@@ -395,6 +395,32 @@ let is_sub ctx ~sub ~super =
    the member cross above. *)
 let type_compatible ctx a b = is_sub ctx ~sub:a ~super:b || is_sub ctx ~sub:b ~super:a
 
+(* The same three answers for a consumer that holds a DOCUMENT rather than
+   a check context — the reference interpreter's loader and evaluator and
+   the ASP translator resolve members through these, so the chain has one
+   definition in the house and the three readers cannot drift on it. *)
+let effective_ot doc name = objecttype { doc } name
+let subtype_of doc ~sub ~super = is_sub { doc } ~sub ~super
+
+(* The type on [from]'s chain that DECLARES [member] — [from] itself when it
+   declares it. The ch. 7.2 conflict key names this type and not the
+   instance's concrete type: a target is declared once, and keying on the
+   concrete type would make one target report under as many names as it has
+   subtypes. *)
+let declaring_type doc ~from ~kind ~member =
+  match declared_objecttype { doc } from with
+  | None -> None
+  | Some ot ->
+      List.find_map
+        (fun (t : objecttype) ->
+          let hit =
+            match kind with
+            | `Attribute -> List.exists (fun (k, _) -> norm k = norm member) t.attributen
+            | `Characteristic -> mem_ci (some_names t.kenmerken) member
+          in
+          if hit then t.ot_naam else None)
+        (chain_from { doc } ot)
+
 let attr_of ot name = find_ci ot.attributen name
 let has_attr ot name = List.exists (fun (k, _) -> norm k = norm name) ot.attributen
 let has_kenmerk ot name = mem_ci (some_names ot.kenmerken) name

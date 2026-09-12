@@ -85,10 +85,37 @@ let applies env (g : geldigheid option) =
 
 (* --- name resolution against the document ------------------------------ *)
 
+(* The EFFECTIVE object type (IR-SPEC ch. 2.2): the declaration with its
+   member maps closed over the supertype chain, nearest declaration first.
+   Every member lookup in this evaluator goes through here, so an
+   inherited attribute or characteristic resolves exactly where an own one
+   does — and a member declared on a strict SUBtype still does not resolve
+   at the supertype, because the walk only goes up. *)
 let objecttype env name =
-  match Ir_v0.Checks.find_ci env.doc.objecttypen name with
+  match Ir_v0.Checks.effective_ot env.doc name with
   | Some ot -> ot
   | None -> Value.fault "unknown object type %S" name
+
+(* S ⊑ T. Reflexive, so this is the drop-in for every place that used to
+   compare two declared type names for equality. *)
+let isa env sub super = Ir_v0.Checks.subtype_of env.doc ~sub ~super
+
+(* An instance of [inst_type] fills a role declaring filler type T iff
+   inst_type ⊑ T — the declared filler type is an UPPER bound (ch. 2.6). *)
+let fills env inst_type (r : rol) =
+  isa env inst_type (Option.value r.rol_objecttype_naam ~default:"")
+
+(* The effective defaults stacks per concrete type (RUNTIME-SEMANTICS
+   ch. 7.10). A composition the block order does not define is a NAMED
+   refusal, surfaced as an evaluation fault like any other rather than as an
+   escaping exception. *)
+let effective_defaults env =
+  try Ir_v0.Desugar.effective_defaults env.doc
+  with Ir_v0.Desugar.Unlowered m -> Value.fault "%s" m
+
+let inherited_rule_clashes env =
+  try Ir_v0.Desugar.inherited_rule_clashes env.doc
+  with Ir_v0.Desugar.Unlowered m -> Value.fault "%s" m
 
 let attr_decl env ~otype ~attr =
   let ot = objecttype env otype in
@@ -126,9 +153,13 @@ let kenmerk_temporal (ot : objecttype) name =
    Where the field is ABSENT, or names the subject's own type, nothing changes:
    the declaration consulted and the object read coincide, which is every
    document the corpus holds. *)
-let owner_hosts ~(otype : string) ~(kenmerk : string option) (eigenaar : string option) =
+let owner_hosts (doc : document) ~(otype : string) ~(kenmerk : string option)
+    (eigenaar : string option) =
   match eigenaar with
-  | Some e when norm e <> norm otype ->
+  (* the owner is satisfied EXTENSIONALLY: a subject of a subtype IS an
+     object of the owner type, so an inherited characteristic check reads
+     the object it is hosted on (ch. 2.2) *)
+  | Some e when not (Ir_v0.Checks.subtype_of doc ~sub:otype ~super:e) ->
       Value.fault
         "characteristic check %S is hosted on %S while the subject is %S: the owner names the \
          object the check is about (WF-100), and this reader has no other object to read"
@@ -231,19 +262,15 @@ let connecting_role env ~from_type ~to_type =
   let candidates =
     List.concat_map
       (fun (_, (ft : feittype)) ->
-        let ot r = Option.value r.rol_objecttype_naam ~default:"" in
+        let f t r = fills env t r in
         match ft.rollen with
         | [ a; b ] ->
-            (if norm (ot a) = norm from_type && norm (ot b) = norm to_type then [ b ]
-             else [])
-            @
-            if norm (ot b) = norm from_type && norm (ot a) = norm to_type then [ a ]
-            else []
+            (if f from_type a && f to_type b then [ b ] else [])
+            @ (if f from_type b && f to_type a then [ a ] else [])
         | [ r ] when ft.wederkerig ->
             (* the reciprocal shape: the one role relates the type to
                itself, and is both sides of the hop *)
-            if norm (ot r) = norm from_type && norm from_type = norm to_type then [ r ]
-            else []
+            if f from_type r && norm from_type = norm to_type then [ r ] else []
         | _ -> [])
       env.doc.feittypen
   in
@@ -266,7 +293,7 @@ let connecting_pair env ~from_type ~to_type =
   let candidates =
     List.filter_map
       (fun (ftn, (ft : feittype)) ->
-        let ot r = Option.value r.rol_objecttype_naam ~default:"" in
+        let f t r = fills env t r in
         match ft.rollen with
         | [ a; b ] when norm from_type = norm to_type ->
             (* a self-typed two-role fact type is role-ambiguous: it
@@ -274,18 +301,13 @@ let connecting_pair env ~from_type ~to_type =
                roles as candidates and derives null) — the explicit
                verbindendeRol binding is the unambiguous route
                (IR-SPEC ch. 3.3) *)
-            if norm (ot a) = norm from_type && norm (ot b) = norm from_type then
-              Some `Blocked
-            else None
+            if f from_type a && f from_type b then Some `Blocked else None
         | [ a; b ] ->
-            if norm (ot a) = norm from_type && norm (ot b) = norm to_type then
-              Some (`Pair (ftn, b, a))
-            else if norm (ot b) = norm from_type && norm (ot a) = norm to_type then
-              Some (`Pair (ftn, a, b))
+            if f from_type a && f to_type b then Some (`Pair (ftn, b, a))
+            else if f from_type b && f to_type a then Some (`Pair (ftn, a, b))
             else None
         | [ r ] when ft.wederkerig ->
-            if norm (ot r) = norm from_type && norm from_type = norm to_type then
-              Some (`Pair (ftn, r, r))
+            if f from_type r && norm from_type = norm to_type then Some (`Pair (ftn, r, r))
             else None
         | _ -> None)
       env.doc.feittypen
@@ -395,7 +417,8 @@ let self_denoting_role (doc : document) ~self_type name =
     (fun (_, (ft : feittype)) ->
       List.exists
         (fun (r : rol) ->
-          norm (Option.value r.rol_objecttype_naam ~default:"") = norm self_type
+          Ir_v0.Checks.subtype_of doc ~sub:self_type
+            ~super:(Option.value r.rol_objecttype_naam ~default:"")
           && ((match r.rol_naam with Some n -> norm n = norm name | None -> false)
              || match r.rol_meervoud with Some m -> norm m = norm name | None -> false))
         ft.rollen)
@@ -408,18 +431,15 @@ let reachable_roles_by_name ?to_type env ~self_type ~name =
     &&
     match to_type with
     | None -> true
-    | Some t -> norm (Option.value r.rol_objecttype_naam ~default:"") = norm t
+    | Some t -> fills env t r
   in
   List.filter_map
     (fun (_, (ft : feittype)) ->
-      let ot r = Option.value r.rol_objecttype_naam ~default:"" in
+      let f r = fills env self_type r in
       match ft.rollen with
       | [ a; b ] ->
-          if norm (ot a) = norm self_type && matches b then Some b
-          else if norm (ot b) = norm self_type && matches a then Some a
-          else None
-      | [ r ] when ft.wederkerig ->
-          if norm (ot r) = norm self_type && matches r then Some r else None
+          if f a && matches b then Some b else if f b && matches a then Some a else None
+      | [ r ] when ft.wederkerig -> if f r && matches r then Some r else None
       | _ -> None)
     env.doc.feittypen
 
@@ -502,7 +522,11 @@ let nav_target env world (self : World.instance) ~bindings ~navigatie_rol ~navig
         (* fail fast on a walk the verifier would reject: a binding chain
            that lands off the declared endpoint must never silently read
            an absent attribute as leeg *)
-        if norm cur.otype <> norm endpoint then
+        (* the reached instance must BE of the declared endpoint type —
+           extensionally, so a subtype instance satisfies a supertype
+           endpoint (ch. 2.2); the unsound direction, a supertype instance
+           against a subtype endpoint, still faults *)
+        if not (isa env cur.otype endpoint) then
           Value.fault "the navigation reached %S, not the declared endpoint %S" cur.otype
             endpoint;
         Some cur
@@ -649,7 +673,10 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
            read exists — the collapses are the only bridges)"
           name;
       let navigated =
-        navigatie_rol <> None || navigatie_pad <> [] || norm ot <> norm self.otype
+        (* not navigated when the reference is anchored at the subject
+           itself — which includes an INHERITED member, written at the
+           declaring supertype and read on a subtype instance (ch. 2.2) *)
+        navigatie_rol <> None || navigatie_pad <> [] || not (isa env self.otype ot)
       in
       if not navigated then begin
         (match navigatie_bindingen with
@@ -825,7 +852,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
           | Attribuut_ref
               { attribuut = Some a; objecttype = Some otn; navigatie_rol = None;
                 navigatie_pad = []; set = false; _ }
-            when norm otn = norm self.otype ->
+            when isa env self.otype otn ->
               if not (Ir_v0.Checks.attr_temporal (objecttype env otn) a) then
                 Value.fault "temporal read of %S, which is not a temporal attribute" a;
               (match World.timeline self a with
@@ -1158,7 +1185,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
   match (kind, argumenten) with
   | ( Totaal,
       [ Attribuut_ref { attribuut = Some a; objecttype = Some aot; navigatie_rol = None; navigatie_pad = []; set = false; _ } ] )
-    when norm aot = norm self.otype
+    when isa env self.otype aot
          && Ir_v0.Checks.attr_temporal (objecttype env aot) a -> (
       (* ch. 3.6, the temporal total — the one v0-mirrored bridge from a
          timeline to a scalar. The case carries the asOfDate bucket's
@@ -1209,7 +1236,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
                     { attribuut = Some b; objecttype = Some botn; navigatie_rol = None;
                       navigatie_pad = []; set = false; _ });
                   rechts = Some grens; periode = None; _ }
-              when norm botn = norm self.otype
+              when isa env self.otype botn
                    && Ir_v0.Checks.attr_temporal ot_decl b ->
                 (* the compared timeline is evaluated PER SEGMENT against
                    the scalar bound (piecewise-constant, never per day) *)
@@ -1493,7 +1520,7 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
           Value.fault
             "navigation binding on a characteristic check that does not navigate (WF-053)"
       | None -> ());
-      owner_hosts ~otype:self.otype ~kenmerk eigenaar;
+      owner_hosts env.doc ~otype:self.otype ~kenmerk eigenaar;
       let k = req "KenmerkCheck.kenmerk" kenmerk in
       (* [owner_hosts] above has already established that an `eigenaar`, where
          present, names the subject's own type — so the declaration this
@@ -1520,7 +1547,7 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
       (* the owner is a HOSTING statement about the pattern, not about the
          reached type, so it is crossed against the subject here exactly as on
          the scalar arm — the characteristic itself still lives on the far side *)
-      owner_hosts ~otype:self.otype ~kenmerk eigenaar;
+      owner_hosts env.doc ~otype:self.otype ~kenmerk eigenaar;
       let k = req "KenmerkCheck.kenmerk" kenmerk in
       let role =
         match navigatie_binding with
@@ -1654,7 +1681,8 @@ let rule_name (r : resolved_regel) = Option.value r.rr_naam ~default:"<naamloos>
 (* run one form over its subjects; [body] gets the fresh instance and an
    error collector, returns (world, changed); collected §9.5 reasons land
    as channel facts for (rule × subject) *)
-let over_subjects world ~otype ~rule body =
+let over_subjects ?(exact = false) env world ~otype ~rule body =
+  let isa = if exact then fun a b -> norm a = norm b else isa env in
   List.fold_left
     (fun (w, changed) (snapshot : World.instance) ->
       let self = World.get w snapshot.label in
@@ -1667,7 +1695,7 @@ let over_subjects world ~otype ~rule body =
           w !pending
       in
       (w, changed || ch))
-    (world, false) (World.of_type world otype)
+    (world, false) (World.of_type ~isa world otype)
 
 (* ch. 3.7: the pro-rata target — the one implemented temporal write.
    The value MUST be tijdsevenredig-deel over an own temporal attribute
@@ -1800,7 +1828,7 @@ let run_rule env world (r : resolved_regel) =
                   Value.fault
                     "temporal attribute %S as a target: temporal writes are not implemented"
                     attr);
-        over_subjects world ~otype:ot ~rule:(rule_name r) (fun w self err ->
+        over_subjects env world ~otype:ot ~rule:(rule_name r) (fun w self err ->
             let fire =
               match r.rr_voorwaarde with Some c -> eval_cond env w self ~err c | None -> true
             in
@@ -1849,7 +1877,7 @@ let run_verdeling env world (v : resolved_verdeling) =
     let doel_type = req "doelType" v.doel_type in
     let bron_attr = req "bronAttribuut" v.bron_attribuut in
     let doel_attr = req "doelAttribuut" v.doel_attribuut in
-    over_subjects world ~otype:bron_type ~rule:name (fun w src cond_err ->
+    over_subjects env world ~otype:bron_type ~rule:name (fun w src cond_err ->
         let cond_ok =
           match v.vd_voorwaarde with
           | Some c -> eval_cond env w src ~err:cond_err c
@@ -1932,7 +1960,7 @@ let run_feit_creatie env world (fc : resolved_feit_creatie) =
     let role rname = bound_role env { rb_feittype = ftn; rb_rol = rname } in
     let anker_rol = role (req "FeitCreatie.ankerRol" fc.anker_rol) in
     let doel_rol = role (req "FeitCreatie.doelRol" fc.doel_rol) in
-    over_subjects world ~otype:(req "FeitCreatie.anker" fc.anker) ~rule:name
+    over_subjects env world ~otype:(req "FeitCreatie.anker" fc.anker) ~rule:name
       (fun w self err ->
         let fire =
           match fc.fc_voorwaarde with Some c -> eval_cond env w self ~err c | None -> true
@@ -1991,7 +2019,7 @@ let run_object_creatie env ~world0 ~idx world (oc : resolved_object_creatie) =
           | Error e -> Value.fault "%s" e)
       | None -> connecting_pair env ~from_type:subject ~to_type:nieuw
     in
-    over_subjects world ~otype:subject ~rule:name (fun w self err ->
+    over_subjects env world ~otype:subject ~rule:name (fun w self err ->
         let fire =
           match oc.oc_voorwaarde with Some c -> eval_cond env w self ~err c | None -> true
         in
@@ -2097,18 +2125,33 @@ type chain_result = Decided of defaults_decision | Conflict of string | Undecide
    fact keyed by the target form plus the default-index path. The strata
    machinery (WF-051) has already put every descendant justification and
    consequence producer strictly below every member. *)
-let run_defaults_group env world (members : prioritized_defaults list) =
+(* [owner] is the CONCRETE type whose effective stack [members] is
+   (RUNTIME-SEMANTICS ch. 7.10): inheritance has already folded every
+   inherited declaration into it, so the group runs on instances of exactly
+   that type — reading the subject extensionally here as well would put the
+   supertype's stack and the subtype's on one instance. *)
+let run_defaults_group env world ~owner (members : prioritized_defaults list) =
   let l0 = List.hd members in
-  let target_form =
-    l0.pd_onderwerp ^ "."
-    ^
+  let target_name =
     match (l0.pd_kenmerk, l0.pd_attribuut) with
     | Some k, _ -> k
     | _, Some a -> a
     | _ -> "?"
   in
+  (* the ch. 7.2 conflict key names the type that DECLARES the target, not
+     the instance's concrete type: a target is declared once, and keying on
+     the concrete type would make one target report under as many names as
+     it has subtypes *)
+  let declarant =
+    Option.value
+      (Ir_v0.Checks.declaring_type env.doc ~from:owner
+         ~kind:(if l0.pd_kenmerk <> None then `Characteristic else `Attribute)
+         ~member:target_name)
+      ~default:l0.pd_onderwerp
+  in
+  let target_form = declarant ^ "." ^ target_name in
   (match l0.pd_attribuut with
-  | Some a when Ir_v0.Checks.attr_temporal (objecttype env l0.pd_onderwerp) a ->
+  | Some a when Ir_v0.Checks.attr_temporal (objecttype env owner) a ->
       Value.fault
         "temporal attribute %S as a defaults target: temporal writes are not implemented" a
   | _ -> ());
@@ -2118,11 +2161,11 @@ let run_defaults_group env world (members : prioritized_defaults list) =
   | Some k
     when List.exists
            (fun (n, _) -> Ir_v0.Checks.norm n = Ir_v0.Checks.norm k)
-           (objecttype env l0.pd_onderwerp).kenmerk_granulariteit ->
+           (objecttype env owner).kenmerk_granulariteit ->
       Value.fault
         "temporal characteristic %S as a defaults target: temporal writes are not implemented" k
   | _ -> ());
-  over_subjects world ~otype:l0.pd_onderwerp ~rule:target_form (fun w self cond_err ->
+  over_subjects ~exact:true env world ~otype:owner ~rule:target_form (fun w self cond_err ->
       let speculate f =
         let buf = ref [] in
         let r = f (fun m -> buf := m :: !buf) in
@@ -2247,7 +2290,7 @@ let run_defaults_group env world (members : prioritized_defaults list) =
       | Decided (Attr_dec v) ->
           let a = req "defaults attribuut" l0.pd_attribuut in
           World.write_attr w ~label:self.label ~attr:a
-            ~decl:(attr_decl env ~otype:l0.pd_onderwerp ~attr:a)
+            ~decl:(attr_decl env ~otype:owner ~attr:a)
             v)
 
 (* consistency and uniqueness fire at the computed fixpoint; violations
@@ -2257,7 +2300,7 @@ let run_consistentie env world (c : resolved_consistentie) =
   else
     let name = Option.value c.cons_naam ~default:"<consistentie>" in
     let world, _ =
-      over_subjects world ~otype:(req "Consistentie.subject" c.cons_subject) ~rule:name
+      over_subjects env world ~otype:(req "Consistentie.subject" c.cons_subject) ~rule:name
         (fun w self err ->
           if eval_cond env w self ~err (req "assertie" c.assertie) then (w, false)
           else (World.insert_error w ~rule:name ~subject:self.label, false))
@@ -2358,7 +2401,7 @@ let run_uniciteit env world (u : resolved_uniciteit) =
           match prefix with
           | None -> []
           | Some pre -> List.map (fun key -> (pre ^ key, i.label)) tuples)
-        (World.of_type world subject)
+        (World.of_type ~isa:(isa env) world subject)
     in
     let dup k = List.length (List.filter (fun (k', _) -> String.equal k k') keyed) > 1 in
     List.fold_left
@@ -2393,7 +2436,7 @@ let run_uniciteit_unie env world (u : resolved_uniciteit_unie) =
           List.concat_map
             (fun (i : World.instance) ->
               List.map (fun key -> (key, i.label)) (ever_tuples env ~otype:t ~keys i))
-            (World.of_type world t))
+            (World.of_type ~isa:(isa env) world t))
         u.bronnen
     in
     let dup k = List.length (List.filter (fun (k', _) -> String.equal k k') keyed) > 1 in
@@ -2596,6 +2639,18 @@ let evaluate env world =
   | { Ir_v0.Checks.wf; at; reason } :: _ ->
       Value.fault "%s at %s: %s — the dependency graph is ill-formed; ref/ refuses to evaluate"
         wf at reason);
+  (* RUNTIME-SEMANTICS ch. 7.10: the two corners inheritance leaves
+     un-lowered are refused here, before any value exists, so all three
+     executors stop on the same document rather than each answering its own
+     way. Both are named refusals, never a guess. *)
+  (match inherited_rule_clashes env with
+  | [] -> ()
+  | (owner, ancestor, attr) :: _ ->
+      Value.fault
+        "'%s' carries a defaults stack for '%s', which an ordinary rule on the ancestor '%s' \
+         also writes: an inherited ordinary writer as the stack's base is not lowered \
+         (ch. 7.10)"
+        owner attr ancestor);
   parameterset_check env;
   validate_input_precision env world;
   (* the input-world snapshot the 1:1 creation guard reads (ch. 5.5) *)
@@ -2688,31 +2743,18 @@ let evaluate env world =
   let indexed l = List.mapi (fun i x -> (i, x)) l in
   (* defaults groups (ch. 7.2): members share one (subject, target); a
      group runs at the max of its members' strata *)
+  (* One stack per (CONCRETE type, target): inheritance composed the
+     inherited declarations into it (RUNTIME-SEMANTICS ch. 7.10), so what
+     runs here is already the effective stack and its subject range is
+     exactly that type. In a document without a supertype edge this is the
+     declared grouping, unchanged. A stratum is the max over the
+     declarations the stack was composed from. *)
   let defaults_groups =
-    let key (l : prioritized_defaults) =
-      (* the kind discriminant keeps a name-sharing attribute and
-         characteristic (WF-002) in separate groups *)
-      (if l.pd_kenmerk <> None then "K:" else "A:")
-      ^ norm l.pd_onderwerp ^ ":"
-      ^
-      match (l.pd_kenmerk, l.pd_attribuut) with
-      | Some k, _ -> norm k
-      | _, Some a -> norm a
-      | _ -> "?"
-    in
-    List.fold_left
-      (fun acc (i, l) ->
-        let k = key l in
-        match List.assoc_opt k acc with
-        | Some _ ->
-            List.map
-              (fun (k', (s, ls)) ->
-                if k' = k then (k', (max s (defaults_stratum i), ls @ [ l ])) else (k', (s, ls)))
-              acc
-        | None -> acc @ [ (k, (defaults_stratum i, [ l ])) ])
-      []
-      (indexed env.doc.prioritized_defaults)
-    |> List.map snd
+    List.map
+      (fun (owner, _key, members, idxs) ->
+        let stratum = List.fold_left (fun acc i -> max acc (defaults_stratum i)) 0 idxs in
+        (stratum, owner, members))
+      (effective_defaults env)
   in
   let pass ~k world =
     let world, c1 =
@@ -2737,10 +2779,10 @@ let evaluate env world =
     in
     let world, c3 =
       List.fold_left
-        (fun (w, ch) (stratum, members) ->
+        (fun (w, ch) (stratum, owner, members) ->
           if stratum > k then (w, ch)
           else
-            let w, c = run_defaults_group env w members in
+            let w, c = run_defaults_group env w ~owner members in
             (w, ch || c))
         (world, false) defaults_groups
     in

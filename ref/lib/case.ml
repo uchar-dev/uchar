@@ -226,8 +226,15 @@ let timeline_of_json ?(allow_empty = false) ~at ~(gran : granulariteit) (decl : 
 
 (* --- cross-checked loading --------------------------------------------- *)
 
+(* The EFFECTIVE object type (IR-SPEC ch. 2.2): the declaration with its
+   member maps closed over the supertype chain. Every member cross in this
+   loader — supplied attribute, supplied characteristic, expected value,
+   expected timeline, granularity — goes through here, so an inherited
+   member is delivered and expected exactly like an own one. A case
+   instance names its CONCRETE type in `objectType`; the chain is what the
+   document adds to it, never something the case restates. *)
 let find_objecttype (doc : document) name =
-  match Ir_v0.Checks.find_ci doc.objecttypen name with
+  match Ir_v0.Checks.effective_ot doc name with
   | Some ot -> ot
   | None -> fail "instance objectType %S is not declared" name
 
@@ -241,18 +248,23 @@ let resolve_role_ft (doc : document) ~otype ~key =
   let hits =
     List.concat_map
       (fun (_, (ft : feittype)) ->
-        let ot r = Option.value r.rol_objecttype_naam ~default:"" in
+        (* the declared filler type is an UPPER bound (ch. 2.6): an
+           instance of S fills every role declared at a T with S ⊑ T *)
+        let fills (r : rol) =
+          Ir_v0.Checks.subtype_of doc ~sub:otype
+            ~super:(Option.value r.rol_objecttype_naam ~default:"")
+        in
         let matches (r : rol) =
           (match r.rol_naam with Some n -> norm n = norm key | None -> false)
           || (match r.rol_meervoud with Some m -> norm m = norm key | None -> false)
         in
         match ft.rollen with
         | [ a; b ] ->
-            (if norm (ot a) = norm otype && matches b then [ (ft, b, a) ] else [])
-            @ if norm (ot b) = norm otype && matches a then [ (ft, a, b) ] else []
+            (if fills a && matches b then [ (ft, b, a) ] else [])
+            @ if fills b && matches a then [ (ft, a, b) ] else []
         | [ r ] when ft.wederkerig ->
             (* reciprocal: the single role is its own opposite *)
-            if norm (ot r) = norm otype && matches r then [ (ft, r, r) ] else []
+            if fills r && matches r then [ (ft, r, r) ] else []
         | _ -> [])
       doc.feittypen
   in
@@ -532,7 +544,9 @@ let check_role_targets (doc : document) (world : World.t) =
               match SMap.find_opt l world.instances with
               | None -> fail "role %S on %S links unknown label %S" key i.label l
               | Some target ->
-                  if norm target.otype <> norm expect then
+                  (* upper bound, not equality: a subtype instance fills
+                     a supertype-typed role (ch. 2.6) *)
+                  if not (Ir_v0.Checks.subtype_of doc ~sub:target.otype ~super:expect) then
                     fail "role %S on %S links %S of type %S; declared filler type is %S" key
                       i.label l target.otype expect)
             labels)

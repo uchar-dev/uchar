@@ -168,12 +168,15 @@ let val_present model label attr =
     model
 
 (* returns mismatches; [] on success *)
+(* Expectations resolve their declaration against the instance's EFFECTIVE
+   object type (IR-SPEC ch. 2.2): an inherited attribute scales by the
+   decimals its declaring type gives it, exactly as the writer scaled it. *)
 let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : string list =
   let scaled_expect ~label ~attr (v : Value.t) =
     let i = Uchar_ref.World.SMap.find label case.world.Uchar_ref.World.instances in
     let ot = i.Uchar_ref.World.otype in
     let d =
-      match Ir_v0.Checks.find_ci doc.objecttypen ot with
+      match Ir_v0.Checks.effective_ot doc ot with
       | Some otd -> (
           match Ir_v0.Checks.find_ci otd.attributen attr with
           | Some dt -> (
@@ -206,7 +209,7 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
     let i = Uchar_ref.World.SMap.find label case.world.Uchar_ref.World.instances in
     let ot = i.Uchar_ref.World.otype in
     let constructoren =
-      match Ir_v0.Checks.find_ci doc.objecttypen ot with
+      match Ir_v0.Checks.effective_ot doc ot with
       | Some otd -> (
           match Ir_v0.Checks.find_ci otd.attributen attr with
           | Some (Some (Sum_type { constructoren; _ })) -> constructoren
@@ -227,7 +230,7 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
     let i = Uchar_ref.World.SMap.find label case.world.Uchar_ref.World.instances in
     let ot = i.Uchar_ref.World.otype in
     let domein, velden =
-      match Ir_v0.Checks.find_ci doc.objecttypen ot with
+      match Ir_v0.Checks.effective_ot doc ot with
       | Some otd -> (
           match Ir_v0.Checks.find_ci otd.attributen attr with
           | Some (Some (Struct_type { domein; velden })) -> (domein, velden)

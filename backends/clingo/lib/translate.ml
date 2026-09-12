@@ -253,6 +253,13 @@ type ctx = {
   mutable binders : (string * (string list * string * int)) list;
 }
 
+(* S ⊑ T, for the OCaml-side scans over case instances. The ASP side does
+   NOT use this: there the closure is a rule the solver sees (the isa_sub
+   block in [translate]), so the clingo leg stays an independent
+   reimplementation of the semantics rather than a second copy of the chain
+   walk. *)
+let isa ctx sub super = Ir_v0.Checks.subtype_of ctx.doc ~sub ~super
+
 (* The convention guards, mirroring ref/'s faults (IR-SPEC ch. 4.3a:
    "executors fault, never guess"): a point read needs the full-timeline
    case variant on every subject instance, and the temporal total needs
@@ -262,7 +269,7 @@ let require_attr_timeline ctx ~otype ~attr =
   Eval.SMap.iter
     (fun _ (i : Uchar_ref.World.instance) ->
       if
-        Ir_v0.Checks.norm i.otype = Ir_v0.Checks.norm otype
+        isa ctx i.otype otype
         && Uchar_ref.World.timeline i attr = None
       then
         fault
@@ -275,7 +282,7 @@ let refuse_attr_timeline ctx ~otype ~attr =
   Eval.SMap.iter
     (fun _ (i : Uchar_ref.World.instance) ->
       if
-        Ir_v0.Checks.norm i.otype = Ir_v0.Checks.norm otype
+        isa ctx i.otype otype
         && Uchar_ref.World.timeline i attr <> None
       then
         fault
@@ -311,10 +318,15 @@ let applies ctx (g : geldigheid option) =
           (match geld_vanaf with Some v -> String.compare v d <= 0 | None -> true)
           && (match geld_tot with Some t -> String.compare d t <= 0 | None -> true))
 
+(* The EFFECTIVE object type (IR-SPEC ch. 2.2): the declaration with its
+   member maps closed over the supertype chain. Every declaration lookup in
+   this translator funnels through here, so an inherited attribute carries
+   its declaring type's decimals, unit and granularity wherever it is read. *)
 let objecttype ctx name =
-  match Ir_v0.Checks.find_ci ctx.doc.objecttypen name with
+  match Ir_v0.Checks.effective_ot ctx.doc name with
   | Some ot -> ot
   | None -> fault "unknown object type %S" name
+
 
 let attr_decimals ctx ~otype ~attr =
   let ot = objecttype ctx otype in
@@ -473,7 +485,7 @@ let prorata_writes (doc : document) ~otype ~attr =
 let case_supplies ctx ~otype ~attr =
   Eval.SMap.exists
     (fun _ (i : Uchar_ref.World.instance) ->
-      norm i.otype = norm otype
+      isa ctx i.otype otype
       && (Uchar_ref.World.attr i attr <> Value.Empty
          || Uchar_ref.World.timeline i attr <> None))
     ctx.case.world.instances
@@ -621,7 +633,7 @@ let coalesce0 ctx ~subject ~subject_ot (atoms, term, scale) =
   else begin
     ctx.fresh <- ctx.fresh + 1;
     let pred = Printf.sprintf "co%d" ctx.fresh in
-    let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+    let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
     let body = String.concat ", " (base :: atoms) in
     emit ctx "%s(%s,%s) :- %s." pred subject term body;
     emit ctx "%s_def(%s) :- %s." pred subject body;
@@ -731,7 +743,7 @@ let pre_epoch_fence ctx ~subject ~body t =
    the chain unbound — the helper underivable, leeg as absence. *)
 let translate_date_plus_months ctx ~subject ~subject_ot ~date_atoms ~date_term ~dur_atoms
     ~count =
-  let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+  let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
   pre_epoch_fence ctx ~subject ~body:((base :: ctx.rule_guard) @ date_atoms) date_term;
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "dpm%d" ctx.fresh in
@@ -1293,7 +1305,7 @@ let rec reads_binder b (e : expr) : bool =
    the other helper-emitting positions) build their rules from the LOCAL atoms
    only, so a bare Let-bound var used inside one grounds UNSAFE (the tutorial's
    `let n = number of individuals` read in the money product). Bind the value
-   through a per-subject helper `letN(S,vt) :- is_a(S,ot), va.` — for a
+   through a per-subject helper `letN(S,vt) :- isa(S,ot), va.` — for a
    ListLength that is the count aggregate over lpres/lelem — so every read
    carries the single `letN` atom and the length/value is bound before use. An
    atom-free value (a literal) is already ground and needs no helper. *)
@@ -1303,7 +1315,7 @@ let let_binder ctx ~subject ~subject_ot ((va, vt, vs) : string list * string * i
   else begin
     ctx.fresh <- ctx.fresh + 1;
     let p = Printf.sprintf "let%d" ctx.fresh in
-    let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+    let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
     emit ctx "%s(%s,%s) :- %s." p subject vt (String.concat ", " (base :: va));
     let v = fresh ctx "LB" in
     ([ Printf.sprintf "%s(%s,%s)" p subject v ], v, vs)
@@ -1320,7 +1332,7 @@ let let_binder ctx ~subject ~subject_ot ((va, vt, vs) : string list * string * i
    NAF is stratified exactly as the numeric eqN is. Equality is untouched: it
    keeps its positive == join (any empty → false, Tabel 38). *)
 let neq_helper ctx ~subject ~subject_ot (ll, tl) (rr, tr) : string list =
-  let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+  let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "eq%d" ctx.fresh in
   emit ctx "%s_l(%s) :- %s." p subject (String.concat ", " (base :: ll));
@@ -1606,7 +1618,12 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         | Totaal -> true
         | _ -> (
             match leegwaarde with
-            | Some (Literal { waarde = Some "0"; _ }) -> true
+            (* zero by VALUE, not by lexeme: a 2-decimal fold writes its
+               fallback as "0.00", which is the same empty-set answer as
+               "0" and the same bare #sum encoding *)
+            | Some (Literal { waarde = Some w; _ })
+              when Q.equal (Uchar_ref.Value.q_of_lexeme w) Q.zero ->
+                true
             | Some _ -> fault "som fallback other than 0 is not translated yet"
             | None -> false)
       in
@@ -1621,7 +1638,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         | None -> []
         | Some c -> cond_atoms ctx ~subject:x ~subject_ot:el c
       in
-      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       let contrib_body, sum_shape =
         if not temporal then begin
           (* the SCALAR set fold: one val/3 per member, the join IS the
@@ -1750,7 +1767,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                   a i.label)
             (Eval.SMap.fold
                (fun _ (self : Uchar_ref.World.instance) acc ->
-                 if norm self.otype <> norm subject_ot then acc
+                 if not (isa ctx self.otype subject_ot) then acc
                  else
                    (match bron_pad with
                     | Some pad -> Eval.linked_path env ctx.case.world self ~path:pad
@@ -1764,7 +1781,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           let spans =
             Eval.SMap.fold
               (fun _ (i : Uchar_ref.World.instance) acc ->
-                if norm i.otype <> norm el then acc
+                if not (isa ctx i.otype el) then acc
                 else
                   match Uchar_ref.World.timeline i a with
                   | None -> acc
@@ -1900,7 +1917,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x
         @ (Printf.sprintf "val(%s,%s,%s)" x (str a) g :: fatoms)
       in
-      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       ctx.fresh <- ctx.fresh + 1;
       let p = Printf.sprintf "extp%d" ctx.fresh in
       emit ctx "%s(%s) :- %s." p subject (String.concat ", " (base :: contrib_body));
@@ -1969,7 +1986,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let m = List.fold_left (fun acc (_, _, s) -> max acc s) 1 ops in
       ctx.fresh <- ctx.fresh + 1;
       let pred = Printf.sprintf "fl%d" ctx.fresh in
-      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       List.iter
         (fun (atoms, t, s) ->
           let body = base :: atoms in
@@ -2008,7 +2025,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       Eval.SMap.iter
         (fun _ (i : Uchar_ref.World.instance) ->
           if
-            Ir_v0.Checks.norm i.otype = Ir_v0.Checks.norm aot
+            isa ctx i.otype aot
             && Uchar_ref.World.timeline i a = None
             && Uchar_ref.World.attr i a <> Value.Empty
           then
@@ -2150,7 +2167,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
 
                Substituting [subject] for "S" and adding the is_a base gives
                the fence the same shape every other site has. *)
-            let sub_base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+            let sub_base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
             range_guard ctx ~subject
               ~body:
                 (((sub_base :: ctx.rule_guard)
@@ -2300,9 +2317,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          %s_seg(%s,V,T,W), |W| > 46340."
         subject
         (String.concat ", "
-           (Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) :: ctx.rule_guard))
+           (Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: ctx.rule_guard))
         p subject;
-      emit ctx "%s_tot(S,%s) :- is_a(S,%s), %s = #sum { W*N,V,T : %s_seg(S,V,T,W), %s_wu(V,T,N) }."
+      emit ctx "%s_tot(S,%s) :- isa(S,%s), %s = #sum { W*N,V,T : %s_seg(S,V,T,W), %s_wu(V,T,N) }."
         p q (str subject_ot) q p p;
       ( [ Printf.sprintf "%s_tot(%s,%s)" p subject q ],
         q,
@@ -2433,7 +2450,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         | [ a; b ] -> (a, b)
         | _ -> fault "tijdsduur expects two arguments"
       in
-      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       let wrap t = if kind = Absolute_tijdsduur then Printf.sprintf "|%s|" t else t in
       if is_datetime_operand (Some a) || is_datetime_operand (Some b) then begin
         (* datum-tijd tijdsduur (ch. 3.8, the millisecond layer): both
@@ -2551,7 +2568,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       | _ -> fault "part-extractor operand is not statically a day-precision date");
       let ba, ta, sa = expr_term ctx ~subject ~subject_ot a in
       if sa <> 1 then fault "part-extractor operand must be an unscaled day term";
-      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       pre_epoch_fence ctx ~subject ~body:((base :: ctx.rule_guard) @ ba) ta;
       let catoms, pmv, dv = civil_pm_day ctx ta in
       let t =
@@ -2581,7 +2598,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       | _ -> fault "eerste-paasdag operand is not statically a whole unitless year (WF-038)");
       let by, ty, sy = expr_term ctx ~subject ~subject_ot y in
       if sy <> 1 then fault "eerste-paasdag year operand must be an unscaled whole term";
-      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       emit ctx
         "viol(\"eerste-paasdag of a year before 1 is not translated (the Gauss chain \
          needs non-negative intermediates)\",%s) :- %s, (%s) < 1."
@@ -2708,7 +2725,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let s2 = numeric_scale ~what:"an additive join" s2 in
       let m = max s1 s2 in
       let bindings, tl, tr = harmonised l r in
-      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       range_guard ctx ~subject
         ~body:((base :: ctx.rule_guard) @ bindings)
         [ (tl_raw, 1073741823 / (m / s1)); (tr_raw, 1073741823 / (m / s2)) ];
@@ -2743,7 +2760,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         coalesce0 ctx ~subject ~subject_ot
           (expr_term ctx ~subject ~subject_ot (req "Binair.rechts" rechts))
       in
-      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       range_guard ctx ~subject
         ~body:((base :: ctx.rule_guard) @ bl @ br)
         [ (tl, 46340); (tr, 46340) ];
@@ -2793,7 +2810,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          [s] as a modulus, so an unscaled basis divides by zero here too *)
       let s = numeric_scale ~what:"a rounding basis" s in
       let target = pow10 decimalen in
-      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       let gbody = (base :: ctx.rule_guard) @ b in
       if target >= s then
         if target mod s = 0 then begin
@@ -2867,7 +2884,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let hi = bound "maximum" maximum in
       let m = List.fold_left max b_scale (List.filter_map (Option.map snd) [ lo; hi ]) in
       let scale_to t s = if s = m then t else Printf.sprintf "(%s*%d)" t (m / s) in
-      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       let fenced = (b_term, b_scale) :: List.filter_map Fun.id [ lo; hi ] in
       range_guard ctx ~subject
         ~body:((base :: ctx.rule_guard) @ b_atoms)
@@ -3200,7 +3217,7 @@ and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string 
         args;
       ctx.fresh <- ctx.fresh + 1;
       let pred = Printf.sprintf "dtf%d" ctx.fresh in
-      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       List.iter
         (fun a ->
           let atoms, d, ms = dt_term ctx ~subject ~subject_ot a in
@@ -3235,7 +3252,7 @@ and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string 
    ms-of-day and re-splits by floor division (the floormod trick over gringo's
    toward-zero \\ and /). Fenced so the ms-of-day sum stays inside 2^31. *)
 and datetime_plus_subday ctx ~subject ~subject_ot ~date_atoms ~dd ~dm ~dur_atoms ~n ~u =
-  let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+  let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
   range_guard ctx ~subject
     ~body:((base :: ctx.rule_guard) @ date_atoms @ dur_atoms)
     [ (Printf.sprintf "(%s)" n, (max_int31 - ms_per_day) / u) ];
@@ -3347,7 +3364,7 @@ and translate_division ctx ~subject ~subject_ot ~links ~rechts ~rounding =
   in
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "q%d" ctx.fresh in
-  let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+  let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
   let guard = ctx.rule_guard in
   let lbody = String.concat ", " (base :: bl) in
   let rbody = String.concat ", " (base :: br) in
@@ -3439,7 +3456,7 @@ and translate_power ctx ~subject ~subject_ot ~links ~rechts =
       let rec go k = if pow_le_max (k + 1) e then go (k + 1) else k in
       go 0
     in
-    let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+    let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
     range_guard ctx ~subject ~body:((base :: ctx.rule_guard) @ b) [ (t, bound) ]
   end;
   (b, Printf.sprintf "((%s)**%d)" t e, out_scale)
@@ -3546,7 +3563,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
       in
       let a1, d1, m1 = dt_term ctx ~subject ~subject_ot le in
       let a2, d2, m2 = dt_term ctx ~subject ~subject_ot re in
-      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       let body = String.concat ", " ((base :: a1) @ a2) in
       ctx.fresh <- ctx.fresh + 1;
       let p = Printf.sprintf "dtcmp%d" ctx.fresh in
@@ -3583,7 +3600,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
       let s1 = numeric_scale ~what:"a numeric equality" s1 in
       let s2 = numeric_scale ~what:"a numeric equality" s2 in
       let m = max s1 s2 in
-      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       (* [rule_guard] rides the fence body: inside a composite it carries the
          ch. 5.10 prefix, so a member the outcome no longer reads cannot fire
          this range viol either (S7's claim is about EVERY emission, not only
@@ -3622,7 +3639,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
       let s1 = numeric_scale ~what:"an ordering comparison" s1 in
       let s2 = numeric_scale ~what:"an ordering comparison" s2 in
       let m = max s1 s2 in
-      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       (* [rule_guard] rides the fence body — the ch. 5.10 prefix inside a
          composite, empty and behaviour-neutral outside one (see the equality
          arm above) *)
@@ -3654,7 +3671,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
          passes for free — a timeline with no segments derives no _d row and
          so no failure, and (on the navigated form) so does a hop that
          reaches nothing. *)
-      Eval.owner_hosts ~otype:subject_ot ~kenmerk eigenaar;
+      Eval.owner_hosts ctx.doc ~otype:subject_ot ~kenmerk eigenaar;
       let k = req "kenmerk" kenmerk in
       let env =
         { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
@@ -3734,7 +3751,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
                check, whose absent link answers false either way *)
             let q = fresh ctx "gpnav" in
             let n = fresh ctx "N" in
-            emit ctx "%s(%s) :- is_a(%s,%s), rol(%s,%s,%s), %s(%s)." q subject subject
+            emit ctx "%s(%s) :- isa(%s,%s), rol(%s,%s,%s), %s(%s)." q subject subject
               (str subject_ot) subject (str (role_canonical role)) n p n;
             Printf.sprintf "%s(%s)" q subject
       in
@@ -3746,7 +3763,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
       | Some _ ->
           fault "navigation binding on a characteristic check that does not navigate (WF-053)"
       | None -> ());
-      Eval.owner_hosts ~otype:subject_ot ~kenmerk eigenaar;
+      Eval.owner_hosts ctx.doc ~otype:subject_ot ~kenmerk eigenaar;
       let k = req "kenmerk" kenmerk in
       [ (if negatie then "not " else "") ^ Printf.sprintf "heeft(%s,%s)" subject (str k) ]
   | Kenmerk_check { kenmerk; navigatie = Some nav; negatie; navigatie_binding; eigenaar; _ }
@@ -3757,7 +3774,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
          deliberate v0 asymmetry, encoded for free. *)
       (* WF-100, keyed on the SUBJECT here too: the owner is a hosting
          statement about the pattern, not about the reached type *)
-      Eval.owner_hosts ~otype:subject_ot ~kenmerk eigenaar;
+      Eval.owner_hosts ctx.doc ~otype:subject_ot ~kenmerk eigenaar;
       let k = req "kenmerk" kenmerk in
       let env =
         { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
@@ -3817,7 +3834,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
         ctx.fresh <- ctx.fresh + 1;
         let p = Printf.sprintf "rm%d" ctx.fresh in
         let n = fresh ctx "N" in
-        emit ctx "%s(%s) :- is_a(%s,%s), rol(%s,%s,%s)." p subject subject (str subject_ot) subject
+        emit ctx "%s(%s) :- isa(%s,%s), rol(%s,%s,%s)." p subject subject (str subject_ot) subject
           (str canonical) n;
         [ Printf.sprintf "not %s(%s)" p subject ]
       end
@@ -3851,7 +3868,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
          GEEN hits = 0, TEN MINSTE hits >= d, TEN HOOGSTE hits <= d, PRECIES
          hits = d; the decision-table desugar's disjunctive row is TEN_MINSTE
          1). Each member becomes its own helper rule — cqK_m<i>(S) :-
-         is_a(S,ot), ⟨member atoms⟩, derivable exactly where ref counts the
+         isa(S,ot), ⟨member atoms⟩, derivable exactly where ref counts the
          member as a hit (an unbound operand fails the positive join: a leeg
          member counts false, Tabel 38 for free) — and a PREFIX CHAIN
          cqK_h<i>(S,H) carries the hits among the first i members, link by
@@ -3883,7 +3900,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
         fault "a counting composite without members is not translated (no corpus case)";
       ctx.fresh <- ctx.fresh + 1;
       let p = Printf.sprintf "cq%d" ctx.fresh in
-      let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+      let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       let n = List.length onderdelen in
       let saved = ctx.rule_guard in
       emit ctx "%s_h0(%s,0) :- %s." p subject base;
@@ -4133,7 +4150,7 @@ and translate_match ctx ~subject ~subject_ot ~typ ~scrutinee ~arms =
   let enum_scrutinee = match scrut_typ with Some (Enumeratie _) -> true | _ -> false in
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "match%d" ctx.fresh in
-  let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+  let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
   let out_scale = value_scale typ in
   (* the scrutinee's pattern carrier. Sum: an own-subject attribute read
      carries the constructor pattern in its val atom (functor unification);
@@ -4721,7 +4738,7 @@ and translate_money_mult ctx ~subject ~subject_ot ~basis : string list * string 
   if sm <> 100 || sr <> 10000 then
     fault "the split money multiplication expects a 2-decimal money and a 4-decimal rate (%d,%d)" sm
       sr;
-  let base = Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) in
+  let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
   let gbody = String.concat ", " ((base :: ctx.rule_guard) @ ma @ ra) in
   (* the fences and REKENKUNDIG half-away encoding are shared with the closed
      body (one encoding); here the value rides a subject-keyed helper predicate,
@@ -5018,7 +5035,7 @@ let fitted ctx ~subject ~what ~body term scale target =
    v0 approximates a non-terminating fraction in DECIMAL64 — the
    recorded ch. 3.7 delta), fenced like every division. *)
 let translate_pro_rata ctx ~subject ~ot ~a ~cond ~b ~k ~(g : granulariteit) =
-  let base = Printf.sprintf "is_a(%s,%s)" subject (str ot) in
+  let base = Printf.sprintf "isa(%s,%s)" subject (str ot) in
   if not (attr_temporal ctx ~otype:ot ~attr:b) then
     fault "pro-rata base %S is not a temporal attribute (WF-056)" b;
   if attr_unit ctx ~otype:ot ~attr:b <> None || attr_unit ctx ~otype:ot ~attr:a <> None then
@@ -5094,7 +5111,7 @@ let translate_pro_rata ctx ~subject ~ot ~a ~cond ~b ~k ~(g : granulariteit) =
    one segment carrying the true-day count — the pro-rata numerator
    without the base join. WF-058 mirrors WF-056's facets. *)
 let translate_aantal_dagen ctx ~subject ~ot ~a ~cond ~k ~(g : granulariteit) =
-  let base = Printf.sprintf "is_a(%s,%s)" subject (str ot) in
+  let base = Printf.sprintf "isa(%s,%s)" subject (str ot) in
   if attr_unit ctx ~otype:ot ~attr:a <> None then
     fault "day-count into a unit-carrying target is not translated (no corpus case)";
   if
@@ -5153,7 +5170,7 @@ let translate_regel ctx (r : resolved_regel) =
       (match doel with
       | Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ } ->
           let subject = "S" in
-          let base = Printf.sprintf "is_a(%s,%s)" subject (str ot) in
+          let base = Printf.sprintf "isa(%s,%s)" subject (str ot) in
           let cond =
             match r.rr_voorwaarde with
             | Some c -> cond_atoms ctx ~subject ~subject_ot:ot c
@@ -5440,7 +5457,7 @@ let translate_object_creatie ctx i (oc : resolved_object_creatie) =
     if recursive then [ Printf.sprintf "depth(%s,D)" subject; "D < oc_budget" ] else []
   in
   let body =
-    (Printf.sprintf "is_a(%s,%s)" subject (str subject_ot) :: cond) @ guard @ depth_guard
+    (Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: cond) @ guard @ depth_guard
   in
   (if recursive then head_body ctx (Printf.sprintf "depth(%s,D+1)" term) body
    else if has_recursive_creation ctx.doc then
@@ -5555,7 +5572,7 @@ let translate_feit_creatie ctx (fc : resolved_feit_creatie) =
       ([], subject) fc.tussenstappen
   in
   let chain, target = hop mids (req "joinRol" fc.join_rol) in
-  let body = (Printf.sprintf "is_a(%s,%s)" subject (str anker) :: cond) @ chain in
+  let body = (Printf.sprintf "isa(%s,%s)" subject (str anker) :: cond) @ chain in
   head_body ctx (Printf.sprintf "rol(%s,%s,%s)" subject (str (role_canonical doel_rol)) target) body;
   head_body ctx (Printf.sprintf "rol(%s,%s,%s)" target (str (role_canonical anker_rol)) subject) body;
   (* a second distinct filler on a to-one end faults in ref/
@@ -5565,7 +5582,7 @@ let translate_feit_creatie ctx (fc : resolved_feit_creatie) =
      re-run can name WHICH guard fired *)
   let to_one_guard (r : rol) holder_type =
     if not r.rol_meervoudig then
-      emit ctx "viol(\"to-one second filler on role %s\",X) :- is_a(X,%s), 2 <= #count { Y : rol(X,%s,Y) }."
+      emit ctx "viol(\"to-one second filler on role %s\",X) :- isa(X,%s), 2 <= #count { Y : rol(X,%s,Y) }."
         (norm (role_canonical r)) (str holder_type)
         (str (role_canonical r))
   in
@@ -5761,7 +5778,13 @@ and translate_group ctx ~is_char ~subject ~subject_ot ~base ~group_path
     (Printf.sprintf "%s(%s)" diff subject :: outer_displaced);
   (out, cfl, any)
 
-let translate_defaults_group ctx gidx (members : (int * prioritized_defaults) list) =
+(* [owner] is the CONCRETE type whose effective stack these members are
+   (RUNTIME-SEMANTICS ch. 7.10). It is the one place in this translator that
+   reads the BASE relation is_a/2 rather than its closure isa/2: inheritance
+   has already folded the supertype's declarations into this stack, so
+   quantifying the subject extensionally as well would run the supertype's
+   stack and the subtype's on one instance. *)
+let translate_defaults_group ctx gidx ~owner (members : (int * prioritized_defaults) list) =
   (* the ch. 8.2 validity gate, per member: an excluded member is
      Undecided — no decision, no conflict, no §9.5 deposit (ref's
      member_decision returns Undecided before a single default is
@@ -5785,12 +5808,12 @@ let translate_defaults_group ctx gidx (members : (int * prioritized_defaults) li
         head_body ctx
           (Printf.sprintf "val(S,%s,V)" (str a))
           [ Printf.sprintf "inputval(S,%s,V)" (str a);
-            Printf.sprintf "is_a(S,%s)" (str l0.pd_onderwerp) ]
+            Printf.sprintf "is_a(S,%s)" (str owner) ]
     | None -> ())
   else begin
   let _, l0 = List.hd members in
   let subject = "S" in
-  let base = Printf.sprintf "is_a(%s,%s)" subject (str l0.pd_onderwerp) in
+  let base = Printf.sprintf "is_a(%s,%s)" subject (str owner) in
   let is_char, target_name =
     match (l0.pd_kenmerk, l0.pd_attribuut) with
     | Some k, None -> (true, k)
@@ -5798,7 +5821,14 @@ let translate_defaults_group ctx gidx (members : (int * prioritized_defaults) li
     | _ ->
         fault "prioritized defaults target exactly one of a characteristic or an attribute"
   in
-  let target_form = l0.pd_onderwerp ^ "." ^ target_name in
+  let target_form =
+    Option.value
+      (Ir_v0.Checks.declaring_type ctx.doc ~from:owner
+         ~kind:(if is_char then `Characteristic else `Attribute)
+         ~member:target_name)
+      ~default:l0.pd_onderwerp
+    ^ "." ^ target_name
+  in
   (* the attribute arm's input scaffolding: the target scale, and the input
      predicate the initialisation default and the defeasible-input rule read *)
   let target_scale, has_input =
@@ -5807,7 +5837,7 @@ let translate_defaults_group ctx gidx (members : (int * prioritized_defaults) li
       let hi = Printf.sprintf "grp%d_has_input" gidx in
       head_body ctx (Printf.sprintf "%s(%s)" hi subject)
         [ base; Printf.sprintf "inputval(%s,%s,_)" subject (str target_name) ];
-      (pow10 (attr_decimals ctx ~otype:l0.pd_onderwerp ~attr:target_name), Some hi)
+      (pow10 (attr_decimals ctx ~otype:owner ~attr:target_name), Some hi)
     end
   in
   (* each top-level member is a chain reconciled at the root path [] *)
@@ -5985,7 +6015,7 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
      body as each val head (emit_write below), so the input yields exactly
      where the allocation decides. *)
   if default_input then
-    emit ctx "val(D,%s,V) :- inputval(D,%s,V), is_a(D,%s), not %seff(D)." (str da) (str da)
+    emit ctx "val(D,%s,V) :- inputval(D,%s,V), isa(D,%s), not %seff(D)." (str da) (str da)
       (str dt) p;
   (* --- the scale layer ------------------------------------------------ *)
   let pdec = attr_decimals ctx ~otype:bt ~attr:ba in
@@ -6045,7 +6075,7 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
      scaled products whether or not the condition turns out true. *)
   head_body ctx
     (Printf.sprintf "%ssrc(B)" p)
-    (Printf.sprintf "is_a(B,%s)" (str bt)
+    (Printf.sprintf "isa(B,%s)" (str bt)
     ::
     (match v.vd_voorwaarde with
     | None -> []
@@ -6065,27 +6095,27 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
   in
   emit ctx
     "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",B) :- \
-     is_a(B,%s), val(B,%s,A), |A| > %d."
+     isa(B,%s), val(B,%s,A), |A| > %d."
     (str bt) (str ba) pot_bound;
   emit ctx
     "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",B) :- \
-     is_a(B,%s), 46340 < #count { X : rol(B,%s,X) }."
+     isa(B,%s), 46340 < #count { X : rol(B,%s,X) }."
     (str bt) (str role);
   (match v.rato_attribuut with
   | Some rato ->
       emit ctx
         "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",X) :- \
-         rol(B,%s,X), is_a(B,%s), val(X,%s,W), |W| > %d."
+         rol(B,%s,X), isa(B,%s), val(X,%s,W), |W| > %d."
         (str role) (str bt) (str rato) (46340 / m_den)
   | None -> ());
   (match (v.maximum_attribuut, cdec) with
   | Some cap, Some c when pow10 (max 0 (ddec - c)) > 1 ->
       emit ctx
         "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",X) :- \
-         rol(B,%s,X), is_a(B,%s), val(X,%s,C), |C| > %d."
+         rol(B,%s,X), isa(B,%s), val(X,%s,C), |C| > %d."
         (str role) (str bt) (str cap) (46340 / pow10 (ddec - c))
   | _ -> ());
-  emit ctx "%sheeft_pot(B) :- is_a(B,%s), val(B,%s,_)." p (str bt) (str ba);
+  emit ctx "%sheeft_pot(B) :- isa(B,%s), val(B,%s,_)." p (str bt) (str ba);
   (* the target write and the remainder, shared across the methods; the
      remainder guard carries each method's Nothing case (ch. 4.4: zero
      recipients, or an absent/zero weight sum, write NO rest) *)
@@ -6292,8 +6322,8 @@ let translate_consistentie ctx i (c : resolved_consistentie) =
   let subject_ot = req "subject" c.cons_subject in
   let ok = Printf.sprintf "cons%d_ok(S)" i in
   let atoms = cond_atoms ctx ~subject:"S" ~subject_ot (req "assertie" c.assertie) in
-  head_body ctx ok (Printf.sprintf "is_a(S,%s)" (str subject_ot) :: atoms);
-  emit ctx "inconsistent(%s,S) :- is_a(S,%s), not cons%d_ok(S)." (str name) (str subject_ot) i
+  head_body ctx ok (Printf.sprintf "isa(S,%s)" (str subject_ot) :: atoms);
+  emit ctx "inconsistent(%s,S) :- isa(S,%s), not cons%d_ok(S)." (str name) (str subject_ot) i
 
 (* ch. 5.9 ever-uniqueness, shared by BOTH uniqueness forms
    (compositionality: the same key, the same reading, either form).
@@ -6312,7 +6342,7 @@ let uni_key_guards ctx ~otype ~keys =
         Eval.SMap.iter
           (fun _ (inst : Uchar_ref.World.instance) ->
             if
-              norm inst.otype = norm otype
+              isa ctx inst.otype otype
               && Uchar_ref.World.timeline inst k = None
               && Uchar_ref.World.attr inst k <> Value.Empty
             then
@@ -6364,7 +6394,7 @@ let translate_uniciteit ctx (u : resolved_uniciteit) =
         [ Printf.sprintf "rol(S1,%s,P)" (str (role_canonical role));
           Printf.sprintf "rol(S2,%s,P)" (str (role_canonical role)) ]
   in
-  emit ctx "inconsistent(%s,S1) :- is_a(S1,%s), is_a(S2,%s), S1 != S2, %s." (str name)
+  emit ctx "inconsistent(%s,S1) :- isa(S1,%s), isa(S2,%s), S1 != S2, %s." (str name)
     (str subject_ot) (str subject_ot)
     (String.concat ", " (joins "S1" @ joins "S2" @ scope_atoms))
 
@@ -6413,7 +6443,7 @@ let translate_uniciteit_unie ctx i (u : resolved_uniciteit_unie) =
           b.uub_sleutels
       in
       let body =
-        Printf.sprintf "is_a(S,%s)" (str t)
+        Printf.sprintf "isa(S,%s)" (str t)
         :: List.mapi
              (fun pos k -> uni_key_atom ctx ~otype:t ~label:"S" ~pos (req "sleutel" k))
              b.uub_sleutels
@@ -6474,17 +6504,23 @@ let translate_case ctx (case : Case.t) =
      input values defeasibly (inputval/3), standing unless the
      defaults/rule/verdeling decides *)
   let standing = Ir_v0.Desugar.standing_targets doc in
+  (* [otype] is the instance's CONCRETE type; a writer declared on any of
+     its supertypes reaches it (ch. 2.2), so the defeasible carriage of a
+     case-supplied value must be decided over the chain — otherwise a
+     subtype instance whose supertype declares the defaults target would
+     enter as a hard fact and silently outvote the stack *)
+  let inherits otype declared = Ir_v0.Checks.subtype_of doc ~sub:otype ~super:declared in
   let defaults_target otype aname =
     List.exists
       (fun (l : prioritized_defaults) ->
         match l.pd_attribuut with
-        | Some a -> norm l.pd_onderwerp = norm otype && norm a = norm aname
+        | Some a -> inherits otype l.pd_onderwerp && norm a = norm aname
         | None -> false)
       doc.prioritized_defaults
-    || List.mem (norm otype, norm aname) standing
+    || List.exists (fun (t, a) -> a = norm aname && inherits otype t) standing
     || List.exists
          (fun (v : resolved_verdeling) ->
-           (match v.doel_type with Some dt -> norm dt = norm otype | None -> false)
+           (match v.doel_type with Some dt -> inherits otype dt | None -> false)
            && match v.doel_attribuut with Some da -> norm da = norm aname | None -> false)
          doc.verdelingen
   in
@@ -6673,6 +6709,27 @@ let translate (doc : document) (case : Case.t) : string =
   (* the fold family's reified lists (S15): declared so a case with an absent
      list source leaves lpres/lelem head-less without a grounding warning *)
   emit ctx "#defined lpres/1. #defined lelem/3.";
+  (* Extensional type membership (IR-SPEC ch. 2.2). is_a/2 carries the
+     CONCRETE type — the case fact and the object-creation head — and isa/2
+     is its closure over the declared supertype edges. Every quantifying
+     join in this program reads isa/2, so a supertype pattern sees subtype
+     instances; the only readers of the base relation are the two producers
+     and the defaults stack, which belongs to exactly one type.
+     The closure is a RULE and not a precomputed type set: it lives in the
+     model the solver sees, which is what keeps this leg an independent
+     reimplementation of the semantics rather than a second copy of the
+     OCaml chain walk. The edge facts are emitted only where the document
+     declares one, so a flat program is unchanged but for the identity
+     rule. *)
+  emit ctx "isa(X,T) :- is_a(X,T).";
+  List.iter
+    (fun (_, (ot : objecttype)) ->
+      match (ot.ot_naam, ot.ot_supertype) with
+      | Some n, Some s -> emit ctx "isa_sub(%s,%s)." (str n) (str s)
+      | _ -> ())
+    doc.objecttypen;
+  if List.exists (fun (_, (ot : objecttype)) -> ot.ot_supertype <> None) doc.objecttypen then
+    emit ctx "isa(X,S) :- isa(X,S0), isa_sub(S0,S).";
   if has_recursive_creation doc then begin
     (* the generation-depth bound (ch. 5.5's fire budget, grounded): a
        recursive chain grounds only as deep as its condition carries
@@ -6690,31 +6747,27 @@ let translate (doc : document) (case : Case.t) : string =
   List.iter (translate_feit_creatie ctx) doc.feit_creaties;
   List.iteri (translate_object_creatie ctx) doc.object_creaties;
   List.iteri (translate_verdeling ctx) doc.verdelingen;
-  (let key (l : prioritized_defaults) =
-     (* kind discriminant: a name-sharing attribute and characteristic
-        (WF-002) are separate targets, never one group *)
-     (if l.pd_kenmerk <> None then "K:" else "A:")
-     ^ norm l.pd_onderwerp ^ ":"
-     ^
-     match (l.pd_kenmerk, l.pd_attribuut) with
-     | Some k, _ -> norm k
-     | _, Some a -> norm a
-     | _ -> "?"
+  (* One stack per (CONCRETE type, target): the block order of ch. 7.10
+     composed the inherited declarations into it, so what is translated here
+     is already the effective stack. In a document without a supertype edge
+     this is the declared grouping, unchanged. *)
+  (let groups =
+     try Ir_v0.Desugar.effective_defaults doc
+     with Ir_v0.Desugar.Unlowered m -> fault "%s" m
    in
-   let groups =
-     List.fold_left
-       (fun acc (i, l) ->
-         let k = key l in
-         match List.assoc_opt k acc with
-         | Some _ ->
-             List.map
-               (fun (k', ms) -> if k' = k then (k', ms @ [ (i, l) ]) else (k', ms))
-               acc
-         | None -> acc @ [ (k, [ (i, l) ]) ])
-       []
-       (List.mapi (fun i l -> (i, l)) doc.prioritized_defaults)
-   in
-   List.iteri (fun gidx (_, ms) -> translate_defaults_group ctx gidx ms) groups);
+   (match (try Ir_v0.Desugar.inherited_rule_clashes doc
+           with Ir_v0.Desugar.Unlowered m -> fault "%s" m) with
+   | [] -> ()
+   | (owner, ancestor, attr) :: _ ->
+       fault
+         "'%s' carries a defaults stack for '%s', which an ordinary rule on the ancestor '%s' \
+          also writes: an inherited ordinary writer as the stack's base is not lowered \
+          (ch. 7.10)"
+         owner attr ancestor);
+   List.iteri
+     (fun gidx (owner, _key, members, idxs) ->
+       translate_defaults_group ctx gidx ~owner (List.combine idxs members))
+     groups);
   List.iteri (translate_consistentie ctx) doc.consistenties;
   List.iter (translate_uniciteit ctx) doc.uniciteiten;
   List.iteri (translate_uniciteit_unie ctx) doc.uniciteit_unies;

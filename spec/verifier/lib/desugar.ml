@@ -215,6 +215,159 @@ let standing_targets_gen ~temporal (doc : document) : (string * string) list =
 
 let standing_targets = standing_targets_gen ~temporal:false
 
+(* --- inheritance: the effective defaults stack per type (RUNTIME-SEMANTICS
+   ch. 7.10) ---------------------------------------------------------------
+
+   A subtype inherits, per target, the whole defaults stack of its supertype;
+   its own declarations fold over the parent's EFFECTIVE stack (not the
+   parent's declarations, so a three-level chain needs no rule of its own).
+   One fixed block order, highest first, and nothing on the wire declares it:
+
+     1. the subtype's own exceptions, in declared order;
+     2. the inherited exceptions, in inherited order — an inherited
+        group-default (exceptions, no own consequence) is not a base and
+        rides at the bottom of this block;
+     3. the base: the subtype's own if it has one, which REPLACES the
+        inherited base, else the inherited base;
+     4. the initialisation and virtual input defaults, never replaced.
+
+   The result is ONE stack per (concrete type, target), which is why a group
+   runs on instances of EXACTLY its owner type: extensional quantification of
+   the defaults subject is already spent here, in the composition. Reading
+   the subject extensionally as well would put two writers on one instance.
+
+   Shared by ref/ and the ASP backend, like the ch. 7.7 desugaring above, so
+   the two executors cannot drift on the block order. *)
+
+let is_init (r : default) = r.default_initialisatie
+let default_has_content (r : default) = r.default_besluit <> None || r.default_consequentie <> None
+
+(* (exceptions, base, initialisation tail) of one member's ordered stack.
+   The base is the LOWEST ordinary default, and only when it decides
+   something itself: a group-default delegates to its exception groups and is
+   therefore not a base (rule 2), and a declared-unordered member has no
+   "lowest" at all, so its whole block travels as one (rule 3). *)
+let split_stack (l : prioritized_defaults) =
+  let head = List.filter (fun r -> not (is_init r)) l.defaults in
+  let tail = List.filter is_init l.defaults in
+  if l.pd_ongeordend then (head, None, tail)
+  else
+    match List.rev head with
+    | last :: rest when default_has_content last -> (List.rev rest, Some last, tail)
+    | _ -> (head, None, tail)
+
+let compose_member ~(own : prioritized_defaults) ~(inherited : prioritized_defaults) =
+  let own_exc, own_base, own_tail = split_stack own in
+  let inh_exc, inh_base, inh_tail = split_stack inherited in
+  let base = match own_base with Some _ as b -> b | None -> inh_base in
+  { own with defaults = own_exc @ inh_exc @ Option.to_list base @ inh_tail @ own_tail }
+
+let target_key (l : prioritized_defaults) =
+  (if l.pd_kenmerk <> None then "K:" else "A:")
+  ^
+  match (l.pd_kenmerk, l.pd_attribuut) with
+  | Some k, _ -> norm k
+  | _, Some a -> norm a
+  | _ -> "?"
+
+exception Unlowered of string
+
+(* Every declared group with the index it sits at in the document, so a
+   consumer can still stratify a composed stack by its contributors. *)
+let rec effective_stacks_of doc ~visited type_name :
+    (string * (prioritized_defaults * int) list) list =
+  let own =
+    List.concat
+      (List.mapi
+         (fun i (l : prioritized_defaults) ->
+           if norm l.pd_onderwerp = norm type_name then [ (l, i) ] else [])
+         doc.prioritized_defaults)
+  in
+  let inherited =
+    match Checks.find_ci doc.objecttypen type_name with
+    | Some ot -> (
+        match ot.ot_supertype with
+        | Some s when not (List.mem (norm s) visited) ->
+            effective_stacks_of doc ~visited:(norm type_name :: visited) s
+        | _ -> [])
+    | None -> []
+  in
+  let own_by_key =
+    List.fold_left
+      (fun acc (l, i) ->
+        let k = target_key l in
+        if List.mem_assoc k acc then
+          List.map (fun (k', ms) -> if k' = k then (k', ms @ [ (l, i) ]) else (k', ms)) acc
+        else acc @ [ (k, [ (l, i) ]) ])
+      [] own
+  in
+  let keys =
+    List.map fst own_by_key
+    @ List.filter (fun k -> not (List.mem_assoc k own_by_key)) (List.map fst inherited)
+  in
+  List.map
+    (fun k ->
+      match (List.assoc_opt k own_by_key, List.assoc_opt k inherited) with
+      | Some ms, None -> (k, ms)
+      | None, Some ms -> (k, ms)
+      | Some [ (o, oi) ], Some [ (p, pi) ] -> (k, [ (compose_member ~own:o ~inherited:p, max oi pi) ])
+      | Some ms, Some ps ->
+          (* the fold is defined member-to-member; a declared-unordered SET
+             on either level would need a rule the design does not give, and
+             guessing one silently is the one thing this must not do *)
+          raise
+            (Unlowered
+               (Printf.sprintf
+                  "target %s on '%s' is carried by %d declared group(s) here and %d inherited \
+                   one(s): the block order composes one stack over one stack, and a \
+                   declared-unordered set across a supertype boundary has no defined fold \
+                   (RUNTIME-SEMANTICS ch. 7.10)"
+                  k type_name (List.length ms) (List.length ps)))
+      | None, None -> (k, []))
+    keys
+
+(* The effective stacks of every declared object type: (owner type, target
+   key, members, contributing declaration indices). The owner is the CONCRETE
+   type the stack belongs to, and its instances are exactly the instances the
+   stack runs on. *)
+let effective_defaults (doc : document) :
+    (string * string * prioritized_defaults list * int list) list =
+  List.concat_map
+    (fun (name, _) ->
+      List.filter_map
+        (fun (k, ms) ->
+          if ms = [] then None
+          else Some (name, k, List.map fst ms, List.map snd ms))
+        (effective_stacks_of doc ~visited:[] name))
+    doc.objecttypen
+
+(* RUNTIME-SEMANTICS ch. 7.10, the corner this release does not lower: an
+   ORDINARY rule on an ancestor's target that a descendant also covers with a
+   defaults group. Under ch. 7.1 that rule would be the inherited base, but it
+   is also a writer in its own right and fires extensionally on the
+   descendant's instances, so document and execution would part company
+   silently. Reported here, once, so all three executors refuse it with one
+   voice instead of each diverging its own way. *)
+let inherited_rule_clashes (doc : document) : (string * string * string) list =
+  let covered = List.map (fun (o, k, _, _) -> (norm o, k)) (effective_defaults doc) in
+  List.concat_map
+    (fun (r : resolved_regel) ->
+      match (r.rr_soort, r.doel) with
+      | ( Some (Gelijkstelling | Berekening | Initialisatie),
+          Some (Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ }) ) ->
+          List.filter_map
+            (fun (owner, _) ->
+              if
+                norm owner <> norm ot
+                && Checks.subtype_of doc ~sub:owner ~super:ot
+                && List.mem (norm owner, "A:" ^ norm a) covered
+              then Some (owner, ot, a)
+              else None)
+            doc.objecttypen
+      | _ -> [])
+    doc.resolved_regels
+  |> List.sort_uniq compare
+
 (* The temporal standing domain (RS ch. 7.8, the timeline arm): a
    temporal target carried by exactly one version-free computing rule
    (in practice the ch. 3.7 pro-rata fold) as its only writer. The rule

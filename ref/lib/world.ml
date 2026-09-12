@@ -49,11 +49,17 @@ let get w label =
   | Some i -> i
   | None -> Value.fault "unknown instance label %S" label
 
-let of_type w otype =
+(* Extensional type membership (IR-SPEC ch. 2.2): every position that
+   ranges over a type ranges over { i : typeOf(i) ⊑ T }, so a supertype
+   rule fires for subtype instances and a supertype aggregation counts
+   them. The chain lives in the DOCUMENT, which the fact base does not
+   hold, so the caller supplies the membership predicate — [isa sub super]
+   — rather than this module inventing a second copy of it. *)
+let of_type ~isa w otype =
   List.filter_map
     (fun l ->
       let i = get w l in
-      if norm i.otype = norm otype then Some i else None)
+      if isa i.otype otype then Some i else None)
     w.order
 
 let attr i name = Option.value (SMap.find_opt (norm name) i.attrs) ~default:Value.Empty
