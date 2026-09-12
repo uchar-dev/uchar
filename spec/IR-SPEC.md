@@ -480,14 +480,25 @@ of it. Three things follow, and each is a definition rather than a rule:
   (ch. 3.2) all range over
   `{ i : typeOf(i) ⊑ T }`. A subtype with no own members is therefore not
   inert but a pure classification, which is the shape the relation exists
-  for. Each of the seven carries a witness rather than a mention: the first
-  three replay in `anchor/jutterswet-strandrechtketen` (gates 5, 6 and 12),
-  the next three — the characteristic check's owner, the uniqueness
-  scope and the consistency subject, which no golden reaches — are worked
-  examples WV-IR2.2-a/b/c in `ref/test/`, and the allocation target replays
-  in `golden/jutterswet-hoofdberging`, where the connecting role's filler is
-  a strict supertype of `targetType` and the recipients outside that type
-  receive nothing.
+  for. Six of the seven carry a witness rather than a mention: the
+  rule subject and the defaults subject replay in
+  `anchor/jutterswet-strandrechtketen` (gates 5, 6 and 12), the
+  characteristic check's owner, the uniqueness scope and the consistency
+  subject — which no golden reaches — are worked examples WV-IR2.2-a/b/c
+  in `ref/test/`, and the allocation target replays in
+  `golden/jutterswet-hoofdberging`, where the connecting role's filler is a
+  strict supertype of `targetType` and the recipients outside that type
+  receive nothing. **The seventh, the instance fold's `elementType`, is
+  witnessed in the INCLUSION direction only** — a subtype instance is
+  counted where the fold names an ancestor (the two aggregations of that
+  same anchor). Its exclusion direction — an `elementType` strictly BELOW
+  the type the fold's source path reaches, where the extension is a proper
+  subset of what the relation yields — has no witness because **no executor
+  implements it**: `ref` and `clingo` both fold the reached set whole, so a
+  plain instance linked beside the subtypes is counted in. Measured
+  2026-09-12; the two agree, so this is a spec-versus-executors gap and not
+  a differential divergence, and closing it is tracked work rather than a
+  claim this clause already makes good.
 - **A role's declared filler type is an UPPER bound** (ch. 2.6): a role
   declaring filler T accepts an instance of any S ⊑ T. **WF-047**'s "agree"
   is consequently ⊑-compatibility and not equality, and **WF-048**'s

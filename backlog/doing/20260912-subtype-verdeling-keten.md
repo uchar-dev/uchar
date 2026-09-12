@@ -72,22 +72,65 @@ van elke join vergeleek twee typenamen letterlijk** terwijl haar
 bindingloze tweeling (`nav_role_by_name` → `fills`) door ⊑ resolveert.
 Hetzelfde document werd zo toegelaten zonder rolbinding en geweigerd mét
 — en ch. 2.6 raadt de geweigerde spelling juist aan zodra er een subtype
-in het spel is. Acht plekken, alle gemeten met een probe:
+in het spel is. **TIEN vergelijkplekken**, elk met een probe gemeten, en
+ze krijgen bewust niet alle hetzelfde antwoord. De scheidslijn: `fills` /
+eenzijdig `is_sub` waar een positie moet KUNNEN HOUDEN wat haar bereikt,
+`type_compatible` alleen waar er dóórheen wordt GELEZEN — wat WF-047 met
+"agree" al bedoelde.
 
-| plek | shape | gemeten weigering vóór de fix |
-|---|---|---|
-| WF-054 uniciteitsscope | onderwerp = subtype, scope-rol op de ouder | `the near side of 'ligging' fills 'Strandvondst', but the uniqueness subject is 'Wrakvondst'` |
-| WF-028 creatieketen | anker = subtype, rollen op de ouder | `hop over 'kustligging': the near side fills 'Kustvak', but the chain stands at 'Wrakvak'` |
-| WF-028 `end_check` | idem, ankerRol/doelRol | `ankerRol 'seinvak' fills 'Kustvak', but the node names 'Wrakvak'` |
-| WF-034 feitcreatie-beanveld | tussenstap-type = subtype van de uitvuller | `the hop over 'kustligging' reaches 'Post', but the intermediate bean type names 'Wrakpost'` |
-| WF-053 navigatieketen (hop + endpoint) | gebonden hop over een ouderrol | zelfde vorm |
-| WF-102 `bronPad` (stap + landing) | idem | zelfde vorm |
-| WF-052 schrijversdetectie | rol die het nieuwe type uitvult | geen weigering: een gemíste schrijver, dus een verzwakte WF-052 |
+| # | plek | helper na de kaart | richting |
+|---|---|---|---|
+| 1 | WF-053 navigatieketen, nabije zijde | `fills` | eenzijdig |
+| 2 | WF-053 kenmerkcontrole, nabije zijde | `fills` | eenzijdig |
+| 3 | WF-102 `bronPad`-stap, nabije zijde | `fills` | eenzijdig |
+| 4 | WF-028 creatieketen-hop, nabije zijde | `fills` | eenzijdig |
+| 5 | WF-054 uniciteitsscope, nabije zijde | `fills` | eenzijdig |
+| 6 | WF-053 endpoint | `is_sub ~sub:bereikt ~super:endpoint` | eenzijdig (lens-vangst 2) |
+| 7 | WF-028 `end_check` (ankerRol/doelRol) | `is_sub ~sub:node ~super:uitvuller` | eenzijdig (lens-punt 3) |
+| 8 | WF-034 feitcreatie-beanveld | `is_sub ~sub:uitvuller ~super:beantype` | eenzijdig (lens-punt 3) |
+| 9 | WF-052 aangemaakt-zijdige rol | `connecting_role_candidates` | geen vergelijking meer (lens-vangst 1) |
+| 10 | WF-102 landing op `elementObjecttype` | `type_compatible` | tweezijdig, op de WF-047-lijn |
 
-Alle acht lopen nu door `fills` (de "vult dit type deze nabije rol?"-helft)
-of `type_compatible` (de "deze rol vult X, de node noemt Y"-helft, precies
-wat WF-047 al leest). Geen enkele negatief-getuige komt vrij (gate 3:
-378 verworpen, ongewijzigd).
+Rij 10 blijft tweezijdig omdat de gewone vouwbron dezelfde vraag al door
+`wf047_binding ~bound_filler:(Some el)` stelt, die de kernel tweezijdig
+maakte: één arm smaller maken zou de twee spellingen van één vouw weer
+laten verschillen — precies de splitsing die deze kaart wegneemt. De reden
+staat bij de regel. WF-028's KETENEINDPUNT (`the join chain reaches …`)
+blijft LETTERLIJK, met reden ter plekke: de onsound richting weigert het
+al, en de verbreding hangt aan hetzelfde open punt als hieronder (geen
+uitvoerder filtert een bereikte verzameling op een gedeclareerd type).
+
+Geen enkele negatief-getuige komt vrij (gate 3: 378 verworpen,
+ongewijzigd).
+
+**Twee regressies die de lens ving, eerlijk als lens-vangst.** Beide zaten
+IN de verbredingen hierboven en waren van mij, niet pre-existent:
+
+1. **WF-052 bond de verkeerde rol, volgorde-afhankelijk.** Mijn eerste
+   versie gebruikte `List.find_opt … fills` over `ft.rollen`. Onder ⊑ vult
+   een subtype-instantie óók de voorouder-rol, dus in een feittype met rol
+   0 = ouder (naar-veel) en rol 1 = subtype (naar-één) pakte de check de
+   OUDERrol en las daar `rol_meervoudig`. Gemeten op
+   `p1d-wf052-bounded.json`: verifier-PASS, waarna **ref omvalt**
+   (`to-one role "bijvondsten" on "W1" already links oc0::W1; a second
+   filler is ill-typed (ch. 5.5)`) terwijl **clingo PASS** geeft en beide
+   links stil vasthoudt — exact de divergentie die WF-052's eigen
+   commentaar statisch zegt te sluiten. Met de twee rollen omgedraaid in
+   de JSON (`p1b`) weigerde dezelfde kop wél: het antwoord hing van
+   array-volgorde af. Nu de kandidaat-afleiding die ref spiegelt
+   (`connecting_role_candidates`); p1, p1b, p1d én p1e weigeren, p1c (één
+   creatie) blijft PASS.
+2. **De WF-053-endpointverbreding liet de richting toe die ref weigert.**
+   Ik gebruikte het tweezijdige `type_compatible`, maar
+   `ref/lib/eval.ml:521-526` weigert uitdrukkelijk de onsound richting (een
+   supertype-instantie tegen een subtype-endpoint). Gemeten op
+   `p2-wf053-endpoint.json`: verifier-PASS, **ref EVALUATION FAULT** (`the
+   navigation reached "Werf", not the declared endpoint "Bedrijfswerf"`),
+   **clingo PASS met getallen** — ref ≢ clingo op een verifier-schoon
+   document. Nu eenzijdig; p6a, p7 en de golden blijven PASS, p2 weigert.
+
+Beide zijn dezelfde les als de ontvangers-correctie zelf: een verbreding
+is pas af als ze de richting kiest die de uitvoerders wáármaken.
 
 **Punt 2 — de route, per uitvoerder gemeten.** De kaartvorm (doeltype =
 subtype, doelattribuut op de voorouder, relatie op het SUBTYPE) speelt
@@ -123,6 +166,15 @@ populatie is en dat `targetAttribute` op de effectieve ledenverzameling
 resolveert. `RUNTIME-SEMANTICS` ch. 4.1 krijgt de consequentie met haar
 worked example (500/500/leeg, rest 1).
 
+De ch. 2.2-zin beloofde eerst dat alle ZEVEN posities een getuige dragen;
+de lens mat dat positie één, de `elementType` van de instancevouw, alleen
+de INSLUITINGSHELFT draagt. De uitsluitingsrichting — een `elementType`
+strikt ONDER wat het bronpad bereikt — bestaat in **geen enkele
+uitvoerder**: gemeten op `p3-wf102-landing.json` telt een mee-gelinkte
+gewone `Vondst` mee in een `Munt`-vouw, in ref én clingo, met dezelfde
+uitkomst. Spec-versus-uitvoerders, geen differentiële divergentie. De zin
+is getemperd en zegt dat nu uit; het punt staat hieronder bij vervolgwerk.
+
 **Registervoorstel** (letterlijke tekst, hoofdsessie landt het),
 `spec/CONSTRUCTS.md` rij 39, aan de bestaande cel toe te voegen:
 
@@ -136,6 +188,45 @@ worked example (500/500/leeg, rest 1).
 > RUNTIME-SEMANTICS ch. 4.1 in en afwijkend van Drools; ook hersteld,
 > getuige `golden/jutterswet-hoofdberging`.
 
+**Vervolgwerk — gemeten, niet in deze ronde gerepareerd.**
+
+*A. De frontend-ketenblindheid (eigen ronde direct na deze merge).* De
+lens vond dezelfde ketenblinde lezing op vijf plekken in
+`frontends/regelspraak`, waar een lid van een VOOROUDER niet bindt omdat
+de resolver alleen het eigen type leest:
+
+1. `MeervoudMatcher.vindAttribuut` — leest `ot.attributen` /
+   `ot.attribuutMeervoud`, niet `ot.keten()`. Dit is de oorzaak van de
+   p18-weigering waarmee deze kaart begon; zolang hij er is kan een
+   verdeling naar een subtype met een geërfd doelattribuut niet uit een
+   `bron.rgs` komen.
+2. `KenmerkMatcher` — dezelfde vraag voor kenmerken.
+3. De objectcreatie-kenmerktak — een geërfd kenmerk op het nieuwe type.
+4. De temporaliteitsfamilie — granulariteit/tijdlijn van een geërfd
+   attribuut.
+5. `dimensieCel` — de dimensies van een geërfd attribuut.
+
+`RegelSpraakModel.Objecttype` heeft de ketenbewuste accessors al
+(`keten`, `attribuut`, `dimensiesVan`, `heeftLid`, `kenmerkSoort`,
+`declarantVan`); de vijf plekken gebruiken ze niet.
+
+*B. De uitsluitingsfilter van een type-rangende positie.* Geen uitvoerder
+filtert een BEREIKTE verzameling op een gedeclareerd type. Gemeten voor
+de instancevouw (`p3`, hierboven); het is dezelfde familie als de
+verdeling die deze kaart wél sloot, maar op de vouw en op WF-028's
+keteneindpunt. Pre-existent (de kernel maakte `wf047_binding` tweezijdig),
+niet van deze kaart; het is één wijziging op beide vouwarmen plus de
+uitvoerders, met een eigen meting.
+
+*C. WF-045's populatieknoop sleutelt op de letterlijke typenaam.*
+`n_pop`/`n_attr` bouwen hun knoop uit de GESCHREVEN typenaam, dus een
+objectcreatie van een subtype laat de populatie van de OUDER ongezien
+groeien en een cyclus die door beide loopt blijft buiten de graaf.
+Pre-existent en LUID in ref (de fixpuntlus merkt de nieuwe instantie
+gewoon), dus geen stille fout — maar de stratificatiegarantie is er
+smaller dan haar tekst. Vraagt een eigen kaart; `declaring_type` bestaat
+al als de normalisatie die dit zou gebruiken.
+
 **Dertien gates groen** (slotregels in het sessieverslag). **Niet
 gemerged**: de kaart raakt beschermde paden (`spec/IR-SPEC.md`,
 `spec/RUNTIME-SEMANTICS.md`, `spec/verifier/`, `scripts/`) en blijft dus
@@ -143,11 +234,14 @@ een voorstel op `card/subtype-verdeling-keten`.
 
 **Eerlijke afwijkingen.** (a) De kaart vroeg de verdelings-tak van WF-034
 ketengesloten te maken; die was het al, dus de reparatie landde op de
-plek die het meten wél rood maakte. (b) De acht join-plekken zijn breder
+plek die het meten wél rood maakte. (b) De tien join-plekken zijn breder
 dan de vijf paden die de kaart noemt: WF-053 en WF-102 zitten in de
 expressielaag. Ze zijn meegenomen omdat het één en dezelfde regel is —
-gebonden tak leest namen, bindingloze tak leest ⊑ — en vijf van de acht
+gebonden tak leest namen, bindingloze tak leest ⊑ — en de helft
 repareren zou het bestand in een vreemdere toestand achterlaten dan het
 nu is. (c) De ref/clingo-correctie van de ontvangersverzameling is
 functioneel gedrag, geen verifier-werk; may-touch dekt het ("alleen
-indien de meting het vergt") en de meting vergde het.
+indien de meting het vergt") en de meting vergde het. (d) Mijn eerste
+ronde verbreedde twee van die tien in de verkeerde richting; de lens ving
+ze en ze staan hierboven bij naam. Ze waren geen van beide pre-existent:
+ik heb ze in deze kaart geïntroduceerd en in deze kaart gesloten.

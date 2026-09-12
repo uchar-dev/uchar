@@ -3428,13 +3428,29 @@ let self_denoting_role ctx ~otype name =
    compared the two type NAMES literally, so the same document was
    admitted without a role binding and refused with one — while ch. 2.6's
    own advice is to write the binding whenever a subtype is in play.
-   Measured 2026-09-12 (card subtype-verdeling-keten) at five bound-branch
-   sites — WF-053's navigation chain and its characteristic check,
-   WF-102's bronPad step, WF-028's creation chain and WF-054's uniqueness
-   scope — each of which loudly refused a document ch. 2.2 admits. They
-   all go through [fills] now. Its sibling [type_compatible] carries the
-   other half of the class, the "this role fills X, but the node names Y"
-   agreement WF-047 already read as ⊑-compatibility. *)
+
+   TEN comparison sites were swept for that on 2026-09-12 (card
+   subtype-verdeling-keten), and they do not all get the same answer.
+   Five are the near-side join above and go through [fills] — WF-053's
+   navigation chain and its characteristic check, WF-102's bronPad step,
+   WF-028's creation chain and WF-054's uniqueness scope. Four are the
+   "this position is used AS type Y" question, and those are ONE-SIDED,
+   because a position accepts every instance at or below its declared
+   type and none above it: WF-053's endpoint (⊑ the written endpoint,
+   which is exactly what ref faults on per instance), WF-028's
+   ankerRol/doelRol agreement and WF-034's intermediate bean type (both
+   ⊑ the role's declared filler), and WF-052's created-side role, which
+   is not a comparison at all any more but the executors' own
+   [connecting_role_candidates] — "the first role the created type fills"
+   picks the ANCESTOR's role under ⊑ and reads its cardinality, so the
+   verdict followed the order the wire listed the roles in. The tenth,
+   WF-102's landing on the elementObjecttype, stays TWO-SIDED on the
+   WF-047 line; the comment there says why.
+
+   The rule that separates them: [fills] and the one-sided [is_sub] where
+   a position must HOLD what reaches it, [type_compatible] only where a
+   position is READ through, which is sound upward from every filler and
+   is what WF-047 already meant by "agree". *)
 let fills ctx ~inst ~(role : rol) =
   is_sub ctx ~sub:inst ~super:(Option.value role.rol_objecttype_naam ~default:"")
 
@@ -3928,9 +3944,17 @@ let nav_hops ctx ~subject ~(bindings : rol_binding list option)
         (match r.rol_naam with Some n -> norm n = norm name | None -> false)
         || (match r.rol_meervoud with Some m -> norm m = norm name | None -> false)
       in
+      (* ONE-SIDED, deliberately: the walk lands on a role whose declared
+         filler is [c], so every instance it can hold is ⊑ c, and all of
+         them satisfy the endpoint only when c ⊑ e. The other direction —
+         a supertype filler against a subtype endpoint — is the unsound
+         one, and ref refuses it at run time per instance
+         (`the navigation reached %S, not the declared endpoint %S`). A
+         two-sided test here would admit a document ref faults on and
+         clingo answers, which is ref ≢ clingo on verifier-clean input. *)
       let endpoint_check cur =
         match (endpoint, cur) with
-        | Some e, Some c when not (type_compatible ctx c e) ->
+        | Some e, Some c when not (is_sub ctx ~sub:c ~super:e) ->
             [ Printf.sprintf "the navigation reaches '%s', not the endpoint '%s'" c e ]
         | _ -> []
       in
@@ -5093,6 +5117,22 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                                        (if i = 0 then "the fold subject"
                                         else "the type the previous step reaches")) ]
                           in
+                          (* TWO-SIDED, on the WF-047 line and deliberately
+                             not narrowed here. The bronPad's landing asks
+                             the same question the ordinary fold source
+                             asks through [wf047_binding] with
+                             ~bound_filler:(Some el), which the kernel made
+                             ⊑-compatible in both directions; a one-sided
+                             test on this arm alone would make the two
+                             spellings of one fold disagree again — the very
+                             split the bound/bindingless correction removed.
+                             The direction that is only half-implemented —
+                             an elementObjecttype STRICTLY BELOW what the
+                             path reaches, which needs an exclusion filter
+                             no executor has — is therefore admitted here
+                             exactly as the bronRol arm already admits it,
+                             and closing it is one change on both arms plus
+                             the executors, not a tightening of this line. *)
                           let lands =
                             if rest <> [] then []
                             else
@@ -7260,12 +7300,26 @@ let wf028 ctx =
                          | false, false ->
                              Error ("'" ^ name ^ "' is not a role of '" ^ ftn ^ "'")
                        in
+                       (* ONE-SIDED. [anker]/[doel] name the types the
+                          creation ranges over and targets; read
+                          extensionally those are every instance ⊑ the name,
+                          and the created relation's role must be able to
+                          hold all of them — so the node's type sits AT OR
+                          BELOW the role's declared filler, never above it.
+                          The other direction (a role filling a strict
+                          subtype while the node names the parent) writes
+                          instances into a role that does not accept them,
+                          and both OCaml executors carry it out silently
+                          instead of refusing. WF-047's [agree] is two-sided
+                          for a reason that does not hold here: there the
+                          node names a type to READ through, and reading
+                          upward from every filler is sound. *)
                        let end_check what name expected =
                          match pick name with
                          | Error e -> [ v "WF-028" at e ]
                          | Ok r -> (
                              match expected with
-                             | Some t when not (type_compatible ctx (filler r) t) ->
+                             | Some t when not (is_sub ctx ~sub:t ~super:(filler r)) ->
                                  [ v "WF-028" at
                                      (Printf.sprintf "%s '%s' fills '%s', but the node names '%s'"
                                         what name (filler r) t) ]
@@ -7302,6 +7356,16 @@ let wf028 ctx =
                      match step (at ^ "/joinRol") cur join with
                      | Error vs -> vs
                      | Ok reached ->
+                         (* LITERAL, and left so on purpose. The unsound
+                            direction — the chain reaches an ancestor of the
+                            declared target, so a plain instance would be
+                            linked as one — must refuse, and this comparison
+                            already does. The sound direction (the chain
+                            reaches a strict SUBTYPE of the target) would be
+                            a widening, and it is held back: it sits on the
+                            open question that no executor filters a reached
+                            set by a declared type, and it deserves its own
+                            measurement rather than riding along here. *)
                          (match (reached, fc.fc_doel) with
                          | Some r, Some d when norm r <> norm d ->
                              [ v "WF-028" at
@@ -7531,8 +7595,15 @@ let wf034_feitcreatie_beanvelden ctx =
                   match t.ts_rol with
                   | None -> []
                   | Some rb ->
+                      (* ONE-SIDED, like WF-028's [end_check] above and for
+                         the same reason: [tn] is a bean FIELD type and the
+                         hop hands it every instance the reached role holds,
+                         all of them ⊑ that role's filler. A field typed at
+                         a strict SUBTYPE of what the hop reaches cannot
+                         hold them; a field typed at an ancestor can. *)
                       (match (resolve_binding ctx rb, t.ts_type) with
-                      | Ok (_, bound, _), Some tn when not (type_compatible ctx tn (filler bound)) ->
+                      | Ok (_, bound, _), Some tn
+                        when not (is_sub ctx ~sub:(filler bound) ~super:tn) ->
                           [ v "WF-034" (tat ^ "/type")
                               (Printf.sprintf
                                  "the hop over '%s' reaches '%s', but the intermediate bean type \
@@ -7776,19 +7847,23 @@ let wf052 ctx =
             | Some st, Some nt -> (
                 match connecting_candidates ctx ~from_type:st ~to_type:nt with
                 | [ fn ] -> (
-                    (* the created-side role: the role nt fills in fn;
-                       a self-typed two-role pair is role-ambiguous and
-                       writes no link (no writer) *)
-                    match find_ci ctx.doc.feittypen fn with
-                    | Some (ft : feittype) when norm st = norm nt && not ft.wederkerig ->
-                        None
-                    | Some (ft : feittype) -> (
-                        match
-                          List.find_opt (fun (r : rol) -> fills ctx ~inst:nt ~role:r) ft.rollen
-                        with
-                        | Some r when not r.rol_meervoudig -> Some (norm fn, at)
-                        | _ -> None)
-                    | None -> None)
+                    (* the created-side role, derived exactly as the
+                       executors derive it — [connecting_role_candidates] is
+                       ref's own list, and the created-side role is the
+                       unique role [nt] fills whose fact type also relates
+                       [st]. "The first role of [fn] that [nt] fills" is NOT
+                       that question and answers it wrongly under ⊑: a
+                       subtype instance fills its ANCESTOR's role too, so a
+                       relation whose roles are (parent, to-many) and
+                       (subtype, to-one) would read [rol_meervoudig] off the
+                       parent role and the verdict would follow the order
+                       the wire happens to list the roles in. A self-typed
+                       two-role pair offers BOTH roles, derives nothing and
+                       writes no link — the block ref keeps as well, and the
+                       reason this arm needs no separate guard for it. *)
+                    match connecting_role_candidates ctx ~from_type:st ~to_type:nt with
+                    | [ r ] when not r.rol_meervoudig -> Some (norm fn, at)
+                    | _ -> None)
                 | _ -> None)
             | _ -> None))
       (List.mapi (fun i o -> (i, o)) ctx.doc.object_creaties)
