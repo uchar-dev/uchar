@@ -1454,6 +1454,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
   let attributen = List.rev !attributen and kenmerken = List.rev !kenmerken in
   let objecttype : I.objecttype =
     { ot_naam = Some ot_name;
+      ot_supertype = None;  (* this frontend models no type hierarchy *)
       attributen;
       attribuut_meervoud = [];
       attribuut_dimensies = [];

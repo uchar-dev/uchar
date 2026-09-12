@@ -609,6 +609,7 @@ let ot name attrs kenmerken : string * Ir_v0.Ast.objecttype =
   ( name,
     {
       ot_naam = Some name;
+      ot_supertype = None;
       attributen = attrs;
       attribuut_meervoud = [];
       attribuut_dimensies = [];
