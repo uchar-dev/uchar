@@ -1,0 +1,7 @@
+// Refusal 18: a role filled by a class nobody declares. WF-003 would catch
+// it later, but the lowering reads the filler to type an aggregation, so
+// the refusal belongs at the source position that caused it.
+Houder[|kaveltal => numeriek(niet_negatief, geheel)|].
+kavelhouderschap : feittype.
+kavelhouderschap[|'houdende houder' {1..1} => Houder|].
+kavelhouderschap[|'gehouden kavels' {0..*} => Kavel|].

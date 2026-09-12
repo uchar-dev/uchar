@@ -1,6 +1,7 @@
 // Refusal 11: two unconditional definitions of one target. Nothing in the
 // slice orders them — the defeasible operators that would are refused.
 Vogel[|hoogte => numeriek(niet_negatief, geheel)|].
+@!{'de gebalkte basis'}
 Vogel[|hoogte -> 10|].
 @!{'ook een basis'}
 ?V[hoogte -> 20] :- ?V : Vogel.

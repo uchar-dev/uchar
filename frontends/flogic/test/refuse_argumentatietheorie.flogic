@@ -1,0 +1,5 @@
+// Refusal 4b: the argumentation-theory rule descriptor. The @{...} tag is
+// the other half of defeasible reasoning beside \overrides.
+Vogel[|hoogte => numeriek(niet_negatief, geheel)|].
+@{prefer(hoog)}
+?V[hoogte -> 10] :- ?V : Vogel.

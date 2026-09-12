@@ -1,0 +1,5 @@
+// Refusal 17: one member declared twice on one class. Two declarations put
+// the same key twice in the wire's `attributen` object, which RFC 8259
+// leaves undefined and every reader resolves by its own rule.
+Vogel[|hoogte => numeriek(niet_negatief, geheel)|].
+Vogel[|hoogte => numeriek(niet_negatief, 2)|].

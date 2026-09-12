@@ -61,6 +61,8 @@ type sigitem =
   | Si_decl of string * card option * ty * int (* name {card} => ty *)
   | Si_val of string * expr * int (* name -> expr : the inheritable default *)
 
+let sigitem_line = function Si_decl (_, _, _, l) | Si_val (_, _, l) -> l
+
 type rule = {
   r_id : string option;
   r_subj : string; (* the head variable, without the '?' *)
@@ -73,7 +75,10 @@ type rule = {
 type stmt =
   | S_sub of string * string * int (* c :: d *)
   | S_member of string * string * int (* t : c *)
-  | S_sig of string * sigitem list * int (* c[| ... |] *)
+  (* [@!{name}] c[| ... |] — the id is carried here because Flora-2 has no
+     per-item place for one, and a barred VALUE is a definition that puts a
+     name on the wire exactly as a Horn rule does *)
+  | S_sig of string * string option * sigitem list * int
   | S_unbarred of string * int (* c[ ... ] — the class object's own frame *)
   | S_rule of rule
 

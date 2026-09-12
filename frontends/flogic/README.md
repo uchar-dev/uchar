@@ -32,15 +32,21 @@ in that reasoner. The rule the slice follows:
 | `C[\|a => kenmerk(soort)\|].` | a characteristic declaration on `C` |
 | `C[\|a => \integer \| \boolean \| \string \| \date\|].` | the four exactly-mappable primitives |
 | `F[\|r {lo..hi} => C\|].` | a role of the fact type `F`, filled by `C` |
-| `C[\|a -> 5\|].` | the inheritable class-level default: a defaults **base** on `C.a` |
+| `@!{'name'} C[\|a -> 5\|].` | the inheritable class-level default: a defaults **base** on `C.a` |
 | `@!{'name'} ?X[a -> Expr] :- ?X : C.` | an unconditional definition of `C.a` |
 | `@!{'name'} ?X[a -> Expr] :- ?X : C, Cond, ….` | a conditional definition: an exception |
 
-The rule id is optional in Flora-2 and **required** here: a rule reaches
-the wire by name, and the names must be distinct. Neither is enforced
-downstream — WF-020 filters null names out and never reaches a defaults
-group's name — so a nameless or duplicated rule refuses at the frontend
-or nowhere.
+Flora-2's rule id is optional and unavailable outside a rule; here it is
+**required on every form that puts a name on the wire, and only on those**
+— a Horn rule and a barred class-level *value*, both of which are
+definitions. A barred *signature* declares a member and names nothing, so
+an id on one refuses, as it does on `::`, on `:` and on the unbarred
+frame. Ids must be distinct across both kinds. None of this is enforced
+downstream: WF-020 filters null names out before comparing and never
+reaches a `prioritizedDefaults` name at all, so a nameless, a duplicated
+or a cross-kind colliding definition refuses at the frontend or nowhere.
+Because Flora-2 has no per-item id, a named barred statement carries
+exactly its one definition.
 
 `sign` is `onbepaald`, `niet_negatief`, `negatief` or `positief`; `scale`
 is `geheel` or a decimal count. `soort` is `bijvoeglijk`, `bezittelijk` or
@@ -118,9 +124,11 @@ the reason and the citation.
    (it states no decimal scale where uchar's `Numeriek` declares one), a
    predicate `p(…)` (the wire format has no predicate channel), an
    aggregate other than `sum`/`count`, a reference signature between object
-   types (a reference is a role and belongs on a fact type), a ground
-   instance fact, two unconditional definitions of one target, a rule with
-   no id, and two rules sharing one id.
+   types (a reference is a role and belongs on a fact type), a role filled
+   by an undeclared class, one member declared twice on one class, a ground
+   instance fact, two unconditional definitions of one target, a definition
+   with no id, an id on a form that names nothing, and two definitions
+   sharing one id.
 
 ## Building and testing
 

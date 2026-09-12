@@ -38,7 +38,8 @@ type otdecl = {
   mutable o_super : (string * int) option;
   mutable o_attrs : (string * A.datatype * int) list; (* source order *)
   mutable o_kenmerken : (string * A.kenmerk_soort * int) list;
-  mutable o_bases : (string * expr * int) list; (* the barred class-level defaults *)
+  mutable o_bases : (string * expr * string * int) list;
+      (* the barred class-level defaults: attribute, value, declared id, line *)
 }
 
 type ftdecl = { f_name : string; mutable f_roles : (string * A.rol * int) list }
@@ -106,6 +107,24 @@ let slot_of_ty ~line (t : ty) : slot =
 
 (* --- pass 1: collect ----------------------------------------------------- *)
 
+(* One member name is declared once per class. Two declarations would put
+   the same key twice in the `attributen` object, which RFC 8259 leaves
+   undefined and every reader resolves by its own rule — so the frontend
+   refuses it, exactly as it refuses two unconditional definitions of one
+   target. (The verifier catches it too, but only after a reader has
+   already had to pick.) *)
+let declare_once (o : otdecl) name line =
+  let hit =
+    List.find_map (fun (n, _, l) -> if n = name then Some l else None) o.o_attrs
+    |> function
+    | Some l -> Some l
+    | None -> List.find_map (fun (n, _, l) -> if n = name then Some l else None) o.o_kenmerken
+  in
+  match hit with
+  | Some first ->
+      refuse ~line "%s declares the member %s twice (line %d and line %d)" o.o_name name first line
+  | None -> ()
+
 let collect (stmts : stmt list) : model =
   let m = { otypes = []; ftypes = []; rules = [] } in
   (* the fact-type markers first: a signature's reading depends on which
@@ -156,7 +175,7 @@ let collect (stmts : stmt list) : model =
                 "%s declares a second direct supertype: %s (line %d) and %s" c first l1 p
           | Some _ -> refuse ~line "%s :: %s is declared twice" c p
           | None -> o.o_super <- Some (p, line))
-      | S_sig (c, items, _) -> (
+      | S_sig (c, sig_id, items, _) -> (
           match find_ft m c with
           | Some f ->
               List.iter
@@ -194,14 +213,25 @@ let collect (stmts : stmt list) : model =
                           "a cardinality on %s.%s: cardinality declares a ROLE's arity, and a \
                            role lives on a fact type" c n;
                       match slot_of_ty ~line t with
-                      | Attribute dt -> o.o_attrs <- o.o_attrs @ [ (n, dt, line) ]
-                      | Characteristic soort -> o.o_kenmerken <- o.o_kenmerken @ [ (n, soort, line) ]
+                      | Attribute dt ->
+                          declare_once o n line;
+                          o.o_attrs <- o.o_attrs @ [ (n, dt, line) ]
+                      | Characteristic soort ->
+                          declare_once o n line;
+                          o.o_kenmerken <- o.o_kenmerken @ [ (n, soort, line) ]
                       | Filler f ->
                           refuse ~line
                             "the signature %s.%s names the object type %s: a reference between \
                              object types is a ROLE — declare a fact type (x : feittype) and put \
                              the two role signatures on it" c n f)
-                  | Si_val (n, e, line) -> o.o_bases <- o.o_bases @ [ (n, e, line) ])
+                  | Si_val (n, e, line) ->
+                      (* the parser has already required the id on exactly this form *)
+                      let id =
+                        match sig_id with
+                        | Some id -> id
+                        | None -> refuse ~line "an inheritable class-level default with no id"
+                      in
+                      o.o_bases <- o.o_bases @ [ (n, e, id, line) ])
                 items)
       | S_rule r -> m.rules <- m.rules @ [ r ])
     stmts;
@@ -269,7 +299,7 @@ let find_hop m ~line ~subject role =
       (fun f ->
         match List.find_opt (fun (n, _, _) -> n = role) f.f_roles with
         | None -> None
-        | Some (_, r, _) ->
+        | Some (_, r, rline) ->
             let anchored =
               List.exists
                 (fun (n, (other : A.rol), _) ->
@@ -279,11 +309,14 @@ let find_hop m ~line ~subject role =
                      | None -> false))
                 f.f_roles
             in
-            if anchored then Some (f, r) else None)
+            if anchored then Some (f, r, rline) else None)
       m.ftypes
   in
   match candidates with
-  | [ (f, r) ] -> (f, r)
+  | [ (f, r, rline) ] -> (
+      match r.A.rol_objecttype_naam with
+      | Some filler -> (f, filler)
+      | None -> refuse ~line:rline "the role %s declares no filler object type" role)
   | [] ->
       refuse ~line
         "no fact type connects %s to a role named %s" subject role
@@ -341,8 +374,7 @@ and low_agg m ctx ~line ~kind ~operand ~whole =
       (show_expr operand) ctx.c_var;
   match (kind, steps) with
   | "count", [ role ] ->
-      let f, r = find_hop m ~line ~subject:ctx.c_subject role in
-      let el = Option.get r.A.rol_objecttype_naam in
+      let f, el = find_hop m ~line ~subject:ctx.c_subject role in
       A.Functie
         { kind = A.Aantal;
           argumenten =
@@ -358,8 +390,7 @@ and low_agg m ctx ~line ~kind ~operand ~whole =
           bron = Some (show_expr whole); granulariteit = None;
           bron_rol = Some { rb_feittype = f.f_name; rb_rol = role }; bron_pad = None }
   | "sum", [ role; attr ] ->
-      let f, r = find_hop m ~line ~subject:ctx.c_subject role in
-      let el = Option.get r.A.rol_objecttype_naam in
+      let f, el = find_hop m ~line ~subject:ctx.c_subject role in
       let dt = attr_type m ~line el attr in
       (* Flora-2 answers 0 for an aggregate over an empty set (measured on
          2.2 beta); [leegwaarde] is that answer in uchar's vocabulary,
@@ -508,25 +539,43 @@ let document (stmts : stmt list) : A.document =
   (* every class mentioned as a supertype, a role filler or a rule subject
      must be declared; the chain walk asserts it *)
   List.iter (fun o -> ignore (chain m o.o_name)) m.otypes;
-  (* WF-020 holds rule names unique across the rule-form arrays, but it
-     filters nulls out and never reaches a defaults group's name — so a
-     duplicate that lands on two GROUPS passes the verifier and leaves two
-     rules sharing one identity downstream. The frontend closes it here,
-     where both kinds are still one list. *)
+  (* A role's filler is a declared object type. WF-003 catches it later,
+     but the lowering reads the filler to type an aggregation, so refusing
+     here keeps the failure at the source position that caused it. *)
+  List.iter
+    (fun f ->
+      List.iter
+        (fun (_, (r : A.rol), line) ->
+          match r.rol_objecttype_naam with
+          | Some filler when find_ot m filler = None ->
+              refuse ~line "the role %s of %s is filled by %s, which is not a declared object type"
+                (Option.value r.rol_naam ~default:"?") f.f_name filler
+          | _ -> ())
+        f.f_roles)
+    m.ftypes;
+  (* Every name this document puts on the wire, in source order: a Horn
+     rule's id and a barred class-level default's id alike. WF-020 holds
+     rule names unique across the rule-form arrays, but it filters nulls
+     out and never reaches a defaults group's name — so a duplicate landing
+     on two GROUPS passes the verifier and leaves two definitions sharing
+     one identity downstream. The frontend closes it here, where both kinds
+     are still one list. *)
+  let named =
+    List.map (fun (r : rule) -> (r.r_line, Option.value r.r_id ~default:"")) m.rules
+    @ List.concat_map
+        (fun o -> List.map (fun (_, _, id, line) -> (line, id)) o.o_bases)
+        m.otypes
+    |> List.sort (fun (a, _) (b, _) -> compare a b)
+  in
   List.iteri
-    (fun i (r : rule) ->
-      match r.r_id with
-      | None -> ()
-      | Some id -> (
-          match
-            List.find_opt
-              (fun (j, (o : rule)) -> j < i && o.r_id = Some id)
-              (List.mapi (fun j o -> (j, o)) m.rules)
-          with
-          | Some (_, o) ->
-              refuse ~line:r.r_line "the rule id %S is already used at line %d" id o.r_line
-          | None -> ()))
-    m.rules;
+    (fun i (line, id) ->
+      match List.find_opt (fun (j, (_, other)) -> j < i && other = id)
+              (List.mapi (fun j x -> (j, x)) named)
+      with
+      | Some (_, (first, _)) ->
+          refuse ~line "the id %S is already used at line %d" id first
+      | None -> ())
+    named;
   let defs = List.map (low_rule m) m.rules in
   (* the barred class-level defaults are bases too, and they arrive before
      the rules in the group order *)
@@ -534,7 +583,7 @@ let document (stmts : stmt list) : A.document =
     List.concat_map
       (fun o ->
         List.map
-          (fun (attr, e, line) ->
+          (fun (attr, e, id, line) ->
             (* Flora-2's inheritable value is a class-level constant: the
                frame carries no instance to read from, so a path in it has
                no reading *)
@@ -548,7 +597,7 @@ let document (stmts : stmt list) : A.document =
                   o.o_name attr (show_expr e) attr o.o_name);
             let ctx = { c_subject = o.o_name; c_var = "self"; c_binds = [] } in
             let (_ : A.datatype) = attr_type m ~line o.o_name attr in
-            { d_name = None; d_target = (o.o_name, attr); d_var = "self"; d_barred = true;
+            { d_name = Some id; d_target = (o.o_name, attr); d_var = "self"; d_barred = true;
               d_cond = None; d_value = low_expr m ctx ~line e; d_line = line })
           o.o_bases)
       m.otypes
@@ -559,10 +608,9 @@ let document (stmts : stmt list) : A.document =
   List.iter
     (fun d -> if not (List.mem d.d_target !targets) then targets := !targets @ [ d.d_target ])
     (barred @ defs);
+  (* the name index: one entry per named definition, in source order *)
   let regels =
-    List.map
-      (fun (r : rule) -> { A.rg_naam = r.r_id; rg_soort = Some "regel" })
-      m.rules
+    List.map (fun (_, id) -> { A.rg_naam = Some id; rg_soort = Some "regel" }) named
   in
   let resolved = ref [] and groups = ref [] in
   List.iter

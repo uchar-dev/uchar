@@ -10,9 +10,11 @@
 
 Vogel[|hoogte => numeriek(niet_negatief, geheel)|].
 Vogel[|gewond => kenmerk(bijvoeglijk)|].
+@!{'hoogte van een vogel'}
 Vogel[|hoogte -> 10|].
 
 Pinguin::Vogel.
+@!{'hoogte van een pinguin'}
 Pinguin[|hoogte -> 20|].
 
 @!{'hoogte van een gewonde vogel'}

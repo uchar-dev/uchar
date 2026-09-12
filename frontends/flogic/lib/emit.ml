@@ -236,7 +236,12 @@ let document (d : document) : json =
 
 let to_string (d : document) : string = Yojson.Safe.pretty_to_string (document d) ^ "\n"
 
+(* Serialise WHOLE, then write. Opening the file first would leave an empty
+   or half-written document behind when a node this serialiser does not
+   carry raises — and a truncated IR that a later reader picks up is worse
+   than no file at all. *)
 let to_file (path : string) (d : document) : unit =
+  let text = to_string d in
   let oc = open_out path in
-  output_string oc (to_string d);
+  output_string oc text;
   close_out oc

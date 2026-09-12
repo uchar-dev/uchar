@@ -414,16 +414,22 @@ let parse_stmt st : stmt =
       S_rule { r_id = rule_id; r_subj = v; r_attr = attr; r_value = value;
                r_body = List.rev !body; r_line = l0 }
   | Atom a -> (
-      if rule_id <> None then
-        refuse ~line:l0 "a rule id on %s, which is not a rule" a;
+      let no_id kind =
+        if rule_id <> None then
+          refuse ~line:l0
+            "a rule id on %s, which is %s: only a definition — a Horn rule or an inheritable \
+             class-level default — puts a name on the wire" a kind
+      in
       advance st;
       match peek st with
       | P "::" ->
+          no_id "a subclass fact";
           advance st;
           let parent = atom_of st in
           expect st "END";
           S_sub (a, parent, l0)
       | P ":" ->
+          no_id "a membership fact";
           advance st;
           let c = atom_of st in
           expect st "END";
@@ -433,17 +439,45 @@ let parse_stmt st : stmt =
           let items = parse_sigitems st in
           expect st "|]";
           expect st "END";
-          S_sig (a, items, l0)
+          (* One uniform rule: every form that puts a name on the wire
+             carries one. A barred VALUE is a defaults base and therefore a
+             named definition; a barred SIGNATURE declares a member and
+             names nothing. Flora-2 has no per-item id, so a named statement
+             carries exactly its one definition. *)
+          let vals = List.filter (function Si_val _ -> true | _ -> false) items in
+          (match (rule_id, vals) with
+          | Some _, [ _ ] when List.length items = 1 -> ()
+          | Some _, [] ->
+              refuse ~line:l0
+                "a rule id on a statement that declares members only: an id names a definition, \
+                 and %s[|attr => type|] declares one" a
+          | Some _, _ ->
+              refuse ~line:l0
+                "a rule id on a statement carrying %d items: an inheritable class-level default \
+                 is named one per statement, because Flora-2 has no per-item id"
+                (List.length items)
+          | None, [] -> ()
+          | None, Si_val (n, _, l) :: _ ->
+              refuse ~line:l
+                "the inheritable class-level default %s[|%s -> …|] has no id: it is a defaults \
+                 base and reaches the wire by name, so write @!{'name'} before it — exactly as a \
+                 Horn rule must" a n
+          | None, _ :: _ -> assert false);
+          S_sig (a, rule_id, items, l0)
       | P "[" ->
+          no_id "the class object's own frame";
           advance st;
           skip_to_close st ~opening:"[" ~closing:"]";
           expect st "END";
           S_unbarred (a, l0)
       | P "(" ->
+          no_id "not a frame at all";
           refuse ~line:l0
             "the predicate %s(...): the slice is frame-based — uchar's wire format has no \
              predicate channel" a
-      | t -> refuse ~line:l0 "expected '::', ':', '[|' or '[' after %s, found %s" a (show t))
+      | t ->
+          no_id "not a frame at all";
+          refuse ~line:l0 "expected '::', ':', '[|' or '[' after %s, found %s" a (show t))
   | t -> refuse ~line:l0 "expected a statement, found %s" (show t)
 
 let parse (src : string) : stmt list =

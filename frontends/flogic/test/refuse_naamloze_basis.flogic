@@ -1,0 +1,6 @@
+// Refusal 16: an inheritable class-level default with no id. It is a
+// defaults base and reaches the wire as a PrioritizedDefaults group, whose
+// name no well-formedness rule inspects — so it must carry one, exactly as
+// a Horn rule must.
+Vogel[|hoogte => numeriek(niet_negatief, geheel)|].
+Vogel[|hoogte -> 10|].

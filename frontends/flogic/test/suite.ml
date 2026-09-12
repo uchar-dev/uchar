@@ -91,8 +91,11 @@ let () =
     [ (* the sharp witness of WF-106: two :: facts, which no wire document
          and no other frontend source form can even write *)
       ("refuse_tweede_ouder.flogic", "WF-106");
-      ("refuse_tweede_ouder.flogic", "RechtOpUitkeringWazo");
-      ("refuse_tweede_ouder.flogic", "RechtUitkeringZw");
+      ("refuse_tweede_ouder.flogic", "RechtOpUitkeringWazo and RechtUitkeringZw,");
+      (* the needle carries the pair AND its parents: a bare
+         "RechtUitkeringZw" is a prefix of "RechtUitkeringZwWazo" and would
+         pass on the parent name alone *)
+      ("refuse_tweede_ouder.flogic", "RechtOpUitkering and RechtUitkeringZwWazo");
       ("refuse_ongebalkt.flogic", "unbarred class-level frame");
       ("refuse_hilog.flogic", "HiLog and meta-programming");
       ("refuse_defeasible.flogic", "\\overrides");
@@ -110,7 +113,11 @@ let () =
          looks at a defaults group's name, so both of these have to refuse
          at the frontend or not at all *)
       ("refuse_naamloos.flogic", "a rule with no id");
-      ("refuse_dubbele_naam.flogic", "is already used at line") ]
+      ("refuse_naamloze_basis.flogic", "has no id");
+      ("refuse_dubbele_naam.flogic", "is already used at line");
+      ("refuse_argumentatietheorie.flogic", "argumentation-theory");
+      ("refuse_dubbel_lid.flogic", "declares the member hoogte twice");
+      ("refuse_onbekende_filler.flogic", "not a declared object type") ]
   in
   List.iter
     (fun (src, needle) ->
