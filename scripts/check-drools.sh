@@ -318,18 +318,25 @@ EXPECTED_CHANNEL=(
 # The pin still has a live flank, and it is the OTHER direction: a count of TWO OR MORE on
 # `bedrijvig` is a §13.3.6.7 raster neither branch carries, so it drops this golden out of the
 # played channel exactly as before — measured after the fix, both branches refuse it by name.
-# 2026-09-12, +2 (124 -> 126): the subtype kernel's anchor
+# 2026-09-12, +3 (124 -> 127): the subtype kernel's anchor
 # `anchor/jutterswet-strandrechtketen` plays. It is the whole point of that card — the four
 # proof moments of object-type inheritance have to be reproduced by all THREE executors, so a
 # supertype rule firing for a subtype instance, a supertype aggregation counting one, base
 # override, and the subtype's own exception beating an inherited one are pinned here as
 # ref = clingo = Drools rather than as two-thirds of a square. The second is
-# `jutterswet-wrakconflict`, which pins the SHAPE of a ch. 7.2 conflict key under inheritance:
-# a clash inside an inherited internally-unordered block, surfacing for the first time on a
-# subtype instance, is keyed on the type that DECLARES the attribute and never on the concrete
-# type — one target under one name however many subtypes inherit it. That key form has three
-# readers and no other witness.
-EXPECTED_PLAYED=126
+# `jutterswet-wrakconflict`, which pins the SHAPE of a ch. 7.2 conflict key under inheritance: a
+# clash inside an inherited internally-unordered block is keyed on the type that DECLARES the
+# attribute and never on the instance's concrete type — one target under one name however many
+# subtypes inherit it. The golden carries both instance kinds side by side on one case: the
+# Wrakrecht separates declarant from concrete type, and the plain Strandrecht beside it shows the
+# key does not depend on the instance kind at all. That key form has three readers and no other
+# witness. The third is `jutterswet-zustervondst`, the SIBLING admission (IR-SPEC ch. 2.2,
+# SUBTYPING §3.3b): two incomparable subtypes of one supertype each declaring `toeslag`, with
+# DIFFERENT datatypes, so a reader that crossed the two chains is caught by the write boundary
+# (12,50 into a whole-number declaration faults) rather than merely answering wrong. It is the
+# admission's only witness — the design refuses shadowing and admits this, and nothing else pins
+# the difference.
+EXPECTED_PLAYED=127
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the

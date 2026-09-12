@@ -1,0 +1,38 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "W1",
+        "objectType": "Wrakstuk",
+        "attributes": { "grondwaarde": { "number": "10.00" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "D1",
+        "objectType": "Drijfhout",
+        "attributes": { "grondwaarde": { "number": "20.00" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S1",
+        "objectType": "Strandvondst",
+        "attributes": { "grondwaarde": { "number": "30.00" } },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "W1", "attribute": "toeslag", "value": { "number": "12.50" } },
+    { "kind": "attributeValue", "label": "D1", "attribute": "toeslag", "value": { "number": "3" } },
+    { "kind": "attributeValue", "label": "W1", "attribute": "vergoeding", "value": { "number": "10.00" } },
+    { "kind": "attributeValue", "label": "D1", "attribute": "vergoeding", "value": { "number": "20.00" } },
+    { "kind": "attributeValue", "label": "S1", "attribute": "vergoeding", "value": { "number": "30.00" } },
+    { "kind": "consistent" }
+  ]
+}
