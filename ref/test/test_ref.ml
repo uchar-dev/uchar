@@ -3456,6 +3456,191 @@ let () =
   expect_msg "WV-5.11-instantiesom-lid0-eerst" (run_leden ledensom "1" "0") bm;
   expect_msg "WV-5.11-instantiesom-lid1-later" (run_leden ledensom "0" "1") pm
 
+(* --- ch. 7.10: inheritance, the effective stack per type ---------------- *)
+
+(* WV-7.10-a: the six cells of ch. 7.10.1 on the smallest model that
+   separates them. `Wrakrecht is een Strandrecht`; the supertype's group is
+   base = grondslag with a 99-exception on `betwist`, the subtype's is
+   base = grondslag x 2 with a 55-exception on bergingsdiepte > 20. The
+   effective Wrakrecht stack is the own 55, the inherited 99, the own base
+   20 — so the pinned pair (row 4 = 99, row 3 = 20) is exactly what a flat
+   lowering cannot produce at once, and row 6 = 55 separates child-wins
+   from parent-wins and from an unordered no-write. *)
+let () =
+  let bedrag : Ir_v0.Ast.datatype =
+    Numeriek { geheel = false; decimalen = 2; teken = None; eenheid = None }
+  in
+  let ot_sub name super attrs kenmerken : string * Ir_v0.Ast.objecttype =
+    let n, o = ot name attrs kenmerken in
+    (n, { o with ot_supertype = Some super })
+  in
+  let altijd : Ir_v0.Ast.conditie =
+    Samengesteld { kwantor = Alle; drempel = 0; onderdelen = []; bron = None }
+  in
+  let d voorwaarde consequentie : Ir_v0.Ast.default =
+    { default_besluit = None; default_voorwaarde = Some voorwaarde;
+      default_consequentie = Some consequentie; default_initialisatie = false;
+      default_excepties = None; default_bron = None }
+  in
+  let groep onderwerp defaults : Ir_v0.Ast.prioritized_defaults =
+    { pd_naam = Some ("uitkering van een " ^ onderwerp); pd_onderwerp = onderwerp;
+      pd_kenmerk = None; pd_attribuut = Some "uitkering"; defaults; pd_ongeordend = false;
+      pd_bron = None; pd_geldigheid = None }
+  in
+  let betwist : Ir_v0.Ast.conditie =
+    Kenmerk_check { kenmerk = Some "betwist"; navigatie = None; negatie = false;
+                    eigenaar = None; periode = None; bron = None; navigatie_binding = None }
+  in
+  let diep : Ir_v0.Ast.conditie =
+    Vergelijking { op = Groter; links = Some (aref "bergingsdiepte" "Wrakrecht" num0);
+                   rechts = Some (litv "20" num0); periode = None; bron = None }
+  in
+  let doc =
+    { empty_doc with
+      objecttypen =
+        [ ot "Strandrecht" [ ("grondslag", Some bedrag); ("uitkering", Some bedrag);
+                             ("registratiekosten", Some bedrag) ] [ "betwist" ];
+          ot_sub "Wrakrecht" "Strandrecht" [ ("bergingsdiepte", Some num0) ] [] ];
+      (* the bare rule on the SUPERTYPE: extensional quantification makes it
+         fire for a subtype instance too (ch. 2.2) *)
+      resolved_regels =
+        [ rr "registratiekosten van een strandrecht" Berekening
+            (Some (aref "registratiekosten" "Strandrecht" bedrag))
+            (Some (litv "5.00" bedrag)) None ];
+      prioritized_defaults =
+        [ groep "Strandrecht" [ d betwist (litv "99.00" bedrag);
+                                d altijd (aref "grondslag" "Strandrecht" bedrag) ];
+          groep "Wrakrecht"
+            [ d diep (litv "55.00" bedrag);
+              d altijd
+                (Binair { op = Maal; links = Some (aref "grondslag" "Wrakrecht" bedrag);
+                          rechts = Some (litv "2" num0); typ = Some bedrag; bron = None }) ] ];
+    }
+  in
+  let run otype ~betwist:b ~diepte =
+    let i = inst "x" otype
+        ([ ("grondslag", n "10.00") ]
+         @ match diepte with Some dp -> [ ("bergingsdiepte", n dp) ] | None -> [])
+    in
+    let i = if b then { i with World.chars = [ "betwist" ] } else i in
+    let final = Eval.evaluate (env_of doc) (World.add_instance World.empty i) in
+    (World.attr (World.get final "x") "uitkering",
+     World.attr (World.get final "x") "registratiekosten",
+     (World.get final "x").World.otype, final.World.channel)
+  in
+  let uitkering (u, _, _, _) = u and kosten (_, k, _, _) = k
+  and kanaal (_, _, _, c) = c in
+  let r1 = run "Strandrecht" ~betwist:false ~diepte:None in
+  let r2 = run "Strandrecht" ~betwist:true ~diepte:None in
+  let r3 = run "Wrakrecht" ~betwist:false ~diepte:(Some "5") in
+  let r4 = run "Wrakrecht" ~betwist:true ~diepte:(Some "5") in
+  let r5 = run "Wrakrecht" ~betwist:false ~diepte:(Some "25") in
+  let r6 = run "Wrakrecht" ~betwist:true ~diepte:(Some "25") in
+  expect_num "WV-7.10-a-rij1-supertype-basis" (uitkering r1) "10.00";
+  expect_num "WV-7.10-a-rij2-supertype-uitzondering" (uitkering r2) "99.00";
+  expect_num "WV-7.10-a-rij3-basisvervanging" (uitkering r3) "20.00";
+  expect_num "WV-7.10-a-rij4-geerfde-uitzondering-boven-eigen-basis" (uitkering r4) "99.00";
+  expect_num "WV-7.10-a-rij5-eigen-uitzondering" (uitkering r5) "55.00";
+  expect_num "WV-7.10-a-rij6-kind-wint" (uitkering r6) "55.00";
+  (* row 6 is an ORDINARY write: the layer boundary deposits no conflict *)
+  check "WV-7.10-a-rij6-geen-conflictfeit" (kanaal r6 = []);
+  (* the supertype's bare rule fires for the subtype instance *)
+  expect_num "WV-7.10-a-supertyperegel-op-subtype" (kosten r3) "5.00";
+  expect_num "WV-7.10-a-supertyperegel-op-supertype" (kosten r1) "5.00"
+
+(* WV-7.10-b: the ch. 7.2 conflict key names the type that DECLARES the
+   attribute, never the instance's concrete type. Two declared-unordered
+   groups on `Strandrecht.uitkering` both decide, differently, on a
+   `Wrakrecht` instance — the one conflict shape inheritance leaves: a clash
+   INSIDE an inherited internally-unordered block, surfacing for the first
+   time on the subtype. One target reports under one name. *)
+let () =
+  let bedrag : Ir_v0.Ast.datatype =
+    Numeriek { geheel = false; decimalen = 2; teken = None; eenheid = None }
+  in
+  let ot_sub name super attrs : string * Ir_v0.Ast.objecttype =
+    let n, o = ot name attrs [] in
+    (n, { o with ot_supertype = Some super })
+  in
+  let kc k : Ir_v0.Ast.conditie =
+    Kenmerk_check { kenmerk = Some k; navigatie = None; negatie = false; eigenaar = None;
+                    periode = None; bron = None; navigatie_binding = None }
+  in
+  let groep k waarde : Ir_v0.Ast.prioritized_defaults =
+    { pd_naam = Some ("uitkering bij " ^ k); pd_onderwerp = "Strandrecht"; pd_kenmerk = None;
+      pd_attribuut = Some "uitkering";
+      defaults =
+        [ { default_besluit = None; default_voorwaarde = Some (kc k);
+            default_consequentie = Some (litv waarde bedrag); default_initialisatie = false;
+            default_excepties = None; default_bron = None } ];
+      pd_ongeordend = true; pd_bron = None; pd_geldigheid = None }
+  in
+  let doc =
+    { empty_doc with
+      objecttypen =
+        [ ot "Strandrecht" [ ("uitkering", Some bedrag) ] [ "betwist"; "geborgen" ];
+          ot_sub "Wrakrecht" "Strandrecht" [] ];
+      prioritized_defaults = [ groep "betwist" "99.00"; groep "geborgen" "44.00" ] }
+  in
+  let i = { (inst "w" "Wrakrecht" []) with World.chars = [ "betwist"; "geborgen" ] } in
+  let final = Eval.evaluate (env_of doc) (World.add_instance World.empty i) in
+  expect_leeg "WV-7.10-b-botsing-schrijft-niet" (World.attr (World.get final "w") "uitkering");
+  check "WV-7.10-b-sleutel-noemt-de-declarant"
+    (List.map (fun (f : World.error_fact) -> (f.rule, f.subject)) final.World.channel
+     = [ ("Strandrecht.uitkering", "w") ])
+
+(* WV-7.10-c: the two corners ch. 7.10 refuses rather than lowers. Both are
+   NAMED refusals before any value exists, so all three executors stop on the
+   same document instead of each answering its own way. *)
+let () =
+  let bedrag : Ir_v0.Ast.datatype =
+    Numeriek { geheel = false; decimalen = 2; teken = None; eenheid = None }
+  in
+  let ot_sub name super attrs : string * Ir_v0.Ast.objecttype =
+    let n, o = ot name attrs [] in
+    (n, { o with ot_supertype = Some super })
+  in
+  let kc k : Ir_v0.Ast.conditie =
+    Kenmerk_check { kenmerk = Some k; navigatie = None; negatie = false; eigenaar = None;
+                    periode = None; bron = None; navigatie_binding = None }
+  in
+  let groep onderwerp k waarde ongeordend : Ir_v0.Ast.prioritized_defaults =
+    { pd_naam = Some (onderwerp ^ " bij " ^ k); pd_onderwerp = onderwerp; pd_kenmerk = None;
+      pd_attribuut = Some "uitkering";
+      defaults =
+        [ { default_besluit = None; default_voorwaarde = Some (kc k);
+            default_consequentie = Some (litv waarde bedrag); default_initialisatie = false;
+            default_excepties = None; default_bron = None } ];
+      pd_ongeordend = ongeordend; pd_bron = None; pd_geldigheid = None }
+  in
+  let types =
+    [ ot "Strandrecht" [ ("uitkering", Some bedrag) ] [ "betwist"; "geborgen" ];
+      ot_sub "Wrakrecht" "Strandrecht" [] ]
+  in
+  let w = World.add_instance World.empty (inst "w" "Wrakrecht" []) in
+  (* (1) a declared-unordered SET on one level and an inherited stack on the
+     other: the block order composes one stack over one stack *)
+  let doc_set =
+    { empty_doc with objecttypen = types;
+      prioritized_defaults =
+        [ groep "Strandrecht" "betwist" "99.00" true; groep "Strandrecht" "geborgen" "44.00" true;
+          groep "Wrakrecht" "betwist" "55.00" false ] }
+  in
+  expect_fault "WV-7.10-c-ongeordende-verzameling-over-de-grens" (fun () ->
+      Eval.evaluate (env_of doc_set) w);
+  (* (2) an ordinary rule on an ANCESTOR whose target a descendant covers
+     with its own defaults group: that rule is also a writer in its own
+     right and fires extensionally on the descendant's instances *)
+  let doc_regel =
+    { empty_doc with objecttypen = types;
+      resolved_regels =
+        [ rr "uitkering van een strandrecht" Berekening
+            (Some (aref "uitkering" "Strandrecht" bedrag)) (Some (litv "7.00" bedrag)) None ];
+      prioritized_defaults = [ groep "Wrakrecht" "betwist" "55.00" false ] }
+  in
+  expect_fault "WV-7.10-c-voorouderregel-als-geerfde-basis" (fun () ->
+      Eval.evaluate (env_of doc_regel) w)
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

@@ -1,0 +1,20 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "W1",
+        "objectType": "Wrakrecht",
+        "attributes": { "grondslag": { "number": "10.00" }, "bergingsdiepte": { "number": "25" } },
+        "roles": {},
+        "characteristics": ["betwist"]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "W1", "attribute": "uitkering", "value": { "number": "99.00" } },
+    { "kind": "consistent" }
+  ]
+}

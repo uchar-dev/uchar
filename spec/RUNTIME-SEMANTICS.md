@@ -3937,6 +3937,124 @@ value priority between the exception groups' outcome and a form-a default's own
 consequence — is real design work carried by the executor card, proven by these
 anchors.
 
+### 7.10 Inheritance: the effective stack per type
+
+*Status: normative. `IR-SPEC.md` ch. 2.2 carries the wire form
+(`supertype`) and the well-formedness rules; this section carries what an
+executor does with it. The anchor
+`corpus/golden/anchor/jutterswet-strandrechtketen` machine-checks every
+outcome below through all three executors (gates 5, 6 and 12), and the
+worked examples are `ref/test/`'s verbatim.*
+
+A subtype inherits, per target, the **whole defaults stack** of its
+supertype. Its own declarations fold over the parent's **effective** stack
+— not over the parent's declarations — so a three-level chain needs no rule
+of its own: the grandchild's own exceptions end up above the child's, above
+the grandparent's, with the base contributed by the lowest declarant that
+has one.
+
+The composition has **one fixed block order**, highest first, and **nothing
+on the wire declares it** (there is no `inheritedExceptions` field, no enum
+and no well-formedness rule demanding a boundary declaration):
+
+1. the subtype's own exceptions, in their declared order;
+2. the inherited exceptions, in their inherited order — an inherited
+   **group-default** (ch. 7.9: `excepties`, no own consequence) is not a
+   base and rides at the bottom of this block;
+3. the **base** — the subtype's own base if it has one, which *replaces*
+   the inherited base, otherwise the inherited base;
+4. the **initialisation** default (ch. 7.3) and the **virtual input**
+   default (ch. 7.8), which are never replaced and are not the base.
+
+The base is *the lowest ordinary default*, and only when it decides
+something itself: a group-default delegates to its exception groups and is
+therefore not a base, so a subtype base is inserted *below* it rather than
+replacing it; and a declared-unordered member has no "lowest" at all, so
+its whole block travels as one.
+
+**Where a subtype-own and an inherited exception are both applicable and
+decide differently, the subtype's own decides** — deterministically, as an
+ordinary write, with **no §9.5 conflict fact**. That is override *per
+target and per block*, not per attribute: an inherited exception with no
+applicable subtype-own counterpart is untouched and **still outranks the
+subtype's own base**. A subtype never edits an inherited exception; where
+an author needs one not to apply, the expressible form is a subtype-own
+exception carrying the same justification, which the block order then lets
+win exactly there and nowhere else.
+
+**The result is one effective stack per (concrete type, target), and the
+group runs on instances of exactly that type.** The extensional
+quantification of the defaults subject (ch. 2.2) is spent in the
+composition; reading the subject extensionally as well would put the
+supertype's stack and the subtype's on one instance, and they would write
+in turn without reaching a fixpoint. The single-writer fences read that
+effective stack and never a chain-closed target key — the obligation
+stated in `IR-SPEC.md` ch. 6.1.
+
+**The ch. 7.2 conflict key names the type that DECLARES the target**, not
+the instance's concrete type and not the type whose defaults group the
+conflicting members sit in. A target is declared once; keying on the
+concrete type would make one target report under as many names as it has
+subtypes, and the ch. 5.6 channel already keys rule × subject, so the
+subject distinguishes the instances.
+
+**Two corners are refused rather than lowered**, by all three executors,
+with the same named message, before any value exists — a guess here would
+be a silent wrong answer:
+
+- a target carried by a **declared-unordered set** on one level and an
+  inherited stack on another: the block order composes one stack over one
+  stack, and a fold across that boundary is not defined here;
+- an **ordinary rule on an ancestor** whose target a descendant also covers
+  with a defaults group: under ch. 7.1 that rule would be the inherited
+  base, but it is also a writer in its own right and fires extensionally on
+  the descendant's instances, so document and execution would part company
+  silently.
+
+#### 7.10.1 Worked examples (absolute; `ref/` tests verbatim)
+
+The model — `Strandrecht` with `grondslag`, `uitkering`,
+`registratiekosten` and the characteristic `betwist`; `Wrakrecht is een
+Strandrecht` adding `bergingsdiepte`; a `Kustgemeente` registering
+`Strandrechten`. A bare rule `registratiekosten van een Strandrecht =
+5,00`; a defaults group on `Strandrecht.uitkering` (base `= de grondslag`,
+exception `= 99,00 indien betwist`); a defaults group on
+`Wrakrecht.uitkering` (base `= de grondslag × 2`, own exception `= 55,00
+indien de bergingsdiepte groter is dan 20`); `uitkeringstotaal = de som van
+de uitkeringen van alle geregistreerde strandrechten` and `registertal =
+het aantal geregistreerde strandrechten`. Every instance has
+`grondslag = 10,00`.
+
+The effective `Wrakrecht` stack for `uitkering` is, highest first: the own
+55-exception, the inherited 99-exception, the own base 20 — and below it,
+unreplaced, the initialisation and virtual input defaults.
+
+| # | instance | betwist | bergingsdiepte | `uitkering` | what it proves |
+|---|---|---|---|---|---|
+| 1 | Strandrecht | no | — | **10,00** | the supertype's own base |
+| 2 | Strandrecht | yes | — | **99,00** | the supertype's own exception |
+| 3 | Wrakrecht | no | 5 | **20,00** | base override: the subtype's own base replaces the inherited one |
+| 4 | Wrakrecht | yes | 5 | **99,00** | the inherited exception still outranks the subtype base — override is per block, not per attribute |
+| 5 | Wrakrecht | no | 25 | **55,00** | the subtype's own exception over its own base |
+| 6 | Wrakrecht | yes | 25 | **55,00**, an ordinary write, `consistent` | both exceptions applicable: the subtype's own decides, deterministically and with no conflict fact |
+
+Rows 3 and 4 together are what a flat lowering cannot produce
+simultaneously: flattening gives 20,00 for row 4 or 99,00 for row 3, never
+both. Row 6 separates all three readings — child-wins writes 55,00,
+parent-wins would write 99,00, and an unordered reading would write nothing
+and deposit a §9.5 fact.
+
+Two further outcomes, on the same model, pin the extensional half:
+
+- **the supertype rule fires for a subtype instance** —
+  `registratiekosten` is **5,00** on the `Wrakrecht` as well as on the
+  `Strandrecht`;
+- **a supertype aggregation counts subtype instances** — with one
+  `Strandrecht` (row 1) and one `Wrakrecht` (row 3) registered by one
+  `Kustgemeente`, `uitkeringstotaal` is **30,00** and `registertal` is
+  **2**. A non-extensional reading gives 10,00 and 1, so the case fails
+  loudly against a flat implementation.
+
 ## 9. Sum types and match
 
 *A v1 kernel extension (CONSTRUCTS row 36; design and ratified decisions:
