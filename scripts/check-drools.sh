@@ -353,7 +353,14 @@ EXPECTED_CHANNEL=(
 # the `supertype` field is emitter-borne and not only hand-written. It has to be a PLAYER and not a
 # refusal: a golden whose values only two of the three executors reproduce would leave the emitted
 # form outside the square that the hand-written form is inside.
-EXPECTED_PLAYED=130
+# 130 -> 131 (2026-09-12, card subtype-verdeling-keten): `jutterswet-hoofdberging`, the ALLOCATION
+# side of the chain — `doelType` is a subtype, `doelAttribuut` is declared on its ancestor, and the
+# connecting role's filler is that same ancestor, so the role reaches a recipient the allocation
+# does not target. It has to be a PLAYER: this backend was the only executor that already read the
+# recipient set as ch. 4.1 states it (every doelType instance the relation reaches), so it is the
+# leg the other two were corrected against at this card, and a refusal here would leave the pins
+# resting on ref = clingo alone.
+EXPECTED_PLAYED=131
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the

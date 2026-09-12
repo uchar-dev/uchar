@@ -1,0 +1,45 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "B1",
+        "objectType": "Berging",
+        "attributes": { "opbrengst": { "number": "1001" } },
+        "roles": { "bergers": ["H1", "H2", "G1"] },
+        "characteristics": []
+      },
+      {
+        "label": "H1",
+        "objectType": "Hoofdberger",
+        "attributes": { "rang": { "number": "1" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "H2",
+        "objectType": "Hoofdberger",
+        "attributes": { "rang": { "number": "2" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "G1",
+        "objectType": "Berger",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "H1", "attribute": "bergingsaandeel", "value": { "number": "500" } },
+    { "kind": "attributeValue", "label": "H2", "attribute": "bergingsaandeel", "value": { "number": "500" } },
+    { "kind": "attributeEmpty", "label": "G1", "attribute": "bergingsaandeel" },
+    { "kind": "attributeValue", "label": "B1", "attribute": "onverdeelde rest", "value": { "number": "1" } },
+    { "kind": "attributeValue", "label": "H1", "attribute": "rang", "value": { "number": "1" } },
+    { "kind": "consistent" }
+  ]
+}
