@@ -395,7 +395,11 @@ EXPECTED_CHANNEL=(
 # the list and none joins it. Nor does the NARROWER refusal that replaced it (the §9.9 startpunt-anchor
 # family) put one there: the two goldens carrying a named tijdlijn declare no supertype, and
 # `jutterswet-penningjaar`'s is fixed-start, which the narrowed guard admits by design.
-EXPECTED_PLAYED=134
+# 2026-09-12 (card regelnaam-wf), 134 -> 135: `jutterswet-wrakboeking` joins as a NEW PLAYER — the
+# positive witness that an object creation's member write closes UPWARD only (IR-SPEC ch. 5.1), a
+# creation that mints its own supertype. It plays because it names its back-link explicitly, so the
+# underivable-role refusal does not fire; nothing else moved.
+EXPECTED_PLAYED=135
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the
