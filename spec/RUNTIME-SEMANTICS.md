@@ -3998,18 +3998,51 @@ concrete type would make one target report under as many names as it has
 subtypes, and the ch. 5.6 channel already keys rule × subject, so the
 subject distinguishes the instances.
 
-**Two corners are refused rather than lowered**, by all three executors,
-with the same named message, before any value exists — a guess here would
-be a silent wrong answer:
+One conflict shape survives inheritance, and it is not a boundary conflict:
+a clash *inside* an inherited block that is internally unordered (a
+declared-unordered set on the ancestor, inherited whole because the
+descendant declares nothing on that target). It is keyed on the declaring
+type and at the root. Witness `corpus/golden/jutterswet-wrakconflict`,
+which puts both instance kinds on one case: the subtype instance separates
+the declarant from the concrete type, and the plain supertype instance
+beside it shows the key does not depend on the instance kind at all.
 
-- a target carried by a **declared-unordered set** on one level and an
-  inherited stack on another: the block order composes one stack over one
-  stack, and a fold across that boundary is not defined here;
-- an **ordinary rule on an ancestor** whose target a descendant also covers
-  with a defaults group: under ch. 7.1 that rule would be the inherited
-  base, but it is also a writer in its own right and fires extensionally on
-  the descendant's instances, so document and execution would part company
-  silently.
+*Stated so it is not looked for:* a conflict of that block cannot be one
+the **subtype makes applicable**. The conditions of an ancestor-declared
+group are resolved at the ancestor, and member resolution walks the chain
+upward only — a member declared on a strict subtype does not resolve there
+(WF-034), nor does a role only the subtype fills, since the group's
+navigation starts at its declared subject. So the block's applicability is
+decided entirely by members the ancestor itself declares, and a plain
+ancestor instance can reach every combination a subtype instance can. What
+inheritance changes here is the KEY, not the reachability.
+
+**A parent that writes the target with a bare rule and no defaults at all**
+— a computing rule under the ch. 7.8 standing norm — contributes that rule
+as the **inherited base**, and the composition above then treats it like
+any other base: a subtype's own base replaces it, inherited exceptions
+outrank it. That is the norm (`spec/proposals/SUBTYPING.md` §4.1 rule 4,
+§4.5), and it is what a conforming executor must eventually do.
+
+> **Not lowered in this release.** No executor lowers that form yet, and
+> all three **refuse it loudly** instead of guessing: the ancestor's rule
+> is also a writer in its own right and fires extensionally on the
+> descendant's instances, so an implementation that silently kept one of
+> the two writers would answer where the document says something else.
+> The refusal is a temporary stand-in for the rule above, not a
+> replacement for it, and it carries one named message in all three
+> executors. Witness: `ref/test/` (WV-7.10-c) and the Drools backend's own
+> suite (`OverervingWeigeringWitnessTest`) — no corpus case can hold the
+> shape, because a golden must replay and `ref` faults on it.
+
+**One further corner has no reading yet and is refused for that reason:** a
+target carried by a **declared-unordered SET** on one level and an
+inherited stack on another. The block order composes one stack over one
+stack; §4.1 rule 3 carries an internally unordered parent group across as
+one block, but a fold between two multi-member sets across a supertype
+boundary **is not defined here**, and inventing one silently is the single
+thing a lowering must not do. Same treatment: one named refusal in all
+three executors, witnessed in the two suites named above.
 
 #### 7.10.1 Worked examples (absolute; `ref/` tests verbatim)
 
