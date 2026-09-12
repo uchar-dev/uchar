@@ -219,9 +219,19 @@ hand. Each refusal cites its rule:
   document declares that name as something else, the message says which kind
   (a domein, a parameter, a feittype, a dimensie, an eenheidsysteem, a
   dagsoort) rather than sending the author hunting for a typo.
-- **WF-105** — a member name declared twice along one chain (ci, per kind).
-  NOT refused, and deliberately: a **sibling** collision — two incomparable
-  subtypes declaring one name — since no instance is of two incomparable types.
+- **WF-105** — a member name declared twice along one chain (ci, per kind) is
+  refused, at the redeclaration's own line. What is **not** refused, and
+  deliberately, is the **sibling** collision — two incomparable subtypes of one
+  supertype each declaring the same name — since no instance is of two
+  incomparable types, so no read is ambiguous.
+
+A misspelled head form is a bare ANTLR "no viable alternative", which points
+the author at the wrong thing, so two common slips get a targeted message
+beside it (never instead of it): `is <Naam>` with the article dropped — an `IS`
+after the name is otherwise a §13.3.2 kenmerk declaration, but that continues
+with a `lowerNaam`, so a capitalised name can only be this — and the clause
+written behind the `mv:` group. Both are read off the token stream over the
+HEAD only, so the `is een` of ordinary rule text is never mistaken for either.
 
 Explicit **non-**refusal: a target carrying rules on two levels. That is the
 kernel's group inheritance (`RUNTIME-SEMANTICS.md` ch. 7.10), and the kernel

@@ -133,6 +133,19 @@ public final class DefinitionResolver {
     private final java.util.Map<String, List<String>> supertypeNamen = new java.util.LinkedHashMap<>();
     private final java.util.Map<String, Integer> supertypeRegel = new java.util.LinkedHashMap<>();
 
+    /** The source line of each member DECLARATION, keyed by object type and lowercased member name — the
+     *  line WF-105 must cite, because the edit that resolves a shadow is at the redeclaration and not at
+     *  the {@code is een} clause. Filled for every member; only read for a type that has a supertype. */
+    private final java.util.Map<Objecttype, java.util.Map<String, Integer>> lidRegel = new java.util.IdentityHashMap<>();
+
+    private void onthoudLidRegel(Objecttype ot, ObjectTypeMemberContext m) {
+        if (m.koptekst() != null) return;
+        String naam = m.attribuutSpecificatie() != null ? naam(m.attribuutSpecificatie().lowerNaam())
+                                                        : kenmerkNaam(m.kenmerkSpecificatie());
+        lidRegel.computeIfAbsent(ot, k -> new java.util.LinkedHashMap<>())
+                .putIfAbsent(naam.toLowerCase(), m.getStart().getLine());
+    }
+
     /** Record the 'is een &lt;Objecttypenaam&gt;' clause(s) of one head. Every name the head writes is
      *  kept — including the ones WF-106 forbids — so the refusal can NAME them instead of reducing to
      *  a syntax error. */
@@ -228,7 +241,8 @@ public final class DefinitionResolver {
             Objecttype terug = pad.get(pad.size() - 1);
             fout("objecttype '" + terug.naam + "': supertypecyclus " + String.join(" -> ", namen)
                     + " — WF-104: de supertypegraaf is acyclisch (een type zou zijn eigen voorouder zijn, "
-                    + "dus ledenresolutie heeft geen wortel om bij te stoppen)", 0);
+                    + "dus ledenresolutie heeft geen wortel om bij te stoppen)",
+                    supertypeRegel.getOrDefault(terug.naam, 0));   // the clause that closes the cycle
             terug.supertype = null;
             return;
         }
@@ -261,7 +275,8 @@ public final class DefinitionResolver {
             fout("objecttype '" + ot.naam + "': " + soort + " '" + naam + "' is al gedeclareerd op '" + v.naam
                     + "' hogerop in de keten — WF-105: een subtype herdeclareert geen geërfde naam (één "
                     + "exemplaar zou twee declaraties van die naam dragen, en welke een lezer vindt bepaalt "
-                    + "datatype, dimensies en tijdlijnfacet van elke lezing ervan)", 0);
+                    + "datatype, dimensies en tijdlijnfacet van elke lezing ervan)",
+                    lidRegel.getOrDefault(ot, java.util.Map.of()).getOrDefault(naam.toLowerCase(), 0));
             return;                                      // one report per member, at its nearest declarant
         }
     }
@@ -277,6 +292,7 @@ public final class DefinitionResolver {
     }
 
     private void member(Objecttype ot, ObjectTypeMemberContext m) {
+        onthoudLidRegel(ot, m);
         if (m.attribuutSpecificatie() != null) {
             AttribuutSpecificatieContext a = m.attribuutSpecificatie();
             String naam = naam(a.lowerNaam());

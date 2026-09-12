@@ -271,6 +271,8 @@ class SubtypeDialectTest {
     @Test void het_lidwoord_voor_de_supertypenaam_hoort_bij_de_frase() {
         // "is een <Naam>" — the article is the language's own onbepaaldLidwoord, read exactly where
         // the language reads one elsewhere; a bare "is <Naam>" is not the head form and must not bind.
+        // ANTLR can only call that "no viable alternative", which points at the wrong thing, so the
+        // frontend names the fix beside it.
         String src = """
             Objecttype het Strandrecht (mv: Strandrechten)
                 de grondslag Numeriek (niet-negatief getal met 2 decimalen);
@@ -280,6 +282,47 @@ class SubtypeDialectTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertFalse(m.isOk(), "'is <Naam>' zonder lidwoord is de kopvorm niet en hoort te weigeren");
+        assertTrue(m.errors().stream().anyMatch(d -> d.message().contains("mist het lidwoord")
+                        && d.message().contains("is een Strandrecht")),
+                () -> "geen gerichte hint over het ontbrekende lidwoord: " + m.errors());
+    }
+
+    @Test void de_clausule_achter_de_meervoudsgroep_wijst_naar_zijn_plek() {
+        // The other common authoring slip: the head annotations have a fixed mutual order and the
+        // extension inserts one more element, so the author has to be told WHERE rather than that
+        // something is unparseable.
+        String src = """
+            Objecttype het Strandrecht (mv: Strandrechten)
+                de grondslag Numeriek (niet-negatief getal met 2 decimalen);
+
+            Objecttype het Wrakrecht (mv: Wrakrechten) is een Strandrecht
+                de bergingsdiepte Numeriek (niet-negatief geheel getal);
+            """;
+        RegelSpraakModel m = Resolver.resolve(src);
+        assertFalse(m.isOk(), "de clausule achter de mv-groep is de kopvorm niet en hoort te weigeren");
+        assertTrue(m.errors().stream().anyMatch(d -> d.message().contains("achter de (mv: …)-groep")),
+                () -> "geen gerichte hint over de annotatievolgorde: " + m.errors());
+    }
+
+    @Test void een_correcte_kop_krijgt_geen_kopvormhint() {
+        // The hints are raised only alongside a real syntax error, and the head walk stops at the
+        // first token no head can contain — so ordinary rule text, where "is een" is plain Dutch,
+        // never draws one. The syntax error here is elsewhere in the document on purpose.
+        String src = """
+            Objecttype de Dag (mv: Dagen)
+                is schouwdag kenmerk (bijvoeglijk);
+
+            Objecttype het Wrakrecht is een Dag (mv: Wrakrechten)
+                de bergingsdiepte Numeriek (niet-negatief geheel getal);
+
+            Regel onzin
+                geldig altijd
+                    Een Dag is een schouwdag indien @@@.
+            """;
+        RegelSpraakModel m = Resolver.resolve(src);
+        assertFalse(m.isOk(), "het document draagt met opzet een echte syntaxfout");
+        assertTrue(m.errors().stream().noneMatch(d -> d.message().startsWith("kopvorm:")),
+                () -> "een correcte kop (en gewone regeltekst) hoort geen kopvormhint te krijgen: " + m.errors());
     }
 
     // -------------------------------------------------------------------- de onvoorwaardelijke basis
