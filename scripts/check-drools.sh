@@ -360,7 +360,13 @@ EXPECTED_CHANNEL=(
 # recipient set as ch. 4.1 states it (every doelType instance the relation reaches), so it is the
 # leg the other two were corrected against at this card, and a refusal here would leave the pins
 # resting on ref = clingo alone.
-EXPECTED_PLAYED=131
+# 131 -> 132 (2026-09-12, card subtype-frontend-keten): `jutterswet-bergingsdeling`, the SOURCE twin
+# of that allocation — the same shape written in RegelSpraak and emitted by the frontend, whose
+# resolver until this card left the written plural of an inherited target attribute standing on the
+# wire. Its second rule reads an inherited kenmerk from a subtype subject. It plays for the same
+# reason the hand-written one does, and playing is what makes the emitted document part of the
+# square rather than merely schema-valid.
+EXPECTED_PLAYED=132
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the

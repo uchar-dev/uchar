@@ -1,0 +1,38 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "B1",
+        "objectType": "Berging",
+        "attributes": { "opbrengst": { "number": "1001" } },
+        "roles": { "hoofdbergers": ["H1", "H2"] },
+        "characteristics": []
+      },
+      {
+        "label": "H1",
+        "objectType": "Hoofdberger",
+        "attributes": { "rang": { "number": "1" } },
+        "roles": {},
+        "characteristics": ["gemachtigd"]
+      },
+      {
+        "label": "H2",
+        "objectType": "Hoofdberger",
+        "attributes": { "rang": { "number": "2" } },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "H1", "attribute": "bergingsaandeel", "value": { "number": "500" } },
+    { "kind": "attributeValue", "label": "H2", "attribute": "bergingsaandeel", "value": { "number": "500" } },
+    { "kind": "attributeValue", "label": "B1", "attribute": "onverdeelde rest", "value": { "number": "1" } },
+    { "kind": "attributeValue", "label": "H1", "attribute": "toeslag", "value": { "number": "25" } },
+    { "kind": "attributeEmpty", "label": "H2", "attribute": "toeslag" },
+    { "kind": "consistent" }
+  ]
+}
