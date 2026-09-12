@@ -306,7 +306,18 @@ public final class ExecModelTranspiler {
         for (io.github.yhavinga.regelspraak.ir.ResolvedUniciteitUnie u : model.uniciteitUnies)  // §8.1.6 "verenigd met" (Phase H)
             for (Rule rule : meet("uniciteit-unie", u.naam(), () -> uniciteitUnie(u))) m.addRule(rule);
         // §6.1 / ch. 7 prioritized defaults: one reduce-rule per (group, subject), a port of ref's run_defaults_group.
-        for (EffectieveStapel groep : defaultsGroepen())
+        // The composition itself can refuse (ch. 7.10 corner (a), a declared-unordered SET across a
+        // supertype boundary). That is a per-form NOT-CARRIED, not a crash: route it through the manifest
+        // like every other one, so the gate reports it in the auto-excluded channel with its reason
+        // instead of as an unclassified ERROR.
+        List<EffectieveStapel> stapels;
+        try {
+            stapels = defaultsGroepen();
+        } catch (DefaultsOnvertaalbaar e) {
+            stapels = List.of();
+            meet("defaults", "effectieve stapels", () -> skipList("defaults: " + e.getMessage()));
+        }
+        for (EffectieveStapel groep : stapels)
             for (Rule rule : meet("defaults", defaultsConstructNaam(groep), () -> defaultsGroep(groep))) m.addRule(rule);
         return m;
     }
