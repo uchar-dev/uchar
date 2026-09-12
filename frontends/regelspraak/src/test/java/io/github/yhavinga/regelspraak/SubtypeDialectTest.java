@@ -28,6 +28,16 @@ class SubtypeDialectTest {
         return IrEmitter.emit(m).replaceAll("\\s+", "");
     }
 
+    /** The {@code resolvedRegels} array of a compacted emission — the part a declaration SPLIT (one flat
+     *  type versus a subtype and its parent) leaves untouched, so two documents that mean the same rule
+     *  compare equal here even though their objecttypen sections differ. */
+    private static String regeldeel(String compact) {
+        int van = compact.indexOf("\"resolvedRegels\":");
+        int tot = compact.indexOf("\"resolvedDagsoorten\":");
+        assertTrue(van >= 0 && tot > van, () -> "geen resolvedRegels-sectie in de emissie:\n" + compact);
+        return compact.substring(van, tot);
+    }
+
     /** The single error text, asserting exactly one error was raised (so a test pins the intended refusal, not
      *  some unrelated diagnostic). */
     private static String enigeFout(RegelSpraakModel m) {
@@ -407,6 +417,272 @@ class SubtypeDialectTest {
                         + "\"rol\":\"geborgenwrakrecht\"}"),
                 () -> "de vouwbron hoort op de GESCHREVEN rol te binden in plaats van bindingloos de wire op te "
                         + "gaan (WF-048 zou die dan weigeren):\n" + c);
+    }
+
+    // ------------------------------------------------- de ketenresolutie in de resolverlaag (§3.2)
+    // The model has carried the chain-aware accessors since the kernel; these five pin that the
+    // RESOLVER reads through them. Each one is a member of an ANCESTOR used from a SUBTYPE subject —
+    // the shape that binds nowhere when a reader consults the own declaration maps only.
+
+    @Test void een_verdeling_naar_een_subtype_bindt_het_geerfde_doelattribuut() {
+        // Plek 1, MeervoudMatcher.vindAttribuut. The sentence writes the PLURAL "bergingsaandelen";
+        // the declaration — singular, with its own "(mv: …)" — sits on Berger, one hop up. Reading the
+        // subtype's own maps binds nothing, so the written plural stayed on the wire as `doelAttribuut`,
+        // where no declaration carries it and WF-034 refuses the document. This is the p18 refusal the
+        // previous card traced here.
+        String src = """
+            Objecttype de Berging (mv: Bergingen)
+                de opbrengst Numeriek (niet-negatief geheel getal);
+                de onverdeelde rest Numeriek (niet-negatief geheel getal);
+
+            Objecttype de Berger (mv: Bergers) (bezield)
+                het bergingsaandeel (mv: bergingsaandelen) Numeriek (niet-negatief geheel getal);
+
+            Objecttype de Hoofdberger is een Berger (mv: Hoofdbergers) (bezield)
+                de rang Numeriek (niet-negatief geheel getal);
+
+            Feittype hoofdbergingsdeelname
+                de hoofdberging Berging
+                de hoofdberger (mv: hoofdbergers) Hoofdberger
+            Eén hoofdberging heeft meerdere hoofdbergers
+
+            Regel verdeel de opbrengst van een berging
+                geldig altijd
+                    De opbrengst van een berging wordt verdeeld over de bergingsaandelen van alle hoofdbergers van de berging, waarbij wordt verdeeld:
+                    - in gelijke delen,
+                    - afgerond op 0 decimalen naar beneden.
+                    Als onverdeelde rest blijft de onverdeelde rest van de berging over.
+            """;
+        RegelSpraakModel m = Resolver.resolve(src);
+        assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
+        String c = emitCompact(m);
+        assertTrue(c.contains("\"doelType\":\"Hoofdberger\",\"doelAttribuut\":\"bergingsaandeel\""),
+                () -> "de verdeling hoort het GEDECLAREERDE enkelvoud van de voorouder op de wire te zetten:\n" + c);
+        assertFalse(c.contains("bergingsaandelen\","),
+                () -> "de geschreven meervoudsvorm hoort nergens als lidnaam op de wire te staan:\n" + c);
+    }
+
+    @Test void een_geerfd_kenmerk_bindt_in_een_predicaat() {
+        // Plek 2, KenmerkMatcher. An inherited kenmerk bound in NO predicaat form — the condition fell
+        // through to an Onopgelost marker and the rule silently never fired. The soort check right after
+        // the binding (kenmerkSoort) was already chain-aware, so binding and soort now see one declarant.
+        String src = """
+            Objecttype het Strandrecht (mv: Strandrechten)
+                is betwist kenmerk (bijvoeglijk);
+                de aanmelding kenmerk;
+
+            Objecttype het Wrakrecht is een Strandrecht (mv: Wrakrechten)
+                de uitkering Numeriek (niet-negatief getal met 2 decimalen);
+
+            Regel uitkering van een betwist wrakrecht
+                geldig altijd
+                    De uitkering van een Wrakrecht moet gesteld worden op 99,00
+                    indien het Wrakrecht betwist is.
+
+            Regel uitkering van een aangemeld wrakrecht
+                geldig altijd
+                    De uitkering van een Wrakrecht moet gesteld worden op 88,00
+                    indien het Wrakrecht een aanmelding is.
+            """;
+        RegelSpraakModel m = Resolver.resolve(src);
+        assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
+        String c = emitCompact(m);
+        assertTrue(c.contains("\"node\":\"Kenmerk\",\"kenmerk\":\"betwist\""),
+                () -> "een geërfd bijvoeglijk kenmerk hoort te binden in plaats van een marker te blijven:\n" + c);
+        // the EEN-form reads the §3.5 soort of the SAME declarant the binding found
+        assertTrue(c.contains("\"node\":\"Kenmerk\",\"kenmerk\":\"aanmelding\""),
+                () -> "een geërfd zelfstandig kenmerk hoort in de een-vorm te binden:\n" + c);
+        assertFalse(c.contains("Onopgelost"), () -> "geen enkele voorwaarde hoort een marker te blijven:\n" + c);
+    }
+
+    @Test void een_objectcreatie_zet_een_geerfd_kenmerk() {
+        // Plek 3. The attribute branch of maakToekenning already resolved through the chain; the kenmerk
+        // branch read the own list and ended on an ERROR ("is geen attribuut of kenmerk van") where a
+        // binding belongs — the two branches of one sentence disagreeing about what the type has.
+        String src = """
+            Objecttype de Berging (mv: Bergingen)
+                de opbrengst Numeriek (niet-negatief geheel getal);
+
+            Objecttype de Berger (mv: Bergers) (bezield)
+                is betwist kenmerk (bijvoeglijk);
+
+            Objecttype de Hoofdberger is een Berger (mv: Hoofdbergers) (bezield)
+                de rang Numeriek (niet-negatief geheel getal);
+
+            Feittype hoofdbergingsdeelname
+                de hoofdberging Berging
+                de hoofdberger (mv: hoofdbergers) Hoofdberger
+            Eén hoofdberging heeft meerdere hoofdbergers
+
+            Regel benoem een hoofdberger
+                geldig altijd
+                    Een Berging heeft een hoofdberger met betwist gelijk aan waar.
+            """;
+        RegelSpraakModel m = Resolver.resolve(src);
+        assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
+        String c = emitCompact(m);
+        assertTrue(c.contains("\"node\":\"Toekenning\",\"attribuut\":\"betwist\","),
+                () -> "een geërfd kenmerk hoort als toekenning te binden, niet als fout:\n" + c);
+        assertTrue(c.contains("\"kenmerk\":true"),
+                () -> "de toekenning hoort als KENMERK te binden (een boolean setter, geen attribuut):\n" + c);
+    }
+
+    @Test void een_geerfde_tijdlijn_klemt_het_totaal() {
+        // Plek 4, the dangerous half: the temporality family had NO chain accessor at all, so a subtype
+        // subject reading an ancestor's timeline attribute answered "not temporal". Here that silently
+        // DROPS the §7.1 gedurende clip — the totaal is then taken over the whole timeline and the number
+        // is simply wrong, with nothing marking it. Both the operand (attribuutGranulariteit) and the
+        // condition (kenmerkGranulariteit) are inherited, so the two halves are pinned at once.
+        String src = """
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                de wachtvergoeding per maand Numeriek (geheel getal) voor elke maand;
+                is wachtplichtig kenmerk (bijvoeglijk) voor elke maand;
+
+            Objecttype de Klipjutter is een Jutter (mv: Klipjutters) (bezield)
+                de wachtsom Numeriek (geheel getal);
+
+            Regel wachtsom van een klipjutter
+                geldig altijd
+                    De wachtsom van een Klipjutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij wachtplichtig is).
+            """;
+        RegelSpraakModel m = Resolver.resolve(src);
+        assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
+        String c = emitCompact(m);
+        assertTrue(c.contains("\"filter\":{\"node\":\"Kenmerk\",\"kenmerk\":\"wachtplichtig\""),
+                () -> "de gedurende-klem hoort op de wire te staan; zonder haar telt het totaal de hele "
+                        + "tijdlijn mee en is het getal stil fout:\n" + c);
+    }
+
+    @Test void een_geerfde_tijdlijn_draagt_de_hele_periode_check() {
+        // Plek 4, the loud half — the same blindness, the other direction: §8.2's whole-period qualifier
+        // is only defined on a tijdsafhankelijk onderwerp, so a subject read as non-temporal turned a
+        // perfectly good rule into an ERROR. Both arms of onderwerpIsTemporeel are inherited here.
+        String src = """
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                de wachtvergoeding per maand Numeriek (geheel getal) voor elke maand;
+                is wachtplichtig kenmerk (bijvoeglijk) voor elke maand;
+
+            Objecttype de Klipjutter is een Jutter (mv: Klipjutters) (bezield)
+                de wachtsom Numeriek (geheel getal);
+                de borgsom Numeriek (geheel getal);
+
+            Regel wachtsom van een klipjutter
+                geldig altijd
+                    De wachtsom van een Klipjutter moet gesteld worden op 10
+                    indien zijn wachtvergoeding per maand gedurende het gehele jaar groter is dan 5.
+
+            Regel borgsom van een klipjutter
+                geldig altijd
+                    De borgsom van een Klipjutter moet gesteld worden op 20
+                    indien hij gedurende het gehele jaar wachtplichtig is.
+            """;
+        RegelSpraakModel m = Resolver.resolve(src);
+        assertTrue(m.errors().isEmpty(),
+                () -> "een geërfde tijdlijn hoort de §8.2-controle gewoon te dragen: " + m.errors());
+        assertFalse(emitCompact(m).contains("Onopgelost"),
+                "geen van beide §8.2-voorwaarden hoort een marker te worden");
+    }
+
+    @Test void een_geerfd_temporeel_attribuut_met_gewone_eenheid_is_geen_tabel30_fout() {
+        // Plek 4 again, and the third failure mode of one blindness: §4.20 Tabel 30 demands a rate unit
+        // for "het totaal van", EXCEPT when the operand is a timeline attribute — its per-tijdseenheid
+        // dimension lives in the declaration, not in the unit. Read as non-temporal, the exception lapses
+        // and a correct document draws a spurious type error.
+        String src = """
+            Eenheidsysteem Munt
+                de euro (mv: euros) EUR €
+
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                de maandvergoeding Numeriek (geheel getal) met eenheid € voor elke maand;
+
+            Objecttype de Klipjutter is een Jutter (mv: Klipjutters) (bezield)
+                de wachtsom Numeriek (geheel getal) met eenheid €;
+
+            Regel wachtsom van een klipjutter
+                geldig altijd
+                    De wachtsom van een Klipjutter moet gesteld worden op het totaal van zijn maandvergoeding.
+            """;
+        RegelSpraakModel m = Resolver.resolve(src);
+        assertTrue(m.errors().isEmpty(),
+                () -> "een geërfd tijdlijnattribuut met een gewone eenheid is de Tabel-30-fout niet: " + m.errors());
+    }
+
+    @Test void een_geerfde_tijdreeks_ontsnapt_niet_aan_de_statische_wacht() {
+        // Plek 4, the escape the card names: §8.4 admits a NON-temporal comparison bullet beside the
+        // temporal ones precisely because it "heeft geen verschillende waarden op verschillende
+        // momenten". `toeslag per maand` is inherited and IS a timeline, so the bullet reads a
+        // List<Segment>; judged non-temporal it slipped past the guard into a scalar comparison term.
+        // The whole compound must stay an honest marker instead — the operand and the first bullet are
+        // the subtype's OWN, so this pins the guard and not the surrounding gates.
+        String src = """
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                de toeslag per maand Numeriek (geheel getal) voor elke maand;
+
+            Objecttype de Klipjutter is een Jutter (mv: Klipjutters) (bezield)
+                de wachtvergoeding per maand Numeriek (geheel getal) voor elke maand;
+                is wachtplichtig kenmerk (bijvoeglijk) voor elke maand;
+                de tegenwachtsom Numeriek (geheel getal);
+
+            Regel tegenwachtsom van een klipjutter
+                geldig altijd
+                    De tegenwachtsom van een Klipjutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij aan alle volgende voorwaarden voldoet:
+                    - hij wachtplichtig is
+                    - zijn toeslag per maand groter is dan 10).
+            """;
+        // the FLAT equivalent — one type carrying all four members — is the reference outcome: the
+        // frontend must treat the subtype subject exactly as it treats this.
+        String vlak = """
+            Objecttype de Klipjutter (mv: Klipjutters) (bezield)
+                de toeslag per maand Numeriek (geheel getal) voor elke maand;
+                de wachtvergoeding per maand Numeriek (geheel getal) voor elke maand;
+                is wachtplichtig kenmerk (bijvoeglijk) voor elke maand;
+                de tegenwachtsom Numeriek (geheel getal);
+
+            Regel tegenwachtsom van een klipjutter
+                geldig altijd
+                    De tegenwachtsom van een Klipjutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij aan alle volgende voorwaarden voldoet:
+                    - hij wachtplichtig is
+                    - zijn toeslag per maand groter is dan 10).
+            """;
+        RegelSpraakModel m = Resolver.resolve(src);
+        assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
+        String c = emitCompact(m);
+        assertFalse(c.contains("\"filter\":{\"node\":\"Samengesteld\""),
+                () -> "een tijdreekslezing hoort niet als statische vergelijking in de samengestelde "
+                        + "gedurende-conditie te belanden:\n" + c);
+        assertTrue(c.contains("\"filter\":{\"node\":\"Onopgelost\""),
+                () -> "de niet-lowerbare samengestelde conditie hoort een eerlijke marker te zijn:\n" + c);
+        assertEquals(regeldeel(emitCompact(Resolver.resolve(vlak))), regeldeel(c),
+                "een subtype-subject met geërfde tijdlijnleden hoort exact als het vlakke equivalent te "
+                        + "worden behandeld");
+    }
+
+    @Test void een_geerfd_gedimensioneerd_attribuut_leest_zijn_cel() {
+        // Plek 5, dimensieCel. `dimensiesVan` existed as a chain accessor and was used two lines later
+        // for the fold; the cell READER iterated the own map, so a §3.6 single-cell read of an inherited
+        // gedimensioneerd attribuut resolved to nothing and stayed a marker.
+        String src = """
+            Dimensie het seizoen, bestaande uit de seizoenen (na het attribuut met voorzetsel in):
+                1. voorjaar
+                2. najaar
+
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                het vondstgewicht Numeriek (niet-negatief getal met 2 decimalen) gedimensioneerd met seizoen;
+
+            Objecttype de Strandjutter is een Jutter (mv: Strandjutters) (bezield)
+                het voorjaarsgewicht Numeriek (niet-negatief getal met 2 decimalen);
+
+            Regel voorjaarsgewicht van een strandjutter
+                geldig altijd
+                    Het voorjaarsgewicht van een Strandjutter moet berekend worden als zijn vondstgewicht in voorjaar.
+            """;
+        RegelSpraakModel m = Resolver.resolve(src);
+        assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
+        String c = emitCompact(m);
+        assertTrue(c.contains("\"node\":\"DimensieCel\""),
+                () -> "een cellezing van een geërfd gedimensioneerd attribuut hoort te resolven:\n" + c);
+        assertTrue(c.contains("\"labels\":[\"voorjaar\"]"),
+                () -> "de cel hoort haar gedeclareerde label te dragen:\n" + c);
     }
 
     @Test void een_naam_die_een_rol_in_een_ander_feittype_treft_bindt_niet() {
