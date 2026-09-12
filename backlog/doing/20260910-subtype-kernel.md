@@ -266,13 +266,25 @@ type één stapel, dus de groep draait op instanties van precies dat type.
 cases; alle zes cellen van SUBTYPING §7.2 exact zoals gepind, en alle vier
 bewijsmomenten spelen door verifier → ref → clingo → Drools.
 
-**Extra golden.** `corpus/golden/jutterswet-wrakconflict` pint de
-sleutelvorm van een §9.5-conflictfeit onder overerving — de vorm die de
-anchor kwijtraakte toen cel 6 ging schrijven: een botsing binnen een geërfd
-intern-ongeordend blok, voor het eerst zichtbaar op een subtype-instantie,
-gesleuteld op `Strandrecht.uitkering` (het type dat het attribuut
-declareert) met twee subjecten. Speelt door alle drie de uitvoerders, dus
-de sleutelvorm is niet meer ongepind.
+**Twee extra goldens.**
+
+`corpus/golden/jutterswet-wrakconflict` pint de sleutelvorm van een
+§9.5-conflictfeit onder overerving — de vorm die de anchor kwijtraakte toen
+cel 6 ging schrijven: een botsing binnen een geërfd intern-ongeordend blok,
+gesleuteld op `Strandrecht.uitkering`, het type dat het attribuut
+declareert. De case zet beide instantiesoorten naast elkaar: het Wrakrecht
+scheidt declarant van concreet type, het vlakke Strandrecht ernaast laat
+zien dat de sleutel niet van de instantiesoort afhángt. Speelt door alle
+drie de uitvoerders.
+
+`corpus/golden/jutterswet-zustervondst` pint de **zustertoelating** van
+SUBTYPING §3.3(b): twee onvergelijkbare subtypes van één supertype
+declareren allebei `toeslag`, met verschillende datatypes (2 decimalen
+tegen geheel). Dat maakt hem een discriminator en geen illustratie: een
+lezer die de twee ketens kruist schrijft 12,50 in een geheelgetalveld en
+loopt tegen de schrijfgrens aan in plaats van stil verkeerd te antwoorden.
+Daarnaast vuurt de supertyperegel `vergoeding` voor alle drie de
+instantiesoorten. Speelt door alle drie de uitvoerders.
 
 **Vijf negatief-directories,** elk met NOTE.md: `wf103-onbekend-supertype`,
 `wf104-supertype-cyclus`, `wf104-supertype-zelfverwijzing`,
@@ -284,7 +296,15 @@ niet-weigeringen, WF-103..106), ch. 6.1 (de enkelschrijver-zin met de
 gemeten richting van het risico), vier WF-indexrijen.
 RUNTIME-SEMANTICS ch. 7.10 met de zescellige tabel als absolute uitkomst en
 de twee extensionele uitkomsten eronder; die voorbeelden staan verbatim in
-`ref/test/test_ref.ml` (WV-7.10-a/b/c, 13 nieuwe voorbeelden).
+`ref/test/test_ref.ml` (WV-7.10-a..d en WV-2.2-a/b/c, 30 nieuwe
+voorbeelden; de suite gaat van 553 naar 583).
+
+Ch. 7.10 draagt ook de **onbereikbaarheidszin** bij de conflictsleutel: een
+botsing in een geërfd blok kan géén botsing zijn die het *subtype*
+toepasselijk maakt. De condities van een op de voorouder gedeclareerde
+groep resolveren op de voorouder en resolutie loopt alleen omhoog, dus een
+lid of rol die alleen het subtype declareert bestaat daar niet (WF-034).
+Wat overerving hier verandert is de sleutel, niet de bereikbaarheid.
 
 ### Rood-eerst
 
@@ -309,12 +329,12 @@ de twee extensionele uitkomsten eronder; die voorbeelden staan verbatim in
 
 ```
 check-self-contained: PASS
-check-ir-schema: PASS (schema valid; 24 pattern self-test row(s); 201 file(s) validate and round-trip, floor 192)
-check-verifier: PASS (201 golden clean; 378 negatief rejected for their declared rule, floor 350)
-check-case-schema: PASS (schema valid; 476 case file(s) validate)
-check-oracle: PASS (ref suite 566 worked examples, floor 489; 450 cases replayed exactly, floor 427; NOT replayed, no case file yet: corpus/golden/jutterswet-seizoenvondst corpus/golden/jutterswet-vormenkabinet)
-check-clingo: PASS (backend suite 125 checks, floor 83; 450 cases replay exactly through clingo — ref = clingo over the corpus)
-check-noop: PASS (414 cases refute a do-nothing executor; 36 pinned survivors pin defeasible standing)
+check-ir-schema: PASS (schema valid; 24 pattern self-test row(s); 202 file(s) validate and round-trip, floor 192)
+check-verifier: PASS (202 golden clean; 378 negatief rejected for their declared rule, floor 350)
+check-case-schema: PASS (schema valid; 477 case file(s) validate)
+check-oracle: PASS (ref suite 583 worked examples, floor 489; 451 cases replayed exactly, floor 427; NOT replayed, no case file yet: corpus/golden/jutterswet-seizoenvondst corpus/golden/jutterswet-vormenkabinet)
+check-clingo: PASS (backend suite 125 checks, floor 83; 451 cases replay exactly through clingo — ref = clingo over the corpus)
+check-noop: PASS (415 cases refute a do-nothing executor; 36 pinned survivors pin defeasible standing)
 check-rood: PASS (26 red cases fault observably in ref and clingo, floor 26)
 check-catala: PASS — frontend suite green (201 checks, floor 201); 12 catala golden(s) regenerate byte-identically (floor 12)
 check-regelspraak: PASS — JUnit suite green (207 tests, floor 173); 42 rgs golden(s) re-emit byte-identically (floor 38)
@@ -322,25 +342,27 @@ check-toka-parity: PASS
   re-emission: 1 casus dump(s), 45 .rgs re-emitted byte-identical, floor 45 (holdouts: …); TOKA suite 27 tests, floor 27
   differential replay: 29 toka cases (floor 29) through ref, clingo, Drools, ZERO silent divergences
 check-drools: PASS
-  played 126  (loaded off the wire, wholly lowered, matched the pinned ref≡clingo expectations)
-  auto-excluded 46; channel floor 49 non-PLAYED goldens pinned by name; played matches the pinned 126
+  played 127  (loaded off the wire, wholly lowered, matched the pinned ref≡clingo expectations)
+  auto-excluded 46; channel floor 49 non-PLAYED goldens pinned by name; played matches the pinned 127
+  JUnit 327 tests, floor 239  (the backend's own suite, green with a non-zero count)
 check-reftype-derivation: PASS (92 unit annotations twisted over 17 goldens, floor 74; 80 executor replays reproduce the untouched outcome, 14 of them PLAYED by the DRL-text branch, floor 13; 0 pinned survivors)
 ```
 
 Gate 13's boekhoudklem meldt `0 outside the twist table`: `supertype` draagt
 geen eenheid en is nergens een eenheiddragende annotatie op een nieuwe plek
-geworden. Gate 7: alle vier de anchorcases en beide wrakconflict-cases zijn
-no-op-rood; geen enkele hoefde in de survivor-lijst.
+geworden. Gate 7: alle vier de anchorcases, beide wrakconflict-cases en de
+zustercase zijn no-op-rood; geen enkele hoefde in de survivor-lijst.
 
 ### Beschermde paden die deze kaart aanraakt
 
-- `scripts/check-drools.sh`: **`EXPECTED_PLAYED` 124 → 126**, met reden en
-  datum in het script. +1 voor de anchor (de vier bewijsmomenten door alle
-  drie de uitvoerders zijn de acceptatie van deze kaart), +1 voor
+- `scripts/check-drools.sh`: **`EXPECTED_PLAYED` 124 → 127**, met reden en
+  datum in het script, in drie stappen die apart te wegen zijn. +1 voor de
+  anchor (de vier bewijsmomenten door alle drie de uitvoerders zijn de
+  acceptatie van deze kaart; de kaart stond deze expliciet toe). +1 voor
   `jutterswet-wrakconflict` (de conflictsleutelvorm heeft drie lezers en
-  geen andere getuige). De kaart stond de eerste toe; de tweede is dezelfde
-  soort wijziging en wordt hier benoemd zodat de maintainer hem los kan
-  wegen.
+  geen andere getuige). +1 voor `jutterswet-zustervondst` (de
+  zustertoelating van SUBTYPING §3.3b, die "a golden pins the admission"
+  eist en die niets anders pint).
 - `spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md`, `spec/schema/`,
   `spec/verifier/`, `corpus/golden/anchor/` — binnen de may-touch van de
   kaart, maar alle beschermd: dit blijft een voorstel tot de maintainer
@@ -351,8 +373,11 @@ no-op-rood; geen enkele hoefde in de survivor-lijst.
 - `frontends/catala/lib/translate.ml`: **één regel** (`ot_supertype = None`).
   Zonder die regel bouwt de OCaml niet meer — het is een recordliteraal van
   het gewijzigde AST-type.
-- `ref/test/test_ref.ml`: dezelfde eenregelige compileerfix, plus de dertien
-  ch.-7.10-voorbeelden die de kaart en de spec-discipline eisen.
+- `ref/test/test_ref.ml`: dezelfde eenregelige compileerfix, plus dertig
+  voorbeelden die de kaart en de spec-discipline eisen (WV-7.10-a..d,
+  WV-2.2-a/b/c) en een `expect_fault_msg`-helper: `expect_fault` pinde
+  alleen dát er een fout kwam, niet welke — precies het gat waardoor de
+  stille Drools-hoek door de suite glipte.
 - `frontends/regelspraak/src/main/java/.../model/RegelSpraakModel.java`: het
   `Objecttype`-veld `supertype`, `keten()`, `isEen()`, `declarantVan()` en
   de ketenbewuste lezing van `attribuut`, `dimensiesVan`, `heeftLid`,
@@ -366,18 +391,28 @@ no-op-rood; geen enkele hoefde in de survivor-lijst.
 
 ### Wat ik NIET heb gehaald, en de conservatieve lezingen
 
-- **Twee hoeken van ch. 7.10 zijn geweigerd in plaats van verlaagd**, met
+- **Twee hoeken van ch. 7.10 worden geweigerd in plaats van verlaagd**, met
   dezelfde benoemde melding in alle drie de uitvoerders, vóór er een waarde
-  bestaat. (a) Een gedeclareerd-ongeordende verzameling op de ene laag en
-  een geërfde stapel op de andere: de blokorde stelt één stapel over één
-  stapel samen en het proposal geeft geen vouw over die grens. (b) Een
-  gewone regel op een voorouder wiens doel een afstammeling met een eigen
-  defaults-groep draagt — §4.1 regel 4. Die regel zou de geërfde basis zijn,
-  maar hij is óók zelf een schrijver en vuurt extensioneel op de instanties
-  van de afstammeling, dus document en uitvoering zouden stil uit elkaar
-  lopen. Beide zijn gepind in `ref/test/` (WV-7.10-c). **Regel 4 is dus
-  gespecificeerd en niet geïmplementeerd**; de conservatiefste lezing die
-  het proposal niet tegenspreekt is luid weigeren.
+  bestaat.
+
+  (b) Een gewone regel op een voorouder wiens doel een afstammeling met een
+  eigen defaults-groep draagt. **De norm blijft SUBTYPING §4.1 regel 4:**
+  die regel ís de geërfde basis en wordt door regel 1 vervangen. Ch. 7.10
+  zegt dat nu ook zo, met de weigering er expliciet als *tijdelijke, luide
+  plaatsvervanger* naast — "specified per SUBTYPING §4.1 rule 4, not
+  lowered in this release". De eerste ronde presenteerde de weigering als
+  de norm en wijzigde daarmee stilzwijgend het bindende proposal; dat is
+  hersteld.
+
+  (a) Een gedeclareerd-ongeordende verzameling op de ene laag en een
+  geërfde stapel op de andere. Hier is de weigering wél de eerlijke
+  eindstand: §4.1 regel 3 draagt één intern-ongeordende oudergroep als één
+  blok over, maar een vouw tussen twee meerledige verzamelingen over de
+  grens is nergens gedefinieerd.
+
+  Beide zijn gepind in `ref/test/` (WV-7.10-c, nu mét meldingstekst) en in
+  de eigen suite van de Drools-backend
+  (`OverervingWeigeringWitnessTest`).
 - **De facetzijtabellen van de Drools-backend blijven per gedeclareerd type
   gelezen** op zo'n veertig plekken in beide transpilertakken. Een keten met
   een temporeel of gedimensioneerd lid weigert de IR-lader daarom bij naam.
@@ -392,8 +427,66 @@ no-op-rood; geen enkele hoefde in de survivor-lijst.
 - **`spec/CONSTRUCTS.md` en `spec/PLAN.md` zijn niet aangeraakt.** Het
   voorgestelde rijmateriaal staat hieronder.
 
+### Tweede ronde, na de adversariële lens (2026-09-12)
+
+De lens draaide alle dertien gates zelf groen, bevestigde de anchorpins en
+de blokorde op drie niveaus empirisch in alle drie de uitvoerders, en
+verklaarde de joinstelling van clingo volledig (48 = 49 − 2
+defaults-plekken die terecht het concrete type lezen + 1 destijds verkeerd
+getelde objectcreatie-kop). Hij blokkeerde de merge op twee punten en
+adviseerde er vier. Alle zes zijn hier verwerkt.
+
+1. **Drools speelde hoek (b) stil.** Ch. 7.10 belooft dat beide hoeken door
+   alle drie de uitvoerders geweigerd worden vóór er een waarde bestaat.
+   Gemeten op een verifier-clean document — kale regel op voorouder `Aa`,
+   eigen defaults-groep op afstammeling `Cc` — faulten ref en clingo met
+   dezelfde zin en speelde Drools het document: **30,00 uit de Cc-basis, de
+   voorouderregel spoorloos**. Oorzaak: `inherited_rule_clashes` bestond
+   alleen in de gedeelde OCaml-desugar. De Java-tegenhanger staat nu in de
+   prelude die beide transpilertakken delen, met de OCaml-zin letterlijk
+   overgenomen. Bijvangst: hoek (a) was luid maar kwam eruit als
+   ongeclassificeerde `ERROR`; die loopt nu door het manifest, zodat gate 12
+   hem in het auto-uitgesloten kanaal met reden zou rapporteren in plaats
+   van als crash.
+2. **De spec verhief de weigering tot norm.** SUBTYPING §4.1 regel 4 is
+   beslist en niet als filling-in gemarkeerd; ch. 7.10 presenteerde de
+   weigering als de norm en voerde er een ontwerpargument voor aan dat tegen
+   het besluit pleit. Herschreven: de norm is weer regel 4 (de kale
+   voorouderregel ís de geërfde basis, vervangbaar per regel 1), met de
+   weigering expliciet als *tijdelijke, luide plaatsvervanger* en met
+   verwijzing naar het proposal en naar de getuigen. Hoek (a) blijft
+   geweigerd op eigen kracht en was al eerlijk geformuleerd. Result en het
+   CONSTRUCTS-rijvoorstel dragen nu dezelfde formulering.
+3. **De wrakconflict-formulering klopte niet.** `check-drools.sh` en het
+   Result zeiden dat het conflict "voor het eerst zichtbaar wordt op een
+   subtype-instantie omdat het subtype twee leden tegelijk toepasselijk
+   maakt". Dat is onjuist — beide kenmerken staan op `Strandrecht` zelf en
+   de golden pint óók de vlakke instantie. Sterker: die vorm is **per
+   constructie onbereikbaar**, en dat staat nu als één zin in ch. 7.10 met
+   het WF-034-argument: de condities van een op de voorouder gedeclareerde
+   groep resolveren op de voorouder en resolutie loopt alleen omhoog, dus
+   geen lid en geen rol die alleen het subtype declareert bestaat daar. Wat
+   overerving verandert is de sleutel, niet de bereikbaarheid. Overal
+   gecorrigeerd naar wat de golden werkelijk pint.
+4. **De zustertoelating had geen golden** terwijl §3.3(b) er een eist.
+   `corpus/golden/jutterswet-zustervondst` — zie hierboven. Speelt, dus
+   `EXPECTED_PLAYED` 126 → 127.
+5. **De drie Drools-laderweigeringen hadden geen getuige.** Nu drie
+   JUnit-tests in `OverervingWeigeringWitnessTest`, naast de twee
+   hoekgetuigen: zes tests, de eigen suite gaat van 321 naar 327.
+6. **Drie normatieve zinnen zonder artefact.** (a) De drieniveauclaim staat
+   nu als WV-7.10-d in `ref/test/`, met de lens-probe overgenomen: 11,00
+   (grootouder dóór het kind heen), 22,00 (kind boven grootouder), 99,00
+   (eigen boven alles, tegen de 30,00 die een ruwe vouw geeft). (b) De
+   extensionele posities uniciteitsscope, consistentie-onderwerp en
+   kenmerkcheck-eigenaar zijn WV-2.2-a/b/c — de zesdelige opsomming in de
+   spec was tot nu toe een opsomming. (c) `expect_fault` pinde alleen dát er
+   een fout kwam; er is nu een `expect_fault_msg` en de twee hoekgetuigen
+   pinnen hun meldingstekst. Dát gat is precies waardoor punt 1 door deze
+   suite glipte.
+
 ### Voorgesteld CONSTRUCTS-rijmateriaal (letterlijke celtekst, rij 39)
 
 | # | Construct | Origin | Verdict (v1) | Kernel or sugar? | v0→v1 delta | Notes |
 |---|---|---|---|---|---|---|
-| 39 | Object-type inheritance (a single supertype) | RegelSpraak / the canonical data model, which uses it functionally (measured 2026-09-10: 157 entities with a direct parent, 44 chains deeper than one level, exactly 2 with two direct parents) | core | kernel | new kernel (extension per the § Method, not emitter-produced yet — the dialect card makes it emitter-borne, the route `Let`/`BinderRef` took): `ObjectType.supertype: string?` on the closed `Objecttype` node (IR-SPEC ch. 2.2), one direct parent by declared name, absent = a root type. Member resolution walks the chain UPWARD ONLY and the effective member set is the chain-closed union; quantification is EXTENSIONAL at every type-ranging position, with no exact-type quantifier; a role's declared filler type is an UPPER bound; a case instance names its CONCRETE type in the existing `objectType` key and creation is not polymorphic. Four rules: WF-103 (the reference resolves), WF-104 (acyclic, self-reference included), WF-105 (no shadowing along the chain — WF-002 lifted) and WF-106 (at most one direct supertype), the last with **no verifier check and no negatief** because the wire shape makes the violation unwritable — a deliberate, argued departure recorded in ch. 2.2, its witnesses the two frontend fixtures. Three rules widen without a number: WF-034's member cross over the chain-closed set (the downward read is the new reachable refusal, negatief `wf034-neerwaartse-lezing`), WF-047's "agree" to ⊑-compatibility, WF-048's uniqueness over the chain-closed pair set (so a subtype can turn a well-formed bindingless navigation into a loud refusal — accepted). WF-026/050/079 gain a CONSTRAINT rather than a restatement: read on the per-type effective stack, never on a chain-closed target key (ch. 6.1). Semantics `RUNTIME-SEMANTICS.md` ch. 7.10 — a subtype inherits the whole defaults stack per target, folded over the parent's EFFECTIVE stack in one fixed block order (own exceptions, inherited exceptions, base with the own one replacing the inherited one, init/input defaults never replaced), so a clash across the boundary is an ordinary write decided by the subtype and deposits no conflict fact, while the ch. 7.2 conflict key names the type that DECLARES the attribute. **Landed (2026-09-12):** all three executors — `ref` and the ASP backend share the composition in `Ir_v0.Desugar`, clingo carries the type closure as a RULE in the ASP (`isa/2` over `is_a/2` plus `isa_sub/2` facts, so the leg stays an independent reimplementation instead of a second copy of the OCaml chain walk), and Drools lowers to native class-hierarchy subtyping (`extends` on the generated bean, own members only, no pattern site or accumulate changed). Anchor `anchor/jutterswet-strandrechtketen` (four cases, the six cells of ch. 7.10.1; gates 5, 6 and 12) plus `jutterswet-wrakconflict` (the conflict-key form) and five negatiefs | single inheritance holds at three layers by construction: the wire shape, Java's single class inheritance, and the two frontends' refusals — so the two known multiple-parent cases of the canonical data model are named in the frontends' messages and nowhere else. Two corners of ch. 7.10 are REFUSED rather than lowered, with one message in all three executors and witnesses in `ref/test/`: a declared-unordered SET across a supertype boundary, and an ordinary rule on an ancestor whose target a descendant covers with its own defaults group (§4.1 rule 4, specified but not lowered). The Drools loader additionally refuses a chain carrying a temporal or dimensioned member: its facet side maps are read per declared type at some forty places, and an inherited timeline member would lower as a scalar |
+| 39 | Object-type inheritance (a single supertype) | RegelSpraak / the canonical data model, which uses it functionally (measured 2026-09-10: 157 entities with a direct parent, 44 chains deeper than one level, exactly 2 with two direct parents) | core | kernel | new kernel (extension per the § Method, not emitter-produced yet — the dialect card makes it emitter-borne, the route `Let`/`BinderRef` took): `ObjectType.supertype: string?` on the closed `Objecttype` node (IR-SPEC ch. 2.2), one direct parent by declared name, absent = a root type. Member resolution walks the chain UPWARD ONLY and the effective member set is the chain-closed union; quantification is EXTENSIONAL at every type-ranging position, with no exact-type quantifier; a role's declared filler type is an UPPER bound; a case instance names its CONCRETE type in the existing `objectType` key and creation is not polymorphic. Four rules: WF-103 (the reference resolves), WF-104 (acyclic, self-reference included), WF-105 (no shadowing along the chain — WF-002 lifted) and WF-106 (at most one direct supertype), the last with **no verifier check and no negatief** because the wire shape makes the violation unwritable — a deliberate, argued departure recorded in ch. 2.2, its witnesses the two frontend fixtures. Three rules widen without a number: WF-034's member cross over the chain-closed set (the downward read is the new reachable refusal, negatief `wf034-neerwaartse-lezing`), WF-047's "agree" to ⊑-compatibility, WF-048's uniqueness over the chain-closed pair set (so a subtype can turn a well-formed bindingless navigation into a loud refusal — accepted). WF-026/050/079 gain a CONSTRAINT rather than a restatement: read on the per-type effective stack, never on a chain-closed target key (ch. 6.1). Semantics `RUNTIME-SEMANTICS.md` ch. 7.10 — a subtype inherits the whole defaults stack per target, folded over the parent's EFFECTIVE stack in one fixed block order (own exceptions, inherited exceptions, base with the own one replacing the inherited one, init/input defaults never replaced), so a clash across the boundary is an ordinary write decided by the subtype and deposits no conflict fact, while the ch. 7.2 conflict key names the type that DECLARES the attribute. **Landed (2026-09-12):** all three executors — `ref` and the ASP backend share the composition in `Ir_v0.Desugar`, clingo carries the type closure as a RULE in the ASP (`isa/2` over `is_a/2` plus `isa_sub/2` facts, so the leg stays an independent reimplementation instead of a second copy of the OCaml chain walk), and Drools lowers to native class-hierarchy subtyping (`extends` on the generated bean, own members only, no pattern site or accumulate changed). Anchor `anchor/jutterswet-strandrechtketen` (four cases, the six cells of ch. 7.10.1; gates 5, 6 and 12), plus `jutterswet-wrakconflict` (the conflict-key form: a clash inside an inherited internally-unordered block, keyed on the declarant, with both instance kinds on one case) and `jutterswet-zustervondst` (the §3.3b sibling admission, the two `toeslag` declarations carrying different datatypes so a crossed chain hits the write boundary), and five negatiefs | single inheritance holds at three layers by construction: the wire shape, Java's single class inheritance, and the two frontends' refusals — so the two known multiple-parent cases of the canonical data model are named in the frontends' messages and nowhere else. Two corners of ch. 7.10 are REFUSED rather than lowered, with one message in all three executors and witnesses in `ref/test/` (WV-7.10-c) and the Drools backend's own suite (`OverervingWeigeringWitnessTest`), because no corpus case can hold either shape — a golden must replay and `ref` faults on both. The first is an ordinary rule on an ancestor whose target a descendant covers with its own defaults group: SUBTYPING §4.1 rule 4 remains the NORM (that rule is the inherited base, replaced per rule 1) and the refusal is a temporary, loud stand-in for a lowering this release does not have. The second is a declared-unordered SET across a supertype boundary, where the proposal gives no fold and the refusal is the honest end state. The Drools loader additionally refuses a chain carrying a temporal or dimensioned member: its facet side maps are read per declared type at some forty places, and an inherited timeline member would lower as a scalar |
