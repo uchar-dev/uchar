@@ -66,6 +66,23 @@ let expect_fault name f =
   | exception Value.Fault _ -> check name true
   | _ -> check name false
 
+(* A fault is only a witness if it says WHAT it refuses. [expect_fault]
+   pins that something went wrong; this pins which sentence came out, so a
+   refusal whose text drifts into another meaning fails here instead of
+   passing silently. Used wherever the message is a shared contract — a
+   refusal the other executors must speak with one voice. *)
+let substring hay needle =
+  let nh = String.length hay and nn = String.length needle in
+  nn = 0
+  ||
+  let rec go i = i + nn <= nh && (String.sub hay i nn = needle || go (i + 1)) in
+  go 0
+
+let expect_fault_msg name f frag =
+  match f () with
+  | exception Value.Fault m -> check (name ^ " (got: " ^ m ^ ")") (substring m frag)
+  | _ -> check (name ^ " (no fault at all)") false
+
 (* --- ch. 1.2a: arithmetic operators over empty ------------------------- *)
 
 let () =
@@ -3626,8 +3643,9 @@ let () =
         [ groep "Strandrecht" "betwist" "99.00" true; groep "Strandrecht" "geborgen" "44.00" true;
           groep "Wrakrecht" "betwist" "55.00" false ] }
   in
-  expect_fault "WV-7.10-c-ongeordende-verzameling-over-de-grens" (fun () ->
-      Eval.evaluate (env_of doc_set) w);
+  expect_fault_msg "WV-7.10-c-ongeordende-verzameling-over-de-grens"
+    (fun () -> Eval.evaluate (env_of doc_set) w)
+    "the block order composes one stack over one stack";
   (* (2) an ordinary rule on an ANCESTOR whose target a descendant covers
      with its own defaults group: that rule is also a writer in its own
      right and fires extensionally on the descendant's instances *)
@@ -3638,8 +3656,164 @@ let () =
             (Some (aref "uitkering" "Strandrecht" bedrag)) (Some (litv "7.00" bedrag)) None ];
       prioritized_defaults = [ groep "Wrakrecht" "betwist" "55.00" false ] }
   in
-  expect_fault "WV-7.10-c-voorouderregel-als-geerfde-basis" (fun () ->
-      Eval.evaluate (env_of doc_regel) w)
+  expect_fault_msg "WV-7.10-c-voorouderregel-als-geerfde-basis"
+    (fun () -> Eval.evaluate (env_of doc_regel) w)
+    "an inherited ordinary writer as the stack's base is not lowered (ch. 7.10)"
+
+(* WV-7.10-d: the THREE-LEVEL claim of ch. 7.10 — "the grandchild's own
+   exceptions above the child's, above the grandparent's, with the base
+   contributed by the lowest declarant that has one". No rule per level is
+   needed for that, because the fold reads the parent's EFFECTIVE stack and
+   not its declarations; this pins the difference. Aa <- Bb <- Cc, each
+   level declaring one exception and one base (11/30, 22/60, 99/90):
+
+     effective Cc = [k3 -> 99]  own exception
+                    [k2 -> 22]  the child's, inherited
+                    [k1 -> 11]  the GRANDPARENT's, inherited THROUGH the child
+                    [      90]  the own base, replacing both inherited ones
+
+   A fold that read the parent's DECLARATIONS would lose the grandparent
+   entirely and answer 90 on a k1-only instance; a fold that let the
+   grandparent's base win would answer 30 where 99 is pinned. *)
+let () =
+  let bedrag : Ir_v0.Ast.datatype =
+    Numeriek { geheel = false; decimalen = 2; teken = None; eenheid = None }
+  in
+  let ot_sub name super : string * Ir_v0.Ast.objecttype =
+    let n, o = ot name [] [] in
+    (n, { o with ot_supertype = Some super })
+  in
+  let altijd : Ir_v0.Ast.conditie =
+    Samengesteld { kwantor = Alle; drempel = 0; onderdelen = []; bron = None }
+  in
+  let kc k : Ir_v0.Ast.conditie =
+    Kenmerk_check { kenmerk = Some k; navigatie = None; negatie = false; eigenaar = None;
+                    periode = None; bron = None; navigatie_binding = None }
+  in
+  let d voorwaarde waarde : Ir_v0.Ast.default =
+    { default_besluit = None; default_voorwaarde = Some voorwaarde;
+      default_consequentie = Some (litv waarde bedrag); default_initialisatie = false;
+      default_excepties = None; default_bron = None }
+  in
+  let groep onderwerp k uitzondering basis : Ir_v0.Ast.prioritized_defaults =
+    { pd_naam = Some ("uitkering van een " ^ onderwerp); pd_onderwerp = onderwerp;
+      pd_kenmerk = None; pd_attribuut = Some "uitkering";
+      defaults = [ d (kc k) uitzondering; d altijd basis ];
+      pd_ongeordend = false; pd_bron = None; pd_geldigheid = None }
+  in
+  let doc =
+    { empty_doc with
+      objecttypen =
+        [ ot "Aa" [ ("uitkering", Some bedrag) ] [ "k1"; "k2"; "k3" ];
+          ot_sub "Bb" "Aa"; ot_sub "Cc" "Bb" ];
+      prioritized_defaults =
+        [ groep "Aa" "k1" "11.00" "30.00"; groep "Bb" "k2" "22.00" "60.00";
+          groep "Cc" "k3" "99.00" "90.00" ] }
+  in
+  let run otype chars =
+    let i = { (inst "x" otype []) with World.chars = List.map Ir_v0.Checks.norm chars } in
+    World.attr (World.get (Eval.evaluate (env_of doc) (World.add_instance World.empty i)) "x")
+      "uitkering"
+  in
+  (* the three levels each answer from their OWN effective stack *)
+  expect_num "WV-7.10-d-aa-basis" (run "Aa" []) "30.00";
+  expect_num "WV-7.10-d-bb-basis" (run "Bb" []) "60.00";
+  expect_num "WV-7.10-d-cc-basis" (run "Cc" []) "90.00";
+  (* the grandparent's exception reaches the grandchild THROUGH the child *)
+  expect_num "WV-7.10-d-cc-grootouderuitzondering" (run "Cc" [ "k1" ]) "11.00";
+  expect_num "WV-7.10-d-cc-ouderuitzondering" (run "Cc" [ "k2" ]) "22.00";
+  expect_num "WV-7.10-d-cc-eigen-uitzondering" (run "Cc" [ "k3" ]) "99.00";
+  (* the ORDER inside the inherited block: the child's above the grandparent's *)
+  expect_num "WV-7.10-d-cc-ouder-boven-grootouder" (run "Cc" [ "k1"; "k2" ]) "22.00";
+  (* and the grandchild's own above both — 99, never the grandparent's base 30 *)
+  expect_num "WV-7.10-d-cc-eigen-boven-alles" (run "Cc" [ "k1"; "k2"; "k3" ]) "99.00";
+  (* the child still reads its own two, unaffected by the grandchild's level *)
+  expect_num "WV-7.10-d-bb-grootouderuitzondering" (run "Bb" [ "k1" ]) "11.00";
+  expect_num "WV-7.10-d-bb-eigen-boven-grootouder" (run "Bb" [ "k1"; "k2" ]) "22.00"
+
+(* WV-2.2-a/b/c: the type-ranging positions of ch. 2.2 that the anchor does
+   NOT reach. Quantification is extensional at EVERY such position, and the
+   six-item list in the spec is only a list until each item has a witness:
+   the anchor covers the rule subject, the instance fold's elementType and
+   the defaults subject, and these three cover the rest — the uniqueness
+   scope, the consistency subject, and a characteristic check's owner. *)
+let () =
+  let ot_sub name super attrs kenmerken : string * Ir_v0.Ast.objecttype =
+    let n, o = ot name attrs kenmerken in
+    (n, { o with ot_supertype = Some super })
+  in
+  let types =
+    [ ot "Vondst" [ ("nummer", Some num0); ("boete", Some num0) ] [ "gemeld" ];
+      ot_sub "Wrakvondst" "Vondst" [] [] ]
+  in
+  (* (a) UNIQUENESS ranges over the extension: two instances of DIFFERENT
+     types on one chain sharing a key collide, exactly as two of one type do.
+     A literal-type reading would let a subtype instance duplicate a
+     supertype instance's number in silence. *)
+  let uni_doc =
+    { empty_doc with
+      objecttypen = types;
+      uniciteiten =
+        [ { uni_naam = Some "nummer is uniek"; uni_subject = Some "Vondst";
+            sleutels = [ Some "nummer" ]; scope_veld = None; uni_bron = None;
+            uni_geldigheid = None; scope_rol = None } ] }
+  in
+  let uni_run a b =
+    let w =
+      World.add_instance
+        (World.add_instance World.empty (inst "v" "Vondst" [ ("nummer", n a) ]))
+        (inst "w" "Wrakvondst" [ ("nummer", n b) ])
+    in
+    (Eval.evaluate (env_of uni_doc) w).World.channel
+  in
+  check "WV-2.2-a-uniciteit-botst-over-de-keten" (uni_run "1" "1" <> []);
+  check "WV-2.2-a-uniciteit-laat-verschillende-sleutels-staan" (uni_run "1" "2" = []);
+  (* (b) a CONSISTENCY rule declared on the supertype is asserted of subtype
+     instances too — the same extension the rule subject ranges over. *)
+  let cons_doc =
+    { empty_doc with
+      objecttypen = types;
+      consistenties =
+        [ { cons_naam = Some "boete blijft onder de grens"; cons_subject = Some "Vondst";
+            assertie =
+              Some
+                (Vergelijking
+                   { op = Kleiner; links = Some (aref "boete" "Vondst" num0);
+                     rechts = Some (litv "100" num0); periode = None; bron = None });
+            cons_bron = None; cons_line = 0; cons_geldigheid = None } ] }
+  in
+  let cons_run otype boete =
+    let w = World.add_instance World.empty (inst "x" otype [ ("boete", n boete) ]) in
+    (Eval.evaluate (env_of cons_doc) w).World.channel
+  in
+  check "WV-2.2-b-consistentie-op-supertype" (cons_run "Vondst" "150" <> []);
+  check "WV-2.2-b-consistentie-vuurt-op-subtype" (cons_run "Wrakvondst" "150" <> []);
+  check "WV-2.2-b-consistentie-zwijgt-binnen-de-grens" (cons_run "Wrakvondst" "50" = []);
+  (* (c) a characteristic check's OWNER is satisfied extensionally: a check
+     hosted on the supertype reads a subtype subject, because a Wrakvondst
+     IS a Vondst. Under a literal reading WF-100's hosting refusal would
+     fire on the legitimate form and the rule would fault instead of firing
+     (ch. 5.8b). *)
+  let owner_doc =
+    { empty_doc with
+      objecttypen = types;
+      resolved_regels =
+        [ rr "boete van een wrakvondst" Berekening
+            (Some (aref "boete" "Wrakvondst" num0))
+            (Some (litv "7" num0))
+            (Some
+               (Kenmerk_check
+                  { kenmerk = Some "gemeld"; navigatie = None; negatie = false;
+                    eigenaar = Some "Vondst"; periode = None; bron = None;
+                    navigatie_binding = None })) ] }
+  in
+  let owner_run chars =
+    let i = { (inst "x" "Wrakvondst" []) with World.chars = List.map Ir_v0.Checks.norm chars } in
+    World.attr (World.get (Eval.evaluate (env_of owner_doc) (World.add_instance World.empty i)) "x")
+      "boete"
+  in
+  expect_num "WV-2.2-c-kenmerkeigenaar-op-voorouder" (owner_run [ "gemeld" ]) "7";
+  expect_leeg "WV-2.2-c-kenmerkeigenaar-onvervuld" (owner_run [])
 
 let () =
   if !failures > 0 then begin
