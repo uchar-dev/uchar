@@ -37,11 +37,10 @@ toepasselijke eigen tegenhanger blijft gewoon boven de subtype-basis
 winnen (rij 4 van de zescellige tabel, 99 en niet 20). Alleen bij
 gedeelde toepasselijkheid wint de eigen.
 
-**WF-nummers (gereserveerd vanaf WF-103).** WF-101 is de hoogste regel
-in de WF-index op de basis van deze branch; WF-102 staat daar níet in
-en is geclaimd door de parallelle bereikpadkaart (branch
-`card/geneste-aggregatie-bronpad`), die vandaag landt. De hoofdsessie
-maakt de nummers definitief bij de landing.
+**WF-nummers (gereserveerd vanaf WF-103).** WF-102 (de
+bereikpadregel, geland 2026-09-12) is de hoogste regel in de WF-index
+op de basis van deze branch. De hoofdsessie maakt de nummers
+definitief bij de landing.
 
 - WF-103 — `supertype` benoemt een gedeclareerd objecttype.
   Negatief `corpus/negatief/wf103-onbekend-supertype`.

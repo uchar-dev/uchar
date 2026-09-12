@@ -74,7 +74,7 @@ Every row was re-measured on this branch for this card.
 | a case names an instance's type in one wire key: `"objectType": "Jutter"` | `corpus/golden/anchor/jutterswet-aanspraaktelling/case1-gemengd.json` |
 | the model for a new acyclicity check already exists: colour DFS with a named cycle path | `spec/verifier/lib/checks.ml:2859–2915` (WF-085, day-kind cycle) |
 | a new WF rule costs: one `wfNNN ctx` function, one line in the `all` concat, one negatief directory, one normative sentence | `spec/verifier/lib/checks.ml` (`all`), `spec/verifier/bin/verifier.ml` |
-| the highest rule **in the index on this branch's base** is WF-101; WF-102 does NOT appear there — it is claimed by the parallel aggregation scope-path card (branch `card/geneste-aggregatie-bronpad`), which merges today | `IR-SPEC.md` WF index; the parallel card |
+| the highest rule **in the index on this branch's base** is WF-102, the aggregation scope-path rule, landed 2026-09-12 (it was still a parallel card's claim when this document was first written) | `IR-SPEC.md` WF index |
 
 Two properties of that inventory shape everything below. First,
 **type membership is decided through one concept per executor but not
@@ -1363,12 +1363,10 @@ session adds a rule for them.**
 
 ## 10. WF-number reservations
 
-**WF-101 is the highest rule in the WF index on this branch's base.**
-WF-102 does **not** appear in that index; it is claimed by the
-parallel aggregation scope-path card (branch
-`card/geneste-aggregatie-bronpad`), whose merge follows today — so the
-number is spoken for by that card, not by the document. Subtyping
-therefore reserves **from WF-103**:
+**WF-102 is the highest rule in the WF index on this branch's base**
+— the aggregation scope-path rule, landed 2026-09-12; when this
+document was first written that number was still a parallel card's
+claim. Subtyping therefore reserves **from WF-103**:
 
 | Reserved | Statement | Negatief |
 |---|---|---|
@@ -1551,6 +1549,6 @@ whole — a settled point does not ratify the section that carries it.
     is a parser-position extension over existing tokens, never a new
     lexer token (§9.2, §9.4).
 11. WF-103, WF-104, WF-105 and the repurposed WF-106 reserved, WF-107
-    held with no named claimant; WF-101 is the highest in the index on
-    this base and WF-102 is claimed by a parallel card; the main
+    held with no named claimant; WF-102, the aggregation scope-path
+    rule, is the highest in the index on this base; the main
     session fixes the numbers at the kernel landing (§10).
