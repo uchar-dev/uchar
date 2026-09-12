@@ -90,6 +90,10 @@ public final class IrLoader {
             "prioritizedDefaults");
 
     private final RegelSpraakModel m = new RegelSpraakModel();
+    /** IR-SPEC ch. 2.2: the declared supertype NAME per object type, held until every declaration is
+     *  read — the wire reference is order-free, so a forward reference is legitimate. An IDENTITY map
+     *  because two object types may carry the same declaration content. */
+    private final Map<Objecttype, String> supertypeNaam = new java.util.IdentityHashMap<>();
     /** §6.1 (Phase 4) the prioritized-defaults extension list, parsed into the shared ir records — a top-level
      *  core-layer section the {@link RegelSpraakModel} does not itself carry (the model is the v0 resolved shape),
      *  so it rides beside the model via {@link Loaded}. An empty list is a legitimate flat program (accepted). */
@@ -158,6 +162,7 @@ public final class IrLoader {
 
         // declarations first: the resolved lists reference them by name.
         forEachField(root.get("objecttypen"), (naam, n) -> m.objecttypen.put(naam, objecttype(naam, n)));
+        bindSupertypes();
         forEachField(root.get("domeinen"), (naam, n) -> m.domeinen.put(naam, datatype(n)));
         forEachField(root.get("parameters"), (naam, n) -> m.parameters.put(naam, parameter(naam, n)));
         forEachField(root.get("eenheidstelsels"), (naam, n) -> m.eenheidstelsels.put(naam, eenheidstelsel(naam, n)));
@@ -225,12 +230,45 @@ public final class IrLoader {
         return new ExceptionGroup(defaults, text(n, "bron"));
     }
 
+    /** Bind every declared supertype reference, and refuse the shapes this backend does not carry.
+     *  WF-103/104 already reject an unknown or cyclic parent at the document, so the two guards here
+     *  are a last line: a loader that walked a cycle would hang instead of reporting.
+     *
+     *  The TEMPORAL/DIMENSIONED refusal is not defensive but load-bearing. The member ACCESSORS of
+     *  {@link Objecttype} walk the chain, but the facet SIDE MAPS (granularity, timeline count,
+     *  dimensions) are read directly, per declared type, at some forty places in both transpiler
+     *  branches. On an inherited temporal member those reads would answer "not temporal" for the
+     *  subtype and lower a timeline as a scalar — silently wrong rather than loud. Refusing the
+     *  combination keeps the differential honest until those reads are chain-aware. */
+    private void bindSupertypes() {
+        supertypeNaam.forEach((ot, naam) -> {
+            if (naam == null) return;
+            Objecttype ouder = m.objecttypeOpNaam(naam);
+            if (ouder == null) throw new Refusal("Objecttype.supertype", "supertype '" + naam + "' is not declared");
+            ot.supertype = ouder;
+        });
+        for (Objecttype ot : m.objecttypen.values()) {
+            java.util.Set<Objecttype> gezien = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+            for (Objecttype t = ot; t != null; t = t.supertype)
+                if (!gezien.add(t)) throw new Refusal("Objecttype.supertype", "supertype cycle at '" + ot.naam + "'");
+        }
+        for (Objecttype ot : m.objecttypen.values()) {
+            if (ot.supertype == null) continue;
+            for (Objecttype t : ot.keten())
+                if (!t.attribuutGranulariteit.isEmpty() || !t.kenmerkGranulariteit.isEmpty()
+                        || !t.attribuutDimensies.isEmpty())
+                    throw new Refusal("Objecttype.supertype",
+                            "a supertype chain carrying a temporal or dimensioned member (the facet side maps are read per declared type)");
+        }
+    }
+
     // --- declaration side --------------------------------------------------
 
     private Objecttype objecttype(String naam, JsonNode n) {
         Objecttype ot = new Objecttype(text(n, "naam") != null ? text(n, "naam") : naam);
         ot.bezield = bool(n, "bezield");
         ot.meervoud = text(n, "meervoud");
+        supertypeNaam.put(ot, text(n, "supertype"));   // resolved after every declaration is read
         forEachField(n.get("attributen"), (k, v) -> ot.attributen.put(k, datatype(v)));
         forEachField(n.get("attribuutMeervoud"), (k, v) -> ot.attribuutMeervoud.put(k, v.asText()));
         forEachField(n.get("attribuutDimensies"), (k, v) -> ot.attribuutDimensies.put(k, stringList(v)));

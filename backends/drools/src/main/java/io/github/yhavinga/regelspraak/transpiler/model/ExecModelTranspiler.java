@@ -306,7 +306,7 @@ public final class ExecModelTranspiler {
         for (io.github.yhavinga.regelspraak.ir.ResolvedUniciteitUnie u : model.uniciteitUnies)  // §8.1.6 "verenigd met" (Phase H)
             for (Rule rule : meet("uniciteit-unie", u.naam(), () -> uniciteitUnie(u))) m.addRule(rule);
         // §6.1 / ch. 7 prioritized defaults: one reduce-rule per (group, subject), a port of ref's run_defaults_group.
-        for (List<PrioritizedDefaults> groep : defaultsGroepen())
+        for (EffectieveStapel groep : defaultsGroepen())
             for (Rule rule : meet("defaults", defaultsConstructNaam(groep), () -> defaultsGroep(groep))) m.addRule(rule);
         return m;
     }
@@ -6607,19 +6607,94 @@ public final class ExecModelTranspiler {
      *  name-sharing attribute and characteristic (WF-002) stay in separate groups, so the discriminant leads.
      *  First-seen order is preserved (a LinkedHashMap), which is stable and deterministic. Each group becomes
      *  ONE reduce-rule. */
-    private List<List<PrioritizedDefaults>> defaultsGroepen() {
-        LinkedHashMap<String, List<PrioritizedDefaults>> groepen = new LinkedHashMap<>();
+    /** One effective stack per (CONCRETE type, target) — the composition of RUNTIME-SEMANTICS ch. 7.10,
+     *  ported from {@code Ir_v0.Desugar.effective_defaults} so the three executors cannot drift on the
+     *  block order. A subtype's own declarations fold over its supertype's EFFECTIVE stack, highest
+     *  first: own exceptions, inherited exceptions, the base (the own one REPLACES the inherited one),
+     *  and below it the initialisation default, never replaced.
+     *
+     *  Why per concrete type and not per declaration: with native {@code extends} a pattern on the
+     *  supertype's class matches subtype facts, so a supertype group and a subtype group would BOTH
+     *  reduce over one Wrakrecht and write in turn — no fixpoint. The composition spends the
+     *  extensional quantification of the defaults subject once, here, and {@link #defaultsGroep} then
+     *  binds its pattern to exactly one class. In a model without a supertype edge this is the
+     *  declared grouping, unchanged. */
+    private record EffectieveStapel(Objecttype eigenaar, List<PrioritizedDefaults> leden) {}
+
+    private List<EffectieveStapel> defaultsGroepen() {
+        List<EffectieveStapel> uit = new ArrayList<>();
+        for (Objecttype ot : model.objecttypen.values())
+            for (var e : effectieveStapels(ot).entrySet())
+                uit.add(new EffectieveStapel(ot, e.getValue()));
+        return uit;
+    }
+
+    /** The effective stacks of {@code type}, keyed by kind-discriminated target. */
+    private LinkedHashMap<String, List<PrioritizedDefaults>> effectieveStapels(Objecttype type) {
+        LinkedHashMap<String, List<PrioritizedDefaults>> eigen = new LinkedHashMap<>();
         for (PrioritizedDefaults l : prioritizedDefaults)
-            groepen.computeIfAbsent(defaultsGroepSleutel(l), k -> new ArrayList<>()).add(l);
-        return new ArrayList<>(groepen.values());
+            if (defaultsNorm(l.onderwerp()).equals(defaultsNorm(type.naam)))
+                eigen.computeIfAbsent(defaultsDoelSleutel(l), k -> new ArrayList<>()).add(l);
+        LinkedHashMap<String, List<PrioritizedDefaults>> geerfd =
+                type.supertype == null ? new LinkedHashMap<>() : effectieveStapels(type.supertype);
+        LinkedHashMap<String, List<PrioritizedDefaults>> uit = new LinkedHashMap<>(eigen);
+        geerfd.forEach((k, ouderLeden) -> {
+            List<PrioritizedDefaults> eigenLeden = eigen.get(k);
+            if (eigenLeden == null) { uit.put(k, ouderLeden); return; }
+            if (eigenLeden.size() != 1 || ouderLeden.size() != 1)
+                // the fold is defined member-to-member; a declared-unordered SET across a supertype
+                // boundary has no defined fold, and guessing one silently is the one thing this must
+                // not do (the OCaml side raises the same refusal)
+                throw new DefaultsOnvertaalbaar("doel " + k + " op '" + type.naam + "' draagt "
+                        + eigenLeden.size() + " eigen en " + ouderLeden.size() + " geërfde groep(en): de blokorde "
+                        + "stelt één stapel over één stapel samen (RUNTIME-SEMANTICS ch. 7.10)");
+            uit.put(k, List.of(voegSamen(eigenLeden.get(0), ouderLeden.get(0))));
+        });
+        return uit;
     }
-    private static String defaultsGroepSleutel(PrioritizedDefaults l) {
-        return (l.isKenmerk() ? "K:" : "A:") + defaultsNorm(l.onderwerp()) + ":" + defaultsNorm(l.doel());
+
+    /** The block order of ch. 7.10, applied to one own member over one inherited member. */
+    private static PrioritizedDefaults voegSamen(PrioritizedDefaults eigen, PrioritizedDefaults geerfd) {
+        List<Default> uit = new ArrayList<>();
+        uit.addAll(uitzonderingen(eigen));
+        uit.addAll(uitzonderingen(geerfd));
+        Default basis = basisVan(eigen) != null ? basisVan(eigen) : basisVan(geerfd);
+        if (basis != null) uit.add(basis);
+        uit.addAll(initialisaties(geerfd));
+        uit.addAll(initialisaties(eigen));
+        return new PrioritizedDefaults(eigen.naam(), eigen.onderwerp(), eigen.kenmerk(), eigen.attribuut(),
+                eigen.ongeordend(), List.copyOf(uit), eigen.bron(), eigen.geldigheid());
     }
-    /** The manifest/rule identity of a defaults group — the kind-discriminated target form, unique per group. */
-    private static String defaultsConstructNaam(List<PrioritizedDefaults> groep) {
-        PrioritizedDefaults l0 = groep.get(0);
-        return "defaults " + (l0.isKenmerk() ? "K:" : "A:") + l0.onderwerp() + "." + l0.doel();
+
+    /** The LOWEST ordinary default, and only when it decides something itself: a group-default delegates
+     *  to its exception groups and is not a base (ch. 7.10 rule 2), and a declared-unordered member has
+     *  no "lowest" at all, so its whole block travels as one (rule 3). */
+    private static Default basisVan(PrioritizedDefaults l) {
+        if (l.ongeordend()) return null;
+        Default laatste = null;
+        for (Default d : l.defaults()) if (!d.initialisatie()) laatste = d;
+        return laatste != null && laatste.heeftEigenInhoud() ? laatste : null;
+    }
+    private static List<Default> uitzonderingen(PrioritizedDefaults l) {
+        Default basis = basisVan(l);
+        List<Default> uit = new ArrayList<>();
+        for (Default d : l.defaults()) if (!d.initialisatie() && d != basis) uit.add(d);
+        return uit;
+    }
+    private static List<Default> initialisaties(PrioritizedDefaults l) {
+        List<Default> uit = new ArrayList<>();
+        for (Default d : l.defaults()) if (d.initialisatie()) uit.add(d);
+        return uit;
+    }
+
+    private static String defaultsDoelSleutel(PrioritizedDefaults l) {
+        return (l.isKenmerk() ? "K:" : "A:") + defaultsNorm(l.doel());
+    }
+    /** The manifest/rule identity of a defaults group — the kind-discriminated target form on its OWNER
+     *  type, so two types sharing one inherited target still name two rules. */
+    private static String defaultsConstructNaam(EffectieveStapel stapel) {
+        PrioritizedDefaults l0 = stapel.leden().get(0);
+        return "defaults " + (l0.isKenmerk() ? "K:" : "A:") + stapel.eigenaar().naam + "." + l0.doel();
     }
     /** Delegates to the SHARED name contract: a second, byte-identical copy of ref's {@code Checks.norm}
      *  here is how the doel/defaults keys and the uniqueness keys would come to disagree the moment one of
@@ -6636,20 +6711,25 @@ public final class ExecModelTranspiler {
      *  channel-depositing consequence (division), a justification/consequence not reducible to the subject-local
      *  lambda machinery. */
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private List<Rule> defaultsGroep(List<PrioritizedDefaults> members) {
+    private List<Rule> defaultsGroep(EffectieveStapel stapel) {
+        List<PrioritizedDefaults> members = stapel.leden();
         // The conflict path inserts one Inconsistentie and never un-writes a target, and the idempotency
         // guard blocks re-insertion; that is only sound because defaultsSalience holds the reduce-rule
         // strictly below every producer of every read of every default — a premature fire cannot happen. Keep
         // that invariant in mind before weakening the salience derivation.
         PrioritizedDefaults l0 = members.get(0);
-        Objecttype onderwerp = model.objecttypeOpNaam(l0.onderwerp());
-        if (onderwerp == null) return skipList("defaults (onbekend onderwerp " + l0.onderwerp() + ")");
+        // the stack's OWNER, not the declaring subject of its members: inheritance has already folded
+        // the supertype's declarations in, so this is the type whose instances the stack runs on
+        Objecttype onderwerp = stapel.eigenaar();
         Class<?> factClass = factClass(onderwerp);
         if (factClass == null) return skipList("defaults (geen fact-class " + onderwerp.naam + ")");
 
         boolean isChar = l0.isKenmerk();
         String doel = l0.doel();
-        String targetForm = l0.onderwerp() + "." + doel;
+        // the ch. 7.2 conflict key names the type that DECLARES the target, never the concrete type:
+        // one target reports under one name however many subtypes inherit it
+        Objecttype declarant = onderwerp.declarantVan(doel);
+        String targetForm = (declarant != null ? declarant.naam : l0.onderwerp()) + "." + doel;
 
         // fence: a characteristic target that NAME-SHARES an attribute (WF-002) — the exec-model bean carries a
         // single field per name and the attribute wins (FactModelGenerator: attribute > kenmerk > referentie), so
@@ -6691,7 +6771,14 @@ public final class ExecModelTranspiler {
         // class-reactive: an opaque always-true expr keeps the pattern reactive to EVERY subject property change, so
         // the reduce-rule re-fires when a producer writes any read of any default (the freshness idiom). WF-051 keeps
         // the target off the read set, so the group's own write never cycles it (NO_LOOP guards self-retrigger).
-        PatternDSL.PatternDef pattern = PatternDSL.pattern(sVar).expr(nextId("lfresh"), (Predicate1) (s -> true));
+        // A stack belongs to EXACTLY ONE type. With native `extends` a pattern on the supertype's class
+        // matches subtype facts too, and the subtype has a stack of its own — so the subject is pinned
+        // to the concrete class here, and only where the model actually has a hierarchy (a flat model
+        // keeps the always-true freshness expr byte for byte).
+        boolean heeftHierarchie = model.objecttypen.values().stream().anyMatch(t -> t.supertype != null);
+        PatternDSL.PatternDef pattern = heeftHierarchie
+                ? PatternDSL.pattern(sVar).expr(nextId("lfresh"), (Predicate1) (s -> s.getClass() == factClass))
+                : PatternDSL.pattern(sVar).expr(nextId("lfresh"), (Predicate1) (s -> true));
 
         // resolve the globals the default consequences read (empty for the scalar-first flip set).
         List<String> gnames = new ArrayList<>(globalNamen);
@@ -6764,7 +6851,7 @@ public final class ExecModelTranspiler {
         // justification/consequence read (recursed through excepties), so a monotone characteristic write cannot
         // decide before its reads have settled. Derived locally from the group's reads, NOT the full dep_forms graph.
         int salience = defaultsSalience(members, onderwerp);
-        var bouwer = PatternDSL.rule(kop(defaultsConstructNaam(members))).attribute(Rule.Attribute.NO_LOOP, true);
+        var bouwer = PatternDSL.rule(kop(defaultsConstructNaam(stapel))).attribute(Rule.Attribute.NO_LOOP, true);
         if (salience != 0) bouwer = bouwer.attribute(Rule.Attribute.SALIENCE, salience);
         return List.of(bouwer.build(items.toArray(new RuleItemBuilder[0])));
     }
@@ -6923,7 +7010,10 @@ public final class ExecModelTranspiler {
         for (ResolvedRegel r : model.resolvedRegels) {
             if (!(r.doel() instanceof Expr.AttribuutRef d) || d.attribuut() == null) continue;
             if (!reads.contains(d.attribuut())) continue;
-            if (d.objecttype() == null || !gelijkeType(d.objecttype(), onderwerp)) continue;
+            // a producer declared on an ANCESTOR also writes this type's facts (ch. 2.2), so the
+            // stack must sit below it too — otherwise the reduce-rule can fire before its reads settle
+            if (d.objecttype() == null || !onderwerp.isEen(d.objecttype()) && !gelijkeType(d.objecttype(), onderwerp))
+                continue;
             any = true;
             minProd = Math.min(minProd, strat.salience(r));
         }

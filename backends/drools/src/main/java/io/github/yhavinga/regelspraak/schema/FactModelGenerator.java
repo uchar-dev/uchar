@@ -39,7 +39,22 @@ public final class FactModelGenerator {
 
     /** Every bean member the model implies for {@code ot} — the ONE derivation the generator renders and
      *  the {@link ContractValidator} checks. */
+    /** IR-SPEC ch. 2.2: the members a subtype's bean declares ITSELF. The generated bean
+     *  {@code extends} its supertype's, so every inherited member is already a field there; emitting
+     *  it again would hide the parent's. The subtraction is by PROPERTY NAME, the same key the dedup
+     *  below uses, because the derived reference arms re-derive the SAME role field on a subtype that
+     *  the parent already carries (a relation hung on the supertype). */
     public static List<Lid> leden(RegelSpraakModel model, Objecttype ot) {
+        List<Lid> alle = alleLeden(model, ot);
+        if (ot.supertype == null) return alle;
+        java.util.Set<String> geerfd = new java.util.HashSet<>();
+        for (Lid l : leden(model, ot.supertype)) geerfd.add(l.eigenschap());
+        List<Lid> uit = new ArrayList<>();
+        for (Lid l : alle) if (!geerfd.contains(l.eigenschap())) uit.add(l);
+        return uit;
+    }
+
+    private static List<Lid> alleLeden(RegelSpraakModel model, Objecttype ot) {
         List<Lid> uit = new ArrayList<>();
         java.util.Set<String> gezien = new java.util.HashSet<>();   // ONE bean property per name: an attribute,
         // kenmerk and to-one role may legally share a name (a single name can be declared as both a kenmerk
@@ -151,7 +166,12 @@ public final class FactModelGenerator {
     public static boolean heeftReferentieVeld(RegelSpraakModel model, Objecttype ot, String rol, Objecttype doel) {
         if (model == null || ot == null || rol == null || doel == null) return false;
         String eigenschap = Namen.ident(rol, false), type = Namen.ident(doel.naam, true);
-        return leden(model, ot).stream().anyMatch(l -> l.eigenschap().equals(eigenschap) && l.javaType().equals(type));
+        // the bean CARRIES a field it inherits: `leden` is own-members-only since the generated
+        // subtype bean extends its supertype's, so the question is asked over the whole chain
+        for (Objecttype t : ot.keten())
+            if (leden(model, t).stream().anyMatch(l -> l.eigenschap().equals(eigenschap) && l.javaType().equals(type)))
+                return true;
+        return false;
     }
 
     /**
@@ -232,7 +252,9 @@ public final class FactModelGenerator {
             StringBuilder b = new StringBuilder();
             b.append("package ").append(PAKKET).append(";\n\n")
              .append("/** Generated fact bean for objecttype '").append(ot.naam).append("' (the explicit fact-model contract). */\n")
-             .append("public class ").append(klasse).append(" {\n");
+             .append("public class ").append(klasse)
+             .append(ot.supertype == null ? "" : " extends " + Namen.ident(ot.supertype.naam, true))
+             .append(" {\n");
             List<Lid> leden = leden(model, ot);
             for (Lid l : leden)
                 b.append("    private ").append(l.javaType()).append(' ').append(l.eigenschap()).append(";\n");

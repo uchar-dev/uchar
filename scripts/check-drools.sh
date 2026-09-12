@@ -318,7 +318,13 @@ EXPECTED_CHANNEL=(
 # The pin still has a live flank, and it is the OTHER direction: a count of TWO OR MORE on
 # `bedrijvig` is a §13.3.6.7 raster neither branch carries, so it drops this golden out of the
 # played channel exactly as before — measured after the fix, both branches refuse it by name.
-EXPECTED_PLAYED=124
+# 2026-09-12, +1 (124 -> 125): the subtype kernel's anchor
+# `anchor/jutterswet-strandrechtketen` plays. It is the whole point of that card — the four
+# proof moments of object-type inheritance have to be reproduced by all THREE executors, so a
+# supertype rule firing for a subtype instance, a supertype aggregation counting one, base
+# override, and the subtype's own exception beating an inherited one are pinned here as
+# ref = clingo = Drools rather than as two-thirds of a square.
+EXPECTED_PLAYED=125
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the
