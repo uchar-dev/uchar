@@ -53,7 +53,7 @@ basis; welke en waarom staat hieronder bij plek 4.
 | 1 `MeervoudMatcher.vindAttribuut` | `bergingsaandelen` bond niets; het meervoud bleef als `doelAttribuut` op de wire — **WF-034 FAIL** | `ot.keten()`, exact-enkelvoud via `attribuutNaam`, `(mv: …)` bij de declarant, ambiguïteitseis ketenbreed |
 | 2 `KenmerkMatcher.vind` | een geërfd kenmerk bond in geen van de elf aanroepplaatsen; de voorwaarde werd `Onopgelost` — **WF-044 bij evaluatie** | idem, exacte basisvorm via `kenmerkNaam`; binding en §3.5-soort zien nu dezelfde declarant |
 | 3 objectcreatie-kenmerktak | **frontend-ERROR** `'betwist' is geen attribuut of kenmerk van Hoofdberger` | `nieuwType.kenmerkNaam(naam)`, symmetrisch met de attribuut-tak ernaast |
-| 4 temporaliteitsfamilie | **WF-055 FAIL** ×2 en drie verzonnen ERRORs, zie hieronder | vijf nieuwe keten-accessors; alle twaalf lookups lopen erdoorheen |
+| 4 temporaliteitsfamilie | **WF-055 FAIL** ×2 en drie verzonnen ERRORs, zie hieronder | vier nieuwe keten-accessors; alle twaalf lookups lopen erdoorheen |
 | 5 `ExpressieBouwer.dimensieCel` | een cellezing van een geërfd gedimensioneerd attribuut bleef `Onopgelost` | `ot.gedimensioneerdeLeden()` |
 | 6 declaratiespelling in de intervalvouw | **de enige stille**: de GESCHREVEN spelling op de wire, 0 diagnostics, **verifier PASS** | `ot.attribuutNaam(kop)` |
 
@@ -99,7 +99,7 @@ RESOLVEN, met twee moet ze WEIGEREN; een ketenblinde telling zou beide
 toelaten.
 
 **Generiek boven speciaal.** De drie bestaande accessors droegen elk hun eigen
-kopie van dezelfde ketenlus; er is nu één `opKeten`, en de vijf nieuwe
+kopie van dezelfde ketenlus; er is nu één `opKeten`, en de zeven nieuwe
 (`granulariteitVan`, `tijdlijnAantalVan`, `kenmerkGranulariteitVan`,
 `kenmerkTijdlijnAantalVan`, plus `gedimensioneerdeLeden`, `attribuutNaam` en
 `kenmerkNaam`) zijn er varianten van. `heeftLid` liep al ketenbewust maar met
