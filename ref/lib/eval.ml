@@ -113,10 +113,6 @@ let effective_defaults env =
   try Ir_v0.Desugar.effective_defaults env.doc
   with Ir_v0.Desugar.Unlowered m -> Value.fault "%s" m
 
-let inherited_rule_clashes env =
-  try Ir_v0.Desugar.inherited_rule_clashes env.doc
-  with Ir_v0.Desugar.Unlowered m -> Value.fault "%s" m
-
 let attr_decl env ~otype ~attr =
   let ot = objecttype env otype in
   match Ir_v0.Checks.find_ci ot.attributen attr with
@@ -1681,8 +1677,14 @@ let rule_name (r : resolved_regel) = Option.value r.rr_naam ~default:"<naamloos>
 (* run one form over its subjects; [body] gets the fresh instance and an
    error collector, returns (world, changed); collected §9.5 reasons land
    as channel facts for (rule × subject) *)
-let over_subjects ?(exact = false) env world ~otype ~rule body =
-  let isa = if exact then fun a b -> norm a = norm b else isa env in
+let over_subjects ?(exact = false) ?(behalve = []) env world ~otype ~rule body =
+  let isa a b =
+    (if exact then norm a = norm b else isa env a b)
+    (* the ch. 7.10 absorption: on these concrete types the rule IS a
+       defaults base and the stack writes it, so firing here too would put
+       two writers on one target *)
+    && not (List.exists (fun t -> norm t = norm a) behalve)
+  in
   List.fold_left
     (fun (w, changed) (snapshot : World.instance) ->
       let self = World.get w snapshot.label in
@@ -1828,7 +1830,17 @@ let run_rule env world (r : resolved_regel) =
                   Value.fault
                     "temporal attribute %S as a target: temporal writes are not implemented"
                     attr);
-        over_subjects env world ~otype:ot ~rule:(rule_name r) (fun w self err ->
+        (* SUBTYPING §4.1 rules 1 and 4: where inheritance brings a defaults
+           stack to this target, this rule is that stack's BASE and is
+           written by the group, not here. The exclusion is per CONCRETE
+           type and empty on every target whose chain declares no group —
+           which is every ordinary rule in a flat model. *)
+        let behalve =
+          match r.rr_soort with
+          | Some Kenmerktoekenning -> []
+          | _ -> Ir_v0.Desugar.absorbed_on env.doc ~otype:ot ~attr
+        in
+        over_subjects ~behalve env world ~otype:ot ~rule:(rule_name r) (fun w self err ->
             let fire =
               match r.rr_voorwaarde with Some c -> eval_cond env w self ~err c | None -> true
             in
@@ -2639,18 +2651,6 @@ let evaluate env world =
   | { Ir_v0.Checks.wf; at; reason } :: _ ->
       Value.fault "%s at %s: %s — the dependency graph is ill-formed; ref/ refuses to evaluate"
         wf at reason);
-  (* RUNTIME-SEMANTICS ch. 7.10: the two corners inheritance leaves
-     un-lowered are refused here, before any value exists, so all three
-     executors stop on the same document rather than each answering its own
-     way. Both are named refusals, never a guess. *)
-  (match inherited_rule_clashes env with
-  | [] -> ()
-  | (owner, ancestor, attr) :: _ ->
-      Value.fault
-        "'%s' carries a defaults stack for '%s', which an ordinary rule on the ancestor '%s' \
-         also writes: an inherited ordinary writer as the stack's base is not lowered \
-         (ch. 7.10)"
-        owner attr ancestor);
   parameterset_check env;
   validate_input_precision env world;
   (* the input-world snapshot the 1:1 creation guard reads (ch. 5.5) *)

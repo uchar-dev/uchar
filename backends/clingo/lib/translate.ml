@@ -5170,7 +5170,24 @@ let translate_regel ctx (r : resolved_regel) =
       (match doel with
       | Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ } ->
           let subject = "S" in
-          let base = Printf.sprintf "isa(%s,%s)" subject (str ot) in
+          (* SUBTYPING §4.1 rules 1 and 4: on the concrete types where
+             inheritance made this rule a defaults BASE, the stack writes it
+             and the rule must not. Read from the shared predicate the other
+             two executors read, per CONCRETE type — so `is_a/2`, the base
+             relation, and not its closure. Empty on every target whose chain
+             declares no group, which is every rule in a flat model, so the
+             emitted program is unchanged there. *)
+          let behalve =
+            match r.rr_soort with
+            | Some Kenmerktoekenning -> []
+            | _ ->
+                List.map
+                  (fun t -> Printf.sprintf "not is_a(%s,%s)" subject (str t))
+                  (Ir_v0.Desugar.absorbed_on ctx.doc ~otype:ot ~attr:a)
+          in
+          let base =
+            String.concat ", " (Printf.sprintf "isa(%s,%s)" subject (str ot) :: behalve)
+          in
           let cond =
             match r.rr_voorwaarde with
             | Some c -> cond_atoms ctx ~subject ~subject_ot:ot c
@@ -6755,15 +6772,6 @@ let translate (doc : document) (case : Case.t) : string =
      try Ir_v0.Desugar.effective_defaults doc
      with Ir_v0.Desugar.Unlowered m -> fault "%s" m
    in
-   (match (try Ir_v0.Desugar.inherited_rule_clashes doc
-           with Ir_v0.Desugar.Unlowered m -> fault "%s" m) with
-   | [] -> ()
-   | (owner, ancestor, attr) :: _ ->
-       fault
-         "'%s' carries a defaults stack for '%s', which an ordinary rule on the ancestor '%s' \
-          also writes: an inherited ordinary writer as the stack's base is not lowered \
-          (ch. 7.10)"
-         owner attr ancestor);
    List.iteri
      (fun gidx (owner, _key, members, idxs) ->
        translate_defaults_group ctx gidx ~owner (List.combine idxs members))

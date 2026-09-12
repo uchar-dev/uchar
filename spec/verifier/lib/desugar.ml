@@ -272,23 +272,141 @@ let target_key (l : prioritized_defaults) =
 
 exception Unlowered of string
 
+(* --- an ORDINARY rule as the base of its level (SUBTYPING §4.1 rules 1
+   and 4) -----------------------------------------------------------------
+
+   ch. 7.8 already reads a bare computing rule as a default: it decides,
+   a leeg evaluation writes nothing, the input stands. Inheritance takes
+   that reading at its word — the rule IS the one-member base of the level
+   that declares it, so a subtype's own rule replaces an inherited base
+   (rule 1) and an ancestor's rule becomes the descendant's inherited base
+   (rule 4). No new wire form: the rule is folded into the stack exactly as
+   the ch. 7.7 desugaring above folds one, condition and all.
+
+   The fold is GATED, and the gate is what keeps every flat model byte for
+   byte where it was: a rule is absorbed only on a target whose CHAIN
+   declares a defaults group somewhere. A bare rule with no group above or
+   below it is the ordinary ch. 7.8 standing norm and never enters a stack
+   — which is every such rule in the corpus. *)
+
+(* the target keys on which [t]'s own chain declares a defaults GROUP *)
+let chain_group_keys doc t =
+  List.concat_map
+    (fun (s, _) ->
+      if Checks.subtype_of doc ~sub:t ~super:s then
+        List.filter_map
+          (fun (l : prioritized_defaults) ->
+            if norm l.pd_onderwerp = norm s then Some (target_key l) else None)
+          doc.prioritized_defaults
+      else [])
+    doc.objecttypen
+  |> List.sort_uniq compare
+
+(* The ordinary attribute writers [level] declares on [key], with their
+   document index: at most one computing rule and at most one plain
+   initialisation — the ch. 7.7 pair. Two computing rules on one target are
+   agenda order, which is what prioritized defaults exist to replace, so
+   they are left for the caller to refuse. *)
+let level_rules doc level key =
+  List.concat
+    (List.mapi
+       (fun i (r : resolved_regel) ->
+         match (r.rr_soort, r.doel) with
+         | ( Some ((Gelijkstelling | Berekening | Initialisatie) as soort),
+             Some (Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ }) )
+           when norm ot = norm level && "A:" ^ norm a = key && r.waarde <> None
+                && version_free r.rr_geldigheid ->
+             [ (soort, r, i) ]
+         | _ -> [])
+       doc.resolved_regels)
+
+(* [level]'s own contribution to [key] when it declares no defaults group:
+   its rules, read as the ch. 7.7 shape — the computing rule as the base,
+   the initialisation below it. None when the level writes the target with
+   no ordinary rule either. *)
+let rule_member doc level key : (prioritized_defaults * int) option =
+  let rules = level_rules doc level key in
+  let comps = List.filter (fun (soort, _, _) -> soort <> Initialisatie) rules in
+  let inits = List.filter (fun (soort, _, _) -> soort = Initialisatie) rules in
+  if rules = [] then None
+  else if List.length comps > 1 || List.length inits > 1 then
+    raise
+      (Unlowered
+         (Printf.sprintf
+            "target %s on '%s' is written by %d computing and %d initialisation rule(s) beside an              inherited defaults stack: the v0 meaning of two writers on one target is agenda              order, which prioritized defaults exist to replace (RUNTIME-SEMANTICS ch. 7.10)"
+            key level (List.length comps) (List.length inits)))
+  else
+    let attribuut =
+      match key with k when String.length k > 2 -> String.sub k 2 (String.length k - 2) | k -> k
+    in
+    let a =
+      match rules with
+      | (_, (r : resolved_regel), _) :: _ -> (
+          match r.doel with
+          | Some (Attribuut_ref { attribuut = Some a; _ }) -> a
+          | _ -> attribuut)
+      | [] -> attribuut
+    in
+    let d ~init (r : resolved_regel) =
+      {
+        default_besluit = None;
+        default_voorwaarde =
+          (if init then None else Some (Option.value r.rr_voorwaarde ~default:always_true));
+        default_consequentie = Some (Option.get r.waarde);
+        default_initialisatie = init;
+        default_excepties = None;
+        default_bron = r.rr_naam;
+      }
+    in
+    let defaults =
+      List.map (fun (_, r, _) -> d ~init:false r) comps
+      @ List.map (fun (_, r, _) -> d ~init:true r) inits
+    in
+    let idx = List.fold_left (fun acc (_, _, i) -> max acc i) 0 rules in
+    Some
+      ( {
+          pd_naam = Some ("regel als basis: " ^ a ^ " van " ^ level);
+          pd_onderwerp = level;
+          pd_kenmerk = None;
+          pd_attribuut = Some a;
+          defaults;
+          pd_ongeordend = false;
+          pd_bron = Some "SUBTYPING §4.1 rules 1/4: an ordinary rule is the base of its level";
+          pd_geldigheid = None;
+        },
+        idx )
+
 (* Every declared group with the index it sits at in the document, so a
-   consumer can still stratify a composed stack by its contributors. *)
-let rec effective_stacks_of doc ~visited type_name :
+   consumer can still stratify a composed stack by its contributors.
+   [absorb] is the key set on which an ordinary rule counts as a base — a
+   property of the stack's OWNER, threaded down so the answer does not
+   change with the recursion depth. *)
+let rec effective_stacks_of doc ~visited ~absorb type_name :
     (string * (prioritized_defaults * int) list) list =
-  let own =
+  let own_groups =
     List.concat
       (List.mapi
          (fun i (l : prioritized_defaults) ->
            if norm l.pd_onderwerp = norm type_name then [ (l, i) ] else [])
          doc.prioritized_defaults)
   in
+  (* a level that declares a group on a key keeps it; on an ABSORBED key it
+     declares none, its ordinary rule is the level's base (a level carrying
+     both is WF-050's single-writer lift and is refused at the document) *)
+  let own =
+    own_groups
+    @ List.filter_map
+        (fun k ->
+          if List.exists (fun (l, _) -> target_key l = k) own_groups then None
+          else rule_member doc type_name k)
+        absorb
+  in
   let inherited =
     match Checks.find_ci doc.objecttypen type_name with
     | Some ot -> (
         match ot.ot_supertype with
         | Some s when not (List.mem (norm s) visited) ->
-            effective_stacks_of doc ~visited:(norm type_name :: visited) s
+            effective_stacks_of doc ~visited:(norm type_name :: visited) ~absorb s
         | _ -> [])
     | None -> []
   in
@@ -311,17 +429,45 @@ let rec effective_stacks_of doc ~visited type_name :
       | Some ms, None -> (k, ms)
       | None, Some ms -> (k, ms)
       | Some [ (o, oi) ], Some [ (p, pi) ] -> (k, [ (compose_member ~own:o ~inherited:p, max oi pi) ])
+      | Some [ _ ], Some ps ->
+          (* ONE own group over an INHERITED DECLARED-UNORDERED SET. This is
+             defined — SUBTYPING §4.1 rule 3: the inherited group stays
+             internally unordered and moves as one block, above the subtype's
+             base and below its own exceptions. It is not lowered here, and
+             the reason is a property of the wire rather than a gap in the
+             design: that reading is a THREE-LAYER priority (own exceptions >
+             the unordered inherited block > the own base), and a defaults
+             group's members reconcile as EQUALS with no order between them
+             (ch. 7.2). The own base's justification is unconditional, so
+             whichever member carried it would decide whenever an inherited
+             member decides — "an inherited exception outranks the subtype's
+             base" (§4.4) and "the base decides when nothing else does" become
+             indistinguishable. The one mechanism that does express "reconcile
+             a set, else fall back" is ch. 7.9's group-default, and wrapping
+             the block in one would move the conflict key from the ROOT form
+             §4.4 pins to the path-keyed form. So it needs a layered stack the
+             wire does not have. *)
+          raise
+            (Unlowered
+               (Printf.sprintf
+                  "target %s on '%s' composes one own group over an inherited declared-unordered \
+                   set of %d: SUBTYPING §4.1 rule 3 defines it (the inherited block moves whole, \
+                   above the base and below the own exceptions) but it is not lowered in this \
+                   release — the reading is a three-layer priority and a group's members \
+                   reconcile as equals (RUNTIME-SEMANTICS ch. 7.10)"
+                  k type_name (List.length ps)))
       | Some ms, Some ps ->
-          (* the fold is defined member-to-member; a declared-unordered SET
-             on either level would need a rule the design does not give, and
-             guessing one silently is the one thing this must not do *)
+          (* A declared-unordered SET on the OWN level, over anything
+             inherited. Here the design itself is silent: §4.1 rule 3 speaks
+             of an unordered PARENT group, and no rule places a subtype's own
+             unordered set against an inherited stack. Guessing one silently
+             is the one thing this must not do. *)
           raise
             (Unlowered
                (Printf.sprintf
                   "target %s on '%s' is carried by %d declared group(s) here and %d inherited \
-                   one(s): the block order composes one stack over one stack, and a \
-                   declared-unordered set across a supertype boundary has no defined fold \
-                   (RUNTIME-SEMANTICS ch. 7.10)"
+                   one(s): a fold between a declared-unordered set of its own and an inherited \
+                   stack has no defined reading (RUNTIME-SEMANTICS ch. 7.10)"
                   k type_name (List.length ms) (List.length ps)))
       | None, None -> (k, []))
     keys
@@ -334,39 +480,32 @@ let effective_defaults (doc : document) :
     (string * string * prioritized_defaults list * int list) list =
   List.concat_map
     (fun (name, _) ->
+      let absorb = chain_group_keys doc name in
       List.filter_map
         (fun (k, ms) ->
           if ms = [] then None
           else Some (name, k, List.map fst ms, List.map snd ms))
-        (effective_stacks_of doc ~visited:[] name))
+        (effective_stacks_of doc ~visited:[] ~absorb name))
     doc.objecttypen
 
-(* RUNTIME-SEMANTICS ch. 7.10, the corner this release does not lower: an
-   ORDINARY rule on an ancestor's target that a descendant also covers with a
-   defaults group. Under ch. 7.1 that rule would be the inherited base, but it
-   is also a writer in its own right and fires extensionally on the
-   descendant's instances, so document and execution would part company
-   silently. Reported here, once, so all three executors refuse it with one
-   voice instead of each diverging its own way. *)
-let inherited_rule_clashes (doc : document) : (string * string * string) list =
-  let covered = List.map (fun (o, k, _, _) -> (norm o, k)) (effective_defaults doc) in
-  List.concat_map
-    (fun (r : resolved_regel) ->
-      match (r.rr_soort, r.doel) with
-      | ( Some (Gelijkstelling | Berekening | Initialisatie),
-          Some (Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ }) ) ->
-          List.filter_map
-            (fun (owner, _) ->
-              if
-                norm owner <> norm ot
-                && Checks.subtype_of doc ~sub:owner ~super:ot
-                && List.mem (norm owner, "A:" ^ norm a) covered
-              then Some (owner, ot, a)
-              else None)
-            doc.objecttypen
-      | _ -> [])
-    doc.resolved_regels
-  |> List.sort_uniq compare
+(* The concrete types on which an ordinary rule writing ([otype], [attr]) has
+   been ABSORBED into an effective defaults stack as its base, and therefore
+   MUST NOT also fire as a rule — a rule that both is a base and writes on its
+   own would be two writers on one target. Every executor asks this of the
+   same function, so no two of them can absorb on different instances.
+
+   The answer is empty on every target whose chain declares no defaults group,
+   which is every ordinary rule in a flat model: there the ch. 7.8 standing
+   norm governs unchanged. *)
+let absorbed_on (doc : document) ~otype ~attr : string list =
+  let key = "A:" ^ norm attr in
+  List.filter_map
+    (fun (t, _) ->
+      if Checks.subtype_of doc ~sub:t ~super:otype && List.mem key (chain_group_keys doc t) then
+        Some t
+      else None)
+    doc.objecttypen
+
 
 (* The temporal standing domain (RS ch. 7.8, the timeline arm): a
    temporal target carried by exactly one version-free computing rule
