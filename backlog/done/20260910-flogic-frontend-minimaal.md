@@ -193,3 +193,28 @@ gate.
    sessieverslag; onvoorwaardelijk en blokkerend, naar het model van gate 6
    (OCaml + clingo, want de suite speelt haar casussen door ref én de
    ASP-backend).
+
+### Naronde (zelfde kaart)
+
+Een lensronde over de veldgebruikers leverde één echt gat op, hier meteen
+gedicht: de frontend liet een regel zónder `@!{}`-id toe, en die bereikt de
+wire als `naam: null`. WF-020 filtert lege namen weg vóór de
+uniciteitsvergelijking en kijkt sowieso nooit naar de naam van een
+`prioritizedDefaults`-groep, dus noch een lege noch een dubbele regelnaam
+wordt stroomafwaarts gevangen — en de DRL-tekstbranche van de
+Drools-backend (het tweede been van gate 13) kan een lege naam niet
+renderen. De rule-id is daarom verplicht en moet uniek zijn; twee
+weigeringen met fixture erbij, suitevloer 60 -> 66. De golden verandert er
+niet van: gate 14 emitteert haar byte-identiek, wat het bewijs is dat de
+regel alleen een deur sluit die niemand hoorde te gebruiken.
+
+Wat diezelfde ronde bevestigde en dus géén wijziging vroeg: `meervoud` en
+`bezield` worden door geen enkele check of executor semantisch gelezen
+(alleen WF-057 toetst de tekstveiligheid van een aanwezige meervoudsvorm);
+clingo valt voor de canonieke rolnaam terug op het enkelvoud als het
+meervoud ontbreekt en Drools matcht op naam óf meervoud, wat precies is
+waarom de hergebruikte casusbestanden hier op `Rol.naam` vallen; een lege
+`regels`-index is toegestaan (geen enkele check leest hem — de
+Catala-frontend emitteert hem altijd leeg), dus het vullen ervan is winst
+en geen plicht; en gate 13 pikt een nieuwe golden vanzelf op, zonder
+registratie.
