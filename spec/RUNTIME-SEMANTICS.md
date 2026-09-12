@@ -4010,39 +4010,86 @@ beside it shows the key does not depend on the instance kind at all.
 *Stated so it is not looked for:* a conflict of that block cannot be one
 the **subtype makes applicable**. The conditions of an ancestor-declared
 group are resolved at the ancestor, and member resolution walks the chain
-upward only — a member declared on a strict subtype does not resolve there
-(WF-034), nor does a role only the subtype fills, since the group's
-navigation starts at its declared subject. So the block's applicability is
-decided entirely by members the ancestor itself declares, and a plain
-ancestor instance can reach every combination a subtype instance can. What
-inheritance changes here is the KEY, not the reachability.
+upward only, so nothing a strict subtype declares is in scope there: an
+attribute or characteristic of the subtype is refused by **WF-034**, and a
+hop toward a role only the subtype fills is refused by **WF-053**, whose
+by-name step resolves from the group's own declared subject. The
+applicability of the block is therefore decided entirely by members the
+ancestor itself declares — **and the case input sets those freely on a
+plain ancestor instance**, so every combination a subtype instance can
+reach, a flat one can reach too. A subtype rule constrains the subtype; it
+does not free it. What inheritance changes here is the KEY, not the
+reachability.
 
-**A parent that writes the target with a bare rule and no defaults at all**
-— a computing rule under the ch. 7.8 standing norm — contributes that rule
-as the **inherited base**, and the composition above then treats it like
-any other base: a subtype's own base replaces it, inherited exceptions
-outrank it. That is the norm (`spec/proposals/SUBTYPING.md` §4.1 rule 4,
-§4.5), and it is what a conforming executor must eventually do.
+#### An ORDINARY rule is the base of its level
 
-> **Not lowered in this release.** No executor lowers that form yet, and
-> all three **refuse it loudly** instead of guessing: the ancestor's rule
-> is also a writer in its own right and fires extensionally on the
-> descendant's instances, so an implementation that silently kept one of
-> the two writers would answer where the document says something else.
-> The refusal is a temporary stand-in for the rule above, not a
-> replacement for it, and it carries one named message in all three
-> executors. Witness: `ref/test/` (WV-7.10-c) and the Drools backend's own
-> suite (`OverervingWeigeringWitnessTest`) — no corpus case can hold the
-> shape, because a golden must replay and `ref` faults on it.
+`ch. 7.8` already reads a bare computing rule as a default: it decides, a
+leeg evaluation writes nothing, and the case input stands. **Inheritance
+takes that reading at its word — an ordinary rule IS the one-member base of
+the level that declares it**, and the composition above then treats it like
+any other base. Two shapes, both `spec/proposals/SUBTYPING.md` §4.1:
 
-**One further corner has no reading yet and is refused for that reason:** a
-target carried by a **declared-unordered SET** on one level and an
-inherited stack on another. The block order composes one stack over one
-stack; §4.1 rule 3 carries an internally unordered parent group across as
-one block, but a fold between two multi-member sets across a supertype
-boundary **is not defined here**, and inventing one silently is the single
-thing a lowering must not do. Same treatment: one named refusal in all
-three executors, witnessed in the two suites named above.
+- the rule sits on the **owner itself** while the stack is inherited —
+  **rule 1**, its bare-rule branch ("the subtype declares its own ordinary
+  rule *or* defaults group … the subtype's own base replaces the inherited
+  base"). Inherited exceptions stay above it, exactly as they stay above a
+  base a defaults group contributes;
+- the rule sits on an **ancestor** of the owner — **rule 4**, "its rule is
+  the base; case 1 applies": it becomes the owner's inherited base, which
+  the owner's own base then replaces.
+
+The rule's own condition becomes the default's justification, and an
+unconditional rule gets the vacuously true empty-ALLE — the same shape the
+ch. 7.7 desugaring uses, so the two readings are one form rather than two.
+
+A rule folded into a stack **must not also fire as a rule**: it is the base,
+and the group writes it. The absorption is per CONCRETE type and all three
+executors read it from one shared predicate, so no two of them can absorb on
+different instances.
+
+> **The fold is gated, and the gate is what keeps every flat model where it
+> was.** A rule is absorbed only on a target whose CHAIN declares a defaults
+> group somewhere. A bare rule with no group above or below it is the
+> ordinary ch. 7.8 standing norm and enters no stack at all — which is every
+> ordinary rule in a document without a supertype edge, and every rule in
+> the corpus that predates this chapter.
+
+Two writers on one level are still not a stack: two computing rules on one
+target mean agenda order, which is exactly what prioritized defaults exist
+to replace (ch. 7.7), so a level carrying two refuses by name rather than
+picking one. A rule beside a group the level declares **itself** is WF-050's
+single-writer lift and is refused at the document.
+
+#### An inherited declared-unordered set
+
+A target carried by a **declared-unordered set** on one level and a stack on
+another splits in two, and the two are not the same kind of gap:
+
+- **one own group over an inherited declared-unordered set** is **defined**
+  — §4.1 rule 3: the inherited group stays internally unordered and moves
+  as one block, above the subtype's base and below its own exceptions. It
+  is **not lowered in this release**, and the reason is a property of the
+  wire rather than a gap in the design. That reading is a **three-layer**
+  priority — own exceptions above the unordered inherited block above the
+  own base — while a defaults group's members reconcile as **equals**, with
+  no order between them (ch. 7.2). The own base's justification is
+  unconditional, so wherever it sat it would decide whenever an inherited
+  member decides, and "an inherited exception outranks the subtype's base"
+  (§4.4) could not be told apart from "the base decides when nothing else
+  does". The one mechanism that does express *reconcile a set, else fall
+  back* is ch. 7.9's group-default, and wrapping the block in one would
+  move the conflict key from the ROOT form §4.4 pins to the path-keyed
+  form. It needs a layered stack this wire does not have;
+- **a declared-unordered set on the OWN level**, over anything inherited,
+  is **undefined**: rule 3 speaks of an unordered *parent* group and no rule
+  places a subtype's own set against an inherited stack. Inventing a reading
+  silently is the single thing a lowering must not do.
+
+Both refuse loudly, in all three executors, with one named message each,
+before any value exists. They are witnessed in `ref/test/` (WV-7.10-c) and
+in the Drools backend's own suite (`OverervingWeigeringWitnessTest`), each
+pinning a fragment of its message — **no corpus case can hold either**,
+because a golden must replay and `ref` faults on both.
 
 #### 7.10.1 Worked examples (absolute; `ref/` tests verbatim)
 
@@ -4077,7 +4124,39 @@ both. Row 6 separates all three readings — child-wins writes 55,00,
 parent-wins would write 99,00, and an unordered reading would write nothing
 and deposit a §9.5 fact.
 
-Two further outcomes, on the same model, pin the extensional half:
+**The three-level composition**, on a second model, because the table above
+has only two levels and "the grandchild's own exceptions above the child's,
+above the grandparent's" is a claim about three. `Aa <- Bb <- Cc`, each
+level declaring one exception and one base (11,00/30,00 at Aa,
+22,00/60,00 at Bb, 99,00/90,00 at Cc), read on a `Cc` instance:
+
+| characteristics held | `uitkering` | what it proves |
+|---|---|---|
+| none | **90,00** | the grandchild's own base replaces BOTH inherited ones |
+| k1 (Aa's) | **11,00** | the grandparent's exception reaches the grandchild THROUGH the child — a fold over the parent's DECLARATIONS instead of its EFFECTIVE stack loses it and answers 90,00 |
+| k2 (Bb's) | **22,00** | the child's exception, inherited one level |
+| k3 (Cc's) | **99,00** | the grandchild's own exception |
+| k1 + k2 | **22,00** | inside the inherited block the child's sits above the grandparent's |
+| k1 + k2 + k3 | **99,00** | the grandchild's own above both — never the grandparent's base 30,00 |
+
+**An ordinary rule in the base slot**, on a third model, because rules 1
+and 4 place a rule where the tables above place a defaults group. Same
+`Strandrecht` group (base `= de grondslag`, exception 99,00 on `betwist`),
+with the subtype's writer a bare rule `de uitkering van een Wrakrecht = de
+grondslag × 2`, and `grondslag` 10,00 throughout:
+
+| instance | betwist | `uitkering` | what it proves |
+|---|---|---|---|
+| Strandrecht | no | **10,00** | the supertype's own base, untouched |
+| Wrakrecht | no | **20,00** | the subtype's RULE is its own base and replaces the inherited one (rule 1) |
+| Wrakrecht | yes | **99,00** | the inherited exception still outranks it — a rule in the base slot is a base like any other |
+
+Swap the two levels — the rule on the ancestor, the group on the subtype —
+and rule 4 reads the mirror: a `Wrakrecht` answers from **its own** base
+while a `Strandrecht` answers **from the rule**, through the ordinary
+ch. 7.8 path, because nothing on *its* chain declares a group.
+
+Two further outcomes, on the first model, pin the extensional half:
 
 - **the supertype rule fires for a subtype instance** —
   `registratiekosten` is **5,00** on the `Wrakrecht` as well as on the
