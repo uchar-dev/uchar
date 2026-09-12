@@ -358,6 +358,22 @@ public final class ExecModelTranspiler {
         seq = 0;
         Variable sVar = DSL.declarationOf(factClass, "$subject");
         PatternDSL.PatternDef pattern = PatternDSL.pattern(sVar);
+        // SUBTYPING §4.1 rules 1 and 4: on the concrete types where inheritance made this rule a
+        // defaults BASE, the composed stack writes it and the rule must not — with native `extends` a
+        // pattern on the ancestor's class matches the descendant's facts, so without this the two would
+        // both write. The set mirrors the SHARED predicate ref and clingo read, so no two executors
+        // absorb on different instances; it is empty on every target whose chain declares no group,
+        // which is every rule in a flat model and every rule the DRL-text branch ever sees (that branch
+        // refuses a document carrying defaults at the door).
+        Set<Class<?>> geabsorbeerd = new LinkedHashSet<>();
+        if (r.soort() != ResolvedRegel.Soort.KENMERKTOEKENNING)
+            for (Objecttype t : geabsorbeerdOp(doel.objecttype(), doel.attribuut())) {
+                Class<?> c = factClass(t);
+                if (c != null) geabsorbeerd.add(c);
+            }
+        if (!geabsorbeerd.isEmpty())
+            pattern = pattern.expr(nextId("absorb"),
+                    (Predicate1) (o -> !geabsorbeerd.contains(o.getClass())));
         List<RuleItemBuilder<?>> extra = new ArrayList<>();
 
         // §8.4/§13.4.5 a TEMPORAL KENMERK doel (kenmerkGranulariteit — a List<Segment> TRUE-period timeline, not a
@@ -6642,25 +6658,122 @@ public final class ExecModelTranspiler {
 
     /** The effective stacks of {@code type}, keyed by kind-discriminated target. */
     private LinkedHashMap<String, List<PrioritizedDefaults>> effectieveStapels(Objecttype type) {
+        return effectieveStapels(type, ketenGroepSleutels(type));
+    }
+
+    /** {@code absorb} is the key set on which an ordinary rule counts as a base — a property of the
+     *  stack's OWNER, threaded down so the answer does not change with the recursion depth. */
+    private LinkedHashMap<String, List<PrioritizedDefaults>> effectieveStapels(
+            Objecttype type, Set<String> absorb) {
         LinkedHashMap<String, List<PrioritizedDefaults>> eigen = new LinkedHashMap<>();
         for (PrioritizedDefaults l : prioritizedDefaults)
             if (defaultsNorm(l.onderwerp()).equals(defaultsNorm(type.naam)))
                 eigen.computeIfAbsent(defaultsDoelSleutel(l), k -> new ArrayList<>()).add(l);
+        // SUBTYPING §4.1 rules 1 and 4: a level that declares no group on an ABSORBED key contributes
+        // its ORDINARY RULE as that level's base instead. The Java twin of Desugar.rule_member — same
+        // shape, same gate — so the three executors compose one stack.
+        for (String k : absorb)
+            if (!eigen.containsKey(k)) {
+                PrioritizedDefaults m = regelLid(type, k);
+                if (m != null) eigen.put(k, List.of(m));
+            }
         LinkedHashMap<String, List<PrioritizedDefaults>> geerfd =
-                type.supertype == null ? new LinkedHashMap<>() : effectieveStapels(type.supertype);
+                type.supertype == null ? new LinkedHashMap<>() : effectieveStapels(type.supertype, absorb);
         LinkedHashMap<String, List<PrioritizedDefaults>> uit = new LinkedHashMap<>(eigen);
         geerfd.forEach((k, ouderLeden) -> {
             List<PrioritizedDefaults> eigenLeden = eigen.get(k);
             if (eigenLeden == null) { uit.put(k, ouderLeden); return; }
+            // ONE own group over an inherited declared-unordered SET is DEFINED — SUBTYPING §4.1
+            // rule 3: the inherited block stays internally unordered and moves as one, above the
+            // base and below the own exceptions. It is not lowered here, and the reason is a
+            // property of the wire rather than a gap in the design: that reading is a THREE-LAYER
+            // priority (own exceptions > the unordered inherited block > the own base) while a
+            // defaults group's members reconcile as EQUALS with no order between them. The own
+            // base's justification is unconditional, so wherever it sat it would decide whenever an
+            // inherited member decides, and "an inherited exception outranks the subtype's base"
+            // (§4.4) could not be told from "the base decides when nothing else does".
+            if (eigenLeden.size() == 1 && ouderLeden.size() > 1)
+                throw new DefaultsOnvertaalbaar("doel " + k + " op '" + type.naam + "' composes one own"
+                        + " group over an inherited declared-unordered set of " + ouderLeden.size()
+                        + ": SUBTYPING §4.1 rule 3 defines it (the inherited block moves whole, above the"
+                        + " base and below the own exceptions) but it is not lowered in this release — the"
+                        + " reading is a three-layer priority and a group's members reconcile as equals"
+                        + " (RUNTIME-SEMANTICS ch. 7.10)");
+            // A declared-unordered set on the OWN level, over anything inherited: here the design
+            // itself is silent, so this one is genuinely undefined rather than merely un-lowered.
             if (eigenLeden.size() != 1 || ouderLeden.size() != 1)
-                // the fold is defined member-to-member; a declared-unordered SET across a supertype
-                // boundary has no defined fold, and guessing one silently is the one thing this must
-                // not do (the OCaml side raises the same refusal)
                 throw new DefaultsOnvertaalbaar("doel " + k + " op '" + type.naam + "' draagt "
-                        + eigenLeden.size() + " eigen en " + ouderLeden.size() + " geërfde groep(en): de blokorde "
-                        + "stelt één stapel over één stapel samen (RUNTIME-SEMANTICS ch. 7.10)");
+                        + eigenLeden.size() + " eigen en " + ouderLeden.size() + " geërfde groep(en): a fold"
+                        + " between a declared-unordered set of its own and an inherited stack has no"
+                        + " defined reading (RUNTIME-SEMANTICS ch. 7.10)");
             uit.put(k, List.of(voegSamen(eigenLeden.get(0), ouderLeden.get(0))));
         });
+        return uit;
+    }
+
+    /** The vacuously true justification an unconditional rule gets when it becomes a base — the same
+     *  empty-ALLE the ch. 7.7 desugaring uses, so the two readings are one shape. */
+    private static final Conditie ALTIJD =
+            new Conditie.Samengesteld(Conditie.Kwantor.ALLE, 0, List.of(), null);
+
+    /** The Java twin of {@code Ir_v0.Desugar.rule_member}: {@code level}'s own contribution to
+     *  {@code key} when it declares no defaults group — its ordinary rules read as the ch. 7.7 shape,
+     *  the computing rule as the base and the initialisation below it. Null when the level writes the
+     *  target with no ordinary rule either; two computing rules on one target are agenda order, which
+     *  prioritized defaults exist to replace, so those refuse. */
+    private PrioritizedDefaults regelLid(Objecttype level, String key) {
+        List<ResolvedRegel> comps = new ArrayList<>(), inits = new ArrayList<>();
+        for (ResolvedRegel r : model.resolvedRegels) {
+            if (!(r.doel() instanceof Expr.AttribuutRef d) || d.attribuut() == null) continue;
+            if (d.objecttype() != level || !("A:" + defaultsNorm(d.attribuut())).equals(key)) continue;
+            if (r.geldigheid() != null && !r.geldigheid().altijd()) continue;
+            if (r.waarde() == null) continue;
+            switch (r.soort()) {
+                case GELIJKSTELLING, BEREKENING -> comps.add(r);
+                case INITIALISATIE -> inits.add(r);
+                default -> { }
+            }
+        }
+        if (comps.isEmpty() && inits.isEmpty()) return null;
+        if (comps.size() > 1 || inits.size() > 1)
+            throw new DefaultsOnvertaalbaar("doel " + key + " op '" + level.naam + "' is written by "
+                    + comps.size() + " computing and " + inits.size() + " initialisation rule(s) beside an"
+                    + " inherited defaults stack: the v0 meaning of two writers on one target is agenda"
+                    + " order, which prioritized defaults exist to replace (RUNTIME-SEMANTICS ch. 7.10)");
+        List<Default> ds = new ArrayList<>();
+        String attr = null;
+        for (ResolvedRegel r : comps) {
+            attr = ((Expr.AttribuutRef) r.doel()).attribuut();
+            ds.add(new Default(null, r.voorwaarde() != null ? r.voorwaarde() : ALTIJD,
+                    r.waarde(), false, null, r.naam()));
+        }
+        for (ResolvedRegel r : inits) {
+            attr = ((Expr.AttribuutRef) r.doel()).attribuut();
+            ds.add(new Default(null, null, r.waarde(), true, null, r.naam()));
+        }
+        return new PrioritizedDefaults("regel als basis: " + attr + " van " + level.naam, level.naam,
+                null, attr, false, List.copyOf(ds),
+                "SUBTYPING §4.1 rules 1/4: an ordinary rule is the base of its level", null);
+    }
+
+    /** The Java twin of {@code Ir_v0.Desugar.absorbed_on}: the CONCRETE types on which an ordinary
+     *  rule writing ({@code otype}, {@code attr}) has been folded into an effective defaults stack as
+     *  its base, and must therefore not fire as a rule as well. Empty unless the type's own chain
+     *  declares a defaults group on that target. */
+    private List<Objecttype> geabsorbeerdOp(Objecttype otype, String attr) {
+        List<Objecttype> uit = new ArrayList<>();
+        for (Objecttype t : model.objecttypen.values())
+            if (t.isEen(otype) && ketenGroepSleutels(t).contains("A:" + defaultsNorm(attr))) uit.add(t);
+        return uit;
+    }
+
+    /** The target keys on which {@code t}'s own chain declares a defaults GROUP. */
+    private Set<String> ketenGroepSleutels(Objecttype t) {
+        Set<String> uit = new LinkedHashSet<>();
+        for (PrioritizedDefaults l : prioritizedDefaults) {
+            Objecttype onderwerp = model.objecttypeOpNaam(l.onderwerp());
+            if (onderwerp != null && t.isEen(onderwerp)) uit.add(defaultsDoelSleutel(l));
+        }
         return uit;
     }
 

@@ -185,38 +185,6 @@ public final class CaseRunner {
         return build(irPath).runCase("case", c);
     }
 
-    /** The Java twin of {@code Ir_v0.Desugar.inherited_rule_clashes} (RUNTIME-SEMANTICS ch. 7.10): every
-     *  (descendant, ancestor, attribute) triple where an ordinary rule declared on the ancestor writes a
-     *  target the descendant covers with a defaults group of its own. Detection and message are held
-     *  BYTE-FOR-BYTE against the OCaml so the three executors refuse one document with one voice; the
-     *  witness is {@code GeerfdeSchrijverWeigeringTest} in this backend's own suite, because no corpus
-     *  golden can hold the shape (ref faults on it, so it can never replay).
-     *
-     *  Note it reads the DECLARED subject of every group, not the composed stacks: a descendant "covers"
-     *  the target when it or any ancestor between it and the rule declares a group, which is exactly when
-     *  the composed stack exists and the ancestor's rule would have to be its base. */
-    static List<String> geerfdeRegelBotsingen(RegelSpraakModel model, List<PrioritizedDefaults> defaults) {
-        List<String> uit = new ArrayList<>();
-        for (ResolvedRegel r : model.resolvedRegels) {
-            if (!(r.doel() instanceof Expr.AttribuutRef d) || d.attribuut() == null || d.objecttype() == null)
-                continue;   // an unresolved target is WF-034's business, not this one
-            switch (r.soort()) { case GELIJKSTELLING, BEREKENING, INITIALISATIE -> { } default -> { continue; } }
-            Objecttype voorouder = d.objecttype();
-            for (Objecttype eigenaar : model.objecttypen.values()) {
-                if (eigenaar == voorouder || !eigenaar.isEen(voorouder)) continue;
-                boolean gedekt = defaults.stream().anyMatch(l ->
-                        !l.isKenmerk() && Namen.norm(l.doel()).equals(Namen.norm(d.attribuut()))
-                        && eigenaar.isEen(model.objecttypeOpNaam(l.onderwerp())));
-                if (gedekt)
-                    uit.add("'" + eigenaar.naam + "' carries a defaults stack for '" + d.attribuut()
-                            + "', which an ordinary rule on the ancestor '" + voorouder.naam
-                            + "' also writes: an inherited ordinary writer as the stack's base is not lowered "
-                            + "(ch. 7.10)");
-            }
-        }
-        return uit;
-    }
-
     /** Load {@code irPath}, refuse the non-replayable forms, generate+contract-check the beans, lower every
      *  construct, and build the {@link KieBase} — the shared prelude of both the green replay and the red probe.
      *  Throws {@link Excluded} / {@link IrLoader.Refusal} for any form the v0 backend does not carry. */
@@ -256,16 +224,6 @@ public final class CaseRunner {
                         + "with a declared member — the bean cannot carry the self-typed reference field "
                         + "(name-sharing bean limit)");
         }
-
-        //   RUNTIME-SEMANTICS ch. 7.10, the corner this release does not lower: an ORDINARY rule on an
-        //     ancestor whose target a descendant also covers with a defaults group. Under ch. 7.1 that rule
-        //     IS the descendant's inherited base (SUBTYPING §4.1 rule 4), but it is also a writer in its own
-        //     right and fires extensionally on the descendant's instances. This backend would silently drop
-        //     it — the per-type reduce-rule wins and the ancestor's rule leaves no trace — where the two
-        //     OCaml executors fault, so the three would part company on a verifier-clean document. Refuse it
-        //     here, in the prelude BOTH transpiler branches share, with the message ref and clingo use.
-        for (String reden : geerfdeRegelBotsingen(model, loaded.prioritizedDefaults()))
-            throw new Excluded(reden);
 
         Map<String, String> bronnen = FactModelGenerator.genereer(model);
         ClassLoader cl = BeanCompiler.compileer(bronnen);
