@@ -482,6 +482,25 @@ let form_arrays ctx =
      List.mapi (fun i r -> (r.fc_naam, r.fc_geldigheid, Printf.sprintf "/feitCreaties/%d" i))
        ctx.doc.feit_creaties) ]
 
+(* Every array that puts a NAME on the wire: the seven versioned rule forms
+   above plus the defaults groups of ch. 6.1, which carry a name and a
+   validity window but no version grouping and no rule-group membership.
+
+   The two lists are deliberately different, and the difference is not an
+   oversight either way. WF-021 (version windows) and WF-033 (group
+   membership) are statements about the VERSIONED ch. 3 forms and stop at
+   [form_arrays]; the two name-identity rules — WF-107 (a name is present)
+   and WF-020 (names are unique) — hold of every name this wire carries and
+   read this one. Before it, a defaults group's name was crossed by nothing
+   at all. *)
+let named_forms ctx =
+  form_arrays ctx
+  @ [ ("prioritizedDefaults",
+       List.mapi
+         (fun i (l : prioritized_defaults) ->
+           (l.pd_naam, l.pd_geldigheid, Printf.sprintf "/prioritizedDefaults/%d" i))
+         ctx.doc.prioritized_defaults) ]
+
 (* ======================================================================= *)
 (* Model layer: WF-001 .. WF-018                                           *)
 (* ======================================================================= *)
@@ -1198,8 +1217,35 @@ let wf018 ctx =
 (* Rule layer: WF-020 .. WF-033                                            *)
 (* ======================================================================= *)
 
+(* WF-107: every named form carries a non-blank name (IR-SPEC ch. 3.1). The
+   name IS the form's identity on this wire: ch. 8 groups versions by it,
+   the ch. 6 dependency graph keys a channel node on it, a regelversie
+   condition names a rule by it, and WF-020 keeps it unique. Without one,
+   every reader invents an identity of its own — measured 2026-09-12, a
+   nameless rule passed here and crashed one Drools branch's name escaper.
+   Blank counts as absent because WF-020 compares over collapsed
+   whitespace, so two blank names are one name. *)
+let wf107 ctx =
+  List.concat_map
+    (fun (arr, entries) ->
+      let why =
+        " (a named form's identity on this wire IS its name — ch. 8 groups \
+         versions by it, the ch. 6 dependency graph keys its channel node on \
+         it, and WF-020 keeps it unique)"
+      in
+      List.filter_map
+        (fun (n, _, at) ->
+          match n with
+          | Some s when collapse_ws s <> "" -> None
+          | Some _ ->
+              Some (v "WF-107" (at ^ "/naam") ("form in " ^ arr ^ " carries a blank name" ^ why))
+          | None ->
+              Some (v "WF-107" (at ^ "/naam") ("form in " ^ arr ^ " carries no name" ^ why)))
+        entries)
+    (named_forms ctx)
+
 let wf020 ctx =
-  let arrays = form_arrays ctx in
+  let arrays = named_forms ctx in
   (* cross-array: a stripped name in more than one form array *)
   let stripped =
     List.concat_map
@@ -1218,7 +1264,7 @@ let wf020 ctx =
         | Some (_, arr', n', _) when arr < arr' ->
             Some (v "WF-020" at
                     (Printf.sprintf
-                       "rule name '%s' collides with '%s' in %s (unique across all rule forms)"
+                       "name '%s' collides with '%s' in %s (unique across all named forms)"
                        n n' arr'))
         | _ -> None)
       stripped
@@ -1232,14 +1278,22 @@ let wf020 ctx =
         in
         (dups_by norm named
          |> List.map (fun (a, _, at) ->
-             v "WF-020" at (Printf.sprintf "duplicate rule name '%s' in %s" a arr)))
+             v "WF-020" at (Printf.sprintf "duplicate name '%s' in %s" a arr)))
         @
         let groups = List.sort_uniq compare (List.map (fun (n, _) -> norm (strip_version n)) named) in
         List.concat_map
           (fun g ->
             let members = List.filter (fun (n, _) -> norm (strip_version n) = g) named in
             let bare = List.exists (fun (n, _) -> not (is_versioned n)) members in
-            if List.length members > 1 && bare then
+            (* and a versioned one to mix it WITH: without this the arm also
+               fires on two entries of one bare name, which is the duplicate
+               above and names no version — a false second report on a
+               document the first arm already refuses (measured 2026-09-12 on
+               wf020-defaultsgroep-duplicaat). It frees nothing: with no
+               versioned member the stripped name IS the name, so [dups_by]
+               has already caught the group. *)
+            let versioned = List.exists (fun (n, _) -> is_versioned n) members in
+            if List.length members > 1 && bare && versioned then
               [ v "WF-020" (snd (List.hd members))
                   (Printf.sprintf
                      "form '%s' in %s mixes a bare name with versioned entries" g arr) ]
@@ -1289,21 +1343,16 @@ let wf101 ctx =
           [ ("vanaf", g.geld_vanaf); ("tot", g.geld_tot) ]
   in
   List.concat_map (fun (_, entries) -> List.concat_map (fun (_, g, at) -> bounds at g) entries)
-    (form_arrays ctx)
-  (* The two carriers form_arrays does not list. A day-kind window is refused
+    (named_forms ctx)
+  (* The one carrier named_forms does not list. A day-kind window is refused
      outright by WF-031 (it must be ALTIJD), so on a conforming document this
      arm is unreachable; it is here so the rule holds of every Geldigheid on
-     the wire rather than of seven of nine. *)
+     the wire rather than of eight of nine. *)
   @ List.concat
       (List.mapi
          (fun i (r : resolved_dagsoort) ->
            bounds (Printf.sprintf "/resolvedDagsoorten/%d" i) r.rd_geldigheid)
          ctx.doc.resolved_dagsoorten)
-  @ List.concat
-      (List.mapi
-         (fun i (r : prioritized_defaults) ->
-           bounds (Printf.sprintf "/prioritizedDefaults/%d" i) r.pd_geldigheid)
-         ctx.doc.prioritized_defaults)
 
 let wf021 ctx =
   List.concat_map
@@ -9122,7 +9171,7 @@ let all (doc : document) : violation list =
     [ wf001 ctx; wf002 ctx; wf103 ctx; wf104 ctx; wf105 ctx;
       wf094 ctx; wf094_null ctx; wf003 ctx; wf004 ctx; wf005 ctx; wf006 ctx;
       wf007_model ctx; wf009 ctx; wf092 ctx; wf011 ctx; wf012 ctx; wf013 ctx; wf014 ctx;
-      wf015 ctx; wf016 ctx; wf017 ctx; wf018 ctx; wf020 ctx; wf101 ctx; wf021 ctx;
+      wf015 ctx; wf016 ctx; wf017 ctx; wf018 ctx; wf107 ctx; wf020 ctx; wf101 ctx; wf021 ctx;
       wf022 ctx; wf023 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
       wf029 ctx; wf030 ctx; wf031 ctx; wf085 ctx; wf032 ctx; wf033 ctx;
       wf034_dagsoort_eenheden ctx; wf034_zijtabelsleutels ctx;
