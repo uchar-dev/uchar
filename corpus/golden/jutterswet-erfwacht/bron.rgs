@@ -1,0 +1,10 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de wachtvergoeding per maand Numeriek (geheel getal) voor elke maand;
+    is wachtplichtig kenmerk (bijvoeglijk) voor elke maand;
+
+Objecttype de Klipjutter is een Jutter (mv: Klipjutters) (bezield)
+    de wachtsom Numeriek (geheel getal);
+
+Regel wachtsom van een klipjutter
+    geldig altijd
+        De wachtsom van een Klipjutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij wachtplichtig is).

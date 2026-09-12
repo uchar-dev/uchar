@@ -375,7 +375,25 @@ EXPECTED_CHANNEL=(
 # inside. It also pins one shape the other two goldens do not: a to-many role that carries no
 # declared plural (F-logic has no grammatical number), so the case files key on `Rol.naam` where the
 # RegelSpraak twin has them keying on `Rol.meervoud`.
-EXPECTED_PLAYED=133
+# 133 -> 134 (2026-09-12, card drools-facet-keten): `jutterswet-erfwacht`, the first golden in which a
+# SUBTYPE instance carries an INHERITED TEMPORAL member — a monthly attribute and a monthly
+# characteristic declared on Jutter, folded from a Klipjutter subject. Until this card the loader
+# refused that whole combination by name, because the facet SIDE MAPS (granularity, timeline count,
+# dimensions) were read per DECLARED type at 121 places in both branches and an inherited timeline
+# answered "not temporal" for the subtype. Those reads go through the chain-closed accessors of
+# `Objecttype` now. The golden was BUILT at the previous card and could not land then: ref = clingo
+# exact, no-op refuted, but Drools refused it, and admitting a refusal would have needed a channel pin
+# the card's may-touch did not cover. It has to be a PLAYER for the same reason every source twin does —
+# a documentclass that two of three executors reproduce is outside the square, and the whole point of
+# lifting the refusal is to put it inside. Measured on this branch: PLAYED 1 in the exec-model branch
+# and PLAYED 1 under --drl (the golden carries no defaults, so the DRL branch's missing
+# prioritizedDefaults lowering does not reach it), with the base jar (main 8bd98e4) and the head jar
+# swept over EVERY golden-with-cases in BOTH branches and diffed line for line: exactly these two lines
+# appear and no other report line moves.
+# The channel floor below did NOT move, and that was measured rather than assumed: the withdrawn
+# refusal was VACUOUS over the corpus — no golden reported it in the base sweep — so no entry leaves
+# the list and none joins it.
+EXPECTED_PLAYED=134
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the

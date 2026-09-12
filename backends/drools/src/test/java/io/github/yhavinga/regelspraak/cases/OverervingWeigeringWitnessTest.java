@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import io.github.yhavinga.regelspraak.loader.IrLoader;
+import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
+import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Objecttype;
 
 import org.junit.jupiter.api.Test;
 
@@ -20,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The five refusals object-type inheritance (IR-SPEC ch. 2.2) adds to this backend, and the reason none of
+ * The refusals object-type inheritance (IR-SPEC ch. 2.2) adds to this backend, and the reason none of
  * them can have a corpus witness.
  *
  * <p>Two are SEMANTIC (RUNTIME-SEMANTICS ch. 7.10): the corners the block order does not lower. A corpus
@@ -38,12 +40,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     Drools   : PLAYED — uitkering 30,00
  * </pre>
  *
- * <p>Three are STRUCTURAL, in the IR loader: a chain carrying a temporal or dimensioned member, an unknown
- * supertype, and a cycle. The first is load-bearing rather than defensive — the facet SIDE MAPS
- * (granularity, timeline count, dimensions) are read directly, per DECLARED type, at some forty places in
- * both transpiler branches, so an inherited temporal member would answer "not temporal" for the subtype and
- * lower a timeline as a scalar. The other two are a last line behind WF-103/WF-104: the verifier rejects
- * both at the document, and a loader that walked a cycle would hang instead of reporting.
+ * <p>The rest are STRUCTURAL, in the IR loader. Until 2026-09-12 the first of them refused every chain
+ * carrying a temporal OR dimensioned member, because the facet SIDE MAPS (granularity, timeline count,
+ * dimensions) were read directly, per DECLARED type, at 121 places in both transpiler branches. Those
+ * reads walk the chain now, so that refusal is WITHDRAWN and its two tests are turned around into
+ * witnesses of what the same mutations do today; the dimensioned half was over-broad even then, since
+ * every dimension read already went through the chain-aware {@code dimensiesVan}. What is LEFT is
+ * narrower and named for what it is: the §9.9 startpunt-ANCHOR family, keyed on the DECLARED SUBJECT
+ * NAME rather than looked up as a member, which reads an inherited attribute on a NAMED tijdlijn as
+ * unanchored — two independent sites, two tests. The unknown supertype and the cycle stay a last line
+ * behind WF-103/WF-104: the verifier rejects both at the document, and a loader that walked a cycle
+ * would hang instead of reporting.
  *
  * <p>The messages are asserted by FRAGMENT, not merely by exception class. A refusal whose text drifts is a
  * refusal that stopped saying what it refuses, and on the two semantic corners the fragment is held
@@ -179,26 +186,80 @@ class OverervingWeigeringWitnessTest {
         assertTrue(e.getMessage().contains("ch. 7.4 keeps apart from defeasibility"), e.getMessage());
     }
 
-    // ---------------- 2. the three loader refusals ----------------
+    // ---------------- 2. the loader refusals, and the two that were WITHDRAWN ----------------
 
-    @Test void een_keten_met_een_temporeel_lid_weigert_bij_het_laden() throws Exception {
+    @Test void een_geerfd_temporeel_lid_laadt_en_leest_zijn_facet_op_de_keten() throws Exception {
+        // Was a REFUSAL until 2026-09-12 (card drools-facet-keten): the facet SIDE MAPS were read per
+        // DECLARED type at 121 places in both branches, so an inherited timeline answered "not temporal"
+        // for the subtype. Those reads go through the chain-closed accessors of Objecttype now, and the
+        // witness is turned around with the refusal — from "the loader says no" to "the facet answers on
+        // the subtype", which is what the 121 sites were changed to ask.
+        //
+        // The mutation is the very one the refusal used: `grondslag` becomes a YEAR timeline on the
+        // SUPERTYPE. The document LOADS now, and the subtype answers the facet question for a member it
+        // does not declare — RED on the base twice over (the loader refused the document outright, and
+        // with the refusal removed the own map is empty, which is the wrong judgement the refusal
+        // existed to prevent). `golden/jutterswet-erfwacht` is the VALUE half, where an inherited
+        // monthly attribute is folded over an inherited monthly characteristic and all three executors
+        // answer 71; this test is the facet half, on a shape no golden can hold (a temporal READ into a
+        // scalar target is Phase F in this backend and faults in ref).
         ObjectNode ir = goldenIr(KETEN);
         ((ObjectNode) ir.get("objecttypen").get("Strandrecht")
                 .get("attribuutGranulariteit")).put("grondslag", "JAAR");
-        IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class,
-                () -> IrLoader.loadAll(JSON.readTree(Files.readString(model("keten-temporeel", ir)))));
-        assertTrue(r.getMessage().contains("a supertype chain carrying a temporal or dimensioned member"),
-                r.getMessage());
+        RegelSpraakModel m = IrLoader.loadAll(JSON.readTree(Files.readString(model("keten-temporeel", ir)))).model();
+        Objecttype wrak = m.objecttypeOpNaam("Wrakrecht");
+        assertEquals(RegelSpraakModel.Granulariteit.JAAR, wrak.granulariteitVan("grondslag"));
+        assertTrue(wrak.granulariteitLeden().containsKey("grondslag"),
+                "the chain-closed facet map is what the 121 read sites ask");
+        assertTrue(wrak.attribuutGranulariteit.isEmpty(),
+                "the OWN map stays own — the bean generator subtracts inherited members and needs it");
     }
 
-    @Test void een_keten_met_een_gedimensioneerd_lid_weigert_bij_het_laden() throws Exception {
+    @Test void een_geerfd_gedimensioneerd_lid_laadt_en_leest_zijn_dimensies_op_de_keten() throws Exception {
+        // The other half of the withdrawn refusal, and it was OVER-BROAD even when it was written:
+        // every dimension read in this backend already went through `dimensiesVan`, which has walked the
+        // chain since the kernel — measured at the same card. So this test is red on the base for ONE
+        // reason only, the loader, and the accessor half passed all along. Recorded that way rather than
+        // as a repair, because a refusal that was never load-bearing is worth knowing about.
         ObjectNode ir = goldenIr(KETEN);
-        ((ObjectNode) ir.get("objecttypen").get("Wrakrecht").get("attribuutDimensies"))
-                .set("bergingsdiepte", JSON.createArrayNode().add("seizoen"));
+        ((ObjectNode) ir.get("objecttypen").get("Strandrecht").get("attribuutDimensies"))
+                .set("grondslag", JSON.createArrayNode().add("seizoen"));
+        RegelSpraakModel m = IrLoader.loadAll(JSON.readTree(Files.readString(model("keten-dimensie", ir)))).model();
+        Objecttype wrak = m.objecttypeOpNaam("Wrakrecht");
+        assertEquals(List.of("seizoen"), wrak.dimensiesVan("grondslag"));
+        assertTrue(wrak.gedimensioneerdeLeden().containsKey("grondslag"));
+    }
+
+    @Test void een_geerfde_benoemde_tijdlijn_weigert_bij_het_laden() throws Exception {
+        // What is LEFT of the withdrawn refusal, narrowed to the class that really is chain-blind: the
+        // §9.9 startpunt-ANCHOR family. It is not a member lookup but a protocol keyed on the DECLARED
+        // SUBJECT NAME — `heeftVariabelStartpunt` reads `attribuutTijdlijnNaam` on the type the
+        // reference names, `startpuntLid` and `isStartpuntLid` key on the startpuntbepaling's subject —
+        // so an inherited attribute riding a NAMED tijdlijn reads as unanchored from a subtype, the
+        // variabel-startpunt bucketing is skipped and the §6.8 leeg-fout companion is not emitted.
+        // Silently, in BOTH branches. Named timelines are a live corpus form (two goldens), so the
+        // refusal stands until the family is widened as a whole.
+        ObjectNode ir = goldenIr(KETEN);
+        ((ObjectNode) ir.get("objecttypen").get("Strandrecht")
+                .get("attribuutTijdlijnNaam")).put("grondslag", "boekjaar");
         IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class,
-                () -> IrLoader.loadAll(JSON.readTree(Files.readString(model("keten-dimensie", ir)))));
-        assertTrue(r.getMessage().contains("a supertype chain carrying a temporal or dimensioned member"),
-                r.getMessage());
+                () -> IrLoader.loadAll(JSON.readTree(Files.readString(model("keten-benoemde-tijdlijn", ir)))));
+        assertTrue(r.getMessage().contains("an INHERITED attribute riding a NAMED tijdlijn"), r.getMessage());
+        assertTrue(r.getMessage().contains("keys on the DECLARED subject name"), r.getMessage());
+    }
+
+    @Test void een_startpuntbepaling_op_een_voorouder_weigert_bij_het_laden() throws Exception {
+        // The second site of the same family, and it falls independently: here no attribute rides a
+        // named tijdlijn at all, but a startpuntbepaling names the ANCESTOR, so `isStartpuntLid` —
+        // which both branches ask of the REFERENCE's objecttype — answers no for every subtype
+        // instance and the §6.8 leeg-fout companion silently disappears for exactly those.
+        ObjectNode ir = goldenIr(KETEN);
+        ((ArrayNode) ir.get("resolvedStartpunten")).add(JSON.createObjectNode()
+                .put("node", "ResolvedStartpunt").put("tijdlijn", "boekjaar")
+                .put("objecttype", "Strandrecht").put("lid", "meetdatum"));
+        IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class,
+                () -> IrLoader.loadAll(JSON.readTree(Files.readString(model("startpunt-voorouder", ir)))));
+        assertTrue(r.getMessage().contains("startpuntbepaling declared on an ANCESTOR"), r.getMessage());
     }
 
     @Test void een_onbekend_supertype_weigert_bij_het_laden() throws Exception {

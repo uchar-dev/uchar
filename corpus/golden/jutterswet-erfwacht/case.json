@@ -1,0 +1,83 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "K1",
+        "objectType": "Klipjutter",
+        "attributes": {
+          "wachtvergoeding per maand": {
+            "timeline": [
+              {
+                "from": "2023-01-01",
+                "to": "2024-01-01",
+                "value": {
+                  "number": "10"
+                }
+              },
+              {
+                "from": "2024-01-01",
+                "to": "2024-07-01",
+                "value": {
+                  "number": "11"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "wachtplichtig": [
+            {
+              "from": "2023-07-01",
+              "to": "2024-02-01"
+            }
+          ]
+        }
+      },
+      {
+        "label": "K2",
+        "objectType": "Klipjutter",
+        "attributes": {
+          "wachtvergoeding per maand": {
+            "timeline": [
+              {
+                "from": "2023-01-01",
+                "to": "2024-01-01",
+                "value": {
+                  "number": "10"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "K1",
+      "attribute": "wachtsom",
+      "value": {
+        "number": "71"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K2",
+      "attribute": "wachtsom",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
