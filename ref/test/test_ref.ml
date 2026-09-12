@@ -3643,22 +3643,108 @@ let () =
         [ groep "Strandrecht" "betwist" "99.00" true; groep "Strandrecht" "geborgen" "44.00" true;
           groep "Wrakrecht" "betwist" "55.00" false ] }
   in
-  expect_fault_msg "WV-7.10-c-ongeordende-verzameling-over-de-grens"
+  (* (1a) ONE own group over an inherited declared-unordered SET. §4.1 rule 3
+     DEFINES this — the inherited block moves whole, above the base and below
+     the own exceptions — so the refusal names it as not lowered rather than
+     as undefined. The reason is a property of the wire: that reading is a
+     three-layer priority, and a group's members reconcile as EQUALS. *)
+  expect_fault_msg "WV-7.10-c-geerfde-ongeordende-set-regel-3"
     (fun () -> Eval.evaluate (env_of doc_set) w)
-    "the block order composes one stack over one stack";
-  (* (2) an ordinary rule on an ANCESTOR whose target a descendant covers
-     with its own defaults group: that rule is also a writer in its own
-     right and fires extensionally on the descendant's instances *)
-  let doc_regel =
+    "SUBTYPING §4.1 rule 3 defines it";
+  (* (1b) a declared-unordered set on the OWN level too. Here the design
+     itself is silent — §4.1 rule 3 speaks of an unordered PARENT group and
+     no rule places a subtype's own set against an inherited stack — so this
+     one is genuinely undefined, not merely un-lowered. *)
+  let doc_beide =
+    { empty_doc with objecttypen = types;
+      prioritized_defaults =
+        [ groep "Strandrecht" "betwist" "99.00" true; groep "Strandrecht" "geborgen" "44.00" true;
+          groep "Wrakrecht" "betwist" "55.00" true; groep "Wrakrecht" "geborgen" "66.00" true ] }
+  in
+  expect_fault_msg "WV-7.10-c-eigen-ongeordende-set-ongedefinieerd"
+    (fun () -> Eval.evaluate (env_of doc_beide) w)
+    "has no defined reading";
+  ()
+
+(* WV-7.10-e/f: an ORDINARY rule as the base of its level — SUBTYPING §4.1
+   rules 1 and 4, LOWERED. ch. 7.8 already reads a bare computing rule as a
+   default; inheritance takes that at its word, so the rule is the one-member
+   base of the level that declares it. The two shapes and their boundary. *)
+let () =
+  let bedrag : Ir_v0.Ast.datatype =
+    Numeriek { geheel = false; decimalen = 2; teken = None; eenheid = None }
+  in
+  let ot_sub name super : string * Ir_v0.Ast.objecttype =
+    let n, o = ot name [] [] in
+    (n, { o with ot_supertype = Some super })
+  in
+  let types =
+    [ ot "Strandrecht" [ ("uitkering", Some bedrag) ] [ "betwist" ]; ot_sub "Wrakrecht" "Strandrecht" ]
+  in
+  let altijd : Ir_v0.Ast.conditie =
+    Samengesteld { kwantor = Alle; drempel = 0; onderdelen = []; bron = None }
+  in
+  let kc k : Ir_v0.Ast.conditie =
+    Kenmerk_check { kenmerk = Some k; navigatie = None; negatie = false; eigenaar = None;
+                    periode = None; bron = None; navigatie_binding = None }
+  in
+  let d voorwaarde waarde : Ir_v0.Ast.default =
+    { default_besluit = None; default_voorwaarde = Some voorwaarde;
+      default_consequentie = Some (litv waarde bedrag); default_initialisatie = false;
+      default_excepties = None; default_bron = None }
+  in
+  let groep onderwerp defaults : Ir_v0.Ast.prioritized_defaults =
+    { pd_naam = Some ("uitkering van een " ^ onderwerp); pd_onderwerp = onderwerp;
+      pd_kenmerk = None; pd_attribuut = Some "uitkering"; defaults; pd_ongeordend = false;
+      pd_bron = None; pd_geldigheid = None }
+  in
+  let run doc otype chars =
+    let i = { (inst "x" otype []) with World.chars = List.map Ir_v0.Checks.norm chars } in
+    World.attr (World.get (Eval.evaluate (env_of doc) (World.add_instance World.empty i)) "x")
+      "uitkering"
+  in
+  (* (e) §4.1 rule 1, the BARE-RULE branch: the subtype's own rule IS its own
+     base and replaces the inherited one, while the inherited exception stays
+     above it. This is the penguin row with a RULE in the base position. *)
+  let doc_e =
+    { empty_doc with objecttypen = types;
+      resolved_regels =
+        [ rr "uitkering van een wrakrecht" Berekening
+            (Some (aref "uitkering" "Wrakrecht" bedrag)) (Some (litv "7.00" bedrag)) None ];
+      prioritized_defaults =
+        [ groep "Strandrecht" [ d (kc "betwist") "99.00"; d altijd "30.00" ] ] }
+  in
+  expect_num "WV-7.10-e-supertype-basis" (run doc_e "Strandrecht" []) "30.00";
+  expect_num "WV-7.10-e-supertype-uitzondering" (run doc_e "Strandrecht" [ "betwist" ]) "99.00";
+  expect_num "WV-7.10-e-eigen-regel-vervangt-geerfde-basis" (run doc_e "Wrakrecht" []) "7.00";
+  expect_num "WV-7.10-e-geerfde-uitzondering-boven-de-regelbasis"
+    (run doc_e "Wrakrecht" [ "betwist" ]) "99.00";
+  (* (f) §4.1 rule 4: the ANCESTOR's bare rule is the descendant's inherited
+     base, and the descendant's own base replaces it. The same rule keeps
+     governing the ancestor's own instances through the ordinary ch. 7.8
+     path, because that chain declares no group — the boundary that keeps
+     every flat model where it was. *)
+  let doc_f =
     { empty_doc with objecttypen = types;
       resolved_regels =
         [ rr "uitkering van een strandrecht" Berekening
-            (Some (aref "uitkering" "Strandrecht" bedrag)) (Some (litv "7.00" bedrag)) None ];
-      prioritized_defaults = [ groep "Wrakrecht" "betwist" "55.00" false ] }
+            (Some (aref "uitkering" "Strandrecht" bedrag)) (Some (litv "30.00" bedrag)) None ];
+      prioritized_defaults =
+        [ groep "Wrakrecht" [ d (kc "betwist") "99.00"; d altijd "20.00" ] ] }
   in
-  expect_fault_msg "WV-7.10-c-voorouderregel-als-geerfde-basis"
-    (fun () -> Eval.evaluate (env_of doc_regel) w)
-    "an inherited ordinary writer as the stack's base is not lowered (ch. 7.10)"
+  expect_num "WV-7.10-f-voorouderregel-op-de-voorouder" (run doc_f "Strandrecht" []) "30.00";
+  expect_num "WV-7.10-f-eigen-basis-vervangt-voorouderregel" (run doc_f "Wrakrecht" []) "20.00";
+  expect_num "WV-7.10-f-eigen-uitzondering-boven-alles" (run doc_f "Wrakrecht" [ "betwist" ]) "99.00";
+  (* the boundary: a bare rule with NO defaults group anywhere on its chain
+     is the ordinary ch. 7.8 standing norm and enters no stack at all — which
+     is every ordinary rule in a flat model, and the reason none of them move *)
+  let doc_kaal =
+    { empty_doc with objecttypen = types;
+      resolved_regels =
+        [ rr "uitkering van een strandrecht" Berekening
+            (Some (aref "uitkering" "Strandrecht" bedrag)) (Some (litv "30.00" bedrag)) None ] }
+  in
+  expect_num "WV-7.10-f-kale-regel-blijft-de-staande-norm" (run doc_kaal "Wrakrecht" []) "30.00"
 
 (* WV-7.10-d: the THREE-LEVEL claim of ch. 7.10 — "the grandchild's own
    exceptions above the child's, above the grandparent's, with the base

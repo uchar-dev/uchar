@@ -318,7 +318,7 @@ EXPECTED_CHANNEL=(
 # The pin still has a live flank, and it is the OTHER direction: a count of TWO OR MORE on
 # `bedrijvig` is a §13.3.6.7 raster neither branch carries, so it drops this golden out of the
 # played channel exactly as before — measured after the fix, both branches refuse it by name.
-# 2026-09-12, +3 (124 -> 127): the subtype kernel's anchor
+# 2026-09-12, +4 (124 -> 128): the subtype kernel's anchor
 # `anchor/jutterswet-strandrechtketen` plays. It is the whole point of that card — the four
 # proof moments of object-type inheritance have to be reproduced by all THREE executors, so a
 # supertype rule firing for a subtype instance, a supertype aggregation counting one, base
@@ -335,8 +335,12 @@ EXPECTED_CHANNEL=(
 # DIFFERENT datatypes, so a reader that crossed the two chains is caught by the write boundary
 # (12,50 into a whole-number declaration faults) rather than merely answering wrong. It is the
 # admission's only witness — the design refuses shadowing and admits this, and nothing else pins
-# the difference.
-EXPECTED_PLAYED=127
+# the difference. The fourth is `jutterswet-wrakbasis`, the OTHER branch of SUBTYPING §4.1 rule 1:
+# the subtype's own writer is a bare RULE rather than a defaults group, so the rule is its own base
+# and replaces the inherited one while the inherited exception stays above it (10,00/20,00 without
+# `betwist`, 99,00/99,00 with). That branch was refused until 2026-09-12 and is now lowered; the
+# golden is what keeps all three executors on it.
+EXPECTED_PLAYED=128
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the
