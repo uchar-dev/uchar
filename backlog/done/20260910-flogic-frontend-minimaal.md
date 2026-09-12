@@ -184,15 +184,6 @@ gate.
   dus er is geen wire-document dat haar schendt — de fixture is de getuige,
   precies zoals SUBTYPING §3.1 vastlegt.
 
-### Drie voorstellen voor de hoofdsessie
-
-1. **CLAUDE.md, gateslijst, gate 14** — letterlijke tekst in het
-   sessieverslag.
-2. **CONSTRUCTS rij 39** — voorgestelde deltazin in het sessieverslag.
-3. **`.github/workflows/gates.yml`** — voorgestelde job in het
-   sessieverslag; onvoorwaardelijk en blokkerend, naar het model van gate 6
-   (OCaml + clingo, want de suite speelt haar casussen door ref én de
-   ASP-backend).
 
 ### Naronde (zelfde kaart)
 
@@ -218,3 +209,144 @@ waarom de hergebruikte casusbestanden hier op `Rol.naam` vallen; een lege
 Catala-frontend emitteert hem altijd leeg), dus het vullen ervan is winst
 en geen plicht; en gate 13 pikt een nieuwe golden vanzelf op, zonder
 registratie.
+
+### Tweede naronde: de gebalkte basis draagt nu ook een naam
+
+De eerste naronde sloot alleen de Horn-regel. De gebalkte
+klassewaarde bleef een stil kanaal: `c[|attr -> v|]` levert een
+`PrioritizedDefaults`-groep, en een id kón er niet op — de parser weigerde
+"a rule id on Vogel, which is not a rule". Gemeten in de eigen fixture
+`overerving.flogic`: een groep `Pinguin.hoogte` met `naam: null`, en met
+twee zulke bases een lege `regels`-index. Woordelijk het kanaal dat de
+README en de eerste naronde claimden te sluiten.
+
+Gekozen route: de meer-taal-route. `@!{'…'}` mag nu op de gebalkte
+klassewaarde en is daar **verplicht**, met één uniforme regel — *elke vorm
+die een naam op de wire zet draagt er een, en alleen die vormen mogen er
+een*. Een gebalkte *signatuur* declareert een lid en noemt niets, dus een
+id daarop weigert, net als op `::`, op `:` en op het ongebalkte frame.
+Omdat Flora-2 geen id per item kent, draagt een benoemde gebalkte
+uitspraak precies haar ene definitie. De uniciteitscontrole loopt over
+beide soorten samen, en de `regels`-index is nu de volledige namenlijst in
+broncodevolgorde. De golden verandert er niet van (benoemde Horn-bases);
+gate 14 emitteert haar byte-identiek. Suitevloer 66 -> 78.
+
+Meegenomen in dezelfde beweging: een fixture voor de
+argumentatietheorie-descriptor `@{…}` (de README belooft er één per
+weigering en die ontbrak); weigering van twee declaraties van één lid op
+één klasse (voorheen exit 0 met een dubbele JSON-sleutel, RFC
+8259-ongedefinieerd) en van een rol met een ongedeclareerde filler
+(voorheen pas WF-003, terwijl de verlaging de filler leest om een
+aggregatie te typeren); `Emit.to_file` serialiseert nu volledig vóór het
+openen van het bestand, zodat een fail-fast-arm geen half document
+achterlaat, en de CLI vangt de resterende fouten met een eerlijk
+`FATAL`-kanaal (exit 3) naast `REFUSED` (exit 2); de twee `Option.get`'s
+zijn weg; en de WF-106-naald in de suite is onderscheidend gemaakt —
+`RechtUitkeringZw` is een prefix van `RechtUitkeringZwWazo`, dus de naald
+draagt nu het paar én zijn ouders.
+
+### Openstaand: een spec-gat, voor de maintainer
+
+**Geen enkele WF-regel kruist een regelnaam op de wire.** WF-020 houdt
+namen uniek binnen en over de regelvormige arrays, maar filtert lege namen
+weg vóór de vergelijking, en `prioritizedDefaults` staat niet in
+`form_arrays` — dus een lege naam, een duplicaat binnen de groepen én een
+kruisbotsing tussen een groep en een regel passeren alle drie de verifier.
+Eén Drools-branche (de DRL-tekstbranche, het tweede been van gate 13) kan
+een lege naam bovendien niet renderen. De weigering in deze frontend is
+vandaag het enige vangnet, en die geldt per definitie alleen voor
+documenten die uit deze frontend komen. Spec-vraag: WF-020 verbreden tot
+`prioritizedDefaults` en tot een non-null-eis, of een eigen nummer. Naast
+de al genoteerde open flanken van rij 39.
+
+### Voorstel (a) — CLAUDE.md, gateslijst, letterlijke tekst
+
+```
+14. `scripts/check-flogic.sh` — the F-logic frontend (`frontends/flogic`,
+    plain OCaml in the workspace's dune build, so no fetched jars and no
+    external compiler) builds and its own suite passes with a non-zero
+    check count: the suite emits every test program, holds it
+    verifier-clean, replays its cases through `ref` AND clingo, and drives
+    one fixture per refusal, checking both the reason and the citation of
+    the mandate document the refusal list belongs to. Every corpus golden
+    carrying a `bron.flogic` re-emits through the frontend
+    byte-identically after canonicalisation (gate 2's serialiser shape,
+    executed from that script — one source of truth, as in gate 9). An
+    empty flogic-golden set, a suite that ran zero checks, or a missing
+    dune is a failure, never silently green. Counting floors in the
+    script: `EXPECTED_MIN_CHECKS=78` and `EXPECTED_MIN_GOLDENS=1`, both
+    measured 2026-09-12. CI leg unconditional and blocking — unlike gate
+    9 this frontend links no external toolchain, so every runner can run
+    it.
+```
+
+### Voorstel (b) — CONSTRUCTS rij 39, deltazin
+
+> A SECOND frontend landed the same day (2026-09-12, card
+> flogic-frontend): `frontends/flogic` lowers a minimal F-logic slice —
+> syntactically a subset of Flora-2 2.2 — to the same `supertype` field
+> and the same inherited defaults stack, with
+> `corpus/golden/jutterswet-wrakrecht-flogic` as the anchor's SECOND
+> source twin (the same four case files byte-identically; gate 14's
+> byte-identical re-emission, gate 12's played channel 132 -> 133). That
+> is what makes the field LANGUAGE-neutral rather than dialect-borne: two
+> source languages sharing no grammar and no code reach one IR, and the
+> frontend diff against `jutterswet-wrakrecht` closes at **52 differing
+> lines in four ADMINISTRATIVE categories with no fifth** — 27 of source
+> provenance (`bron`/`onderwerpBron`, read by no executor), 12 of literal
+> spelling with its own annotation (the hand anchor already spells the
+> F-logic form, and §2.10's effective-type law is why all four executors
+> pin the same values across it), 8 of declared surface names F-logic has
+> no grammar for (`meervoud` null, `bezield` false, one label on a
+> to-many role, so the shared case key falls on `Rol.naam` — a shape
+> `jutterswet-kaveltelling` already carries), and 5 of `regels` index
+> order. WF-106's witness is doubled and, for the first time, EXERCISED
+> rather than constructed: F-logic can WRITE two `::` facts, so the
+> refusal fires on a real second parent instead of on a spelling the
+> dialect has to be handed. Three lowerings the mandate's slice did not
+> fix, taken on the generic reading and argued on the card: a fact type is
+> a class marked `x : feittype` carrying its two role signatures (F-logic
+> has no named binary relation, and Flora-2 2.2 has no `=>>` — a role's
+> arity is a cardinality brace, measured); priority comes from the SHAPE
+> of a definition (unconditional = base, conditional = exception, a target
+> with only an unconditional rule stays the ch. 7.8 standing norm, and a
+> barred class-level value is always a base) because F-logic's own
+> ordering device is defeasible reasoning, which the slice refuses; and a
+> ground instance fact refuses with a pointer to the `uchar-case-v0`
+> document, since the IR has no instance channel. The frontend also
+> requires an id on every form that puts a name on the wire and refuses a
+> duplicate across both kinds, because nothing downstream does: WF-020
+> filters null names out and never reaches a `prioritizedDefaults` name
+> (open spec question, recorded on the card). Flora-2 2.2 was run over the
+> use case's inheritance skeleton as a documented external comparison
+> (never a gate, never a fourth leg): under the child-wins reading of
+> §11.2 five of the six cells agree exactly — 10 / 99 / 20 / 99 / 55 —
+> and on the sixth uchar's single 55 lies inside Flora's unchosen
+> {55, 99}, so what divides them there is determinism, not direction.
+
+### Voorstel (c) — `.github/workflows/gates.yml`, job
+
+```yaml
+  flogic:
+    # Gate 14 — the F-logic frontend (card flogic-frontend, 2026-09-12): a
+    # second source language reaching the same kernel subtyping. Needs
+    # OCaml (the frontend, the verifier and ref) and gringo (the suite
+    # replays every case through the ASP backend too), and nothing else —
+    # this frontend links no external toolchain, so unlike gate 9 the leg
+    # is unconditional and blocking. Invoked with BASH, like gates 10-13:
+    # the script uses process substitution and is a syntax error under sh.
+    name: "Gate 14: F-logic frontend"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: "5"
+      - name: install yojson + zarith
+        run: opam install -y yojson zarith
+      - name: install clingo
+        # Ubuntu ships the clingo binary in the gringo package
+        run: sudo apt-get update && sudo apt-get install -y gringo && clingo --version
+      - name: check-flogic
+        run: opam exec -- bash scripts/check-flogic.sh
+```
