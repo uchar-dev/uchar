@@ -6680,6 +6680,71 @@ let n_char ot k = "char:" ^ norm ot ^ ":" ^ norm k
 let n_chan rule = "chan:" ^ norm (strip_version rule)
 let n_pop ot = "pop:" ^ norm ot
 
+(* A population node is the set of instances of one declared type, so a
+   creation of T grows T's population AND every ancestor's: every T
+   instance IS an instance of each type on its chain (ch. 2.2), and a form
+   that iterates an ancestor's population is handed the new instance.
+
+   Keyed on the WRITTEN name alone the write and that read were different
+   nodes, and a cycle running between them left the graph entirely —
+   measured 2026-09-12 on a creation whose `nieuwType` is a subtype of its
+   own `subject`: verifier-clean, and `ref` ending in `no fixpoint within
+   100 passes`. The same creation with the two names EQUAL was already
+   refused, so a subtype was an escape hatch from a rule the document in
+   one type already met.
+
+   Only the WRITE closes, and only upward. Creating an ancestor does not
+   grow a subtype's population, so closing reads downward would invent
+   edges and refuse the mirror document (subject `Wrakrecht`, new type
+   `Strandrecht`) that terminates perfectly well. And only an OBJECT
+   creation closes: a fact creation mints no instance — its population
+   write is ch. 6.1's conservative proxy beside the relation node — so
+   lifting a proxy up a chain buys false edges and no missed cycle. *)
+let pop_writes ctx t =
+  match declared_objecttype ctx t with
+  | None -> [ n_pop t ]
+  | Some ot ->
+      List.sort_uniq compare
+        (n_pop t
+         :: List.filter_map (fun (a : objecttype) -> Option.map n_pop a.ot_naam) (chain_from ctx ot))
+
+(* The same closure for a MEMBER write, and it runs BOTH ways because a
+   member is not a population: a rule writing `m` at owner T writes it on
+   every T instance, and the instance sets of T and S overlap exactly when
+   T and S are ⊑-comparable — S above T (a T instance is an S), S below T
+   (an S instance is a T). So the write reaches every comparable spelling
+   that HAS the member, and only those.
+
+   Incomparable types are deliberately left apart, and that is the whole
+   reason this is a comparability walk and not [declaring_type]. Keying
+   both sides on the declaring type is one line shorter and merges the two
+   SIBLING subtypes of one parent into one node: measured 2026-09-12, that
+   refuses a document (two incomparable subtypes each computing one
+   inherited attribute from the other) that ref replays to a clean PASS —
+   no instance is of both types, so there is no cycle to refuse. Under the
+   comparability reading the same document stays clean and the two spellings
+   of ONE chain still meet.
+
+   Reads stay literal on purpose: every legal read spelling of `m` is a type
+   comparable with some writer's owner, so the write side alone already
+   draws every real edge. *)
+let member_writes ctx ~kind ot m =
+  let node = match kind with `Attribute -> n_attr | `Characteristic -> n_char in
+  let carries s =
+    match objecttype ctx s with
+    | None -> false
+    | Some e -> ( match kind with `Attribute -> has_attr e m | `Characteristic -> has_kenmerk e m)
+  in
+  List.sort_uniq compare
+    (node ot m
+     :: List.filter_map
+          (fun (key, (o : objecttype)) ->
+            let n = Option.value o.ot_naam ~default:key in
+            if (is_sub ctx ~sub:n ~super:ot || is_sub ctx ~sub:ot ~super:n) && carries n then
+              Some (node n m)
+            else None)
+          ctx.doc.objecttypen)
+
 (* the link set of one declared relation (ch. 6.1): written by the fact
    creations that create it, read by every symbolic hop over it and by
    every fold/allocation that names it in a role binding. Bindingless
@@ -6921,7 +6986,9 @@ let dep_forms ctx : dep_form list =
         match r.doel with
         | Some (Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ }) ->
             let writes =
-              [ (if r.rr_soort = Some Kenmerktoekenning then n_char ot a else n_attr ot a) ]
+              member_writes ctx
+                ~kind:(if r.rr_soort = Some Kenmerktoekenning then `Characteristic else `Attribute)
+                ot a
             in
             let subject = Some ot in
             let reads = dep_opt ctx ~subject (cond ~subject r.rr_voorwaarde) r.waarde in
@@ -6941,8 +7008,10 @@ let dep_forms ctx : dep_form list =
         let bt = Option.value v.bron_type ~default:"" in
         let dt = Option.value v.doel_type ~default:"" in
         let writes =
-          (match v.doel_attribuut with Some a -> [ n_attr dt a ] | None -> [])
-          @ (match v.restant_attribuut with Some a -> [ n_attr bt a ] | None -> [])
+          (match v.doel_attribuut with Some a -> member_writes ctx ~kind:`Attribute dt a | None -> [])
+          @ (match v.restant_attribuut with
+            | Some a -> member_writes ctx ~kind:`Attribute bt a
+            | None -> [])
         in
         let reads =
           (n_pop dt, Dep_pos)
@@ -7035,8 +7104,8 @@ let dep_forms ctx : dep_form list =
         let nt = Option.value o.nieuw_type ~default:"" in
         let subject = o.oc_subject in
         let writes =
-          (n_pop nt)
-          :: (match (o.oc_verbindende_rol, subject) with
+          pop_writes ctx nt
+          @ (match (o.oc_verbindende_rol, subject) with
              | Some rb, _ ->
                  (* the explicit back-link binding (extension) names
                     the written relation directly *)
@@ -7057,11 +7126,14 @@ let dep_forms ctx : dep_form list =
                      | _ -> [ n_rel fn ])
                  | _ -> [])
              | None, None -> [])
-          @ List.filter_map
+          @ List.concat_map
                (fun (t : toekenning) ->
-                 Option.map
-                   (fun a -> if t.toe_kenmerk then n_char nt a else n_attr nt a)
-                   t.toe_attribuut)
+                 match t.toe_attribuut with
+                 | Some a ->
+                     member_writes ctx
+                       ~kind:(if t.toe_kenmerk then `Characteristic else `Attribute)
+                       nt a
+                 | None -> [])
                o.toekenningen
         in
         let reads =
@@ -7150,10 +7222,12 @@ let dep_forms ctx : dep_form list =
         in
         let reads = List.concat_map default_reads l.defaults in
         let writes =
-          (match l.pd_kenmerk with Some k -> [ n_char l.pd_onderwerp k ] | None -> [])
+          (match l.pd_kenmerk with
+          | Some k -> member_writes ctx ~kind:`Characteristic l.pd_onderwerp k
+          | None -> [])
           @
           match l.pd_attribuut with
-          | Some a -> [ n_attr l.pd_onderwerp a ]
+          | Some a -> member_writes ctx ~kind:`Attribute l.pd_onderwerp a
           | None -> []
         in
         {
