@@ -268,3 +268,26 @@ jobs:
         run: mvn -B -f backends/drools/pom.xml package
       - name: check-reftype-derivation
         run: opam exec -- bash scripts/check-reftype-derivation.sh
+
+  flogic:
+    # Gate 14 — the F-logic frontend (card flogic-frontend, 2026-09-12): a
+    # second source language reaching the same kernel subtyping. Needs
+    # OCaml (the frontend, the verifier and ref) and gringo (the suite
+    # replays every case through the ASP backend too), and nothing else —
+    # this frontend links no external toolchain, so unlike gate 9 the leg
+    # is unconditional and blocking. Invoked with BASH, like gates 10-13:
+    # the script uses process substitution and is a syntax error under sh.
+    name: "Gate 14: F-logic frontend"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: "5"
+      - name: install yojson + zarith
+        run: opam install -y yojson zarith
+      - name: install clingo
+        # Ubuntu ships the clingo binary in the gringo package
+        run: sudo apt-get update && sudo apt-get install -y gringo && clingo --version
+      - name: check-flogic
+        run: opam exec -- bash scripts/check-flogic.sh
