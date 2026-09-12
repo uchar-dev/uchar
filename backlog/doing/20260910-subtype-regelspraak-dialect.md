@@ -158,6 +158,12 @@ golden af met tweemaal `WF-050 … a non-initialisation default carries a
 justification`, en pas daarna is de lowering geschreven en de unittest
 toegevoegd (224 groen).
 
+De lensronde bracht er drie bij (227 groen). De misbindingsgetuige ging óók
+rood-eerst: `p11`/`p15` geëmit, `bronRol {strandbeheer, wrakrechten}` gemeten,
+verifier PASS — het stille geval — daarna de identiteitseis, daarna dezelfde
+twee documenten bindingloos met een luide WF-048, met de positieve controle
+`p16` onveranderd.
+
 ### De dertien slotregels (letterlijk)
 
 ```
@@ -170,7 +176,7 @@ check-clingo: PASS (backend suite 125 checks, floor 83; 459 cases replay exactly
 check-noop: PASS (423 cases refute a do-nothing executor; 36 pinned survivors pin defeasible standing)
 check-rood: PASS (26 red cases fault observably in ref and clingo, floor 26)
 check-catala: PASS — frontend suite green (201 checks, floor 201); 12 catala golden(s) regenerate byte-identically (floor 12)
-check-regelspraak: PASS — JUnit suite green (224 tests, floor 173); 43 rgs golden(s) re-emit byte-identically (floor 38)
+check-regelspraak: PASS — JUnit suite green (227 tests, floor 173); 43 rgs golden(s) re-emit byte-identically (floor 38)
 check-toka-parity: PASS
 check-drools: PASS
 check-reftype-derivation: PASS (92 unit annotations twisted over 17 goldens, floor 74; 80 executor replays reproduce the untouched outcome, 14 of them PLAYED by the DRL-text branch, floor 13; 0 pinned survivors)
@@ -193,16 +199,31 @@ altijd al was (de ch.-7.8-staande norm, die geldt zodra niets erboven beslist).
 Eén plek (`RuleChecker.defaultVan`), dus geordend én ongeordend krijgen hem.
 Alternatief was een taalvorm voor "indien altijd" — meer oppervlak voor niets.
 
-**2. De vouwbron valt terug op de GESCHREVEN rol.** De kaart vraagt de
-frontend WF-048's ketensluiting vóór te zijn. Gemeten: de paarzoektocht van de
-frontend is al ketengesloten (`rolHeeftObjecttype` gebruikt `isEen`), dus zij
-zwijgt precies wanneer WF-048 weigert — en dan ging de vouwbron bindingloos de
-wire op. `IrEmitter.bronRolBinding` probeert nu, waar het paar dubbelzinnig is,
-de rol die de zin schreef (`elementRolBinding` over de naamkandidaten van
-`onderwerpBron`) — dezelfde declared-name-zoektocht die de Onbekend-tak al
-deed. Alleen een gedeclareerde naam bindt; een frase die geen of meer dan één
-rol noemt blijft bindingloos in plaats van te gokken. Getuige:
-`een_subtype_dat_het_typepaar_dubbel_verbindt_houdt_zijn_bronRol`.
+**2. De vouwbron valt terug op de GESCHREVEN rol, en eist dan identiteit.** De
+kaart vraagt de frontend WF-048's ketensluiting vóór te zijn. Gemeten: de
+paarzoektocht van de frontend is al ketengesloten (`rolHeeftObjecttype` gebruikt
+`isEen`), dus zij zwijgt precies wanneer WF-048 weigert — en dan ging de
+vouwbron bindingloos de wire op. `IrEmitter.bronRolBinding` probeert nu, waar
+het paar dubbelzinnig is, de rol die de zin schreef (`elementRolBinding` over de
+naamkandidaten van `onderwerpBron`) — dezelfde declared-name-zoektocht die de
+Onbekend-tak al deed.
+
+De eerste versie van die terugval was FOUT en is door de lensronde gemeten
+(`p11`, `p15`): de naamkandidaten ontstaan door leidende woorden weg te laten,
+dus "alle geborgen wrakrechten" wordt óók als "wrakrechten" geprobeerd, en dat
+trof een gelijknamige rol in een ANDER feittype. De bovengrenstoets die overal
+elders juist is liet dat door — `Wrakrecht.isEen(Strandrecht)` — en de vouwbron
+ging gebonden aan een relatie die de zin nooit noemde de wire op: verifier
+PASS, `ref` rekende 100 waar het document 10 verwacht. Bindingloos was daar
+juist de goede uitkomst geweest (luide WF-048). De terugval eist nu dat de
+bereikte rol het elementtype ZELF als vuller declareert — identiteit, niet ⊑.
+Gemeten na de fix: `p11` en `p15` gaan bindingloos en krijgen
+`WF-048 FAIL … 2 fact types relate 'Kustgemeente' to 'Wrakrecht'`, de positieve
+controle `p16` bindt onveranderd op `wrakberging/geborgen wrakrecht` en blijft
+verifier-schoon, en de golden heremitteert byte-identiek. Twee getuigen:
+`een_subtype_dat_het_typepaar_dubbel_verbindt_houdt_zijn_bronRol` (bindt) en
+`een_naam_die_een_rol_in_een_ander_feittype_treft_bindt_niet` (bindt niet).
+Codecommentaar, DIVERGENCES §5 en deze notitie zeggen nu alle drie hetzelfde.
 
 ### Kleinere keuzes, expliciet gemaakt
 
@@ -218,6 +239,27 @@ rol noemt blijft bindingloos in plaats van te gokken. Getuige:
   binding dus wél wegvallen en WF-048 weigert luid. Geen corpusgetuige, geen
   stille fout — maar het is een openstaande flank, niet iets wat deze kaart
   heeft dichtgezet.
+- **Kernelgat, buiten deze may-touch: de verdelingstak van WF-034 sluit de
+  keten niet.** Gemeten met de lenscasus `p18`: `bergingsaandeel` staat op
+  `Berger`, `Hoofdberger is een Berger`, en een verdeling naar de hoofdbergers
+  valt op
+  `WF-034 FAIL /verdelingen/0/doelAttribuut: 'bergingsaandelen' is not a
+  declared attribute of the target type 'Hoofdberger'`. Luid, dus geen
+  correctheidsfout — maar het weigert een document dat ch. 2.2 toestaat. De
+  verifier ligt buiten deze kaart; de hoofdsessie pakt het direct na de merge
+  op.
+- **Twee auteursfouten krijgen een gerichte melding náást de ANTLR-fout.**
+  Kaal `is Strandrecht` (lidwoord vergeten) en `(mv: …) is een …` (verkeerde
+  annotatievolgorde) leverden alleen "no viable alternative", wat de auteur naar
+  de verkeerde plek stuurt. `Resolver.kopvormHints` leest ze van de tokenstroom
+  af, alleen náást een echte syntaxfout en alleen over de KOP — de wandeling
+  stopt bij het eerste token dat geen kop kan bevatten, zodat de "is een" van
+  gewone regeltekst nooit voor een van beide wordt aangezien. Drie getuigen,
+  waarvan één negatief (`een_correcte_kop_krijgt_geen_kopvormhint`).
+- **WF-104 en WF-105 citeren nu een regel.** De cyclusmelding wijst de clausule
+  aan die de cyclus sluit; de shadowmelding wijst de HERDECLARATIE aan, want
+  daar zit de reparatie. Gemeten: regel 4 respectievelijk regel 6 op de twee
+  fixturevormen, waar beide eerder 0 droegen.
 - **De `altijd`-unittest staat in `SubtypeDialectTest`, niet in
   `DefaultsExtensieTest`,** waar hij inhoudelijk hoort. Bestaande testbestanden
   zijn niet aangeraakt; een latere kaart mag hem verhuizen.
@@ -234,7 +276,7 @@ door
 
 en voeg aan het eind van de **Landed (2026-09-12)**-zin toe, ná "and five negatiefs":
 
-> `. The dialect frontend landed the same day: `jutterswet-wrakrecht` is the anchor's SOURCE twin — the same three types and the same four cases, byte-identical, but with an `ir.json` the emitter wrote from a `bron.rgs`, so the field is producer-backed and not only hand-written (gate 10's byte-identical re-emission, gate 12's played channel 129 -> 130). WF-106's promised witness is now real: the frontend refuses both spellings of a second parent (two `is een` clauses, and `is een A en B`) naming the two canonical-data-model cases in the message, and refuses WF-103/104/105 ahead of the verifier because it has the chain at hand. Two consequences the syntax did not carry: an UNCONDITIONAL base rule now lowers to the vacuously true justification WF-050 requires (an `ALLE`-group over no parts — how the hand anchors spell "altijd"), which no defaults golden had needed before; and where the chain closure makes a type pair ambiguous the fold's `bronRol` falls back to the role the sentence WROTE, so a subtype cannot silently turn a bound navigation into a WF-048 refusal`
+> `. The dialect frontend landed the same day: `jutterswet-wrakrecht` is the anchor's SOURCE twin — the same three types and the same four cases, byte-identical, but with an `ir.json` the emitter wrote from a `bron.rgs`, so the field is producer-backed and not only hand-written (gate 10's byte-identical re-emission, gate 12's played channel 129 -> 130). WF-106's promised witness is now real: the frontend refuses both spellings of a second parent (two `is een` clauses, and `is een A en B`) naming the two canonical-data-model cases in the message, and refuses WF-103/104/105 ahead of the verifier because it has the chain at hand. Two consequences the syntax did not carry: an UNCONDITIONAL base rule now lowers to the vacuously true justification WF-050 requires (an `ALLE`-group over no parts — how the hand anchors spell "altijd"), which no defaults golden had needed before; and where the chain closure makes a type pair ambiguous the fold's `bronRol` falls back to the role the sentence WROTE — demanding that role declare the element type ITSELF, since the by-name candidates are truncations and an upper-bound test there would bind a same-named role in another fact type, which is verifier-clean and silently folds the wrong set where a bindingless fold would get the loud WF-048`
 
 `spec/PLAN.md` heeft geen wijziging nodig: de scope van de kaart is niet
 veranderd.
