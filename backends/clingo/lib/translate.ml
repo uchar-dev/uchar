@@ -532,8 +532,26 @@ let role_canonical (r : rol) =
    intermediates contributes one tuple — which is what ref's explicit
    label dedup produces. Nothing in this function enforces it; the
    choice of aggregate TERM does, and that is why the terms are left
-   exactly as the one-step arms wrote them. *)
+   exactly as the one-step arms wrote them.
+
+   The CLOSING atom is the element type (IR-SPEC ch. 2.2, the exclusion
+   direction of extensional quantification): the relation supplies the
+   REACH, elementObjecttype supplies the POPULATION, so the fold ranges
+   over { i : typeOf(i) ⊑ elementObjecttype } and an instance the role
+   reaches but that type does not cover is not a member. The two
+   coincided while WF-047 demanded one and the same name on both; since
+   ch. 2.6 widened "agree" to ⊑-compatibility the filler may be a STRICT
+   SUPERTYPE and the role then reaches instances the fold does not range
+   over. This is the same split ch. 4.1 makes for an allocation's
+   recipients, and `isa/2` is the same chain-closed relation the solver
+   derives (the isa_sub block in [translate]) that [vdN_ontv] joins on —
+   so where the filler is the element type or below, which is every
+   document written before the chain existed, the atom is satisfied by
+   every instance the role yields and the encoding is unchanged.
+   Every fold body goes through here, the row-1 count wart included, so
+   there is one place the population is decided. *)
 let source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x =
+  let scope = [ Printf.sprintf "isa(%s,%s)" x (str el) ] in
   match bron_pad with
   | None ->
       let role_name =
@@ -542,7 +560,7 @@ let source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x =
           | Some rb -> Eval.bound_role env rb
           | None -> Eval.connecting_role env ~from_type:subject_ot ~to_type:el)
       in
-      [ Printf.sprintf "rol(%s,%s,%s)" subject (str role_name) x ]
+      (Printf.sprintf "rol(%s,%s,%s)" subject (str role_name) x :: scope)
   | Some pad ->
       let n = List.length pad in
       if n < 2 then
@@ -558,7 +576,7 @@ let source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x =
           ([], subject)
           (List.mapi (fun i rb -> (i, rb)) pad)
       in
-      atoms
+      atoms @ scope
 
 let lexeme_decimals lex =
   match String.index_opt lex '.' with
@@ -1542,25 +1560,25 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           "a bronPad on the row-1 wart (the role-name count source): a range is admissible only \
            on the SET source of a single-argument instance fold (WF-102)";
       let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty } in
-      let role =
-        role_canonical
-          (match bron_rol with
-          | Some rb -> Eval.bound_role env rb
-          | None -> (
-              (* resolve-or-fault (IR-SPEC ch. 4.3), never the raw lexeme
-                 as the rol/3 key: the written name must resolve against
-                 declared roles (name or plural, ci) or fall back to the
-                 unique connecting fact type — the same order ref/ walks.
-                 The count then keys the CONNECTING role's canonical name,
-                 exactly like the som arm below: the raw-lexeme key
-                 silently counted 0 whenever the written form differed
-                 from the declared plural that keys rol/3 (the singular
-                 of a to-many role, or an undeclared synthesized plural). *)
-              let name = req "fold role" attribuut in
-              match Eval.reachable_roles_by_name env ~self_type:subject_ot ~name with
-              | [] | [ _ ] -> Eval.connecting_role env ~from_type:subject_ot ~to_type:el
-              | _ -> fault "ambiguous role name %S from %S" name subject_ot))
-      in
+      (* resolve-or-fault (IR-SPEC ch. 4.3), never the raw lexeme as the
+         rol/3 key: the written name must resolve against declared roles
+         (name or plural, ci) or fall back to the unique connecting fact
+         type — the same order ref/ walks, and exactly what [source_join]
+         does for the set folds below, so the range is built in ONE place
+         and the element scope cannot differ between the two. The count
+         keys the CONNECTING role's canonical name: the raw-lexeme key
+         silently counted 0 whenever the written form differed from the
+         declared plural that keys rol/3 (the singular of a to-many role,
+         or an undeclared synthesized plural). Only the AMBIGUITY verdict
+         is the wart's own — a name reaching two roles is refused here
+         rather than resolved by the type pair. *)
+      (match bron_rol with
+      | Some _ -> ()
+      | None -> (
+          let name = req "fold role" attribuut in
+          match Eval.reachable_roles_by_name env ~self_type:subject_ot ~name with
+          | [] | [ _ ] -> ()
+          | _ -> fault "ambiguous role name %S from %S" name subject_ot));
       let v = fresh ctx "C" in
       let x = Printf.sprintf "X%s" v in
       let fatoms =
@@ -1568,8 +1586,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         | None -> []
         | Some c -> cond_atoms ctx ~subject:x ~subject_ot:el c
       in
-      ( [ Printf.sprintf "%s = #count { %s : %s }" v x
-            (String.concat ", " (Printf.sprintf "rol(%s,%s,%s)" subject (str role) x :: fatoms)) ],
+      let join = source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad:None ~x in
+      ( [ Printf.sprintf "%s = #count { %s : %s }" v x (String.concat ", " (join @ fatoms)) ],
         v,
         1 )
   (* The set folds below carry navigatie_rol/navigatie_pad but deliberately
@@ -1769,9 +1787,12 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                (fun _ (self : Uchar_ref.World.instance) acc ->
                  if not (isa ctx self.otype subject_ot) then acc
                  else
-                   (match bron_pad with
-                    | Some pad -> Eval.linked_path env ctx.case.world self ~path:pad
-                    | None -> Eval.linked ?binding:bron_rol env ctx.case.world self ~to_type:el)
+                   (* the MEMBERS, ch. 2.2-scoped like the join above: a
+                      linked instance the element type does not cover is
+                      not folded, so its missing timeline is not this
+                      fold's business to fault on *)
+                   Eval.fold_members ?binding:bron_rol ?path:bron_pad env ctx.case.world self
+                     ~element:el
                    @ acc)
                ctx.case.world.instances []);
           (* one entry PER (member, segment) — the multiplicity is

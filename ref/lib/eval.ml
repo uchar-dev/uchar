@@ -389,6 +389,26 @@ let linked_path env world (self : World.instance) ~path =
         true))
     reached
 
+(* the instance fold's element set (IR-SPEC ch. 2.2, the EXCLUSION
+   direction of extensional quantification). The relation supplies the
+   REACH, the declared [element] type supplies the POPULATION: the fold
+   ranges over { i : typeOf(i) ⊑ element }, so a linked instance the
+   relation reaches but the declared element type does not cover is not a
+   member of it. The two coincided while WF-047 demanded the bound role's
+   filler and elementObjecttype be the same name; since ch. 2.6 widened
+   that to ⊑-compatibility the filler may be a STRICT SUPERTYPE, and the
+   role then reaches instances the fold does not range over. Exactly the
+   split ch. 4.1 makes for an allocation's recipients, and identity
+   wherever the filler is [element] or below — which is every document
+   written before the chain existed. *)
+let fold_members ?binding ?path env world (self : World.instance) ~element =
+  let reached =
+    match path with
+    | Some pad -> linked_path env world self ~path:pad (* ch. 3.4b *)
+    | None -> linked ?binding env world self ~to_type:element
+  in
+  List.filter (fun (i : World.instance) -> isa env i.otype element) reached
+
 (* a role reachable from [self]'s type whose name/plural matches [name] —
    the v0 instance-fold source wart: a pseudo-AttribuutRef carrying the
    sentinel type names a role, resolved against declared roles (the
@@ -1345,7 +1365,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
                    stays unmirrored (tracked delta) *)
                 let (_ : rol) = connecting_role env ~from_type:self.otype ~to_type:el in
                 ()));
-        `Instances (filter_in_order keep (linked ?binding:bron_rol env world self ~to_type:el))
+        `Instances (filter_in_order keep (fold_members ?binding:bron_rol env world self ~element:el))
     | ( Some el,
         [ Attribuut_ref { attribuut; set = true; navigatie_rol = None; navigatie_pad = []; _ } ]
       ) ->
@@ -1353,9 +1373,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
         let el_decl = objecttype env el in
         let members =
           filter_in_order keep
-            (match bron_pad with
-            | Some pad -> linked_path env world self ~path:pad (* ch. 3.4b *)
-            | None -> linked ?binding:bron_rol env world self ~to_type:el)
+            (fold_members ?binding:bron_rol ?path:bron_pad env world self ~element:el)
         in
         (* §7.1: a set read of a TEMPORAL attribute folds TWICE — each
            member's own timeline collapses over time first (ch. 3.6, at
