@@ -3037,6 +3037,20 @@ let wf031 ctx =
         @ match r.rd_naam with
           | Some n when not (mem_ci (some_names ctx.doc.dagsoorten) n) ->
               [ v "WF-031" at ("definition for undeclared day kind '" ^ n ^ "'") ]
+          (* The name IS which day kind is being defined, so an absent or
+             blank one defines nothing and is dead in exactly the way the
+             bounded window above is dead — same clause, same reason. It is
+             NOT WF-107's: that rule holds of the NAMED FORMS, whose names
+             share one namespace WF-020 keeps unique, and a day kind's name
+             lives in its own (WF-031 above keeps that one unique). *)
+          | Some n when collapse_ws n = "" ->
+              [ v "WF-031" at
+                  "day-kind definition with a blank name; it defines no declared day kind and is \
+                   silently dead" ]
+          | None ->
+              [ v "WF-031" at
+                  "day-kind definition without a name; it defines no declared day kind and is \
+                   silently dead" ]
           | _ -> [])
       (List.mapi (fun i r -> (i, r)) ctx.doc.resolved_dagsoorten)
 

@@ -1,0 +1,200 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": {
+      "node": "Objecttype",
+      "naam": "Jutter",
+      "attributen": {
+        "aantal aangemelde vondsten": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "penninggerechtigd"
+      ],
+      "kenmerkSoorten": {
+        "penninggerechtigd": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Jutters"
+    }
+  },
+  "domeinen": {},
+  "parameters": {
+    "vondstdrempel": {
+      "node": "Parameter",
+      "naam": "vondstdrempel",
+      "datatype": {
+        "node": "Numeriek",
+        "geheel": true,
+        "decimalen": 0,
+        "teken": "ONBEPAALD",
+        "eenheid": null
+      },
+      "granulariteit": null
+    }
+  },
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [
+    "schouwdag",
+    "hoogschouwdag"
+  ],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "Kenmerktoekenning jutter penninggerechtigd",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "Kenmerktoekenning jutter penninggerechtigd",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "penninggerechtigd",
+        "objecttype": "Jutter",
+        "onderwerpBron": "Een Jutter",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Jutter is penninggerechtigd",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "GROTER_OF_GELIJK",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "aantal aangemelde vondsten",
+          "objecttype": "Jutter",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "zijn aantal aangemelde vondsten",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "ParameterRef",
+          "parameter": "vondstdrempel",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de vondstdrempel"
+        },
+        "periode": null,
+        "bron": "zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [
+    {
+      "node": "ResolvedDagsoort",
+      "naam": null,
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "EERDER",
+        "links": {
+          "node": "Literal",
+          "waarde": "2026-03-01",
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "2026-03-01"
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "2026-10-01",
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "2026-10-01"
+        },
+        "periode": null,
+        "bron": "in het schouwseizoen"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedDagsoort",
+      "naam": "hoogschouwdag",
+      "voorwaarde": {
+        "node": "Predicaat",
+        "soort": "DAGSOORT",
+        "operand": {
+          "node": "Literal",
+          "waarde": "2026-06-21",
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "die dag"
+        },
+        "dagsoort": "schouwdag",
+        "negatie": false,
+        "cijfers": 0,
+        "periode": null,
+        "bron": "die dag is een schouwdag"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}
