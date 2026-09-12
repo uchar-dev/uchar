@@ -3744,7 +3744,29 @@ let () =
         [ rr "uitkering van een strandrecht" Berekening
             (Some (aref "uitkering" "Strandrecht" bedrag)) (Some (litv "30.00" bedrag)) None ] }
   in
-  expect_num "WV-7.10-f-kale-regel-blijft-de-staande-norm" (run doc_kaal "Wrakrecht" []) "30.00"
+  expect_num "WV-7.10-f-kale-regel-blijft-de-staande-norm" (run doc_kaal "Wrakrecht" []) "30.00";
+  (* NOT lowered, and refused by name: a rule with a VALIDITY WINDOW beside an
+     inherited stack. A windowed base would put version selection inside the
+     stack, which ch. 7.4 keeps apart from defeasibility on purpose. The
+     refusal has to be LOUD because absorption takes the rule out of the rule
+     circuit: a fold that merely skipped the window would silence the writer
+     without ever making it a base — measured, on both directions of the
+     shape, as a silently empty target and as an active rule answering from
+     the inherited base instead of its own value. *)
+  let doc_venster =
+    { empty_doc with objecttypen = types;
+      resolved_regels =
+        [ { (rr "uitkering van een wrakrecht" Berekening
+               (Some (aref "uitkering" "Wrakrecht" bedrag)) (Some (litv "7.00" bedrag)) None)
+            with rr_geldigheid = Some { geld_vanaf = Some "2020-01-01"; geld_tot = None } } ];
+      prioritized_defaults =
+        [ groep "Strandrecht" [ d (kc "betwist") "99.00"; d altijd "30.00" ] ] }
+  in
+  expect_fault_msg "WV-7.10-f-venster-in-de-basis-weigert"
+    (fun () ->
+      Eval.evaluate (env_of doc_venster)
+        (World.add_instance World.empty (inst "x" "Wrakrecht" [])))
+    "a rule with a VALIDITY WINDOW beside an inherited defaults stack"
 
 (* WV-7.10-d: the THREE-LEVEL claim of ch. 7.10 — "the grandchild's own
    exceptions above the child's, above the grandparent's, with the base
@@ -3817,7 +3839,7 @@ let () =
   expect_num "WV-7.10-d-bb-grootouderuitzondering" (run "Bb" [ "k1" ]) "11.00";
   expect_num "WV-7.10-d-bb-eigen-boven-grootouder" (run "Bb" [ "k1"; "k2" ]) "22.00"
 
-(* WV-2.2-a/b/c: the type-ranging positions of ch. 2.2 that the anchor does
+(* WV-IR2.2-a/b/c: the type-ranging positions of ch. 2.2 that the anchor does
    NOT reach. Quantification is extensional at EVERY such position, and the
    six-item list in the spec is only a list until each item has a witness:
    the anchor covers the rule subject, the instance fold's elementType and
@@ -3852,8 +3874,8 @@ let () =
     in
     (Eval.evaluate (env_of uni_doc) w).World.channel
   in
-  check "WV-2.2-a-uniciteit-botst-over-de-keten" (uni_run "1" "1" <> []);
-  check "WV-2.2-a-uniciteit-laat-verschillende-sleutels-staan" (uni_run "1" "2" = []);
+  check "WV-IR2.2-a-uniciteit-botst-over-de-keten" (uni_run "1" "1" <> []);
+  check "WV-IR2.2-a-uniciteit-laat-verschillende-sleutels-staan" (uni_run "1" "2" = []);
   (* (b) a CONSISTENCY rule declared on the supertype is asserted of subtype
      instances too — the same extension the rule subject ranges over. *)
   let cons_doc =
@@ -3872,9 +3894,9 @@ let () =
     let w = World.add_instance World.empty (inst "x" otype [ ("boete", n boete) ]) in
     (Eval.evaluate (env_of cons_doc) w).World.channel
   in
-  check "WV-2.2-b-consistentie-op-supertype" (cons_run "Vondst" "150" <> []);
-  check "WV-2.2-b-consistentie-vuurt-op-subtype" (cons_run "Wrakvondst" "150" <> []);
-  check "WV-2.2-b-consistentie-zwijgt-binnen-de-grens" (cons_run "Wrakvondst" "50" = []);
+  check "WV-IR2.2-b-consistentie-op-supertype" (cons_run "Vondst" "150" <> []);
+  check "WV-IR2.2-b-consistentie-vuurt-op-subtype" (cons_run "Wrakvondst" "150" <> []);
+  check "WV-IR2.2-b-consistentie-zwijgt-binnen-de-grens" (cons_run "Wrakvondst" "50" = []);
   (* (c) a characteristic check's OWNER is satisfied extensionally: a check
      hosted on the supertype reads a subtype subject, because a Wrakvondst
      IS a Vondst. Under a literal reading WF-100's hosting refusal would
@@ -3898,8 +3920,8 @@ let () =
     World.attr (World.get (Eval.evaluate (env_of owner_doc) (World.add_instance World.empty i)) "x")
       "boete"
   in
-  expect_num "WV-2.2-c-kenmerkeigenaar-op-voorouder" (owner_run [ "gemeld" ]) "7";
-  expect_leeg "WV-2.2-c-kenmerkeigenaar-onvervuld" (owner_run [])
+  expect_num "WV-IR2.2-c-kenmerkeigenaar-op-voorouder" (owner_run [ "gemeld" ]) "7";
+  expect_leeg "WV-IR2.2-c-kenmerkeigenaar-onvervuld" (owner_run [])
 
 let () =
   if !failures > 0 then begin

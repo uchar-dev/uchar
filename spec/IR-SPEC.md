@@ -483,7 +483,7 @@ of it. Three things follow, and each is a definition rather than a rule:
   three replay in `anchor/jutterswet-strandrechtketen` (gates 5, 6 and 12),
   and the last three — the characteristic check's owner, the uniqueness
   scope and the consistency subject, which no golden reaches — are worked
-  examples WV-2.2-a/b/c in `ref/test/`.
+  examples WV-IR2.2-a/b/c in `ref/test/`.
 - **A role's declared filler type is an UPPER bound** (ch. 2.6): a role
   declaring filler T accepts an instance of any S ⊑ T. **WF-047**'s "agree"
   is consequently ⊑-compatibility and not equality, and **WF-048**'s

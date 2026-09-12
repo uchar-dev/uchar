@@ -138,6 +138,47 @@ class OverervingWeigeringWitnessTest {
         assertTrue(e.getMessage().contains("not lowered in this release"), e.getMessage());
     }
 
+    @Test void een_eigen_ongeordende_set_weigert_luid() throws Exception {
+        // The other half of the pair, and the one ch. 7.10 claims is pinned here: a
+        // declared-unordered SET on the OWN level against an inherited stack. Here the design itself
+        // is silent — §4.1 rule 3 speaks of an unordered PARENT group and no rule places a subtype's
+        // own set against an inherited stack — so this refusal says "undefined", not "not lowered".
+        // The two messages must stay apart: one is a lowering the wire cannot carry, the other is a
+        // reading nobody has written.
+        ObjectNode ir = goldenIr(KETEN);
+        ArrayNode pds = (ArrayNode) ir.get("prioritizedDefaults");
+        ObjectNode wrak = (ObjectNode) pds.get(1);                     // Wrakrecht.uitkering
+        wrak.put("ongeordend", true);
+        ObjectNode tweede = wrak.deepCopy();
+        tweede.put("naam", "uitkering van een wrakrecht #2");
+        pds.add(tweede);
+
+        Path irPad = model("overerving-eigen-set", ir);
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.speelCase(irPad, geval(KETEN, "case1-basis.json")));
+        assertTrue(e.getMessage().contains("has no defined reading"), e.getMessage());
+    }
+
+    @Test void een_venster_in_de_basis_weigert_luid() throws Exception {
+        // NOT lowered, deliberately: a base carrying a VALIDITY WINDOW would put version selection
+        // inside the stack, and ch. 7.4 keeps that apart from defeasibility. The refusal has to be
+        // LOUD because absorption takes the rule out of the rule circuit — a fold that merely skipped
+        // the window would silence the writer without ever making it a base. Measured on
+        // verifier-clean documents before this arm: the target came out silently leeg in all three
+        // executors, and an ACTIVE windowed rule answered from the inherited base instead of its own
+        // value. Versioned rules are a live corpus form, so this is not a hypothetical.
+        ObjectNode ir = goldenIr(WRAKBASIS);
+        ObjectNode geldigheid = (ObjectNode) ir.get("resolvedRegels").get(0).get("geldigheid");
+        geldigheid.put("vanaf", "2020-01-01");
+
+        Path irPad = model("overerving-venster", ir);
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.speelCase(irPad, geval(WRAKBASIS, "case1-regel-als-basis.json")));
+        assertTrue(e.getMessage().contains("a rule with a VALIDITY WINDOW beside an inherited defaults"
+                + " stack"), e.getMessage());
+        assertTrue(e.getMessage().contains("ch. 7.4 keeps apart from defeasibility"), e.getMessage());
+    }
+
     // ---------------- 2. the three loader refusals ----------------
 
     @Test void een_keten_met_een_temporeel_lid_weigert_bij_het_laden() throws Exception {
