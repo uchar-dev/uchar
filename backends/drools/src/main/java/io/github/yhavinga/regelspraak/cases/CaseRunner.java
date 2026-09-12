@@ -419,7 +419,7 @@ public final class CaseRunner {
     /** Whether {@code attr} on {@code ot} is a §13.3.6 temporal bean member — a {@code List<Segment>} field,
      *  the shape {@link FactModelGenerator} derives from a declared attribuutGranulariteit. */
     private boolean temporeel(Objecttype ot, String attr) {
-        return ot.attribuutGranulariteit.containsKey(attr);
+        return ot.granulariteitLeden().containsKey(attr);
     }
 
     /** Whether {@code attr} on {@code ot} is a §3.6 dimensioned bean member — a {@code Map<String, BigDecimal>}
@@ -441,7 +441,7 @@ public final class CaseRunner {
                         + "is not carried by the v0 backend");
             if (temporeel(ot, e.getKey())) {
                 roep(bean, Namen.setter(e.getKey()), List.class,
-                        temporeleInvoer(e.getValue(), e.getKey(), ot.attribuutGranulariteit.get(e.getKey())));
+                        temporeleInvoer(e.getValue(), e.getKey(), ot.granulariteitLeden().get(e.getKey())));
                 continue;
             }
             roep(bean, Namen.setter(e.getKey()), argType(dt), waardeNaarArg(e.getValue(), e.getKey()));
@@ -457,7 +457,7 @@ public final class CaseRunner {
             // since that decision. It stayed an Excluded until then, which filed a broken case under "a form
             // the v0 backend does not carry" — a counted, reasoned refusal in the gate report for a case that
             // is simply wrong, and the one classification that could keep it out of sight.
-            if (ot.kenmerkGranulariteit.containsKey(k.asText()))
+            if (ot.kenmerkGranulariteitLeden().containsKey(k.asText()))
                 throw new IllegalArgumentException("scalar characteristic input '" + k.asText() + "' on the "
                         + "time-dependent kenmerk of " + ot.naam + ": deliver it as a characteristicTimelines "
                         + "entry — the static characteristics list asserts a scalar truth no temporal reader "
@@ -469,7 +469,7 @@ public final class CaseRunner {
             // a CASE defect, not an uncarried form — ref refuses this shape at load (case.ml: "a
             // characteristic timeline on a non-temporal characteristic"), so it is hard here too; an
             // Excluded would file a broken corpus case under "not carried", silently green.
-            if (!ot.kenmerkGranulariteit.containsKey(e.getKey()))
+            if (!ot.kenmerkGranulariteitLeden().containsKey(e.getKey()))
                 throw new IllegalArgumentException("kenmerktijdlijn op niet-temporeel kenmerk '" + e.getKey() + "'");
             roep(bean, Namen.setter(e.getKey()), List.class, kenmerkTijdreeks(e.getValue(), e.getKey()));
         }
@@ -858,7 +858,7 @@ public final class CaseRunner {
             throw new IllegalArgumentException("attributeTimeline-verwachting op onbekend label '" + label + "'");
         if (!temporeel(ot, attr))
             throw new IllegalArgumentException("attributeTimeline-verwachting op niet-temporeel attribuut '" + attr + "'");
-        Granulariteit gran = ot.attribuutGranulariteit.get(attr);
+        Granulariteit gran = ot.granulariteitLeden().get(attr);
         List<Object> verwacht = tijdreeks(v.get("timeline"), attr, gran, true);
         Object gelezen = labelNaarBean.containsKey(label) ? lees(labelNaarBean.get(label), Namen.getter(attr)) : null;
         if (gelezen == null)

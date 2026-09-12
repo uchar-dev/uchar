@@ -202,7 +202,7 @@ public final class EffectieveEenheid {
     private static Eenheid naTijdvouwing(Expr operand, Eenheid u) {
         if (u == null || u.noemer() == null) return u;
         if (!(operand instanceof Expr.AttribuutRef a) || a.objecttype() == null) return u;
-        return a.objecttype().attribuutGranulariteit.containsKey(a.attribuut()) ? u.teller() : u;
+        return a.objecttype().granulariteitLeden().containsKey(a.attribuut()) ? u.teller() : u;
     }
 
     /**
