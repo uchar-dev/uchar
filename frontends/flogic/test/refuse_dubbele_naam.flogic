@@ -1,0 +1,8 @@
+// Refusal 15: two rules sharing one id. WF-020 holds rule names unique but
+// never reaches a defaults group's name, so this one has to refuse here.
+Vogel[|hoogte => numeriek(niet_negatief, geheel)|].
+Vogel[|gewond => kenmerk(bijvoeglijk)|].
+@!{'hoogte van een vogel'}
+?V[hoogte -> 10] :- ?V : Vogel.
+@!{'hoogte van een vogel'}
+?V[hoogte -> 99] :- ?V : Vogel, ?V : gewond.

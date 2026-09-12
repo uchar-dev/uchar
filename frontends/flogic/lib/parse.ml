@@ -402,6 +402,15 @@ let parse_stmt st : stmt =
       in
       loop ();
       expect st "END";
+      (* Flora-2 leaves the rule id optional; uchar does not. A nameless
+         rule reaches the wire as `naam: null`, which no WF rule crosses
+         (WF-020 filters nulls out and never looks at a defaults group's
+         name at all) and which one Drools branch cannot render. Naming is
+         the author's job, not the frontend's to invent. *)
+      if rule_id = None then
+        refuse ~line:l0
+          "a rule with no id: write @!{'name'} before the head — a rule reaches the wire by \
+           name, and a synthesised one would be this frontend's invention";
       S_rule { r_id = rule_id; r_subj = v; r_attr = attr; r_value = value;
                r_body = List.rev !body; r_line = l0 }
   | Atom a -> (

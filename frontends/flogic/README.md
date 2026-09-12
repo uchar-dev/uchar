@@ -36,6 +36,12 @@ in that reasoner. The rule the slice follows:
 | `@!{'name'} ?X[a -> Expr] :- ?X : C.` | an unconditional definition of `C.a` |
 | `@!{'name'} ?X[a -> Expr] :- ?X : C, Cond, ….` | a conditional definition: an exception |
 
+The rule id is optional in Flora-2 and **required** here: a rule reaches
+the wire by name, and the names must be distinct. Neither is enforced
+downstream — WF-020 filters null names out and never reaches a defaults
+group's name — so a nameless or duplicated rule refuses at the frontend
+or nowhere.
+
 `sign` is `onbepaald`, `niet_negatief`, `negatief` or `positief`; `scale`
 is `geheel` or a decimal count. `soort` is `bijvoeglijk`, `bezittelijk` or
 `zelfstandig`. A cardinality whose upper bound is `*`, or greater than 1,
@@ -113,7 +119,8 @@ the reason and the citation.
    predicate `p(…)` (the wire format has no predicate channel), an
    aggregate other than `sum`/`count`, a reference signature between object
    types (a reference is a role and belongs on a fact type), a ground
-   instance fact, and two unconditional definitions of one target.
+   instance fact, two unconditional definitions of one target, a rule with
+   no id, and two rules sharing one id.
 
 ## Building and testing
 

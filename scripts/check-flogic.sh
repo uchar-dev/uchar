@@ -31,7 +31,7 @@ fail() { echo "check-flogic: FAIL — $*" >&2; exit 1; }
 # Both counts are unseen elsewhere: the suite is not corpus files at all, and the golden count is
 # the number of bron.flogic sources, which no other gate reads (gate 2 floors the ir.json beside
 # them, so a deleted source would otherwise cost frontend coverage in silence).
-EXPECTED_MIN_CHECKS=60   # 2026-09-12: measured 60 (frontends/flogic/test, the runtest alias)
+EXPECTED_MIN_CHECKS=66   # 2026-09-12: measured 66 (frontends/flogic/test, the runtest alias)
 EXPECTED_MIN_GOLDENS=1   # 2026-09-12: measured 1 (corpus/golden/**/bron.flogic)
 
 command -v dune >/dev/null 2>&1 || fail "dune not found (run: eval \$(opam env))"

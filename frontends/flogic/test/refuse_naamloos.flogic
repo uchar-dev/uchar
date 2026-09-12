@@ -1,0 +1,5 @@
+// Refusal 14: a rule with no id. A nameless rule reaches the wire as
+// `naam: null`, which no well-formedness rule crosses and which one Drools
+// branch cannot render; naming is the author's job.
+Vogel[|hoogte => numeriek(niet_negatief, geheel)|].
+?V[hoogte -> 10] :- ?V : Vogel.

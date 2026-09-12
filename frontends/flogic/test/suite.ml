@@ -105,7 +105,12 @@ let () =
       ("refuse_decimal.flogic", "\\decimal");
       ("refuse_tweede_basis.flogic", "two unconditional definitions");
       ("refuse_aggregaat.flogic", "sum and count only");
-      ("refuse_rolsignatuur.flogic", "declare a fact type") ]
+      ("refuse_rolsignatuur.flogic", "declare a fact type");
+      (* a rule reaches the wire by name: WF-020 filters nulls out and never
+         looks at a defaults group's name, so both of these have to refuse
+         at the frontend or not at all *)
+      ("refuse_naamloos.flogic", "a rule with no id");
+      ("refuse_dubbele_naam.flogic", "is already used at line") ]
   in
   List.iter
     (fun (src, needle) ->

@@ -508,6 +508,25 @@ let document (stmts : stmt list) : A.document =
   (* every class mentioned as a supertype, a role filler or a rule subject
      must be declared; the chain walk asserts it *)
   List.iter (fun o -> ignore (chain m o.o_name)) m.otypes;
+  (* WF-020 holds rule names unique across the rule-form arrays, but it
+     filters nulls out and never reaches a defaults group's name — so a
+     duplicate that lands on two GROUPS passes the verifier and leaves two
+     rules sharing one identity downstream. The frontend closes it here,
+     where both kinds are still one list. *)
+  List.iteri
+    (fun i (r : rule) ->
+      match r.r_id with
+      | None -> ()
+      | Some id -> (
+          match
+            List.find_opt
+              (fun (j, (o : rule)) -> j < i && o.r_id = Some id)
+              (List.mapi (fun j o -> (j, o)) m.rules)
+          with
+          | Some (_, o) ->
+              refuse ~line:r.r_line "the rule id %S is already used at line %d" id o.r_line
+          | None -> ()))
+    m.rules;
   let defs = List.map (low_rule m) m.rules in
   (* the barred class-level defaults are bases too, and they arrive before
      the rules in the group order *)
