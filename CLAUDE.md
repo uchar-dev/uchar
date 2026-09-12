@@ -268,6 +268,23 @@ green. Current gates:
     pattern). An empty twist set is a failure, never silently green. CI
     leg unconditional and blocking.
 
+14. `scripts/check-flogic.sh` — the F-logic frontend (`frontends/flogic`,
+    plain OCaml in the workspace's dune build, so no fetched jars and no
+    external compiler) builds and its own suite passes with a non-zero
+    check count: the suite emits every test program, holds it
+    verifier-clean, replays its cases through `ref` AND clingo, and drives
+    one fixture per refusal, checking both the reason and the citation of
+    the mandate document the refusal list belongs to. Every corpus golden
+    carrying a `bron.flogic` re-emits through the frontend
+    byte-identically after canonicalisation (gate 2's serialiser shape,
+    executed from that script — one source of truth, as in gate 9). An
+    empty flogic-golden set, a suite that ran zero checks, or a missing
+    dune is a failure, never silently green. Counting floors in the
+    script: `EXPECTED_MIN_CHECKS=81` and `EXPECTED_MIN_GOLDENS=1`, both
+    measured 2026-09-12. CI leg unconditional and blocking — unlike gate
+    9 this frontend links no external toolchain, so every runner can run
+    it.
+
 **Counting floors (maintainer decision 2026-09-09).** Beside the non-empty
 checks and the name-carrying lists, every gate whose count could shrink unseen
 carries an `EXPECTED_MIN_<name>` constant in its own script, with its reason
