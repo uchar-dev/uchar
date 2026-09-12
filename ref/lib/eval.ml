@@ -1897,7 +1897,20 @@ let run_verdeling env world (v : resolved_verdeling) =
         in
         if not cond_ok then (w, false)
         else
-          let recipients = linked ?binding:v.verbindende_rol env w src ~to_type:doel_type in
+          (* ch. 4.1: the recipient set is every DOELTYPE instance the
+             connecting relation reaches — the role only supplies the
+             relation. The two used to coincide, because WF-047 demanded
+             the bound role's filler and doelType be the same name; since
+             ch. 2.6 widened that to ⊑-compatibility the filler may be a
+             STRICT SUPERTYPE, and the role then reaches instances this
+             allocation does not target. Filtering is identity wherever the
+             filler is doelType or below, which is every document written
+             before the chain existed. *)
+          let recipients =
+            List.filter
+              (fun (i : World.instance) -> isa env i.otype doel_type)
+              (linked ?binding:v.verbindende_rol env w src ~to_type:doel_type)
+          in
           let recs =
             List.map
               (fun (i : World.instance) ->

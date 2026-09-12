@@ -1840,7 +1840,20 @@ An allocation names a source `(sourceType, sourceAttribute)` — the pot —
 and a target `(targetType, targetAttribute)` — each recipient's share
 (`IR-SPEC.md` ch. 3.2). The **recipient set** of one source instance is:
 every `targetType` instance related to it through the connecting
-relation. **Decided (2026-08-16, WF-047/048):** the connecting relation
+relation. **The role supplies the relation, `targetType` supplies the
+population, and the intersection is what receives** — read extensionally,
+so an instance of any S ⊑ `targetType` is in and everything else the
+relation reaches is out (`IR-SPEC.md` ch. 2.2). The two coincided until
+the supertype relation landed, because WF-047 then demanded one and the
+same name on the bound role's filler and on `targetType`; with "agree"
+widened to ⊑-compatibility the filler may be a **strict supertype**, and a
+related instance that is not a `targetType` receives nothing and stays
+**leeg** — never 0. It contributes nothing to Σ either, so the excluded
+instances raise the remainder. Worked witness:
+`golden/jutterswet-hoofdberging`, 1001 over two `Hoofdberger`s beside a
+plain `Berger` on one `Berger`-typed role → **500, 500, leeg**, rest
+**1** (unfiltered it would read 333/333/333, rest 2).
+**Decided (2026-08-16, WF-047/048):** the connecting relation
 is named explicitly — the `connectingRole` binding of `IR-SPEC.md`
 ch. 3.2 (v0 wire `verbindendeRol`, an extension field), the same
 symbolic-role move as `CONSTRUCTS.md` rows 4/22; executors consume the

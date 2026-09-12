@@ -476,14 +476,18 @@ of it. Three things follow, and each is a definition rather than a rule:
   exact-type quantifier: the instance fold's `elementType` (ch. 4.3), a
   rule's subject type, a defaults group's `subject` (ch. 6.1), a
   characteristic check's owner type (ch. 4.5), the uniqueness scope
-  (ch. 3.6) and the consistency rule's subject all range over
+  (ch. 3.6), the consistency rule's subject and an allocation's `targetType`
+  (ch. 3.2) all range over
   `{ i : typeOf(i) ⊑ T }`. A subtype with no own members is therefore not
   inert but a pure classification, which is the shape the relation exists
-  for. Each of the six carries a witness rather than a mention: the first
+  for. Each of the seven carries a witness rather than a mention: the first
   three replay in `anchor/jutterswet-strandrechtketen` (gates 5, 6 and 12),
-  and the last three — the characteristic check's owner, the uniqueness
+  the next three — the characteristic check's owner, the uniqueness
   scope and the consistency subject, which no golden reaches — are worked
-  examples WV-IR2.2-a/b/c in `ref/test/`.
+  examples WV-IR2.2-a/b/c in `ref/test/`, and the allocation target replays
+  in `golden/jutterswet-hoofdberging`, where the connecting role's filler is
+  a strict supertype of `targetType` and the recipients outside that type
+  receive nothing.
 - **A role's declared filler type is an UPPER bound** (ch. 2.6): a role
   declaring filler T accepts an instance of any S ⊑ T. **WF-047**'s "agree"
   is consequently ⊑-compatibility and not equality, and **WF-048**'s
@@ -2011,7 +2015,7 @@ below (minus `name`) is one version's body.
 |---|---|---|
 | `name` | string | — |
 | `sourceType`, `sourceAttribute` | type ref, string | the amount being distributed |
-| `targetType`, `targetAttribute` | type ref, string | each recipient's share |
+| `targetType`, `targetAttribute` | type ref, string | each recipient's share; `targetType` is the population the allocation ranges over (extensional, ch. 2.2), `targetAttribute` resolves on its effective member set, so it may be declared on an ancestor |
 | `method` | `equalShares` \| `proportional` \| `ordered` | §9.7.2 |
 | `ratioAttribute` | string? | weight; present iff proportional, or ordered with a proportional tie-break |
 | `maximumAttribute` | string? | per-recipient cap (§9.7.3); requires a ratio |
@@ -2021,7 +2025,7 @@ below (minus `name`) is one version's body.
 | `descending` | boolean | ordered only |
 | `condition` | Condition? | — |
 | `validity` | Validity | — |
-| `connectingRole` | RoleBinding? | **extension field** (v0 wire `verbindendeRol`): the connecting relation, with the **recipient role bound** — the bound role's filler is `targetType`, the opposite role's filler is `sourceType` (WF-047). Absent, the relation must be uniquely derivable from the type pair (WF-048); `RUNTIME-SEMANTICS.md` ch. 4.1 |
+| `connectingRole` | RoleBinding? | **extension field** (v0 wire `verbindendeRol`): the connecting relation, with the **recipient role bound** — the bound role's filler is ⊑-compatible with `targetType`, the opposite role's with `sourceType` (WF-047, widened from equality by ch. 2.2). Absent, the relation must be uniquely derivable from the type pair (WF-048); `RUNTIME-SEMANTICS.md` ch. 4.1 |
 
 **Delta (tracked, `CONSTRUCTS.md` row 17):** v0's fourth method value
 `COMPLEX` — the donor's unhandled-form placeholder — is not admissible IR;

@@ -6025,6 +6025,23 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
       | None -> Eval.connecting_role env ~from_type:bt ~to_type:dt)
   in
   let p = Printf.sprintf "vd%d_" i in
+  (* ch. 4.1: the recipient set of one source instance is every DOELTYPE
+     instance the connecting relation reaches — the role supplies the
+     relation, doelType supplies the population. The two used to coincide,
+     because WF-047 demanded one and the same name on both; since ch. 2.6
+     widened "agree" to ⊑-compatibility the bound role's filler may be a
+     STRICT SUPERTYPE of doelType, and the role then reaches instances this
+     allocation does not target. One derived predicate carries the
+     intersection and every recipient body below joins on it instead of
+     rol/3 — including the wrap fences and the recipient counts, which must
+     see the same set the shares are computed over. `isa/2` is the
+     chain-closed relation the solver derives (the isa_sub block in
+     [translate]), so where the filler is doelType or below — every
+     document written before the chain existed — this derives exactly the
+     role's links and the encoding is unchanged. *)
+  emit ctx "%sontv(B,X) :- rol(B,%s,X), isa(X,%s)." p (str role) (str dt);
+  let recip = Printf.sprintf "%sontv(B,X)" p in
+  let recip_any = Printf.sprintf "%sontv(B,_)" p in
   (* the S10 pass-through: the case value stands on any target instance the
      verdeling does not effectively write — a non-recipient the role never
      reaches, or a recipient the method excludes (a weightless proportional
@@ -6116,21 +6133,21 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
     (str bt) (str ba) pot_bound;
   emit ctx
     "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",B) :- \
-     isa(B,%s), 46340 < #count { X : rol(B,%s,X) }."
-    (str bt) (str role);
+     isa(B,%s), 46340 < #count { X : %s }."
+    (str bt) recip;
   (match v.rato_attribuut with
   | Some rato ->
       emit ctx
         "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",X) :- \
-         rol(B,%s,X), isa(B,%s), val(X,%s,W), |W| > %d."
-        (str role) (str bt) (str rato) (46340 / m_den)
+         %s, isa(B,%s), val(X,%s,W), |W| > %d."
+        recip (str bt) (str rato) (46340 / m_den)
   | None -> ());
   (match (v.maximum_attribuut, cdec) with
   | Some cap, Some c when pow10 (max 0 (ddec - c)) > 1 ->
       emit ctx
         "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",X) :- \
-         rol(B,%s,X), isa(B,%s), val(X,%s,C), |C| > %d."
-        (str role) (str bt) (str cap) (46340 / pow10 (ddec - c))
+         %s, isa(B,%s), val(X,%s,C), |C| > %d."
+        recip (str bt) (str cap) (46340 / pow10 (ddec - c))
   | _ -> ());
   emit ctx "%sheeft_pot(B) :- isa(B,%s), val(B,%s,_)." p (str bt) (str ba);
   (* the target write and the remainder, shared across the methods; the
@@ -6180,21 +6197,21 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
          on — viol/2 witnesses plus the global integrity constraint
          make clingo fail identically instead of silently diverging *)
       emit ctx "viol(\"allocation: negative pot\",B) :- %s, val(B,%s,A), A < 0." src (str ba);
-      emit ctx "viol(\"allocation: empty pot\",B) :- %s, rol(B,%s,_), not %sheeft_pot(B)." src
-        (str role) p;
+      emit ctx "viol(\"allocation: empty pot\",B) :- %s, %s, not %sheeft_pot(B)." src
+        recip_any p;
       (* eligible recipients: filled weight; the weightless are excluded
          and surface on the channel (ch. 4.4) *)
-      emit ctx "%sgewicht(X,W) :- rol(B,%s,X), %s, val(X,%s,W)." p (str role) src (str rato);
+      emit ctx "%sgewicht(X,W) :- %s, %s, val(X,%s,W)." p recip src (str rato);
       emit ctx "viol(\"allocation: negative weight\",X) :- %sgewicht(X,W), W < 0." p;
-      emit ctx "inconsistent(%s,X) :- rol(B,%s,X), %s, not %sheeft_gewicht(X)." (str name)
-        (str role) src p;
+      emit ctx "inconsistent(%s,X) :- %s, %s, not %sheeft_gewicht(X)." (str name)
+        recip src p;
       emit ctx "%sheeft_gewicht(X) :- %sgewicht(X,_)." p p;
-      emit ctx "%swsum(B,S) :- %s, S = #sum { W,X : rol(B,%s,X), %sgewicht(X,W) }, S != 0." p
-        src (str role) p;
+      emit ctx "%swsum(B,S) :- %s, S = #sum { W,X : %s, %sgewicht(X,W) }, S != 0." p
+        src recip p;
       let num = Printf.sprintf "%s*W" (scaled "A" m_num) in
       let den = divd "S" m_den in
       let raw_body =
-        Printf.sprintf "rol(B,%s,X), %sgewicht(X,W), %swsum(B,S), val(B,%s,A)" (str role) p p
+        Printf.sprintf "%s, %sgewicht(X,W), %swsum(B,S), val(B,%s,A)" recip p p
           (str ba)
       in
       emit ctx "%sraw(X,(%s)/%s) :- %s." p num den raw_body;
@@ -6209,25 +6226,24 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
       | None -> emit ctx "%sshare(X,R) :- %sraw(X,R)." p p);
       emit_write ~eff_atom:(Printf.sprintf "%sshare(X,_)" p) (Printf.sprintf "%sshare(X,S)" p);
       emit_rest ~guard:(Printf.sprintf "%swsum(B,_)" p)
-        ~sum:(Printf.sprintf "S,X : rol(B,%s,X), %sshare(X,S)" (str role) p)
+        ~sum:(Printf.sprintf "S,X : %s, %sshare(X,S)" recip p)
   | Gelijke_delen ->
       (* one group, all recipients, unweighted (ch. 4.2); the negative
          and empty pot guards as in the proportional method (the empty
          pot is the same ch. 4.4 v0 mirror hole) *)
       emit ctx "viol(\"allocation: negative pot\",B) :- %s, val(B,%s,A), A < 0." src (str ba);
-      emit ctx "viol(\"allocation: empty pot\",B) :- %s, rol(B,%s,_), not %sheeft_pot(B)." src
-        (str role) p;
-      emit ctx "%sn(B,N) :- %s, rol(B,%s,_), N = #count { X : rol(B,%s,X) }." p src (str role)
-        (str role);
+      emit ctx "viol(\"allocation: empty pot\",B) :- %s, %s, not %sheeft_pot(B)." src
+        recip_any p;
+      emit ctx "%sn(B,N) :- %s, %s, N = #count { X : %s }." p src recip_any recip;
       let num = scaled "A" m_num in
       let den = divd "N" m_den in
-      let raw_body = Printf.sprintf "rol(B,%s,X), %sn(B,N), val(B,%s,A)" (str role) p (str ba) in
+      let raw_body = Printf.sprintf "%s, %sn(B,N), val(B,%s,A)" recip p (str ba) in
       emit ctx "%sshare(X,(%s)/%s) :- %s." p num den raw_body;
       if exact then
         emit ctx "viol(\"%s\",X) :- %s, (%s) \\ %s != 0." exact_viol raw_body num den;
       emit_write ~eff_atom:(Printf.sprintf "%sshare(X,_)" p) (Printf.sprintf "%sshare(X,S)" p);
       emit_rest ~guard:(Printf.sprintf "%sn(B,_)" p)
-        ~sum:(Printf.sprintf "S,X : rol(B,%s,X), %sshare(X,S)" (str role) p)
+        ~sum:(Printf.sprintf "S,X : %s, %sshare(X,S)" recip p)
   | Op_volgorde ->
       (* groups are the equal-key classes of the ordering attribute,
          ascending/descending as declared, an EMPTY key sorting last in
@@ -6242,7 +6258,7 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
          trunc-vs-floor split of negative division never surfaces and a
          negative pot needs no viol here; an empty pot is Nothing (the
          §9.7.6 discipline), never the equal/proportional fault. *)
-      let rolx = Printf.sprintf "rol(B,%s,X)" (str role) in
+      let rolx = recip in
       (match v.groepeer_attribuut with
       | Some ga ->
           let cmp = if v.afnemend then ">" else "<" in
@@ -6252,8 +6268,8 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
           emit ctx "%sgkey(B,K) :- %skey(B,_,K)." p p;
           emit ctx "%sgrank(B,K,R) :- %sgkey(B,K), R = #count { K2 : %sgkey(B,K2), K2 %s K }."
             p p p cmp;
-          emit ctx "%sng(B,N) :- %s, rol(B,%s,_), N = #count { K : %sgkey(B,K) }." p src
-            (str role) p;
+          emit ctx "%sng(B,N) :- %s, %s, N = #count { K : %sgkey(B,K) }." p src
+            recip_any p;
           emit ctx "%smrank(B,X,R) :- %skey(B,X,K), %sgrank(B,K,R)." p p p;
           emit ctx "%smrank(B,X,N) :- %snokey(B,X), %sng(B,N)." p p p;
           emit ctx "%shasnokey(B) :- %snokey(B,_)." p p;
@@ -6263,9 +6279,9 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
           (* keyless: ONE group — ref sorts an all-empty key list into a
              single equal-key class *)
           emit ctx "%smrank(B,X,0) :- %s, %s." p rolx src;
-          emit ctx "%sranks(B,1) :- %s, rol(B,%s,_)." p src (str role));
-      emit ctx "%spot(B,0,%s) :- %s, val(B,%s,A), rol(B,%s,_)." p (scaled "A" m_num) src
-        (str ba) (str role);
+          emit ctx "%sranks(B,1) :- %s, %s." p src recip_any);
+      emit ctx "%spot(B,0,%s) :- %s, val(B,%s,A), %s." p (scaled "A" m_num) src
+        (str ba) recip_any;
       (match v.rato_attribuut with
       | Some rato ->
           (* the weighted tie-break (ch. 4.2/4.4): an empty weight is a
@@ -6322,7 +6338,7 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
       emit ctx "%spot(B,R+1,0) :- %spot(B,R,P), %sspent(B,R,T), %sranks(B,N), R+1 < N, P-T < 0."
         p p p p;
       emit_write ~eff_atom:(Printf.sprintf "%sshare(B,X,_)" p) (Printf.sprintf "%sshare(B,X,S)" p);
-      emit_rest ~guard:(Printf.sprintf "rol(B,%s,_)" (str role))
+      emit_rest ~guard:recip_any
         ~sum:(Printf.sprintf "S,X : %sshare(B,X,S)" p)
 
 let translate_consistentie ctx i (c : resolved_consistentie) =
