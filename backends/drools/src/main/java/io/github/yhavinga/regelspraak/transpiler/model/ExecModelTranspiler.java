@@ -6722,19 +6722,36 @@ public final class ExecModelTranspiler {
      *  target with no ordinary rule either; two computing rules on one target are agenda order, which
      *  prioritized defaults exist to replace, so those refuse. */
     private PrioritizedDefaults regelLid(Objecttype level, String key) {
-        List<ResolvedRegel> comps = new ArrayList<>(), inits = new ArrayList<>();
+        // EVERY ordinary writer on the target — the filter is on the target and nothing else. An
+        // earlier revision skipped the forms it could not fold (a validity window, an absent value),
+        // which was a silent-answer bug rather than a narrowing: geabsorbeerdOp takes the rule out of
+        // the rule circuit per (type, attribute), so a rule the fold skipped was silenced without ever
+        // becoming a base and its writer vanished. Collect everything; refuse by name below.
+        List<ResolvedRegel> comps = new ArrayList<>(), inits = new ArrayList<>(), alle = new ArrayList<>();
         for (ResolvedRegel r : model.resolvedRegels) {
             if (!(r.doel() instanceof Expr.AttribuutRef d) || d.attribuut() == null) continue;
             if (d.objecttype() != level || !("A:" + defaultsNorm(d.attribuut())).equals(key)) continue;
-            if (r.geldigheid() != null && !r.geldigheid().altijd()) continue;
-            if (r.waarde() == null) continue;
             switch (r.soort()) {
-                case GELIJKSTELLING, BEREKENING -> comps.add(r);
-                case INITIALISATIE -> inits.add(r);
+                case GELIJKSTELLING, BEREKENING -> { comps.add(r); alle.add(r); }
+                case INITIALISATIE -> { inits.add(r); alle.add(r); }
                 default -> { }
             }
         }
-        if (comps.isEmpty() && inits.isEmpty()) return null;
+        if (alle.isEmpty()) return null;
+        for (ResolvedRegel r : alle)
+            // NOT lowered, deliberately: a windowed base would put version selection inside the
+            // stack, and ch. 7.4 keeps that apart from defeasibility on purpose.
+            if (r.geldigheid() != null && !r.geldigheid().altijd())
+                throw new DefaultsOnvertaalbaar("target " + key + " op '" + level.naam + "' is written"
+                        + " by a rule with a VALIDITY WINDOW beside an inherited defaults stack: a"
+                        + " windowed base would put version selection inside the stack, which ch. 7.4"
+                        + " keeps apart from defeasibility, and the block order has no reading for it"
+                        + " (RUNTIME-SEMANTICS ch. 7.10)");
+        for (ResolvedRegel r : alle)
+            if (r.waarde() == null)
+                throw new DefaultsOnvertaalbaar("target " + key + " op '" + level.naam + "' is written"
+                        + " by a rule without a value beside an inherited defaults stack: a base with no"
+                        + " consequence decides nothing and cannot be folded (RUNTIME-SEMANTICS ch. 7.10)");
         if (comps.size() > 1 || inits.size() > 1)
             throw new DefaultsOnvertaalbaar("doel " + key + " op '" + level.naam + "' is written by "
                     + comps.size() + " computing and " + inits.size() + " initialisation rule(s) beside an"

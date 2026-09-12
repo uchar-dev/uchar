@@ -307,6 +307,18 @@ let chain_group_keys doc t =
    initialisation — the ch. 7.7 pair. Two computing rules on one target are
    agenda order, which is what prioritized defaults exist to replace, so
    they are left for the caller to refuse. *)
+(* EVERY ordinary attribute writer [level] declares on [key] — the FILTER is
+   deliberately on the target and nothing else. An earlier revision filtered
+   out the forms it could not fold (a validity window, an absent value) and
+   that was a silent-answer bug rather than a narrowing: [absorbed_on] takes
+   the rule out of the rule circuit per (type, attribute), so a rule the fold
+   skipped was silenced without ever becoming a base and its writer vanished
+   from all three executors. Measured 2026-09-12 on two verifier-clean
+   documents: a windowed rule on the ancestor left the target leeg where the
+   loud refusal used to stand, and a windowed rule that was ACTIVE on the
+   evaluation date answered from the inherited base instead of its own value.
+   Collect everything here; [rule_member] refuses by name on anything it
+   cannot fold. *)
 let level_rules doc level key =
   List.concat
     (List.mapi
@@ -314,8 +326,7 @@ let level_rules doc level key =
          match (r.rr_soort, r.doel) with
          | ( Some ((Gelijkstelling | Berekening | Initialisatie) as soort),
              Some (Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ }) )
-           when norm ot = norm level && "A:" ^ norm a = key && r.waarde <> None
-                && version_free r.rr_geldigheid ->
+           when norm ot = norm level && "A:" ^ norm a = key ->
              [ (soort, r, i) ]
          | _ -> [])
        doc.resolved_regels)
@@ -329,6 +340,29 @@ let rule_member doc level key : (prioritized_defaults * int) option =
   let comps = List.filter (fun (soort, _, _) -> soort <> Initialisatie) rules in
   let inits = List.filter (fun (soort, _, _) -> soort = Initialisatie) rules in
   if rules = [] then None
+  else if List.exists (fun (_, (r : resolved_regel), _) -> not (version_free r.rr_geldigheid)) rules
+  then
+    (* NOT lowered, and deliberately: a base carrying a validity window would
+       put a third time dimension into the stack semantics — version selection
+       is temporal and defeasibility is not, and ch. 7.4 keeps them apart on
+       purpose. The proposal gives no reading for the two together, so this is
+       the fall-back rule: refuse by name rather than pick one. *)
+    raise
+      (Unlowered
+         (Printf.sprintf
+            "target %s on '%s' is written by a rule with a VALIDITY WINDOW beside an inherited \
+             defaults stack: a windowed base would put version selection inside the stack, which \
+             ch. 7.4 keeps apart from defeasibility, and the block order has no reading for it \
+             (RUNTIME-SEMANTICS ch. 7.10)"
+            key level))
+  else if List.exists (fun (_, (r : resolved_regel), _) -> r.waarde = None) rules then
+    raise
+      (Unlowered
+         (Printf.sprintf
+            "target %s on '%s' is written by a rule without a value beside an inherited defaults \
+             stack: a base with no consequence decides nothing and cannot be folded \
+             (RUNTIME-SEMANTICS ch. 7.10)"
+            key level))
   else if List.length comps > 1 || List.length inits > 1 then
     raise
       (Unlowered
@@ -497,7 +531,14 @@ let effective_defaults (doc : document) :
    The answer is empty on every target whose chain declares no defaults group,
    which is every ordinary rule in a flat model: there the ch. 7.8 standing
    norm governs unchanged. *)
-let absorbed_on (doc : document) ~otype ~attr : string list =
+(* A one-entry memo keyed on the document's PHYSICAL identity. [absorbed_on]
+   is asked once per rule per fixpoint pass and its answer is a property of
+   the document alone, so recomputing objecttypes x groups on every pass is
+   quadratic work where the pre-inheritance code did none. A miss simply
+   recomputes — the cache can never answer for the wrong document. *)
+let absorbed_memo : (document * (string * string, string list) Hashtbl.t) option ref = ref None
+
+let absorbed_uncached (doc : document) ~otype ~attr : string list =
   let key = "A:" ^ norm attr in
   (* the rule's OWN level declaring a group on the target is not inheritance
      but WF-050's single-writer lift, refused at the document. The synthesis
@@ -517,6 +558,23 @@ let absorbed_on (doc : document) ~otype ~attr : string list =
           Some t
         else None)
       doc.objecttypen
+
+let absorbed_on (doc : document) ~otype ~attr : string list =
+  let tbl =
+    match !absorbed_memo with
+    | Some (d, t) when d == doc -> t
+    | _ ->
+        let t = Hashtbl.create 16 in
+        absorbed_memo := Some (doc, t);
+        t
+  in
+  let k = (norm otype, norm attr) in
+  match Hashtbl.find_opt tbl k with
+  | Some v -> v
+  | None ->
+      let v = absorbed_uncached doc ~otype ~attr in
+      Hashtbl.add tbl k v;
+      v
 
 
 (* The temporal standing domain (RS ch. 7.8, the timeline arm): a
