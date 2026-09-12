@@ -329,12 +329,12 @@ Wat overerving hier verandert is de sleutel, niet de bereikbaarheid.
 
 ```
 check-self-contained: PASS
-check-ir-schema: PASS (schema valid; 24 pattern self-test row(s); 203 file(s) validate and round-trip, floor 192)
-check-verifier: PASS (203 golden clean; 378 negatief rejected for their declared rule, floor 350)
-check-case-schema: PASS (schema valid; 479 case file(s) validate)
-check-oracle: PASS (ref suite 591 worked examples, floor 489; 453 cases replayed exactly, floor 427; NOT replayed, no case file yet: corpus/golden/jutterswet-seizoenvondst corpus/golden/jutterswet-vormenkabinet)
-check-clingo: PASS (backend suite 125 checks, floor 83; 453 cases replay exactly through clingo — ref = clingo over the corpus)
-check-noop: PASS (417 cases refute a do-nothing executor; 36 pinned survivors pin defeasible standing)
+check-ir-schema: PASS (schema valid; 24 pattern self-test row(s); 204 file(s) validate and round-trip, floor 192)
+check-verifier: PASS (204 golden clean; 378 negatief rejected for their declared rule, floor 350)
+check-case-schema: PASS (schema valid; 481 case file(s) validate)
+check-oracle: PASS (ref suite 592 worked examples, floor 489; 455 cases replayed exactly, floor 427; NOT replayed, no case file yet: corpus/golden/jutterswet-seizoenvondst corpus/golden/jutterswet-vormenkabinet)
+check-clingo: PASS (backend suite 125 checks, floor 83; 455 cases replay exactly through clingo — ref = clingo over the corpus)
+check-noop: PASS (419 cases refute a do-nothing executor; 36 pinned survivors pin defeasible standing)
 check-rood: PASS (26 red cases fault observably in ref and clingo, floor 26)
 check-catala: PASS — frontend suite green (201 checks, floor 201); 12 catala golden(s) regenerate byte-identically (floor 12)
 check-regelspraak: PASS — JUnit suite green (207 tests, floor 173); 42 rgs golden(s) re-emit byte-identically (floor 38)
@@ -342,17 +342,17 @@ check-toka-parity: PASS
   re-emission: 1 casus dump(s), 45 .rgs re-emitted byte-identical, floor 45; TOKA suite 27 tests, floor 27
   differential replay: 29 toka cases (floor 29) through ref, clingo, Drools, ZERO silent divergences
 check-drools: PASS
-  played 128  (loaded off the wire, wholly lowered, matched the pinned ref≡clingo expectations)
-  auto-excluded 46; channel floor 49 non-PLAYED goldens pinned by name; played matches the pinned 128
-  JUnit 328 tests, floor 239  (the backend's own suite, green with a non-zero count)
+  played 129  (loaded off the wire, wholly lowered, matched the pinned ref≡clingo expectations)
+  auto-excluded 46; channel floor 49 non-PLAYED goldens pinned by name; played matches the pinned 129
+  JUnit 330 tests, floor 239  (the backend's own suite, green with a non-zero count)
 check-reftype-derivation: PASS (92 unit annotations twisted over 17 goldens, floor 74; 80 executor replays reproduce the untouched outcome, 14 of them PLAYED by the DRL-text branch, floor 13; 0 pinned survivors)
 ```
 
 Gate 13's boekhoudklem meldt `0 outside the twist table`: `supertype` draagt
 geen eenheid en is nergens een eenheiddragende annotatie op een nieuwe plek
 geworden. Gate 7: alle vier de anchorcases, beide wrakconflict-cases, de
-zustercase en beide wrakbasis-cases zijn no-op-rood; geen enkele hoefde in
-de survivor-lijst.
+zustercase en de vier basiscases (wrakbasis en wrakerfbasis) zijn
+no-op-rood; geen enkele hoefde in de survivor-lijst.
 
 ### Beschermde paden die deze kaart aanraakt
 
@@ -365,7 +365,11 @@ de survivor-lijst.
   zustertoelating van SUBTYPING §3.3b, die "a golden pins the admission"
   eist en die niets anders pint). +1 voor `jutterswet-wrakbasis` (de
   kale-regeltak van §4.1 regel 1, in de derde ronde van weigering naar
-  norm gegaan — zonder golden zou die norm door geen enkele gate lopen).
+  norm gegaan — zonder golden zou die norm door geen enkele gate lopen). +1
+  voor `jutterswet-wrakerfbasis`, de spiegel daarvan (§4.1 regel 4: de
+  voorouderregel als geërfde basis, die de afstammeling vervangt). Die
+  richting was gepind in ref en in de eigen Drools-suite, maar door niets
+  dat alle drie de uitvoerders draaien.
 - `spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md`, `spec/schema/`,
   `spec/verifier/`, `corpus/golden/anchor/` — binnen de may-touch van de
   kaart, maar alle beschermd: dit blijft een voorstel tot de maintainer
@@ -408,7 +412,14 @@ de survivor-lijst.
   - **een gedeclareerd-ongeordende set op het eigen niveau** tegen een
     geërfde stapel — werkelijk ongedefinieerd: regel 3 gaat over een
     ongeordende OUDER-groep, en voor deze vorm geeft het proposal geen
-    lezing.
+    lezing;
+  - **een regel met een geldigheidsvenster** op een geabsorbeerd doel — een
+    venster in de basis zou versieselectie ín de stapel zetten, en ch. 7.4
+    houdt versieselectie en defeasibiliteit uit elkaar. Ook terugvalregel;
+  - **twee rekenregels op één laag** van een geabsorbeerd doel, en een regel
+    **zonder waarde** — de eerste is agenda-orde (precies wat prioritized
+    defaults vervangen), de tweede beslist niets. Beide alleen op een
+    geabsorbeerd doel: in een vlak model houden ze hun bestaande lezing.
 
   Beide gepind in `ref/test/` (WV-7.10-c) en in de eigen suite van de
   Drools-backend, elk op meldingsfragment. Geen corpuscase kan ze dragen:
@@ -430,6 +441,15 @@ de survivor-lijst.
   voorgestelde rijmateriaal staat hieronder.
 
 ### Tweede ronde, na de adversariële lens (2026-09-12)
+
+> **Deels achterhaald in ronde 3 (koerswijziging).** Punt 1 hieronder
+> beschrijft een Java-clashdetectie die in de derde ronde is *verwijderd*:
+> die vorm wordt nu gelowerd in plaats van geweigerd, en de detectie —
+> `inherited_rule_clashes` in OCaml en `geerfdeRegelBotsingen` in Java —
+> bestaat niet meer. Ook de weigergetuigen die punt 1 en punt 6 noemen zijn
+> vervangen door waardegetuigen. Het logboek blijft staan omdat de METING
+> geldig is en de reden waarom de vorm aandacht kreeg; lees de eindstand in
+> de derde ronde hieronder.
 
 De lens draaide alle dertien gates zelf groen, bevestigde de anchorpins en
 de blokorde op drie niveaus empirisch in alle drie de uitvoerders, en
@@ -547,6 +567,25 @@ omgebouwd tot de waardegetuigen WV-7.10-e/f; de JUnit-hoekgetuigen tot één
 waardegetuige plus de grensgetuige. Verantwoord hier omdat er weiger-dekking
 mee verdween: wat die getuigen bewaakten is nu gedrag dat een golden en
 zeven voorbeelden pinnen.
+
+**Lens 3 ving het gat dat de koerswijziging zelf sloeg.** Absorptie haalt
+een regel uit het regelcircuit per (type, attribuut), maar de vouw filterde
+de vormen die hij niet kon verwerken er stil uit — een geldigheidsvenster,
+of een waarde die ontbreekt. Zo'n regel werd dus gesmoord zónder ooit basis
+te worden, en de schrijver verdween. Gemeten op twee verifier-clean
+documenten: een versioned regel op de voorouder liet het doel **stil leeg**
+in alle drie de uitvoerders waar de vorige ronde nog luid weigerde, en een
+versioned regel die op de rekendatum **actief** was antwoordde stil 30,00
+uit de geërfde basis waar zijn eigen 7,00 hoort. Versioned regels zijn een
+levende corpusvorm (6 van 343).
+
+Fix volgens het huispatroon van ch. 7.7's `desugarable`: verzamel *elke*
+gewone schrijver op (laag, doel) en weiger benoemd zodra er één niet
+vouwbaar is. Een venster in de basis wordt bewust níét gelowerd — dat zou
+versieselectie ín de stapel zetten, en ch. 7.4 houdt die twee juist uit
+elkaar; terugvalregel, met de reden in ch. 7.10. Nu weigeren alle drie
+benoemd op beide probes, terwijl dezelfde versioned regel zónder groep
+gewoon blijft vuren.
 
 **NOOT B — gemeten, en het was géén artefact.** De recursie vouwt wél over
 de EFFECTIEVE ouderstapel. Twee geërfde groepen ontstaan maar op één
