@@ -366,7 +366,16 @@ EXPECTED_CHANNEL=(
 # wire. Its second rule reads an inherited kenmerk from a subtype subject. It plays for the same
 # reason the hand-written one does, and playing is what makes the emitted document part of the
 # square rather than merely schema-valid.
-EXPECTED_PLAYED=132
+# 132 -> 133 (2026-09-12, card flogic-frontend): `jutterswet-wrakrecht-flogic`, the SECOND source
+# twin of the kernel anchor — the same three types, the same chain, the same fact type and the same
+# four case files, but emitted from a `bron.flogic` by an F-logic frontend that shares no code and
+# no grammar with the RegelSpraak one. It has to be a PLAYER for the reason its RegelSpraak sibling
+# is: the point of a source twin is that the SAME expectations hold over the emitted document, and
+# a refusal here would leave the second language's document outside the square its two siblings sit
+# inside. It also pins one shape the other two goldens do not: a to-many role that carries no
+# declared plural (F-logic has no grammatical number), so the case files key on `Rol.naam` where the
+# RegelSpraak twin has them keying on `Rol.meervoud`.
+EXPECTED_PLAYED=133
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the
