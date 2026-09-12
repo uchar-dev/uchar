@@ -6329,8 +6329,9 @@ an identity: an instance answers to every type on its chain, so a write
 under one spelling is read under another and the two must be the same node
 or the edge is lost. The **write** side closes and the **read** side stays
 literal — every legal read spelling is reached from the write side, so
-closing both would only invent edges — and the two node kinds close
-differently, because they are not the same kind of set:
+closing both would only invent edges. **How far a write closes is decided by
+what it writes ON**, and the answer is not the same in all three places, so
+the three are spelled out rather than generalised:
 
 - a **population** write closes UPWARD ONLY. An object creation of type T
   grows T's population and every ancestor's, since every T instance is an
@@ -6339,17 +6340,32 @@ differently, because they are not the same kind of set:
   subtype. A fact creation mints no instance at all — its ch. 6.1
   population write is the conservative proxy beside the relation node — so
   that one stays literal.
-- a **member** write closes in BOTH directions, over the ⊑-**comparable**
-  types that carry the member. An attribute or characteristic written at
-  owner T is written on every T instance, and the instance sets of T and S
-  overlap exactly when the two are comparable: S above T is handed T's
-  instances, S below T reads instances the write covers. Two INCOMPARABLE
-  types share no instance and are left apart — which is why this is a
-  comparability walk and not a rewrite of both sides to the declaring type.
-  That shorter rewrite merges two sibling subtypes of one parent into one
-  node and refuses a document that runs (measured 2026-09-12: two
-  incomparable subtypes each computing one inherited attribute from the
-  other, clean in the reference interpreter and refused under the merge).
+- a **member** write by a form that ITERATES a type — a rule's `target`, an
+  allocation's `targetAttribute` and `remainderAttribute`, a defaults
+  group's target — closes in BOTH directions, over the ⊑-**comparable**
+  types that carry the member. Such a form writes the member on *every*
+  instance of its owner T, and the instance sets of T and S overlap exactly
+  when the two are comparable: S above T is handed T's instances, S below T
+  reads instances the write covers. Two INCOMPARABLE types share no
+  instance and are left apart — which is why this is a comparability walk
+  and not a rewrite of both sides to the declaring type. That shorter
+  rewrite merges two sibling subtypes of one parent into one node and
+  refuses a document that runs (measured 2026-09-12: two incomparable
+  subtypes each computing one inherited attribute from the other, clean in
+  the reference interpreter and refused under the merge).
+- a **member** write by an **object creation** — an `ObjectCreation`'s
+  member assignment (ch. 3.3) — closes UPWARD ONLY, like the population
+  write beside it and for the same reason. It writes on the ONE instance
+  the creation mints, whose concrete type is exactly the created type, so a
+  strict subtype of that type is never written even though it inherits the
+  member. Reading this one as an extension write is unsound in the
+  over-refusing direction and was measured to be so, 2026-09-12: a creation
+  that mints its own SUPERTYPE and fills an inherited attribute drew a
+  false edge back to a rule anchored at the subtype it can never mint, and
+  a model with no cycle in it became a WF-045 refusal — with the reference
+  interpreter, which shares this graph, declining to evaluate while the ASP
+  backend answered the pinned numbers, so the differential square split on
+  a document neither of them had any quarrel with.
 
 Both halves make WF-045's promise true where it was not. Measured
 2026-09-12, one witness each, both verifier-clean before and both ending in

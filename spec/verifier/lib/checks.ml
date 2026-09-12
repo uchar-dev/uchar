@@ -6722,42 +6722,65 @@ let pop_writes ctx t =
         (n_pop t
          :: List.filter_map (fun (a : objecttype) -> Option.map n_pop a.ot_naam) (chain_from ctx ot))
 
-(* The same closure for a MEMBER write, and it runs BOTH ways because a
-   member is not a population: a rule writing `m` at owner T writes it on
-   every T instance, and the instance sets of T and S overlap exactly when
-   T and S are ⊑-comparable — S above T (a T instance is an S), S below T
-   (an S instance is a T). So the write reaches every comparable spelling
-   that HAS the member, and only those.
+(* The same closure for a MEMBER write, and [~over] is what decides how far
+   it reaches, because the two writing forms do not put the value on the
+   same set of instances.
 
-   Incomparable types are deliberately left apart, and that is the whole
-   reason this is a comparability walk and not [declaring_type]. Keying
-   both sides on the declaring type is one line shorter and merges the two
-   SIBLING subtypes of one parent into one node: measured 2026-09-12, that
-   refuses a document (two incomparable subtypes each computing one
-   inherited attribute from the other) that ref replays to a clean PASS —
-   no instance is of both types, so there is no cycle to refuse. Under the
-   comparability reading the same document stays clean and the two spellings
-   of ONE chain still meet.
+   [`Extension] — the form ITERATES a type: a rule target, an allocation's
+   target or remainder, a defaults group's target. It writes `m` on every
+   instance of [ot], so the write is seen wherever those instances are read,
+   and the instance sets of [ot] and S overlap exactly when the two are
+   ⊑-COMPARABLE — S above [ot] (an [ot] instance is an S), S below [ot] (an
+   S instance is an [ot]). Both directions, over the comparable types that
+   carry the member.
+
+   [`Minted] — an object creation's member assignment. It writes `m` on ONE
+   new instance whose concrete type is exactly [ot], because creation is NOT
+   polymorphic (ch. 2.2), so the reach is [ot] and its ANCESTORS and never a
+   strict subtype — the same asymmetry, and the same argument, as
+   [pop_writes] above. Measured 2026-09-12 before the split: a creation of a
+   SUPERTYPE, assigning an inherited member, drew an edge to a rule anchored
+   at the subtype it can never mint, and one document went verifier-clean
+   ->  WF-045 FAIL with ref refusing and clingo still answering — a latent
+   over-refusal that splits the differential square.
+
+   Incomparable types are left apart in both modes, and that is the whole
+   reason [`Extension] is a comparability walk and not [declaring_type].
+   Keying both sides on the declaring type is one line shorter and merges
+   the two SIBLING subtypes of one parent into one node: measured
+   2026-09-12, that refuses a document (two incomparable subtypes each
+   computing one inherited attribute from the other) that ref replays to a
+   clean PASS — no instance is of both types, so there is no cycle to
+   refuse. Under the comparability reading the same document stays clean and
+   the two spellings of ONE chain still meet.
 
    Reads stay literal on purpose: every legal read spelling of `m` is a type
    comparable with some writer's owner, so the write side alone already
    draws every real edge. *)
-let member_writes ctx ~kind ot m =
+let member_writes ctx ~kind ~over ot m =
   let node = match kind with `Attribute -> n_attr | `Characteristic -> n_char in
   let carries s =
     match objecttype ctx s with
     | None -> false
     | Some e -> ( match kind with `Attribute -> has_attr e m | `Characteristic -> has_kenmerk e m)
   in
+  let reached =
+    match over with
+    | `Minted -> (
+        match declared_objecttype ctx ot with
+        | None -> []
+        | Some o -> List.filter_map (fun (a : objecttype) -> a.ot_naam) (chain_from ctx o))
+    | `Extension ->
+        List.map
+          (fun (key, (o : objecttype)) -> Option.value o.ot_naam ~default:key)
+          (List.filter
+             (fun (key, (o : objecttype)) ->
+               let n = Option.value o.ot_naam ~default:key in
+               is_sub ctx ~sub:n ~super:ot || is_sub ctx ~sub:ot ~super:n)
+             ctx.doc.objecttypen)
+  in
   List.sort_uniq compare
-    (node ot m
-     :: List.filter_map
-          (fun (key, (o : objecttype)) ->
-            let n = Option.value o.ot_naam ~default:key in
-            if (is_sub ctx ~sub:n ~super:ot || is_sub ctx ~sub:ot ~super:n) && carries n then
-              Some (node n m)
-            else None)
-          ctx.doc.objecttypen)
+    (node ot m :: List.filter_map (fun n -> if carries n then Some (node n m) else None) reached)
 
 (* the link set of one declared relation (ch. 6.1): written by the fact
    creations that create it, read by every symbolic hop over it and by
@@ -7000,7 +7023,7 @@ let dep_forms ctx : dep_form list =
         match r.doel with
         | Some (Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ }) ->
             let writes =
-              member_writes ctx
+              member_writes ctx ~over:`Extension
                 ~kind:(if r.rr_soort = Some Kenmerktoekenning then `Characteristic else `Attribute)
                 ot a
             in
@@ -7022,9 +7045,11 @@ let dep_forms ctx : dep_form list =
         let bt = Option.value v.bron_type ~default:"" in
         let dt = Option.value v.doel_type ~default:"" in
         let writes =
-          (match v.doel_attribuut with Some a -> member_writes ctx ~kind:`Attribute dt a | None -> [])
+          (match v.doel_attribuut with
+          | Some a -> member_writes ctx ~over:`Extension ~kind:`Attribute dt a
+          | None -> [])
           @ (match v.restant_attribuut with
-            | Some a -> member_writes ctx ~kind:`Attribute bt a
+            | Some a -> member_writes ctx ~over:`Extension ~kind:`Attribute bt a
             | None -> [])
         in
         let reads =
@@ -7144,7 +7169,10 @@ let dep_forms ctx : dep_form list =
                (fun (t : toekenning) ->
                  match t.toe_attribuut with
                  | Some a ->
-                     member_writes ctx
+                     (* `Minted, not `Extension: this value lands on the ONE
+                        instance the creation makes, and its concrete type
+                        is exactly nt (creation is not polymorphic) *)
+                     member_writes ctx ~over:`Minted
                        ~kind:(if t.toe_kenmerk then `Characteristic else `Attribute)
                        nt a
                  | None -> [])
@@ -7237,11 +7265,11 @@ let dep_forms ctx : dep_form list =
         let reads = List.concat_map default_reads l.defaults in
         let writes =
           (match l.pd_kenmerk with
-          | Some k -> member_writes ctx ~kind:`Characteristic l.pd_onderwerp k
+          | Some k -> member_writes ctx ~over:`Extension ~kind:`Characteristic l.pd_onderwerp k
           | None -> [])
           @
           match l.pd_attribuut with
-          | Some a -> member_writes ctx ~kind:`Attribute l.pd_onderwerp a
+          | Some a -> member_writes ctx ~over:`Extension ~kind:`Attribute l.pd_onderwerp a
           | None -> []
         in
         {
