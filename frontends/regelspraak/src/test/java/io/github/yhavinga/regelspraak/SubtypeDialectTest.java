@@ -420,9 +420,17 @@ class SubtypeDialectTest {
     }
 
     // ------------------------------------------------- de ketenresolutie in de resolverlaag (§3.2)
-    // The model has carried the chain-aware accessors since the kernel; these five pin that the
-    // RESOLVER reads through them. Each one is a member of an ANCESTOR used from a SUBTYPE subject —
-    // the shape that binds nowhere when a reader consults the own declaration maps only.
+    // The model has carried the chain-aware accessors since the kernel; these pin that the RESOLVER
+    // reads through them. Each one is a member of an ANCESTOR used from a SUBTYPE subject — the shape
+    // that binds nowhere when a reader consults the own declaration maps only.
+    //
+    // Measured on the unrepaired base, because it decides what these tests are FOR: five of the six
+    // places fail LOUDLY. The wire is well fenced — a name that no declaration carries is refused by
+    // WF-034, a gedurende condition that did not resolve degrades to `Onopgelost` and is refused by
+    // WF-055, an `Onopgelost` reached in evaluation faults with WF-044, and three of the places raise
+    // an outright frontend ERROR on a document that is not wrong. So the damage is a correct document
+    // made unusable, not a wrong number slipping through — with ONE exception, plek 6 below, which
+    // emits a member name no declaration carries, verifier-clean and diagnostics-free.
 
     @Test void een_verdeling_naar_een_subtype_bindt_het_geerfde_doelattribuut() {
         // Plek 1, MeervoudMatcher.vindAttribuut. The sentence writes the PLURAL "bergingsaandelen";
@@ -463,9 +471,11 @@ class SubtypeDialectTest {
     }
 
     @Test void een_geerfd_kenmerk_bindt_in_een_predicaat() {
-        // Plek 2, KenmerkMatcher. An inherited kenmerk bound in NO predicaat form — the condition fell
-        // through to an Onopgelost marker and the rule silently never fired. The soort check right after
-        // the binding (kenmerkSoort) was already chain-aware, so binding and soort now see one declarant.
+        // Plek 2, KenmerkMatcher. An inherited kenmerk bound in NO predicaat form — across all eleven
+        // call sites — and the condition fell through to an Onopgelost marker. That marker is LOUD, not
+        // silent: reaching it in evaluation faults with WF-044, so the rule does not quietly never fire,
+        // it takes the document down. The soort check right after the binding (kenmerkSoort) was already
+        // chain-aware, so binding and soort now see one and the same declarant.
         String src = """
             Objecttype het Strandrecht (mv: Strandrechten)
                 is betwist kenmerk (bijvoeglijk);
@@ -528,11 +538,12 @@ class SubtypeDialectTest {
     }
 
     @Test void een_geerfde_tijdlijn_klemt_het_totaal() {
-        // Plek 4, the dangerous half: the temporality family had NO chain accessor at all, so a subtype
-        // subject reading an ancestor's timeline attribute answered "not temporal". Here that silently
-        // DROPS the §7.1 gedurende clip — the totaal is then taken over the whole timeline and the number
-        // is simply wrong, with nothing marking it. Both the operand (attribuutGranulariteit) and the
-        // condition (kenmerkGranulariteit) are inherited, so the two halves are pinned at once.
+        // Plek 4: the temporality family had NO chain accessor at all, so a subtype subject reading an
+        // ancestor's timeline attribute answered "not temporal". The §7.1 gedurende clip then does not
+        // silently disappear — it DEGRADES to an `Onopgelost` filter plus a WARNING, and WF-055 refuses
+        // that on the wire. The cost is a correct document made unusable, which is why the repair is
+        // owed. Both the operand (attribuutGranulariteit) and the condition (kenmerkGranulariteit) are
+        // inherited here, so the two halves are pinned at once.
         String src = """
             Objecttype de Jutter (mv: Jutters) (bezield)
                 de wachtvergoeding per maand Numeriek (geheel getal) voor elke maand;
@@ -549,8 +560,8 @@ class SubtypeDialectTest {
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         String c = emitCompact(m);
         assertTrue(c.contains("\"filter\":{\"node\":\"Kenmerk\",\"kenmerk\":\"wachtplichtig\""),
-                () -> "de gedurende-klem hoort op de wire te staan; zonder haar telt het totaal de hele "
-                        + "tijdlijn mee en is het getal stil fout:\n" + c);
+                () -> "de gedurende-klem hoort gebonden op de wire te staan in plaats van als Onopgelost, "
+                        + "dat WF-055 weigert:\n" + c);
     }
 
     @Test void een_geerfde_tijdlijn_draagt_de_hele_periode_check() {
@@ -608,12 +619,15 @@ class SubtypeDialectTest {
     }
 
     @Test void een_geerfde_tijdreeks_ontsnapt_niet_aan_de_statische_wacht() {
-        // Plek 4, the escape the card names: §8.4 admits a NON-temporal comparison bullet beside the
-        // temporal ones precisely because it "heeft geen verschillende waarden op verschillende
-        // momenten". `toeslag per maand` is inherited and IS a timeline, so the bullet reads a
-        // List<Segment>; judged non-temporal it slipped past the guard into a scalar comparison term.
-        // The whole compound must stay an honest marker instead — the operand and the first bullet are
-        // the subtype's OWN, so this pins the guard and not the surrounding gates.
+        // Plek 4, the escape: §8.4 admits a NON-temporal comparison bullet beside the temporal ones
+        // precisely because it "heeft geen verschillende waarden op verschillende momenten".
+        // `toeslag per maand` is inherited and IS a timeline, so the bullet reads a List<Segment>;
+        // judged non-temporal it slipped past the guard into a scalar comparison term. The escape is
+        // real IN THE RESOLVER and stops there: WF-055 narrows composite gedurende members to
+        // characteristic checks, so the base's Samengesteld filter is refused on the wire too — with a
+        // different reason than the honest marker the repair produces. Both are refusals; this test
+        // pins that the guard itself no longer lets a timeline through. The operand and the first
+        // bullet are the subtype's OWN, so nothing but that guard is under test.
         String src = """
             Objecttype de Jutter (mv: Jutters) (bezield)
                 de toeslag per maand Numeriek (geheel getal) voor elke maand;
@@ -683,6 +697,181 @@ class SubtypeDialectTest {
                 () -> "een cellezing van een geërfd gedimensioneerd attribuut hoort te resolven:\n" + c);
         assertTrue(c.contains("\"labels\":[\"voorjaar\"]"),
                 () -> "de cel hoort haar gedeclareerde label te dragen:\n" + c);
+    }
+
+    @Test void een_geerfd_gedimensioneerd_attribuut_gaat_gedeclareerd_de_wire_op() {
+        // Plek 6, and the ONLY one of the six whose failure is silent. The §5.8.5 interval fold
+        // reconstructs the attribute it folds, and it took the declared spelling from the own map:
+        // for an inherited attribute that lookup misses and the WRITTEN form ("Betaalde belasting",
+        // as the sentence capitalises it) goes onto the wire. Zero diagnostics, and the verifier
+        // passes it — no WF rule holds an AttribuutRef name against the declarations, so nothing
+        // downstream catches a member name that no declaration carries. The other five fail loudly.
+        String src = """
+            Dimensie de jaardimensie, bestaande uit de jaardimensies (na het attribuut met voorzetsel van):
+                1. vorig jaar
+                2. huidig jaar
+
+            Objecttype de Persoon (mv: Personen)
+                de betaalde belasting Numeriek (geheel getal) gedimensioneerd met jaardimensie;
+
+            Objecttype de Ondernemer is een Persoon (mv: Ondernemers)
+                het totaal Numeriek (geheel getal);
+
+            Regel tel
+                geldig altijd
+                    Het totaal van een Ondernemer moet berekend worden als de som van zijn Betaalde belasting over de jaardimensies vanaf vorig jaar t/m huidig jaar.
+            """;
+        RegelSpraakModel m = Resolver.resolve(src);
+        assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
+        String c = emitCompact(m);
+        assertTrue(c.contains("\"attribuut\":\"betaaldebelasting\""),
+                () -> "de vouw hoort de GEDECLAREERDE spelling te dragen:\n" + c);
+        assertFalse(c.contains("\"attribuut\":\"Betaaldebelasting\""),
+                () -> "de geschreven spelling op de wire is een lidnaam die geen declaratie draagt — en "
+                        + "geen enkele WF-regel houdt een AttribuutRef-naam tegen de declaraties:\n" + c);
+    }
+
+    @Test void twee_geerfde_tijdlijnsleutels_weigeren_de_uniciteit() {
+        // Plek 4, telTemporeel. §8.1.6 ever-uniqueness admits at most ONE temporal key component; a
+        // second needs the same-moment tuple join no reading pins, so the whole rule stays a WARNING.
+        // Counting the temporal components on the SUBJECT'S OWN maps calls two inherited timelines
+        // static and admits a key with no defined semantics.
+        //
+        // This one is NOT red on the untouched base, and the reason is worth naming: there plek 1
+        // stops the sentence one step earlier (no written form of an inherited attribute binds, so
+        // the source resolves to nothing at all) and this check is never reached. Repairing plek 1
+        // is what makes the count load-bearing, so both directions are pinned here at once — with
+        // one temporal key the rule must RESOLVE, with two it must be REFUSED. A chain-blind count
+        // would resolve both.
+        String eenTijdlijn = """
+            Objecttype de Wachter (mv: Wachters) (bezield)
+                het wachtnummer Numeriek (geheel getal);
+                het borgnummer Numeriek (geheel getal) voor elke maand;
+
+            Objecttype de Klipwachter is een Wachter (mv: Klipwachters) (bezield)
+                de post Numeriek (niet-negatief geheel getal);
+
+            Regel wachtsleutel
+                geldig altijd
+                    De concatenatie van wachtnummer en borgnummer van alle Klipwachters moeten uniek zijn.
+            """;
+        RegelSpraakModel een = Resolver.resolve(eenTijdlijn);
+        assertEquals(1, een.uniciteiten.size(),
+                () -> "één geërfde tijdlijncomponent is toegestaan en hoort te resolven: " + een.diagnostics);
+        assertEquals("Klipwachter", een.uniciteiten.get(0).subject().naam);
+
+        String tweeTijdlijnen = eenTijdlijn.replace(
+                "het wachtnummer Numeriek (geheel getal);",
+                "het wachtnummer Numeriek (geheel getal) voor elke maand;");
+        RegelSpraakModel twee = Resolver.resolve(tweeTijdlijnen);
+        assertTrue(twee.uniciteiten.isEmpty() && twee.uniciteitUnies.isEmpty(),
+                () -> "twee GEËRFDE tijdlijncomponenten horen de §8.1.6-ooituniciteit te laten weigeren: "
+                        + twee.uniciteiten + twee.uniciteitUnies);
+    }
+
+    @Test void een_genavigeerde_tijdsevenredige_basis_leest_de_keten_van_het_doeltype() {
+        // Plek 4, the navigated §7.3.2 base. The operand is a to-one navigated timeline attribute of
+        // the RELATED type; that type's facets were read on its own maps, so a related SUBTYPE whose
+        // timeline attribute is declared one hop up failed the operand gate and the clip degraded to
+        // an Onopgelost the wire refuses (WF-055) — again unusable, not silently wrong.
+        String src = """
+            Objecttype de Reis (mv: Reizen)
+                het reistarief Numeriek (geheel getal) voor elk jaar;
+
+            Objecttype de Zeereis is een Reis (mv: Zeereizen)
+                de diepgang Numeriek (niet-negatief geheel getal);
+
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                is varend kenmerk (bijvoeglijk) voor elke maand;
+                de reisbijdrage Numeriek (geheel getal) voor elke maand;
+
+            Feittype reisdeelname
+                de reizende jutter Jutter
+                de vaartocht Zeereis
+            Eén reizende jutter maakt één vaartocht
+
+            Regel reisbijdrage van een jutter
+                geldig altijd
+                    De reisbijdrage van een Jutter moet gesteld worden op het tijdsevenredig deel per maand van het reistarief van de vaartocht gedurende de tijd dat hij varend is.
+            """;
+        RegelSpraakModel m = Resolver.resolve(src);
+        assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
+        String c = emitCompact(m);
+        assertTrue(c.contains("\"kind\":\"TIJDSEVENREDIG_DEEL\""), () -> "geen tijdsevenredige vouw:\n" + c);
+        assertTrue(c.contains("\"attribuut\":\"reistarief\",\"objecttype\":\"Zeereis\""),
+                () -> "de basis hoort het geërfde tijdlijnattribuut van het genavigeerde subtype te "
+                        + "lezen:\n" + c);
+        // the operand gate is what this pins: only a single-period timeline base admits the clip, so a
+        // bound filter proves the navigated type's facets were read through its chain
+        assertTrue(c.contains("\"filter\":{\"node\":\"Kenmerk\",\"kenmerk\":\"varend\""),
+                () -> "een geërfde tijdlijn achter een to-one navigatie hoort de klem te dragen in plaats "
+                        + "van een marker te worden:\n" + c);
+    }
+
+    @Test void een_genavigeerd_geerfd_tijdlijnkenmerk_klemt_het_tijdsevenredig_deel() {
+        // Plek 4, gedurendeNavigatieKenmerk. Same navigated shape, now on the CONDITION side: the
+        // kenmerk must be a single-period timeline kenmerk of the navigated type, read on its own
+        // maps. An inherited one answered "not temporal" and the clip fell away.
+        String src = """
+            Objecttype de Reis (mv: Reizen)
+                is gestremd kenmerk (bijvoeglijk) voor elke maand;
+
+            Objecttype de Zeereis is een Reis (mv: Zeereizen)
+                de diepgang Numeriek (niet-negatief geheel getal);
+
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                het jaartarief Numeriek (geheel getal) voor elk jaar;
+                de reisbijdrage Numeriek (geheel getal) voor elke maand;
+
+            Feittype reisdeelname
+                de reizende jutter Jutter
+                de vaartocht Zeereis
+            Eén reizende jutter maakt één vaartocht
+
+            Regel reisbijdrage van een jutter
+                geldig altijd
+                    De reisbijdrage van een Jutter moet gesteld worden op het tijdsevenredig deel per maand van zijn jaartarief gedurende de tijd dat zijn vaartocht gestremd is.
+            """;
+        RegelSpraakModel m = Resolver.resolve(src);
+        assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
+        String c = emitCompact(m);
+        assertTrue(c.contains("\"filter\":{\"node\":\"Kenmerk\",\"kenmerk\":\"gestremd\",\"navigatie\":\"vaartocht\""),
+                () -> "de genavigeerde klem hoort te binden op het geërfde tijdlijnkenmerk:\n" + c);
+    }
+
+    @Test void een_setlezing_over_een_geerfde_tijdlijn_blijft_de_tijdvouw() {
+        // Plek 4, setLezing. A set read over a NON-timeline attribute is the pure instance fold; over
+        // a TIMELINE attribute it is the §7.1 per-element fold over time, and the §4.20 rate strip
+        // must keep applying to it. Read on the element's own maps, an inherited timeline made the
+        // fold look like the plain one — the strip lapsed and the unit came out wrong.
+        String src = """
+            Eenheidsysteem Munt
+                de euro (mv: euros) EUR €
+
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                de maandloon Numeriek (geheel getal) met eenheid € voor elke maand;
+
+            Objecttype de Klipjutter is een Jutter (mv: Klipjutters) (bezield)
+                de post Numeriek (niet-negatief geheel getal);
+
+            Objecttype de Wacht (mv: Wachten)
+                de loonsom Numeriek (geheel getal) met eenheid €;
+
+            Feittype wachtbezetting
+                de wacht Wacht
+                de klipjutter (mv: klipjutters) Klipjutter
+            Eén wacht heeft meerdere klipjutters
+
+            Regel loonsom van een wacht
+                geldig altijd
+                    De loonsom van een Wacht moet berekend worden als het totaal van de maandloon van alle klipjutters van de Wacht.
+            """;
+        RegelSpraakModel m = Resolver.resolve(src);
+        // The §4.20 strip drops the /tijdseenheid from the RESULT: over a timeline operand the fold
+        // integrates over time, so a plain-EUR target is the right one and no unit error is raised.
+        assertTrue(m.errors().isEmpty(),
+                () -> "een setlezing over een GEËRFDE tijdlijn is de gewone instantievouw niet: " + m.errors());
+        assertTrue(emitCompact(m).contains("\"kind\":\"TOTAAL\""), "de vouw hoort een totaal te blijven");
     }
 
     @Test void een_naam_die_een_rol_in_een_ander_feittype_treft_bindt_niet() {
