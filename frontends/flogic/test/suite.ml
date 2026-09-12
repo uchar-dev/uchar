@@ -114,6 +114,7 @@ let () =
          at the frontend or not at all *)
       ("refuse_naamloos.flogic", "a rule with no id");
       ("refuse_naamloze_basis.flogic", "has no id");
+      ("refuse_id_zonder_definitie.flogic", "which is a subclass fact");
       ("refuse_dubbele_naam.flogic", "is already used at line");
       ("refuse_argumentatietheorie.flogic", "argumentation-theory");
       ("refuse_dubbel_lid.flogic", "declares the member hoogte twice");

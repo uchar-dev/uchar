@@ -1,0 +1,6 @@
+// Refusal 19: an id on a form that names nothing. Only a definition — a
+// Horn rule or a barred class-level value — puts a name on the wire; a
+// subclass fact declares a chain and names nothing.
+Strandrecht[|grondslag => numeriek(niet_negatief, 2)|].
+@!{'wrakrecht is een strandrecht'}
+Wrakrecht::Strandrecht.

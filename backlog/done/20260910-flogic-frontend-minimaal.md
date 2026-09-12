@@ -229,7 +229,7 @@ Omdat Flora-2 geen id per item kent, draagt een benoemde gebalkte
 uitspraak precies haar ene definitie. De uniciteitscontrole loopt over
 beide soorten samen, en de `regels`-index is nu de volledige namenlijst in
 broncodevolgorde. De golden verandert er niet van (benoemde Horn-bases);
-gate 14 emitteert haar byte-identiek. Suitevloer 66 -> 78.
+gate 14 emitteert haar byte-identiek. Suitevloer 66 -> 81.
 
 Meegenomen in dezelfde beweging: een fixture voor de
 argumentatietheorie-descriptor `@{…}` (de README belooft er één per
@@ -274,7 +274,7 @@ de al genoteerde open flanken van rij 39.
     executed from that script — one source of truth, as in gate 9). An
     empty flogic-golden set, a suite that ran zero checks, or a missing
     dune is a failure, never silently green. Counting floors in the
-    script: `EXPECTED_MIN_CHECKS=78` and `EXPECTED_MIN_GOLDENS=1`, both
+    script: `EXPECTED_MIN_CHECKS=81` and `EXPECTED_MIN_GOLDENS=1`, both
     measured 2026-09-12. CI leg unconditional and blocking — unlike gate
     9 this frontend links no external toolchain, so every runner can run
     it.
