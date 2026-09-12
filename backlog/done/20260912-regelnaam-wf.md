@@ -111,17 +111,38 @@ misten elkaar volledig. Ook dat document was verifier-schoon en divergeert in
 `ref` (gemeten). Beide sluiten aan de **schrijf**kant, elk anders, omdat het
 niet dezelfde soort verzameling is:
 
-- **populatie**: alleen omhoog. Een creatie van T laat T's populatie en die
+**Drie schrijfposities, en ze sluiten niet gelijk** — dat is de
+asymmetrie, en ze staat nu voluit in ch. 5.1, in de WF-045-indexrij en in
+het registervoorstel hieronder:
+
+- **populatie**: alleen OMHOOG. Een creatie van T laat T's populatie en die
   van elke voorouder groeien; niet die van een afstammeling, want creatie is
   niet polymorf. Een feitcreatie maakt geen instantie — haar
   populatieschrijving is ch. 6.1's proxy — en blijft letterlijk.
-- **lid**: beide richtingen, over de ⊑-**vergelijkbare** typen die het lid
-  dragen. Een schrijving op eigenaar T raakt elke T-instantie, en de
-  instantieverzamelingen van T en S overlappen precies wanneer ze
-  vergelijkbaar zijn.
+- **lid, geschreven door een vorm die een type ITEREERT** (regeldoel,
+  verdelingsdoel en -restant, defaultsdoel): BEIDE richtingen, over de
+  ⊑-**vergelijkbare** typen die het lid dragen. Zo'n vorm schrijft het lid
+  op élke instantie van haar eigenaar, en de instantieverzamelingen van T en
+  S overlappen precies wanneer ze vergelijkbaar zijn.
+- **lid, geschreven door een OBJECTCREATIE**: alleen OMHOOG, net als de
+  populatieschrijving ernaast en om dezelfde reden. De waarde landt op de
+  ENE instantie die gemunt wordt, en haar concrete type is precies het
+  gecreëerde type.
 
 Lezen blijft letterlijk: elke geldige leesspelling wordt vanaf de
 schrijfkant bereikt, dus beide sluiten zou alleen edges verzinnen.
+
+**Lensvangst binnen deze kaart: de derde positie ontbrak eerst.** Mijn eerste
+versie liet de creatie-toekenning bidirectioneel sluiten, samen met de
+itererende vormen. Dat trekt een valse edge van een creatie die haar eigen
+SUPERTYPE munt terug naar een regel op het subtype dat zij nooit kan munten.
+Gemeten op de lensgetuige: basis alles PASS, en met de foute lezing verifier
+**WF-045 FAIL** op een model zonder cyclus, waarbij `ref` — die deze graaf
+DEELT — weigerde te evalueren terwijl clingo de gepinde getallen antwoordde:
+het differentiaalvierkant gespleten op een document waar geen van beide iets
+tegen had. Nul corpusblootstelling vandaag, dus latent. `member_writes` kiest
+nu tussen `Extension` en `Minted`; het is dezelfde asymmetrie die
+`pop_writes` al had, en de fout was dat één van de twee hem niet erfde.
 
 **De afgewezen kortere route, met haar meting.** Beide kanten op
 `declaring_type` sleutelen is één regel korter en was de route die de
@@ -142,6 +163,7 @@ hoort — de regel weigert cycli, geen subtypecreatie):
 | `subject` Kustgemeente, `nieuwType` Wrakrecht (zijwaarts) | PASS — twee populatieschrijvingen, één onverwante lezing |
 | dezelfde creatie in een bewaakte `recursief`-groep | PASS — WF-045's eigen uitzondering |
 | twee onvergelijkbare zustersubtypen over één geërfd paar | PASS — geen instantie is van beide |
+| creatie die haar eigen SUPERTYPE munt met een geërfd lid | PASS — de `Minted`-arm; onder de bidirectionele lezing een valse WF-045 |
 
 **Kosten: geen, en niet leeg.** De sluiting verbreedt een schrijving in **9**
 corpusdocumenten (`strandrechtketen`, `wrakrecht`, `wrakrecht-flogic`,
@@ -150,40 +172,64 @@ corpusdocumenten (`strandrechtketen`, `wrakrecht`, `wrakrecht-flogic`,
 `zustervondst` is de zusterstructuur zelf: een schrijving op de ouder bereikt
 twee onvergelijkbare kinderen en die bereiken elkaar nog steeds niet.
 
-**Getuigen.** `wf045-subtypecreatie-cyclus` (populatie-arm) en
+**Getuigen.** Twee negatief: `wf045-subtypecreatie-cyclus` (populatie-arm) en
 `wf045-erfattribuut-spelling-cyclus` (lid-arm), naast de bestaande
 `wf045-cyclic-attribute-dependency`. De drie vallen onafhankelijk: een graaf
 op de geschreven naam vangt alleen de eerste.
 
+Eén positief: **`corpus/golden/jutterswet-wrakboeking`**, de getuige van de
+`Minted`-arm en het enige corpusdocument dat haar kan falsifiëren — laat de
+creatie-toekenning beide richtingen sluiten en gate 3 wordt rood op déze
+golden (gemeten, beide lezingen, op dit bestand). Speelt in ref, clingo én
+Drools, dus het vierkant staat er ook omheen. Elke andere arm van de
+ketensluiting had al een schone golden (`strandrechtketen`, `wrakrecht`,
+`hoofdberging`, `zustervondst`); deze had er geen, want de vorm — een
+creatie die haar eigen supertype munt — bestond nergens in het corpus.
+
+**Scope-uitzondering, expliciet gemeld.** Die golden kon er niet bij zonder
+één regel in een BESCHERMD script dat de kaart uitsluit: gate 12's
+`EXPECTED_PLAYED` is een gelijkheid, dus een nieuwe speler faalt de gate tot
+het getal meegaat (134 → 135, met reden en datum ter plekke — precies de bump
+die de gate zelf in haar foutboodschap voorschrijft). De golden, haar NOTE en
+die ene regel zitten in **één commit**, zodat de maintainer de uitzondering
+als geheel kan aanvaarden of laten vallen; valt hij weg, dan blijven de
+veertien gates groen en houdt de arm alleen haar gemeten bewijs.
+
 ### De hele voor/na-veeg
 
-Over **625 documenten** in vier zones bewegen **9** rapportregels en geen
-enkele andere: de acht nieuwe getuigen, plus `wf020-crossform-collision`
-waarvan het *oordeel* gelijk blijft en alleen de boodschap herformuleert
-("rule name" → "name", "all rule forms" → "all named forms"). Gate 3 telt
-209 golden schoon (ongewijzigd) en 386 negatief (378 → 386).
+Over **626 documenten** in vier zones bewegen **9** rapportregels en geen
+enkele andere: de acht nieuwe negatief-getuigen, plus
+`wf020-crossform-collision` waarvan het *oordeel* gelijk blijft en alleen de
+boodschap herformuleert ("rule name" → "name", "all rule forms" → "all named
+forms"). De nieuwe golden `jutterswet-wrakboeking` staat NIET in de veeg, en
+dat hoort: main's letterlijke sleutel laat hem ook door — wat hij
+onderscheidt is de tussenliggende, foute lezing, en dat is met de
+falsificatieproef gemeten in plaats van met de veeg. Gate 3 telt 210 golden
+schoon (209 → 210) en 386 negatief (378 → 386).
 
 ### Veertien gates groen — slotregels
 
 ```
 check-self-contained: PASS
-check-ir-schema: PASS (schema valid; 24 pattern self-test row(s); 209 file(s) validate and round-trip, floor 192)
-check-verifier: PASS (209 golden clean; 386 negatief rejected for their declared rule, floor 350)
-check-case-schema: PASS (schema valid; 492 case file(s) validate)
-check-oracle: PASS (ref suite 592 worked examples, floor 489; 466 cases replayed exactly, floor 427; NOT replayed, no case file yet: corpus/golden/jutterswet-seizoenvondst corpus/golden/jutterswet-vormenkabinet)
-check-clingo: PASS (backend suite 125 checks, floor 83; 466 cases replay exactly through clingo — ref = clingo over the corpus)
-check-noop: PASS (430 cases refute a do-nothing executor; 36 pinned survivors pin defeasible standing)
+check-ir-schema: PASS (schema valid; 24 pattern self-test row(s); 210 file(s) validate and round-trip, floor 192)
+check-verifier: PASS (210 golden clean; 386 negatief rejected for their declared rule, floor 350)
+check-case-schema: PASS (schema valid; 493 case file(s) validate)
+check-oracle: PASS (ref suite 592 worked examples, floor 489; 467 cases replayed exactly, floor 427; NOT replayed, no case file yet: corpus/golden/jutterswet-seizoenvondst corpus/golden/jutterswet-vormenkabinet)
+check-clingo: PASS (backend suite 125 checks, floor 83; 467 cases replay exactly through clingo — ref = clingo over the corpus)
+check-noop: PASS (431 cases refute a do-nothing executor; 36 pinned survivors pin defeasible standing)
 check-rood: PASS (26 red cases fault observably in ref and clingo, floor 26)
 check-catala: PASS — frontend suite green (201 checks, floor 201); 12 catala golden(s) regenerate byte-identically (floor 12)
 check-regelspraak: PASS — JUnit suite green (245 tests, floor 173); 45 rgs golden(s) re-emit byte-identically (floor 38)
 check-toka-parity: PASS   (ref 29 / clingo 29 / Drools 29 PLAYED)
-check-drools: PASS   (played 134, channel floor 49 pinned by name, JUnit 335 tests floor 239)
+check-drools: PASS   (played 135, channel floor 49 pinned by name, JUnit 335 tests floor 239)
 check-reftype-derivation: PASS (93 unit annotations twisted over 18 goldens, floor 74; 84 executor replays reproduce the untouched outcome, 15 of them PLAYED by the DRL-text branch, floor 13; 0 pinned survivors)
 check-flogic: PASS — frontend suite green (81 checks, floor 81); 1 flogic golden(s) re-emit byte-identically (floor 1)
 ```
 
-Gate 12 en 13 staan stil op hun uitgangswaarden (played 134; 93/84/15) — er
-is geen uitvoerder aangeraakt.
+Gate 13 staat stil op zijn uitgangswaarden (93/84/15) — er is geen
+uitvoerder aangeraakt en de nieuwe golden draagt geen eenheidsannotatie.
+Gate 12 beweegt met precies één speler mee (134 → 135), de gemelde
+scope-uitzondering hierboven.
 
 ### Registervoorstel (letterlijke tekst, hoofdsessie landt het)
 
@@ -201,8 +247,8 @@ welgevormdheidspromotie op een bestaande vorm en geen construct:
 > Drools-exec-tak rekenen door, en de DRL-tekst-tak valt om met een
 > `NullPointerException` uit de regelnaam-escaper. Uniciteit blijft WF-020,
 > die nu dezelfde lijst leest — twee eigenschappen, twee nummers, één lijst,
-> zodat één botsing niet twee nummers kan citeren. Kosten nul: 1105 benoemde
-> vormen over 625 documenten droegen al een naam. Bij dezelfde meting kwam
+> zodat één botsing niet twee nummers kan citeren. Kosten nul: 1107 benoemde
+> vormen over 626 documenten droegen al een naam. Bij dezelfde meting kwam
 > een derde naamdrager boven die niets kruist — een `resolvedDagsoort` zonder
 > naam definieert geen dagsoort en glipte langs WF-031's eigen
 > resolutiekruising heen — en die is bij **WF-031** gesloten en niet hier,
@@ -230,34 +276,66 @@ blanco naam is ook geen gedeclareerde dagsoort, dus in de natuurlijke
 volgorde antwoordt de resolutie-arm eerst met `undeclared day kind ' '` —
 waar, en de verkeerde diagnose.
 
-De derde naamdrager, `regelGroepen`, blijft er bewust buiten en dat staat
-nu in WF-107's tekst: WF-033 resolveert de LEDEN van een groep op naam en
-niemand leest de naam van de groep zelf, dus een naamloze groep is inert in
-plaats van dubbelzinnig. Acht groepen in het corpus, allemaal benoemd.
+**De grens van WF-107 is per array getrokken, niet geraden**, en staat zo in
+de regeltekst en de indexrij. Vier andere top-level arrays dragen een naam,
+elk om een eigen reden buiten deze regel — allemaal gemeten over de vier
+zones:
+
+| array | telling | waarom buiten WF-107 |
+|---|---|---|
+| `resolvedDagsoorten` | 24, één naamloos (de getuige) | eigen naamruimte; presence is WF-031's clausule (hierboven) |
+| `tijdlijnen` | 37, allemaal benoemd | al gedekt: WF-015 sleutelt de declaratie op de naam, en een naamloze tijdlijn valt op **WF-003** (gemeten: `reference to undeclared timeline 'penningjaar'`) |
+| `regelGroepen` | 8, allemaal benoemd | label; WF-033 resolveert de LEDEN op naam, niemand leest de groepsnaam — inert, geen regel zonder falen |
+| `regels` | 866, allemaal benoemd | de parse-stage stub-index die geen check en geen uitvoerder leest; naamloos is verifier-schoon en blijft dat (gemeten) |
+
+Daarnaast is `dagsoorten` een lijst kále strings; `[null]` is daar vandaag
+ook toegelaten (gemeten: verifier PASS) en dat is **als open genoteerd**, niet
+gesloten: het is opnieuw de dagsoort-naamruimte, dus het hoort bij WF-031's
+familie en niet hier, en geen producent schrijft er een.
 
 **(b) `spec/CONSTRUCTS.md` rij 39, aan de bestaande cel toe te voegen:**
 
 > De subtype-consequentie voor de STRATIFICATIE was de laatste die nog op de
 > letterlijke typenaam stond, hersteld 2026-09-12: de knoop van de
-> ch. 5.1-afhankelijkheidsgraaf is nu ketengesloten aan de SCHRIJFkant, en
-> de twee knoopsoorten sluiten verschillend — een populatieschrijving alleen
-> OMHOOG (creatie is niet polymorf, en een feitcreatie maakt geen instantie,
-> dus haar populatieschrijving blijft de letterlijke proxy), een
-> lidschrijving over de ⊑-VERGELIJKBARE typen die het lid dragen, in beide
-> richtingen; lezen blijft letterlijk. Twee cycli die er tot dan buiten
-> vielen zijn nu statisch geweigerd, allebei verifier-schoon en allebei
-> divergerend in `ref` met `no fixpoint within 100 passes`: een objectcreatie
-> waarvan het nieuwe type een subtype van haar eigen subject is
+> ch. 5.1-afhankelijkheidsgraaf is nu ketengesloten aan de SCHRIJFkant, en de
+> DRIE schrijfposities sluiten NIET gelijk — dat is de kern en het is per
+> positie opgeschreven in plaats van gegeneraliseerd. Een POPULATIEschrijving
+> sluit alleen OMHOOG (creatie is niet polymorf; een feitcreatie maakt geen
+> instantie, dus haar populatieschrijving blijft de letterlijke proxy). Een
+> LIDschrijving door een vorm die een type ITEREERT — regeldoel,
+> verdelingsdoel en -restant, defaultsdoel — sluit in BEIDE richtingen over
+> de ⊑-VERGELIJKBARE typen die het lid dragen, want zo'n vorm schrijft op elke
+> instantie van haar eigenaar. Een LIDschrijving door een OBJECTCREATIE sluit
+> weer alleen OMHOOG, want zij vult de ene instantie die zij munt en het
+> concrete type daarvan is precies het gecreëerde type. Lezen blijft
+> letterlijk. Twee cycli die er tot dan buiten vielen zijn nu statisch
+> geweigerd, allebei verifier-schoon en allebei divergerend in `ref` met
+> `no fixpoint within 100 passes`: een objectcreatie waarvan het nieuwe type
+> een subtype van haar eigen subject is
 > (`negatief/wf045-subtypecreatie-cyclus`) en twee regels op één geërfd
 > attribuutpaar met verschillend gespelde eigenaars
-> (`negatief/wf045-erfattribuut-spelling-cyclus`). Bewust NIET de kortere
-> route van `declaring_type` aan beide kanten: die voegt twee
-> onvergelijkbare zustersubtypen samen tot één knoop en weigert een document
-> dat `ref` schoon uitrekent (gemeten dezelfde dag). De sluiting verbreedt
-> een schrijving in 9 corpusdocumenten zonder er één een cyclus te geven.
+> (`negatief/wf045-erfattribuut-spelling-cyclus`). Twee kortere routes zijn
+> gemeten en verworpen, elk omdat zij een document weigert dat draait:
+> `declaring_type` aan beide kanten voegt twee onvergelijkbare
+> zustersubtypen samen tot één knoop, en de creatie-toekenning bidirectioneel
+> sluiten trekt een valse edge van een creatie die haar eigen SUPERTYPE munt
+> terug naar een regel op het subtype dat zij nooit kan munten — daar
+> weigerde `ref`, die deze graaf deelt, terwijl clingo doorrekende, dus het
+> differentiaalvierkant spleet. De sluiting verbreedt een schrijving in 9
+> corpusdocumenten zonder er één een cyclus te geven, en
+> `golden/jutterswet-wrakboeking` is de getuige van de derde positie: het
+> enige corpusdocument dat rood wordt zodra die weer bidirectioneel sluit.
 
 ### Eerlijke afwijkingen
 
+- **Twee bestanden buiten may-touch aangeraakt, beide gemeld.**
+  (i) `scripts/check-drools.sh` — één regel, `EXPECTED_PLAYED` 134 → 135, met
+  reden en datum; zonder die bump kan géén nieuwe golden landen, en de gate
+  schrijft de bump zelf voor in haar foutboodschap. Zit met de golden in één
+  commit, dus als geheel te laten vallen. (ii)
+  `corpus/negatief/wf020-crossform-collision/NOTE.md` — één zin, die de regel
+  parafraseerde als "unique across all rule forms" en door de verbreding
+  onwaar werd. Een onware NOTE laten staan is het slechtere alternatief.
 - **Een derde gat, buiten de twee die de kaart noemt, is meegenomen**
   (WF-031, hierboven). Het kwam uit de meting van gat 1, het is dezelfde
   vraag, de reden stond al in WF-031's eigen tekst en het corpus is er
@@ -267,6 +345,12 @@ plaats van dubbelzinnig. Acht groepen in het corpus, allemaal benoemd.
   kwam uit het meten van gat 2 en is dezelfde familie met dezelfde
   consequentie; hem laten liggen zou WF-045's belofte half waar laten. Hij
   staat apart in de spec, met eigen negatief en eigen grensmeting.
+- **Mijn eerste versie van gat 2 was in één van de drie posities fout**, en
+  de lens ving het: de creatie-toekenning sloot bidirectioneel mee. Latent
+  (nul corpusblootstelling), maar het spleet het differentiaalvierkant op de
+  lensgetuige. Eerlijk als lens-vangst: hij was van mij en zat in deze kaart,
+  en hij is in deze kaart gesloten, mét de positieve getuige die de arm
+  ontbrak.
 - **De formulering van gat 2 wijkt af van de bronkaart.** Die noemde
   `declaring_type` als de bestaande normalisatie; de meting wees uit dat die
   te grof is (zusterversmelting). De sluiting gebruikt daarom
