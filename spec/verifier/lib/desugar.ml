@@ -499,12 +499,24 @@ let effective_defaults (doc : document) :
    norm governs unchanged. *)
 let absorbed_on (doc : document) ~otype ~attr : string list =
   let key = "A:" ^ norm attr in
-  List.filter_map
-    (fun (t, _) ->
-      if Checks.subtype_of doc ~sub:t ~super:otype && List.mem key (chain_group_keys doc t) then
-        Some t
-      else None)
-    doc.objecttypen
+  (* the rule's OWN level declaring a group on the target is not inheritance
+     but WF-050's single-writer lift, refused at the document. The synthesis
+     skips such a level, so the suppression must skip it too — otherwise the
+     rule would be silenced without ever becoming a base, and the writer
+     would vanish. Measured: this is the shape the standing-norm witness
+     `StaandeScalaireNormWitnessTest` pins, and it caught the omission. *)
+  if
+    List.exists
+      (fun (l : prioritized_defaults) -> norm l.pd_onderwerp = norm otype && target_key l = key)
+      doc.prioritized_defaults
+  then []
+  else
+    List.filter_map
+      (fun (t, _) ->
+        if Checks.subtype_of doc ~sub:t ~super:otype && List.mem key (chain_group_keys doc t) then
+          Some t
+        else None)
+      doc.objecttypen
 
 
 (* The temporal standing domain (RS ch. 7.8, the timeline arm): a

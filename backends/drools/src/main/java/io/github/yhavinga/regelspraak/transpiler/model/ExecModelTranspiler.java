@@ -6761,9 +6761,16 @@ public final class ExecModelTranspiler {
      *  its base, and must therefore not fire as a rule as well. Empty unless the type's own chain
      *  declares a defaults group on that target. */
     private List<Objecttype> geabsorbeerdOp(Objecttype otype, String attr) {
+        String key = "A:" + defaultsNorm(attr);
+        // the rule's OWN level declaring a group on the target is not inheritance but WF-050's
+        // single-writer lift, refused at the document. The synthesis skips such a level, so the
+        // suppression must skip it too — otherwise the rule is silenced without ever becoming a base.
+        for (PrioritizedDefaults l : prioritizedDefaults)
+            if (model.objecttypeOpNaam(l.onderwerp()) == otype && defaultsDoelSleutel(l).equals(key))
+                return List.of();
         List<Objecttype> uit = new ArrayList<>();
         for (Objecttype t : model.objecttypen.values())
-            if (t.isEen(otype) && ketenGroepSleutels(t).contains("A:" + defaultsNorm(attr))) uit.add(t);
+            if (t.isEen(otype) && ketenGroepSleutels(t).contains(key)) uit.add(t);
         return uit;
     }
 
