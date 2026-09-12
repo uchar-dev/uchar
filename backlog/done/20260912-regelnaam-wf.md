@@ -51,7 +51,7 @@ bij aanvang): 1094 benoemde vormen, waarvan 65 defaultsgroepen, **allemaal
 met een niet-lege naam**, en geen enkele botsing behalve de bestaande
 getuige `wf020-crossform-collision`. De verwachting uit de kaartopdracht
 klopte dus: alle producenten emitteren namen, en de regel sluit een deur die
-niemand gebruikte. Bij landing staat de teller op 624 documenten en 1104
+niemand gebruikte. Bij landing staat de teller op 625 documenten en 1105
 benoemde vormen, met precies drie naamloze/blanco vormen — de drie eigen
 getuigen.
 
@@ -157,18 +157,18 @@ op de geschreven naam vangt alleen de eerste.
 
 ### De hele voor/na-veeg
 
-Over **624 documenten** in vier zones bewegen **8** rapportregels en geen
-enkele andere: de zeven nieuwe getuigen, plus `wf020-crossform-collision`
+Over **625 documenten** in vier zones bewegen **9** rapportregels en geen
+enkele andere: de acht nieuwe getuigen, plus `wf020-crossform-collision`
 waarvan het *oordeel* gelijk blijft en alleen de boodschap herformuleert
 ("rule name" → "name", "all rule forms" → "all named forms"). Gate 3 telt
-209 golden schoon (ongewijzigd) en 385 negatief (378 → 385).
+209 golden schoon (ongewijzigd) en 386 negatief (378 → 386).
 
 ### Veertien gates groen — slotregels
 
 ```
 check-self-contained: PASS
 check-ir-schema: PASS (schema valid; 24 pattern self-test row(s); 209 file(s) validate and round-trip, floor 192)
-check-verifier: PASS (209 golden clean; 385 negatief rejected for their declared rule, floor 350)
+check-verifier: PASS (209 golden clean; 386 negatief rejected for their declared rule, floor 350)
 check-case-schema: PASS (schema valid; 492 case file(s) validate)
 check-oracle: PASS (ref suite 592 worked examples, floor 489; 466 cases replayed exactly, floor 427; NOT replayed, no case file yet: corpus/golden/jutterswet-seizoenvondst corpus/golden/jutterswet-vormenkabinet)
 check-clingo: PASS (backend suite 125 checks, floor 83; 466 cases replay exactly through clingo — ref = clingo over the corpus)
@@ -201,8 +201,35 @@ welgevormdheidspromotie op een bestaande vorm en geen construct:
 > Drools-exec-tak rekenen door, en de DRL-tekst-tak valt om met een
 > `NullPointerException` uit de regelnaam-escaper. Uniciteit blijft WF-020,
 > die nu dezelfde lijst leest — twee eigenschappen, twee nummers, één lijst,
-> zodat één botsing niet twee nummers kan citeren. Kosten nul: 1104 benoemde
-> vormen over 624 documenten droegen al een naam.
+> zodat één botsing niet twee nummers kan citeren. Kosten nul: 1105 benoemde
+> vormen over 625 documenten droegen al een naam. Bij dezelfde meting kwam
+> een derde naamdrager boven die niets kruist — een `resolvedDagsoort` zonder
+> naam definieert geen dagsoort en glipte langs WF-031's eigen
+> resolutiekruising heen — en die is bij **WF-031** gesloten en niet hier,
+> want de benoemde vormen delen één naamruimte en een dagsoortnaam heeft een
+> eigen. `regelGroepen` blijft bewust buiten beide: WF-033 leest de LEDEN van
+> een groep op naam en niemand leest de groepsnaam zelf.
+
+### Gat 3 — meegenomen, want het is dezelfde vraag in een andere naamruimte
+
+Bij het meten van gat 1 kwam een derde naam boven die niets kruist: een
+`resolvedDagsoort` met `naam: null` passeerde de verifier. WF-031's eigen
+kruising ("definition for undeclared day kind") heeft dan niets te
+vergelijken, dus de definitie bindt aan niets en is stil dood — precies de
+vorm die WF-031's vensterclausule al met die reden weigert. Gesloten **bij
+WF-031 en niet bij WF-107**, want het zijn twee naamruimten: de benoemde
+vormen delen er één (die WF-020 uniek houdt), een dagsoortnaam heeft een
+eigen (die WF-031 zelf uniek houdt). Getuige
+`wf031-dagsoortdefinitie-naamloos`; kosten nul, alle 21 dagsoortdefinities
+in de vier zones dragen een naam. Gemeten schade: op de eigen casus van
+`jutterswet-schouwkalender` beweegt geen antwoord — het defect is een
+verloren definitie, geen fout getal, en dat is juist waarom het een regel
+vraagt en geen gated case.
+
+De derde naamdrager, `regelGroepen`, blijft er bewust buiten en dat staat
+nu in WF-107's tekst: WF-033 resolveert de LEDEN van een groep op naam en
+niemand leest de naam van de groep zelf, dus een naamloze groep is inert in
+plaats van dubbelzinnig. Acht groepen in het corpus, allemaal benoemd.
 
 **(b) `spec/CONSTRUCTS.md` rij 39, aan de bestaande cel toe te voegen:**
 
@@ -227,6 +254,11 @@ welgevormdheidspromotie op een bestaande vorm en geen construct:
 
 ### Eerlijke afwijkingen
 
+- **Een derde gat, buiten de twee die de kaart noemt, is meegenomen**
+  (WF-031, hierboven). Het kwam uit de meting van gat 1, het is dezelfde
+  vraag, de reden stond al in WF-031's eigen tekst en het corpus is er
+  schoon voor. Een aparte kaart zou een open punt zijn geweest waar het
+  mandaat er geen wil.
 - **De kaart vroeg één WF-045-getuige, er zijn er twee.** De lidknoop-arm
   kwam uit het meten van gat 2 en is dezelfde familie met dezelfde
   consequentie; hem laten liggen zou WF-045's belofte half waar laten. Hij
