@@ -1,0 +1,39 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "K1",
+        "objectType": "Kustgemeente",
+        "attributes": {},
+        "roles": { "geregistreerde strandrechten": ["S1", "W1"] },
+        "characteristics": []
+      },
+      {
+        "label": "S1",
+        "objectType": "Strandrecht",
+        "attributes": { "grondslag": { "number": "10.00" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W1",
+        "objectType": "Wrakrecht",
+        "attributes": { "grondslag": { "number": "10.00" }, "bergingsdiepte": { "number": "5" } },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "S1", "attribute": "uitkering", "value": { "number": "10.00" } },
+    { "kind": "attributeValue", "label": "W1", "attribute": "uitkering", "value": { "number": "20.00" } },
+    { "kind": "attributeValue", "label": "S1", "attribute": "registratiekosten", "value": { "number": "5.00" } },
+    { "kind": "attributeValue", "label": "W1", "attribute": "registratiekosten", "value": { "number": "5.00" } },
+    { "kind": "attributeValue", "label": "K1", "attribute": "uitkeringstotaal", "value": { "number": "30.00" } },
+    { "kind": "attributeValue", "label": "K1", "attribute": "registertal", "value": { "number": "2" } },
+    { "kind": "consistent" }
+  ]
+}

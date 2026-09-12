@@ -1,0 +1,50 @@
+// Jutterswet — the Strandrecht/Wrakrecht chain and the aggregating
+// Kustgemeente, written in the F-logic slice.
+
+Strandrecht[|grondslag         => numeriek(niet_negatief, 2)|].
+Strandrecht[|uitkering         => numeriek(niet_negatief, 2)|].
+Strandrecht[|registratiekosten => numeriek(niet_negatief, 2)|].
+Strandrecht[|betwist           => kenmerk(bijvoeglijk)|].
+
+Wrakrecht::Strandrecht.
+Wrakrecht[|bergingsdiepte => numeriek(niet_negatief, geheel)|].
+
+Kustgemeente[|uitkeringstotaal => numeriek(niet_negatief, 2)|].
+Kustgemeente[|registertal      => numeriek(niet_negatief, geheel)|].
+
+// One Kustgemeente registers many Strandrechten. The relation is reified
+// as a class carrying its two role signatures; the cardinality braces say
+// which end is to-many.
+strandrechtregistratie : feittype.
+strandrechtregistratie[|'registrerende kustgemeente'   {1..1} => Kustgemeente|].
+strandrechtregistratie[|'geregistreerde strandrechten' {0..*} => Strandrecht|].
+
+// The bare rule on the supertype: no exception anywhere, so it is a
+// standing norm rather than a default, and it fires for Wrakrechten too.
+@!{'registratiekosten van een strandrecht'}
+?S[registratiekosten -> 5.00] :- ?S : Strandrecht.
+
+// Strandrecht.uitkering: an unconditional rule is the base, a conditional
+// one an exception above it.
+@!{'uitkering van een strandrecht'}
+?S[uitkering -> ?S.grondslag] :- ?S : Strandrecht.
+
+@!{'uitkering van een betwist strandrecht'}
+?S[uitkering -> 99.00] :- ?S : Strandrecht, ?S : betwist.
+
+// Wrakrecht.uitkering: its own base replaces the inherited one, its own
+// exception joins the inherited one above that.
+@!{'uitkering van een wrakrecht'}
+?W[uitkering -> ?W.grondslag * 2] :- ?W : Wrakrecht.
+
+@!{'uitkering van een diep wrakrecht'}
+?W[uitkering -> 55.00] :- ?W : Wrakrecht, ?W.bergingsdiepte > 20.
+
+// The two aggregations range extensionally: a Wrakrecht is a Strandrecht.
+@!{'uitkeringstotaal van een kustgemeente'}
+?K[uitkeringstotaal -> ?T] :- ?K : Kustgemeente,
+    ?T = sum{?U | ?U = ?K.'geregistreerde strandrechten'.uitkering}.
+
+@!{'registertal van een kustgemeente'}
+?K[registertal -> ?N] :- ?K : Kustgemeente,
+    ?N = count{?S | ?S = ?K.'geregistreerde strandrechten'}.
