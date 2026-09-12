@@ -235,6 +235,10 @@ public final class IrEmitter {
         w.beginObject();
         w.key("node").value("Objecttype");
         w.key("naam").value(ot.naam);
+        // IR-SPEC ch. 2.2: an extension field under the § Method's discipline — optional, never null,
+        // written WHOLE or not at all, so a root type emits no key and every flat golden keeps its
+        // v0-mirror byte-identity. The position mirrors the schema's property order (right after naam).
+        if (ot.supertype != null) w.key("supertype").value(ot.supertype.naam);
         w.key("attributen").beginObject();
         for (var en : ot.attributen.entrySet()) { w.key(en.getKey()); datatype(en.getValue()); }
         w.endObject();
@@ -784,7 +788,27 @@ public final class IrEmitter {
         // (Onbekend-typed name wart first, member fold second), so the two
         // sides can never classify one source differently
         if (arg.type() instanceof Datatype.Onbekend) return m.elementRolBinding(huidigSubject, arg.attribuut());
-        if (arg.set()) return m.verbindendeRolBinding(huidigSubject, f.elementObjecttype());
+        if (arg.set()) {
+            RegelSpraakModel.RolBindingRef paar = m.verbindendeRolBinding(huidigSubject, f.elementObjecttype());
+            return paar != null ? paar : geschrevenElementBinding(arg);
+        }
+        return null;
+    }
+
+    /** The element-role binding a fold source's WRITTEN phrase names, used only where the by-pair search
+     *  came back ambiguous. IR-SPEC ch. 2.2: WF-048's uniqueness is computed over the CHAIN-CLOSED type
+     *  pair, so a new subtype can make a pair that was uniquely connected doubly connected — and a fold
+     *  that went out bindingless yesterday would be refused today. The written name is authoritative
+     *  (§13.4.1) and still names exactly one role, so the binding stays derivable and the document keeps
+     *  working. Same declared-name search the Onbekend branch above runs, read off the source phrase the
+     *  operand carries, under the same candidate forms the type binding was tried with; a phrase naming no
+     *  role, or more than one, stays bindingless rather than guessing. */
+    private RegelSpraakModel.RolBindingRef geschrevenElementBinding(Expr.AttribuutRef arg) {
+        if (arg.onderwerpBron() == null) return null;
+        for (String kandidaat : RegelSpraakModel.naamKandidaten(arg.onderwerpBron())) {
+            RegelSpraakModel.RolBindingRef b = m.elementRolBinding(huidigSubject, kandidaat);
+            if (b != null) return b;
+        }
         return null;
     }
 
