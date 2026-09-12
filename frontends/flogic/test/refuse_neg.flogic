@@ -1,0 +1,4 @@
+// Refusal 5b: explicit (classical) negation.
+Vogel[|hoogte => numeriek(niet_negatief, geheel)|].
+Vogel[|gewond => kenmerk(bijvoeglijk)|].
+?V[hoogte -> 10] :- ?V : Vogel, \neg ?V : gewond.

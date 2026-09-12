@@ -1,0 +1,4 @@
+// Refusal 7: a ground instance fact. uchar separates program from data —
+// instances live in a uchar-case-v0 case document.
+Vogel[|hoogte => numeriek(niet_negatief, geheel)|].
+tweety : Vogel.

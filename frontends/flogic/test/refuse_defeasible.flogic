@@ -1,0 +1,6 @@
+// Refusal 4: defeasible reasoning. uchar orders defaults by block
+// position, never by an argumentation theory.
+Vogel[|hoogte => numeriek(niet_negatief, geheel)|].
+Pinguin::Vogel.
+@!{'laag'}
+?V[hoogte -> 20] :- ?V : Vogel, \overrides(hoog, laag).

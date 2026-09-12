@@ -1,0 +1,4 @@
+// Refusal 9: the Flora-1 inheritable-value arrow of the JACM paper.
+// Flora-2 2.2 writes the inheritable value with the bars and rejects *->.
+Vogel[|hoogte => numeriek(niet_negatief, geheel)|].
+Vogel[|hoogte *-> 10|].

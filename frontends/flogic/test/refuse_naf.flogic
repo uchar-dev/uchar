@@ -1,0 +1,4 @@
+// Refusal 5a: negation as failure.
+Vogel[|hoogte => numeriek(niet_negatief, geheel)|].
+Vogel[|gewond => kenmerk(bijvoeglijk)|].
+?V[hoogte -> 10] :- ?V : Vogel, \naf ?V : gewond.

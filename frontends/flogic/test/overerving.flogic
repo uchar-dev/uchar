@@ -1,0 +1,19 @@
+// The inheritance skeleton of the mandate's own canonical case, in the
+// slice: an inheritable class-level default as the BASE, a subtype base
+// that replaces it, and a supertype exception written as a Horn rule that
+// keeps outranking the subtype's base.
+//
+//   Vogel,   not gewond -> 10   (the supertype's own base)
+//   Vogel,   gewond     -> 99   (the supertype's own exception)
+//   Pinguin, not gewond -> 20   (base override: specific beats general)
+//   Pinguin, gewond     -> 99   (the inherited exception outranks the subtype base)
+
+Vogel[|hoogte => numeriek(niet_negatief, geheel)|].
+Vogel[|gewond => kenmerk(bijvoeglijk)|].
+Vogel[|hoogte -> 10|].
+
+Pinguin::Vogel.
+Pinguin[|hoogte -> 20|].
+
+@!{'hoogte van een gewonde vogel'}
+?V[hoogte -> 99] :- ?V : Vogel, ?V : gewond.

@@ -1,0 +1,20 @@
+// A fact type with a to-one and a to-many role, and the two aggregations
+// the slice carries. Flora-2 answers 0 for an aggregate over an empty set
+// (measured on 2.2 beta), which is what the SOM's leegwaarde says here.
+
+Kavel[|opbrengst => numeriek(niet_negatief, 2)|].
+
+Houder[|kaveltotaal => numeriek(niet_negatief, 2)|].
+Houder[|kaveltal => numeriek(niet_negatief, geheel)|].
+
+kavelhouderschap : feittype.
+kavelhouderschap[|'houdende houder' {1..1} => Houder|].
+kavelhouderschap[|'gehouden kavels' {0..*} => Kavel|].
+
+@!{'kaveltotaal van een houder'}
+?H[kaveltotaal -> ?T] :- ?H : Houder,
+    ?T = sum{?O | ?O = ?H.'gehouden kavels'.opbrengst}.
+
+@!{'kaveltal van een houder'}
+?H[kaveltal -> ?N] :- ?H : Houder,
+    ?N = count{?K | ?K = ?H.'gehouden kavels'}.

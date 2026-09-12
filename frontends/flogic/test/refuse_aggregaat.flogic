@@ -1,0 +1,9 @@
+// Refusal 12: an aggregate outside the slice. sum and count are carried;
+// Flora-2's other aggregates are not.
+Kavel[|opbrengst => numeriek(niet_negatief, 2)|].
+Houder[|top => numeriek(niet_negatief, 2)|].
+kavelhouderschap : feittype.
+kavelhouderschap[|'houdende houder' {1..1} => Houder|].
+kavelhouderschap[|'gehouden kavels' {0..*} => Kavel|].
+@!{'top van een houder'}
+?H[top -> ?T] :- ?H : Houder, ?T = max{?O | ?O = ?H.'gehouden kavels'.opbrengst}.

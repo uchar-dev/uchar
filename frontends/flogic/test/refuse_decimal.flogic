@@ -1,0 +1,3 @@
+// Refusal 10: a primitive type that states no decimal scale where uchar's
+// Numeriek declares one.
+Vogel[|hoogte => \decimal|].

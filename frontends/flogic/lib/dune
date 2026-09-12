@@ -1,0 +1,3 @@
+(library
+ (name flogic_frontend_lib)
+ (libraries uchar-ir-v0 yojson))

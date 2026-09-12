@@ -1,0 +1,5 @@
+// Refusal 2: the UNBARRED class-level value. c[attr -> v] is the class
+// object's own value; uchar has no class-level attribute value for a type
+// object, and lowering it to an instance default would change its meaning.
+Vogel[|hoogte => numeriek(niet_negatief, geheel)|].
+Vogel[hoogte -> 10].

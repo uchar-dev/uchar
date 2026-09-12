@@ -1,0 +1,8 @@
+// Refusal 1: two :: facts give one class two incomparable parents.
+// F-logic is the only source form in this repo that can WRITE a second
+// parent, so this fixture is where WF-106 is actually exercised.
+RechtOpUitkering[|bedrag => numeriek(niet_negatief, 2)|].
+RechtUitkeringZwWazo[|bedrag => numeriek(niet_negatief, 2)|].
+
+RechtOpUitkeringWazo::RechtOpUitkering.
+RechtOpUitkeringWazo::RechtUitkeringZwWazo.

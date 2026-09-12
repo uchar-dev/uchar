@@ -1,0 +1,3 @@
+(executable
+ (name flogic_frontend)
+ (libraries flogic_frontend_lib))

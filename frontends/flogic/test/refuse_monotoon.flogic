@@ -1,0 +1,4 @@
+// Refusal 6: the monotonic inheritance mode. uchar's inheritance is
+// non-monotonic by mandate decision 3; the two modes do not interchange.
+:- setsemantics{inheritance=monotonic}.
+Vogel[|hoogte => numeriek(niet_negatief, geheel)|].

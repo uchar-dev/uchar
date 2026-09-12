@@ -1,0 +1,4 @@
+// Refusal 8: a plain predicate. The slice is frame-based; the wire format
+// has no predicate channel.
+Vogel[|hoogte => numeriek(niet_negatief, geheel)|].
+vliegt(tweety).

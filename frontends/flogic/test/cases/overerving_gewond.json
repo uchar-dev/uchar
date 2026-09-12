@@ -1,0 +1,16 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "V1", "objectType": "Vogel", "attributes": {}, "roles": {}, "characteristics": ["gewond"] },
+      { "label": "P1", "objectType": "Pinguin", "attributes": {}, "roles": {}, "characteristics": ["gewond"] }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "V1", "attribute": "hoogte", "value": { "number": "99" } },
+    { "kind": "attributeValue", "label": "P1", "attribute": "hoogte", "value": { "number": "99" } },
+    { "kind": "consistent" }
+  ]
+}

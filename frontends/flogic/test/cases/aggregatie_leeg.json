@@ -1,0 +1,15 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "H1", "objectType": "Houder", "attributes": {}, "roles": {}, "characteristics": [] }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "H1", "attribute": "kaveltotaal", "value": { "number": "0.00" } },
+    { "kind": "attributeValue", "label": "H1", "attribute": "kaveltal", "value": { "number": "0" } },
+    { "kind": "consistent" }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "H1", "objectType": "Houder", "attributes": {},
+        "roles": { "gehouden kavels": ["K1", "K2"] }, "characteristics": [] },
+      { "label": "K1", "objectType": "Kavel", "attributes": { "opbrengst": { "number": "3.00" } }, "roles": {}, "characteristics": [] },
+      { "label": "K2", "objectType": "Kavel", "attributes": { "opbrengst": { "number": "4.50" } }, "roles": {}, "characteristics": [] }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "H1", "attribute": "kaveltotaal", "value": { "number": "7.50" } },
+    { "kind": "attributeValue", "label": "H1", "attribute": "kaveltal", "value": { "number": "2" } },
+    { "kind": "consistent" }
+  ]
+}

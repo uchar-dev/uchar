@@ -1,0 +1,4 @@
+// Refusal 3: HiLog and meta-programming — a variable in an attribute
+// position quantifies over the metamodel.
+Vogel[|hoogte => numeriek(niet_negatief, geheel)|].
+?V[hoogte -> ?V.?A] :- ?V : Vogel.

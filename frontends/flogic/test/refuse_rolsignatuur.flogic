@@ -1,0 +1,4 @@
+// Refusal 13: a reference between object types written as a plain
+// signature. A reference IS a role, and a role lives on a fact type.
+Kavel[|opbrengst => numeriek(niet_negatief, 2)|].
+Houder[|kavel => Kavel|].

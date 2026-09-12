@@ -1,0 +1,25 @@
+(executable
+ (name suite)
+ (libraries unix))
+
+; The end-to-end frontend suite. It drives the frontend plus the three
+; workspace executors (verifier, reference runner, clingo runner) over the
+; F-logic test programs and their cases. All four executables and the
+; source/case fixtures are declared as deps so dune builds and sandboxes
+; them; their paths are handed to the suite as argv.
+(rule
+ (alias runtest)
+ (deps
+  (glob_files *.flogic)
+  (glob_files cases/*.json)
+  (file ../bin/flogic_frontend.exe)
+  (file ../../../spec/verifier/bin/verifier.exe)
+  (file ../../../ref/bin/runner.exe)
+  (file ../../../backends/clingo/bin/clingo_runner.exe))
+ (action
+  (run
+   %{exe:suite.exe}
+   ../bin/flogic_frontend.exe
+   ../../../spec/verifier/bin/verifier.exe
+   ../../../ref/bin/runner.exe
+   ../../../backends/clingo/bin/clingo_runner.exe)))
