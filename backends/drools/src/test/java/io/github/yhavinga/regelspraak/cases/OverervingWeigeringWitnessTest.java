@@ -42,15 +42,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>The rest are STRUCTURAL, in the IR loader. Until 2026-09-12 the first of them refused every chain
  * carrying a temporal OR dimensioned member, because the facet SIDE MAPS (granularity, timeline count,
- * dimensions) were read directly, per DECLARED type, at 121 places in both transpiler branches. Those
+ * dimensions) were read directly, per DECLARED type, at 122 reads (121 lines) in both transpiler branches. Those
  * reads walk the chain now, so that refusal is WITHDRAWN and its two tests are turned around into
  * witnesses of what the same mutations do today; the dimensioned half was over-broad even then, since
- * every dimension read already went through the chain-aware {@code dimensiesVan}. What is LEFT is
- * narrower and named for what it is: the §9.9 startpunt-ANCHOR family, keyed on the DECLARED SUBJECT
- * NAME rather than looked up as a member, which reads an inherited attribute on a NAMED tijdlijn as
- * unanchored — two independent sites, two tests. The unknown supertype and the cycle stay a last line
- * behind WF-103/WF-104: the verifier rejects both at the document, and a loader that walked a cycle
- * would hang instead of reporting.
+ * every dimension read already went through the chain-aware {@code dimensiesVan}.
+ *
+ * <p>What is LEFT is narrower and named for what it is: the §9.9 startpunt-ANCHOR family, a PROTOCOL
+ * keyed on the DECLARED SUBJECT NAME rather than a member lookup. Two sites that fall independently —
+ * an inherited attribute riding a named tijdlijn WITH A VARIABEL STARTPUNT, and a startpuntbepaling
+ * declared on an ancestor — each with its own boundary test, because the narrowing has to be shown not
+ * to over-reach: a FIXED-startpunt tijdlijn and a determination beside the chain both load. Measured
+ * against the merge base, the exchange is not a relabelling in either direction: the narrowed guard
+ * FREES the fixed-startpunt shape (base EXCLUDE, head PLAYED) and CATCHES two the broad one let through
+ * silently — a determination on an ancestor (base PLAYED 4, the one non-degenerate hole) and the
+ * degenerate {@code granulariteit: null} tijdlijn on which WF-005 demands no granularity facet at all
+ * (base PLAYED 4). The unknown supertype and the cycle stay a last line behind WF-103/WF-104: the
+ * verifier rejects both at the document, and a loader that walked a cycle would hang instead of
+ * reporting.
  *
  * <p>The messages are asserted by FRAGMENT, not merely by exception class. A refusal whose text drifts is a
  * refusal that stopped saying what it refuses, and on the two semantic corners the fragment is held
@@ -190,10 +198,10 @@ class OverervingWeigeringWitnessTest {
 
     @Test void een_geerfd_temporeel_lid_laadt_en_leest_zijn_facet_op_de_keten() throws Exception {
         // Was a REFUSAL until 2026-09-12 (card drools-facet-keten): the facet SIDE MAPS were read per
-        // DECLARED type at 121 places in both branches, so an inherited timeline answered "not temporal"
+        // DECLARED type at 122 reads in both branches, so an inherited timeline answered "not temporal"
         // for the subtype. Those reads go through the chain-closed accessors of Objecttype now, and the
         // witness is turned around with the refusal — from "the loader says no" to "the facet answers on
-        // the subtype", which is what the 121 sites were changed to ask.
+        // the subtype", which is what those reads were changed to ask.
         //
         // The mutation is the very one the refusal used: `grondslag` becomes a YEAR timeline on the
         // SUPERTYPE. The document LOADS now, and the subtype answers the facet question for a member it
@@ -210,7 +218,7 @@ class OverervingWeigeringWitnessTest {
         Objecttype wrak = m.objecttypeOpNaam("Wrakrecht");
         assertEquals(RegelSpraakModel.Granulariteit.JAAR, wrak.granulariteitVan("grondslag"));
         assertTrue(wrak.granulariteitLeden().containsKey("grondslag"),
-                "the chain-closed facet map is what the 121 read sites ask");
+                "the chain-closed facet map is what the routed read sites ask");
         assertTrue(wrak.attribuutGranulariteit.isEmpty(),
                 "the OWN map stays own — the bean generator subtracts inherited members and needs it");
     }
@@ -230,36 +238,91 @@ class OverervingWeigeringWitnessTest {
         assertTrue(wrak.gedimensioneerdeLeden().containsKey("grondslag"));
     }
 
-    @Test void een_geerfde_benoemde_tijdlijn_weigert_bij_het_laden() throws Exception {
-        // What is LEFT of the withdrawn refusal, narrowed to the class that really is chain-blind: the
-        // §9.9 startpunt-ANCHOR family. It is not a member lookup but a protocol keyed on the DECLARED
-        // SUBJECT NAME — `heeftVariabelStartpunt` reads `attribuutTijdlijnNaam` on the type the
-        // reference names, `startpuntLid` and `isStartpuntLid` key on the startpuntbepaling's subject —
-        // so an inherited attribute riding a NAMED tijdlijn reads as unanchored from a subtype, the
-        // variabel-startpunt bucketing is skipped and the §6.8 leeg-fout companion is not emitted.
-        // Silently, in BOTH branches. Named timelines are a live corpus form (two goldens), so the
-        // refusal stands until the family is widened as a whole.
+    // The §9.9 startpunt-ANCHOR family: what is LEFT of the withdrawn refusal, and the one part of it
+    // that really is chain-blind. Two sites that fall independently, plus the boundary the narrowing
+    // must NOT cross. Every fixture below is VERIFIER-CLEAN — measured, and it is the point: a refusal
+    // pinned on a document the verifier already rejects pins nothing, since no such document reaches an
+    // executor through any gate. That is what the first versions of these two got wrong (an
+    // `attribuutTijdlijnNaam` entry with no `tijdlijnen` declaration and no matching granularity is
+    // WF-003 + WF-005), and the shapes here are the corrected ones.
+
+    @Test void een_geerfde_variabele_tijdlijn_weigert_bij_het_laden() throws Exception {
+        // Site (a). An ancestor declares an attribute riding a named tijdlijn WITH A VARIABEL STARTPUNT.
+        // `heeftVariabelStartpunt` reads `attribuutTijdlijnNaam` on the type the reference names, so
+        // from a subtype it answers false where the truth is true: the bucketing is skipped, silently,
+        // in both branches.
+        //
+        // The determination is put on Kustgemeente — NOT on the chain — for two reasons: WF-016 demands
+        // that a variable-start tijdlijn have one at all, and putting it on the ancestor would make site
+        // (b) fire too, so the test would not show that (a) falls on its own.
+        //
+        // Measured (probe p1a): verifier PASS; on the merge base this was EXCLUDE anyway, caught by the
+        // WITHDRAWN broad refusal — WF-005 forces the granularity facet to match the declaration, so a
+        // named tijdlijn on verifier-clean input carries a granularity and the old test saw it. This
+        // shape is therefore RESIDUE, not a newly-closed hole; the hole is the degenerate twin below.
         ObjectNode ir = goldenIr(KETEN);
-        ((ObjectNode) ir.get("objecttypen").get("Strandrecht")
-                .get("attribuutTijdlijnNaam")).put("grondslag", "boekjaar");
+        benoemdeTijdlijn(ir, /*variabelStartpunt=*/true, /*granulariteit=*/"JAAR");
+        startpuntOp(ir, "Kustgemeente");
         IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class,
-                () -> IrLoader.loadAll(JSON.readTree(Files.readString(model("keten-benoemde-tijdlijn", ir)))));
-        assertTrue(r.getMessage().contains("an INHERITED attribute riding a NAMED tijdlijn"), r.getMessage());
+                () -> IrLoader.loadAll(JSON.readTree(Files.readString(model("keten-variabele-tijdlijn", ir)))));
+        assertTrue(r.getMessage().contains("riding a NAMED tijdlijn with a VARIABEL STARTPUNT"), r.getMessage());
         assertTrue(r.getMessage().contains("keys on the DECLARED subject name"), r.getMessage());
     }
 
-    @Test void een_startpuntbepaling_op_een_voorouder_weigert_bij_het_laden() throws Exception {
-        // The second site of the same family, and it falls independently: here no attribute rides a
-        // named tijdlijn at all, but a startpuntbepaling names the ANCESTOR, so `isStartpuntLid` —
-        // which both branches ask of the REFERENCE's objecttype — answers no for every subtype
-        // instance and the §6.8 leeg-fout companion silently disappears for exactly those.
+    @Test void de_gedegenereerde_variabele_tijdlijn_is_het_gat_dat_werkelijk_stil_was() throws Exception {
+        // Site (a)'s degenerate twin, and the reason the narrowed guard reaches FURTHER than the broad
+        // one it replaces. A tijdlijn declaration may carry `granulariteit: null` (schema-legal), and
+        // WF-005 then compares None with None, so the attribute needs NO granularity facet — which is
+        // exactly what the withdrawn refusal tested for. Measured (probe p1cv): verifier PASS, and on
+        // the merge base PLAYED 4. Silently: the bucketing was skipped and nothing said so.
         ObjectNode ir = goldenIr(KETEN);
-        ((ArrayNode) ir.get("resolvedStartpunten")).add(JSON.createObjectNode()
-                .put("node", "ResolvedStartpunt").put("tijdlijn", "boekjaar")
-                .put("objecttype", "Strandrecht").put("lid", "meetdatum"));
+        benoemdeTijdlijn(ir, /*variabelStartpunt=*/true, /*granulariteit=*/null);
+        startpuntOp(ir, "Kustgemeente");
+        IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class,
+                () -> IrLoader.loadAll(JSON.readTree(Files.readString(model("keten-nulgranulariteit", ir)))));
+        assertTrue(r.getMessage().contains("riding a NAMED tijdlijn with a VARIABEL STARTPUNT"), r.getMessage());
+    }
+
+    @Test void een_geerfde_tijdlijn_met_VAST_startpunt_laadt_gewoon() throws Exception {
+        // The boundary, and the whole reason the guard asks `heeftVariabelStartpunt` instead of testing
+        // `attribuutTijdlijnNaam` for emptiness. On a FIXED-startpunt tijdlijn that predicate answers
+        // false from the own map and from the chain alike: there is no blindness, so refusing would
+        // print a reason ("reads it as unanchored") that is simply TRUE of the document. Measured
+        // (probe p1): verifier PASS, merge base EXCLUDE (the broad refusal caught it), head PLAYED 4 —
+        // so the narrowing FREES a shape as well as catching two, and this test is what holds it free.
+        ObjectNode ir = goldenIr(KETEN);
+        benoemdeTijdlijn(ir, /*variabelStartpunt=*/false, /*granulariteit=*/"JAAR");
+        Path irPad = model("keten-vast-startpunt", ir);
+        assertNull(CaseRunner.speelCase(irPad, geval(KETEN, "case1-basis.json")));
+    }
+
+    @Test void een_startpuntbepaling_op_een_voorouder_weigert_bij_het_laden() throws Exception {
+        // Site (b), and it falls independently of (a): here NO attribute rides a named tijdlijn at all,
+        // but a startpuntbepaling names the ANCESTOR. `isStartpuntLid` is asked of the type the
+        // REFERENCE names and compares the determination's declared subject name, so for every subtype
+        // instance it answers no and the §6.8 leeg-fout companion silently disappears for exactly those.
+        //
+        // Measured (probe p2): verifier PASS, merge base PLAYED 4. This is the ONE non-degenerate hole
+        // this card closes — the withdrawn refusal tested granularity and dimensions, and a
+        // determination entry carries neither.
+        ObjectNode ir = goldenIr(KETEN);
+        variabeleTijdlijnDeclaratie(ir);                                   // WF-016 wants one
+        ankerAttribuut(ir, "Strandrecht");                                 // WF-032 wants the member
+        startpuntOp(ir, "Strandrecht");
         IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class,
                 () -> IrLoader.loadAll(JSON.readTree(Files.readString(model("startpunt-voorouder", ir)))));
         assertTrue(r.getMessage().contains("startpuntbepaling declared on an ANCESTOR"), r.getMessage());
+    }
+
+    @Test void een_startpuntbepaling_naast_de_keten_laadt_gewoon() throws Exception {
+        // Site (b)'s boundary: the same determination on a type that is NOT on the subtype's chain
+        // decides nothing about a subtype read, so it must stay admitted. Measured (probe p3): verifier
+        // PASS, merge base PLAYED 4, head PLAYED 4.
+        ObjectNode ir = goldenIr(KETEN);
+        variabeleTijdlijnDeclaratie(ir);
+        ankerAttribuut(ir, "Kustgemeente");
+        startpuntOp(ir, "Kustgemeente");
+        assertNull(CaseRunner.speelCase(model("startpunt-naast-keten", ir), geval(KETEN, "case1-basis.json")));
     }
 
     @Test void een_onbekend_supertype_weigert_bij_het_laden() throws Exception {
@@ -288,6 +351,46 @@ class OverervingWeigeringWitnessTest {
 
     private static ObjectNode goldenIr(String naam) throws Exception {
         return (ObjectNode) JSON.readTree(Files.readString(CORPUS.resolve(naam).resolve("ir.json")));
+    }
+
+    /** Declare tijdlijn `boekjaar` and hang a new SUPERTYPE attribute `peilwaarde` on it, with the
+     *  granularity facet WF-005 demands (the declaration's own, or none when the declaration carries
+     *  none). This is the whole §13.3.6.9 shape, verifier-clean by construction rather than by luck. */
+    private static void benoemdeTijdlijn(ObjectNode ir, boolean variabelStartpunt, String granulariteit) {
+        ObjectNode tl = JSON.createObjectNode().put("node", "Tijdlijn").put("naam", "boekjaar")
+                .put("variabelStartpunt", variabelStartpunt);
+        if (granulariteit == null) tl.putNull("granulariteit"); else tl.put("granulariteit", granulariteit);
+        tl.put("aantal", 1);
+        ((ArrayNode) ir.get("tijdlijnen")).add(tl);
+        ObjectNode st = (ObjectNode) ir.get("objecttypen").get("Strandrecht");
+        ((ObjectNode) st.get("attributen")).set("peilwaarde", getal());
+        ((ObjectNode) st.get("attribuutTijdlijnNaam")).put("peilwaarde", "boekjaar");
+        if (granulariteit != null)                                    // WF-005: adoption must be total
+            ((ObjectNode) st.get("attribuutGranulariteit")).put("peilwaarde", granulariteit);
+    }
+
+    /** The tijdlijn declaration alone, variable-start — for site (b), where no attribute rides it. */
+    private static void variabeleTijdlijnDeclaratie(ObjectNode ir) {
+        ((ArrayNode) ir.get("tijdlijnen")).add(JSON.createObjectNode().put("node", "Tijdlijn")
+                .put("naam", "boekjaar").put("variabelStartpunt", true)
+                .put("granulariteit", "JAAR").put("aantal", 1));
+    }
+
+    /** The synthetic anchor member a startpuntbepaling names — WF-032 requires it to be declared. */
+    private static void ankerAttribuut(ObjectNode ir, String objecttype) {
+        ((ObjectNode) ir.get("objecttypen").get(objecttype).get("attributen")).set("meetdatum",
+                JSON.createObjectNode().put("node", "DatumInDagen"));
+    }
+
+    private static void startpuntOp(ObjectNode ir, String objecttype) {
+        ((ArrayNode) ir.get("resolvedStartpunten")).add(JSON.createObjectNode()
+                .put("node", "ResolvedStartpunt").put("tijdlijn", "boekjaar")
+                .put("objecttype", objecttype).put("lid", "meetdatum"));
+    }
+
+    private static ObjectNode getal() {
+        return JSON.createObjectNode().put("node", "Numeriek").put("geheel", true).put("decimalen", 0)
+                .put("teken", "NIET_NEGATIEF").putNull("eenheid");
     }
 
     private static JsonNode geval(String golden, String bestand) throws Exception {

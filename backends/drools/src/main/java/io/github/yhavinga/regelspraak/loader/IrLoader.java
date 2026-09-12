@@ -184,7 +184,7 @@ public final class IrLoader {
         forEach(root.get("feitCreaties"), n -> m.feitCreaties.add(feitCreatie(n)));
         forEach(root.get("resolvedStartpunten"), n -> m.resolvedStartpunten.add(
                 new ResolvedStartpunt(text(n, "tijdlijn"), text(n, "objecttype"), text(n, "lid"))));
-        weigerGeerfdeStartpuntAnker();   // the second §9.9 site, and it can only be asked once the list is read
+        weigerGeerfdAnker();   // the §9.9 family: asked here, where BOTH the tijdlijnen and the determinations are read
         forEach(root.get("regelGroepen"), n -> m.regelGroepen.add(new ResolvedRegelGroep(
                 text(n, "naam"), bool(n, "recursief"), stringList(n.get("leden")), bron(n), intOf(n, "line"))));
         forEach(root.get("diagnostics"), n -> m.diagnostics.add(new Diagnostic(
@@ -231,28 +231,18 @@ public final class IrLoader {
         return new ExceptionGroup(defaults, text(n, "bron"));
     }
 
-    /** Bind every declared supertype reference, and refuse the shape this backend does not carry.
-     *  WF-103/104 already reject an unknown or cyclic parent at the document, so the two guards here
+    /** Bind every declared supertype reference, and refuse the two shapes this backend does not carry.
+     *  WF-103/104 already reject an unknown or cyclic parent at the document, so both guards here
      *  are a last line: a loader that walked a cycle would hang instead of reporting.
      *
      *  <p>Until 2026-09-12 a third guard refused every chain carrying a temporal OR dimensioned member,
-     *  because the facet SIDE MAPS were read per declared type at 121 places in both transpiler branches
+     *  because the facet SIDE MAPS were read per declared type at 122 reads (121 lines) in both transpiler branches
      *  and an inherited timeline would answer "not temporal" for the subtype. Those reads go through the
      *  chain-closed accessors of {@link Objecttype} now, so the broad refusal is gone and the whole
      *  combination plays. Measured at the same card: the DIMENSIONED half was over-broad even then —
      *  every dimension read already went through {@code dimensiesVan}, which has walked the chain since
-     *  the kernel.
-     *
-     *  <p>What is left is NARROWER and named for what it is: the §9.9 startpunt-ANCHOR family. That
-     *  family is not a member lookup but a protocol keyed on the DECLARED SUBJECT NAME — a
-     *  startpuntbepaling declares a synthetic attribute on a named objecttype, and
-     *  {@code heeftVariabelStartpunt}, {@code startpuntLid} and {@code isStartpuntLid} all key on that
-     *  name (see the note at {@code RegelSpraakModel.heeftVariabelStartpunt}: closing one of the four
-     *  through the chain only moves the seam). Read from a SUBTYPE, an inherited attribute riding a
-     *  NAMED tijdlijn therefore answers "no named tijdlijn", the variabel-startpunt bucketing is skipped
-     *  and the §6.8 leeg-fout companion is not emitted — silently, and in BOTH branches. Named timelines
-     *  are a live corpus form, so this is not hypothetical; it is refused here until the family is
-     *  closed as a whole. */
+     *  the kernel. What is left of it is the §9.9 startpunt-ANCHOR family, refused in
+     *  {@link #weigerGeerfdAnker} — not here, because it needs the tijdlijn list, which is read later. */
     private void bindSupertypes() {
         supertypeNaam.forEach((ot, naam) -> {
             if (naam == null) return;
@@ -265,28 +255,44 @@ public final class IrLoader {
             for (Objecttype t = ot; t != null; t = t.supertype)
                 if (!gezien.add(t)) throw new Refusal("Objecttype.supertype", "supertype cycle at '" + ot.naam + "'");
         }
-        for (Objecttype ot : m.objecttypen.values()) {
-            if (ot.supertype == null) continue;
-            for (Objecttype t = ot.supertype; t != null; t = t.supertype)     // STRICTLY above ot
-                if (!t.attribuutTijdlijnNaam.isEmpty())
-                    throw new Refusal("Objecttype.supertype",
-                            "an INHERITED attribute riding a NAMED tijdlijn (§13.3.6.9) on the chain of '" + ot.naam
-                            + "': the §9.9 startpunt-anchor family keys on the DECLARED subject name, so a subtype "
-                            + "reads such an attribute as unanchored");
-        }
     }
 
-    /** The SECOND §9.9 site, and it falls independently of the first: a startpuntbepaling declared on an
-     *  ANCESTOR. {@code isStartpuntLid} is asked of the type the REFERENCE names, and it compares the
-     *  startpuntbepaling's declared subject name, so for every subtype instance it answers no and the
-     *  §6.8 leeg-fout companion silently disappears for exactly those. Checked here rather than in
-     *  {@link #bindSupertypes} because the startpunt list is read long after the declarations are. */
-    private void weigerGeerfdeStartpuntAnker() {
-        if (m.resolvedStartpunten.isEmpty()) return;
+    /** The §9.9 startpunt-ANCHOR family — what is LEFT of the withdrawn temporal/dimensioned refusal,
+     *  and the one part of it that really is chain-blind. The family is not a member lookup but a
+     *  PROTOCOL keyed on the DECLARED SUBJECT NAME: a startpuntbepaling declares a synthetic attribute
+     *  on a named objecttype, and {@code heeftVariabelStartpunt}, {@code startpuntLid} and
+     *  {@code isStartpuntLid} all key on that name (see the note at
+     *  {@code RegelSpraakModel.heeftVariabelStartpunt}: resolving one of the four through the chain only
+     *  moves the seam). Two sites, and they fall independently:
+     *
+     *  <p>(a) an ancestor declares an attribute riding a named tijdlijn WITH A VARIABEL STARTPUNT.
+     *  {@code heeftVariabelStartpunt} then answers false for the subtype where the truth is true, so the
+     *  bucketing is skipped. The guard asks {@code heeftVariabelStartpunt} itself rather than testing
+     *  {@code attribuutTijdlijnNaam} for emptiness, because on a FIXED-startpunt tijdlijn that predicate
+     *  answers false from the own map and from the chain alike — there is no blindness there, and
+     *  refusing it would print a reason ("reads it as unanchored") that is simply true of the document.
+     *  That narrowness is what makes this guard need the tijdlijn list, hence its place here.
+     *
+     *  <p>(b) a startpuntbepaling declared on an ANCESTOR. {@code isStartpuntLid} is asked of the type
+     *  the REFERENCE names and compares the determination's declared subject name, so for every subtype
+     *  instance it answers no and the §6.8 leeg-fout companion silently disappears for exactly those.
+     *
+     *  <p>WF-016 ties the two together on conforming input without merging them: a variable-start
+     *  tijdlijn must have SOME determination, but nothing makes that determination name the type that
+     *  declares the attribute — so (a) fires alone when it names another type, and (b) fires alone when
+     *  no attribute rides the tijdlijn at all. */
+    private void weigerGeerfdAnker() {
         for (Objecttype ot : m.objecttypen.values()) {
             if (ot.supertype == null) continue;
-            for (Objecttype t = ot.supertype; t != null; t = t.supertype) {
+            for (Objecttype t = ot.supertype; t != null; t = t.supertype) {       // STRICTLY above ot
                 final Objecttype voorouder = t;
+                for (String attr : voorouder.attribuutTijdlijnNaam.keySet())
+                    if (m.heeftVariabelStartpunt(voorouder, attr))
+                        throw new Refusal("Objecttype.supertype",
+                                "an INHERITED attribute ('" + attr + "') riding a NAMED tijdlijn with a VARIABEL"
+                                + " STARTPUNT (§13.3.6.9/§9.9) on the chain of '" + ot.naam + "': the anchor family"
+                                + " keys on the DECLARED subject name, so a subtype reads such an attribute as"
+                                + " unanchored");
                 if (m.resolvedStartpunten.stream().anyMatch(sp -> voorouder.naam.equals(sp.objecttype())))
                     throw new Refusal("Objecttype.supertype",
                             "a §9.9 startpuntbepaling declared on an ANCESTOR of '" + ot.naam

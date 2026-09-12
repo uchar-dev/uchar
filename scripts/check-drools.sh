@@ -379,7 +379,7 @@ EXPECTED_CHANNEL=(
 # SUBTYPE instance carries an INHERITED TEMPORAL member — a monthly attribute and a monthly
 # characteristic declared on Jutter, folded from a Klipjutter subject. Until this card the loader
 # refused that whole combination by name, because the facet SIDE MAPS (granularity, timeline count,
-# dimensions) were read per DECLARED type at 121 places in both branches and an inherited timeline
+# dimensions) were read per DECLARED type at 122 reads (121 lines) in both branches and an inherited timeline
 # answered "not temporal" for the subtype. Those reads go through the chain-closed accessors of
 # `Objecttype` now. The golden was BUILT at the previous card and could not land then: ref = clingo
 # exact, no-op refuted, but Drools refused it, and admitting a refusal would have needed a channel pin
@@ -392,7 +392,9 @@ EXPECTED_CHANNEL=(
 # appear and no other report line moves.
 # The channel floor below did NOT move, and that was measured rather than assumed: the withdrawn
 # refusal was VACUOUS over the corpus — no golden reported it in the base sweep — so no entry leaves
-# the list and none joins it.
+# the list and none joins it. Nor does the NARROWER refusal that replaced it (the §9.9 startpunt-anchor
+# family) put one there: the two goldens carrying a named tijdlijn declare no supertype, and
+# `jutterswet-penningjaar`'s is fixed-start, which the narrowed guard admits by design.
 EXPECTED_PLAYED=134
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------

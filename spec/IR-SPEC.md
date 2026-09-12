@@ -508,13 +508,17 @@ of it. Three things follow, and each is a definition rather than a rule:
   gates 5, 6 and 12). The Drools backend refused this whole combination
   until 2026-09-12 because its facet side-maps were read per declared
   type; what it refuses now is **narrower and named**: an **inherited
-  attribute riding a NAMED timeline** (ch. 2.8), or a startpunt anchor
-  (ch. 9.9) declared on an ancestor. That family is not a member lookup
-  but a protocol keyed on the DECLARED SUBJECT NAME — the anchor is a
-  synthetic attribute declared on a named object type — so resolving one
-  of its four sites through the chain only moves the seam; it is widened
-  whole or not at all, and until then the loader refuses the combination
-  loudly rather than lowering an unanchored timeline in silence.
+  attribute riding a named timeline that has a variable start point**
+  (ch. 2.8, ch. 9.9), or a **start-point determination declared on an
+  ancestor**. That family is not a member lookup but a protocol keyed on
+  the DECLARED SUBJECT NAME — the anchor is a synthetic attribute
+  declared on a named object type — so resolving one of its four sites
+  through the chain only moves the seam; it is widened whole or not at
+  all, and until then the loader refuses those two shapes loudly rather
+  than lowering an unanchored timeline in silence. The **variable** start
+  point is the whole of the condition: on a fixed-start named timeline
+  the predicate answers the same from the subtype as from the declaring
+  ancestor, so there is nothing to be blind about and the shape loads.
 - **A role's declared filler type is an UPPER bound** (ch. 2.6): a role
   declaring filler T accepts an instance of any S ⊑ T. **WF-047**'s "agree"
   is consequently ⊑-compatibility and not equality, and **WF-048**'s
