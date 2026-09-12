@@ -778,6 +778,9 @@ final class RuleChecker {
 
     /** A domain-typed attribute/parameter must reference a declared domain (§13.3.4). */
     private void domeinReferenties(RegelSpraakDocumentContext doc) {
+        // OWN declarations on purpose: this ITERATES rather than resolves. Its subject is the
+        // declaration itself, and a chain-closed view would report one inherited attribute once per
+        // descendant — the same duplicate the verifier's declaration-walking checks avoid.
         model.objecttypen.values().forEach(ot -> ot.attributen.forEach((naam, dt) -> meldOnbekendDomein(dt, naam)));
         model.parameters.values().forEach(p -> meldOnbekendDomein(p.datatype(), p.naam()));
     }
@@ -1441,6 +1444,9 @@ final class RuleChecker {
         String lid = "startpunt " + tijdlijnNaam;
         // the synthetic anchor name is reserved: an author-declared attribute of another type under this
         // exact name would otherwise silently merge with the anchor (a latent type-mismatched write).
+        // OWN, with the rest of the §9.9 anchor family (RegelSpraakModel.heeftVariabelStartpunt): the
+        // anchor is DECLARED on the named subject and every reader of it keys on that name, so reading
+        // this one guard through the chain while the others do not would only shift the seam.
         Datatype bestaand = subject.attributen.get(lid);
         if (bestaand != null && !(bestaand instanceof Datatype.DatumInDagen)) {
             model.diagnostics.add(new Diagnostic(Severity.ERROR,
