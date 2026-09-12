@@ -345,7 +345,15 @@ EXPECTED_CHANNEL=(
 # ch. 7.8 path, 10,00 on the subtype because its own base won, 99,00 with the exception). Without
 # it that direction was pinned in ref and in this backend's own suite but by nothing all three
 # executors run.
-EXPECTED_PLAYED=129
+# 129 -> 130 (2026-09-12, card subtype-regelspraak-dialect): `jutterswet-wrakrecht`, the
+# RegelSpraak-SOURCE twin of the kernel anchor above — the same three types, the same chain, the
+# same four cases with the same absolute values, but with an `ir.json` the frontend EMITTED from a
+# `bron.rgs` carrying `Objecttype het Wrakrecht is een Strandrecht`. The anchor proves the three
+# executors agree on inheritance; this one proves the dialect frontend produces exactly that IR, so
+# the `supertype` field is emitter-borne and not only hand-written. It has to be a PLAYER and not a
+# refusal: a golden whose values only two of the three executors reproduce would leave the emitted
+# form outside the square that the hand-written form is inside.
+EXPECTED_PLAYED=130
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the

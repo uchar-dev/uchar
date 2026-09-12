@@ -1,0 +1,47 @@
+Objecttype het Strandrecht (mv: Strandrechten)
+    de grondslag Numeriek (niet-negatief getal met 2 decimalen);
+    de uitkering Numeriek (niet-negatief getal met 2 decimalen);
+    de registratiekosten Numeriek (niet-negatief getal met 2 decimalen);
+    is betwist kenmerk (bijvoeglijk);
+
+Objecttype het Wrakrecht is een Strandrecht (mv: Wrakrechten)
+    de bergingsdiepte Numeriek (niet-negatief geheel getal);
+
+Objecttype de Kustgemeente (mv: Kustgemeenten) (bezield)
+    het uitkeringstotaal Numeriek (niet-negatief getal met 2 decimalen);
+    het registertal Numeriek (niet-negatief geheel getal);
+
+Feittype strandrechtregistratie
+    de registrerende kustgemeente Kustgemeente
+    het geregistreerd strandrecht (mv: geregistreerde strandrechten) Strandrecht
+Eén registrerende kustgemeente registreert meerdere geregistreerde strandrechten
+
+Regel registratiekosten van een strandrecht
+    geldig altijd
+        De registratiekosten van een Strandrecht moet berekend worden als 5,00.
+
+Regel uitkering van een strandrecht
+    geldig altijd
+        De uitkering van een Strandrecht moet gesteld worden op zijn grondslag.
+
+Uitzondering op uitkering van een strandrecht: uitkering van een betwist strandrecht
+    geldig altijd
+        De uitkering van een Strandrecht moet gesteld worden op 99,00
+        indien het Strandrecht betwist is.
+
+Regel uitkering van een wrakrecht
+    geldig altijd
+        De uitkering van een Wrakrecht moet gesteld worden op zijn grondslag maal 2.
+
+Uitzondering op uitkering van een wrakrecht: uitkering van een diep wrakrecht
+    geldig altijd
+        De uitkering van een Wrakrecht moet gesteld worden op 55,00
+        indien zijn bergingsdiepte groter is dan 20.
+
+Regel uitkeringstotaal van een kustgemeente
+    geldig altijd
+        Het uitkeringstotaal van een Kustgemeente moet berekend worden als de som van de uitkering van alle geregistreerde strandrechten van de Kustgemeente of 0,00 als die er niet zijn.
+
+Regel registertal van een kustgemeente
+    geldig altijd
+        Het registertal van een Kustgemeente moet berekend worden als het aantal geregistreerde strandrechten van de Kustgemeente.
