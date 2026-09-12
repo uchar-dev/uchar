@@ -220,11 +220,15 @@ vorm die WF-031's vensterclausule al met die reden weigert. Gesloten **bij
 WF-031 en niet bij WF-107**, want het zijn twee naamruimten: de benoemde
 vormen delen er één (die WF-020 uniek houdt), een dagsoortnaam heeft een
 eigen (die WF-031 zelf uniek houdt). Getuige
-`wf031-dagsoortdefinitie-naamloos`; kosten nul, alle 21 dagsoortdefinities
-in de vier zones dragen een naam. Gemeten schade: op de eigen casus van
+`wf031-dagsoortdefinitie-naamloos`; kosten nul, 24 dagsoortdefinities over
+de vier zones (golden 6, negatief 17, pariteit 1) en allemaal benoemd op de
+getuige na. Gemeten schade: op de eigen casus van
 `jutterswet-schouwkalender` beweegt geen antwoord — het defect is een
 verloren definitie, geen fout getal, en dat is juist waarom het een regel
-vraagt en geen gated case.
+vraagt en geen gated case. De blanco-arm staat VOOR de resolutie-arm: een
+blanco naam is ook geen gedeclareerde dagsoort, dus in de natuurlijke
+volgorde antwoordt de resolutie-arm eerst met `undeclared day kind ' '` —
+waar, en de verkeerde diagnose.
 
 De derde naamdrager, `regelGroepen`, blijft er bewust buiten en dat staat
 nu in WF-107's tekst: WF-033 resolveert de LEDEN van een groep op naam en

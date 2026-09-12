@@ -5,7 +5,7 @@ carries `naam: "   "` — present, and empty once whitespace is collapsed.
 
     WF-107 FAIL /resolvedRegels/0/naam: form in resolvedRegels carries a
     blank name (a named form's identity on this wire IS its name — ch. 8
-    groups versions by it, the ch. 6 dependency graph keys its channel node
+    groups versions by it, the ch. 5.1 dependency graph keys its channel node
     on it, and WF-020 keeps it unique)
 
 The BLANK arm, kept beside `wf107-naamloze-regel` because the two fall

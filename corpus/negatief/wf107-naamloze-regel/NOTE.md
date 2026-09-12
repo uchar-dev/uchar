@@ -5,7 +5,7 @@ carries `naam: null`. The document says nothing else wrong.
 
     WF-107 FAIL /resolvedRegels/0/naam: form in resolvedRegels carries no
     name (a named form's identity on this wire IS its name — ch. 8 groups
-    versions by it, the ch. 6 dependency graph keys its channel node on it,
+    versions by it, the ch. 5.1 dependency graph keys its channel node on it,
     and WF-020 keeps it unique)
 
 Why it is a rule and not a schema clause: the wire type is
