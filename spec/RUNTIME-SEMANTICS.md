@@ -1898,6 +1898,44 @@ meer dan 10 hebben* — a berger at 5 the whole year is not a contributor,
 so a ploeg of one berger at 50 and one at 5 reads **waar**, and a ploeg
 whose only berger is at 5 reads **waar** vacuously.
 
+**Worked examples — a NON-temporal matrix** (absolute;
+`corpus/golden/jutterswet-schouwploeg` verbatim). `test` is an ordinary
+condition, so it need not be temporal at all, and until 2026-09-16 the
+three executors disagreed about exactly that. They agree now, each by
+executing the sentence above rather than by recognising one matrix shape.
+Document: a `Schouwploeg` reaches its `wachten` over the to-many role of
+`schouwindeling`; `dienstjaren` is a plain attribute of `Strandwacht` and
+`gediplomeerd` a characteristic of it. Four folds in one document:
+*ervaren* = `ALLE` over `dienstjaren > 5`, *onervaren* = `GEEN` over the
+same, *bevoegd* = `ALLE` over `gediplomeerd`, *sluitend* = `GEEN` over
+`niet gediplomeerd`.
+
+| # | the ploeg's wachten (dienstjaren, diploma) | ervaren | onervaren | bevoegd | sluitend |
+|---|---|---|---|---|---|
+| 1 | 8 ja, 6 ja | **waar** | onwaar | **waar** | **waar** |
+| 2 | 8 ja, 3 nee | onwaar | onwaar | onwaar | onwaar |
+| 3 | 3 ja, 5 ja | onwaar | **waar** | **waar** | **waar** |
+| 4 | none | **waar** | **waar** | **waar** | **waar** |
+| 5 | leeg ja, 3 ja | onwaar | **waar** | **waar** | **waar** |
+
+Row 2 is `GEEN` ≠ `not (ALLE)` again, now with no temporal reason in the
+matrix at all: one member above the bound and one below leaves both folds
+false. Row 3 pins the strict bound, row 4 the vacuous set under both
+quantifiers. Row 5 is the **leeg** member, and it is the counterpart of
+row 7 above: an ordering comparison over leeg is onwaar (ch. 1.2d), so the
+member FAILS its matrix — it breaks `ALLE` and is no witness for `GEEN` —
+whereas an absent TIMELINE PASSES its whole-period matrix vacuously and
+therefore breaks `GEEN`. Nothing but the matrix decides which of the two
+readings applies, which is why both are pinned.
+
+*sluitend* is the **negated matrix**, and it answers what *bevoegd*
+answers in every row. On a non-temporal matrix the "niet" is part of the
+condition and is read per member, so the quantifier is untouched — unlike
+ch. 3.9's "niet gedurende …", which qualifies the outer comparison and
+which an executor may therefore fold by flipping `ALLE` into `GEEN`
+(∀c.¬P = ¬∃c.P). Both are the same verdict; stating where the negation
+lives is what keeps an executor from applying that flip twice.
+
 ### 3.10 Period conditions and the §8.4.3 clip
 
 A **period condition** (`TimeWindow`, `IR-SPEC.md` ch. 4.5) restricts a
@@ -2021,7 +2059,7 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 | Whole-period qualifier over a characteristic, the **inner** negation ("gedurende … NIET") | specified (ch. 3.9's formula), executed by the two OCaml executors; the Drools backend refuses it by name in both branches, so it stays suite-pinned and out of the corpus |
 | Whole-period qualifier, the **ordering/equality** test over a value timeline | **specified and executed, ch. 3.9** — the reference interpreter and the ASP backend built it 2026-09-16 (the heelperiode-forall card), the Drools backend carried it already; witnessed by `corpus/golden/jutterswet-ploegpremie` and by each executor's own suite. The **date-valued** form stays refused (its own row above), and the navigated form is untouched |
 | Whole-period qualifier, the **leeg/gevuld** tests | specified (ch. 3.9), **not executed** by either OCaml executor — both refuse them by name, no corpus case. The threshold clause the leeg test needs (touched-days rather than calendar days) is stated in ch. 3.9 and implemented in the Drools runtime alone; the sibling that landed above deliberately did not take it along, because a clause with no witness on this side would be a green subset |
-| **Quantifier fold** over a linked instance set (ch. 3.9a) | **specified and executed** — ALLE and GEEN in all three executors, witnessed by `corpus/golden/jutterswet-ploegpremie`. The counting quantifiers over an instance range are the named extension point and are refused by WF-108 (a); a NON-temporal matrix is admitted by the IR; the reference interpreter executes it under both quantifiers, the ASP backend under GEEN only (ALLE would need the complement of an arbitrary condition, which is not an ASP body) and the Drools backend under neither (it markers the form by name in both branches) — the standing executor asymmetry, kept out of the corpus |
+| **Quantifier fold** over a linked instance set (ch. 3.9a) | **specified and executed** — ALLE and GEEN in all three executors, over a WHOLE-PERIOD matrix (witness `corpus/golden/jutterswet-ploegpremie`) and, since 2026-09-16, over a NON-temporal one (witness `corpus/golden/jutterswet-schouwploeg`: five cells, both quantifiers, two matrix shapes and a negated matrix). The executor asymmetry this row used to record is **gone**: the ASP backend REIFIES the matrix into a helper predicate and negates that one atom (negation-as-failure over a reified conjunction is an ordinary ASP body, where the complement of an arbitrary conjunction of atoms is not), and both Drools branches ask the matrix through their ordinary per-subject condition lowering with the element as subject — the exec branch collecting the contributors, the DRL-text branch denying the failure witness with a `not` pattern. What stays bounded is which matrix FORMS each executor's condition translation carries: a form outside it is refused by name, per form, never silently. The counting quantifiers over an instance range are the named extension point and are refused by WF-108 (a); the WHOLE-PERIOD matrix remains a named marker in the Drools DRL-text branch alone |
 | Gap-vs-absent timeline observability (temporal total: 0 vs leeg) | mirrored residual; stays OPEN here — the ch. 1.4 freeze covers the scalar discipline, not this temporal residual |
 | Sorted/non-overlapping input invariant | delta candidate (WF rule, data plane), ch. 3.1 |
 | Non-terminating pro-rata stored at 16 digits | v0 residual (normative: exact fraction), ch. 3.7 |
