@@ -1,0 +1,75 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": { "vondsten": ["V1", "M1", "M2"] },
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": { "vondsten": ["V2"] },
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": { "vondsten": ["M3"] },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": { "gewicht": { "number": "3.00" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": { "gewicht": { "number": "4.00" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "M1",
+        "objectType": "Munt",
+        "attributes": { "gewicht": { "number": "7.00" }, "jaartal": { "number": "1650" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "M2",
+        "objectType": "Munt",
+        "attributes": { "gewicht": { "number": "5.00" }, "jaartal": { "number": "1702" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "M3",
+        "objectType": "Munt",
+        "attributes": { "jaartal": { "number": "1799" } },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "aantal munten", "value": { "number": "2" } },
+    { "kind": "attributeValue", "label": "J1", "attribute": "muntgewicht", "value": { "number": "12.00" } },
+    { "kind": "attributeValue", "label": "J2", "attribute": "aantal munten", "value": { "number": "0" } },
+    { "kind": "attributeValue", "label": "J2", "attribute": "muntgewicht", "value": { "number": "0" } },
+    { "kind": "attributeValue", "label": "J3", "attribute": "aantal munten", "value": { "number": "1" } },
+    { "kind": "attributeValue", "label": "J3", "attribute": "muntgewicht", "value": { "number": "0" } },
+    { "kind": "attributeValue", "label": "M1", "attribute": "jaartal", "value": { "number": "1650" } },
+    { "kind": "consistent" }
+  ]
+}

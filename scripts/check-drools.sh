@@ -399,7 +399,14 @@ EXPECTED_CHANNEL=(
 # positive witness that an object creation's member write closes UPWARD only (IR-SPEC ch. 5.1), a
 # creation that mints its own supertype. It plays because it names its back-link explicitly, so the
 # underivable-role refusal does not fire; nothing else moved.
-EXPECTED_PLAYED=135
+# 2026-09-16 (card typerange-sluiting), 135 -> 136: `jutterswet-munttelling` joins as a NEW PLAYER —
+# the witness for the EXCLUSION direction of ch. 2.2, an instance fold whose elementObjecttype is a
+# strict SUBTYPE of what the source role fills, with a plain supertype instance linked beside the
+# subtypes that must NOT be folded. This backend needed no change for it: the exec-model branch
+# matches the element type as a Java CLASS pattern over beans wired with native `extends`, so a
+# `Munt` pattern never saw the plain `Vondst` — Drools was the only executor already right, and the
+# golden pins that agreement instead of leaving it unmeasured. Nothing else moved.
+EXPECTED_PLAYED=136
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the
