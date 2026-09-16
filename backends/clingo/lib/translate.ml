@@ -1813,35 +1813,146 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
              not this fold's business — witnessed by
              `golden/jutterswet-muntbewaring`, which the older
              [linked]/[linked_path] walk refused by name on a plain
-             Vondst carrying a bucket scalar. The residual edge is the
-             die/dat FILTER: ref drops a filtered-out member before the
-             integration, and a filter is not decidable at translation
-             time, so a filtered-out member carrying a bucket scalar is
-             refused here where ref would answer. Loud, recorded, and
-             without a corpus case. *)
+             Vondst carrying a bucket scalar.
+
+             The die/dat FILTER narrows the walk the third way (2026-09-16,
+             the residue the typerange card parked). ref settles the
+             contributors IN FULL — filter and all — before the integration
+             runs (ch. 3.4a), so a member the subselection drops is not
+             this fold's business either, and refusing on its missing
+             timeline refused a document ref and the Drools backend both
+             answer. Witnessed by `golden/jutterswet-keurlast`.
+
+             Evaluating a filter at TRANSLATION time is only sound while
+             its verdict can no longer change, so the drop is guarded by
+             exactly the question [derived_writer] above asks about the
+             folded attribute, asked about the names the filter READS: a
+             subselection over a value some rule, allocation or defaults
+             group still writes is refused under its OWN reason, because a
+             member wrongly dropped here contributes a silent 0 where ref
+             faults. [filter_reads] answers None for any shape it cannot
+             account for, so an unrecognised read is never taken for case
+             data.
+
+             Both of those refusals are asked ONLY of a SUSPECT — a member
+             with no timeline and a non-empty scalar. A subselection this
+             translation cannot settle is harmless while nothing hangs on
+             the answer, and refusing there would refuse documents the
+             fence was never about. *)
+          let derived_on name =
+            let related o = isa ctx o el || isa ctx el o in
+            if
+              List.exists
+                (fun (r : resolved_regel) ->
+                  match r.doel with
+                  | Some (Attribuut_ref { attribuut = Some x; objecttype = Some o; _ }) ->
+                      norm x = norm name && related o
+                  | _ -> false)
+                ctx.doc.resolved_regels
+            then Some "a rule"
+            else if
+              List.exists
+                (fun (v : resolved_verdeling) ->
+                  (match v.doel_attribuut with Some x -> norm x = norm name | None -> false)
+                  && match v.doel_type with Some o -> related o | None -> false)
+                ctx.doc.verdelingen
+            then Some "an allocation (verdeling)"
+            else if
+              List.exists
+                (fun (l : prioritized_defaults) ->
+                  (match l.pd_attribuut with Some x -> norm x = norm name | None -> false)
+                  && related l.pd_onderwerp)
+                ctx.doc.prioritized_defaults
+            then Some "a defaults group"
+            else None
+          in
+          (* the ELEMENT-OWN names a subselection reads, or None for a shape
+             this walk cannot account for. A characteristic and an attribute
+             share one namespace here on purpose: a kenmerktoekenning writes
+             its characteristic through the same doel field a value rule
+             writes an attribute through, so ONE scan covers both. *)
+          let rec filter_reads (c : conditie) : string list option =
+            let operand = function
+              | None -> Some []
+              | Some (Literal _) | Some (Parameter_ref _) -> Some []
+              | Some
+                  (Attribuut_ref
+                    { attribuut = Some n; navigatie_rol = None; navigatie_pad = []; set = false; _ })
+                ->
+                  Some [ n ]
+              | Some _ -> None
+            in
+            match c with
+            | Kenmerk_check { kenmerk = Some k; navigatie = None; eigenaar = None; _ } -> Some [ k ]
+            | Vergelijking { links; rechts; periode = None; _ } -> (
+                match (operand links, operand rechts) with
+                | Some l, Some r -> Some (l @ r)
+                | _ -> None)
+            | Samengesteld { onderdelen; _ } ->
+                List.fold_left
+                  (fun acc c ->
+                    match (acc, filter_reads c) with Some a, Some b -> Some (a @ b) | _ -> None)
+                  (Some []) onderdelen
+            | _ -> None
+          in
+          let suspects =
+            List.filter
+              (fun (i : Uchar_ref.World.instance) ->
+                Uchar_ref.World.timeline i a = None && Uchar_ref.World.attr i a <> Value.Empty)
+              (Eval.SMap.fold
+                 (fun _ (self : Uchar_ref.World.instance) acc ->
+                   if not (isa ctx self.otype subject_ot) then acc
+                   else
+                     (* the MEMBERS, ch. 2.2-scoped like the join above: a
+                        linked instance the element type does not cover is
+                        not folded, so its missing timeline is not this
+                        fold's business to fault on *)
+                     Eval.fold_members ?binding:bron_rol ?path:bron_pad env ctx.case.world self
+                       ~element:el
+                     @ acc)
+                 ctx.case.world.instances [])
+          in
+          let contributes =
+            match filter with
+            | _ when suspects = [] -> fun _ -> false
+            | None -> fun _ -> true
+            | Some c ->
+                (match filter_reads c with
+                | None ->
+                    fault
+                      "the per-element temporal fold of %S carries a die/dat subselection this \
+                       translation cannot settle at translate time (an unrecognised read), and a \
+                       member without its own timeline hangs on the answer (ch. 3.4a/3.6)"
+                      a
+                | Some names ->
+                    List.iter
+                      (fun n ->
+                        match derived_on n with
+                        | None -> ()
+                        | Some who ->
+                            fault
+                              "the per-element temporal fold of %S carries a die/dat subselection \
+                               over %S, which %s DERIVES on %S: its verdict is not settled at \
+                               translate time, and a member without its own timeline hangs on the \
+                               answer (ch. 3.4a/3.6)"
+                              a n who el)
+                      names);
+                fun (i : Uchar_ref.World.instance) ->
+                  (* a filter that cannot be evaluated at all keeps the member:
+                     the fence then fires, which is the conservative side —
+                     a member wrongly DROPPED would contribute a silent 0 *)
+                  (try Eval.eval_cond env ctx.case.world i ~err:(fun _ -> ()) c
+                   with Value.Fault _ -> true)
+          in
           List.iter
             (fun (i : Uchar_ref.World.instance) ->
-              if
-                Uchar_ref.World.timeline i a = None
-                && Uchar_ref.World.attr i a <> Value.Empty
-              then
+              if contributes i then
                 fault
                   "the per-element temporal fold of %S over %S: the case supplies an \
                    asOfDate-bucket scalar, which carries no period of its own; a set fold needs \
                    each member's own timeline (ch. 3.6/§7.1, ch. 8.4)"
                   a i.label)
-            (Eval.SMap.fold
-               (fun _ (self : Uchar_ref.World.instance) acc ->
-                 if not (isa ctx self.otype subject_ot) then acc
-                 else
-                   (* the MEMBERS, ch. 2.2-scoped like the join above: a
-                      linked instance the element type does not cover is
-                      not folded, so its missing timeline is not this
-                      fold's business to fault on *)
-                   Eval.fold_members ?binding:bron_rol ?path:bron_pad env ctx.case.world self
-                     ~element:el
-                   @ acc)
-               ctx.case.world.instances []);
+            suspects;
           (* one entry PER (member, segment) — the multiplicity is
              load-bearing for the fence below, which must count the
              tuples the #sum accumulates, not the distinct calendar
