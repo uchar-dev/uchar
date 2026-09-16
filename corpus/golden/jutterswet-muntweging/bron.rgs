@@ -1,0 +1,19 @@
+Eenheidsysteem Gewicht
+    het kilogram (mv: kilogrammen) kg
+    de ton (mv: tonnen) t = 1000 kg
+
+Objecttype de Vondst (mv: Vondsten)
+    het brutogewicht Numeriek (getal met 2 decimalen) met eenheid kg;
+    het geborgen gewicht Numeriek (getal met 2 decimalen) met eenheid kg;
+    het aangegeven gewicht Numeriek (getal met 2 decimalen) met eenheid kg;
+
+Objecttype de Munt is een Vondst (mv: Munten)
+    het jaartal Numeriek (niet-negatief geheel getal);
+
+Regel aangegeven gewicht van een vondst
+    geldig altijd
+        Het aangegeven gewicht van een Vondst moet berekend worden als het brutogewicht van de Vondst plus 1 t.
+
+Regel geborgen gewicht van een munt
+    geldig altijd
+        Het geborgen gewicht van een Munt moet berekend worden als het brutogewicht van de Munt plus 1 t.

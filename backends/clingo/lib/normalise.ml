@@ -96,9 +96,19 @@ let finest_of_stelsel (s : eenheidstelsel) : eenheid * (eenheid -> Q.t) =
       (finest, to_finest)
 
 (* the target attribute's declared unit (None when unit-free, non-numeric, or
-   unknown — every such target is left untouched) *)
+   unknown — every such target is left untouched).
+
+   The declaration is the EFFECTIVE one (ch. 2.2): a write whose subject is a
+   SUBTYPE reaches a slot its ancestor declares, and off the raw map that slot
+   is simply absent, so this answered None, the pass left the rule untouched and
+   the additive write fence then refused a document the verifier accepts and ref
+   answers (measured on `golden/jutterswet-muntweging`: clingo "non-identical
+   units under an additive join are not translated", ref 1002,00, Drools the
+   same). Untouched-on-unknown is still the rule for a target this document
+   really does not declare; what changed is which declarations count as the
+   target's. Same defect class as [Translate.attr_temporal_decl]'s raw read. *)
 let target_unit (doc : document) ~ot ~attr : eenheid option =
-  match Checks.find_ci doc.objecttypen ot with
+  match Checks.effective_ot doc ot with
   | Some otd -> (
       match Checks.find_ci otd.attributen attr with
       | Some (Some (Numeriek { eenheid; _ } | Percentage { eenheid; _ })) -> eenheid

@@ -447,7 +447,16 @@ EXPECTED_CHANNEL=(
 # declaration, so a fold anchored at the subtype answered "not temporal", the strip did not fire and
 # the write fence refused `EUR/mnd` into a `EUR` target — while ref and this backend both answered 48.
 # That lookup closes over the supertype chain now, the same correction the facet card made here.
-EXPECTED_PLAYED=141
+# 2026-09-16 (card typerange-dekking, fix round after the lens), 141 -> 142: `jutterswet-muntweging`
+# joins as a NEW PLAYER — a write whose TARGET slot is declared on the ANCESTOR (`Munt ⊑ Vondst`,
+# `geborgen gewicht` declared on Vondst, rule subject Munt) with a `t` literal added to a `kg` base.
+# This backend arrived playing and needed no change; the golden exists for the SECOND instance of the
+# raw-declaration defect class, one file over from the one above: the ASP backend's unit-normalisation
+# pass read the target's declared unit off the raw map, answered "no unit" for the subtype, left the
+# rule unrestated and the additive write fence then refused 1002,00 — which ref and this backend both
+# produced. It has to be a player for the reason every unit golden is: a restating that two of three
+# executors reproduce is outside the square. Nothing else moved.
+EXPECTED_PLAYED=142
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the

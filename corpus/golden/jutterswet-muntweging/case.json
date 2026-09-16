@@ -1,0 +1,40 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": { "brutogewicht": { "number": "3.00" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "M1",
+        "objectType": "Munt",
+        "attributes": { "brutogewicht": { "number": "2.00" }, "jaartal": { "number": "1650" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "M2",
+        "objectType": "Munt",
+        "attributes": { "brutogewicht": { "number": "0.50" }, "jaartal": { "number": "1702" } },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "V1", "attribute": "aangegeven gewicht", "value": { "number": "1003.00" } },
+    { "kind": "attributeEmpty", "label": "V1", "attribute": "geborgen gewicht" },
+    { "kind": "attributeValue", "label": "M1", "attribute": "aangegeven gewicht", "value": { "number": "1002.00" } },
+    { "kind": "attributeValue", "label": "M1", "attribute": "geborgen gewicht", "value": { "number": "1002.00" } },
+    { "kind": "attributeValue", "label": "M2", "attribute": "aangegeven gewicht", "value": { "number": "1000.50" } },
+    { "kind": "attributeValue", "label": "M2", "attribute": "geborgen gewicht", "value": { "number": "1000.50" } },
+    { "kind": "attributeValue", "label": "M1", "attribute": "jaartal", "value": { "number": "1650" } },
+    { "kind": "consistent" }
+  ]
+}
