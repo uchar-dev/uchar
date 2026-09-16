@@ -2258,6 +2258,12 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
     | Periode_conditie { vanaf; tot; _ } ->
         Option.iter fence_expr vanaf; Option.iter fence_expr tot
     | Samengesteld { onderdelen; _ } -> List.iter fence_cond onderdelen
+    (* the quantifier fold (IR-SPEC ch. 4.5) reaches this walk only through
+       its two sub-conditions; this frontend never produces one, and the
+       arm is here so that adding a condition node stays a compile error
+       for the walks that must see it rather than a silent leaf *)
+    | Kwantorvouw { kv_filter; kv_toets; _ } ->
+        Option.iter fence_cond kv_filter; Option.iter fence_cond kv_toets
     | Kenmerk_check _ | Rollidmaatschap _ | Verre_rollidmaatschap _
     | Regelversie _ | Conditie_onopgelost _ -> ()
   in
