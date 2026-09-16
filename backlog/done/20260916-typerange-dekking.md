@@ -38,22 +38,34 @@ pint ze.
 
 ## Result
 
-**Alle drie de navondsten hebben nu een artefact, en het bouwen van de derde
-legde een eigen gat bloot dat in dezelfde ronde is gedicht.** Vier nieuwe
-goldens, één nieuw negatief, één nieuwe JUnit-klasse, één regel gewijzigd in
-`backends/clingo`. Alle veertien gates groen.
+**Alle drie de navondsten hebben nu een artefact, en het bouwen ervan legde
+TWEE voorkomens van dezelfde defectklasse bloot, die in dezelfde ronde zijn
+gedicht.** Vijf nieuwe goldens, één nieuw negatief, één nieuwe JUnit-klasse,
+twee regels gewijzigd in `backends/clingo` (één per voorkomen). Alle veertien
+gates groen.
+
+*Na de lensronde is er één fixronde geweest; die bevestigde alle veertien
+gates, alle vier de toen bestaande goldens en alle drie de rood-eerst-metingen
+exact, en voegde vier punten toe: het tweede voorkomen van de defectklasse met
+zijn eigen golden (`muntweging`), twee extra JUnit-getuigen, een te sterke
+nieuwheidsclaim aangescherpt, en een stale commentaarzin bijgewerkt. Alles
+hieronder is de eindstand.*
 
 ### Wat er landde
 
 *(1) De AANTAL-arm zonder bronRol.*
 
 - `frontends/regelspraak/src/test/java/io/github/yhavinga/regelspraak/TelbereikTest.java`
-  — zes tests, nieuwe klasse, geen bestaande test aangeraakt. Ze pinnen: het
+  — acht tests, nieuwe klasse, geen bestaande test aangeraakt. Ze pinnen: het
   geschreven typemeervoud bindt het objecttype; de vouw gaat bindingloos de
   wire op (geen `bronRol`, geen `bronPad`, geen `Onopgelost`); de geschreven
   ROLnaam bindt wél, op hetzelfde model; de meerduidige variant gokt géén
-  relatie; en twee grenzen van de opzoeking — een gedeeld typemeervoud bindt
-  geen van beide, een woord dat niets benoemt levert geen elementtype.
+  relatie; twee grenzen van de opzoeking — een gedeeld typemeervoud bindt geen
+  van beide, een woord dat niets benoemt levert geen elementtype; en de twee
+  flanken die de fixronde erbij zette — een woord dat TEGELIJK objecttype- én
+  rolmeervoud is bindt de RELATIE (de opzoeking is een fallback en de volgorde
+  stond nergens vast), en een onverbonden typepaar levert dezelfde opgeloste,
+  bindingloze vouw als het meerduidige geval.
 - `corpus/golden/jutterswet-muntpeiling` (bron.rgs + case + NOTE) — de vorm
   kan het hele vierkant door, dus het is een golden geworden en niet alleen
   de JUnit-weg. Het document schrijft DEZELFDE telling twee keer: bindingloos
@@ -67,8 +79,12 @@ goldens, één nieuw negatief, één nieuwe JUnit-klasse, één regel gewijzigd 
   nor a declared role, and the type pair 'Jutter'/'Munt' does not derive a
   unique connecting role (2 candidates)`) én WF-048 (`bindingless instance
   fold: 2 fact types relate 'Jutter' to 'Munt'`). De directory declareert
-  WF-048: die rule had een negatief voor de VERDELING (`wf048-ambiguous-
-  connecting-relation`) en geen enkele voor haar `site:"instance fold"`-arm.
+  WF-048. Precies wat dat toevoegt, na de lens aangescherpt: de arm was niet
+  ONgeraakt — `wf034-ambigu-typenpaar` trapt hem ook, en zegt dat — maar gate 3
+  controleert alleen de regel die een directorynaam declareert, dus een
+  incidentele overtreding is een regel in een rapport en geen gepinde getuige;
+  ze kan verdwijnen zonder dat een gate iets merkt. Dit is de eerste case die
+  WF-048's `site:"instance fold"`-arm DECLAREERT.
 
 *(2) De bronPad-tak, de MIN/MAX-arm en het temporele vertaaltijd-hek.* Alle
 drie zijn armen van dezelfde uitsluitingsfilter (ch. 2.2), dus alle drie de
@@ -84,6 +100,15 @@ goldens zijn `jutterswet-munttelling` met de vouw op een andere arm gezet.
 - `corpus/golden/jutterswet-muntbewaring` — de per-element temporele vouw met
   een geërfd maandelijks lid, en twee gewone `Vondst`-instanties met een
   asOfDate-emmerwaarde ernaast. Speelt in alle drie.
+
+*(3, uit de fixronde) Het tweede voorkomen van de defectklasse.*
+
+- `corpus/golden/jutterswet-muntweging` (bron.rgs + case + NOTE) — een schrijf-
+  regel wiens DOELSLEUF op de voorouder is gedeclareerd (`Munt ⊑ Vondst`,
+  `geborgen gewicht` staat op `Vondst`, het regelonderwerp is `Munt`) met een
+  `t`-literaal opgeteld bij een `kg`-grondslag. De eerste subtype-golden die de
+  overerving op de SCHRIJFpositie zet in plaats van op de elementverzameling of
+  het regelonderwerp. Speelt in alle drie.
 
 ### De handberekeningen, elk vóór het draaien
 
@@ -129,6 +154,28 @@ opzettelijk hetzelfde getal als `jutterswet-tempovouw`, zodat het verschil
 tussen de twee goldens de versmalling is en verder niets. Gemeten: ref PASS
 (4), clingo PASS (4) na de fix hieronder, Drools PLAYED 1, noop weerlegd.
 
+**muntweging.** `1 t = 1000 kg` volgens de gedeclareerde factor, en het doel is
+`kg` — de fijnste basiseenheid van het stelsel `Gewicht` — dus elke som wordt
+in `kg` gedaan nadat de literaal precies één keer is herschreven.
+
+| instantie | type | brutogewicht | `aangegeven gewicht` (regel op Vondst) | `geborgen gewicht` (regel op Munt) |
+|---|---|---|---|---|
+| V1 | Vondst | 3,00 kg | 3,00 + 1000,00 = **1003,00** | **leeg** |
+| M1 | Munt | 2,00 kg | 2,00 + 1000,00 = **1002,00** | 2,00 + 1000,00 = **1002,00** |
+| M2 | Munt | 0,50 kg | 0,50 + 1000,00 = **1000,50** | 0,50 + 1000,00 = **1000,50** |
+
+V1 draagt de insluitingsrichting en haar tegenhanger op één rij: de
+voorouderregel vuurt voor hem, de SUBTYPEregel niet, dus `geborgen gewicht`
+blijft leeg op een gewone vondst — een regelonderwerp wordt niet omhoog
+verbreed. M1 en M2 zijn de kruiscontrole: de twee kolommen dragen per
+constructie hetzelfde getal, dus een herschrijving die maar één pad raakt komt
+binnen één instantie aan het licht in plaats van als een getal dat niemand kan
+narekenen. M2's 0,50 houdt de tweede decimaal dragend: wie `1 t` als een hele
+1000 herschrijft en daarna de decimalen van de andere operand laat vallen,
+antwoordt daar 1000,00 en is op M1 nog steeds goed. Gemeten: ref PASS (8),
+clingo PASS (8) na de fix, Drools PLAYED 1, noop weerlegd op vijf
+verwachtingen.
+
 ### Rood-eerst, per reparatie gemeten
 
 De drie reparaties waren al geland, dus rood-eerst kon alleen door de
@@ -153,6 +200,13 @@ teruggezet; geen van die patches staat in de geschiedenis.
    `TRANSLATION FAULT: the per-element temporal fold of "bewaartarief" over
    "V2": the case supplies an asOfDate-bucket scalar …` — een weigering bij
    naam op een instantie die de vouw niet vouwt.
+
+4. **Het schrijfdoel van de eenheidspas** (fixronde). Hier kon rood-eerst
+   echt: de golden is eerst gebouwd en gemeten, daarna de fix. Vóór de fix
+   antwoordt ref alle acht verwachtingen (1002,00 incluis) en geeft Drools
+   PLAYED 1, terwijl clingo `TRANSLATION FAULT: non-identical units under an
+   additive join are not translated` zegt. Na de fix: clingo PASS (8),
+   driewegspeler.
 
 ### De eigen vondst: een geërfd tijdlijnlid las "niet temporeel"
 
@@ -180,34 +234,57 @@ testbestanden aanraken zonder te vragen" staat boven de gewoonte. De
 VURENDE richting van het hek (een echt lid met een emmerwaarde) houdt haar
 bestaande getuige in diezelfde suite.
 
+### Het tweede voorkomen: het schrijfdoel van de eenheidspas
+
+De lensronde vond hetzelfde defect één bestand verderop, en mijn eigen
+`grep` had het gemist omdat ik alleen `translate.ml` had afgezocht.
+`backends/clingo/lib/normalise.ml`, `target_unit`: de eenheids-herstelpas —
+die vóór het additieve schrijfhek elke literaal van het stelsel van het doel
+herschrijft naar de fijnste basiseenheid, zodat het hek één identiek
+eenheidsrecord ziet in plaats van twee omrekenbare — zocht de eenheid van het
+SCHRIJFDOEL in de ruwe declaratiekaart. Noemt het doel een subtype waarvan het
+eenheidsdragende lid op de voorouder staat, dan is die sleuf daar afwezig, dus
+antwoordde de pas "geen eenheid", liet de regel onherschreven, en weigerde het
+hek daarna. Zelfde eenregelige correctie, zelfde commentaarpatroon.
+
+*De correctie is over de rest van het corpus aantoonbaar een no-op, en dat is
+gemeten en niet aangenomen.* Waar geen enkel supertype gedeclareerd is, is
+`effective_ot` per definitie de ruwe declaratie. Van de 218 corpusdocumenten
+(golden + rood) dragen er **17** een supertype-rand; over die 17 is per
+schrijfregel het antwoord van `target_unit` vóór en na uitgerekend, en er is
+**precies één** regel waar het verandert: `geborgen gewicht van een munt` in
+de nieuwe golden zelf. Gates 5, 6, 8, 11 en 13 draaien daarnaast de volle
+herspeling en bevestigen de waarden (481 cases exact, 29 toka-cases, 26 rode
+cases, 96 herspelingen onder de annotatiedraai).
+
 ### De veertien gates, eindstand (basislijn → kop)
 
 | gate | kerncijfer |
 |---|---|
 | 1 self-contained | PASS |
-| 2 ir-schema | 213 → **217** bestanden valideren en round-trippen (vloer 192) |
-| 3 verifier | 213 → **217** golden clean; 390 → **391** negatief op hun eigen rule (vloer 350) |
-| 4 case-schema | 502 → **506** casebestanden |
-| 5 oracle | ref-suite 620 worked examples (vloer 489); 476 → **480** cases exact herspeeld (vloer 427) |
-| 6 clingo | backendsuite 188 checks (vloer 83); 476 → **480** cases ref = clingo |
-| 7 noop | 440 → **444** cases weerleggen een niets-doende uitvoerder; 36 survivors ongewijzigd |
+| 2 ir-schema | 213 → **218** bestanden valideren en round-trippen (vloer 192) |
+| 3 verifier | 213 → **218** golden clean; 390 → **391** negatief op hun eigen rule (vloer 350) |
+| 4 case-schema | 502 → **507** casebestanden |
+| 5 oracle | ref-suite 620 worked examples (vloer 489); 476 → **481** cases exact herspeeld (vloer 427) |
+| 6 clingo | backendsuite 188 checks (vloer 83); 476 → **481** cases ref = clingo |
+| 7 noop | 440 → **445** cases weerleggen een niets-doende uitvoerder; 36 survivors ongewijzigd |
 | 8 rood | 26 rode cases (vloer 26), ongewijzigd |
-| 9 catala | 201 checks (vloer 201); 12 catala-goldens byte-identiek |
-| 10 regelspraak | JUnit 255 → **261** tests (vloer 173); 47 → **48** rgs-goldens byte-identiek (vloer 38) |
+| 9 catala | 201 checks (vloer 201); 12 catala-goldens byte-identiek — ongewijzigd |
+| 10 regelspraak | JUnit 255 → **263** tests (vloer 173); 47 → **49** rgs-goldens byte-identiek (vloer 38) |
 | 11 toka-parity | 29 cases, 29 Drools PLAYED, 0 divergenties — ongewijzigd |
-| 12 drools | played 138 → **141**; auto-excluded 46 → **47**; kanaalvloer 49 → **50**; value-divergence 1; no-case 2; JUnit 349 tests (vloer 239) |
-| 13 reftype-derivation | 96 → **99** getwiste annotaties over 19 → **20** goldens (vloer 74); 88 → **92** herspelingen, 16 → **17** door de DRL-tekst-tak (vloer 13); 0 survivors; 0 buiten de twist-tabel |
+| 12 drools | played 138 → **142**; auto-excluded 46 → **47**; kanaalvloer 49 → **50**; value-divergence 1; no-case 2; JUnit 349 tests (vloer 239) |
+| 13 reftype-derivation | 96 → **105** getwiste annotaties over 19 → **21** goldens (vloer 74); 88 → **96** herspelingen, 16 → **18** door de DRL-tekst-tak (vloer 13); 0 survivors; 0 buiten de twist-tabel |
 | 14 flogic | 81 checks (vloer 81); 1 flogic-golden byte-identiek |
 
 ### De gate-12-scriptdelta
 
-Drie bewerkingen in `scripts/check-drools.sh`, in de bestaande stijl, elk
-gedateerd en met reden:
+Twee soorten bewerking in `scripts/check-drools.sh`, in de bestaande stijl,
+elk gedateerd en met reden:
 
-1. `EXPECTED_PLAYED` 138 → 141, in drie afzonderlijk benoemde stappen
+1. `EXPECTED_PLAYED` 138 → 142, in vier afzonderlijk benoemde stappen
    (138 → 139 `muntpeiling`, 139 → 140 `muntpiek`, 140 → 141
-   `muntbewaring`), elk met de reden waarom die golden een SPELER moet zijn
-   en niet een weigering.
+   `muntbewaring`, 141 → 142 `muntweging`), elk met de reden waarom die
+   golden een SPELER moet zijn en niet een weigering.
 2. Eén regel erbij in `EXPECTED_CHANNEL`: `jutterswet-muntketen|EXCLUDE|
    loader Refusal: Functie.bronPad …`, die zegt dat dit de derde golden van
    die vorm is en de eerste met een versmalde landing, en die erbij vermeldt
@@ -217,16 +294,26 @@ gedateerd en met reden:
 
 ### Afwijkingen en twijfels, eerlijk
 
-(a) **Eén bestand buiten de letterlijke opdracht gewijzigd**:
-`backends/clingo/lib/translate.ml`, de ketensluiting hierboven. De kaart
-vroeg om getuigen, niet om reparaties. Zonder deze wijziging was
-`muntbewaring` niet te landen, en de weigering was een echt gat: een
+(a) **Twee bestanden buiten de letterlijke opdracht gewijzigd**:
+`backends/clingo/lib/translate.ml` en `backends/clingo/lib/normalise.ml`, de
+twee ketensluitingen hierboven. De kaart vroeg om getuigen, niet om
+reparaties. Zonder de eerste was `muntbewaring` niet te landen en zonder de
+tweede `muntweging`, en beide weigeringen waren echte gaten: een
 verifier-schoon document dat twee uitvoerders beantwoorden en de derde luid
-weigert. Het alternatief — de golden zonder eenheden schrijven — had het gat
-laten staan en de getuige zwakker gemaakt. De wijziging staat in een eigen
-commit met de meting erbij.
+weigert. Het alternatief — de goldens zonder eenheden schrijven — had de
+gaten laten staan en de getuigen zwakker gemaakt. Elke wijziging staat in
+een eigen commit met haar meting erbij. Twijfel die ik eerlijk noteer: na
+twee vondsten in dezelfde klasse is de vraag of er een DERDE ruwe lezing is
+niet met een `grep` te beantwoorden — mijn eigen grep miste de tweede. Wat
+ik nu wel heb nagelopen is de hele backend: `grep -rn objecttypen
+backends/clingo/lib backends/clingo/bin` geeft na deze ronde nog exact TWEE
+treffers, beide op regel 7075-7076 van `translate.ml`, en beide terecht — dat
+is de `isa_sub`-emissie, die juist de RUWE supertype-randen moet aflopen om
+de ketensluiting in de solver af te leiden. Elke andere declaratielezing in
+deze backend gaat door `effective_ot`. Een systematische toets over de ándere
+backends en de verifier is niet gedaan en is een eigen kaart.
 
-(b) **Drie van de vier goldens zijn handgeschreven IR zonder brontweeling**,
+(b) **Drie van de vijf goldens zijn handgeschreven IR zonder brontweeling**,
 om precies de reden die de vorige kaart als vervolgwerk A vastlegde: de
 vouwBRON van een LEDENvouw eist dat de geschreven naam een ROL noemt, dus
 "alle munten van de Jutter" is niet schrijfbaar zolang de rol `vondst` heet.
@@ -256,6 +343,26 @@ elementtype-vraag van deze kaart.
 (f) **`muntpiek` heeft geen brontweeling én zou er wel één kunnen krijgen als
 vervolgwerk A ooit wordt beslist.** Ik heb dat niet opgerekt.
 
+(g) **De nul-kandidaatflank blijft een JUnit-getuige en wordt geen tweede
+negatief.** Gemeten gedraagt hij zich zoals verwacht: `WF-034 … does not
+derive a unique connecting role (0 candidates)` naast `WF-048 … bindingless
+instance fold: no fact type relates 'Jutter' to 'Munt'`. Een tweede
+negatiefdirectory zou dezelfde twee clausules op een andere kandidatentelling
+pinnen, terwijl de arm die zij declareert al door `wf048-telling-meerduidig`
+wordt gedeclareerd. Wat géén getuige had is de FRONTENDhelft — dat een
+onverbonden paar een opgeloste, bindingloze vouw oplevert en niet een
+markering of een stilte — en dat is wat de JUnit-test pint. De verifiertekst
+staat letterlijk in de javadoc, met de meetdatum, zodat een wijziging van die
+boodschap zichtbaar wordt bij het lezen en niet alleen bij het draaien.
+
+(h) **De fixronde raakte twee zinnen die door code onwaar waren geworden.**
+Het hek-commentaar in `translate.ml` noemde nog de bereikwandeling
+(`[linked]`) die het sinds de vorige ronde niet meer doet, en de NOTE van het
+negatief claimde een arm die "no negatief case reached before" terwijl
+`wf034-ambigu-typenpaar` hem incidenteel al raakt. Beide zijn bijgewerkt naar
+wat er werkelijk staat; de tweede claim is teruggebracht tot het verschil dat
+gate 3 werkelijk maakt (gedeclareerd versus incidenteel).
+
 ### Registervoorstel (letterlijke tekst, hoofdsessie landt het)
 
 `spec/CONSTRUCTS.md` rij 39, aan de bestaande cel toe te voegen:
@@ -284,5 +391,13 @@ vervolgwerk A ooit wordt beslist.** Ik heb dat niet opgerekt.
 > (`golden/jutterswet-muntpeiling`, dat dezelfde telling ook op de
 > gedeclareerde rolnaam schrijft, zodat afleiding en binding elkaar
 > controleren); de meerduidige variant gokt geen relatie en valt op WF-034
-> en WF-048 tegelijk (`negatief/wf048-telling-meerduidig`, de eerste
-> getuige van WF-048's instance-fold-arm).
+> en WF-048 tegelijk (`negatief/wf048-telling-meerduidig`, de eerste getuige
+> die WF-048's instance-fold-arm ook DECLAREERT — gate 3 controleert alleen
+> de gedeclareerde regel, en `wf034-ambigu-typenpaar` raakte de arm al
+> incidenteel). Dezelfde ronde vond het defect van de ruwe declaratielezing
+> een tweede keer, op de SCHRIJFpositie: de eenheids-herstelpas van de
+> ASP-backend zocht de eenheid van het schrijfdoel eveneens in de ruwe kaart,
+> zodat een regel die een lid van een subtype schrijft dat op de voorouder is
+> gedeclareerd onherschreven bleef en het additieve schrijfhek haar weigerde
+> terwijl ref en Drools 1002,00 gaven; getuige `golden/jutterswet-muntweging`,
+> de eerste subtype-golden die de overerving op de schrijfpositie zet.
