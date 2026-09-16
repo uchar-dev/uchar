@@ -1,0 +1,82 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2026-03-15",
+  "input": {
+    "instances": [
+      {
+        "label": "P1",
+        "objectType": "Bergingsploeg",
+        "attributes": {},
+        "roles": {
+          "bergers": [
+            "B1",
+            "B2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "B1",
+        "objectType": "Berger",
+        "attributes": {
+          "dagvergoeding": {
+            "timeline": [
+              {
+                "from": "2026-01-01",
+                "to": "2027-01-01",
+                "value": {
+                  "number": "50"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "B2",
+        "objectType": "Berger",
+        "attributes": {
+          "dagvergoeding": {
+            "timeline": [
+              {
+                "from": "2026-01-01",
+                "to": "2026-07-01",
+                "value": {
+                  "number": "60"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "bergertal",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "P1",
+      "characteristic": "premiegerechtigd"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "P1",
+      "characteristic": "wisselvallig"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

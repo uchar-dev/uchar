@@ -1,0 +1,24 @@
+Objecttype de Bergingsploeg (mv: Bergingsploegen)
+    het bergertal Numeriek (geheel getal);
+    is premiegerechtigd kenmerk (bijvoeglijk);
+    is wisselvallig kenmerk (bijvoeglijk);
+
+Objecttype de Berger (mv: Bergers) (bezield)
+    de dagvergoeding Numeriek (geheel getal) voor elke maand;
+
+Feittype ploegindeling
+    de ploeg Bergingsploeg
+    de berger (mv: bergers) Berger
+Eén ploeg omvat meerdere bergers
+
+Regel premiegerechtigd bij dagvergoeding
+    geldig altijd
+        Een Bergingsploeg is premiegerechtigd indien de dagvergoeding van alle bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40.
+
+Regel wisselvallig bij dagvergoeding
+    geldig altijd
+        Een Bergingsploeg is wisselvallig indien de dagvergoeding van geen van de bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40.
+
+Regel bergertal van een bergingsploeg
+    geldig altijd
+        Het bergertal van een Bergingsploeg moet berekend worden als het aantal bergers van de Bergingsploeg.
