@@ -61,6 +61,13 @@ AANGEMELDE vondsten kwantificeert leverde een verifier-schoon document dat
 over alle vondsten kwantificeert — door alle uitvoerders eensgezind
 beantwoord, en fout. Alle veertien poorten groen.
 
+**Na de lensronde is diezelfde stilte op twee buurposities gedicht** (zie "Wat
+er gebouwd is", fixronde): de getalpredicaat-bijzin op de vouwpositie — een
+doodlopend pad dat de frontend al kende — en de bijzin op een GEWONE lezing,
+die pre-existent en zonder één diagnose werd weggegooid. Beide vallen nu
+luid; de tweede blokkeert de emissie, want er is geen lezing van dat document
+waaronder de weggelaten bijzin ongevaarlijk is.
+
 ### Rood-eerst 1 — de frontend, per spelling
 
 Gemeten op de frontend zoals hij op `main` (0e2028a) stond, vóór enige
@@ -146,12 +153,76 @@ beantwoorden, en hij wijst een instantie aan die de vouw nooit vouwt.
   stonden: een deelselectie die niet bindt laat de vouw ONGELOWERD, houdt de
   WF-096-fout staande en trekt een WARNING die haar noemt. Stil doorlaten is
   precies de fout die het veld moet voorkomen.
-- `src/test/java/…/KwantorvouwFilterTest.java` (nieuw, 8 rijen): de
+- `src/test/java/…/KwantorvouwFilterTest.java` (nieuw, 9 rijen): de
   wire-vorm onder ALLE en GEEN, de elementverankering (geen navigatie), de
-  samengestelde bijzin, drie luid vallende randvormen (een kenmerk van het
-  ONDERWERP, een bezitspredicaat, een ONTKENDE bijzin) en de regressiepin
-  voor een zin zonder bijzin. Vijf van de zes eerste rijen vielen op de
-  basiskop; de zesde is de pin.
+  samengestelde bijzin, vier luid vallende randvormen (een kenmerk van het
+  ONDERWERP, een bezitspredicaat, een ONTKENDE bijzin, een getalpredicaat) en
+  de regressiepin voor een zin zonder bijzin. Vijf van de zes eerste rijen
+  vielen op de basiskop; de zesde is de pin.
+
+**Frontend, fixronde** — twee gaten van dezelfde soort, allebei gemeten stil:
+
+- **de getalpredicaat-bijzin op de kwantorvouw weigert nu.**
+  `elementVergelijking` kopieert het GEKWANTIFICEERDE operand als linkerzijde
+  van het filter, en de §8.2-poort garandeert dat dat operand
+  tijdsafhankelijk is — dus elk toegelaten getalpredicaat levert per
+  constructie een document dat in alle drie de uitvoerders omvalt op ch. 3.3.
+  Toelaten is daar misleidend, dus `deelselectie` weigert het nu, met de as
+  erbij. De weigering is een FRONTENDgrens, geen wiregrens, en zegt dat ook:
+  de KNOOP draagt de vorm (een handgeschreven `Kwantorvouw` met een
+  `Vergelijking`-filter over een NIET-temporeel lid speelt in ref, clingo én
+  de Drools-exec-tak). `deelselectie` geeft daarom een `Deelselectie(filter,
+  reden)` terug in plaats van een kale conditie, zodat elke weigering de as
+  noemt waarop zij valt in plaats van één generieke tekst:
+
+  ```
+  WARNING (line 17): de 'die/dat'-deelselectie in 'de dagvergoeding van alle
+  bergers van de Bergingsploeg die groter zijn dan 10' wordt niet omgezet naar
+  een kwantorvouw-filter: een getalpredicaat over het gekwantificeerde
+  attribuut 'dagvergoeding' heeft hier geen lezing: de §8.2-kwalificatie geldt
+  alleen over een TIJDSAFHANKELIJK onderwerp, en een tijdlijn in een scalaire
+  sleuf heeft er geen (ch. 3.3) — de knoop draagt de vorm wel, deze
+  schrijfpositie kan hem niet leveren; de vouw wordt daarom NIET gelowerd —
+  een vouw over het volle bereik zou een andere verzameling kwantificeren dan
+  de zin noemt, dus de setlezing blijft buiten een vouwbron staan (WF-096)
+  ERROR (line 17): setlezing buiten een vouwbron: … (WF-096, IR-SPEC ch. 4.3)
+  ```
+
+- **een bijzin op een NIET-vouwpositie valt nu luid.** Gemeten op basis én
+  kop, dus pre-existent en geen regressie van deze kaart: `… indien de
+  leeftijd van de Jutter DIE BEVOEGD IS groter is dan 5` leverde een
+  `Vergelijking` met de bijzin nog in `onderwerpBron`, geen spoor van
+  `bevoegd` in de conditie, nul diagnoses — exact dezelfde
+  verkeerde-verzameling-fout die deze kaart op de vouwpositie dicht.
+  `ExpressieBouwer` houdt nu bij welke `PredicaatContext`en de resolutie
+  VERBRUIKT (de instantievouw en de kwantorvouw doen dat allebei, elk op hun
+  eigen route), en `RuleChecker.keurDeelselecties` loopt na afloop de hele
+  parseboom af en weigert wat overblijft:
+
+  ```
+  ERROR (line 8): de 'die/dat'-deelselectie 'bevoegd is' wordt niet omgezet en
+  zou stil wegvallen: een deelselectie kiest WELKE exemplaren de zin bedoelt,
+  dus haar weglaten beantwoordt een andere vraag dan er staat. De uchar-wire
+  draagt haar alleen op een vouwbereik (IR-SPEC ch. 4.3 en ch. 4.5, veld
+  'filter'); op deze positie is zij een benoemd uitbreidingspunt en wordt zij
+  geweigerd in plaats van genegeerd (§5.6)
+  ```
+
+  ERROR en geen WARNING, en dat is de hele keuze: er is geen lezing van het
+  geëmitteerde document waaronder de weggelaten bijzin ongevaarlijk is, dus
+  de weigering moet de emissie blokkeren. De SEMANTIEK op gewone posities is
+  hiermee niet gebouwd maar benoemd — een uitbreidingspunt met luide
+  weigering, zoals de tellende kwantoren dat op de vouw zijn.
+
+- **De hermeting die deze weigering draagt:** alle **51** corpusbronnen
+  emitteren byte-identiek (poort 10) én alle **45** TOKA-bronnen (poort 11,
+  de ©-zone, met dezelfde twee staande holdouts). Geen enkele bron leunde op
+  de stilte.
+- `src/test/java/…/DeelselectieZonderVouwTest.java` (nieuw, 4 rijen): de
+  weigering zelf mét haar ERROR-graad, de twee regressiepinnen dat de
+  instantievouw en de kwantorvouw hun EIGEN bijzin houden, en de pin dat een
+  door de vouw al geweigerde bijzin niet TWEE keer gemeld wordt (één zin, één
+  weigering, en de precieze).
 
 **Backend** — `backends/clingo/lib/translate.ml`, het vertaaltijd-horizonhek
 van de per-element temporele vouw:
@@ -182,6 +253,31 @@ Gemeten, alle vier de richtingen:
 
 `golden/jutterswet-muntbewaring` en `golden/jutterswet-tempovouw`
 antwoorden onveranderd.
+
+- `backends/clingo/test/test_clingo.ml` — vier rijen ADDITIEF toegevoegd (geen
+  bestaande rij gewijzigd; gemandateerd bij de fixronde). Het corpus pint de
+  ANTWOORDENDE kant van het filterbewuste hek; deze rijen pinnen de
+  weigerende, die geen rood-corpusplek kan krijgen omdat `ref` beide
+  documenten beantwoordt en poort 8 een fout in BEIDE uitvoerders eist. De
+  twee gepinde teksten, voluit:
+
+  ```
+  the per-element temporal fold of "bewaartarief" carries a die/dat
+  subselection over "gekeurd", which a rule DERIVES on "Vondst": its verdict
+  is not settled at translate time, and a member without its own timeline
+  hangs on the answer (ch. 3.4a/3.6)
+  ```
+
+  ```
+  the per-element temporal fold of "bewaartarief" carries a die/dat
+  subselection this translation cannot settle at translate time (an
+  unrecognised read), and a member without its own timeline hangs on the
+  answer (ch. 3.4a/3.6)
+  ```
+
+  Naast die twee staan twee GRENSrijen die zeggen waar de weigeringen NIET
+  gelden: hetzelfde onleesbare filter zonder een lid zonder eigen tijdlijn
+  wordt door ref én clingo gewoon beantwoord. Suite 205 → 209 controles.
 
 **Corpus** (beide uit `bron.rgs`, beide gate-10-herémitteerbaar):
 
@@ -249,11 +345,11 @@ is opnieuw een emmerwaarde.
 3  check-verifier: PASS (221 golden clean; 392 negatief rejected for their declared rule, floor 350)
 4  check-case-schema: PASS (schema valid; 520 case files validate)
 5  check-oracle: PASS (ref suite 620 worked examples, floor 489; 494 cases replayed exactly, floor 427)
-6  check-clingo: PASS (backend suite 205 checks, floor 83; 494 cases replay exactly through clingo)
+6  check-clingo: PASS (backend suite 209 checks, floor 83; 494 cases replay exactly through clingo)
 7  check-noop: PASS (458 cases refute a do-nothing executor; 36 pinned survivors)
 8  check-rood: PASS (26 red cases fault observably in ref and clingo, floor 26)
 9  check-catala: PASS (frontend suite 201 checks, floor 201; 12 catala goldens regenerate byte-identically)
-10 check-regelspraak: PASS (JUnit 271 tests, floor 173; 51 rgs goldens re-emit byte-identically)
+10 check-regelspraak: PASS (JUnit 276 tests, floor 173; 51 rgs goldens re-emit byte-identically)
 11 check-toka-parity: PASS (45 .rgs re-emitted byte-identical, floor 45; 29 cases through ref, clingo, Drools; 0 divergences)
 12 check-drools: PASS (played 145 = pinned 145; channel floor 50; value-divergence 1; JUnit 354 tests, floor 239)
 13 check-reftype-derivation: PASS (108 annotations twisted over 22 goldens, floor 74; 100 replays, 19 DRL-text PLAYED, floor 13)
@@ -262,13 +358,39 @@ is opnieuw een emmerwaarde.
 
 Bewegingen: poort 2 en 3 van 219 naar 221 documenten (en 391 naar 392
 negatiefs), poort 4 van 512 naar 520 cases, poort 5 en 6 van 486 naar 494,
-poort 7 van 450 naar 458, poort 10 van 263 naar 271 tests en van 49 naar 51
-rgs-goldens, poort 12's `EXPECTED_PLAYED` van 143 naar 145 (twee eigen
+poort 6's eigen suite van 205 naar 209 controles, poort 7 van 450 naar 458,
+poort 10 van 263 naar 276 tests en van 49 naar 51 rgs-goldens, poort 12's `EXPECTED_PLAYED` van 143 naar 145 (twee eigen
 gedateerde, redendragende stappen in `scripts/check-drools.sh`; de
 kanaallijst blijft 50, want beide nieuwe goldens spelen), poort 13 van 105
 naar 108 verdraaide annotaties over 21 naar 22 goldens en van 18 naar 19
 DRL-tekst-spelers — `jutterswet-keurlast` draagt `€/mnd`, dus hij wordt
 verdraaid en de DRL-tekst-tak speelt hem. Geen enkele vloer verlaagd.
+
+### De toolchain-naschok, gemeten (alleen gelezen, niets gebouwd)
+
+Na de herpin levert de gevendorde resolver GEVULDE filters aan de
+toolchain-transpilers. Gemeten op `regelspraak-java` @ `9ad12b6` (read-only),
+en het antwoord is het ongevaarlijke: **beide takken DRAGEN `kv.filter()`, en
+allebei weigeren zij bij naam wat zij niet kunnen binden. Geen enkele tak
+negeert hem stil.**
+
+| plek | regels | wat er staat |
+|---|---|---|
+| `transpiler/DrlTranspiler.java`, `kwantorvouwVoorwaarde` | 3459–3463 | `conditie(acc, kv.filter(), elem)` met het ELEMENT als onderwerp; de tekst gaat als extra constraint het accumulate-SOURCE-patroon in naast de join. `fc.marker()` → `kvMarker(kv, "een die/dat-subselectie die deze tak niet op de source kan binden")` |
+| `transpiler/model/ExecModelTranspiler.java`, `kwantorvouwVoorwaarde` | 2422–2425 | `filterSource(src, kv.filter(), elem)`; `null` → `kvSkip(kv, "een die/dat-subselectie die deze tak niet op de source kan binden")` |
+| `transpiler/Stratificatie.java` | 159–160 | `verzamelReads(kv.filter(), kv.elementObjecttype(), uit)` — de filter telt mee in de stratificatie, met het elementtype als onderwerp |
+| `graaf/ProducentConsument.java` | 127–128 | `verzamelConditie(kv.filter(), kv.elementObjecttype(), uit)` — idem in de afhankelijkheidsgraaf |
+
+Vier plekken, vier keer gelezen: de twee die lowert en de twee die de
+volgorde bepalen. Een filter die een AFGELEIDE waarde leest komt daar dus ook
+in de ordening terecht, wat precies de vraag is waarop het ASP-hek in deze
+kaart conservatief werd.
+
+Eén ding is géén naschok maar wel het vermelden waard: beide
+toolchain-takken weigeren nog een matrix ZONDER §8.2-kwalificatie
+(`DrlTranspiler` r. 3411, `ExecModelTranspiler` r. 2367) — de niet-temporele
+arm van de asymmetrie-kaart is daar nog niet geland. Dat raakt de filter
+niet, want de frontend levert die vorm sowieso niet uit bron.
 
 ### Registervoorstel (letterlijk, voor de hoofdsessie)
 
@@ -279,7 +401,7 @@ die blijft waar voor de NIET-temporele vorm, maar niet meer voor het
 bereikveld waar zij over zwijgt. De aanvulling zegt dat met zoveel woorden,
 naar het precedent van de rij-29-correctie in de forall-kaart:
 
-**Landed (2026-09-16, kaart diedat-filter) — the die/dat SUBSELECTION now reaches the wire, and this NARROWS the clause above:** where that clause says the frontend does not produce this shape, it now says so of the §8.2 GATE only. `RuleChecker.kwantorvouw` still lowers the §8.2-QUALIFIED condition and nothing wider — the non-temporal matrix is still hand-written IR, and widening that is still a frontend card of its own — but the fold's RANGE is no longer half-written: `filter` (ch. 4.5) comes out of `bron.rgs`. What the measurement found first was not a missing field but a SILENT one. The frontend PARSED the §5.6 bijzin (it stood in the operand's `bron`), lowered the sentence, and wrote `filter: null` with ZERO diagnostics under both quantifiers — so "de keurvergoeding van alle keurmeesters van de Keurploeg DIE AANGEMELD ZIJN" produced a verifier-clean document quantifying over every keurmeester, which all three executors then answered consistently and wrongly. The subselectie is resolved by exactly the machinery the instance fold's `filter` already used (kenmerk, getalpredicaat, compound), bound against the ELEMENT type, and it is looked for in the parse subtree of the QUANTIFIED operand alone — the bijzin trails the onderwerp but selects the members, so a die on the other side of the comparison belongs to that operand's navigation. The node's lowering gained a FOURTH refusal beside its three: a subselection that does not bind leaves the fold UNLOWERED and keeps the WF-096 ERROR, with a WARNING naming it — never a fold over the full range, which is the one failure this field exists to prevent. Witness `corpus/golden/jutterswet-keurploeg` (seven hand-computed cells, ALLE and GEEN in one document, plus an UNFILTERED count that states the raw range per cell; three cells are decided by the filter alone — the member outside the selection that would break ALLE, its mirror that would hand GEEN a witness, and the selection that comes out EMPTY beside a range of two — and removing the filter from the IR fails exactly those three in ref and in the Drools exec branch), negatief `wf034-kwantorvouw-filter-onderwerpkenmerk` (a filter reading a characteristic of the fold's SUBJECT: the element re-anchoring is what refuses it, through the check that already existed). Measured and NOT changed: all three executors carried `Kwantorvouw.filter` before this card — `ref` filters the members, the ASP backend joins the filter atoms into the witness rule under both quantifiers, the Drools exec branch constrains the accumulate source, and the DRL-text branch writes them into the element pattern; each verified with a hand-written probe plus its mutant and a filter-less counterfactual, so no arm was silently ignoring the field. The DRL-text branch markers this golden for its WHOLE-PERIOD matrix, which is the standing channel split and unchanged | the §8.2 gate is unmoved: a fold whose matrix carries no whole-period qualifier still does not come from source. A getalpredicaat subselectie ("die groter zijn dan 10") resolves to a `Vergelijking` filter, but on THIS position the quantified attribute is temporal by construction, so the document faults BY NAME in all three executors (ch. 3.3, a timeline in a scalar slot) rather than being refused at the frontend — loud, recorded, not silent, and a candidate for a frontend refusal of its own. A NEGATED kenmerk subselectie ("die niet aangemeld zijn") does not bind either, exactly as it does not on the instance fold |
+**Landed (2026-09-16, kaart diedat-filter) — the die/dat SUBSELECTION now reaches the wire, and this NARROWS the clause above:** where that clause says the frontend does not produce this shape, it now says so of the §8.2 GATE only. `RuleChecker.kwantorvouw` still lowers the §8.2-QUALIFIED condition and nothing wider — the non-temporal matrix is still hand-written IR, and widening that is still a frontend card of its own — but the fold's RANGE is no longer half-written: `filter` (ch. 4.5) comes out of `bron.rgs`. What the measurement found first was not a missing field but a SILENT one. The frontend PARSED the §5.6 bijzin (it stood in the operand's `bron`), lowered the sentence, and wrote `filter: null` with ZERO diagnostics under both quantifiers — so "de keurvergoeding van alle keurmeesters van de Keurploeg DIE AANGEMELD ZIJN" produced a verifier-clean document quantifying over every keurmeester, which all three executors then answered consistently and wrongly. The subselectie is resolved by exactly the machinery the instance fold's `filter` already used (kenmerk, getalpredicaat, compound), bound against the ELEMENT type, and it is looked for in the parse subtree of the QUANTIFIED operand alone — the bijzin trails the onderwerp but selects the members, so a die on the other side of the comparison belongs to that operand's navigation. The node's lowering gained a FOURTH refusal beside its three: a subselection that does not bind leaves the fold UNLOWERED and keeps the WF-096 ERROR, with a WARNING naming it — never a fold over the full range, which is the one failure this field exists to prevent. Witness `corpus/golden/jutterswet-keurploeg` (seven hand-computed cells, ALLE and GEEN in one document, plus an UNFILTERED count that states the raw range per cell; three cells are decided by the filter alone — the member outside the selection that would break ALLE, its mirror that would hand GEEN a witness, and the selection that comes out EMPTY beside a range of two — and removing the filter from the IR fails exactly those three in ref and in the Drools exec branch), negatief `wf034-kwantorvouw-filter-onderwerpkenmerk` (a filter reading a characteristic of the fold's SUBJECT: the element re-anchoring is what refuses it, through the check that already existed). Measured and NOT changed: all three executors carried `Kwantorvouw.filter` before this card — `ref` filters the members, the ASP backend joins the filter atoms into the witness rule under both quantifiers, the Drools exec branch constrains the accumulate source, and the DRL-text branch writes them into the element pattern; each verified with a hand-written probe plus its mutant and a filter-less counterfactual, so no arm was silently ignoring the field. The DRL-text branch markers this golden for its WHOLE-PERIOD matrix, which is the standing channel split and unchanged | the §8.2 gate is unmoved: a fold whose matrix carries no whole-period qualifier still does not come from source. Two subselectie shapes are refused at the FRONTEND and neither is a wire limit. A getalpredicaat ("die groter zijn dan 10") resolves — §5.6 names no attribute of its own, so the comparison's left side IS the quantified operand — but on THIS position that operand is temporal by construction, and a timeline in a scalar slot has no reading (ch. 3.3), so every such filter would emit a document that falls over by name in all three executors; the NODE carries the shape (a hand-written Kwantorvouw with a Vergelijking filter over a NON-temporal member plays in ref, clingo and the Drools exec branch), this sentence position cannot produce it. A NEGATED kenmerk ("die niet aangemeld zijn") does not bind either, exactly as it does not on the instance fold. **A SUBSELECTION ON AN ORDINARY (NON-FOLD) POSITION is the named extension point of this row's neighbourhood**, and it was measured SILENT on base and head alike — "indien de leeftijd van de Jutter DIE BEVOEGD IS groter is dan 5" produced a Vergelijking with the bijzin still in `onderwerpBron`, no trace of `bevoegd` in the condition and zero diagnostics, the same wrong-set failure this row closes on the fold position. It is now an ERROR that blocks the emission (a WARNING would leave that document on disk, and there is no reading of it under which the omitted subselectie is harmless): the resolver records which subselecties it CONSUMED — the instance fold and the quantifier fold each on their own route — and refuses whatever the parse produced and nothing consumed. What a subselection MEANS on a scalar navigation is a spec question, so this is a loud refusal at an extension point, the posture the counting quantors have in WF-108 (a) — not a semantics. Measured over every source in the repository: all 51 corpus `bron.rgs` and all 45 TOKA sources re-emit byte-identically, so no source leaned on the silence |
 
 **Rij 39, aan te vullen achter de bestaande tekst** (de rij die het
 vertaaltijd-hek al draagt):
@@ -288,17 +410,17 @@ vertaaltijd-hek al draagt):
 
 ### Eerlijke afwijkingen en twijfels
 
-**(a) De twee nieuwe weigeringsredenen in de ASP-backend hebben geen
-machinegetuige.** `golden/jutterswet-keurlast` dekt de laat-vallen-kant; de
-vuurrichting heeft haar bestaande getuige in de unitsuite van die backend.
-De reden "de filter leest iets dat afgeleid wordt" en de reden "een lezing
-die deze vertaling niet kan verantwoorden" zijn met de hand gemeten (zie de
-tabel hierboven) maar staan in geen enkele suite, omdat zij alleen als rijen
-in `backends/clingo/test/test_clingo.ml` kunnen — een BESTAAND testbestand,
-dat deze kaart niet mag wijzigen. Een rood-corpusplek past niet: `ref`
-ANTWOORDT die documenten, en gate 8 eist een fout in beide. Voorstel voor
-een vervolgkaart: twee rijen in die suite, met de letterlijke teksten uit de
-tabel.
+**(a) De twee nieuwe ASP-weigeringsredenen hebben hun getuige gekregen —
+in een BESTAAND testbestand, additief en met mandaat.** In de eerste ronde
+stonden zij alleen met de hand gemeten in dit Result, omdat zij nergens
+anders kunnen: een rood-corpusplek past niet (`ref` ANTWOORDT beide
+documenten, en poort 8 eist een fout in BEIDE uitvoerders). Bij de fixronde
+is dat mandaat gegeven en zijn vier rijen toegevoegd aan
+`backends/clingo/test/test_clingo.ml` — twee weigeringen plus twee
+GRENSrijen die zeggen waar zij niet gelden. Geen bestaande rij gewijzigd; de
+suite gaat van 205 naar 209 controles en `EXPECTED_MIN_SUITE_CHECKS` (83) is
+een ondergrens, dus poort 6's script is niet aangeraakt. De teksten staan
+voluit onder "Wat er gebouwd is".
 
 **(b) Geen tweede golden op de NIET-temporele matrix met filter.** Overwogen
 zoals de kaart vroeg, en niet gedaan. De reden is gemeten, niet aangenomen:
@@ -318,26 +440,44 @@ onder een Kwantorvouw zetten zou gate 13's boekhoudklem kunnen laten vallen
 dat script is beschermd en niet gemandateerd in deze kaart. Vandaar: gemeten
 en gemeld, niet gebouwd.
 
-**(c) De getalpredicaat-bijzin wordt toegelaten, niet geweigerd.** "die
-groter zijn dan 10" lost op naar een `Vergelijking`-filter over het
-gekwantificeerde attribuut. Op de §8.2-positie is dat attribuut per
-constructie tijdsafhankelijk, dus het document valt in alle drie de
-uitvoerders bij naam om (`ref`: *"temporal attribute … in a scalar context is
-refused (ch. 3.3)"*; clingo: *"… in a scalar slot is refused (ch. 3.3)"*;
-Drools exec: `EXCLUDE … een die/dat-subselectie die deze tak niet op de
-source kan binden`). Luid, dus niet de fout die deze kaart sluit — maar wel
-een document dat de frontend had kunnen tegenhouden. Ik heb hem NIET
-tegengehouden: dat is een extra weigering die de kaart niet vroeg en die de
-symmetrie met de instantievouw breekt, en de Drools-melding noemt bovendien
-de verkeerde as. Voorgelegd, niet stil beslist.
+**(c) De getalpredicaat-bijzin wordt nu WEL geweigerd — besluit van de
+fixronde.** In de eerste ronde liet ik hem toe en meldde ik de uitkomst: het
+document valt bij naam om in alle drie de uitvoerders (`ref`: *"temporal
+attribute … in a scalar context is refused (ch. 3.3)"*; clingo: *"… in a
+scalar slot is refused (ch. 3.3)"*; Drools exec: `EXCLUDE … een
+die/dat-subselectie die deze tak niet op de source kan binden` — en die
+laatste noemt bovendien de verkeerde as). Luid, dus niet stil, maar wel een
+document waarvan de frontend al weet dat niemand het kan draaien. Bij de
+fixronde is besloten dat toelaten hier misleidend is: de §8.2-poort maakt het
+gekwantificeerde operand per constructie tijdsafhankelijk, dus dit pad is
+doodlopend en niet zeldzaam-fout. De weigering is nu gebouwd, formuleert
+zichzelf als FRONTENDgrens en zegt erbij dat de knoop de vorm wél draagt.
 
-**(d) Twee bestaande regels zijn nu verouderd, en ik heb ze laten staan.**
-`KwantorvouwTest.de_alle_zin_wordt_een_kwantorvouw_over_het_elementtype`
-asserteert `"filter":null` met het commentaar *"de die/dat subselectie is out
-of scope for this card; the node admits it, we produce none"*. De ASSERTIE
-klopt nog — die zin schrijft geen bijzin — maar het commentaar niet meer.
-Idem de javadoc van `KwantorvouwTest` zelf. Acceptatie (e) zegt "bestaande
-tests ongewijzigd", dus gemeld in plaats van gecorrigeerd.
+**(c2) De twee vouwen reageren VERSCHILLEND op een onbindbare bijzin.**
+Gemeten, en hier als feit vastgelegd zonder het te harmoniseren. De
+INSTANTIEvouw zet een `Onopgelost`-filter op de wire, trekt een WARNING en
+EMITTEERT het document — dat valt dan bij evaluatie om op WF-044. De
+KWANTORvouw lowert niet, trekt een WARNING en laat de WF-096-ERROR staan —
+dat document komt er niet. Allebei luid, en de asymmetrie heeft een grond:
+op de vouwpositie ís er een geldige wire-vorm om een marker in te zetten,
+terwijl een kwantorvouw zonder filter een ANDERE verzameling kwantificeert
+dan de zin noemt. Of die twee gelijkgetrokken moeten worden is een eigen,
+gemeten kaart; deze kaart heeft de bestaande vouwroute niet aangeraakt.
+
+**(d) Twee verouderde commentaren in `KwantorvouwTest` zijn bijgewerkt —
+met mandaat van de fixronde, en alleen commentaar.** De javadoc sprak van
+"three shapes that decline to lower" (het zijn er vier sinds deze kaart) en
+de regel bij `"filter":null` zei *"deze kaart levert geen filter"*. Beide
+zijn nu juist en verwijzen naar `KwantorvouwFilterTest`. Geen enkele
+ASSERTIE gewijzigd: `"filter":null` blijft de regressiepin voor de zin
+zonder bijzin, en die klopte al. Alleen de faalboodschap ernaast is
+meegegaan.
+
+**(d2) Eén commit was een schemacorrectie, niet inhoud.** `36fac4c`: de
+vacuümcel schreef `"keurmeesters": []` om te zeggen dat het bereik leeg is,
+maar het caseschema zet `minItems: 1` op rolarrays. De rol wordt nu
+weggelaten — de afwezigheid ÍS de lege verzameling, en zo schrijft
+`jutterswet-ploegpremie` zijn lege-set-case ook.
 
 **(e) `Kwantorvouw.filter` was nergens gebroken.** De kaart nam dat aan; het
 is nu gemeten in alle vier de armen, mét mutant en tegenproef. Er is dus
@@ -345,6 +485,17 @@ geen backendwijziging voor dit deel, en de enige `backends/`-diff van deze
 kaart hoort bij het typerange-residu.
 
 **(f) Niets buiten de opdracht aangeraakt.** Geen `spec/`, geen `toka/`,
-geen bestaande golden, negatief of test; van `scripts/` alleen
-`check-drools.sh`, en daarin alleen `EXPECTED_PLAYED` met twee gedateerde,
-redendragende stappen.
+geen bestaande golden of negatief; van `scripts/` alleen `check-drools.sh`,
+en daarin alleen `EXPECTED_PLAYED` met twee gedateerde, redendragende
+stappen. Twee BESTAANDE testbestanden zijn wel aangeraakt, allebei met
+mandaat van de fixronde en allebei zonder een assertie te wijzigen:
+`backends/clingo/test/test_clingo.ml` (vier rijen additief, zie (a)) en
+`frontends/regelspraak/…/KwantorvouwTest.java` (alleen commentaar en één
+faalboodschap, zie (d)).
+
+**(g) De toolchain-naschok is gemeten en goedaardig.** Zie de eigen sectie
+hierboven: beide toolchain-transpilers én beide afhankelijkheidswandelingen
+LEZEN `kv.filter()`, en de twee transpilers weigeren bij naam wat zij niet
+kunnen binden. Er is dus geen stille negeerder aan de andere kant van de
+herpin. De fix van de toolchain is de volgende ronde en niet deze kaart;
+`regelspraak-java` is alleen gelezen.
