@@ -63,10 +63,18 @@ WF-tekst.
 
 **Het uitbreidingspunt is gebouwd: TEN_MINSTE / TEN_HOOGSTE / PRECIES tellen
 de bijdragers, door alle lagen.** Er is precies één veld bijgekomen —
-`drempel`, `Samengesteld`'s eigen veld — en geen enkele nieuwe machinerie:
+`drempel`, `Samengesteld`'s eigen veld — en geen enkel nieuw MECHANISME:
 `ALLE` is `telling = n` en `GEEN` is `telling = 0`, dus de vijf kwantoren
 zijn één vergelijking en de kortsluiting is voor alle vijf ch. 5.10's tabel
 met de bijdragers als leden.
+
+*Preciezer, want "geen nieuwe machinerie" onderrapporteert wat er gebeurde:
+om de vijf kwantoren ÉÉN vergelijking te laten zijn is de bestaande
+ALLE/GEEN-route in TWEE benen verhuisd — `ref` van `List.for_all` naar
+verdict/settled/read, en de niet-temporele Drools-exec-route van een
+`for`-lus naar `vastgesteld`/`telVerdict`. Dat is een routewissel en die
+vraagt bewijs, niet een redenering; zie de sectie "Routewissel, gemeten"
+hieronder.*
 
 ## (ii) De semantische beslissingen, met hun grond
 
@@ -212,7 +220,8 @@ NIEUW:
 **De twee indexrijen** (WF-041 en WF-108) bewegen mee: WF-041 noemt nu beide
 gastheren en beide negatiefs, WF-108 zegt "Five arms", herschrijft (a),
 voegt (e) toe, noemt `jutterswet-reddingsvloot` als tweede getuige en de zes
-negatiefs. Zie de diff van commit 8acbb6d; de normatieve zinnen staan
+negatiefs. Het kopcommentaar van de WF-108-check in `checks.ml` zegt sinds de
+fixronde ook "Five arms" in plaats van "Four arms". Zie de diff van commit 8acbb6d; de normatieve zinnen staan
 hierboven letterlijk.
 
 ### `spec/RUNTIME-SEMANTICS.md`
@@ -266,6 +275,26 @@ inherited" (die zelf onveranderd blijft), letterlijk:
 > is where the intuition slips, and the counting arms are stated here
 > because a reader might expect a vacuum rule and there is none to apply.
 
+**ch. 3.9a, een DERDE nieuwe alinea** (fixronde 2026-09-17, na de lens): de
+NIET-prefix onder een drempel. Zij stond als bewering in het registervoorstel
+en als code in twee lagen, maar nergens in de normtekst en op geen enkele
+cel — dat gat is hiermee gesloten, letterlijk:
+
+> **A NIET prefix on the matrix lands on the COUNT, because a threshold
+> cannot be flipped.** ch. 3.9's "niet gedurende …" qualifies the outer
+> comparison, so under `ALLE` and `GEEN` an executor may fold it by
+> flipping the quantifier (∀c.¬P = ¬∃c.P) — and two of the three do. No
+> such move exists for *at-least 2*: there is no quantifier it turns into.
+> The negation is therefore read where it is written, per contributor, and
+> what it changes is the count: `count(¬P) = |contributors| − count(P)`,
+> an equality and not an approximation, because the whole-period predicate
+> is total — every contributor either satisfies it or does not, the member
+> with no timeline at all included (it passes vacuously, so it counts on
+> the POSITIVE side; ch. 3.9's rule, unchanged). The empty set stays
+> 0 − 0 = 0 and does not become "everything denied". Witness
+> `corpus/golden/jutterswet-sleepvloot`, whose cells are chosen so that
+> counting P instead of ¬P gives the other verdict in four of them.
+
 **ch. 3.9a, het blok "Worked examples — the counting quantifiers"** is
 toegevoegd aan het slot van het hoofdstuk, vóór ch. 3.10: de zeven
 verdictrijen van `jutterswet-reddingsvloot` met hun `count`-kolom, plus vijf
@@ -280,7 +309,7 @@ bereik). Die tabel is de handberekening onder (iv) letterlijk.
 
 NIEUW:
 
-> What stays bounded is which matrix FORMS each executor's condition translation carries: a form outside it is refused by name, per form, never silently. **All five quantifiers are executed since 2026-09-16**: the counting three — the named extension point this row used to record — are built in all three executors over BOTH matrix routes, each of them reading the SIZE of the satisfier set where ALLE and GEEN read a witness (the ASP backend a `#count` with the range join INSIDE the aggregate, the Drools exec branch a counting twin of the ch. 3.9 fold helpers and a count over the collected contributors, the DRL-text branch a count accumulate over the element pattern). Witnesses `corpus/golden/jutterswet-reddingsvloot` (the §8.2 matrix, seven verdict rows) and `corpus/golden/jutterswet-vuurtoren` (a non-temporal one, six). What is left on the quantifier field is `DE`, refused by name by WF-108 (a); the WHOLE-PERIOD matrix remains a named marker in the Drools DRL-text branch alone, counting quantifiers included |
+> What stays bounded is which matrix FORMS each executor's condition translation carries: a form outside it is refused by name, per form, never silently. **All five quantifiers are executed since 2026-09-16**: the counting three — the named extension point this row used to record — are built in all three executors over BOTH matrix routes, each of them reading the SIZE of the satisfier set where ALLE and GEEN read a witness (the ASP backend a `#count` with the range join INSIDE the aggregate, the Drools exec branch a counting twin of the ch. 3.9 fold helpers and a count over the collected contributors, the DRL-text branch a count accumulate over the element pattern). Witnesses `corpus/golden/jutterswet-reddingsvloot` (the §8.2 matrix, seven verdict rows), `corpus/golden/jutterswet-vuurtoren` (a non-temporal one, six) and `corpus/golden/jutterswet-sleepvloot` (the NIET prefix, which under a threshold lands on the COUNT because there is no quantifier to flip into — three rows, four of whose cells invert if `count(P)` is read for `count(¬P)`). What is left on the quantifier field is `DE`, refused by name by WF-108 (a); the WHOLE-PERIOD matrix remains a named marker in the Drools DRL-text branch alone, counting quantifiers included |
 
 *Eerlijk gemeld: de kaart mandateerde ch. 3.9a. Deze ch.-3.12-rij is een
 STATUSrij in hetzelfde beschermde document en zou na deze kaart onwaar zijn
@@ -402,6 +431,58 @@ Zes lezers, zes benoemde weigeringen, nul stiltes. Dat is de toestand die
 deze kaart opheft, en het is ook waarom zij opgeheven KON worden: de
 weigeringen noemden de vorm in plaats van erover te gokken.
 
+## Routewissel, gemeten
+
+Twee benen van de BESTAANDE ALLE/GEEN-route zijn verhuisd om de vijf
+kwantoren één vergelijking te laten zijn, en het asymmetrieprecedent eist
+daar byte-gelijkheidsbewijs bij. Beide verhuizingen bij naam:
+
+- `ref/lib/eval.ml`, de `Kwantorvouw`-arm: `List.for_all (fun m -> eval_cond
+  … = want) members` → de `verdict`/`settled`/`read`-machinerie die
+  `Samengesteld` al voerde;
+- `backends/drools/.../model/ExecModelTranspiler.java`,
+  `kwantorvouwVoorwaarde`, de NIET-temporele tak: de `for (Object e : leden)
+  if (matrix.test(e) != wil) return false`-lus → `vastgesteld` +
+  `telVerdict`.
+
+De ASP-vertaling is NIET verhuisd — de telling is er een nieuwe match-arm
+vóór de bestaande, die de ALLE/GEEN-route ongemoeid laat — maar zij is
+meegemeten, omdat "ongemoeid" een bewering is en geen lezing.
+
+De meting is gedraaid op het UITGEPAKTE basisarchief `d8fd48a` naast de
+werkkopie, met tijdelijke dumpers die niet gecommit zijn (verwijderd vóór de
+commit; de werkboom is schoon). Zij vergelijkt de VOLLEDIGE uitvoer, niet de
+poortuitslag:
+
+```
+ref     : volledige werelddump (attrs, kenmerken, links, tijdlijnen,
+          kenmerktijdlijnen, §9.5-kanaal, checkuitslag) over 520 cases
+          van de BASIS-corpus (golden + rood)   -> BYTE-IDENTIEK
+clingo  : geëmitteerd PROGRAMMA + het VOLLEDIGE stabiele model (alle
+          atomen, #show weggestript) over 494 goldencases -> BYTE-IDENTIEK
+drools  : beide takken over 193 basis-goldens met al hun cases,
+          volledige runneruitvoer per golden
+          exec-model -> BYTE-IDENTIEK ; DRL-tekst -> BYTE-IDENTIEK
+```
+
+**En de LEESDIEPTE apart**, want byte-gelijke antwoorden zouden een
+verschoven kortsluiting kunnen verbergen: een matrix die per lid HARD faalt
+(`100 gedeeld door de dienstjaren > 1`, met een lid op 0), in vier
+combinaties op de `schouwploeg`-vorm. Basis en head geven regel voor regel
+hetzelfde, en de twee foutrijen bewijzen dat de probe kán falen — dus de
+twee PASS-rijen zijn werkelijk "het tweede lid is nooit gelezen":
+
+| kwantor | leden (dienstjaren) | basis | head |
+|---|---|---|---|
+| ALLE | 200, 0 | `oracle: PASS` (lid 1 beslist, lid 2 ongelezen) | idem |
+| ALLE | 50, 0 | `EVALUATION FAULT: division by numeric zero` | idem |
+| GEEN | 200, 0 | `EVALUATION FAULT: division by numeric zero` | idem |
+| GEEN | 50, 0 | `oracle: PASS` (lid 1 beslist, lid 2 ongelezen) | idem |
+
+In de Drools-exec-tak is leesdiepte niet waarneembaar — `leafPredicate`
+levert een boolean en faalt niet per lid — dus daar IS de byte-gelijkheid
+over 193 goldens het bewijs.
+
 ## (iv) De handberekende cellen
 
 **`jutterswet-reddingsvloot`** — grens 20, STRIKT `groter dan`, periode heel
@@ -453,8 +534,27 @@ ordeningsvergelijking over leeg is onwaar (ch. 1.2d), dus L1 telt NIET mee —
 vacuüm HAALT en dus wél zou meetellen. Onder een drempel wordt dat verschil
 een getal in plaats van een omgeklapt verdict.
 
-Alle dertien verdictrijen haalden het bij de eerste run door `ref`, en
-daarna ongewijzigd door clingo en beide Drools-takken.
+**`jutterswet-sleepvloot`** (fixronde) — grens 20, strikt, heel 2026, en elke
+vouw draagt `niet gedurende het gehele jaar`. `count(P)` is het aantal boten
+dat het hele jaar boven 20 zit; de vouwen tellen het complement daarvan
+binnen hun eigen bereik.
+
+| case | vloot | de boten van de vloot (sleeptijd, keuring) | bootal | count(P) | count(¬P) | inzetbaar (≥2) | krap (≤1) | paraat (=1) | geschikt (≥2, gekeurd) |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | V1 | 25 gekeurd, 30 NIET gekeurd, 10 gekeurd | 3 | 2 | 1 | nee | **ja** | **ja** | nee |
+| 1 | V2 | 30 gekeurd | 1 | 1 | 0 | nee | **ja** | nee | nee |
+| 2 | V1 | geen boten | 0 | 0 | 0 | nee | **ja** | nee | nee |
+
+De cel is DISCRIMINEREND, en dat is gemeten: hetzelfde document met
+`niet: false` en verder niets veranderd faalt op vier cellen, in `ref` en in
+de Drools-exec-tak — `V1 inzetbaar` verschijnt, `V1 krap` en `V1 paraat`
+verdwijnen, `V2 paraat` verschijnt. Case 2 bewaakt de andere kant van de
+formule: `0 − 0 = 0`, dus een lege vloot wordt niet "alles ontkend".
+
+Alle zestien verdictrijen haalden het bij de eerste run door `ref`, en
+daarna ongewijzigd door clingo en beide Drools-takken (de sleepvloot-rijen
+door de exec-tak; de DRL-tekst-tak markeert dat document voor zijn
+heelperiodematrix, zoals hij elke heelperiodevouw markeert).
 
 ## (v) Wat elke uitvoerder draagt en weigert
 
@@ -472,29 +572,30 @@ en komt met de vorm in de reden in het poortrapport terecht.
 
 ```
 1  check-self-contained: PASS
-2  check-ir-schema: PASS (schema valid; 24 pattern self-test rows; 223 files validate and round-trip, floor 192)
-3  check-verifier: PASS (223 golden clean; 395 negatief rejected for their declared rule, floor 350)
-4  check-case-schema: PASS (schema valid; 531 case files validate)
-5  check-oracle: PASS (ref suite 637 worked examples, floor 489; 505 cases replayed exactly, floor 427)
-6  check-clingo: PASS (backend suite 242 checks, floor 83; 505 cases replay exactly through clingo)
-7  check-noop: PASS (469 cases refute a do-nothing executor; 36 pinned survivors)
+2  check-ir-schema: PASS (schema valid; 24 pattern self-test rows; 224 files validate and round-trip, floor 192)
+3  check-verifier: PASS (224 golden clean; 395 negatief rejected for their declared rule, floor 350)
+4  check-case-schema: PASS (schema valid; 533 case files validate)
+5  check-oracle: PASS (ref suite 643 worked examples, floor 489; 507 cases replayed exactly, floor 427)
+6  check-clingo: PASS (backend suite 252 checks, floor 83; 507 cases replay exactly through clingo)
+7  check-noop: PASS (471 cases refute a do-nothing executor; 36 pinned survivors)
 8  check-rood: PASS (26 red cases fault observably in ref and clingo, floor 26; Drools leg 6 fault-pinned, 20 not-carried)
 9  check-catala: PASS (frontend suite 201 checks, floor 201; 12 catala goldens regenerate byte-identically)
-10 check-regelspraak: PASS (JUnit 278 tests, floor 173; 52 rgs goldens re-emit byte-identically, floor 38)
+10 check-regelspraak: PASS (JUnit 278 tests, floor 173; 53 rgs goldens re-emit byte-identically, floor 38)
 11 check-toka-parity: PASS (45 .rgs re-emitted byte-identical, floor 45; TOKA suite 27 tests, floor 27)
-12 check-drools: PASS (played 147 = pinned 147; channel floor 50; value-divergence 1; JUnit 360 tests, floor 239)
+12 check-drools: PASS (played 148 = pinned 148; channel floor 50; value-divergence 1; JUnit 361 tests, floor 239)
 13 check-reftype-derivation: PASS (108 annotations twisted over 22 goldens, floor 74; 100 replays, 19 DRL-text PLAYED, floor 13)
 14 check-flogic: PASS (frontend suite 81 checks, floor 81; 1 flogic golden re-emits byte-identically)
 ```
 
-Bewegingen tegenover de beginstand: poort 2 en 3 van 221 naar 223 documenten
-en 392 naar 395 negatiefs; poort 4 van 520 naar 531 casebestanden; poort 5 en
-6 van 494 naar 505 cases; poort 5's ref-suite van 620 naar 637 voorbeelden;
-poort 6's suite van 209 naar 242 controles; poort 7 van 458 naar 469; poort
-10's JUnit van 276 naar 278 en zijn rgs-goldens van 51 naar 52; poort 12's
-JUnit van 354 naar 360 en `EXPECTED_PLAYED` van 145 naar 147; poort 13 van 22
-goldens ongewijzigd (geen van beide nieuwe goldens draagt een
-eenheidsdragende annotatie). Geen enkele vloer verlaagd.
+Bewegingen tegenover de beginstand: poort 2 en 3 van 221 naar 224 documenten
+en 392 naar 395 negatiefs; poort 4 van 520 naar 533 casebestanden; poort 5 en
+6 van 494 naar 507 cases; poort 5's ref-suite van 620 naar 643 voorbeelden;
+poort 6's suite van 209 naar 252 controles; poort 7 van 458 naar 471; poort
+10's JUnit van 276 naar 278 en zijn rgs-goldens van 51 naar 53; poort 12's
+JUnit van 354 naar 361 en `EXPECTED_PLAYED` van 145 via 147 naar 148 (twee
+gedateerde, redendragende stappen in het script); poort 13 van 22 goldens
+ongewijzigd (geen van de drie nieuwe goldens draagt een eenheidsdragende
+annotatie). Geen enkele vloer verlaagd.
 
 ## (vii) De toolchain-meting (read-only, `regelspraak-java`)
 
@@ -541,13 +642,16 @@ bovendien de eerste clausule van de slotkolom ("the counting quantors over an
 instance range are the named extension point and are NOT built"), die per
 vandaag onwaar is:
 
-**Landed (2026-09-16, kaart tellende-kwantoren) — the counting quantors are BUILT, and this RETIRES the first clause of the closing column:** where that clause says they are the named extension point and are NOT built, all three of them now run in all three executors, over BOTH matrix routes, out of `bron.rgs`. What is left at that extension point is nothing; what is left on the `kwantor` field is `DE`, which WF-108 (a) still refuses by name because the bare definite describes ONE member and is not a quantification over a set. The build adds exactly ONE field and no machinery: `drempel`, `Samengesteld`'s own, under `Samengesteld`'s own rule — the verdict COUNTS the contributors whose matrix holds and compares that number with the threshold, which is `Compound`'s count-and-compare (row 121 on `Kwantor`) over instances instead of parts. `ALLE` is `count = |contributors|` and `GEEN` is `count = 0` written the other way round, so ONE rule of evaluation covers all five and it is ch. 5.10's: the contributors settle in full first, the matrix then short-circuits on ch. 5.10's trigger table with the contributors as its members, and TWO of its rows fire on the EMPTY PREFIX here — at-least and exactly below the contributor count answer onwaar having read nothing, at-most at or above it answers waar having read nothing. **The empty set gets no principle of its own**: a count of 0 answers each counting quantifier by itself and the three DISAGREE on it (onwaar, waar, onwaar), which no "an empty set means true" rule would produce; ch. 3.9a's vacuous clause therefore stays a rule about ALLE and GEEN and is explicitly not extended. **WF-041 is the threshold's rule at BOTH of its hosts since this card** — its sentence was always about the VOCABULARY, not about one node — so WF-108 gains a fifth arm (e) that owns the field's PRESENCE and hands its VALUE to WF-041 at this position, exactly as arm (c) hands an unresolvable range binding to WF-047. **Where this node DIVERGES from `Samengesteld` is the one place it is new enough to**: `drempel` is written EXACTLY under a counting quantor and is FORBIDDEN under ALLE/GEEN, checked by the schema (an `if`/`then`/`else` on `kwantor`, plus `minimum: 1`) and by WF-108 (e) — where `Samengesteld` writes the field always and writes a zero nobody reads, which is the "a field nobody reads is a field that can say anything" defect of WF-083 (c) and matters concretely: a consumer reading the threshold before the quantor would answer "at least 2" for a document that wrote "alle". Witnesses `corpus/golden/jutterswet-reddingsvloot` (the §8.2 whole-period matrix out of `bron.rgs`, six cases carrying seven hand-computed verdict rows: one matrix under all three quantifiers, so every threshold is pinned from BOTH sides by one pair of member sets, plus the empty set where the three part company, ch. 3.9's gap, a fourth fold that repeats the first with a die/dat filter, a second vloot that pins the RANGE and fires both empty-prefix triggers, and the empty SELECTION beside a filled range) and `corpus/golden/jutterswet-vuurtoren` (hand-written IR, the same layout over a NON-temporal matrix, six verdict rows, with a leeg member that fails the ordering and therefore does not COUNT — the mirror of `ploegpremie`'s absent timeline, which passes vacuously and does); negatiefs `wf108-kwantorvouw-kwantor-de` (arm (a)'s new witness, since the counting one lost its premise), `wf108-kwantorvouw-drempel-ontbreekt` (the renamed `wf108-kwantorvouw-telkwantor`, same document, now violating (e)), `wf108-kwantorvouw-drempel-op-alle` and `wf041-kwantorvouw-drempel-nul`. **The frontend lowers all five** and carries the written telwoord: `geschrevenKwantor` had a twin `geschrevenDrempel` added beside it, because without the number "ten minste 2 van de" and "ten minste 3 van de" arrive as the same sentence — measured, and it is the only reason the quantor could be refused rather than answered before. A telwoord below 1 is NOT lowered and keeps the WF-096 ERROR with a WARNING naming it: WF-041 refuses that document anyway, so emitting it would only move the refusal downstream. The §8.2 gate is again unmoved — a fold whose matrix carries no whole-period qualifier still does not come from source, so the non-temporal witness is hand-written IR and gate 10 does not see it. Each executor reads the SIZE of the satisfier set where ALLE and GEEN read a witness, and none of the three needed a new machine for it: the ASP backend emits `#count` over exactly the atoms GEEN already derives, with the range join and the filter INSIDE the aggregate element (outside it the element variable would be global and the count would range over the whole population — the failure `reddingsvloot` case 5's second vloot exists to catch) and hoists it into a helper rule so the fold still fits positions an aggregate cannot occupy; `ref` replaces `List.for_all` with the verdict/settled/read machinery `Samengesteld` already had, which is what makes ALLE and GEEN the same comparison as the other three; the Drools exec branch gains `rsGeheelPeriodeTelling` BESIDE `rsGeheelPeriodeAlle`/`-Geen` (those two stay what ALLE and GEEN read, because their early exit IS the short circuit) and counts over the collectList accumulate on the non-temporal route; the DRL-text branch writes `Number( intValue <op> N ) from accumulate( $e : <Element>( <join>, <filter>, <matrix> ), count($e) )` over the very element pattern its denied witness uses. **The NIET prefix cannot flip a threshold** the way it flips ALLE into GEEN, so on the whole-period matrix it is applied to the COUNT instead (`count(¬P) = n − count(P)`, exact because `rsGeheelPeriode` is total), and on a non-temporal matrix it stays inside the condition and is read per member, unchanged from the asymmetry card. The DRL-text branch still markers the WHOLE-PERIOD matrix, counting quantifiers included — the standing channel split, unmoved | *(en de eerste clausule van de slotkolom, "the counting quantors over an instance range are the named extension point and are NOT built", is daarmee vervallen)*
+**Landed (2026-09-16, kaart tellende-kwantoren) — the counting quantors are BUILT, and this RETIRES the first clause of the closing column:** where that clause says they are the named extension point and are NOT built, all three of them now run in all three executors, over BOTH matrix routes, out of `bron.rgs`. What is left at that extension point is nothing; what is left on the `kwantor` field is `DE`, which WF-108 (a) still refuses by name because the bare definite describes ONE member and is not a quantification over a set. The build adds exactly ONE field and no machinery: `drempel`, `Samengesteld`'s own, under `Samengesteld`'s own rule — the verdict COUNTS the contributors whose matrix holds and compares that number with the threshold, which is `Compound`'s count-and-compare (the `— Kwantor` (counting) sub-row of `Samengesteld` in the condition-layer table, ch. 2.2 — TEN_MINSTE / TEN_HOOGSTE / PRECIES, §13.4.14.4) over instances instead of parts. `ALLE` is `count = |contributors|` and `GEEN` is `count = 0` written the other way round, so ONE rule of evaluation covers all five and it is ch. 5.10's: the contributors settle in full first, the matrix then short-circuits on ch. 5.10's trigger table with the contributors as its members, and TWO of its rows fire on the EMPTY PREFIX here — at-least and exactly below the contributor count answer onwaar having read nothing, at-most at or above it answers waar having read nothing. **The empty set gets no principle of its own**: a count of 0 answers each counting quantifier by itself and the three DISAGREE on it (onwaar, waar, onwaar), which no "an empty set means true" rule would produce; ch. 3.9a's vacuous clause therefore stays a rule about ALLE and GEEN and is explicitly not extended. **WF-041 is the threshold's rule at BOTH of its hosts since this card** — its sentence was always about the VOCABULARY, not about one node — so WF-108 gains a fifth arm (e) that owns the field's PRESENCE and hands its VALUE to WF-041 at this position, exactly as arm (c) hands an unresolvable range binding to WF-047. **Where this node DIVERGES from `Samengesteld` is the one place it is new enough to**: `drempel` is written EXACTLY under a counting quantor and is FORBIDDEN under ALLE/GEEN, checked by the schema (an `if`/`then`/`else` on `kwantor`, plus `minimum: 1`) and by WF-108 (e) — where `Samengesteld` writes the field always and writes a zero nobody reads, which is the "a field nobody reads is a field that can say anything" defect of WF-083 (c) and matters concretely: a consumer reading the threshold before the quantor would answer "at least 2" for a document that wrote "alle". Witnesses `corpus/golden/jutterswet-reddingsvloot` (the §8.2 whole-period matrix out of `bron.rgs`, six cases carrying seven hand-computed verdict rows: one matrix under all three quantifiers, so every threshold is pinned from BOTH sides by one pair of member sets, plus the empty set where the three part company, ch. 3.9's gap, a fourth fold that repeats the first with a die/dat filter, a second vloot that pins the RANGE and fires both empty-prefix triggers, and the empty SELECTION beside a filled range) and `corpus/golden/jutterswet-vuurtoren` (hand-written IR, the same layout over a NON-temporal matrix, six verdict rows, with a leeg member that fails the ordering and therefore does not COUNT — the mirror of `ploegpremie`'s absent timeline, which passes vacuously and does); negatiefs `wf108-kwantorvouw-kwantor-de` (arm (a)'s new witness, since the counting one lost its premise), `wf108-kwantorvouw-drempel-ontbreekt` (the renamed `wf108-kwantorvouw-telkwantor`, same document, now violating (e)), `wf108-kwantorvouw-drempel-op-alle` and `wf041-kwantorvouw-drempel-nul`. **The frontend lowers all five** and carries the written telwoord: `geschrevenKwantor` had a twin `geschrevenDrempel` added beside it, because without the number "ten minste 2 van de" and "ten minste 3 van de" arrive as the same sentence — measured, and it is the only reason the quantor could be refused rather than answered before. A telwoord below 1 is NOT lowered and keeps the WF-096 ERROR with a WARNING naming it: WF-041 refuses that document anyway, so emitting it would only move the refusal downstream. The §8.2 gate is again unmoved — a fold whose matrix carries no whole-period qualifier still does not come from source, so the non-temporal witness is hand-written IR and gate 10 does not see it. Each executor reads the SIZE of the satisfier set where ALLE and GEEN read a witness, and none of the three needed a new machine for it: the ASP backend emits `#count` over exactly the atoms GEEN already derives, with the range join and the filter INSIDE the aggregate element (outside it the element variable would be global and the count would range over the whole population — the failure `reddingsvloot` case 5's second vloot exists to catch) and hoists it into a helper rule so the fold still fits positions an aggregate cannot occupy; `ref` replaces `List.for_all` with the verdict/settled/read machinery `Samengesteld` already had, which is what makes ALLE and GEEN the same comparison as the other three; the Drools exec branch gains `rsGeheelPeriodeTelling` BESIDE `rsGeheelPeriodeAlle`/`-Geen` (those two stay what ALLE and GEEN read, because their early exit IS the short circuit) and counts over the collectList accumulate on the non-temporal route; the DRL-text branch writes `Number( intValue <op> N ) from accumulate( $e : <Element>( <join>, <filter>, <matrix> ), count($e) )` over the very element pattern its denied witness uses. **The NIET prefix cannot flip a threshold** the way it flips ALLE into GEEN — there is no quantifier "at least 2" turns into — so it is read per contributor and lands on the COUNT: `count(¬P) = |contributors| − count(P)`, an equality because the whole-period predicate is total, and the empty set stays 0 − 0 = 0. On a non-temporal matrix the negation stays inside the condition and is read per member, unchanged from the asymmetry card. Both halves are stated in ch. 3.9a and witnessed by a THIRD golden, `corpus/golden/jutterswet-sleepvloot` (out of `bron.rgs`: all four folds under `niet gedurende het gehele jaar`, three hand-computed verdict rows, chosen so that counting P where the sentence writes ¬P inverts FOUR cells — measured on the same document with `niet: false` and nothing else changed, which fails exactly those four in `ref` and in the Drools exec branch). The DRL-text branch still markers the WHOLE-PERIOD matrix, counting quantifiers included — the standing channel split, unmoved. **This also NARROWS the v1-delta column of this row:** where it says "WF-108 (a) refuses the counting quantors and the bare definite by name rather than falling through", it now refuses THE BARE DEFINITE alone — the counting quantors are admitted, and what arm (a) still keeps out is `DE` and every unknown token. **And the TITLE cell moves with the node**: "Quantifier fold — a condition quantified over a linked instance set (ALLE / GEEN)" becomes "Quantifier fold — a condition quantified over a linked instance set (ALLE / GEEN / TEN MINSTE n / TEN HOOGSTE n / PRECIES n)", because the parenthesis enumerates what the node carries and no longer does |
+
+*(Bij het landen vervalt daarmee de eerste clausule van de slotkolom, "the counting quantors over an instance range are the named extension point and are NOT built"; de tweede en derde clausule van die kolom — de frontend-gate en de DRL-tekst-marker — blijven staan zoals de diedat-kaart ze achterliet.)*
 
 ## (ix) Eerlijke afwijkingen
 
-**(a) Vier bestaande getuigen zijn gewijzigd, tegen acceptatie (f) in.** Alle
-vier pinden precies de weigering die deze kaart opheft; geen enkele is
-verwijderd, en alle vier meten nu een STERKERE bewering.
+**(a) Vijf bestaande testbestanden zijn gewijzigd, tegen acceptatie (f) in.**
+Vier ervan pinden precies de weigering die deze kaart opheft; geen enkele is
+verwijderd, en alle vier meten nu een STERKERE bewering. Het vijfde is zuiver
+additief.
 
 1. `corpus/negatief/wf108-kwantorvouw-telkwantor/` is hernoemd naar
    `wf108-kwantorvouw-drempel-ontbreekt/`. Het `ir.json` is BYTE-ONGEWIJZIGD
@@ -575,6 +679,12 @@ verwijderd, en alle vier meten nu een STERKERE bewering.
    dragen géén drempel op de wire, en een telwoord onder 1 houdt de
    WF-096-fout (dezelfde bewering als de oude rij, op de as die nu de grens
    is).
+5. `backends/drools/.../NietTemporeleKwantorvouwWitnessTest.java` — ZUIVER
+   ADDITIEF, en daarom apart genoemd: geen enkele bestaande assertie bewoog.
+   `cases()` is een dunne wrapper om een nieuwe `casesVan(golden)` geworden
+   zodat de tweede golden dezelfde weg kan lopen, en er staan twee methodes
+   bij (beide takken over `jutterswet-vuurtoren`, plus de mutant op de
+   telling).
 
 **(b) Drie prozaverwijzingen buiten die vier zijn bijgewerkt**, omdat zij na
 deze kaart onwaar zouden zijn: de zin "ALLE and GEEN are the two v0
@@ -587,14 +697,15 @@ houding die zij hielden TOTDAT zij gebouwd werden"). Geen assertie bewoog.
 **(c) De ch.-3.12-statusrij is meegenomen zonder expliciet mandaat.** Zie de
 noot bij de RUNTIME-SEMANTICS-delta hierboven.
 
-**(d) Er is een TWEEDE golden, waar de kaart er één vroeg.** `overweeg
-dekking voor de niet-temporele drempelvouw` is opgevolgd, en de reden is
-dat het twee stukken code zijn en niet één: de exec-tak heeft een aparte
+**(d) Er zijn DRIE goldens, waar de kaart er één vroeg.** `overweeg dekking
+voor de niet-temporele drempelvouw` is opgevolgd, en de reden is dat het
+twee stukken code zijn en niet één: de exec-tak heeft een aparte
 niet-temporele telroute (telling over de `collectList`-accumulate) die de
 heelperiode-golden nooit raakt, en de DRL-tekst-tak markeert de
 heelperiodematrix, zodat zijn tel-lowering ZONDER die tweede golden geen
 enkele corpusgetuige zou hebben. Beide takken spelen hem, gemeten in
-`NietTemporeleKwantorvouwWitnessTest`.
+`NietTemporeleKwantorvouwWitnessTest`. De derde golden kwam er in de
+fixronde bij, om dezelfde reden op een derde stuk code — zie hieronder.
 
 **(e) De kortsluiting is niet in elke uitvoerder een faaloppervlak.** `ref`
 voert ch. 5.10's stoptriggers uit, en de Drools-exec-tak doet dat op de
@@ -610,6 +721,59 @@ dat deze kaart introduceert, en er zit geen corpuscel op.
 vloer verlaagd, en `corpus/golden/anchor/`, `spec/CONSTRUCTS.md` en
 `spec/PLAN.md` zijn niet aangeraakt.
 
+## De fixronde na de lens (2026-09-17)
+
+De lens bevestigde het kernwerk — alle veertien poorten exact nagerekend,
+alle dertien verdictrijen onafhankelijk herberekend, de vier schemarichtingen
+met eigen minidocumenten, de WF-041-spiegel, de zes wire-lezers, de
+toolchain-regelnummers en de twee-subjecten-`#count` (`kvc3("V1",2)` /
+`kvc3("V2",1)`) — en wees zes punten aan. Alle zes verwerkt.
+
+**1 (ernstig) — de NIET-prefix onder een drempel had geen enkele getuige.**
+Het was nieuwe code in twee lagen (de frontend schrijft de prefix onder een
+tellende kwantor naar de wire; `ExecModelTranspiler` past hem tweemaal toe
+als `nietPrefix ? n - hits : hits`) én een gelande bewering in het
+registervoorstel, zonder corpuscel, zonder JUnit-rij en zonder suiterij:
+`jutterswet-reddingsvloot` draagt overal `niet: false`. Gesloten met het
+huispatroon in plaats van met het minimum — een derde golden,
+`corpus/golden/jutterswet-sleepvloot`, mét `bron.rgs`, drie handberekende
+verdictrijen, drieweg gespeeld — en met de suiterijen ernaast (zes in
+`ref/test`, vijf in de clingo-suite, één methode in
+`HeelperiodeKwantorvouwWitnessTest`). De keuze voor de golden: de bewering is
+NORMATIEF (zij staat nu ook in ch. 3.9a), en in dit repo is een normatieve
+zin pas af met een corpusgetuige eronder — een suiterij alleen zou het
+verschil tussen "de code doet dit" en "de spec eist dit" niet dragen. De
+suiterijen staan er toch bij omdat zij de vorm sneller pinnen dan een poort
+dat doet.
+
+**2 — "geen nieuwe machinerie" onderrapporteerde de routewissel.** De
+ALLE/GEEN-route is in twee benen verhuisd, en het asymmetrieprecedent eist
+daar bewijs bij. De meting is zelf herhaald (520 ref-cases volledige
+werelddump, 494 clingo-cases programma + volledig stabiel model, 193
+basis-goldens door beide Drools-takken, plus een leesdiepteprobe met een
+per-lid HARD falende matrix): alles byte-identiek. Eigen sectie "Routewissel,
+gemeten" hierboven; de dumpers zijn niet gecommit.
+
+**3 — het registervoorstel liet twee gevolgen onbenoemd.** De v1-deltakolom
+("WF-108 (a) refuses the counting quantors and the bare definite by name")
+krijgt nu een expliciete narrow-clausule, en de TITELcel van rij 40
+("… (ALLE / GEEN)") krijgt een bijwerking naar de vijf kwantoren. De
+verwijzing "(row 121 on `Kwantor`)" was een regelnummer en geen rijnaam; zij
+is vervangen door de eenduidige aanduiding van de `— Kwantor` (counting)
+subrij van `Samengesteld` in de conditielaagtabel.
+
+**4 — `checks.ml` zei nog "Four arms"** in het kopcommentaar van de
+WF-108-check. Nu "Five arms", consistent met IR-SPEC.
+
+**5 — twee kleinigheden.** Regel 22 van
+`corpus/golden/jutterswet-ploegpremie/NOTE.md` is op ≤80 gewrapt zoals de
+rest van dat bestand, en afwijking (a) hierboven telt nu VIJF gewijzigde
+bestaande testbestanden in plaats van vier:
+`NietTemporeleKwantorvouwWitnessTest` hoorde in de lijst, zuiver additief.
+
+**6 — poorten.** Alle veertien opnieuw gedraaid, niet alleen de zes die de
+mini-golden raakt.
+
 ## (x) De commits
 
 ```
@@ -620,6 +784,8 @@ vloer verlaagd, en `corpus/golden/anchor/`, `spec/CONSTRUCTS.md` en
 df22dae  drools: beide takken tellen, elk langs de weg die zij al kende
 283a578  frontend: het telwoord reist mee, anders zijn "ten minste 2" en "3" één zin
 916120f  corpus: twee goldens, want de twee matrixroutes zijn twee stukken code
+53c8c16  kaart naar done: de drempelkwantoren zijn door alle lagen gebouwd
+cc09e51  de ontkenning onder een drempel landt op de telling, en krijgt een getuige
 ```
 
 De kaart zelf landt erachteraan. Branch `card/tellende-kwantoren`, niet
