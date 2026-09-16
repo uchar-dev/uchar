@@ -1,0 +1,35 @@
+Objecttype de Sleepvloot (mv: Sleepvloten)
+    het bootal Numeriek (geheel getal);
+    is inzetbaar kenmerk (bijvoeglijk);
+    is krap kenmerk (bijvoeglijk);
+    is paraat kenmerk (bijvoeglijk);
+    is geschikt kenmerk (bijvoeglijk);
+
+Objecttype de Sleepboot (mv: Sleepboten)
+    de sleeptijd Numeriek (geheel getal) voor elke maand;
+    is gekeurd kenmerk (bijvoeglijk);
+
+Feittype sleepindeling
+    de vloot Sleepvloot
+    de boot (mv: boten) Sleepboot
+Eén vloot omvat meerdere boten
+
+Regel inzetbaar bij sleeptijd
+    geldig altijd
+        Een Sleepvloot is inzetbaar indien de sleeptijd van ten minste 2 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20.
+
+Regel krap bij sleeptijd
+    geldig altijd
+        Een Sleepvloot is krap indien de sleeptijd van ten hoogste 1 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20.
+
+Regel paraat bij sleeptijd
+    geldig altijd
+        Een Sleepvloot is paraat indien de sleeptijd van precies 1 van de boten van de Sleepvloot niet gedurende het gehele jaar groter is dan 20.
+
+Regel geschikt bij sleeptijd
+    geldig altijd
+        Een Sleepvloot is geschikt indien de sleeptijd van ten minste 2 van de boten van de Sleepvloot die gekeurd zijn niet gedurende het gehele jaar groter is dan 20.
+
+Regel bootal van een sleepvloot
+    geldig altijd
+        Het bootal van een Sleepvloot moet berekend worden als het aantal boten van de Sleepvloot.

@@ -19,7 +19,8 @@ cell for cell.
 
 `ALLE` and `GEEN` are the two quantifiers this document runs — its counting
 sibling `jutterswet-reddingsvloot` runs the other three over the same §8.2
-matrix — and the corpus carries both in one document on purpose. They are not each other's negation: `GEEN` complements the
+matrix — and the corpus carries both in one document on purpose. They are
+not each other's negation: `GEEN` complements the
 matrix PER MEMBER, so the cases below can hold a ploeg for which neither
 characteristic is attributed (case 2 and 3 — one berger is above the bound, so
 `ALLE` fails; another is not, so `GEEN` fails too) and one for which both are

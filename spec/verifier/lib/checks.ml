@@ -6480,7 +6480,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) at (c : conditie) : viola
              (fun i c -> walk_cond ctx ~binders ~subject (Printf.sprintf "%s/onderdelen/%d" at i) c)
              onderdelen)
   (* WF-108 — the QUANTIFIER FOLD's shape (IR-SPEC ch. 4.5; semantics
-     RUNTIME-SEMANTICS ch. 3.9a). Four arms, and each closes a way the node
+     RUNTIME-SEMANTICS ch. 3.9a). Five arms, and each closes a way the node
      could state a quantification with nothing to quantify over.
 
      The range arms (c) deliberately carry their OWN number rather than

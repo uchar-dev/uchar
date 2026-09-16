@@ -3961,13 +3961,14 @@ let kv_doc =
 
 (* the matrix: "zijn dagvergoeding gedurende het gehele jaar groter is dan 40",
    read on the ELEMENT — a set:false own read, the qualifier riding it *)
-let kv_toets ?(op : Ir_v0.Ast.vergelijk_op = Groter) ?(grens = "40") () : Ir_v0.Ast.conditie =
+let kv_toets ?(op : Ir_v0.Ast.vergelijk_op = Groter) ?(grens = "40") ?(niet = false) () :
+    Ir_v0.Ast.conditie =
   Vergelijking
     {
       op;
       links = Some (aref "dagvergoeding" "Berger" num0);
       rechts = Some (litv grens num0);
-      periode = Some { gp_jaar = true; gp_niet = false };
+      periode = Some { gp_jaar = true; gp_niet = niet };
       bron = None;
     }
 
@@ -4117,6 +4118,31 @@ let () =
     (not
        (kv_eval ~kwantor:Ten_minste ~drempel:2 ~filter:filter_boven_10
           [ ("B1", heel_jaar "50"); ("B2", heel_jaar "5"); ("B3", heel_jaar "5") ]));
+
+  (* the NIET prefix under a counting quantifier. On the whole-period matrix
+     the "niet" qualifies the OUTER comparison, and under ALLE/GEEN an
+     executor may fold it by flipping the quantifier — a THRESHOLD has no
+     quantifier to flip into, so the negation is read per contributor and
+     lands on the COUNT: count(not P) = n - count(P), exact because the
+     whole-period predicate is total. Each row is chosen so that counting P
+     instead of not-P gives the other verdict. *)
+  let ontkend = kv_toets ~niet:true () in
+  let tel_niet k d leden = kv_eval ~kwantor:k ~drempel:d ~toets:ontkend leden in
+  check "WV-3.9a-niet-minstens2-geen-lid-haalt-de-matrix"
+    (tel_niet Ten_minste 2 [ ("B1", heel_jaar "30"); ("B2", heel_jaar "20") ]);
+  check "WV-3.9a-niet-hoogstens1-elk-lid-haalt-de-matrix"
+    (tel_niet Ten_hoogste 1 [ ("B1", heel_jaar "50"); ("B2", heel_jaar "60") ]);
+  check "WV-3.9a-niet-precies1-twee-halen-hem-een-niet"
+    (tel_niet Precies 1
+       [ ("B1", heel_jaar "50"); ("B2", heel_jaar "60"); ("B3", heel_jaar "30") ]);
+  (* ch. 3.9's gap counts on the DENIED side; a member with NO timeline passes
+     the matrix vacuously and therefore counts on the POSITIVE one *)
+  check "WV-3.9a-niet-minstens1-het-half-dekkende-lid-telt-ontkend"
+    (tel_niet Ten_minste 1 [ ("B1", half_jaar "50") ]);
+  check "WV-3.9a-niet-minstens1-lid-zonder-tijdlijn-telt-niet-ontkend"
+    (not (tel_niet Ten_minste 1 [ ("B1", []) ]));
+  check "WV-3.9a-niet-minstens1-lege-set-blijft-nul-min-nul"
+    (not (tel_niet Ten_minste 1 []));
 
   (* a counting fold with no threshold has nothing to compare the count
      with — WF-108 (e)'s business, and reaching it in evaluation is a

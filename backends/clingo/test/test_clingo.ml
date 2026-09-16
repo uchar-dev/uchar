@@ -3830,6 +3830,37 @@ let () =
   alle ~name:"ch3.9a TEN HOOGSTE 2 over één lid is vacuüm waar" ~ir:(tel "TEN_HOOGSTE" 2)
     ~leden:[ ("S1", heel_jaar "50") ]
     ~waar:true ();
+  (* the NIET prefix under a counting quantifier. On the whole-period form the
+     "niet" qualifies the OUTER comparison, and an executor may fold it by
+     flipping ALLE into GEEN — but a THRESHOLD cannot flip that way, so the
+     negation lands on the COUNT: count(¬P) = n − count(P), exact because the
+     whole-period predicate is total. Every row below is chosen so that
+     counting P instead of ¬P gives the OTHER verdict. Corpus witness:
+     corpus/golden/jutterswet-sleepvloot. *)
+  let tel_niet kwantor drempel =
+    kv_doc ~kwantor ~drempel ~toets:(kv_geheel ~niet:"true" ()) ()
+  in
+  alle ~name:"ch3.9a NIET + TEN MINSTE 2: geen lid haalt de matrix, dus beide ontkend"
+    ~ir:(tel_niet "TEN_MINSTE" 2)
+    ~leden:[ ("S1", heel_jaar "30"); ("S2", heel_jaar "20") ]
+    ~waar:true ();
+  alle ~name:"ch3.9a NIET + TEN HOOGSTE 1: elk lid haalt de matrix, dus nul ontkend"
+    ~ir:(tel_niet "TEN_HOOGSTE" 1)
+    ~leden:[ ("S1", heel_jaar "50"); ("S2", heel_jaar "60") ]
+    ~waar:true ();
+  alle ~name:"ch3.9a NIET + PRECIES 1: twee halen hem, één niet"
+    ~ir:(tel_niet "PRECIES" 1)
+    ~leden:[ ("S1", heel_jaar "50"); ("S2", heel_jaar "60"); ("S3", heel_jaar "30") ]
+    ~waar:true ();
+  (* ch. 3.9's gap counts on the DENIED side: a member whose timeline does not
+     cover the period fails the matrix, so it satisfies its negation *)
+  alle ~name:"ch3.9a NIET + TEN MINSTE 1: het half dekkende lid telt aan de ontkende kant"
+    ~ir:(tel_niet "TEN_MINSTE" 1)
+    ~leden:[ ("S1", half_jaar "50") ]
+    ~waar:true ();
+  (* and n = 0 is still 0 − 0: the empty set does not become "all denied" *)
+  alle ~name:"ch3.9a NIET + TEN MINSTE 1 over de lege verzameling is onwaar"
+    ~ir:(tel_niet "TEN_MINSTE" 1) ~leden:[] ~waar:false ();
   (* the counting arms over a NON-temporal matrix: the same count, the other
      matrix route *)
   let kenmerk_tel kwantor drempel =

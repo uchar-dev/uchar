@@ -1,0 +1,176 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2026-03-15",
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Sleepvloot",
+        "attributes": {},
+        "roles": {
+          "boten": [
+            "B1",
+            "B2",
+            "B3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "B1",
+        "objectType": "Sleepboot",
+        "attributes": {
+          "sleeptijd": {
+            "timeline": [
+              {
+                "from": "2026-01-01",
+                "to": "2027-01-01",
+                "value": {
+                  "number": "25"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gekeurd"
+        ]
+      },
+      {
+        "label": "B2",
+        "objectType": "Sleepboot",
+        "attributes": {
+          "sleeptijd": {
+            "timeline": [
+              {
+                "from": "2026-01-01",
+                "to": "2027-01-01",
+                "value": {
+                  "number": "30"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "B3",
+        "objectType": "Sleepboot",
+        "attributes": {
+          "sleeptijd": {
+            "timeline": [
+              {
+                "from": "2026-01-01",
+                "to": "2027-01-01",
+                "value": {
+                  "number": "10"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gekeurd"
+        ]
+      },
+      {
+        "label": "V2",
+        "objectType": "Sleepvloot",
+        "attributes": {},
+        "roles": {
+          "boten": [
+            "B4"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "B4",
+        "objectType": "Sleepboot",
+        "attributes": {
+          "sleeptijd": {
+            "timeline": [
+              {
+                "from": "2026-01-01",
+                "to": "2027-01-01",
+                "value": {
+                  "number": "30"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gekeurd"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "bootal",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "inzetbaar"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "krap"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "paraat"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "geschikt"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "bootal",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V2",
+      "characteristic": "inzetbaar"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V2",
+      "characteristic": "krap"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V2",
+      "characteristic": "paraat"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V2",
+      "characteristic": "geschikt"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

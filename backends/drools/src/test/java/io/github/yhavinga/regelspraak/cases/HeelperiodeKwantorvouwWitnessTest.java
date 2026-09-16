@@ -245,6 +245,31 @@ class HeelperiodeKwantorvouwWitnessTest {
                 "en is niet precies 1");
     }
 
+    /**
+     * De NIET-prefix onder een TELLENDE kwantor. Bij ALLE/GEEN klapt deze tak de kwantor om
+     * (∀c.¬P = ¬∃c.P, de rij hieronder); een DREMPEL kan zo niet omklappen, dus de ontkenning landt op
+     * de TELLING: {@code count(¬P) = n − count(P)}, exact omdat rsGeheelPeriode totaal is. Elke rij
+     * hier is zo gekozen dat P tellen in plaats van ¬P het ANDERE verdict geeft, dus zij faalt zodra de
+     * flip wegvalt. Corpusgetuige: {@code corpus/golden/jutterswet-sleepvloot}.
+     */
+    @Test void de_niet_prefix_landt_onder_een_drempel_op_de_telling() throws Exception {
+        String geen = schepen(schuit("S1", "3", "2025-01-01", "2026-01-01"),
+                schuit("S2", "4", "2025-01-01", "2026-01-01"));
+        String beide = schepen(schuit("S1", "12", "2025-01-01", "2026-01-01"),
+                schuit("S2", "15", "2025-01-01", "2026-01-01"));
+        String twee_van_drie = schepen(schuit("S1", "12", "2025-01-01", "2026-01-01"),
+                schuit("S2", "15", "2025-01-01", "2026-01-01"),
+                schuit("S3", "3", "2025-01-01", "2026-01-01"));
+        assertTrue(zeewaardig(ir(vouw("TEN_MINSTE", 2, "null", BRONROL, true)), geen),
+                "geen lid haalt de matrix, dus beide voldoen aan haar ontkenning");
+        assertTrue(zeewaardig(ir(vouw("TEN_HOOGSTE", 1, "null", BRONROL, true)), beide),
+                "elk lid haalt de matrix, dus nul voldoen aan haar ontkenning");
+        assertTrue(zeewaardig(ir(vouw("PRECIES", 1, "null", BRONROL, true)), twee_van_drie),
+                "twee halen hem, één niet — precies één aan de ontkende kant");
+        assertFalse(zeewaardig(ir(vouw("TEN_MINSTE", 1, "null", BRONROL, true)), ""),
+                "de lege verzameling blijft 0 − 0 en wordt niet 'alles ontkend'");
+    }
+
     /** Het filter kiest WELKE leden geteld worden; de drempel wat de telling moet zijn. */
     @Test void het_filter_kiest_de_getelde_leden() throws Exception {
         // S1 en S2 halen de matrix, S2 is niet zeegaand: de selectie houdt één voldoener over.

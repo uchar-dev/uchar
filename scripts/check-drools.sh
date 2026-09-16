@@ -486,7 +486,12 @@ EXPECTED_CHANNEL=(
 # accumulate( … count(…) )` over the element pattern), measured in
 # NietTemporeleKwantorvouwWitnessTest. Nothing else moved: ALLE and GEEN keep the witness route in both
 # branches, and every form outside the arm still refuses BY NAME, per form.
-EXPECTED_PLAYED=147
+# 2026-09-17 (card tellende-kwantoren, fixronde), 147 -> 148:
+# `jutterswet-sleepvloot` joins as a NEW PLAYER — the NIET prefix under a counting quantifier, which
+# this branch applies to the COUNT (n - hits) because a threshold has no quantifier to flip into the
+# way ALLE flips into GEEN. It was new code in this file with no corpus cell on it; the golden's three
+# rows are chosen so that counting P instead of the denied P inverts four of them, measured.
+EXPECTED_PLAYED=148
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the
