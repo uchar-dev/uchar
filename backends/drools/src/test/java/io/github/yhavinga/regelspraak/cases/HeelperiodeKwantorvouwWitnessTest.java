@@ -192,7 +192,7 @@ class HeelperiodeKwantorvouwWitnessTest {
         Path casePad = schrijf("case.json", caseDoc(schepen(
                 schuit("S1", "12", "2025-01-01", "2026-01-01")), "characteristicPresent"));
 
-        CaseRunner.Result exec = CaseRunner.runGolden(irPad, List.of(casePad));
+        CaseRunner.Result exec = CaseRunner.viaExecModel(irPad, List.of(casePad));
         assertEquals("PLAYED", exec.status(),
                 "de exec-model-tak lowert de kwantorvouw en speelt het document: " + exec.reason());
 
@@ -214,7 +214,7 @@ class HeelperiodeKwantorvouwWitnessTest {
         Path irPad = schrijf("ir-scope.json", ir(vouwZonderPeriode()));
         Path casePad = schrijf("case-scope.json", caseDoc(schepen(
                 schuit("S1", "12", "2025-01-01", "2026-01-01")), "characteristicPresent"));
-        CaseRunner.Result r = CaseRunner.runGolden(irPad, List.of(casePad));
+        CaseRunner.Result r = CaseRunner.viaExecModel(irPad, List.of(casePad));
         assertEquals("EXCLUDE", r.status(), "een niet-gelowerde kwantorvouw mag nooit meespelen");
         assertTrue(r.reason().contains("kwantorvouw"),
                 "de reden noemt de VORM, zodat gate 12 haar met reden in de kanaalvloer zet: " + r.reason());

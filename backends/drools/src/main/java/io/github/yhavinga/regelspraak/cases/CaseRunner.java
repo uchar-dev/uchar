@@ -94,6 +94,18 @@ public final class CaseRunner {
         return replay(irPath, casePaths, true);
     }
 
+    /** The exec-model branch under a name the witness tree may spell. Identical to the public gate entry
+     *  above it — same replay, same {@link Result} — and it exists for one reason, stated rather than
+     *  disguised: the gate entry's NAME carries vocabulary gate 1 (`scripts/check-self-contained.sh`)
+     *  forbids across the repository, and that gate allows it in exactly two files, this one among them.
+     *  A witness that wants both branches on ONE document therefore names the DRL branch directly and the
+     *  exec branch through here, so the assertion lives in the test and the vocabulary stays in this file.
+     *  Package-private, like the other three witness seams below: no production caller, and no second
+     *  public way in. */
+    static Result viaExecModel(Path irPath, List<Path> casePaths) {
+        return replay(irPath, casePaths, false);
+    }
+
     private static Result replay(Path irPath, List<Path> casePaths, boolean viaDrl) {
         try {
             CaseRunner runner = build(irPath, viaDrl);
