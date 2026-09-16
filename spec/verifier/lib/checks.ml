@@ -7530,12 +7530,14 @@ let wf028 ctx =
                             direction — the chain reaches an ancestor of the
                             declared target, so a plain instance would be
                             linked as one — must refuse, and this comparison
-                            already does. The sound direction (the chain
-                            reaches a strict SUBTYPE of the target) would be
-                            a widening, and it is held back: it sits on the
-                            open question that no executor filters a reached
-                            set by a declared type, and it deserves its own
-                            measurement rather than riding along here. *)
+                            already does. The sound direction (the chain reaches a strict SUBTYPE of
+                            the target) would be a widening, and it is held back: the
+                            fold and the allocation now both narrow a reached set to
+                            their declared type (ch. 2.2), so the machinery exists,
+                            but a creation LINKS rather than folds — a narrowed chain
+                            would silently create fewer relations instead of fewer
+                            contributors — and that deserves its own measurement
+                            rather than riding along here. *)
                          (match (reached, fc.fc_doel) with
                          | Some r, Some d when norm r <> norm d ->
                              [ v "WF-028" at

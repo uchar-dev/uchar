@@ -941,6 +941,14 @@ fold there is one attribute, one scale, one unit — no harmonisation.
 Witnessed by `jutterswet-vondstpiek` (both extremes, the presence guard
 and the empty-skip corners).
 
+Every fold join closes with `isa(X,el)` on the ELEMENT variable — the
+ch. 2.2 population, joined against the reach the `rol/3` atoms deliver.
+It is emitted unconditionally, including for a `bronPad` (where it lands
+on the last step only, never on an intermediate), and it is the same
+chain-closed `isa/2` the allocation's `vdN_ontv` joins on. On a document
+without a supertype edge the atom is satisfied by every instance the
+role yields, so the encoding is unchanged.
+
 **Temporal total, clipped** (totaal ... gedurende, ch. 3.6): the
 clip predicates a fold over the subject's *own* temporal attribute on
 a condition timeline. Per clip N: the condition segments (the
