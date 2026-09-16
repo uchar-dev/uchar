@@ -1629,6 +1629,105 @@ let () =
       "the per-element temporal fold of \"bewaartarief\" over \"V1\": the case supplies an \
        asOfDate-bucket scalar"
 
+(* --- the die/dat FILTER on the horizon fence (card diedat-filter, 2026-09-16)
+
+   The fence walks the CONTRIBUTORS, and since this card that includes the
+   §5.6 subselection: a member the filter drops is not folded, so its missing
+   timeline is not this fold's business and the document translates (witness
+   `corpus/golden/jutterswet-keurlast`, which is where the ANSWERING side is
+   pinned).
+
+   Reading a filter at TRANSLATE time is only sound while its verdict can no
+   longer change, so two shapes keep the refusal. Neither can be a corpus
+   case: `ref` ANSWERS both documents, and gate 8 demands an observable fault
+   in BOTH executors. So the fault texts are pinned here, beside the
+   answering witness in the corpus. *)
+let () =
+  (* a literal one-shot replacement; this executable links no Str. It FAILS
+     LOUDLY when the anchor is gone, so a reformat of [setvouw_doc] above
+     cannot silently turn these two rows into something else. *)
+  let vervang ~oud ~nieuw s =
+    let n = String.length oud and m = String.length s in
+    let rec zoek i =
+      if i + n > m then failwith ("test_clingo: anker niet gevonden: " ^ oud)
+      else if String.sub s i n = oud then i
+      else zoek (i + 1)
+    in
+    let i = zoek 0 in
+    String.sub s 0 i ^ nieuw ^ String.sub s (i + n) (m - i - n)
+  in
+  let straight =
+    setvouw_doc ~kind:"TOTAAL" ~operand_ot:"Vondst" ~tarief_eenheid:(eur mnd_eenheid)
+      ~doel_eenheid:(eur "null")
+  in
+  (* Vondst gains the characteristic the subselecties below read *)
+  let met_kenmerk =
+    vervang straight
+      ~oud:
+        {|"kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vondsten" }|}
+      ~nieuw:
+        {|"kenmerken": [ "gekeurd" ], "kenmerkSoorten": { "gekeurd": "BIJVOEGLIJK" },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vondsten" }|}
+  in
+  let met_filter f = vervang met_kenmerk ~oud:{|"filter": null|} ~nieuw:({|"filter": |} ^ f) in
+  let kenmerkfilter =
+    {|{ "node": "Kenmerk", "kenmerk": "gekeurd", "navigatie": null, "negatie": false,
+        "eigenaar": null, "periode": null, "bron": "die gekeurd zijn" }|}
+  in
+  (* ROW 1 — the subselection reads a value a RULE writes. Its verdict is not
+     settled at translate time, so which members carry a horizon is not
+     either: a member wrongly dropped here contributes a silent 0 where ref
+     faults. ref answers this document (it evaluates the filter after the
+     rule has fired); this arm refuses it, naming the value and the writer. *)
+  let afgeleid =
+    vervang (met_filter kenmerkfilter)
+      ~oud:{|"resolvedRegels": [ { "node": "ResolvedRegel", "naam": "bewaarlast van een jutter",|}
+      ~nieuw:
+        {|"resolvedRegels": [
+    { "node": "ResolvedRegel", "naam": "gekeurd bij tarief", "soort": "KENMERKTOEKENNING",
+      "doel": { "node": "AttribuutRef", "attribuut": "gekeurd", "objecttype": "Vondst",
+        "onderwerpBron": "Een Vondst", "navigatieRol": null,
+        "type": { "node": "Booleaan" }, "bron": "Een Vondst is gekeurd", "set": false,
+        "navigatiePad": [] },
+      "waarde": { "node": "Literal", "waarde": "waar", "type": { "node": "Booleaan" },
+        "bron": "waar" },
+      "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } },
+    { "node": "ResolvedRegel", "naam": "bewaarlast van een jutter",|}
+  in
+  faults_with ~name:"§7.1 horizon fence: a die/dat subselection a rule still DERIVES"
+    ~ir:afgeleid
+    ~case_text:(setvouw_case ~v1:v1_bucket_scalar)
+    ~needle:
+      "the per-element temporal fold of \"bewaartarief\" carries a die/dat subselection over \
+       \"gekeurd\", which a rule DERIVES on \"Vondst\": its verdict is not settled at translate \
+       time, and a member without its own timeline hangs on the answer (ch. 3.4a/3.6)";
+  (* ROW 2 — a subselection shape the reads-walk cannot account for. An
+     unknown read is never taken for case data: the walk answers None and the
+     fence refuses rather than guessing which members it drops. A role
+     membership is the witness; ref evaluates it and answers. *)
+  let onleesbaar =
+    met_filter
+      {|{ "node": "Rollidmaatschap", "rol": "vondst", "anderTeFiller": "Jutter",
+        "negatie": false, "bron": "die vondst van een Jutter zijn" }|}
+  in
+  faults_with ~name:"§7.1 horizon fence: a die/dat subselection shape the reads-walk cannot account for"
+    ~ir:onleesbaar
+    ~case_text:(setvouw_case ~v1:v1_bucket_scalar)
+    ~needle:
+      "the per-element temporal fold of \"bewaartarief\" carries a die/dat subselection this \
+       translation cannot settle at translate time (an unrecognised read), and a member without \
+       its own timeline hangs on the answer (ch. 3.4a/3.6)";
+  (* and the boundary beside them: WITHOUT a suspect there is nothing hanging
+     on the filter's verdict, so neither refusal fires and the document is
+     answered — a fence that refused here would refuse documents it was never
+     about. *)
+  ref_matches ~name:"§7.1 horizon fence: an underivable filter without a suspect is answered"
+    ~ir:onleesbaar ~case_text:(setvouw_case ~v1:v1_timeline);
+  clingo_matches ~name:"§7.1 horizon fence: no suspect, no refusal (clingo)" ~ir:onleesbaar
+    ~case_text:(setvouw_case ~v1:v1_timeline)
+
 (* --- the wrap fence counts TUPLES, not distinct spans ---------------------
    (the fix round, 2026-09-05)
 
