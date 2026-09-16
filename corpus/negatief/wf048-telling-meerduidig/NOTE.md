@@ -6,8 +6,12 @@ ill-formed (the lifted ch. 4.1 runtime fault of
 `spec/RUNTIME-SEMANTICS.md`).
 
 The sibling `wf048-ambiguous-connecting-relation` pins the same rule on
-an ALLOCATION; this one pins its `site:"instance fold"` arm, which no
-negatief case reached before.
+an ALLOCATION; this one is the first case to DECLARE its
+`site:"instance fold"` arm. The arm was not unreached before — the
+sibling `wf034-ambigu-typenpaar` trips it too, and says so — but gate 3
+only checks the rule a directory's name declares, so an incidental
+violation is a line in a report and not a pinned witness: it may go
+away without any gate noticing.
 
 The same document is **also** WF-034-ill-formed, and that is the point
 of writing it this way: the element word `Munten` names the object

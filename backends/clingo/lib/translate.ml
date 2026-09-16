@@ -1800,13 +1800,20 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
              deliberate — there the session date IS the horizon.
 
              The fence walks the ACTUAL MEMBERS, through ref's own
-             [linked], not every instance of the element type: a
+             [fold_members], not every instance of the element type: a
              disconnected instance is no contributor, and ref answers 0
              (an empty totaal) where a type-wide fence would have
              refused. Measured on exactly that shape — a Vondst subject
              folding over "de bewarende jutter" whose link is declared on
              the Jutter side, so the walk finds no member — ref says 0
-             and this arm must say 0 too. The residual edge is the
+             and this arm must say 0 too. [fold_members] is the same
+             helper the join uses, so the walk is ch. 2.2-scoped as well
+             (2026-09-16): a linked instance the elementObjecttype does
+             not cover is not a member either, and its missing timeline is
+             not this fold's business — witnessed by
+             `golden/jutterswet-muntbewaring`, which the older
+             [linked]/[linked_path] walk refused by name on a plain
+             Vondst carrying a bucket scalar. The residual edge is the
              die/dat FILTER: ref drops a filtered-out member before the
              integration, and a filter is not decidable at translation
              time, so a filtered-out member carrying a bucket scalar is

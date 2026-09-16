@@ -69,6 +69,36 @@ class TelbereikTest {
         Objecttype het Muntstuk (mv: Munten)
         """;
 
+    /** The COLLISION: one written word that is the object type's declared plural AND a role's declared
+     *  plural at the same time. Both readings reach the same type, so nothing is ambiguous about the
+     *  POPULATION; the question is only whether the relation is named, and it is. */
+    static final String BOTSEND_MEERVOUD_MODEL = """
+        Objecttype de Jutter (mv: Jutters) (bezield)
+            het muntaantal Numeriek (niet-negatief geheel getal);
+
+        Objecttype de Munt (mv: Munten)
+
+        Feittype muntvondst
+            de vinder Jutter
+            de munt (mv: Munten) Munt
+        Eén vinder vindt meerdere Munten
+        """;
+
+    /** No fact type relates Jutter to Munt at all — the type pair has ZERO candidates, not two. */
+    static final String ONVERBONDEN_MODEL = """
+        Objecttype de Jutter (mv: Jutters) (bezield)
+            het muntaantal Numeriek (niet-negatief geheel getal);
+
+        Objecttype de Munt (mv: Munten)
+
+        Objecttype de Schelp (mv: Schelpen)
+
+        Feittype schelpvondst
+            de vinder Jutter
+            de gevonden schelp (mv: gevonden schelpen) Schelp
+        Eén vinder vindt meerdere gevonden schelpen
+        """;
+
     static final String TYPEMEERVOUD_REGEL = """
 
         Regel muntaantal van een jutter
@@ -161,6 +191,47 @@ class TelbereikTest {
         String c = ir(MODEL + VREEMDE_REGEL);
         assertTrue(c.contains("\"elementObjecttype\": null"),
                 () -> "een onbekend elementwoord mag geen type binden:\n" + c);
+    }
+
+    /** The COLLISION, and the order that decides it: when one written word is BOTH the object type's
+     *  declared plural and a role's declared plural, the population lookup is not what answers — the
+     *  role does, and the fold goes out BOUND. Both readings reach `Munt`, so no population question
+     *  is open; what would be lost by binding nothing is the relation the sentence does name, and the
+     *  document would then rest on a type-pair derivation it does not need. Not a new behaviour — the
+     *  population lookup is a fallback and runs only where the role reading finds nothing — but the
+     *  precedence had no test, so a reordering would have been invisible here. */
+    @Test
+    void een_woord_dat_ook_een_rolmeervoud_is_bindt_de_relatie() {
+        String c = ir(BOTSEND_MEERVOUD_MODEL + TYPEMEERVOUD_REGEL);
+        assertTrue(c.contains("\"elementObjecttype\": \"Munt\""),
+                () -> "beide lezingen bereiken Munt, dus het elementtype staat vast:\n" + c);
+        assertTrue(c.contains("\"bronRol\""),
+                () -> "een woord dat een rol NOEMT hoort die rol te binden:\n" + c);
+        assertTrue(c.contains("\"rol\": \"munt\""),
+                () -> "de binding noemt de gedeclareerde rol:\n" + c);
+    }
+
+    /** The ZERO-candidate flank of the same fallback. Two fact types make the type pair ambiguous; NONE
+     *  makes it empty, and the frontend's answer is identical in both — the element type binds, no
+     *  relation is invented, the fold goes out bindingless — so the difference is the verifier's to
+     *  state and it states it: {@code WF-034 … the type pair 'Jutter'/'Munt' does not derive a unique
+     *  connecting role (0 candidates)} beside {@code WF-048 … bindingless instance fold: no fact type
+     *  relates 'Jutter' to 'Munt'}. Measured 2026-09-16 on exactly this source. It stays a JUnit
+     *  witness rather than a second negatief case: the refusing ARM is the one
+     *  {@code corpus/negatief/wf048-telling-meerduidig} already declares, and a second document would
+     *  pin the same two clauses over a different candidate count, whereas what has no witness at all
+     *  is the FRONTEND's half — that an unconnected pair produces a resolved, bindingless fold and not
+     *  a marker or a silence. */
+    @Test
+    void een_onverbonden_typepaar_levert_dezelfde_bindingloze_vouw() {
+        String c = ir(ONVERBONDEN_MODEL + TYPEMEERVOUD_REGEL);
+        assertTrue(c.contains("\"kind\": \"AANTAL\""), () -> "de telling hoort geëmitteerd te worden:\n" + c);
+        assertTrue(c.contains("\"elementObjecttype\": \"Munt\""),
+                () -> "het elementtype bindt ook zonder verbindend feittype:\n" + c);
+        assertFalse(c.contains("\"bronRol\""),
+                () -> "er is geen relatie, dus er mag er ook geen geëmitteerd worden:\n" + c);
+        assertFalse(c.contains("\"node\": \"Onopgelost\""),
+                () -> "de telling is opgelost; de weigering is de verifier's:\n" + c);
     }
 
     /** The raw emission, keys spelled as the wire spells them — whitespace is NOT stripped, because
