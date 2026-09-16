@@ -2349,9 +2349,17 @@
         "kwantor": {
           "enum": [
             "ALLE",
-            "GEEN"
+            "GEEN",
+            "TEN_MINSTE",
+            "TEN_HOOGSTE",
+            "PRECIES"
           ],
-          "description": "The quantifier over the instance range. ALLE = every contributor satisfies 'toets'; GEEN = none does. The vocabulary is Samengesteld's, over instances instead of parts; the counting forms (TEN_MINSTE / TEN_HOOGSTE / PRECIES) are the named extension point and are NOT admitted in v0 (WF-108 (a) refuses a hand-written one by name)."
+          "description": "The quantifier over the instance range. ALLE = every contributor satisfies 'toets'; GEEN = none does; the three counting forms compare the NUMBER of contributors that satisfy it with 'drempel' (TEN_MINSTE: count >= drempel; TEN_HOOGSTE: count <= drempel; PRECIES: count == drempel). The vocabulary is Samengesteld's, over instances instead of parts. DE is NOT admitted here: the bare definite describes ONE member and is not a quantification over a set (WF-108 (a) refuses a hand-written one by name)."
+        },
+        "drempel": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "The counting quantifier's threshold — Samengesteld's field, under Samengesteld's rule (WF-041: at least 1). Written EXACTLY under TEN_MINSTE / TEN_HOOGSTE / PRECIES and omitted under ALLE / GEEN, which is where this node diverges from Samengesteld (there the field is always present and a zero nobody reads): a field that is meaningful in one position and inert everywhere else can say anything. The conditional below is the wire half of WF-108 (e); the verifier cites the rule."
         },
         "elementObjecttype": {
           "type": [
@@ -2400,6 +2408,36 @@
           "description": "Extension field (wire-entry discipline, IR-SPEC Method): the MULTI-STEP range, the relations walked subject-outwards, each step spelled exactly as bronRol is. Two or more steps; the one-step range IS bronRol and the two fields are mutually exclusive (WF-108 (c), the WF-102 discipline under this node's own rule)."
         }
       },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "kwantor"
+            ],
+            "properties": {
+              "kwantor": {
+                "enum": [
+                  "TEN_MINSTE",
+                  "TEN_HOOGSTE",
+                  "PRECIES"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "drempel"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "drempel"
+              ]
+            }
+          }
+        }
+      ],
       "description": "Extension node (IR-SPEC Method; wire node Kwantorvouw): the QUANTIFIER FOLD — first-order quantification of a condition over the members of a linked instance set (IR-SPEC ch. 4.5; RUNTIME-SEMANTICS ch. 3.9a). The first-order sibling of Samengesteld, which quantifies over PARTS of one subject; this one quantifies over INSTANCES, and takes its range fields from the instance fold (ch. 4.3) unchanged."
     },
     "Regelversie": {

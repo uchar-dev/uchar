@@ -1801,6 +1801,11 @@ contributors = { m : m ∈ reach ∩ population,  filter(m) }
 ALLE  = for every m in contributors:       test(m)
 GEEN  = for every m in contributors:  not  test(m)
 contributors = ∅  →  waar, for BOTH quantifiers
+
+count          = | { m ∈ contributors : test(m) } |
+TEN MINSTE n   =  count ≥ n
+TEN HOOGSTE n  =  count ≤ n
+PRECIES n      =  count = n
 ```
 
 `reach ∩ population` and `filter` are **ch. 3.4a's**, unchanged and
@@ -1842,6 +1847,29 @@ appears in this document (ch. 3.9's empty to-many range, ch. 5.10's
 `ALLE` composite over no parts) — but it is written down here because it
 is the one rule of this node that a reader is most likely to supply from
 intuition and get backwards, and because the corpus pins it.
+
+**The counting quantifiers count the CONTRIBUTORS the matrix holds of**
+(`IR-SPEC.md` ch. 4.5, WF-108 (e); the threshold is `Compound`'s field
+under `Compound`'s rule, WF-041: at least 1). They are not a second kind
+of fold: `ALLE` is `count = |contributors|` and `GEEN` is `count = 0`
+written the other way round, so **one** rule of evaluation covers all
+five, and it is ch. 5.10's — the contributors are settled in full first,
+the matrix is then read in the contributors' own order (ch. 5.11) and
+stops at the first one after which the outcome stands, with ch. 5.10's
+trigger table applied verbatim, the contributors as its members. Two of
+its rows fire on the **empty prefix** here as they do there and are the
+sharper for ranging over a set rather than a written list: *at-least n*
+and *exactly n* over fewer than *n* contributors are **onwaar** having
+read nothing, and *at-most n* over at most *n* contributors is **waar**
+having read nothing.
+
+**The empty set needs no separate principle under these three.** A count
+of 0 answers each of them by itself — *at-least n* (n ≥ 1) onwaar,
+*at-most n* waar, *exactly n* onwaar — so the paragraph above is a rule
+about `ALLE` and `GEEN` and is not extended to them. Those two would come
+out the same way from the count; they are stated separately because that
+is where the intuition slips, and the counting arms are stated here
+because a reader might expect a vacuum rule and there is none to apply.
 
 **Worked examples — the §8.2 form (absolute; `ref/` tests, the ASP
 backend's suite and `corpus/golden/jutterswet-ploegpremie` verbatim).**
@@ -1943,6 +1971,64 @@ ch. 3.9's "niet gedurende …", which qualifies the outer comparison and
 which an executor may therefore fold by flipping `ALLE` into `GEEN`
 (∀c.¬P = ¬∃c.P). Both are the same verdict; stating where the negation
 lives is what keeps an executor from applying that flip twice.
+
+**Worked examples — the counting quantifiers** (absolute;
+`corpus/golden/jutterswet-reddingsvloot` verbatim). Document: a
+`Reddingsvloot` reaches its `sloepen` over the to-many role of
+`vlootindeling`; `vaartijd` is a month-granular attribute of
+`Reddingssloep` and `gekeurd` a characteristic of it. One matrix — the
+ch. 3.9 whole-period test *vaartijd > 20 gedurende het gehele jaar* —
+under three quantifiers, plus a fourth fold that adds a die/dat
+subselection to the same matrix: *inzetbaar* = `TEN MINSTE 2`,
+*krap* = `TEN HOOGSTE 1`, *paraat* = `PRECIES 1`, *geschikt* =
+`TEN MINSTE 2` over the sloepen *die gekeurd zijn*. `sloeptal` is the
+plain instance fold beside them, so every row also states how large the
+unfiltered range is.
+
+| # | vloot | the vloot's sloepen (vaartijd, keuring) | sloeptal | count | inzetbaar (≥2) | krap (≤1) | paraat (=1) | geschikt (≥2, gekeurd) |
+|---|---|---|---|---|---|---|---|---|
+| 1 | V1 | 25 gekeurd, 30 gekeurd | 2 | 2 | **waar** | onwaar | onwaar | **waar** |
+| 2 | V1 | 25 gekeurd, 10 gekeurd | 2 | 1 | onwaar | **waar** | **waar** | onwaar |
+| 3 | V1 | none | 0 | 0 | onwaar | **waar** | onwaar | onwaar |
+| 4 | V1 | 25 gekeurd, 30 gekeurd on Jan–Jun only | 2 | 1 | onwaar | **waar** | **waar** | onwaar |
+| 5 | V1 | 25 gekeurd, 30 NIET gekeurd, 10 gekeurd | 3 | 2 | **waar** | onwaar | onwaar | onwaar |
+| 5 | V2 | 30 gekeurd | 1 | 1 | onwaar | **waar** | **waar** | onwaar |
+| 6 | V1 | 25 NIET gekeurd, 30 NIET gekeurd | 2 | 2 | **waar** | onwaar | onwaar | onwaar |
+
+The `count` column is the count of the formula — over the UNFILTERED
+contributors, which is what the first three folds range over; *geschikt*
+counts over the `gekeurd` survivors and its own counts are 2, 1, 0, 1, 1,
+1 and 0 in the seven rows.
+
+Rows 1 and 2 pin each threshold **from both sides at once**, which is
+what one shared matrix buys: a count of 2 satisfies *at-least 2* exactly
+at its threshold and breaks *at-most 1* by exactly one, and a count of 1
+turns both of those over while satisfying *exactly 1*. Row 3 is the empty
+set under all three — and it is the paragraph above made observable: a
+count of 0 decides each quantifier without any vacuum rule, so *krap* is
+**waar** where *inzetbaar* and *paraat* are **onwaar**, which no single
+"empty means true" principle would give. Row 4 is ch. 3.9's gap, reused
+unchanged: the member with the half-year timeline fails the matrix, so it
+simply does not count.
+
+Row 5 carries TWO vloten and both of them earn their place. V1 is the
+cell **the filter alone decides**: *inzetbaar* and *geschikt* ask the same
+question of the same matrix and part company here, because the sloep at
+30 is not `gekeurd` and the surviving pair holds only one satisfier.
+Removing the `filter` from the wire makes *geschikt* read **waar** and
+nothing else in the document moves. V2 pins the **range** the way
+`jutterswet-schouwploeg` row 2 does — it reads *krap* and *paraat* in the
+same run in which V1 reads neither, so an executor quantifying over every
+`Reddingssloep` rather than over the vloot's own sloepen answers it the
+other way — and it is also where ch. 5.10's **empty-prefix** triggers
+fire: over one contributor, *at-least 2* is out of reach before the
+matrix is read once, and *at-most 1* can no longer be exceeded, so both
+answer having read nothing. Row 6 is the empty SELECTION beside a filled
+range: two satisfying sloepen, neither `gekeurd`, so *inzetbaar* is
+**waar** on a count of 2 while *geschikt* counts over ∅ and is **onwaar**
+— the counting mirror of the vacuous cell, and the one place where an
+executor that dropped the filter and one that dropped the empty-set
+reading would answer differently.
 
 ### 3.10 Period conditions and the §8.4.3 clip
 
@@ -2067,7 +2153,7 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 | Whole-period qualifier over a characteristic, the **inner** negation ("gedurende … NIET") | specified (ch. 3.9's formula), executed by the two OCaml executors; the Drools backend refuses it by name in both branches, so it stays suite-pinned and out of the corpus |
 | Whole-period qualifier, the **ordering/equality** test over a value timeline | **specified and executed, ch. 3.9** — the reference interpreter and the ASP backend built it 2026-09-16 (the heelperiode-forall card), the Drools backend carried it already; witnessed by `corpus/golden/jutterswet-ploegpremie` and by each executor's own suite. The **date-valued** form stays refused (its own row above), and the navigated form is untouched |
 | Whole-period qualifier, the **leeg/gevuld** tests | specified (ch. 3.9), **not executed** by either OCaml executor — both refuse them by name, no corpus case. The threshold clause the leeg test needs (touched-days rather than calendar days) is stated in ch. 3.9 and implemented in the Drools runtime alone; the sibling that landed above deliberately did not take it along, because a clause with no witness on this side would be a green subset |
-| **Quantifier fold** over a linked instance set (ch. 3.9a) | **specified and executed** — ALLE and GEEN in all three executors, over a WHOLE-PERIOD matrix (witness `corpus/golden/jutterswet-ploegpremie`) and, since 2026-09-16, over a NON-temporal one (witness `corpus/golden/jutterswet-schouwploeg`: five cases carrying six verdict rows — two ploegen share one of them, which is what pins the RANGE — both quantifiers, two matrix shapes and a negated matrix). The executor asymmetry this row used to record is **gone**: the ASP backend REIFIES the matrix into a helper predicate and negates that one atom (negation-as-failure over a reified conjunction is an ordinary ASP body, where the complement of an arbitrary conjunction of atoms is not), and both Drools branches ask the matrix through their ordinary per-subject condition lowering with the element as subject — the exec branch collecting the contributors, the DRL-text branch denying the failure witness with a `not` pattern. What stays bounded is which matrix FORMS each executor's condition translation carries: a form outside it is refused by name, per form, never silently. The counting quantifiers over an instance range are the named extension point and are refused by WF-108 (a); the WHOLE-PERIOD matrix remains a named marker in the Drools DRL-text branch alone |
+| **Quantifier fold** over a linked instance set (ch. 3.9a) | **specified and executed** — ALLE and GEEN in all three executors, over a WHOLE-PERIOD matrix (witness `corpus/golden/jutterswet-ploegpremie`) and, since 2026-09-16, over a NON-temporal one (witness `corpus/golden/jutterswet-schouwploeg`: five cases carrying six verdict rows — two ploegen share one of them, which is what pins the RANGE — both quantifiers, two matrix shapes and a negated matrix). The executor asymmetry this row used to record is **gone**: the ASP backend REIFIES the matrix into a helper predicate and negates that one atom (negation-as-failure over a reified conjunction is an ordinary ASP body, where the complement of an arbitrary conjunction of atoms is not), and both Drools branches ask the matrix through their ordinary per-subject condition lowering with the element as subject — the exec branch collecting the contributors, the DRL-text branch denying the failure witness with a `not` pattern. What stays bounded is which matrix FORMS each executor's condition translation carries: a form outside it is refused by name, per form, never silently. **All five quantifiers are executed since 2026-09-16**: the counting three — the named extension point this row used to record — are built in all three executors over BOTH matrix routes, each of them reading the SIZE of the satisfier set where ALLE and GEEN read a witness (the ASP backend a `#count` with the range join INSIDE the aggregate, the Drools exec branch a counting twin of the ch. 3.9 fold helpers and a count over the collected contributors, the DRL-text branch a count accumulate over the element pattern). Witnesses `corpus/golden/jutterswet-reddingsvloot` (the §8.2 matrix, seven verdict rows) and `corpus/golden/jutterswet-vuurtoren` (a non-temporal one, six). What is left on the quantifier field is `DE`, refused by name by WF-108 (a); the WHOLE-PERIOD matrix remains a named marker in the Drools DRL-text branch alone, counting quantifiers included |
 | Gap-vs-absent timeline observability (temporal total: 0 vs leeg) | mirrored residual; stays OPEN here — the ch. 1.4 freeze covers the scalar discipline, not this temporal residual |
 | Sorted/non-overlapping input invariant | delta candidate (WF rule, data plane), ch. 3.1 |
 | Non-terminating pro-rata stored at 16 digits | v0 residual (normative: exact fraction), ch. 3.7 |
