@@ -464,7 +464,17 @@ EXPECTED_CHANNEL=(
 # condition gets. A form the leaf translation does not carry still refuses BY NAME, per form. Nothing
 # else moved: the whole-period matrix keeps its own route in the exec branch and its named marker in
 # the DRL-text one.
-EXPECTED_PLAYED=143
+# 2026-09-16 (card diedat-filter), 143 -> 144: `jutterswet-keurploeg` joins as a NEW PLAYER — the
+# ch. 3.9a quantifier fold with the §5.6 die/dat SUBSELECTION on its range, which the RegelSpraak
+# frontend now emits instead of dropping. No arm grew for it: this backend already constrained the
+# accumulate SOURCE with `Kwantorvouw.filter` exactly as it constrains `Expr.Functie.filter`, and the
+# golden's seven cells (three of which the filter alone decides) confirm it against ref and clingo.
+# 2026-09-16 (card diedat-filter), 144 -> 145: `jutterswet-keurlast` joins as a NEW PLAYER — the
+# per-element temporal fold with a die/dat subselection, where the member OUTSIDE the selection
+# carries an asOfDate-bucket scalar. This backend answered it all along (it drops a filtered-out
+# member before integrating, as ref does); the ASP backend's translate-time horizon fence did not,
+# and that is the leg the card repaired. Nothing else moved.
+EXPECTED_PLAYED=145
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the
