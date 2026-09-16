@@ -406,7 +406,12 @@ EXPECTED_CHANNEL=(
 # matches the element type as a Java CLASS pattern over beans wired with native `extends`, so a
 # `Munt` pattern never saw the plain `Vondst` — Drools was the only executor already right, and the
 # golden pins that agreement instead of leaving it unmeasured. Nothing else moved.
-EXPECTED_PLAYED=136
+# 2026-09-16 (card typerange-sluiting), 136 -> 137: `jutterswet-bergersdeling` joins as a NEW PLAYER —
+# the SOURCE twin of `jutterswet-hoofdberging`, which had to be hand-written because the frontend
+# could not resolve an allocation target naming a SUBTYPE whose relation hangs on the ancestor. It
+# plays for the same reason hoofdberging does and pins the same three hand-computed numbers; what is
+# new is only that the document now comes out of a `bron.rgs`. Nothing else moved.
+EXPECTED_PLAYED=137
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the

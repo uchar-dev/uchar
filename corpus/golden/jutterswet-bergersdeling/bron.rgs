@@ -1,0 +1,24 @@
+Eenheidsysteem Munt
+    de euro (mv: euros) EUR €
+
+Objecttype de Berging (mv: Bergingen)
+    de opbrengst Numeriek (geheel getal) met eenheid €;
+    de onverdeelde rest Numeriek (geheel getal) met eenheid €;
+
+Objecttype de Berger (mv: Bergers) (bezield)
+    het bergingsaandeel (mv: bergingsaandelen) Numeriek (geheel getal) met eenheid €;
+
+Objecttype de Hoofdberger is een Berger (mv: Hoofdbergers) (bezield)
+    de rang Numeriek (niet-negatief geheel getal);
+
+Feittype bergingsdeelname
+    de berging Berging
+    de berger (mv: bergers) Berger
+Eén berging heeft meerdere bergers
+
+Regel verdeel de opbrengst van een berging
+    geldig altijd
+        De opbrengst van een berging wordt verdeeld over de bergingsaandelen van alle hoofdbergers van de berging, waarbij wordt verdeeld:
+        - in gelijke delen,
+        - afgerond op 0 decimalen naar beneden.
+        Als onverdeelde rest blijft de onverdeelde rest van de berging over.

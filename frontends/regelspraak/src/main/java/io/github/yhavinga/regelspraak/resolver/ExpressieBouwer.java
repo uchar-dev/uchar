@@ -1390,6 +1390,10 @@ final class ExpressieBouwer {
      */
     private Objecttype aantalElement(String woord) {
         Objecttype byNaam = model.resolveObjecttype(woord);
+        // the count's element word is a population name too ("het aantal Munten van de boot"), and
+        // it is written in the plural by construction — same fallback, same precedence as the set
+        // onderwerp above (see typeViaMeervoud); the role reading below still wins where it applies.
+        if (byNaam == null) byNaam = typeViaMeervoud(woord);
         if (huidigSubject == null) return byNaam;
         Objecttype viaRol = model.rolDoeltypeNaarSubject(huidigSubject, woord);
         if (viaRol != null && (byNaam == null || model.verbindendeRolViaNaam(huidigSubject, byNaam, woord) == null))
@@ -2040,7 +2044,36 @@ final class ExpressieBouwer {
     Objecttype resolveOnderwerp(OnderwerpContext o) {
         String n = primaireNaam(o);
         Objecttype ot = n != null ? model.resolveObjecttype(n) : null;
+        if (ot == null) ot = typeViaMeervoud(n);
         return ot != null ? ot : vindObjecttype(o);
+    }
+
+    /**
+     * The declared object type a written PLURAL names ("alle Hoofdbergers"), for the positions that
+     * name a POPULATION rather than navigate to one: a set onderwerp and a count's element word.
+     *
+     * <p>{@link RegelSpraakModel#resolveObjecttype} keys object types on their declared SINGULAR and
+     * otherwise reads the name as a ROLE (name or declared plural). That covers a population whose
+     * name happens to be a role's — "alle bergers" binds Berger through the role {@code berger
+     * (mv: bergers)} — and covers nothing else. A population named by a SUBTYPE has no role of its
+     * own by construction: the relation is declared once, on the ancestor the subtype inherits from
+     * (ch. 2.6 makes a filler an UPPER bound), so "alle Hoofdbergers" matched no object-type key and
+     * no role and resolved to nothing at all. The reach and the population are two different
+     * questions (ch. 2.2: quantification is extensional at every type-ranging position), and this
+     * answers the second one; the role binding answers the first and already resolves through ⊑.
+     *
+     * <p>Tried LAST, after the singular and the role reading, so every name that resolves today
+     * resolves to exactly what it does today and this only binds where nothing did. The matcher is
+     * the ambiguity-safe one the uniqueness check already uses, so a plural shared by two declared
+     * types binds neither.
+     */
+    private Objecttype typeViaMeervoud(String naam) {
+        if (naam == null) return null;
+        for (String kandidaat : RegelSpraakModel.naamKandidaten(naam)) {
+            Objecttype ot = MeervoudMatcher.vindObjecttype(model.objecttypen.values(), kandidaat);
+            if (ot != null) return ot;
+        }
+        return null;
     }
 
     /** The object type an onderwerpketen denotes (a rule subject), via its primary noun. */
