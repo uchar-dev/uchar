@@ -3498,8 +3498,12 @@ let kv_geheel ?(op = "GROTER") ?(grens = "40") ?(jaar = "true") ?(niet = "false"
 (* the quantifier-fold document: one rule on Werf, whose condition folds the
    linked Schuiten. [toets] defaults to the whole-period comparison; [ext] is
    the extension slot (bronRol / bronPad). *)
-let kv_doc ?(kwantor = "ALLE") ?(toets = kv_geheel ()) ?(filter = "null") ?(ext = "")
+let kv_doc ?(kwantor = "ALLE") ?drempel ?(toets = kv_geheel ()) ?(filter = "null") ?(ext = "")
     ?(element = {|"Schuit"|}) () =
+  (* the threshold is written EXACTLY under a counting kwantor (WF-108 (e)), so
+     it is a slot that is empty for ALLE/GEEN rather than a field always
+     written *)
+  let dr = match drempel with None -> "" | Some d -> Printf.sprintf {|, "drempel": %d|} d in
   Printf.sprintf
     {|{
   "formaat": "regelspraak-ir-v0",
@@ -3514,7 +3518,7 @@ let kv_doc ?(kwantor = "ALLE") ?(toets = kv_geheel ()) ?(filter = "null") ?(ext 
         "onderwerpBron": "een Werf", "navigatieRol": null, "type": %s,
         "bron": "De keur van een Werf", "set": false, "navigatiePad": [] },
       "waarde": { "node": "Literal", "waarde": "5", "type": %s, "bron": "5" },
-      "voorwaarde": { "node": "Kwantorvouw", "kwantor": "%s", "elementObjecttype": %s,
+      "voorwaarde": { "node": "Kwantorvouw", "kwantor": "%s"%s, "elementObjecttype": %s,
         "filter": %s, "toets": %s,
         "bron": "%s schuiten van de Werf gedurende het gehele jaar een vangst van meer dan 40 hebben"%s },
       "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }
@@ -3524,7 +3528,7 @@ let kv_doc ?(kwantor = "ALLE") ?(toets = kv_geheel ()) ?(filter = "null") ?(ext 
   "regelGroepen": [], "diagnostics": []
 }
 |}
-    kv_objecttypen kv_feittypen kv_num0 kv_num0 kwantor element filter toets kwantor ext
+    kv_objecttypen kv_feittypen kv_num0 kv_num0 kwantor dr element filter toets kwantor ext
 
 (* the SCALAR form of the same clause: no quantifier, the subject reads its
    own timeline. One rule on Schuit, so a case pins it per member. *)
@@ -3785,6 +3789,74 @@ let () =
   alle ~name:"ch3.9a GEEN over een ONTKENDE kenmerkmatrix, één lid niet gekeurd"
     ~ir:(kenmerk_matrix ~kwantor:"GEEN" ~negatie:"true" ()) ~gekeurd:[ "S1" ] ~leden:leden2
     ~waar:false ();
+  (* THE COUNTING QUANTIFIERS (ch. 3.9a, since 2026-09-16). What they need is
+     not a witness but the SIZE of the satisfier set, so the backend emits a
+     #count over the same matrix atoms and compares. Every threshold is pinned
+     from BOTH sides off ONE pair of member sets — a count of 2 sits exactly at
+     ten-minste-2 and exceeds ten-hoogste-1 by one; a count of 1 turns both over
+     and is what precies-1 wants. Corpus witnesses:
+     corpus/golden/jutterswet-reddingsvloot (this matrix) and
+     corpus/golden/jutterswet-vuurtoren (a non-temporal one). *)
+  let tel kwantor drempel = kv_doc ~kwantor ~drempel () in
+  let twee = [ ("S1", heel_jaar "50"); ("S2", heel_jaar "60") ] in
+  let een = [ ("S1", heel_jaar "50"); ("S2", heel_jaar "30") ] in
+  alle ~name:"ch3.9a TEN MINSTE 2, telling 2 (op de drempel)" ~ir:(tel "TEN_MINSTE" 2)
+    ~leden:twee ~waar:true ();
+  alle ~name:"ch3.9a TEN MINSTE 2, telling 1 (onder de drempel)" ~ir:(tel "TEN_MINSTE" 2)
+    ~leden:een ~waar:false ();
+  alle ~name:"ch3.9a TEN HOOGSTE 1, telling 1 (op de drempel)" ~ir:(tel "TEN_HOOGSTE" 1)
+    ~leden:een ~waar:true ();
+  alle ~name:"ch3.9a TEN HOOGSTE 1, telling 2 (boven de drempel)" ~ir:(tel "TEN_HOOGSTE" 1)
+    ~leden:twee ~waar:false ();
+  alle ~name:"ch3.9a PRECIES 1, telling 1" ~ir:(tel "PRECIES" 1) ~leden:een ~waar:true ();
+  alle ~name:"ch3.9a PRECIES 1, telling 2 is onwaar" ~ir:(tel "PRECIES" 1) ~leden:twee
+    ~waar:false ();
+  alle ~name:"ch3.9a PRECIES 1, telling 0 is onwaar" ~ir:(tel "PRECIES" 1)
+    ~leden:[ ("S1", heel_jaar "30"); ("S2", heel_jaar "20") ]
+    ~waar:false ();
+  (* the empty set is the COUNT and not a principle: the three part company on
+     the same range, where ALLE and GEEN both read waar *)
+  alle ~name:"ch3.9a TEN MINSTE 1 over de lege verzameling is onwaar" ~ir:(tel "TEN_MINSTE" 1)
+    ~leden:[] ~waar:false ();
+  alle ~name:"ch3.9a TEN HOOGSTE 1 over de lege verzameling is waar" ~ir:(tel "TEN_HOOGSTE" 1)
+    ~leden:[] ~waar:true ();
+  alle ~name:"ch3.9a PRECIES 1 over de lege verzameling is onwaar" ~ir:(tel "PRECIES" 1)
+    ~leden:[] ~waar:false ();
+  (* a threshold beyond the contributor count, and one that already covers it:
+     ch. 5.10's empty-prefix triggers, over a set instead of a written list *)
+  alle ~name:"ch3.9a TEN MINSTE 2 over één lid is buiten bereik" ~ir:(tel "TEN_MINSTE" 2)
+    ~leden:[ ("S1", heel_jaar "50") ]
+    ~waar:false ();
+  alle ~name:"ch3.9a TEN HOOGSTE 2 over één lid is vacuüm waar" ~ir:(tel "TEN_HOOGSTE" 2)
+    ~leden:[ ("S1", heel_jaar "50") ]
+    ~waar:true ();
+  (* the counting arms over a NON-temporal matrix: the same count, the other
+     matrix route *)
+  let kenmerk_tel kwantor drempel =
+    kv_doc ~kwantor ~drempel
+      ~toets:
+        {|{ "node": "Kenmerk", "kenmerk": "gekeurd", "navigatie": null, "negatie": false,
+            "eigenaar": null, "periode": null, "bron": "de Schuit gekeurd is" }|}
+      ()
+  in
+  alle ~name:"ch3.9a TEN MINSTE 2 over een kenmerkmatrix, twee gekeurd"
+    ~ir:(kenmerk_tel "TEN_MINSTE" 2) ~gekeurd:[ "S1"; "S2" ] ~leden:leden2 ~waar:true ();
+  alle ~name:"ch3.9a TEN MINSTE 2 over een kenmerkmatrix, één gekeurd"
+    ~ir:(kenmerk_tel "TEN_MINSTE" 2) ~gekeurd:[ "S1" ] ~leden:leden2 ~waar:false ();
+  alle ~name:"ch3.9a PRECIES 1 over een kenmerkmatrix, één gekeurd"
+    ~ir:(kenmerk_tel "PRECIES" 1) ~gekeurd:[ "S1" ] ~leden:leden2 ~waar:true ();
+  (* the emitted shape, so the RANGE is pinned and not only the verdict: the
+     join sits INSIDE the aggregate element. Outside it the element variable
+     would be global and the count would range over the whole population —
+     the failure corpus case 5 of jutterswet-reddingsvloot is there to catch *)
+  translates_carrying ~name:"ch3.9a de telling draagt de bereikjoin IN de aggregatie"
+    ~ir:(tel "TEN_MINSTE" 2)
+    ~case_text:(kv_case ~leden:[ ("S1", heel_jaar "50") ] ~waar:false ())
+    ~needle:{|#count { X|};
+  translates_carrying ~name:"ch3.9a de telling joint op de rol binnen de aggregatie"
+    ~ir:(tel "TEN_MINSTE" 2)
+    ~case_text:(kv_case ~leden:[ ("S1", heel_jaar "50") ] ~waar:false ())
+    ~needle:{|: rol(S,"schuiten",|};
   (* the emitted shape itself: one negated witness helper over the fold's own
      range, reading the whole-period FAILURE atom per element *)
   translates_carrying ~name:"ch3.9a ALLE leest het faalatoom per element" ~ir:(kv_doc ())
@@ -3819,9 +3891,16 @@ let () =
     ~needle:"whole-period leeg/gevuld test is ch. 3.9 scope";
   faults_with ~name:"ch3.9a vouw zonder matrix (WF-108)" ~ir:(kv_doc ~toets:"null" ())
     ~case_text:vals ~needle:"without a matrix (toets) is ill-formed (WF-108)";
-  faults_with ~name:"ch3.9a vouw met een tellende kwantor"
+  (* the two REFUSALS this node still carries on its quantifier field. Until
+     2026-09-16 the counting quantors were refused here too — they are built
+     since, and the rows above are their verdicts; the DE arm and the missing
+     threshold are what is left, and both come up by name rather than being
+     read as a forall. *)
+  faults_with ~name:"ch3.9a vouw met kwantor DE" ~ir:(kv_doc ~kwantor:"DE" ()) ~case_text:vals
+    ~needle:"kwantor DE, which WF-108 (a) refuses";
+  faults_with ~name:"ch3.9a tellende vouw zonder drempel"
     ~ir:(kv_doc ~kwantor:"TEN_MINSTE" ())
-    ~case_text:vals ~needle:"a kwantor other than ALLE or GEEN";
+    ~case_text:vals ~needle:"counting quantifier fold without a drempel";
   (* the range fields ride [source_join], so the WF-102 verdicts are the fold
      family's own, in the fold family's words *)
   faults_with ~name:"ch3.9a bereikpad van één stap"

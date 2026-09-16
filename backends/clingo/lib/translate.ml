@@ -4313,7 +4313,8 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
       in
       [ Printf.sprintf "%s_h%d(%s,%s)" p n subject h; compare ]
   | Kwantorvouw
-      { kv_kwantor; kv_element_objecttype; kv_filter; kv_toets; kv_bron_rol; kv_bron_pad; _ } ->
+      { kv_kwantor; kv_drempel; kv_element_objecttype; kv_filter; kv_toets; kv_bron_rol;
+        kv_bron_pad; _ } ->
       (* RUNTIME-SEMANTICS ch. 3.9a: the QUANTIFIER FOLD — "alle/geen ⟨elementen⟩
          ⟨matrix⟩". Its contributors are EXACTLY the instance fold's (ch. 3.4a /
          3.4b) and are gathered by the same machinery: [source_join] decides
@@ -4349,11 +4350,20 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
                cites the rule, and this backend does not guess a verdict for it"
       in
       (match kv_kwantor with
-      | Alle | Geen -> ()
-      | De | Ten_minste | Ten_hoogste | Precies ->
+      | Alle | Geen | Ten_minste | Ten_hoogste | Precies -> ()
+      | De ->
           fault
-            "the quantifier fold carries a kwantor other than ALLE or GEEN, which WF-108 refuses \
-             upstream; the counting quantifiers fold conditions, not elements");
+            "the quantifier fold carries kwantor DE, which WF-108 (a) refuses upstream: the bare \
+             definite describes ONE member, not a quantification over a set");
+      let drempel =
+        match (kv_kwantor, kv_drempel) with
+        | (Ten_minste | Ten_hoogste | Precies), Some d -> d
+        | (Ten_minste | Ten_hoogste | Precies), None ->
+            fault
+              "a counting quantifier fold without a drempel is ill-formed (WF-108 (e)): the \
+               verifier cites the rule, and this backend does not guess a threshold for it"
+        | _, _ -> 0
+      in
       let env =
         { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None;
           locals = Eval.SMap.empty }
@@ -4366,6 +4376,51 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
       let fatoms =
         match kv_filter with None -> [] | Some c -> cond_atoms ctx ~subject:x ~subject_ot:el c
       in
+      (match kv_kwantor with
+      | Ten_minste | Ten_hoogste | Precies ->
+          (* the COUNTING quantifiers (ch. 3.9a): the verdict is a number,
+             not a witness, so the negated-helper route above cannot serve
+             them — what is needed is the SIZE of the satisfier set. That is
+             `#count`, over exactly the element condition GEEN already reads:
+             the satisfiers ARE the atoms `cond_atoms` derives for the
+             matrix.
+
+             The range join sits INSIDE the aggregate element, not beside it.
+             Outside, X would be a global variable and the count would range
+             over whatever the caller's rule happened to bind it to — over
+             every element of the population in practice, which is the exact
+             failure the two-ploegen corpus cell is there to catch. Inside,
+             X and every intermediate hop are local, and the element tuple is
+             X alone, so a contributor reachable along two hops counts once:
+             the dedup the flat union demands, for free, the same way the
+             witness route gets it.
+
+             It goes into a HELPER rule rather than into the caller's body,
+             for the reason the witness route does the same: `cond_atoms`
+             serves positions an aggregate cannot occupy — a fold's own
+             filter among them, where a bare `#count` here would nest inside
+             another aggregate. `kvc(S,H)` plus a comparison are plain
+             literals and fit everywhere.
+
+             The empty contributor set is clingo's own 0, so no arm is
+             needed for it: at-least and exactly fail on it, at-most holds.
+             Stratification is the witness route's argument unchanged — the
+             helper is named after a counter that only grows, over a matrix
+             translated before the name existed. *)
+          let atoms = cond_atoms ctx ~subject:x ~subject_ot:el toets in
+          ctx.fresh <- ctx.fresh + 1;
+          let p = Printf.sprintf "kvc%d" ctx.fresh in
+          let h = fresh ctx "H" in
+          emit ctx "%s(%s,%s) :- isa(%s,%s), %s = #count { %s : %s }." p subject h subject
+            (str subject_ot) h x
+            (String.concat ", " (join @ fatoms @ atoms));
+          let hc = fresh ctx "H" in
+          [ Printf.sprintf "%s(%s,%s)" p subject hc;
+            (match kv_kwantor with
+            | Ten_minste -> Printf.sprintf "%s >= %d" hc drempel
+            | Ten_hoogste -> Printf.sprintf "%s <= %d" hc drempel
+            | _ -> Printf.sprintf "%s == %d" hc drempel) ]
+      | _ ->
       let witness =
         match kv_kwantor with
         | Geen ->
@@ -4405,7 +4460,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
       emit ctx "%s(%s) :- %s." p subject
         (String.concat ", "
            ((Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: join) @ fatoms @ witness));
-      [ Printf.sprintf "not %s(%s)" p subject ]
+      [ Printf.sprintf "not %s(%s)" p subject ])
   | Predicaat { soort = Gevuld; operand; negatie = false; dagsoort = None; periode = None; _ } ->
       (* the gevuld gate (ref eval: value <> leeg): the operand's binding atoms
          as a positive join. A struct operand rides struct_term (its val atom),
