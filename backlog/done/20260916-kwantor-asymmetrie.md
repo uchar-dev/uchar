@@ -235,14 +235,14 @@ regels erbij, 1 vervangen; niets anders onder `spec/` aangeraakt.
 9  check-catala: PASS (frontend suite 201 checks, floor 201; 12 catala goldens regenerate byte-identically)
 10 check-regelspraak: PASS (JUnit 263 tests, floor 173; 49 rgs goldens re-emit byte-identically)
 11 check-toka-parity: PASS (45 .rgs re-emitted byte-identical, floor 45; 29 cases through ref, clingo, Drools; 0 divergences)
-12 check-drools: PASS (played 143 = pinned 143; channel floor 50; value-divergence 1; JUnit 352 tests, floor 239)
+12 check-drools: PASS (played 143 = pinned 143; channel floor 50; value-divergence 1; JUnit 354 tests, floor 239)
 13 check-reftype-derivation: PASS (105 annotations twisted over 21 goldens, floor 74; 96 replays, 18 DRL-text PLAYED, floor 13)
 14 check-flogic: PASS (frontend suite 81 checks, floor 81; 1 flogic golden re-emits byte-identically)
 ```
 
 Bewegingen: poort 2 en 3 van 218 naar 219 documenten, poort 5 en 6 van 481
 naar 486 cases, poort 6's suite van 188 naar 205 controles, poort 7 van 445
-naar 450, poort 12's JUnit van 349 naar 352 tests en `EXPECTED_PLAYED` van
+naar 450, poort 12's JUnit van 349 naar 354 tests en `EXPECTED_PLAYED` van
 142 naar 143 (eigen gedateerde, redendragende stap in
 `scripts/check-drools.sh`; de kanaallijst blijft 50, want die pint alleen
 NIET-spelers en de nieuwe golden speelt). Geen enkele vloer verlaagd.
@@ -273,30 +273,108 @@ konden niet blijven staan zoals zij waren. Geen van beide is verwijderd.
 draagt geen eenheidsdragende annotatie om te verdraaien. Daarom is er één
 nieuw testbestand (additief):
 `backends/drools/.../NietTemporeleKwantorvouwWitnessTest.java` — beide
-takken over de vijf corpuscellen, plus een mutant op de vacuümcel die
-allebei moeten verwerpen (PLAYED alleen is geen getuige: een tak die stil
-niets lowert haalt elke AFWEZIG-verwachting vanzelf).
+takken over de vijf corpuscases, een mutant op de vacuümcel die allebei
+moeten verwerpen (PLAYED alleen is geen getuige: een tak die stil niets
+lowert haalt elke AFWEZIG-verwachting vanzelf), en sinds de fixronde de
+geneste vouw plus de scheiding van de markerredenen (zie hieronder).
 
-**(c) Bewust NIET gebouwd: de SAMENGESTELDE matrix.** `leafPredicate` draagt
-geen `Samengesteld`, dus een matrix als "die aan alle volgende voorwaarden
-voldoet" krijgt in de exec-tak een benoemde skip. `filterSource` heeft er
-één regel voor (`leafCompound`) die hier overgenomen kon worden, maar zij
-zou landen zonder getuige, en de kaart vraagt twee matrixvormen, niet drie.
-Gevolg, eerlijk genoteerd: de DRL-tekst-tak draagt die vorm wél, want
-`conditie()` kent `Samengesteld` — een takongelijkheid in de ANDERE
-richting dan de bestaande. Niets wordt er stil van: de exec-tak weigert bij
-naam en poort 12 zou zo'n golden met reden uitsluiten. Kandidaat voor een
-eigen kaart, samen met de frontend-verbreding onder "de golden" hierboven.
+**(c) De matrixvormen die elke tak draagt zijn NIET dezelfde verzameling,
+in BEIDE richtingen.** Gemeten, elk met een eigen probe, en geen ervan
+wordt stil:
+
+- de exec-tak draagt geen `Samengesteld` matrix (`leafPredicate` kent er
+  geen; `filterSource` heeft er één regel voor, `leafCompound`, die hier
+  overgenomen kon worden maar zonder getuige zou landen) en geen matrix
+  tegen een PARAMETER — de DRL-tekst-tak draagt allebei. Gemeten op de
+  parameterprobe: `ref` PASS, clingo PASS, DRL-tekst `PLAYED 1`, exec
+  `EXCLUDE … een vergelijking van het eigen attribuut 'dienstjaren' met de
+  parameter 'keurgrens'`;
+- de DRL-tekst-tak draagt geen HEELPERIODEmatrix — de exec-tak wel;
+- een GENESTE vouw als matrix draagt geen van beide, en allebei weigeren
+  hem nu bij naam.
+
+Kandidaten voor eigen kaarten, samen met de frontend-verbreding onder "de
+golden" hierboven.
 
 **(d) `ref/` is niet aangeraakt** — gemeten, niet aangenomen: alle vijf de
 cases speelden door `ref` op de dag dat de golden landde, vóór enige
 codewijziging (acceptatie f).
 
+### De fixronde na de lens (2026-09-16)
+
+De lens bevestigde het kernwerk en wees vier punten aan; alle vier
+verwerkt.
+
+**1 (ernstig) — de javadoc-belofte hield niet voor de conditiesoort die
+deze kaart zelf toevoegde.** `conditieInline` ziet alleen het
+`extra`-kanaal (`heeftExtra()`). Een conditie die haar clausule
+RECHTSTREEKS in de `Acc` hijst en een LEGE inline teruggeeft komt er
+ongemerkt doorheen — en dat is precies wat de nieuwe vouwlowering zelf
+doet, dus een GENESTE vouw als matrix was de eerste vorm die zichzelf
+brak. Rood, gemeten op een eigen probe (Schouwploeg → Strandwacht →
+Uitrusting, matrix = "alle stukken zijn gekeurd"):
+
+```
+EXCLUDE drl compile: [Message [id=1, kieBase=defaultKieBase, level=ERROR, path=file0.drl, line=13, column=0    text=[ERR 101] Line 13:44 no viable alternative at input ')' in rule "uitgerust bij keuring"], …
+```
+
+Een weesclausule die tegen `$subject` joint met een veld van het verkeerde
+type, plus een lege `!(  )`-constraint. Luid, maar géén benoemde weigering
+— en de ch.-3.12-zin die deze kaart zelf schreef belooft "refused by name,
+per form, never silently". Groen, na de vangst op beide kanalen
+(`ff.marker() || acc.clausules.size() != mark`, en idem voor de toets):
+
+```
+EXCLUDE drl-transpiler MARKER: regel: uitgerust bij keuring — TODO §8.2 kwantorvouw (ALLE over Strandwacht) — een matrixvorm die deze tak niet IN het elementpatroon kan schrijven (Kwantorvouw): alle wachten van de Schouwploeg alle stukken gekeurd hebben
+```
+
+Op hetzelfde document antwoorden de twee OCaml-uitvoerders wél — verifier
+PASS, `ref` PASS (2 verwachtingen), clingo PASS (2 verwachtingen) — dus de
+tweewegsdivergentie is echt en staat nu als getuige in
+`NietTemporeleKwantorvouwWitnessTest`, met de parsefout expliciet
+uitgesloten (`assertFalse(reason.contains("drl compile"))`).
+
+Twee dingen gingen mee. De MARKERTEKST was te grof: één zin ("ch. 3.9a
+wordt alleen in de exec-model-tak gelowerd") verscheen ook waar de
+exec-tak juist óók weigert en waar de reden een andere is. De weigeringen
+zijn nu per reden — heelperiodematrix, meerstaps bereik, kwantor buiten
+v0, geen verbindende rol, geen beanveld (met de §13.3.9-reden gesplitst),
+filter of matrix die niet in het elementpatroon past — en een eigen rij
+houdt die scheiding vast. En de doel-zijde van `feitCreatie` kreeg
+dezelfde vangst (`doelAcc.clausules.isEmpty()`): een doel-guard rijdt IN
+het `$doel`-patroon, dus een lowering die hijst zou haar clausule achter
+het ANKERpatroon krijgen, waar `$subject` de anker betekent. Door de lens
+als code-lezing gemeld, hier gesloten.
+
+**2 (klein) — de weigeringstekst van de exec-tak noemde de verkeerde as.**
+"een niet-temporele matrix (Vergelijking) die de per-subject bladvertaling
+niet draagt" noemde de KLASSE, terwijl `Vergelijking` in het algemeen wél
+gedragen wordt en het de OPERAND is die niet past. De tekst noemt nu de
+werkelijke as: "een vergelijking van het eigen attribuut 'dienstjaren' met
+de parameter 'keurgrens'".
+
+**3 (klein) — het registervoorstel corrigeerde de rij niet waar het dat
+wél moest.** De slotzin van rij 40 ("the DRL-text Drools branch markers the
+node by name") is na deze kaart nog maar half waar. De aanvulling opent nu
+met een expliciete narrow-clausule, naar het precedent van de
+rij-29-correctie in de forall-kaart.
+
+**4 (klein) — het spec-blok claimde "verbatim" maar miste een rij.** De
+S2-rij van cel 2 — de rij die het BEREIK pint — ontbrak in ch. 3.9a. Zij
+is toegevoegd, met de zin die zegt waarom zij er staat: een uitvoerder die
+over élke `Strandwacht` zou kwantificeren in plaats van over de wachten
+van de ploeg leest haar andersom, en dat is precies het faalpad van een
+reïficatie die per element gedefinieerd is. De ch.-3.12-rij zegt nu "five
+cases carrying six verdict rows" in plaats van "five cells".
+
 ### Registervoorstel (letterlijk, voor de hoofdsessie)
 
 Rij 40, aan te vullen achter de bestaande tekst. De aanvulling CORRIGEERT
-bovendien niets aan die rij — zij beschreef de vorm, niet de
-uitvoerdersgrens — maar de **Landed**-clausule erin noemt alleen de
-heelperiodegetuige, dus zij krijgt haar tweede:
+bovendien de SLOTZIN van de bestaande rij ("the DRL-text Drools branch
+markers the node by name (the prioritizedDefaults asymmetry, second
+instance)"), die per vandaag nog maar half waar is: die tak markeert
+alleen nog de HEELPERIODEvorm en speelt de niet-temporele. De aanvulling
+zegt dat met zoveel woorden, naar het precedent van de rij-29-correctie in
+de forall-kaart, zodat de rij zichzelf niet tegenspreekt:
 
-**Landed (2026-09-16, kaart kwantor-asymmetrie) — the matrix is now executed AS THE CHAPTER STATES IT, by all three:** ch. 3.9a's `test` is an ordinary condition with the ELEMENT as subject, and until this card two of the three executors implemented not that sentence but one recognised matrix SHAPE. The NON-temporal matrix therefore played in `ref` alone. It plays in all three now, with a second witness beside the first: `corpus/golden/jutterswet-schouwploeg` (hand-written IR, five hand-computed cells, ALLE and GEEN over BOTH a scalar comparison and a characteristic check, plus the negated matrix). The ASP backend REIFIES the matrix — one helper rule per fold whose head means "this element satisfies the matrix", derived from exactly the atoms GEEN already read, with `not helper(X)` as the ALLE failure witness; negation-as-failure over a reified conjunction is an ordinary ASP body where the complement of an arbitrary conjunction of atoms is not, and stratification holds by construction (the counting composite's own argument: the name comes from a counter that only grows, over a matrix translated before the name existed). The whole-period matrix LOST its special case there and now takes the same route under a double negation — measured byte-identical over the complete stable model of all 486 golden cases. Both Drools branches ask the matrix through their ordinary per-subject condition lowering with the element as subject: the exec branch collects the CONTRIBUTORS instead of their timelines, the DRL-text branch denies the failure witness with one `not <Element>( <join>, <matrix or its negation> )` clause. Where the NEGATION lives is now pinned rather than inherited: on a non-temporal matrix it is part of the condition and is read per member, so the quantifier is untouched — unlike ch. 3.9's "niet gedurende …", which qualifies the outer comparison and which an executor may fold by flipping ALLE into GEEN | the frontend does NOT produce this shape — measured, both spellings: the unqualified comparison raises WF-096 (`setlezing buiten een vouwbron`) and the characteristic spelling resolves to `Onopgelost`, because `RuleChecker.kwantorvouw` lowers only the §8.2-QUALIFIED condition; widening that is a frontend card of its own, and the witness is hand-written IR without a `bron.rgs`. A COMPOUND (`Samengesteld`) matrix is deliberately not built in the Drools exec branch (`leafPredicate` carries no compound) and refuses there by name; the DRL-text branch does carry it — a branch inequality in the opposite direction to the existing one, recorded rather than closed |
+**Landed (2026-09-16, kaart kwantor-asymmetrie) — the matrix is now executed AS THE CHAPTER STATES IT, by all three, and this NARROWS the closing clause above:** where that clause says the DRL-text Drools branch markers THE NODE by name, it now markers only the WHOLE-PERIOD matrix of that node — the non-temporal matrix it LOWERS, and plays. ch. 3.9a's `test` is an ordinary condition with the ELEMENT as subject, and until this card two of the three executors implemented not that sentence but one recognised matrix SHAPE. The NON-temporal matrix therefore played in `ref` alone. It plays in all three now, with a second witness beside the first: `corpus/golden/jutterswet-schouwploeg` (hand-written IR, five cases carrying six hand-computed verdict rows — two ploegen share one case, which is what pins the RANGE — ALLE and GEEN over BOTH a scalar comparison and a characteristic check, plus the negated matrix). The ASP backend REIFIES the matrix — one helper rule per fold whose head means "this element satisfies the matrix", derived from exactly the atoms GEEN already read, with `not helper(X)` as the ALLE failure witness; negation-as-failure over a reified conjunction is an ordinary ASP body where the complement of an arbitrary conjunction of atoms is not, and stratification holds by construction (the counting composite's own argument: the name comes from a counter that only grows, over a matrix translated before the name existed). The whole-period matrix LOST its special case there and now takes the same route under a double negation — measured byte-identical over the complete stable model of all 486 golden cases. Both Drools branches ask the matrix through their ordinary per-subject condition lowering with the element as subject: the exec branch collects the CONTRIBUTORS instead of their timelines, the DRL-text branch denies the failure witness with one `not <Element>( <join>, <matrix or its negation> )` clause. Where the NEGATION lives is now pinned rather than inherited: on a non-temporal matrix it is part of the condition and is read per member, so the quantifier is untouched — unlike ch. 3.9's "niet gedurende …", which qualifies the outer comparison and which an executor may fold by flipping ALLE into GEEN | the frontend does NOT produce this shape — measured, both spellings: the unqualified comparison raises WF-096 (`setlezing buiten een vouwbron`) and the characteristic spelling resolves to `Onopgelost`, because `RuleChecker.kwantorvouw` lowers only the §8.2-QUALIFIED condition; widening that is a frontend card of its own, and the witness is hand-written IR without a `bron.rgs`. Which matrix FORMS each Drools branch carries is NOT the same set, in BOTH directions, and each refusal is named per form: the exec branch declines a COMPOUND (`Samengesteld`) matrix and one whose bound is a PARAMETER, which the DRL-text branch both carry; the DRL-text branch declines the WHOLE-PERIOD matrix, which the exec branch carries; and a NESTED fold as matrix is declined by both. Recorded rather than closed — each is a candidate for its own measured card |
