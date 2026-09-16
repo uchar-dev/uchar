@@ -1,0 +1,43 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": { "gevonden munten": ["M1", "M2", "M3"] },
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": { "gevonden munten": ["M4"] },
+        "characteristics": []
+      },
+      { "label": "M1", "objectType": "Munt", "attributes": {}, "roles": {}, "characteristics": [] },
+      { "label": "M2", "objectType": "Munt", "attributes": {}, "roles": {}, "characteristics": [] },
+      { "label": "M3", "objectType": "Munt", "attributes": {}, "roles": {}, "characteristics": [] },
+      { "label": "M4", "objectType": "Munt", "attributes": {}, "roles": {}, "characteristics": [] }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "muntaantal", "value": { "number": "3" } },
+    { "kind": "attributeValue", "label": "J1", "attribute": "gecontroleerde muntaantal", "value": { "number": "3" } },
+    { "kind": "attributeValue", "label": "J2", "attribute": "muntaantal", "value": { "number": "0" } },
+    { "kind": "attributeValue", "label": "J2", "attribute": "gecontroleerde muntaantal", "value": { "number": "0" } },
+    { "kind": "attributeValue", "label": "J3", "attribute": "muntaantal", "value": { "number": "1" } },
+    { "kind": "attributeValue", "label": "J3", "attribute": "gecontroleerde muntaantal", "value": { "number": "1" } },
+    { "kind": "consistent" }
+  ]
+}

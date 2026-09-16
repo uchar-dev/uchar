@@ -1,0 +1,18 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het muntaantal Numeriek (niet-negatief geheel getal);
+    het gecontroleerde muntaantal Numeriek (niet-negatief geheel getal);
+
+Objecttype de Munt (mv: Munten)
+
+Feittype muntvondst
+    de vinder Jutter
+    de gevonden munt (mv: gevonden munten) Munt
+Eén vinder vindt meerdere gevonden munten
+
+Regel muntaantal van een jutter
+    geldig altijd
+        Het muntaantal van een Jutter moet berekend worden als het aantal Munten van de Jutter.
+
+Regel gecontroleerd muntaantal van een jutter
+    geldig altijd
+        Het gecontroleerde muntaantal van een Jutter moet berekend worden als het aantal gevonden munten van de Jutter.

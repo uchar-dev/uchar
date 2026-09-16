@@ -421,7 +421,15 @@ EXPECTED_CHANNEL=(
 # by pair only, with no bronRol fallback, so the self-typed range the field exists for would bind
 # nothing there while the exec branch binds it) — the prioritizedDefaults asymmetry, second instance.
 # That costs this gate nothing: the played channel is the exec-model path. Nothing else moved.
-EXPECTED_PLAYED=138
+# 2026-09-16 (card typerange-dekking), 138 -> 139: `jutterswet-muntpeiling` joins as a NEW PLAYER —
+# the BINDINGLESS count whose element word names a POPULATION (the object type's own declared plural),
+# so the wire carries `elementObjecttype` and no `bronRol` and every consumer derives the source from
+# the type pair (IR-SPEC ch. 4.3, WF-048). It has to be a player because the derivation is the thing
+# under test: the document writes the SAME count twice, once bindingless and once on the declared role
+# name, and the two attributes only agree if what each executor derives is the relation the bound
+# spelling names. The backend needed no change — its by-pair search already answers this shape — and
+# a refusal here would leave the derivation pinned by two executors instead of three. Nothing else moved.
+EXPECTED_PLAYED=139
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the
