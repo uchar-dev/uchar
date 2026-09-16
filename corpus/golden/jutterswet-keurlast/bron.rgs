@@ -1,0 +1,21 @@
+Eenheidsysteem Munt
+    de euro (mv: euros) EUR €
+
+Eenheidsysteem Keurtijd
+    de maand mnd
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de keurlast Numeriek (geheel getal) met eenheid €;
+
+Objecttype de Vondst (mv: Vondsten)
+    het keurtarief (mv: keurtarieven) Numeriek (geheel getal) met eenheid €/mnd voor elke maand;
+    is gekeurd kenmerk (bijvoeglijk);
+
+Feittype keuring
+    de keurende jutter Jutter
+    de vondst (mv: vondsten) Vondst
+Eén keurende jutter keurt meerdere vondsten
+
+Regel keurlast van een jutter
+    geldig altijd
+        De keurlast van een Jutter moet berekend worden als het totaal van het keurtarief van alle vondsten van de Jutter die gekeurd zijn.

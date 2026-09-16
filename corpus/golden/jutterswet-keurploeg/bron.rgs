@@ -1,0 +1,25 @@
+Objecttype de Keurploeg (mv: Keurploegen)
+    het keurtal Numeriek (geheel getal);
+    is premiewaardig kenmerk (bijvoeglijk);
+    is stilliggend kenmerk (bijvoeglijk);
+
+Objecttype de Keurmeester (mv: Keurmeesters) (bezield)
+    de keurvergoeding Numeriek (geheel getal) voor elke maand;
+    is aangemeld kenmerk (bijvoeglijk);
+
+Feittype keurindeling
+    de ploeg Keurploeg
+    de keurmeester (mv: keurmeesters) Keurmeester
+Eén ploeg omvat meerdere keurmeesters
+
+Regel premiewaardig bij keurvergoeding
+    geldig altijd
+        Een Keurploeg is premiewaardig indien de keurvergoeding van alle keurmeesters van de Keurploeg die aangemeld zijn gedurende het gehele jaar groter is dan 40.
+
+Regel stilliggend bij keurvergoeding
+    geldig altijd
+        Een Keurploeg is stilliggend indien de keurvergoeding van geen van de keurmeesters van de Keurploeg die aangemeld zijn gedurende het gehele jaar groter is dan 40.
+
+Regel keurtal van een keurploeg
+    geldig altijd
+        Het keurtal van een Keurploeg moet berekend worden als het aantal keurmeesters van de Keurploeg.

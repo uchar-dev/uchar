@@ -1,0 +1,41 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2026-03-15",
+  "input": {
+    "instances": [
+      {
+        "label": "P1",
+        "objectType": "Keurploeg",
+        "attributes": {},
+        "roles": {
+          "keurmeesters": []
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "keurtal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "P1",
+      "characteristic": "premiewaardig"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "P1",
+      "characteristic": "stilliggend"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

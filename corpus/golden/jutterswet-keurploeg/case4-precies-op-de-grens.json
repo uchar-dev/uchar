@@ -1,0 +1,64 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2026-03-15",
+  "input": {
+    "instances": [
+      {
+        "label": "P1",
+        "objectType": "Keurploeg",
+        "attributes": {},
+        "roles": {
+          "keurmeesters": [
+            "K1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "K1",
+        "objectType": "Keurmeester",
+        "attributes": {
+          "keurvergoeding": {
+            "timeline": [
+              {
+                "from": "2026-01-01",
+                "to": "2027-01-01",
+                "value": {
+                  "number": "40"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "aangemeld"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "keurtal",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "P1",
+      "characteristic": "premiewaardig"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "P1",
+      "characteristic": "stilliggend"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
