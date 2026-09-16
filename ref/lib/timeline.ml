@@ -198,6 +198,52 @@ let geheel_periode_kenmerk (g : Ir_v0.Ast.granulariteit) ~(negatie : bool)
       satisfied >= bucket_days)
     (aantal_dagen_in g true_periods)
 
+(* ch. 3.9, the VALUE test — the same fold over a value timeline instead of
+   a characteristic's true-periods:
+
+     geheel(tl, grid, toets) = for EVERY bucket B touched by tl:
+                                 satisfied-days(B, toets) >= days(B)
+
+   The two [aantal_dagen_in] folds below are the whole implementation and
+   the split is the point: the FIRST says which buckets the value timeline
+   touches, the SECOND how many days in each of them satisfy [pred]. Taking
+   the touched buckets from the SATISFYING days instead — the shape the
+   characteristic arm can get away with, because there the two coincide —
+   would make a timeline of 30 across the whole of 2026, tested "> 40",
+   touch no bucket and pass vacuously, which is the opposite of the answer.
+
+   A gap day is covered by no segment, so it lands in neither fold and the
+   bucket falls short of its calendar length: a partially covered bucket
+   fails, exactly as the chapter says. A timeline with no segments at all
+   touches no bucket and passes vacuously. [pred] decides what a leeg
+   segment does — for a comparison ch. 1.2d makes it false, so a leeg day
+   fails the test without faulting.
+
+   The QUALIFIER's own negation ("niet gedurende …") is not here: it
+   complements the folded result, which the caller does. *)
+let geheel_periode_waarde (g : Ir_v0.Ast.granulariteit) ~(tl : t) (pred : Value.t -> bool) : bool =
+  let segs = normalise tl in
+  let interval s = (s.s_van, s.s_tot) in
+  let dagen (b : segment) =
+    match b.s_waarde with
+    | Num (q, _) -> Q.to_int q
+    | v -> fault "whole-period day count is not numeric: %s" (Value.to_string v)
+  in
+  let geraakt = aantal_dagen_in g (List.map interval segs) in
+  let goed =
+    aantal_dagen_in g
+      (List.filter_map (fun s -> if pred s.s_waarde then Some (interval s) else None) segs)
+  in
+  List.for_all
+    (fun (b : segment) ->
+      let satisfied =
+        match List.find_opt (fun (x : segment) -> x.s_van = b.s_van) goed with
+        | Some x -> dagen x
+        | None -> 0
+      in
+      satisfied >= b.s_tot - b.s_van)
+    geraakt
+
 (* anchored bucket walls: every wall computed directly from the anchor —
    never by incrementing the previous wall — so a month-end anchor
    clamps consistently (ch. 3.2) *)

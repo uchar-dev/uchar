@@ -643,6 +643,22 @@ let static_date l r =
   in
   is_date l || is_date r
 
+(* the OPERAND SWAP of a comparison (ch. 3.9): "40 < x" read as a test on
+   x is "x > 40". Reversal, never negation — the two coincide on totally
+   ordered filled values and part company on a leeg operand, which makes
+   BOTH orderings false (ch. 1.2d). The equalities are symmetric and stay
+   themselves. *)
+let omgekeerd : Ir_v0.Ast.vergelijk_op -> Ir_v0.Ast.vergelijk_op = function
+  | Kleiner -> Groter
+  | Kleiner_of_gelijk -> Groter_of_gelijk
+  | Groter -> Kleiner
+  | Groter_of_gelijk -> Kleiner_of_gelijk
+  | Eerder -> Later
+  | Eerder_of_gelijk -> Later_of_gelijk
+  | Later -> Eerder
+  | Later_of_gelijk -> Eerder_of_gelijk
+  | (Gelijk | Ongelijk) as op -> op
+
 let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
   match e with
   | Literal { waarde; typ; _ } -> literal_value waarde typ
@@ -1506,10 +1522,51 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
       let r = eval_expr env world self ~err re in
       Arith.compare_op ?static_numeric:(static_numeric le re) ~static_date:(static_date le re) op l
         r
-  (* the sister of the leeg/gevuld refusal below, and worded like it since
-     2026-09-11: it used to say "ch. 3", which reads as the whole timeline
-     chapter rather than as the one clause that specifies this test *)
-  | Vergelijking _ -> Value.fault "whole-period comparison is ch. 3.9 scope, not executed here"
+  (* ch. 3.9, the whole-period VALUE test — the second of the chapter's two
+     specified collapses, and the door ch. 3.3's scalar refusal must not
+     shut. Built 2026-09-16; until then this arm faulted by name while the
+     chapter specified it, which is the gap ch. 3.12 recorded.
+
+     Exactly one side reads a time-dependent attribute of the subject and
+     the other is the scalar bound. When the temporal side stands on the
+     RIGHT the operator is REVERSED — an operand swap, never a negation:
+     "40 < de vergoeding" and "de vergoeding > 40" are one test, while the
+     negation of either is a different one (leeg operands make both
+     false). *)
+  | Vergelijking { op; links; rechts; periode = Some gp; _ } ->
+      let le = req "Vergelijking.links" links and re = req "Vergelijking.rechts" rechts in
+      let temporal_side = function
+        | Attribuut_ref
+            { attribuut = Some a; objecttype = Some otn; navigatie_rol = None;
+              navigatie_pad = []; set = false; _ }
+          when isa env self.otype otn && Ir_v0.Checks.attr_temporal (objecttype env otn) a ->
+            Some a
+        | _ -> None
+      in
+      let attr, grens_e, op =
+        match (temporal_side le, temporal_side re) with
+        | Some a, None -> (a, re, op)
+        | None, Some a -> (a, le, omgekeerd op)
+        | Some _, Some _ ->
+            Value.fault
+              "whole-period comparison between TWO time-dependent operands has no ch. 3.9 \
+               reading: the fold tests one timeline against a scalar bound"
+        | None, None ->
+            Value.fault
+              "whole-period qualifier on a comparison whose operands are not a time-dependent \
+               attribute of %S and a scalar bound (WF-043)"
+              self.otype
+      in
+      let tested = Option.value (World.timeline self attr) ~default:[] in
+      let grens = eval_expr env world self ~err grens_e in
+      let g : Ir_v0.Ast.granulariteit = if gp.gp_jaar then Jaar else Maand in
+      let verdict =
+        Timeline.geheel_periode_waarde g ~tl:tested (fun v ->
+            Arith.compare_op ?static_numeric:(static_numeric le re)
+              ~static_date:(static_date le re) op v grens)
+      in
+      (* ch. 3.9: "Negation complements the folded result" *)
+      if gp.gp_niet then not verdict else verdict
   | Predicaat { soort = Leeg | Gevuld; periode = Some _; _ } ->
       (* ch. 3.9's leeg/gevuld tests over a timeline. Both arms below matched
          `periode` away with `_` until 2026-09-11, so the qualifier was
@@ -1684,7 +1741,68 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
           (Option.value role.rol_naam ~default:"?");
       let fills = role_links world self role <> [] in
       if negatie then not fills else fills
-  | Kwantorvouw _ -> Value.fault "quantifier fold is ch. 3.9a scope, not executed here"
+  (* ch. 3.9a, the QUANTIFIER FOLD: a condition quantified over the members
+     of a linked instance set. The contributors are the instance fold's,
+     down to the helper — [fold_members] decides the population once, for
+     the fold and for this node alike, so "which members" can never come
+     apart between the two.
+
+     Two different disciplines meet here, each taken from the node it
+     belongs to. The CONTRIBUTORS are settled in full first, filter and all,
+     exactly as an instance fold settles them (ch. 3.4a): the subselection
+     says which members the sentence is about, and that question is not
+     short-circuited by the answer. The MATRIX then short-circuits, exactly
+     as a composite condition does (ch. 5.10): evaluation stops at the first
+     contributor whose verdict settles the fold, so a member never reached
+     produces no fault and no §9.5 channel fact. *)
+  | Kwantorvouw
+      { kv_kwantor; kv_element_objecttype; kv_filter; kv_toets; kv_bron_rol; kv_bron_pad; _ } ->
+      let el = req "Kwantorvouw.elementObjecttype" kv_element_objecttype in
+      let toets =
+        match kv_toets with
+        | Some t -> t
+        | None ->
+            Value.fault
+              "quantifier fold without a toets: the matrix is what every contributor must \
+               satisfy (WF-108)"
+      in
+      (match kv_bron_pad with
+      | None -> ()
+      | Some pad ->
+          if kv_bron_rol <> None then
+            Value.fault
+              "a bronPad beside a bronRol on a quantifier fold: the one-step range IS bronRol \
+               (WF-108)";
+          if List.length pad < 2 then
+            Value.fault
+              "a quantifier fold's bronPad carries at least TWO steps, found %d (WF-108)"
+              (List.length pad));
+      (* GEEN is the per-MEMBER complement, never the fold's: "geen van de
+         bergers heeft gedurende het gehele jaar meer dan 40" asks each
+         member to fail the matrix, so a member whose timeline does not
+         cover the period fails it and does not block GEEN either *)
+      let want =
+        match kv_kwantor with
+        | Alle -> true
+        | Geen -> false
+        | De ->
+            Value.fault
+              "quantifier fold with kwantor DE: the bare definite describes ONE member, not a \
+               quantification over the set (WF-108)"
+        | Ten_minste | Ten_hoogste | Precies ->
+            Value.fault
+              "quantifier fold with a counting kwantor: only ALLE and GEEN are v0 forms (WF-108)"
+      in
+      let keep (i : World.instance) =
+        match kv_filter with None -> true | Some c -> eval_cond env world i ~err c
+      in
+      let members =
+        filter_in_order keep
+          (fold_members ?binding:kv_bron_rol ?path:kv_bron_pad env world self ~element:el)
+      in
+      (* an empty contributor set is TRUE for both quantifiers: [for_all]
+         over nothing, which is the vacuous reading stated, not inherited *)
+      List.for_all (fun m -> eval_cond env world m ~err toets = want) members
   | Verre_rollidmaatschap _ | Periode_conditie _ ->
       Value.fault "condition kind not implemented in this card"
   | Conditie_onopgelost _ -> Value.fault "Onopgelost condition reached in evaluation (WF-044)"
