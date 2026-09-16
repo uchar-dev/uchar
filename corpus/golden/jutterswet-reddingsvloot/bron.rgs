@@ -1,0 +1,35 @@
+Objecttype de Reddingsvloot (mv: Reddingsvloten)
+    het sloeptal Numeriek (geheel getal);
+    is inzetbaar kenmerk (bijvoeglijk);
+    is krap kenmerk (bijvoeglijk);
+    is paraat kenmerk (bijvoeglijk);
+    is geschikt kenmerk (bijvoeglijk);
+
+Objecttype de Reddingssloep (mv: Reddingssloepen)
+    de vaartijd Numeriek (geheel getal) voor elke maand;
+    is gekeurd kenmerk (bijvoeglijk);
+
+Feittype vlootindeling
+    de vloot Reddingsvloot
+    de sloep (mv: sloepen) Reddingssloep
+Eén vloot omvat meerdere sloepen
+
+Regel inzetbaar bij vaartijd
+    geldig altijd
+        Een Reddingsvloot is inzetbaar indien de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20.
+
+Regel krap bij vaartijd
+    geldig altijd
+        Een Reddingsvloot is krap indien de vaartijd van ten hoogste 1 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20.
+
+Regel paraat bij vaartijd
+    geldig altijd
+        Een Reddingsvloot is paraat indien de vaartijd van precies 1 van de sloepen van de Reddingsvloot gedurende het gehele jaar groter is dan 20.
+
+Regel geschikt bij vaartijd
+    geldig altijd
+        Een Reddingsvloot is geschikt indien de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot die gekeurd zijn gedurende het gehele jaar groter is dan 20.
+
+Regel sloeptal van een reddingsvloot
+    geldig altijd
+        Het sloeptal van een Reddingsvloot moet berekend worden als het aantal sloepen van de Reddingsvloot.

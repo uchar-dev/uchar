@@ -1,0 +1,80 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "T1",
+        "objectType": "Vuurtoren",
+        "attributes": {},
+        "roles": {
+          "lampen": [
+            "L1",
+            "L2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "L1",
+        "objectType": "Lamp",
+        "attributes": {
+          "sterkte": {
+            "number": "8"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gekeurd"
+        ]
+      },
+      {
+        "label": "L2",
+        "objectType": "Lamp",
+        "attributes": {
+          "sterkte": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gekeurd"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "T1",
+      "attribute": "lampental",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "T1",
+      "characteristic": "helder"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "T1",
+      "characteristic": "zuinig"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "T1",
+      "characteristic": "enkelvoudig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "T1",
+      "characteristic": "keurig"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

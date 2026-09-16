@@ -474,7 +474,19 @@ EXPECTED_CHANNEL=(
 # carries an asOfDate-bucket scalar. This backend answered it all along (it drops a filtered-out
 # member before integrating, as ref does); the ASP backend's translate-time horizon fence did not,
 # and that is the leg the card repaired. Nothing else moved.
-EXPECTED_PLAYED=145
+# 2026-09-16 (card tellende-kwantoren), 145 -> 147: TWO new players, one per matrix route, because the
+# counting quantifiers over an instance range are built and each branch of this backend grew an arm for
+# them. `jutterswet-reddingsvloot` is the §8.2 WHOLE-PERIOD matrix under ten minste / ten hoogste /
+# precies: the exec branch reads the counting TWIN of the two ch. 3.9 fold helpers
+# (rsGeheelPeriodeTelling) and compares the count with the threshold, and the DRL-text branch markers it
+# for its whole-period matrix exactly as it markers the ALLE/GEEN sibling — the standing channel split,
+# unmoved. `jutterswet-vuurtoren` is the same three quantifiers over a NON-temporal matrix: the exec
+# branch counts over the collectList accumulate of the contributors, and it is the one corpus document
+# that reaches the DRL-text branch's counting lowering at all (a `Number( intValue <op> N ) from
+# accumulate( … count(…) )` over the element pattern), measured in
+# NietTemporeleKwantorvouwWitnessTest. Nothing else moved: ALLE and GEEN keep the witness route in both
+# branches, and every form outside the arm still refuses BY NAME, per form.
+EXPECTED_PLAYED=147
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the
