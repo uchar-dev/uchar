@@ -3971,10 +3971,12 @@ let kv_toets ?(op : Ir_v0.Ast.vergelijk_op = Groter) ?(grens = "40") () : Ir_v0.
       bron = None;
     }
 
-let kv_cond ?(kwantor : Ir_v0.Ast.kwantor = Alle) ?filter ?toets () : Ir_v0.Ast.conditie =
+let kv_cond ?(kwantor : Ir_v0.Ast.kwantor = Alle) ?drempel ?filter ?toets () : Ir_v0.Ast.conditie
+    =
   Kwantorvouw
     {
       kv_kwantor = kwantor;
+      kv_drempel = drempel;
       kv_element_objecttype = Some "Berger";
       kv_filter = filter;
       kv_toets = Some (match toets with Some t -> t | None -> kv_toets ());
@@ -4002,10 +4004,10 @@ let kv_wereld leden =
   in
   List.fold_left World.add_instance World.empty (p1 :: bergers)
 
-let kv_eval ?kwantor ?filter ?toets leden =
+let kv_eval ?kwantor ?drempel ?filter ?toets leden =
   let w = kv_wereld leden in
   Eval.eval_cond (env_of kv_doc) w (World.get w "P1") ~err:no_err
-    (kv_cond ?kwantor ?filter ?toets ())
+    (kv_cond ?kwantor ?drempel ?filter ?toets ())
 
 let heel_jaar v = [ seg "2026-01-01" "2027-01-01" (n v) ]
 let half_jaar v = [ seg "2026-01-01" "2026-07-01" (n v) ]
@@ -4062,6 +4064,71 @@ let () =
   check "WV-3.9a-filter-dat-alles-uitsluit-is-vacuous-waar"
     (kv_eval ~filter:filter_boven_10 [ ("B1", heel_jaar "5") ]);
 
+  (* the COUNTING quantifiers (ch. 3.9a): the verdict COUNTS the
+     contributors whose matrix holds and compares that number with the
+     threshold. ALLE is [hits = n] and GEEN is [hits = 0] written the other
+     way round, so one comparison covers all five — and the empty set gets
+     no vacuum rule of its own, it simply counts 0. Matrix throughout: the
+     §8.2 test "dagvergoeding > 40 gedurende het gehele jaar". *)
+  let tel k d leden = kv_eval ~kwantor:k ~drempel:d leden in
+
+  (* each threshold from BOTH sides, on ONE pair of member sets: a count of
+     2 sits exactly at at-least 2 and exceeds at-most 1 by exactly one; a
+     count of 1 turns both over and satisfies exactly 1 *)
+  let twee_boven = [ ("B1", heel_jaar "50"); ("B2", heel_jaar "60") ] in
+  let een_boven = [ ("B1", heel_jaar "50"); ("B2", heel_jaar "30") ] in
+  check "WV-3.9a-tel-minstens2-telling2-op-de-drempel" (tel Ten_minste 2 twee_boven);
+  check "WV-3.9a-tel-minstens2-telling1-onder-de-drempel" (not (tel Ten_minste 2 een_boven));
+  check "WV-3.9a-tel-hoogstens1-telling1-op-de-drempel" (tel Ten_hoogste 1 een_boven);
+  check "WV-3.9a-tel-hoogstens1-telling2-boven-de-drempel" (not (tel Ten_hoogste 1 twee_boven));
+  check "WV-3.9a-tel-precies1-telling1" (tel Precies 1 een_boven);
+  check "WV-3.9a-tel-precies1-telling2-is-onwaar" (not (tel Precies 1 twee_boven));
+  check "WV-3.9a-tel-precies1-telling0-is-onwaar"
+    (not (tel Precies 1 [ ("B1", heel_jaar "30"); ("B2", heel_jaar "20") ]));
+
+  (* the EMPTY contributor set, per quantifier: it is the count, not a
+     principle. ALLE and GEEN read waar there (pinned above); these three
+     part company on the same set *)
+  check "WV-3.9a-tel-lege-set-minstens1-is-onwaar" (not (tel Ten_minste 1 []));
+  check "WV-3.9a-tel-lege-set-hoogstens1-is-waar" (tel Ten_hoogste 1 []);
+  check "WV-3.9a-tel-lege-set-precies1-is-onwaar" (not (tel Precies 1 []));
+
+  (* ch. 5.10's EMPTY-PREFIX triggers, over a set instead of a written list:
+     at-least above the contributor count is out of reach before the matrix
+     is read once, and at-most at or above it can no longer be exceeded —
+     both answer having read no member at all *)
+  check "WV-3.9a-tel-minstens2-over-een-lid-is-buiten-bereik"
+    (not (tel Ten_minste 2 [ ("B1", heel_jaar "50") ]));
+  check "WV-3.9a-tel-hoogstens2-over-een-lid-is-vacuous-waar"
+    (tel Ten_hoogste 2 [ ("B1", heel_jaar "50") ]);
+
+  (* ch. 3.9's gap, unchanged under a counting quantifier: a member whose
+     timeline does not cover the period fails the matrix, so it does not
+     COUNT — the half-year member is the difference between 2 and 1 here *)
+  check "WV-3.9a-tel-half-dekkend-lid-telt-niet-mee"
+    (not (tel Ten_minste 2 [ ("B1", heel_jaar "50"); ("B2", half_jaar "60") ]));
+
+  (* filter and threshold together: the subselection decides WHICH members
+     are counted, the threshold what the count must be *)
+  check "WV-3.9a-tel-filter-en-drempel-telling2"
+    (kv_eval ~kwantor:Ten_minste ~drempel:2 ~filter:filter_boven_10
+       [ ("B1", heel_jaar "50"); ("B2", heel_jaar "60"); ("B3", heel_jaar "5") ]);
+  check "WV-3.9a-tel-filter-laat-de-telling-onder-de-drempel-zakken"
+    (not
+       (kv_eval ~kwantor:Ten_minste ~drempel:2 ~filter:filter_boven_10
+          [ ("B1", heel_jaar "50"); ("B2", heel_jaar "5"); ("B3", heel_jaar "5") ]));
+
+  (* a counting fold with no threshold has nothing to compare the count
+     with — WF-108 (e)'s business, and reaching it in evaluation is a
+     fault, never a verdict. DE is arm (a)'s and faults the same way *)
+  expect_fault_msg "WV-3.9a-tel-kwantorvouw-zonder-drempel-faalt"
+    (fun () ->
+      Value.Bool (kv_eval ~kwantor:Ten_minste [ ("B1", heel_jaar "50") ]))
+    "counting quantifier fold without a drempel";
+  expect_fault_msg "WV-3.9a-kwantorvouw-met-kwantor-DE-faalt"
+    (fun () -> Value.Bool (kv_eval ~kwantor:De [ ("B1", heel_jaar "50") ]))
+    "quantifier fold with kwantor DE";
+
   (* a matrix that is absent is WF-108's business, and reaching it in
      evaluation is a fault, never a verdict *)
   expect_fault_msg "WV-3.9a-matrixloze-kwantorvouw-faalt"
@@ -4070,7 +4137,8 @@ let () =
       Value.Bool
         (Eval.eval_cond (env_of kv_doc) w (World.get w "P1") ~err:no_err
            (Kwantorvouw
-              { kv_kwantor = Alle; kv_element_objecttype = Some "Berger"; kv_filter = None;
+              { kv_kwantor = Alle; kv_drempel = None; kv_element_objecttype = Some "Berger";
+                kv_filter = None;
                 kv_toets = None; kv_bron = None;
                 kv_bron_rol = Some { rb_feittype = "ploegindeling"; rb_rol = "berger" };
                 kv_bron_pad = None })))

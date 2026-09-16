@@ -1756,7 +1756,8 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
      contributor whose verdict settles the fold, so a member never reached
      produces no fault and no §9.5 channel fact. *)
   | Kwantorvouw
-      { kv_kwantor; kv_element_objecttype; kv_filter; kv_toets; kv_bron_rol; kv_bron_pad; _ } ->
+      { kv_kwantor; kv_drempel; kv_element_objecttype; kv_filter; kv_toets; kv_bron_rol;
+        kv_bron_pad; _ } ->
       let el = req "Kwantorvouw.elementObjecttype" kv_element_objecttype in
       let toets =
         match kv_toets with
@@ -1777,21 +1778,20 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
             Value.fault
               "a quantifier fold's bronPad carries at least TWO steps, found %d (WF-108)"
               (List.length pad));
-      (* GEEN is the per-MEMBER complement, never the fold's: "geen van de
-         bergers heeft gedurende het gehele jaar meer dan 40" asks each
-         member to fail the matrix, so a member whose timeline does not
-         cover the period fails it and does not block GEEN either *)
-      let want =
-        match kv_kwantor with
-        | Alle -> true
-        | Geen -> false
-        | De ->
+      (match kv_kwantor with
+      | Alle | Geen | Ten_minste | Ten_hoogste | Precies -> ()
+      | De ->
+          Value.fault
+            "quantifier fold with kwantor DE: the bare definite describes ONE member, not a \
+             quantification over the set (WF-108)");
+      let drempel =
+        match (kv_kwantor, kv_drempel) with
+        | (Ten_minste | Ten_hoogste | Precies), Some d -> d
+        | (Ten_minste | Ten_hoogste | Precies), None ->
             Value.fault
-              "quantifier fold with kwantor DE: the bare definite describes ONE member, not a \
-               quantification over the set (WF-108)"
-        | Ten_minste | Ten_hoogste | Precies ->
-            Value.fault
-              "quantifier fold with a counting kwantor: only ALLE and GEEN are v0 forms (WF-108)"
+              "counting quantifier fold without a drempel: there is no threshold to compare the \
+               count of satisfying contributors with (WF-108)"
+        | _, _ -> 0
       in
       let keep (i : World.instance) =
         match kv_filter with None -> true | Some c -> eval_cond env world i ~err c
@@ -1800,9 +1800,51 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
         filter_in_order keep
           (fold_members ?binding:kv_bron_rol ?path:kv_bron_pad env world self ~element:el)
       in
-      (* an empty contributor set is TRUE for both quantifiers: [for_all]
-         over nothing, which is the vacuous reading stated, not inherited *)
-      List.for_all (fun m -> eval_cond env world m ~err toets = want) members
+      (* ch. 3.9a's count, and it is ch. 5.10's machinery over the
+         CONTRIBUTORS instead of over a written member list — ALLE is
+         [hits = n] and GEEN is [hits = 0], so all five quantifiers are the
+         same comparison and the same stop triggers. GEEN stays the
+         per-MEMBER complement and never the fold's: "geen van de bergers
+         heeft gedurende het gehele jaar meer dan 40" asks each member to
+         fail the matrix, so a member whose timeline does not cover the
+         period fails it and does not block GEEN either. The empty
+         contributor set needs no arm of its own: ALLE and GEEN both read
+         [hits = 0 = n], at-least and exactly are out of reach, at-most can
+         no longer be exceeded. *)
+      let n = List.length members in
+      let verdict hits =
+        match kv_kwantor with
+        | De | Alle -> hits = n
+        | Geen -> hits = 0
+        | Ten_minste -> hits >= drempel
+        | Ten_hoogste -> hits <= drempel
+        | Precies -> hits = drempel
+      in
+      let settled ~hits ~left =
+        match kv_kwantor with
+        | De | Alle -> if hits < n - left then Some false else None
+        | Geen -> if hits > 0 then Some false else None
+        | Ten_minste ->
+            if hits >= drempel then Some true
+            else if hits + left < drempel then Some false
+            else None
+        | Ten_hoogste ->
+            if hits > drempel then Some false
+            else if hits + left <= drempel then Some true
+            else None
+        | Precies -> if hits > drempel || hits + left < drempel then Some false else None
+      in
+      let rec read hits left parts =
+        match settled ~hits ~left with
+        | Some v -> v
+        | None -> (
+            match parts with
+            | [] -> verdict hits
+            | m :: rest ->
+                let hit = eval_cond env world m ~err toets in
+                read (if hit then hits + 1 else hits) (left - 1) rest)
+      in
+      read 0 n members
   | Verre_rollidmaatschap _ | Periode_conditie _ ->
       Value.fault "condition kind not implemented in this card"
   | Conditie_onopgelost _ -> Value.fault "Onopgelost condition reached in evaluation (WF-044)"
