@@ -3643,24 +3643,81 @@ let () =
     ~ir:niet_matrix
     ~leden:[ ("S1", heel_jaar "50"); ("S2", heel_jaar "20") ]
     ~waar:false ();
+  (* THE NON-TEMPORAL MATRIX, executed here since 2026-09-16 (card
+     kwantor-asymmetrie). ch. 3.9a's `toets` is an ORDINARY condition with the
+     element as subject, so a characteristic check is as much a matrix as the
+     whole-period comparison, and this backend used to refuse it under ALLE by
+     name. It no longer does: the matrix is REIFIED into a helper predicate
+     whose negation is the failure witness, so ALLE reads the complement of a
+     PREDICATE (an ordinary ASP body) instead of the complement of an
+     arbitrary conjunction (which is not one). GEEN is unchanged — there the
+     matrix always WAS the witness. Corpus witness:
+     corpus/golden/jutterswet-schouwploeg. *)
+  let kenmerk_matrix ?(kwantor = "ALLE") ?(negatie = "false") () =
+    kv_doc ~kwantor
+      ~toets:
+        (Printf.sprintf
+           {|{ "node": "Kenmerk", "kenmerk": "gekeurd", "navigatie": null, "negatie": %s,
+               "eigenaar": null, "periode": null, "bron": "de Schuit gekeurd is" }|}
+           negatie)
+      ()
+  in
+  let leden2 = [ ("S1", heel_jaar "50"); ("S2", heel_jaar "30") ] in
+  alle ~name:"ch3.9a ALLE over een kenmerkmatrix, elk lid gekeurd" ~ir:(kenmerk_matrix ())
+    ~gekeurd:[ "S1"; "S2" ] ~leden:leden2 ~waar:true ();
+  alle ~name:"ch3.9a ALLE over een kenmerkmatrix, één lid niet gekeurd" ~ir:(kenmerk_matrix ())
+    ~gekeurd:[ "S1" ] ~leden:leden2 ~waar:false ();
+  alle ~name:"ch3.9a ALLE over een kenmerkmatrix, lege verzameling (vacuüm waar)"
+    ~ir:(kenmerk_matrix ()) ~leden:[] ~waar:true ();
+  alle ~name:"ch3.9a GEEN over een kenmerkmatrix, geen lid gekeurd"
+    ~ir:(kenmerk_matrix ~kwantor:"GEEN" ()) ~leden:leden2 ~waar:true ();
+  (* the pair that separates GEEN from `not (ALLE)`: with S1 gekeurd and S2
+     not, the row above is onwaar AND this one is onwaar *)
+  alle ~name:"ch3.9a GEEN over een kenmerkmatrix, één lid gekeurd"
+    ~ir:(kenmerk_matrix ~kwantor:"GEEN" ()) ~gekeurd:[ "S1" ] ~leden:leden2 ~waar:false ();
+  alle ~name:"ch3.9a GEEN over een kenmerkmatrix, lege verzameling (vacuüm waar)"
+    ~ir:(kenmerk_matrix ~kwantor:"GEEN" ()) ~leden:[] ~waar:true ();
+  (* the NIET of a non-temporal matrix is the MATRIX's, never the quantifier's:
+     "geen van de schuiten is NIET gekeurd" answers what "alle schuiten zijn
+     gekeurd" answers, in both directions *)
+  alle ~name:"ch3.9a GEEN over een ONTKENDE kenmerkmatrix, elk lid gekeurd"
+    ~ir:(kenmerk_matrix ~kwantor:"GEEN" ~negatie:"true" ()) ~gekeurd:[ "S1"; "S2" ]
+    ~leden:leden2 ~waar:true ();
+  alle ~name:"ch3.9a GEEN over een ONTKENDE kenmerkmatrix, één lid niet gekeurd"
+    ~ir:(kenmerk_matrix ~kwantor:"GEEN" ~negatie:"true" ()) ~gekeurd:[ "S1" ] ~leden:leden2
+    ~waar:false ();
   (* the emitted shape itself: one negated witness helper over the fold's own
      range, reading the whole-period FAILURE atom per element *)
   translates_carrying ~name:"ch3.9a ALLE leest het faalatoom per element" ~ir:(kv_doc ())
     ~case_text:(kv_case ~leden:[ ("S1", heel_jaar "50") ] ~waar:true ())
-    ~needle:{|rol(S,"schuiten",|}
+    ~needle:{|rol(S,"schuiten",|};
+  (* the REIFICATION itself, so the shape is pinned and not only its verdict:
+     ALLE emits a satisfaction helper and reads its negation *)
+  translates_carrying ~name:"ch3.9a ALLE reïficeert de matrix" ~ir:(kenmerk_matrix ())
+    ~case_text:(kv_case ~gekeurd:[ "S1" ] ~leden:[ ("S1", heel_jaar "50") ] ~waar:true ())
+    ~needle:"not kvs"
 
 let () =
   (* the loud flanks. Each names the form it refuses. *)
   let vals = kv_case ~leden:[ ("S1", heel_jaar "50") ] ~waar:true () in
-  faults_with ~name:"ch3.9a ALLE over een andere matrix dan de heelperiodevergelijking"
+  (* The ALLE arm carries EVERY matrix [cond_atoms] carries (2026-09-16, card
+     kwantor-asymmetrie — the verdict rows are above). What it does not carry
+     is a matrix [cond_atoms] itself refuses, and that refusal must still reach
+     the surface THROUGH the fold rather than be swallowed by the reification.
+     The whole-period leeg test is the cheapest such form: ch. 3.9 states it,
+     this backend refuses it by name, and it is refused here in those same
+     words. *)
+  faults_with ~name:"ch3.9a ALLE over een matrix die de vertaler zelf weigert"
     ~ir:
       (kv_doc
          ~toets:
-           {|{ "node": "Kenmerk", "kenmerk": "bedrijvig", "navigatie": null, "negatie": false,
-               "eigenaar": null, "periode": null, "bron": "de Schuit bedrijvig is" }|}
+           ({|{ "node": "Predicaat", "soort": "LEEG", "operand": |} ^ kv_vangst_ref
+           ^ {|, "dagsoort": null, "negatie": false, "cijfers": 0,
+               "periode": { "node": "GeheelPeriode", "jaar": true, "niet": false },
+               "bron": "de vangst van de Schuit gedurende het gehele jaar leeg is" }|})
          ())
     ~case_text:vals
-    ~needle:"other than the whole-period comparison is not translated under ALLE";
+    ~needle:"whole-period leeg/gevuld test is ch. 3.9 scope";
   faults_with ~name:"ch3.9a vouw zonder matrix (WF-108)" ~ir:(kv_doc ~toets:"null" ())
     ~case_text:vals ~needle:"without a matrix (toets) is ill-formed (WF-108)";
   faults_with ~name:"ch3.9a vouw met een tellende kwantor"
