@@ -86,7 +86,48 @@ final class RuleChecker {
         // PrioritizedDefaults nodes whose consequentie is a copy of the rule's waarde, so checking here
         // covers the lifted rules too — and covers them once.
         keurSetlezingen();
+        keurDeelselecties(doc);
         defaults(doc);        // §4 lift the base+exception families and unordered groups into PrioritizedDefaults nodes
+    }
+
+    /**
+     * §5.6: every "die/dat &lt;predicaat&gt;" the parse produced must have been CONSUMED by a resolution
+     * that accounts for it — bound as a filter, or refused by name. What is left over was silently
+     * dropped, and a dropped subselectie is not a missing feature but a WRONG ANSWER: the document then
+     * ranges over every instance where the sentence named a selection of them, verifier-clean, and every
+     * executor answers it the same and wrongly.
+     *
+     * <p>ERROR, not WARNING, and the difference is the point: a warning leaves the document on disk.
+     * There is no reading of the emitted IR under which the omitted subselectie is harmless, so the
+     * refusal has to block the emission.
+     *
+     * <p>This makes the STILLNESS loud; it does not build the semantics. A subselectie on an ordinary
+     * (non-fold) position — "indien de leeftijd van de Jutter DIE BEVOEGD IS groter is dan 5" — has no
+     * wire form yet: the IR's {@code filter} field belongs to the two folds (IR-SPEC ch. 4.3, ch. 4.5),
+     * and what a subselection means on a scalar navigation is a spec question, not a resolver one. It is
+     * a named extension point with a loud refusal, exactly as the counting quantors are on the
+     * quantifier fold.
+     */
+    private void keurDeelselecties(RegelSpraakDocumentContext doc) {
+        java.util.Set<PredicaatContext> verbruikt = bouwer.verbruikteDeelselecties();
+        List<PredicaatContext> alle = new ArrayList<>();
+        verzamelDeelselecties(doc, alle);
+        for (PredicaatContext p : alle) {
+            if (verbruikt.contains(p)) continue;
+            model.diagnostics.add(new Diagnostic(Severity.ERROR,
+                "de 'die/dat'-deelselectie '" + src(p) + "' wordt niet omgezet en zou stil wegvallen: een "
+                + "deelselectie kiest WELKE exemplaren de zin bedoelt, dus haar weglaten beantwoordt een "
+                + "andere vraag dan er staat. De uchar-wire draagt haar alleen op een vouwbereik "
+                + "(IR-SPEC ch. 4.3 en ch. 4.5, veld 'filter'); op deze positie is zij een benoemd "
+                + "uitbreidingspunt en wordt zij geweigerd in plaats van genegeerd (§5.6)",
+                p.getStart().getLine()));
+        }
+    }
+
+    /** Every {@code onderwerpKeten ( DIE | DAT ) predicaat} in the tree, in document order. */
+    private static void verzamelDeelselecties(org.antlr.v4.runtime.tree.ParseTree t, List<PredicaatContext> uit) {
+        if (t instanceof OnderwerpKetenContext k && k.predicaat() != null) uit.add(k.predicaat());
+        for (int i = 0; i < t.getChildCount(); i++) verzamelDeelselecties(t.getChild(i), uit);
     }
 
     /** §9.10 build the {@link io.github.yhavinga.regelspraak.ir.ResolvedRegelGroep} carriers (member RULE NAMES + the
@@ -2115,17 +2156,17 @@ final class RuleChecker {
         // operand only: the bijzin trails the onderwerp ("… van alle vondsten van de Jutter die
         // aangemeld zijn") but selects the quantified MEMBERS, so a die on the other side of the
         // comparison belongs to that operand's own navigation and is none of this fold's business.
-        Conditie filter = bouwer.deelselectie(
+        ExpressieBouwer.Deelselectie ds = bouwer.deelselectie(
                 c instanceof Conditie.Vergelijking v && v.rechts() == zet ? rhsCtx : lhsCtx, elem, zet);
-        if (filter instanceof Conditie.Onopgelost) {
+        if (ds != null && ds.filter() == null) {
             model.diagnostics.add(new Diagnostic(Severity.WARNING,
                 "de 'die/dat'-deelselectie in '" + zet.bron() + "' wordt niet omgezet naar een "
-                + "kwantorvouw-filter: zij bindt geen kenmerk of getalpredicaat van " + elem.naam
-                + " (§5.6, IR-SPEC ch. 4.5); de vouw wordt daarom NIET gelowerd — een vouw over het "
-                + "volle bereik zou een andere verzameling kwantificeren dan de zin noemt, dus de "
+                + "kwantorvouw-filter: " + ds.reden() + "; de vouw wordt daarom NIET gelowerd — een vouw "
+                + "over het volle bereik zou een andere verzameling kwantificeren dan de zin noemt, dus de "
                 + "setlezing blijft buiten een vouwbron staan (WF-096)", zet.bron().line()));
             return c;
         }
+        Conditie filter = ds == null ? null : ds.filter();
         // The matrix: the SAME condition, with the quantified operand replaced by an own, element-subject
         // read of the same attribute. The §8.2 qualifier stays ON it — per member, the whole-period test is
         // what each contributor must satisfy. No navigation role/path/range and no quantor survive: the

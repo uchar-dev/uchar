@@ -164,6 +164,25 @@ class KwantorvouwFilterTest {
                 "een ontkende deelselectie mag nooit als de BEVESTIGENDE vouw landen");
     }
 
+    @Test void een_getalpredicaat_deelselectie_valt_luid_op_deze_schrijfpositie() {
+        // §5.6's getalpredicaat names no attribute of its own: the comparison is of the very attribute
+        // the fold ranges over. On the §8.2 position that attribute is TIJDSAFHANKELIJK by construction
+        // — the qualifier is only defined over a temporal onderwerp and is what admits the fold at all —
+        // and a timeline in a scalar slot has no reading (ch. 3.3). So every such filter would emit a
+        // document that falls over by name in all three executors, which makes ADMITTING it the
+        // misleading answer. The refusal is a FRONTEND boundary, not a wire one: the node carries the
+        // shape (a hand-written Kwantorvouw with a Vergelijking filter over a NON-temporal member plays
+        // in ref, clingo and the Drools exec branch); this sentence position cannot produce it.
+        RegelSpraakModel m = resolveer("alle", " die groter zijn dan 3 kg");
+        assertEquals(1, wf096(m).size(), () -> "de setlezing hoort te blijven staan: " + m.diagnostics);
+        assertEquals(1, deelselectieWaarschuwing(m).size(),
+                () -> "de geweigerde deelselectie hoort benoemd te worden: " + m.diagnostics);
+        assertTrue(deelselectieWaarschuwing(m).get(0).message().contains("gekwantificeerde attribuut 'gewicht'"),
+                () -> "de weigering hoort de AS te noemen waarop zij valt: " + m.diagnostics);
+        assertFalse(emitCompact(m).contains("Kwantorvouw"),
+                "een getalpredicaat-deelselectie mag nooit als vouw over het VOLLE bereik landen");
+    }
+
     @Test void de_samengestelde_deelselectie_bereikt_het_filter() {
         // §13.4.13.4 "die aan alle volgende voorwaarden voldoen: …" — the same compound machinery the
         // aggregation's subselectie uses, bound against the ELEMENT (the bullets' "hij" is the member).
