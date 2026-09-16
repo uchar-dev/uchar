@@ -1111,6 +1111,35 @@ final class ExpressieBouwer {
         return null;
     }
 
+    /**
+     * §5.6 / IR-SPEC ch. 4.5: the "die/dat &lt;predicaat&gt;" subselectie over the range of a §8.2
+     * QUANTIFIER FOLD — the same field, the same reading and the same resolution as an aggregation's
+     * (see {@link #aggregatieFilter}), reached from {@link RuleChecker}'s lowering instead of from a
+     * functieaanroep. Returns null when the operand writes no subselectie at all, a resolved
+     * {@link Conditie} when it writes one this resolver binds, and {@link Conditie.Onopgelost} when it
+     * writes one it does not — the caller then DECLINES to lower, because a fold over the full range is
+     * exactly the silent wrong set the field exists to prevent.
+     *
+     * <p>{@code operand} is the parse subtree of the QUANTIFIED operand specifically, never the whole
+     * condition: the subselectie is written after the onderwerp ("… van alle vondsten van de Jutter die
+     * aangemeld zijn") but selects the quantified MEMBERS, so it must be looked for on the side the
+     * quantifier is on. A die on the other operand belongs to that operand's own navigation.
+     */
+    Conditie deelselectie(ParseTree operand, Objecttype elem, Expr gekwantificeerd) {
+        if (elem == null || operand == null) return null;
+        PredicaatContext p = vindDie(operand);
+        if (p == null) return null;
+        if (p.samengesteldPredicaat() != null) {
+            Conditie c = samengesteldeFilter != null ? samengesteldeFilter.resolve(p.samengesteldPredicaat(), elem) : null;
+            return c != null ? c : new Conditie.Onopgelost(bron(p));
+        }
+        Conditie filter = elementKenmerkFilter(p, elem);
+        // §5.6 getalpredicaat "die <op> <expr>": the comparison is of the very attribute the quantifier
+        // ranges over, so the fold's own operand is what elementVergelijking re-anchors on the element.
+        if (filter == null) filter = elementVergelijking(p, elem, List.of(gekwantificeerd));
+        return filter != null ? filter : new Conditie.Onopgelost(bron(p));
+    }
+
     /** The element type a count operand ("deelnemers van …") ranges over, or null when it is not an
      *  "&lt;attribuut&gt; van &lt;onderwerp&gt;" naming a countable element — used to confirm every operand
      *  of a §5.8.1 union shares one element before OR-ing their filters. */

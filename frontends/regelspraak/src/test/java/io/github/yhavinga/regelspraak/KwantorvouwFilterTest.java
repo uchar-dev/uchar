@@ -48,6 +48,7 @@ class KwantorvouwFilterTest {
         Objecttype de Vondst (mv: Vondsten)
             het gewicht (mv: gewichten) Numeriek (getal met 2 decimalen) met eenheid kg voor elke maand;
             is aangemeld kenmerk (bijvoeglijk);
+            is geborgen kenmerk (bijvoeglijk);
 
         Feittype vondstaanmelding
             de aanmelder Jutter
@@ -148,6 +149,39 @@ class KwantorvouwFilterTest {
                 () -> "de geweigerde deelselectie hoort benoemd te worden: " + m.diagnostics);
         assertFalse(emitCompact(m).contains("Kwantorvouw"),
                 "een geweigerde deelselectie mag nooit als vouw over het VOLLE bereik landen");
+    }
+
+    @Test void een_ontkende_deelselectie_valt_luid_in_plaats_van_omgekeerd_te_binden() {
+        // "die NIET aangemeld zijn" is an ordinary sentence and this resolver does not bind it — the
+        // §13.4.13.5-.8 kenmerk register it shares with the instance fold is the affirmative one. What
+        // matters is the direction of the failure: refusing costs a sentence, silently binding the
+        // AFFIRMATIVE kenmerk would quantify over exactly the complement of what was written.
+        RegelSpraakModel m = resolveer("alle", " die niet aangemeld zijn");
+        assertEquals(1, wf096(m).size(), () -> "de setlezing hoort te blijven staan: " + m.diagnostics);
+        assertEquals(1, deelselectieWaarschuwing(m).size(),
+                () -> "de geweigerde deelselectie hoort benoemd te worden: " + m.diagnostics);
+        assertFalse(emitCompact(m).contains("Kwantorvouw"),
+                "een ontkende deelselectie mag nooit als de BEVESTIGENDE vouw landen");
+    }
+
+    @Test void de_samengestelde_deelselectie_bereikt_het_filter() {
+        // §13.4.13.4 "die aan alle volgende voorwaarden voldoen: …" — the same compound machinery the
+        // aggregation's subselectie uses, bound against the ELEMENT (the bullets' "hij" is the member).
+        RegelSpraakModel m = Resolver.resolve(MODEL + """
+            Regel maatgevend gewicht
+                geldig altijd
+                    Het maatgevend gewicht van een Jutter moet gesteld worden op 10 kg
+                    indien het gewicht van alle vondsten van de Jutter die aan alle volgende voorwaarden voldoen:
+                        - hij aangemeld is
+                        - hij geborgen is
+                    gedurende het gehele jaar groter is dan 5 kg.
+            """);
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        String v = voorwaarde(m);
+        assertTrue(v.contains("\"filter\":{\"node\":\"Samengesteld\",\"kwantor\":\"ALLE\""),
+                () -> "de samengestelde deelselectie hoort als filter op de wire te staan:\n" + v);
+        assertTrue(v.contains("\"kenmerk\":\"aangemeld\"") && v.contains("\"kenmerk\":\"geborgen\""),
+                () -> "beide bullets horen tegen het ELEMENT gebonden te zijn:\n" + v);
     }
 
     @Test void zonder_deelselectie_blijft_het_filter_leeg() {

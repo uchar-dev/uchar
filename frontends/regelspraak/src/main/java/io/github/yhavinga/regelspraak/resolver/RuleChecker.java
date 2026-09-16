@@ -859,7 +859,7 @@ final class RuleChecker {
         EnkelvoudigeConsistentieRegelContext e = cr.enkelvoudigeConsistentieRegel();
         if (e != null && e.expressie() != null && e.toplevelOperator() != null) {
             Expr lhs = bouwer.bouw(e.expressie());
-            Conditie assertie = uitToplevel(lhs, e.toplevelOperator(), bron(e));
+            Conditie assertie = uitToplevel(lhs, e.expressie(), e.toplevelOperator(), bron(e));
             Objecttype subject = lhs instanceof Expr.AttribuutRef a ? a.objecttype() : null;
             if (subject != null && transpileerbaar(assertie)) {
                 model.consistenties.add(new io.github.yhavinga.regelspraak.ir.ResolvedConsistentie(naam, subject, assertie, bron(cr), cr.getStart().getLine(), geldigheid));
@@ -1588,7 +1588,7 @@ final class RuleChecker {
             // §8.3.1: after 'indien'/'dat'/'gedurende de tijd dat' the grammar admits ONLY the verb-trailing
             // (vragende) toplevelOperator — the verb-leading register is reserved for samengestelde bullets.
             if (c.expressie() != null && c.toplevelOperator() != null)
-                return uitToplevel(bouwer.bouw(c.expressie()), c.toplevelOperator(), bron(c));
+                return uitToplevel(bouwer.bouw(c.expressie()), c.expressie(), c.toplevelOperator(), bron(c));
             // §8.1.9 / §13.4.15.18: "indien regelversie <X> is gevuurd|inconsistent" as the whole voorwaarde.
             if (c.consistentieVoorwaarde() != null) return bouwRegelversie(c.consistentieVoorwaarde());
         }
@@ -1935,9 +1935,9 @@ final class RuleChecker {
      *  {@link Conditie}; shared by the samengestelde voorwaarde and the samengestelde consistentieregel. */
     private Conditie bouwElementair(ElementaireVoorwaardeContext c) {
         if (c.expressie() != null && c.nonToplevelOperator() != null)
-            return uitNonToplevel(bouwer.bouw(c.expressie()), c.nonToplevelOperator(), bron(c));
+            return uitNonToplevel(bouwer.bouw(c.expressie()), c.expressie(), c.nonToplevelOperator(), bron(c));
         if (c.expressie() != null && c.toplevelOperator() != null)
-            return uitToplevel(bouwer.bouw(c.expressie()), c.toplevelOperator(), bron(c));
+            return uitToplevel(bouwer.bouw(c.expressie()), c.expressie(), c.toplevelOperator(), bron(c));
         // §13.4.15.69 / §8.4.3: the "het is de periode <periodevergelijkingEnkelvoudig>" bullet form.
         if (c.periodevergelijkingElementair() != null)
             return bouwPeriode(c.periodevergelijkingElementair().periodevergelijkingEnkelvoudig());
@@ -2007,10 +2007,12 @@ final class RuleChecker {
                 && !a.attribuut().toLowerCase().endsWith("niet");
     }
 
-    private Conditie uitToplevel(Expr lhs, ToplevelOperatorContext op, Bron bron) {
+    /** {@code lhsCtx} is the parse subtree the left operand was built from: the §5.6 die/dat
+     *  subselectie lives there, and {@link #kwantorvouw} needs the tree, not the Expr. */
+    private Conditie uitToplevel(Expr lhs, ExpressieContext lhsCtx, ToplevelOperatorContext op, Bron bron) {
         return kwantorvouw(
                 keurGeheelPeriode(uitToplevelKaal(lhs, op, bron), geheelPeriode(op.gehelePeriodevergelijking()), bron),
-                bron);
+                lhsCtx, op.expressie(), bron);
     }
 
     private Conditie uitToplevelKaal(Expr lhs, ToplevelOperatorContext op, Bron bron) {
@@ -2039,10 +2041,10 @@ final class RuleChecker {
         return kenmerk != null ? kenmerk : new Conditie.Onopgelost(bron); // else objecttype/navigation membership
     }
 
-    private Conditie uitNonToplevel(Expr lhs, NonToplevelOperatorContext op, Bron bron) {
+    private Conditie uitNonToplevel(Expr lhs, ExpressieContext lhsCtx, NonToplevelOperatorContext op, Bron bron) {
         return kwantorvouw(
                 keurGeheelPeriode(uitNonToplevelKaal(lhs, op, bron), geheelPeriode(op.gehelePeriodevergelijking()), bron),
-                bron);
+                lhsCtx, op.expressie(), bron);
     }
 
     /** §8.2: the "gedurende de/het gehele &lt;periode&gt;" check is only defined when the predicate's
@@ -2081,10 +2083,14 @@ final class RuleChecker {
      * does not resolve at all — a quantifier bound to no relation is the silent-wrong-set failure WF-048
      * exists to prevent, and a loud refusal beats a fold over a set the sentence never named.
      *
-     * <p>The {@code filter} (the die/dat subselection over the quantified range) is null here: the IR
-     * admits it, this card does not produce it.
+     * <p>A FOURTH shape declines for the same reason the other three do, and it is the §5.6 die/dat
+     * SUBSELECTION: a subselectie this resolver cannot bind against the element type leaves the WF-096
+     * ERROR standing and draws a WARNING naming itself. Dropping it would be worse than refusing —
+     * "alle vondsten DIE AANGEMELD ZIJN" would land as a fold over every vondst, a verifier-clean wire
+     * form carrying a set the sentence never named, which every executor then answers consistently and
+     * wrongly. That is the one failure this node's {@code filter} field exists to prevent.
      */
-    private Conditie kwantorvouw(Conditie c, Bron bron) {
+    private Conditie kwantorvouw(Conditie c, ExpressieContext lhsCtx, ExpressieContext rhsCtx, Bron bron) {
         if (periodeVan(c) == null) return c;                 // only the §8.2-qualified condition
         Expr.AttribuutRef zet = enigeSetOperand(c);
         if (zet == null) return c;
@@ -2105,13 +2111,28 @@ final class RuleChecker {
         RegelSpraakModel.RolBindingRef bronRol =
                 model.vouwbronBinding(bouwer.subject(), elem, zet.onderwerpBron());
         if (bronRol == null) return c;                       // unresolvable range — never a silent misbinding
+        // §5.6 / ch. 4.5 the die/dat SUBSELECTION, looked for in the parse subtree of the QUANTIFIED
+        // operand only: the bijzin trails the onderwerp ("… van alle vondsten van de Jutter die
+        // aangemeld zijn") but selects the quantified MEMBERS, so a die on the other side of the
+        // comparison belongs to that operand's own navigation and is none of this fold's business.
+        Conditie filter = bouwer.deelselectie(
+                c instanceof Conditie.Vergelijking v && v.rechts() == zet ? rhsCtx : lhsCtx, elem, zet);
+        if (filter instanceof Conditie.Onopgelost) {
+            model.diagnostics.add(new Diagnostic(Severity.WARNING,
+                "de 'die/dat'-deelselectie in '" + zet.bron() + "' wordt niet omgezet naar een "
+                + "kwantorvouw-filter: zij bindt geen kenmerk of getalpredicaat van " + elem.naam
+                + " (§5.6, IR-SPEC ch. 4.5); de vouw wordt daarom NIET gelowerd — een vouw over het "
+                + "volle bereik zou een andere verzameling kwantificeren dan de zin noemt, dus de "
+                + "setlezing blijft buiten een vouwbron staan (WF-096)", zet.bron().line()));
+            return c;
+        }
         // The matrix: the SAME condition, with the quantified operand replaced by an own, element-subject
         // read of the same attribute. The §8.2 qualifier stays ON it — per member, the whole-period test is
         // what each contributor must satisfy. No navigation role/path/range and no quantor survive: the
         // element IS the subject there, which is also why no set reading is left for WF-096 to find.
         Expr.AttribuutRef eigen = new Expr.AttribuutRef(zet.attribuut(), elem, zet.onderwerpBron(), null,
                 zet.type(), zet.bron(), false, List.of(), List.of(), null);
-        return new Conditie.Kwantorvouw(q, elem, null, metOperand(c, zet, eigen), bronRol, List.of(), bron);
+        return new Conditie.Kwantorvouw(q, elem, filter, metOperand(c, zet, eigen), bronRol, List.of(), bron);
     }
 
     /** The §8.2 whole-period qualifier of {@code c}, for the two condition forms that carry Expr operands
