@@ -3319,6 +3319,405 @@ let () =
   clingo_matches ~name:"ch3.4b een to-één stap op het pad"
     ~ir:bp_toone_doc ~case_text:bp_toone_case
 
+
+(* --- ch. 3.9 over a VALUE timeline, and ch. 3.9a's quantifier fold ------- *)
+
+(* Two clauses, pinned together because the second is built ON the first: the
+   whole-period comparison derives its FAILURE positively, and a positively
+   derived failure is the only per-element complement an ASP body can read,
+   so it is the one matrix the ALLE quantifier carries.
+
+   Every value below is HAND-COMPUTED from the ch. 3.9 formula — per calendar
+   bucket the timeline touches, the satisfying days must equal the bucket's
+   WHOLE length — and cross-read against RegelSpraakRuntime.rsGeheelPeriode,
+   its non-LEEG branch. They run in BOTH OCaml executors from one document
+   ([beide]: ref folds the clause in OCaml, clingo grounds the ASP encoding
+   below, neither calls the other), which is what makes them the differential
+   and not two separate beliefs. The corpus golden `jutterswet-ploegpremie`
+   pins the same five ALLE cells in all three executors; these rows carry
+   what no corpus document can — the shapes the encoding REFUSES, and the
+   grid/ordering/negation axes a golden would need six more cases for.
+
+   The GAP row is why the touched days and the satisfying days are two
+   predicates and not one: a member covered for half the year at a satisfying
+   value must be FALSE (the second half has no value, so it cannot satisfy),
+   and a single satisfying-day count with no notion of "touched" would have
+   passed it as vacuous. The EQUAL-TO-BOUND row is the mirror on the other
+   side: 40 under `> 40` satisfies no day at all, so every touched bucket
+   fails. *)
+
+let kv_num0 =
+  {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null }|}
+
+let kv_objecttypen =
+  {|"Werf": { "node": "Objecttype", "naam": "Werf",
+      "attributen": { "keur": |} ^ kv_num0
+  ^ {| },
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
+      "bezield": false, "meervoud": "Werven" },
+    "Schuit": { "node": "Objecttype", "naam": "Schuit",
+      "attributen": { "vangst": |} ^ kv_num0 ^ {|, "toeslag": |} ^ kv_num0
+  ^ {| },
+      "attribuutMeervoud": {}, "attribuutDimensies": {},
+      "attribuutGranulariteit": { "vangst": "MAAND" },
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [ "gekeurd" ], "kenmerkSoorten": { "gekeurd": "BIJVOEGLIJK" },
+      "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
+      "bezield": false, "meervoud": "Schuiten" }|}
+
+let kv_feittypen =
+  {|{ "ligplaats": { "node": "Feittype", "naam": "ligplaats", "wederkerig": false,
+    "rollen": [
+      { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true }
+    ] } }|}
+
+(* the subject's OWN vangst read — the ch. 3.9 timeline side *)
+let kv_vangst_ref =
+  {|{ "node": "AttribuutRef", "attribuut": "vangst", "objecttype": "Schuit",
+      "onderwerpBron": "de Schuit", "navigatieRol": null, "type": |} ^ kv_num0
+  ^ {|, "bron": "de vangst van de Schuit", "set": false, "navigatiePad": [] }|}
+
+(* "gedurende de gehele ⟨periode⟩ is de vangst ⟨op⟩ ⟨grens⟩" — the qualifier's
+   grid is its own ([jaar]), never the attribute's declared MAAND *)
+let kv_geheel ?(op = "GROTER") ?(grens = "40") ?(jaar = "true") ?(niet = "false")
+    ?(links = kv_vangst_ref) ?rechts () =
+  Printf.sprintf
+    {|{ "node": "Vergelijking", "op": "%s", "links": %s, "rechts": %s,
+        "periode": { "node": "GeheelPeriode", "jaar": %s, "niet": %s },
+        "bron": "de vangst van de Schuit gedurende de gehele periode %s %s is" }|}
+    op links
+    (match rechts with
+     | Some r -> r
+     | None ->
+         Printf.sprintf {|{ "node": "Literal", "waarde": "%s", "type": %s, "bron": "%s" }|} grens
+           kv_num0 grens)
+    jaar niet op grens
+
+(* the quantifier-fold document: one rule on Werf, whose condition folds the
+   linked Schuiten. [toets] defaults to the whole-period comparison; [ext] is
+   the extension slot (bronRol / bronPad). *)
+let kv_doc ?(kwantor = "ALLE") ?(toets = kv_geheel ()) ?(filter = "null") ?(ext = "")
+    ?(element = {|"Schuit"|}) () =
+  Printf.sprintf
+    {|{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": { %s },
+  "domeinen": {}, "parameters": {}, "eenheidstelsels": {},
+  "feittypen": %s,
+  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
+  "regels": [ { "node": "Regel", "naam": "keur van een werf", "soort": "regel" } ],
+  "resolvedRegels": [
+    { "node": "ResolvedRegel", "naam": "keur van een werf", "soort": "BEREKENING",
+      "doel": { "node": "AttribuutRef", "attribuut": "keur", "objecttype": "Werf",
+        "onderwerpBron": "een Werf", "navigatieRol": null, "type": %s,
+        "bron": "De keur van een Werf", "set": false, "navigatiePad": [] },
+      "waarde": { "node": "Literal", "waarde": "5", "type": %s, "bron": "5" },
+      "voorwaarde": { "node": "Kwantorvouw", "kwantor": "%s", "elementObjecttype": %s,
+        "filter": %s, "toets": %s,
+        "bron": "%s schuiten van de Werf gedurende het gehele jaar een vangst van meer dan 40 hebben"%s },
+      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }
+  ],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+  "regelGroepen": [], "diagnostics": []
+}
+|}
+    kv_objecttypen kv_feittypen kv_num0 kv_num0 kwantor element filter toets kwantor ext
+
+(* the SCALAR form of the same clause: no quantifier, the subject reads its
+   own timeline. One rule on Schuit, so a case pins it per member. *)
+let gpv_doc ?(toets = kv_geheel ()) () =
+  Printf.sprintf
+    {|{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": { %s },
+  "domeinen": {}, "parameters": {}, "eenheidstelsels": {},
+  "feittypen": %s,
+  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
+  "regels": [ { "node": "Regel", "naam": "toeslag van een schuit", "soort": "regel" } ],
+  "resolvedRegels": [
+    { "node": "ResolvedRegel", "naam": "toeslag van een schuit", "soort": "BEREKENING",
+      "doel": { "node": "AttribuutRef", "attribuut": "toeslag", "objecttype": "Schuit",
+        "onderwerpBron": "een Schuit", "navigatieRol": null, "type": %s,
+        "bron": "De toeslag van een Schuit", "set": false, "navigatiePad": [] },
+      "waarde": { "node": "Literal", "waarde": "5", "type": %s, "bron": "5" },
+      "voorwaarde": %s,
+      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }
+  ],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+  "regelGroepen": [], "diagnostics": []
+}
+|}
+    kv_objecttypen kv_feittypen kv_num0 kv_num0 toets
+
+(* one month-grid-aligned segment: [van, tot) at [waarde] *)
+let seg ~van ~tot ~waarde =
+  Printf.sprintf {|{ "from": "%s", "to": "%s", "value": { "number": "%s" } }|} van tot waarde
+
+let heel_jaar w = seg ~van:"2026-01-01" ~tot:"2027-01-01" ~waarde:w
+let half_jaar w = seg ~van:"2026-01-01" ~tot:"2026-07-01" ~waarde:w
+let heel_2027 w = seg ~van:"2027-01-01" ~tot:"2028-01-01" ~waarde:w
+let half_2027 w = seg ~van:"2027-01-01" ~tot:"2027-07-01" ~waarde:w
+
+(* [leden] is (label, timeline JSON or "") per Schuit; "" means the member
+   carries no vangst timeline at all. W1 names every member on the to-many
+   role, so the fold's range is exactly [leden]. *)
+let kv_case ?(gekeurd = []) ~leden ~waar () =
+  let schuit (l, tl) =
+    Printf.sprintf
+      {|{ "label": "%s", "objectType": "Schuit", "attributes": %s, "roles": {}, "characteristics": [ %s ] }|}
+      l
+      (if tl = "" then "{}" else Printf.sprintf {|{ "vangst": { "timeline": [ %s ] } }|} tl)
+      (if List.mem l gekeurd then {|"gekeurd"|} else "")
+  in
+  Printf.sprintf
+    {|{
+  "format": "uchar-case-v0", "asOfDate": "2026-03-15",
+  "input": { "instances": [
+      { "label": "W1", "objectType": "Werf", "attributes": {}, "roles": { "schuiten": [ %s ] },
+        "characteristics": [] }%s%s
+    ], "parameters": {} },
+  "expected": [ %s, { "kind": "consistent" } ]
+}
+|}
+    (String.concat ", " (List.map (fun (l, _) -> {|"|} ^ l ^ {|"|}) leden))
+    (if leden = [] then "" else ",\n      ")
+    (String.concat ",\n      " (List.map schuit leden))
+    (if waar then
+       {|{ "kind": "attributeValue", "label": "W1", "attribute": "keur", "value": { "number": "5" } }|}
+     else {|{ "kind": "attributeEmpty", "label": "W1", "attribute": "keur" }|})
+
+(* the scalar form's case: one Schuit, its own timeline, its own outcome *)
+let gpv_case ~tijdlijn ~waar =
+  Printf.sprintf
+    {|{
+  "format": "uchar-case-v0", "asOfDate": "2026-03-15",
+  "input": { "instances": [
+      { "label": "S1", "objectType": "Schuit", "attributes": %s, "roles": {}, "characteristics": [] }
+    ], "parameters": {} },
+  "expected": [ %s, { "kind": "consistent" } ]
+}
+|}
+    (if tijdlijn = "" then "{}"
+     else Printf.sprintf {|{ "vangst": { "timeline": [ %s ] } }|} tijdlijn)
+    (if waar then
+       {|{ "kind": "attributeValue", "label": "S1", "attribute": "toeslag", "value": { "number": "5" } }|}
+     else {|{ "kind": "attributeEmpty", "label": "S1", "attribute": "toeslag" }|})
+
+let () =
+  (* THE SCALAR ch. 3.9 TABLE — the four rows the characteristic form pins,
+     over a value timeline. `> 40`, year grid. *)
+  let rij ~name ?(toets = kv_geheel ()) ~tijdlijn ~waar () =
+    let ir = gpv_doc ~toets () and case_text = gpv_case ~tijdlijn ~waar in
+    ref_matches ~name ~ir ~case_text;
+    clingo_matches ~name ~ir ~case_text
+  in
+  rij ~name:"ch3.9 waarde-a geen tijdlijn" ~tijdlijn:"" ~waar:true ();
+  rij ~name:"ch3.9 waarde-b heel 2026 op 50" ~tijdlijn:(heel_jaar "50") ~waar:true ();
+  rij ~name:"ch3.9 waarde-c jan-jul 2026 op 50 (het gat)" ~tijdlijn:(half_jaar "50")
+    ~waar:false ();
+  rij ~name:"ch3.9 waarde-d heel 2026 op 30" ~tijdlijn:(heel_jaar "30") ~waar:false ();
+  (* the qualifier's own grid: six WHOLE months pass where the year failed *)
+  rij ~name:"ch3.9 waarde maand-grid jan-jul" ~toets:(kv_geheel ~jaar:"false" ())
+    ~tijdlijn:(half_jaar "50") ~waar:true ();
+  (* "niet gedurende …" complements the folded result, both directions *)
+  rij ~name:"ch3.9 waarde niet-b" ~toets:(kv_geheel ~niet:"true" ()) ~tijdlijn:(heel_jaar "50")
+    ~waar:false ();
+  rij ~name:"ch3.9 waarde niet-c" ~toets:(kv_geheel ~niet:"true" ()) ~tijdlijn:(half_jaar "50")
+    ~waar:true ();
+  (* the temporal side on the RIGHT: the operator REVERSES, never negates —
+     `40 < de vangst` folds exactly the days `de vangst > 40` folds *)
+  rij ~name:"ch3.9 waarde omgekeerde operandvolgorde"
+    ~toets:
+      (kv_geheel ~op:"KLEINER"
+         ~links:
+           (Printf.sprintf {|{ "node": "Literal", "waarde": "40", "type": %s, "bron": "40" }|}
+              kv_num0)
+         ~rechts:kv_vangst_ref ())
+    ~tijdlijn:(heel_jaar "50") ~waar:true ();
+  (* EVERY bucket the timeline touches, not just the first: two full years
+     pass, and one full year beside a failing one does not *)
+  rij ~name:"ch3.9 waarde twee volle jaren"
+    ~tijdlijn:(heel_jaar "50" ^ ", " ^ heel_2027 "50")
+    ~waar:true ();
+  rij ~name:"ch3.9 waarde tweede jaar onder de grens"
+    ~tijdlijn:(heel_jaar "50" ^ ", " ^ heel_2027 "30")
+    ~waar:false ();
+  rij ~name:"ch3.9 waarde tweede jaar maar half gedekt"
+    ~tijdlijn:(heel_jaar "50" ^ ", " ^ half_2027 "50")
+    ~waar:false ();
+  rij ~name:"ch3.9 waarde omgekeerd, onder de grens"
+    ~toets:
+      (kv_geheel ~op:"KLEINER"
+         ~links:
+           (Printf.sprintf {|{ "node": "Literal", "waarde": "40", "type": %s, "bron": "40" }|}
+              kv_num0)
+         ~rechts:kv_vangst_ref ())
+    ~tijdlijn:(heel_jaar "30") ~waar:false ()
+
+let () =
+  (* THE FIVE PINS of the quantifier fold over a whole-period comparison,
+     ALLE, `> 40`, year grid. *)
+  let alle ?(ir = kv_doc ()) ?gekeurd ~name ~leden ~waar () =
+    let case_text = kv_case ?gekeurd ~leden ~waar () in
+    ref_matches ~name ~ir ~case_text;
+    clingo_matches ~name ~ir ~case_text
+  in
+  alle ~name:"ch3.9a ALLE 1 elk lid heel 2026 boven de grens"
+    ~leden:[ ("S1", heel_jaar "50"); ("S2", heel_jaar "60") ]
+    ~waar:true ();
+  alle ~name:"ch3.9a ALLE 2 één lid heel 2026 onder de grens"
+    ~leden:[ ("S1", heel_jaar "50"); ("S2", heel_jaar "30") ]
+    ~waar:false ();
+  alle ~name:"ch3.9a ALLE 3 één lid dekt maar een half jaar (het gat)"
+    ~leden:[ ("S1", heel_jaar "50"); ("S2", half_jaar "50") ]
+    ~waar:false ();
+  alle ~name:"ch3.9a ALLE 4 lege verzameling (vacuüm waar)" ~leden:[] ~waar:true ();
+  alle ~name:"ch3.9a ALLE 5 elk lid precies OP de grens, strikt groter"
+    ~leden:[ ("S1", heel_jaar "40"); ("S2", heel_jaar "40") ]
+    ~waar:false ();
+  (* GEEN is the same helper read the other way: the witness is a SATISFIER,
+     and its absence is the verdict *)
+  let geen ~name ~leden ~waar =
+    let ir = kv_doc ~kwantor:"GEEN" () and case_text = kv_case ~leden ~waar () in
+    ref_matches ~name ~ir ~case_text;
+    clingo_matches ~name ~ir ~case_text
+  in
+  geen ~name:"ch3.9a GEEN 1 elk lid onder de grens"
+    ~leden:[ ("S1", heel_jaar "30"); ("S2", heel_jaar "20") ]
+    ~waar:true;
+  geen ~name:"ch3.9a GEEN 2 één lid boven de grens"
+    ~leden:[ ("S1", heel_jaar "50"); ("S2", heel_jaar "20") ]
+    ~waar:false;
+  geen ~name:"ch3.9a GEEN 3 lege verzameling (vacuüm waar)" ~leden:[] ~waar:true;
+  (* a member with NO timeline touches no bucket and passes the matrix
+     vacuously — so ALLE keeps standing and GEEN falls *)
+  alle ~name:"ch3.9a ALLE lid zonder tijdlijn (vacuüm waar)"
+    ~leden:[ ("S1", heel_jaar "50"); ("S2", "") ]
+    ~waar:true ();
+  geen ~name:"ch3.9a GEEN lid zonder tijdlijn (vacuüm waar telt als voldoener)"
+    ~leden:[ ("S1", heel_jaar "30"); ("S2", "") ]
+    ~waar:false;
+  (* the EXPLICIT one-step range: bronRol names the hop instead of leaving it
+     to the type-pair derivation, and the verdict must not move *)
+  alle ~name:"ch3.9a ALLE met een expliciete bronRol"
+    ~ir:
+      (kv_doc
+         ~ext:{|, "bronRol": { "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" }|}
+         ())
+    ~leden:[ ("S1", heel_jaar "50"); ("S2", heel_jaar "30") ]
+    ~waar:false ();
+  (* THE FILTER, evaluated per contributor with the ELEMENT as subject: the
+     same two members that make row 2 false become true once the failing one
+     is filtered out of the range *)
+  let gefilterd =
+    kv_doc
+      ~filter:
+        {|{ "node": "Kenmerk", "kenmerk": "gekeurd", "navigatie": null, "negatie": false,
+            "eigenaar": null, "periode": null, "bron": "de Schuit gekeurd is" }|}
+      ()
+  in
+  alle ~name:"ch3.9a ALLE met filter: het falende lid valt buiten het bereik" ~ir:gefilterd
+    ~gekeurd:[ "S1" ]
+    ~leden:[ ("S1", heel_jaar "50"); ("S2", heel_jaar "30") ]
+    ~waar:true ();
+  alle ~name:"ch3.9a ALLE met filter: het falende lid valt er WEL binnen" ~ir:gefilterd
+    ~gekeurd:[ "S1"; "S2" ]
+    ~leden:[ ("S1", heel_jaar "50"); ("S2", heel_jaar "30") ]
+    ~waar:false ();
+  (* the matrix's OWN "niet": under ALLE the element's failure is the
+     UN-negated failure atom, so the complement flips with it *)
+  let niet_matrix = kv_doc ~toets:(kv_geheel ~niet:"true" ()) () in
+  alle ~name:"ch3.9a ALLE over een niet-gekwalificeerde matrix, elk lid onder de grens"
+    ~ir:niet_matrix
+    ~leden:[ ("S1", heel_jaar "30"); ("S2", heel_jaar "20") ]
+    ~waar:true ();
+  alle ~name:"ch3.9a ALLE over een niet-gekwalificeerde matrix, één lid boven de grens"
+    ~ir:niet_matrix
+    ~leden:[ ("S1", heel_jaar "50"); ("S2", heel_jaar "20") ]
+    ~waar:false ();
+  (* the emitted shape itself: one negated witness helper over the fold's own
+     range, reading the whole-period FAILURE atom per element *)
+  translates_carrying ~name:"ch3.9a ALLE leest het faalatoom per element" ~ir:(kv_doc ())
+    ~case_text:(kv_case ~leden:[ ("S1", heel_jaar "50") ] ~waar:true ())
+    ~needle:{|rol(S,"schuiten",|}
+
+let () =
+  (* the loud flanks. Each names the form it refuses. *)
+  let vals = kv_case ~leden:[ ("S1", heel_jaar "50") ] ~waar:true () in
+  faults_with ~name:"ch3.9a ALLE over een andere matrix dan de heelperiodevergelijking"
+    ~ir:
+      (kv_doc
+         ~toets:
+           {|{ "node": "Kenmerk", "kenmerk": "bedrijvig", "navigatie": null, "negatie": false,
+               "eigenaar": null, "periode": null, "bron": "de Schuit bedrijvig is" }|}
+         ())
+    ~case_text:vals
+    ~needle:"other than the whole-period comparison is not translated under ALLE";
+  faults_with ~name:"ch3.9a vouw zonder matrix (WF-108)" ~ir:(kv_doc ~toets:"null" ())
+    ~case_text:vals ~needle:"without a matrix (toets) is ill-formed (WF-108)";
+  faults_with ~name:"ch3.9a vouw met een tellende kwantor"
+    ~ir:(kv_doc ~kwantor:"TEN_MINSTE" ())
+    ~case_text:vals ~needle:"a kwantor other than ALLE or GEEN";
+  (* the range fields ride [source_join], so the WF-102 verdicts are the fold
+     family's own, in the fold family's words *)
+  faults_with ~name:"ch3.9a bereikpad van één stap"
+    ~ir:
+      (kv_doc
+         ~ext:
+           {|, "bronPad": [ { "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" } ]|}
+         ())
+    ~case_text:vals ~needle:"a bronPad carries at least TWO steps";
+  faults_with ~name:"ch3.9a bereikpad naast een bronRol"
+    ~ir:
+      (kv_doc
+         ~ext:
+           ({|, "bronRol": { "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" },|}
+           ^ {| "bronPad": [ { "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" },
+                             { "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" } ]|})
+         ())
+    ~case_text:vals ~needle:"a bronPad beside a bronRol";
+  (* WF-043 stays intact on the value side: a qualifier over a
+     non-time-dependent operand is refused by name, never folded to a
+     vacuous pass *)
+  faults_with ~name:"ch3.9 kwalificator op een niet-tijdsafhankelijk attribuut (WF-043)"
+    ~ir:
+      (gpv_doc
+         ~toets:
+           (kv_geheel
+              ~links:
+                ({|{ "node": "AttribuutRef", "attribuut": "toeslag", "objecttype": "Schuit",
+                     "onderwerpBron": "de Schuit", "navigatieRol": null, "type": |} ^ kv_num0
+                ^ {|, "bron": "de toeslag van de Schuit", "set": false, "navigatiePad": [] }|})
+              ())
+         ())
+    ~case_text:(gpv_case ~tijdlijn:"" ~waar:true)
+    ~needle:"no time-dependent attribute of \"Schuit\" among its operands (WF-043)";
+  (* the bound rides INSIDE the per-segment rule, so only a ground or
+     subject-free one is carried *)
+  faults_with ~name:"ch3.9 grens die het onderwerp leest"
+    ~ir:
+      (gpv_doc
+         ~toets:
+           (kv_geheel
+              ~rechts:
+                ({|{ "node": "AttribuutRef", "attribuut": "toeslag", "objecttype": "Schuit",
+                     "onderwerpBron": "de Schuit", "navigatieRol": null, "type": |} ^ kv_num0
+                ^ {|, "bron": "de toeslag van de Schuit", "set": false, "navigatiePad": [] }|})
+              ())
+         ())
+    ~case_text:(gpv_case ~tijdlijn:(heel_jaar "50") ~waar:true)
+    ~needle:"other than a literal or a scalar parameter";
+  (* two timelines under one qualifier is a different fold *)
+  faults_with ~name:"ch3.9 twee tijdlijnen onder één kwalificator"
+    ~ir:(gpv_doc ~toets:(kv_geheel ~rechts:kv_vangst_ref ()) ())
+    ~case_text:(gpv_case ~tijdlijn:(heel_jaar "50") ~waar:true)
+    ~needle:"between TWO timelines is not translated"
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

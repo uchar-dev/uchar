@@ -1405,6 +1405,17 @@ let emit_bucket_calendar ctx ~p ~(g : granulariteit) =
       let first, _ = Uchar_ref.Timeline.bucket g lo in
       walk first 0
 
+(* the intersection of a segment [KV,KT) with a bucket [B,N), as the four
+   cases an ASP body can state without a min/max function: (van guard, van
+   pick, tot guard, tot pick). One table, because the geometry is one — the
+   characteristic emitter below and the value emitter beside it differ only
+   in the fact they read. *)
+let bucket_cases =
+  [ ("KV >= B", "KV", "KT <= N", "KT");
+    ("KV >= B", "KV", "KT > N", "N");
+    ("KV < B", "B", "KT <= N", "KT");
+    ("KV < B", "B", "KT > N", "N") ]
+
 (* true days per (bucket × condition segment): four-case intersection
    over the gedurende characteristic's timeline (shared likewise) *)
 let emit_true_days ctx ~p ~k =
@@ -1412,10 +1423,30 @@ let emit_true_days ctx ~p ~k =
     (fun (vcmp, vpick, tcmp, tpick) ->
       emit ctx "%s_d(S,B,KV,KT,%s-%s) :- ktl(S,%s,KV,KT), %s_b(B,N,_), %s, %s, %s < %s." p tpick
         vpick (str k) p vcmp tcmp vpick tpick)
-    [ ("KV >= B", "KV", "KT <= N", "KT");
-      ("KV >= B", "KV", "KT > N", "N");
-      ("KV < B", "B", "KT <= N", "KT");
-      ("KV < B", "B", "KT > N", "N") ]
+    bucket_cases
+
+(* the same intersection over a VALUE timeline (ch. 3.9's comparison arm):
+   tl/5 instead of ktl/4, and TWO predicates where the characteristic needs
+   one. _t carries the TOUCHED days — every segment day, whatever its value,
+   which is what makes the buckets the fold ranges over the ones the timeline
+   touches; _g carries only the days whose segment value satisfies [sat].
+   That is rsGeheelPeriode's geraaktDagen/goedDagen pair verbatim, and it is
+   why a timeline of 30 tested `> 40` is FALSE rather than vacuously true:
+   the bucket is touched, and nothing satisfies in it.
+
+   [sat] rides INSIDE the _g body, so it may bind only variables this rule
+   binds — the segment value V and whatever ground terms the caller carried
+   in. The caller fences that (see [whole_period_fails]). *)
+let emit_value_days ctx ~p ~attr ~sat =
+  let rules suffix v extra =
+    List.iter
+      (fun (vcmp, vpick, tcmp, tpick) ->
+        emit ctx "%s_%s(S,B,KV,KT,%s-%s) :- tl(S,%s,KV,KT,%s), %s_b(B,N,_), %s, %s, %s < %s%s." p
+          suffix tpick vpick (str attr) v p vcmp tcmp vpick tpick extra)
+      bucket_cases
+  in
+  rules "t" "_" "";
+  rules "g" "V" (String.concat "" (List.map (fun a -> ", " ^ a) sat))
 
 let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
   match e with
@@ -3482,16 +3513,185 @@ and translate_power ctx ~subject ~subject_ot ~links ~rechts =
   end;
   (b, Printf.sprintf "((%s)**%d)" t e, out_scale)
 
+(* ch. 3.9 over a VALUE timeline — "gedurende de gehele ⟨periode⟩ is ⟨x⟩
+   ⟨op⟩ ⟨grens⟩". Returns the name of the FAILURE predicate: p(S) holds
+   exactly where some calendar bucket the timeline touches is not satisfied
+   for its whole calendar length, which is rsGeheelPeriode's `goed < totaal`
+   verbatim (RegelSpraakRuntime.java, the non-LEEG branch). The caller reads
+   its negation — or the atom itself, under the qualifier's "niet".
+
+   Failure is derived POSITIVELY and named, rather than folded into the
+   caller's atom list, for the ALLE quantifier: ASP forms no complement of an
+   arbitrary condition, but it can read an atom that already means "this
+   element fails", and this is that atom (ch. 3.9a).
+
+   The helper rules quantify over their own S, like the ch. 3.9
+   characteristic arm beside them, so the predicate is defined for every
+   subject and the caller instantiates it. That is only sound while nothing
+   inside the helper names the CALLER's subject variable — which is what the
+   bound restriction below buys. *)
+and whole_period_fails ctx ~subject_ot ~op ~links ~rechts ~(gp : geheel_periode) : string =
+  (* a navigated or set timeline read is a different join than the one the
+     helper makes (it reads the subject's OWN tl/5 facts), so it is refused
+     by name rather than silently read off the wrong instance *)
+  List.iter
+    (fun e ->
+      match e with
+      | Some
+          (Attribuut_ref
+            { attribuut = Some a; objecttype = Some ot; set; navigatie_rol; navigatie_pad; _ })
+        when (set || navigatie_rol <> None || navigatie_pad <> [])
+             && attr_temporal_decl ctx ~otype:ot ~attr:a ->
+          fault
+            "a whole-period comparison over a NAVIGATED or SET timeline read (%S on %S) is not \
+             translated: the fold reads the subject's own tl/5 facts (no corpus case)"
+            a ot
+      | _ -> ())
+    [ links; rechts ];
+  let temporal_own e =
+    match e with
+    | Some
+        (Attribuut_ref
+          { attribuut = Some a; set = false; navigatie_rol = None; navigatie_pad = []; _ })
+      when attr_temporal ctx ~otype:subject_ot ~attr:a ->
+        Some a
+    | _ -> None
+  in
+  (* ch. 3.9: when the temporal side is on the RIGHT the operator is
+     REVERSED (the operands swap), never negated — `40 < de opbrengst` folds
+     the same days as `de opbrengst > 40` *)
+  let reverse = function
+    | Kleiner -> Groter
+    | Kleiner_of_gelijk -> Groter_of_gelijk
+    | Groter -> Kleiner
+    | Groter_of_gelijk -> Kleiner_of_gelijk
+    | Eerder -> Later
+    | Eerder_of_gelijk -> Later_of_gelijk
+    | Later -> Eerder
+    | Later_of_gelijk -> Eerder_of_gelijk
+    | (Gelijk | Ongelijk) as op -> op
+  in
+  let a, bound, op =
+    match (temporal_own links, temporal_own rechts) with
+    | Some _, Some _ ->
+        fault
+          "a whole-period comparison between TWO timelines is not translated: ch. 3.9 folds one \
+           timeline against a scalar bound (no corpus case)"
+    | Some a, None -> (a, req "Vergelijking.rechts" rechts, op)
+    | None, Some a -> (a, req "Vergelijking.links" links, reverse op)
+    | None, None ->
+        (* WF-043 on this node. The verifier rejects the form, so no
+           verifier-clean document arrives here; the executor still refuses
+           it by name rather than fold an empty timeline to a vacuous pass. *)
+        fault
+          "whole-period qualifier on a comparison with no time-dependent attribute of %S among \
+           its operands (WF-043)"
+          subject_ot
+  in
+  units_identical_ok ~what:"a whole-period comparison"
+    (Option.bind links (eff_unit ctx))
+    (Option.bind rechts (eff_unit ctx));
+  (* THE BOUND. It rides inside the per-segment _g rule, whose only bound
+     variables are the timeline's own S, its segment bounds and its value, so
+     it may contribute a GROUND term or a subject-free join and nothing else.
+     A literal contributes no atom at all; a scalar parameter contributes
+     param/2, keyed by name. Anything richer — an attribute read, an
+     arithmetic composite, a fold — either names the caller's subject or
+     deposits a range fence keyed on it, neither of which this rule can
+     carry, so it is refused by name. A LEEG parameter simply has no param/2
+     fact: the positive join fails, no day satisfies, and the test is false —
+     ch. 3.9's "a leeg bound makes the test false", for free. *)
+  let batoms, bterm, sb =
+    match bound with
+    | Literal _ | Parameter_ref _ -> expr_term ctx ~subject:"S" ~subject_ot bound
+    | _ ->
+        fault
+          "a whole-period comparison against a bound other than a literal or a scalar parameter \
+           is not translated: the bound rides inside the per-segment rule, which binds only the \
+           timeline's own subject (no corpus case)"
+  in
+  let sa = pow10 (attr_decimals ctx ~otype:subject_ot ~attr:a) in
+  let sym =
+    match op with
+    | Gelijk -> "=="
+    | Ongelijk -> "!="
+    | Eerder | Eerder_of_gelijk | Later | Later_of_gelijk ->
+        (* a date-typed timeline: ref's ordering is the same integer
+           comparison, but no corpus case folds one over a period, and the
+           scale harmonisation below is the numeric one *)
+        fault
+          "a whole-period comparison with a DATE ordering is not translated (no corpus case \
+           folds a date timeline over a period)"
+    | op -> vergelijk_sym op
+  in
+  let sat_atoms, vt, bt = harmonised ([], "V", sa) (batoms, bterm, sb) in
+  (* the wrap fence, at translation time because the helper carries no
+     subject to key a viol/2 on: the harmonisation multiplies the SEGMENT
+     value when the bound is finer than the attribute, and gringo grounds in
+     machine integers. The case's own segments are the exact operands, so
+     they are what is measured. *)
+  let m = max (numeric_scale ~what:"a whole-period comparison" sa) sb in
+  if m > sa then begin
+    let k = m / sa in
+    let worst =
+      Eval.SMap.fold
+        (fun _ (i : Uchar_ref.World.instance) acc ->
+          if not (isa ctx i.otype subject_ot) then acc
+          else
+            match Uchar_ref.World.timeline i a with
+            | None -> acc
+            | Some tl ->
+                List.fold_left
+                  (fun acc (s : Uchar_ref.Timeline.segment) ->
+                    max acc
+                      (abs
+                         (scaled_of_value
+                            ~decimals:(attr_decimals ctx ~otype:subject_ot ~attr:a)
+                            s.s_waarde)))
+                  acc tl)
+        ctx.case.world.instances 0
+    in
+    if worst > max_int31 / k then
+      fault
+        "the whole-period comparison on %S harmonises to scale %d, where the case's largest \
+         segment value (%d) leaves the guarded machine-integer range"
+        a m worst
+  end;
+  (* the qualifier's OWN grid, never the attribute's declared granularity
+     (ch. 3.9) *)
+  let g : granulariteit = if gp.gp_jaar then Jaar else Maand in
+  ctx.fresh <- ctx.fresh + 1;
+  let p = Printf.sprintf "gpv%d" ctx.fresh in
+  emit_bucket_calendar ctx ~p ~g;
+  emit_value_days ctx ~p ~attr:a ~sat:(sat_atoms @ [ Printf.sprintf "%s %s %s" vt sym bt ]);
+  (* per TOUCHED bucket: fail when the satisfying days fall short of the
+     bucket's whole calendar length. A gap day contributes to _t and not to
+     _g, so a partially covered bucket fails; a timeline with no segments
+     touches no bucket, derives no failure, and passes vacuously. *)
+  emit ctx
+    "%s(S) :- %s_t(S,B,_,_,_), %s_b(B,_,Tot), GD = #sum { D,KV,KT : %s_g(S,B,KV,KT,D) }, GD < \
+     Tot."
+    p p p p;
+  p
+
 and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
   match c with
-  (* ch. 3.9's other two value tests. Every Vergelijking and Predicaat arm
-     below guards `periode = None`, so a qualified one already fell through
-     to the catch-all — loud, but under a message that says nothing about
-     the clause it belongs to, and not the message ref gives for the same
-     node. Named here so the two executors refuse the same form in the same
-     words; the characteristic-holds test is built (the arm further down). *)
-  | Vergelijking { periode = Some _; _ } ->
-      fault "whole-period comparison is ch. 3.9 scope, not executed here"
+  (* ch. 3.9's value test over a timeline, executed here since 2026-09-16
+     (the fold itself is [whole_period_fails]). Every other Vergelijking arm
+     below guards `periode = None`, so this arm sees every qualified
+     comparison and nothing else reaches it.
+
+     "Negation complements the folded result" (ch. 3.9): the qualifier's
+     "niet gedurende …" reads the failure atom itself, the plain form reads
+     its negation. *)
+  | Vergelijking { op; links; rechts; periode = Some gp; _ } ->
+      let p = whole_period_fails ctx ~subject_ot ~op ~links ~rechts ~gp in
+      [ (if gp.gp_niet then "" else "not ") ^ Printf.sprintf "%s(%s)" p subject ]
+  (* ch. 3.9's remaining value test. A qualified leeg/gevuld predicate would
+     otherwise fall through to the catch-all — loud, but under a message that
+     says nothing about the clause it belongs to, and not the message ref
+     gives for the same node. Named here so the two executors refuse the same
+     form in the same words. *)
   | Predicaat { soort = Leeg | Gevuld; periode = Some _; _ } ->
       fault "whole-period leeg/gevuld test is ch. 3.9 scope, not executed here"
   | Vergelijking { op = (Gelijk | Ongelijk) as op; links; rechts; periode = None; _ }
@@ -3982,6 +4182,81 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
         | Alle | De -> fault "unreachable: a conjunctive quantifier in the counting branch"
       in
       [ Printf.sprintf "%s_h%d(%s,%s)" p n subject h; compare ]
+  | Kwantorvouw
+      { kv_kwantor; kv_element_objecttype; kv_filter; kv_toets; kv_bron_rol; kv_bron_pad; _ } ->
+      (* RUNTIME-SEMANTICS ch. 3.9a: the QUANTIFIER FOLD — "alle/geen ⟨elementen⟩
+         ⟨matrix⟩". Its contributors are EXACTLY the instance fold's (ch. 3.4a /
+         3.4b) and are gathered by the same machinery: [source_join] decides
+         reach ∩ population in the one place it is decided anywhere in this
+         file, and the filter is evaluated per contributor with the ELEMENT as
+         subject, exactly as Functie.filter is.
+
+         Both quantifiers are ONE negated helper. kvN(S) derives a WITNESS and
+         the verdict is its absence: under GEEN the witness is an element that
+         SATISFIES the matrix, under ALLE one that FAILS it. The empty
+         contributor set derives no witness either way, so both quantifiers are
+         vacuously TRUE on it — the chapter's rule, for free, the same way the
+         ch. 3.9 qualifier gets its vacuous passes.
+
+         The DEDUP the flat union demands is free: a contributor reachable
+         along two intermediate hops derives the same ground atom twice, and an
+         atom holds or does not. No aggregate elects a term here, so unlike the
+         value folds there is nothing to keep multiplicities out of. *)
+      let el = req "Kwantorvouw.elementObjecttype" kv_element_objecttype in
+      let toets =
+        match kv_toets with
+        | Some c -> c
+        | None ->
+            fault
+              "a quantifier fold without a matrix (toets) is ill-formed (WF-108): the verifier \
+               cites the rule, and this backend does not guess a verdict for it"
+      in
+      (match kv_kwantor with
+      | Alle | Geen -> ()
+      | De | Ten_minste | Ten_hoogste | Precies ->
+          fault
+            "the quantifier fold carries a kwantor other than ALLE or GEEN, which WF-108 refuses \
+             upstream; the counting quantifiers fold conditions, not elements");
+      let env =
+        { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None;
+          locals = Eval.SMap.empty }
+      in
+      let x = fresh ctx "X" in
+      let join =
+        source_join ctx env ~subject ~subject_ot ~el ~bron_rol:kv_bron_rol ~bron_pad:kv_bron_pad
+          ~x
+      in
+      let fatoms =
+        match kv_filter with None -> [] | Some c -> cond_atoms ctx ~subject:x ~subject_ot:el c
+      in
+      let witness =
+        match kv_kwantor with
+        | Geen ->
+            (* the witness IS the matrix: whatever cond_atoms carries, GEEN
+               carries, because a satisfier is what it already derives *)
+            cond_atoms ctx ~subject:x ~subject_ot:el toets
+        | _ -> (
+            (* ALLE needs the element's FAILURE, and ASP forms no complement of
+               an arbitrary condition — this backend's standing asymmetry. The
+               whole-period comparison already derives failure positively, so
+               its complement is one atom; every other matrix is refused by
+               name rather than encoded half-right. *)
+            match toets with
+            | Vergelijking { op; links; rechts; periode = Some gp; _ } ->
+                let p = whole_period_fails ctx ~subject_ot:el ~op ~links ~rechts ~gp in
+                [ (if gp.gp_niet then "not " else "") ^ Printf.sprintf "%s(%s)" p x ]
+            | _ ->
+                fault
+                  "a quantifier-fold matrix other than the whole-period comparison is not \
+                   translated under ALLE (the complement of an arbitrary condition is not an ASP \
+                   body; no corpus case)")
+      in
+      ctx.fresh <- ctx.fresh + 1;
+      let p = Printf.sprintf "kv%d" ctx.fresh in
+      emit ctx "%s(%s) :- %s." p subject
+        (String.concat ", "
+           ((Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: join) @ fatoms @ witness));
+      [ Printf.sprintf "not %s(%s)" p subject ]
   | Predicaat { soort = Gevuld; operand; negatie = false; dagsoort = None; periode = None; _ } ->
       (* the gevuld gate (ref eval: value <> leeg): the operand's binding atoms
          as a positive join. A struct operand rides struct_term (its val atom),
