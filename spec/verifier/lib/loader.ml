@@ -732,6 +732,26 @@ and conditie path j : conditie =
               (list_ (path / "onderdelen") (f "onderdelen"));
           bron = bron ();
         }
+  | "Kwantorvouw" ->
+      check_keys path kvs ~ext:[ "bronRol"; "bronPad" ]
+        [ "node"; "kwantor"; "elementObjecttype"; "filter"; "toets"; "bron" ];
+      Kwantorvouw
+        {
+          kv_kwantor = kwantor (path / "kwantor") (f "kwantor");
+          kv_element_objecttype =
+            str_opt (path / "elementObjecttype") (f "elementObjecttype");
+          kv_filter = opt (path / "filter") conditie (f "filter");
+          (* optional at the LOADER, required by WF-108 (d): a missing matrix
+             is a citable violation, never a load failure with no rule to name
+             — the WF-102 discipline on bronPad, applied to this node's own
+             fields *)
+          kv_toets = opt (path / "toets") conditie (f "toets");
+          kv_bron = bron ();
+          kv_bron_rol = ext_field path kvs "bronRol" rol_binding;
+          kv_bron_pad =
+            ext_field path kvs "bronPad" (fun p j ->
+                List.mapi (fun i x -> rol_binding (p / string_of_int i) x) (list_ p j));
+        }
   | "Regelversie" ->
       check_keys path kvs [ "node"; "regel"; "inconsistent"; "bron" ];
       Regelversie

@@ -3006,6 +3006,11 @@ let dagsoort_scan at (c0 : conditie) : violation list * string list =
     | Rollidmaatschap { rol; _ } -> impure "role membership" (Option.value rol ~default:"?")
     | Verre_rollidmaatschap { filler; _ } -> impure "role membership" (Option.value filler ~default:"?")
     | Regelversie { regel; _ } -> impure "rule-version state" (Option.value regel ~default:"?")
+    (* the quantifier fold ranges over the fact base — instances reached
+       through a relation — which is the same derived read the membership
+       arms above are flagged for; the day-kind admission list is closed *)
+    | Kwantorvouw { kv_element_objecttype; _ } ->
+        impure "instance quantification" (Option.value kv_element_objecttype ~default:"?")
     | Conditie_onopgelost _ -> ()
   in
   co c0;
@@ -4233,6 +4238,9 @@ and mentions_binder_cond b (c : conditie) : bool =
   | Predicaat { operand; _ } -> opt operand
   | Periode_conditie { vanaf; tot; _ } -> opt vanaf || opt tot
   | Samengesteld { onderdelen; _ } -> List.exists (mentions_binder_cond b) onderdelen
+  | Kwantorvouw { kv_filter; kv_toets; _ } ->
+      let sub = function Some c -> mentions_binder_cond b c | None -> false in
+      sub kv_filter || sub kv_toets
   | Kenmerk_check _ | Rollidmaatschap _ | Verre_rollidmaatschap _ | Regelversie _
   | Conditie_onopgelost _ -> false
 
@@ -4273,7 +4281,7 @@ let wf077_condition at (c : conditie) : violation list =
         List.concat
           (List.mapi (fun i c -> walk (Printf.sprintf "%s/onderdelen/%d" at i) c) onderdelen)
     | Kenmerk_check _ | Rollidmaatschap _ | Verre_rollidmaatschap _ | Regelversie _
-    | Conditie_onopgelost _ ->
+    | Kwantorvouw _ | Conditie_onopgelost _ ->
         [ v "WF-077" at
             "an IfThenElse condition reads a characteristic, role or channel — not admissible (only \
              binders, parameters and literals may be read; route state reads through a Let \
@@ -6471,6 +6479,140 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) at (c : conditie) : viola
           (List.mapi
              (fun i c -> walk_cond ctx ~binders ~subject (Printf.sprintf "%s/onderdelen/%d" at i) c)
              onderdelen)
+  (* WF-108 — the QUANTIFIER FOLD's shape (IR-SPEC ch. 4.5; semantics
+     RUNTIME-SEMANTICS ch. 3.9a). Four arms, and each closes a way the node
+     could state a quantification with nothing to quantify over.
+
+     The range arms (c) deliberately carry their OWN number rather than
+     widening WF-102: that rule is scoped to a fold's ARGUMENT — the source
+     position, which this node does not have — and a negatief directory must
+     be able to name the rule it violates. What is shared is the MACHINERY,
+     not the number: [wf047_binding], [wf048_derivable] and [resolve_binding]
+     are the fold's, called from here, so a range can never be judged by two
+     different engines. An unresolvable binding therefore still reports
+     WF-047, exactly as a fold's does. *)
+  | Kwantorvouw k ->
+      let sub p = at ^ "/" ^ p in
+      (* (a) the quantifier: ALLE and GEEN are the v0 forms. The counting
+         quantifiers are Samengesteld's vocabulary over PARTS and the named
+         extension point here; DE is a definite description, not a
+         quantification over a set. Refused by name rather than ignored —
+         a reader that took an unhandled kwantor for ALLE would answer the
+         opposite of "geen van de". *)
+      (match k.kv_kwantor with
+       | Alle | Geen -> []
+       | De ->
+           [ v "WF-108" (sub "kwantor")
+               "quantifier fold with kwantor DE: the bare definite is a description of ONE \
+                member, not a quantification over the set — a fold over it has no reading" ]
+       | Ten_minste | Ten_hoogste | Precies ->
+           [ v "WF-108" (sub "kwantor")
+               "quantifier fold with a counting kwantor: only ALLE and GEEN are v0 forms (the \
+                counting quantifiers are the named extension point, and no semantics clause \
+                corresponds to one here)" ])
+      (* (b) the population. WF-034 owns the name resolution of every other
+         type reference; this arm owns the node's REQUIREMENT that one be
+         there at all, because a quantifier with no element type ranges over
+         nothing a reader can name. *)
+      @ (match k.kv_element_objecttype with
+         | None ->
+             [ v "WF-108" (sub "elementObjecttype")
+                 "quantifier fold without an elementObjecttype: the population it ranges over is \
+                  unnamed" ]
+         | Some t when objecttype ctx t = None ->
+             [ v "WF-034" (sub "elementObjecttype")
+                 ("quantifier-fold element type '" ^ t ^ "' is not declared") ]
+         | Some _ -> [])
+      (* (d) the matrix. A quantifier with no matrix states a range and
+         asks nothing of it; the loader carries the absence so this rule
+         can name it. *)
+      @ (match k.kv_toets with
+         | None ->
+             [ v "WF-108" (sub "toets")
+                 "quantifier fold without a toets: the matrix is what every contributor must \
+                  satisfy, and a quantifier over no condition has no verdict" ]
+         | Some _ -> [])
+      (* (c) the range, one meaning with two spellings — the WF-102
+         discipline under this node's own number. *)
+      @ (match k.kv_bron_pad with
+         | Some pad ->
+             (match k.kv_bron_rol with
+              | Some _ ->
+                  [ v "WF-108" (sub "bronPad")
+                      "bronPad beside bronRol on a quantifier fold: the one-step range IS \
+                       bronRol, so the two fields are mutually exclusive" ]
+              | None -> [])
+             @ (if List.length pad >= 2 then []
+                else
+                  [ v "WF-108" (sub "bronPad")
+                      (Printf.sprintf
+                         "a quantifier fold's bronPad carries at least TWO steps, found %d — the \
+                          one-step range is spelled bronRol"
+                         (List.length pad)) ])
+             @ (let rec chain i from_t = function
+                  | [] -> []
+                  | (rb : rol_binding) :: rest -> (
+                      let step = sub ("bronPad/" ^ string_of_int i) in
+                      match resolve_binding ctx rb with
+                      | Error e -> [ v "WF-047" step e ]
+                      | Ok (_, bound, other) ->
+                          let bound_filler = Option.value bound.rol_objecttype_naam ~default:"" in
+                          let joins =
+                            match from_t with
+                            | None -> []
+                            | Some ft when fills ctx ~inst:ft ~role:other -> []
+                            | Some ft ->
+                                [ v "WF-108" step
+                                    (Printf.sprintf
+                                       "the opposite role '%s' fills '%s', but this step starts \
+                                        at '%s' (%s) — a quantifier range is a connected walk"
+                                       (Option.value other.rol_naam ~default:"?")
+                                       (Option.value other.rol_objecttype_naam ~default:"")
+                                       ft
+                                       (if i = 0 then "the quantifier's subject"
+                                        else "the type the previous step reaches")) ]
+                          in
+                          let lands =
+                            if rest <> [] then []
+                            else
+                              match k.kv_element_objecttype with
+                              | Some el when not (type_compatible ctx bound_filler el) ->
+                                  [ v "WF-108" step
+                                      (Printf.sprintf
+                                         "the last step's bound role '%s' fills '%s', but the \
+                                          quantifier's elementObjecttype is '%s' — the path must \
+                                          land on the element type"
+                                         (Option.value bound.rol_naam ~default:"?")
+                                         bound_filler el) ]
+                              | _ -> []
+                          in
+                          joins @ lands @ chain (i + 1) (Some bound_filler) rest)
+                in
+                chain 0 subject pad)
+         | None -> (
+             match (k.kv_element_objecttype, k.kv_bron_rol) with
+             | Some el, Some rb ->
+                 wf047_binding ctx (sub "bronRol") rb ~bound_filler:(Some el)
+                   ~other_filler:subject
+             | Some el, None -> (
+                 match subject with
+                 | Some st ->
+                     wf048_derivable ctx (sub "bronRol") ~from_type:st ~to_type:el
+                       ~site:"quantifier fold"
+                 | None -> [])
+             | None, _ -> []))
+      (* the matrix and the subselection are read with the ELEMENT as
+         subject — the same re-anchoring the fold's filter gets
+         (walk_expr's Functie arm), so an element-own read resolves against
+         the element type and not against the outer subject *)
+      @ (let esubject =
+           match k.kv_element_objecttype with Some el -> Some el | None -> subject
+         in
+         let walk_sub p = function
+           | Some c -> walk_cond ctx ~binders ~subject:esubject ~body (sub p) c
+           | None -> []
+         in
+         walk_sub "filter" k.kv_filter @ walk_sub "toets" k.kv_toets)
   | Regelversie _ -> [] (* row-30 split; admissibility OPEN *)
   | Conditie_onopgelost _ -> []
 
@@ -6996,6 +7138,28 @@ and dep_cond ctx ~subject ~neg acc (c : conditie) =
         | De | Alle | Ten_minste -> neg
       in
       List.fold_left (fun acc c -> dep_cond ctx ~subject ~neg:neg' acc c) acc onderdelen
+  (* the quantifier fold (ch. 3.9a): the RANGE relation is read positively,
+     and everything under the matrix is read CONSERVATIVELY NEGATIVELY —
+     the quantifier is a fold with conjunction, so a member that fails
+     decides the verdict the way a negated read does, and GEEN is the
+     negation outright. ch. 6.1's "once negative, conservatively negative"
+     applied at the one place this node introduces. *)
+  | Kwantorvouw { kv_kwantor; kv_element_objecttype; kv_filter; kv_toets; kv_bron_rol; kv_bron_pad; _ }
+    ->
+      ignore kv_kwantor;
+      ignore kv_element_objecttype;
+      let acc =
+        List.fold_left
+          (fun acc rb -> (n_rel rb.rb_feittype, Dep_pos) :: acc)
+          acc
+          ((match kv_bron_rol with Some rb -> [ rb ] | None -> [])
+          @ Option.value kv_bron_pad ~default:[])
+      in
+      let sub acc = function
+        | Some c -> dep_cond ctx ~subject:kv_element_objecttype ~neg:true acc c
+        | None -> acc
+      in
+      sub (sub acc kv_filter) kv_toets
   | Regelversie { regel = Some r; _ } -> (n_chan r, Dep_neg) :: acc
   | Regelversie _ -> acc
   | Conditie_onopgelost _ -> acc
@@ -9060,6 +9224,9 @@ and invoked_cond acc (c : conditie) : string list =
   | Predicaat { operand; _ } -> invoked_opt acc operand
   | Samengesteld { onderdelen; _ } -> List.fold_left invoked_cond acc onderdelen
   | Periode_conditie { vanaf; tot; _ } -> invoked_opt (invoked_opt acc vanaf) tot
+  | Kwantorvouw { kv_filter; kv_toets; _ } ->
+      let sub acc = function Some c -> invoked_cond acc c | None -> acc in
+      sub (sub acc kv_filter) kv_toets
   | Kenmerk_check _ | Rollidmaatschap _ | Verre_rollidmaatschap _ | Regelversie _
   | Conditie_onopgelost _ ->
       acc

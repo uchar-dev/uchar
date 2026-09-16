@@ -1684,6 +1684,7 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
           (Option.value role.rol_naam ~default:"?");
       let fills = role_links world self role <> [] in
       if negatie then not fills else fills
+  | Kwantorvouw _ -> Value.fault "quantifier fold is ch. 3.9a scope, not executed here"
   | Verre_rollidmaatschap _ | Periode_conditie _ ->
       Value.fault "condition kind not implemented in this card"
   | Conditie_onopgelost _ -> Value.fault "Onopgelost condition reached in evaluation (WF-044)"
@@ -2559,6 +2560,7 @@ let vintage_read_params (doc : document) : string list =
         ()
     | Periode_conditie { vanaf; tot; _ } -> opt vanaf; opt tot
     | Samengesteld { onderdelen; _ } -> List.iter cond onderdelen
+    | Kwantorvouw { kv_filter; kv_toets; _ } -> copt kv_filter; copt kv_toets
   and copt = function Some c -> cond c | None -> ()
   in
   List.iter

@@ -2331,6 +2331,77 @@
         }
       }
     },
+    "Kwantorvouw": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "kwantor",
+        "elementObjecttype",
+        "filter",
+        "toets",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "Kwantorvouw"
+        },
+        "kwantor": {
+          "enum": [
+            "ALLE",
+            "GEEN"
+          ],
+          "description": "The quantifier over the instance range. ALLE = every contributor satisfies 'toets'; GEEN = none does. The vocabulary is Samengesteld's, over instances instead of parts; the counting forms (TEN_MINSTE / TEN_HOOGSTE / PRECIES) are the named extension point and are NOT admitted in v0 (WF-108 (a) refuses a hand-written one by name)."
+        },
+        "elementObjecttype": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The instance type quantified over — the POPULATION, extensionally (IR-SPEC ch. 2.2): the contributors are the instances the range reaches whose type is the subtype-or-equal of this one."
+        },
+        "filter": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/conditie"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The die/dat subselection, evaluated PER CONTRIBUTOR with the element as subject — the same field, the same reading and the same machinery as Functie.filter (RUNTIME-SEMANTICS ch. 3.4a). It selects WHICH members are quantified over; 'toets' is what each selected member must satisfy."
+        },
+        "toets": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/conditie"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The quantified matrix, evaluated PER CONTRIBUTOR with the element as subject. Nullable on the wire so a missing matrix is a citable WF-108 (d) violation rather than a load failure with no rule to name."
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "bronRol": {
+          "$ref": "#/$defs/RolBinding",
+          "description": "Extension field (wire-entry discipline, IR-SPEC Method): the one-step range — the connecting relation with the role whose filler instances the quantifier RANGES OVER bound. Spelled exactly as Functie.bronRol. Written whole or not at all, never null."
+        },
+        "bronPad": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RolBinding"
+          },
+          "description": "Extension field (wire-entry discipline, IR-SPEC Method): the MULTI-STEP range, the relations walked subject-outwards, each step spelled exactly as bronRol is. Two or more steps; the one-step range IS bronRol and the two fields are mutually exclusive (WF-108 (c), the WF-102 discipline under this node's own rule)."
+        }
+      },
+      "description": "Extension node (IR-SPEC Method; wire node Kwantorvouw): the QUANTIFIER FOLD — first-order quantification of a condition over the members of a linked instance set (IR-SPEC ch. 4.5; RUNTIME-SEMANTICS ch. 3.9a). The first-order sibling of Samengesteld, which quantifies over PARTS of one subject; this one quantifies over INSTANCES, and takes its range fields from the instance fold (ch. 4.3) unchanged."
+    },
     "Regelversie": {
       "type": "object",
       "additionalProperties": false,
@@ -2404,6 +2475,9 @@
         },
         {
           "$ref": "#/$defs/Samengesteld"
+        },
+        {
+          "$ref": "#/$defs/Kwantorvouw"
         },
         {
           "$ref": "#/$defs/Regelversie"

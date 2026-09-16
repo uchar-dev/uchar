@@ -3923,6 +3923,205 @@ let () =
   expect_num "WV-IR2.2-c-kenmerkeigenaar-op-voorouder" (owner_run [ "gemeld" ]) "7";
   expect_leeg "WV-IR2.2-c-kenmerkeigenaar-onvervuld" (owner_run [])
 
+(* --- ch. 3.9 / 3.9a: the whole-period COMPARISON and the QUANTIFIER FOLD --
+   The five pinned rows of the §8.2 form
+     "… indien de <attribuut> van ALLE <leden> van de <onderwerp>
+        gedurende het gehele jaar groter is dan <grens>"
+   plus the scalar comparison the matrix rests on, and the GEEN twin. *)
+
+let dagnr iso = match Value.date_of_iso iso with Value.Date d -> d | _ -> assert false
+
+let seg van tot waarde : Timeline.segment =
+  { s_van = dagnr van; s_tot = dagnr tot; s_waarde = waarde }
+
+(* Berger.dagvergoeding is month-granular; the qualifier's own grid is the
+   YEAR, which is the ch. 3.9 independence the two must not conflate. *)
+let kv_berger : string * Ir_v0.Ast.objecttype =
+  let base = ot "Berger" [ ("dagvergoeding", Some num0) ] [] in
+  (fst base, { (snd base) with attribuut_granulariteit = [ ("dagvergoeding", Some Maand) ] })
+
+let kv_ploegindeling : string * Ir_v0.Ast.feittype =
+  ( "ploegindeling",
+    {
+      ft_naam = Some "ploegindeling";
+      wederkerig = false;
+      rollen =
+        [
+          { rol_naam = Some "ploeg"; rol_objecttype_naam = Some "Bergingsploeg";
+            rol_meervoud = None; rol_meervoudig = false };
+          { rol_naam = Some "berger"; rol_objecttype_naam = Some "Berger";
+            rol_meervoud = Some "bergers"; rol_meervoudig = true };
+        ];
+    } )
+
+let kv_doc =
+  { empty_doc with
+    objecttypen = [ ot "Bergingsploeg" [] []; kv_berger ];
+    feittypen = [ kv_ploegindeling ] }
+
+(* the matrix: "zijn dagvergoeding gedurende het gehele jaar groter is dan 40",
+   read on the ELEMENT — a set:false own read, the qualifier riding it *)
+let kv_toets ?(op : Ir_v0.Ast.vergelijk_op = Groter) ?(grens = "40") () : Ir_v0.Ast.conditie =
+  Vergelijking
+    {
+      op;
+      links = Some (aref "dagvergoeding" "Berger" num0);
+      rechts = Some (litv grens num0);
+      periode = Some { gp_jaar = true; gp_niet = false };
+      bron = None;
+    }
+
+let kv_cond ?(kwantor : Ir_v0.Ast.kwantor = Alle) ?filter ?toets () : Ir_v0.Ast.conditie =
+  Kwantorvouw
+    {
+      kv_kwantor = kwantor;
+      kv_element_objecttype = Some "Berger";
+      kv_filter = filter;
+      kv_toets = Some (match toets with Some t -> t | None -> kv_toets ());
+      kv_bron = None;
+      kv_bron_rol = Some { rb_feittype = "ploegindeling"; rb_rol = "berger" };
+      kv_bron_pad = None;
+    }
+
+(* one world per row: the ploeg P1 and its bergers, each with its own
+   dagvergoeding timeline *)
+let kv_wereld leden =
+  let bergers =
+    List.map
+      (fun (label, tl) ->
+        { (inst label "Berger" []) with
+          World.tls = World.SMap.add "dagvergoeding" tl World.SMap.empty })
+      leden
+  in
+  let p1 =
+    { (inst "P1" "Bergingsploeg" []) with
+      World.links =
+        (match leden with
+        | [] -> World.SMap.empty
+        | _ -> World.SMap.add "bergers" (List.map fst leden) World.SMap.empty) }
+  in
+  List.fold_left World.add_instance World.empty (p1 :: bergers)
+
+let kv_eval ?kwantor ?filter ?toets leden =
+  let w = kv_wereld leden in
+  Eval.eval_cond (env_of kv_doc) w (World.get w "P1") ~err:no_err
+    (kv_cond ?kwantor ?filter ?toets ())
+
+let heel_jaar v = [ seg "2026-01-01" "2027-01-01" (n v) ]
+let half_jaar v = [ seg "2026-01-01" "2026-07-01" (n v) ]
+
+let () =
+  (* THE FIVE PINS (the toolchain's own expectations for the §8.2 form) *)
+  check "WV-3.9a-pin1-allen-heel-jaar-boven-de-grens"
+    (kv_eval [ ("B1", heel_jaar "50"); ("B2", heel_jaar "60") ]);
+  check "WV-3.9a-pin2-een-lid-onder-de-grens"
+    (not (kv_eval [ ("B1", heel_jaar "50"); ("B2", heel_jaar "30") ]));
+  check "WV-3.9a-pin3-een-lid-met-een-gat-in-de-periode"
+    (not (kv_eval [ ("B1", heel_jaar "50"); ("B2", half_jaar "60") ]));
+  check "WV-3.9a-pin4-lege-set-is-vacuous-waar" (kv_eval []);
+  check "WV-3.9a-pin5-precies-op-de-grens-is-niet-strikt-groter"
+    (not (kv_eval [ ("B1", heel_jaar "40") ]));
+
+  (* the GEEN twin: the verdict is the complement PER MEMBER, never of the
+     fold — a member with a gap does NOT have the value whole-period, so it
+     does not block GEEN either *)
+  check "WV-3.9a-geen-allen-onder-de-grens"
+    (kv_eval ~kwantor:Geen [ ("B1", heel_jaar "30"); ("B2", heel_jaar "20") ]);
+  check "WV-3.9a-geen-een-lid-erboven"
+    (not (kv_eval ~kwantor:Geen [ ("B1", heel_jaar "30"); ("B2", heel_jaar "50") ]));
+  check "WV-3.9a-geen-lege-set-is-vacuous-waar" (kv_eval ~kwantor:Geen []);
+  check "WV-3.9a-geen-lid-met-een-gat-blokkeert-niet"
+    (kv_eval ~kwantor:Geen [ ("B1", half_jaar "50") ]);
+
+  (* a member with NO timeline at all touches no bucket and passes
+     vacuously — ch. 3.9's own rule, lifted unchanged; it is NOT the same
+     thing as a gap, and the difference is pinned here so an executor that
+     collapses the two fails by name *)
+  check "WV-3.9a-lid-zonder-tijdlijn-is-vacuous-waar"
+    (kv_eval [ ("B1", heel_jaar "50"); ("B2", []) ]);
+
+  (* the die/dat subselection selects WHICH members are quantified over; the
+     excluded member's failing value never reaches the verdict *)
+  let filter_boven_10 : Ir_v0.Ast.conditie =
+    Vergelijking
+      { op = Groter; links = Some (aref "dagvergoeding" "Berger" num0);
+        rechts = Some (litv "10" num0); periode = Some { gp_jaar = true; gp_niet = false };
+        bron = None }
+  in
+  check "WV-3.9a-filter-sluit-het-falende-lid-uit"
+    (kv_eval ~filter:filter_boven_10 [ ("B1", heel_jaar "50"); ("B2", heel_jaar "5") ]);
+  check "WV-3.9a-filter-dat-alles-uitsluit-is-vacuous-waar"
+    (kv_eval ~filter:filter_boven_10 [ ("B1", heel_jaar "5") ]);
+
+  (* a matrix that is absent is WF-108's business, and reaching it in
+     evaluation is a fault, never a verdict *)
+  expect_fault_msg "WV-3.9a-matrixloze-kwantorvouw-faalt"
+    (fun () ->
+      let w = kv_wereld [ ("B1", heel_jaar "50") ] in
+      Value.Bool
+        (Eval.eval_cond (env_of kv_doc) w (World.get w "P1") ~err:no_err
+           (Kwantorvouw
+              { kv_kwantor = Alle; kv_element_objecttype = Some "Berger"; kv_filter = None;
+                kv_toets = None; kv_bron = None;
+                kv_bron_rol = Some { rb_feittype = "ploegindeling"; rb_rol = "berger" };
+                kv_bron_pad = None })))
+    "quantifier fold without a toets"
+
+(* The SCALAR whole-period comparison the matrix rests on (ch. 3.9): the
+   same four rows the characteristic form already pins, over a VALUE
+   timeline. Until this card both OCaml executors refused the form by name
+   while ch. 3.9 specified it — the gap ch. 3.12 recorded. *)
+let () =
+  let scalar_doc =
+    { empty_doc with objecttypen = [ (fst kv_berger, snd kv_berger) ] }
+  in
+  let ev ?(op : Ir_v0.Ast.vergelijk_op = Groter) ?(niet = false) ?(jaar = true) ?(grens = "40") tl =
+    let i =
+      { (inst "B1" "Berger" []) with
+        World.tls = World.SMap.add "dagvergoeding" tl World.SMap.empty }
+    in
+    let w = World.add_instance World.empty i in
+    Eval.eval_cond (env_of scalar_doc) w (World.get w "B1") ~err:no_err
+      (Vergelijking
+         { op; links = Some (aref "dagvergoeding" "Berger" num0);
+           rechts = Some (litv grens num0);
+           periode = Some { gp_jaar = jaar; gp_niet = niet }; bron = None })
+  in
+  check "WV-3.9-vgl-a-geen-tijdlijn-raakt-geen-emmer" (ev []);
+  check "WV-3.9-vgl-b-heel-jaar-boven-de-grens" (ev (heel_jaar "50"));
+  check "WV-3.9-vgl-c-heel-jaar-onder-de-grens" (not (ev (heel_jaar "30")));
+  check "WV-3.9-vgl-d-half-jaar-boven-de-grens" (not (ev (half_jaar "50")));
+  check "WV-3.9-vgl-e-precies-op-de-grens" (not (ev (heel_jaar "40")));
+  check "WV-3.9-vgl-f-groter-of-gelijk-op-de-grens"
+    (ev ~op:Groter_of_gelijk (heel_jaar "40"));
+  (* the QUALIFIER's own negation complements the verdict, the vacuous rows
+     included — exactly as on the characteristic form *)
+  check "WV-3.9-vgl-niet-a" (not (ev ~niet:true []));
+  check "WV-3.9-vgl-niet-b" (not (ev ~niet:true (heel_jaar "50")));
+  check "WV-3.9-vgl-niet-d" (ev ~niet:true (half_jaar "50"));
+  (* the grid is the QUALIFIER's own: six whole months pass where the year
+     bucket failed *)
+  check "WV-3.9-vgl-maand-d" (ev ~jaar:false (half_jaar "50"));
+  check "WV-3.9-vgl-maand-deelmaand"
+    (not (ev ~jaar:false [ seg "2026-01-15" "2026-03-01" (n "50") ]));
+  (* a leeg segment inside the period is a day that does not satisfy the
+     test — false, never a fault (ch. 3.9) *)
+  check "WV-3.9-vgl-leeg-segment-faalt"
+    (not (ev [ seg "2026-01-01" "2026-07-01" (n "50"); seg "2026-07-01" "2027-01-01" leeg ]));
+  (* a non-time-dependent operand keeps WF-043's refusal *)
+  expect_fault_msg "WV-3.9-vgl-niet-tijdsafhankelijk"
+    (fun () ->
+      let flat = ot "Berger" [ ("dagvergoeding", Some num0) ] [] in
+      let d = { empty_doc with objecttypen = [ flat ] } in
+      let w = World.add_instance World.empty (inst "B1" "Berger" [ ("dagvergoeding", n "50") ]) in
+      Value.Bool
+        (Eval.eval_cond (env_of d) w (World.get w "B1") ~err:no_err
+           (Vergelijking
+              { op = Groter; links = Some (aref "dagvergoeding" "Berger" num0);
+                rechts = Some (litv "40" num0);
+                periode = Some { gp_jaar = true; gp_niet = false }; bron = None })))
+    "WF-043"
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

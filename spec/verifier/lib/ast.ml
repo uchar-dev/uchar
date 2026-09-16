@@ -298,6 +298,19 @@ and conditie =
       onderdelen : conditie list;
       bron : string option;
     }
+  | Kwantorvouw of {
+      kv_kwantor : kwantor;
+      kv_element_objecttype : string option;
+      kv_filter : conditie option;
+      kv_toets : conditie option;
+      kv_bron : string option;
+      kv_bron_rol : rol_binding option; (* extension: the one-step range *)
+      kv_bron_pad : rol_binding list option;
+          (* extension: the multi-step range, carried AS LOADED (empty
+             included) so the arity is a violation WF-108 reports and never
+             a load failure — the WF-102 discipline, under this node's own
+             rule *)
+    }
   | Regelversie of { regel : string option; inconsistent : bool; bron : string option }
   | Conditie_onopgelost of { bron : string option }
 
