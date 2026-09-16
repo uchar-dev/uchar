@@ -15,9 +15,6 @@ verzwakken.
 Acceptance:
 - `bash scripts/check-*.sh` — alle veertien gates groen (OCaml na
   `eval $(opam env)`; jars in `frontends/regelspraak/lib/`).
-  *Uitzondering, vooraf gemeten en gemeld: gate 1 is op `main` (a8eb629) al
-  rood op één regel van een top-level werkdocument buiten deze may-touch;
-  deze kaart voegt er geen enkele regel aan toe.*
 - De VIJF gepinde toolchain-verwachtingen zijn absoluut vastgelegd in de
   golden en repliceren identiek door `ref`, clingo en Drools-exec:
   1. alle leden heel jaar boven de grens → WAAR
@@ -92,9 +89,12 @@ haalt zijn matrix vacuüm. Cel 6 kan dat onderscheid niet maken: haar berger op
 50 beslist GEEN al. Mutanten op de vacuüm-cel én op cel 7 worden door alle drie
 verworpen.
 
-**Eerlijke afwijkingen.** (a) Poort 1 was op `main` (a8eb629) al rood op
-regel 17 van `OPDRACHT_OBJECTTYPE_HIERARCHIE_20260910.md` — buiten deze
-may-touch; deze kaart voegt er niets aan toe en laat hem staan. (b)
+**Eerlijke afwijkingen.** (a) Poort 1 was bij aanvang op `main` (a8eb629)
+al rood, op één regel van een top-level werkdocument buiten deze may-touch.
+Gemeld in plaats van omzeild; de maintainer heeft het bestand op `main`
+untracked (8144006) en deze tak is daarop herbaseerd, dus poort 1 is groen.
+Deze kaart voegde er geen enkele regel aan toe — gemeten over de hele diff.
+(b)
 `frontends/catala/lib/translate.ml` kreeg één arm: een knoop aan de
 conditie-unie toevoegen maakt elke uitputtende match een compileerfout.
 Buiten de may-touch, onvermijdelijk, hier gemeld. (c) De die/dat-deelselectie
