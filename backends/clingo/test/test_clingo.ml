@@ -3629,14 +3629,17 @@ let () =
     ~gekeurd:[ "S1"; "S2" ]
     ~leden:[ ("S1", heel_jaar "50"); ("S2", heel_jaar "30") ]
     ~waar:false ();
-  (* the matrix's OWN "niet": under ALLE the element's failure is the
-     UN-negated failure atom, so the complement flips with it *)
+  (* the matrix's OWN "niet" — the qualifier's negation riding the
+     comparison, NOT an unqualified matrix (that shape is refused further
+     down, and calling this one "ongekwalificeerd" made the two read as one
+     thing). Under ALLE the element's failure is the UN-negated failure
+     atom, so the complement flips with it. *)
   let niet_matrix = kv_doc ~toets:(kv_geheel ~niet:"true" ()) () in
-  alle ~name:"ch3.9a ALLE over een niet-gekwalificeerde matrix, elk lid onder de grens"
+  alle ~name:"ch3.9a ALLE over een ONTKENDE matrix, elk lid onder de grens"
     ~ir:niet_matrix
     ~leden:[ ("S1", heel_jaar "30"); ("S2", heel_jaar "20") ]
     ~waar:true ();
-  alle ~name:"ch3.9a ALLE over een niet-gekwalificeerde matrix, één lid boven de grens"
+  alle ~name:"ch3.9a ALLE over een ONTKENDE matrix, één lid boven de grens"
     ~ir:niet_matrix
     ~leden:[ ("S1", heel_jaar "50"); ("S2", heel_jaar "20") ]
     ~waar:false ();

@@ -1859,6 +1859,8 @@ asked of each berger's own timeline.
 | 3 | 50 the whole year; 60 on [2026-01-01, 2026-07-01) only | waar, onwaar (181 of 365) | **onwaar** |
 | 4 | none | — | **waar** (vacuous) |
 | 5 | 40, the whole of 2026 | onwaar (strictly greater) | **onwaar** |
+| 6 | 50 the whole year; one berger with no timeline at all | waar, waar (no bucket touched) | **waar** |
+| 7 | one berger, no timeline at all | waar (no bucket touched) | **waar** |
 
 Row 3 is the gap and row 4 the empty set; together they are the two ends
 the fold is most often got wrong at, and they disagree on purpose — a
@@ -1870,11 +1872,26 @@ and the fold does not stumble over it. That is ch. 3.9's rule applied
 unchanged rather than a rule of this chapter, and it is pinned so that an
 executor which collapses "absent" into "gap" fails by name.
 
+**Under GEEN that same member changes the sign, and the two vacuous
+readings part company.** An absent timeline makes the member SATISFY its
+matrix vacuously, so it satisfies what GEEN says nobody satisfies: a
+ploeg whose single berger has no `dagvergoeding` at all reads
+premiegerechtigd **waar** and wisselvallig **onwaar**, while a ploeg with
+no bergers reads **waar** on both. Vacuous-at-the-member and
+vacuous-at-the-set are different vacua and only one of them is the empty
+conjunction of this chapter; row 4's rule is about the SET, and nothing
+about an empty set follows from a member that happens to be empty. The
+corpus pins the pair side by side for that reason.
+
 Under **GEEN**, on the same document: bergers at 30 and 20 the whole year
 → **waar** (no member is above 40); 30 and 50 → **onwaar**; no bergers →
 **waar**; a single berger at 50 on the first half of 2026 only →
 **waar**, because he does not have more than 40 *gedurende het gehele
-jaar* either.
+jaar* either. Rows 6 and 7 are where GEEN turns over: both read
+**onwaar**, because a member with no timeline satisfies the matrix
+vacuously and GEEN denies exactly that. Row 7 is the one that has to be
+pinned on its own — in row 6 the berger at 50 already decides GEEN, so
+that row cannot tell the empty member from the full one.
 
 With a die/dat subselection — *alle bergers die een dagvergoeding van
 meer dan 10 hebben* — a berger at 5 the whole year is not a contributor,
@@ -2004,7 +2021,7 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 | Whole-period qualifier over a characteristic, the **inner** negation ("gedurende … NIET") | specified (ch. 3.9's formula), executed by the two OCaml executors; the Drools backend refuses it by name in both branches, so it stays suite-pinned and out of the corpus |
 | Whole-period qualifier, the **ordering/equality** test over a value timeline | **specified and executed, ch. 3.9** — the reference interpreter and the ASP backend built it 2026-09-16 (the heelperiode-forall card), the Drools backend carried it already; witnessed by `corpus/golden/jutterswet-ploegpremie` and by each executor's own suite. The **date-valued** form stays refused (its own row above), and the navigated form is untouched |
 | Whole-period qualifier, the **leeg/gevuld** tests | specified (ch. 3.9), **not executed** by either OCaml executor — both refuse them by name, no corpus case. The threshold clause the leeg test needs (touched-days rather than calendar days) is stated in ch. 3.9 and implemented in the Drools runtime alone; the sibling that landed above deliberately did not take it along, because a clause with no witness on this side would be a green subset |
-| **Quantifier fold** over a linked instance set (ch. 3.9a) | **specified and executed** — ALLE and GEEN in all three executors, witnessed by `corpus/golden/jutterswet-ploegpremie`. The counting quantifiers over an instance range are the named extension point and are refused by WF-108 (a); a NON-temporal matrix is admitted by the IR and executed by the reference interpreter, while the ASP backend carries the whole-period matrix only — the standing executor asymmetry, kept out of the corpus |
+| **Quantifier fold** over a linked instance set (ch. 3.9a) | **specified and executed** — ALLE and GEEN in all three executors, witnessed by `corpus/golden/jutterswet-ploegpremie`. The counting quantifiers over an instance range are the named extension point and are refused by WF-108 (a); a NON-temporal matrix is admitted by the IR; the reference interpreter executes it under both quantifiers, the ASP backend under GEEN only (ALLE would need the complement of an arbitrary condition, which is not an ASP body) and the Drools backend under neither (it markers the form by name in both branches) — the standing executor asymmetry, kept out of the corpus |
 | Gap-vs-absent timeline observability (temporal total: 0 vs leeg) | mirrored residual; stays OPEN here — the ch. 1.4 freeze covers the scalar discipline, not this temporal residual |
 | Sorted/non-overlapping input invariant | delta candidate (WF rule, data plane), ch. 3.1 |
 | Non-terminating pro-rata stored at 16 digits | v0 residual (normative: exact fraction), ch. 3.7 |

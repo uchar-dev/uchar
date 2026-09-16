@@ -25,25 +25,43 @@ characteristic is attributed (case 2 and 3 — one berger is above the bound, so
 (case 4, the empty set, vacuous under both). A reader that computed `GEEN` as
 `not ALLE` fails case 2, case 3 and case 4 alike.
 
-## The six cells
+## The seven cells
 
 | case | the ploeg's bergers | premiegerechtigd | wisselvallig |
 |---|---|---|---|
 | 1 | 50 and 60, each the whole of 2026 | **ja** | nee |
 | 2 | 50 and 30, each the whole of 2026 | nee | nee |
-| 3 | 50 the whole year; 60 on the first half only | nee | nee |
+| 3 | 50 the whole year; 60 on [2026-01-01, 2026-07-01) only | nee | nee |
 | 4 | none | **ja** (vacuous) | **ja** (vacuous) |
 | 5 | 40, the whole of 2026 | nee (strictly greater) | **ja** |
 | 6 | 50 the whole year; one berger with no timeline at all | **ja** | nee |
+| 7 | one berger, no timeline at all | **ja** | nee |
 
 Cases 1–5 are the five expectations the production toolchain pins for this
-form, in a casus of our own. Case 6 is the corpus's own addition and it is the
-one a reader is most likely to get wrong: **an absent timeline is not a gap.**
-A member with no segments touches no calendar bucket and passes the
-whole-period test vacuously (ch. 3.9); a member whose timeline covers only part
-of the year touches the 2026 bucket and falls short of its 365 days, so it
-fails (case 3). The two sit side by side here so that an executor which
-collapses them fails by name rather than by accident.
+form, in a casus of our own. Cases 6 and 7 are the corpus's own addition and
+they pin the thing a reader is most likely to get wrong: **an absent timeline
+is not a gap.** A member with no segments touches no calendar bucket and passes
+the whole-period test vacuously (ch. 3.9); a member whose timeline covers only
+part of the year touches the 2026 bucket and falls short of its 365 days, so it
+fails (case 3 — partial COVERAGE, `[jan, jul)`, which is what the file name
+says; not a hole punched in the middle). The two sit side by side here so that
+an executor which collapses them fails by name rather than by accident.
+
+The vacuous reading of an absent timeline is **not a free choice made here**:
+it is the answer the ported production runtime already gave. `rsGeheelPeriode`
+opens with `if (tijdlijn == null) return true;` — no period, nothing to
+violate — and ch. 3.9's "a timeline with no segments touches no bucket and
+passes vacuously" is that behaviour written down. The corpus pins it rather
+than inheriting it silently.
+
+**Case 7 is the cell where vacuous changes sign**, and it is the reason the
+pair is two cases and not one. Under `ALLE` an absent timeline is harmless; under
+`GEEN` it is fatal, because the member SATISFIES its matrix vacuously and `GEEN`
+denies exactly that. So a ploeg whose only berger has no dagvergoeding reads
+wisselvallig **nee**, while a ploeg with no bergers at all reads **ja** — two
+different vacua, and only the second is the empty conjunction. Case 6 cannot
+make that distinction on its own: its berger at 50 already decides `GEEN`
+before the empty member is reached.
 
 `asOfDate` is 2026-03-15 in every case and is **irrelevant to the verdict** —
 deliberately so. The whole-period fold takes its buckets from the timeline, not

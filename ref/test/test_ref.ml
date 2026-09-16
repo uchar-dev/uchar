@@ -4016,7 +4016,7 @@ let () =
     (kv_eval [ ("B1", heel_jaar "50"); ("B2", heel_jaar "60") ]);
   check "WV-3.9a-pin2-een-lid-onder-de-grens"
     (not (kv_eval [ ("B1", heel_jaar "50"); ("B2", heel_jaar "30") ]));
-  check "WV-3.9a-pin3-een-lid-met-een-gat-in-de-periode"
+  check "WV-3.9a-pin3-een-lid-dekt-maar-een-half-jaar"
     (not (kv_eval [ ("B1", heel_jaar "50"); ("B2", half_jaar "60") ]));
   check "WV-3.9a-pin4-lege-set-is-vacuous-waar" (kv_eval []);
   check "WV-3.9a-pin5-precies-op-de-grens-is-niet-strikt-groter"
@@ -4030,15 +4030,24 @@ let () =
   check "WV-3.9a-geen-een-lid-erboven"
     (not (kv_eval ~kwantor:Geen [ ("B1", heel_jaar "30"); ("B2", heel_jaar "50") ]));
   check "WV-3.9a-geen-lege-set-is-vacuous-waar" (kv_eval ~kwantor:Geen []);
-  check "WV-3.9a-geen-lid-met-een-gat-blokkeert-niet"
+  check "WV-3.9a-geen-half-dekkend-lid-blokkeert-niet"
     (kv_eval ~kwantor:Geen [ ("B1", half_jaar "50") ]);
 
   (* a member with NO timeline at all touches no bucket and passes
      vacuously — ch. 3.9's own rule, lifted unchanged; it is NOT the same
-     thing as a gap, and the difference is pinned here so an executor that
-     collapses the two fails by name *)
+     thing as partial coverage, and the difference is pinned here so an
+     executor that collapses the two fails by name *)
   check "WV-3.9a-lid-zonder-tijdlijn-is-vacuous-waar"
     (kv_eval [ ("B1", heel_jaar "50"); ("B2", []) ]);
+  (* and the cell where that vacuum CHANGES SIGN: the very same member
+     SATISFIES its matrix vacuously, which is what GEEN denies. Pinned on
+     its OWN set, because beside a member at 50 the fold is already decided
+     and the empty one is never reached — the two vacua (at the member, at
+     the set) part company only here *)
+  check "WV-3.9a-geen-enig-lid-zonder-tijdlijn-is-onwaar"
+    (not (kv_eval ~kwantor:Geen [ ("B1", []) ]));
+  check "WV-3.9a-alle-enig-lid-zonder-tijdlijn-is-waar"
+    (kv_eval [ ("B1", []) ]);
 
   (* the die/dat subselection selects WHICH members are quantified over; the
      excluded member's failing value never reaches the verdict *)

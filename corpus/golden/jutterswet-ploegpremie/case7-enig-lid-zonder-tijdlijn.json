@@ -1,0 +1,50 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2026-03-15",
+  "input": {
+    "instances": [
+      {
+        "label": "P1",
+        "objectType": "Bergingsploeg",
+        "attributes": {},
+        "roles": {
+          "bergers": [
+            "B1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "B1",
+        "objectType": "Berger",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "bergertal",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "P1",
+      "characteristic": "premiegerechtigd"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "P1",
+      "characteristic": "wisselvallig"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
