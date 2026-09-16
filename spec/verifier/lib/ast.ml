@@ -300,6 +300,12 @@ and conditie =
     }
   | Kwantorvouw of {
       kv_kwantor : kwantor;
+      kv_drempel : int option;
+          (* extension: the counting quantifier's threshold, Samengesteld's
+             field. An OPTION and not an int, because on this node the field
+             is present exactly where it is read (WF-108 (e)) rather than
+             always present with a zero nobody consults — so its absence is a
+             citable violation, and its VALUE is WF-041's, as on the sibling *)
       kv_element_objecttype : string option;
       kv_filter : conditie option;
       kv_toets : conditie option;

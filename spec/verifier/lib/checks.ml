@@ -6493,23 +6493,42 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) at (c : conditie) : viola
      WF-047, exactly as a fold's does. *)
   | Kwantorvouw k ->
       let sub p = at ^ "/" ^ p in
-      (* (a) the quantifier: ALLE and GEEN are the v0 forms. The counting
-         quantifiers are Samengesteld's vocabulary over PARTS and the named
-         extension point here; DE is a definite description, not a
-         quantification over a set. Refused by name rather than ignored —
-         a reader that took an unhandled kwantor for ALLE would answer the
-         opposite of "geen van de". *)
+      (* (a) the quantifier: ALLE, GEEN and — since 2026-09-16 — the three
+         counting forms, Samengesteld's vocabulary over INSTANCES instead of
+         parts. DE is a definite description, not a quantification over a
+         set, and is refused by name rather than ignored: a reader that took
+         an unhandled kwantor for ALLE would answer the opposite of "geen van
+         de". *)
       (match k.kv_kwantor with
-       | Alle | Geen -> []
+       | Alle | Geen | Ten_minste | Ten_hoogste | Precies -> []
        | De ->
            [ v "WF-108" (sub "kwantor")
                "quantifier fold with kwantor DE: the bare definite is a description of ONE \
-                member, not a quantification over the set — a fold over it has no reading" ]
-       | Ten_minste | Ten_hoogste | Precies ->
-           [ v "WF-108" (sub "kwantor")
-               "quantifier fold with a counting kwantor: only ALLE and GEEN are v0 forms (the \
-                counting quantifiers are the named extension point, and no semantics clause \
-                corresponds to one here)" ])
+                member, not a quantification over the set — a fold over it has no reading" ])
+      (* (e) the threshold: present EXACTLY under a counting quantifier. A
+         counting fold without one names no number to compare the count with;
+         one under ALLE/GEEN records a quantification the kwantor field
+         contradicts, and a reader is entitled to trust either. The VALUE is
+         not this rule's — a bound below 1 is WF-041, reported at this
+         position exactly as an unresolvable binding reports WF-047, on the
+         shared-rule discipline arm (c) states. *)
+      @ (match (k.kv_kwantor, k.kv_drempel) with
+         | (Ten_minste | Ten_hoogste | Precies), None ->
+             [ v "WF-108" (sub "drempel")
+                 "counting quantifier fold without a drempel: the verdict compares the number of \
+                  contributors satisfying the matrix with a threshold, and there is none to \
+                  compare it with" ]
+         | (Alle | Geen | De), Some d ->
+             [ v "WF-108" (sub "drempel")
+                 (Printf.sprintf
+                    "quantifier fold with a drempel (%d) under a NON-counting kwantor: the \
+                     threshold is read only by the counting quantifiers, and a number no reader \
+                     consults states a quantification the kwantor contradicts"
+                    d) ]
+         | (Ten_minste | Ten_hoogste | Precies), Some d when d < 1 ->
+             [ v "WF-041" (sub "drempel")
+                 (Printf.sprintf "counting quantifier with threshold %d < 1" d) ]
+         | _ -> [])
       (* (b) the population. WF-034 owns the name resolution of every other
          type reference; this arm owns the node's REQUIREMENT that one be
          there at all, because a quantifier with no element type ranges over

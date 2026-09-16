@@ -733,11 +733,16 @@ and conditie path j : conditie =
           bron = bron ();
         }
   | "Kwantorvouw" ->
-      check_keys path kvs ~ext:[ "bronRol"; "bronPad" ]
+      check_keys path kvs ~ext:[ "bronRol"; "bronPad"; "drempel" ]
         [ "node"; "kwantor"; "elementObjecttype"; "filter"; "toets"; "bron" ];
       Kwantorvouw
         {
           kv_kwantor = kwantor (path / "kwantor") (f "kwantor");
+          (* optional at the LOADER for the same reason [kv_toets] is: the
+             field's PRESENCE is WF-108 (e)'s demand and its value WF-041's,
+             so both are citable violations rather than load failures with no
+             rule to name *)
+          kv_drempel = ext_field path kvs "drempel" int_;
           kv_element_objecttype =
             str_opt (path / "elementObjecttype") (f "elementObjecttype");
           kv_filter = opt (path / "filter") conditie (f "filter");
