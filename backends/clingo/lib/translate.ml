@@ -3537,9 +3537,12 @@ and translate_power ctx ~subject ~subject_ot ~links ~rechts =
    its negation — or the atom itself, under the qualifier's "niet".
 
    Failure is derived POSITIVELY and named, rather than folded into the
-   caller's atom list, for the ALLE quantifier: ASP forms no complement of an
-   arbitrary condition, but it can read an atom that already means "this
-   element fails", and this is that atom (ch. 3.9a).
+   caller's atom list, because the day count it folds is an aggregate and an
+   aggregate is not a constraint the caller can carry: the name is what makes
+   the verdict readable as ONE atom, in either polarity. (Until 2026-09-16
+   this was also what let the quantifier fold negate the matrix under ALLE;
+   that fold now reifies EVERY matrix of its own accord and reads this one
+   through [cond_atoms] like any other.)
 
    The helper rules quantify over their own S, like the ch. 3.9
    characteristic arm beside them, so the predicate is defined for every
@@ -4214,6 +4217,13 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
          vacuously TRUE on it — the chapter's rule, for free, the same way the
          ch. 3.9 qualifier gets its vacuous passes.
 
+         The two quantifiers differ in ONE step and it is the witness: GEEN
+         reads the matrix's own atoms, ALLE reads the negation of a REIFIED
+         matrix (see below). Neither arm knows anything about which condition
+         the matrix is — ch. 3.9a's "test is an ordinary condition with the
+         element as subject", executed as written, so the "niet" of a matrix
+         is the matrix's and never the quantifier's.
+
          The DEDUP the flat union demands is free: a contributor reachable
          along two intermediate hops derives the same ground atom twice, and an
          atom holds or does not. No aggregate elects a term here, so unlike the
@@ -4251,21 +4261,33 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
             (* the witness IS the matrix: whatever cond_atoms carries, GEEN
                carries, because a satisfier is what it already derives *)
             cond_atoms ctx ~subject:x ~subject_ot:el toets
-        | _ -> (
+        | _ ->
             (* ALLE needs the element's FAILURE, and ASP forms no complement of
-               an arbitrary condition — this backend's standing asymmetry. The
-               whole-period comparison already derives failure positively, so
-               its complement is one atom; every other matrix is refused by
-               name rather than encoded half-right. *)
-            match toets with
-            | Vergelijking { op; links; rechts; periode = Some gp; _ } ->
-                let p = whole_period_fails ctx ~subject_ot:el ~op ~links ~rechts ~gp in
-                [ (if gp.gp_niet then "not " else "") ^ Printf.sprintf "%s(%s)" p x ]
-            | _ ->
-                fault
-                  "a quantifier-fold matrix other than the whole-period comparison is not \
-                   translated under ALLE (the complement of an arbitrary condition is not an ASP \
-                   body; no corpus case)")
+               an arbitrary CONJUNCTION OF ATOMS — but it does form the
+               complement of a PREDICATE. So the matrix is REIFIED: one helper
+               rule per fold whose head means "this element satisfies the
+               matrix", derived from exactly the atoms GEEN reads, and the
+               failure witness is its negation. The helper quantifies over its
+               own X (like [whole_period_fails] beside it), so the caller
+               instantiates it at the contributor the range bound.
+               `isa(X,el)` opens the body because a matrix need not bind its
+               own subject (a negated characteristic read binds nothing), and
+               it is the same atom [source_join] closes the range with.
+
+               Stratification holds by CONSTRUCTION, the counting composite's
+               argument above: the helper is named after a counter that only
+               grows, and the matrix inside it is a strict subterm translated
+               BEFORE the name exists, so no atom the helper's body reads can
+               depend on the helper. Double negation is therefore fine — for
+               the whole-period matrix the body is itself `not gpvN(X)`, and
+               `not kvsM(X)` over that is the same verdict the old
+               special-cased arm read positively off `gpvN`. *)
+            let atoms = cond_atoms ctx ~subject:x ~subject_ot:el toets in
+            ctx.fresh <- ctx.fresh + 1;
+            let s = Printf.sprintf "kvs%d" ctx.fresh in
+            emit ctx "%s(%s) :- %s." s x
+              (String.concat ", " (Printf.sprintf "isa(%s,%s)" x (str el) :: atoms));
+            [ Printf.sprintf "not %s(%s)" s x ]
       in
       ctx.fresh <- ctx.fresh + 1;
       let p = Printf.sprintf "kv%d" ctx.fresh in

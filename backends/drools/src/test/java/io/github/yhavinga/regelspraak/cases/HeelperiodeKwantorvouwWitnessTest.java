@@ -205,10 +205,17 @@ class HeelperiodeKwantorvouwWitnessTest {
     // ---------------- an unlowerable shape SKIPS by name, never fires a wrong verdict ----------------
 
     /**
-     * De exec-model-tak lowert alleen de heelperiodevorm van ch. 3.9a. Elke andere matrix moet een
-     * SKIP MET REDEN opleveren waarin de vorm genoemd staat — nooit een regel die toch vuurt op een
-     * matrix die niet gelezen is. Een kale vergelijking zonder §8.2-kwalificatie is de goedkoopste
-     * getuige daarvan: hij is welgevormd, hij laadt, en hij hoort hier af te ketsen.
+     * Elke matrix die deze tak niet lowert moet een SKIP MET REDEN opleveren waarin de vorm genoemd
+     * staat — nooit een regel die toch vuurt op een matrix die niet gelezen is.
+     *
+     * <p><b>De grens verschoof op 2026-09-16</b> (kaart kwantor-asymmetrie) en deze rij verschoof mee.
+     * Tot dan lowerde de tak ALLEEN de heelperiodevorm en was elke kale vergelijking de goedkoopste
+     * getuige; sindsdien lowert zij ook de NIET-temporele matrix, via dezelfde per-subject
+     * bladvertaling die elke andere conditie van deze backend krijgt. De getuige is daarom nu een
+     * vergelijking die WEL niet-temporeel bedoeld is maar een TIJDSAFHANKELIJK operand leest
+     * ({@code wachtwaarde} is MAAND-granulair): die draagt de bladvertaling niet, dus de weigering
+     * blijft — met een andere, even benoemde reden. De bewering van de rij is onveranderd: buiten de
+     * scope is de vorm zichtbaar, nooit stil.
      */
     @Test void een_matrix_buiten_de_scope_wordt_met_de_vorm_in_de_reden_overgeslagen() throws Exception {
         Path irPad = schrijf("ir-scope.json", ir(vouwZonderPeriode()));
@@ -218,7 +225,7 @@ class HeelperiodeKwantorvouwWitnessTest {
         assertEquals("EXCLUDE", r.status(), "een niet-gelowerde kwantorvouw mag nooit meespelen");
         assertTrue(r.reason().contains("kwantorvouw"),
                 "de reden noemt de VORM, zodat gate 12 haar met reden in de kanaalvloer zet: " + r.reason());
-        assertTrue(r.reason().contains("gehele-periodekwalificatie"),
+        assertTrue(r.reason().contains("bladvertaling niet draagt"),
                 "en zegt WELKE grens geraakt is, niet alleen dat er een grens is: " + r.reason());
     }
 

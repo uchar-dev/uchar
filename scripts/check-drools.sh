@@ -456,7 +456,15 @@ EXPECTED_CHANNEL=(
 # rule unrestated and the additive write fence then refused 1002,00 — which ref and this backend both
 # produced. It has to be a player for the reason every unit golden is: a restating that two of three
 # executors reproduce is outside the square. Nothing else moved.
-EXPECTED_PLAYED=142
+# 2026-09-16 (card kwantor-asymmetrie), 142 -> 143: `jutterswet-schouwploeg` joins as a NEW PLAYER —
+# the ch. 3.9a quantifier fold over a NON-temporal matrix, the form all three executors used to answer
+# differently (ref did it under both quantifiers, the ASP backend under GEEN only, this backend under
+# neither). It plays because this backend GREW the arm: ch. 3.9a's `toets` is an ordinary condition of
+# the element, so both branches now ask it through the same per-subject leaf translation every other
+# condition gets. A form the leaf translation does not carry still refuses BY NAME, per form. Nothing
+# else moved: the whole-period matrix keeps its own route in the exec branch and its named marker in
+# the DRL-text one.
+EXPECTED_PLAYED=143
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the
