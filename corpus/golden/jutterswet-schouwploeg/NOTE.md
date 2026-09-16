@@ -1,0 +1,108 @@
+# jutterswet-schouwploeg — the quantifier fold over a NON-temporal matrix
+
+The sibling of `jutterswet-ploegpremie`. There the matrix is the ch. 3.9
+whole-period test over a member's own timeline; here it is an ORDINARY
+condition of the member — a scalar comparison and a characteristic check —
+with no period qualifier anywhere in the document:
+
+```
+Een Schouwploeg is ervaren    indien de dienstjaren van ALLE wachten
+                                     van de Schouwploeg groter zijn dan 5.
+Een Schouwploeg is onervaren  indien de dienstjaren van GEEN VAN DE wachten
+                                     van de Schouwploeg groter zijn dan 5.
+Een Schouwploeg is bevoegd    indien ALLE wachten van de Schouwploeg
+                                     gediplomeerd zijn.
+Een Schouwploeg is sluitend   indien GEEN VAN DE wachten van de Schouwploeg
+                                     NIET gediplomeerd is.
+Het wachttal van een Schouwploeg moet berekend worden als het aantal
+                                     wachten van de Schouwploeg.
+```
+
+`IR-SPEC.md` ch. 4.5 (`QuantifierFold`, WF-108); semantics
+`RUNTIME-SEMANTICS.md` ch. 3.9a, whose formula is stated over an arbitrary
+`test` and whose worked examples until now only ran the temporal one.
+
+## Why this ir.json is hand-written and carries no bron.rgs
+
+Measured on the frontend of this repository, both shapes, before the cases
+were written:
+
+- the comparison form without the §8.2 qualifier — *"indien de
+  dagvergoeding van alle bergers van de Bergingsploeg groter is dan 40"* —
+  is refused: `setlezing buiten een vouwbron … hier wordt één waarde
+  verwacht (WF-096, IR-SPEC ch. 4.3)`. The lowering to `Kwantorvouw`
+  opens with "only the §8.2-qualified condition" and declines everything
+  else, deliberately (a set reading in a one-value slot has no quantifier
+  to give it a home);
+- the characteristic form — *"indien alle bergers van de Bergingsploeg
+  bevoegd zijn"* — resolves to `Onopgelost`.
+
+So no RegelSpraak source produces this node today. The document is written
+by hand against the schema, and the frontend gate does not see it. Widening
+the lowering is a frontend question of its own and is not this witness's
+job.
+
+## The four folds, and what each of them is for
+
+`ervaren` / `onervaren` are the SAME matrix under the two quantifiers, so
+the pair shows on every case that `GEEN` is not `not ALLE`: the two are
+computed per member, not over the fold's verdict.
+
+`bevoegd` / `sluitend` are the second matrix SHAPE (a characteristic check
+instead of a comparison) and they carry the NIET prefix. `sluitend` is
+`GEEN` over a NEGATED matrix — "geen van de wachten is niet gediplomeerd" —
+and it must answer exactly what `bevoegd` answers, in every cell. That is
+the whole point of the pair: on a non-temporal matrix the negation belongs
+to the MATRIX and is evaluated per member (ch. 3.9a: `test` is an ordinary
+condition with the element as subject), so nothing about the quantifier
+moves. The whole-period arm looks different only because its "niet
+gedurende …" sits on the outer comparison and the runtime helper that folds
+it is chosen per quantifier; the verdict is the same reading.
+
+`wachttal` is the plain instance fold beside them, so each cell also pins
+how many contributors the range actually has — which is what separates the
+empty SET from a member that happens to be empty.
+
+## The five cells, computed by hand before any executor ran
+
+The bound is 5 and the comparison is STRICT (`groter dan`).
+
+| case | the ploeg's wachten (dienstjaren, diploma) | wachttal | ervaren (ALLE >5) | onervaren (GEEN >5) | bevoegd (ALLE dipl) | sluitend (GEEN ¬dipl) |
+|---|---|---|---|---|---|---|
+| 1 | S1: 8 ja, 6 ja | 2 | **ja** | nee | **ja** | **ja** |
+| 2 | S1: 8 ja, 3 nee | 2 | nee | nee | nee | nee |
+| 2 | S2: 9 ja | 1 | **ja** | nee | **ja** | **ja** |
+| 3 | S1: 3 ja, 5 ja | 2 | nee | **ja** | **ja** | **ja** |
+| 4 | S1: geen wachten | 0 | **ja** | **ja** | **ja** | **ja** |
+| 5 | S1: leeg ja, 3 ja | 2 | nee | **ja** | **ja** | **ja** |
+
+**Case 2 is the `GEEN` ≠ `not ALLE` cell.** S1 holds one wacht above the
+bound and one below it, so `ALLE` fails on the second and `GEEN` fails on
+the first: neither characteristic is attributed. A reader that computed
+`onervaren` as the complement of `ervaren` would attribute it here.
+
+**Case 2 also holds a SECOND ploeg**, and it is there to pin the RANGE. S2's
+single wacht is at 9, so S2 is `ervaren` while S1 is not — on the same run,
+over the same population. An executor that quantified over every
+`Strandwacht` instead of over the ploeg's own wachten would drag S1's wacht
+at 3 into S2's fold and read S2 as not ervaren.
+
+**Case 3 pins the strictness at the bound** (5 is not greater than 5) and is
+the cell where `GEEN` is true with a non-empty set.
+
+**Case 4 is the vacuous cell**: an empty contributor set reads **waar**
+under BOTH quantifiers (ch. 3.9a). `wachttal` is 0 in the same case, so the
+cell says out loud that the set really is empty and not merely unreachable.
+
+**Case 5 is the leeg cell.** W1 has no `dienstjaren` at all. An ordering
+comparison over leeg is FALSE (ch. 1.2d), so W1 fails the matrix: `ervaren`
+is onwaar. It does not SATISFY the matrix either, so it is no witness for
+`GEEN`, and with W2 at 3 nobody is above the bound — `onervaren` is waar.
+Leeg is therefore not a third truth value here and not a vacuous pass: that
+is the difference with `jutterswet-ploegpremie` case 7, where an ABSENT
+TIMELINE passes the whole-period matrix vacuously and thereby BREAKS
+`GEEN`. The two goldens pin opposite answers for superficially similar
+inputs, on purpose.
+
+`asOfDate` is null in every case: nothing in this document is
+time-dependent, which is exactly what makes the matrix non-temporal.

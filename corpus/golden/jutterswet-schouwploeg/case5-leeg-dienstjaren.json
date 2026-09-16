@@ -1,0 +1,76 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Schouwploeg",
+        "attributes": {},
+        "roles": {
+          "wachten": [
+            "W1",
+            "W2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "W1",
+        "objectType": "Strandwacht",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "gediplomeerd"
+        ]
+      },
+      {
+        "label": "W2",
+        "objectType": "Strandwacht",
+        "attributes": {
+          "dienstjaren": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gediplomeerd"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "wachttal",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "S1",
+      "characteristic": "ervaren"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "S1",
+      "characteristic": "onervaren"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "S1",
+      "characteristic": "bevoegd"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "S1",
+      "characteristic": "sluitend"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

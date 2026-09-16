@@ -1,0 +1,49 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Schouwploeg",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "wachttal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "S1",
+      "characteristic": "ervaren"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "S1",
+      "characteristic": "onervaren"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "S1",
+      "characteristic": "bevoegd"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "S1",
+      "characteristic": "sluitend"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
