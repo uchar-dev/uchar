@@ -1,0 +1,86 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2026-03-15",
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": { "vondsten": ["M1", "M2", "V1"] },
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": { "vondsten": ["V2"] },
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": { "vondsten": ["M3"] },
+        "characteristics": []
+      },
+      {
+        "label": "M1",
+        "objectType": "Munt",
+        "attributes": {
+          "jaartal": { "number": "1650" },
+          "bewaartarief": {
+            "timeline": [
+              { "from": "2026-01-01", "to": "2026-04-01", "value": { "number": "12" } }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "M2",
+        "objectType": "Munt",
+        "attributes": {
+          "jaartal": { "number": "1702" },
+          "bewaartarief": {
+            "timeline": [
+              { "from": "2026-01-01", "to": "2026-02-01", "value": { "number": "7" } },
+              { "from": "2026-02-01", "to": "2026-03-01", "value": { "number": "5" } }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "M3",
+        "objectType": "Munt",
+        "attributes": { "jaartal": { "number": "1799" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": { "bewaartarief": { "number": "99" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": { "bewaartarief": { "number": "50" } },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "bewaarlast", "value": { "number": "48" } },
+    { "kind": "attributeValue", "label": "J2", "attribute": "bewaarlast", "value": { "number": "0" } },
+    { "kind": "attributeValue", "label": "J3", "attribute": "bewaarlast", "value": { "number": "0" } },
+    { "kind": "consistent" }
+  ]
+}

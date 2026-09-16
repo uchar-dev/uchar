@@ -371,9 +371,18 @@ let fold_operand_otype ~element_objecttype ~set (ot : string option) =
    pure ANALYSIS positions (comparisons, additive joins, the write fence)
    where a type it cannot resolve must stay an unknown unit, never a
    translation fault of its own — the faulting lookup belongs to the arm
-   that actually translates the node. *)
+   that actually translates the node.
+
+   The declaration is the EFFECTIVE one (ch. 2.2), for the reason every
+   other lookup here funnels through [objecttype]: a fold anchored at a
+   SUBTYPE whose temporal attribute is declared on the ancestor read "not
+   temporal" off the raw map, so the §4.20 noemer strip below did not fire
+   and the write fence then refused a document ref and the Drools backend
+   both answer (measured on `golden/jutterswet-muntbewaring`: clingo
+   `non-identical units under the write to "bewaarlast"`, ref and Drools 48).
+   Only the FAULT is this helper's own; the chain never was. *)
 let attr_temporal_decl ctx ~otype ~attr =
-  match Ir_v0.Checks.find_ci ctx.doc.objecttypen otype with
+  match Ir_v0.Checks.effective_ot ctx.doc otype with
   | Some ot -> Ir_v0.Checks.attr_temporal ot attr
   | None -> false
 

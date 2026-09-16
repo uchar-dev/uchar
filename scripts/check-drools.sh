@@ -438,7 +438,16 @@ EXPECTED_CHANNEL=(
 # non-members. It arrived playing — the exec-model branch matches the element type as a Java class
 # pattern over beans wired with native `extends`, so the narrowing was never this backend's gap and the
 # golden pins the agreement instead of leaving it unmeasured. Nothing else moved.
-EXPECTED_PLAYED=140
+# 2026-09-16 (card typerange-dekking), 140 -> 141: `jutterswet-muntbewaring` joins as a NEW PLAYER —
+# the PER-ELEMENT TEMPORAL fold (§7.1) narrowed to a strict SUBTYPE, whose two plain-Vondst links carry
+# asOfDate-BUCKET scalars instead of timelines. This backend arrived playing and needed no change; the
+# golden exists for the OTHER two executors' translate-time fence, which must walk the fold's MEMBERS
+# and not its raw reach, or it points at an instance the fold never folds. Recorded here because the
+# same golden moved a second thing in the ASP backend: its §4.20 noemer-strip test read the RAW
+# declaration, so a fold anchored at the subtype answered "not temporal", the strip did not fire and
+# the write fence refused `EUR/mnd` into a `EUR` target — while ref and this backend both answered 48.
+# That lookup closes over the supertype chain now, the same correction the facet card made here.
+EXPECTED_PLAYED=141
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the
