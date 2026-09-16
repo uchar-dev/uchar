@@ -170,9 +170,15 @@ rol — de relatie is één keer gedeclareerd, op de voorouder. Dus
 
 *Fix.* De ambiguïteitsveilige `MeervoudMatcher.vindObjecttype` — die de
 uniciteitscontrole al gebruikt — beslist nu ook op de posities die een
-POPULATIE benoemen, als LAATSTE kandidaat. Daarmee lost elke naam die
-vandaag oplost precies zo op als vandaag, en bindt de nieuwe arm alleen waar
-niets bond. Twee aanroepplaatsen, dezelfde helper: het set-onderwerp
+POPULATIE benoemen: na de enkelvouds- en de rollezing, en vóór de oudere
+diepe parse-tree-scan, zodat een geschreven meervoud dat een gedeclareerd
+type benoemt hier wordt beantwoord in plaats van door de
+diepste-match-gok van die scan. Elke enkelvoudsnaam en elke rol lost
+precies zo op als vandaag, en na de lensronde is de matcher op ELKE pas
+ambiguïteitsveilig: een gedeeld gedeclareerd (mv: …) bindt geen van
+beide, waarna de ongebonden naam luid op WF-034 valt (gemeten: zonder de
+guard passeerde het tweelingdocument verifier-schoon met een stil
+gekozen type; met de guard weigert de verifier het). Twee aanroepplaatsen, dezelfde helper: het set-onderwerp
 (`resolveOnderwerp`) en het elementwoord van een telling (`aantalElement`).
 De rolbinding hoefde niet mee.
 
@@ -304,3 +310,18 @@ voor de per-element temporele vouw in clingo scande de ONgefilterde
 bereikverzameling en kon dus een instantie aanwijzen die niet meedoet. Zelfde
 regel, zelfde ronde; het los laten staan zou de twee lezingen van één vouw
 uit elkaar laten lopen.
+
+
+*Lensronde-navondsten, vastgelegd als vervolgwerk:* (i) de AANTAL-arm komt
+na deze kaart wél uit de frontend zonder bronRol (type-paar-afleiding;
+de meerduidige variant valt luid op WF-034+WF-048) maar heeft geen golden
+of JUnit-getuige; (ii) de bronPad-tak, clingo's MIN/MAX-arm en het
+temporele vertaaltijd-hek zijn gerepareerd en per probe bevestigd, maar
+geen corpus-golden dekt ze (Drools weigert bronPad per vorm, dus een
+driewegspeler kan daar niet — gate 5+6-dekking kan wel); (iii) de
+near-side-rolcheck is n.v.t. op grond van RUNTIME-SEMANTICS ch. 5.8a (de
+geschreven rolnaam is presentatie; anderTeFiller is een relatieselector),
+niet om de boolean-vorm van de uitkomst — de lens-getuige (een
+Rollidmaatschap wiens anderTeFiller nergens door een instantie wordt
+gedragen, antwoordt waar) hoort bij een eventuele herziening van die
+clausule.

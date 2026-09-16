@@ -2062,10 +2062,12 @@ final class ExpressieBouwer {
      * questions (ch. 2.2: quantification is extensional at every type-ranging position), and this
      * answers the second one; the role binding answers the first and already resolves through ⊑.
      *
-     * <p>Tried LAST, after the singular and the role reading, so every name that resolves today
-     * resolves to exactly what it does today and this only binds where nothing did. The matcher is
-     * the ambiguity-safe one the uniqueness check already uses, so a plural shared by two declared
-     * types binds neither.
+     * <p>Tried after the singular and the role reading, and BEFORE the older deep parse-tree scan —
+     * a written plural that names a declared type is answered here rather than by that scan's
+     * deepest-match guess. Every singular and every role keeps resolving exactly as it did. The
+     * matcher is ambiguity-safe on EVERY pass (a shared declared {@code (mv: …)} binds neither, and
+     * the un-bound name then falls loudly on WF-034 instead of silently picking a type), so this
+     * never introduces a first-hit bind.
      */
     private Objecttype typeViaMeervoud(String naam) {
         if (naam == null) return null;
