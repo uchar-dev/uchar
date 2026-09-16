@@ -4561,7 +4561,8 @@ negatief corpus fixes the taxonomy's values.
 | Predicate | `kind` ∈ empty, filled, elfproef, exact-digits (`digits`), day-kind (`dayKind`), `operand`, `negated`, `wholePeriod?`, `source` | empty/filled are core kernel (three-valued rules in `RUNTIME-SEMANTICS.md` ch. 1.2); the other three are dialect builtins |
 | CharacteristicCheck | `characteristic`, `navigation?` (to-one role), `negated`, `wholePeriod?`, `source` | **Delta (`CONSTRUCTS.md` ch. 2.2):** v0's `eigenaar` pattern-steering field (a Drools attachment hint set only on fact-creation guards) is dropped. While it rides the v0 wire it is FENCED, as the ch. 3.4 bean fields are: **WF-034 requires a present `eigenaar` to name a declared object type** (ch. 4.6 (q)) — it is the node key of the dependency edge the check contributes, and a bean-model executor re-attributes an unresolvable one to the subject in silence — and **WF-100 requires the named type to DECLARE the characteristic** (ch. 4.6 (q1), maintainer decision 2026-09-10): while the field is on the wire it is AUTHORITATIVE, so it and not the subject is the key of every declaration a reader consults, and a reader with no object of that type refuses rather than answers from the subject (`RUNTIME-SEMANTICS.md` ch. 5.8b). Inside a `gedurende` clip the field is not fenced but REFUSED — WF-097 (below) — because the clip reads the subject's own characteristic timeline and consults no owner at all **Landed (2026-08-18):** the navigated check carries its one hop symbolically in the `navigatieBinding` extension field (ch. 4.1a, WF-053); semantics `RUNTIME-SEMANTICS.md` ch. 5.8 — an absent link is false, negated or not |
 | RoleMembership | `factType`, `role` (the role the subject plays), `negated`, `source` | **Delta (row 5):** one existential node replaces v0's near-side (`Rollidmaatschap`, with its filler-type lookup hint) and far-side (`VerreRollidmaatschap`, with the literal `backref` bean field and the top-level-only restriction — both dropped). On the v0 wire the near-side node resolves through `anderTeFiller` alone (the written `rol` is presentation), and WF-034 crosses it in both spellings: it MUST be present and it MUST name a type the subject is related to (ch. 4.6 (o)). The far-side node's own `filler` and `backref` stay uncrossed — no document in any zone carries one, so a clause there would have no witness; the open list of ch. 4.6 records it. *Migration:* near-side → the named role; far-side → the subject-side role of the relation |
-| Compound | `quantifier` ∈ all, none, the, at-least (`threshold`), at-most (`threshold`), exactly (`threshold`), `parts`, `source` | all/none/the are kernel; the counting forms are sugar (count-and-compare, row on `Kwantor`, `CONSTRUCTS.md` ch. 2.2) — mirrored as quantifiers |
+| Compound | `quantifier` ∈ all, none, the, at-least (`threshold`), at-most (`threshold`), exactly (`threshold`), `parts`, `source` | all/none/the are kernel; the counting forms are sugar (count-and-compare, row on `Kwantor`, `CONSTRUCTS.md` ch. 2.2) — mirrored as quantifiers. Quantifies over **parts of one subject** — propositional. Its first-order sibling is the row below |
+| QuantifierFold | `quantifier` ∈ all, none, `elementType`, `filter?`, `test`, `sourceRole?`, `sourcePath?`, `source` | **extension node** (wire `Kwantorvouw`), `layer: core`: quantification of a condition over the members of a linked **instance set** — "…indien de `<attribuut>` van ALLE `<leden>` van de `<onderwerp>` gedurende het gehele jaar groter is dan `<grens>`". The range fields are the instance fold's (ch. 4.3) unchanged — `elementType` is the POPULATION extensionally (ch. 2.2), `sourceRole`/`sourcePath` the REACH, `filter` the die/dat subselection evaluated per contributor — and `test` is the quantified matrix, evaluated per contributor with the element as subject. WF-108; semantics `RUNTIME-SEMANTICS.md` ch. 3.9a |
 | TimeWindow | `from?`, `to?`, `toInclusive`, `source` | from inclusive, to exclusive unless `toInclusive`; never both absent |
 | RuleStatusCheck | `rule`, `inconsistent`, `source` | the row-30 split verdict: "is gevuurd" is a v1 non-goal, "is inconsistent" waits on the §9.5 channel — mirrored here because v0 dumps carry it; its v1 admissibility is **OPEN** with row 30 |
 | Unresolved | `source` | ch. 4.4 |
@@ -4681,6 +4682,97 @@ attachment, and one field beside it, by WF-097 below.
   something this rule introduces. It is bounded, not resolved: the
   verifier rejects any such document, so it can never enter a gated
   zone, and gate 6 only ever compares verifier-clean documents.
+
+**The quantifier fold (WF-108).** *(Maintainer decision 2026-09-16, the
+heelperiode-forall card.)* The condition layer had propositional
+quantification — `Compound`, over the PARTS of one subject — and no
+first-order one. The set-ranging machinery lived on one node only, the
+instance fold of ch. 4.3, and it produced a VALUE. So the official §8.2
+sentence shape — a condition asked of every member of a linked set —
+had nowhere to land, and the frontend's emission of it was cut by
+WF-096 at the moment that rule was promoted to ERROR.
+
+**The node quantifies; the operand does not.** The alternative this
+replaces is the one the v0 wire actually carried and the production
+toolchain actually executed: the comparison itself, with a SET-valued
+operand, quantified implicitly. It is rejected on a measured defect, not
+on taste. `set: true` records only THAT a quantifier was written, never
+WHICH — the frontend computes it as "the onderwerp's quantor is not the
+bare definite", so `alle`, `geen van de`, `ten minste 2 van de` and
+`precies 1 van de` reach the wire as one and the same node. A reader
+that took the set flag for a universal would answer ALLE for a sentence
+that wrote "geen van de", silently and with a straight face. That is the
+one-answer-and-no-question class this repository refuses, and no
+exemption to WF-096 can repair it: the information is not on the wire to
+exempt.
+
+The second candidate — keep the comparison and record the quantor as a
+field on the READ (`AttributeReference.quantifier`) — was rejected for
+two reasons of the same kind. A binder would then sit on an operand and
+scope over a condition two levels above it, which no other node in this
+IR does and which leaves "which operand binds, when both sides are set
+reads" with no answer; and the field would be meaningful in exactly one
+position and inert everywhere else — on a fold source, `geen van de`
+reads as nothing at all — which is the "a field nobody reads is a field
+that can say anything" defect WF-083 (c) names.
+
+**What it reuses, deliberately and exactly.** `elementType`, `filter`,
+`sourceRole` and `sourcePath` are the instance fold's fields, with the
+instance fold's meanings and the instance fold's rules. The contributors
+are `reach ∩ population`, then the `filter` survivors, per
+`RUNTIME-SEMANTICS.md` ch. 3.4a/3.4b — one definition, not two. The
+verifier reaches them through the SAME helpers the fold's arms call
+(`wf047_binding`, `wf048_derivable`, `resolve_binding`), on the WF-097
+shared-helper discipline: what the rule requires is one engine, not one
+call site. An unresolvable binding therefore still reports **WF-047**,
+exactly as a fold's does, and only the shape questions this node
+introduces carry the new number.
+
+**`filter` and `test` are not the same field twice.** `filter` selects
+WHICH members the sentence is about (the die/dat subselection, ch. 4.3);
+`test` is what each selected member must satisfy. Both are conditions
+over the same element subject, which is why they share machinery, and
+they answer different questions, which is why they are two fields: "alle
+bergers **die een keurmerk dragen** hebben gedurende het gehele jaar meer
+dan 40" excludes the unkeurmerkte berger from the claim rather than
+failing on him.
+
+- **WF-108** A `QuantifierFold` MUST state a quantification something can
+  satisfy. Four arms.
+  (a) `quantifier` ∈ {all, none}. The counting quantifiers are
+  `Compound`'s vocabulary over parts and this node's named extension
+  point; `the` is a definite description of one member and not a
+  quantification over a set. Both are refused BY NAME rather than
+  ignored, for the reason the node exists: a reader that fell through to
+  the universal would answer the opposite of what was written.
+  (b) `elementType` is present, and names a declared object type. The
+  presence is this rule's (a quantifier whose population is unnamed
+  ranges over nothing a reader can name); the resolution is WF-034's,
+  reported under that number at this position.
+  (c) The RANGE is one meaning with two spellings: `sourcePath` and
+  `sourceRole` are mutually exclusive, a `sourcePath` carries at least
+  two steps, its steps form a connected walk from the quantifier's
+  subject, and its last step lands on a role whose filler is
+  ⊑-compatible with `elementType`. This is WF-102's discipline under
+  this node's own number, and the number is new on purpose: WF-102 is
+  scoped to a fold's ARGUMENT — the source position, which this node
+  does not have — and a `corpus/negatief/` directory must be able to
+  declare the rule it violates.
+  (d) `test` is present. A quantifier with no matrix states a range and
+  asks nothing of it, and has no verdict to give.
+  Semantics: `RUNTIME-SEMANTICS.md` ch. 3.9a.
+
+**What this does NOT move.** WF-096 stands unamended and unweakened: a
+set reading is still admissible only as an instance fold's source. The
+reclaimed route does not become an exemption to it — the lowered
+document contains **no set reading at all**, because the quantifier
+binds the member and the matrix reads that member's own attribute. Of
+the eight producer routes measured in 2026-09-09's census, exactly one
+moves (the whole-period-qualified condition); the other seven, the
+unqualified condition among them, keep the WF-096 ERROR verbatim. That
+the unqualified condition could be lowered by the same node is true and
+deliberately not done here: it is a widening with no pinned witness in
+two of three executors, and it belongs to whoever measures it.
 
 ### 4.6 Well-formedness
 
@@ -6844,6 +6936,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-105 | no attribute or characteristic name is declared twice along one chain, ci (ch. 2.2) — WF-002's per-kind uniqueness lifted from the declaration to the chain. One instance would otherwise carry two declarations of one name, and which one a reader finds decides that name's datatype, dimensions and timeline facet on every read of it. The measured consumer consequence is sharper than a compile error: the Drools bean generator deduplicates member names silently, first-wins, so a shadowed name yields a bean that generates and compiles perfectly and is quietly missing one member. What is NOT refused is the sibling collision — two incomparable subtypes of one supertype declaring the same name — which is admitted without a rule (ch. 2.2): no instance is of two incomparable types, so no read is ambiguous, and the supertype-anchored read of such a name is refused by WF-034 rather than by this rule | gate 3 | `anchor/jutterswet-strandrechtketen` (`Wrakrecht` adds one own attribute beside three inherited ones, none of them redeclared) | `wf105-hershadowd-attribuut` |
 | WF-106 | an object type declares at most one direct supertype (ch. 2.2) | **none, and none possible** — `supertype` is a bare string, so a second direct parent is not a well-formed-but-wrong document a check could reject but one that cannot be WRITTEN; the closed `Objecttype` node refuses the array form and gate 2 is where the refusal is mechanically enforced. A **deliberate, argued departure** from the spec discipline, recorded in ch. 2.2: the alternative was a `supertypes: [string]` wire form plus an "at most one" rule, which buys a real negatief at the price of a wire shape that can express exactly what the design forbids, and it was rejected. What the number buys is one citable name for one refusal across three layers | `anchor/jutterswet-strandrechtketen` declares one parent, which costs nothing and proves nothing — the rule's real witnesses are the two frontend fixtures | **none, and none possible** — the rule bounds the language ABOVE the wire, so its witnesses live where that language is read: the RegelSpraak dialect frontend's `is een A en B` fixture and the F-logic frontend's two-`::`-facts fixture, the latter being the sharp case since F-logic can actually write two parents |
 | WF-107 | every NAMED form carries a present, non-blank name (ch. 3.1) — the ch. 3 versioned rule forms and the ch. 6.1 defaults groups, the same list WF-020 reads. Presence and uniqueness are two properties and take two numbers: WF-020 compares names, and until this rule it compared only the names that were there, filtering the nulls out before the comparison. **What the name IS**, so no reader has to decide: the form's identity — ch. 8 groups a form's versions by it, the ch. 5.1 dependency graph keys its channel node on it, and a regelversie channel test (`RUNTIME-SEMANTICS.md` ch. 5.6) names a rule by it. **Measured before the rule (2026-09-12)** on a nameless `ResolvedRegel`: verifier PASS, the reference interpreter and the ASP backend evaluating it without noticing, the Drools exec-model branch playing it, and the DRL-text branch throwing a `NullPointerException` out of the rule-name escaper, which calls a string method on the name it is handed — one verifier-clean document, four consumers, three answers and one crash. On a defaults group it is wider still: that array was in no name list at all, so a nameless group, a duplicate group name and a group colliding with a rule all three passed. **Blank counts as absent** because WF-020 compares over collapsed whitespace, so two blank names are one name and every blank form collides with every other. **The wire type stays nullable** and the schema is deliberately not the enforcement layer — a nameless form has to remain a well-formed document, or the rule would have no witness (the WF-106 situation, and the reason that rule has none). Cost: none — counted the day it landed, **1107** named forms over the four zones (626 documents: golden 184, rood 26, negatief 386, parity 30), every one of them carrying a non-blank name already except this rule's own three witnesses, so no producer moves and the rule closes a door nothing used. **Boundary, drawn per array rather than inferred** (all measured 2026-09-12 over the four zones): FOUR other top-level arrays put a name on this wire and each is outside for its own reason — `resolvedDagsoorten`, whose name is which day kind is being defined and lives in the day-kind namespace, so its presence is **WF-031**'s clause (added the same day, beside that rule's own dead-definition test); `tijdlijnen`, already covered, since WF-015 keys the declaration on the name and a nameless timeline takes every reference down with it, the document falling on **WF-003** (measured: `WF-003 FAIL … reference to undeclared timeline 'penningjaar'`); `regelGroepen`, a label nothing reads, WF-033 resolving a group's MEMBERS by name, so a nameless group is inert rather than ambiguous and refusing it would be a rule without a failure; and `regels`, the parse-stage shell index no check or executor reads, which one frontend emits empty by design. `dagsoorten` is a list of bare strings and a `null` entry there is admitted too — recorded as OPEN rather than closed, since it is the day-kind namespace again and no producer writes one | gate 3 | every golden — the rule's positive witness is the whole corpus, which is what makes it a promotion of existing practice rather than a new demand; named most sharply by `anchor/jutterswet-uitsluiting`, whose rule and defaults group are two named forms with two names | `wf107-naamloze-regel` (absent, on a rule) + `wf107-blanco-regelnaam` (present and blank — a presence-only check admits it, so it falls independently) + `wf107-naamloze-defaultsgroep` (the array no name rule reached) |
+| WF-108 | the QUANTIFIER FOLD states a quantification something can satisfy (ch. 4.5). Four arms: (a) `quantifier` ∈ {all, none} — the counting quantifiers are `Compound`'s vocabulary over parts and this node's named extension point, `the` is a definite description of ONE member, and both are refused BY NAME because a reader that fell through to the universal would answer the opposite of what the sentence wrote; (b) `elementType` present (its RESOLUTION is WF-034's, reported under that number at this position); (c) the RANGE is one meaning with two spellings — `sourcePath` not beside `sourceRole`, at least two steps, a connected walk from the quantifier's subject, landing ⊑-compatibly on `elementType` — WF-102's discipline under this node's own number, new on purpose because WF-102 is scoped to a fold's ARGUMENT, a position this node does not have, and a negatief directory must be able to declare the rule it violates; (d) `test` present, since a quantifier with no matrix states a range and asks nothing of it. The range MACHINERY is shared, not copied — `wf047_binding`, `wf048_derivable` and `resolve_binding` are the fold's helpers called from here, on the WF-097 shared-helper discipline — so an unresolvable binding still reports **WF-047** exactly as a fold's does, and only the shape questions this node introduces carry this number | gate 3 | `jutterswet-ploegpremie` (the §8.2 form in all five pinned cells) | `wf108-kwantorvouw-telkwantor` (a counting quantifier) + `wf108-kwantorvouw-zonder-toets` (no matrix) + `wf108-kwantorvouw-bereik-dubbel` (bronPad beside bronRol) + `wf108-kwantorvouw-zonder-elementtype` (unnamed population) |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

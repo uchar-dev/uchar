@@ -1658,10 +1658,20 @@ threshold(B) = days(B)          for every toets except the leeg test
   vacuously** (the qualifier's negation then fails). A leeg comparison
   bound makes the test false, never a fault. Negation complements the
   folded result.
-- Over a to-many navigation the fold is conjunctive — every element's
-  timeline must pass — and an **empty set passes vacuously**; a failed
-  to-one navigation contributes a null timeline, which passes vacuously
-  (the ch. 1.2 leeg-navigation discipline, lifted).
+- A failed **to-one** navigation contributes a null timeline, which passes
+  vacuously (the ch. 1.2 leeg-navigation discipline, lifted).
+- Over a **to-many** range the fold is conjunctive — every member's
+  timeline must pass — and an **empty set passes vacuously**. *(Re-scoped
+  2026-09-16.)* That reading is right and it is **not** an implicit
+  reading of a set-valued operand: the wire shape it used to describe —
+  an `AttributeReference` with `set: true` standing in a condition — is
+  ill-formed under WF-096, and it could not distinguish "alle" from "geen
+  van de" if it were admitted, since the set flag records that a
+  quantifier was written and never which one. The conjunctive lift is
+  therefore stated where the quantifier is: **ch. 3.9a**, the quantifier
+  fold, whose matrix is this qualifier applied per member. Counted when
+  the clause was re-scoped: **zero** documents in the four zones carried
+  the shape it described, so the bullet had never had a witness.
 - The **grid is the qualifier's own** — "de gehele maand" or "het gehele
   jaar" — never the tested member's declared granularity. The two are
   independent: a month-granular characteristic tested "gedurende het
@@ -1710,6 +1720,51 @@ carries no value); the negated form → waar. Same half-year timeline
 under the **leeg** test → touched days must be leeg, but they carry 12 →
 **onwaar**.
 
+**Where the buckets come from, on a VALUE timeline** (stated apart
+because it is the one place the formula can be implemented backwards and
+still look right). The touched buckets are the ones the **value**
+timeline touches — not the ones the satisfying days touch. On a
+characteristic the two coincide, because a characteristic's timeline IS
+its true-periods, which is why the distinction never had to be drawn
+before the value test was built. On a value timeline they come apart at
+exactly the case that matters: a value of 30 across the whole of 2026,
+tested `> 40`, has **no** satisfying day, so a fold that took its buckets
+from the satisfying days would touch no bucket and pass vacuously — the
+opposite of the answer. The buckets are the timeline's; the satisfied
+days are the predicate's; the threshold is the bucket's calendar length.
+
+Worked examples — the **ordering** test over a value timeline (absolute;
+`ref/` tests and the ASP backend's suite verbatim; month-granular
+attribute `dagvergoeding`, qualifier "gedurende het gehele jaar",
+tested `> 40`):
+
+| # | value timeline | fold | verdict |
+|---|---|---|---|
+| a | no segments | no bucket touched | **waar** |
+| b | 50 on [2026-01-01, 2027-01-01) | bucket 2026: 365 of 365 satisfy | **waar** |
+| c | 30 on [2026-01-01, 2027-01-01) | bucket 2026: 0 of 365 | **onwaar** |
+| d | 50 on [2026-01-01, 2026-07-01) | bucket 2026: 181 of 365 | **onwaar** |
+| e | 40 on [2026-01-01, 2027-01-01) | strictly greater: 0 of 365 | **onwaar** |
+| f | as e, tested `≥ 40` | 365 of 365 | **waar** |
+
+Row e is the operator, not the fold: `>` is strict, and the clause says
+so here because the whole point of the whole-period reading is that it
+changes WHEN the test is asked, never WHAT it asks. The qualifier's own
+negation complements each verdict — a → onwaar, b → onwaar, d → **waar**
+— and under the **month** grid row d passes (January through June are
+each touched in full) while a value on [2026-01-15, 2026-03-01) fails it
+(January is touched for 17 of 31 days). A **leeg** segment inside the
+period is a day that does not satisfy the test: 50 on the first half of
+2026 and explicit leeg on the second reads **onwaar**, never a fault
+(ch. 1.2d — a comparison against leeg is false).
+
+When the temporal side stands on the RIGHT ("40 is kleiner dan zijn
+dagvergoeding gedurende het gehele jaar") the operator is **reversed**,
+never negated. On totally ordered filled values the two coincide; on a
+leeg operand they do not, because ch. 1.2d makes BOTH orderings false
+there, so a reader that negated instead of reversing would turn every
+leeg day into a satisfying one.
+
 Worked examples — the **characteristic-holds** test over a *navigated*
 characteristic (absolute; `ref/` tests and the ASP backend's suite
 verbatim). Document: a Schuit reaches one Werf over the to-one role
@@ -1735,6 +1790,96 @@ waar, c → onwaar (bucket 2026 satisfies 0 of 365), d → onwaar (184 of
 row d passes — January through June are each touched in full, 181 of 181
 days — while a true-period of [2026-01-15, 2026-03-01) fails it (January
 is touched for 17 of 31 days).
+
+### 3.9a The quantifier fold — a condition over a linked set
+
+A **quantifier fold** (`IR-SPEC.md` ch. 4.5, wire `Kwantorvouw`, WF-108)
+asks one condition of every member of a linked instance set:
+
+```
+contributors = { m : m ∈ reach ∩ population,  filter(m) }
+ALLE  = for every m in contributors:       test(m)
+GEEN  = for every m in contributors:  not  test(m)
+contributors = ∅  →  waar, for BOTH quantifiers
+```
+
+`reach ∩ population` and `filter` are **ch. 3.4a's**, unchanged and
+shared: the range (`sourceRole`, or the multi-step `sourcePath` of
+ch. 3.4b, or the derived connecting role when neither is written) says
+which instances the quantifier reaches; `elementType` says which it
+ranges over, extensionally (`IR-SPEC.md` ch. 2.2) — every instance whose
+type is ⊑ it; and the die/dat `filter` drops contributors, evaluated per
+contributor with the element as subject. There is one definition of
+"which members", not two, and one implementation of it per artifact.
+
+`test` is evaluated the same way — **per contributor, the element as the
+condition's subject**. That is the whole difference between the two
+condition fields: `filter` says which members the sentence is about,
+`test` says what it claims about them.
+
+**GEEN is the per-MEMBER complement, never the fold's.** `not (ALLE)` and
+`GEEN` are different conditions and the difference shows on exactly the
+members whose test is false for a *temporal* reason: a member whose
+timeline does not cover the period fails the matrix, so it does not block
+`ALLE`'s failure and it does not block `GEEN` either.
+
+**Order and short circuit** — two disciplines meet, each taken from the
+node it belongs to, and neither is invented here. The **contributors are
+settled in full first**, filter included, exactly as an instance fold
+settles them (ch. 3.4a): the subselection decides what the sentence is
+about, and that question is not short-circuited by its answer, so a
+filter that faults on a later member faults whether or not an earlier
+member has already decided the verdict. The **matrix then short
+circuits**, exactly as a composite condition does (ch. 5.10): evaluation
+stops at the first contributor whose verdict settles the fold, in the
+contributors' own order (ch. 5.11), and a member never reached produces
+no fault and no §9.5 channel fact.
+
+**The vacuous case is stated, not inherited.** An empty contributor set
+reads **waar** under both quantifiers. It is the empty conjunction, and
+it is the same answer the empty set gets everywhere else a universal
+appears in this document (ch. 3.9's empty to-many range, ch. 5.10's
+`ALLE` composite over no parts) — but it is written down here because it
+is the one rule of this node that a reader is most likely to supply from
+intuition and get backwards, and because the corpus pins it.
+
+**Worked examples — the §8.2 form (absolute; `ref/` tests, the ASP
+backend's suite and `corpus/golden/jutterswet-ploegpremie` verbatim).**
+Document: a `Bergingsploeg` reaches its `bergers` over the to-many role
+of `ploegindeling`; `dagvergoeding` is a month-granular attribute of
+`Berger`; the rule is *een Bergingsploeg is premiegerechtigd indien de
+dagvergoeding van alle bergers van de Bergingsploeg gedurende het gehele
+jaar groter is dan 40*. The matrix is therefore ch. 3.9's ordering test,
+asked of each berger's own timeline.
+
+| # | the ploeg's bergers | per-member verdict | fold |
+|---|---|---|---|
+| 1 | 50 and 60, each the whole of 2026 | waar, waar | **waar** |
+| 2 | 50 and 30, each the whole of 2026 | waar, onwaar | **onwaar** |
+| 3 | 50 the whole year; 60 on [2026-01-01, 2026-07-01) only | waar, onwaar (181 of 365) | **onwaar** |
+| 4 | none | — | **waar** (vacuous) |
+| 5 | 40, the whole of 2026 | onwaar (strictly greater) | **onwaar** |
+
+Row 3 is the gap and row 4 the empty set; together they are the two ends
+the fold is most often got wrong at, and they disagree on purpose — a
+member the relation reaches but whose timeline does not cover the period
+**fails**, while a set the relation does not reach at all **passes**.
+A member with **no timeline at all** is the third case and sides with
+row 4, not row 3: it touches no bucket, so ch. 3.9 passes it vacuously
+and the fold does not stumble over it. That is ch. 3.9's rule applied
+unchanged rather than a rule of this chapter, and it is pinned so that an
+executor which collapses "absent" into "gap" fails by name.
+
+Under **GEEN**, on the same document: bergers at 30 and 20 the whole year
+→ **waar** (no member is above 40); 30 and 50 → **onwaar**; no bergers →
+**waar**; a single berger at 50 on the first half of 2026 only →
+**waar**, because he does not have more than 40 *gedurende het gehele
+jaar* either.
+
+With a die/dat subselection — *alle bergers die een dagvergoeding van
+meer dan 10 hebben* — a berger at 5 the whole year is not a contributor,
+so a ploeg of one berger at 50 and one at 5 reads **waar**, and a ploeg
+whose only berger is at 5 reads **waar** vacuously.
 
 ### 3.10 Period conditions and the §8.4.3 clip
 
@@ -1857,7 +2002,9 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 | Date-valued whole-period comparison | refused (mirrored) |
 | Whole-period qualifier, the **characteristic-holds** test (own and navigated, both grids, the qualifier's negation) | **specified and executed, ch. 3.9** — all three executors, witnessed by `corpus/golden/synth-gehelejaarkenmerk`; the two OCaml ones carry it since 2026-09-11, the Drools backend carried it already |
 | Whole-period qualifier over a characteristic, the **inner** negation ("gedurende … NIET") | specified (ch. 3.9's formula), executed by the two OCaml executors; the Drools backend refuses it by name in both branches, so it stays suite-pinned and out of the corpus |
-| Whole-period qualifier, the **ordering/equality** and **leeg/gevuld** tests | specified (ch. 3.9), **not executed** by either OCaml executor — both refuse them by name, no corpus case; the Drools backend carries the comparison form over an OWN operand and markers the navigated one |
+| Whole-period qualifier, the **ordering/equality** test over a value timeline | **specified and executed, ch. 3.9** — the reference interpreter and the ASP backend built it 2026-09-16 (the heelperiode-forall card), the Drools backend carried it already; witnessed by `corpus/golden/jutterswet-ploegpremie` and by each executor's own suite. The **date-valued** form stays refused (its own row above), and the navigated form is untouched |
+| Whole-period qualifier, the **leeg/gevuld** tests | specified (ch. 3.9), **not executed** by either OCaml executor — both refuse them by name, no corpus case. The threshold clause the leeg test needs (touched-days rather than calendar days) is stated in ch. 3.9 and implemented in the Drools runtime alone; the sibling that landed above deliberately did not take it along, because a clause with no witness on this side would be a green subset |
+| **Quantifier fold** over a linked instance set (ch. 3.9a) | **specified and executed** — ALLE and GEEN in all three executors, witnessed by `corpus/golden/jutterswet-ploegpremie`. The counting quantifiers over an instance range are the named extension point and are refused by WF-108 (a); a NON-temporal matrix is admitted by the IR and executed by the reference interpreter, while the ASP backend carries the whole-period matrix only — the standing executor asymmetry, kept out of the corpus |
 | Gap-vs-absent timeline observability (temporal total: 0 vs leeg) | mirrored residual; stays OPEN here — the ch. 1.4 freeze covers the scalar discipline, not this temporal residual |
 | Sorted/non-overlapping input invariant | delta candidate (WF rule, data plane), ch. 3.1 |
 | Non-terminating pro-rata stored at 16 digits | v0 residual (normative: exact fraction), ch. 3.7 |
