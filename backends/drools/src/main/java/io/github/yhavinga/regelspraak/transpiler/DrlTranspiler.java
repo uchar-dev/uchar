@@ -3580,6 +3580,24 @@ public final class DrlTranspiler {
                 default          -> String.join(" && ", delen); // unreachable (alle/de handled above), kept total
             });
         }
+        // IR-SPEC ch. 4.5 / RUNTIME-SEMANTICS ch. 3.9a the QUANTIFIER FOLD — marked by NAME, not lowered. The same
+        // asymmetry, and the same reason, as the ch. 7 prioritizedDefaults one CaseRunner.drlTak records: this
+        // branch is NARROWER than the exec-model one, and where a lowering exists only there, a DRL KieBase that
+        // quietly omitted the construct would answer with an unquantified rule instead of refusing. So it markers,
+        // drlTak refuses the document by name, and the two branches stay honest about which carries what.
+        //
+        // Why a marker and not a lowering. The pieces do exist here — temporeelSetAccumulate builds a collectList
+        // accumulate, conditie(acc, filter, elem) lowers a die/dat filter onto an accumulate source — but none of
+        // them fits this node without being rebuilt: temporeelSetAccumulate keys on a `set` AttribuutRef (a fold
+        // matrix reads the contributor's own attribute, set=false) and derives its join by pair only, with no
+        // bronRol fallback and no storage-direction split, so the SELF-TYPED range the wire field exists for would
+        // bind nothing here while the exec branch binds it. That is a new arm of its own, and it would land with no
+        // corpus golden to measure it against — the form has none yet. A named marker is the honest state until one
+        // exists; when it does, THIS is the line that grows a lowering.
+        if (c instanceof Conditie.Kwantorvouw kv)
+            return LoweredConditie.marker("§8.2 kwantorvouw (" + kv.kwantor() + " over "
+                    + (kv.elementObjecttype() == null ? "<onopgelost elementtype>" : kv.elementObjecttype().naam)
+                    + ") — ch. 3.9a wordt alleen in de exec-model-tak gelowerd", c.bron());
         return LoweredConditie.marker("voorwaarde", c.bron());
     }
 

@@ -509,6 +509,34 @@ public final class IrLoader {
                 yield new Conditie.Samengesteld(enumOf(Conditie.Kwantor.class, text(n, "kwantor")),
                         intOf(n, "drempel"), delen, bron(n));
             }
+            // IR-SPEC ch. 4.5 / WF-108 the QUANTIFIER FOLD. Unlike Samengesteld — whose kwantor ranges over the
+            // BULLETS of one subject — this one ranges over INSTANCES, and its range fields are the instance fold's
+            // (ch. 4.3) spelled unchanged. Both extension fields are decoded INTO the record: Kwantorvouw is not part
+            // of the vendored frontend slice the Functie/ResolvedObjectCreatie side-channel exists for, so bronRol
+            // needs no Loaded#rolBindingen entry.
+            case "Kwantorvouw" -> {
+                // WF-108 (c), the WF-102 discipline under this node's own rule. Refused for exactly the reason
+                // Functie.bronPad is: the model cannot re-derive a multi-step range, and the by-pair fallback would
+                // bind a coincidental DIRECT subject-to-element relation and quantify over the WRONG set while the
+                // OCaml executors quantify over the right one. A named per-form Refusal puts the golden in gate 12's
+                // channel floor by reason instead.
+                if (n.hasNonNull("bronPad"))
+                    throw new Refusal("Kwantorvouw.bronPad",
+                            "a multi-step quantifier range (WF-108 (c)); the accumulate source carries one join role");
+                // WF-108 (a): ALLE and GEEN are the v0 forms. The counting quantors (and the definite DE) share
+                // Samengesteld's enum but are the named extension point, NOT admitted here — a hand-written one must
+                // be refused BY NAME rather than lowered as if it were a forall. An unknown token never reaches
+                // Enum.valueOf's unattributed IllegalArgumentException either: it lands in the same named Refusal.
+                Conditie.Kwantor kw;
+                try { kw = enumOf(Conditie.Kwantor.class, text(n, "kwantor")); }
+                catch (IllegalArgumentException e) { kw = null; }
+                if (kw != Conditie.Kwantor.ALLE && kw != Conditie.Kwantor.GEEN)
+                    throw new Refusal("Kwantorvouw.kwantor", "'" + text(n, "kwantor") + "' is not a v0 quantifier"
+                            + " (WF-108 (a)); the v0 forms are ALLE and GEEN");
+                yield new Conditie.Kwantorvouw(kw, ot(text(n, "elementObjecttype")),
+                        conditie(n.get("filter")), conditie(n.get("toets")),
+                        rolBinding(n.get("bronRol")), List.of(), bron(n));
+            }
             case "Regelversie" -> new Conditie.Regelversie(text(n, "regel"), bool(n, "inconsistent"), bron(n));
             case "Onopgelost" -> new Conditie.Onopgelost(bron(n));
             default -> throw new Refusal("Conditie:" + node, "unknown condition node");

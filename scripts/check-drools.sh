@@ -411,7 +411,17 @@ EXPECTED_CHANNEL=(
 # could not resolve an allocation target naming a SUBTYPE whose relation hangs on the ancestor. It
 # plays for the same reason hoofdberging does and pins the same three hand-computed numbers; what is
 # new is only that the document now comes out of a `bron.rgs`. Nothing else moved.
-EXPECTED_PLAYED=137
+# 2026-09-16 (card heelperiode-forall), 137 -> 138: `jutterswet-ploegpremie` joins as a NEW PLAYER —
+# the QUANTIFIER FOLD (IR-SPEC ch. 4.5, WF-108; RUNTIME-SEMANTICS ch. 3.9a), a condition quantified
+# over the members of a linked instance set, carrying ALLE and GEEN in one document. It plays all six
+# hand-computed cells on the exec-model path: the loader decodes `Kwantorvouw`, the transpiler builds
+# the collectList accumulate over the contributors' own timelines and the runtime answers each member
+# with `rsGeheelPeriode` — the §8.2 whole-period check the backend already had, now asked per member.
+# The DRL-TEXT branch MARKERS it by name (its set accumulate keys on a `set` read and derives its join
+# by pair only, with no bronRol fallback, so the self-typed range the field exists for would bind
+# nothing there while the exec branch binds it) — the prioritizedDefaults asymmetry, second instance.
+# That costs this gate nothing: the played channel is the exec-model path. Nothing else moved.
+EXPECTED_PLAYED=138
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the
