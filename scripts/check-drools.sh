@@ -218,6 +218,7 @@ EXPECTED_CHANNEL=(
   "jutterswet-kinderlet|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-kindermacht|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-kinderprocent|EXCLUDE|loader Refusal: Datatype:ListType"
+  "jutterswet-muntketen|EXCLUDE|loader Refusal: Functie.bronPad — the multi-step fold-source range (WF-102), the THIRD golden of that form and the first whose landing is NARROWED: elementObjecttype is a strict subtype of what the last step's role fills (ch. 2.2 / ch. 3.4b). The refusal is the same one bootberging and vondstketen carry and is unchanged by the narrowing; the one-step narrowing IS played here, by jutterswet-munttelling and jutterswet-muntpiek"
   "jutterswet-meldplichtspoor|EXCLUDE|loader Refusal: Datatype:SumType"
   "jutterswet-meldtermijnen|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-penningbeschikking-catala|EXCLUDE|loader Refusal: Datatype:SumType"
@@ -429,7 +430,15 @@ EXPECTED_CHANNEL=(
 # name, and the two attributes only agree if what each executor derives is the relation the bound
 # spelling names. The backend needed no change — its by-pair search already answers this shape — and
 # a refusal here would leave the derivation pinned by two executors instead of three. Nothing else moved.
-EXPECTED_PLAYED=139
+# 2026-09-16 (card typerange-dekking), 139 -> 140: `jutterswet-muntpiek` joins as a NEW PLAYER — the
+# EXTREME arms (MINIMUM and MAXIMUM) narrowing their element set to a strict SUBTYPE (ch. 2.2, the
+# exclusion direction), which `jutterswet-munttelling` pins for the count and the sum and no golden
+# pinned here. The arm deserves its own player because it fails differently: a wrongly included
+# instance does not shift an extreme, it REPLACES it, and J1's lightest and heaviest links are both
+# non-members. It arrived playing — the exec-model branch matches the element type as a Java class
+# pattern over beans wired with native `extends`, so the narrowing was never this backend's gap and the
+# golden pins the agreement instead of leaving it unmeasured. Nothing else moved.
+EXPECTED_PLAYED=140
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the

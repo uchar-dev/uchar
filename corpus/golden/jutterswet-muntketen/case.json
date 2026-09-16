@@ -1,0 +1,123 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": { "gevoerde boten": ["B1", "B2"] },
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": { "gevoerde boten": ["B3"] },
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": { "gevoerde boten": ["B4", "B5"] },
+        "characteristics": []
+      },
+      {
+        "label": "B1",
+        "objectType": "Boot",
+        "attributes": {},
+        "roles": { "geborgen vondsten": ["V1", "M1"] },
+        "characteristics": []
+      },
+      {
+        "label": "B2",
+        "objectType": "Boot",
+        "attributes": {},
+        "roles": { "geborgen vondsten": ["M2", "V2"] },
+        "characteristics": []
+      },
+      {
+        "label": "B3",
+        "objectType": "Boot",
+        "attributes": {},
+        "roles": { "geborgen vondsten": ["V3"] },
+        "characteristics": []
+      },
+      {
+        "label": "B4",
+        "objectType": "Boot",
+        "attributes": {},
+        "roles": { "geborgen vondsten": ["M3"] },
+        "characteristics": []
+      },
+      {
+        "label": "B5",
+        "objectType": "Boot",
+        "attributes": {},
+        "roles": { "geborgen vondsten": ["M3", "V4"] },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": { "gewicht": { "number": "1.00" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": { "gewicht": { "number": "9.00" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": { "gewicht": { "number": "4.00" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V4",
+        "objectType": "Vondst",
+        "attributes": { "gewicht": { "number": "2.00" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "M1",
+        "objectType": "Munt",
+        "attributes": { "gewicht": { "number": "7.00" }, "jaartal": { "number": "1650" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "M2",
+        "objectType": "Munt",
+        "attributes": { "gewicht": { "number": "5.00" }, "jaartal": { "number": "1702" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "M3",
+        "objectType": "Munt",
+        "attributes": { "gewicht": { "number": "3.00" }, "jaartal": { "number": "1799" } },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "laagste muntgewicht", "value": { "number": "5.00" } },
+    { "kind": "attributeValue", "label": "J1", "attribute": "totaal muntgewicht", "value": { "number": "12.00" } },
+    { "kind": "attributeEmpty", "label": "J2", "attribute": "laagste muntgewicht" },
+    { "kind": "attributeValue", "label": "J2", "attribute": "totaal muntgewicht", "value": { "number": "0" } },
+    { "kind": "attributeValue", "label": "J3", "attribute": "laagste muntgewicht", "value": { "number": "3.00" } },
+    { "kind": "attributeValue", "label": "J3", "attribute": "totaal muntgewicht", "value": { "number": "3.00" } },
+    { "kind": "consistent" }
+  ]
+}

@@ -1,0 +1,341 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": {
+      "node": "Objecttype",
+      "naam": "Jutter",
+      "attributen": {
+        "laagste muntgewicht": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "totaal muntgewicht": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Jutters"
+    },
+    "Boot": {
+      "node": "Objecttype",
+      "naam": "Boot",
+      "attributen": {},
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Boten"
+    },
+    "Vondst": {
+      "node": "Objecttype",
+      "naam": "Vondst",
+      "attributen": {
+        "gewicht": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {
+        "gewicht": "gewichten"
+      },
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Vondsten"
+    },
+    "Munt": {
+      "node": "Objecttype",
+      "naam": "Munt",
+      "attributen": {
+        "jaartal": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Munten",
+      "supertype": "Vondst"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {
+    "bemanning": {
+      "node": "Feittype",
+      "naam": "bemanning",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "schipper",
+          "objecttypeNaam": "Jutter",
+          "meervoud": null,
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "gevoerde boot",
+          "objecttypeNaam": "Boot",
+          "meervoud": "gevoerde boten",
+          "meervoudig": true
+        }
+      ]
+    },
+    "berging": {
+      "node": "Feittype",
+      "naam": "berging",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "bergende boot",
+          "objecttypeNaam": "Boot",
+          "meervoud": "bergende boten",
+          "meervoudig": true
+        },
+        {
+          "node": "Rol",
+          "naam": "geborgen vondst",
+          "objecttypeNaam": "Vondst",
+          "meervoud": "geborgen vondsten",
+          "meervoudig": true
+        }
+      ]
+    }
+  },
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "laagste muntgewicht",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "totaal muntgewicht",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "laagste muntgewicht",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "laagste muntgewicht",
+        "objecttype": "Jutter",
+        "onderwerpBron": "een Jutter",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "Het laagste muntgewicht van een Jutter",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "MINIMUM",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "gewicht",
+            "objecttype": "Munt",
+            "onderwerpBron": "alle geborgen munten van alle gevoerde boten van de Jutter",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "het gewicht van alle geborgen munten van alle gevoerde boten van de Jutter",
+            "set": true,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": "Munt",
+        "leegwaarde": null,
+        "filter": null,
+        "dimensieSelectie": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de minimale waarde van het gewicht van alle geborgen munten van alle gevoerde boten van de Jutter",
+        "granulariteit": null,
+        "bronPad": [
+          {
+            "node": "RolBinding",
+            "feittype": "bemanning",
+            "rol": "gevoerde boot"
+          },
+          {
+            "node": "RolBinding",
+            "feittype": "berging",
+            "rol": "geborgen vondst"
+          }
+        ]
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "totaal muntgewicht",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "totaal muntgewicht",
+        "objecttype": "Jutter",
+        "onderwerpBron": "een Jutter",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "Het totaal muntgewicht van een Jutter",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "SOM",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "gewicht",
+            "objecttype": "Munt",
+            "onderwerpBron": "alle geborgen munten van alle gevoerde boten van de Jutter",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "het gewicht van alle geborgen munten van alle gevoerde boten van de Jutter",
+            "set": true,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": "Munt",
+        "leegwaarde": {
+          "node": "Literal",
+          "waarde": "0",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "0"
+        },
+        "filter": null,
+        "dimensieSelectie": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "de som van het gewicht van alle geborgen munten van alle gevoerde boten van de Jutter of 0 als die er niet zijn",
+        "granulariteit": null,
+        "bronPad": [
+          {
+            "node": "RolBinding",
+            "feittype": "bemanning",
+            "rol": "gevoerde boot"
+          },
+          {
+            "node": "RolBinding",
+            "feittype": "berging",
+            "rol": "geborgen vondst"
+          }
+        ]
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}
