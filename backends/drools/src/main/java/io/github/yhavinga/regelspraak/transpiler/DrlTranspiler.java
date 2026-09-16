@@ -1136,7 +1136,13 @@ public final class DrlTranspiler {
             } else {
                 Acc doelAcc = new Acc();                       // the failed anker attempt is simply abandoned
                 Frag opDoel = conditieInline(doelAcc, fc.voorwaarde(), doel, true);
-                if (!opDoel.marker()) {
+                // A DOEL-side guard rides INSIDE the $doel pattern, so it must be a PURE INLINE constraint. A
+                // lowering that hoists a clause of its own would have that clause hosted after the ANKER pattern
+                // below, where $subject means the anker and not the doel — a join against the wrong type, and a
+                // guard whose inline half is empty, i.e. dropped. conditieInline catches the `extra` channel but
+                // not a condition that pushes straight into the Acc (the ch. 3.9a fold is the first that can), so
+                // the clause list is checked here too.
+                if (!opDoel.marker() && doelAcc.clausules.isEmpty()) {
                     doelExtra = opDoel.text();
                     acc = doelAcc;
                 } else {
@@ -3580,34 +3586,33 @@ public final class DrlTranspiler {
                 default          -> String.join(" && ", delen); // unreachable (alle/de handled above), kept total
             });
         }
-        // IR-SPEC ch. 4.5 / RUNTIME-SEMANTICS ch. 3.9a the QUANTIFIER FOLD. The NON-temporal matrix lowers here
-        // (see kwantorvouwNietTemporeel); the WHOLE-PERIOD matrix is still marked by NAME, and deliberately —
-        // the same asymmetry, and the same reason, as the ch. 7 prioritizedDefaults one CaseRunner.drlTak
-        // records: this branch is NARROWER than the exec-model one, and where a lowering exists only there, a
-        // DRL KieBase that quietly omitted the construct would answer with an unquantified rule instead of
-        // refusing. So it markers, drlTak refuses the document by name, and the two branches stay honest about
-        // which carries what.
-        //
-        // Why the whole-period matrix stays a marker. The pieces do exist here — temporeelSetAccumulate builds a
-        // collectList accumulate — but none of them fits this node without being rebuilt: temporeelSetAccumulate
-        // keys on a `set` AttribuutRef (a fold matrix reads the contributor's own attribute, set=false) and
-        // derives its join by pair only, with no bronRol fallback and no storage-direction split, so the
-        // SELF-TYPED range the wire field exists for would bind nothing here while the exec branch binds it.
-        // That is a new arm of its own. The non-temporal matrix needed no such rebuild: it is an ordinary
-        // condition of the element, and this branch has lowered those onto an element pattern all along.
-        if (c instanceof Conditie.Kwantorvouw kv) {
-            LoweredConditie gelowerd = kwantorvouwNietTemporeel(acc, kv, subject);
-            if (gelowerd != null) return gelowerd;
-            return LoweredConditie.marker("§8.2 kwantorvouw (" + kv.kwantor() + " over "
-                    + (kv.elementObjecttype() == null ? "<onopgelost elementtype>" : kv.elementObjecttype().naam)
-                    + ") — ch. 3.9a wordt alleen in de exec-model-tak gelowerd", c.bron());
-        }
+        // IR-SPEC ch. 4.5 / RUNTIME-SEMANTICS ch. 3.9a the QUANTIFIER FOLD — see kwantorvouw below, which
+        // lowers the non-temporal matrix and markers every other shape WITH ITS OWN REASON.
+        if (c instanceof Conditie.Kwantorvouw kv) return kwantorvouw(acc, kv, subject);
         return LoweredConditie.marker("voorwaarde", c.bron());
     }
 
-    /** RUNTIME-SEMANTICS ch. 3.9a with a NON-temporal matrix: lower the quantifier fold to a single hoisted
-     *  {@code not <Element>( <join>, <filter>, <matrix or its negation> )} clause — the failure WITNESS, denied.
-     *  Both quantifiers are that one shape: {@code GEEN} fails on a member that SATISFIES the matrix,
+    /** The marker this branch leaves for a quantifier fold it does not lower, carrying the QUANTIFIER, the
+     *  element type and — the part that has to be right — the reason THIS fold was declined. One text for
+     *  every decline was measured wrong on 2026-09-16: it said "ch. 3.9a wordt alleen in de exec-model-tak
+     *  gelowerd" for a shape the exec branch ALSO refuses, and for a range whose reason has nothing to do
+     *  with either branch. The reasons are per decline now, and each names the axis it was declined on. */
+    private LoweredConditie kvMarker(Conditie.Kwantorvouw kv, String reden) {
+        return LoweredConditie.marker("§8.2 kwantorvouw (" + kv.kwantor() + " over "
+                + (kv.elementObjecttype() == null ? "<onopgelost elementtype>" : kv.elementObjecttype().naam)
+                + ") — " + reden, kv.bron());
+    }
+
+    /** Roll back any clause a bailed-out fold lowering appended since {@code mark} — the {@link #aggTerug}
+     *  discipline, so a markered rule keeps no orphan clause — and marker with {@code reden}. */
+    private LoweredConditie kvTerug(Acc acc, int mark, Conditie.Kwantorvouw kv, String reden) {
+        aggTerug(acc, mark);   // for the rollback; its own "not lowered" null is replaced by the marker below
+        return kvMarker(kv, reden);
+    }
+
+    /** RUNTIME-SEMANTICS ch. 3.9a: lower the quantifier fold over a NON-temporal matrix to a single hoisted
+     *  {@code not <Element>( <join>, <filter>, <matrix or its negation> )} clause — the failure WITNESS,
+     *  denied. Both quantifiers are that one shape: {@code GEEN} fails on a member that SATISFIES the matrix,
      *  {@code ALLE} on one that does not, so the only difference is whether the matrix constraint is negated.
      *
      *  <p>Three things follow from the shape rather than being arranged for. An EMPTY range denies nothing and
@@ -3618,32 +3623,52 @@ public final class DrlTranspiler {
      *  quantifier is untouched. And the {@code filter} is the die/dat subselection on the same pattern, exactly
      *  as it is on an aggregation's accumulate source.
      *
-     *  <p>Returns null — the caller then markers by name — for the WHOLE-PERIOD matrix (the exec branch's, see
-     *  the caller), a non-v0 kwantor, a multi-step range, an unresolvable or fieldless join, and a matrix or
-     *  filter this branch cannot inline (a condition that wants to hoist a clause of its own cannot ride inside
-     *  a pattern; {@link #conditieInline} turns that into a marker Frag). Any clause a bailed-out lowering had
-     *  already appended is rolled back through {@link #aggTerug}, so the marker rule keeps no orphan. */
-    private LoweredConditie kwantorvouwNietTemporeel(Acc acc, Conditie.Kwantorvouw kv, Objecttype subject) {
-        if (subject == null || kv.toets() == null) return null;
-        if (kv.kwantor() != Conditie.Kwantor.ALLE && kv.kwantor() != Conditie.Kwantor.GEEN) return null;
-        if (!kv.bronPad().isEmpty()) return null;              // a multi-step range: one join constraint, one hop
-        if (geheelPeriodeVan(kv.toets()) != null) return null; // the §8.2 matrix is the exec branch's
+     *  <p><b>Every other shape markers, by its own reason.</b> The WHOLE-PERIOD matrix is the exec branch's
+     *  alone, deliberately: temporeelSetAccumulate keys on a {@code set} AttribuutRef (a fold matrix reads the
+     *  contributor's own attribute, set=false) and derives its join by pair only, with no bronRol fallback and
+     *  no storage-direction split, so the SELF-TYPED range the wire field exists for would bind nothing here.
+     *  That is a new arm of its own, and until it exists a marker is the honest state — drlTak then refuses the
+     *  document by name, which is what keeps this branch from answering with an unquantified rule.
+     *
+     *  <p><b>A matrix or filter that HOISTS is refused, and not only one that markers.</b> Both are measured:
+     *  {@link #conditieInline} degrades a condition carrying {@code extra} to a marker Frag, but a condition
+     *  that pushes straight into the {@link Acc} — which is what THIS method does, so a NESTED fold is the
+     *  first one that can — returns an EMPTY inline and no marker at all. Taken at face value that emitted an
+     *  orphan clause joined against {@code $subject} of the wrong type plus an empty {@code !(  )} constraint,
+     *  and the package died on a parser error instead of refusing by name (measured 2026-09-16). So the guard
+     *  is BOTH channels: a marker, or any clause appended since {@code mark}. */
+    private LoweredConditie kwantorvouw(Acc acc, Conditie.Kwantorvouw kv, Objecttype subject) {
+        if (subject == null) return kvMarker(kv, "geen subjectpatroon om het bereik aan te hangen");
+        if (kv.toets() == null) return kvMarker(kv, "een kwantorvouw zonder matrix (WF-108 (d))");
+        if (kv.kwantor() != Conditie.Kwantor.ALLE && kv.kwantor() != Conditie.Kwantor.GEEN)
+            return kvMarker(kv, "kwantor is geen v0-vorm (WF-108 (a)): alleen ALLE en GEEN worden gelowerd");
+        if (!kv.bronPad().isEmpty())
+            return kvMarker(kv, "een meerstaps bereik (WF-108 (c)); het elementpatroon draagt één joinconstraint");
+        if (geheelPeriodeVan(kv.toets()) != null)
+            return kvMarker(kv, "een §8.2-heelperiodematrix; die wordt alleen in de exec-model-tak gelowerd");
         Objecttype elem = kv.elementObjecttype();
-        if (elem == null) return null;
+        if (elem == null) return kvMarker(kv, "onopgelost elementObjecttype");
         // §13.3.9 STORAGE DIRECTION, the question scope() asks for an aggregation join: the role the SUBJECT
         // plays is read as a FIELD ON THE ELEMENT, and a resolved role is not yet a bean field.
         String rol = model.verbindendeRol(elem, subject);
-        if (rol == null || !navVeld("kwantorvouw-bereik", elem, rol, subject)) return null;
+        if (rol == null)
+            return kvMarker(kv, "geen verbindende rol tussen " + subject.naam + " en " + elem.naam);
+        if (!navVeld("kwantorvouw-bereik", elem, rol, subject))
+            return kvMarker(kv, "de bereik-join heeft geen beanveld — " + navReden);
         final int mark = acc.clausules.size();
         StringJoiner delen = new StringJoiner(", ");
         delen.add(ident(rol, false) + " == " + SUBJECT);
         if (kv.filter() != null) {
             Frag ff = conditieInline(acc, kv.filter(), elem, false);
-            if (ff.marker()) return aggTerug(acc, mark);
+            if (ff.marker() || acc.clausules.size() != mark)
+                return kvTerug(acc, mark, kv, "een die/dat-subselectie die deze tak niet IN het elementpatroon"
+                        + " kan schrijven (" + kv.filter().getClass().getSimpleName() + ")");
             delen.add(ff.text());
         }
         Frag mf = conditieInline(acc, kv.toets(), elem, true);
-        if (mf.marker()) return aggTerug(acc, mark);
+        if (mf.marker() || acc.clausules.size() != mark)
+            return kvTerug(acc, mark, kv, "een matrixvorm die deze tak niet IN het elementpatroon kan schrijven ("
+                    + kv.toets().getClass().getSimpleName() + ")");
         delen.add(kv.kwantor() == Conditie.Kwantor.ALLE ? "!( " + mf.text() + " )" : mf.text());
         acc.clausules.add("not " + ident(elem.naam, true) + "( " + delen + " )");
         return new LoweredConditie("", java.util.List.of(), false);

@@ -2720,6 +2720,30 @@ public final class ExecModelTranspiler {
         return null;
     }
 
+    /** WHY a non-temporal matrix was declined, on the axis it was actually declined on. The node CLASS alone is
+     *  too coarse and was measured misleading on 2026-09-16: a {@code Vergelijking} is carried in general, and a
+     *  comparison against a Parameter is declined for its OPERAND, not for being a comparison. So a node that has
+     *  operands is named by its operands; one that does not falls back to its class. */
+    private static String matrixAs(Conditie c) {
+        if (c instanceof Conditie.Vergelijking v)
+            return "een vergelijking van " + operandAs(v.links()) + " met " + operandAs(v.rechts());
+        if (c instanceof Conditie.Predicaat p)
+            return "een " + p.soort() + "-predicaat over " + operandAs(p.operand());
+        return "een conditie van soort " + c.getClass().getSimpleName();
+    }
+
+    /** One operand of {@link #matrixAs}, named the way the leaf translation distinguishes them. */
+    private static String operandAs(Expr e) {
+        if (e == null) return "een ontbrekend operand";
+        if (e instanceof Expr.AttribuutRef a)
+            return (a.navigatieRol() == null ? "het eigen attribuut '" : "het genavigeerde attribuut '")
+                    + a.attribuut() + "'";
+        if (e instanceof Expr.ParameterRef p) return "de parameter '" + p.parameter().naam() + "'";
+        if (e instanceof Expr.Literal l) return "de literal '" + l.waarde() + "'";
+        if (e instanceof Expr.Functie f) return "een " + f.kind() + "-functie";
+        return "een operand van soort " + e.getClass().getSimpleName();
+    }
+
     /** Is {@code a} a read of a SINGLE-PERIOD tijdlijn member of {@code elem} written with the ELEMENT as subject?
      *  The matrix of a fold is evaluated per contributor with the element as subject (ch. 3.9a), so a navigated
      *  read is a further hop this arm does not walk, and the member is looked up CHAIN-CLOSED (a contributor may be
@@ -2790,8 +2814,8 @@ public final class ExecModelTranspiler {
         if (gp == null) {
             statischeMatrix = leafPredicate(kv.toets(), elem);
             if (statischeMatrix == null)
-                return kvSkip(kv, "een niet-temporele matrix (" + kv.toets().getClass().getSimpleName()
-                        + ") die de per-subject bladvertaling niet draagt");
+                return kvSkip(kv, "een niet-temporele matrix die de per-subject bladvertaling niet draagt: "
+                        + matrixAs(kv.toets()));
         } else {
             gran = gp.jaar() ? "JAAR" : "MAAND";
             if (kv.toets() instanceof Conditie.Vergelijking v) {
