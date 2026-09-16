@@ -881,6 +881,43 @@ characteristic (ch. 3.11).
 
 ### 3.4a The die/dat subselection on instance folds
 
+**The contributors, before any filter: reach ∩ population.** An instance
+fold names two declarations, and they answer two different questions. The
+source relation (`sourceRole`, or the multi-step `sourcePath` of ch. 3.4b,
+or WF-048's derived role when neither is written) says which instances the
+fold REACHES from its subject. `elementObjecttype` says which instances the
+fold RANGES OVER, extensionally (`IR-SPEC.md` ch. 2.2): every instance
+whose type is ⊑ it. The contributors are the intersection — an instance the
+relation reaches whose type the element type does not cover is **not** a
+contributor, and contributes to neither a count nor a value fold.
+
+The two used to be the same set. WF-047 demanded the bound role's filler
+and `elementObjecttype` be the same name, so the relation could not reach
+anything the element type failed to cover; since ch. 2.6 made a role's
+declared filler an UPPER bound and widened "agree" to ⊑-compatibility, the
+filler may be a strict supertype and the two come apart. Where the filler
+is the element type or below — every document written before the chain
+existed — the intersection is the reach and nothing changes.
+
+This narrowing is **not** the die/dat filter below, and the difference is
+observable: the type narrowing happens first and cannot be written as a
+condition, since no condition can ask an instance for its type.
+
+Worked example (the `golden/jutterswet-munttelling` golden, verbatim in
+gates 5, 6 and 12). `vondstaanmelding` relates Jutter to **Vondst**; both
+folds declare `elementObjecttype` **Munt**, and `Munt ⊑ Vondst` strictly.
+`J1` is linked to `V1` (a plain Vondst, gewicht 3,00), `M1` (a Munt, 7,00)
+and `M2` (a Munt, 5,00): the reach is all three, the population is {M1,
+M2}, so the count is **2** and the sum **12,00** — unfiltered they would
+read 3 and 15,00. `J2` is linked to exactly one instance, `V2` (a plain
+Vondst, 4,00): the reach is NOT empty and the contributors are, so the
+count is **0** and the sum falls to its `of 0` fallback — the empty-source
+rules of ch. 1.2 read the contributors, never the links. `J3` is linked to
+`M3`, a Munt with no gewicht: it IS a contributor, so the count is **1**,
+while the sum has a member and no value and reaches **0** by the same
+fallback — which is why both folds are pinned per jutter, since only the
+count tells J2's empty population from J3's empty value.
+
 The `filter` condition of an instance fold evaluates **per
 contributor**: the element instance is the condition's subject, never
 the outer fold subject. A contributor whose filter operand is leeg
@@ -954,8 +991,10 @@ A set fold source may describe its range with a PATH of relations rather
 than one (`IR-SPEC.md` ch. 4.3, `sourcePath`; two or more steps, the
 one-step range stays `sourceRole`). The folded set is the **flat union**:
 start at the fold subject, take step 1's linked instances, take step 2's
-linked instances from each of those, and so on; the contributors are the
-instances the last step reaches. It is a SET — an element reachable through
+linked instances from each of those, and so on; the instances the last step
+reaches are the fold's REACH, which `elementObjecttype` narrows to the
+contributors exactly as in the one-step form (ch. 3.4a — the intermediate
+steps are not narrowed, only the landing). It is a SET — an element reachable through
 more than one intermediate instance contributes **once** — and everything
 downstream is unchanged: the element's attribute is read at the
 `elementObjecttype` exactly as in the one-step form, a leeg element

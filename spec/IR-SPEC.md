@@ -480,25 +480,59 @@ of it. Three things follow, and each is a definition rather than a rule:
   (ch. 3.2) all range over
   `{ i : typeOf(i) ⊑ T }`. A subtype with no own members is therefore not
   inert but a pure classification, which is the shape the relation exists
-  for. Six of the seven carry a witness rather than a mention: the
-  rule subject and the defaults subject replay in
-  `anchor/jutterswet-strandrechtketen` (gates 5, 6 and 12), the
-  characteristic check's owner, the uniqueness scope and the consistency
-  subject — which no golden reaches — are worked examples WV-IR2.2-a/b/c
-  in `ref/test/`, and the allocation target replays in
-  `golden/jutterswet-hoofdberging`, where the connecting role's filler is a
-  strict supertype of `targetType` and the recipients outside that type
-  receive nothing. **The seventh, the instance fold's `elementType`, is
-  witnessed in the INCLUSION direction only** — a subtype instance is
-  counted where the fold names an ancestor (the two aggregations of that
-  same anchor). Its exclusion direction — an `elementType` strictly BELOW
-  the type the fold's source path reaches, where the extension is a proper
-  subset of what the relation yields — has no witness because **no executor
-  implements it**: `ref` and `clingo` both fold the reached set whole, so a
-  plain instance linked beside the subtypes is counted in. Measured
-  2026-09-12; the two agree, so this is a spec-versus-executors gap and not
-  a differential divergence, and closing it is tracked work rather than a
-  claim this clause already makes good.
+  for.
+
+  The seven split by HOW their set is obtained, and the split decides
+  what a witness has to show. **Four name a population the executor
+  SCANS**: the rule subject, the defaults subject, the consistency
+  subject, and the population a uniqueness ranges over before its scope
+  hop groups it. There the quantifier IS the scan, so its two directions
+  cannot come apart — an instance is enumerated because its type
+  satisfies `⊑ T`, and one that does not is never enumerated to begin
+  with. **One is not a set at all**: a characteristic check's owner is a
+  hosting statement about the one subject the check is evaluated on, so
+  `⊑` is read there as a predicate and there is nothing to exclude FROM.
+  **Two name a type against a set a RELATION delivers** — the instance
+  fold's `elementType` and an allocation's `targetType` — and there the
+  clause is two separate
+  claims, because the relation and the declared type are two different
+  declarations: the relation supplies the REACH, the declared type
+  supplies the POPULATION, and the quantifier is their intersection. The
+  inclusion half says an instance the relation reaches counts when its
+  type is a strict SUBTYPE of the declared one; the exclusion half says
+  an instance the relation reaches does NOT count when its type is not
+  `⊑` the declared one at all. The two halves coincided until ch. 2.6
+  widened **WF-047**'s "agree" from equality to ⊑-compatibility; only
+  since then can a bound role's filler be a strict supertype of the type
+  its position declares, and only since then is the second claim
+  reachable.
+
+  All seven carry a witness rather than a mention. The rule subject and
+  the defaults subject replay in `anchor/jutterswet-strandrechtketen`
+  (gates 5, 6 and 12); the characteristic check's owner, the uniqueness
+  scope and the consistency subject — which no golden reaches — are
+  worked examples WV-IR2.2-a/b/c in `ref/test/`. The two relation-fed
+  positions carry both halves: the allocation target replays in
+  `golden/jutterswet-hoofdberging` (and, from RegelSpraak source, in its
+  twin `golden/jutterswet-bergersdeling`), where the connecting role's
+  filler is a strict supertype of `targetType` and the recipients outside
+  that type receive nothing; the instance fold's `elementType` is
+  witnessed for inclusion by the two aggregations of that same anchor,
+  and for exclusion by `golden/jutterswet-munttelling`, where both folds
+  declare an `elementType` strictly BELOW what the source role fills and
+  a plain supertype instance linked beside the subtypes is reached and
+  not folded.
+
+  *Recorded, because the gap was real and the executors did not all share
+  it.* Until 2026-09-16 `ref` and `clingo` folded the reached set whole
+  and counted that plain instance in, while the Drools backend did not —
+  its exec-model branch matches the element type as a class pattern over
+  beans wired with native inheritance, so the subtype pattern never saw
+  the supertype fact. That was a three-way divergence on a
+  verifier-clean document, with this clause and Drools on one side; the
+  two interpreters were corrected to it, not the other way round. The
+  same shape was measured and closed one construct over, on the
+  allocation's recipients, on 2026-09-12.
 - **An inherited member carries its facets** — its dimensions and its
   timeline granularity/count are read on the chain like the declaration
   itself, so a subtype instance of a type whose ancestor declares a
@@ -3582,11 +3616,11 @@ embedded expressions) — sugar verdict (row 31), mirrored; empty coerces to
 |---|---|
 | `kind` | sum, total, count, minimum, maximum, first, last |
 | `arguments` | one set-valued operand (instance fold), or ≥ 2 listed operands (value fold / §5.8.1 union count) |
-| `elementType` | the instance type ranged over (instance folds) |
+| `elementType` | the instance type ranged over (instance folds) — the POPULATION, extensionally (ch. 2.2): the contributors are the instances the source relation reaches whose type is ⊑ `elementType`, so one it reaches that this type does not cover is not folded. Since WF-047's "agree" became ⊑-compatibility the source role's filler may be a strict SUPERTYPE of it, and reach and population are then genuinely different sets; witness `golden/jutterswet-munttelling` |
 | `filter` | Condition? — the die/dat-subselection, evaluated PER CONTRIBUTOR (the element is the condition's subject; a leeg operand fails it, ch. 1.2d; an all-excluding filter leaves an empty source — the sum fallback fires, a count reads 0). **Landed (2026-08-19):** executes in both executors (`jutterswet-strandgoed`, an emitter golden; `RUNTIME-SEMANTICS.md` ch. 3.4a). The reference interpreter carries the full condition set; the ASP backend's corpus-exercised fragment faults loudly on the rest — the standing executor asymmetry, differential-gated over the corpus. The SAME field also carries the §7.1 gedurende timeline clip (on the temporal total, where the element type is the subject itself) — a timeline operation, never an instance subselection. **Landed (2026-08-19, WF-055):** the clip executes in both executors (`jutterswet-getijdenwacht`; `RUNTIME-SEMANTICS.md` ch. 3.6): intersect the full value timeline with the condition's true-periods (an own temporal characteristic, or a per-segment comparison against a scalar bound), then total whole units per clipped segment — floor, never pro-rata; a gap in the condition clips away; a fully clipped-away or absent timeline totals 0, never leeg. The negated clip (the complement) and the Gelijk/Ongelijk comparison clip execute in the reference interpreter only — the ASP side faults loudly on both. A negated characteristic subselection never reaches the wire executable (v0 marks it Onopgelost) |
 | `emptyFallback` | expression? — **sum only**: the §5.8.2 "of … als die er niet zijn" clause |
 | `dimensionSelection` | ? — **sum/min/max only**: fold over an ordered label selection instead of instances (dialect, row 28) |
-| `sourceRole` | RoleBinding? — **extension field** (v0 wire `bronRol`), instance folds only: the connecting relation, with **the role whose filler instances form the folded set bound**; the opposite role's filler is the fold's subject type (WF-047). Absent, WF-048's unique derivability applies; a binding on a non-fold is ill-formed (WF-047) |
+| `sourceRole` | RoleBinding? — **extension field** (v0 wire `bronRol`), instance folds only: the connecting relation, with **the role whose filler instances the fold RANGES OVER bound** — the reach, which `elementType` then narrows to the population (ch. 2.2); the opposite role's filler is the fold's subject type (WF-047, ⊑-compatible since ch. 2.6, so the bound role's filler may be an ancestor of `elementType`). Absent, WF-048's unique derivability applies; a binding on a non-fold is ill-formed (WF-047) |
 | `sourcePath` | RoleBinding list? — **extension field** (v0 wire `bronPad`), the MULTI-STEP range of a set source: the relations walked subject-outwards, each step spelled exactly as `sourceRole` is. Two or more steps; the one-step range IS `sourceRole` and the two fields are mutually exclusive (WF-102) |
 | `type`, `source` | — |
 
