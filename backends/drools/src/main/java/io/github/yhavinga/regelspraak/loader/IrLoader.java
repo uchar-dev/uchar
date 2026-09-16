@@ -523,17 +523,27 @@ public final class IrLoader {
                 if (n.hasNonNull("bronPad"))
                     throw new Refusal("Kwantorvouw.bronPad",
                             "a multi-step quantifier range (WF-108 (c)); the accumulate source carries one join role");
-                // WF-108 (a): ALLE and GEEN are the v0 forms. The counting quantors (and the definite DE) share
-                // Samengesteld's enum but are the named extension point, NOT admitted here — a hand-written one must
-                // be refused BY NAME rather than lowered as if it were a forall. An unknown token never reaches
+                // WF-108 (a): ALLE, GEEN and the three COUNTING quantors are the admitted forms. DE shares
+                // Samengesteld's enum and is refused BY NAME — the bare definite describes one member, and reading
+                // it as a forall is the misreading this node exists to prevent. An unknown token never reaches
                 // Enum.valueOf's unattributed IllegalArgumentException either: it lands in the same named Refusal.
                 Conditie.Kwantor kw;
                 try { kw = enumOf(Conditie.Kwantor.class, text(n, "kwantor")); }
                 catch (IllegalArgumentException e) { kw = null; }
-                if (kw != Conditie.Kwantor.ALLE && kw != Conditie.Kwantor.GEEN)
-                    throw new Refusal("Kwantorvouw.kwantor", "'" + text(n, "kwantor") + "' is not a v0 quantifier"
-                            + " (WF-108 (a)); the v0 forms are ALLE and GEEN");
-                yield new Conditie.Kwantorvouw(kw, ot(text(n, "elementObjecttype")),
+                if (kw == null || kw == Conditie.Kwantor.DE)
+                    throw new Refusal("Kwantorvouw.kwantor", "'" + text(n, "kwantor") + "' is not a quantifier over"
+                            + " a set (WF-108 (a)); the forms are ALLE, GEEN, TEN_MINSTE, TEN_HOOGSTE and PRECIES");
+                // WF-108 (e): the threshold is present EXACTLY under a counting quantor. Read as an absence rather
+                // than as a 0 — a counting fold whose threshold is missing has no verdict, and guessing one here
+                // would answer a question the document does not ask.
+                boolean telt = kw == Conditie.Kwantor.TEN_MINSTE || kw == Conditie.Kwantor.TEN_HOOGSTE
+                        || kw == Conditie.Kwantor.PRECIES;
+                if (telt != n.hasNonNull("drempel"))
+                    throw new Refusal("Kwantorvouw.drempel", "a drempel is written exactly under a counting"
+                            + " kwantor (WF-108 (e)); this node has kwantor " + kw
+                            + (telt ? " and no drempel" : " and one"));
+                yield new Conditie.Kwantorvouw(kw, telt ? intOf(n, "drempel") : 0,
+                        ot(text(n, "elementObjecttype")),
                         conditie(n.get("filter")), conditie(n.get("toets")),
                         rolBinding(n.get("bronRol")), List.of(), bron(n));
             }

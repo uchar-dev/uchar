@@ -2786,10 +2786,11 @@ public final class ExecModelTranspiler {
             Objecttype subject, Variable subjectVar) {
         if (subject == null || subjectVar == null)
             return kvSkip(kv, "geen subjectpatroon om het bereik aan te hangen");
-        // The loader refuses a non-v0 kwantor by name (WF-108 (a)); this is the defensive twin, because a fold
-        // reached through any other route must never be lowered as if it were a forall.
-        if (kv.kwantor() != Conditie.Kwantor.ALLE && kv.kwantor() != Conditie.Kwantor.GEEN)
-            return kvSkip(kv, "kwantor is geen v0-vorm (WF-108 (a)): alleen ALLE en GEEN worden gelowerd");
+        // The loader refuses DE and every unknown token by name (WF-108 (a)); this is the defensive twin,
+        // because a fold reached through any other route must never be lowered as if it were a forall.
+        if (kv.kwantor() == Conditie.Kwantor.DE)
+            return kvSkip(kv, "kwantor DE (WF-108 (a)): de bepaalde lidwoordvorm noemt ÉÉN lid en is geen "
+                    + "kwantificatie over een verzameling");
         if (!kv.bronPad().isEmpty())
             return kvSkip(kv, "een meerstaps bereik (WF-108 (c)); de accumulate-source draagt één join-rol");
         Objecttype elem = kv.elementObjecttype();
@@ -2902,10 +2903,20 @@ public final class ExecModelTranspiler {
             RuleItemBuilder accStatisch = DSL.accumulate(src,
                     DSL.accFunction(accFn("CollectListAccumulateFunction"), elemVar).as(elemsVar));
             final Predicate1<Object> matrix = statischeMatrix;
-            final boolean wil = kv.kwantor() == Conditie.Kwantor.ALLE;   // ALLE wants every member true, GEEN every member false
+            final Conditie.Kwantor kwS = kv.kwantor();
+            final int dS = kv.drempel();
+            // ch. 3.9a's count over the collected contributors, read with ch. 5.10's stop triggers — the same
+            // {@link #vastgesteld} table the composite uses, with the contributors as its members. ALLE is
+            // hits == n and GEEN is hits == 0, so all five quantifiers are one comparison.
             Predicate1<Object> evStatisch = leden -> {
-                for (Object e : (List<?>) leden) if (matrix.test(e) != wil) return false;
-                return true;
+                List<?> ls = (List<?>) leden;
+                int n = ls.size(), hits = 0;
+                for (int i = 0; i < n; i++) {
+                    Boolean vast = vastgesteld(kwS, dS, hits, i, n - i);
+                    if (vast != null) return vast;
+                    if (matrix.test(ls.get(i))) hits++;
+                }
+                return telVerdict(kwS, dS, hits, n);
             };
             PatternDSL.PatternDef checkStatisch =
                     PatternDSL.pattern(elemsVar).expr(nextId("kv"), (Predicate1) evStatisch);
@@ -2920,11 +2931,26 @@ public final class ExecModelTranspiler {
         RuleItemBuilder accItem = DSL.accumulate(src2, DSL.accFunction(accFn("CollectListAccumulateFunction"), elemTlVar).as(tlVar));
         // the NIET prefix is the MATRIX's, so it flips the quantifier rather than the verdict (see the javadoc).
         final boolean alle = (kv.kwantor() == Conditie.Kwantor.ALLE) != gp.niet();
+        // ch. 3.9a's counting quantifiers over this same matrix: what they need is not a witness but the SIZE
+        // of the satisfier set, so they read the counting TWIN of the two helpers above and compare. The NIET
+        // prefix cannot flip a threshold, so here it is applied to the count instead: ¬P holds of exactly the
+        // members P does not, and rsGeheelPeriode is total, so count(¬P) = n − count(P) exactly.
+        final Conditie.Kwantor kwT = kv.kwantor();
+        final int dT = kv.drempel();
+        final boolean nietPrefix = gp.niet();
+        final boolean telt = kwT == Conditie.Kwantor.TEN_MINSTE || kwT == Conditie.Kwantor.TEN_HOOGSTE
+                || kwT == Conditie.Kwantor.PRECIES;
         final int fToets = toetsCode; final String fGran = gran; final WaardeFn gf = grensFn;
         java.util.Set<String> gGlobals = gf == null ? java.util.Set.of() : gf.globals();
         if (gGlobals.isEmpty()) {
             Predicate1<Object> ev = tls -> {
                 BigDecimal grens = gf == null ? null : RegelSpraakRuntime.toBd(gf.fn().apply(null, java.util.Map.of()));
+                if (telt) {
+                    List<? extends List<?>> ls = (List<? extends List<?>>) tls;
+                    int n = ls == null ? 0 : ls.size();
+                    int hits = RegelSpraakRuntime.rsGeheelPeriodeTelling(ls, fGran, fToets, grens);
+                    return telVerdict(kwT, dT, nietPrefix ? n - hits : hits, n);
+                }
                 return alle ? RegelSpraakRuntime.rsGeheelPeriodeAlle((List<? extends List<?>>) tls, fGran, fToets, grens)
                             : RegelSpraakRuntime.rsGeheelPeriodeGeen((List<? extends List<?>>) tls, fGran, fToets, grens);
             };
@@ -2937,6 +2963,12 @@ public final class ExecModelTranspiler {
             if (gg == null) return kvSkip(kv, "een matrixgrens op de niet-geregistreerde global " + gn);
             Predicate2<Object, Object> ev = (tls, gv) -> {
                 BigDecimal grens = RegelSpraakRuntime.toBd(gf.fn().apply(null, bindGlobal(gn, gv)));
+                if (telt) {
+                    List<? extends List<?>> ls = (List<? extends List<?>>) tls;
+                    int n = ls == null ? 0 : ls.size();
+                    int hits = RegelSpraakRuntime.rsGeheelPeriodeTelling(ls, fGran, fToets, grens);
+                    return telVerdict(kwT, dT, nietPrefix ? n - hits : hits, n);
+                }
                 return alle ? RegelSpraakRuntime.rsGeheelPeriodeAlle((List<? extends List<?>>) tls, fGran, fToets, grens)
                             : RegelSpraakRuntime.rsGeheelPeriodeGeen((List<? extends List<?>>) tls, fGran, fToets, grens);
             };
@@ -2973,6 +3005,20 @@ public final class ExecModelTranspiler {
             case TEN_HOOGSTE -> hits > drempel ? Boolean.FALSE
                               : (hits + rest <= drempel ? Boolean.TRUE : null);
             case PRECIES     -> (hits > drempel || hits + rest < drempel) ? Boolean.FALSE : null;
+        };
+    }
+
+    /** The verdict once every member has been read: {@code hits} of {@code n}, against {@code drempel}. The
+     *  full-read half of {@link #vastgesteld} and the one place the five quantifiers are one comparison —
+     *  ALLE is hits == n, GEEN is hits == 0, and the counting three are the threshold comparisons of
+     *  RUNTIME-SEMANTICS ch. 3.9a. Used by the quantifier fold, over CONTRIBUTORS instead of bullets. */
+    private static boolean telVerdict(Conditie.Kwantor kw, int drempel, int hits, int n) {
+        return switch (kw) {
+            case ALLE, DE    -> hits == n;
+            case GEEN        -> hits == 0;
+            case TEN_MINSTE  -> hits >= drempel;
+            case TEN_HOOGSTE -> hits <= drempel;
+            case PRECIES     -> hits == drempel;
         };
     }
 

@@ -1098,6 +1098,23 @@ public final class RegelSpraakRuntime {
         return true;
     }
 
+    /** RUNTIME-SEMANTICS ch. 3.9a, the COUNTING arms of the quantifier fold: how MANY contributors satisfy the
+     *  whole-period matrix. The counting twin of {@link #rsGeheelPeriodeAlle} and {@link #rsGeheelPeriodeGeen}
+     *  over the same collected {@code List<List<Segment>>} — those two answer a witness question ("does any
+     *  contributor fail / satisfy"), and a threshold needs the SIZE of the satisfier set, which no boolean
+     *  fold yields. Those two remain what ALLE and GEEN read: their early exit is the ch. 5.10 short circuit,
+     *  and rewriting them as {@code telling == n} / {@code telling == 0} would read every contributor where
+     *  today they stop at the first that decides. An EMPTY contributor set counts 0, which answers each
+     *  counting quantifier by itself — no vacuous rule is applied here. The caller applies the NIET prefix to
+     *  the COUNT (count(¬P) = n − count(P); this predicate is total), because a negation cannot flip a
+     *  threshold the way it flips ALLE into GEEN. */
+    public static int rsGeheelPeriodeTelling(List<? extends List<?>> reeksen, String granulariteit, int toets, BigDecimal grens) {
+        if (reeksen == null) return 0;
+        int telling = 0;
+        for (List<?> r : reeksen) if (rsGeheelPeriode(r, granulariteit, toets, grens)) telling++;
+        return telling;
+    }
+
     /** The value of the segment covering {@code dag} (van &le; dag &lt; tot), or null (leeg) when no segment covers it. */
     private static BigDecimal waardeOpDag(List<?> lijst, LocalDate dag) {
         for (Object o : leeg(lijst)) {

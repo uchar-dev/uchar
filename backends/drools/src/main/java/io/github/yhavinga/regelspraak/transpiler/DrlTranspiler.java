@@ -3611,9 +3611,14 @@ public final class DrlTranspiler {
     }
 
     /** RUNTIME-SEMANTICS ch. 3.9a: lower the quantifier fold over a NON-temporal matrix to a single hoisted
-     *  {@code not <Element>( <join>, <filter>, <matrix or its negation> )} clause — the failure WITNESS,
-     *  denied. Both quantifiers are that one shape: {@code GEEN} fails on a member that SATISFIES the matrix,
-     *  {@code ALLE} on one that does not, so the only difference is whether the matrix constraint is negated.
+     *  clause. {@code ALLE} and {@code GEEN} are a denied failure WITNESS —
+     *  {@code not <Element>( <join>, <filter>, <matrix or its negation> )}: GEEN fails on a member that
+     *  SATISFIES the matrix, ALLE on one that does not, so the only difference is whether the matrix
+     *  constraint is negated. The three COUNTING quantifiers need the SIZE of the satisfier set, which no
+     *  witness yields, so they take the accumulate form this branch already uses for an aggregation —
+     *  {@code Number( intValue <op> N ) from accumulate( $e : <Element>( <join>, <filter>, <matrix> ),
+     *  count($e) )} — over exactly the same element pattern. A count accumulate always produces a row, 0 over
+     *  an empty range, so ch. 3.9a's "the empty set is the count" holds without an arm for it.
      *
      *  <p>Three things follow from the shape rather than being arranged for. An EMPTY range denies nothing and
      *  the clause holds, which is ch. 3.9a's vacuous rule under BOTH quantifiers. The matrix is lowered with
@@ -3640,8 +3645,9 @@ public final class DrlTranspiler {
     private LoweredConditie kwantorvouw(Acc acc, Conditie.Kwantorvouw kv, Objecttype subject) {
         if (subject == null) return kvMarker(kv, "geen subjectpatroon om het bereik aan te hangen");
         if (kv.toets() == null) return kvMarker(kv, "een kwantorvouw zonder matrix (WF-108 (d))");
-        if (kv.kwantor() != Conditie.Kwantor.ALLE && kv.kwantor() != Conditie.Kwantor.GEEN)
-            return kvMarker(kv, "kwantor is geen v0-vorm (WF-108 (a)): alleen ALLE en GEEN worden gelowerd");
+        if (kv.kwantor() == Conditie.Kwantor.DE)
+            return kvMarker(kv, "kwantor DE (WF-108 (a)): de bepaalde lidwoordvorm noemt ÉÉN lid en is geen "
+                    + "kwantificatie over een verzameling");
         if (!kv.bronPad().isEmpty())
             return kvMarker(kv, "een meerstaps bereik (WF-108 (c)); het elementpatroon draagt één joinconstraint");
         if (geheelPeriodeVan(kv.toets()) != null)
@@ -3669,6 +3675,19 @@ public final class DrlTranspiler {
         if (mf.marker() || acc.clausules.size() != mark)
             return kvTerug(acc, mark, kv, "een matrixvorm die deze tak niet IN het elementpatroon kan schrijven ("
                     + kv.toets().getClass().getSimpleName() + ")");
+        String vergelijking = switch (kv.kwantor()) {
+            case TEN_MINSTE  -> ">= " + kv.drempel();
+            case TEN_HOOGSTE -> "<= " + kv.drempel();
+            case PRECIES     -> "== " + kv.drempel();
+            default          -> null;   // ALLE / GEEN: the witness route below
+        };
+        if (vergelijking != null) {
+            delen.add(mf.text());
+            String ev = "$kv" + (++acc.n);   // the Acc's own element counter, shared with the aggregations
+            acc.clausules.add("Number( intValue " + vergelijking + " ) from accumulate( " + ev + " : "
+                    + ident(elem.naam, true) + "( " + delen + " ), count(" + ev + ") )");
+            return new LoweredConditie("", java.util.List.of(), false);
+        }
         delen.add(kv.kwantor() == Conditie.Kwantor.ALLE ? "!( " + mf.text() + " )" : mf.text());
         acc.clausules.add("not " + ident(elem.naam, true) + "( " + delen + " )");
         return new LoweredConditie("", java.util.List.of(), false);

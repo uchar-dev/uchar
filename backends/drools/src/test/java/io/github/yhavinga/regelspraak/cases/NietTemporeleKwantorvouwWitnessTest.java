@@ -43,13 +43,21 @@ class NietTemporeleKwantorvouwWitnessTest {
     private static final Path GOLDEN =
             Path.of("..", "..", "corpus", "golden", "jutterswet-schouwploeg");
 
+    /** Its counting sibling: the three counting quantifiers over a matrix with no period qualifier. */
+    private static final Path TEL_GOLDEN =
+            Path.of("..", "..", "corpus", "golden", "jutterswet-vuurtoren");
+
     @TempDir Path tmp;
 
-    private static List<Path> cases() throws IOException {
-        try (Stream<Path> s = Files.list(GOLDEN)) {
+    private static List<Path> casesVan(Path golden) throws IOException {
+        try (Stream<Path> s = Files.list(golden)) {
             return s.filter(p -> p.getFileName().toString().startsWith("case")).sorted().toList();
         }
     }
+
+    private static List<Path> cases() throws IOException { return casesVan(GOLDEN); }
+
+    private static List<Path> telCases() throws IOException { return casesVan(TEL_GOLDEN); }
 
     @Test void de_exec_model_tak_speelt_de_cellen() throws Exception {
         List<Path> cases = cases();
@@ -98,6 +106,61 @@ class NietTemporeleKwantorvouwWitnessTest {
         Path ir = GOLDEN.resolve("ir.json");
         assertEquals("FAIL", CaseRunner.viaExecModel(ir, List.of(mutant)).status(),
                 "de exec-model-tak hoort de omgeklapte vacuümverwachting te verwerpen");
+        assertEquals("FAIL", CaseRunner.viaDrlTekst(ir, List.of(mutant)).status(),
+                "de DRL-tekst-tak hoort hem even goed te verwerpen");
+    }
+
+    // ---------------- the COUNTING quantifiers over the same, non-temporal matrix ----------------
+
+    /**
+     * {@code corpus/golden/jutterswet-vuurtoren} is the counting sibling of the golden above: the three
+     * counting quantifiers over an ordinary comparison, each at its threshold from both sides. It is the
+     * ONLY corpus document that reaches the DRL-text branch's counting lowering at all — the whole-period
+     * counting golden ({@code jutterswet-reddingsvloot}) is markered there, exactly as its ALLE/GEEN sibling
+     * is — and it is the only one that reaches the exec branch's NON-temporal counting route, since gate 12
+     * would otherwise only ever see the timeline route. The two lowerings are different roads again: the
+     * exec branch counts over a {@code collectList} accumulate of the contributors, the DRL branch writes a
+     * {@code Number( intValue <op> N ) from accumulate( … count(…) )} over the element pattern.
+     */
+    @Test void beide_takken_tellen_dezelfde_cellen() throws Exception {
+        List<Path> cases = telCases();
+        assertFalse(cases.isEmpty(), "de tel-golden hoort casebestanden te dragen");
+        Path ir = TEL_GOLDEN.resolve("ir.json");
+
+        CaseRunner.Result exec = CaseRunner.viaExecModel(ir, cases);
+        assertEquals("PLAYED", exec.status(),
+                "de exec-model-tak hoort de tellende vouw te loweren: " + exec.reason());
+        assertEquals(cases.size(), exec.casesPlayed(), "elke cel hoort gespeeld te zijn");
+
+        CaseRunner.Result drl = CaseRunner.viaDrlTekst(ir, cases);
+        assertEquals("PLAYED", drl.status(),
+                "de DRL-tekst-tak hoort haar even goed te loweren: " + drl.reason());
+        assertEquals(cases.size(), drl.casesPlayed(), "elke cel hoort gespeeld te zijn");
+    }
+
+    /**
+     * PLAYED alleen is ook hier geen getuige, en bij een TELLING minder dan ooit: de lege-toren-cel leest
+     * {@code zuinig} (ten hoogste 1) AANWEZIG en de andere drie AFWEZIG, dus een tak die stil niets lowert
+     * zou drie van de vier verwachtingen halen. Deze mutant klapt juist de AANWEZIGE om, zodat alleen een
+     * tak die de telling werkelijk uitrekent hem verwerpt.
+     */
+    @Test void een_mutant_op_de_telling_wordt_door_beide_takken_verworpen() throws Exception {
+        Path bron = TEL_GOLDEN.resolve("case3-lege-toren.json");
+        ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(bron));
+        boolean geraakt = false;
+        for (JsonNode e : doc.withArray("expected"))
+            if ("characteristicPresent".equals(e.path("kind").asText())
+                    && "zuinig".equals(e.path("characteristic").asText())) {
+                ((ObjectNode) e).put("kind", "characteristicAbsent");
+                geraakt = true;
+            }
+        assertTrue(geraakt, "de lege-toren-cel hoort 'zuinig' AANWEZIG te verwachten");
+        Path mutant = tmp.resolve("tel-mutant.json");
+        Files.writeString(mutant, doc.toPrettyString());
+
+        Path ir = TEL_GOLDEN.resolve("ir.json");
+        assertEquals("FAIL", CaseRunner.viaExecModel(ir, List.of(mutant)).status(),
+                "de exec-model-tak hoort de omgeklapte telling te verwerpen");
         assertEquals("FAIL", CaseRunner.viaDrlTekst(ir, List.of(mutant)).status(),
                 "de DRL-tekst-tak hoort hem even goed te verwerpen");
     }

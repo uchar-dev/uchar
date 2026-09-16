@@ -165,17 +165,95 @@ class HeelperiodeKwantorvouwWitnessTest {
                 "de reden verwijst naar de regel die de vorm definieert:\n" + r.getMessage());
     }
 
-    @Test void een_tellende_kwantor_wordt_bij_naam_geweigerd() throws Exception {
-        // De tellende kwantoren delen Samengesteld's enum maar zijn het benoemde uitbreidingspunt: ze
-        // mogen NIET als forall gelowerd worden, dus ze moeten bij naam stuklopen — niet stil meeglijden.
-        for (String kw : new String[]{"DE", "TEN_MINSTE", "TEN_HOOGSTE", "PRECIES", "SOMMIGE"}) {
+    /**
+     * <b>De grens verschoof op 2026-09-16</b> (kaart tellende-kwantoren) en deze rij verschoof mee. Tot dan
+     * waren de drie TELLENDE kwantoren het benoemde uitbreidingspunt en werden zij hier samen met DE
+     * geweigerd; zij zijn nu gebouwd, en hun verdicten staan hieronder. Wat op de kwantor-as overblijft is
+     * DE — de bepaalde lidwoordvorm noemt ÉÉN lid — plus elk onbekend token, en die moeten nog steeds bij
+     * naam stuklopen in plaats van stil als forall mee te glijden.
+     */
+    @Test void de_bepaalde_kwantor_wordt_bij_naam_geweigerd() throws Exception {
+        for (String kw : new String[]{"DE", "SOMMIGE"}) {
             IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class,
                     () -> IrLoader.load(JSON.readTree(ir(vouw(kw, "null", BRONROL)))),
-                    "kwantor " + kw + " is geen v0-vorm en hoort te worden geweigerd");
+                    "kwantor " + kw + " is geen kwantificatie over een verzameling en hoort te worden geweigerd");
             assertEquals("Kwantorvouw.kwantor", r.form(), "de weigering noemt de vorm (" + kw + ")");
             assertTrue(r.getMessage().contains("WF-108"),
                     "de reden verwijst naar de regel: " + r.getMessage());
         }
+    }
+
+    /**
+     * WF-108 (e): de drempel staat er PRECIES onder een tellende kwantor. Beide richtingen zijn een
+     * weigering bij naam, want beide zouden de loader dwingen te raden — een ontbrekende drempel heeft geen
+     * verdict, en een drempel naast ALLE noteert een kwantificatie die het kwantorveld tegenspreekt.
+     */
+    @Test void de_drempel_staat_er_precies_onder_een_tellende_kwantor() throws Exception {
+        for (String kw : new String[]{"TEN_MINSTE", "TEN_HOOGSTE", "PRECIES"}) {
+            IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class,
+                    () -> IrLoader.load(JSON.readTree(ir(vouw(kw, "null", BRONROL)))),
+                    "een tellende kwantor zonder drempel hoort te worden geweigerd (" + kw + ")");
+            assertEquals("Kwantorvouw.drempel", r.form(), "de weigering noemt de vorm (" + kw + ")");
+            assertTrue(r.getMessage().contains("WF-108"),
+                    "de reden verwijst naar de regel: " + r.getMessage());
+        }
+        for (String kw : new String[]{"ALLE", "GEEN"}) {
+            IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class,
+                    () -> IrLoader.load(JSON.readTree(ir(telVouw(kw, 2, "null", BRONROL)))),
+                    "een drempel naast " + kw + " hoort te worden geweigerd");
+            assertEquals("Kwantorvouw.drempel", r.form(), "de weigering noemt de vorm (" + kw + ")");
+        }
+    }
+
+    // ---------------- the COUNTING quantifiers: the verdict is the COUNT ----------------
+
+    /**
+     * ch. 3.9a's counting arms over the §8.2 matrix, each threshold from BOTH sides off één paar
+     * ledenverzamelingen: een telling van 2 ligt precies OP ten-minste-2 en overschrijdt ten-hoogste-1 met
+     * precies één; een telling van 1 klapt beide om en is wat precies-1 wil. De exec-tak leest hier de
+     * TELTWEELING van de twee heelperiode-helpers en vergelijkt met de drempel.
+     */
+    @Test void de_tellende_kwantoren_lezen_de_telling_aan_beide_zijden() throws Exception {
+        String twee = schepen(schuit("S1", "12", "2025-01-01", "2026-01-01"),
+                schuit("S2", "15", "2025-01-01", "2026-01-01"));
+        String een = schepen(schuit("S1", "12", "2025-01-01", "2026-01-01"),
+                schuit("S2", "8", "2025-01-01", "2026-01-01"));
+        assertTrue(zeewaardig(ir(telVouw("TEN_MINSTE", 2, "null", BRONROL)), twee),
+                "telling 2 ligt op de drempel van ten minste 2");
+        assertFalse(zeewaardig(ir(telVouw("TEN_MINSTE", 2, "null", BRONROL)), een),
+                "telling 1 ligt er precies één onder");
+        assertTrue(zeewaardig(ir(telVouw("TEN_HOOGSTE", 1, "null", BRONROL)), een),
+                "telling 1 ligt op de drempel van ten hoogste 1");
+        assertFalse(zeewaardig(ir(telVouw("TEN_HOOGSTE", 1, "null", BRONROL)), twee),
+                "telling 2 overschrijdt haar met precies één");
+        assertTrue(zeewaardig(ir(telVouw("PRECIES", 1, "null", BRONROL)), een),
+                "precies 1 wil de telling die de andere twee omklapt");
+        assertFalse(zeewaardig(ir(telVouw("PRECIES", 1, "null", BRONROL)), twee),
+                "en verwerpt er twee");
+    }
+
+    /**
+     * De lege verzameling is hier de TELLING en geen apart vacuümbeginsel: waar ALLE en GEEN er allebei
+     * waar op lezen, gaan de drie tellende kwantoren uit elkaar op precies dezelfde verzameling.
+     */
+    @Test void de_lege_verzameling_is_onder_de_tellende_kwantoren_de_telling_nul() throws Exception {
+        assertFalse(zeewaardig(ir(telVouw("TEN_MINSTE", 1, "null", BRONROL)), ""),
+                "telling 0 haalt ten minste 1 niet");
+        assertTrue(zeewaardig(ir(telVouw("TEN_HOOGSTE", 1, "null", BRONROL)), ""),
+                "telling 0 blijft onder ten hoogste 1");
+        assertFalse(zeewaardig(ir(telVouw("PRECIES", 1, "null", BRONROL)), ""),
+                "en is niet precies 1");
+    }
+
+    /** Het filter kiest WELKE leden geteld worden; de drempel wat de telling moet zijn. */
+    @Test void het_filter_kiest_de_getelde_leden() throws Exception {
+        // S1 en S2 halen de matrix, S2 is niet zeegaand: de selectie houdt één voldoener over.
+        String leden = schepen(schuit("S1", "12", "2025-01-01", "2026-01-01", true),
+                schuit("S2", "15", "2025-01-01", "2026-01-01", false));
+        assertTrue(zeewaardig(ir(telVouw("TEN_MINSTE", 2, "null", BRONROL)), leden),
+                "zonder filter telt het bereik er twee");
+        assertFalse(zeewaardig(ir(telVouw("TEN_MINSTE", 2, ZEEGAAND_FILTER, BRONROL)), leden),
+                "met de deelselectie blijft er één voldoener over, en dat is onder de drempel");
     }
 
     // ---------------- the DRL-text branch refuses the document BY NAME ----------------
@@ -248,9 +326,20 @@ class HeelperiodeKwantorvouwWitnessTest {
         return vouw(kwantor, filter, bereik, false);
     }
 
+    /** The counting form. {@code drempel} is written EXACTLY under a counting kwantor (WF-108 (e)), so it is
+     *  a slot the ALLE/GEEN builder leaves empty rather than a field always written; a NEGATIVE argument
+     *  means "write none", which is how the refusal rows below build an ill-formed node deliberately. */
+    private static String telVouw(String kwantor, int drempel, String filter, String bereik) {
+        return vouw(kwantor, drempel, filter, bereik, false);
+    }
+
     private static String vouw(String kwantor, String filter, String bereik, boolean niet) {
+        return vouw(kwantor, -1, filter, bereik, niet);
+    }
+
+    private static String vouw(String kwantor, int drempel, String filter, String bereik, boolean niet) {
         return """
-                { "node": "Kwantorvouw", "kwantor": "%s", "elementObjecttype": "Schuit",
+                { "node": "Kwantorvouw", "kwantor": "%s"%s, "elementObjecttype": "Schuit",
                   "filter": %s,
                   "toets": {
                     "node": "Vergelijking", "op": "GROTER",
@@ -262,7 +351,8 @@ class HeelperiodeKwantorvouwWitnessTest {
                     "bron": "zijn wachtwaarde gedurende het gehele jaar groter is dan 10" },
                   %s,
                   "bron": "de wachtwaarde van %s schepen van de Vloot gedurende het gehele jaar groter is dan 10" }
-                """.formatted(kwantor, filter, NUMERIEK, NUMERIEK, niet, bereik,
+                """.formatted(kwantor, drempel < 0 ? "" : ", \"drempel\": " + drempel,
+                        filter, NUMERIEK, NUMERIEK, niet, bereik,
                         "GEEN".equals(kwantor) ? "geen van de" : "alle");
     }
 
