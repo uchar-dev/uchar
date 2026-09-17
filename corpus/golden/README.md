@@ -1,13 +1,23 @@
 # Golden corpus
 
-One directory per case: `bron.rgs` (the RegelSpraak source, authored
-against the Jutterswet — `corpus/jutterswet/`) and `ir.json` (its
-`regelspraak-ir-v0` dump). Admission: gate 2 (schema-valid, byte-identical
-round-trip) and gate 3 (verifier-clean) — see `corpus/README.md` for the
-rights policy and `spec/IR-SPEC.md` for the WF index the cases witness.
-The `anchor/` subdirectory holds the hand-written cases with absolute
-expected values (no `bron.rgs`; extension fields admitted) — its own
-README carries the charter.
+One directory per golden: `ir.json` (the `regelspraak-ir-v0` document),
+one or more `case*.json` files, a `NOTE.md` with the hand computation,
+and — where a frontend carries the form — a source file (`bron.rgs`,
+authored against the Jutterswet in `corpus/jutterswet/`; `bron.catala_en`;
+or `bron.flogic`) that must re-emit the committed IR byte-identically
+(gates 9, 10, 14). Goldens without a source are hand-written IR for forms
+no frontend produces yet. Every golden passes the full gate set: schema
+round-trip (gate 2), verifier (gate 3), case schema (gate 4), exact
+replay in the reference interpreter and Clingo (gates 5–6), and the
+Drools leg (gate 12 — played, or refused with a named reason). See
+`corpus/README.md` for the rights policy and `spec/IR-SPEC.md` for the WF
+index. The `anchor/` subdirectory holds the hand-written cases with
+absolute expected values — its own README carries the charter.
+
+The table below covers the first five cases only; the directory has
+grown far past it (inheritance, quantifier folds, defaults, temporal
+folds, distribution — the delta register `spec/CONSTRUCTS.md` tracks
+what landed when). Each golden's own `NOTE.md` is the reading guide.
 
 | Case | Jutterswet basis | Exercises |
 |---|---|---|
@@ -59,15 +69,14 @@ witnessing WF-046's accept path (ch. 6). Its case observes the collapse
 itself (totaal 14 and 3), the absent-timeline rule (a jutter without
 the temporal attribute totals to leeg, so the ordering comparison is
 false), and the non-transient negation outcomes. Case convention for
-temporal data, recorded: a `uchar-case-v0` value for a timeline-valued
-attribute is the value of the `asOfDate` bucket — the format carries no
-multi-segment timelines yet. Deliberately absent, recorded: a temporal
-attribute or a year-granular parameter read in a scalar condition is
-*refused* (ch. 3.3, the §8.2 marker family — v0's backends refuse it
-and `ref/` faults identically), so a vintage-selection case (a
-2025/2026 drempel flip) is not expressible until ch. 8 specifies how a
-rule reads a vintage; parameter-set data is ch. 8 (`Parameterset`)
-scope. The
+temporal data at this golden's admission: a `uchar-case-v0` value for a
+timeline-valued attribute is the value of the `asOfDate` bucket. The
+format has since gained multi-segment timelines — the later temporal
+goldens (`jutterswet-getijdenwacht`, `jutterswet-muntbewaring` and
+others) carry full segment lists. A temporal attribute read in a scalar
+condition is still *refused* (ch. 3.3) in all executors; the
+`Parameterset` layer this note once deferred to has since landed in the
+spec (ch. 8). The
 `jutterswet-vondsttelling` case exercises the count-over-a-role wart
 (the weightless vondst still counts) and the declared empty-source
 fallback ("of 0 als die er niet zijn", both for a jutter without
@@ -88,12 +97,18 @@ with a label assignment (WF-006/039), the sign-restricted literal
 (WF-016/032), the day-kind definition (WF-017/031), two dated versions
 of one rule name (WF-021), the counting quantifier (WF-041), the time
 window (WF-042), and the whole-period qualifier over a time-dependent
-operand (WF-043). When one of these constructs becomes executable, its
-witness moves into an executing document and the cabinet shrinks — it
-is scaffolding for the WF index, never a place for semantics.
+operand (WF-043). The rule at admission: when one of these constructs
+becomes executable, its witness moves into an executing document and
+the cabinet shrinks — it is scaffolding for the WF index, never a place
+for semantics. Several constructs have since gained executing witnesses
+elsewhere (the counting quantifier runs in nine composite goldens and,
+since 2026-09-16, on the quantifier fold; the dimensioned attribute got
+`jutterswet-seizoenvondst`; day kinds run in `jutterswet-schouwkalender`)
+while the cabinet document itself has not shrunk yet — pruning it is
+`backlog/new/20260917-kabinetkrimp.md`.
 
-Two more goldens joined the cabinet on 2026-09-04, so gate 5 now lists
-**three** as not replayed.
+Gate 5 currently lists **two** goldens as not replayed: the cabinet and
+`jutterswet-seizoenvondst`.
 
 `jutterswet-seizoenvondst` is a UNIT-bearing dimensioned attribute read
 through a dimension cell, which is the positive witness WF-091's
@@ -105,12 +120,10 @@ carries the three refusals verbatim.
 
 `jutterswet-tempototaal` is the route-split witness of `het totaal van`:
 the set reading and the temporal reading of one operator over one unit
-(`€/mnd`), side by side, so neither route can move unnoticed. It is
-caseless for a different measured reason — `ref` and the Drools backend
-carry the set fold, but `backends/clingo` refuses it reason-bearing and
-gate 6 has no refusal channel — and its `NOTE.md` carries the refusal
-verbatim plus the hand-computed absolutes the case gets the day clingo
-carries the form.
+(`€/mnd`), side by side, so neither route can move unnoticed. It joined
+the cabinet caseless — `backends/clingo` refused the set fold at the
+time — and left it when clingo gained the form: it now carries its case
+files and replays through gates 5–6. Its `NOTE.md` keeps the history.
 
 A verifier-only golden is admitted ONLY when that measurement is in its
 NOTE: silence there would make an unexecuted document look like an
@@ -150,13 +163,17 @@ gap means the characteristic does not hold there.
 golden (toolchain `332db4c`) for Jutterswet art. 3 jo. 5 — the
 RegelSpraak-toolchain render of the defeasibility defaults that
 `jutterswet-penningrecht-catala` renders through the Catala plugin and
-`anchor/jutterswet-hardheid` pins by hand. The toolchain emits no
-prioritized defaults: the same law arrives as two flat
+`anchor/jutterswet-hardheid` pins by hand. This render carries no
+prioritized defaults: the source writes two independent flat
 `KENMERKTOEKENNING` rules
 (`penninggerechtigd bij drempel`, >=12; `penninggerechtigd bij
-hardheid`, the compound hardheid AND >=6), with no `prioritizedDefaults`
-field at all (the v0 emitter omits it, where the Catala dump carries it
-populated). The
+hardheid`, the compound hardheid AND >=6), so no `prioritizedDefaults`
+field appears — where the Catala dump carries it populated. At this
+golden's admission the RegelSpraak emitter could not produce the field
+at all; it has since learned the layered form
+(`jutterswet-wrakrecht` carries populated `prioritizedDefaults` from
+`bron.rgs`), while this pair deliberately keeps the flat render: the
+form difference over identical inputs and outcomes is what it pins. The
 render is faithful on every input, not just the five cases: both rules
 decide the same value (`waar`), so the ordered defaults collapse to a
 disjunction and no default conflict is reachable — the pair thus isolates
