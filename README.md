@@ -85,7 +85,10 @@ The Jutterswet (island of Scholde) is original, rights-free fiction by the
 maintainer. It mirrors, article by article, the British Nationality Act
 experiment (Sergot, Sadri, Kowalski, Kriwaczek, Hammond & Cory, *CACM*
 29(5), 1986) — which gives the corpus four decades of logic-programming and
-ASP literature to compare against.
+ASP literature to compare against. The same lineage picked the backend:
+Clingo was chosen as the semantically alien executor because the BNA
+tradition is logic programming, so the corpus and the ASP backend answer
+to one body of literature.
 
 ## License
 
