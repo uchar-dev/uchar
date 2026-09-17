@@ -16,6 +16,31 @@ flogic_frontend <source.flogic> <out.json>
 A refusal writes no document, prints its reason with a line number, and
 exits 2.
 
+## Why F-logic, as the third frontend
+
+Each frontend was chosen because the construct it must guard is a native
+form of that language, not a translation into it. RegelSpraak is the
+target language itself. Catala came second for the defaults: default
+logic with exceptions is Catala's core construct, so the
+`prioritizedDefaults` node reaching the wire from Catala proves that
+node is not a RegelSpraak rendering. F-logic came third for the object
+hierarchy, by the same argument: class subtyping (`C::D`) and
+inheritable class-level values (`@!{...} C[|a -> v|]`) are native
+F-logic frames — the language was designed around them (Kifer, Lausen &
+Wu, *JACM* 42(4), 1995) — where Catala has no subtyping at all. The
+supertype field, chain-closed member resolution and the child-wins
+defaults order reaching the wire from this frontend proves the
+hierarchy kernel is language-neutral, and the pair of goldens named
+above pins it: two sources, one set of case expectations.
+
+Two further reasons. The slice is a syntactic subset of Flora-2 2.2, so
+every accepted program also parses in an independently maintained
+reasoner — the spelling is borrowed, not invented. And F-logic can write
+what RegelSpraak cannot: a second parent. That makes this frontend the
+only place WF-106 (at most one supertype) has a refusing witness — on
+the wire the rule is structural (`supertype` is one string), so no
+verifier check can test it.
+
 ## The slice
 
 The slice is a syntactic **subset of Flora-2 2.2**: every form below parses
