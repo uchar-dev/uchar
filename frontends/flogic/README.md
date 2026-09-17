@@ -38,6 +38,16 @@ defaults order reaching the wire from this frontend proves the
 hierarchy kernel is language-neutral, and the pair of goldens named
 above pins it: two sources, one set of case expectations.
 
+The implementation language follows the same early choices. Choosing
+Catala meant OCaml was in the project from the plan onward (Catala's
+compiler and plugin API are OCaml), the other language in house — Java
+— is the production-runtime side that `ref/` and the verifier must stay
+structurally separate from (gate 1's no-share tripwire), and OCaml fits
+a reference implementation well: typed ASTs with exhaustive matches, so
+every kernel extension that widens a node union breaks the build here
+instead of failing silently. That is why the verifier, `ref/`, the
+clingo backend and this frontend are OCaml.
+
 Two further reasons. The slice is a syntactic subset of Flora-2 2.2, so
 every accepted program also parses in an independently maintained
 reasoner — the spelling is borrowed, not invented. And F-logic can write
