@@ -68,12 +68,19 @@ faults with file/position context — never a silent fallback.
   `asOfDate` bucket's value the case carries (ch. 3.6, leeg for an
   absent timeline). A temporal attribute, temporal characteristic or
   granular parameter in any other scalar position is refused (ch. 3.3 —
-  the §8.2 marker family), as are temporal write targets (ch. 3.11):
-  never a silent coercion.
-- **Not implemented** (each faults with context): temporal writes and
-  pro-rata bucket producers (ch. 3.7/3.11), day kinds, multi-period
-  grids, navigation paths, dimension cells, filters, variable/constant
-  refs, object and fact creation, scoped uniqueness, uniqueness unions,
-  rule groups, the "is gevuurd" test (row 30: decided as a dialect-only
-  fixpoint predicate, not yet implemented), and any reading of a
-  granular parameter — vintage selection is ch. 8 scope.
+  the §8.2 marker family). A temporal write target is refused too
+  (ch. 3.11) except in the two shapes that produce buckets: the ch. 3.7
+  pro-rata target and the ch. 3.8 day-count target. Never a silent
+  coercion.
+- **Not implemented** (each faults with context): day kinds,
+  multi-period grids, dimension cells, dimension selections,
+  variable/constant refs, rule groups, the "is gevuurd" test (row 30:
+  decided as a dialect-only fixpoint predicate, not yet implemented),
+  and a granular parameter read in a SCALAR slot — vintage selection is
+  ch. 8 scope.
+- **Landed since that list was written**, and no longer refused: the
+  ch. 3.7 pro-rata and ch. 3.8 day-count temporal targets, navigated
+  scalar reads over a hop path (WF-053), the die/dat subselection filter
+  on a fold, object and fact creation, parent-scoped uniqueness
+  (ch. 5.9, WF-054), uniqueness unions, and the temporal read of a
+  granular parameter's own timeline.

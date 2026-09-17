@@ -10,10 +10,12 @@
    re-fired once. The general condition — stratification as
    well-formedness — is ch. 6 and out of this card's scope.
 
-   Coverage is deliberately partial: constructs no golden exercises yet
-   (navigation paths, dimension cells, filters, timelines, object/fact
-   creation, day kinds) fault with context instead of guessing — fail
-   fast, never a silent fallback. *)
+   Coverage is deliberately partial: a construct no golden exercises
+   faults with context instead of guessing — fail fast, never a silent
+   fallback. Of the forms this header once listed as uncovered,
+   navigation paths, filters, timelines and object/fact creation have
+   since landed; dimension cells and day kinds still fault. ref/README.md
+   carries the maintained list. *)
 
 open Ir_v0.Ast
 module SMap = World.SMap

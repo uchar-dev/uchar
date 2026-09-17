@@ -22,11 +22,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * quantification of a whole-period condition over the members of a linked instance set, replayed
  * end-to-end through the exec-model branch.
  *
- * <p><b>Why it is authored here and not read from the corpus.</b> The form has no golden yet — the
- * spec chapter and this lowering land together — so there is nothing to read. Every document below is
- * built in this file and written to a {@link TempDir}; no corpus path is touched, and no corpus
- * expectation is consulted. When the golden does arrive it pins the same rows against ref and clingo;
- * these cases pin what THIS executor does with them, which is the part gate 12 cannot see until then.
+ * <p><b>Why it is authored here and not read from the corpus.</b> When this file was written the form
+ * had no golden — the spec chapter and this lowering landed together — so there was nothing to read.
+ * The goldens have since arrived ({@code jutterswet-ploegpremie} and {@code jutterswet-keurploeg} carry
+ * ALLE and GEEN over a whole-period matrix, and gate 12 plays both), so the rows here are no longer the
+ * only evidence: they are the hand-built variation around them. Every document below is still built in
+ * this file and written to a {@link TempDir}; no corpus path is touched, and no corpus expectation is
+ * consulted.
  *
  * <p><b>What the rows are.</b> The model is one Vloot whose {@code zeewaardig} kenmerk is written iff
  * the {@code wachtwaarde} of ALLE (or GEEN) of its schepen stays above a bound for the WHOLE calendar

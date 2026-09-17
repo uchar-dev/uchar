@@ -55,8 +55,11 @@ routekaart hieronder wijst per constructie de dragende artikelen aan:
 
 ## Tweede casus: een echte regeling
 
-Naast de Jutterswet komt één op werkelijke wetgeving gebaseerde casus als
-realismetoets (wettekst is auteursrechtvrij, art. 11 Aw); kandidaat: de
+Naast de Jutterswet staat één op werkelijke wetgeving gebaseerde casus als
+realismetoets (wettekst is auteursrechtvrij, art. 11 Aw). Die is er: het
+WW-herlevingspad uit de Werkloosheidswet (BWBR0004045), als
+`corpus/golden/anchor/ww-herleving-inkomen` — handgeschreven met absolute
+verwachtingen, in de ankerzone in plaats van in een eigen map. De
 zorgtoeslag — compact, rekenintensief, met echte jaarlijkse
-parameterwijzigingen voor de vintage-machinerie. Eigen map zodra het
-Phase-1-corpuswerk start.
+parameterwijzigingen voor de vintage-machinerie — was de oorspronkelijke
+kandidaat en staat nog open.

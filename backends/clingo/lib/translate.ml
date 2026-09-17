@@ -4315,23 +4315,28 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
   | Kwantorvouw
       { kv_kwantor; kv_drempel; kv_element_objecttype; kv_filter; kv_toets; kv_bron_rol;
         kv_bron_pad; _ } ->
-      (* RUNTIME-SEMANTICS ch. 3.9a: the QUANTIFIER FOLD — "alle/geen ⟨elementen⟩
-         ⟨matrix⟩". Its contributors are EXACTLY the instance fold's (ch. 3.4a /
+      (* RUNTIME-SEMANTICS ch. 3.9a: the QUANTIFIER FOLD — "⟨kwantor⟩ ⟨elementen⟩
+         ⟨matrix⟩", over the five quantifiers WF-108 admits. Its contributors are
+         EXACTLY the instance fold's (ch. 3.4a /
          3.4b) and are gathered by the same machinery: [source_join] decides
          reach ∩ population in the one place it is decided anywhere in this
          file, and the filter is evaluated per contributor with the ELEMENT as
          subject, exactly as Functie.filter is.
 
-         Both quantifiers are ONE negated helper. kvN(S) derives a WITNESS and
-         the verdict is its absence: under GEEN the witness is an element that
-         SATISFIES the matrix, under ALLE one that FAILS it. The empty
-         contributor set derives no witness either way, so both quantifiers are
-         vacuously TRUE on it — the chapter's rule, for free, the same way the
-         ch. 3.9 qualifier gets its vacuous passes.
+         TWO routes, split on the quantifier. ALLE and GEEN are ONE negated
+         helper: kvN(S) derives a WITNESS and the verdict is its absence —
+         under GEEN the witness is an element that SATISFIES the matrix, under
+         ALLE one that FAILS it. The empty contributor set derives no witness
+         either way, so BOTH OF THEM are vacuously TRUE on it — the chapter's
+         rule, for free, the same way the ch. 3.9 qualifier gets its vacuous
+         passes. The three COUNTING quantifiers cannot take that route at all,
+         because their verdict is a number; they go to the #count helper below,
+         which has its own vacuity (at-most holds on the empty set, at-least
+         and exactly do not).
 
-         The two quantifiers differ in ONE step and it is the witness: GEEN
-         reads the matrix's own atoms, ALLE reads the negation of a REIFIED
-         matrix (see below). Neither arm knows anything about which condition
+         The two witness quantifiers differ in ONE step and it is the witness:
+         GEEN reads the matrix's own atoms, ALLE reads the negation of a REIFIED
+         matrix (see below). No arm knows anything about which condition
          the matrix is — ch. 3.9a's "test is an ordinary condition with the
          element as subject", executed as written, so the "niet" of a matrix
          is the matrix's and never the quantifier's.

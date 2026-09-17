@@ -59,7 +59,9 @@ class ModelTest {
     @Test void temporele_attributen_dragen_hun_granulariteit() {
         // §13.3.6: an attribute/kenmerk with a tijdlijn ("voor elk jaar") records its Granulariteit; an
         // ordinary attribute carries none. Both the single-period (elke dag/jaar) and multi-period (elke
-        // 5 maanden) inline forms reduce to a unit; the period count and startpunt are not yet captured.
+        // 5 maanden) inline forms reduce to a unit. The period count has since been captured as well —
+        // attribuutTijdlijnAantal, which meer_periodieke_tijdlijn_legt_zijn_periodeaantal_vast below
+        // asserts; only the inline fixed startpunt ("startend op …") is still dropped.
         String src = """
             Domein Bedrag is van het type Numeriek (geheel getal)
             Objecttype de Vlucht (mv: Vluchten)

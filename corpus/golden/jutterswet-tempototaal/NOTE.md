@@ -208,6 +208,6 @@ temporal set attribute — a ranking fold has no defined moment to rank at.
 `V3` contributes to neither: an absent element value drops out of both
 folds. And note what the alias does *not* extend to: the empty-source rule
 still differs between the two operators, which is why `J2` pins both. Those
-four values plus `consistent` are the case this golden gets the day
-`backends/clingo` carries a set-fold `Totaal`; `ref` and Drools agree on
-them today.
+four values plus `consistent` are what `case.json` pins: `backends/clingo`
+gained the set-fold `Totaal` on 2026-09-05 and the case landed with it, so
+all three executors now replay them.
