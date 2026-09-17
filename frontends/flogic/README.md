@@ -41,12 +41,12 @@ Flora-2's rule id is optional and unavailable outside a rule; here it is
 — a Horn rule and a barred class-level *value*, both of which are
 definitions. A barred *signature* declares a member and names nothing, so
 an id on one refuses, as it does on `::`, on `:` and on the unbarred
-frame. Ids must be distinct across both kinds. None of this is enforced
-downstream: WF-020 filters null names out before comparing and never
-reaches a `prioritizedDefaults` name at all, so a nameless, a duplicated
-or a cross-kind colliding definition refuses at the frontend or nowhere.
-Because Flora-2 has no per-item id, a named barred statement carries
-exactly its one definition.
+frame. Ids must be distinct across both kinds. The same demands hold
+downstream since 2026-09-12: WF-107 requires a present, non-blank name on
+every named form and WF-020 keeps names unique across rules and defaults
+groups in one namespace. The frontend refuses first, with a source line;
+the verifier is the second net. Because Flora-2 has no per-item id, a
+named barred statement carries exactly its one definition.
 
 `sign` is `onbepaald`, `niet_negatief`, `negatief` or `positief`; `scale`
 is `geheel` or a decimal count. `soort` is `bijvoeglijk`, `bezittelijk` or
@@ -105,8 +105,8 @@ the reason and the citation.
    most one direct supertype. On the wire that refusal is structural
    (`supertype` is one string), so no verifier check and no `corpus/negatief`
    entry can carry it: F-logic is the only source form in this repository
-   that can actually *write* a second parent, which makes this fixture the
-   rule's sharp witness. The message names the two known
+   that can actually *write* a second parent, so this fixture is the only
+   place the rule can be tested. The message names the two known
    multiple-inheritance cases in the source data.
 2. **the unbarred class-level value** `C[a -> v]` — that is the class
    object's own value, and uchar has no class-level attribute value for a
@@ -141,6 +141,6 @@ dune build --force @frontends/flogic/runtest
 
 The suite emits each test program, asserts it is verifier-clean, replays
 its cases through the reference runner and the clingo backend, and drives
-every refusal fixture. `scripts/check-flogic.sh` runs that suite and holds
-every corpus golden carrying a `bron.flogic` to byte-identical
-re-emission.
+every refusal fixture. `scripts/check-flogic.sh` (gate 14, with an
+unconditional CI leg) runs that suite and holds every corpus golden
+carrying a `bron.flogic` to byte-identical re-emission.
