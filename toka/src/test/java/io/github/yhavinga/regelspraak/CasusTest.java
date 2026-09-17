@@ -17,10 +17,11 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 /**
  * End-to-end on the real TOKA casus: the whole document resolves to a faithful
  * model AND raises no ERROR diagnostics — the resolver makes no false claim on the
- * constructs it cannot fully resolve. (It does raise WARNINGs for resultaatdeel
- * kinds not yet lifted into the IR — feitcreatie, startpuntbepaling,
- * dagsoortresultaat — so those rules are visible as gaps rather than silently
- * dropped.) Reads the committed fixtures under examples/toka.
+ * constructs it cannot fully resolve. (The resultaatdeel kinds this comment once
+ * listed as warned-and-dropped gaps — feitcreatie, startpuntbepaling,
+ * dagsoortresultaat — have since been lifted into the IR: ResolvedFeitCreatie,
+ * ResolvedStartpunt, ResolvedDagsoort.) Reads the committed fixtures under
+ * examples/toka.
  */
 class CasusTest {
 
