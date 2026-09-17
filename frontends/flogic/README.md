@@ -18,14 +18,19 @@ exits 2.
 
 ## Why F-logic, as the third frontend
 
-Each frontend was chosen because the construct it must guard is a native
-form of that language, not a translation into it. RegelSpraak is the
-target language itself. Catala came second for the defaults: default
-logic with exceptions is Catala's core construct, so the
-`prioritizedDefaults` node reaching the wire from Catala proves that
-node is not a RegelSpraak rendering. F-logic came third for the object
-hierarchy, by the same argument: class subtyping (`C::D`) and
-inheritable class-level values (`@!{...} C[|a -> v|]`) are native
+RegelSpraak is the target language itself. Catala was chosen as the
+second language at the start of the project, before any of the
+defaults work existed, because it is a complete, mature DSL for legal
+rules; that its core construct is default logic with exceptions is
+what later made it the natural second source for the
+`prioritizedDefaults` node — the guard was a consequence of the
+choice, not its motive. The same holds for the engines: Drools and
+Clingo were picked at the start (Drools from the existing toolchain
+practice, ASP because the corpus mirrors the British Nationality Act
+experiment, which is logic-programming literature), not for any one
+construct. F-logic is the first frontend chosen the other way around:
+picked *for* the construct it had to guard. Class subtyping (`C::D`)
+and inheritable class-level values (`@!{...} C[|a -> v|]`) are native
 F-logic frames — the language was designed around them (Kifer, Lausen &
 Wu, *JACM* 42(4), 1995) — where Catala has no subtyping at all. The
 supertype field, chain-closed member resolution and the child-wins
