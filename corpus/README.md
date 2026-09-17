@@ -1,7 +1,8 @@
 # The uchar corpus
 
-The executable test material for the spec: golden cases (source → IR →
-expected outcome) and deliberately ill-formed negatief cases. The corpus
+The executable test material for the spec, in three zones: golden cases
+(source → IR → expected outcome), deliberately ill-formed negatief
+documents, and rood cases that must fail in every executor. The corpus
 ships with the spec and inherits its obligations: **rights-free by
 construction**.
 
@@ -9,38 +10,45 @@ construction**.
 
 - Casus material is own-authored (the Jutterswet, `jutterswet/`) or built on
   statute text, which is copyright-free under art. 11 Auteurswet.
-- No ©-Belastingdienst material enters this repo: no TOKA casus, no
+- No ©-Belastingdienst material enters the corpus: no TOKA casus, no
   RegelSpraak specification excerpts. Programs *written in* RegelSpraak are
-  ours; the language specification text is not.
+  ours; the language specification text is not. The repository's one
+  exception is the top-level `toka/` parity zone — temporary, outside
+  `corpus/`, and the reason the repository stays private (see the root
+  README and `CLAUDE.md`). Gate 1 checks that every corpus zone stays
+  TOKA-free.
 
-## Layout (Phase 1 fills this in)
+## Layout
 
 | Path | Contents |
 |---|---|
 | `jutterswet/` | The casus source material: statute text, dossiers, coverage roadmap |
-| `golden/` | One directory per case: source, its IR-JSON, expected outcomes |
+| `golden/` | One directory per golden: `ir.json`, one or more `case*.json` with expected values, a `NOTE.md` with the hand computation, and — where a frontend carries the form — a source file (`bron.rgs`, `bron.catala_en` or `bron.flogic`) that must re-emit the committed IR byte-identically (gates 9, 10, 14) |
 | `golden/anchor/` | Hand-written cases with **absolute** expected values, permanently pinned — protected path |
-| `negatief/` | Deliberately ill-formed IR files + the verifier verdict each must produce (at least one per WF rule) |
-| `rood/` | Verifier-clean documents whose cases declare `expectedFault {ref, clingo}`: evaluation must fail observably in both executors, substring-pinned (gate 8) — the standing fence for red paths, the WF-044 unsolved state among them |
+| `negatief/` | Deliberately ill-formed IR files; each directory name declares the WF rule it violates (`wf###-slug`) and gate 3 demands the verifier cite exactly that rule |
+| `rood/` | Verifier-clean documents whose cases declare `expectedFault {ref, clingo}`: evaluation must fail observably in both executors, substring-pinned (gate 8), the WF-044 unsolved state among them |
 
 ## Admission rules
 
 1. Hand-authored cases: spec-derived; expected values computed by hand
-   (anchor) or by the reference interpreter once it exists.
-2. Synthesized cases (from Phase 2): admitted **only** when the full
-   differential square agrees (Drools ≡ reference interpreter ≡ Clingo, to
-   the extent those exist). Any disagreement routes to adversarial triage —
-   it is a spec bug to resolve, never a case to admit. Mechanized:
-   `scripts/admit.sh <candidate-dir> <name>` is the sanctioned door — it
-   checks self-containedness, verifier acceptance, exact replay in ref AND
-   clingo, the no-op refutation per case, and the full gate set after the
-   copy (rolling back on red). Routing synthesized material through it is
-   working discipline (WAY-OF-WORKING), not itself a gate: the gate set
-   judges what is in the corpus, not how it arrived. Synthesized
-   directories are named `golden/synth-*`; the anchor subset stays
-   hand-written and pinned.
+   first — for the anchor subset always, and as working discipline for
+   every pinned expectation — then confirmed by the reference
+   interpreter.
+2. Synthesized cases: admitted **only** when the full differential square
+   agrees (reference interpreter ≡ Clingo ≡ Drools; a form the Drools
+   backend refuses appears in gate 12's reason-carrying channel, never
+   silently). Any disagreement routes to adversarial triage — it is a
+   spec bug to resolve, never a case to admit. Mechanized:
+   `scripts/admit.sh <candidate-dir> <name>` is the required admission
+   route — it checks self-containedness, verifier acceptance, exact
+   replay in ref AND clingo, the no-op refutation per case, and the full
+   gate set after the copy (rolling back on red). Routing synthesized
+   material through it is working discipline (WAY-OF-WORKING), not
+   itself a gate: the gate set judges what is in the corpus, not how it
+   arrived. Synthesized directories are named `golden/synth-*`; the
+   anchor subset stays hand-written and pinned.
 3. Every WF rule in the spec has at least one passing golden case and one
    failing negatief case.
-4. The held-out acceptance split lives in a **separate private repository**,
-   pulled only by the CI acceptance job. It is never vendored, mirrored, or
+4. The held-out acceptance split lives in a **separate private
+   repository**, pulled only by CI. It is never vendored, mirrored, or
    read here.
