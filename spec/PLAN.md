@@ -503,9 +503,9 @@ exposed — exactly the feedback a second frontend is for.
 Known fits and frictions from the analysis: ConflictError maps well onto
 §9.5; money/rationals/dates/durations fit our exact arithmetic; scopes with
 rebound inputs are real design work (object type + object creation +
-navigation); general folds and function values are planned kernel
-additions, designed at this phase — full-Catala expressibility is the goal,
-not a subset stance (`CONSTRUCTS.md` rows 10/36); and on
+navigation); general folds and function values are kernel
+since the Phase-5b landing, 2026-08-22 (`CONSTRUCTS.md` rows 10/36) —
+full-Catala expressibility is the goal, not a subset stance; and on
 time the mismatch runs the other way — our IR is richer (timelines, vintages)
 than Catala, which handles law versions mainly at source level. Catala's
 evaluation model is weaker than our fixpoint forward-chaining, and compiling

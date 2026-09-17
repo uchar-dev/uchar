@@ -311,8 +311,8 @@ this exercise.**
   mirror* by construction; the Catala plugin targets the *v1 core*. The diff
   therefore measures mirror-vs-diverge, which is exactly where tracked deltas
   live — and tracked deltas are confirmation, not findings. It does **not**
-  compare two independent v1-native frontends (that pairing does not yet
-  exist).
+  compare two independent v1-native frontends (that pairing exists since
+  the F-logic landing, 2026-09-12 — `CONSTRUCTS.md` row 39).
 - **One fragment is not completeness.** A single law — a characteristic
   defeasibility defaults group — proves nothing about attribute defaults,
   allocation,
