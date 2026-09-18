@@ -129,9 +129,18 @@ kaart ("andere opslagrichtingweigeringen"). Ik heb het daarom niet gedaan
 en het niet stil gelaten: de twee kanaalregels dragen nu hun werkelijke,
 één laag diepere reden, precies zoals `anchor/jutterswet-bergingstoezicht`
 die bij de rolvelden-kaart kreeg. Voorstel voor een vervolgkaart:
-"veel-op-veel in het Drools-beanmodel", met `bootberging`, `muntketen`,
-`erflijn`, `gemeenteberging` en `penninguitgifte` als vijf gemeten
-kandidaten.
+"veel-op-veel in het Drools-beanmodel", met DRIE gemeten kandidaten —
+`anchor/jutterswet-bootberging`, `jutterswet-muntketen` en
+`anchor/jutterswet-erflijn`. Die drie delen één vorm: een feittype met
+beide rollen meervoudig, dus geen ene-kant en dus geen veld.
+`anchor/jutterswet-gemeenteberging` en `anchor/jutterswet-penninguitgifte`
+horen er NIET bij en stonden er eerst wel: zij weigeren op de ANDERE arm —
+een enkelvoudige elementrol wiens zusterrol meervoudig is, waar het ene
+beanveld wél bestaat en noodzakelijk beide richtingen draagt. Dat is een
+conservatieve weigering waarvan de oorspronkelijke grond door
+RUNTIME-SEMANTICS ch. 5.7a is ingetrokken, en zij vraagt een eigen meting
+(opheffen verschuift kanalen) in plaats van een beanmodel-uitbreiding. Twee
+kaarten dus, niet één.
 
 ### Wat er gebouwd is
 
@@ -249,11 +258,37 @@ Alle veertien, exitcodes letterlijk:
     clingo: 0                reftype-derivation: 0
     noop: 0                  flogic: 0
 
-Gate 12 letterlijk:
+Gate 12 LETTERLIJK — stdout woord voor woord, en stderr is 0 bytes. Die
+tweede vaststelling is geen formaliteit: tot de fixronde van deze dag
+drukte elke gate-12-run tweemaal `line 247: berging: command not found` op
+stderr, omdat twee van mijn eigen pinredenen een woord tussen backticks
+droegen en bash dat binnen dubbele aanhalingstekens UITVOERT. De gate bleef
+groen — zij vergelijkt alleen het kanaal — en de opgeslagen reden was stil
+verminkt tot "Its middle relation  declares…", het woord weg. Hersteld met
+enkele aanhalingstekens, die bash niet interpreteert; gemeten over beide
+arrays is dit de enige plek waar het stond.
 
     check-drools: PASS
       played 150  (loaded off the wire, wholly lowered, matched the pinned ref≡clingo expectations)
       auto-excluded 46  (per-form refusals: loader / transpiler marker / contract / unsupported input)
+        14x  loader: form not carried by the v0 Drools backend: Datatype:ListType (unknown datatype node)
+        7x  loader: form not carried by the v0 Drools backend: Datatype:StructType (unknown datatype node)
+        6x  loader: form not carried by the v0 Drools backend: Datatype:SumType (unknown datatype node)
+        3x  loader: form not carried by the v0 Drools backend: functionDefs (unknown top-level section)
+        2x  loader: form not carried by the v0 Drools backend: Expr:TemporalRead (unknown expression node)
+        2x  loader: form not carried by the v0 Drools backend: Expr:Match (unknown expression node)
+        1x  transpiler SKIP: verdeling: verdeel de opbrengst van een berging — verdeling (onopgelost naar_rato): verdeel de opbrengst van een berging
+        1x  transpiler SKIP: regel: vindersloon van een vondst — regel (waarde buiten scope): vindersloon van een vondst
+        1x  transpiler SKIP: regel: veilbaarheid naar staat — regel (voorwaarde buiten Phase-B scope): veilbaarheid naar staat
+        1x  transpiler SKIP: regel: premie van een partij — regel (waarde buiten scope): premie van een partij
+        1x  transpiler SKIP: regel: laagste vondstgewicht van een jutter — regel (bronPad-stap 1 (Boot -> Vondst) heeft geen beanveld — de rol 'geborgen vondst' op Boot is meervoudig, dus haar opslag is het veld aan de overzijde, en ook daar leidt het beanmodel er geen af (beide zijden meervoudig) (§13.3.9 opslagrichting)): laagste vondstgewicht van een jutter
+        1x  transpiler SKIP: regel: laagste muntgewicht — regel (bronPad-stap 1 (Boot -> Munt) heeft geen beanveld — de rol 'geborgen vondst' op Boot is meervoudig, dus haar opslag is het veld aan de overzijde, en ook daar leidt het beanmodel er geen af (beide zijden meervoudig) (§13.3.9 opslagrichting)): laagste muntgewicht
+        1x  transpiler SKIP: regel: klipteken van een kustwacht — regel (voorwaarde buiten Phase-B scope): klipteken van een kustwacht
+        1x  transpiler SKIP: regel: erfvolgeraantal van een wachter — regel (de aggregatie-join heeft geen beanveld — de rol 'erflater' op Wachter is meervoudig, dus haar opslag is het veld aan de overzijde, en ook daar leidt het beanmodel er geen af (beide zijden meervoudig) (§13.3.9 opslagrichting)): erfvolgeraantal van een wachter
+        1x  transpiler SKIP: regel: bergingstarief van een vondst — regel (waarde buiten scope): bergingstarief van een vondst
+        1x  transpiler SKIP: regel: aantal bergende gemeenten van een vondst — regel (aggregatie over de enkelvoudige elementrol 'bergende gemeente' wiens zusterrol 'geborgen vondst' meervoudig is: dat feittype heeft ÉÉN beanveld en dat draagt noodzakelijk BEIDE richtingen. Deze weigering staat CONSERVATIEF: haar oorspronkelijke grond — de gerichte lezing van de case-invoer — is per RUNTIME-SEMANTICS ch. 5.7a ingetrokken, en of ze daarmee overbodig is geworden vergt een eigen, gemeten kaart (het opheffen verschuift gate-12-kanalen) (§13.3.9 opslagrichting)): aantal bergende gemeenten van een vondst
+        1x  transpiler SKIP: defaults: defaults K:Jutter.toelage — defaults (kenmerktarget Jutter.toelage deelt zijn naam met een attribuut — de exec-model bean draagt één veld per naam (attribuut wint), dus het boolean kenmerk kan niet worden geschreven of onderscheiden; v0 bean-model-limiet, geen defaults-divergentie)
+        1x  transpiler SKIP: consistentie: houderscontrole — consistentie (AANTAL over de enkelvoudige rol 'houder' wiens zusterrol 'penning' meervoudig is: dat feittype heeft ÉÉN beanveld en dat draagt noodzakelijk BEIDE richtingen. Deze weigering staat CONSERVATIEF: haar oorspronkelijke grond — de gerichte telling van de case-invoer — is per RUNTIME-SEMANTICS ch. 5.7a ingetrokken, en of ze daarmee overbodig is geworden vergt een eigen, gemeten kaart (het opheffen verschuift gate-12-kanalen) (§13.3.9 opslagrichting)): houderscontrole
       value-divergence 1  (listed with reason — the exec-model differs from ref/clingo)
       no-case 2  (goldens without a case file)
       channel floor 49 non-PLAYED goldens pinned by name; played matches the pinned 150
@@ -325,3 +360,40 @@ WEIGERT de vorm bij naam (`Functie.bronPad`) in de kanaalvloer van gate 12
   beanveld op de voorouder staat). Gevonden bij het bouwen van de getuige
   en omzeild door die link op een gewone Praam te leggen; het raakt het pad
   niet en hoort bij dezelfde beanmodel-kaart.
+
+### Fixronde (2026-09-18, na de lens)
+
+De lens bevestigde de kern op alle vier onderdelen — de veel-op-veel-analyse,
+de richtingsanalyse (die tegen een eigen diamant-tegenmodel standhield), het
+getuigedocument (door verifier + ref + clingo gehaald, PASS 21) en de
+byte-vergelijking van alle 199 geëmitteerde DRL-teksten (196 identiek, 3 de
+bronPad-goldens). Read-only stelde zij bovendien vast dat de oude
+toolchain-vorm in BEIDE hops een ene-kant had: de legacy-vorm is de
+vondstketen-vorm, wat de scopekeuze hierboven achteraf bevestigt in plaats
+van haar te vergoelijken. Drie punten kwamen eruit, alle drie hersteld.
+
+**Commandosubstitutie in het beschermde script.** Mijn twee nieuwe
+`EXPECTED_CHANNEL`-redenen droegen het woord `berging` tussen BACKTICKS,
+binnen dubbele aanhalingstekens — en bash voert dat uit. Gevolg: elke
+gate-12-run schreef tweemaal `line 247: berging: command not found` naar
+stderr, en de gepinde reden zelf verloor het woord ("Its middle relation
+declares…"). De gate bleef groen, want zij vergelijkt alleen het KANAAL; de
+reden is documentatie en wordt door niets gekruist. Dat is precies waarom
+dit kon blijven staan, en waarom het "PASS"-blok hierboven niet volstond als
+bewijs: ik had stderr niet gelezen. Nu met enkele aanhalingstekens, die bash
+niet interpreteert. Gemeten over beide arrays van het script: dit waren de
+enige twee regels met een backtick, dus het is geen bestaand patroon dat ik
+navolgde maar een fout die ik introduceerde.
+
+**Dode API in `kern/Bronpad`.** `Plan.vrijeStappen()` had nul aanroepers, en
+van `Stap` werden alleen `achterwaarts()` en `veld()` gelezen — `feittype`,
+`rol`, `van` en `naar` door niemand. Verwijderd in plaats van gebruikt: de
+twee typen die een stap verbindt staan al als knoop `i-1` en `i` in
+`knoopTypen`, en een tweede kopie is een tweede ding dat waar moet blijven;
+de feittype- en rolnamen horen bij `ontleed`, waar zij opgelost worden en
+waar de weigerzinnen ze citeren. `Stap` is nu `(boolean achterwaarts,
+String veld)`.
+
+**De vervolgkaart-kandidaten gesplitst.** Zie de alinea hierboven: drie
+goldens delen de veel-op-veel-vorm, twee weigeren op de andere,
+conservatieve arm. Twee kaarten, niet één.
