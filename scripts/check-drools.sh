@@ -197,7 +197,7 @@ known_reason() { local n="$1"; for e in "${EXCLUDE_KNOWN[@]}"; do [ "${e%%|*}" =
 EXPECTED_CHANNEL=(
   "anchor/jutterswet-aanmeldquotum|EXCLUDE|loader Refusal: Expr:TemporalRead — the v0 backend has no temporal-read lowering"
   "anchor/jutterswet-aanspraaktelling|EXCLUDE|loader Refusal: functionDefs — no function section in the v0 backend"
-  "anchor/jutterswet-bergingstoezicht|EXCLUDE|transpiler SKIP: the aggregation join has no bean field — the to-one role 'toezichthouder' derives no reference field (§13.3.9 storage direction)"
+  "anchor/jutterswet-bergingstoezicht|EXCLUDE|transpiler SKIP: verdeling (onopgelost naar_rato) — since the rolvelden card (2026-09-18) the repeated-pair reference field exists, so the refusal moved one layer deeper"
   "anchor/jutterswet-beschikkingsom|EXCLUDE|loader Refusal: Datatype:SumType"
   "anchor/jutterswet-bootberging|EXCLUDE|loader Refusal: Functie.bronPad — the multi-step fold-source range (WF-102, 2026-09-11). The accumulate source joins the element to the rule subject through ONE role; a composite source with a pattern per intermediate hop is a measured change in BOTH branches with channel consequences of its own, and the card that introduced the field explicitly allowed the named refusal. The refusal is EXPLICIT rather than inherited: without it the loader drops the field and the by-pair search binds a coincidental direct subject-to-element relation, folding the wrong set while ref and clingo fold the right one — the very misbinding the field closes"
   "anchor/jutterswet-erflijn|EXCLUDE|transpiler SKIP: aggregation join with BOTH sides plural — neither side stores a bean field (§13.3.9)"
