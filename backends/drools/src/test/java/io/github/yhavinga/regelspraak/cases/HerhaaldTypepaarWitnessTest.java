@@ -291,10 +291,16 @@ class HerhaaldTypepaarWitnessTest {
     }
 
     @Test void een_consument_zonder_geschreven_rol_vindt_het_paar_nog_altijd_ambigu() throws Exception {
-        // The LOUD-AMBIGUITY row. A SOM's argument is an ATTRIBUTE name, never a role, so the DRL-text
-        // branch's fold scope has only the by-PAIR search to go on — and must still refuse. This is the
-        // guard against widening the fix into a guess: if verbindendeRol picked a winner, this marker would
-        // quietly disappear and the fold would join over whichever feittype happened to come first.
+        // The LOUD-AMBIGUITY row. A SOM's argument is an ATTRIBUTE name, never a role, so a fold that names
+        // no range AT ALL — no written element role, no wire binding — has only the by-PAIR search to go on,
+        // and must still refuse. This is the guard against widening the derivation into a guess: if
+        // verbindendeRol picked a winner, this marker would quietly disappear and the fold would join over
+        // whichever feittype happened to come first.
+        //
+        // Until 2026-09-19 the fixture KEPT the golden's bronRol and refused anyway, because the DRL-text
+        // branch did not read it — so this row was pinning a branch inequality as if it were the ambiguity
+        // law. It now strips the binding, which is what the sentence always claimed. The bound flank moved
+        // to BronRolVouwWitnessTest, where the same fold PLAYS in both branches.
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                 () -> CaseRunner.speelCase(somOverLiggers(), JSON.readTree(tweeRollenCase("2", "0", "0", "1")), true));
         assertTrue(e.getMessage().contains("drl-transpiler"), e.getMessage());
@@ -400,12 +406,15 @@ class HerhaaldTypepaarWitnessTest {
     }
 
     /** The counts-only model with the liggertal fold turned into a SOM over the liggers' romplengte — whose
-     *  argument is an ATTRIBUTE name, so the DRL branch's scope has only the by-pair search. */
+     *  argument is an ATTRIBUTE name — and its {@code bronRol} REMOVED, so no route to the range remains but
+     *  the by-pair search. (With the binding in place the same fold is lowerable and plays; that is
+     *  BronRolVouwWitnessTest's business.) */
     private static Path somOverLiggers() throws Exception {
         ObjectNode ir = lees(DUBBELVERBINDING);
         ir.putArray("feitCreaties");
         houdRegels(ir, "liggertal van een haven");
         ObjectNode fold = (ObjectNode) ir.get("resolvedRegels").get(0).get("waarde");
+        fold.remove("bronRol");
         fold.put("kind", "SOM").put("bron", "de som van de romplengte van alle liggers van de Haven");
         ObjectNode arg = (ObjectNode) fold.get("argumenten").get(0);
         arg.put("attribuut", "romplengte").put("objecttype", "Schuit").put("onderwerpBron", "de romplengte")
