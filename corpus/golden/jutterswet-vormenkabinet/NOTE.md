@@ -3,40 +3,73 @@
 This golden is the **verifier-only witness cabinet** (see the "witness
 cabinet" section of `corpus/golden/README.md`). It exists to witness,
 positively and verifier-clean, the well-formedness rules whose constructs
-no *executing* corpus document carries yet — closing the Golden column of
-the WF index for WF-004/006/014/016/017/021/031/032/039/040/041/042/043
-(and the enum-assignment slice of WF-023, and since 2026-09-09 the name
-identity of WF-034 arm (s) — the section below). It deliberately carries no
-`case*.json`, so gate 5 (the oracle) lists it as "NOT replayed, no case
-file yet". This NOTE records *why* that is a true report and not a gap to
-be filled with a manufactured case, and the exact condition under which it
-becomes one.
+no *executing* corpus document carries yet. After the 2026-09-19 shrink
+(the next section) that is WF-004/014/040 (the dimensioned attribute and
+its cell read), WF-016/032 (the variable-start timeline with its start
+point), WF-042 (the time window), plus the two registry rules the sections
+near the end carry: WF-017's positive binding and WF-034 arm (s)'s identity
+half. It deliberately carries no `case*.json`, so gate 5 (the oracle) lists
+it as "NOT replayed, no case file yet". This NOTE records *why* that is a
+true report and not a gap to be filled with a manufactured case, and the
+exact condition under which it becomes one.
+
+## What left, and to whom (2026-09-19)
+
+The admission rule at the bottom — a construct that becomes executable in
+both executors leaves — had not been applied since the cabinet was built.
+Measured over the corpus's 200 golden documents (198 carry case files and
+therefore replay through gates 5–6; the two that do not are this cabinet
+and `jutterswet-seizoenvondst`), five rows had an executing witness and
+left:
+
+| What left | WF rows | The executing successor, measured |
+|---|---|---|
+| `staat na schouw`, with the `kwaliteit` domain and the `staat` attribute | WF-006, WF-039 (enum-label arm), the enum slice of WF-023 | `jutterswet-keurstaat`: it declares the domain `keurklasse`, and its `stempel voor een veilbare vondst` writes the label `gaaf` into an `Enumeratie`-typed target — the same `GELIJKSTELLING`-with-enum-`Literal` shape this rule had. `jutterswet-vaarwatertoeslag-catala` carries a second one |
+| `aanwas na schouw`, with the `aanwas` attribute | WF-039 (sign arm) | `anchor/jutterswet-taxatie` (the literals `2` and `3`, each typed `NIET_NEGATIEF`), `anchor/jutterswet-aanspraaktelling` (`0.00`), `anchor/jutterswet-hardheid`, `jutterswet-postenheffing`, `synth3-vondststaat`. Difference recorded rather than glossed: those carry the sign-restricted `Literal` as an **operand**, where this rule carried it at the write position. WF-039 reads the literal's own type wherever `walk_expr` reaches it, so it is the same node under the same clause — no corpus document outside this cabinet had it at a rule's `waarde` |
+| the counting quantifier of `peiling bij dubbele borging` — `TEN_MINSTE` with threshold 2, now `ALLE` with 0 | WF-041 | `jutterswet-wachtploeg` carries `TEN_MINSTE` with threshold 2 on the composite host, the same form this rule had. Eight further composite goldens carry the other quantors and thresholds (`paasvondst`, `rubriektabel`, `seinwacht`, `sluimerwacht`, `tweevoudkeur`, `vacuumwacht`, `vrijgavetoets`, `wachtdeling`), and `jutterswet-reddingsvloot` carries the fold host of WF-108 (e). The rule itself stays: its `Periode` member is a row that did not leave |
+| `doorwaadbaar bij lage stand #1` and `#2`, with the `doorwaadbaar` characteristic | WF-021, WF-043 | WF-021: `anchor/jutterswet-jutheffing` — `jutheffing naar jaartarief #1`/`#2` is the only other corpus document whose rule names group to one name under the version strip WF-021 applies, with non-overlapping windows replayed per window. WF-043: `jutterswet-keurploeg`, `jutterswet-ploegpremie`, `jutterswet-reddingsvloot` and `jutterswet-sleepvloot` each compare a `MAAND`-granular attribute under a whole-year qualifier (the last one negated), and `synth-gehelejaarkenmerk` carries the characteristic variant |
+| the two `resolvedDagsoorten` definitions | WF-031 | `jutterswet-schouwkalender` carries two pure definitions, replayed by gates 5–6 over its ordinary rule, and `jutterswet-schouwrooster` a second pair. The `dagsoorten` **declarations** and the `dagsoortPerEenheid` registry stay here — WF-017 and WF-034 (s) read the declaration table, not the definitions, and their witnesses did not leave (the two sections below; gate 3 stays green with the definitions gone) |
+
+Two things the shrink deliberately kept, each because a *staying* row needs
+them:
+
+- the `waterstand` attribute, `JAAR`-granular on the `boekjaar` timeline.
+  Nothing reads it now that the whole-period rules are gone, but the
+  variable-start timeline is a staying witness and a timeline with no
+  time-dependent member would make it a declaration about nothing.
+- the `bewaakt` and `omheind` members of the composite. Under `ALLE` they
+  are no longer the "at least two of three" the old name counted, but the
+  name still reads true — the peiling holds when the field is guarded *and*
+  fenced *and* the window is open.
+
+As of this shrink the WF index in `spec/IR-SPEC.md` still names this
+cabinet in the Golden column of the rules that left. That file is a
+protected path; the replacement cells are proposed in the shrinking card's
+`Result:` note, for the maintainer to land.
 
 ## Why no replay case
 
 The oracle (`ref/`) and the differential backend (`backends/clingo/`)
 replay a case by evaluating the **whole** document to its fixpoint and then
-checking the pinned expectations — there is no per-rule replay. Three of
-this cabinet's rules exercise constructs both executors deliberately refuse
-(they fault with context rather than guess — the fail-fast discipline of
-`ref/lib/eval.ml` and `backends/clingo/lib/translate.ml`), so any case over
-this IR faults before a single expectation can be checked:
+checking the pinned expectations — there is no per-rule replay. Both rules
+this cabinet still carries exercise constructs the two executors
+deliberately refuse (they fault with context rather than guess — the
+fail-fast discipline of `ref/lib/eval.ml` and
+`backends/clingo/lib/translate.ml`), so any case over this IR faults before
+a single expectation can be checked:
 
 | Rule | Construct (WF row) | Fault the reference interpreter raises |
 |---|---|---|
 | `vakcijfer uit voorjaarsopbrengst` | dimension-cell read of the dimensioned `opbrengst` (WF-004/014/040) | `expression kind not implemented in this card` |
-| `peiling bij dubbele borging` | counting quantifier with a time-window (`Periode`) member (WF-041/042) | `condition kind not implemented in this card` |
-| `doorwaadbaar bij lage stand #1`/`#2` | whole-period comparison over the temporal `waterstand` (WF-043) | `whole-period comparison is ch. 3.9 scope, not executed here` |
+| `peiling bij dubbele borging` | composite condition with a time-window (`Periode`) member (WF-042) | `condition kind not implemented in this card` |
 
 The ASP backend mirrors these same refusals by construction
 (`backends/clingo/lib/translate.ml`: everything outside the
 corpus-exercised subset faults with context), so neither executor can
-replay this document.
-
-The two rules that *are* individually executable — `staat na schouw`
-(enum-label assignment) and `aanwas na schouw` (sign-restricted literal) —
-cannot be replayed on their own: the evaluator runs every `resolvedRegel`,
-so the three refusing rules bring the whole replay down first.
+replay this document. Since 2026-09-19 the document holds **no**
+individually executable rule at all: the two that were —
+`staat na schouw` and `aanwas na schouw` — are exactly the two that left
+for their executing successors.
 
 A case with zero `Schouwveld` instances does not even evade the faults
 cleanly. The reference interpreter is lazy per-instance: with no subject no
@@ -44,23 +77,32 @@ rule body runs, so `ref` reports `oracle: PASS`. But the ASP backend
 translates every rule body **statically**, independent of instance count, so
 `clingo` still faults —
 `TRANSLATION FAULT: expression kind not translated (no corpus case exercises it)`
-— and gate 6 would turn **red**, not merely pin nothing. Either way the case
+— and gate 6 would turn **red**, not merely pin nothing. (Re-measured
+2026-09-19 on the shrunken document: unchanged.) Either way the case
 exercises and pins nothing real: it is exactly the manufactured "make the
 report go away" case this cabinet must not carry. Executable expectations
 belong to executing goldens, not to a scaffold.
 
+## What stays, and the measurement that keeps it here
+
+| Stays | WF rows | Measured 2026-09-19 |
+|---|---|---|
+| `vakcijfer uit voorjaarsopbrengst`, the dimensioned `opbrengst`, the `seizoen` dimension | WF-004, WF-014, WF-040 | The only other corpus document carrying a `Dimensie` or a `DimensieCel` is `jutterswet-seizoenvondst`, and that golden carries **no case file either** — it is the second verifier-only golden (`corpus/golden/README.md`). No *executing* document carries the form, so the row stays. The shrinking card's 2026-09-17 reading that `jutterswet-seizoenvondst` covers it had measured the construct without measuring the execution |
+| the variable-start `boekjaar` timeline, its `ResolvedStartpunt`, the `meetdatum` anchor and the `waterstand` member | WF-016, WF-032 | `jutterswet-penningjaar` is the corpus's other timeline golden, but its `het penningjaar` declares `variabelStartpunt: false`; `resolvedStartpunten` is non-empty in this document and in no other, so both halves of the row are uncovered |
+| the `Periode` member of `peiling bij dubbele borging` | WF-042 | `"node": "Periode"` occurs in no other corpus document, and both executors still refuse it (the table above). Its host composite therefore stays, with the counting quantifier that *did* leave replaced by `ALLE` |
+| the `dagsoorten` declarations and the four `dagsoortPerEenheid` entries | WF-017 (positive side), WF-034 arm (s) (identity half) | the two sections below; measured across all corpus zones, the non-byte-identical registry values live here and in one negatief case only |
+
 ## The day-kind unit registry: WF-034 (s)'s IDENTITY witness (2026-09-09)
 
-Beside the rules above, this cabinet now carries the **name identity** half of
+Beside the rules above, this cabinet carries the **name identity** half of
 WF-034 arm (s) (`spec/IR-SPEC.md` ch. 4.6): *every value of
 `dagsoortPerEenheid` must name a day kind `dagsoorten` declares*, compared
 under the ch. 2.1 identity — collapse whitespace, lower case.
 
-The document already declared the day kind `schouwdag` and registered no
-spelling for it. It now registers two for that day kind, and **neither value is
-byte-identical to the declaration** — they are the first two entries of the map
-as it stands today (the last two, and the second day kind they belong to,
-arrived with the WF-017 section below):
+The document declares the day kind `schouwdag` and registers two spellings
+for it, and **neither value is byte-identical to the declaration** — they
+are the first two entries of the map (the last two, and the second day kind
+they belong to, arrived with the WF-017 section below):
 
     "dagsoortPerEenheid": {
       "schouwdag":       "SchouwDag",
@@ -86,6 +128,11 @@ entries the same mutant reports both of them here and takes **gate 3 down**:
     WF-034 FAIL /dagsoortPerEenheid/schouwdagen: day-kind unit 'schouwdagen'
     names day kind '  schouwdag  ', which no declaration carries: …
 
+Re-measured 2026-09-19 over the golden, negatief and rood zones: the only
+registry values that are not byte-identical to a declaration are these two
+and the one in `corpus/negatief/wf034-dagsoorteenheid-onbekende-dagsoort`,
+which is the refusing side. The witness is still this document's alone.
+
 The RESOLUTION half of the same arm is pinned from the other side by
 `corpus/negatief/wf034-dagsoorteenheid-onbekende-dagsoort`.
 
@@ -107,7 +154,7 @@ witness, and this is it.
 
 The cabinet declared exactly ONE day kind, so the only positive fact it could
 show was that one declaration's key resolving to itself. It now declares a
-second, with its own definition and both its spellings registered:
+second, and registers both spellings of each:
 
     "dagsoorten": ["schouwdag", "stormvloeddag"],
     "dagsoortPerEenheid": {
@@ -123,6 +170,13 @@ normalised identity (`schouwdag` → `SchouwDag`), and a PLURAL key that binds t
 its own day kind and collides with no other declaration (`stormvloeddagen`,
 `schouwdagen`). No key is a built-in calendar unit, so arm (a) is silent too.
 The document stays verifier-clean, which is the point.
+
+Since 2026-09-19 these two day kinds are declared and registered here but
+**defined** elsewhere: the definitions left for `jutterswet-schouwkalender`
+in the shrink. Both rules read the declaration table — WF-017 compares a key
+against declared names, WF-034 (s) resolves a value against them — so
+neither witness depends on a definition standing beside it, and gate 3
+confirms it: the document is verifier-clean with `resolvedDagsoorten` empty.
 
 **Why the entries are here — index hygiene, and that is the whole claim.** The
 WF index names this cabinet in WF-017's Golden column, so this is the document a
@@ -156,27 +210,27 @@ replayed" and gate 12 keeps it `NOCASE`.
 From the workspace root, with the ref runner built (`dune build ref`), the
 runner on this `ir.json` and any case carrying one `Schouwveld` instance
 faults with `expression kind not implemented in this card` — the
-dimension-cell read of the first rule. Filtering `resolvedRegels` down to a
-single blocking rule in turn (for example with `jq`) reproduces the other
-faults in the table above — with one wrinkle for the temporal row:
+dimension-cell read of the first rule. Filtering `resolvedRegels` down to
+the second rule (for example with `jq`) reproduces
+`condition kind not implemented in this card`, at any `asOfDate`, a null one
+included: the refusal is the `Periode` member, and it was so before the
+counting quantifier left as well. `backends/clingo` refuses both in its own
+words — `TRANSLATION FAULT: expression kind not translated` and
+`TRANSLATION FAULT: condition kind not translated (no corpus case exercises
+it)`.
 
-- `peiling bij dubbele borging` alone faults with
-  `condition kind not implemented in this card`, at any `asOfDate`
-  (including a null one).
-- The two `doorwaadbaar bij lage stand` rules carry validity bounds
-  (`#1 tot 2025-12-31`, `#2 vanaf 2026-01-01`), so filtering to them with a
-  null `asOfDate` faults *first* with `a validity-bounded form needs an
-  evaluation date; this session is time-free` — not the whole-period fault.
-  The whole-period-comparison refusal (`whole-period comparison is
-  ch. 3.9 scope, not executed here`) surfaces only once the case also
-  carries an `asOfDate` inside a rule's window — for example `#2` with
-  `asOfDate 2026-06-01`.
+Both faults re-measured 2026-09-19 on the shrunken document. The validity
+window wrinkle this section used to record went out with the two
+`doorwaadbaar bij lage stand` rules; it now reproduces on
+`anchor/jutterswet-jutheffing`, where those windows execute.
 
 ## When this cabinet shrinks
 
 When one of the refused constructs becomes executable in **both**
 executors, its witness moves into an executing golden with a replay case
 and its rows leave this cabinet — the README's rule: the cabinet is
-"scaffolding for the WF index, never a place for semantics". Until then the
-case-less state is the correct one, and gate 5's "NOT replayed" line for
-this directory is a true, motivated report — not a coverage hole.
+"scaffolding for the WF index, never a place for semantics". Applied for
+the first time on 2026-09-19 (the table at the top of this NOTE); until the
+next construct becomes executable the case-less state is the correct one,
+and gate 5's "NOT replayed" line for this directory is a true, motivated
+report — not a coverage hole.

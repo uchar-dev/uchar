@@ -19,21 +19,6 @@
           "teken": "ONBEPAALD",
           "eenheid": null
         },
-        "staat": {
-          "node": "Enumeratie",
-          "domein": "kwaliteit",
-          "waarden": [
-            "gaaf",
-            "beschadigd"
-          ]
-        },
-        "aanwas": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
         "meetdatum": {
           "node": "DatumInDagen"
         },
@@ -69,13 +54,11 @@
       },
       "kenmerken": [
         "bewaakt",
-        "omheind",
-        "doorwaadbaar"
+        "omheind"
       ],
       "kenmerkSoorten": {
         "bewaakt": "BIJVOEGLIJK",
-        "omheind": "BIJVOEGLIJK",
-        "doorwaadbaar": "BIJVOEGLIJK"
+        "omheind": "BIJVOEGLIJK"
       },
       "kenmerkGranulariteit": {},
       "kenmerkTijdlijnAantal": {},
@@ -83,16 +66,7 @@
       "meervoud": "Schouwvelden"
     }
   },
-  "domeinen": {
-    "kwaliteit": {
-      "node": "Enumeratie",
-      "domein": "kwaliteit",
-      "waarden": [
-        "gaaf",
-        "beschadigd"
-      ]
-    }
-  },
+  "domeinen": {},
   "parameters": {},
   "eenheidstelsels": {},
   "feittypen": {},
@@ -135,32 +109,7 @@
     },
     {
       "node": "Regel",
-      "naam": "staat na schouw",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "aanwas na schouw",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
       "naam": "peiling bij dubbele borging",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "doorwaadbaar bij lage stand #1",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "doorwaadbaar bij lage stand #2",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "schouwdag",
       "soort": "regel"
     }
   ],
@@ -226,88 +175,6 @@
     },
     {
       "node": "ResolvedRegel",
-      "naam": "staat na schouw",
-      "soort": "GELIJKSTELLING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "staat",
-        "objecttype": "Schouwveld",
-        "onderwerpBron": "een Schouwveld",
-        "navigatieRol": null,
-        "type": {
-          "node": "Enumeratie",
-          "domein": "kwaliteit",
-          "waarden": [
-            "gaaf",
-            "beschadigd"
-          ]
-        },
-        "bron": "De staat van een Schouwveld",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "gaaf",
-        "type": {
-          "node": "Enumeratie",
-          "domein": "kwaliteit",
-          "waarden": [
-            "gaaf",
-            "beschadigd"
-          ]
-        },
-        "bron": "'gaaf'"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "aanwas na schouw",
-      "soort": "GELIJKSTELLING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "aanwas",
-        "objecttype": "Schouwveld",
-        "onderwerpBron": "een Schouwveld",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "bron": "De aanwas van een Schouwveld",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "3",
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "bron": "3"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
       "naam": "peiling bij dubbele borging",
       "soort": "GELIJKSTELLING",
       "doel": {
@@ -341,8 +208,8 @@
       },
       "voorwaarde": {
         "node": "Samengesteld",
-        "kwantor": "TEN_MINSTE",
-        "drempel": 2,
+        "kwantor": "ALLE",
+        "drempel": 0,
         "onderdelen": [
           {
             "node": "Kenmerk",
@@ -377,211 +244,7 @@
             "bron": "vanaf 1 januari 2026"
           }
         ],
-        "bron": "ten minste twee van: bewaakt, omheind, vanaf 2026"
-      },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "doorwaadbaar bij lage stand #1",
-      "soort": "KENMERKTOEKENNING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "doorwaadbaar",
-        "objecttype": "Schouwveld",
-        "onderwerpBron": "Een Schouwveld",
-        "navigatieRol": null,
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "Een Schouwveld is doorwaadbaar",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "waar",
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "waar"
-      },
-      "voorwaarde": {
-        "node": "Vergelijking",
-        "op": "KLEINER",
-        "links": {
-          "node": "AttribuutRef",
-          "attribuut": "waterstand",
-          "objecttype": "Schouwveld",
-          "onderwerpBron": "de waterstand",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de waterstand van het Schouwveld",
-          "set": false,
-          "navigatiePad": []
-        },
-        "rechts": {
-          "node": "Literal",
-          "waarde": "40",
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "40"
-        },
-        "periode": {
-          "node": "GeheelPeriode",
-          "jaar": true,
-          "niet": false
-        },
-        "bron": "de waterstand gedurende het gehele jaar kleiner is dan 40"
-      },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": "2025-12-31"
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "doorwaadbaar bij lage stand #2",
-      "soort": "KENMERKTOEKENNING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "doorwaadbaar",
-        "objecttype": "Schouwveld",
-        "onderwerpBron": "Een Schouwveld",
-        "navigatieRol": null,
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "Een Schouwveld is doorwaadbaar",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "waar",
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "waar"
-      },
-      "voorwaarde": {
-        "node": "Vergelijking",
-        "op": "KLEINER",
-        "links": {
-          "node": "AttribuutRef",
-          "attribuut": "waterstand",
-          "objecttype": "Schouwveld",
-          "onderwerpBron": "de waterstand",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de waterstand van het Schouwveld",
-          "set": false,
-          "navigatiePad": []
-        },
-        "rechts": {
-          "node": "Literal",
-          "waarde": "35",
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "35"
-        },
-        "periode": {
-          "node": "GeheelPeriode",
-          "jaar": true,
-          "niet": false
-        },
-        "bron": "de waterstand gedurende het gehele jaar kleiner is dan 35"
-      },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": "2026-01-01",
-        "tot": null
-      }
-    }
-  ],
-  "resolvedDagsoorten": [
-    {
-      "node": "ResolvedDagsoort",
-      "naam": "schouwdag",
-      "voorwaarde": {
-        "node": "Vergelijking",
-        "op": "EERDER",
-        "links": {
-          "node": "Literal",
-          "waarde": "2026-03-01",
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "2026-03-01"
-        },
-        "rechts": {
-          "node": "Literal",
-          "waarde": "2026-10-01",
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "2026-10-01"
-        },
-        "periode": null,
-        "bron": "voor de najaarsschouw"
-      },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedDagsoort",
-      "naam": "stormvloeddag",
-      "voorwaarde": {
-        "node": "Vergelijking",
-        "op": "LATER",
-        "links": {
-          "node": "Literal",
-          "waarde": "2026-10-01",
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "2026-10-01"
-        },
-        "rechts": {
-          "node": "Literal",
-          "waarde": "2026-03-01",
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "2026-03-01"
-        },
-        "periode": null,
-        "bron": "na de najaarsschouw"
+        "bron": "bewaakt, omheind, en vanaf 1 januari 2026"
       },
       "geldigheid": {
         "node": "Geldigheid",
@@ -590,6 +253,7 @@
       }
     }
   ],
+  "resolvedDagsoorten": [],
   "objectCreaties": [],
   "verdelingen": [],
   "consistenties": [],
