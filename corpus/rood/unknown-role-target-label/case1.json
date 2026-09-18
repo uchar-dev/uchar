@@ -1,0 +1,36 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "H1",
+        "objectType": "Haven",
+        "attributes": {},
+        "roles": {
+          "liggers": [
+            "S1",
+            "S9"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S1",
+        "objectType": "Schuit",
+        "attributes": {
+          "romplengte": {
+            "number": "12"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "ref": "role \"liggers\" on \"H1\" links unknown label \"S9\"",
+    "clingo": "role \"liggers\" on \"H1\" links unknown label \"S9\""
+  }
+}

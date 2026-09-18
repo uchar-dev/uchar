@@ -1,0 +1,47 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Schuit",
+        "attributes": {},
+        "roles": {
+          "ligger": [
+            "P1",
+            "V1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "P1",
+        "objectType": "Ponton",
+        "attributes": {
+          "draagvlak": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vlot",
+        "attributes": {
+          "dekhoogte": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "ref": "role key \"ligger\" is ambiguous from \"Schuit\"",
+    "clingo": "role key \"ligger\" is ambiguous from \"Schuit\""
+  }
+}
