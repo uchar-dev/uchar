@@ -1,37 +1,83 @@
 # drl-heelperiode-arm: de DRL-tekst-tak lowert ook de heelperiodematrix
 
-Aanleiding: de DRL-tekst-tak van `backends/drools` MARKEERT de Kwantorvouw
-met een §8.2-heelperiodematrix bij naam, waar de exec-model-tak hem speelt
-— tot nu toe het "staande kanaalbesluit" (zichtbaar op de goldens
-`jutterswet-ploegpremie`, `-keurploeg`, `-reddingsvloot`,
-`-sleepvloot`). Maintainersbesluit 2026-09-17: dit takverschil is
-ongewenst. De twee takken hebben elk hun rol — de DRL-tekst-tak om snel
-mee te ontwikkelen en te testen, de exec-model-tak om services mee te
-compileren — en een vorm die maar in één tak speelt breekt die
-werkverdeling. De asymmetrie-kaart bewees al dat de NIET-temporele
-matrix in beide takken kan; de heelperiodevorm hoort te volgen.
+Goal: De classic-DRL-tak van `backends/drools` lowert de al normatieve
+`Kwantorvouw` met een §8.2-heelperiodematrix, met dezelfde uitkomst en
+dezelfde luide grenzen als de exec-model-tak. Dit sluit één van de
+gemeten oude-toolchainregressies: in de oorspronkelijke differentiële
+fixture `PHASE_GP_ALLE` speelden beide Drools-armen vijf gevallen
+(lege verzameling/vacuüm waar, een tijdlijngat, alle leden boven de
+grens, exact-op-de-grens en één tegenvoorbeeld); in uchar speelt exec
+die vorm en geeft classic DRL nog een `TODO §8.2 kwantorvouw`-marker.
 
-Richting: de runtime-helpers bestaan (`rsGeheelPeriodeAlle`,
-`rsGeheelPeriodeGeen`, `rsGeheelPeriodeTelling` — beide takken delen de
-runtime al); het patroon collectList-accumulate + result-var-eval staat
-als voorbeeld in de exec-tak én in de toolchain-DRL-tak
-(regelspraak-java, de Kwantorvouw-naport). De vijf kwantoren en de
-NIET-omklap/telling-landing zijn in de exec-tak al gepind — de DRL-arm
-moet exact diezelfde tabellen reproduceren.
+Evidence:
 
-## Acceptatie (bij oppakken aanscherpen)
+- De huidige publieke getuigen zijn `jutterswet-ploegpremie`,
+  `jutterswet-keurploeg`, `jutterswet-reddingsvloot` en
+  `jutterswet-sleepvloot`; samen pinnen ze ALLE, tellende kwantoren,
+  filter en NIET.
+- De runtime-helpers bestaan al:
+  `rsGeheelPeriodeAlle`, `rsGeheelPeriodeGeen` en
+  `rsGeheelPeriodeTelling`. De exec-model-tak en de oorspronkelijke
+  toolchain-DRL-tak leveren het patroon
+  collectList-accumulate + result-var-eval.
+- De niet-temporele `Kwantorvouw` speelt al in beide huidige takken.
+  Deze kaart verbreedt die classic-DRL-lowering; zij ontwerpt geen
+  nieuwe kwantorsemantiek.
 
-- (a) De DRL-tekst-tak lowert de heelperiodematrix onder alle vijf
-  kwantoren, incl. filter en de NIET-prefix-semantiek (omklap bij
-  ALLE/GEEN, telling-landing bij de drempelkwantoren), met dezelfde
-  weigeringsgrenzen als de exec-tak — elke resterende weigering
-  benoemd, nooit stil.
-- (b) De bestaande heelperiode-goldens verhuizen in gate 12/13 van
-  MARKER naar PLAYED in de DRL-tekst-tak; de kanaallijsten en pinnen
-  bewegen mee met gedateerde stappen.
-- (c) Rood-eerst: de huidige markerteksten gemeten vóór de bouw; daarna
-  DRL ≡ exec ≡ ref ≡ clingo op alle betrokken cellen.
-- (d) De "standing channel split"-formuleringen (rij 40, ch. 3.12,
-  NOTE's, testjavadocs) bewegen mee — registervoorstel in het Result;
-  RUNTIME-SEMANTICS-wijziging alleen met kaartmandaat.
-- (e) Alle veertien gates groen.
+Acceptance:
+
+- Rood-eerst: bouw de backend en leg voor minstens één ALLE- en één
+  tellende golden de huidige `EXCLUDE drl-transpiler MARKER: ...
+  een §8.2-heelperiodematrix` vast:
+
+  ```sh
+  mvn -q -o -f backends/drools/pom.xml package
+  java -jar backends/drools/target/uchar-drools-backend-0-SNAPSHOT-shaded.jar \
+    --drl corpus/golden/jutterswet-ploegpremie/ir.json \
+    corpus/golden/jutterswet-ploegpremie/case*.json
+  java -jar backends/drools/target/uchar-drools-backend-0-SNAPSHOT-shaded.jar \
+    --drl corpus/golden/jutterswet-reddingsvloot/ir.json \
+    corpus/golden/jutterswet-reddingsvloot/case*.json
+  ```
+
+- De classic-DRL-tak draagt alle vijf kwantoren (ALLE, GEEN,
+  TEN_MINSTE, TEN_HOOGSTE, PRECIES), de ledenfilter en de
+  NIET-prefix-semantiek: omklap bij ALLE/GEEN en telling-landing bij
+  de drempelkwantoren. Lege verzameling, ontbrekend segment,
+  gedeeltelijke dekking en grensgelijkheid blijven onderscheiden.
+- Alle cases van de vier genoemde goldens eindigen zowel zonder vlag
+  als met `--drl` in `PLAYED`; hun verwachtingen wijzigen niet.
+  De gate-12 exec-model-kanaaltelling verandert dus niet. De
+  backend-JUnit-suite moet de vier dual-branch replays blijvend pinnen,
+  zodat `--drl` geen eenmalige handmeting blijft.
+- De lowering hergebruikt de gedeelde runtimehelpers; zij kopieert de
+  heelperiodetabellen niet als afwijkende MVEL-logica. Wat de
+  exec-model-tak om een inhoudelijke reden weigert, weigert classic DRL
+  per construct met dezelfde as en een reden, nooit met een
+  compile-fout of stille lege fold.
+- Noteer in het `Result:` de precieze wijziging voor
+  `spec/CONSTRUCTS.md` rij 40 en voor verouderde
+  "standing channel split"-proza. Een wijziging aan normatieve
+  semantiek is niet nodig en heeft geen kaartmandaat.
+- `mvn -q -o -f backends/drools/pom.xml package`,
+  `bash scripts/check-drools.sh`,
+  `bash scripts/check-reftype-derivation.sh` en daarna alle veertien
+  gates zijn groen.
+
+May touch: `backends/drools/src/main/java/io/github/yhavinga/regelspraak/transpiler/DrlTranspiler.java`,
+`backends/drools/src/main/java/io/github/yhavinga/regelspraak/runtime/`,
+`backends/drools/src/main/java/io/github/yhavinga/regelspraak/cases/CaseRunner.java`
+alleen wanneer de dual-branch testnaad dat vereist,
+`backends/drools/src/test/**`, deze kaart en bij afronding haar
+verplaatsing binnen `backlog/`. Een noodzakelijk scriptpinvoorstel is
+beperkt tot `scripts/check-drools.sh` of
+`scripts/check-reftype-derivation.sh` en blijft als beschermd-padvoorstel
+voor de maintainer; groei van een ondergrens alleen is geen reden om
+een script te wijzigen.
+
+Out of scope: niet-temporele kwantorproductie in de RegelSpraak-frontend
+(`20260917-niettemporele-vouw-uit-bron.md`), een geneste vouw als matrix,
+`bronPad`, local bindings, standing-value writes, prioritized defaults
+en enige wijziging aan schema/verifier/ref/clingo of corpusverwachtingen.
+Deze kaart deelt `DrlTranspiler.java` met de andere Drools-pariteitskaarten
+van 2026-09-18 en wordt daarom serieel gepland, niet parallel.
