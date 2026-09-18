@@ -273,7 +273,10 @@ public final class CaseRunner {
     private static CaseRunner drlTak(RegelSpraakModel model, IrLoader.Loaded loaded, ClassLoader cl) {
         if (!loaded.prioritizedDefaults().isEmpty())
             throw new Excluded("drl: ch. 7 prioritizedDefaults — the DRL-text branch has no defaults lowering");
-        DrlTranspiler t = DrlTranspiler.build(model);
+        // ch. 4.10: the DRL branch lowers the §11 variabelendeel's Let chain, so it gets the document's Let INDEX
+        // beside the model — the ch. 2.10 unit derivation needs it to answer a BinderRef read, which carries no
+        // route back up to its own binding (the exec branch has taken the same index since the Let-node card).
+        DrlTranspiler t = DrlTranspiler.build(model, loaded.lets());
         for (Dekking d : t.dekking())
             if (!d.lowered()) throw new Excluded("drl-transpiler " + d.verdict() + ": " + d.sleutel()
                     + (d.reden().isEmpty() ? "" : " — " + d.reden()));

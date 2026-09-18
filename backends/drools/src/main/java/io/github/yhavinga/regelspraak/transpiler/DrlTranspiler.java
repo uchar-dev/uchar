@@ -56,13 +56,13 @@ public final class DrlTranspiler {
     public static final String FACT_PACKAGE = "io.github.yhavinga.regelspraak.facts";
     private final RegelSpraakModel model;
     /** RUNTIME-SEMANTICS ch. 2.10: the §4 EFFECTIVE-unit derivation — declarations plus the ch. 2.6 join rules,
-     *  the ONE source every unit restatement below consults instead of a node's own wire annotation. The DRL
-     *  back-end consumes the v0 model alone: it lowers no ch. 4.10 node (a Let in a value is a TODO marker), so
-     *  it hands the derivation no Let index. A ch. 4.10 node it MEETS while deriving is still derived through —
-     *  those are union nodes in the tree, not a side channel — which changes nothing here: every construct
-     *  carrying one is a marker before any restatement of it is reached. */
-    private final io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid eff =
-            new io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid(java.util.List.of());
+     *  the ONE source every unit restatement below consults instead of a node's own wire annotation. Since this
+     *  branch lowers the ch. 4.10 {@link Expr.Let} chain of a §11 variabelendeel, it hands the derivation the
+     *  document's Let INDEX: a restatement deep inside a body asks a {@link Expr.BinderRef} for its unit with no
+     *  route back up to its own binding, and only that index resolves it — without it the read falls back to its
+     *  own wire annotation, which is the repetition ch. 2.10 exists to not read. A caller that has no index
+     *  (a transpile-only witness) passes none and gets the pre-existing fallback. */
+    private final io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid eff;
     /** §9.2: the salience derivation over the declared kenmerk graph, shared with ExecModelTranspiler. */
     private final Stratificatie strat;
 
@@ -100,8 +100,12 @@ public final class DrlTranspiler {
             = new java.util.LinkedHashMap<>();
     private final Dagsoorten dagsoorten;
 
-    public DrlTranspiler(RegelSpraakModel model) {
+    public DrlTranspiler(RegelSpraakModel model) { this(model, List.of()); }
+
+    /** @param lets the document's ch. 4.10 {@link Expr.Let} index ({@code IrLoader.Loaded.lets}) — see {@link #eff}. */
+    public DrlTranspiler(RegelSpraakModel model, List<Expr.Let> lets) {
         this.model = model;
+        this.eff = new io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid(lets);
         this.dagsoorten = new Dagsoorten(model);
         this.strat = Stratificatie.bereken(model.resolvedRegels);
     }
@@ -110,8 +114,10 @@ public final class DrlTranspiler {
 
     /** As {@link #transpile} but also exposes the coverage manifest — one {@link Dekking} verdict per
      *  construct, per soort in model-list order (comparable per soort with the exec back-end's). */
-    public static DrlTranspiler build(RegelSpraakModel model) {
-        DrlTranspiler t = new DrlTranspiler(model);
+    public static DrlTranspiler build(RegelSpraakModel model) { return build(model, List.of()); }
+
+    public static DrlTranspiler build(RegelSpraakModel model, List<Expr.Let> lets) {
+        DrlTranspiler t = new DrlTranspiler(model, lets);
         t.drl0 = t.run();
         return t;
     }
@@ -309,6 +315,71 @@ public final class DrlTranspiler {
     private static final class Acc {
         final List<String> clausules = new ArrayList<>();
         int n;
+        /** ch. 4.10 / ch. 10.6 — the binder ENVIRONMENT of the value being lowered: binder key ({@link #letSleutel})
+         *  -&gt; the consequence-local mvel variable its forced need lives in. Threaded with the rest of this
+         *  context, and scoped by save/restore around each {@link Expr.Let} body, so a binding dies with its body
+         *  (WF-064: an inner binder of the same name SHADOWS, it never mutates the outer one in place). */
+        final java.util.Map<String, String> binders = new java.util.LinkedHashMap<>();
+        /** The consequence PRELUDE: one {@code $behoefteN = …;} line per forced need, in evaluation order. Non-null
+         *  exactly where the consequence can carry it — the scalar setter path of {@link #regel}. A {@link Expr.Let}
+         *  met while this is null has nowhere to put its need and stays an honest marker. */
+        List<String> letVoorspel;
+        /** The needs whose barrier stands between this point and the enclosing consequence, innermost last —
+         *  ch. 10.6 clause 2. A need is FORCED under the conjunction of these, so a value the barrier would have
+         *  cut off is never evaluated (and never faults). Pushed/popped around each {@link Expr.Let} body. */
+        final List<String> letBewaking = new ArrayList<>();
+        int letN;
+    }
+
+    /** The binder-environment key: lower-cased, mirroring {@code ref}'s {@code norm} over its locals and the
+     *  exec back-end's binder slots, so binder resolution is case-insensitive on every side. */
+    private static String letSleutel(String naam) {
+        return naam == null ? "" : naam.toLowerCase(java.util.Locale.ROOT);
+    }
+
+    /**
+     * ch. 10.6: whether evaluating {@code e} necessarily READS the binder {@code sleutel} bound outside it.
+     *
+     * <p>A static question with an exact answer in the subset this branch lowers: every form it lowers evaluates
+     * ALL its children, so "is reached" and "is present" coincide — with the ONE exception this walk carries,
+     * a nested {@code Let}, whose value is reached only when its own binder is read (clause 3). The ch. 10.2
+     * branch node, whose taken arm is a runtime verdict, is NOT lowered by this branch, so no node here can make
+     * the answer depend on a value.
+     *
+     * <p>WF-064/WF-076 in the two Let arms: a nested binder of the same name SHADOWS the outer one inside the
+     * BODY, while the nested {@code value} is evaluated in the ENCLOSING scope and therefore still reads it.
+     */
+    private static boolean leestBinder(Expr e, String sleutel) {
+        if (e == null) return false;
+        if (e instanceof Expr.BinderRef br) return sleutel.equals(letSleutel(br.naam()));
+        if (e instanceof Expr.Let b) {
+            if (leestBinder(b.body(), letSleutel(b.binder())) && leestBinder(b.value(), sleutel)) return true;
+            return !letSleutel(b.binder()).equals(sleutel) && leestBinder(b.body(), sleutel);
+        }
+        for (Expr k : gewoneKinderen(e)) if (leestBinder(k, sleutel)) return true;
+        return false;
+    }
+
+    /** Every {@link Expr} child of an ORDINARY (non-ch.-4.10) node, condition operands included — the walk
+     *  {@link #leestBinder} and the §6.5/§6.6 site collectors descend with a SCOPE of their own. The ch. 4.10
+     *  nodes are deliberately absent: each carries a scope this accessor cannot express, so every caller matches
+     *  them itself (and an {@link Expr.IfThenElse} this branch does not lower reaches no caller at all). */
+    private static List<Expr> gewoneKinderen(Expr e) {
+        List<Expr> uit = new ArrayList<>();
+        if (e instanceof Expr.Binair b) { uit.add(b.links()); uit.add(b.rechts()); }
+        else if (e instanceof Expr.Afgerond a) uit.add(a.basis());
+        else if (e instanceof Expr.Begrensd b) { uit.add(b.basis()); uit.add(b.minimum()); uit.add(b.maximum()); }
+        else if (e instanceof Expr.DimensieCel c) uit.add(c.attribuut());
+        else if (e instanceof Expr.TekstReeks t) {
+            for (Expr.TekstReeks.Deel d : t.delen())
+                if (d instanceof Expr.TekstReeks.Ingevoegd i) uit.add(i.expr());
+        } else if (e instanceof Expr.Functie f) {
+            uit.addAll(f.argumenten());
+            uit.add(f.leegwaarde());
+            Conditie.bevatOperand(f.filter(), x -> { uit.add(x); return false; });
+        }
+        uit.removeIf(java.util.Objects::isNull);
+        return uit;
     }
 
     /** §9.5 the consequence shared by the three inconsistency-flagging rules (consistentie, uniciteit,
@@ -1185,10 +1256,21 @@ public final class DrlTranspiler {
         boolean temporeelDoel = subject != null && r.doel() instanceof Expr.AttribuutRef td && td.navigatieRol() == null
                 && td.objecttype() != null && td.objecttype().granulariteitLeden().containsKey(td.attribuut())
                 && !Tijdlijnen.meerPeriodiek(td.objecttype().tijdlijnAantalLeden(), td.attribuut());
+        // ch. 4.10: the forced needs of a Let in the value ride the CONSEQUENCE as local variables, so hoisting is
+        // opened exactly where a SCALAR setter consumes that value. The two branches below that ignore the scalar
+        // value — a temporal attribute doel (single- or multi-period) and a temporal kenmerk write — would orphan
+        // the prelude, so they open none and a Let there stays an honest marker.
+        if (subject != null && !temporeelDoel && r.doel() instanceof Expr.AttribuutRef sd && sd.objecttype() != null
+                && !sd.objecttype().granulariteitLeden().containsKey(sd.attribuut())
+                && !sd.objecttype().kenmerkGranulariteitLeden().containsKey(sd.attribuut()))
+            acc.letVoorspel = new ArrayList<>();
         // Translate the value first: any aggregation registers an accumulate pattern
         // for the "when" and yields the bound result variable used here in the "then".
         Frag valueStr = subject != null && !temporeelDoel && r.doel() instanceof Expr.AttribuutRef
                 ? waarde(acc, r.waarde(), subject) : null;
+        // the needs belong to the scalar consequence below; nothing emitted after this point may add one.
+        List<String> letVoorspel = acc.letVoorspel == null ? List.of() : List.copyOf(acc.letVoorspel);
+        acc.letVoorspel = null;
         // §5.1.4 lower a temporal-doel timeline value BEFORE the acc.clausules flush (temporeleWaarde may register a
         // collectList accumulate for a §5.8.2 to-many sommatie, which must be emitted after $subject binds).
         String temporeelTl = null; boolean temporeelOngeankerd = false;
@@ -1380,7 +1462,10 @@ public final class DrlTranspiler {
             // expression is pure (rs* helpers are side-effect-free), so evaluating it twice is safe.
             // mvel PROPERTY access in the guard (not an explicit getter call): a boolean kenmerk exposes
             // is<X>(), and mvel's property navigation resolves either accessor form.
-            rule.dan("    if (!java.util.Objects.equals(" + SUBJECT + "." + ident(a.attribuut(), false) + ", " + valueStr.text() + ")) {\n"
+            // ch. 4.10: the needs come FIRST — the idempotence guard and the setter both read the same locals, so
+            // one forced need serves both (a second evaluation is what an inlined value text would have cost).
+            rule.dan(String.join("", letVoorspel)
+                    + "    if (!java.util.Objects.equals(" + SUBJECT + "." + ident(a.attribuut(), false) + ", " + valueStr.text() + ")) {\n"
                     + "    modify(" + SUBJECT + ") {\n        " + setter(a.attribuut()) + "( " + valueStr.text() + " )\n    }\n"
                     + "    }\n");
         } else {
@@ -1437,19 +1522,21 @@ public final class DrlTranspiler {
      *  radicand &lt; 0 is false for a null, so it does not fire for leeg. */
     private void wortelNegatiefFout(Acc acc, ResolvedRegel r, Objecttype subject, String voorwaarde, boolean voorwaardeMarker, List<String> extraClausules) {
         if (voorwaardeMarker) return;
-        List<Expr.Functie> wortels = new ArrayList<>();
-        verzamelWortels(r.waarde(), wortels);
+        List<Foutplek> wortels = new ArrayList<>();
+        verzamelWortels(r.waarde(), List.of(), wortels);
         List<String> guards = new ArrayList<>();   // the "radicand < 0" guard per qualifying wortel
-        for (Expr.Functie w : wortels)
-            if (w.argumenten().size() == 1) {
-                OperandDeel rd = companionDeel(acc, w.argumenten().get(0), subject);
-                if (rd != null)
-                    // a navigated radicand must guard its root before the "." dereference (mvel is not null-safe);
-                    // an own attribute reads `basis < 0` directly (a null is false for "< 0", no NPE) — byte-identical.
-                    guards.add(rd.genavigeerd()
-                            ? rd.vol() + " && " + rd.waarde() + " < new java.math.BigDecimal(\"0\")"
-                            : rd.waarde() + " < new java.math.BigDecimal(\"0\")");
-            }
+        for (Foutplek fp : wortels) {
+            Expr.Functie w = (Expr.Functie) fp.plek();
+            if (w.argumenten().size() != 1) continue;
+            OperandDeel rd = companionDeel(acc, w.argumenten().get(0), subject);
+            String behoeften = behoefteGuards(acc, fp.behoeften(), subject);   // ch. 10.6 clause 2 — null = drop
+            if (rd != null && behoeften != null)
+                // a navigated radicand must guard its root before the "." dereference (mvel is not null-safe);
+                // an own attribute reads `basis < 0` directly (a null is false for "< 0", no NPE) — byte-identical.
+                guards.add(behoeften + (rd.genavigeerd()
+                        ? rd.vol() + " && " + rd.waarde() + " < new java.math.BigDecimal(\"0\")"
+                        : rd.waarde() + " < new java.math.BigDecimal(\"0\")"));
+        }
         for (int i = 0; i < guards.size(); i++) {
             String pattern = (voorwaarde.isEmpty() ? "" : voorwaarde + ", ") + guards.get(i);
             Regel rule = new Regel(r.naam() + " (wortel van negatief" + (guards.size() > 1 ? " " + (i + 1) : "") + ")")
@@ -1487,6 +1574,13 @@ public final class DrlTranspiler {
                 if (d instanceof Expr.TekstReeks.Ingevoegd i) verzamelEigenReads(i.expr(), subject, uit);
         } else if (e instanceof Expr.DimensieCel dc) {
             verzamelEigenReads(dc.attribuut(), subject, uit);
+        } else if (e instanceof Expr.Let b) {
+            // ch. 4.10: a read WRAPPED in a Let is still a read of the subject's own attribute. Without this arm
+            // the pattern gets an EMPTY reactivity mask for a Let-only value: the rule computes once — against a
+            // producer that has not written yet — and never recomputes. Both sides, since the value is evaluated
+            // whenever the body reads the binder and the watch may over-approximate but never under-approximate.
+            verzamelEigenReads(b.value(), subject, uit);
+            verzamelEigenReads(b.body(), subject, uit);
         }
     }
 
@@ -1519,6 +1613,9 @@ public final class DrlTranspiler {
             verzamelFilterKenmerkReads(bg.basis(), subject, uit);
             verzamelFilterKenmerkReads(bg.minimum(), subject, uit);
             verzamelFilterKenmerkReads(bg.maximum(), subject, uit);
+        } else if (e instanceof Expr.Let b) {   // ch. 4.10: an aggregation's clipping kenmerk under a binding
+            verzamelFilterKenmerkReads(b.value(), subject, uit);
+            verzamelFilterKenmerkReads(b.body(), subject, uit);
         }
     }
 
@@ -1589,23 +1686,63 @@ public final class DrlTranspiler {
                 if (d instanceof Expr.TekstReeks.Ingevoegd i) verzamelNavRefs(i.expr(), subject, uit);
         } else if (e instanceof Expr.DimensieCel dc) {
             verzamelNavRefs(dc.attribuut(), subject, uit);
+        } else if (e instanceof Expr.Let b) {   // ch. 4.10: a far-side read under a binding needs the same join
+            verzamelNavRefs(b.value(), subject, uit);
+            verzamelNavRefs(b.body(), subject, uit);
         }
     }
 
-    private static void verzamelWortels(Expr e, List<Expr.Functie> uit) {
-        if (e instanceof Expr.Functie f) {
-            if (f.kind() == Expr.FunctieKind.WORTEL) uit.add(f);
-            for (Expr a : f.argumenten()) verzamelWortels(a, uit);
-        } else if (e instanceof Expr.Binair b) {
-            verzamelWortels(b.links(), uit);
-            verzamelWortels(b.rechts(), uit);
-        } else if (e instanceof Expr.Afgerond af) {
-            verzamelWortels(af.basis(), uit);
-        } else if (e instanceof Expr.Begrensd bg) {
-            verzamelWortels(bg.basis(), uit);
-            verzamelWortels(bg.minimum(), uit);
-            verzamelWortels(bg.maximum(), uit);
+    /**
+     * A §6.5/§6.6 fault site together with the ch. 4.10 NEEDS whose barrier stands between the rule firing and
+     * the site running — the values of the {@link Expr.Let}s enclosing it, outermost first, empty for a site with
+     * no binding above it (the unchanged v0 shape). ch. 10.6 clause 2: a leeg need ends its {@code Let} and the
+     * body's sites never run, so a companion built WITHOUT them would insert an Inconsistentie for a division
+     * that never executed.
+     */
+    private record Foutplek(Expr plek, List<Expr> behoeften) {}
+
+    /** The needs a site sits behind, as companion-pattern guards ({@code "<vol>, <vol>, "}, empty for none), or
+     *  null when one of them does not decompose into a re-readable guard — the companion is then DROPPED, which
+     *  is the same scope limit a literal/parameter operand already carries: a fault that degrades to leeg but
+     *  raises no Inconsistentie, never a fault invented on a path the barrier cut off. */
+    private String behoefteGuards(Acc acc, List<Expr> behoeften, Objecttype subject) {
+        StringBuilder b = new StringBuilder();
+        for (Expr n : behoeften) {
+            OperandDeel d = companionDeel(acc, n, subject);
+            if (d == null) return null;
+            b.append(d.vol()).append(", ");
         }
+        return b.toString();
+    }
+
+    private static void verzamelWortels(Expr e, List<Expr> behoeften, List<Foutplek> uit) {
+        if (e instanceof Expr.Functie f) {
+            if (f.kind() == Expr.FunctieKind.WORTEL) uit.add(new Foutplek(f, behoeften));
+            for (Expr a : f.argumenten()) verzamelWortels(a, behoeften, uit);
+        } else if (e instanceof Expr.Binair b) {
+            verzamelWortels(b.links(), behoeften, uit);
+            verzamelWortels(b.rechts(), behoeften, uit);
+        } else if (e instanceof Expr.Afgerond af) {
+            verzamelWortels(af.basis(), behoeften, uit);
+        } else if (e instanceof Expr.Begrensd bg) {
+            verzamelWortels(bg.basis(), behoeften, uit);
+            verzamelWortels(bg.minimum(), behoeften, uit);
+            verzamelWortels(bg.maximum(), behoeften, uit);
+        } else if (e instanceof Expr.Let b) {
+            verzamelWortels(b.body(), letDescent(b, behoeften, (x, n) -> verzamelWortels(x, n, uit)), uit);
+        }
+    }
+
+    /** How the §6.5/§6.6 collectors descend one {@link Expr.Let}: the VALUE is walked under the enclosing needs,
+     *  and only when the body READS the binder (ch. 10.6 clause 3 — an unread need runs no site at all); the need
+     *  list the BODY then sits behind (clause 2) is handed back. One statement of the scope rule for both walks. */
+    private static List<Expr> letDescent(Expr.Let b, List<Expr> behoeften,
+                                         java.util.function.BiConsumer<Expr, List<Expr>> walk) {
+        if (!leestBinder(b.body(), letSleutel(b.binder()))) return behoeften;
+        walk.accept(b.value(), behoeften);
+        List<Expr> binnen = new ArrayList<>(behoeften);
+        binnen.add(b.value());
+        return binnen;
     }
 
     /** §6.5 / Tabel 12: a "waarde gedeeld door leeg" is a Fout. The value side already degrades it to leeg
@@ -1619,12 +1756,15 @@ public final class DrlTranspiler {
      *  null, never merely divisor == null. */
     private void deelDoorLeegFout(Acc acc, ResolvedRegel r, Objecttype subject, String voorwaarde, boolean voorwaardeMarker, List<String> extraClausules) {
         if (voorwaardeMarker) return;          // the host rule is itself a no-op marker -> no division fires
-        List<Expr.Binair> delingen = new ArrayList<>();
-        verzamelDelingen(r.waarde(), delingen);
+        List<Foutplek> delingen = new ArrayList<>();
+        verzamelDelingen(r.waarde(), List.of(), delingen);
         List<String> patronen = new ArrayList<>();   // "dividend-vol, divisor-leeg" per qualifying division
-        for (Expr.Binair d : delingen) {
+        for (Foutplek fp : delingen) {
+            Expr.Binair d = (Expr.Binair) fp.plek();
             OperandDeel dividend = companionDeel(acc, d.links(), subject), divisor = companionDeel(acc, d.rechts(), subject);
-            if (dividend != null && divisor != null) patronen.add(dividend.vol() + ", " + divisor.leeg());
+            String behoeften = behoefteGuards(acc, fp.behoeften(), subject);   // ch. 10.6 clause 2 — null = drop
+            if (dividend != null && divisor != null && behoeften != null)
+                patronen.add(behoeften + dividend.vol() + ", " + divisor.leeg());
         }
         for (int i = 0; i < patronen.size(); i++) {
             String pattern = (voorwaarde.isEmpty() ? "" : voorwaarde + ", ") + patronen.get(i);
@@ -1642,17 +1782,20 @@ public final class DrlTranspiler {
     /** Collect every "gedeeld door"/"gedeeld door (ABS)" node reachable through the arithmetic-wrapper layers
      *  (Binair / Afgerond / Begrensd) of a value expression — for the §6.5 fout surfacing. Aggregation operands
      *  are not descended (an aggregation divisor cannot be a plain re-readable guard). */
-    private static void verzamelDelingen(Expr e, List<Expr.Binair> uit) {
+    private static void verzamelDelingen(Expr e, List<Expr> behoeften, List<Foutplek> uit) {
         if (e instanceof Expr.Binair b) {
-            if (b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS) uit.add(b);
-            verzamelDelingen(b.links(), uit);
-            verzamelDelingen(b.rechts(), uit);
+            if (b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS)
+                uit.add(new Foutplek(b, behoeften));
+            verzamelDelingen(b.links(), behoeften, uit);
+            verzamelDelingen(b.rechts(), behoeften, uit);
         } else if (e instanceof Expr.Afgerond af) {
-            verzamelDelingen(af.basis(), uit);
+            verzamelDelingen(af.basis(), behoeften, uit);
         } else if (e instanceof Expr.Begrensd bg) {
-            verzamelDelingen(bg.basis(), uit);
-            verzamelDelingen(bg.minimum(), uit);
-            verzamelDelingen(bg.maximum(), uit);
+            verzamelDelingen(bg.basis(), behoeften, uit);
+            verzamelDelingen(bg.minimum(), behoeften, uit);
+            verzamelDelingen(bg.maximum(), behoeften, uit);
+        } else if (e instanceof Expr.Let b) {
+            verzamelDelingen(b.body(), letDescent(b, behoeften, (x, n) -> verzamelDelingen(x, n, uit)), uit);
         }
     }
 
@@ -2008,7 +2151,16 @@ public final class DrlTranspiler {
             Frag rk = rekenConstante(c);   // §5.3 Rekendatum/Rekenjaar as a VALUE operand (§13.4.17.34)
             return rk != null ? rk : Frag.todo("constante", c.naam());
         }
+        if (e instanceof Expr.BinderRef br)     return binderLezing(acc, br);
+        if (e instanceof Expr.Let b)            return letWaarde(acc, b, subject);
         if (e instanceof Expr.Functie f) {
+            // ch. 4.10: a binder read inside an aggregation would have to be re-read from the WHEN (that is where
+            // the accumulate lives) while its need is a CONSEQUENCE-local — the two cannot meet. The frontend
+            // SUBSTITUTES a read inside a shape-reading construct instead of emitting a BinderRef there
+            // (RUNTIME-SEMANTICS ch. 10.6, tracked delta 1), so a document carrying one is refused here BY NAME
+            // rather than through a bare Drools compile error about an unresolvable identifier.
+            if (Expr.bevat(f, x -> x instanceof Expr.BinderRef))
+                return Frag.todo("binderlezing binnen een aggregatie (ch. 4.10)", f.bron());
             Frag scalar = scalarFunctie(acc, f, x -> waarde(acc, x, subject)); // §13.4.17 single-value builtins (abs, datum-delen, datum-met)
             if (scalar != null) return scalar;
             Frag dim = dimensieAggregatie(acc, f, subject);      // SOM/min/max over a dimension's labels
@@ -2021,6 +2173,77 @@ public final class DrlTranspiler {
             return var != null ? var : Frag.todo("aggregatie " + f.kind(), f.bron());
         }
         return Frag.todo("expressie", e.bron());
+    }
+
+    // ---------------- IR-SPEC ch. 4.10 / RUNTIME-SEMANTICS ch. 10.6: the value-level binding ----------------
+
+    /**
+     * WF-064 a read of the nearest enclosing binder: the consequence-local variable its need was forced into.
+     * The binding is a real one — the need is evaluated ONCE and every read is the same variable — so a §9.5
+     * channel reason, a fault or a leeg comes from one evaluation, not from one per read, which is what a text
+     * substitution of the value would have made of it.
+     *
+     * <p>A read with no binding in scope is a document this branch cannot lower (WF-064 says there is always
+     * one, so it never comes off the wire verifier-clean): an honest marker, never a silent leeg.
+     */
+    private Frag binderLezing(Acc acc, Expr.BinderRef br) {
+        String var = acc.binders.get(letSleutel(br.naam()));
+        return var == null ? Frag.todo("ongebonden binderlezing (WF-064)", br.bron()) : Frag.ok(var);
+    }
+
+    /**
+     * ch. 10.6 lowered as CONTROL FLOW, not as substitution. The need is forced into a fresh consequence-local
+     * mvel variable ({@code $behoefteN}) by one PRELUDE line, and the {@code Let} itself renders as the
+     * leeg-BARRIER over it: {@code ($behoefteN == null ? null : <body>)}.
+     *
+     * <p>The three clauses, each a piece of that shape:
+     * <ul>
+     *   <li><b>1 — lazy, and once.</b> One prelude line per need, one variable, every read the same variable.
+     *       Re-emitting the value text at each read would evaluate it once per read; the shared local is what
+     *       makes "one need" true here, and it is why the body's units, its fout companions and its freshness
+     *       watch keep speaking about the SAME evaluation.</li>
+     *   <li><b>2 — the barrier at the read, owned by the binding Let.</b> The {@code == null} ternary sits AT
+     *       this node, so a leeg need empties exactly THIS {@code Let} and nothing above it: a sibling
+     *       {@code Let} under the same {@code plus} keeps its own answer (and the §6.2 leegwaarde table then
+     *       coalesces this one), where a consequence-wide guard would have emptied the whole value.</li>
+     *   <li><b>3 — an unread binder evaluates nothing.</b> A body that does not read the binder gets NO prelude
+     *       line and NO barrier: the {@code Let}'s outcome IS the body's, and the value is never evaluated —
+     *       no leeg, no fault. {@link #leestBinder} decides that statically, which is exact in the subset this
+     *       branch lowers (every other form it lowers evaluates all its children).</li>
+     * </ul>
+     *
+     * <p><b>Where the forcing sits, and why the prelude line is itself guarded.</b> The needs are forced BEFORE
+     * the body rather than at the textual read, which is observationally identical here (the values are pure and
+     * every read that exists is reached) — but only if a need the barrier would have cut off is not forced
+     * anyway: {@code rsGedeeld} by a numeric zero THROWS, and a throw inside a consequence aborts the whole
+     * fire. So each prelude line carries the conjunction of the needs ENCLOSING it ({@link Acc#letBewaking}),
+     * and a chain whose outer need is leeg forces no inner one. What remains, and is stated rather than hidden:
+     * ch. 10.6 orders the reads left-to-right, so a §6.5 site standing BEFORE the read that raises the barrier
+     * does run in {@code ref} and does not here — a MISSED fault, never an invented one, and the §6.5/§6.6
+     * companions are gated by the same needs so they agree with this lowering.
+     */
+    private Frag letWaarde(Acc acc, Expr.Let b, Objecttype subject) {
+        if (acc.letVoorspel == null)   // no consequence to carry the need — honest marker, never a half lowering
+            return Frag.todo("Let buiten de resultaatwaarde van een berekening (ch. 4.10)", b.bron());
+        String sleutel = letSleutel(b.binder());
+        if (!leestBinder(b.body(), sleutel)) return waarde(acc, b.body(), subject);   // clause 3
+        // WF-076: the value is lowered in the ENCLOSING scope — the binder is not visible in its own value, so it
+        // is bound only after this call.
+        Frag v = waarde(acc, b.value(), subject);
+        String var = "$behoefte" + (++acc.letN);
+        String bewaakt = acc.letBewaking.isEmpty() ? v.text()
+                : "(" + String.join(" && ", acc.letBewaking) + ") ? " + v.text() + " : null";
+        acc.letVoorspel.add("    " + var + " = " + bewaakt + ";\n");
+        String vorige = acc.binders.put(sleutel, var);   // WF-064: an inner binder SHADOWS, it never overwrites
+        acc.letBewaking.add(var + " != null");
+        Frag body;
+        try {
+            body = waarde(acc, b.body(), subject);
+        } finally {
+            acc.letBewaking.remove(acc.letBewaking.size() - 1);
+            if (vorige == null) acc.binders.remove(sleutel); else acc.binders.put(sleutel, vorige);
+        }
+        return Frag.from("(" + var + " == null ? null : " + body.text() + ")", v, body);
     }
 
     /**
@@ -3928,6 +4151,11 @@ public final class DrlTranspiler {
         // and rsWaarde is a safe identity for its BigDecimal / Breuk result.
         if (e.type() != null && !e.type().isGetalachtig() && !e.type().isOnbekend()) return false;
         if (e instanceof Expr.Binair || e instanceof Expr.Begrensd || e instanceof Expr.Afgerond) return true;
+        // ch. 4.10: a Let's result IS its body's (WF-076), so the collapse question is the body's; a binder read
+        // hands back whatever its need computed, which may be an exact Breuk — the numeric-type gate above is what
+        // keeps the rsWaarde wrap safe there, and for a terminating BigDecimal the wrap is the identity.
+        if (e instanceof Expr.Let b) return kanBreukOpleveren(b.body());
+        if (e instanceof Expr.BinderRef) return true;
         // §6.9 "de absolute waarde van" preserves a Breuk (rsAbs returns Object); other builtins (date-component,
         // datum-met, aggregation) return a BigDecimal/date, so they need no collapse and stay unwrapped.
         if (e instanceof Expr.Functie f && f.kind() == Expr.FunctieKind.ABSOLUTE_WAARDE) return true;

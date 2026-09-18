@@ -34,12 +34,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * document the loader accepts, so a golden that gains a unit-bearing rescale is covered here the day it
  * lands, whether or not it is replayable.
  *
- * <p><b>What it does not add, measured and said out loud.</b> With {@code EffectieveEenheid.van} put back on
- * {@code e.type()} (the state before that class existed) this witness goes red on 9 goldens — the same nine
- * the harness's DRL leg catches. The other three twistable goldens (lichterloon, vondstrecht, seizoenvondst)
- * stay green under that mutant, and the reason is not luck: their unit-bearing positions sit under a
- * construct the DRL branch MARKERS (the ch. 4.10 Let), so no rescale factor is emitted there for a lie to
- * move. Wider reach, identical catch — today.
+ * <p><b>What its reach is, measured and said out loud.</b> With {@code EffectieveEenheid.van} put back on
+ * {@code e.type()} (the state before that class existed) this witness goes red on <b>21</b> goldens
+ * (measured 2026-09-18). It used to be 9, the same nine the harness's DRL leg caught, and the difference is
+ * this branch's ch. 4.10 lowering: while a Let was a MARKER here, a golden whose unit-bearing positions sat
+ * under one emitted no rescale factor at all, so no lie could move its text — {@code jutterswet-lichterloon}
+ * and {@code jutterswet-vondstrecht} were two of those and are now among the 21. Wider reach, and no longer
+ * the same catch.
  *
  * <p>The twist mirrors the harness's table deliberately — same derived positions, same reason-carrying
  * exceptions (a {@code Literal}'s own lexeme, the WF-035 duration operand, a WF-038 tijdsduur). It is
@@ -160,8 +161,13 @@ class DrlEenheidsplekWitnessTest {
         return CORPUS.relativize(ir.getParent()).toString();
     }
 
+    /** The emitted text, built exactly as {@code CaseRunner}'s DRL branch builds it — model AND the document's
+     *  ch. 4.10 Let index. The index is not decoration here: a {@link io.github.yhavinga.regelspraak.ir.Expr.BinderRef}
+     *  asked for its unit in isolation has no route back up to its binding, so without it the read falls back to
+     *  its own wire annotation and this witness would measure a transpiler no branch uses. */
     private static String drl(JsonNode ir) {
-        return DrlTranspiler.transpile(IrLoader.loadAll(ir).model());
+        IrLoader.Loaded l = IrLoader.loadAll(ir);
+        return DrlTranspiler.build(l.model(), l.lets()).drl();
     }
 
     /** The first line that moved, as "honest | lying" — the diagnostic a bare inequality cannot give. */
