@@ -115,6 +115,11 @@ public final class ExecModelTranspiler {
      *  nodes are records with value equality). Empty by default — every node then uses the by-pair derivation,
      *  which is exactly the pre-2026-08-30 behaviour. */
     private Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen = new java.util.IdentityHashMap<>();
+    /** IR-SPEC ch. 4.3 / WF-102: the fold-source RANGE as a PATH per {@link Expr.Functie} node
+     *  ({@code IrLoader.Loaded.bronPaden}), riding beside the model for the same vendored-record reason and for a
+     *  sharper one — a path is the one extension the model cannot RE-DERIVE, so dropping it folds a coincidental
+     *  direct relation instead. Keyed by IDENTITY. Empty by default (every fold then carries the one-step range). */
+    private Map<Object, List<RegelSpraakModel.RolBindingRef>> bronPaden = new java.util.IdentityHashMap<>();
     /** RUNTIME-SEMANTICS ch. 2.10: the §4 EFFECTIVE-unit derivation — declarations plus the ch. 2.6 join rules.
      *  Every unit restatement below takes its datatypes from here; a bare {@code e.type()} at a restatement site
      *  reads the wire's REPETITION of a declaration instead of the declaration, which is what made this backend
@@ -170,7 +175,12 @@ public final class ExecModelTranspiler {
      *  decide a fixture is "not yet migrated" rather than a divergence). Fact beans resolve against
      *  {@code beanLoader}; null routes to this transpiler's own loader. */
     public static ExecModelTranspiler build(RegelSpraakModel m, ClassLoader beanLoader) {
-        return build(m, beanLoader, List.of(), java.util.Map.of(), List.of());
+        return build(m, beanLoader, List.of(), java.util.Map.of(), List.of(), java.util.Map.of());
+    }
+    /** The pre-WF-102 arity, kept for the callers that carry no path (every witness that builds a one-step model). */
+    public static ExecModelTranspiler build(RegelSpraakModel m, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
+            Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen, List<Expr.Let> lets) {
+        return build(m, beanLoader, defaults, rolBindingen, lets, java.util.Map.of());
     }
     /** As {@link #build(RegelSpraakModel, ClassLoader)} but also consumes what the loader carries BESIDE the model
      *  (see {@code IrLoader.Loaded}): the ch. 7 prioritized-defaults extension — each group lowers to one
@@ -178,7 +188,8 @@ public final class ExecModelTranspiler {
      *  index. An empty/null defaults list is the flat v0 case; an empty {@code rolBindingen} is the
      *  by-pair-derivation-only case. */
     public static ExecModelTranspiler build(RegelSpraakModel m, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
-            Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen, List<Expr.Let> lets) {
+            Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen, List<Expr.Let> lets,
+            Map<Object, List<RegelSpraakModel.RolBindingRef>> bronPaden) {
         ExecModelTranspiler t = new ExecModelTranspiler(m, beanLoader);
         t.prioritizedDefaults = defaults == null ? List.of() : defaults;
         if (rolBindingen != null && !rolBindingen.isEmpty()) {
@@ -186,6 +197,10 @@ public final class ExecModelTranspiler {
             // value-keyed map would merge two structurally identical nodes into one binding.
             t.rolBindingen = new java.util.IdentityHashMap<>();
             t.rolBindingen.putAll(rolBindingen);
+        }
+        if (bronPaden != null && !bronPaden.isEmpty()) {
+            t.bronPaden = new java.util.IdentityHashMap<>();   // identity, for rolBindingen's reason
+            t.bronPaden.putAll(bronPaden);
         }
         t.eff = new io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid(
                 lets == null ? List.of() : lets);
@@ -892,6 +907,21 @@ public final class ExecModelTranspiler {
         if (temporeel && f.kind() != Expr.FunctieKind.SOM && f.kind() != Expr.FunctieKind.TOTAAL) return null;
         if (!count && arg == null) return null;   // sum/min/max need an attribute to fold
 
+        // IR-SPEC ch. 4.3 / WF-102: a RANGE that is a PATH replaces the whole one-step join derivation below. It is
+        // read first and returns, so a document carrying a path never falls through to the by-pair search — that
+        // fallback would bind a coincidental DIRECT subject-to-element relation and fold the wrong set, which is
+        // the misbinding the field closes. The fold KIND, its leegwaarde and every §4.12/§5.8.2 guard stay exactly
+        // where they are: only the SOURCE changes, so there is no MIN-specific (or any other kind-specific) arm in
+        // the path code.
+        List<RegelSpraakModel.RolBindingRef> pad = bronPaden.get(f);
+        if (pad != null) {
+            io.github.yhavinga.regelspraak.transpiler.kern.Bronpad.Plan plan =
+                    io.github.yhavinga.regelspraak.transpiler.kern.Bronpad.ontleed(model, subject, pad, elem);
+            if (plan.weigering() != null) { aggregatieReden = plan.weigering(); return null; }
+            PadBron pb = padBron(plan, elem, elemClass, subjectVar);
+            if (pb == null) return null;                  // aggregatieReden set by padBron
+            return vouw(f, elem, arg, count, temporeel, leegCount, pb.elemVar(), pb.src(), pb.extra());
+        }
         // §9.4 the join role binding the element to the subject (a count may name its element role explicitly).
         String rol = null;
         if (subject != null && arg != null && count) rol = model.verbindendeRolViaElementnaam(subject, arg.attribuut());
@@ -977,6 +1007,27 @@ public final class ExecModelTranspiler {
         PatternDSL.PatternDef src = PatternDSL.pattern(elemVar).expr(nextId("join"), (Variable) subjectVar,
                 voorwaarts ? (Predicate2) (e, subj) -> RegelSpraakRuntime.get(subj, fwdVeld) == e
                            : (Predicate2) (e, subj) -> RegelSpraakRuntime.get(e, backref) == subj);
+        return vouw(f, elem, arg, count, temporeel, leegCount, elemVar, src, List.of());
+    }
+
+    /** <b>Every count carries the ELEMENT VARIABLE</b>, which is not decoration. A source-LESS count is legal
+     *  over a plain pattern and the fold used to write one, but over a SUBNETWORK — which is what a WF-102 path
+     *  with an existential intermediate builds — the model compiler locates the accumulate's source pattern
+     *  through the FIRST function's source variable, and a function without one leaves every binding unresolved:
+     *  measured, a {@code SubnetworkTuple} arrives where a {@code BigDecimal} is expected and the fire dies.
+     *  Naming the element is semantics-free over a plain pattern (the function counts matches and never reads
+     *  the value), so both source shapes take the same lowering rather than two.
+     *
+     *  <p>The fold itself, over a source pattern whose JOIN is already decided — the one-step backref/forward join of
+     *  {@link #aggregatie} or the WF-102 path of {@link #padBron}. Everything kind-specific lives HERE and nothing
+     *  range-specific does: §13.4.2's die-filter, §5.8.2's empty-SOM count+fallback, §4.12's {@code != null} source
+     *  guard, §7.1's per-element timeline collapse and §5.8.3's leegCount companion read the same {@code src}
+     *  whichever range produced it. {@code extra} carries the path's EXISTENTIAL intermediates (empty for every
+     *  other source): they join the accumulate SOURCE, not the fold, which is what makes one element reached along
+     *  two routes contribute once. */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private Agg vouw(Expr.Functie f, Objecttype elem, Expr.AttribuutRef arg, boolean count, boolean temporeel,
+            boolean leegCount, Variable elemVar, PatternDSL.PatternDef src, List<PatternDSL.PatternDef> extra) {
         if (f.filter() != null) {                       // §13.4.2 die/dat <predicaat> on the element
             src = filterSource(src, f.filter(), elem);
             if (src == null) return null;               // unstructured / unbindable filter -> skip (mirror the DRL marker)
@@ -984,7 +1035,8 @@ public final class ExecModelTranspiler {
 
         Variable resultVar = DSL.declarationOf(Object.class, "$acc_" + (seq++));
         if (count)
-            return new Agg(DSL.accumulate(src, DSL.accFunction(accFn("CountAccumulateFunction")).as(resultVar)),
+            return new Agg(DSL.accumulate(accBron(src, extra),
+                            DSL.accFunction(accFn("CountAccumulateFunction"), elemVar).as(resultVar)),
                     resultVar, null, null, false);
 
         final String attr = arg.attribuut();
@@ -1013,8 +1065,8 @@ public final class ExecModelTranspiler {
             PatternDSL.PatternDef src2 = src.expr(nextId("nn"), (Predicate1) (e) -> RegelSpraakRuntime.get(e, attr) != null)
                     .bind(amtVar, (Function1) elemWaarde);
             Variable cntVar = DSL.declarationOf(Object.class, "$cnt_" + (seq++));
-            RuleItemBuilder acc = DSL.accumulate(src2,
-                    DSL.accFunction(accFn("CountAccumulateFunction")).as(cntVar),
+            RuleItemBuilder acc = DSL.accumulate(accBron(src2, extra),
+                    DSL.accFunction(accFn("CountAccumulateFunction"), elemVar).as(cntVar),
                     DSL.accFunction(accFn("BigDecimalSumAccumulateFunction"), amtVar).as(resultVar));
             return new Agg(acc, resultVar, cntVar, fallback, true);
         }
@@ -1041,12 +1093,116 @@ public final class ExecModelTranspiler {
             // (count==0 -> a null aggregate, no fallback) and rsAggVergelijk applies the leegwaarde cells. The VALUE side
             // (leegCount=false) keeps the bare fold -> an empty value-aggregation simply does not fire (unchanged).
             Variable cntVar = DSL.declarationOf(Object.class, "$cnt_" + (seq++));
-            RuleItemBuilder acc = DSL.accumulate(src2,
-                    DSL.accFunction(accFn("CountAccumulateFunction")).as(cntVar),
+            RuleItemBuilder acc = DSL.accumulate(accBron(src2, extra),
+                    DSL.accFunction(accFn("CountAccumulateFunction"), elemVar).as(cntVar),
                     DSL.accFunction(accClass, amtVar).as(resultVar));
             return new Agg(acc, resultVar, cntVar, null, false);   // countVar set, no fallback, not SOM
         }
-        return new Agg(DSL.accumulate(src2, DSL.accFunction(accClass, amtVar).as(resultVar)), resultVar, null, null, false);
+        return new Agg(DSL.accumulate(accBron(src2, extra), DSL.accFunction(accClass, amtVar).as(resultVar)), resultVar, null, null, false);
+    }
+
+    /** The accumulate SOURCE: the element pattern alone, or — for a WF-102 path whose walk alternates — that
+     *  pattern AND an {@code exists} over the intermediates. The {@code exists} is what makes the flat-union
+     *  reading true in this branch: joined into the source instead, two intermediates reaching one element would
+     *  produce two tuples and the element would contribute twice. */
+    private org.drools.model.view.ViewItem<?> accBron(PatternDSL.PatternDef src, List<PatternDSL.PatternDef> extra) {
+        if (extra.isEmpty()) return src;
+        org.drools.model.view.ViewItemBuilder<?>[] rest =
+                extra.subList(1, extra.size()).toArray(new org.drools.model.view.ViewItemBuilder<?>[0]);
+        return DSL.and(src, DSL.exists(extra.get(0), rest));
+    }
+
+    /** A WF-102 path lowered to an accumulate source: the element pattern plus whatever the walk needs. */
+    private record PadBron(Variable elemVar, PatternDSL.PatternDef src, List<PatternDSL.PatternDef> extra) {}
+
+    /** Apply a chain of to-one reference fields, leeg-safely: a broken link anywhere reads as null rather than
+     *  faulting, so an intermediate that reaches nothing simply drops out of the union (ch. 3.4b). */
+    private static Object wandel(Object start, List<String> velden) {
+        Object cur = start;
+        for (String v : velden) { if (cur == null) return null; cur = RegelSpraakRuntime.get(cur, v); }
+        return cur;
+    }
+
+    /**
+     * IR-SPEC ch. 4.3 / WF-102 — the fold-source RANGE as a path, lowered to an accumulate source.
+     *
+     * <p>Each hop reads the §13.3.9 bean field {@link io.github.yhavinga.regelspraak.transpiler.kern.Bronpad}
+     * derived for it, and the shape of the lowering follows from WHICH end stores it. A backward hop is functional
+     * FROM the element (one scalar getter), a forward hop functional FROM the subject, so:
+     *
+     * <ul>
+     *   <li>a path that is a forward run followed by a backward run is ONE constraint on the element pattern —
+     *       walk down from {@code $subject}, walk up from the element, and demand the two meet. No intermediate is
+     *       bound, no element is reachable twice, and the accumulate source stays a single pattern;</li>
+     *   <li>otherwise a BACKWARD hop is followed by a FORWARD one, and there the intermediate genuinely matters:
+     *       two intermediates may reach the SAME element. Each such node becomes a pattern inside one
+     *       {@code exists}, which is precisely the dedup the flat union asks for — the element pattern remains the
+     *       only tuple generator, so the element contributes once however many routes reach it.</li>
+     * </ul>
+     *
+     * <p>Every constraint binds at most two variables and is attached to the LATER-bound of them, so the
+     * intermediates may be declared in path order. null -> skip, with {@link #aggregatieReden} set.
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private PadBron padBron(io.github.yhavinga.regelspraak.transpiler.kern.Bronpad.Plan plan, Objecttype elem,
+            Class<?> elemClass, Variable subjectVar) {
+        Variable elemVar = DSL.declarationOf(elemClass, "$e_" + (seq++));
+        if (plan.ontmoet()) {
+            int m = plan.ontmoeting();
+            final List<String> vanafElement = plan.ketenVanafElement(m);
+            final List<String> vanafOnderwerp = plan.ketenVanafOnderwerp(m);
+            PatternDSL.PatternDef src = PatternDSL.pattern(elemVar).expr(nextId("pad"), (Variable) subjectVar,
+                    (Predicate2) (e, subj) -> {
+                        Object a = wandel(e, vanafElement), b = wandel(subj, vanafOnderwerp);
+                        return a != null && a == b;
+                    });
+            return new PadBron(elemVar, src, List.of());
+        }
+        // the alternating middle: one existential pattern per node neither walk determines
+        java.util.Map<Integer, Variable> tussen = new java.util.LinkedHashMap<>();
+        for (int i : plan.tussenknopen()) {
+            Class<?> c = factClass(plan.knoopTypen().get(i));
+            if (c == null) {
+                aggregatieReden = "bronPad-tussentype '" + plan.knoopTypen().get(i).naam
+                        + "' heeft geen factklasse (§13.3.9 opslagrichting)";
+                return null;
+            }
+            tussen.put(i, DSL.declarationOf(c, "$pm_" + (seq++)));
+        }
+        List<PatternDSL.PatternDef> extra = new ArrayList<>();
+        int laatsteTussen = plan.achterwaartsVanaf() - 1;
+        for (java.util.Map.Entry<Integer, Variable> e : tussen.entrySet()) {
+            int i = e.getKey();
+            PatternDSL.PatternDef p = PatternDSL.pattern(e.getValue());
+            p = koppel(p, plan, i, i, tussen, elemVar, subjectVar);                   // the hop INTO this node
+            if (i == laatsteTussen) p = koppel(p, plan, plan.achterwaartsVanaf(), i, tussen, elemVar, subjectVar);
+            extra.add(p);
+        }
+        return new PadBron(elemVar, PatternDSL.pattern(elemVar), extra);
+    }
+
+    /** Constrain {@code p} — the pattern of node {@code dit} — with hop {@code stap} (which connects nodes
+     *  {@code stap-1} and {@code stap}), reading the OTHER end through whichever root determines it: the subject
+     *  (a forward prefix), the element (a backward suffix) or an already-declared intermediate. */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private PatternDSL.PatternDef koppel(PatternDSL.PatternDef p,
+            io.github.yhavinga.regelspraak.transpiler.kern.Bronpad.Plan plan, int stap, int dit,
+            java.util.Map<Integer, Variable> tussen, Variable elemVar, Variable subjectVar) {
+        int ander = stap - 1 == dit ? stap : stap - 1;
+        final boolean ditIsDoel = ander == stap - 1;          // this node is the hop's TARGET, the other its source
+        final List<String> anderKeten = ander <= plan.voorwaarts() ? plan.ketenVanafOnderwerp(ander)
+                : ander >= plan.achterwaartsVanaf() ? plan.ketenVanafElement(ander) : List.of();
+        Variable anderVar = ander <= plan.voorwaarts() ? subjectVar
+                : ander >= plan.achterwaartsVanaf() ? elemVar : tussen.get(ander);
+        final String veld = plan.stappen().get(stap - 1).veld();
+        final boolean achterwaarts = plan.stappen().get(stap - 1).achterwaarts();
+        return p.expr(nextId("pad"), anderVar, (Predicate2) (t, o) -> {
+            Object x = wandel(o, anderKeten);
+            if (x == null || t == null) return false;
+            Object bron = ditIsDoel ? x : t, doel = ditIsDoel ? t : x;
+            return achterwaarts ? RegelSpraakRuntime.get(doel, veld) == bron
+                                : RegelSpraakRuntime.get(bron, veld) == doel;
+        });
     }
 
     /** A §5.8.2 to-many temporal sommatie: the collectList accumulate CE (binding the element {@code List<Segment>}

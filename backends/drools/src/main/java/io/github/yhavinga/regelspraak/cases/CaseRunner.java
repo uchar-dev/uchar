@@ -256,7 +256,7 @@ public final class CaseRunner {
         try {
             if (viaDrl) return drlTak(model, loaded, cl);
             ExecModelTranspiler et = ExecModelTranspiler.build(model, cl, loaded.prioritizedDefaults(),
-                    loaded.rolBindingen(), loaded.lets());
+                    loaded.rolBindingen(), loaded.lets(), loaded.bronPaden());
             // every construct must LOWER — a marker means the exec KieBase silently omits it,
             // so the case's expectations could not be produced; that golden is not carried.
             for (Dekking d : et.dekking())
@@ -287,7 +287,7 @@ public final class CaseRunner {
         // route back up to its own binding (the exec branch has taken the same index since the Let-node card).
         // The defaults list is empty by the refusal above; it is passed rather than defaulted because the
         // ch. 7.8 standing classification's other_writer clause reads it (see DrlTranspiler's constructor).
-        DrlTranspiler t = DrlTranspiler.build(model, loaded.lets(), loaded.prioritizedDefaults());
+        DrlTranspiler t = DrlTranspiler.build(model, loaded.lets(), loaded.prioritizedDefaults(), loaded.bronPaden());
         for (Dekking d : t.dekking())
             if (!d.lowered()) throw new Excluded("drl-transpiler " + d.verdict() + ": " + d.sleutel()
                     + (d.reden().isEmpty() ? "" : " — " + d.reden()));

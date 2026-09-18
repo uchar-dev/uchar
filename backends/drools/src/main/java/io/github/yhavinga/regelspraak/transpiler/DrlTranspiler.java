@@ -118,12 +118,31 @@ public final class DrlTranspiler {
      *      its own standing domain the day this branch does gain the lowering. */
     public DrlTranspiler(RegelSpraakModel model, List<Expr.Let> lets,
             List<io.github.yhavinga.regelspraak.ir.PrioritizedDefaults> defaults) {
+        this(model, lets, defaults, java.util.Map.of());
+    }
+
+    /** @param bronPaden the ch. 4.3 / WF-102 fold-source RANGES ({@code IrLoader.Loaded.bronPaden}), per
+     *      {@link Expr.Functie} node, by IDENTITY. It is the ONE thing beside the model this branch cannot
+     *      re-derive: the by-pair search below answers for a type PAIR, and a path's intermediate types are its
+     *      own claim — so a branch that did not receive it would fold whatever DIRECT relation happens to connect
+     *      subject and element and answer differently from ref, clingo and its own sister branch. */
+    public DrlTranspiler(RegelSpraakModel model, List<Expr.Let> lets,
+            List<io.github.yhavinga.regelspraak.ir.PrioritizedDefaults> defaults,
+            java.util.Map<Object, java.util.List<RegelSpraakModel.RolBindingRef>> bronPaden) {
         this.model = model;
         this.eff = new io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid(lets);
         this.dagsoorten = new Dagsoorten(model);
         this.strat = Stratificatie.bereken(model.resolvedRegels);
         this.staande = io.github.yhavinga.regelspraak.transpiler.kern.StaandeDoelen.van(model, defaults);
+        if (bronPaden != null && !bronPaden.isEmpty()) {
+            this.bronPaden = new java.util.IdentityHashMap<>();   // identity: the nodes are value-equal records
+            this.bronPaden.putAll(bronPaden);
+        }
     }
+
+    /** See the constructor parameter of the same name. Empty by default — every fold then carries the one-step
+     *  range and this branch behaves exactly as it did before WF-102. */
+    private java.util.Map<Object, java.util.List<RegelSpraakModel.RolBindingRef>> bronPaden = java.util.Map.of();
 
     public static String transpile(RegelSpraakModel model) { return new DrlTranspiler(model).run(); }
 
@@ -137,7 +156,13 @@ public final class DrlTranspiler {
 
     public static DrlTranspiler build(RegelSpraakModel model, List<Expr.Let> lets,
             List<io.github.yhavinga.regelspraak.ir.PrioritizedDefaults> defaults) {
-        DrlTranspiler t = new DrlTranspiler(model, lets, defaults);
+        return build(model, lets, defaults, java.util.Map.of());
+    }
+
+    public static DrlTranspiler build(RegelSpraakModel model, List<Expr.Let> lets,
+            List<io.github.yhavinga.regelspraak.ir.PrioritizedDefaults> defaults,
+            java.util.Map<Object, java.util.List<RegelSpraakModel.RolBindingRef>> bronPaden) {
+        DrlTranspiler t = new DrlTranspiler(model, lets, defaults, bronPaden);
         t.drl0 = t.run();
         return t;
     }
@@ -3593,21 +3618,42 @@ public final class DrlTranspiler {
             default -> null;
         };
         if (elem == null || fn == null) return null;
-        Frag scope = scope(elem, subject, f);
+        // IR-SPEC ch. 4.3 / WF-102: a RANGE that is a PATH replaces the one-step join entirely. Resolved BEFORE
+        // scope() and instead of it, because the by-pair search that function performs is exactly the wrong
+        // answer here — it binds whatever DIRECT relation happens to connect subject and element and folds that
+        // set, which is the misbinding this field closes. A path the bean model cannot walk is a per-form refusal
+        // carrying its own sentence (the shared one, so both branches say it in the same words).
+        java.util.List<RegelSpraakModel.RolBindingRef> pad = bronPaden.get(f);
+        io.github.yhavinga.regelspraak.transpiler.kern.Bronpad.Plan plan = null;
+        if (pad != null) {
+            plan = io.github.yhavinga.regelspraak.transpiler.kern.Bronpad.ontleed(model, subject, pad, elem);
+            if (plan.weigering() != null) { navReden = plan.weigering(); return null; }
+        }
+        Frag scope = plan != null ? Frag.ok("") : scope(elem, subject, f);
         if (scope.marker()) return null;   // unresolvable join -> marker, never a global aggregate
         // §13.4.2 "die/dat <predicaat>" subselectie on the element ("… van de elementen die een kind
         // zijn") -> an extra constraint on the accumulate source pattern, so only the matching
         // instances are aggregated. A filter the resolver could not structure (Onopgelost) lowers to
         // a marker here -> bail, so the aggregation is a visible no-op rather than counting EVERY
         // instance (a silent miscompile).
-        String filterScope = scope.text();
+        java.util.List<String> bereik = new ArrayList<>();
+        if (plan == null) bereik.add(scope.text());
         if (f.filter() != null) {
             Frag fc = conditie(acc, f.filter(), elem);  // Kenmerk -> bare element property; Onopgelost -> marker
             if (fc.marker()) return null;
-            filterScope = scope.text() + ", " + fc.text();
+            bereik.add(fc.text());
         }
         int n = ++acc.n;
         String ev = "$e" + n, var = "$acc" + n;
+        // the path's own clauses: an in-pattern constraint when the two functional walks meet, else an
+        // `exists` over the intermediates AFTER the element pattern — the dedup the flat union asks for.
+        String naPatroon = "";
+        if (plan != null) {
+            PadClausules pc = padClausules(plan, ev, n);
+            if (!pc.constraint().isEmpty()) bereik.add(0, pc.constraint());
+            naPatroon = pc.naPatroon();
+        }
+        String filterScope = samen(bereik);
         Expr arg = f.argumenten().isEmpty() ? null : f.argumenten().get(0);
         // §7.1 a per-element timeline fold: a temporal-attribute element value is summed over time (rsTijdTotaal at the
         // attribute's granularity) to a scalar BEFORE the set aggregate, instead of the bare List<Segment> getter.
@@ -3628,7 +3674,7 @@ public final class DrlTranspiler {
                 && arg instanceof Expr.AttribuutRef a && !scope.marker()) {
             String cnt = "$n" + n;
             acc.clausules.add("accumulate( " + ev + " : " + ident(elem.naam, true)
-                    + "( " + filterScope + ", " + ident(a.attribuut(), false) + " != null ) ; "
+                    + "( " + samen(bereik, ident(a.attribuut(), false) + " != null") + " )" + naPatroon + " ; "
                     + cnt + " : count(" + ev + "), " + var + " : sum( " + elemWaarde.apply(a) + " ) )");
             Frag fallback = f.leegwaarde() != null ? waarde(acc, f.leegwaarde(), subject) : Frag.ok("null");
             return Frag.from("(" + cnt + " == 0 ? " + fallback.text() + " : " + var + ")", fallback);
@@ -3645,7 +3691,7 @@ public final class DrlTranspiler {
         // TOTAAL/MIN/MAX over a plain attribute. A temporal per-element fold reads a List<Segment> getter, never null.)
         String foldScope = filterScope;
         if (!fn.equals("count") && !temporeelArg && arg instanceof Expr.AttribuutRef a)
-            foldScope = filterScope + ", " + ident(a.attribuut(), false) + " != null";
+            foldScope = samen(bereik, ident(a.attribuut(), false) + " != null");
         // §5.8.3 an empty MIN/MAX is LEEG (§5.3 Tabel 37 / §5.6 Tabel 44), but a bare min()/max() accumulate binds NO
         // result row over an EMPTY source — so a downstream CONDITION compare would never run (the rule silently reads
         // onwaar, wrong for leeg==leeg / leeg!=gevuld). In a condition context (leegCount) bind count() alongside the
@@ -3654,12 +3700,12 @@ public final class DrlTranspiler {
         // the bare fold: an empty value-aggregation simply does not fire (unchanged).
         if (leegCount && (f.kind() == Expr.FunctieKind.MINIMUM || f.kind() == Expr.FunctieKind.MAXIMUM)) {
             String cnt = "$n" + n;
-            acc.clausules.add("accumulate( " + ev + " : " + ident(elem.naam, true) + "( " + foldScope + " ) ; "
-                    + cnt + " : count(" + ev + "), " + var + " : " + fn + "( " + elementExpr + " ) )");
+            acc.clausules.add("accumulate( " + ev + " : " + ident(elem.naam, true) + "( " + foldScope + " )" + naPatroon
+                    + " ; " + cnt + " : count(" + ev + "), " + var + " : " + fn + "( " + elementExpr + " ) )");
             return Frag.ok("(" + cnt + " == 0 ? null : " + fnImport("toBd") + "(" + var + "))");
         }
         acc.clausules.add("accumulate( " + ev + " : " + ident(elem.naam, true)
-                + "( " + foldScope + " ) ; " + var + " : " + fn + "( " + elementExpr + " ) )");
+                + "( " + foldScope + " )" + naPatroon + " ; " + var + " : " + fn + "( " + elementExpr + " ) )");
         // §5.8.3 a min/max reduction binds $accN as a java.lang.Number (the element's static type in the accumulate),
         // so a downstream cross-unit restate (.multiply/.divide) or arithmetic on it fails Drools' strict-mode method
         // resolution (Number has no .multiply). Coerce to BigDecimal, null-safe (an empty min/max stays leeg), mirroring
@@ -3667,6 +3713,112 @@ public final class DrlTranspiler {
         if (f.kind() == Expr.FunctieKind.MINIMUM || f.kind() == Expr.FunctieKind.MAXIMUM)
             return Frag.ok(fnImport("toBd") + "(" + var + ")");
         return Frag.ok(var);
+    }
+
+    /** Join non-empty constraint texts into a DRL pattern's constraint list. Empty in, empty out — a pattern
+     *  with no constraints is {@code Type( )}, which is legal, whereas a stray comma is not. */
+    private static String samen(java.util.List<String> delen, String... extra) {
+        java.util.List<String> alle = new ArrayList<>(delen);
+        alle.addAll(java.util.Arrays.asList(extra));
+        StringBuilder b = new StringBuilder();
+        for (String d : alle) {
+            if (d == null || d.isEmpty()) continue;
+            if (b.length() > 0) b.append(", ");
+            b.append(d);
+        }
+        return b.toString();
+    }
+
+    /** A WF-102 path's DRL: the constraint that goes ON the element pattern (empty when the walk alternates) and
+     *  the clause that follows it inside the accumulate source (empty when it does not). */
+    private record PadClausules(String constraint, String naPatroon) {}
+
+    /**
+     * IR-SPEC ch. 4.3 / WF-102 — the fold-source RANGE as a path, in DRL text. The shape mirrors the exec branch
+     * one-for-one, because the two answer to the same bean model: §13.3.9 stores every relation in ONE scalar
+     * reference field, so a backward hop is a getter FROM the element and a forward hop a getter FROM the subject.
+     *
+     * <p>A path that is a forward run followed by a backward run is therefore one equality between two getter
+     * chains — every dereferenced prefix null-guarded, as the §13.4.1 chain reader guards its hops, so an
+     * intermediate that reaches nothing drops out of the union instead of aborting the fire. No element can be
+     * reached twice that way.
+     *
+     * <p>Where a BACKWARD hop is followed by a FORWARD one the intermediate is a real existential — two
+     * intermediates may reach the same element — so it becomes a pattern inside ONE {@code exists} after the
+     * element pattern. That keeps the element pattern the only tuple generator: the element contributes ONCE
+     * however many routes reach it, which is exactly what joining the intermediates into the source would break.
+     */
+    private PadClausules padClausules(io.github.yhavinga.regelspraak.transpiler.kern.Bronpad.Plan plan,
+            String ev, int n) {
+        if (plan.ontmoet()) {
+            int m = plan.ontmoeting();
+            java.util.List<String> bewaking = new ArrayList<>();
+            String links = keten("this", plan.ketenVanafElement(m), bewaking, true);
+            String rechts = keten(SUBJECT, plan.ketenVanafOnderwerp(m), bewaking, false);
+            return new PadClausules("(" + samenEn(bewaking, links + " == " + rechts) + ")", "");
+        }
+        java.util.Map<Integer, String> naam = new java.util.LinkedHashMap<>();
+        for (int i : plan.tussenknopen()) naam.put(i, "$pm" + n + "_" + i);
+        StringBuilder ex = new StringBuilder();
+        int laatste = plan.achterwaartsVanaf() - 1;
+        for (int i : plan.tussenknopen()) {
+            java.util.List<String> cs = new ArrayList<>();
+            cs.add(hop(plan, i, i, ev, naam));                                  // the hop INTO this node
+            if (i == laatste) cs.add(hop(plan, plan.achterwaartsVanaf(), i, ev, naam));   // and the hop OUT of it
+            if (ex.length() > 0) ex.append(" and ");
+            ex.append(naam.get(i)).append(" : ").append(ident(plan.knoopTypen().get(i).naam, true))
+              .append("( ").append(samen(cs)).append(" )");
+        }
+        return new PadClausules("", " and exists( " + ex + " )");
+    }
+
+    /** One hop's constraint text, seen from the pattern of node {@code dit}. */
+    private String hop(io.github.yhavinga.regelspraak.transpiler.kern.Bronpad.Plan plan, int stap, int dit,
+            String ev, java.util.Map<Integer, String> naam) {
+        java.util.List<String> bewaking = new ArrayList<>();
+        String bron = knoop(plan, stap - 1, dit, ev, naam, bewaking);
+        String doel = knoop(plan, stap, dit, ev, naam, bewaking);
+        var st = plan.stappen().get(stap - 1);
+        String kern = st.achterwaarts()
+                ? doel + "." + getter(st.veld()) + "() == " + bron
+                : bron + "." + getter(st.veld()) + "() == " + doel;
+        // the DEREFERENCED side must exist before its getter runs; the other side must exist for the equality to
+        // MEAN reachability (two broken walks are not a meeting)
+        bewaking.add(st.achterwaarts() ? doel : bron);
+        bewaking.add(st.achterwaarts() ? bron : doel);
+        return "(" + samenEn(bewaking, kern) + ")";
+    }
+
+    /** The text denoting node {@code j}, plus any null-guards its getter chain needs. */
+    private String knoop(io.github.yhavinga.regelspraak.transpiler.kern.Bronpad.Plan plan, int j, int dit,
+            String ev, java.util.Map<Integer, String> naam, java.util.List<String> bewaking) {
+        if (j == dit) return "this";
+        if (j <= plan.voorwaarts()) return keten(SUBJECT, plan.ketenVanafOnderwerp(j), bewaking, false);
+        if (j >= plan.achterwaartsVanaf()) return keten(ev, plan.ketenVanafElement(j), bewaking, false);
+        return naam.get(j);
+    }
+
+    /** {@code wortel.getA().getB()}, recording every prefix that gets DEREFERENCED as a null-guard, plus — when
+     *  {@code eindNietLeeg} — the whole expression, so a walk that ends nowhere never equals another that does. */
+    private String keten(String wortel, java.util.List<String> velden, java.util.List<String> bewaking,
+            boolean eindNietLeeg) {
+        String uit = wortel;
+        for (int i = 0; i < velden.size(); i++) {
+            if (i > 0) bewaking.add(uit);
+            uit = uit + "." + getter(velden.get(i)) + "()";
+        }
+        if (eindNietLeeg && !velden.isEmpty()) bewaking.add(uit);
+        return uit;
+    }
+
+    /** {@code a != null && b != null && <kern>} — the guards first, deduplicated, and never on a bare variable
+     *  ({@code this}, {@code $subject} and a bound pattern variable are non-null by construction). */
+    private static String samenEn(java.util.List<String> bewaking, String kern) {
+        StringBuilder b = new StringBuilder();
+        java.util.Set<String> gezien = new java.util.LinkedHashSet<>();
+        for (String g : bewaking) if (g != null && g.indexOf('.') >= 0) gezien.add(g);
+        for (String g : gezien) b.append(g).append(" != null && ");
+        return b.append(kern).toString();
     }
 
     /** The element scope: the join binding the element to the subject ("the elements

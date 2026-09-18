@@ -104,6 +104,9 @@ public final class IrLoader {
     private final Map<Object, RolBindingRef> rolBindingen = new java.util.IdentityHashMap<>();
     /** ch. 4.10: every {@link Expr.Let} this document carries, in parse order — see {@link Loaded#lets()}. */
     private final List<Expr.Let> lets = new ArrayList<>();
+    /** ch. 4.3 / WF-102: the fold-source RANGE as a path, per {@link Expr.Functie} node — see
+     *  {@link Loaded#bronPaden()}. Identity-keyed for {@link #rolBindingen}'s reason. */
+    private final Map<Object, List<RolBindingRef>> bronPaden = new java.util.IdentityHashMap<>();
 
     private IrLoader() {}
 
@@ -131,9 +134,17 @@ public final class IrLoader {
      *         themselves sit in the expression trees as ordinary union nodes, and every consumer lowers and walks
      *         them there. The index exists for the one consumer that must start a walk at a Let without holding the
      *         tree it came from ({@code EffectieveEenheid}'s binder-read table, which answers the unit of a
-     *         {@link Expr.BinderRef} asked in isolation). Empty for a document that carries no Let. */
+     *         {@link Expr.BinderRef} asked in isolation). Empty for a document that carries no Let.
+     *  @param bronPaden the ch. 4.3 / WF-102 fold-source RANGE per {@link Expr.Functie} node, by IDENTITY: the
+     *         ordered RolBinding steps, subject-outward, VERBATIM off the wire. It rides here for the same reason
+     *         {@code bronRol} does — {@code Expr.Functie} is the vendored slice — and for a sharper one: unlike
+     *         every other extension this loader carries, a path is not re-derivable. The type PAIR answers for the
+     *         endpoints only, and a path's intermediate types are its own claim; a consumer that dropped this list
+     *         would silently fold whatever direct relation happens to connect subject and element. Empty for a
+     *         document whose folds all carry the one-step range. */
     public record Loaded(RegelSpraakModel model, List<PrioritizedDefaults> prioritizedDefaults,
-                         Map<Object, RolBindingRef> rolBindingen, List<Expr.Let> lets) {}
+                         Map<Object, RolBindingRef> rolBindingen, List<Expr.Let> lets,
+                         Map<Object, List<RolBindingRef>> bronPaden) {}
 
     /** Parse a {@code regelspraak-ir-v0} tree into a resolved model, or throw {@link Refusal} for a form
      *  the v0 backend does not carry. The prioritized-defaults extension (if any) is parsed but not returned —
@@ -149,7 +160,7 @@ public final class IrLoader {
     public static Loaded loadAll(JsonNode root) {
         IrLoader l = new IrLoader();
         RegelSpraakModel model = l.model(root);
-        return new Loaded(model, l.prioritizedDefaults, l.rolBindingen, l.lets);
+        return new Loaded(model, l.prioritizedDefaults, l.rolBindingen, l.lets, l.bronPaden);
     }
 
     private RegelSpraakModel model(JsonNode root) {
@@ -404,18 +415,33 @@ public final class IrLoader {
                         ot(text(n, "elementObjecttype")), expr(n.get("leegwaarde")), conditie(n.get("filter")),
                         dimensieSelectie(n.get("dimensieSelectie")), datatype(n.get("type")), bron(n),
                         enumOf(Granulariteit.class, text(n, "granulariteit")));
-                // IR-SPEC ch. 4.3 / WF-102: a MULTI-STEP fold-source range. This backend has no lowering for it
-                // — the accumulate source joins the element to $subject through ONE role — and the refusal must
-                // be EXPLICIT rather than inherited from a failing join derivation. Every other extension this
-                // loader ignores is one the transpiler RE-DERIVES from the model; a bronPad is the opposite: the
-                // model cannot re-derive it, and the by-pair search would happily bind a coincidental direct
-                // relation between subject and element type and fold the WRONG set, with the two OCaml executors
-                // agreeing on the right one. That silent misbinding is the defect the field exists to close, so
-                // dropping the field here would reintroduce it in this executor alone. A named per-form Refusal
-                // puts the golden in gate 12's channel floor by reason instead.
-                if (n.hasNonNull("bronPad"))
-                    throw new Refusal("Functie.bronPad",
-                            "a multi-step fold-source range (WF-102); the accumulate source carries one join role");
+                // IR-SPEC ch. 4.3 / WF-102: a MULTI-STEP fold-source range. Read VERBATIM — the full ordered list
+                // of RolBinding steps, nothing derived from the presentation strings and nothing re-derived from
+                // the endpoint type PAIR. That is the whole point of the field: a by-pair search binds a
+                // coincidental DIRECT relation between subject and element type and folds the WRONG set, which is
+                // exactly what this executor did when the field was dropped (measured on jutterswet-vondstketen:
+                // 5,00 where the sentence says 3,00, with ref and clingo answering 3,00). The three SHAPE arms
+                // below are refused BY NAME here rather than downstream, for ref's reason: a document that reaches
+                // an executor without passing the verifier must fail naming the shape it violates instead of being
+                // read as the one-step form with the range dropped. Arm (a) comes FIRST so a document carrying
+                // both spellings is named for carrying both. The MODEL-relative arms (a step that does not join,
+                // a landing beside the element type, a hop the beans carry no field for) belong to the walk and
+                // are per-form refusals in the transpilers, which know the fold SUBJECT this node does not.
+                List<RolBindingRef> pad = null;
+                if (n.hasNonNull("bronPad")) {
+                    if (n.hasNonNull("bronRol"))
+                        throw new Refusal("Functie.bronPad",
+                                "a bronPad beside a bronRol: the one-step range IS bronRol (WF-102 (a))");
+                    pad = new ArrayList<>();
+                    for (JsonNode s : n.get("bronPad")) pad.add(rolBinding(s));
+                    if (pad.size() < 2)
+                        throw new Refusal("Functie.bronPad", "a bronPad carries at least TWO steps, found "
+                                + pad.size() + " — the one-step range is spelled bronRol (WF-102 (b))");
+                    if (!isLedenVouwbron(n))
+                        throw new Refusal("Functie.bronPad", "a bronPad is admissible only on the SET source of a"
+                                + " single-argument instance fold — the position bronRol stands at (WF-102 (c))");
+                    bronPaden.put(f, List.copyOf(pad));
+                }
                 // the aggregation's symbolic bronRol — see Loaded#rolBindingen. It stays OUT of the record (that
                 // one is vendored) and the transpiler still re-derives the join by pair FIRST; the binding is the
                 // fallback for the pair no by-pair search can disambiguate, a SELF-TYPED one.
@@ -463,6 +489,22 @@ public final class IrLoader {
     private static <T> T verplicht(String vorm, String veld, T waarde) {
         if (waarde == null) throw new Refusal(vorm, "malformed node: missing required field '" + veld + "'");
         return waarde;
+    }
+
+    /** WF-102 (c): is this {@code Functie} node the SET source of a single-argument instance fold — the one
+     *  position {@code bronRol} stands at, and hence the only one a RANGE applies to? Asked of the RAW node, in
+     *  the verifier's own terms: a declared {@code elementObjecttype} plus exactly one argument that is a plain
+     *  set-reading AttribuutRef. The other fold-source shapes hand the fold something else entirely — the temporal
+     *  total reads the SUBJECT's own timeline, the row-1 wart hands it the subject's linked instances — so a range
+     *  does not apply to them and a document that writes one there is refused rather than half-read. */
+    private static boolean isLedenVouwbron(JsonNode n) {
+        if (!n.hasNonNull("elementObjecttype")) return false;
+        JsonNode args = n.get("argumenten");
+        if (args == null || !args.isArray() || args.size() != 1) return false;
+        JsonNode a = args.get(0);
+        return "AttribuutRef".equals(text(a, "node")) && bool(a, "set")
+                && !a.hasNonNull("navigatieRol")
+                && (!a.hasNonNull("navigatiePad") || a.get("navigatiePad").isEmpty());
     }
 
     /** Index one {@link Expr.Let} (see {@link Loaded#lets()}) and return it — the node itself goes into the tree. */
