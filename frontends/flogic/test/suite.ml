@@ -128,8 +128,12 @@ let () =
       (* the quantifier fold's own edges: the threshold the source wrote is
          the threshold on the wire, the count stands on the left, and a
          conditioned comprehension is a quantification and not a value *)
-      ("refuse_teldrempel_strikt.flogic", ">= 2");
+      ("refuse_teldrempel_strikt.flogic", "'>= 2'");
       ("refuse_teldrempel_nul.flogic", "WF-041");
+      ("refuse_telling_ongelijk.flogic", "no direct spelling to rewrite this into");
+      (* the hop is the rule's subject here exactly as it is in a value
+         position — same rule, same message *)
+      ("refuse_telling_vreemde_hop.flogic", "does not start at the rule's subject ?S");
       ("refuse_telling_rechts.flogic", "on the LEFT");
       ("refuse_teldrempel_geen_getal.flogic", "a whole, non-negative number");
       ("refuse_alle_tweeling.flogic", "the ALLE spelling repeats the comprehension");

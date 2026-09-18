@@ -145,6 +145,16 @@ and show_goal = function
   | G_bind (v, e, _) -> Printf.sprintf "?%s = %s" v (show_expr e)
   | G_cmp (op, l, r, _) -> Printf.sprintf "%s %s %s" (show_expr l) op (show_expr r)
 
+(* A comprehension in a DIAGNOSTIC, in the letters the author wrote. The
+   wire rendering above normalises the member to [?V] so one comprehension
+   has one spelling there; a refusal is read against the source, so it must
+   quote the source. Equality between two comprehensions is still decided on
+   the normalised form — that is alpha-equivalence, and it is the right
+   test. *)
+let show_agg_source kind var operand goals =
+  Printf.sprintf "%s{?%s | ?%s = %s%s}" kind var var (show_expr operand)
+    (String.concat "" (List.map (fun g -> ", " ^ show_goal g) goals))
+
 let show_head ~var = function
   | H_attr (attr, _) -> Printf.sprintf "?%s.%s" var (atom attr)
   | H_kenmerk k -> Printf.sprintf "?%s : %s" var (atom k)

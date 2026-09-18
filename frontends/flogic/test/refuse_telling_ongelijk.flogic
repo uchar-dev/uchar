@@ -1,0 +1,14 @@
+// A count compared for INEQUALITY. Unlike the strict comparisons there is
+// no direct spelling to rewrite it into: the five quantifiers are >=, <=,
+// = and the matrix-free twin, and "a count other than 2" is none of them.
+
+Boot[|lengte => numeriek(onbepaald, geheel)|].
+Reddingsstation[|sterk => kenmerk(bijvoeglijk)|].
+
+stationsindeling : feittype.
+stationsindeling[|station {1..1} => Reddingsstation|].
+stationsindeling[|boten   {0..*} => Boot|].
+
+@!{'sterk station'}
+?S : sterk :- ?S : Reddingsstation,
+    count{?V | ?V = ?S.boten, ?V.lengte > 8} != 2.

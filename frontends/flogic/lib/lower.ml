@@ -457,6 +457,7 @@ let conjoin ~bron = function
    subselection on, so the position carries the distinction. *)
 type quantification = {
   q_var : string; (* the counted member's variable *)
+  q_subj : string; (* the variable the hop starts at — the rule's subject *)
   q_role : string;
   q_hop : expr;
   q_filter : goal list;
@@ -481,9 +482,9 @@ let is_counting_comprehension = function
 
 let as_quantification ~line = function
   | E_agg ("count", av, hop, (_ :: _ as goals)) ->
-      let role =
+      let subj, role =
         match hop with
-        | E_path (_, [ r ]) -> r
+        | E_path (s, [ r ]) -> (s, r)
         | E_path (_, steps) ->
             refuse ~line
               "count{?V | ?V = %s, …} states a condition over a %d-step path: a quantifier \
@@ -497,7 +498,7 @@ let as_quantification ~line = function
         | [] -> assert false
       in
       let q_filter, q_matrix = split [] goals in
-      Some { q_var = av; q_role = role; q_hop = hop; q_filter; q_matrix }
+      Some { q_var = av; q_subj = subj; q_role = role; q_hop = hop; q_filter; q_matrix }
   | _ -> None
 
 let rec low_cond m ctx (g : goal) : A.conditie =
@@ -539,6 +540,13 @@ let rec low_cond m ctx (g : goal) : A.conditie =
    move: GEEN is count = 0 and ALLE is count = |contributors|, written as
    the same comprehension without its matrix. *)
 and low_kwantorvouw m ctx ~line ~op ~q ~rhs ~bron : A.conditie =
+  (* The hop starts at the rule's subject, exactly as it must in a VALUE
+     position ([low_agg], same message). Without this the range would be
+     read off a variable the rule never bound, and the wire would carry a
+     bronRol whose provenance quotes a name with no reading. *)
+  if q.q_subj <> ctx.c_var then
+    refuse ~line "the aggregate path %s does not start at the rule's subject ?%s"
+      (show_expr q.q_hop) ctx.c_var;
   let f, el = find_hop m ~line ~subject:ctx.c_subject q.q_role in
   (* Every goal speaks of the counted member and of nothing else: the
      filter and the matrix are read PER CONTRIBUTOR with the element as
@@ -580,33 +588,65 @@ and low_kwantorvouw m ctx ~line ~op ~q ~rhs ~bron : A.conditie =
   in
   let kwantor, drempel =
     match (op, rhs) with
-    | "=", E_agg ("count", _, _, _) ->
+    | "=", E_agg ("count", av2, hop2, goals2) ->
         let twin = E_agg ("count", q.q_var, q.q_hop, q.q_filter) in
+        (* compared on the NORMALISED rendering (alpha-equivalence), quoted
+           in the letters the author wrote *)
         if show_expr rhs <> show_expr twin then
           refuse ~line
             "the ALLE spelling repeats the comprehension without its last goal, and this one \
              does not — expected %s, found %s: ALLE is count(satisfiers) = count(members), and \
              the members are the ones the filter leaves"
-            (show_expr twin) (show_expr rhs);
+            (show_agg_source "count" q.q_var q.q_hop q.q_filter)
+            (show_agg_source "count" av2 hop2 goals2);
         (A.Alle, None)
     | (">=" | "<=" | "="), E_num lex -> (
         match (op, threshold lex) with
         | "=", 0 -> (A.Geen, None)
-        | _, 0 ->
+        | ">=", 0 ->
+            (* not a threshold question at all: a count is never negative *)
             refuse ~line
-              "a counting quantifier with threshold 0: WF-041 pins the bound at 1, and \"no \
-               member satisfies the matrix\" has its own spelling — count{...} = 0, which is GEEN"
+              "a counting quantifier with threshold 0 under '>=': a count is never negative, so \
+               this holds of every subject and states no quantification — WF-041 pins a counting \
+               threshold at 1"
+        | "<=", 0 ->
+            refuse ~line
+              "a counting quantifier with threshold 0 under '<=': WF-041 pins the bound at 1, and \
+               \"no member satisfies the matrix\" has its own spelling — count{...} = 0, which is \
+               GEEN"
         | ">=", n -> (A.Ten_minste, Some n)
         | "<=", n -> (A.Ten_hoogste, Some n)
         | _, n -> (A.Precies, Some n))
     | ((">" | "<") as o), E_num lex when int_of_string_opt lex <> None ->
+        (* every advice below is a form the slice ACCEPTS: '<= 0' and
+           '<= -1' would refuse in turn, so a reader following the message
+           must not arrive at one *)
         let n = Option.get (int_of_string_opt lex) in
+        if o = "<" && n = 0 then
+          refuse ~line
+            "the comparison '< 0' against a counting comprehension: a count is never negative, so \
+             this holds of no subject at all and states no quantification"
+        else
+          let direct =
+            match (o, n) with
+            | ">", _ -> Printf.sprintf "'>= %d'" (n + 1)
+            | "<", 1 -> "'= 0', which is the GEEN spelling"
+            | _ -> Printf.sprintf "'<= %d'" (n - 1)
+          in
+          refuse ~line
+            "the strict comparison '%s %s' against a counting comprehension: the drempel on the \
+             wire is the number the source wrote, so the slice reads the direct spelling — write \
+             %s"
+            o lex direct
+    | ("!=" | "\\="), _ ->
+        (* no rewrite exists: the five quantifiers are >=, <=, = and the
+           matrix-free twin, and "a count OTHER than n" is none of them *)
         refuse ~line
-          "the strict comparison '%s %s' against a counting comprehension: the drempel on the \
-           wire is the number the source wrote, so the slice reads the direct spelling — write \
-           '%s'"
-          o lex
-          (if o = ">" then Printf.sprintf ">= %d" (n + 1) else Printf.sprintf "<= %d" (n - 1))
+          "the inequality '%s' against a counting comprehension: the five quantifiers of the fold \
+           are the comparisons >=, <=, = and the matrix-free twin, and a count DIFFERENT from a \
+           number is none of them — there is no direct spelling to rewrite this into, so the \
+           sentence has to be stated as a quantification the node carries"
+          op
     | _ ->
         refuse ~line
           "the counting comprehension is compared with %s: the right side of a count comparison \
