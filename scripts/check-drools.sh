@@ -495,7 +495,19 @@ EXPECTED_CHANNEL=(
 # this branch applies to the COUNT (n - hits) because a threshold has no quantifier to flip into the
 # way ALLE flips into GEEN. It was new code in this file with no corpus cell on it; the golden's three
 # rows are chosen so that counting P instead of the denied P inverts four of them, measured.
-EXPECTED_PLAYED=148
+# 2026-09-18 (card drools-rolvelden-herhaalde-typenparen), 148 -> 149:
+# `jutterswet-dubbelverbinding` joins as a NEW PLAYER — FOUR feittypen over ONE objecttypepaar, where
+# the bean model used to derive no reference field at all because it asked the by-PAIR authority, which
+# is ambiguous there by construction while every written role name is unique. It plays because the
+# derivation now runs PER ROLE: one scalar field per uniquely addressable to-one role. Both branches
+# grew it through the one shared member derivation, so the fold's join, the §13.4.7 creation's join and
+# set positions, the navigated read and the case-input write all follow from the same change. The DRL
+# branch needed one more thing to reach a fixpoint: its relation write is idempotent now, mirroring the
+# exec branch's werkBijReflectief. Measured before and after over ALL goldens in BOTH branches: exec
+# 148 -> 149, DRL-text 121 -> 122, and no other golden changed channel. One exclusion REASON moved
+# without its channel: `anchor/jutterswet-bergingstoezicht` (a repeated pair itself) now refuses on its
+# verdeling's unresolved naar_rato instead of on the missing join field — deeper in, still EXCLUDE.
+EXPECTED_PLAYED=149
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the
