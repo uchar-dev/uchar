@@ -511,47 +511,39 @@ public final class CaseRunner {
                 Object doel = labelNaarBean.get(labelNode.asText());
                 if (doel == null) throw new Excluded("role '" + e.getKey() + "' names unknown label " + labelNode.asText());
                 Objecttype tL = objecttypeVanBean(doel);
-                // §13.4.1 the WRITTEN role IS the navigation — and for a SELF-TYPED pair it is the ONLY route:
-                // the by-pair search below counts both same-typed sibling roles and derives null by construction
-                // (RegelSpraakModel.verbindendeRol; ref BLOCKS the same derivation in connecting_pair). Resolved
-                // through the very authority FactModelGenerator.zelfpaarRollen derived those fields from, and
-                // ACCEPTED ONLY when it names one of them, so a hit can only write a field the bean carries. That
-                // membership test is what keeps this from being a general by-name override: a by-pair-AMBIGUOUS
-                // cross-type pair derives no bean field at all, so resolving it by name would call a setter no
-                // bean has. Where the by-pair search already succeeds the outcome is unchanged — a by-name hit is
-                // always one of the by-pair candidates, so a unique pair resolves to the same role either way.
-                // The self-typed guard is the same one the sister test below carries, for the same reason and
-                // with the same measured reach: zelfpaarRollen derives fields ONLY for a self-typed pair, so
-                // cross-type it could at best fire on a name coincidence. Stated on both tests rather than on
-                // one, so the pair reads as one rule.
+                // §13.4.1 the WRITTEN role IS the navigation — and wherever the type pair carries more than
+                // one role it is the ONLY route: the by-pair search below counts every candidate and derives
+                // null by construction (RegelSpraakModel.verbindendeRol; ref BLOCKS the same derivation in
+                // connecting_pair). That is the SELF-TYPED pair's two sibling roles and, since the repeated-pair
+                // card, the ordinary cross-type pair related by several feittypen. Resolved through the very
+                // authority FactModelGenerator.leden derives the fields from and ACCEPTED ONLY when it names one
+                // of them (geldigRolveld), so a hit can only write a field the bean carries — that membership
+                // test is what keeps this from being a general by-name override. Where the by-pair search already
+                // succeeds the outcome is unchanged: a by-name hit is always one of the by-pair candidates, so a
+                // unique pair resolves to the same role either way.
                 String viaNaam = model.verbindendeRolViaNaam(tI, tL, e.getKey());
-                boolean zelfpaar = viaNaam != null && tI.naam.equalsIgnoreCase(tL.naam)
-                        && FactModelGenerator.zelfpaarRollen(model, tI).contains(viaNaam);
-                // the field on THIS bean (to-one from here): the written self-pair role, else the type pair
-                String rolIL = zelfpaar ? viaNaam : model.verbindendeRol(tI, tL);
+                boolean geschrevenVeld = viaNaam != null && geldigRolveld(tI, viaNaam, tL);
+                // the field on THIS bean (to-one from here): the written role, else the type pair
+                String rolIL = geschrevenVeld ? viaNaam : model.verbindendeRol(tI, tL);
                 // The SISTER role — the one THIS instance fills — whose reference field lives on the TARGET
                 // bean, and which is where a TO-MANY written role stores its links. Resolved BY NAME first,
                 // exactly as rolIL is: the written role name names one feittype and its OTHER role is the
-                // back-reference (verbindendeRolViaElementnaam). That is the only route on a SELF-TYPED pair,
-                // where the by-pair search below counts both same-typed siblings and derives null by
-                // construction — the shape that made W1{opvolgers:[…]} a per-form refusal although the field
-                // (Wachter.voorligger) exists and the case-input arm two lines down could write it.
-                // Accepted only when the name lands on a field FactModelGenerator really derived
-                // (zelfpaarRollen, the same membership test rolIL uses), so a by-pair-AMBIGUOUS cross-type
-                // pair keeps its by-pair answer and its name-sharing refusal instead of reaching a setter no
-                // bean carries. Where the by-pair search already succeeds, a by-name hit is one of its
-                // candidates, so a unique pair resolves to the same role either way.
+                // back-reference (verbindendeRolViaElementnaam). That is the only route wherever the by-pair
+                // search counts more than one candidate — the self-typed pair's two siblings (the shape that
+                // made W1{opvolgers:[…]} a per-form refusal although Wachter.voorligger exists) and the
+                // repeated cross-type pair, where H1{liggers:[…]} must land on Schuit.thuishaven and not on
+                // one of the three other Haven fields that bean now carries. RUNTIME-SEMANTICS ch. 5.7a makes
+                // this write obligatory, not optional: the case names ONE leg of a relation that has two, and
+                // the reader arriving from the other end must reach the same relation instance.
                 //
-                // The self-typed guard states the reach rather than relying on it: zelfpaarRollen only ever
-                // derives fields for a SELF-typed pair, so on a cross-type pair the membership test could at
-                // best fire on a NAME COINCIDENCE — the target type happening to carry a self-pair role of the
-                // same name — and would then hand the by-pair route's honest refusal a field belonging to a
-                // different relation. Measured: no corpus or fixture model reaches it either way, so this
-                // closes surface rather than changing behaviour.
+                // Accepted only when the name lands on a field FactModelGenerator really derived
+                // (geldigRolveld, the same membership test rolIL uses), so a written name that resolves to a
+                // role WITHOUT a field keeps the honest refusal below instead of reaching a setter no bean
+                // carries. Where the by-pair search already succeeds, a by-name hit is one of its candidates,
+                // so a unique pair resolves to the same role either way.
                 String zuster = model.verbindendeRolViaElementnaam(tI, e.getKey());
-                boolean zusterZelfpaar = zuster != null && tI.naam.equalsIgnoreCase(tL.naam)
-                        && FactModelGenerator.zelfpaarRollen(model, tL).contains(zuster);
-                String rolLI = zusterZelfpaar ? zuster : model.verbindendeRol(tL, tI);
+                boolean zusterVeld = zuster != null && geldigRolveld(tL, zuster, tI);
+                String rolLI = zusterVeld ? zuster : model.verbindendeRol(tL, tI);
                 if (rolIL != null && !model.naarVeelRol(tI, tL, rolIL)) {
                     naamdelingsPoort(tI, rolIL, tL, e.getKey());
                     zetToOne(bean, rolIL, doel);
@@ -601,10 +593,26 @@ public final class CaseRunner {
         }
     }
 
+    /** Whether {@code rol} is one of the reference fields {@link FactModelGenerator#leden} DERIVES on
+     *  {@code drager} toward {@code doel} — the membership test that lets the WRITTEN role name override the
+     *  by-pair search without ever reaching a setter no bean has. It asks the generator's own two derivations:
+     *  {@code zelfpaarRollen} for a self-typed pair (§13.3.9.2 and the ordinary two-role self-pair) and
+     *  {@code verbindendeRollen} for a cross-type one. Deliberately a NAME test, not
+     *  {@link FactModelGenerator#heeftReferentieVeld}: a role whose name a declared member displaced is a
+     *  DIFFERENT failure with its own sentence ({@link #naamdelingsPoort}), and collapsing the two here would
+     *  send the name-sharing shape back through the by-pair route to be blamed for an ambiguity it does not
+     *  have. */
+    private boolean geldigRolveld(Objecttype drager, String rol, Objecttype doel) {
+        return drager.naam.equalsIgnoreCase(doel.naam)
+                ? FactModelGenerator.zelfpaarRollen(model, drager).contains(rol)
+                : model.verbindendeRollen(drager, doel).contains(rol);
+    }
+
     /** The §13.3.9 NAME-SHARING gate on a resolved to-one role write: {@code drager}'s bean must carry the
      *  reference field for {@code rol} TYPED (a field of {@code doel}'s class), not merely a property of that
      *  name. Both roles here come from the very authorities {@link FactModelGenerator#leden} derives the fields
-     *  from ({@code zelfpaarRollen} / {@code verbindendeRol}), so the ONE thing that can still be missing is the
+     *  from ({@code zelfpaarRollen} / {@code verbindendeRollen} / {@code verbindendeRol}), so the ONE thing that
+     *  can still be missing is the
      *  reference itself, displaced by a declared member of the same name (leden()'s dedup: attribute >
      *  characteristic > reference). Without this gate the write below reaches {@code set<X>(BigDecimal)} with a
      *  fact — "kon setter setOpvolger(Wachter) niet aanroepen", an unclassified ERROR the gate refuses to excuse

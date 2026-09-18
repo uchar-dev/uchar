@@ -81,18 +81,32 @@ public final class FactModelGenerator {
                 uit.add(new Lid(Namen.ident(k, false), temporeel ? "java.util.List<Segment>" : "boolean", !temporeel));
         }
         // §13.3.9: the scalar to-one reference fields — derived from the SAME authority the transpilers
-        // navigate by (verbindendeRol + naarVeelRol): for every other objecttype reachable through exactly
-        // one feittype, the houder carries a field named after the doelwit's role ("Eén houder betreft
+        // navigate by (verbindendeRollen + naarVeelRol): for every other objecttype, the houder carries ONE
+        // field per uniquely addressable to-one role of that type, named after the role ("Eén houder betreft
         // meerdere elementen" -> Element.houder : Houder), UNLESS that navigation crosses a to-many role
-        // (then the scalar reference lives on the other side). An AMBIGUOUS pair derives nothing: the
-        // transpilers navigate those only via the WRITTEN role name, which a static bean derivation cannot
-        // know — under-implied, never over-implied.
+        // (then the scalar reference lives on the other side).
+        //
+        // ONE FIELD PER ROLE, not per PAIR (card drools-rolvelden-herhaalde-typenparen). This loop used to
+        // ask verbindendeRol(ot, doelwit) — the by-PAIR search — which answers null the moment a SECOND
+        // feittype relates the same two object types, so a bean carried no reference at all and the fold's
+        // join, the §13.4.7 creation's three positions, the navigated read and the case-input write each
+        // refused a document whose author had written a perfectly unique role name. The ambiguity was never
+        // in the source; it was in asking the question by pair. verbindendeRollen asks it by NAME, per role,
+        // and keeps every refusal that is genuinely a refusal: a name two roles share resolves to nothing,
+        // a to-many role's storage stays the far end's field, and a declared member of the same name still
+        // displaces the reference through the dedup above. Under-implied, never over-implied — as before,
+        // now measured per role instead of per pair.
+        //
+        // The by-pair authority itself is UNCHANGED and stays ambiguous: a consumer that has no written or
+        // symbolic role still finds a repeated pair unresolvable (RUNTIME-SEMANTICS ch. 5.5), and this
+        // derivation is what makes the field EXIST for the consumers that do have one.
         for (Objecttype doelwit : model.objecttypen.values()) {
             if (doelwit == ot) continue;
-            String rol = model.verbindendeRol(ot, doelwit);
-            if (rol == null || model.naarVeelRol(ot, doelwit, rol)) continue;
-            if (gezien.add(Namen.ident(rol, false)))
-                uit.add(new Lid(Namen.ident(rol, false), Namen.ident(doelwit.naam, true), false));
+            for (String rol : model.verbindendeRollen(ot, doelwit)) {
+                if (model.naarVeelRol(ot, doelwit, rol)) continue;
+                if (gezien.add(Namen.ident(rol, false)))
+                    uit.add(new Lid(Namen.ident(rol, false), Namen.ident(doelwit.naam, true), false));
+            }
         }
         // §13.3.9.2: the SELF-PAIR reference field, which the loop above cannot reach because it skips
         // ot itself. It is derivable for exactly one shape — a wederkerig feittype — see zelfpaarRol.

@@ -1349,10 +1349,20 @@ public final class DrlTranspiler {
                     + " )");
             vorige = var;
         }
+        // IDEMPOTENT relation write, mirroring the exec branch's werkBijReflectief: modify ONLY when the
+        // reference actually changes, so a re-established link does not re-propagate $doel. `no-loop` blocks
+        // only the SELF-retrigger, and this rule's own anker pattern is re-activated by any OTHER rule that
+        // writes the anker — a fold over the created relation is exactly such a rule, so creation and count
+        // ping-ponged forever on a repeated type pair (measured: "geen fixpunt (kringverwijzing?)" on the
+        // dubbelverbinding golden's cases 1 and 3, where a second feittype over the pair first made the fold
+        // and the creation both lowerable in this branch). A same-valued rewrite writes nothing and the chain
+        // terminates — the same argument the scalar Objects.equals guard below carries, on the same seam.
         rule.clausule("$doel : " + ident(doel.naam, true) + "( "
                 + ident(fc.joinVeld(), false) + " == " + vorige
                 + (!doelExtra.isEmpty() ? ", " + doelExtra : "") + " )")
-            .dan("    modify($doel) {\n        " + setter(fc.zetVeld()) + "( " + SUBJECT + " )\n    }\n");
+            .dan("    if (!java.util.Objects.equals($doel." + ident(fc.zetVeld(), false) + ", " + SUBJECT + ")) {\n"
+                + "    modify($doel) {\n        " + setter(fc.zetVeld()) + "( " + SUBJECT + " )\n    }\n"
+                + "    }\n");
         out.append(rule.render());
     }
 
