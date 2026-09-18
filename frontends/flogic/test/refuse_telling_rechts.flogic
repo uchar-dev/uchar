@@ -1,0 +1,13 @@
+// The count on the RIGHT of the comparison. Reading it would mean
+// mirroring the operator, and the slice reads one spelling per form.
+
+Boot[|lengte => numeriek(onbepaald, geheel)|].
+Reddingsstation[|sterk => kenmerk(bijvoeglijk)|].
+
+stationsindeling : feittype.
+stationsindeling[|station {1..1} => Reddingsstation|].
+stationsindeling[|boten   {0..*} => Boot|].
+
+@!{'sterk station'}
+?S : sterk :- ?S : Reddingsstation,
+    2 <= count{?V | ?V = ?S.boten, ?V.lengte > 8}.

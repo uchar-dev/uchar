@@ -1,0 +1,14 @@
+// A characteristic head naming something the subject does not declare.
+// The head is the assignment's target, so an undeclared name would reach
+// the wire as a characteristic nobody declared.
+
+Boot[|lengte => numeriek(onbepaald, geheel)|].
+Reddingsstation[|sterk => kenmerk(bijvoeglijk)|].
+
+stationsindeling : feittype.
+stationsindeling[|station {1..1} => Reddingsstation|].
+stationsindeling[|boten   {0..*} => Boot|].
+
+@!{'zeewaardig station'}
+?S : zeewaardig :- ?S : Reddingsstation,
+    count{?V | ?V = ?S.boten, ?V.lengte > 8} >= 2.

@@ -1,0 +1,13 @@
+// A conditioned comprehension in a VALUE position. It is a
+// quantification with nothing to compare its count against — the F-logic
+// counterpart of the set reading a fold source cannot host.
+
+Boot[|lengte => numeriek(onbepaald, geheel)|].
+Reddingsstation[|bootstal => numeriek(onbepaald, geheel)|].
+
+stationsindeling : feittype.
+stationsindeling[|station {1..1} => Reddingsstation|].
+stationsindeling[|boten   {0..*} => Boot|].
+
+@!{'bootstal van een station'}
+?S[bootstal -> count{?V | ?V = ?S.boten, ?V.lengte > 8}] :- ?S : Reddingsstation.

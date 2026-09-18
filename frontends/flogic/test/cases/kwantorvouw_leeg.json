@@ -1,0 +1,23 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "S1", "objectType": "Reddingsstation", "attributes": {},
+        "roles": {}, "characteristics": ["bemand"] }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "S1", "attribute": "bootstal", "value": { "number": "0" } },
+    { "kind": "characteristicPresent", "label": "S1", "characteristic": "slagvaardig" },
+    { "kind": "characteristicPresent", "label": "S1", "characteristic": "kansloos" },
+    { "kind": "characteristicAbsent", "label": "S1", "characteristic": "sterk" },
+    { "kind": "characteristicPresent", "label": "S1", "characteristic": "karig" },
+    { "kind": "characteristicAbsent", "label": "S1", "characteristic": "solitair" },
+    { "kind": "characteristicAbsent", "label": "S1", "characteristic": "beproefd" },
+    { "kind": "characteristicPresent", "label": "S1", "characteristic": "dubbelgekeurd" },
+    { "kind": "characteristicAbsent", "label": "S1", "characteristic": "paraat" },
+    { "kind": "consistent" }
+  ]
+}

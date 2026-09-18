@@ -1,0 +1,12 @@
+// A subselection inside sum{...}: the slice's SOM carries no filter, and
+// a summed set is not a quantification either.
+
+Boot[|lengte => numeriek(onbepaald, geheel)|].
+Reddingsstation[|lengtetotaal => numeriek(onbepaald, geheel)|].
+
+stationsindeling : feittype.
+stationsindeling[|station {1..1} => Reddingsstation|].
+stationsindeling[|boten   {0..*} => Boot|].
+
+@!{'lengtetotaal van een station'}
+?S[lengtetotaal -> sum{?V | ?V = ?S.boten.lengte, ?V > 8}] :- ?S : Reddingsstation.

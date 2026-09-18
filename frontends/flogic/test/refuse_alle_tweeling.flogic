@@ -1,0 +1,16 @@
+// The ALLE spelling whose twin is a DIFFERENT comprehension: the left
+// count is over the zeewaardig boats, the right one over all of them, so
+// the two do not state "every member satisfies the matrix" at all.
+
+Boot[|lengte => numeriek(onbepaald, geheel)|].
+Boot[|zeewaardig => kenmerk(bijvoeglijk)|].
+Reddingsstation[|slagvaardig => kenmerk(bijvoeglijk)|].
+
+stationsindeling : feittype.
+stationsindeling[|station {1..1} => Reddingsstation|].
+stationsindeling[|boten   {0..*} => Boot|].
+
+@!{'slagvaardig station'}
+?S : slagvaardig :- ?S : Reddingsstation,
+    count{?V | ?V = ?S.boten, ?V : zeewaardig, ?V.lengte > 8}
+      = count{?V | ?V = ?S.boten}.

@@ -1,0 +1,15 @@
+// A goal inside the comprehension that speaks of the SUBJECT instead of
+// the counted member: the filter and the matrix are read per contributor,
+// so a condition of the station has no reading there.
+
+Boot[|lengte => numeriek(onbepaald, geheel)|].
+Reddingsstation[|bemand => kenmerk(bijvoeglijk)|].
+Reddingsstation[|sterk  => kenmerk(bijvoeglijk)|].
+
+stationsindeling : feittype.
+stationsindeling[|station {1..1} => Reddingsstation|].
+stationsindeling[|boten   {0..*} => Boot|].
+
+@!{'sterk station'}
+?S : sterk :- ?S : Reddingsstation,
+    count{?V | ?V = ?S.boten, ?S : bemand, ?V.lengte > 8} >= 2.

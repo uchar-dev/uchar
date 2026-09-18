@@ -1,0 +1,19 @@
+// Two definitions of one characteristic target. Nothing in the slice
+// orders them, and a characteristic has one value to be given, so there
+// is no defaults stack to build either — exactly as two unconditional
+// attribute definitions refuse.
+
+Boot[|lengte => numeriek(onbepaald, geheel)|].
+Reddingsstation[|sterk => kenmerk(bijvoeglijk)|].
+
+stationsindeling : feittype.
+stationsindeling[|station {1..1} => Reddingsstation|].
+stationsindeling[|boten   {0..*} => Boot|].
+
+@!{'sterk station'}
+?S : sterk :- ?S : Reddingsstation,
+    count{?V | ?V = ?S.boten, ?V.lengte > 8} >= 2.
+
+@!{'sterk station bij een enkele grote boot'}
+?S : sterk :- ?S : Reddingsstation,
+    count{?V | ?V = ?S.boten, ?V.lengte > 20} >= 1.

@@ -63,7 +63,13 @@ let () =
     [ ("overerving.flogic",
        [ "cases/overerving_heel.json"; "cases/overerving_gewond.json" ]);
       ("aggregatie.flogic",
-       [ "cases/aggregatie_twee.json"; "cases/aggregatie_leeg.json" ]) ]
+       [ "cases/aggregatie_twee.json"; "cases/aggregatie_leeg.json" ]);
+      (* the five quantifiers of the fold, as counts: the empty case is the
+         vacuum cell (ALLE and GEEN both hold), the mixed one separates GEEN
+         from not-ALLE, and two cells are decided by the filter alone *)
+      ("kwantorvouw.flogic",
+       [ "cases/kwantorvouw_twee.json"; "cases/kwantorvouw_gemengd.json";
+         "cases/kwantorvouw_leeg.json"; "cases/kwantorvouw_filterbeslist.json" ]) ]
   in
   List.iter
     (fun (src, cases) ->
@@ -118,7 +124,21 @@ let () =
       ("refuse_dubbele_naam.flogic", "is already used at line");
       ("refuse_argumentatietheorie.flogic", "argumentation-theory");
       ("refuse_dubbel_lid.flogic", "declares the member hoogte twice");
-      ("refuse_onbekende_filler.flogic", "not a declared object type") ]
+      ("refuse_onbekende_filler.flogic", "not a declared object type");
+      (* the quantifier fold's own edges: the threshold the source wrote is
+         the threshold on the wire, the count stands on the left, and a
+         conditioned comprehension is a quantification and not a value *)
+      ("refuse_teldrempel_strikt.flogic", ">= 2");
+      ("refuse_teldrempel_nul.flogic", "WF-041");
+      ("refuse_telling_rechts.flogic", "on the LEFT");
+      ("refuse_teldrempel_geen_getal.flogic", "a whole, non-negative number");
+      ("refuse_alle_tweeling.flogic", "without its last goal");
+      ("refuse_gefilterde_telling_in_waarde.flogic", "is a QUANTIFICATION");
+      ("refuse_gefilterde_som.flogic", "sum{...} carries no subselection");
+      ("refuse_telling_tweede_hop.flogic", "ONE role hop");
+      ("refuse_telling_vreemde_variabele.flogic", "speaks of ?S");
+      ("refuse_kenmerkkop_onbekend.flogic", "declares no characteristic zeewaardig");
+      ("refuse_kenmerk_tweede_definitie.flogic", "two definitions") ]
   in
   List.iter
     (fun (src, needle) ->

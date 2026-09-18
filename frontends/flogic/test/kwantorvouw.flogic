@@ -1,0 +1,73 @@
+// The five quantifiers of the fold, written as COUNTS. No negation form
+// is needed and none is used: GEEN is count(satisfiers) = 0 and ALLE is
+// count(satisfiers) = count(members), so the slice's \naf / \neg refusal
+// stays exactly where it was.
+//
+// Inside a comprehension the LAST goal is the matrix and everything
+// between the hop and it narrows the range — the die/dat subselection.
+// `beproefd` and `dubbelgekeurd` are the filtered forms; the other three
+// carry no filter.
+
+Boot[|lengte => numeriek(onbepaald, geheel)|].
+Boot[|zeewaardig => kenmerk(bijvoeglijk)|].
+
+Reddingsstation[|bootstal      => numeriek(onbepaald, geheel)|].
+Reddingsstation[|bemand        => kenmerk(bijvoeglijk)|].
+Reddingsstation[|slagvaardig   => kenmerk(bijvoeglijk)|].
+Reddingsstation[|kansloos      => kenmerk(bijvoeglijk)|].
+Reddingsstation[|sterk         => kenmerk(bijvoeglijk)|].
+Reddingsstation[|karig         => kenmerk(bijvoeglijk)|].
+Reddingsstation[|solitair      => kenmerk(bijvoeglijk)|].
+Reddingsstation[|beproefd      => kenmerk(bijvoeglijk)|].
+Reddingsstation[|dubbelgekeurd => kenmerk(bijvoeglijk)|].
+Reddingsstation[|paraat        => kenmerk(bijvoeglijk)|].
+
+stationsindeling : feittype.
+stationsindeling[|station {1..1} => Reddingsstation|].
+stationsindeling[|boten   {0..*} => Boot|].
+
+// The bare comprehension carries no condition, so it states no matrix and
+// stays the plain instance fold — a quantifier over nothing would violate
+// WF-108 (d).
+@!{'bootstal van een station'}
+?S[bootstal -> count{?V | ?V = ?S.boten}] :- ?S : Reddingsstation.
+
+// ALLE: every member the sentence is about satisfies the matrix, written
+// as "as many satisfiers as there are members".
+@!{'slagvaardig station'}
+?S : slagvaardig :- ?S : Reddingsstation,
+    count{?V | ?V = ?S.boten, ?V.lengte > 8} = count{?V | ?V = ?S.boten}.
+
+// GEEN: no member satisfies it.
+@!{'kansloos station'}
+?S : kansloos :- ?S : Reddingsstation,
+    count{?V | ?V = ?S.boten, ?V.lengte > 8} = 0.
+
+@!{'sterk station'}
+?S : sterk :- ?S : Reddingsstation,
+    count{?V | ?V = ?S.boten, ?V.lengte > 8} >= 2.
+
+@!{'karig station'}
+?S : karig :- ?S : Reddingsstation,
+    count{?V | ?V = ?S.boten, ?V.lengte > 8} <= 1.
+
+@!{'solitair station'}
+?S : solitair :- ?S : Reddingsstation,
+    count{?V | ?V = ?S.boten, ?V.lengte > 8} = 1.
+
+// The filtered range under a threshold.
+@!{'beproefd station'}
+?S : beproefd :- ?S : Reddingsstation,
+    count{?V | ?V = ?S.boten, ?V : zeewaardig, ?V.lengte > 8} >= 2.
+
+// The filtered range under ALLE: the twin repeats the comprehension
+// WITHOUT its last goal, so "members" means the filter's survivors.
+@!{'dubbelgekeurd station'}
+?S : dubbelgekeurd :- ?S : Reddingsstation,
+    count{?V | ?V = ?S.boten, ?V : zeewaardig, ?V.lengte > 8}
+      = count{?V | ?V = ?S.boten, ?V : zeewaardig}.
+
+// A fold beside an ordinary condition of the subject: the two conjoin.
+@!{'paraat station'}
+?S : paraat :- ?S : Reddingsstation, ?S : bemand,
+    count{?V | ?V = ?S.boten, ?V.lengte > 8} >= 1.

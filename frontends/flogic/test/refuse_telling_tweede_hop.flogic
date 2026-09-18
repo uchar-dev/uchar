@@ -1,0 +1,14 @@
+// A conditioned comprehension over an ATTRIBUTE path instead of one role
+// hop: the quantifier ranges over instances, and a list of lengths names
+// no population to range over.
+
+Boot[|lengte => numeriek(onbepaald, geheel)|].
+Reddingsstation[|sterk => kenmerk(bijvoeglijk)|].
+
+stationsindeling : feittype.
+stationsindeling[|station {1..1} => Reddingsstation|].
+stationsindeling[|boten   {0..*} => Boot|].
+
+@!{'sterk station'}
+?S : sterk :- ?S : Reddingsstation,
+    count{?V | ?V = ?S.boten.lengte, ?V > 8} >= 2.

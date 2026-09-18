@@ -1,0 +1,14 @@
+// A computed threshold: the wire's drempel is an integer (WF-108 (e),
+// WF-041), so a read has no place there.
+
+Boot[|lengte => numeriek(onbepaald, geheel)|].
+Reddingsstation[|grens => numeriek(onbepaald, geheel)|].
+Reddingsstation[|sterk => kenmerk(bijvoeglijk)|].
+
+stationsindeling : feittype.
+stationsindeling[|station {1..1} => Reddingsstation|].
+stationsindeling[|boten   {0..*} => Boot|].
+
+@!{'sterk station'}
+?S : sterk :- ?S : Reddingsstation,
+    count{?V | ?V = ?S.boten, ?V.lengte > 8} >= ?S.grens.

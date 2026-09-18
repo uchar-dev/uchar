@@ -1,0 +1,14 @@
+// A strict comparison against a counting comprehension: the threshold on
+// the wire is the number the source wrote, so the direct spelling is the
+// only one the slice reads.
+
+Boot[|lengte => numeriek(onbepaald, geheel)|].
+Reddingsstation[|sterk => kenmerk(bijvoeglijk)|].
+
+stationsindeling : feittype.
+stationsindeling[|station {1..1} => Reddingsstation|].
+stationsindeling[|boten   {0..*} => Boot|].
+
+@!{'sterk station'}
+?S : sterk :- ?S : Reddingsstation,
+    count{?V | ?V = ?S.boten, ?V.lengte > 8} > 1.

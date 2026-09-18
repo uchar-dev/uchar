@@ -1,0 +1,27 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "S1", "objectType": "Reddingsstation", "attributes": {},
+        "roles": { "boten": ["B1", "B2"] }, "characteristics": ["bemand"] },
+      { "label": "B1", "objectType": "Boot", "attributes": { "lengte": { "number": "10" } },
+        "roles": {}, "characteristics": ["zeewaardig"] },
+      { "label": "B2", "objectType": "Boot", "attributes": { "lengte": { "number": "9" } },
+        "roles": {}, "characteristics": ["zeewaardig"] }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "S1", "attribute": "bootstal", "value": { "number": "2" } },
+    { "kind": "characteristicPresent", "label": "S1", "characteristic": "slagvaardig" },
+    { "kind": "characteristicAbsent", "label": "S1", "characteristic": "kansloos" },
+    { "kind": "characteristicPresent", "label": "S1", "characteristic": "sterk" },
+    { "kind": "characteristicAbsent", "label": "S1", "characteristic": "karig" },
+    { "kind": "characteristicAbsent", "label": "S1", "characteristic": "solitair" },
+    { "kind": "characteristicPresent", "label": "S1", "characteristic": "beproefd" },
+    { "kind": "characteristicPresent", "label": "S1", "characteristic": "dubbelgekeurd" },
+    { "kind": "characteristicPresent", "label": "S1", "characteristic": "paraat" },
+    { "kind": "consistent" }
+  ]
+}
