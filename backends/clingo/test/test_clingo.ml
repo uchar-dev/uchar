@@ -4716,6 +4716,442 @@ let () =
   clingo_matches ~name:"ch10.6 §6.5-plek in de wikkel blijft melden" ~ir:tak_doc10
     ~case_text:wikkel
 
+(* --- DRIE TUSSENKNOPEN TUSSEN DE Let EN DE TAKKNOOP ----------------------
+   De ch.-10.6-herschrijving hierboven daalt af door de vier zuivere
+   rekenwikkels en door niets anders. Wat er verder tussen een `Let` en de
+   takknoop kan staan is hier vorm voor vorm GEMETEN en dan gedragen of luid
+   geweigerd — geen terugvalredenering, want die was de les van de vorige
+   kaart.
+
+   1. EEN GENESTE `Let`. Gedragen, over twee routes die elkaar aanvullen: de
+      geneste `Let` DISTRIBUEERT over de armen zoals een wikkel dat doet, en
+      waar dat niet mag — de takconditie leest de tussenbinder — WISSELEN de
+      twee `Let`s van plaats. Beide exact onder ch. 10.6, beide hier in beide
+      richtingen, op regelniveau én in de gesloten body.
+   2. EEN VOUWLICHAAM. De directe vorm (een regelniveau-`Let` gelezen ín een
+      gesloten lichaam) is WF-064-ill-formed. Wat overblijft is de vouw ZELF
+      als tussenknoop, met de takknoop in haar `init` — en die weigert al
+      luid, omdat een fold-init over [closed_term] loopt en die de knoop niet
+      draagt. Gemeten, met ref ernaast die hem wél speelt.
+   3. EEN AGGREGATIELICHAAM. Bestaat niet in welgevormd IR: elke
+      expressiepositie binnen een `Functie` — de leegwaarde en elk argument —
+      wordt door de verifier op regelniveau gelopen, en daar is een
+      `IfThenElse` WF-069-ill-formed. De weigering staat dus aan de deur, niet
+      in deze backend, en wordt hier met de verifier zelf vastgelegd.
+
+   Wat GEEN van beide routes bereikt is een WIKKEL tussen de twee `Let`s met
+   een conditie die de tussenbinder leest: de wissel kan niet over de wikkel
+   heen stappen en de distributie kan de takknoop niet uit de geneste `Let`
+   tillen. Eager plaatsing daar is gemeten fout — melding, afbraak én een
+   gecoalesceerde waarde — dus die vorm is een luide, benoemde weigering. *)
+
+(* de verifier IN deze suite: dezelfde [Ir_v0.Checks.all] die gate 3 draait, zodat
+   "verifier-clean" een gedraaide check is en geen bewering in een notitie — en
+   zodat de WF-weigering van knoop 3 een getuige heeft in plaats van een zin. *)
+let wf_ids ir =
+  let irf = write_temp ".ir.json" ir in
+  let doc = Ir_v0.Loader.load_file irf in
+  Sys.remove irf;
+  List.map (fun (x : Ir_v0.Checks.violation) -> x.wf ^ " " ^ x.at) (Ir_v0.Checks.all doc)
+
+let verifier_clean ~name ~ir =
+  match wf_ids ir with
+  | [] -> check (name ^ ": verifier-clean") true
+  | vs -> check (name ^ ": verifier-clean (" ^ String.concat "; " vs ^ ")") false
+
+(* de weigering moet DE weigering zijn: niet-leeg, en elke klacht draagt het
+   genoemde WF-nummer. Anders zou een document dat om een heel andere reden
+   ill-formed is deze getuige groen houden. *)
+let verifier_refuses ~name ~ir ~wf =
+  let vs = wf_ids ir in
+  let is v = String.length v >= String.length wf && String.sub v 0 (String.length wf) = wf in
+  check
+    (name ^ ": " ^ wf ^ " weigert de vorm aan de deur, en niets anders klaagt ("
+   ^ String.concat "; " vs ^ ")")
+    (vs <> [] && List.for_all is vs)
+
+let tak_attrs3 =
+  Printf.sprintf {|"inkomen": %s, "restpost": %s, "heffing": %s|} tak_nn tak_nn tak_ob
+
+let tak_lit w = Printf.sprintf {|{ "node": "Literal", "waarde": "%s", "type": %s, "bron": "%s" }|}
+                  w tak_ob w
+
+let tak_plus links rechts bron =
+  Printf.sprintf
+    {|{ "node": "Binair", "op": "PLUS", "links": %s, "rechts": %s, "type": %s, "bron": "%s" }|}
+    links rechts tak_ob bron
+
+(* het geraamte van alle vijf de documenten hieronder: Let k = zijn inkomen in
+   (Let z = k gedeeld door zijn restpost in <romp>) *)
+let tak_genest ~romp =
+  tak_doc ~attributen:tak_attrs3
+    ~parameters:(tak_param "drempel" ^ ", " ^ tak_param "basisheffing")
+    ~doel_typ:tak_ob
+    ~waarde:
+      (tak_let ~typ:tak_ob ~binder:"k" ~value:(tak_attr "inkomen")
+         ~body:(tak_let ~typ:tak_ob ~binder:"z" ~value:tak_deling ~body:romp))
+
+(* de takknoop zoals de vorige kaart hem kent: als k > de drempel dan <dan>
+   anders de behoefte z *)
+let tak_op_k ~dan = tak_ite ~typ:tak_ob ~links:(tak_binder "k") ~rechts:(tak_par "drempel")
+                      ~dan ~anders:(tak_binder ~typ:tak_ob "z")
+
+(* … en de variant waarin de TUSSENBINDER de conditie draagt: als w > de
+   drempel dan 0,00 anders z. Precies deze conditie sluit de distributie uit. *)
+let tak_op_w = tak_ite ~typ:tak_ob ~links:(tak_binder "w") ~rechts:(tak_par "drempel")
+                 ~dan:(tak_lit "0.00") ~anders:(tak_binder ~typ:tak_ob "z")
+
+(* D1 — de kale geneste Let: Let w = 1,00 tussen de Let z en de takknoop *)
+let tak_doc11 =
+  tak_genest
+    ~romp:(tak_let ~typ:tak_ob ~binder:"w" ~value:(tak_lit "1.00")
+             ~body:(tak_op_k ~dan:(tak_binder ~typ:tak_ob "w")))
+
+(* D2 — dezelfde geneste Let, met een PLUS om de takknoop. Dit is de
+   REIKWIJDTE-PIN: leegt de barrière alleen de arm in plaats van het geheel,
+   dan leest de plus die arm als 0,00 en antwoordt 5,00 waar ref leeg zegt. *)
+let tak_doc12b =
+  tak_genest
+    ~romp:
+      (tak_plus
+         (tak_let ~typ:tak_ob ~binder:"w" ~value:(tak_lit "1.00")
+            ~body:(tak_op_k ~dan:(tak_binder ~typ:tak_ob "w")))
+         (tak_par "basisheffing") "het deel plus de basisheffing")
+
+(* D3 — de geneste Let wier binder de takCONDITIE leest. De distributie mag
+   hier niet (de conditie zou haar binding kwijtraken); de wissel wel. *)
+let tak_doc13 =
+  tak_genest ~romp:(tak_let ~typ:tak_ob ~binder:"w" ~value:(tak_binder "k") ~body:tak_op_w)
+
+(* D4 — dezelfde conditie-lezende tussenbinder, nu met een WIKKEL ertussen.
+   Geen van beide routes bereikt hem: de luide weigering. *)
+let tak_doc14 =
+  tak_genest
+    ~romp:
+      (tak_plus
+         (tak_let ~typ:tak_ob ~binder:"w" ~value:(tak_binder "k") ~body:tak_op_w)
+         (tak_par "basisheffing") "het deel plus de basisheffing")
+
+(* D5 — de geneste WAARDE leest de buitenste behoefte. Dan is die behoefte
+   nodig welke arm ook genomen wordt, dus er valt niets te verplaatsen en
+   eager plaatsing is exact — gemeten, niet aangenomen. *)
+let tak_doc15 =
+  tak_genest
+    ~romp:
+      (tak_let ~typ:tak_ob ~binder:"w"
+         ~value:(tak_plus (tak_binder ~typ:tak_ob "z") (tak_lit "0.00") "de behoefte plus 0,00")
+         ~body:(tak_op_k ~dan:(tak_binder ~typ:tak_ob "w")))
+
+let tak_val n =
+  Printf.sprintf
+    {|"expected": [
+        { "kind": "attributeValue", "label": "J1", "attribute": "heffing",
+          "value": { "number": "%s" } },
+        { "kind": "consistent" } ]|}
+    n
+
+let tak_breekt =
+  {|"expectedFault": { "ref": "division by numeric zero",
+                       "clingo": "division by numeric zero" }|}
+
+(* de vier hoeken van elke vorm: de niet-betreden arm met een lege en met een
+   nul-deler, en de betreden arm met dezelfde twee *)
+let tak_vier ~naam ~ir ~niet_betreden =
+  verifier_clean ~name:naam ~ir;
+  let leeg40 = tak_case ~inkomen:"40" ~parameters:tak_params12
+                 ~verwacht:(tak_val niet_betreden) () in
+  let nul40 = tak_case ~inkomen:"40" ~restpost:"0" ~parameters:tak_params12
+                ~verwacht:(tak_val niet_betreden) () in
+  ref_matches ~name:(naam ^ ", lege deler in de niet-betreden arm") ~ir ~case_text:leeg40;
+  clingo_matches ~name:(naam ^ ", lege deler in de niet-betreden arm meldt niet") ~ir
+    ~case_text:leeg40;
+  ref_matches ~name:(naam ^ ", nuldeler in de niet-betreden arm") ~ir ~case_text:nul40;
+  clingo_matches ~name:(naam ^ ", nuldeler in de niet-betreden arm breekt niet af") ~ir
+    ~case_text:nul40;
+  (* de garde staat er nog — een fix die het hek weghaalt zou de twee regels
+     hierboven ook groen maken *)
+  translates_carrying ~name:(naam ^ ": de nulgarde staat nog in het programma") ~ir
+    ~case_text:nul40 ~needle:{|viol("division by numeric zero"|};
+  (* DE REIKWIJDTE-PIN, en de spiegel ineen: de arm WORDT betreden, de behoefte
+     wordt gelezen, en dan meldt §6.5 én leegt de ch.-10.6-barrière het GEHEEL —
+     niet alleen de arm, wat een coalescerende wikkel als 0,00 zou lezen *)
+  let leeg5 = tak_case ~inkomen:"5" ~parameters:tak_params12
+                ~verwacht:tak_heffing_leeg_en_gemeld () in
+  ref_matches ~name:(naam ^ ", lege deler in de BETREDEN arm") ~ir ~case_text:leeg5;
+  clingo_matches ~name:(naam ^ ", lege deler in de BETREDEN arm meldt en leegt") ~ir
+    ~case_text:leeg5;
+  both_break ~name:(naam ^ ", nuldeler in de BETREDEN arm") ~ir
+    ~case_text:(tak_case ~inkomen:"5" ~restpost:"0" ~parameters:tak_params12
+                  ~verwacht:tak_breekt ())
+    ~needle:"division by numeric zero"
+
+let () =
+  (* D1: de niet-betreden arm levert w = 1,00 *)
+  tak_vier ~naam:"ch10.6 geneste Let tussen Let en tak" ~ir:tak_doc11 ~niet_betreden:"1";
+  (* D2: 1,00 plus de basisheffing 5,00 — en de betreden arm leegt het GEHEEL *)
+  tak_vier ~naam:"ch10.6 geneste Let onder een wikkel" ~ir:tak_doc12b ~niet_betreden:"6";
+  (* D3: de conditie leest de tussenbinder w; de dan-arm levert 0,00 *)
+  tak_vier ~naam:"ch10.6 geneste Let die de takconditie draagt" ~ir:tak_doc13
+    ~niet_betreden:"0"
+
+let () =
+  (* D5 — de geneste waarde leest de buitenste behoefte, dus die behoefte is
+     nodig welke arm ook genomen wordt. Er valt niets te verplaatsen: eager
+     plaatsing blijft staan EN is exact, in beide executors, in beide
+     richtingen. Deze getuige houdt de herschrijving eerlijk aan de andere
+     kant — zij mag niet verplaatsen wat niet arm-lokaal is. *)
+  verifier_clean ~name:"ch10.6 geneste waarde leest de buitenste behoefte" ~ir:tak_doc15;
+  let leeg40 = tak_case ~inkomen:"40" ~parameters:tak_params12
+                 ~verwacht:tak_heffing_leeg_en_gemeld () in
+  ref_matches ~name:"ch10.6 geneste waarde leest de buitenste behoefte, lege deler"
+    ~ir:tak_doc15 ~case_text:leeg40;
+  clingo_matches
+    ~name:"ch10.6 geneste waarde leest de buitenste behoefte, lege deler meldt en leegt"
+    ~ir:tak_doc15 ~case_text:leeg40;
+  both_break ~name:"ch10.6 geneste waarde leest de buitenste behoefte, nuldeler" ~ir:tak_doc15
+    ~case_text:(tak_case ~inkomen:"40" ~restpost:"0" ~parameters:tak_params12
+                  ~verwacht:tak_breekt ())
+    ~needle:"division by numeric zero"
+
+let () =
+  (* D4 — DE LUIDE WEIGERING. Een wikkel tussen de twee Lets met een
+     conditie-lezende tussenbinder: de wissel stapt niet over de wikkel, de
+     distributie tilt de takknoop niet uit de geneste Let. Eager plaatsing is
+     hier gemeten fout — melding, afbraak én een gecoalesceerde waarde — dus
+     weigert de vertaling bij naam. ref speelt hem, en die getuige staat
+     ernaast: dit is een weigering, geen uitspraak dat de vorm geen betekenis
+     heeft. *)
+  verifier_clean ~name:"ch10.6 wikkel tussen twee Lets, conditie-lezende tussenbinder"
+    ~ir:tak_doc14;
+  let leeg40 = tak_case ~inkomen:"40" ~parameters:tak_params12 ~verwacht:(tak_val "5") () in
+  ref_matches ~name:"ch10.6 wikkel tussen twee Lets, conditie-lezende tussenbinder [ref speelt]"
+    ~ir:tak_doc14 ~case_text:leeg40;
+  faults_with ~name:"ch10.6 wikkel tussen twee Lets, conditie-lezende tussenbinder weigert luid"
+    ~ir:tak_doc14 ~case_text:leeg40 ~needle:"nor swap the two Lets";
+  faults_with
+    ~name:"ch10.6 wikkel tussen twee Lets, conditie-lezende tussenbinder noemt de reden"
+    ~ir:tak_doc14 ~case_text:leeg40
+    ~needle:"read in exactly one branch arm"
+
+(* --- knoop 1, tweede helft: de GESLOTEN body ------------------------------
+   Dezelfde twee routes in de derde lowering. De §6.5-melding kan hier niet
+   ontstaan (een gesloten body is leegvrij, ch. 10.1), dus wat er te meten valt
+   is precies de fail-fast-kant. *)
+
+let cbn_ite ~links ~drempel ~dan ~anders =
+  Printf.sprintf
+    {|{ "node": "IfThenElse", "type": %s,
+        "condition": { "node": "Vergelijking", "op": "GROTER_OF_GELIJK", "links": %s,
+                       "rechts": { "node": "Literal", "waarde": "%d", "type": %s,
+                                   "bron": "%d" },
+                       "periode": null,
+                       "bron": "het kindertal groter of gelijk aan %d" },
+        "then": %s, "else": %s,
+        "bron": "boven de drempel tellen, daaronder delen" }|}
+    cb_som links drempel cb_tel drempel drempel dan anders
+
+let cb_binder naam typ =
+  Printf.sprintf {|{ "node": "BinderRef", "name": "%s", "type": %s, "bron": "de %s" }|} naam typ naam
+
+let cb_let binder value body =
+  Printf.sprintf {|{ "node": "Let", "type": %s, "binder": "%s", "value": %s, "body": %s,
+                     "bron": "de %s" }|} cb_som binder value body binder
+
+(* een geneste Let tussen de behoefte m en de takknoop; de conditie leest de
+   ELEMENTBINDER x, dus de distributie mag *)
+let cb_body_genest ~drempel =
+  cb_let "m" cb_deling
+    (cb_let "w"
+       (Printf.sprintf {|{ "node": "Literal", "waarde": "1.00", "type": %s, "bron": "1.00" }|} cb_som)
+       (cbn_ite ~links:cb_x ~drempel
+          ~dan:(cb_plus (cb_binder "w" cb_som) "het opgetelde deel plus w")
+          ~anders:(cb_plus (cb_binder "m" cb_som) "het opgetelde deel plus het deel")))
+
+(* … en dezelfde geneste Let wier binder de takCONDITIE draagt, waar alleen de
+   wissel nog bij kan *)
+let cb_body_conditie ~drempel =
+  cb_let "m" cb_deling
+    (cb_let "w" cb_x
+       (cbn_ite ~links:(cb_binder "w" cb_tel) ~drempel
+          ~dan:(cb_plus
+                  (Printf.sprintf {|{ "node": "Literal", "waarde": "1.00", "type": %s,
+                                      "bron": "1.00" }|} cb_som)
+                  "het opgetelde deel plus 1,00")
+          ~anders:(cb_plus (cb_binder "m" cb_som) "het opgetelde deel plus het deel")))
+
+let cb_drie ~naam ~lambda_body =
+  let nul = {|{ "number": "0" }|} in
+  let laag = cb_doc ~drempel:0 ~lambda_body and hoog = cb_doc ~drempel:4 ~lambda_body in
+  verifier_clean ~name:naam ~ir:laag;
+  verifier_clean ~name:(naam ^ " (hoge drempel)") ~ir:hoog;
+  (* de niet-betreden arm: drempel 0, kindertal 0 — de dan-arm telt op en de
+     deling door dat nul-kindertal mag het programma niet afbreken *)
+  let telt = cb_case ~kindertallen:nul ~verwacht:(cb_totaal "1.00") in
+  ref_matches ~name:(naam ^ " in de niet-betreden arm") ~ir:laag ~case_text:telt;
+  clingo_matches ~name:(naam ^ " in de niet-betreden arm breekt niet af") ~ir:laag
+    ~case_text:telt;
+  translates_carrying ~name:(naam ^ ": de nulgarde staat nog in het programma") ~ir:laag
+    ~case_text:telt ~needle:{|viol("division by numeric zero"|};
+  (* de betreden arm REKENT — een armgarde die de arm zelf doodmaakt haalt dit
+     niet *)
+  let rekent = cb_case ~kindertallen:{|{ "number": "3" }|} ~verwacht:(cb_totaal "20.00") in
+  ref_matches ~name:(naam ^ ": de betreden arm rekent") ~ir:hoog ~case_text:rekent;
+  clingo_matches ~name:(naam ^ ": de betreden arm rekent ook in clingo") ~ir:hoog
+    ~case_text:rekent;
+  (* en de betreden arm VUURT *)
+  both_break ~name:(naam ^ " in de BETREDEN arm") ~ir:hoog
+    ~case_text:
+      (cb_case ~kindertallen:nul
+         ~verwacht:
+           {|"expectedFault": { "ref": "division by numeric zero",
+                                "clingo": "division by numeric zero" }|})
+    ~needle:"division by numeric zero"
+
+let () =
+  cb_drie ~naam:"ch10.6 gesloten body: geneste Let" ~lambda_body:cb_body_genest;
+  cb_drie ~naam:"ch10.6 gesloten body: geneste Let die de takconditie draagt"
+    ~lambda_body:cb_body_conditie
+
+(* --- knoop 2: het VOUWLICHAAM als tussenknoop -----------------------------
+   De directe vorm — een regelniveau-`Let` gelezen ín een gesloten lichaam — is
+   WF-064-ill-formed en komt hier niet voorbij. Wat overblijft is de VOUW zelf
+   tussen de `Let` en de takknoop, met de takknoop in haar `init`: een fold-init
+   is onderwerploos en loopt daarom over [closed_term], die een takknoop niet
+   draagt. Dat is al een luide weigering — hier vastgelegd mét ref ernaast, die
+   hem wél speelt, zodat de weigering een weigering blijft en geen bewering. *)
+
+let tak_vouw =
+  tak_doc ~attributen:tak_attrs3
+    ~parameters:
+      (tak_param "drempel" ^ ", " ^ tak_param "basisheffing"
+      ^ Printf.sprintf
+          {|, "reeks": { "node": "Parameter", "naam": "reeks",
+                         "datatype": { "node": "ListType", "element": %s },
+                         "granulariteit": null }|} tak_ob)
+    ~doel_typ:tak_ob
+    ~waarde:
+      (tak_let ~typ:tak_ob ~binder:"k" ~value:(tak_attr "inkomen")
+         ~body:
+           (tak_let ~typ:tak_ob ~binder:"z" ~value:tak_deling
+              ~body:
+                (Printf.sprintf
+                   {|{ "node": "Fold", "type": %s,
+                       "list": { "node": "ParameterRef", "parameter": "reeks",
+                                 "type": { "node": "ListType", "element": %s },
+                                 "bron": "de reeks" },
+                       "function": { "node": "Lambda",
+                         "parameters": [ { "name": "acc", "datatype": %s },
+                                         { "name": "x", "datatype": %s } ],
+                         "body": %s, "bron": "de delen opgeteld" },
+                       "init": %s,
+                       "bron": "de reeks gevouwen" }|}
+                   tak_ob tak_ob tak_ob tak_ob
+                   (tak_plus (tak_binder ~typ:tak_ob "acc") (tak_binder ~typ:tak_ob "x")
+                      "het opgetelde deel plus het deel")
+                   (tak_op_k ~dan:(tak_lit "0.00")))))
+
+let tak_vouw_case verwacht =
+  Printf.sprintf
+    {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+      { "label": "J1", "objectType": "Jutter",
+        "attributes": { "inkomen": { "number": "40" } },
+        "roles": {}, "characteristics": [] } ],
+    "parameters": { %s, "reeks": { "list": [ { "number": "2" } ] } } },
+  %s }|}
+    tak_params12 verwacht
+
+let () =
+  verifier_clean ~name:"ch10.6 vouwlichaam tussen Let en tak" ~ir:tak_vouw;
+  let speelt = tak_vouw_case (tak_val "2") in
+  ref_matches ~name:"ch10.6 vouwlichaam tussen Let en tak [ref speelt]" ~ir:tak_vouw
+    ~case_text:speelt;
+  faults_with ~name:"ch10.6 vouwlichaam tussen Let en tak weigert luid" ~ir:tak_vouw
+    ~case_text:speelt ~needle:"a closed-body term here"
+
+(* --- knoop 3: het AGGREGATIELICHAAM ---------------------------------------
+   Bestaat niet in welgevormd IR, en dat is de meting: de verifier loopt elke
+   expressiepositie binnen een `Functie` — de leegwaarde en elk argument — op
+   REGELNIVEAU, en daar is een `IfThenElse` WF-069-ill-formed. Er valt dus niets
+   te dragen en niets te weigeren in deze backend; de weigering staat aan de
+   deur, bij gate 3, en wordt hier met dezelfde [Ir_v0.Checks.all] vastgelegd.
+   Twee documenten, omdat het twee posities zijn. *)
+
+(* de aggregatie vouwt over een echt feittype, zodat de enige klacht over het
+   document de WF-069 van de takknoop is en niet een gedegradeerde vouwbron *)
+let met_vondsten ir =
+  replace_first ir ~needle:{|"objecttypen": {|}
+    ~by:
+      (Printf.sprintf
+         {|"objecttypen": {
+    "Vondst": { "node": "Objecttype", "naam": "Vondst",
+      "attributen": { "waarde": %s },
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vondsten" },|}
+         tak_ob)
+  |> replace_first ~needle:{|"feittypen": {},|}
+       ~by:
+         {|"feittypen": { "berging": { "node": "Feittype", "naam": "berging",
+    "wederkerig": false,
+    "rollen": [ { "node": "Rol", "naam": "bergende jutter", "objecttypeNaam": "Jutter",
+                  "meervoud": null, "meervoudig": false },
+                { "node": "Rol", "naam": "vondst", "objecttypeNaam": "Vondst",
+                  "meervoud": "vondsten", "meervoudig": true } ] } },|}
+
+let () =
+  (* positie 1: de §5.8.2-leegwaarde, een zuivere waardepositie *)
+  let leegwaarde_vorm =
+    met_vondsten
+      (tak_doc ~attributen:tak_attrs3
+         ~parameters:(tak_param "drempel" ^ ", " ^ tak_param "basisheffing")
+         ~doel_typ:tak_ob
+         ~waarde:
+           (tak_let ~typ:tak_ob ~binder:"k" ~value:(tak_attr "inkomen")
+              ~body:
+                (tak_let ~typ:tak_ob ~binder:"z" ~value:tak_deling
+                   ~body:
+                     (Printf.sprintf
+                        {|{ "node": "Functie", "kind": "SOM",
+                            "argumenten": [ { "node": "AttribuutRef", "attribuut": "waarde",
+                               "objecttype": "Vondst",
+                               "onderwerpBron": "alle vondsten van de Jutter",
+                               "navigatieRol": null, "type": %s,
+                               "bron": "de waarde van alle vondsten van de Jutter",
+                               "set": true, "navigatiePad": [] } ],
+                            "elementObjecttype": "Vondst",
+                            "leegwaarde": %s,
+                            "filter": null, "dimensieSelectie": null, "type": %s,
+                            "bron": "de som van de waarde van alle vondsten van de Jutter",
+                            "granulariteit": null,
+                            "bronRol": { "node": "RolBinding", "feittype": "berging",
+                                         "rol": "vondst" } }|}
+                        tak_ob (tak_op_k ~dan:(tak_lit "0.00")) tak_ob))))
+  in
+  verifier_refuses ~name:"ch10.6 aggregatielichaam tussen Let en tak (leegwaarde)"
+    ~ir:leegwaarde_vorm ~wf:"WF-069";
+  (* positie 2: een gelijst waardefold-argument (§5.8.3) *)
+  let argument_vorm =
+    tak_doc ~attributen:tak_attrs3
+      ~parameters:(tak_param "drempel" ^ ", " ^ tak_param "basisheffing")
+      ~doel_typ:tak_ob
+      ~waarde:
+        (tak_let ~typ:tak_ob ~binder:"k" ~value:(tak_attr "inkomen")
+           ~body:
+             (tak_let ~typ:tak_ob ~binder:"z" ~value:tak_deling
+                ~body:
+                  (Printf.sprintf
+                     {|{ "node": "Functie", "kind": "MINIMUM",
+                         "argumenten": [ %s, %s ],
+                         "elementObjecttype": null, "leegwaarde": null,
+                         "filter": null, "dimensieSelectie": null, "type": %s,
+                         "bron": "het minimum van de twee", "granulariteit": null }|}
+                     (tak_op_k ~dan:(tak_lit "0.00")) (tak_par "basisheffing") tak_ob)))
+  in
+  verifier_refuses ~name:"ch10.6 aggregatielichaam tussen Let en tak (argument)"
+    ~ir:argument_vorm ~wf:"WF-069"
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
