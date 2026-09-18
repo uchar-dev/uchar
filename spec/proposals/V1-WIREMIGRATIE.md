@@ -83,9 +83,9 @@ geclassificeerd. Verdeling:
 
 | Klasse | Rijen | Welke |
 |---|---:|---|
-| **Brekend** (levert een of meer B-items) | **13** | 1, 2, 3, 4, 5, 11, 16, 20, 22, 25, 26, 27, 30 |
-| **Additief geland** (v1-vorm rijdt naast de v0-vorm) | **10** | 7, 8, 9, 10, 21, 24, 36, 38, 39, 40 (rij 21 draagt alleen de WF-027-versoepeling) |
-| **Gedaan** (delta is uitgevoerd, geen wire-schuld meer) | **7** | 6, 14, 15, 17, 19, 23, 29 |
+| **Brekend** (levert een of meer B-items) | **14** | 1, 2, 3, 4, 5, 11, 16, 17, 20, 22, 25, 26, 27, 30 |
+| **Additief geland** (v1-vorm rijdt naast de v0-vorm) | **9** | 7, 8, 9, 10, 24, 36, 38, 39, 40 |
+| **Gedaan** (delta is uitgevoerd, geen wire-schuld meer) | **7** | 6, 14, 15, 19, 21, 23, 29 |
 | **N.v.t. voor v1** (non-goal of later(v2)) | **10** | 12, 13, 18, 28, 31, 32, 33, 34, 35, 37 |
 
 Samen 40. Twee brekende items hebben **geen** eigen matrixrij en komen uit de
@@ -94,13 +94,21 @@ preambule en de knoopinventaris: de globale hernoeming (preambule van
 `regels`-stubs en `diagnostics`, beide uit §2.3/§2.4 met het oordeel
 `non-goal`.
 
+*(Rij 17 — verdeling — staat als **brekend** en niet als gedaan: `Methode.COMPLEX`
+is inderdaad afgehandeld (WF-024), maar de bindingloze verdeling valt onder
+hetzelfde vervallen van WF-048 als de bindingloze vouw, en dat is B12's tweede
+helft. Rij 21 — objectcreatie — staat als **gedaan**: de deltakolom zegt
+"— (mirrored as-is)" en de WF-027-versoepeling is additief geland, dus er is
+geen wire-schuld meer.)*
+
 *(Rij 31 — tekstinterpolatie — staat als n.v.t. en niet als brekend: het
 `sugar`-oordeel geldt de brontaal, maar IR-SPEC ch. 4.2 houdt de knoop
 uitdrukkelijk aan — "**TextComposition** … sugar verdict (row 31),
 mirrored". Hetzelfde geldt voor `Begrensd`: ch. 4.2 houdt **Clamp** aan als
 v1-knoop, en WF-099 hangt er sinds 2026-09-10 aan. Beide bewegen dus alleen
-mee in de hernoeming B6, niet als eigen delta. Dit is de enige plek waar het
-register en IR-SPEC uit elkaar lopen; zie **V3**.)*
+mee in de hernoeming B6, niet als eigen delta. Waar het register en IR-SPEC uit
+elkaar lopen is niet de matrixrij maar de **knoopinventaris**; §9 registerrij 1
+stelt precies die regel voor.)*
 
 Daarnaast is de **knoopinventaris** van `CONSTRUCTS.md` §2.1–§2.4 integraal
 doorgenomen — 12 `Expr`-subtypen, 9 `Conditie`-subtypen, 13 top-level
@@ -112,13 +120,16 @@ en `Methode.COMPLEX` (WF-024 geland, maar zie B21's noot over de toka-zone).
 
 ### 2.2 Mechanische sweep
 
-Zoektermen over `spec/` en het schema, met ruwe treffertellingen:
+Zoektermen over `spec/` en het schema. De tabel telt **ruwe regeltreffers**
+(`grep -cEi` per bestand, hoofdletterongevoelig, één telling per regel — een
+regel met twee treffers telt één keer) en is **indicatief**: hij toont waar de
+dichtheid zit, en is geen bewijs van volledigheid. Dat bewijs zit in de
+classificatie eronder.
 
 | Term | IR-SPEC | RUNTIME-SEM. | CONSTRUCTS | ASP-TRANSL. | schema |
 |---|---:|---:|---:|---:|---:|
 | `v0 mirror` | 58 | 27 | 0 | 1 | 0 |
 | `mirror` (breed) | 112 | 77 | 11 | 18 | 1 |
-| `**Delta` | 60 | 6 | 1 | 0 | 0 |
 | `*Migration:*` | 14 | 0 | 0 | 0 | 0 |
 | `tracked delta` | 4 | 10 | 3 | 2 | 0 |
 | `format bump` | 2 | 0 | 1 | 0 | 0 |
@@ -129,21 +140,39 @@ Zoektermen over `spec/` en het schema, met ruwe treffertellingen:
 | `deprecated`/`legacy` | 0 | 0 | 0 | 0 | 0 |
 | `OPEN` | 107 | 48 | 18 | 11 | 1 |
 
-De **60 `**Delta`-markeringen in IR-SPEC** zijn de dichtste bron en zijn
-uitputtend geclassificeerd:
+**De deltamarkeringen in IR-SPEC zijn de dichtste bron — en de eerste doorgang
+telde ze verkeerd.** Die gebruikte het letterlijke patroon `**Delta` (hoofdletter,
+woordbegin) en vond er 60. IR-SPEC spelt de markering echter op vier manieren, en
+drie daarvan beginnen niet met een hoofdletter-`D`:
 
-- **36 × `(promotion)`** — WF-verscherping, geen wire-vorm. Afgehandeld per
-  §1: niet brekend.
-- **3 × `(v1 normalisation / tightening / widening)`** en **2 × `(new wire
-  law)`** en **1 × `(diverge-from-v0)`** — alle zes geland. Niet brekend.
-- **18 vormdragende markeringen** — `(tracked …)` (8), `(row …)` (7), kaal
-  `Delta:` (2), `(CONSTRUCTS.md ch. 2.2)` (1). Deze achttien zijn één-op-één
-  afgehandeld; de kolom "sweep-herkomst" in §6 noemt per B-item zijn
-  regelnummer.
+| Spelling | Regel | Aard |
+|---|---:|---|
+| `**Delta …**` | 60× | de gangbare vorm |
+| `**pending delta (tracked, row 3)**` | 2516 | **vormdragend — dit is B26, de `bron`-string** |
+| `**Staged delta (row 11)**` | 672 | uitgesteld: v1 houdt de facet bij het lid, timeline-of-element landt later |
+| `**delta, promotion**` | 2444 | promotie (WF-032) |
 
-Vier brekende punten vielen **buiten** de `**Delta`-markeringen en zijn alleen
-via de sweep op `inert` / `baggage` / `retires` / `mirror` en via het register
-gevonden. Ze staan hier apart omdat ze laten zien dat één bron niet genoeg was:
+Het gecorrigeerde patroon — `**` gevolgd door hoogstens twintig letters en dan
+`delta`, hoofdletterongevoelig — vindt er **63**, uitputtend geclassificeerd:
+
+- **37 × promotie** — WF-verscherping, geen wire-vorm. Niet brekend (§1).
+- **3 × `(v1 normalisation / tightening / widening)`**, **2 × `(new wire law)`**,
+  **1 × `(diverge-from-v0)`** — alle zes geland. Niet brekend.
+- **1 × `Staged`** — uitdrukkelijk "recorded here so it is not mistaken for a
+  settled shape": geen v1-vorm om nu te beslissen, wél een aantekening bij B5/B18.
+- **19 vormdragende markeringen** — `(tracked …)` (8), `(row …)` (7), kaal
+  `Delta:` (2), `(CONSTRUCTS.md ch. 2.2)` (1) en `pending delta` (1). Deze
+  negentien zijn één-op-één afgehandeld.
+
+**De les die deze correctie oplevert, en waarom ze hier blijft staan:** een
+zoekterm is geen meting. De eerste doorgang presenteerde "60 markeringen,
+uitputtend geclassificeerd" als een vaststelling, terwijl het de uitkomst van
+één spelling was — en de delta die daardoor wegviel is naar voorkomens de
+**grootste van de hele lijst** (B26: 4987 voorkomens). Elke telling in dit
+document draagt daarom voortaan haar meetmethode.
+
+Vier brekende punten vielen **buiten élke deltamarkering** en zijn alleen via de
+sweep op `inert` / `baggage` / `retires` / `mirror` en via het register gevonden:
 
 1. **De `regels`-stubs** (IR-SPEC ch. 3, maintainersbesluit 2026-09-05) —
    "They are inert v0 mirror baggage, exactly like the bean fields of ch. 3.4,
@@ -169,18 +198,43 @@ uitkomst corrigeert een aanname die de kaart nog droeg:
 > `backends/drools` **voert ze uit** — beide transpilertakken.
 
 De javadoc van de Drools-loader zegt het zelf, en dit is de zwaarste enkele
-vondst van deze kaart:
+vondst van deze kaart. **Hij bestaat uit twee alinea's, en de tweede beperkt de
+eerste** — wie alleen de eerste citeert trekt een te ruime conclusie:
 
 > **Authority.** The v0 BEAN fields are authoritative: where the emitter also
-> writes a symbolic extension that is a record field … it is reconstructed
-> faithfully; where the extension is purely emitter-derived and NOT a record
-> field (an AttribuutRef's `navigatieBindingen`, a Functie's `bronRol`, a
-> Kenmerk's `navigatieBinding`, a verdeling's `verbindendeRol`) it is ignored —
-> the transpiler re-derives it from the model.
+> writes a symbolic extension that is a record field (a feitcreatie's
+> `feittype/ankerRol/doelRol/joinRol`, a uniciteit's `scopeRol`, a tussenstap's
+> `rolBinding`) it is reconstructed faithfully; where the extension is purely
+> emitter-derived and NOT a record field (an AttribuutRef's
+> `navigatieBindingen`, a Functie's `bronRol`, a Kenmerk's `navigatieBinding`, a
+> verdeling's `verbindendeRol`) it is ignored — the transpiler re-derives it
+> from the model.
+>
+> **TWO extensions escape that dichotomy**, both because the model cannot ALWAYS
+> re-derive them: an OBJECTCREATIE's `verbindendeRol` (IR-SPEC ch. 3.3, which
+> RUNTIME-SEMANTICS ch. 5.5 makes AUTHORITATIVE) and an aggregation
+> `Expr.Functie`'s `bronRol`. On a SELF-TYPED role pair … the symbolic binding
+> is the only route there is.
 
-Voor vier symbolische uitbreidingen geldt dus: de Drools-backend negeert ze en
-leidt ze zelf af uit het model. Het v0-veld weghalen is daar geen opruiming
-maar een **amputatie**. Dat bepaalt de volgorde van het vervolgprogramma (§6).
+De vier "genegeerde" van de eerste alinea zijn er in werkelijkheid **drie**, en
+de code bevestigt het: `IrLoader` leest de vouw-`bronRol` (r. 448-449) en de
+objectcreatie-`verbindendeRol` (r. 623-624), beide in de zijkanaal-kaart
+`Loaded#rolBindingen`, omdat de recordtypen tot de gevendorde frontend-slice
+behoren en uitbreiden daar een her-vendor plus pin-bump zou kosten. De stand,
+gemeten in plaats van uit één alinea afgelezen:
+
+| Symbolische uitbreiding | Drools-loader | Gevolg voor de migratie |
+|---|---|---|
+| `AttribuutRef.navigatieBindingen` | **genegeerd**, her-afgeleid uit `navigatieRol`/`navigatiePad` | port vóór B11 (P1) |
+| `Kenmerk.navigatieBinding` | **genegeerd**, her-afgeleid | port vóór B11 (P1) |
+| `ResolvedVerdeling.verbindendeRol` | **genegeerd**, her-afgeleid uit het typenpaar | port vóór B12 (P3) |
+| `Functie.bronRol` (vouw) | **gelezen** — zijkanaal, terugval voor het zelfgetypeerde paar | geen port nodig |
+| `ResolvedObjectCreatie.verbindendeRol` | **gelezen** — en ch. 5.5 maakt hem GEZAGHEBBEND | geen port nodig |
+| feitcreatie `feittype/ankerRol/doelRol/joinRol`, uniciteit `scopeRol`, tussenstap `rolBinding` | **gelezen**, maar het BONENveld beslist | port vóór B7/B8 (P2) |
+
+Voor drie symbolische uitbreidingen geldt dus: de Drools-backend negeert ze en
+leidt ze zelf af uit het model. Het v0-veld weghalen is daar geen opruiming maar
+een **amputatie**. Dat bepaalt de volgorde van het vervolgprogramma (§7).
 
 ### 2.3 Wat er verder buiten valt, met reden
 
@@ -202,7 +256,7 @@ maar een **amputatie**. Dat bepaalt de volgorde van het vervolgprogramma (§6).
 
 ## 3. De brekende lijst
 
-Vijfentwintig items in zeven families. Per item: de wire-diff, de geraakte
+Achtentwintig items in acht families. Per item: de wire-diff, de geraakte
 partijen, de gemeten corpusomvang, de migratienota, en waar nodig de
 beslisvraag.
 
@@ -249,20 +303,57 @@ stil te missen. Het bestandspad van het schema verhuist mee
 "objectTypes": [ { "name": "Jutter", ... } ]
 ```
 
-**Partijen.** `E:` alle drie. `C:` alle vier. `S:` zes top-level properties
-(`objecttypen`, `parameters`, `eenheidstelsels`, `feittypen`, `dimensies`,
-`domeinen`) plus het `naam`-veld op elk van hun waardeknopen. `K:` 639 documenten
-dragen `objecttypen` (966 objecttypen), 215 `feittypen` (386), 142 `domeinen`
-(221), 136 `eenheidstelsels` (248), 134 `parameters` (664), 13 `dimensies` (13).
-Het veld `naam` staat 5177 keer in 642 documenten — niet alles daarvan is
-zelfnaam, maar de zes tabellen leveren 2498 van die voorkomens. `T:` de pin.
+**Partijen.** `E:` alle drie. `C:` alle vier. `S:` zes top-level properties plus
+het zelfnaamveld op hun waardeknopen. `T:` de pin.
 
-**Migratienota.** WF-094 (2026-09-06, vier clausules) beschrijft de zelfnaam al
+**Gemeten omvang, per tabel, op de DECLARATIEpositie** (de waarden van de
+top-level kaart — niet elk voorkomen van de veldnaam ergens in het document):
+
+| Tabel | Declaraties | Documenten | Zelfnaamveld |
+|---|---:|---:|---|
+| `objecttypen` | 966 | 639 | `naam` |
+| `parameters` | 664 | 134 | `naam` |
+| `feittypen` | 386 | 215 | `naam` |
+| `eenheidstelsels` | 248 | 136 | `naam` |
+| `dimensies` | 13 | 13 | `naam` |
+| **subtotaal, de vijf WF-094-tabellen** | **2277** | — | — |
+| `domeinen` | 221 | 142 | **drie spellingen — zie hieronder** |
+
+De sleutel `naam` staat in totaal **5185** keer in de vier zones plus de
+pariteitszone (waarvan 8 met waarde `null` — de WF-094 clausule-(d)-getuigen);
+**2277** daarvan zijn zelfnaam op een van de vijf WF-094-tabellen, de rest zijn
+regelnamen, rolnamen, ledennamen en dergelijke.
+
+**`domeinen` is een andere vorm en verdient een eigen behandeling.** De vijf
+tabellen hierboven hebben als waarde een *declaratieknoop* met een `naam`-veld,
+gedekt door WF-094. `domeinen` heeft als waarde een **datatype** (het schema:
+`additionalProperties: anyOf [datatype, null]`), en de zelfnaam zit daar per
+datatypesoort ergens anders — of nergens:
+
+| Domeinwaarde | Declaraties | Zelfnaamveld |
+|---|---:|---|
+| `Enumeratie` | 88 | `domein` |
+| `SumType` | 53 | `domain` |
+| `StructType` | 50 | `domain` |
+| `Numeriek` | 30 | **geen** |
+
+Drie gevolgen. Ten eerste: **WF-094 dekt vijf tabellen, niet zes** — `domeinen`
+staat niet in zijn lijst, en dat is terecht, want er is geen uniform veld om te
+kruisen. Ten tweede: de zelfnaam van een domein wordt onder **twee spellingen**
+geschreven (`domein` op de v0-gespiegelde `Enumeratie`, `domain` op de
+v1-uitbreidingen `SumType`/`StructType`) — een tweetaligheid binnen één tabel,
+die B6 hoe dan ook opruimt. Ten derde, en dat draait de delta om: voor de
+**30 `Numeriek`-domeinen voegt v1 een naam TOE** in plaats van een veld weg te
+halen, want de lijstvorm heeft een naam nodig waar de kaartsleutel er nu een gaf.
+
+**Migratienota.** WF-094 (2026-09-06, vier clausules) beschrijft de zelfnaam
 letterlijk als "the v0 denormalisation of the ONE `name` a v1 declaration
-carries on its node". De migratie is mechanisch: neem de sleutel, gooi het veld
-weg. Bij de klap **vervallen alle vier de WF-094-clausules** — er is geen tweede
-spelling meer om tegen te kruisen. Hun tien negatief-getuigen verliezen hun
-onderwerp (zie V15).
+carries on its node". Voor de vijf tabellen is de migratie mechanisch: neem de
+sleutel, gooi het veld weg. Bij de klap **vervallen alle vier de
+WF-094-clausules** — er is geen tweede spelling meer om tegen te kruisen — en
+hun tien negatief-getuigen verliezen hun onderwerp (**V14**). Voor `domeinen` is
+de migratie: neem de sleutel, gooi `domein`/`domain` weg, en geef de dertig
+`Numeriek`-domeinen de sleutel als naam.
 
 Het argument om de tabellen naar lijsten te brengen is **WF-019**: declaratievolgorde
 is normatief en moet door serialisatie behouden blijven. Een JSON-object
@@ -270,9 +361,9 @@ garandeert die volgorde niet; een array wel. Vandaag rust WF-019 op de
 byte-identieke round-trip van gate 2, dus op het gedrag van de serialisator, niet
 op de vorm. De lijst maakt de eis structureel.
 
-**Beslisvraag: geen** — de richting staat in IR-SPEC ch. 2 (de rootcontainer
-noemt `objectTypes` een "list of ObjectType") en in WF-094. Wel geraakt door
-**V3** (nesten of vlak).
+**Beslisvraag: geen over het *of*** — de richting staat in IR-SPEC ch. 2 (de
+rootcontainer noemt `objectTypes` een "list of ObjectType") en in WF-094. Wel
+geraakt door **V3** (nesten of vlak).
 
 ---
 
@@ -469,9 +560,11 @@ Vervalt: `zetVeld`, `joinVeld`, en per `Tussenstap` de velden `veld`,
 onder WF-028 en WF-034 (m); **`backends/drools` voert ze uit** — de
 exec-tak schrijft de bonenproperty uit `zetVeld`, joint op `joinVeld` en hopt
 via `Tussenstap.veld`/`viaOuderVeld`; `ref` en clingo lopen uitsluitend de
-symbolische vorm. `S:` vijf properties over twee `$def`s. `K:` 16 documenten
-dragen `zetVeld`/`joinVeld` (4 golden, 1 rood, 10 negatief, 1 toka); 13 dragen
-`veld`/`viaOuderVeld` (idem verdeling). `T:` de pin.
+symbolische vorm. `S:` vijf properties over twee `$def`s. `K:` **16 documenten**
+dragen een `ResolvedFeitCreatie` en daarmee `zetVeld`/`joinVeld` — anchor 2,
+golden 2, negatief 10, rood 1, toka 1 (18 knopen); daarvan dragen er **13** ook
+een `Tussenstap` met `veld`/`viaOuderVeld` — anchor 2, golden 1, negatief 8,
+rood 1, toka 1. `T:` de pin.
 
 **Migratienota.** IR-SPEC ch. 3.4 draagt hem: "v0's `zetVeld`/`joinVeld`/`veld`
 are derivable from the role bindings by the backend's own role→field mapping;
@@ -711,6 +804,13 @@ uitkomsten geven. `S:` het `type`-veld op elke referentieknoop. `K:` een
 `type`-annotatie staat 4519 keer in 567 documenten; gate 13 verdraait er 74 over
 15 goldens (de vloer). `T:` de pin.
 
+*Telconventie:* die 4519 telt **elk** `type`-veld waarvan de waarde een object is,
+dus ook de afgeleide posities die onder V5 (a) blijven staan. Vier knoopklassen
+tellen niet mee omdat ze geen `type` dragen: `Bron` (de uniciteitsunie-bron),
+`Tussenstap`, `FilterList` en de conditie-variant van `Onopgelost`. Het aantal
+dat daadwerkelijk van de wire gaat hangt aan V5 en ligt tussen "de vier
+referentieknoopklassen" en "alles op één na de vierde klasse van ch. 2.10".
+
 **Migratienota.** CONSTRUCTS rij 1 formuleert het argument in één zin: "a copy
 that cannot be serialized cannot drift". De machinale voorbereiding is af — gate
 13 is er precies voor gebouwd, en `RUNTIME-SEMANTICS.md` ch. 2.10 (de
@@ -863,7 +963,13 @@ afwijkt.
 **Partijen.** `E:` alle drie. `C:` alle vier — clingo het zwaarst, want daar
 hangt de integer-codering van de grounder aan. `S:` één property verandert van
 type. `K:` **143 documenten, 2777 voorkomens** (2 anchor, 28 golden, 83
-negatief, 30 toka). `T:` de pin.
+negatief, 30 toka — groen dus 30). `T:` de pin.
+
+*Telconventie:* geteld zijn de `Eenheid`-knopen met een **niet-null**
+`factorNaarCanoniek`. Een eenheid met `canoniek: null` en `factorNaarCanoniek:
+null` is de basiseenheid van haar stelsel en beweegt niet; WF-092 eist dat het
+paar heel geschreven wordt, dus de twee velden staan altijd samen gevuld of
+samen leeg.
 
 **Migratienota.** IR-SPEC ch. 2.5: "v1 stores factors as true rationals and
 specifies only the exact restatement form; the pre-rounded single-ratio form is
@@ -1031,8 +1137,7 @@ die zone naar v1 niet lukt; zie §5.
 
 #### B22 — Literalen worden getypeerde waarden
 
-Dit is het item met de meeste al-voorgesorteerde deelstappen en de enige waar
-het corpus vandaag **twee spellingen van dezelfde waarde** draagt.
+Dit is het item met de meeste al-voorgesorteerde deelstappen.
 
 **Wire-diff.**
 
@@ -1046,13 +1151,21 @@ het corpus vandaag **twee spellingen van dezelfde waarde** draagt.
 **Stand van zaken per literaalsoort** (IR-SPEC ch. 4.1, herzien 2026-09-18):
 
 | Soort | Lexeemvorm vandaag | Gehekt door | Corpusdragers |
-|---|---|---|---|
-| getal | kaal getal, eenheid in het type | WF-081 | 632 literalen |
-| datum | kale ISO `yyyy-mm-dd` | WF-084 | 53 |
-| tekst | de **geparste** string (sinds 2026-09-18) | emittergetuige, gate 10/11 | 75 |
+|---|---|---|---:|
+| getal | kaal getal, eenheid in het type | WF-081 | 632 |
 | booleaan | `waar`/`onwaar` | — | 201 |
+| tekst | de **geparste** string (sinds 2026-09-18) | emittergetuige, gate 10/11 | 75 |
+| datum | kale ISO `yyyy-mm-dd` | WF-084 | 53 |
+| enumeratiewaarde | het kale label | **WF-039** (label ∈ gedeclareerd domein) | 17 |
 | **datum-tijd** | **canoniek ISO óf de bronsnippet** | WF-095 (laat beide toe) | 7 |
-| **enumeratiewaarde** | **kaal label óf `'label'`** | niets | 17 |
+| percentage | kaal getal | WF-081 | 5 |
+| som-constructor | de constructornaam | WF-061 | 1 |
+| *typeloos* (`type: null`) | — | WF-034 (r) weigert hem | 1 |
+| **totaal** | | | **992** |
+
+*(De laatste rij is de som over alle vier de zones plus de pariteitszone. Het
+typeloze exemplaar staat in een negatief-getuige en is er om afgewezen te
+worden.)*
 
 **B22a — het DatumTijd-lexeem.** WF-095 (2026-09-06) laat twee spellingen toe:
 canoniek `yyyy-mm-ddThh:mm:ss[.fff]` en de dag-eerst-bronsnippet. De regel zegt
@@ -1069,29 +1182,50 @@ handgeschreven. De emitterkant heeft dus **nul goldengetuigen**.
 herschrijven, en **nul goldenregeneratie**. Dit is de goedkoopste brekende stap
 van de hele lijst.
 
-**B22b — de enumeratiewaarde-delimiters.** Dit is een levend defect, gemeten op
-deze kop, en het is de exacte tweelingbroer van wat de tekstlexeem-kaart op
-2026-09-18 sloot:
+**B22b — de enumeratiewaarde-delimiters: een frontend-dekkingsgat, geen
+wire-divergentie.** De eerste doorgang van deze kaart las dit als de
+tweelingbroer van de tekstlexeem-kaart — twee spellingen, verbatim vergelijking,
+stil fout antwoord. **Dat is onjuist en de tegenproef wijst het aan.** De
+gemeten stand:
 
-- de RegelSpraak-emitter schrijft de **bronsnippet mét delimiters** (`'Ruimzee'`)
-  — `ExpressieBouwer`, de `ENUM_LITERAL`-tak;
-- de Catala-plugin en elke handgeschreven wire schrijven het **kale label**
-  (`Ruimzee`) — gemeten over alle 650 documenten: **nul dragen de
-  gedelimiteerde vorm**;
-- `ref` leest het lexeem **verbatim** als enumwaarde (`Some (Enumeratie _) ->
+- de RegelSpraak-emitter bouwt een enum-literal als `new Expr.Literal(
+  bron.snippet(), onbekend(), bron)` — dus **mét** de `'…'`-delimiters **en**
+  met het onbekend-sentinel als type, want welke `Enumeratie` bedoeld is hangt
+  van de context af. Dat is de enige bouwplek; nergens wordt de literal
+  hergetypeerd;
+- de Catala-plugin en elke handgeschreven wire schrijven het **kale label**;
+  gemeten over alle 650 documenten draagt **nul** de gedelimiteerde vorm;
+- `ref` leest het lexeem verbatim als enumwaarde (`Some (Enumeratie _) ->
   Value.Enum lex`), en alle vier de consumenten vergelijken enumwaarden
   byte-voor-byte.
 
-Twee producenten, twee spellingen, verbatim vergelijking, **en geen enkele
-getuige** — want geen `bron.rgs`-golden draagt een enumeratieliteral.
-IR-SPEC ch. 4.1 beschrijft de gedelimiteerde vorm als de wire-vorm ("an
-enumeratiewaarde keeps its `'…'` delimiters, which readers strip"), maar de
-genoemde stripper (`Literalen.enumLabel`) zit in de **frontend**, niet in een
-consument. Die zin klopt dus niet met wat de consumenten doen.
-→ Dit is geen v1-item maar een v0-defect. Het hoort **vóór** de klap gesloten,
-precies zoals de tekstlexeem-kaart dat deed: canonicaliseer bij emissie op het
-kale label, borg met een emittergetuige, en voeg één `bron.rgs`-golden met een
-enumeratieliteral toe die de zaak machinaal vasthoudt. Zie **V8**.
+**Maar de wire is dubbel gehekt, en dat is de correctie.** Ten eerste weigert
+**WF-039** een label dat niet in het gedeclareerde domein staat. Tegenproef op
+deze kop: neem `corpus/golden/jutterswet-vaarwatertoeslag-catala` (verifier:
+PASS), zet delimiters om zijn ene enum-literal, draai de verifier opnieuw:
+
+```
+WF-039 FAIL /resolvedRegels/2/voorwaarde/rechts:
+  enumeration label ''Ruimzee'' is not in the declared domain
+```
+
+Ten tweede zou de emitterroute al eerder stranden: de literal draagt het
+onbekend-sentinel, en **WF-034 arm (r)** maakt dat sentinel ill-formed op elke
+leespositie. Er is dus geen document waarin de gedelimiteerde vorm stil door
+kan glippen, en er is geen stil fout antwoord.
+
+Wat er wél is, is een **dekkingsgat aan de producentkant**: de RegelSpraak-frontend
+kan een enum-literal helemaal niet welgevormd emitteren — niet vanwege de
+delimiters alleen, maar omdat hij het construct niet typeert — en daarom draagt
+geen enkele `bron.rgs`-golden er een. De zin in IR-SPEC ch. 4.1 ("an
+enumeratiewaarde keeps its `'…'` delimiters, which readers strip") beschrijft
+de **frontend** (`Literalen.enumLabel` zit dáár, niet in een consument) en niet
+de wire; op de wire is het kale label de enige welgevormde vorm.
+
+→ Het hoort **vóór** de klap gesloten, maar de omvang is **"delimiters én
+typering"** en niet één emitterregel: strip bij emissie, type de literal tegen
+de context, en voeg één `bron.rgs`-golden met een enumeratieliteral toe die de
+route machinaal vasthoudt. Zie **V8**.
 
 **B22c — de volle overgang naar getypeerde waarden.** Van "een string die elke
 consument parseert" naar "een JSON-waarde van de juiste soort". Dat raakt alle
@@ -1210,6 +1344,150 @@ om een besluit uit te stellen tot hij niet meer uitstelbaar is.
 
 ---
 
+#### B27 — `ResolvedUniciteit` en `ResolvedUniciteitUnie` smelten samen
+
+**Wire-diff.**
+
+```json
+// vóór — twee top-level lijsten, twee knopen
+"uniciteiten":    [ { "node": "ResolvedUniciteit", "objecttype": "Vondst", "sleutels": ["nummer"] } ]
+"uniciteitUnies": [ { "node": "ResolvedUniciteitUnie",
+                      "bronnen": [ { "node": "Bron", "objecttype": "Vondst", "sleutels": ["nummer"] },
+                                   { "node": "Bron", "objecttype": "Wrak",   "sleutels": ["nummer"] } ] } ]
+// ná — één vorm; de enkelvoudige is de lengte-1-bron
+"uniqueness": [ { "sources": [ { "objectType": "Vondst", "keys": ["nummer"] } ] } ]
+```
+
+**Partijen.** `E:` RegelSpraak. `C:` alle vier. `S:` twee top-level lijsten en
+drie `$def`s worden één lijst en twee `$def`s. `K:` `ResolvedUniciteit` in 19
+documenten (22 knopen; groen 7), `ResolvedUniciteitUnie` in 6 (9 knopen; groen
+4); **de vereniging is 24 documenten, groen 10** (één document draagt beide
+vormen). `T:` de pin.
+
+**Migratienota.** Rij 20: "unify `ResolvedUniciteit` + `ResolvedUniciteitUnie`
+into one construct (single type = one source)". IR-SPEC ch. 3.6 draagt de vorm.
+De migratie is mechanisch en dezelfde beweging die `bronRol` → `bronPad` op rij 1
+maakte: de enkelvoudige vorm wordt de lengte-1-vorm van de algemene.
+
+Eén open punt dat de samensmelting **niet** oplost en dat rij 20 zelf noemt: een
+**gescoopte unie** blijft onuitdrukbaar, want v0 kent die vorm niet. Na de
+samensmelting is dat geen structurele onmogelijkheid meer maar een keuze — de
+gecombineerde vorm heeft zowel `sources` als een `scope`. Of v1 die combinatie
+toelaat is een ontwerpvraag die deze kaart niet opent: hij vraagt semantiek
+(welke scope-ouder telt over twee bronnen?) en hoort in een eigen kaart, niet in
+de klap.
+
+**Beslisvraag: geen** over de samensmelting zelf.
+
+---
+
+#### B28 — `ResolvedStartpunt` wordt ankermetadata
+
+**Wire-diff.**
+
+```json
+// vóór — een eigen top-level vorm naast de regels
+"resolvedStartpunten": [ { "node": "ResolvedStartpunt",
+                           "objecttype": "Vondst", "attribuut": "bergingsdatum",
+                           "tijdlijn": "bergingsreeks" } ]
+// ná — metadata bij de tijdlijnfacet die hem nodig heeft
+"timelines": [ { "name": "bergingsreeks", "variableStart": true,
+                 "anchor": { "objectType": "Vondst", "attribute": "bergingsdatum" } } ]
+```
+
+**Partijen.** `E:` RegelSpraak. `C:` alle vier (WF-032 kruist de vorm; de
+Drools-loader weigert een geërfd anker bij naam sinds 2026-09-12). `S:` één
+top-level lijst en één `$def` verhuizen naar de tijdlijnknoop. `K:` **6
+documenten** (1 golden, 2 negatief, 3 toka; groen 1). `T:` de pin.
+
+**Migratienota.** Rij 11: "the startpunt registration (`ResolvedStartpunt`)
+becomes explicit anchor metadata, the write stays an ordinary rule", en de
+knoopinventaris velt het oordeel `core (metadata)`. De registratie hoort bij de
+tijdlijn die een variabel startpunt declareert; als losse top-level vorm moet
+elke consument hem met een sleutel op de gedeclareerde onderwerpnaam terugvinden
+— precies de protocolvorm die §7's P-kaarten bij `backends/drools` als open gat
+laten staan ("niet een ledenopzoeking maar een protocol gesleuteld op de
+gedeclareerde onderwerpnaam, dus in zijn geheel verbreed of niet").
+
+**Dat maakt B28 goedkoper dan zijn zes documenten suggereren en waardevoller dan
+zijn omvang:** de verhuizing naar de tijdlijnknoop maakt de sleutel overbodig, en
+daarmee vervalt de reden waarom de Drools-backend de subtype-overerving daar niet
+kan volgen. Eén van de twee openstaande §9.9-weigeringen van rij 39 verdwijnt met
+deze delta.
+
+**Beslisvraag: geen.**
+
+---
+
+### Familie H — de bronverwijzing (dwars door alle lagen)
+
+#### B26 — De `bron`-string wordt een gestructureerd `Bron`-record
+
+*Naar voorkomens de grootste delta van de lijst, en de enige die deze kaart in
+haar eerste doorgang miste: IR-SPEC markeert hem als `**pending delta**` en niet
+als `**Delta**`, waardoor het sweeppatroon eroverheen las (§2.2).*
+
+**Wire-diff.**
+
+```json
+// vóór — één string, de onverwerkte bronsnede
+{ "node": "AttribuutRef", "attribuut": "leeftijd",
+  "bron": "de leeftijd van de Jutter" }
+// ná — een record dat zegt waar het vandaan komt
+{ "node": "AttributeReference", "attribute": "leeftijd",
+  "source": { "file": "jutterswet.rgs", "line": 42, "column": 17,
+              "snippet": "de leeftijd van de Jutter" } }
+```
+
+**Partijen.** `E:` alle drie — en dit is het enige item waarvoor de drie
+emitters echt verschillend werk hebben, want `file`/`line`/`column` moeten uit
+drie verschillende parsers komen. `C:` geen enkele uitvoerder leest `bron`
+semantisch; de verifier valideert hem als sleutel en citeert hem in
+foutmeldingen, en de frontend-diff van rij 39 telt `bron`/`onderwerpBron` bij de
+27 administratieve verschillen die "read by no executor" zijn. `S:` het
+`bron`-veld op elke expressie- en conditieknoop. `K:` **4987 voorkomens in 551
+documenten** — 39 anchor, 146 golden, 320 negatief, 23 rood, 23 toka; **groen
+208**. `T:` de pin.
+
+**Migratienota.** IR-SPEC ch. 4 (preambule) draagt hem, inclusief de koppeling
+die hem tot vandaag heeft opgehouden:
+
+> Every node carries a source reference; **pending delta (tracked,
+> `CONSTRUCTS.md` row 3):** today that is the v0 `bron` string — the structured
+> source reference (`file, line, column, snippet`) lands with the cross-repo
+> source-anchoring card and will change the wire format and the schema when it
+> does.
+
+Rij 3 draagt de andere helft: de `// Bron:`-wetsannotaties rijden sinds
+2026-08-25 additief mee als `bronAnnotaties` (WF-082), en "the structured-`Bron`
+wire form stays the tracked v1 delta, and the machine-readable legal-source id
+stays open (LRML-audit C1's optional tail)".
+
+**Drie dingen maken dit item bijzonder, en alle drie pleiten voor zorg in plaats
+van snelheid.**
+
+Ten eerste: het is **de grootste delta naar voorkomens** (4987) en tegelijk een
+van de goedkoopste naar betekenis — geen enkele uitvoerder leest het veld, dus
+er kan niets stil van antwoord veranderen. De kosten zitten volledig in de drie
+emitters en in de regeneratie.
+
+Ten tweede: de migratie is **niet verliesloos in de andere richting**. Een
+v0-`bron` is precies één van de vier v1-velden (`snippet`); `file`, `line` en
+`column` bestaan nog niet en moeten door de emitters worden aangeleverd. Een
+mechanische conversie van bestaand corpus levert dus een record met drie lege
+velden op — wat de vraag oproept of die drie optioneel zijn (en het record
+daarmee half leeg de wire op gaat) of verplicht (en elk document dan opnieuw uit
+bron moet worden geëmitteerd, wat voor de handgeschreven ankers en de
+negatief-zone niet kan).
+
+Ten derde: IR-SPEC koppelt hem aan een kaart die niet bestaat — "the cross-repo
+source-anchoring card". Zolang die koppeling staat is dit item niet vrij
+inplanbaar. **V16** stelt de vraag of hij in deze klap meegaat.
+
+**Beslisvraag: V16.**
+
+---
+
 ## 4. Samenvattende tabel
 
 | # | Delta | Familie | Groene-zone-dragers | Alle zones | Vraag |
@@ -1230,28 +1508,128 @@ om een besluit uit te stellen tot hij niet meer uitstelbaar is.
 | B14 | `Percentage` lost op | E | 4 | 47 | — |
 | B15 | `DatumInDagen` + `DatumTijd` → `Date(p)` | E | 19 | 89 | — |
 | B16 | `Onbekend` uit de datatypesom | E | 25 (→0 ná B13) | 71 | V6 |
-| B17 | exacte factor + canonieke-eenheid-wire | E | 31 | 143 | V7 |
+| B17 | exacte factor + canonieke-eenheid-wire | E | 30 | 143 | V7 |
 | B18 | `Parameter` volledige tijdlijnfacet | E | 32 | 134 | — |
 | B19 | versie-afvlakking keert om | F | 190 | 501 | — |
 | B20 | `Soort` klapt in | F | 190 | 501 | — |
 | B21 | `Functie` splitst | F | 61 | 170 | — |
+| B27 | uniciteit + uniciteitsunie samensmelten | F | 10 | 24 | — |
+| B28 | `ResolvedStartpunt` → ankermetadata | F | 1 | 6 | — |
 | B22 | literalen → getypeerde waarden | G | 148 | 368 | V8, V9 |
 | B23 | `Constante` splitst | G | 4 | 10 | V10 |
 | B24 | `Onopgelost` krijgt een reden | G | 1 | 2 | V11 |
 | B25 | `Regelversie` — blijft hij toelaatbaar? | G | 0 | **0** | V13 |
+| **B26** | **`bron`-string → `Bron`-record** | **H** | **208** | **551** | **V16** |
 
-*"Groene-zone-dragers" = anchor + golden + rood, de zones die gate 2/3/5/6/12
-gaten. "Alle zones" telt negatief en toka mee. De zonetotalen zijn: anchor 40,
-golden 159, rood 26, negatief 395, toka 30 — samen 650 `ir.json`, plus 566
-casusbestanden.*
+*"Groene-zone-dragers" = anchor + golden + rood, de zones die de gates 2, 3, 5, 6
+en 12 bewaken. "Alle zones" telt negatief en toka mee. De zonetotalen zijn:
+anchor 40, golden 159, rood 26, negatief 395, toka 30 — samen 650 `ir.json`,
+plus 566 casusbestanden. Elke drager-telling is een **documenttelling**, niet
+een knooptelling; waar het aantal voorkomens los meetelt (B2, B6, B13, B17, B26)
+staat dat bij het item zelf.*
 
 ---
 
 ## 5. De genummerde beslisvragen
 
-*Twaalf vragen: **V1–V11** en **V13** hier, **V12** — de toka-volgorde — in §6.
-Alle dertien staan open. De aanbeveling is de aanbeveling van deze kaart, niet
-een besluit.*
+*Zestien vragen: **V1–V11** en **V13–V17** hier, **V12** — de toka-volgorde — in
+§6. Alle zeventien staan open. De aanbeveling is de aanbeveling van deze kaart,
+niet een besluit. De nummering volgt de volgorde waarin de vragen zijn ontstaan;
+de **leesvolgorde is een andere**, en daarom staat V14 vooraan: hij bepaalt wat
+de klap kost en wat gate 3 daarna nog bewaakt.*
+
+---
+
+### V14 — Krijgt elke vervallende WF-regel een opvolgergetuige? **(begin hier)**
+
+Dit is de grootste post van het hele programma en de enige vraag waarop een
+verkeerd antwoord de gate-set stilzwijgend uitholt.
+
+**Gemeten.** `corpus/negatief/` telt **395** mappen (plus een `README.md`).
+Daarvan zijn er **171** getuige van een WF-regel die de klap raakt:
+
+| Regel(familie) | Getuigen | Geraakt door | Verliest onderwerp? |
+|---|---:|---|---|
+| WF-091 / WF-089 / WF-090 / WF-088 / WF-078 — de type-identiteitsfamilie | 27 / 15 / 10 / 4 / 1 = **57** | B13 | **geheel** — de herhaling die ze bewaken staat er niet meer |
+| WF-034 sentinel-armen (11) + WF-093 (4) | **15** | B13, B16 | **geheel** — na B13 is er geen sentinelpositie |
+| WF-034 zijkaart-armen (`wees-*` 8, `zijtabel-*` 1) | **9** | B5 | **geheel** — de v1-knoopvorm maakt de wees onschrijfbaar |
+| WF-094, vier clausules | **10** | B2 | **geheel** — er is geen tweede spelling meer |
+| WF-034 feitcreatie-armen (7) + WF-028 (3) | **10** | B7 | **geheel** — de bonenvelden zijn weg |
+| WF-053 | **7** | B11 | **vormwijziging** — de padvorm erft de kruising |
+| WF-095 | **5** | B22a | 4 van de 5 blijven (andere spellingen), 1 vervalt |
+| WF-054 (3) + WF-096 (3) | **6** | B8, B11 | WF-054 vormwijziging, WF-096 geheel |
+| WF-092 (3) + WF-081 (1) + WF-084 (2) | **6** | B22, B17 | **blijven** — ze zitten op de declaratie of op het lexeem |
+| WF-034 rolcheck (2) + kenmerkcheck-eigenaar (1) + WF-100 (1) | **4** | B9, B10 | **geheel** |
+| WF-048 (2) + WF-098 (2) | **4** | B12, B23 | WF-048 geheel, WF-098 vormwijziging |
+| WF-024 (1) + WF-003 (1) + WF-039 (1) | **3** | B21, B16, B22b | WF-024/003 geheel, WF-039 blijft |
+| WF-034, overige armen | **34** | — | **blijven** |
+| **totaal geraakt** | **171** | | |
+
+*Meetmethode: mapnaamprefix (`corpus/negatief/<wf###>-…`), wat de
+gate-3-conventie is — de mapnaam declareert de regel waarop de getuige wordt
+afgewezen. De kolom "verliest onderwerp?" is een **inschatting per familie**,
+niet een meting: welke van de 171 er werkelijk vervalt is precies wat deze vraag
+per getuige moet vaststellen.*
+
+- **(a) Per vervallende regel een opvolgergetuige.** Waar de v1-vorm de
+  overtreding *onschrijfbaar* maakt (WF-094, WF-034 (p), de meeste van B13's 57)
+  is er geen opvolger — daar verdwijnt de getuige, en dat is correct. Waar de
+  regel opgaat in een andere (WF-053 → de padvorm, WF-096 → de positieregel)
+  komt er een getuige van die andere. Elk van de 171 krijgt expliciet een van
+  drie stempels: herschreven, vervangen, verwijderd-met-reden.
+- **(b) De zone mechanisch converteren en zien wat rood blijft.** Goedkoop, en
+  het levert een groene gate 3 op waarvan niemand meer weet wat hij bewaakt.
+- **(c) De zone opnieuw opbouwen** vanuit de v1-WF-index: elke WF-regel die v1
+  heeft krijgt zijn getuige, ongeacht wat v0 had.
+
+**Aanbeveling: (a).** (b) is de definitie van een groene deelverzameling en
+botst frontaal met de gate-discipline van dit project: "an empty negatief corpus
+is a failure, never silently green" bewaakt de *omvang*, niet de *inhoud*, en
+juist daarom noemt het regime van de tel-vloeren die zwakte met zoveel woorden —
+"a count that stays equal while its content shifted passes, and the
+name-carrying lists are what cover that direction". Hier ís er geen
+naamdragende lijst; (a) maakt hem. (c) is aantrekkelijk maar verliest de
+geschiedenis: een negatief-getuige draagt vaak de *meting* die zijn regel
+afdwong, en die opnieuw uitvinden is duurder dan hem meenemen.
+
+**Consequentie voor de vloer.** `EXPECTED_MIN_NEGATIEF` staat op 350 en is een
+ondergrens. Onder (a) daalt het aantal getuigen gegarandeerd — de regels die
+onschrijfbaar worden hebben er geen meer. De vloer moet dus in dezelfde commit
+omlaag, met de reden erbij; dat is precies wat het tel-vloerregime voorschrijft
+("a deliberate removal lowers it in the same commit").
+
+---
+
+### V15 — Wat gebeurt er met gate 13?
+
+Gate 13 (`check-reftype-derivation.sh`) verdraait elke eenheiddragende
+`type`-annotatie op referentie- en composietposities en eist dat ref, clingo en
+beide Drools-takken exact hun ongetwiste uitkomst reproduceren. **Als B13 landt
+is er niets meer om te verdraaien**: de annotatie die de gate vervalst staat er
+niet meer.
+
+- **(a) Intrekken.** De gate heeft zijn werk gedaan — hij bestond om te bewijzen
+  dat geen consument de herhaling leest, en B13 maakt dat structureel waar.
+- **(b) Herzien tot een afgeleide-positie-harnas**: verdraai de annotaties die
+  onder V5 (a) blijven staan (de afgeleide posities) en houd dezelfde eis.
+- **(c) Behouden met een lege twistverzameling.** Onmogelijk: het script maakt
+  een lege twistverzameling expliciet tot een fout ("an empty twist set is a
+  failure, never silently green").
+
+**Aanbeveling: (b), met (a) als eerlijk alternatief.** (b) houdt het harnas op
+de posities die overblijven en is de goedkoopste manier om de eigenschap te
+behouden; maar als V5 (b) wordt gekozen blijft er niets over en is (a) het
+eerlijke antwoord.
+
+**Dit is maintainersmateriaal en geen tabelcel.** `CLAUDE.md` legt vast dat de
+gate-set monotoon groeit en noemt **één** gedocumenteerde uitzondering: gate 11,
+die met de toka-zone vertrekt. Gate 13 intrekken zou de **tweede** zijn. Anders
+dan bij gate 11 is de reden hier niet "de zone gaat weg" maar "de eigenschap is
+van gedrag naar vorm verhuisd" — een sterker argument, en juist daarom een
+argument dat expliciet moet worden aanvaard in plaats van afgeleid. Het hoort in
+`CLAUDE.md` naast dat van gate 11.
+
+---
 
 ---
 
@@ -1453,29 +1831,42 @@ als de eenheid op de wire blijft staan.
 
 ---
 
-### V8 — De enumeratiewaarde-delimiters: nu of bij de klap?
+### V8 — Het enumeratiewaarde-gat in de frontend: nu of bij de klap?
 
-Gemeten defect, twee spellingen, verbatim vergelijking, nul getuigen (B22b).
+B22b. Let op wat dit **niet** is: geen levende wire-divergentie en geen stil
+fout antwoord. De wire is dubbel gehekt (WF-039 op het label, WF-034 (r) op het
+sentineltype) en nul van de 650 documenten draagt de gedelimiteerde vorm. Wat er
+wél is, is dat de RegelSpraak-frontend een enum-literal **niet welgevormd kan
+emitteren** — hij schrijft de snippet mét delimiters én laat het type op het
+onbekend-sentinel staan — en dat daardoor geen enkele `bron.rgs`-golden er een
+draagt.
 
-- **(a) Nu, als eigen v0-kaart**, exact zoals de tekstlexeem-kaart van
-  2026-09-18: canonicaliseer bij emissie op het kale label, borg met een
-  emittergetuige in de frontend-suite, voeg één `bron.rgs`-golden met een
-  enumeratieliteral toe, en corrigeer de zin in IR-SPEC ch. 4.1.
-- **(b) Meenemen in B22.** Bespaart een kaart; laat het defect tot de klap
+- **(a) Nu, als eigen v0-kaart**, naar het model van de tekstlexeem-kaart van
+  2026-09-18: strip de delimiters bij emissie **én** type de literal tegen de
+  context, borg met een emittergetuige in de frontend-suite, voeg één
+  `bron.rgs`-golden met een enumeratieliteral toe, en corrigeer de zin in
+  IR-SPEC ch. 4.1 die de gedelimiteerde vorm als wire-vorm beschrijft.
+- **(b) Meenemen in B22.** Bespaart een kaart; laat het dekkingsgat tot de klap
   openstaan.
 - **(c) Andersom canonicaliseren**: de gedelimiteerde vorm wordt de wire-vorm en
   de consumenten gaan strippen. Volgt de huidige IR-SPEC-zin.
 
-**Aanbeveling: (a).** Het is een v0-producentendefect, geen v1-vorm, en het
-precedent staat er (`backlog/done/20260918-tekstlexeem-canonicalisatie.md`) met
-gemeten kosten. (c) valt af op hetzelfde argument dat de tekstkaart gebruikte:
-de delimiters zijn brontaalsyntaxis, en een `Tekst`-waarde en een enumlabel
-horen langs dezelfde regel te lopen — anders draagt de wire twee
-canonicalisatiewetten voor twee soorten die beide "een string" zijn.
+**Aanbeveling: (a)** — maar met een eerlijker prijskaartje dan de eerste
+doorgang van deze kaart gaf. Het is **niet** één emitterregel: de frontend moet
+de literal ook *typeren*, en dat is contextafhankelijk werk (welke `Enumeratie`
+is bedoeld, afgeleid uit het schrijfdoel of de vergelijkingszijde). Het
+precedent staat er (`backlog/done/20260918-tekstlexeem-canonicalisatie.md`), maar
+dat ging over strippen alleen.
 
-**De toka-consequentie is er ook en is klein**: de toka-zone draagt 30
-documenten met enumeratiedeclaraties; of daar een emitterdivergentie ontstaat die
-een herpin vraagt, is met één meting vast te stellen bij de uitvoering.
+**(c) heeft een prijs die genoemd moet worden:** hij vraagt de **intrekking of
+herdefinitie van WF-039**. Die regel kruist het label byte-exact tegen het
+gedeclareerde domein; met delimiters op de wire moet hij eerst strippen, en dan
+bewaakt hij niet meer wat hij zegt te bewaken. Eén wire-regel opgeven om een
+emitter niet te hoeven wijzigen is de verkeerde ruil.
+
+**De toka-consequentie is klein en meetbaar**: de toka-zone draagt 30 documenten
+met enumeratiedeclaraties; of daar een emitterdivergentie ontstaat die een
+herpin vraagt, is met één meting vast te stellen bij de uitvoering.
 
 ---
 
@@ -1568,6 +1959,70 @@ uitvoert en geen emitter die hem schrijft — dus wat er vandaag in het schema
 staat is een vorm zonder betekenisdrager. De formaatklap is het goedkoopste
 moment om zo'n vorm weg te nemen, en de weg terug is de gewone
 wire-entry-discipline: additief, met een getuige.
+
+---
+
+### V16 — Gaat het `Bron`-record in deze klap mee?
+
+B26 is naar voorkomens de grootste delta (4987 in 551 documenten) en naar
+betekenis een van de kleinste (geen uitvoerder leest het veld). IR-SPEC koppelt
+hem aan "the cross-repo source-anchoring card", die niet bestaat.
+
+- **(a) Mee, met alle vier de velden verplicht.** Dan moet elk document opnieuw
+  uit bron worden geëmitteerd — wat kan voor de 54 `bron.rgs`-, 12 Catala- en
+  1 F-logic-golden, maar **niet** voor de 40 handgeschreven ankers en de 395
+  negatief-getuigen, die geen bronbestand hebben.
+- **(b) Mee, met `file`/`line`/`column` optioneel en `snippet` verplicht.** De
+  bestaande `bron`-string wordt mechanisch `{"snippet": …}`; emitters die meer
+  weten vullen meer. Elk document beweegt, geen enkel document blokkeert.
+- **(c) Niet mee.** `bron` blijft een string (hernoemd naar `source` door B6) en
+  het record landt met de source-anchoring-kaart, in een latere klap.
+- **(d) Mee, en in dezelfde beweging de LRML-C1-staart** (een
+  machineleesbare wetsbron-id naast `bronAnnotaties`).
+
+**Aanbeveling: (b).** (a) is onuitvoerbaar op twee zones tegelijk en zou de
+handgeschreven ankers — het enige dat parity tussen backends nooit als waarheid
+laat gelden — dwingen tot een verzonnen bestandsnaam en regelnummer. (c) is
+verdedigbaar maar duur: `bron` staat op 551 documenten, dus hem later omzetten
+is een derde volledige regeneratie voor een veld dat niemand leest. (b) betaalt
+de regeneratie één keer mee met B6, die toch elk document aanraakt, en laat de
+drie extra velden groeien naarmate de emitters ze kunnen leveren. (d) is een
+aparte ontwerpvraag (LRML-audit C1) en hoort niet in een formaatklap.
+
+**Let op de wisselwerking met V2.** Onder V2 (a) — één klap — is (b) bijna
+gratis, want het document wordt toch al herschreven. Onder V2 (b) of (c) moet
+B26 expliciet aan één van de epochen worden toegewezen.
+
+---
+
+### V17 — In welke taal staan de proposals?
+
+Een vraag over dit document zelf, niet over de wire. `spec/proposals/` bevat tien
+documenten en die zijn **alle tien Engels** (`DEONTIEK-EISENLIJST`,
+`LEGALRULEML-AUDIT`, `PHASE4-DEFAULTS`, `PHASE5-CATALA`, `PHASE5B-KERNEL`,
+`PHASE5C-TUTORIAL`, `PHASE5D-DIFF`, `PRIORITIZED-DEFAULTS-EVOLUTIE`,
+`PRIORITY-RELATION`, `SUBTYPING`). Dit is het eerste Nederlandse.
+
+Dat is niet zonder grond: `CLAUDE.md` schrijft Engels voor "infrastructure, spec
+metamodel, and node names" en Nederlands voor domeininhoud, en een proposal is
+geen van beide — het is werkproza. De recente registerteksten in
+`CONSTRUCTS.md` zijn bovendien in toenemende mate Nederlands, dus de praktijk is
+al gemengd.
+
+- **(a) Dit document vertalen naar Engels**, en de conventie vastleggen dat
+  `spec/proposals/` Engels is — consistent met de tien bestaande en met de
+  publieke flip, waar het spec-materiaal Engels is.
+- **(b) Nederlands aanvaarden als proposals-taal** en de conventie in
+  `CLAUDE.md` bijschrijven, met de bestaande tien als historisch Engels.
+- **(c) Per document laten**, geen conventie.
+
+**Aanbeveling: (a), maar niet nu.** Dit document is geschreven om beslissingen
+uit te lokken, niet om gepubliceerd te worden; vertalen vóór de besluiten kost
+werk aan tekst die op dertien punten nog gaat veranderen. Zodra de vragen
+beantwoord zijn is de vertaling zinvol, en dan hoort de conventie er expliciet
+bij — want (c) leidt ertoe dat de leesbaarheid van de proposals-map van de
+schrijver afhangt, en dat is precies het soort stilzwijgende drift dat dit
+project elders mechanisch afvangt.
 
 ---
 
@@ -1669,8 +2124,8 @@ stuk los te landen en verbeteren de v0-toestand ook als de klap nooit komt.
 |---|---|---|---|
 | P1 | **`backends/drools` leest `navigatieBindingen`** | de loader negeert ze vandaag en leidt navigatie her-af uit `navigatieRol`/`navigatiePad`; die velden verdwijnen bij B11 | B11 |
 | P2 | **`backends/drools` leidt bonenvelden af uit de rolbindingen** — feitcreatie (`zetVeld`/`joinVeld`/`Tussenstap.*`) en uniciteitsscope (`scopeVeld`) | de backend *voert die velden uit*; ze weghalen is zonder deze port een amputatie | B7, B8 |
-| P3 | **`backends/drools` leest `verbindendeRol` op de verdeling en `bronRol` op de vouw** | dezelfde her-afleiding, dezelfde loader-javadoc; B12 maakt de binding verplicht | B12 |
-| P4 | **Enumeratiewaarde-lexeem gecanonicaliseerd** (V8 (a)) | gemeten v0-defect: twee producenten, twee spellingen, verbatim vergelijking, nul getuigen | B22b |
+| P3 | **`backends/drools` leest `verbindendeRol` op de VERDELING** | de enige nog her-afgeleide binding van de drie; de vouw-`bronRol` en de objectcreatie-`verbindendeRol` worden al gelezen (§2.2), dus deze kaart is een derde van wat hij leek | B12 |
+| P4 | **Enumeratie-emissie gerepareerd** (V8 (a)): delimiters strippen **én** de literal typeren | frontend-dekkingsgat, geen wire-divergentie — de wire is gehekt (WF-039, WF-034 (r)), maar de frontend kan het construct niet welgevormd emitteren, dus geen `bron.rgs`-golden draagt er een | B22b |
 | P5 | **DatumTijd-lexeem gecanonicaliseerd** (WF-095 versmalt tot canoniek ISO) | één emitterregel, vijf negatief-getuigen, nul goldenregeneratie — de goedkoopste stap op de lijst | B22a |
 | P6 | **Getuige voor de verre rollidmaatschap** (V4 (b)) | de knoop heeft nul dragers; samenvoegen zonder getuige is onbewijsbaar | B9 |
 | P7 | **`eigenaar`-gastheerobject beslissen** (`backlog/new/20260910-eigenaar-gastheer-object.md`) | als de OBJECT-helft betekenis is, verdwijnt het veld niet | B10 |
@@ -1687,15 +2142,22 @@ codestuk raakt en de gates er per familie iets van merken:
 
 | # | Kaart | Deltas | Gates die bewegen |
 |---|---|---|---|
-| M1 | **Het schema en de container** | B1, B2, B3, B4, B5 | 2 (schema-id + `EXPECTED_MIN_DOCS`), 3, 4 |
-| M2 | **De spiegelbagage eruit** | B7, B8, B9, B10, B11, B12 | 3 (~30 negatief-getuigen), 5, 6, 12 |
-| M3 | **De typeannotatie** | B13, B16 | 3 (57 negatief-getuigen), **13** — de annotatie-onverschilligheidsgate verliest zijn onderwerp en moet worden ingetrokken of herzien |
+| M1 | **Het schema en de container** | B1, B2, B3, B4, B5 | 2 (schema-id + `EXPECTED_MIN_DOCS`), 3 (19 getuigen), 4 |
+| M2 | **De spiegelbagage eruit** | B7, B8, B9, B10, B11, B12 | 3 (~30 getuigen), 5, 6, 12 |
+| M3 | **De typeannotatie** | B13, B16 | 3 (72 getuigen: 57 identiteitsfamilie + 15 sentinel), **13** — zie **V15** |
 | M4 | **Het typesysteem** | B14, B15, B17 (i), B18 | 2, 3, 5, 6, 12 |
-| M5 | **De regellaag** | B19, B20, B21 | 3, 5, 6, 12 |
-| M6 | **De expressielaag** | B22 (a/b/c), B23, B24-of-niet, B25 | 2, 3, 5, 6, 9, 10, 14 |
-| M7 | **De hernoeming** | B6 | **alle veertien** |
+| M5 | **De regellaag** | B19, B20, B21, B27, B28 | 3, 5, 6, 12 |
+| M6 | **De expressielaag** | B22 (a/b/c), B23, B24-of-niet, B25 | 2, 3 (~8 getuigen), 5, 6, 9, 10, 14 |
+| M7 | **De bronverwijzing** | **B26** | 2, 3, 9, 10, 14 — 551 documenten, maar geen enkele uitvoerder leest het veld, dus gates 5/6/12 mogen niet bewegen; doen ze dat wel, dan leest er tóch iemand |
+| M8 | **De hernoeming** | B6 | **alle veertien** |
 
-M7 staat achteraan en is bewust puur mechanisch: als M1–M6 geland zijn is de
+**M7 is opzettelijk een eigen kaart en niet bij M6 gevoegd.** B26 raakt meer
+documenten dan elk ander item (551) en verandert geen enkele betekenis — dat
+maakt hem de perfecte *nulmeting*: als gate 5, 6 of 12 na M7 ook maar één waarde
+anders geeft, is de aanname "niemand leest `bron`" weerlegd, en dat wil je weten
+op een kaart waar niets anders tegelijk beweegt.
+
+M8 staat achteraan en is bewust puur mechanisch: als M1–M7 geland zijn is de
 hernoeming een tabelvervanging plus een regeneratie, en dan is de
 round-trip-eigenschap van gate 2 het bewijs.
 
@@ -1715,17 +2177,16 @@ boekhouding, niet per kaart opnieuw te bedenken:
   vloer, dus die beweegt bij elke M-kaart;
 - de negatief-getuigen langslopen die hun regel verliezen — zie hieronder.
 
-**De negatief-zone is de grootste post en verdient zijn eigen besluit.** Van de
-396 negatief-mappen zijn er **136** getuige van een regel die bij de klap zijn
-onderwerp verliest of verandert (wf034 ×65 waarvan ~18 een verdwijnend veld
-hekken, wf091 ×27, wf094 ×10, wf053 ×7, wf095 ×5, wf054 ×3, wf092 ×3, wf096 ×3,
-wf028 ×3, wf098 ×2, wf048 ×2, wf084 ×2, wf100/wf081/wf024/wf003 ×1). Elk van
-die getuigen moet één van drie dingen worden: herschreven op de v1-vorm,
-verwijderd omdat de regel weg is, of vervangen door een getuige van de
-opvolgerregel. **Dat is geen restwerk; dat is de helft van de klap.** Het
-alternatief — de zone laten staan met getuigen van regels die niet meer bestaan
-— maakt gate 3 groen op iets wat niets meer bewaakt, en dat is de definitie van
-een groene deelverzameling.
+**De negatief-zone is de grootste post en heeft zijn eigen besluit: V14.** Van de
+**395** negatief-mappen zijn er **171** getuige van een regel die de klap raakt;
+de uitsplitsing per regelfamilie, met per familie de inschatting of de getuige
+zijn onderwerp geheel verliest of alleen van vorm verandert, staat bij V14. Elk
+van die 171 moet één van drie stempels krijgen: herschreven op de v1-vorm,
+vervangen door een getuige van de opvolgerregel, of verwijderd met de reden
+erbij. **Dat is geen restwerk; dat is de helft van de klap.** Het alternatief —
+de zone mechanisch converteren en zien wat rood blijft — maakt gate 3 groen op
+iets wat niets meer bewaakt, en dat is de definitie van een groene
+deelverzameling.
 
 ### Fase 3 — de toolchain
 
@@ -1751,10 +2212,15 @@ kaart al is.
 
 ## 8. Wat deze kaart bewust niet heeft gedaan
 
-- **Geen besluit genomen.** Alle dertien vragen staan open; de aanbevelingen
+- **Geen besluit genomen.** Alle zeventien vragen staan open; de aanbevelingen
   zijn aanbevelingen.
 - **Geen code, schema, corpus of gate aangeraakt.** De veertien gates draaiden
-  één keer ter bevestiging en stonden alle veertien groen (exitcode 0).
+  ter bevestiging en stonden alle veertien groen (exitcode 0).
+- **De "verliest onderwerp?"-kolom van V14 is niet per getuige gemeten.** Hij is
+  een inschatting per regelfamilie; welke van de 171 negatief-getuigen
+  werkelijk vervalt, is precies wat V14 moet laten vaststellen, getuige voor
+  getuige. Hem hier als meting presenteren zou dezelfde fout zijn die §2.2
+  beschrijft.
 - **De additieve deltas niet geïnventariseerd.** Die vallen per §1 buiten de
   opdracht en hoeven niet op de klap te wachten.
 - **De v1-naamtabel niet geëxtraheerd.** Dat is P10 en het is echt werk: IR-SPEC
@@ -1769,20 +2235,40 @@ kaart al is.
 `spec/PLAN.md` zijn het serieel-bijgehouden boekhoudkanaal van de hoofdsessie en
 zijn door deze kaart niet aangeraakt.*
 
-1. **Rij 1 en rij 31, deltakolom:** één zin die zegt dat het `sugar`-oordeel op
-   `Begrensd` en `TekstReeks` de *brontaal* betreft en niet de wire — IR-SPEC
-   ch. 4.2 houdt `Clamp` en `TextComposition` als v1-knoop aan, en WF-099 hangt
-   sinds 2026-09-10 aan de eerste (zie V3).
-2. **Rij 27, deltakolom:** de meting van de enumeratiewaarde-delimiters — de
-   RegelSpraak-emitter schrijft de gedelimiteerde vorm, de Catala-plugin en elke
-   handgeschreven wire het kale label, alle vier de consumenten vergelijken
-   verbatim, en **nul van de 650 documenten** dragen de gedelimiteerde vorm, want
-   geen `bron.rgs`-golden draagt een enumeratieliteral. De zin in IR-SPEC
-   ch. 4.1 die zegt dat de delimiters blijven, beschrijft de emitter en niet de
-   consumenten (zie V8).
-3. **Rijen 4/5/22, deltakolom:** de gemeten autoriteitsverhouding — de
-   Drools-loader behandelt de v0-bonenvelden als GEZAGHEBBEND en negeert vier
-   symbolische uitbreidingen (`navigatieBindingen`, `navigatieBinding`, een
-   vouw-`bronRol`, een verdelings-`verbindendeRol`), die hij zelf her-afleidt uit
-   het model. De formulering "de symbolische opvolgers zijn de enige gelezen
-   vorm" geldt voor `ref` en clingo op de feitcreatie, en nergens anders.
+1. **Knoopinventaris §2.1, de regels van `Begrensd` en `TekstReeks`** — niet de
+   matrixrijen. Beide knopen dragen daar het oordeel `sugar` met een
+   desuikeringsnotitie in de deltakolom (`min(max(x, lo), hi)`, "desugars to
+   concatenation"), wat zich laat lezen als "verdwijnt van de wire". IR-SPEC
+   ch. 4.2 houdt ze allebei uitdrukkelijk aan als v1-knoop — "**Clamp** … sugar
+   verdict (row 1), **mirrored as a node**" en "**TextComposition** … sugar
+   verdict (row 31), **mirrored**" — en sinds 2026-09-10 hangt WF-099 aan
+   `Clamp`. Voorstel: één zin per regel die zegt dat het oordeel de *brontaal*
+   betreft en dat de knoop in v1 blijft.
+   *(Matrixrij 1 noemt `Begrensd` wél, driemaal, maar alleen in de
+   WF-099-passage over de eenheid van een klemgrens — niet als oordeel. Daar
+   hoeft niets te veranderen.)*
+2. **Rij 27, deltakolom:** de gemeten stand van de enumeratiewaarde, die anders
+   is dan hij op het eerste gezicht lijkt. De wire is **gehekt**: WF-039 kruist
+   het label byte-exact tegen het gedeclareerde domein (tegenproef: delimiters om
+   het ene enum-literal van `jutterswet-vaarwatertoeslag-catala` geeft
+   `WF-039 FAIL … is not in the declared domain`), en de emitterroute strandt
+   sowieso eerder omdat de frontend een enum-literal niet typeert (`onbekend()`
+   → WF-034 (r)). Wat er is, is een **frontend-dekkingsgat**: de
+   RegelSpraak-frontend kan het construct niet welgevormd emitteren, en daarom
+   draagt geen enkele `bron.rgs`-golden een enumeratieliteral en **nul van de 650
+   documenten** de gedelimiteerde vorm. De zin in IR-SPEC ch. 4.1 ("an
+   enumeratiewaarde keeps its `'…'` delimiters, which readers strip") beschrijft
+   de **frontend** — `Literalen.enumLabel` zit dáár — en niet de wire; op de wire
+   is het kale label de enige welgevormde vorm (zie V8).
+3. **Rijen 4/5/22, deltakolom:** de gemeten autoriteitsverhouding in de
+   Drools-loader, met de begrenzing die de javadoc zelf aanbrengt. De
+   v0-bonenvelden zijn GEZAGHEBBEND, en **drie** symbolische uitbreidingen
+   worden genegeerd en uit het model her-afgeleid: `AttribuutRef.navigatieBindingen`,
+   `Kenmerk.navigatieBinding` en de verdelings-`verbindendeRol`. **Twee andere
+   worden wél gelezen** — de vouw-`bronRol` (`IrLoader` r. 448-449) en de
+   objectcreatie-`verbindendeRol` (r. 623-624), beide via de zijkanaal-kaart
+   `Loaded#rolBindingen`, omdat de recordtypen tot de gevendorde frontend-slice
+   behoren; en de objectcreatie-`verbindendeRol` is bovendien per
+   `RUNTIME-SEMANTICS.md` ch. 5.5 **gezaghebbend**, niet slechts gelezen. De
+   formulering "de symbolische opvolgers zijn de enige gelezen vorm" geldt voor
+   `ref` en clingo op de feitcreatie, en nergens anders.
