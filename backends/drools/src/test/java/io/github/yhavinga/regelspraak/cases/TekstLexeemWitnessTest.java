@@ -33,8 +33,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * of them in one toolchain. So every witness below asserts BOTH branches on ONE document. Measured against the
  * removal, put back BOTH ways — restored in the shared reader while the exec branch keeps its private one (the
  * exact pre-fix state), and restored in the shared reader with both branches on it (the success-shaped no-op, a
- * "fix" that only deletes the private copy) — each probe turns 6 of these 8 red. The two that stay green are the
- * quote-free flank and the mirror direction, both pinned for exactly that reason.
+ * "fix" that only deletes the private copy) — each probe turns 6 of the 8 quote witnesses (sections 1–5) red. The
+ * two that stay green are the quote-free flank and the mirror direction, both pinned for exactly that reason.
+ *
+ * <p>Section 6 pins the second character class the same splice must survive: a CR or LF inside the value, which
+ * until 2026-09-18 reached the generated DRL as a REAL line break and was then dropped on the WRITE side only —
+ * the same shape of divergence one character class further on, and the reason this class grew rather than a new
+ * one appearing beside it.
  *
  * <p>All models are SYNTHETIC, built in memory from {@code jutterswet-keurmerk}'s {@code ir.json} off the wire;
  * the corpus files are read and never written. Each was measured through the verifier, {@code ref/} and the
@@ -176,6 +181,72 @@ class TekstLexeemWitnessTest {
         beideTakkenSpelen(ir, geval("ofrij-lid", "\"Zeeland\"", true, GEVOLG));
         beideTakkenSpelen(ir, geval("ofrij-geen-lid", "\"Utrecht\"", false, null));
         beideTakkenSpelen(ir, geval("ofrij-ontdaan-lid", "Zeeland", false, null));
+    }
+
+    // ---------------- 6. the OTHER character the DRL text must escape: a line terminator ----------------
+
+    /** A Tekst whose value contains a line break, and the same value flattened — two DIFFERENT strings to the wire,
+     *  to ref and to the verifier, so no executor may confuse them. */
+    private static final String REGELEINDE = "uit\nvoer";
+    private static final String PLATGESLAGEN = "uitvoer";
+
+    /** The consequence value for the line-terminator witnesses: the WRITE side is where the loss happened, so the
+     *  written value carries a line break of its own. */
+    private static final String GEVOLG_REGELEINDE = "afslag\nnoord";
+
+    @Test void een_regeleinde_overleeft_vergelijking_en_gevolg_in_beide_takken() throws Exception {
+        // MUTATION WITNESS for the second escape in the shared naming contract's DRL-string helper. Until 2026-09-18 that
+        // helper escaped `\` and `"` but neither line terminator, so a CR or LF reached the generated DRL as a
+        // REAL line break — and the two halves of a rule then disagreed about it. The constraint side kept the
+        // character (so the comparison below fired), while the consequence block's pre-processor dropped it:
+        //     Drools DRL-tekst (pre-fix, LF): FAIL — attribuut afslag: verwacht afslag\nnoord, werkelijk afslagnoord
+        //     Drools DRL-tekst (pre-fix, CR): FAIL — attribuut afslag: verwacht uit\rvoer, werkelijk uitvoer
+        // — a wrong value with no complaint, while the exec-model branch played both. BOTH terminators are asserted
+        // because they are two separate substitutions in that helper and a witness on one leaves the other free.
+        // Measured on the fixed jar (each document, its own case):
+        //     verifier: PASS
+        //     ref     : oracle: PASS (3 expectations)
+        //     clingo  : TRANSLATION FAULT — the ASP string encoding cannot quote a line terminator, so clingo
+        //               REFUSES this flank loudly and ref is the arbiter here (measured the same day).
+        for (String einde : List.of("\n", "\r")) {
+            String waarde = "uit" + einde + "voer";
+            String gevolg = "afslag" + einde + "noord";
+            Path ir = model("tekstlexeem-regeleinde", "GELIJK", waarde, gevolg);
+            beideTakkenSpelen(ir, geval("regeleinde-raakt", waarde, true, gevolg));
+        }
+    }
+
+    @Test void een_regeleindedragend_literal_raakt_de_platgeslagen_casewaarde_niet() throws Exception {
+        // The mirror direction, pinned for the same reason as the quote mirror above: no branch ever got this one
+        // wrong — pre-fix the constraint side kept the line break, so this document already PLAYED in both — and it
+        // is here so the escaping can never become a NORMALISATION. A helper that dropped or collapsed line
+        // terminators instead of escaping them would satisfy the witness above (both branches losing the character
+        // agree with each other) and fire this rule the wire does not license. Measured on the fixed jar:
+        //     verifier: PASS
+        //     ref     : oracle: PASS (3 expectations)
+        Path ir = model("tekstlexeem-regeleinde", "GELIJK", REGELEINDE, GEVOLG_REGELEINDE);
+        beideTakkenSpelen(ir, geval("platgeslagen-invoer", PLATGESLAGEN, false, null));
+    }
+
+    @Test void een_waarde_die_op_een_backslash_eindigt_weigert_luid_in_de_tekst_tak() throws Exception {
+        // The flank the escaping does NOT rescue, pinned as LOUD rather than left unstated. The backslash was
+        // already escaped before this card, and the doubled backslash makes the DRL consequence pre-processor read
+        // the closing quote as escaped and run off the end of the block. That is a per-form compile refusal — the
+        // back-end reports the form as not carried, with the reason — never a wrong answer, which is what the card
+        // required of this shape. Measured on the fixed jar, unchanged by the line-terminator escaping:
+        //     exec-model      : PLAYED 1
+        //     Drools DRL-tekst: EXCLUDE drl compile: … Unable to build expression for 'consequence' …
+        //     verifier: PASS / ref: oracle: PASS (3 expectations) / clingo: clingo: PASS (3 expectations)
+        // The shape is "ENDS in a backslash", not "is a backslash": `pad\` refuses the same way and a backslash in
+        // the MIDDLE (`pad\naar`, a real backslash) plays in both branches — both measured 2026-09-18.
+        Path ir = model("tekstlexeem-backslash", "GELIJK", "\\", "\\");
+        Path c = geval("backslash-raakt", "\\", true, "\\");
+
+        CaseRunner.Result exec = CaseRunner.viaExecModel(ir, List.of(c));
+        assertEquals("PLAYED", exec.status(), exec.reason() + " " + exec.caseFailures());
+        CaseRunner.Result drl = CaseRunner.viaDrlTekst(ir, List.of(c));
+        assertEquals("EXCLUDE", drl.status(), drl.reason() + " " + drl.caseFailures());
+        assertTrue(drl.reason().startsWith("drl compile: "), drl.reason());
     }
 
     // ---------------- the two-branch assertion ----------------

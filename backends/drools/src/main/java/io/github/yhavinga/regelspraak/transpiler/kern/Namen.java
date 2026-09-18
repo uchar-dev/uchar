@@ -63,11 +63,29 @@ public final class Namen {
         return tekst.replace("*/", "* /").replace("\r", " ").replace("\n", " ");
     }
 
-    /** A value spliced as a DRL/mvel STRING literal: backslashes and embedded double quotes are ESCAPED —
-     *  never stripped (escaping by construction: an enum label with an embedded quote must compare against the real label,
-     *  not a silently altered one). Returns the quoted literal including its delimiters. */
+    /** A value spliced as a DRL/mvel STRING literal: backslashes, embedded double quotes and the two line
+     *  terminators are ESCAPED — never stripped (escaping by construction: an enum label with an embedded quote must compare
+     *  against the real label, not a silently altered one). Returns the quoted literal including its delimiters.
+     *
+     *  <p>CR and LF are here because an UNESCAPED one reaches the generated DRL as a REAL line break, and the two
+     *  halves of a rule then disagree about it: the constraint side keeps the character, while the consequence
+     *  block's pre-processor drops it, so a text value with a line break is WRITTEN without it — measured
+     *  2026-09-18 on a Tekst consequence, {@code verwacht afslag\nnoord, werkelijk afslagnoord} against a ref that
+     *  plays. That is a wrong answer with no complaint, the one outcome a back-end may not produce.
+     *
+     *  <p>DELIBERATELY only those two. Every other control character was measured through both branches on the
+     *  same day — tab, form feed, backspace, vertical tab, NUL — and each round-trips through the DRL text
+     *  unaltered, so escaping them would be scope without a witness. The one form this helper does NOT rescue is
+     *  a value ENDING in a backslash: the doubled backslash makes the consequence pre-processor read the closing
+     *  quote as escaped and run off the end, which fails LOUDLY as a compile refusal (the back-end reports the
+     *  form as not carried) and never as a wrong value. Rendering it would have to change how the consequence is
+     *  built, not how a value is spelled.
+     *
+     *  <p>The four substitutions are applied backslash-first, so the backslashes the other three introduce are
+     *  not doubled a second time; none of the three can match what the others produce. */
     public static String drlString(String s) {
-        return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+        return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"")
+                       .replace("\r", "\\r").replace("\n", "\\n") + "\"";
     }
 
     /** ref's {@code Checks.norm} ({@code checks.ml}: {@code lowercase_ascii (collapse_ws s)}): the form in
