@@ -1,0 +1,260 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2026-06-01",
+  "input": {
+    "instances": [
+      {
+        "label": "H1",
+        "objectType": "Haven",
+        "attributes": {
+          "kadegeld": {
+            "number": "40"
+          }
+        },
+        "roles": {
+          "vlaggenschip": [
+            "S1"
+          ]
+        },
+        "characteristics": [
+          "veilig"
+        ]
+      },
+      {
+        "label": "H2",
+        "objectType": "Haven",
+        "attributes": {
+          "kadegeld": {
+            "number": "25"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "veilig"
+        ]
+      },
+      {
+        "label": "H3",
+        "objectType": "Haven",
+        "attributes": {
+          "kadegeld": {
+            "number": "50"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S1",
+        "objectType": "Schuit",
+        "attributes": {
+          "romplengte": {
+            "number": "12"
+          }
+        },
+        "roles": {
+          "thuishaven": [
+            "H1"
+          ]
+        },
+        "characteristics": [
+          "gekeurd"
+        ]
+      },
+      {
+        "label": "S2",
+        "objectType": "Schuit",
+        "attributes": {
+          "romplengte": {
+            "number": "7"
+          }
+        },
+        "roles": {
+          "thuishaven": [
+            "H1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S3",
+        "objectType": "Schuit",
+        "attributes": {
+          "romplengte": {
+            "number": "9"
+          }
+        },
+        "roles": {
+          "thuishaven": [
+            "H2"
+          ]
+        },
+        "characteristics": [
+          "gekeurd"
+        ]
+      },
+      {
+        "label": "S4",
+        "objectType": "Schuit",
+        "attributes": {
+          "romplengte": {
+            "number": "5"
+          }
+        },
+        "roles": {
+          "thuishaven": [
+            "H3"
+          ]
+        },
+        "characteristics": [
+          "gekeurd"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "H1",
+      "attribute": "liggertal",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "H2",
+      "attribute": "liggertal",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "H3",
+      "attribute": "liggertal",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "H1",
+      "attribute": "wintertal",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "H2",
+      "attribute": "wintertal",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "H3",
+      "attribute": "wintertal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "H1",
+      "attribute": "keurtal",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "H2",
+      "attribute": "keurtal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "H3",
+      "attribute": "keurtal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "ligprijs",
+      "value": {
+        "number": "40"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S2",
+      "attribute": "ligprijs"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S3",
+      "attribute": "ligprijs",
+      "value": {
+        "number": "25"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S4",
+      "attribute": "ligprijs"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "vlagprijs",
+      "value": {
+        "number": "40"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S2",
+      "attribute": "vlagprijs"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S3",
+      "attribute": "vlagprijs"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S4",
+      "attribute": "vlagprijs"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "H1",
+      "attribute": "vlaglengte",
+      "value": {
+        "number": "12"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "H2",
+      "attribute": "vlaglengte"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "H3",
+      "attribute": "vlaglengte"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

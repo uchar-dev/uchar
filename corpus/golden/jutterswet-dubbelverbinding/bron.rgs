@@ -1,0 +1,68 @@
+Objecttype de Haven (mv: Havens)
+    is veilig kenmerk (bijvoeglijk);
+    het kadegeld Numeriek (niet-negatief geheel getal);
+    het liggertal Numeriek (niet-negatief geheel getal);
+    het wintertal Numeriek (niet-negatief geheel getal);
+    het keurtal Numeriek (niet-negatief geheel getal);
+    de vlaglengte Numeriek (niet-negatief geheel getal);
+
+Objecttype de Schuit (mv: Schuiten)
+    is gekeurd kenmerk (bijvoeglijk);
+    de romplengte Numeriek (niet-negatief geheel getal);
+    de ligprijs Numeriek (niet-negatief geheel getal);
+    de vlagprijs Numeriek (niet-negatief geheel getal);
+
+Feittype thuisligging
+    de thuishaven Haven
+    de ligger (mv: liggers) Schuit
+Eén thuishaven telt meerdere liggers
+
+Feittype winterberging
+    de winterhaven Haven
+    de winterschuit (mv: winterschuiten) Schuit
+Eén winterhaven telt meerdere winterschuiten
+
+Feittype keurberging
+    de keurhaven Haven
+    de keurschuit (mv: keurschuiten) Schuit
+Eén keurhaven telt meerdere keurschuiten
+
+Feittype vlagvoering
+    de vlaghaven Haven
+    het vlaggenschip (mv: vlaggenschepen) Schuit
+Eén vlaghaven heeft één vlaggenschip
+
+Regel liggertal van een haven
+    geldig altijd
+        Het liggertal van een Haven moet berekend worden als het aantal liggers van de Haven.
+
+Regel winterberging door de haven
+    geldig vanaf 01-03-2026
+        Een winterschuit van een Haven is een ligger van de Haven
+        indien de Haven veilig is.
+
+Regel wintertal van een haven
+    geldig altijd
+        Het wintertal van een Haven moet berekend worden als het aantal winterschuiten van de Haven.
+
+Regel keurberging door de haven
+    geldig altijd
+        Een keurschuit van een Haven is een winterschuit van de Haven
+        indien het kadegeld van de Haven groter is dan 30.
+
+Regel keurtal van een haven
+    geldig altijd
+        Het keurtal van een Haven moet berekend worden als het aantal keurschuiten van de Haven.
+
+Regel ligprijs van een schuit
+    geldig altijd
+        De ligprijs van een Schuit moet gesteld worden op het kadegeld van de winterhaven van de Schuit
+        indien de Schuit gekeurd is.
+
+Regel vlagprijs van een schuit
+    geldig altijd
+        De vlagprijs van een Schuit moet gesteld worden op het kadegeld van de vlaghaven van de Schuit.
+
+Regel vlaglengte van een haven
+    geldig altijd
+        De vlaglengte van een Haven moet gesteld worden op de romplengte van het vlaggenschip van de Haven.

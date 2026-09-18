@@ -1,0 +1,154 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2026-06-01",
+  "input": {
+    "instances": [
+      {
+        "label": "H1",
+        "objectType": "Haven",
+        "attributes": {
+          "kadegeld": {
+            "number": "40"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "H2",
+        "objectType": "Haven",
+        "attributes": {
+          "kadegeld": {
+            "number": "35"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S1",
+        "objectType": "Schuit",
+        "attributes": {
+          "romplengte": {
+            "number": "12"
+          }
+        },
+        "roles": {
+          "thuishaven": [
+            "H1"
+          ]
+        },
+        "characteristics": [
+          "gekeurd"
+        ]
+      },
+      {
+        "label": "S2",
+        "objectType": "Schuit",
+        "attributes": {
+          "romplengte": {
+            "number": "7"
+          }
+        },
+        "roles": {
+          "thuishaven": [
+            "H1"
+          ],
+          "winterhaven": [
+            "H2"
+          ]
+        },
+        "characteristics": [
+          "gekeurd"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "H1",
+      "attribute": "liggertal",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "H2",
+      "attribute": "liggertal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "H1",
+      "attribute": "wintertal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "H2",
+      "attribute": "wintertal",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "H1",
+      "attribute": "keurtal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "H2",
+      "attribute": "keurtal",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S1",
+      "attribute": "ligprijs"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S2",
+      "attribute": "ligprijs",
+      "value": {
+        "number": "35"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S1",
+      "attribute": "vlagprijs"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S2",
+      "attribute": "vlagprijs"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "H1",
+      "attribute": "vlaglengte"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "H2",
+      "attribute": "vlaglengte"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

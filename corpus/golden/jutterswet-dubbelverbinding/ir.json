@@ -1,0 +1,707 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Haven": {
+      "node": "Objecttype",
+      "naam": "Haven",
+      "attributen": {
+        "kadegeld": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "liggertal": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "wintertal": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "keurtal": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "vlaglengte": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "veilig"
+      ],
+      "kenmerkSoorten": {
+        "veilig": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Havens"
+    },
+    "Schuit": {
+      "node": "Objecttype",
+      "naam": "Schuit",
+      "attributen": {
+        "romplengte": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "ligprijs": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "vlagprijs": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "gekeurd"
+      ],
+      "kenmerkSoorten": {
+        "gekeurd": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Schuiten"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {
+    "thuisligging": {
+      "node": "Feittype",
+      "naam": "thuisligging",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "thuishaven",
+          "objecttypeNaam": "Haven",
+          "meervoud": null,
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "ligger",
+          "objecttypeNaam": "Schuit",
+          "meervoud": "liggers",
+          "meervoudig": true
+        }
+      ]
+    },
+    "winterberging": {
+      "node": "Feittype",
+      "naam": "winterberging",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "winterhaven",
+          "objecttypeNaam": "Haven",
+          "meervoud": null,
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "winterschuit",
+          "objecttypeNaam": "Schuit",
+          "meervoud": "winterschuiten",
+          "meervoudig": true
+        }
+      ]
+    },
+    "keurberging": {
+      "node": "Feittype",
+      "naam": "keurberging",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "keurhaven",
+          "objecttypeNaam": "Haven",
+          "meervoud": null,
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "keurschuit",
+          "objecttypeNaam": "Schuit",
+          "meervoud": "keurschuiten",
+          "meervoudig": true
+        }
+      ]
+    },
+    "vlagvoering": {
+      "node": "Feittype",
+      "naam": "vlagvoering",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "vlaghaven",
+          "objecttypeNaam": "Haven",
+          "meervoud": null,
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "vlaggenschip",
+          "objecttypeNaam": "Schuit",
+          "meervoud": "vlaggenschepen",
+          "meervoudig": false
+        }
+      ]
+    }
+  },
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "liggertal van een haven",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "winterberging door de haven",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "wintertal van een haven",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "keurberging door de haven",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "keurtal van een haven",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "ligprijs van een schuit",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "vlagprijs van een schuit",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "vlaglengte van een haven",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "liggertal van een haven",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "liggertal",
+        "objecttype": "Haven",
+        "onderwerpBron": "een Haven",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "Het liggertal van een Haven",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "AANTAL",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "liggers",
+            "objecttype": "Haven",
+            "onderwerpBron": "de Haven",
+            "navigatieRol": null,
+            "type": {
+              "node": "Onbekend",
+              "reden": "niet opgelost"
+            },
+            "bron": "liggers van de Haven",
+            "set": false,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": "Schuit",
+        "leegwaarde": null,
+        "filter": null,
+        "dimensieSelectie": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "het aantal liggers van de Haven",
+        "granulariteit": null,
+        "bronRol": {
+          "node": "RolBinding",
+          "feittype": "thuisligging",
+          "rol": "ligger"
+        }
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "wintertal van een haven",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "wintertal",
+        "objecttype": "Haven",
+        "onderwerpBron": "een Haven",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "Het wintertal van een Haven",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "AANTAL",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "winterschuiten",
+            "objecttype": "Haven",
+            "onderwerpBron": "de Haven",
+            "navigatieRol": null,
+            "type": {
+              "node": "Onbekend",
+              "reden": "niet opgelost"
+            },
+            "bron": "winterschuiten van de Haven",
+            "set": false,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": "Schuit",
+        "leegwaarde": null,
+        "filter": null,
+        "dimensieSelectie": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "het aantal winterschuiten van de Haven",
+        "granulariteit": null,
+        "bronRol": {
+          "node": "RolBinding",
+          "feittype": "winterberging",
+          "rol": "winterschuit"
+        }
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "keurtal van een haven",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "keurtal",
+        "objecttype": "Haven",
+        "onderwerpBron": "een Haven",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "Het keurtal van een Haven",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "AANTAL",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "keurschuiten",
+            "objecttype": "Haven",
+            "onderwerpBron": "de Haven",
+            "navigatieRol": null,
+            "type": {
+              "node": "Onbekend",
+              "reden": "niet opgelost"
+            },
+            "bron": "keurschuiten van de Haven",
+            "set": false,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": "Schuit",
+        "leegwaarde": null,
+        "filter": null,
+        "dimensieSelectie": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "het aantal keurschuiten van de Haven",
+        "granulariteit": null,
+        "bronRol": {
+          "node": "RolBinding",
+          "feittype": "keurberging",
+          "rol": "keurschuit"
+        }
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "ligprijs van een schuit",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "ligprijs",
+        "objecttype": "Schuit",
+        "onderwerpBron": "een Schuit",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "De ligprijs van een Schuit",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "AttribuutRef",
+        "attribuut": "kadegeld",
+        "objecttype": "Haven",
+        "onderwerpBron": "de Schuit",
+        "navigatieRol": "Schuit",
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "het kadegeld van de winterhaven van de Schuit",
+        "set": false,
+        "navigatiePad": [
+          "winterhaven"
+        ],
+        "navigatieBindingen": [
+          {
+            "node": "RolBinding",
+            "feittype": "winterberging",
+            "rol": "winterhaven"
+          }
+        ]
+      },
+      "voorwaarde": {
+        "node": "Kenmerk",
+        "kenmerk": "gekeurd",
+        "navigatie": null,
+        "negatie": false,
+        "eigenaar": null,
+        "periode": null,
+        "bron": "de Schuit gekeurd is"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "vlagprijs van een schuit",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "vlagprijs",
+        "objecttype": "Schuit",
+        "onderwerpBron": "een Schuit",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "De vlagprijs van een Schuit",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "AttribuutRef",
+        "attribuut": "kadegeld",
+        "objecttype": "Haven",
+        "onderwerpBron": "de Schuit",
+        "navigatieRol": "Schuit",
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "het kadegeld van de vlaghaven van de Schuit",
+        "set": false,
+        "navigatiePad": [
+          "vlaghaven"
+        ],
+        "navigatieBindingen": [
+          {
+            "node": "RolBinding",
+            "feittype": "vlagvoering",
+            "rol": "vlaghaven"
+          }
+        ]
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "vlaglengte van een haven",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "vlaglengte",
+        "objecttype": "Haven",
+        "onderwerpBron": "een Haven",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "De vlaglengte van een Haven",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "AttribuutRef",
+        "attribuut": "romplengte",
+        "objecttype": "Schuit",
+        "onderwerpBron": "de Haven",
+        "navigatieRol": "Haven",
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "de romplengte van het vlaggenschip van de Haven",
+        "set": false,
+        "navigatiePad": [
+          "vlaggenschip"
+        ],
+        "navigatieBindingen": [
+          {
+            "node": "RolBinding",
+            "feittype": "vlagvoering",
+            "rol": "vlaggenschip"
+          }
+        ]
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [
+    {
+      "node": "ResolvedFeitCreatie",
+      "naam": "winterberging door de haven",
+      "anker": "Haven",
+      "doel": "Schuit",
+      "zetVeld": "winterhaven",
+      "joinVeld": "thuishaven",
+      "tussenstappen": [],
+      "voorwaarde": {
+        "node": "Kenmerk",
+        "kenmerk": "veilig",
+        "navigatie": null,
+        "negatie": false,
+        "eigenaar": null,
+        "periode": null,
+        "bron": "de Haven veilig is"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": "2026-03-01",
+        "tot": null
+      },
+      "feittype": "winterberging",
+      "ankerRol": "winterhaven",
+      "doelRol": "winterschuit",
+      "joinRol": {
+        "node": "RolBinding",
+        "feittype": "thuisligging",
+        "rol": "ligger"
+      }
+    },
+    {
+      "node": "ResolvedFeitCreatie",
+      "naam": "keurberging door de haven",
+      "anker": "Haven",
+      "doel": "Schuit",
+      "zetVeld": "keurhaven",
+      "joinVeld": "winterhaven",
+      "tussenstappen": [],
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "GROTER",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "kadegeld",
+          "objecttype": "Haven",
+          "onderwerpBron": "de Haven",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "het kadegeld van de Haven",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "30",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "30"
+        },
+        "periode": null,
+        "bron": "het kadegeld van de Haven groter is dan 30"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      },
+      "feittype": "keurberging",
+      "ankerRol": "keurhaven",
+      "doelRol": "keurschuit",
+      "joinRol": {
+        "node": "RolBinding",
+        "feittype": "winterberging",
+        "rol": "winterschuit"
+      }
+    }
+  ],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}
