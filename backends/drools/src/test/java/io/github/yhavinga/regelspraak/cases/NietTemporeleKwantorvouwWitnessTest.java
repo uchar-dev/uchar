@@ -204,22 +204,27 @@ class NietTemporeleKwantorvouwWitnessTest {
 
     /**
      * De markertekst van de DRL-tekst-tak is PER REDEN waar. Tot 2026-09-16 zei elke weigering "ch. 3.9a
-     * wordt alleen in de exec-model-tak gelowerd", ook waar de exec-tak juist óók weigert (zoals hierboven).
-     * Deze rij houdt de twee redenen uit elkaar: de heelperiodevouw is werkelijk exec-only, de geneste vouw
-     * is dat niet.
+     * wordt alleen in de exec-model-tak gelowerd", ook waar de exec-tak juist óók weigert (zoals hierboven);
+     * de redenen zijn sindsdien per decline.
+     *
+     * <p><b>De rij verschoof op 2026-09-18</b> (kaart drl-heelperiode-arm) en met haar de bewering. Tot dan
+     * was de HEELPERIODEMATRIX de ene weigering die wél echt exec-only was, en zij was hier de tegenhanger
+     * van de geneste vouw. Die kanaalsplitsing is dicht: die matrix speelt nu in beide takken, dus de rij
+     * leest hem als een PLAY en houdt daarnaast vast dat de geneste vouw haar EIGEN reden draagt — en dat
+     * geen enkele weigering nog beweert dat een vorm alleen in de exec-tak zou lowerden.
      */
     @Test void de_drl_markertekst_scheidt_de_redenen() throws Exception {
         Path ploegpremie = GOLDEN.resolveSibling("jutterswet-ploegpremie");
         CaseRunner.Result heel = CaseRunner.viaDrlTekst(ploegpremie.resolve("ir.json"),
                 List.of(ploegpremie.resolve("case1-allen-boven-de-grens.json")));
-        assertEquals("EXCLUDE", heel.status(), "de heelperiodevouw blijft de exec-tak's werk");
-        assertTrue(heel.reason().contains("heelperiodematrix")
-                        && heel.reason().contains("alleen in de exec-model-tak"),
-                "en zegt dát, want daar is het waar: " + heel.reason());
+        assertEquals("PLAYED", heel.status(),
+                "de heelperiodevouw is geen kanaalsplitsing meer: " + heel.reason());
 
         Path c = tmp.resolve("genest-case-2.json");
         Files.writeString(c, GENEST_CASE);
         String genest = CaseRunner.viaDrlTekst(genesteVouw(), List.of(c)).reason();
+        assertTrue(genest.contains("kwantorvouw") && genest.contains("Kwantorvouw"),
+                "de geneste vouw draagt haar eigen reden, met de matrixvorm erin: " + genest);
         assertFalse(genest.contains("alleen in de exec-model-tak"),
                 "de geneste vouw wordt door de exec-tak óók geweigerd, dus die zin is daar onwaar: " + genest);
     }

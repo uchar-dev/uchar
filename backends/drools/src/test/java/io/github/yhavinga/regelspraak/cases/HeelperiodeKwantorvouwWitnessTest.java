@@ -2,6 +2,7 @@ package io.github.yhavinga.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import io.github.yhavinga.regelspraak.loader.IrLoader;
 
@@ -20,20 +21,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * The QUANTIFIER FOLD witness (IR-SPEC ch. 4.5 / RUNTIME-SEMANTICS ch. 3.9a, WF-108): first-order
  * quantification of a whole-period condition over the members of a linked instance set, replayed
- * end-to-end through the exec-model branch.
+ * end-to-end through BOTH Drools transpiler branches.
  *
  * <p><b>Why it is authored here and not read from the corpus.</b> When this file was written the form
  * had no golden — the spec chapter and this lowering landed together — so there was nothing to read.
- * The goldens have since arrived ({@code jutterswet-ploegpremie} and {@code jutterswet-keurploeg} carry
- * ALLE and GEEN over a whole-period matrix, and gate 12 plays both), so the rows here are no longer the
- * only evidence: they are the hand-built variation around them. Every document below is still built in
- * this file and written to a {@link TempDir}; no corpus path is touched, and no corpus expectation is
- * consulted.
+ * The goldens have since arrived, and the corpus half of this file replays them (see the section at the
+ * bottom); the rows here are the hand-built variation AROUND them, each document built in this file and
+ * written to a {@link TempDir}.
  *
  * <p><b>What the rows are.</b> The model is one Vloot whose {@code zeewaardig} kenmerk is written iff
- * the {@code wachtwaarde} of ALLE (or GEEN) of its schepen stays above a bound for the WHOLE calendar
- * year. The attribute is MAAND-granular while the qualifier is the YEAR — that is what lets a member
- * cover only part of the year on-grid, so the GAP row can exist at all (a JAAR-granular timeline
+ * the {@code wachtwaarde} of ALLE (or GEEN, or n) of its schepen stays above a bound for the WHOLE
+ * calendar year. The attribute is MAAND-granular while the qualifier is the YEAR — that is what lets a
+ * member cover only part of the year on-grid, so the GAP row can exist at all (a JAAR-granular timeline
  * cannot carry a half-year segment: the case loader refuses the off-grid boundary).
  *
  * <p><b>Both directions, every row.</b> Each verdict is read by playing the case TWICE — once against
@@ -41,10 +40,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * exactly one of them holds. A rule that silently failed to lower writes nothing and would satisfy
  * every "absent" expectation on its own; demanding the complementary failure is what makes the
  * absence rows evidence instead of a vacuous pass.
+ *
+ * <p><b>Both BRANCHES, every row too</b> (since the DRL-text branch gained this lowering). Each of
+ * those two plays is made through the exec-model branch AND through the DRL-text branch, and the two
+ * verdicts must agree — so every row below is a differential cell, not a single executor's reading.
+ * The two reach it by different roads: the exec branch builds the {@code collectList} accumulate and
+ * the result-var eval in the executable model, the DRL-text branch emits them as text a Drools compiler
+ * then parses. They share only the ch. 3.9 runtime helpers, which is the point: if one branch restated
+ * the whole-period table in its own terms, these rows would part company.
  */
 class HeelperiodeKwantorvouwWitnessTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
+
+    /** cwd under surefire is the module dir (backends/drools); the corpus is two levels up. */
+    private static final Path CORPUS = Path.of("..", "..", "corpus", "golden");
 
     @TempDir Path tmp;
 
@@ -283,28 +293,159 @@ class HeelperiodeKwantorvouwWitnessTest {
                 "met de deelselectie blijft er één voldoener over, en dat is onder de drempel");
     }
 
-    // ---------------- the DRL-text branch refuses the document BY NAME ----------------
+    // ---------------- the flanks a single-segment row cannot separate ----------------
 
     /**
-     * De klassieke DRL-tekst-tak lowert deze knoop niet; zij markeert hem. Dat is een bewuste asymmetrie
-     * (dezelfde die {@code CaseRunner.drlTak} voor de ch.-7 prioritizedDefaults vastlegt), en de eis
-     * eraan is dat het document dan wordt GEWEIGERD met de vorm in de reden — nooit stil gedraaid met een
-     * ongekwantificeerde regel. Deze rij leest beide takken op ÉÉN document, zodat "de exec speelt" en
-     * "de DRL weigert bij naam" niet uit elkaar kunnen lopen.
+     * Een GAT MIDDEN IN het jaar tegenover een HALF jaar: twee verschillende manieren om het kalenderjaar
+     * niet te dekken, die ch. 3.9 op dezelfde grond afwijst (minder voldoende dagen dan de bucket lang is)
+     * maar die een lowering die alleen naar de BUITENSTE grenzen van de tijdlijn kijkt uit elkaar zou
+     * halen: januari tot en met december staat er, alleen juli ontbreekt. Beide takken moeten hem missen.
      */
-    @Test void de_drl_tekst_tak_weigert_het_document_bij_naam() throws Exception {
-        Path irPad = schrijf("ir.json", ir(vouw("ALLE", "null", BRONROL)));
-        Path casePad = schrijf("case.json", caseDoc(schepen(
-                schuit("S1", "12", "2025-01-01", "2026-01-01")), "characteristicPresent"));
+    @Test void een_gat_midden_in_het_jaar_breekt_de_dekking_net_zo_goed() throws Exception {
+        assertFalse(zeewaardig(ir(vouw("ALLE", "null", BRONROL)), schepen(
+                gatSchuit("S1", "12", "2025-01-01", "2025-07-01", "2025-08-01", "2026-01-01"))),
+                "een lid dat elf van de twaalf maanden dekt voldoet niet GEDURENDE HET GEHELE jaar");
+        assertTrue(zeewaardig(ir(vouw("GEEN", "null", BRONROL)), schepen(
+                gatSchuit("S1", "12", "2025-01-01", "2025-07-01", "2025-08-01", "2026-01-01"))),
+                "en haalt de matrix dus niet, waarmee GEEN juist houdt");
+    }
 
-        CaseRunner.Result exec = CaseRunner.viaExecModel(irPad, List.of(casePad));
-        assertEquals("PLAYED", exec.status(),
-                "de exec-model-tak lowert de kwantorvouw en speelt het document: " + exec.reason());
+    /**
+     * Een ONTBREKEND SEGMENT — een lid zonder enige tijdlijn — is ch. 3.9's DERDE geval en hoort NIET bij
+     * het gat: het raakt geen enkele bucket, dus het voldoet VACUÜM. Daardoor draait het teken om tussen de
+     * twee kwantoren, en dat is precies wat deze rij vastlegt: ALLE leest waar, GEEN leest ONWAAR. Een
+     * uitvoerder die "afwezig" op "gat" laat samenvallen leest hier beide keren het andere antwoord.
+     *
+     * <p>Zij staat naast de lege VERZAMELING hierboven, want die twee vacua zijn niet hetzelfde: een lege
+     * verzameling leest waar onder BEIDE kwantoren, een leeg LID onder maar één.
+     */
+    @Test void een_lid_zonder_tijdlijn_voldoet_vacuum_en_keert_geen_om() throws Exception {
+        String enkel = schepen(schuitZonderTijdlijn("S1"));
+        assertTrue(zeewaardig(ir(vouw("ALLE", "null", BRONROL)), enkel),
+                "geen bucket geraakt, dus niets geschonden");
+        assertFalse(zeewaardig(ir(vouw("GEEN", "null", BRONROL)), enkel),
+                "maar GEEN ontkent precies wie de matrix haalt, en vacuüm halen is halen");
+        assertTrue(zeewaardig(ir(vouw("GEEN", "null", BRONROL)), ""),
+                "terwijl de lege VERZAMELING onder GEEN wél waar blijft — twee verschillende vacua");
+    }
 
-        CaseRunner.Result drl = CaseRunner.viaDrlTekst(irPad, List.of(casePad));
-        assertEquals("EXCLUDE", drl.status(), "de DRL-tekst-tak mag dit document niet stil draaien");
-        assertTrue(drl.reason().contains("kwantorvouw"),
-                "de weigering noemt de VORM, niet een generieke 'voorwaarde': " + drl.reason());
+    /**
+     * Hetzelfde onderscheid onder een DREMPEL, waar het op de TELLING landt: het lid zonder tijdlijn telt
+     * mee aan de POSITIEVE kant (het voldoet vacuüm), het lid met het gat niet. Een uitvoerder die de twee
+     * op één hoop gooit leest hier de andere kant van ten-minste-1.
+     */
+    @Test void de_telling_scheidt_het_ontbrekende_segment_van_het_gat() throws Exception {
+        assertTrue(zeewaardig(ir(telVouw("TEN_MINSTE", 1, "null", BRONROL)),
+                schepen(schuitZonderTijdlijn("S1"))),
+                "het lid zonder tijdlijn voldoet vacuüm en telt dus mee");
+        assertFalse(zeewaardig(ir(telVouw("TEN_MINSTE", 1, "null", BRONROL)), schepen(
+                gatSchuit("S1", "12", "2025-01-01", "2025-07-01", "2025-08-01", "2026-01-01"))),
+                "het lid met het gat voldoet niet en telt dus niet mee");
+    }
+
+    /**
+     * De DREMPELVERGELIJKING zelf, van beide kanten op één paar ledenverzamelingen — de af-bij-één-rij.
+     * Zij is er omdat een {@code >=} dat een {@code >} wordt (of andersom) elke andere rij hierboven
+     * overleeft: die lezen de telling ver van haar drempel.
+     */
+    @Test void de_drempelvergelijking_ligt_op_de_grens_en_niet_ernaast() throws Exception {
+        String twee = schepen(schuit("S1", "12", "2025-01-01", "2026-01-01"),
+                schuit("S2", "15", "2025-01-01", "2026-01-01"));
+        String drie = schepen(schuit("S1", "12", "2025-01-01", "2026-01-01"),
+                schuit("S2", "15", "2025-01-01", "2026-01-01"),
+                schuit("S3", "11", "2025-01-01", "2026-01-01"));
+        assertTrue(zeewaardig(ir(telVouw("TEN_MINSTE", 2, "null", BRONROL)), twee),
+                "telling 2 haalt ten minste 2 precies");
+        assertTrue(zeewaardig(ir(telVouw("TEN_HOOGSTE", 2, "null", BRONROL)), twee),
+                "en blijft precies onder ten hoogste 2");
+        assertFalse(zeewaardig(ir(telVouw("TEN_HOOGSTE", 2, "null", BRONROL)), drie),
+                "terwijl telling 3 haar met precies één overschrijdt");
+        assertTrue(zeewaardig(ir(telVouw("PRECIES", 2, "null", BRONROL)), twee),
+                "precies 2 wil de telling die beide grenzen raakt");
+        assertFalse(zeewaardig(ir(telVouw("PRECIES", 2, "null", BRONROL)), drie),
+                "en verwerpt er één meer");
+    }
+
+    // ---------------- the corpus goldens, replayed by BOTH branches ----------------
+
+    /**
+     * De vier corpusgoldens die deze knoop dragen, door BEIDE takken heen met de handberekende
+     * verwachtingen die {@code ref} en clingo pinnen (poorten 5 en 6). Samen dekken zij alle vijf de
+     * kwantoren, de ledenfilter en de NIET-prefix:
+     * <ul>
+     *   <li>{@code jutterswet-ploegpremie} — ALLE en GEEN, zeven cellen;</li>
+     *   <li>{@code jutterswet-keurploeg} — dezelfde twee mét die/dat-subselectie, zeven cellen;</li>
+     *   <li>{@code jutterswet-reddingsvloot} — TEN MINSTE / TEN HOOGSTE / PRECIES, zes cellen;</li>
+     *   <li>{@code jutterswet-sleepvloot} — dezelfde drie onder de NIET-prefix, twee cellen.</li>
+     * </ul>
+     *
+     * <p><b>Waarom deze rij bestaat naast poort 12.</b> Poort 12 speelt elke golden door de EXEC-tak
+     * alleen, en poort 13 drijft de DRL-tekst-tak over de goldens die zij kan VERDRAAIEN — dat zijn de
+     * eenheidsdragende. Zonder deze rij zou {@code --drl} op deze vier een eenmalige handmeting blijven.
+     */
+    @Test void beide_takken_spelen_de_vier_corpusgoldens() throws Exception {
+        for (String naam : GOLDENS) {
+            Path ir = CORPUS.resolve(naam).resolve("ir.json");
+            List<Path> cases = casesVan(CORPUS.resolve(naam));
+            assertFalse(cases.isEmpty(), naam + " hoort casebestanden te dragen");
+
+            CaseRunner.Result exec = CaseRunner.viaExecModel(ir, cases);
+            assertEquals("PLAYED", exec.status(), naam + " hoort door de exec-model-tak gespeeld te worden: "
+                    + exec.reason());
+            assertEquals(cases.size(), exec.casesPlayed(), naam + ": elke cel hoort gespeeld te zijn");
+
+            CaseRunner.Result drl = CaseRunner.viaDrlTekst(ir, cases);
+            assertEquals("PLAYED", drl.status(), naam + " hoort door de DRL-tekst-tak even goed gespeeld te "
+                    + "worden: " + drl.reason());
+            assertEquals(cases.size(), drl.casesPlayed(), naam + ": elke cel hoort gespeeld te zijn");
+        }
+    }
+
+    /**
+     * PLAYED alleen is geen getuige: een tak die stil niets lowert schrijft niets en haalt daarmee elke cel
+     * die een kenmerk AFWEZIG verwacht. Deze rij klapt in elke golden één AANWEZIGE verwachting om en eist
+     * dat BEIDE takken de mutant verwerpen — pas dan zegt de rij hierboven iets over de kwantor.
+     */
+    @Test void een_mutant_per_golden_wordt_door_beide_takken_verworpen() throws Exception {
+        for (String[] rij : MUTANTEN) {
+            String naam = rij[0], caseNaam = rij[1], kenmerk = rij[2];
+            Path bron = CORPUS.resolve(naam).resolve(caseNaam);
+            ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(bron));
+            boolean geraakt = false;
+            for (JsonNode e : doc.withArray("expected"))
+                if ("characteristicPresent".equals(e.path("kind").asText())
+                        && kenmerk.equals(e.path("characteristic").asText())) {
+                    ((ObjectNode) e).put("kind", "characteristicAbsent");
+                    geraakt = true;
+                }
+            assertTrue(geraakt, naam + "/" + caseNaam + " hoort '" + kenmerk + "' AANWEZIG te verwachten — "
+                    + "anders muteert deze rij niets");
+            Path mutant = tmp.resolve(naam + "-mutant.json");
+            Files.writeString(mutant, doc.toPrettyString());
+
+            Path ir = CORPUS.resolve(naam).resolve("ir.json");
+            assertEquals("FAIL", CaseRunner.viaExecModel(ir, List.of(mutant)).status(),
+                    naam + ": de exec-model-tak hoort de omgeklapte verwachting te verwerpen");
+            assertEquals("FAIL", CaseRunner.viaDrlTekst(ir, List.of(mutant)).status(),
+                    naam + ": de DRL-tekst-tak hoort hem even goed te verwerpen");
+        }
+    }
+
+    /** De vier goldens die de heelperiodevouw dragen, in de volgorde waarin zij hem uitbreiden. */
+    private static final List<String> GOLDENS = List.of("jutterswet-ploegpremie", "jutterswet-keurploeg",
+            "jutterswet-reddingsvloot", "jutterswet-sleepvloot");
+
+    /** Per golden: de case en het AANWEZIGE kenmerk waarvan de mutant hierboven de verwachting omklapt. */
+    private static final List<String[]> MUTANTEN = List.of(
+            new String[]{"jutterswet-ploegpremie", "case4-lege-set.json", "premiegerechtigd"},
+            new String[]{"jutterswet-keurploeg", "case3-lege-selectie-gevuld-bereik.json", "premiewaardig"},
+            new String[]{"jutterswet-reddingsvloot", "case1-telling-twee-op-de-drempel.json", "inzetbaar"},
+            new String[]{"jutterswet-sleepvloot", "case1-de-ontkende-telling-in-twee-vloten.json", "krap"});
+
+    private static List<Path> casesVan(Path golden) throws Exception {
+        try (java.util.stream.Stream<Path> s = Files.list(golden)) {
+            return s.filter(p -> p.getFileName().toString().startsWith("case")).sorted().toList();
+        }
     }
 
     // ---------------- an unlowerable shape SKIPS by name, never fires a wrong verdict ----------------
@@ -463,6 +604,26 @@ class HeelperiodeKwantorvouwWitnessTest {
                 .formatted(label, van, tot, waarde, zeegaand ? " \"zeegaand\" " : ""));
     }
 
+    /** Een Schuit met TWEE segmenten van dezelfde waarde en een GAT ertussen — de dekking is niet aan een
+     *  rand afgeknipt maar van binnen doorbroken. */
+    private static Schuit gatSchuit(String label, String waarde, String van1, String tot1,
+            String van2, String tot2) {
+        return new Schuit(label, """
+                { "label": "%s", "objectType": "Schuit",
+                  "attributes": { "wachtwaarde": { "timeline": [
+                      { "from": "%s", "to": "%s", "value": { "number": "%s" } },
+                      { "from": "%s", "to": "%s", "value": { "number": "%s" } } ] } },
+                  "roles": {}, "characteristics": [] }"""
+                .formatted(label, van1, tot1, waarde, van2, tot2, waarde));
+    }
+
+    /** Een Schuit ZONDER tijdlijn: het lid bestaat en de relatie bereikt het, maar het raakt geen bucket. */
+    private static Schuit schuitZonderTijdlijn(String label) {
+        return new Schuit(label, """
+                { "label": "%s", "objectType": "Schuit", "attributes": {},
+                  "roles": {}, "characteristics": [] }""".formatted(label));
+    }
+
     /** The Vloot plus the given Schuiten, linked over the to-many {@code schepen} role. An EMPTY member list
      *  is the vacuous row: a Vloot that fills the relation with nobody. */
     private static String schepen(Schuit... schuiten) {
@@ -500,10 +661,20 @@ class HeelperiodeKwantorvouwWitnessTest {
         return aanwezig == null;
     }
 
+    /**
+     * One expectation through BOTH branches, which must answer the same. The DRL-text branch lowers this
+     * node since the heelperiode-arm card; before it, it markered the whole document and {@code build}
+     * threw, so a branch that silently LOST the lowering again fails here loudly rather than by a shifted
+     * gate count.
+     */
     private String speel(String ir, String instances, String kind) throws Exception {
         Path irPad = schrijf("ir-" + (n++) + ".json", ir);
         JsonNode c = JSON.readTree(caseDoc(instances.isEmpty() ? vlootAlleen() : instances, kind));
-        return CaseRunner.speelCase(irPad, c);
+        String exec = CaseRunner.speelCase(irPad, c);
+        String drl = CaseRunner.speelCase(irPad, c, true);
+        assertEquals(exec == null, drl == null,
+                "beide takken horen dezelfde cel te lezen — exec=" + exec + ", drl-tekst=" + drl);
+        return exec;
     }
 
     /** The lone Vloot — the empty-contributor row's input. */

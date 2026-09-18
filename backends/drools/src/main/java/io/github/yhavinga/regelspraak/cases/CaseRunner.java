@@ -197,6 +197,15 @@ public final class CaseRunner {
         return build(irPath).runCase("case", c);
     }
 
+    /** The same comparator seam through EITHER transpiler branch, so one authored document can be replayed by
+     *  both and their verdicts compared row by row. It exists for the same reason {@link #viaExecModel} does:
+     *  a witness that wants both branches on ONE in-memory case would otherwise have to write the document to
+     *  disk twice and read two {@link Result}s, which reports a whole golden's status where the row wants a
+     *  single cell's verdict. Package-private, no production caller. */
+    static String speelCase(Path irPath, JsonNode c, boolean viaDrl) throws java.io.IOException {
+        return build(irPath, viaDrl).runCase("case", c);
+    }
+
     /** Load {@code irPath}, refuse the non-replayable forms, generate+contract-check the beans, lower every
      *  construct, and build the {@link KieBase} — the shared prelude of both the green replay and the red probe.
      *  Throws {@link Excluded} / {@link IrLoader.Refusal} for any form the v0 backend does not carry. */

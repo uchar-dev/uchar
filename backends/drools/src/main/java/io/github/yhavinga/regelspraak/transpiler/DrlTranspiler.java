@@ -4125,12 +4125,10 @@ public final class DrlTranspiler {
      *  quantifier is untouched. And the {@code filter} is the die/dat subselection on the same pattern, exactly
      *  as it is on an aggregation's accumulate source.
      *
-     *  <p><b>Every other shape markers, by its own reason.</b> The WHOLE-PERIOD matrix is the exec branch's
-     *  alone, deliberately: temporeelSetAccumulate keys on a {@code set} AttribuutRef (a fold matrix reads the
-     *  contributor's own attribute, set=false) and derives its join by pair only, with no bronRol fallback and
-     *  no storage-direction split, so the SELF-TYPED range the wire field exists for would bind nothing here.
-     *  That is a new arm of its own, and until it exists a marker is the honest state — drlTak then refuses the
-     *  document by name, which is what keeps this branch from answering with an unquantified rule.
+     *  <p><b>The WHOLE-PERIOD matrix takes the other road</b>, {@link #heelperiodeVouw}: a witness pattern
+     *  cannot ask ch. 3.9's per-bucket question of a {@code List<Segment>} member, so that arm collects the
+     *  contributors' timelines and folds them through the shared ch. 3.9 runtime helpers. The join and the
+     *  filter built here are its accumulate SOURCE, which is why it is entered from below rather than beside.
      *
      *  <p><b>A matrix or filter that HOISTS is refused, and not only one that markers.</b> Both are measured:
      *  {@link #conditieInline} degrades a condition carrying {@code extra} to a marker Frag, but a condition
@@ -4147,8 +4145,6 @@ public final class DrlTranspiler {
                     + "kwantificatie over een verzameling");
         if (!kv.bronPad().isEmpty())
             return kvMarker(kv, "een meerstaps bereik (WF-108 (c)); het elementpatroon draagt één joinconstraint");
-        if (geheelPeriodeVan(kv.toets()) != null)
-            return kvMarker(kv, "een §8.2-heelperiodematrix; die wordt alleen in de exec-model-tak gelowerd");
         Objecttype elem = kv.elementObjecttype();
         if (elem == null) return kvMarker(kv, "onopgelost elementObjecttype");
         // §13.3.9 STORAGE DIRECTION, the question scope() asks for an aggregation join: the role the SUBJECT
@@ -4168,6 +4164,8 @@ public final class DrlTranspiler {
                         + " kan schrijven (" + kv.filter().getClass().getSimpleName() + ")");
             delen.add(ff.text());
         }
+        Conditie.GeheelPeriode gp = geheelPeriodeVan(kv.toets());
+        if (gp != null) return heelperiodeVouw(acc, kv, gp, elem, subject, delen, mark);
         Frag mf = conditieInline(acc, kv.toets(), elem, true);
         if (mf.marker() || acc.clausules.size() != mark)
             return kvTerug(acc, mark, kv, "een matrixvorm die deze tak niet IN het elementpatroon kan schrijven ("
@@ -4187,6 +4185,122 @@ public final class DrlTranspiler {
         }
         delen.add(kv.kwantor() == Conditie.Kwantor.ALLE ? "!( " + mf.text() + " )" : mf.text());
         acc.clausules.add("not " + ident(elem.naam, true) + "( " + delen + " )");
+        return new LoweredConditie("", java.util.List.of(), false);
+    }
+
+    /** Is {@code lid} a SINGLE-PERIOD tijdlijn member of {@code elem}? The matrix of a fold is evaluated per
+     *  contributor with the ELEMENT as subject (ch. 3.9a), so the member is looked up on the element type
+     *  chain-closed (a contributor may be a subtype that inherits the timeline) rather than through
+     *  {@link #isTemporeelAttribuut}, which asks the question of the rule's own subject. Multi-period
+     *  (§13.3.6.7) is excluded, as everywhere under §8.2. */
+    private static boolean elementTijdlijnLid(Objecttype elem, String lid) {
+        return elem.granulariteitLeden().containsKey(lid)
+                && !Tijdlijnen.meerPeriodiek(elem.tijdlijnAantalLeden(), lid);
+    }
+
+    /**
+     * RUNTIME-SEMANTICS ch. 3.9a with a §8.2 WHOLE-PERIOD matrix: the fold's other road, entered from
+     * {@link #kwantorvouw} once the join and the die/dat filter are built (they become this arm's accumulate
+     * SOURCE, unchanged — one definition of "which members", not two).
+     *
+     * <p><b>Why not the denied witness.</b> ch. 3.9's question is per BUCKET over a whole
+     * {@code List<Segment>} member, and a Drools pattern constraint has no way to ask it of the element it
+     * ranges over without calling the helper on the element's own timeline — which is a List in a scalar
+     * constraint, the shape this branch refuses everywhere else. So the contributors' TIMELINES are collected
+     * ({@code collectList}) and the fold happens in one eval over the collected
+     * {@code List<List<Segment>>} — the same three pieces the set §8.2 arm
+     * ({@link #geheelPeriodeAlleVoorwaarde}) and the exec branch's twin use, and the same shape the production
+     * toolchain lowers this sentence to.
+     *
+     * <p><b>One table, three readings of it.</b> The per-contributor verdict is
+     * {@link io.github.yhavinga.regelspraak.runtime.RegelSpraakRuntime#rsGeheelPeriode}, reached through the
+     * three shared folds over it: {@code rsGeheelPeriodeAlle} (no contributor fails), {@code rsGeheelPeriodeGeen}
+     * (no contributor satisfies) and {@code rsGeheelPeriodeTelling} (how many do). No heelperiode logic is
+     * restated as MVEL here — the emitted text carries a call and a comparison, nothing else, so this branch
+     * and the exec branch cannot drift on the matrix itself.
+     *
+     * <p><b>Where the NIET prefix lands</b>, exactly as ch. 3.9a states it and as the exec twin does it: under
+     * ALLE/GEEN it FLIPS the quantifier (∀c.¬P = ¬∃c.P, ¬∃c.¬P = ∀c.P), and under a threshold there is no
+     * quantifier to flip into, so it lands on the COUNT — {@code count(¬P) = |contributors| − count(P)}, an
+     * equality because the whole-period predicate is total. The contributor count is the collected list's own
+     * size, which is why the members with NO timeline at all matter: {@code collectList} keeps their null, so
+     * they are counted and — per ch. 3.9 — they satisfy the matrix vacuously.
+     *
+     * <p><b>The grens must be $subject-free</b>, a literal or a scalar Parameter-global. The eval rides AFTER
+     * the accumulate and the exec twin's eval binds no subject there at all; refusing an own/navigated bound on
+     * both sides keeps the two branches' carried set the same, which is what makes a gate-12 refusal readable.
+     * Every other decline below names the axis it was declined on and rolls back through {@link #kvTerug}.
+     */
+    private LoweredConditie heelperiodeVouw(Acc acc, Conditie.Kwantorvouw kv, Conditie.GeheelPeriode gp,
+            Objecttype elem, Objecttype subject, StringJoiner delen, int mark) {
+        String gran = gp.jaar() ? "JAAR" : "MAAND";
+        String tlVeld; int toetsCode; String grens = "null";
+        if (kv.toets() instanceof Conditie.Vergelijking v) {
+            Expr.AttribuutRef tijd; Expr ander; boolean linksTemp;
+            if (v.links() instanceof Expr.AttribuutRef la && la.navigatieRol() == null && elementTijdlijnLid(elem, la.attribuut()))
+                { tijd = la; ander = v.rechts(); linksTemp = true; }
+            else if (v.rechts() instanceof Expr.AttribuutRef ra && ra.navigatieRol() == null && elementTijdlijnLid(elem, ra.attribuut()))
+                { tijd = ra; ander = v.links(); linksTemp = false; }
+            else return kvTerug(acc, mark, kv,
+                    "een matrixvergelijking zonder enkelperiodiek tijdlijnattribuut van het elementtype");
+            if (!(tijd.type().isNumeriek() || tijd.type().isPercentage()))
+                return kvTerug(acc, mark, kv, "een niet-numerieke heelperiodevergelijking in de matrix");
+            if (ander instanceof Expr.AttribuutRef ar && ar.navigatieRol() == null && elementTijdlijnLid(elem, ar.attribuut()))
+                return kvTerug(acc, mark, kv, "een tijdlijn-vs-tijdlijnvergelijking in de matrix");
+            io.github.yhavinga.regelspraak.model.Eenheid el = eff.eenheidVan(tijd), er = eff.eenheidVan(ander);
+            boolean crossUnit = el != null && er != null && el.vereistOmrekening(er);
+            if (crossUnit && er.exacteHerschaalFactoren(el) == null)
+                return kvTerug(acc, mark, kv, "een matrixgrens in een eenheid zonder exacte herschaalfactoren");
+            // put the temporal operand on the left: REVERSE the operator (operand swap), never negate it —
+            // ch. 3.9's rule, because on a leeg day BOTH orderings are false and a negation would make it satisfy.
+            Integer code = Tijdrekening.toets(linksTemp ? v.op() : Operatoren.omkeren(v.op()));
+            if (code == null) return kvTerug(acc, mark, kv, "een datumvergelijking als heelperiodematrix");
+            if (!(ander instanceof Expr.Literal)
+                    && !(ander instanceof Expr.ParameterRef pr && pr.parameter().granulariteit() == null))
+                return kvTerug(acc, mark, kv,
+                        "een niet-scalaire matrixgrens (de eval na de accumulate bindt geen $subject)");
+            Frag g = waarde(acc, ander, subject);
+            if (g.marker() || acc.clausules.size() != mark)
+                return kvTerug(acc, mark, kv, "een matrixgrens buiten de scalaire scope");
+            tlVeld = tijd.attribuut(); toetsCode = code;
+            grens = crossUnit ? herschaalExact(g.text(), effType(ander), effType(tijd)) : g.text();
+        } else if (kv.toets() instanceof Conditie.Predicaat p && p.operand() instanceof Expr.AttribuutRef pa
+                && pa.navigatieRol() == null && elementTijdlijnLid(elem, pa.attribuut())
+                && (p.soort() == Conditie.Predicaatsoort.GEVULD || p.soort() == Conditie.Predicaatsoort.LEEG)) {
+            tlVeld = pa.attribuut();
+            toetsCode = p.soort() == Conditie.Predicaatsoort.GEVULD ? 6 : 8;   // §8.2 gevuld / leeg over every moment
+        } else if (kv.toets() instanceof Conditie.Kenmerk k && k.navigatie() == null && !k.negatie()
+                && k.kenmerk() != null && elem.kenmerkGranulariteitLeden().containsKey(k.kenmerk())
+                && !Tijdlijnen.meerPeriodiek(elem.kenmerkTijdlijnAantalLeden(), k.kenmerk())) {
+            tlVeld = k.kenmerk(); toetsCode = 7;                                // §8.2 the kenmerk's TRUE-period timeline
+        } else {
+            return kvTerug(acc, mark, kv, "een matrixvorm buiten de §8.2 heelperiodeverzameling (vergelijking /"
+                    + " gevuld / leeg / tijdsafhankelijk kenmerk van het element)");
+        }
+
+        int n = ++acc.n;                       // the Acc's own element counter, shared with the aggregations
+        String ev = "$kv" + n, lijst = "$kvtl" + n;
+        acc.clausules.add("accumulate( " + ev + " : " + ident(elem.naam, true) + "( " + delen + " ) ; "
+                + lijst + " : collectList( " + ev + "." + getter(tlVeld) + "() ) )");
+        String staart = ", \"" + gran + "\", " + toetsCode + ", " + grens + ")";
+        boolean telt = kv.kwantor() == Conditie.Kwantor.TEN_MINSTE
+                || kv.kwantor() == Conditie.Kwantor.TEN_HOOGSTE || kv.kwantor() == Conditie.Kwantor.PRECIES;
+        if (telt) {
+            String telling = fnImport("rsGeheelPeriodeTelling") + "(" + lijst + staart;
+            // the NIET prefix cannot flip a threshold, so it lands on the count: n − count(P).
+            String geteld = gp.niet() ? "(" + lijst + ".size() - " + telling + ")" : telling;
+            String op = switch (kv.kwantor()) {
+                case TEN_MINSTE  -> ">= ";
+                case TEN_HOOGSTE -> "<= ";
+                default          -> "== ";   // PRECIES (the three arms above are the only ones reaching here)
+            };
+            acc.clausules.add("eval( " + geteld + " " + op + kv.drempel() + " )");
+            return new LoweredConditie("", java.util.List.of(), false);
+        }
+        // ALLE/GEEN: the NIET prefix is the MATRIX's, so it flips the quantifier rather than the verdict.
+        boolean alle = (kv.kwantor() == Conditie.Kwantor.ALLE) != gp.niet();
+        String fold = fnImport(alle ? "rsGeheelPeriodeAlle" : "rsGeheelPeriodeGeen");
+        acc.clausules.add("eval( " + fold + "(" + lijst + staart + " == true )");
         return new LoweredConditie("", java.util.List.of(), false);
     }
 
