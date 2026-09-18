@@ -2806,7 +2806,7 @@
             },
             "rechts": {
               "node": "Literal",
-              "waarde": "\"Friesland\"",
+              "waarde": "Friesland",
               "type": {
                 "node": "Tekst"
               },
@@ -2833,7 +2833,7 @@
             },
             "rechts": {
               "node": "Literal",
-              "waarde": "\"Groningen\"",
+              "waarde": "Groningen",
               "type": {
                 "node": "Tekst"
               },
@@ -2860,7 +2860,7 @@
             },
             "rechts": {
               "node": "Literal",
-              "waarde": "\"Drenthe\"",
+              "waarde": "Drenthe",
               "type": {
                 "node": "Tekst"
               },
@@ -2887,7 +2887,7 @@
             },
             "rechts": {
               "node": "Literal",
-              "waarde": "\"Zeeland\"",
+              "waarde": "Zeeland",
               "type": {
                 "node": "Tekst"
               },
@@ -2914,7 +2914,7 @@
             },
             "rechts": {
               "node": "Literal",
-              "waarde": "\"Limburg\"",
+              "waarde": "Limburg",
               "type": {
                 "node": "Tekst"
               },
@@ -2988,7 +2988,7 @@
             },
             "rechts": {
               "node": "Literal",
-              "waarde": "\"Noord-Brabant\"",
+              "waarde": "Noord-Brabant",
               "type": {
                 "node": "Tekst"
               },
@@ -3015,7 +3015,7 @@
             },
             "rechts": {
               "node": "Literal",
-              "waarde": "\"Gelderland\"",
+              "waarde": "Gelderland",
               "type": {
                 "node": "Tekst"
               },
@@ -3042,7 +3042,7 @@
             },
             "rechts": {
               "node": "Literal",
-              "waarde": "\"Overijssel\"",
+              "waarde": "Overijssel",
               "type": {
                 "node": "Tekst"
               },
@@ -3069,7 +3069,7 @@
             },
             "rechts": {
               "node": "Literal",
-              "waarde": "\"Flevoland\"",
+              "waarde": "Flevoland",
               "type": {
                 "node": "Tekst"
               },
@@ -3143,7 +3143,7 @@
             },
             "rechts": {
               "node": "Literal",
-              "waarde": "\"Noord-Holland\"",
+              "waarde": "Noord-Holland",
               "type": {
                 "node": "Tekst"
               },
@@ -3170,7 +3170,7 @@
             },
             "rechts": {
               "node": "Literal",
-              "waarde": "\"Zuid-Holland\"",
+              "waarde": "Zuid-Holland",
               "type": {
                 "node": "Tekst"
               },
@@ -3197,7 +3197,7 @@
             },
             "rechts": {
               "node": "Literal",
-              "waarde": "\"Utrecht\"",
+              "waarde": "Utrecht",
               "type": {
                 "node": "Tekst"
               },
