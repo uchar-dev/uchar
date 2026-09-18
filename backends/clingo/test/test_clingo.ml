@@ -4132,6 +4132,27 @@ let tak_doc4 =
                    ~dan:(tak_par "basisheffing")
                    ~anders:(tak_binder ~typ:tak_ob "m"))))
 
+(* vorm 5: dezelfde §6.5-plek als vorm 1, maar de knoop staat onder een PLUS.
+   Hij loopt daardoor NIET over de regelkop-splitsing maar over het eigen
+   hulppredicaat, en die route heeft haar eigen takgarde. Zonder dit document
+   zou die garde ongetuigd zijn: vorm 3 bewijst dat de route bestaat, niet dat
+   ze de arm volgt. *)
+let tak_doc5 =
+  tak_doc
+    ~attributen:
+      (Printf.sprintf {|"inkomen": %s, "restpost": %s, "heffing": %s|} tak_nn tak_nn tak_ob)
+    ~parameters:(tak_param "drempel" ^ ", " ^ tak_param "basisheffing")
+    ~doel_typ:tak_ob
+    ~waarde:
+      (tak_let ~typ:tak_ob ~binder:"k" ~value:(tak_attr "inkomen")
+         ~body:
+           (Printf.sprintf
+              {|{ "node": "Binair", "op": "PLUS", "links": %s, "rechts": %s, "type": %s,
+                  "bron": "de staffel plus de basisheffing" }|}
+              (tak_ite ~typ:tak_ob ~links:(tak_binder "k") ~rechts:(tak_par "drempel")
+                 ~dan:(tak_par "basisheffing") ~anders:tak_deling)
+              (tak_par "basisheffing") tak_ob))
+
 (* vorm 3: één behoefte in de armen van TWEE knopen. De knopen staan onder een
    PLUS, dus de regelkop kan niet per tak gesplitst worden en de vertaling moet
    de knoop zelf dragen. *)
@@ -4269,6 +4290,61 @@ let () =
     ~case_text:case3;
   clingo_matches ~name:"ch10.2 één behoefte onder twee takgardes speelt" ~ir:tak_doc3
     ~case_text:case3;
+  (* vorm 5 — dezelfde plekken, nu onder een PLUS, dus over het
+     hulppredicaat in plaats van over de regelkop-splitsing. De som is
+     5,00 + 5,00 boven de drempel; onder de drempel coalesceert de lege
+     linkerhand van de PLUS naar 0,00 en blijft 5,00 over, mét het
+     kanaalfeit. *)
+  let vijf_niet_betreden =
+    tak_case ~inkomen:"40" ~parameters:tak_params12
+      ~verwacht:
+        {|"expected": [
+            { "kind": "attributeValue", "label": "J1", "attribute": "heffing",
+              "value": { "number": "10" } },
+            { "kind": "consistent" } ]|}
+      ()
+  in
+  ref_matches ~name:"ch10.2 §6.5-plek in de niet-betreden arm onder een operator"
+    ~ir:tak_doc5 ~case_text:vijf_niet_betreden;
+  clingo_matches ~name:"ch10.2 §6.5-plek in de niet-betreden arm onder een operator meldt niet"
+    ~ir:tak_doc5 ~case_text:vijf_niet_betreden;
+  let vijf_nul_niet_betreden =
+    tak_case ~inkomen:"40" ~restpost:"0" ~parameters:tak_params12
+      ~verwacht:
+        {|"expected": [
+            { "kind": "attributeValue", "label": "J1", "attribute": "heffing",
+              "value": { "number": "10" } },
+            { "kind": "consistent" } ]|}
+      ()
+  in
+  ref_matches ~name:"ch10.2 nuldeling in de niet-betreden arm onder een operator" ~ir:tak_doc5
+    ~case_text:vijf_nul_niet_betreden;
+  clingo_matches
+    ~name:"ch10.2 nuldeling in de niet-betreden arm onder een operator breekt niet af"
+    ~ir:tak_doc5 ~case_text:vijf_nul_niet_betreden;
+  (* en de betreden arm onder diezelfde operator: melden respectievelijk
+     afbreken, precies als ref *)
+  let vijf_betreden =
+    tak_case ~inkomen:"5" ~parameters:tak_params12
+      ~verwacht:
+        {|"expected": [
+            { "kind": "attributeValue", "label": "J1", "attribute": "heffing",
+              "value": { "number": "5" } },
+            { "kind": "inconsistent", "rule": "heffing van een jutter", "label": "J1" } ]|}
+      ()
+  in
+  ref_matches ~name:"ch10.2 §6.5-plek in de BETREDEN arm onder een operator" ~ir:tak_doc5
+    ~case_text:vijf_betreden;
+  clingo_matches ~name:"ch10.2 §6.5-plek in de BETREDEN arm onder een operator meldt wel"
+    ~ir:tak_doc5 ~case_text:vijf_betreden;
+  both_break ~name:"ch10.2 nuldeling in de BETREDEN arm onder een operator" ~ir:tak_doc5
+    ~case_text:
+      (tak_case ~inkomen:"5" ~restpost:"0" ~parameters:tak_params12
+         ~verwacht:
+           {|"expectedFault": { "ref": "division by numeric zero",
+                                "clingo": "division by numeric zero" }|}
+         ())
+    ~needle:"division by numeric zero";
   (* vorm 4 — de behoefte wordt alleen in de niet-betreden arm gelezen, dus
      ch. 10.6 evalueert haar waarde daar niet en de §6.5-plek erin zwijgt *)
   ref_matches ~name:"ch10.6 behoefte alleen in de niet-betreden arm" ~ir:tak_doc4
