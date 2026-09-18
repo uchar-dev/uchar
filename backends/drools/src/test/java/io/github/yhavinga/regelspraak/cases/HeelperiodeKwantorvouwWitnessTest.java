@@ -448,6 +448,119 @@ class HeelperiodeKwantorvouwWitnessTest {
         }
     }
 
+    // ---------------- the REFUSAL AXES: named, symmetric, and written before anything else is ----------------
+
+    /**
+     * Een weigeringsas van de heelperiodearm schrijft GEEN clausule voordat hij afketst. De vorm: een
+     * matrixgrens die het EIGEN attribuut van het element leest — niet-scalair, want de eval na de
+     * accumulate bindt geen {@code $subject} — mét een ledenfilter ernaast, zodat de arm al door de join
+     * en de subselectie heen is als hij de grens afkeurt.
+     *
+     * <p>De assertie die telt is de LAATSTE: de geëmitteerde DRL bevat geen {@code accumulate(}. Een
+     * markering die haar accumulate al geschreven had laat een weesclausule achter die tegen een
+     * {@code $subject} van het verkeerde type joint, en het pakket sterft dan op een parsefout in plaats
+     * van bij naam te weigeren — de modus die op 2026-09-16 gemeten is. Beide takken weigeren hier op
+     * DEZELFDE as, met dezelfde reden, zodat een poort-12-rapport de twee naast elkaar kan lezen.
+     */
+    @Test void een_weigeringsas_schrijft_geen_clausule_voor_hij_afketst() throws Exception {
+        Path ir = schrijf("ir-grens.json", nietScalaireGrens());
+        Path c = schrijf("case-grens.json", caseDoc(schepen(
+                schuit("S1", "12", "2025-01-01", "2026-01-01", true)), "characteristicPresent"));
+
+        CaseRunner.Result drl = CaseRunner.viaDrlTekst(ir, List.of(c));
+        assertEquals("EXCLUDE", drl.status(), "een niet-gelowerde vouw mag nooit meespelen");
+        assertFalse(drl.reason().contains("drl compile"),
+                "een parsefout is geen benoemde weigering: " + drl.reason());
+        assertTrue(drl.reason().contains("niet-scalaire matrixgrens"),
+                "de reden noemt de AS waarop hij afketst: " + drl.reason());
+
+        CaseRunner.Result exec = CaseRunner.viaExecModel(ir, List.of(c));
+        assertEquals("EXCLUDE", exec.status(), "de exec-tak weigert dezelfde vorm");
+        assertTrue(exec.reason().contains("niet-scalaire matrixgrens"),
+                "en op dezelfde as, met dezelfde reden: " + exec.reason());
+
+        assertFalse(drlTekst(ir).contains("accumulate("),
+                "de arm hoort niets te hebben geschreven voordat hij de grens afkeurde:\n" + drlTekst(ir));
+    }
+
+    /**
+     * En de tegenhanger waar er WEL iets terug te draaien valt: een die/dat-subselectie die zelf een vouw
+     * is. Die hijst haar clausule rechtstreeks in de {@code Acc} en geeft een LEGE inline terug zonder
+     * markering, dus geen van de twee gewone kanalen ziet haar; de arm vangt haar op de clausuleteller en
+     * draait terug ({@code kvTerug}). Zonder die terugdraai blijft er een {@code not Uitrusting( … )}
+     * staan op een regel die verder een markering is.
+     *
+     * <p>Mutatieproef uitgevoerd: {@code kvTerug} kortgesloten tot een kale markering (geen
+     * {@code aggTerug}) laat de weesclausule staan en deze rij wordt rood.
+     */
+    @Test void een_filter_dat_hijst_wordt_teruggedraaid_en_bij_naam_geweigerd() throws Exception {
+        Path ir = schrijf("ir-filterhijs.json", filterDatHijst());
+        Path c = schrijf("case-filterhijs.json", caseDoc(schepen(
+                schuit("S1", "12", "2025-01-01", "2026-01-01")), "characteristicPresent"));
+
+        CaseRunner.Result drl = CaseRunner.viaDrlTekst(ir, List.of(c));
+        assertEquals("EXCLUDE", drl.status(), "een niet-gelowerde vouw mag nooit meespelen");
+        assertFalse(drl.reason().contains("drl compile"),
+                "een parsefout is geen benoemde weigering — de terugdraai ontbreekt: " + drl.reason());
+        assertTrue(drl.reason().contains("die/dat-subselectie"),
+                "de reden noemt de AS waarop hij afketst: " + drl.reason());
+
+        CaseRunner.Result exec = CaseRunner.viaExecModel(ir, List.of(c));
+        assertEquals("EXCLUDE", exec.status(), "de exec-tak weigert dezelfde vorm op dezelfde as");
+        assertTrue(exec.reason().contains("die/dat-subselectie"), "met dezelfde reden: " + exec.reason());
+
+        String tekst = drlTekst(ir);
+        assertFalse(tekst.contains("accumulate("), "geen accumulate op een gemarkeerde regel:\n" + tekst);
+        assertFalse(tekst.contains("Uitrusting("),
+                "en geen weesclausule van het gehesen filter:\n" + tekst);
+    }
+
+    /**
+     * Een vouw als kind van een NIET-conjunctieve {@code Samengesteld} ("ten minste één van: alle schepen
+     * halen de matrix; de Vloot is vlaggend"). Beide routes van de vouw — de heelperiodematrix en de
+     * niet-temporele — antwoorden met een EIGEN when-clausule en een lege inline, en een {@code ||}/{@code !}
+     * -vouw kan die niet hosten: een aparte clausule beweert onvoorwaardelijk wat de vouw juist weegt.
+     *
+     * <p>De vorm is welgevormd en {@code ref} speelt hem — gemeten op beide documenten:
+     * <pre>
+     *   verifier : PASS
+     *   ref      : oracle: PASS (2 expectations)
+     * </pre>
+     * Beide Drools-takken weigeren hem, en de eis is dat die weigering BENOEMD is:
+     * tot 2026-09-18 schreef de tak haar clausule toch en stierf het pakket op
+     * {@code [ERR 101] … no viable alternative at input ')'}. De niet-temporele route had datzelfde defect
+     * al vóór deze kaart; beide zijn met dezelfde vangst dicht.
+     */
+    @Test void een_vouw_onder_een_niet_conjunctieve_kwantor_weigert_bij_naam() throws Exception {
+        Path c = schrijf("case-disjunctie.json", caseDoc(schepen(
+                schuit("S1", "12", "2025-01-01", "2026-01-01", true)), "characteristicPresent"));
+        for (boolean heelperiode : new boolean[]{true, false}) {
+            String wat = heelperiode ? "heelperiodematrix" : "niet-temporele matrix";
+            Path ir = schrijf("ir-disjunctie-" + heelperiode + ".json", vouwOnderDisjunctie(heelperiode));
+
+            CaseRunner.Result drl = CaseRunner.viaDrlTekst(ir, List.of(c));
+            assertEquals("EXCLUDE", drl.status(), wat + ": een niet-gelowerde vouw mag nooit meespelen");
+            assertFalse(drl.reason().contains("drl compile"),
+                    wat + ": een parsefout is geen benoemde weigering: " + drl.reason());
+            assertTrue(drl.reason().contains("kwantorvouw")
+                            && drl.reason().contains("niet-conjunctieve kwantor"),
+                    wat + ": de reden noemt de KNOOP en de positie: " + drl.reason());
+
+            CaseRunner.Result exec = CaseRunner.viaExecModel(ir, List.of(c));
+            assertEquals("EXCLUDE", exec.status(), wat + ": de exec-tak weigert dezelfde vorm");
+        }
+    }
+
+    /** De DRL-TEKST van één document, zonder te compileren of te spelen — de enige naad waarop een
+     *  weesclausule zichtbaar is: een gemarkeerde regel compileert vaak gewoon, en dan is het de TEKST en
+     *  niet de status die zegt of er iets is achtergebleven. */
+    private static String drlTekst(Path ir) throws Exception {
+        io.github.yhavinga.regelspraak.loader.IrLoader.Loaded loaded =
+                io.github.yhavinga.regelspraak.loader.IrLoader.loadAll(JSON.readTree(Files.readString(ir)));
+        return io.github.yhavinga.regelspraak.transpiler.DrlTranspiler
+                .build(loaded.model(), loaded.lets()).drl();
+    }
+
     // ---------------- an unlowerable shape SKIPS by name, never fires a wrong verdict ----------------
 
     /**
@@ -522,6 +635,74 @@ class HeelperiodeKwantorvouwWitnessTest {
                 """.formatted(kwantor, drempel < 0 ? "" : ", \"drempel\": " + drempel,
                         filter, NUMERIEK, NUMERIEK, niet, bereik,
                         "GEEN".equals(kwantor) ? "geen van de" : "alle");
+    }
+
+    /** The §8.2 fold with a member filter and a bound this arm refuses: the ELEMENT's own scalar attribute,
+     *  which the eval after the accumulate cannot read (it binds no subject). */
+    private static String nietScalaireGrens() throws Exception {
+        ObjectNode doc = (ObjectNode) JSON.readTree(ir(vouw("ALLE", ZEEGAAND_FILTER, BRONROL)));
+        ((ObjectNode) doc.get("objecttypen").get("Schuit").get("attributen"))
+                .set("grenswaarde", JSON.readTree(NUMERIEK));
+        ObjectNode toets = (ObjectNode) doc.get("resolvedRegels").get(0).get("voorwaarde").get("toets");
+        toets.set("rechts", JSON.readTree("""
+                { "node": "AttribuutRef", "attribuut": "grenswaarde", "objecttype": "Schuit",
+                  "onderwerpBron": "zijn", "navigatieRol": null, "type": %s,
+                  "bron": "zijn grenswaarde", "set": false, "navigatiePad": [] }""".formatted(NUMERIEK)));
+        return doc.toPrettyString();
+    }
+
+    /** The §8.2 fold whose die/dat subselection is ITSELF a fold: it pushes its clause straight into the
+     *  {@code Acc} and returns an empty inline, the channel neither the marker flag nor {@code heeftExtra}
+     *  reports. A second to-many relation off the Schuit is spliced in to carry it. */
+    private static String filterDatHijst() throws Exception {
+        String nested = """
+                { "node": "Kwantorvouw", "kwantor": "ALLE", "elementObjecttype": "Uitrusting",
+                  "filter": null,
+                  "toets": { "node": "Kenmerk", "kenmerk": "gekeurd", "navigatie": null, "negatie": false,
+                             "eigenaar": null, "periode": null, "bron": "het stuk gekeurd is" },
+                  "bronRol": { "node": "RolBinding", "feittype": "schuituitrusting", "rol": "stuk" },
+                  "bron": "die al hun stukken gekeurd hebben" }""";
+        ObjectNode doc = (ObjectNode) JSON.readTree(ir(vouw("ALLE", nested, BRONROL)));
+        ((ObjectNode) doc.get("objecttypen")).set("Uitrusting", JSON.readTree("""
+                { "node": "Objecttype", "naam": "Uitrusting", "attributen": {}, "attribuutMeervoud": {},
+                  "attribuutDimensies": {}, "attribuutGranulariteit": {}, "attribuutTijdlijnAantal": {},
+                  "attribuutTijdlijnNaam": {}, "kenmerken": [ "gekeurd" ],
+                  "kenmerkSoorten": { "gekeurd": "BIJVOEGLIJK" }, "kenmerkGranulariteit": {},
+                  "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Uitrustingen" }"""));
+        ((ObjectNode) doc.get("feittypen")).set("schuituitrusting", JSON.readTree("""
+                { "node": "Feittype", "naam": "schuituitrusting", "wederkerig": false, "rollen": [
+                    { "node": "Rol", "naam": "drager", "objecttypeNaam": "Schuit",
+                      "meervoud": null, "meervoudig": false },
+                    { "node": "Rol", "naam": "stuk", "objecttypeNaam": "Uitrusting",
+                      "meervoud": "stukken", "meervoudig": true } ] }"""));
+        return doc.toPrettyString();
+    }
+
+    /** The fold as ONE bullet of a "ten minste 1" compound, beside a plain characteristic of the subject —
+     *  the position whose verdict is folded with {@code ||}, where a separate when-clause cannot go.
+     *  {@code heelperiode} picks which matrix route the bullet takes. */
+    private static String vouwOnderDisjunctie(boolean heelperiode) throws Exception {
+        ObjectNode doc = (ObjectNode) JSON.readTree(ir(vouw("ALLE", "null", BRONROL)));
+        ObjectNode vloot = (ObjectNode) doc.get("objecttypen").get("Vloot");
+        vloot.set("kenmerken", JSON.readTree("[ \"zeewaardig\", \"vlaggend\" ]"));
+        vloot.set("kenmerkSoorten",
+                JSON.readTree("{ \"zeewaardig\": \"BIJVOEGLIJK\", \"vlaggend\": \"BIJVOEGLIJK\" }"));
+        ObjectNode regel = (ObjectNode) doc.get("resolvedRegels").get(0);
+        ObjectNode fold = (ObjectNode) regel.get("voorwaarde");
+        if (!heelperiode)   // de niet-temporele route: een kenmerkmatrix zonder heelperiodekwalificatie
+            fold.set("toets", JSON.readTree("""
+                    { "node": "Kenmerk", "kenmerk": "zeegaand", "navigatie": null, "negatie": false,
+                      "eigenaar": null, "periode": null, "bron": "het schip zeegaand is" }"""));
+        ObjectNode compound = JSON.createObjectNode();
+        compound.put("node", "Samengesteld");
+        compound.put("kwantor", "TEN_MINSTE");
+        compound.put("drempel", 1);
+        compound.putArray("onderdelen").add(fold).add(JSON.readTree("""
+                { "node": "Kenmerk", "kenmerk": "vlaggend", "navigatie": null, "negatie": false,
+                  "eigenaar": null, "periode": null, "bron": "de Vloot vlaggend is" }"""));
+        compound.put("bron", "ten minste één van de volgende voorwaarden");
+        regel.set("voorwaarde", compound);
+        return doc.toPrettyString();
     }
 
     /** The same fold with a BARE comparison as its matrix — no §8.2 qualifier. A well-formed node this branch

@@ -325,6 +325,20 @@ public final class DrlTranspiler {
          *  rule and cannot see the host consequence's locals, so a §6.5/§6.6 guard that mentions a binder must
          *  re-read the need itself — and drop the companion when it cannot ({@link #takGarde}). */
         final java.util.Map<String, String> binderPatroon = new java.util.LinkedHashMap<>();
+        /** Set while lowering the children of a NON-conjunctive {@link Conditie.Samengesteld}: their verdicts are
+         *  folded with {@code ||} / {@code !}, so a child that answers with a SEPARATE when-clause instead of an
+         *  inline constraint has no faithful place there — the clause would assert unconditionally what the fold
+         *  means to weigh. {@link LoweredConditie#heeftExtra} is that signal for one of the two hoist channels;
+         *  this flag is how the OTHER channel — a child pushing straight into {@link #clausules} — learns it
+         *  before it writes anything, so its refusal names ITS OWN node instead of arriving as a parse error.
+         *  Sticky on the way down: an inner conjunction inside a disjunction does not lift it, because the outer
+         *  fold is still the one that would have to host the clause. */
+        boolean hijsVerbod;
+        /** The reason of the child that refused BECAUSE of {@link #hijsVerbod}, so the compound's own marker can
+         *  say WHICH node and WHY instead of the generic "voorwaarde". A markered child's text is otherwise
+         *  dropped — the compound replaces it with its own — and this node's whole refusal discipline is that
+         *  every decline names its axis. Scoped like the flag: saved and restored around each recursion. */
+        String hijsReden;
         /** The consequence PRELUDE: one {@code $behoefteN = …;} line per forced need, in evaluation order. Non-null
          *  exactly where the consequence can carry it — the scalar setter path of {@link #regel}. A {@link Expr.Let}
          *  met while this is null has nowhere to put its need and stays an honest marker. */
@@ -4041,8 +4055,25 @@ public final class DrlTranspiler {
             if (s.kwantor() != Conditie.Kwantor.ALLE && s.kwantor() != Conditie.Kwantor.DE
                     && s.onderdelen().stream().anyMatch(d -> d instanceof Conditie.Vergelijking cv && isAggregatieVergelijking(cv)))
                 return LoweredConditie.marker("aggregatie-bullet onder tellende kwantor (>1 bullet / ten hoogste / precies)", s.bron());
+            // Only a PURE CONJUNCTION can host a child's separate when-clause (see the hoist note below), and the
+            // children have to know that BEFORE they lower — a child that writes into the Acc and only then hears
+            // it cannot take the clause back without every caller in the chain knowing to. So the flag goes down
+            // with the recursion, and the mark below stays as the net for a channel nobody read it on.
+            final int hijsMark = acc.clausules.size();
+            boolean conjunctie = s.kwantor() == Conditie.Kwantor.ALLE || s.kwantor() == Conditie.Kwantor.DE;
+            boolean vorigVerbod = acc.hijsVerbod;
+            String vorigeHijsReden = acc.hijsReden;
+            if (!conjunctie) acc.hijsVerbod = true;
+            acc.hijsReden = null;
             List<LoweredConditie> kinderen = new ArrayList<>();
-            for (Conditie deel : s.onderdelen()) kinderen.add(conditie(acc, deel, subject, alsVoorwaarde));
+            String hijsReden;
+            try {
+                for (Conditie deel : s.onderdelen()) kinderen.add(conditie(acc, deel, subject, alsVoorwaarde));
+            } finally {
+                acc.hijsVerbod = vorigVerbod;
+                hijsReden = acc.hijsReden;
+                acc.hijsReden = vorigeHijsReden;
+            }
             if (kinderen.isEmpty()) return LoweredConditie.van("true");
             // Only a PURE CONJUNCTION (§13.4.14 alle/de) is a plain && of its parts, so a hoisted exists/not
             // clause — implicitly AND-ed as a separate when-clause — is faithful there. The other quantifiers
@@ -4051,14 +4082,26 @@ public final class DrlTranspiler {
             // child that wants to hoist (`heeftExtra`) under any NON-conjunction quantifier no-ops the whole
             // compound, exactly as a marker child does. Keyed on alle/de EXPLICITLY (never the default arm) so a
             // future quantifier cannot silently inherit the hoist.
-            boolean conjunctie = s.kwantor() == Conditie.Kwantor.ALLE || s.kwantor() == Conditie.Kwantor.DE;
             // An unresolved sub-condition cannot be faithfully combined. Splicing its always-false marker into
             // one operand is wrong under the NEGATED quantifiers (geen/ten hoogste/precies, which wrap the
             // operands in !(…)): there the dropped criterion flips into a positive firing decision. So mark the
             // WHOLE compound a no-op (rule never fires) rather than risk a silently-wrong gate — for every quantifier.
             boolean wilHoisten = kinderen.stream().anyMatch(LoweredConditie::heeftExtra);
-            if (kinderen.stream().anyMatch(LoweredConditie::marker) || (wilHoisten && !conjunctie))
-                return LoweredConditie.marker("voorwaarde", s.bron());
+            // The SECOND hoist channel, as a net rather than as the mechanism: a child that pushed straight into
+            // the Acc leaves an EMPTY inline and no marker, so neither test above sees it, and the fold below
+            // then wrote "(())" — a parse error instead of a named refusal (measured 2026-09-16 on a nested fold,
+            // again 2026-09-18 on a §8.2 fold under "ten minste 1"). The flag above is what keeps a child from
+            // getting here; this is what happens if a future node does not read it.
+            boolean hijstInAcc = acc.clausules.size() != hijsMark;
+            if (kinderen.stream().anyMatch(LoweredConditie::marker) || ((wilHoisten || hijstInAcc) && !conjunctie)) {
+                aggTerug(acc, hijsMark);   // a markered compound keeps no orphan clause (the kvTerug discipline)
+                return LoweredConditie.marker(
+                        hijsReden != null ? hijsReden
+                        : hijstInAcc && !conjunctie
+                            ? "een onderdeel dat zijn clausule BUITEN de inline hijst onder een niet-conjunctieve"
+                              + " kwantor: een aparte when-clausule beweert onvoorwaardelijk wat de vouw weegt"
+                        : "voorwaarde", s.bron());
+            }
             if (conjunctie) {
                 // Join ONLY the non-empty inlines (a pure far-side child has an empty inline — dropping it
                 // avoids a dangling "()" / " && "); concat every child's hoisted clauses. When every child is a
@@ -4138,6 +4181,22 @@ public final class DrlTranspiler {
      *  and the package died on a parser error instead of refusing by name (measured 2026-09-16). So the guard
      *  is BOTH channels: a marker, or any clause appended since {@code mark}. */
     private LoweredConditie kwantorvouw(Acc acc, Conditie.Kwantorvouw kv, Objecttype subject) {
+        // Both routes below answer with a SEPARATE when-clause (a `not` witness pattern, a count accumulate, the
+        // §8.2 collectList+eval) and an EMPTY inline — which is faithful only where the compound AND-s its parts.
+        // Under a fold that ORs or negates them the clause would assert unconditionally what the fold means to
+        // weigh, so the position is refused before anything is written, by name. Measured: without this the node
+        // emitted its clause anyway and the package died on "[ERR 101] … no viable alternative at input ')'" — a
+        // parse error where ch. 3.12 promises a named refusal. The exec branch refuses the same document on its
+        // own axis ("voorwaarde buiten Phase-B scope"), so the two stay symmetric.
+        if (acc.hijsVerbod) {
+            String staart = "onder een niet-conjunctieve kwantor: haar clausule is een eigen when-clausule en"
+                    + " geen patroonconstraint, dus zij kan niet in een ||/!-vouw staan";
+            // The compound replaces a markered child's text with its own, so the axis is handed up explicitly.
+            acc.hijsReden = "kwantorvouw (" + kv.kwantor() + " over "
+                    + (kv.elementObjecttype() == null ? "<onopgelost elementtype>" : kv.elementObjecttype().naam)
+                    + ") " + staart;
+            return kvMarker(kv, "een vouw " + staart);
+        }
         if (subject == null) return kvMarker(kv, "geen subjectpatroon om het bereik aan te hangen");
         if (kv.toets() == null) return kvMarker(kv, "een kwantorvouw zonder matrix (WF-108 (d))");
         if (kv.kwantor() == Conditie.Kwantor.DE)

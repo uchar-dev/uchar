@@ -1090,8 +1090,10 @@ public final class RegelSpraakRuntime {
      *  is "some contributor fails the matrix", which is not "no contributor satisfies it". The caller's NIET
      *  prefix does not need a third helper — a negated matrix turns ALLE into GEEN and GEEN into ALLE
      *  (∀c.¬P = ¬∃c.P and ¬∃c.¬P = ∀c.P), so the transpiler flips the quantifier and picks the other fold.
-     *  The single implementation; the DRL branch does not import it (it markers the node — see
-     *  {@code DrlTranspiler.conditie}). */
+     *  The single implementation, and BOTH transpiler branches read it: the exec-model branch calls it from the
+     *  result-var predicate of its collectList accumulate, the DRL-text branch imports it as a DRL function and
+     *  calls it from the eval after its own (2026-09-18 — until then that branch markered the whole-period
+     *  matrix, which is what this sentence used to record). */
     public static boolean rsGeheelPeriodeGeen(List<? extends List<?>> reeksen, String granulariteit, int toets, BigDecimal grens) {
         if (reeksen == null) return true;
         for (List<?> r : reeksen) if (rsGeheelPeriode(r, granulariteit, toets, grens)) return false;
