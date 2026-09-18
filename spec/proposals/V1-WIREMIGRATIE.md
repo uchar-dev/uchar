@@ -732,13 +732,17 @@ bewaken een kopie die er niet meer is. Het is wel een groot blok
 corpusonderhoud, en het is onomkeerbaar.
 
 **Er is een tweede gevolg dat bijna gratis is en dat de volgorde bepaalt.** Van
-de 97 `Onbekend`-voorkomens op de wire staan er **90 op `AttribuutRef.type`** —
-de WF-093-telwrat, de enige nog toegelaten sentinelpositie. Als de
+de 97 `Onbekend`-voorkomens op de wire staan er **90 op `AttribuutRef.type`**.
+In de groene zones (9 anchor-, 22 golden- en 3 rood-documenten) is dat per
+WF-093 en WF-034 arm (r) uitsluitend de eenargumentige AANTAL-telbron — de enige
+nog toegelaten sentinelpositie; in de negatief-zone zijn het de
+`wf034-sentinel-*`-getuigen die de vorm juist moeten afwijzen. Als de
 referentie-`type` de wire verlaat, verdwijnen die 90 met hem mee, en houdt B16
-(`Onbekend` uit de datatypesom) nog maar **zeven** voorkomens over: vijf in
-negatief-documenten die de vorm juist moeten afwijzen, één in een
-negatief-`Parameter`, en één `Binair.type` in `toka/casus/ir.json` — de
-toka-45-holdout van besluit 16Y. **B13 vóór B16 maakt B16 bijna kosteloos.**
+(`Onbekend` uit de datatypesom) nog maar **zeven** voorkomens over: zes in
+negatief-documenten (twee `SumType`-payloads, één `ListType`-element, één
+`StructType`-datatype, één attribuutdeclaratie en één `Parameter`-datatype) en
+één `Binair.type` in `toka/casus/ir.json` — de toka-45-holdout van besluit 16Y.
+**B13 vóór B16 maakt B16 bijna kosteloos.**
 
 **Beslisvraag: V5** (hoe ver gaat het — alleen eenheiddragend, of alle
 referentieposities?).
@@ -1506,8 +1510,9 @@ serialisatie gratis kan doen.
 IR-SPEC ch. 4.1 laat dit uitdrukkelijk open. Zes documenten dragen de vorm.
 
 - **(a) Eigen knoop** (`BoundDay`), want het ís iets anders: geen sessiewaarde
-  maar de gebonden dag van een dagsoortdefinitie. Elf van de veertien
-  `Constante`-voorkomens in het corpus zijn deze.
+  maar de gebonden dag van een dagsoortdefinitie. Rij 25 mat bij de landing van
+  WF-098 dat elf van de veertien `Constante`-voorkomens op de wire deze vorm
+  waren; vandaag draagt `de dag` zes documenten tegen `Rekendatum` drie.
 - **(b) `ContextValue` met drie namen**, zoals WF-098 hem vandaag sluit.
   Kleinste stap.
 - **(c) Uitstellen** tot `backlog/new/20260910-dagsoort-semantiek.md` is gedaan,
