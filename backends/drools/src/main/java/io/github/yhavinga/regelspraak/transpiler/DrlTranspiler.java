@@ -320,6 +320,11 @@ public final class DrlTranspiler {
          *  context, and scoped by save/restore around each {@link Expr.Let} body, so a binding dies with its body
          *  (WF-064: an inner binder of the same name SHADOWS, it never mutates the outer one in place). */
         final java.util.Map<String, String> binders = new java.util.LinkedHashMap<>();
+        /** The same environment for the CONDITION side: binder key -&gt; the need's own re-readable PATTERN text
+         *  (a bare property), or null when the need does not decompose into one. A companion rule is a separate
+         *  rule and cannot see the host consequence's locals, so a §6.5/§6.6 guard that mentions a binder must
+         *  re-read the need itself — and drop the companion when it cannot ({@link #takGarde}). */
+        final java.util.Map<String, String> binderPatroon = new java.util.LinkedHashMap<>();
         /** The consequence PRELUDE: one {@code $behoefteN = …;} line per forced need, in evaluation order. Non-null
          *  exactly where the consequence can carry it — the scalar setter path of {@link #regel}. A {@link Expr.Let}
          *  met while this is null has nowhere to put its need and stays an honest marker. */
@@ -331,6 +336,52 @@ public final class DrlTranspiler {
         int letN;
     }
 
+    /**
+     * ch. 10.6 clause 3 + ch. 10.2 as one static answer: <b>under which condition does evaluating a body read a
+     * given binder?</b>
+     *
+     * <p>Without a ch. 10.2 node the answer is a constant — every other form this branch lowers evaluates all its
+     * children, so a read is reached iff it is present ({@link #ALTIJD} / {@link #NOOIT}). An {@code IfThenElse}
+     * makes it a CONDITION: a binder read only in the {@code dan} arm is read exactly when the guard holds. That
+     * is what {@link Tak} carries, and it is what keeps a need that only one arm reads from being forced (and its
+     * barrier from firing) when the other arm runs — the flank {@code synth3-takbarriere} pins.
+     *
+     * <p>{@link #ONBEPAALD} is the honest fourth answer: two DIFFERENT branch conditions joining (a read in one
+     * arm of one {@code IfThenElse} and in one arm of another). A conjunction could be built for it, but not one
+     * whose operands are guaranteed to be assigned by the time the prelude needs them, so this branch refuses the
+     * shape by name instead of guessing.
+     */
+    private sealed interface Leesgarde permits Altijd, Nooit, Tak, Onbepaald {}
+    private record Altijd() implements Leesgarde {}
+    private record Nooit() implements Leesgarde {}
+    /** Read exactly when {@code conditie} holds ({@code positief}) or does not ({@code !positief}). */
+    private record Tak(Conditie conditie, boolean positief) implements Leesgarde {}
+    private record Onbepaald() implements Leesgarde {}
+    private static final Leesgarde ALTIJD = new Altijd(), NOOIT = new Nooit(), ONBEPAALD = new Onbepaald();
+
+    /** The join of two read-guards: ALTIJD absorbs, NOOIT is the unit, two EQUAL branch guards join to themselves
+     *  and two different ones are ONBEPAALD (see {@link Leesgarde}). */
+    private static Leesgarde ofOok(Leesgarde a, Leesgarde b) {
+        if (a instanceof Altijd || b instanceof Altijd) return ALTIJD;
+        if (a instanceof Nooit) return b;
+        if (b instanceof Nooit) return a;
+        if (a instanceof Tak ta && b instanceof Tak tb
+                && ta.conditie() == tb.conditie() && ta.positief() == tb.positief()) return a;
+        return ONBEPAALD;
+    }
+
+    /** The meet used where a read happens only if BOTH hold (a read inside a nested need's value: the need must
+     *  be forced AND the value must read). ALTIJD is the unit, NOOIT absorbs, a branch guard survives beside an
+     *  ALTIJD, and anything else is ONBEPAALD. */
+    private static Leesgarde enOok(Leesgarde a, Leesgarde b) {
+        if (a instanceof Nooit || b instanceof Nooit) return NOOIT;
+        if (a instanceof Altijd) return b;
+        if (b instanceof Altijd) return a;
+        if (a instanceof Tak ta && b instanceof Tak tb
+                && ta.conditie() == tb.conditie() && ta.positief() == tb.positief()) return a;
+        return ONBEPAALD;
+    }
+
     /** The binder-environment key: lower-cased, mirroring {@code ref}'s {@code norm} over its locals and the
      *  exec back-end's binder slots, so binder resolution is case-insensitive on every side. */
     private static String letSleutel(String naam) {
@@ -338,40 +389,55 @@ public final class DrlTranspiler {
     }
 
     /**
-     * ch. 10.6: whether evaluating {@code e} necessarily READS the binder {@code sleutel} bound outside it.
+     * ch. 10.6 + ch. 10.2: under which condition does evaluating {@code e} READ the binder {@code sleutel} bound
+     * outside it. See {@link Leesgarde} for the four answers.
      *
-     * <p>A static question with an exact answer in the subset this branch lowers: every form it lowers evaluates
-     * ALL its children, so "is reached" and "is present" coincide — with the ONE exception this walk carries,
-     * a nested {@code Let}, whose value is reached only when its own binder is read (clause 3). The ch. 10.2
-     * branch node, whose taken arm is a runtime verdict, is NOT lowered by this branch, so no node here can make
-     * the answer depend on a value.
-     *
-     * <p>WF-064/WF-076 in the two Let arms: a nested binder of the same name SHADOWS the outer one inside the
-     * BODY, while the nested {@code value} is evaluated in the ENCLOSING scope and therefore still reads it.
+     * <p>Two nodes carry the whole subtlety. A nested {@code Let}'s VALUE is reached only when its own binder is
+     * read (clause 3), so a read there is conjoined with that inner guard; WF-064/WF-076 put the nested binder's
+     * shadow on the BODY only, never on its own value. An {@code IfThenElse} splits: a read in the CONDITION is
+     * unconditional (the guard always runs), and a read in one arm alone is that arm's guard.
      */
-    private static boolean leestBinder(Expr e, String sleutel) {
-        if (e == null) return false;
-        if (e instanceof Expr.BinderRef br) return sleutel.equals(letSleutel(br.naam()));
+    private static Leesgarde leesGarde(Expr e, String sleutel) {
+        if (e == null) return NOOIT;
+        if (e instanceof Expr.BinderRef br) return sleutel.equals(letSleutel(br.naam())) ? ALTIJD : NOOIT;
         if (e instanceof Expr.Let b) {
-            if (leestBinder(b.body(), letSleutel(b.binder())) && leestBinder(b.value(), sleutel)) return true;
-            return !letSleutel(b.binder()).equals(sleutel) && leestBinder(b.body(), sleutel);
+            // read through the nested need: the need must be forced AND its value must read the binder
+            Leesgarde viaBehoefte = enOok(leesGarde(b.body(), letSleutel(b.binder())), leesGarde(b.value(), sleutel));
+            if (letSleutel(b.binder()).equals(sleutel)) return viaBehoefte;   // shadowed throughout the body
+            return ofOok(viaBehoefte, leesGarde(b.body(), sleutel));
         }
-        for (Expr k : gewoneKinderen(e)) if (leestBinder(k, sleutel)) return true;
-        return false;
+        if (e instanceof Expr.IfThenElse k) {
+            Leesgarde inConditie = NOOIT;
+            List<Expr> operanden = new ArrayList<>();
+            Conditie.bevatOperand(k.conditie(), x -> { operanden.add(x); return false; });
+            for (Expr o : operanden) inConditie = ofOok(inConditie, leesGarde(o, sleutel));
+            if (inConditie instanceof Altijd || inConditie instanceof Onbepaald) return inConditie;
+            Leesgarde dan = leesGarde(k.dan(), sleutel), anders = leesGarde(k.anders(), sleutel);
+            if (dan instanceof Altijd && anders instanceof Altijd) return ALTIJD;
+            if (dan instanceof Altijd && anders instanceof Nooit) return new Tak(k.conditie(), true);
+            if (dan instanceof Nooit && anders instanceof Altijd) return new Tak(k.conditie(), false);
+            if (dan instanceof Nooit && anders instanceof Nooit) return NOOIT;
+            return ONBEPAALD;   // a branch guard nested inside a branch — refused by name, never guessed
+        }
+        Leesgarde uit = NOOIT;
+        for (Expr k : gewoneKinderen(e)) uit = ofOok(uit, leesGarde(k, sleutel));
+        return uit;
+    }
+
+    /** Whether {@code e} reads the binder at all — the site collectors' question, which needs no guard. */
+    private static boolean leestBinder(Expr e, String sleutel) {
+        return !(leesGarde(e, sleutel) instanceof Nooit);
     }
 
     /**
-     * Every {@link Expr} child of an ORDINARY (non-ch.-4.10) node, condition operands included — the walk
-     * {@link #leestBinder} and the §6.5/§6.6 site collectors descend with a SCOPE of their own.
+     * Every {@link Expr} child of an ORDINARY (non-BINDING) node, condition operands included — the walk
+     * {@link #leesGarde} and the §6.5/§6.6 site collectors descend with a SCOPE (or a branch guard) of their own.
      *
      * <p>The two BINDING nodes are absent because each carries a scope this accessor cannot express, so every
-     * caller matches them itself. An {@link Expr.IfThenElse} is absent for a different reason: it binds
-     * nothing, but exactly ONE of its arms runs (ch. 10.2), which is a fire-time verdict no static child list
-     * can state — the exec branch answers it with a path probe, not with a wider accessor. This branch lowers
-     * no such node at all ({@link #waarde} markers it), so the conservative "no children" answer a walk gets
-     * here can never reach emitted DRL: the construct carrying it is inert before any of these walks decides
-     * anything. A branch that DID lower it must revisit {@link #leestBinder}, whose exactness rests on this
-     * very absence, rather than extend this list.
+     * caller matches them itself. An {@link Expr.IfThenElse} is absent for a third reason: it binds nothing, but
+     * exactly ONE of its arms runs (ch. 10.2), and a flat child list would report a read, or a §6.5 site, on the
+     * arm that does not. Every caller therefore matches it too — {@link #leesGarde} to build the branch guard,
+     * the site collectors to carry it into the companion's own pattern.
      */
     private static List<Expr> gewoneKinderen(Expr e) {
         List<Expr> uit = new ArrayList<>();
@@ -1532,13 +1598,13 @@ public final class DrlTranspiler {
     private void wortelNegatiefFout(Acc acc, ResolvedRegel r, Objecttype subject, String voorwaarde, boolean voorwaardeMarker, List<String> extraClausules) {
         if (voorwaardeMarker) return;
         List<Foutplek> wortels = new ArrayList<>();
-        verzamelWortels(r.waarde(), List.of(), wortels);
+        verzamelWortels(r.waarde(), Poort.OPEN, wortels);
         List<String> guards = new ArrayList<>();   // the "radicand < 0" guard per qualifying wortel
         for (Foutplek fp : wortels) {
             Expr.Functie w = (Expr.Functie) fp.plek();
             if (w.argumenten().size() != 1) continue;
             OperandDeel rd = companionDeel(acc, w.argumenten().get(0), subject);
-            String behoeften = behoefteGuards(acc, fp.behoeften(), subject);   // ch. 10.6 clause 2 — null = drop
+            String behoeften = plekGuards(acc, fp, subject);   // ch. 10.6 clause 2 / ch. 10.2 — null = drop
             if (rd != null && behoeften != null)
                 // a navigated radicand must guard its root before the "." dereference (mvel is not null-safe);
                 // an own attribute reads `basis < 0` directly (a null is false for "< 0", no NPE) — byte-identical.
@@ -1590,6 +1656,12 @@ public final class DrlTranspiler {
             // whenever the body reads the binder and the watch may over-approximate but never under-approximate.
             verzamelEigenReads(b.value(), subject, uit);
             verzamelEigenReads(b.body(), subject, uit);
+        } else if (e instanceof Expr.IfThenElse k) {
+            // ch. 10.2: only one arm RUNS, but the watch may over-approximate and may not under-approximate —
+            // an attribute the taken arm reads must be in the mask whichever arm that turns out to be.
+            Conditie.bevatOperand(k.conditie(), x -> { verzamelEigenReads(x, subject, uit); return false; });
+            verzamelEigenReads(k.dan(), subject, uit);
+            verzamelEigenReads(k.anders(), subject, uit);
         }
     }
 
@@ -1625,6 +1697,9 @@ public final class DrlTranspiler {
         } else if (e instanceof Expr.Let b) {   // ch. 4.10: an aggregation's clipping kenmerk under a binding
             verzamelFilterKenmerkReads(b.value(), subject, uit);
             verzamelFilterKenmerkReads(b.body(), subject, uit);
+        } else if (e instanceof Expr.IfThenElse k) {   // ch. 10.2: either arm may be the one that runs
+            verzamelFilterKenmerkReads(k.dan(), subject, uit);
+            verzamelFilterKenmerkReads(k.anders(), subject, uit);
         }
     }
 
@@ -1698,6 +1773,10 @@ public final class DrlTranspiler {
         } else if (e instanceof Expr.Let b) {   // ch. 4.10: a far-side read under a binding needs the same join
             verzamelNavRefs(b.value(), subject, uit);
             verzamelNavRefs(b.body(), subject, uit);
+        } else if (e instanceof Expr.IfThenElse k) {   // ch. 10.2: either arm may be the one that runs
+            Conditie.bevatOperand(k.conditie(), x -> { verzamelNavRefs(x, subject, uit); return false; });
+            verzamelNavRefs(k.dan(), subject, uit);
+            verzamelNavRefs(k.anders(), subject, uit);
         }
     }
 
@@ -1708,50 +1787,120 @@ public final class DrlTranspiler {
      * body's sites never run, so a companion built WITHOUT them would insert an Inconsistentie for a division
      * that never executed.
      */
-    private record Foutplek(Expr plek, List<Expr> behoeften) {}
+    private record Foutplek(Expr plek, List<Expr> behoeften, List<Tak> takken,
+                            java.util.Map<String, Expr> binders) {}
 
-    /** The needs a site sits behind, as companion-pattern guards ({@code "<vol>, <vol>, "}, empty for none), or
-     *  null when one of them does not decompose into a re-readable guard — the companion is then DROPPED, which
-     *  is the same scope limit a literal/parameter operand already carries: a fault that degrades to leeg but
-     *  raises no Inconsistentie, never a fault invented on a path the barrier cut off. */
-    private String behoefteGuards(Acc acc, List<Expr> behoeften, Objecttype subject) {
+    /**
+     * What stands between the rule firing and a §6.5/§6.6 site running, as the collectors walk down to it: the
+     * ch. 10.6 NEEDS whose barrier could end the {@code Let} first, and the ch. 10.2 branch guards whose arm must
+     * be the chosen one. Immutable and handed down the walk, so two siblings can never inherit each other's gate.
+     */
+    private record Poort(List<Expr> behoeften, List<Tak> takken, java.util.Map<String, Expr> binders) {
+        static final Poort OPEN = new Poort(List.of(), List.of(), java.util.Map.of());
+
+        Foutplek plek(Expr e) { return new Foutplek(e, behoeften, takken, binders); }
+
+        /** Behind one more need, and with its binder in scope — a branch guard below may READ that binder, and a
+         *  companion has to re-read the need itself to state it. */
+        Poort achterBehoefte(String sleutel, Expr waarde) {
+            List<Expr> b = new ArrayList<>(behoeften);
+            b.add(waarde);
+            java.util.Map<String, Expr> env = new java.util.LinkedHashMap<>(binders);
+            env.put(sleutel, waarde);   // WF-064: an inner binder of the same name shadows for this sub-walk only
+            return new Poort(b, takken, env);
+        }
+
+        Poort inTak(Conditie c, boolean positief) {
+            List<Tak> t = new ArrayList<>(takken);
+            t.add(new Tak(c, positief));
+            return new Poort(behoeften, t, binders);
+        }
+    }
+
+    /** The needs AND branch guards a site sits behind, as companion-pattern constraints
+     *  ({@code "<vol>, <garde>, "}, empty for none), or null when one of them does not decompose into a
+     *  re-readable form — the companion is then DROPPED, which is the same scope limit a literal/parameter
+     *  operand already carries: a fault that degrades to leeg but raises no Inconsistentie, never a fault
+     *  invented on a path the barrier or the unentered arm cut off. */
+    private String plekGuards(Acc acc, Foutplek fp, Objecttype subject) {
         StringBuilder b = new StringBuilder();
-        for (Expr n : behoeften) {
+        for (Expr n : fp.behoeften()) {
             OperandDeel d = companionDeel(acc, n, subject);
             if (d == null) return null;
             b.append(d.vol()).append(", ");
         }
+        if (fp.takken().isEmpty()) return b.toString();
+        // The branch guards are rendered in the CONDITION-side environment of the site: each binder in scope
+        // stands for its need's own re-readable read, since the companion is a separate rule and sees no
+        // consequence local. Built here, from the walk's own scope, and torn down again.
+        java.util.Map<String, String> vorige = new java.util.LinkedHashMap<>(acc.binderPatroon);
+        try {
+            for (java.util.Map.Entry<String, Expr> e : fp.binders().entrySet()) {
+                OperandDeel d = companionDeel(acc, e.getValue(), subject);
+                acc.binderPatroon.put(e.getKey(), d == null ? null : d.waarde());
+            }
+            for (Tak t : fp.takken()) {
+                String g = takGarde(acc, t, subject);
+                if (g == null) return null;
+                b.append(g).append(", ");
+            }
+        } finally {
+            acc.binderPatroon.clear();
+            acc.binderPatroon.putAll(vorige);
+        }
         return b.toString();
     }
 
-    private static void verzamelWortels(Expr e, List<Expr> behoeften, List<Foutplek> uit) {
+    /**
+     * One ch. 10.2 branch guard as a companion-PATTERN constraint. It is the same {@code rsAggVergelijk} term the
+     * consequence's ternary tests, but lowered condition-side — a companion is a separate rule and sees no
+     * consequence local, so a binder operand stands for its need's own re-readable read ({@link Acc#binderPatroon}).
+     * null when any part of that fails, and the caller then drops the companion rather than guard it wrongly.
+     */
+    private String takGarde(Acc acc, Tak t, Objecttype subject) {
+        if (!(t.conditie() instanceof Conditie.Vergelijking v) || !numeriekeOperator(v.op())) return null;
+        if (!getalachtig(v.links()) || !getalachtig(v.rechts())) return null;
+        Datatype lt = effType(v.links()), rt = effType(v.rechts());
+        io.github.yhavinga.regelspraak.model.Eenheid el = lt == null ? null : lt.eenheidOf();
+        io.github.yhavinga.regelspraak.model.Eenheid er = rt == null ? null : rt.eenheidOf();
+        if (el != null && er != null && el.convertibleNaar(er) && el.vereistOmrekening(er)) return null;
+        Frag l = operand(acc, v.links(), subject), r = operand(acc, v.rechts(), subject);
+        if (l.marker() || r.marker()) return null;
+        String test = fnImport("rsAggVergelijk") + "(" + l.text() + ", " + r.text()
+                + ", \"" + Operatoren.symbool(v.op()) + "\")";
+        return t.positief() ? test : "!(" + test + ")";
+    }
+
+    private static void verzamelWortels(Expr e, Poort poort, List<Foutplek> uit) {
         if (e instanceof Expr.Functie f) {
-            if (f.kind() == Expr.FunctieKind.WORTEL) uit.add(new Foutplek(f, behoeften));
-            for (Expr a : f.argumenten()) verzamelWortels(a, behoeften, uit);
+            if (f.kind() == Expr.FunctieKind.WORTEL) uit.add(poort.plek(f));
+            for (Expr a : f.argumenten()) verzamelWortels(a, poort, uit);
         } else if (e instanceof Expr.Binair b) {
-            verzamelWortels(b.links(), behoeften, uit);
-            verzamelWortels(b.rechts(), behoeften, uit);
+            verzamelWortels(b.links(), poort, uit);
+            verzamelWortels(b.rechts(), poort, uit);
         } else if (e instanceof Expr.Afgerond af) {
-            verzamelWortels(af.basis(), behoeften, uit);
+            verzamelWortels(af.basis(), poort, uit);
         } else if (e instanceof Expr.Begrensd bg) {
-            verzamelWortels(bg.basis(), behoeften, uit);
-            verzamelWortels(bg.minimum(), behoeften, uit);
-            verzamelWortels(bg.maximum(), behoeften, uit);
+            verzamelWortels(bg.basis(), poort, uit);
+            verzamelWortels(bg.minimum(), poort, uit);
+            verzamelWortels(bg.maximum(), poort, uit);
         } else if (e instanceof Expr.Let b) {
-            verzamelWortels(b.body(), letDescent(b, behoeften, (x, n) -> verzamelWortels(x, n, uit)), uit);
+            verzamelWortels(b.body(), letDescent(b, poort, (x, p) -> verzamelWortels(x, p, uit)), uit);
+        } else if (e instanceof Expr.IfThenElse k) {
+            Conditie.bevatOperand(k.conditie(), x -> { verzamelWortels(x, poort, uit); return false; });
+            verzamelWortels(k.dan(), poort.inTak(k.conditie(), true), uit);
+            verzamelWortels(k.anders(), poort.inTak(k.conditie(), false), uit);
         }
     }
 
     /** How the §6.5/§6.6 collectors descend one {@link Expr.Let}: the VALUE is walked under the enclosing needs,
      *  and only when the body READS the binder (ch. 10.6 clause 3 — an unread need runs no site at all); the need
      *  list the BODY then sits behind (clause 2) is handed back. One statement of the scope rule for both walks. */
-    private static List<Expr> letDescent(Expr.Let b, List<Expr> behoeften,
-                                         java.util.function.BiConsumer<Expr, List<Expr>> walk) {
-        if (!leestBinder(b.body(), letSleutel(b.binder()))) return behoeften;
-        walk.accept(b.value(), behoeften);
-        List<Expr> binnen = new ArrayList<>(behoeften);
-        binnen.add(b.value());
-        return binnen;
+    private static Poort letDescent(Expr.Let b, Poort poort,
+                                    java.util.function.BiConsumer<Expr, Poort> walk) {
+        if (!leestBinder(b.body(), letSleutel(b.binder()))) return poort;
+        walk.accept(b.value(), poort);
+        return poort.achterBehoefte(letSleutel(b.binder()), b.value());
     }
 
     /** §6.5 / Tabel 12: a "waarde gedeeld door leeg" is a Fout. The value side already degrades it to leeg
@@ -1766,12 +1915,12 @@ public final class DrlTranspiler {
     private void deelDoorLeegFout(Acc acc, ResolvedRegel r, Objecttype subject, String voorwaarde, boolean voorwaardeMarker, List<String> extraClausules) {
         if (voorwaardeMarker) return;          // the host rule is itself a no-op marker -> no division fires
         List<Foutplek> delingen = new ArrayList<>();
-        verzamelDelingen(r.waarde(), List.of(), delingen);
+        verzamelDelingen(r.waarde(), Poort.OPEN, delingen);
         List<String> patronen = new ArrayList<>();   // "dividend-vol, divisor-leeg" per qualifying division
         for (Foutplek fp : delingen) {
             Expr.Binair d = (Expr.Binair) fp.plek();
             OperandDeel dividend = companionDeel(acc, d.links(), subject), divisor = companionDeel(acc, d.rechts(), subject);
-            String behoeften = behoefteGuards(acc, fp.behoeften(), subject);   // ch. 10.6 clause 2 — null = drop
+            String behoeften = plekGuards(acc, fp, subject);   // ch. 10.6 clause 2 / ch. 10.2 — null = drop
             if (dividend != null && divisor != null && behoeften != null)
                 patronen.add(behoeften + dividend.vol() + ", " + divisor.leeg());
         }
@@ -1791,20 +1940,25 @@ public final class DrlTranspiler {
     /** Collect every "gedeeld door"/"gedeeld door (ABS)" node reachable through the arithmetic-wrapper layers
      *  (Binair / Afgerond / Begrensd) of a value expression — for the §6.5 fout surfacing. Aggregation operands
      *  are not descended (an aggregation divisor cannot be a plain re-readable guard). */
-    private static void verzamelDelingen(Expr e, List<Expr> behoeften, List<Foutplek> uit) {
+    private static void verzamelDelingen(Expr e, Poort poort, List<Foutplek> uit) {
         if (e instanceof Expr.Binair b) {
             if (b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS)
-                uit.add(new Foutplek(b, behoeften));
-            verzamelDelingen(b.links(), behoeften, uit);
-            verzamelDelingen(b.rechts(), behoeften, uit);
+                uit.add(poort.plek(b));
+            verzamelDelingen(b.links(), poort, uit);
+            verzamelDelingen(b.rechts(), poort, uit);
         } else if (e instanceof Expr.Afgerond af) {
-            verzamelDelingen(af.basis(), behoeften, uit);
+            verzamelDelingen(af.basis(), poort, uit);
         } else if (e instanceof Expr.Begrensd bg) {
-            verzamelDelingen(bg.basis(), behoeften, uit);
-            verzamelDelingen(bg.minimum(), behoeften, uit);
-            verzamelDelingen(bg.maximum(), behoeften, uit);
+            verzamelDelingen(bg.basis(), poort, uit);
+            verzamelDelingen(bg.minimum(), poort, uit);
+            verzamelDelingen(bg.maximum(), poort, uit);
         } else if (e instanceof Expr.Let b) {
-            verzamelDelingen(b.body(), letDescent(b, behoeften, (x, n) -> verzamelDelingen(x, n, uit)), uit);
+            verzamelDelingen(b.body(), letDescent(b, poort, (x, p) -> verzamelDelingen(x, p, uit)), uit);
+        } else if (e instanceof Expr.IfThenElse k) {
+            // ch. 10.2: a site in the CONDITION always runs; a site in an arm runs only when that arm is chosen.
+            Conditie.bevatOperand(k.conditie(), x -> { verzamelDelingen(x, poort, uit); return false; });
+            verzamelDelingen(k.dan(), poort.inTak(k.conditie(), true), uit);
+            verzamelDelingen(k.anders(), poort.inTak(k.conditie(), false), uit);
         }
     }
 
@@ -2162,6 +2316,7 @@ public final class DrlTranspiler {
         }
         if (e instanceof Expr.BinderRef br)     return binderLezing(acc, br);
         if (e instanceof Expr.Let b)            return letWaarde(acc, b, subject);
+        if (e instanceof Expr.IfThenElse k)     return keuzeWaarde(acc, k, subject);
         if (e instanceof Expr.Functie f) {
             // ch. 4.10: a binder read inside an aggregation would have to be re-read from the WHEN (that is where
             // the accumulate lives) while its need is a CONSEQUENCE-local — the two cannot meet. The frontend
@@ -2235,13 +2390,29 @@ public final class DrlTranspiler {
         if (acc.letVoorspel == null)   // no consequence to carry the need — honest marker, never a half lowering
             return Frag.todo("Let buiten de resultaatwaarde van een berekening (ch. 4.10)", b.bron());
         String sleutel = letSleutel(b.binder());
-        if (!leestBinder(b.body(), sleutel)) return waarde(acc, b.body(), subject);   // clause 3
+        Leesgarde garde = leesGarde(b.body(), sleutel);
+        if (garde instanceof Nooit) return waarde(acc, b.body(), subject);   // clause 3
+        if (garde instanceof Onbepaald)
+            return Frag.todo("behoefte gelezen onder twee verschillende takgardes (ch. 10.2/10.6)", b.bron());
+        // A read confined to ONE ch. 10.2 arm forces the need only when that arm runs, and its barrier fires only
+        // then too. The guard is lowered in the CURRENT scope — this binder is deliberately not bound yet (a
+        // condition reading it would have answered ALTIJD), and a guard reading a binder bound DEEPER inside the
+        // body cannot resolve here, which markers rather than emitting a forward reference.
+        String takTekst = null;
+        if (garde instanceof Tak t) {
+            Frag test = keuzeConditie(acc, t.conditie(), subject);
+            if (test == null || test.marker())
+                return Frag.todo("takgarde van een voorwaardelijk gelezen behoefte (ch. 10.2)", b.bron());
+            takTekst = t.positief() ? test.text() : "!(" + test.text() + ")";
+        }
         // WF-076: the value is lowered in the ENCLOSING scope — the binder is not visible in its own value, so it
         // is bound only after this call.
         Frag v = waarde(acc, b.value(), subject);
         String var = "$behoefte" + (++acc.letN);
-        String bewaakt = acc.letBewaking.isEmpty() ? v.text()
-                : "(" + String.join(" && ", acc.letBewaking) + ") ? " + v.text() + " : null";
+        List<String> poorten = new ArrayList<>(acc.letBewaking);
+        if (takTekst != null) poorten.add(takTekst);
+        String bewaakt = poorten.isEmpty() ? v.text()
+                : "(" + String.join(" && ", poorten) + ") ? " + v.text() + " : null";
         acc.letVoorspel.add("    " + var + " = " + bewaakt + ";\n");
         String vorige = acc.binders.put(sleutel, var);   // WF-064: an inner binder SHADOWS, it never overwrites
         acc.letBewaking.add(var + " != null");
@@ -2252,7 +2423,72 @@ public final class DrlTranspiler {
             acc.letBewaking.remove(acc.letBewaking.size() - 1);
             if (vorige == null) acc.binders.remove(sleutel); else acc.binders.put(sleutel, vorige);
         }
-        return Frag.from("(" + var + " == null ? null : " + body.text() + ")", v, body);
+        // ch. 10.6 clause 2, at the binding Let. Under a branch guard the barrier carries it too: a need the
+        // unentered arm never read is null because it was never forced, and that must NOT empty the Let.
+        String barriere = takTekst == null ? var + " == null" : "(" + takTekst + ") && " + var + " == null";
+        return Frag.from("(" + barriere + " ? null : " + body.text() + ")", v, body);
+    }
+
+    // ---------------- IR-SPEC ch. 4.10 / RUNTIME-SEMANTICS ch. 10.2: the value-level conditional ----------------
+
+    /**
+     * ch. 10.2: evaluate the guard, then EXACTLY the chosen branch — strict, no coalesce, the other arm not
+     * evaluated at all. An mvel ternary is that semantics verbatim: it evaluates one arm, so a §6.5 division in
+     * the arm not taken never runs (and the companion built for it carries the same guard, {@link #takGarde}).
+     */
+    private Frag keuzeWaarde(Acc acc, Expr.IfThenElse k, Objecttype subject) {
+        Frag test = keuzeConditie(acc, k.conditie(), subject);
+        if (test == null) return Frag.todo("ch. 10.2-conditie buiten de gelowerde vorm", k.bron());
+        Frag dan = waarde(acc, k.dan(), subject), anders = waarde(acc, k.anders(), subject);
+        return Frag.from("(" + test.text() + " ? " + dan.text() + " : " + anders.text() + ")", test, dan, anders);
+    }
+
+    /**
+     * The ch. 10.2 branch guard as a single mvel term, through the SHARED {@code rsAggVergelijk} — the same helper
+     * the exec branch's own ch. 10.2 lowering uses, so both branches read one table for the leeg cells (§5.3
+     * Tabel 37 / §5.6 Tabel 44 / Tabel 33) and compare an exact Breuk exactly.
+     *
+     * <p><b>The leeg flank, measured 2026-09-18 rather than assumed.</b> WF-077 admits only binders, parameters
+     * and literals (with arithmetic combinators over them) as condition operands, and each of the three is
+     * non-leeg where it is read: a binder read either yields a gevuld value or ends its {@code Let} first
+     * (ch. 10.6 clause 2), a parameter that a case does not supply is a FAIL-FAST fault in {@code ref}
+     * ("parameter … is unbound in this case", ch. 5.7 — measured, it is not leeg), and a literal has a lexeme.
+     * So a verifier-clean document cannot present a leeg guard operand at all, which is exactly what WF-077 is
+     * for. Routing through {@code rsAggVergelijk} nevertheless means that a document that somehow does gets
+     * {@code ref}'s own table rather than an mvel accident.
+     *
+     * <p>null — an honest marker at the caller — for everything else, mirroring the exec branch's refusals one
+     * for one: a non-comparison condition, a non-numeric operator, a non-numeric operand, an operand that does
+     * not lower, and a comparison that would need a §5.1 Tabel 32 UNIT restatement, which {@code rsAggVergelijk}
+     * does not apply. No half lowering.
+     */
+    private Frag keuzeConditie(Acc acc, Conditie c, Objecttype subject) {
+        if (!(c instanceof Conditie.Vergelijking v) || !numeriekeOperator(v.op())) return null;
+        if (!getalachtig(v.links()) || !getalachtig(v.rechts())) return null;
+        Datatype lt = effType(v.links()), rt = effType(v.rechts());
+        io.github.yhavinga.regelspraak.model.Eenheid el = lt == null ? null : lt.eenheidOf();
+        io.github.yhavinga.regelspraak.model.Eenheid er = rt == null ? null : rt.eenheidOf();
+        Eenheidsconflict.eisHerschaalbaar(el, er, "een ch. 10.2-takgarde (DRL-tekst)");
+        if (el != null && er != null && el.convertibleNaar(er) && el.vereistOmrekening(er)) return null;
+        Frag l = waarde(acc, v.links(), subject), r = waarde(acc, v.rechts(), subject);
+        if (l.marker() || r.marker()) return null;
+        fnImport("rsAggVergelijk");
+        return Frag.ok("rsAggVergelijk(" + l.text() + ", " + r.text() + ", \"" + Operatoren.symbool(v.op()) + "\")");
+    }
+
+    /** The comparison operators a ch. 10.2 guard lowers — the numeric six; a date operator is refused, exactly as
+     *  the exec branch refuses it (mirrors {@code ExecModelTranspiler.isNumeriekOp}). */
+    private static boolean numeriekeOperator(Conditie.Operator op) {
+        return switch (op) {
+            case KLEINER, KLEINER_OF_GELIJK, GROTER, GROTER_OF_GELIJK, GELIJK, ONGELIJK -> true;
+            default -> false;
+        };
+    }
+
+    /** Whether an operand is number-like enough for {@code rsAggVergelijk} (mirrors the exec branch's
+     *  {@code getalachtigVergelijkbaar}); an unknown-typed operand is refused rather than guessed. */
+    private static boolean getalachtig(Expr e) {
+        return e != null && e.type() != null && e.type().isGetalachtig();
     }
 
     /**
@@ -4003,6 +4239,14 @@ public final class DrlTranspiler {
     }
 
     private Frag operand(Acc acc, Expr e, Objecttype subject) {
+        if (e instanceof Expr.BinderRef br) {
+            // ch. 4.10 on the CONDITION side: a separate rule (a §6.5/§6.6 companion) cannot read the host
+            // consequence's local, so the binder stands for the need's OWN re-readable form. A need without one
+            // markers, which drops the companion instead of inventing a guard — see takGarde.
+            String patroon = acc.binderPatroon.get(letSleutel(br.naam()));
+            return patroon == null ? Frag.todo("binder zonder herleesbare behoefte in een patroon", br.bron())
+                    : Frag.ok(patroon);
+        }
         if (e instanceof Expr.DimensieCel c)
             // §3.6 a dimensioned cell on the CONDITION side is deferred to a marker (the value/then side
             // lowers it). A Drools PATTERN constraint cannot host the null-guarded ternary the value form
@@ -4164,6 +4408,9 @@ public final class DrlTranspiler {
         // hands back whatever its need computed, which may be an exact Breuk — the numeric-type gate above is what
         // keeps the rsWaarde wrap safe there, and for a terminating BigDecimal the wrap is the identity.
         if (e instanceof Expr.Let b) return kanBreukOpleveren(b.body());
+        // ch. 10.2: either arm may be the value, so either arm may be the Breuk — a blind answer here takes the
+        // (BigDecimal) cast path and THROWS on the exact rational the arm really computes.
+        if (e instanceof Expr.IfThenElse k) return kanBreukOpleveren(k.dan()) || kanBreukOpleveren(k.anders());
         if (e instanceof Expr.BinderRef) return true;
         // §6.9 "de absolute waarde van" preserves a Breuk (rsAbs returns Object); other builtins (date-component,
         // datum-met, aggregation) return a BigDecimal/date, so they need no collapse and stay unwrapped.

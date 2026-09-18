@@ -38,25 +38,35 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       its own answer when its neighbour empties — the three shapes a consequence-wide null guard, an
  *       in-place binder map or a value-text substitution each get wrong;</li>
  *   <li>a VOORWAARDE-ONLY variable, which the frontend already brought to both branches WITHOUT a Let: the
- *       non-regression flank of this whole card.</li>
+ *       non-regression flank of this whole card;</li>
+ *   <li><b>ch. 10.2</b>: each arm chosen in turn; a branch node INSIDE a Let chain whose guard reads an earlier
+ *       binder and whose arm reads a later one (the tariefstelling shape); a need only the UNENTERED arm reads,
+ *       which may be neither forced nor allowed to raise its barrier; and the §6.5 site in each arm — reported
+ *       from the one that runs, silent from the one that does not.</li>
  * </ul>
  *
  * <p><b>What the pins actually catch, measured by mutation on 2026-09-18</b> — a suite that only agrees with
- * the implementation it was written beside proves nothing, so the three ways to get this construct wrong were
- * each built and run:
+ * the implementation it was written beside proves nothing, so every way to get these two constructs wrong was
+ * built and run (all counts over the 24 tests here):
  * <ul>
- *   <li>the barrier dropped (an ALWAYS-WRITING Let) → 5 red, among them
- *       {@code een_lege_behoefte_maakt_de_hele_let_leeg…}, {@code een_lege_buitenbehoefte…} and
- *       {@code het_lege_doel_is_observeerbaar_afwezig…};</li>
- *   <li>the Let always leeg (a NEVER-WRITING one) → 11 red, every filled pin among them;</li>
+ *   <li>the ch. 10.6 barrier dropped (an ALWAYS-WRITING Let) → 6 red, among them
+ *       {@code een_lege_behoefte_maakt_de_hele_let_leeg…} and {@code het_lege_doel_is_observeerbaar_afwezig…};</li>
+ *   <li>the Let always leeg (a NEVER-WRITING one) → 18 red, every filled pin among them;</li>
  *   <li>the prelude's own guard dropped → {@code een_lege_buitenbehoefte…} ERRORS with
  *       "Breuk deling door 0", the fault ch. 10.6 says must not happen;</li>
- *   <li>the §6.5 companion walk left at the Let (no descent) →
- *       {@code een_deling_door_leeg_binnen_een_behoefte…} goes red: "verwacht inconsistent …, werkelijk
- *       consistent", the silent direction;</li>
+ *   <li>the §6.5 companion walk left at the Let (no descent) → 2 red, among them
+ *       {@code een_deling_door_leeg_binnen_een_behoefte…}: "verwacht inconsistent …, werkelijk consistent",
+ *       the silent direction;</li>
  *   <li>the companion emitted WITHOUT its needs as a gate →
  *       {@code een_deling_achter_een_lege_behoefte…} goes red: "verwacht consistent, werkelijk inconsistent",
- *       a fault invented on a path the barrier cut off.</li>
+ *       a fault invented on a path the barrier cut off;</li>
+ *   <li><b>ch. 10.2, the arms SWAPPED</b> → 6 red, both branch pins among them;</li>
+ *   <li><b>the companion emitted without its BRANCH guard</b> →
+ *       {@code dezelfde_deling_in_de_niet_betreden_tak_meldt_zich_niet} goes red, the arm-level twin of the
+ *       barrier case above;</li>
+ *   <li><b>a conditionally-read need forced unconditionally</b> (its branch guard dropped from the prelude and
+ *       the barrier) → {@code een_behoefte_die_alleen_de_niet_betreden_tak_leest_wordt_niet_geforceerd} goes
+ *       red — the flank {@code synth3-takbarriere} pins in the corpus.</li>
  * </ul>
  */
 class LetResultaatTakWitnessTest {
@@ -192,6 +202,75 @@ class LetResultaatTakWitnessTest {
         beideSpelen(jutter(GEVULD, waarde("zusters", "45.00")));
     }
 
+    // ---------------- 5b. ch. 10.2: the value-level conditional ----------------
+
+    @Test void de_danstak_wordt_betreden_en_de_anderstak_niet() throws Exception {
+        // tak := Let k = inkomen in (als k groter dan 10,00 dan k maal 2 anders 2,00). ref: 80.00 at inkomen
+        // 40,00 — the guard holds, so the DAN arm is the value and the anders arm is not evaluated at all.
+        beideSpelen(jutter(GEVULD, waarde("tak", "80.00")));
+    }
+
+    @Test void de_anderstak_wordt_betreden_en_de_danstak_niet() throws Exception {
+        // the same rule at inkomen 2,00: the guard fails, so the ANDERS arm decides. ref: 2.00. An
+        // implementation with the arms swapped passes neither this test nor the one above.
+        beideSpelen(jutter("\"inkomen\": { \"number\": \"2.00\" }, " + INVOER_REST, waarde("tak", "2.00")));
+    }
+
+    @Test void een_lege_behoefte_in_de_takgarde_eindigt_de_let_voor_de_keuze() throws Exception {
+        // the guard READS a binder (WF-077), so a leeg need ends the Let at that read (ch. 10.6 clause 2) and no
+        // arm is chosen at all — this is WHY a ch. 10.2 guard never sees a leeg operand. Measured 2026-09-18 on
+        // the only other route a WF-077-clean document has, an unsupplied parameter: ref FAULTS fail-fast
+        // ("parameter … is unbound in this case", ch. 5.7), so it is not leeg either. The guard nevertheless goes
+        // through the SHARED rsAggVergelijk, so a document that somehow presents a leeg operand gets ref's own
+        // Tabel 33/37/44 rather than an mvel accident. ref here: tak leeg.
+        beideSpelen(jutter(LEEG, leeg("tak")));
+    }
+
+    @Test void een_ifthenelse_in_een_letbody_leest_een_eerdere_behoefte() throws Exception {
+        // the jutterswet-tariefstelling shape, isolated: takketen := Let a = inkomen in Let b = a maal 2 in
+        // (als a groter dan 10,00 dan b anders 0,00). The guard reads the EARLIER binder and the chosen arm reads
+        // the LATER one — the chain and the branch in one value. ref: 80.00 at inkomen 40,00, 0.00 at 2,00.
+        beideSpelen(jutter(GEVULD, waarde("takketen", "80.00")));
+        beideSpelen(jutter("\"inkomen\": { \"number\": \"2.00\" }, " + INVOER_REST, waarde("takketen", "0.00")));
+    }
+
+    @Test void een_behoefte_die_alleen_de_niet_betreden_tak_leest_wordt_niet_geforceerd() throws Exception {
+        // takopslag := Let g = inkomen in Let o = takopslaggrond in (als g groter dan 10,00 dan 3,00 anders
+        // 3,00 plus o), with the guard HOLDING and `takopslaggrond` ABSENT. ch. 10.6 clause 3 over a ch. 10.2
+        // arm: the dan arm never reads `o`, so its need is never forced and its barrier never fires — the target
+        // is WRITTEN. ref: 3.00. An eager forcing (the need computed whatever the guard says) makes `o` leeg and
+        // the barrier empties the whole Let: the corpus pins the same flank in synth3-takbarriere.
+        beideSpelen(jutter(ONGELEZEN_TAKOPSLAG, waarde("takopslag", "3.00")));
+    }
+
+    @Test void dezelfde_behoefte_telt_wel_mee_zodra_haar_tak_betreden_wordt() throws Exception {
+        // the other side, so the pin above is not passing on an arm that never adds: at inkomen 2,00 the ANDERS
+        // arm runs, `o` IS read and its need is forced. ref: 9.00 (3,00 + 6,00).
+        beideSpelen(jutter("\"inkomen\": { \"number\": \"2.00\" }, " + INVOER_REST, waarde("takopslag", "9.00")));
+    }
+
+    @Test void een_deling_in_de_betreden_tak_meldt_zich() throws Exception {
+        // takdeling := Let k = inkomen in (als k groter dan 10,00 dan teller gedeeld door takdeler anders 7,00),
+        // guard HOLDING and the divisor ABSENT: the §6.5 site really runs, so ref answers INCONSISTENT and the
+        // target stays leeg. The DRL companion carries the need gate AND the branch guard, and must still fire.
+        beideSpelen(jutterMet(LEGE_TAKDELER_DAN, leeg("takdeling") + ", " + waarde("tak", "80.00")
+                + ", { \"kind\": \"inconsistent\", \"rule\": \"takdeling van een jutter\", \"label\": \"J1\" }"));
+    }
+
+    @Test void dezelfde_deling_in_de_niet_betreden_tak_meldt_zich_niet() throws Exception {
+        // the same rule and the same absent divisor at inkomen 2,00: the ANDERS arm runs, the division is never
+        // evaluated, and there is nothing to report — ref: takdeling 7.00, CONSISTENT. A companion without the
+        // branch guard invents an Inconsistentie here.
+        //
+        // NOTE, measured 2026-09-18 and reported rather than pinned away: on THIS shape the clingo backend
+        // answers inconsistent where ref answers consistent ("expected consistent, but the model carries 1
+        // inconsistent fact(s)") — its §6.5 fence is not path-following through a ch. 10.2 arm. That is a
+        // ref-vs-clingo question in a backend this card may not touch, so the shape is witnessed here (where ref
+        // is the arbiter and BOTH Drools branches agree with it) and never proposed as a corpus golden, which
+        // gate 6 would rightly reject.
+        beideSpelen(jutter(LEGE_TAKDELER_ANDERS, waarde("takdeling", "7.00") + ", " + waarde("tak", "2.00")));
+    }
+
     // ---------------- 6. the non-regression flank: a voorwaarde-only variable ----------------
 
     @Test void een_voorwaarde_only_variabele_blijft_zonder_let_werken() throws Exception {
@@ -235,25 +314,48 @@ class LetResultaatTakWitnessTest {
      *  is making a point about THAT divisor, since a leeg divisor is a §6.5 Fout wherever its need is forced. */
     private static final String INVOER_REST =
             "\"teller\": { \"number\": \"40.00\" }, \"deler\": { \"number\": \"4\" }, \"staffel\": { \"number\": \"4\" }, "
-            + "\"heffingsdeler\": { \"number\": \"4\" }, \"beschermdeler\": { \"number\": \"4\" }";
+            + "\"heffingsdeler\": { \"number\": \"4\" }, \"beschermdeler\": { \"number\": \"4\" }, "
+            + "\"takdeler\": { \"number\": \"4\" }, \"takopslaggrond\": { \"number\": \"6.00\" }";
     private static final String GEVULD = "\"inkomen\": { \"number\": \"40.00\" }, " + INVOER_REST;
     private static final String LEEG = INVOER_REST;                     // inkomen ABSENT
     private static final String NULDELER =
             "\"inkomen\": { \"number\": \"40.00\" }, \"teller\": { \"number\": \"40.00\" }, "
             + "\"deler\": { \"number\": \"0\" }, \"staffel\": { \"number\": \"4\" }, "
-            + "\"heffingsdeler\": { \"number\": \"4\" }, \"beschermdeler\": { \"number\": \"4\" }";
+            + "\"heffingsdeler\": { \"number\": \"4\" }, \"beschermdeler\": { \"number\": \"4\" }, "
+            + "\"takdeler\": { \"number\": \"4\" }, \"takopslaggrond\": { \"number\": \"6.00\" }";
     private static final String BARRIERE_VOOR_DE_DELING =                // inkomen ABSENT and staffel 0
             "\"teller\": { \"number\": \"40.00\" }, \"deler\": { \"number\": \"0\" }, \"staffel\": { \"number\": \"0\" }, "
-            + "\"heffingsdeler\": { \"number\": \"4\" }, \"beschermdeler\": { \"number\": \"4\" }";
+            + "\"heffingsdeler\": { \"number\": \"4\" }, \"beschermdeler\": { \"number\": \"4\" }, "
+            + "\"takdeler\": { \"number\": \"4\" }, \"takopslaggrond\": { \"number\": \"6.00\" }";
     /** `heffingsdeler` ABSENT: the §6.5 site inside a NEED's own value really runs, and faults. */
     private static final String LEGE_HEFFINGSDELER =
             "\"inkomen\": { \"number\": \"40.00\" }, \"teller\": { \"number\": \"40.00\" }, "
             + "\"deler\": { \"number\": \"4\" }, \"staffel\": { \"number\": \"4\" }, "
-            + "\"beschermdeler\": { \"number\": \"4\" }";
+            + "\"beschermdeler\": { \"number\": \"4\" }, "
+            + "\"takdeler\": { \"number\": \"4\" }, \"takopslaggrond\": { \"number\": \"6.00\" }";
     /** `beschermdeler` AND inkomen ABSENT: the same site sits BEHIND a barrier that fires first. */
     private static final String LEGE_DELER_ACHTER_DE_BARRIERE =
             "\"teller\": { \"number\": \"40.00\" }, \"deler\": { \"number\": \"4\" }, "
-            + "\"staffel\": { \"number\": \"4\" }, \"heffingsdeler\": { \"number\": \"4\" }";
+            + "\"staffel\": { \"number\": \"4\" }, \"heffingsdeler\": { \"number\": \"4\" }, "
+            + "\"takdeler\": { \"number\": \"4\" }, \"takopslaggrond\": { \"number\": \"6.00\" }";
+    /** inkomen 40,00 (the DAN arm runs) with `takdeler` ABSENT: the §6.5 site in the ENTERED arm really runs. */
+    private static final String LEGE_TAKDELER_DAN =
+            "\"inkomen\": { \"number\": \"40.00\" }, \"teller\": { \"number\": \"40.00\" }, "
+            + "\"deler\": { \"number\": \"4\" }, \"staffel\": { \"number\": \"4\" }, "
+            + "\"heffingsdeler\": { \"number\": \"4\" }, \"beschermdeler\": { \"number\": \"4\" }, "
+            + "\"takopslaggrond\": { \"number\": \"6.00\" }";
+    /** inkomen 2,00 (the ANDERS arm runs) with the same divisor absent: the site is in the arm NOT taken. */
+    private static final String LEGE_TAKDELER_ANDERS =
+            "\"inkomen\": { \"number\": \"2.00\" }, \"teller\": { \"number\": \"40.00\" }, "
+            + "\"deler\": { \"number\": \"4\" }, \"staffel\": { \"number\": \"4\" }, "
+            + "\"heffingsdeler\": { \"number\": \"4\" }, \"beschermdeler\": { \"number\": \"4\" }, "
+            + "\"takopslaggrond\": { \"number\": \"6.00\" }";
+    /** inkomen 40,00 (the DAN arm runs) with `takopslaggrond` ABSENT — a need only the OTHER arm reads. */
+    private static final String ONGELEZEN_TAKOPSLAG =
+            "\"inkomen\": { \"number\": \"40.00\" }, \"teller\": { \"number\": \"40.00\" }, "
+            + "\"deler\": { \"number\": \"4\" }, \"staffel\": { \"number\": \"4\" }, "
+            + "\"heffingsdeler\": { \"number\": \"4\" }, \"beschermdeler\": { \"number\": \"4\" }, "
+            + "\"takdeler\": { \"number\": \"4\" }";
 
     private static String jutter(String attributen, String verwacht) {
         return jutterMet(attributen, verwacht + ", { \"kind\": \"consistent\" }");
@@ -321,6 +423,13 @@ class LetResultaatTakWitnessTest {
                 .formatted(naam, num(2, false, teken), naam);
     }
 
+    /** ch. 4.10 the value-level conditional. WF-069 makes both arms agree with the node's {@code type}, sign
+     *  included, which the verifier checks — so the arms' shared sign is spelled at each call site. */
+    private static String ite(String conditie, String dan, String anders, String teken) {
+        return ("{\"node\":\"IfThenElse\",\"type\":%s,\"condition\":%s,\"then\":%s,\"else\":%s,"
+                + "\"bron\":\"als … dan … anders …\"}").formatted(num(2, false, teken), conditie, dan, anders);
+    }
+
     private static String verg(String op, String links, String rechts) {
         return "{\"node\":\"Vergelijking\",\"op\":\"%s\",\"links\":%s,\"rechts\":%s,\"periode\":null,\"bron\":\"%s\"}"
                 .formatted(op, links, rechts, op.toLowerCase());
@@ -343,6 +452,9 @@ class LetResultaatTakWitnessTest {
         String staffel = attr("staffel", 0, true, NN);
         String heffingsdeler = attr("heffingsdeler", 0, true, NN);
         String beschermdeler = attr("beschermdeler", 0, true, NN);
+        String takdeler = attr("takdeler", 0, true, NN);
+        String takopslaggrond = attr("takopslaggrond", 2, false, NN);
+        String boven10 = verg("GROTER", bref("k", NN), lit("10.00", 2, false));
         String dubbelDef = binair("MAAL", inkomen, lit("2", 0, true));
 
         String[][] rs = {
@@ -396,6 +508,27 @@ class LetResultaatTakWitnessTest {
              let("veilig", inkomen,
                  let("r", binair("GEDEELD_DOOR", teller, beschermdeler),
                      binair("PLUS", bref("veilig", NN), bref("r", ONBEPAALD)), ONBEPAALD), ONBEPAALD), "null"},
+            // ---- ch. 10.2, the value-level conditional (WF-069: inside a Let body; WF-077: binder guard) ----
+            // both arms, one rule
+            {"tak van een jutter", attr("tak", 2, false, ONBEPAALD),
+             let("k", inkomen, ite(boven10, binair("MAAL", bref("k", NN), lit("2", 0, true)),
+                     lit("2.00", 2, false), ONBEPAALD), ONBEPAALD), "null"},
+            // a §6.5 site in ONE arm — it runs in the entered arm and not in the other
+            {"takdeling van een jutter", attr("takdeling", 2, false, ONBEPAALD),
+             let("k", inkomen, ite(boven10, binair("GEDEELD_DOOR", teller, takdeler),
+                     lit("7.00", 2, false), ONBEPAALD), ONBEPAALD), "null"},
+            // a NEED only the anders arm reads: the dan arm may not force it, nor raise its barrier
+            {"takopslag van een jutter", attr("takopslag", 2, false, ONBEPAALD),
+             let("g", inkomen,
+                 let("o", takopslaggrond,
+                     ite(verg("GROTER", bref("g", NN), lit("10.00", 2, false)), lit("3.00", 2, false),
+                         binair("PLUS", lit("3.00", 2, false), bref("o", NN)), ONBEPAALD), ONBEPAALD), ONBEPAALD), "null"},
+            // the tariefstelling shape: a LATER need read by one arm, the guard reading the earlier binder
+            {"takketen van een jutter", attr("takketen", 2, false, ONBEPAALD),
+             let("a", inkomen,
+                 let("b", binair("MAAL", bref("a", NN), lit("2", 0, true)),
+                     ite(verg("GROTER", bref("a", NN), lit("10.00", 2, false)), bref("b", ONBEPAALD),
+                         lit("0.00", 2, false), ONBEPAALD), ONBEPAALD), ONBEPAALD), "null"},
         };
 
         StringBuilder namen = new StringBuilder(), regels = new StringBuilder();
@@ -405,11 +538,13 @@ class LetResultaatTakWitnessTest {
             regels.append(regel(r[0], r[1], r[2], r[3]));
         }
         StringBuilder attributen = new StringBuilder(
-                "\"inkomen\":%s,\"teller\":%s,\"deler\":%s,\"staffel\":%s,\"heffingsdeler\":%s,\"beschermdeler\":%s"
+                ("\"inkomen\":%s,\"teller\":%s,\"deler\":%s,\"staffel\":%s,\"heffingsdeler\":%s,"
+                 + "\"beschermdeler\":%s,\"takdeler\":%s,\"takopslaggrond\":%s")
                         .formatted(num(2, false, NN), num(2, false, NN), num(0, true, NN), num(0, true, NN),
-                                num(0, true, NN), num(0, true, NN)));
+                                num(0, true, NN), num(0, true, NN), num(0, true, NN), num(2, false, NN)));
         for (String naam : new String[]{"aandeel", "gestaffeld", "quotient", "garde", "metlet", "zonderlet",
-                                        "dubbelop", "schaduw", "zusters", "premie", "heffing", "bescherm"})
+                                        "dubbelop", "schaduw", "zusters", "premie", "heffing", "bescherm",
+                                        "tak", "takdeling", "takopslag", "takketen"})
             attributen.append(",\"%s\":%s".formatted(naam, num(2, false, ONBEPAALD)));
 
         return ("{\"formaat\":\"regelspraak-ir-v0\","
