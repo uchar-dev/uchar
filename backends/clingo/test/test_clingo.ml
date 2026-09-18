@@ -4175,20 +4175,20 @@ let tak_doc3 =
                   "bron": "de twee staffeldelen opgeteld" }|}
               (arm (tak_par "drempel")) (arm (tak_par "hoge drempel")) tak_nn))
 
-let tak_case ~inkomen ?restpost ~parameters ~verwacht () =
+let tak_case ~inkomen ?restpost ?wikkeldeler ~parameters ~verwacht () =
+  let opt naam = function
+    | None -> ""
+    | Some v -> Printf.sprintf {|, "%s": { "number": "%s" }|} naam v
+  in
   Printf.sprintf
     {|{ "format": "uchar-case-v0", "asOfDate": null,
   "input": { "instances": [
       { "label": "J1", "objectType": "Jutter",
-        "attributes": { "inkomen": { "number": "%s" }%s },
+        "attributes": { "inkomen": { "number": "%s" }%s%s },
         "roles": {}, "characteristics": [] } ],
     "parameters": { %s } },
   %s }|}
-    inkomen
-    (match restpost with
-     | None -> ""
-     | Some r -> Printf.sprintf {|, "restpost": { "number": "%s" }|} r)
-    parameters verwacht
+    inkomen (opt "restpost" restpost) (opt "wikkeldeler" wikkeldeler) parameters verwacht
 
 let tak_params12 = {|"drempel": { "number": "10" }, "basisheffing": { "number": "5" }|}
 
@@ -4548,6 +4548,58 @@ let () =
    vóór deze kaart niet alleen een verzonnen melding maar ook een verkeerde
    WAARDE: de lege behoefte maakte de hele tak onafleidbaar, en de PLUS
    coalesceerde die naar 0,00. *)
+(* --- een REKENOPERATOR tussen de Let en de takknoop ----------------------
+   De gewoonste vorm die de opsomming hierboven miste. `Let z = … in ((als …
+   dan … anders z) plus de basisheffing)` leest z in precies één arm, net als
+   de kale vorm — er staat alleen een operator tussen. ref evalueert de waarde
+   op precies dezelfde plek; de vertaling moet dus ook precies daar duwen.
+
+   Deze vorm was op de merge-base een LUIDE WEIGERING ("expression kind not
+   translated"), omdat de knoop onder een operator daar helemaal niet gedragen
+   werd. Toen die knoop draagbaar werd zonder dat de ch.-10.6-duw meeverbreedde,
+   werd de weigering een STIL FOUT ANTWOORD — het ergst mogelijke ruilmiddel.
+   Daarom staan beide richtingen hier, en daarom staat de wikkelgetuige
+   eronder: die pint dat de duw alleen de behoefte verplaatst en niets anders. *)
+
+let tak_attrs_wikkel =
+  Printf.sprintf {|"inkomen": %s, "restpost": %s, "wikkeldeler": %s, "heffing": %s|} tak_nn tak_nn
+    tak_nn tak_ob
+
+(* Let k = zijn inkomen in (Let z = k gedeeld door zijn restpost in
+      ((als k > de drempel dan 0,00 anders z) plus <rechterhand>)) *)
+let tak_doc_operator ~rechterhand =
+  tak_doc ~attributen:tak_attrs_wikkel
+    ~parameters:(tak_param "drempel" ^ ", " ^ tak_param "basisheffing")
+    ~doel_typ:tak_ob
+    ~waarde:
+      (tak_let ~typ:tak_ob ~binder:"k" ~value:(tak_attr "inkomen")
+         ~body:
+           (tak_let ~typ:tak_ob ~binder:"z" ~value:tak_deling
+              ~body:
+                (Printf.sprintf
+                   {|{ "node": "Binair", "op": "PLUS", "links": %s, "rechts": %s, "type": %s,
+                       "bron": "de staffel plus de rechterhand" }|}
+                   (tak_ite ~typ:tak_ob ~links:(tak_binder "k") ~rechts:(tak_par "drempel")
+                      ~dan:(Printf.sprintf
+                              {|{ "node": "Literal", "waarde": "0.00", "type": %s,
+                                  "bron": "0,00" }|} tak_ob)
+                      ~anders:(tak_binder ~typ:tak_ob "z"))
+                   rechterhand tak_ob)))
+
+(* de kale operator-tussenvorm: de rechterhand is een gewone parameterlezing *)
+let tak_doc9 = tak_doc_operator ~rechterhand:(tak_par "basisheffing")
+
+(* de WIKKELGETUIGE: de rechterhand draagt zelf een §6.5-plek, BUITEN de tak.
+   Die moet blijven melden zoals ref het doet — de duw verplaatst de behoefte,
+   niet de rest van de wikkel. *)
+let tak_doc10 =
+  tak_doc_operator
+    ~rechterhand:
+      (Printf.sprintf
+         {|{ "node": "Binair", "op": "GEDEELD_DOOR", "links": %s, "rechts": %s, "type": %s,
+             "bron": "de grondslag gedeeld door zijn wikkeldeler" }|}
+         (tak_binder "k") (tak_attr "wikkeldeler") tak_ob)
+
 let tak_doc6 =
   tak_doc
     ~attributen:
@@ -4581,6 +4633,88 @@ let () =
   clingo_matches
     ~name:"ch10.6 behoefte in de niet-betreden arm onder een operator meldt niet en rekent"
     ~ir:tak_doc6 ~case_text:niet_betreden
+
+let () =
+  (* de twee lensvarianten: de dan-arm wordt betreden, dus de deling in de
+     waarde van z mag niets doen — niet melden (lege deler) en niet afbreken
+     (nul-deler). Op de merge-base was dit een luide weigering; ertussenin een
+     stil fout antwoord; nu speelt het, met ref als arbiter ernaast. *)
+  let vijf_consistent =
+    {|"expected": [
+        { "kind": "attributeValue", "label": "J1", "attribute": "heffing",
+          "value": { "number": "5" } },
+        { "kind": "consistent" } ]|}
+  in
+  let op_leeg40 = tak_case ~inkomen:"40" ~parameters:tak_params12 ~verwacht:vijf_consistent () in
+  let op_nul40 =
+    tak_case ~inkomen:"40" ~restpost:"0" ~parameters:tak_params12 ~verwacht:vijf_consistent ()
+  in
+  ref_matches ~name:"ch10.6 operator tussen Let en tak, lege deler in de niet-betreden arm"
+    ~ir:tak_doc9 ~case_text:op_leeg40;
+  clingo_matches
+    ~name:"ch10.6 operator tussen Let en tak, lege deler in de niet-betreden arm meldt niet"
+    ~ir:tak_doc9 ~case_text:op_leeg40;
+  ref_matches ~name:"ch10.6 operator tussen Let en tak, nuldeler in de niet-betreden arm"
+    ~ir:tak_doc9 ~case_text:op_nul40;
+  clingo_matches
+    ~name:"ch10.6 operator tussen Let en tak, nuldeler in de niet-betreden arm breekt niet af"
+    ~ir:tak_doc9 ~case_text:op_nul40;
+  translates_carrying ~name:"ch10.6 operator tussen Let en tak: de nulgarde staat nog in het programma"
+    ~ir:tak_doc9 ~case_text:op_nul40 ~needle:{|viol("division by numeric zero"|};
+  (* de spiegel: inkomen 5,00 kiest de anders-arm, en dan wordt z WEL gelezen.
+     Met een lege deler meldt §6.5 en maakt de ch.-10.6-barrière het GEHEEL
+     leeg — niet alleen de arm. Dat laatste is precies wat een kale duw naar
+     binnen kapot zou maken: de `plus` zou de geleegde arm als 0,00 lezen en
+     5,00 antwoorden waar ref leeg zegt. De herschrijving tilt de takknoop
+     daarom uit de wikkel in plaats van de Let erin te duwen. *)
+  ref_matches ~name:"ch10.6 operator tussen Let en tak, lege deler in de BETREDEN arm"
+    ~ir:tak_doc9
+    ~case_text:
+      (tak_case ~inkomen:"5" ~parameters:tak_params12
+         ~verwacht:
+           {|"expected": [
+               { "kind": "attributeEmpty", "label": "J1", "attribute": "heffing" },
+               { "kind": "inconsistent", "rule": "heffing van een jutter",
+                 "label": "J1" } ]|}
+         ());
+  clingo_matches
+    ~name:"ch10.6 operator tussen Let en tak, lege deler in de BETREDEN arm meldt en leegt"
+    ~ir:tak_doc9
+    ~case_text:
+      (tak_case ~inkomen:"5" ~parameters:tak_params12
+         ~verwacht:
+           {|"expected": [
+               { "kind": "attributeEmpty", "label": "J1", "attribute": "heffing" },
+               { "kind": "inconsistent", "rule": "heffing van een jutter",
+                 "label": "J1" } ]|}
+         ());
+  both_break ~name:"ch10.6 operator tussen Let en tak, nuldeler in de BETREDEN arm" ~ir:tak_doc9
+    ~case_text:
+      (tak_case ~inkomen:"5" ~restpost:"0" ~parameters:tak_params12
+         ~verwacht:
+           {|"expectedFault": { "ref": "division by numeric zero",
+                                "clingo": "division by numeric zero" }|}
+         ())
+    ~needle:"division by numeric zero";
+  (* DE WIKKELGETUIGE. De rechterhand van de `plus` draagt zelf een
+     §6.5-plek, buiten de tak om, en de waarde van z draagt een nuldeler. De
+     dan-arm wordt betreden: z's nuldeling mag niets doen, maar de deling in de
+     wikkel MOET melden — ref doet dat ook, want die operand wordt hoe dan ook
+     geëvalueerd. Eén frame dat beide richtingen tegelijk vasthoudt. *)
+  let wikkel =
+    tak_case ~inkomen:"40" ~restpost:"0" ~parameters:tak_params12
+      ~verwacht:
+        {|"expected": [
+            { "kind": "attributeValue", "label": "J1", "attribute": "heffing",
+              "value": { "number": "0" } },
+            { "kind": "inconsistent", "rule": "heffing van een jutter",
+              "label": "J1" } ]|}
+      ()
+  in
+  ref_matches ~name:"ch10.6 §6.5-plek in de wikkel, buiten de tak" ~ir:tak_doc10
+    ~case_text:wikkel;
+  clingo_matches ~name:"ch10.6 §6.5-plek in de wikkel blijft melden" ~ir:tak_doc10
+    ~case_text:wikkel
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
