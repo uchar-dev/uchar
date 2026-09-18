@@ -65,6 +65,11 @@ public final class DrlTranspiler {
     private final io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid eff;
     /** §9.2: the salience derivation over the declared kenmerk graph, shared with ExecModelTranspiler. */
     private final Stratificatie strat;
+    /** RUNTIME-SEMANTICS ch. 7.8 / ch. 7.7: the standing-target classification, the SHARED derivation
+     *  ({@link io.github.yhavinga.regelspraak.transpiler.kern.StaandeDoelen}) ExecModelTranspiler reads too.
+     *  It decides WHERE a leeg write is suppressed; a branch-local re-derivation is what let this back-end
+     *  erase four goldens' standing values while the exec branch preserved them. */
+    private final io.github.yhavinga.regelspraak.transpiler.kern.StaandeDoelen staande;
 
     /** The §4 restatement datatype of {@code e}: its annotation with the EFFECTIVE unit grafted on. Every
      *  restatement argument in this file goes through here — a bare {@code e.type()} feeding
@@ -103,11 +108,21 @@ public final class DrlTranspiler {
     public DrlTranspiler(RegelSpraakModel model) { this(model, List.of()); }
 
     /** @param lets the document's ch. 4.10 {@link Expr.Let} index ({@code IrLoader.Loaded.lets}) — see {@link #eff}. */
-    public DrlTranspiler(RegelSpraakModel model, List<Expr.Let> lets) {
+    public DrlTranspiler(RegelSpraakModel model, List<Expr.Let> lets) { this(model, lets, List.of()); }
+
+    /** @param lets     the document's ch. 4.10 {@link Expr.Let} index ({@code IrLoader.Loaded.lets}) — see {@link #eff}.
+     *  @param defaults the ch. 7 prioritizedDefaults extension beside the model. This branch has no defaults
+     *      LOWERING and its caller refuses a defaults-carrying document at the door, so the list is empty on
+     *      every document that reaches emission — it is threaded anyway because the standing classification's
+     *      {@code other_writer} clause reads it, and a branch that silently passed an empty list would widen
+     *      its own standing domain the day this branch does gain the lowering. */
+    public DrlTranspiler(RegelSpraakModel model, List<Expr.Let> lets,
+            List<io.github.yhavinga.regelspraak.ir.PrioritizedDefaults> defaults) {
         this.model = model;
         this.eff = new io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid(lets);
         this.dagsoorten = new Dagsoorten(model);
         this.strat = Stratificatie.bereken(model.resolvedRegels);
+        this.staande = io.github.yhavinga.regelspraak.transpiler.kern.StaandeDoelen.van(model, defaults);
     }
 
     public static String transpile(RegelSpraakModel model) { return new DrlTranspiler(model).run(); }
@@ -117,7 +132,12 @@ public final class DrlTranspiler {
     public static DrlTranspiler build(RegelSpraakModel model) { return build(model, List.of()); }
 
     public static DrlTranspiler build(RegelSpraakModel model, List<Expr.Let> lets) {
-        DrlTranspiler t = new DrlTranspiler(model, lets);
+        return build(model, lets, List.of());
+    }
+
+    public static DrlTranspiler build(RegelSpraakModel model, List<Expr.Let> lets,
+            List<io.github.yhavinga.regelspraak.ir.PrioritizedDefaults> defaults) {
+        DrlTranspiler t = new DrlTranspiler(model, lets, defaults);
         t.drl0 = t.run();
         return t;
     }
@@ -1479,6 +1499,15 @@ public final class DrlTranspiler {
             boolean ongeankerd = temporeelOngeankerd;
             String anker = ankerLid == null ? null : SUBJECT + "." + getter(ankerLid) + "()";
             String tl = temporeelTl;   // pre-lowered above (before the acc.clausules flush) so a collectList accumulate emits
+            // RUNTIME-SEMANTICS ch. 7.8, the TIMELINE arm: on a STANDING temporal target (the shared
+            // classification) an EMPTY fold result is the temporal leeg, decides nothing, and must write
+            // NOTHING — the case-supplied input timeline stands WHOLE, never merged per bucket (a default
+            // decides once, and §3.11's timeline write replaces the whole attribute timeline). The domain is
+            // what keeps this from becoming "skip every empty timeline write": a multi-writer or versioned
+            // temporal target keeps the v0 erase. Kenmerk-tijdlijn writes are a separate branch below and
+            // never ask (the key carries no member kind while WF-002 admits a same-named kenmerk).
+            boolean staandTl = tl != null && staande.staandTemporeel(a);
+            String tlGevuld = staandTl ? fnImport("rsTijdreeksGevuld") + "(" + tl + ")" : null;
             if (tl != null && anker != null) {
                 // IDEMPOTENT anchored write (the temporal analogue of the scalar Objects.equals guard): the
                 // @watch on the startpunt attribute re-fires this rule when the anchor lands, and a sibling
@@ -1486,7 +1515,16 @@ public final class DrlTranspiler {
                 // compares per-segment (Segment has no equals); the producer is pure, so evaluating twice is
                 // safe. Scoped to ANCHORED writes only — the calendar emission (and its byte-pins) unchanged.
                 fnImport("rsTijdreeksGelijk");
-                rule.dan("    if (!rsTijdreeksGelijk(" + SUBJECT + "." + getter(a.attribuut()) + "(), " + tl + ")) {\n"
+                rule.dan("    if (" + (staandTl ? tlGevuld + " && " : "")
+                        + "!rsTijdreeksGelijk(" + SUBJECT + "." + getter(a.attribuut()) + "(), " + tl + ")) {\n"
+                        + "    modify(" + SUBJECT + ") {\n        " + setter(a.attribuut()) + "( " + tl + " )\n    }\n"
+                        + "    }\n");
+            } else if (staandTl) {
+                // the CALENDAR emission on a standing target: unguarded it wipes the input timeline on every
+                // empty fold (the measured borgdeel/dagentelling defect). The idempotence guard the anchored
+                // arm carries is NOT needed here (a calendar write reads no startpunt attribute, so its
+                // pattern is not re-fired by a sibling), so only the standing guard is added.
+                rule.dan("    if (" + tlGevuld + ") {\n"
                         + "    modify(" + SUBJECT + ") {\n        " + setter(a.attribuut()) + "( " + tl + " )\n    }\n"
                         + "    }\n");
             } else {
@@ -1553,8 +1591,15 @@ public final class DrlTranspiler {
             // is<X>(), and mvel's property navigation resolves either accessor form.
             // ch. 4.10: the needs come FIRST — the idempotence guard and the setter both read the same locals, so
             // one forced need serves both (a second evaluation is what an inlined value text would have cost).
+            // RUNTIME-SEMANTICS ch. 7.8 (the SCALAR norm) together with the ch. 7.7 desugaring domain: on a
+            // standing scalar target — the SHARED classification, which alone decides WHERE this applies — a
+            // LEEG (null) computed value decides nothing and must write NOTHING, so the case input stands, or
+            // in the desugaring domain the initialisatie (whose own §9.6 leeg-guard then lets the input win)
+            // decides. A blanket "never write null" would erase the v0 multi-writer semantics this branch
+            // still owes outside the domain, which is why the guard rides the classification and not the value.
+            String leegGuard = staande.staandScalair(r) ? valueStr.text() + " != null && " : "";
             rule.dan(String.join("", letVoorspel)
-                    + "    if (!java.util.Objects.equals(" + SUBJECT + "." + ident(a.attribuut(), false) + ", " + valueStr.text() + ")) {\n"
+                    + "    if (" + leegGuard + "!java.util.Objects.equals(" + SUBJECT + "." + ident(a.attribuut(), false) + ", " + valueStr.text() + ")) {\n"
                     + "    modify(" + SUBJECT + ") {\n        " + setter(a.attribuut()) + "( " + valueStr.text() + " )\n    }\n"
                     + "    }\n");
         } else {

@@ -14,7 +14,6 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -33,6 +32,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       pro-rata and the ch. 3.8 day count): a one-sided implementation (never write / always write) fails
  *       one of the two.</li>
  * </ol>
+ *
+ * <p>DUAL-BRANCH since the drl-staande-waarden card (2026-09-18): every replay row below runs through BOTH
+ * Drools transpiler branches ({@link BeideTakken}) — the exec-model back-end and the classic DRL-text build.
+ * Until then the whole matrix ran through the exec branch alone, and the DRL branch, which carried no target
+ * classification, wiped the input timeline of {@code jutterswet-borgdeel} and {@code jutterswet-dagentelling}
+ * on an empty fold, unwitnessed. The termination rows mirror too: the DRL branch reaches its fixpoint through
+ * a narrow {@code @watch} where the exec branch uses a per-segment comparison, so "settles" is a claim about
+ * two different mechanisms and each has to be made. The last row (Segment carries no equals) is the input
+ * layer's, which is branch-independent, and says so at the site.
  *
  * <p>This class used to ALSO pin the scalar oscillation of {@code jutterswet-waardering-v0vorm} — a
  * leeg-source gelijkstelling against an INITIALISATIE — as a cross-domain non-interference witness: the
@@ -69,7 +77,7 @@ class TemporeelFixpuntWitnessTest {
                     "parameters": {} },
                   "expected": [ { "kind": "consistent" } ] }
                 """;
-        assertNull(speel("anchor/jutterswet-borgdeel", c), "two temporal siblings must settle, not run away");
+        speel("anchor/jutterswet-borgdeel", c, "two temporal siblings must settle, not run away");
     }
 
     @Test void drie_temporele_schrijvers_op_een_subject_bereiken_een_fixpunt() throws Exception {
@@ -92,7 +100,7 @@ class TemporeelFixpuntWitnessTest {
                     "parameters": {} },
                   "expected": [ { "kind": "consistent" } ] }
                 """;
-        assertNull(speel("synth2-prorata-breed", c), "three temporal siblings must settle, not run away");
+        speel("synth2-prorata-breed", c, "three temporal siblings must settle, not run away");
     }
 
     // ---------------- 2. the ch. 7.8 timeline arm, both sides ----------------
@@ -100,43 +108,45 @@ class TemporeelFixpuntWitnessTest {
     @Test void dagtelling_met_lege_opbrengst_laat_de_invoertijdreeks_staan() throws Exception {
         // no borgplichtig period at all -> the ch. 3.8 day count yields the temporal leeg, which decides
         // nothing on this standing target: the input timeline stands WHOLE.
-        assertNull(speel("anchor/jutterswet-dagentelling", dagentelling("", """
+        speel("anchor/jutterswet-dagentelling", dagentelling("", """
                 { "kind": "attributeTimeline", "label": "J1", "attribute": "borgdagen", "timeline": [
-                    { "from": "2024-03-01", "to": "2024-04-01", "value": { "number": "99" } } ] }""")),
+                    { "from": "2024-03-01", "to": "2024-04-01", "value": { "number": "99" } } ] }"""),
                 "an empty day count writes nothing and the input stands");
     }
 
     @Test void dagtelling_met_gevulde_opbrengst_verdringt_de_invoertijdreeks() throws Exception {
         // the other side of the same norm: a deciding fold displaces the input ENTIRELY (per target, never per
         // bucket) — the March input segment is gone, replaced by the counted March bucket.
-        assertNull(speel("anchor/jutterswet-dagentelling", dagentelling("""
+        speel("anchor/jutterswet-dagentelling", dagentelling("""
                 "borgplichtig": [ { "from": "2024-03-01", "to": "2024-03-11" } ]""", """
                 { "kind": "attributeTimeline", "label": "J1", "attribute": "borgdagen", "timeline": [
-                    { "from": "2024-03-01", "to": "2024-04-01", "value": { "number": "10" } } ] }""")),
+                    { "from": "2024-03-01", "to": "2024-04-01", "value": { "number": "10" } } ] }"""),
                 "a deciding day count displaces the input timeline");
     }
 
     @Test void prorata_met_lege_opbrengst_laat_de_invoertijdreeks_staan() throws Exception {
         // the same norm on the ch. 3.7 pro-rata arm: no true period -> empty result -> the input stands whole.
-        assertNull(speel("anchor/jutterswet-borgdeel", borgdeel("", """
+        speel("anchor/jutterswet-borgdeel", borgdeel("", """
                 { "kind": "attributeTimeline", "label": "J1", "attribute": "borgdeel", "timeline": [
-                    { "from": "2024-03-01", "to": "2024-04-01", "value": { "number": "99" } } ] }""")),
+                    { "from": "2024-03-01", "to": "2024-04-01", "value": { "number": "99" } } ] }"""),
                 "an empty pro-rata fold writes nothing and the input stands");
     }
 
     @Test void prorata_met_gevulde_opbrengst_verdringt_de_invoertijdreeks() throws Exception {
         // a January-only true period prorates the JAAR base over the January MAAND bucket; the unrelated March
         // input segment does NOT survive beside it.
-        assertNull(speel("anchor/jutterswet-borgdeel", borgdeel("""
+        speel("anchor/jutterswet-borgdeel", borgdeel("""
                 "borgplichtig": [ { "from": "2024-01-01", "to": "2024-02-01" } ]""", """
                 { "kind": "attributeTimeline", "label": "J1", "attribute": "borgdeel", "timeline": [
-                    { "from": "2024-01-01", "to": "2024-02-01", "value": { "number": "12" } } ] }""")),
+                    { "from": "2024-01-01", "to": "2024-02-01", "value": { "number": "12" } } ] }"""),
                 "a deciding pro-rata fold displaces the input timeline");
     }
 
     // ---------------- the premise of the timeline idempotency guard ----------------
 
     @Test void een_echt_segment_draagt_geen_equals() throws Exception {
+        // NOT mirrored, and branch-independently so: this row stops at the INPUT layer (invoerBeans), before
+        // any rule fires, so there is no transpiler branch in it to choose.
         // WHY the timeline write cannot use the scalar guard: the generated Segment bean declares no equals,
         // so Objects.equals is unequal on two segment-for-segment identical timelines and an equals-guarded
         // write would re-propagate its subject on EVERY recompute. rsTijdreeksGelijk compares per segment.
@@ -159,10 +169,10 @@ class TemporeelFixpuntWitnessTest {
 
     // ---------------- helpers ----------------
 
-    /** One authored case over a corpus golden's {@code ir.json}; the per-case failure line, null on a match. */
-    private static String speel(String golden, String caseJson) throws Exception {
-        Path ir = CORPUS.resolve(golden).resolve("ir.json");
-        return CaseRunner.speelCase(ir, JSON.readTree(caseJson));
+    /** One authored case over a corpus golden's {@code ir.json}, replayed through BOTH transpiler branches —
+     *  each must MATCH the expectation ({@link BeideTakken}). */
+    private static void speel(String golden, String caseJson, String boodschap) throws Exception {
+        BeideTakken.groen(CORPUS.resolve(golden).resolve("ir.json"), JSON.readTree(caseJson), boodschap);
     }
 
     /** The dagentelling case: a pinned borgdagen INPUT segment, the given kenmerk periods, the given expectation. */

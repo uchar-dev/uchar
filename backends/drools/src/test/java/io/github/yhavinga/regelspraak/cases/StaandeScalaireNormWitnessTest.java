@@ -11,7 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -27,7 +27,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * target leaves the standing domain (ref's writer count is 2), and there the v0 erase is still in force —
  * a leeg source DOES wipe the input. Verified against {@code ref/} on this exact model before it was pinned
  * here, so the two executors agree on the flank as well as on the norm. Without this witness a "skip every
- * null write" implementation would pass every other assertion in the gate set.
+ * null write" implementation would pass every other assertion in the gate set. Its twin is the VERSION
+ * flank: a versioned computing rule is not version-free, so its target is in neither domain and the v0
+ * erase stands there too — selection is temporal (ch. 7.4) and never defeasible.
+ *
+ * <p>DUAL-BRANCH since the drl-staande-waarden card (2026-09-18): every row below runs through BOTH Drools
+ * transpiler branches ({@link BeideTakken}). Until then the whole matrix ran through the exec-model branch
+ * alone, and the DRL-text branch — which had no target classification at all — erased on an empty
+ * computation what the norm preserves, on four corpus goldens, unwitnessed. The ONE exception is the
+ * defaults row, and it is named rather than dropped: the DRL branch refuses a prioritizedDefaults document
+ * as a whole (it has no defaults lowering), so that row asserts the refusal there instead of the outcome.
  */
 class StaandeScalaireNormWitnessTest {
 
@@ -40,26 +49,26 @@ class StaandeScalaireNormWitnessTest {
 
     @Test void staand_doel_met_lege_opbrengst_laat_de_invoerwaarde_staan() throws Exception {
         // the rule FIRES (gemeld) but its source is leeg: it decides nothing, so the input value stands.
-        assertNull(speel("anchor/jutterswet-waardestelling",
-                vondst("\"geschatte waarde\": { \"number\": \"77.00\" }", "\"gemeld\"", waarde("77.00"))),
+        speel("anchor/jutterswet-waardestelling",
+                vondst("\"geschatte waarde\": { \"number\": \"77.00\" }", "\"gemeld\"", waarde("77.00")),
                 "a leeg computed value must not displace the case input");
     }
 
     @Test void staand_doel_met_gevulde_opbrengst_verdringt_de_invoerwaarde() throws Exception {
         // the other side of the same norm: a deciding computation overwrites the input — the arm may not
         // degenerate into "a standing target is never written".
-        assertNull(speel("anchor/jutterswet-waardestelling",
+        speel("anchor/jutterswet-waardestelling",
                 vondst("\"taxatiewaarde\": { \"number\": \"51.00\" }, \"geschatte waarde\": { \"number\": \"77.00\" }",
-                        "\"gemeld\"", waarde("51.00"))),
+                        "\"gemeld\"", waarde("51.00")),
                 "a gevuld computed value displaces the case input");
     }
 
     @Test void staand_doel_zonder_invoer_blijft_leeg_bij_lege_opbrengst() throws Exception {
         // "the target keeps what the fact base holds" — and here it holds nothing, so the outcome is leeg.
         // The arm is a NO-WRITE, never a fallback to some other value.
-        assertNull(speel("anchor/jutterswet-waardestelling",
+        speel("anchor/jutterswet-waardestelling",
                 vondst("", "\"gemeld\"",
-                        "{ \"kind\": \"attributeEmpty\", \"label\": \"v1\", \"attribute\": \"geschatte waarde\" }")),
+                        "{ \"kind\": \"attributeEmpty\", \"label\": \"v1\", \"attribute\": \"geschatte waarde\" }"),
                 "no input and a leeg computation leaves the target leeg");
     }
 
@@ -69,22 +78,22 @@ class StaandeScalaireNormWitnessTest {
         // the fire-but-leeg corner that used to OSCILLATE here: the gelijkstelling wrote null, the
         // initialisatie refilled 25, and the exec model never reached a fixpoint. With the arm the
         // gelijkstelling writes nothing and the initialisatie decides — once.
-        assertNull(speel("anchor/jutterswet-waardering-v0vorm", jutter("", "\"erkend\"", waardering("25"))),
+        speel("anchor/jutterswet-waardering-v0vorm", jutter("", "\"erkend\"", waardering("25")),
                 "a leeg computed value lets the initialisatie decide, without an oscillation");
     }
 
     @Test void ontsuikerd_doel_met_lege_opbrengst_laat_de_invoerwaarde_staan() throws Exception {
         // same domain, input present: the initialisatie's own §9.6 leeg-guard blocks it, so the INPUT stands.
-        assertNull(speel("anchor/jutterswet-waardering-v0vorm",
-                jutter("\"waardering\": { \"number\": \"41\" }", "\"erkend\"", waardering("41"))),
+        speel("anchor/jutterswet-waardering-v0vorm",
+                jutter("\"waardering\": { \"number\": \"41\" }", "\"erkend\"", waardering("41")),
                 "a leeg computed value leaves a case input standing over the initialisatie");
     }
 
     @Test void ontsuikerd_doel_met_gevulde_opbrengst_verdringt_beide() throws Exception {
         // and the deciding side: the computation beats both the input and the initialisatie.
-        assertNull(speel("anchor/jutterswet-waardering-v0vorm",
+        speel("anchor/jutterswet-waardering-v0vorm",
                 jutter("\"basisbedrag\": { \"number\": \"50\" }, \"waardering\": { \"number\": \"41\" }",
-                        "\"erkend\"", waardering("50"))),
+                        "\"erkend\"", waardering("50")),
                 "a gevuld computed value displaces input and initialisatie alike");
     }
 
@@ -96,17 +105,35 @@ class StaandeScalaireNormWitnessTest {
         // holds it — the v0 erase is unretired there, and a leeg source wipes the input. ref agrees on this
         // very model+case (checked before pinning); a domain-free "skip null writes" would fail here.
         Path ir = tweedeSchrijver();
-        assertNull(CaseRunner.speelCase(ir, JSON.readTree(
+        BeideTakken.groen(ir, JSON.readTree(
                 vondst("\"geschatte waarde\": { \"number\": \"77.00\" }", "\"gemeld\"",
-                        "{ \"kind\": \"attributeEmpty\", \"label\": \"v1\", \"attribute\": \"geschatte waarde\" }"))),
+                        "{ \"kind\": \"attributeEmpty\", \"label\": \"v1\", \"attribute\": \"geschatte waarde\" }")),
                 "outside the domain the v0 erase still applies: the leeg source wipes the input");
 
         // and the same case with the standing expectation is a MISMATCH, so the assertion above is not
-        // passing on a comparator that ignores absence.
-        String fout = CaseRunner.speelCase(ir, JSON.readTree(
-                vondst("\"geschatte waarde\": { \"number\": \"77.00\" }", "\"gemeld\"", waarde("77.00"))));
-        assertNotNull(fout, "the input must be observably GONE, not merely unasserted");
-        assertTrue(fout.contains("geschatte waarde"), "the mismatch names the wiped attribute: " + fout);
+        // passing on a comparator that ignores absence. This is the row a classification "every null write
+        // is skipped" turns green in BOTH branches — the boundary, not the guard, is what is pinned here.
+        BeideTakken.rood(ir, JSON.readTree(
+                vondst("\"geschatte waarde\": { \"number\": \"77.00\" }", "\"gemeld\"", waarde("77.00"))),
+                "geschatte waarde", "the input must be observably GONE, not merely unasserted");
+    }
+
+    // ---------------- 3b. the VERSION flank: a versioned rule is in no domain ----------------
+
+    @Test void een_versiedoel_komt_niet_in_het_staande_domein() throws Exception {
+        // ref's is_computing demands a VERSION-FREE rule, so a target whose SOLE writer carries a geldigheids-
+        // window is in neither domain: version selection is temporal (ch. 7.4) and never defeasible, so the v0
+        // erase is unretired there. Same model as the standing rows, one clause different — the window — and
+        // the case's asOfDate sits inside it, so the rule fires, computes leeg, and WIPES the input 77.00.
+        // ref answers exactly this on this model+case (checked before pinning, `oracle: PASS`).
+        Path ir = versieSchrijver();
+        BeideTakken.groen(ir, JSON.readTree(versiegeval(
+                "{ \"kind\": \"attributeEmpty\", \"label\": \"v1\", \"attribute\": \"geschatte waarde\" }")),
+                "a VERSIONED sole writer is outside the norm: its leeg result wipes the input");
+
+        // the standing outcome is observably NOT what happened, in both branches.
+        BeideTakken.rood(ir, JSON.readTree(versiegeval(waarde("77.00"))),
+                "geschatte waarde", "a versioned target must not silently acquire the standing arm");
     }
 
     // ---------------- 4. the other_writer clause: a defaults group evicts the target ----------------
@@ -156,6 +183,17 @@ class StaandeScalaireNormWitnessTest {
             assertNotNull(fout, "the target must have LEFT the standing domain: the erase-refill oscillation "
                     + "must be observable, exactly as ref faults on this model (ch. 5.7)");
             assertTrue(fout.contains("geen fixpunt"), fout);
+
+            // THE ONE ROW THAT DOES NOT MIRROR, named rather than dropped: the DRL-text branch has no ch. 7
+            // defaults lowering and refuses such a document WHOLE, so it never reaches the outcome above.
+            // Asserting the refusal keeps the exception honest — a DRL branch that silently started PLAYING
+            // a defaults document (and therefore answering with an unwritten default) fails here.
+            CaseRunner.Excluded weigering = assertThrows(CaseRunner.Excluded.class,
+                    () -> CaseRunner.speelCase(tmp, JSON.readTree(
+                            vondst("\"geschatte waarde\": { \"number\": \"77.00\" }", "\"gemeld\"", waarde("12.00"))),
+                            true),
+                    "the DRL-text branch must refuse a prioritizedDefaults document, not play it");
+            assertTrue(weigering.getMessage().contains("prioritizedDefaults"), weigering.getMessage());
         } finally {
             Files.deleteIfExists(tmp);
         }
@@ -163,9 +201,10 @@ class StaandeScalaireNormWitnessTest {
 
     // ---------------- helpers ----------------
 
-    /** One authored case over a corpus golden's {@code ir.json}; the per-case failure line, null on a match. */
-    private static String speel(String golden, String caseJson) throws Exception {
-        return CaseRunner.speelCase(CORPUS.resolve(golden).resolve("ir.json"), JSON.readTree(caseJson));
+    /** One authored case over a corpus golden's {@code ir.json}, replayed through BOTH transpiler branches —
+     *  each must MATCH the expectation ({@link BeideTakken}). */
+    private static void speel(String golden, String caseJson, String boodschap) throws Exception {
+        BeideTakken.groen(CORPUS.resolve(golden).resolve("ir.json"), JSON.readTree(caseJson), boodschap);
     }
 
     /** A one-Vondst case for {@code jutterswet-waardestelling}: the given attributes, kenmerken, expectation. */
@@ -204,6 +243,34 @@ class StaandeScalaireNormWitnessTest {
         return """
                 { "kind": "attributeValue", "label": "M", "attribute": "waardering",
                   "value": { "number": "%s" } }""".formatted(getal);
+    }
+
+    /** The version-flank case: an asOfDate INSIDE the window {@link #versieSchrijver} puts on the rule, a
+     *  standing input of 77.00, and a leeg taxatiewaarde — so the rule fires and computes leeg. */
+    private static String versiegeval(String expectedNode) {
+        return """
+                { "format": "uchar-case-v0", "asOfDate": "2026-06-01",
+                  "input": { "instances": [
+                      { "label": "v1", "objectType": "Vondst",
+                        "attributes": { "geschatte waarde": { "number": "77.00" } },
+                        "roles": {}, "characteristics": [ "gemeld" ] } ],
+                    "parameters": {} },
+                  "expected": [ %s, { "kind": "consistent" } ] }
+                """.formatted(expectedNode);
+    }
+
+    /** The waardestelling IR with a geldigheids-WINDOW on its single rule, written to a temp file: the same
+     *  model one clause past version-freedom, and therefore out of both domains. Derived from the golden, so
+     *  the two models differ in exactly that clause — the corpus file itself is only read. */
+    private static Path versieSchrijver() throws Exception {
+        ObjectNode ir = (ObjectNode) JSON.readTree(CORPUS.resolve("anchor")
+                .resolve("jutterswet-waardestelling").resolve("ir.json").toFile());
+        ((ObjectNode) ir.get("resolvedRegels").get(0)).set("geldigheid", JSON.createObjectNode()
+                .put("node", "Geldigheid").put("vanaf", "2026-01-01").put("tot", "2026-12-31"));
+        Path uit = Files.createTempFile("versie-schrijver", ".json");
+        uit.toFile().deleteOnExit();
+        Files.writeString(uit, JSON.writerWithDefaultPrettyPrinter().writeValueAsString(ir));
+        return uit;
     }
 
     /** The waardestelling IR with a SECOND gelijkstelling on the same target (its own leeg-by-default source),

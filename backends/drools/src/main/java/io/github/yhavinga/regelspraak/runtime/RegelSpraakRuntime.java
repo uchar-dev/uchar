@@ -906,6 +906,16 @@ public final class RegelSpraakRuntime {
         return true;
     }
 
+    /** RUNTIME-SEMANTICS ch. 7.8 (the timeline arm): does a computed timeline DECIDE? A null or empty result
+     *  is the temporal leeg (empty == never-written, ch. 3.1), which decides nothing — so on a standing
+     *  temporal target the write is skipped and the case-supplied input timeline stands WHOLE. The single
+     *  implementation of that emptiness test: the exec model's timeline write calls it, and the DRL text
+     *  imports it into its emitted guard (single-runtime principle), so the two back-ends cannot disagree on
+     *  what "gevuld" means for a timeline. */
+    public static boolean rsTijdreeksGevuld(List<?> t) {
+        return t != null && !t.isEmpty();
+    }
+
     /** The start of the bucket containing {@code d}: calendar-aligned for a null {@code anker}, else the
      *  greatest anker+k·eenheid ≤ d (k may be negative — §3.8 allows periods before the startpunt). All
      *  bounds are computed as anker.plusMonths/Years(k), so a clamped month-end anchor yields the same

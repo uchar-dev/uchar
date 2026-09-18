@@ -285,7 +285,9 @@ public final class CaseRunner {
         // ch. 4.10: the DRL branch lowers the §11 variabelendeel's Let chain, so it gets the document's Let INDEX
         // beside the model — the ch. 2.10 unit derivation needs it to answer a BinderRef read, which carries no
         // route back up to its own binding (the exec branch has taken the same index since the Let-node card).
-        DrlTranspiler t = DrlTranspiler.build(model, loaded.lets());
+        // The defaults list is empty by the refusal above; it is passed rather than defaulted because the
+        // ch. 7.8 standing classification's other_writer clause reads it (see DrlTranspiler's constructor).
+        DrlTranspiler t = DrlTranspiler.build(model, loaded.lets(), loaded.prioritizedDefaults());
         for (Dekking d : t.dekking())
             if (!d.lowered()) throw new Excluded("drl-transpiler " + d.verdict() + ": " + d.sleutel()
                     + (d.reden().isEmpty() ? "" : " — " + d.reden()));

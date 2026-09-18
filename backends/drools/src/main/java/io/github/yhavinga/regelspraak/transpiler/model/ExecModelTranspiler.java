@@ -136,14 +136,11 @@ public final class ExecModelTranspiler {
      *  constraint and silently use the first rule's predicate for both — the cross-rule analog of the within-rule
      *  id-collision. A global counter makes every constraint id unique, so no rule ever inherits another's predicate. */
     private int idSeq;
-    /** ch. 7.8's standing-temporal-target domain, computed once per model (see {@link #staandeTemporeleDoelen}). */
-    private Set<String> staandeDoelen;
-    /** ch. 7.8's standing-SCALAR-target domain, computed once per model (see {@link #staandeScalaireDoelen}). */
-    private Set<String> staandeScalaire;
-    /** ch. 7.7's desugaring domain, computed once per model (see {@link #ontsuikerdeDoelen}). */
-    private Set<String> ontsuikerde;
-    /** ref's {@code written_by_rules} tally, shared by both standing domains (see {@link #schrijversPerDoel}). */
-    private Map<String, Integer> schrijversCache;
+    /** The ch. 7.8 / ch. 7.7 target classification — the SHARED derivation
+     *  ({@link io.github.yhavinga.regelspraak.transpiler.kern.StaandeDoelen}) the DRL-text branch reads too, so
+     *  neither branch can drift on WHERE a leeg write is suppressed. Built lazily: the ch. 7 defaults list it
+     *  consults is threaded in after construction (see {@link #build}). */
+    private io.github.yhavinga.regelspraak.transpiler.kern.StaandeDoelen staande;
 
     /** A lowered voorwaarde: the subject pattern with its in-pattern constraints, plus zero or more SEPARATE
      *  rule items (the §8.1.7 far-side {@code exists}/{@code not} joins) appended after it — the model analog of
@@ -344,17 +341,14 @@ public final class ExecModelTranspiler {
         // case-supplied input timeline stands whole. The domain holds only ATTRIBUTE targets, but the lookup key
         // carries no member kind while WF-002 admits a kenmerk sharing an attribute's name — so the kenmerk
         // callsite below passes false explicitly (ref structurally cannot apply the arm to a Kenmerktoekenning).
-        final boolean staandDoel = staandeTemporeleDoelen().contains(doelSleutel(doel));
+        final boolean staandDoel = staande().staandTemporeel(doel);
         // ch. 7.8 (the scalar arm), together with the ch. 7.7 desugaring domain ref's scalar arm consults beside it:
         // on such a target a LEEG (null) computed value decides nothing and the case-supplied input — or, in the
         // desugaring domain, the initialisatie — stands. Only a computing rule is in ref's arm: a KENMERKTOEKENNING
         // must NEVER inherit it (the key carries no member kind while WF-002 admits a kenmerk sharing an attribute's
         // name, and ref reaches its arm structurally only from the Gelijkstelling/Berekening branch), and an
         // INITIALISATIE keeps its own §9.6 leeg-guard (ref's Initialisatie branch carries no standing arm either).
-        final boolean staandScalairDoel =
-                (r.soort() == ResolvedRegel.Soort.GELIJKSTELLING || r.soort() == ResolvedRegel.Soort.BEREKENING)
-                        && (staandeScalaireDoelen().contains(doelSleutel(doel))
-                            || ontsuikerdeDoelen().contains(doelSleutel(doel)));
+        final boolean staandScalairDoel = staande().staandScalair(r);
         seq = 0;
         Variable sVar = DSL.declarationOf(factClass, "$subject");
         PatternDSL.PatternDef pattern = PatternDSL.pattern(sVar);
@@ -703,8 +697,9 @@ public final class ExecModelTranspiler {
      *  scale BigDecimal re-propagates harmlessly); it never UNDER-updates, so the fixpoint outcome still matches DRL.
      *
      *  <p>{@code staandDoel} carries the ch. 7.8 STANDING arm (the scalar twin of {@link #werkBijTijdlijn}'s): on a
-     *  standing scalar target ({@link #staandeScalaireDoelen}) or a ch. 7.7 desugaring-domain target
-     *  ({@link #ontsuikerdeDoelen}) a LEEG computed value decides nothing, so NOTHING is written and what the fact
+     *  standing scalar target or a ch. 7.7 desugaring-domain target — the SHARED classification
+     *  ({@link io.github.yhavinga.regelspraak.transpiler.kern.StaandeDoelen#staandScalair}) the DRL-text branch
+     *  reads too — a LEEG computed value decides nothing, so NOTHING is written and what the fact
      *  base holds — the case-supplied input, or the initialisatie's value — stands (ref: the {@code Value.Empty}
      *  arm of {@code ref/lib/eval.ml}'s Gelijkstelling/Berekening branch). Scalar leeg is {@code null}, tested
      *  AFTER {@link #collapseBreuk} so the write boundary is one place, not two. */
@@ -729,9 +724,11 @@ public final class ExecModelTranspiler {
     /** Write a TIMELINE doel ({@code List<Segment>}) — the timeline analogue of {@link #werkBij}, holding the two
      *  rules a timeline write obeys that a scalar write does not.
      *
-     *  <p>(1) The ch. 7.8 STANDING arm: on a standing temporal target ({@link #staandeTemporeleDoelen}) an EMPTY
-     *  result is the temporal leeg and decides nothing, so NOTHING is written and the case-supplied input timeline
-     *  stands whole (ref: {@code ref/lib/eval.ml}'s pro-rata and day-count arms).
+     *  <p>(1) The ch. 7.8 STANDING arm: on a standing temporal target — the SHARED classification
+     *  ({@link io.github.yhavinga.regelspraak.transpiler.kern.StaandeDoelen#staandTemporeel}) the DRL-text branch
+     *  reads too — an EMPTY result is the temporal leeg and decides nothing, so NOTHING is written and the
+     *  case-supplied input timeline stands whole (ref: {@code ref/lib/eval.ml}'s pro-rata and day-count arms).
+     *  Emptiness itself is {@link RegelSpraakRuntime#rsTijdreeksGevuld}, the same predicate the DRL text imports.
      *
      *  <p>(2) IDEMPOTENCY: {@link java.util.Objects#equals} — the guard {@link #werkBij} uses — is ALWAYS unequal on
      *  two timelines ({@code Segment} declares no {@code equals}), so a timeline write would re-propagate its subject
@@ -746,130 +743,19 @@ public final class ExecModelTranspiler {
     static void werkBijTijdlijn(org.drools.model.Drools drools, Object s,
             java.util.function.Function<Object, Object> getter, BiConsumer<Object, Object> setter,
             Object nieuw, boolean staandDoel) {
-        if (staandDoel && (nieuw == null || ((List<?>) nieuw).isEmpty())) return;
+        if (staandDoel && !RegelSpraakRuntime.rsTijdreeksGevuld((List<?>) nieuw)) return;
         if (RegelSpraakRuntime.rsTijdreeksGelijk((List<?>) getter.apply(s), (List<?>) nieuw)) return;
         setter.accept(s, nieuw);
         drools.update(s);
     }
 
-    /** RUNTIME-SEMANTICS ch. 7.8 (the timeline arm, decided 2026-08-21) — the STANDING TEMPORAL TARGET domain, a
-     *  port of ref's {@code Desugar.standing_temporal_targets} ({@code spec/verifier/lib/desugar.ml:226} over
-     *  {@code standing_targets_gen}), clause for clause: a temporal attribute written by EXACTLY ONE version-free
-     *  computing rule (GELIJKSTELLING/BEREKENING carrying a value) whose value has the ch. 3.7 pro-rata / ch. 3.8
-     *  day-count shape (ref's {@code executable} — the only temporal writers that execute), with NO other writer:
-     *  no prioritized-defaults group, no verdeling, no creation-time write on that attribute. Kenmerk targets are
-     *  outside the domain (ref excludes {@code Kenmerktoekenning} from both the writer count and {@code is_computing}).
-     *  Keys normalise like ref's {@code norm}, so the two domains coincide construct for construct. */
-    private Set<String> staandeTemporeleDoelen() {
-        if (staandeDoelen != null) return staandeDoelen;
-        Map<String, Integer> schrijvers = schrijversPerDoel();
-        Set<String> uit = new LinkedHashSet<>();
-        for (ResolvedRegel r : model.resolvedRegels) {
-            boolean uitvoerbaar = r.waarde() instanceof Expr.Functie f
-                    && (f.kind() == Expr.FunctieKind.TIJDSEVENREDIG_DEEL || f.kind() == Expr.FunctieKind.AANTAL_DAGEN_IN);
-            String k = doelSleutel(r.doel());
-            if (!isRekenend(r) || !uitvoerbaar || k == null || schrijvers.getOrDefault(k, 0) != 1) continue;
-            Expr.AttribuutRef d = (Expr.AttribuutRef) r.doel();
-            if (!temporeelAttribuut(d.objecttype(), d.attribuut())) continue;   // ref's wanted_shape
-            if (andereSchrijver(d.objecttype().naam, d.attribuut())) continue;
-            uit.add(k);
-        }
-        staandeDoelen = uit;
-        return uit;
-    }
-
-    /** RUNTIME-SEMANTICS ch. 7.8 (the scalar norm, decided 2026-08-20) — the STANDING SCALAR TARGET domain, a port
-     *  of ref's {@code Desugar.standing_targets} ({@code spec/verifier/lib/desugar.ml:216} over
-     *  {@code standing_targets_gen ~temporal:false}), clause for clause: a NON-temporal attribute written by EXACTLY
-     *  ONE version-free computing rule (GELIJKSTELLING/BEREKENING carrying a value) with NO other writer — no
-     *  prioritized-defaults group, no verdeling, no creation-time write. Two clauses differ from the temporal twin:
-     *  ref's {@code executable} is vacuously true off the temporal path (every scalar value shape executes, so the
-     *  domain is NOT restricted to particular Functie kinds), and {@code wanted_shape} demands the ABSENCE of a
-     *  declared granulariteit. Kenmerk targets are outside the domain exactly as there. */
-    private Set<String> staandeScalaireDoelen() {
-        if (staandeScalaire != null) return staandeScalaire;
-        Map<String, Integer> schrijvers = schrijversPerDoel();
-        Set<String> uit = new LinkedHashSet<>();
-        for (ResolvedRegel r : model.resolvedRegels) {
-            String k = doelSleutel(r.doel());
-            if (!isRekenend(r) || k == null || schrijvers.getOrDefault(k, 0) != 1) continue;
-            Expr.AttribuutRef d = (Expr.AttribuutRef) r.doel();
-            if (temporeelAttribuut(d.objecttype(), d.attribuut())) continue;   // ref's wanted_shape, ~temporal:false
-            if (andereSchrijver(d.objecttype().naam, d.attribuut())) continue;
-            uit.add(k);
-        }
-        staandeScalaire = uit;
-        return uit;
-    }
-
-    /** RUNTIME-SEMANTICS ch. 7.7 — the v0 DESUGARING domain, a port of ref's {@code Desugar.desugared_targets}
-     *  ({@code spec/verifier/lib/desugar.ml:81} over {@code chosen_targets}): a target carried ENTIRELY by exactly
-     *  one unconditional version-free Initialisatie plus AT MOST one version-free computing rule. ref's scalar arm
-     *  consults this set BESIDE the standing one ({@code ref/lib/eval.ml}: the leeg-evaluating computing rule writes
-     *  nothing, so the initialisation or the input decides and the fire-but-leeg corner has a fixpoint instead of an
-     *  oscillation). Unlike the standing domain this one has NO shape and NO other-writer clause — ref does not test
-     *  them here either, and its scalar arm is the only consumer, so a temporal target never reaches it. */
-    private Set<String> ontsuikerdeDoelen() {
-        if (ontsuikerde != null) return ontsuikerde;
-        Map<String, List<ResolvedRegel>> perDoel = new LinkedHashMap<>();
-        for (ResolvedRegel r : model.resolvedRegels) {
-            if (r.soort() == ResolvedRegel.Soort.KENMERKTOEKENNING) continue;
-            String k = doelSleutel(r.doel());
-            if (k != null) perDoel.computeIfAbsent(k, x -> new ArrayList<>()).add(r);
-        }
-        Set<String> uit = new LinkedHashSet<>();
-        for (Map.Entry<String, List<ResolvedRegel>> e : perDoel.entrySet()) {
-            List<ResolvedRegel> inits = new ArrayList<>(), comps = new ArrayList<>();
-            for (ResolvedRegel r : e.getValue()) {
-                if (r.soort() == ResolvedRegel.Soort.INITIALISATIE) inits.add(r);
-                if (isRekenend(r)) comps.add(r);
-            }
-            // ref's `desugarable`: no rule outside the two families (a versioned computing rule falls in neither and
-            // breaks the tally), exactly one initialisation, that initialisation PLAIN, at most one computing rule.
-            if (e.getValue().size() != inits.size() + comps.size() || inits.size() != 1 || comps.size() > 1) continue;
-            ResolvedRegel init = inits.get(0);
-            boolean kaal = init.voorwaarde() == null && (init.geldigheid() == null || init.geldigheid().altijd())
-                    && init.waarde() != null;   // ref's is_plain_init
-            if (kaal) uit.add(e.getKey());
-        }
-        ontsuikerde = uit;
-        return uit;
-    }
-
-    /** ref's {@code written_by_rules} count per target key: every rule EXCEPT a Kenmerktoekenning that writes an
-     *  objecttype-bound attribuut — an Initialisatie counts as a writer here (which is what keeps an
-     *  init-beside-computation target out of the standing domain and inside the ch. 7.7 desugaring's). */
-    private Map<String, Integer> schrijversPerDoel() {
-        if (schrijversCache != null) return schrijversCache;
-        Map<String, Integer> schrijvers = new LinkedHashMap<>();
-        for (ResolvedRegel r : model.resolvedRegels) {
-            if (r.soort() == ResolvedRegel.Soort.KENMERKTOEKENNING) continue;
-            String k = doelSleutel(r.doel());
-            if (k != null) schrijvers.merge(k, 1, Integer::sum);
-        }
-        schrijversCache = schrijvers;
-        return schrijvers;
-    }
-
-    /** ref's {@code is_computing}: a version-free Gelijkstelling/Berekening carrying a value. */
-    private static boolean isRekenend(ResolvedRegel r) {
-        return (r.soort() == ResolvedRegel.Soort.GELIJKSTELLING || r.soort() == ResolvedRegel.Soort.BEREKENING)
-                && (r.geldigheid() == null || r.geldigheid().altijd()) && r.waarde() != null;
-    }
-
-    /** ref's {@code other_writer}: a prioritized-defaults group, a verdeling or an object-creatie toekenning
-     *  writing the same objecttype × attribuut — any of them takes the target out of the standing domain. */
-    private boolean andereSchrijver(String ot, String attr) {
-        for (PrioritizedDefaults pd : prioritizedDefaults)
-            if (gelijkeNaam(pd.onderwerp(), ot) && pd.attribuut() != null && gelijkeNaam(pd.attribuut(), attr)) return true;
-        for (ResolvedVerdeling v : model.verdelingen)
-            if (v.doelType() != null && gelijkeNaam(v.doelType().naam, ot)
-                    && v.doelAttribuut() != null && gelijkeNaam(v.doelAttribuut(), attr)) return true;
-        for (io.github.yhavinga.regelspraak.ir.ResolvedObjectCreatie oc : model.objectCreaties)
-            if (oc.nieuwType() != null && gelijkeNaam(oc.nieuwType().naam, ot))
-                for (var t : oc.toekenningen())
-                    if (!t.kenmerk() && gelijkeNaam(t.attribuut(), attr)) return true;
-        return false;
+    /** The ch. 7.8 / ch. 7.7 target classification, built on first use — {@link #prioritizedDefaults} (which
+     *  its {@code other_writer} clause consults) is threaded in after construction, so the derivation cannot be
+     *  built in the constructor. */
+    private io.github.yhavinga.regelspraak.transpiler.kern.StaandeDoelen staande() {
+        if (staande == null)
+            staande = io.github.yhavinga.regelspraak.transpiler.kern.StaandeDoelen.van(model, prioritizedDefaults);
+        return staande;
     }
 
     /** ref's {@code Checks.attr_temporal}: the attribuut carries a declared granulariteit. Delegates to the
@@ -886,18 +772,6 @@ public final class ExecModelTranspiler {
      *  capitalisation must be resolved here or it looks for a getter that does not exist. */
     private static String gedeclareerdAttribuut(Objecttype ot, String attr) {
         return ot == null ? attr : Namen.gedeclareerdeNaam(ot.attribuutLeden().keySet(), attr);
-    }
-
-    /** The {@code "<objecttype>|<attribuut>"} key of a rule doel (ref's {@code target_of} + {@code key}), or null
-     *  when the doel is not an objecttype-bound attribuutreferentie. Normalisation is {@link #defaultsNorm} —
-     *  the file's one ref-{@code Checks.norm} mirror, null-safe. */
-    private static String doelSleutel(Expr doel) {
-        return doel instanceof Expr.AttribuutRef d && d.objecttype() != null && d.attribuut() != null
-                ? defaultsNorm(d.objecttype().naam) + "|" + defaultsNorm(d.attribuut()) : null;
-    }
-
-    private static boolean gelijkeNaam(String a, String b) {
-        return a != null && b != null && defaultsNorm(a).equals(defaultsNorm(b));
     }
 
     /** Reflective analogue of {@link #werkBij} for the verdeling / feitcreatie consequences, which read+write a
