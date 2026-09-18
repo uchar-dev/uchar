@@ -1190,7 +1190,9 @@ final class ExpressieBouwer {
         // here would be misleading: this is a FRONTEND boundary, not a wire one. The NODE carries the shape
         // fine (a hand-written Kwantorvouw with a Vergelijking filter over a non-temporal member plays in
         // ref, clingo and the Drools exec branch); it is this SENTENCE position that cannot produce it.
-        filter = elementVergelijking(p, elem, List.of(gekwantificeerd));
+        // A MEMBERSHIP fold (the kenmerkcheck over a quantified subject) quantifies no attribute at all,
+        // so there is no operand for a getalpredicaat to re-anchor on; it falls into the reason below.
+        filter = elementVergelijking(p, elem, gekwantificeerd == null ? List.of() : List.of(gekwantificeerd));
         if (filter == null)
             return new Deelselectie(null, "zij bindt geen kenmerk of getalpredicaat van " + elem.naam
                     + " (§5.6, IR-SPEC ch. 4.5)");
@@ -2015,8 +2017,10 @@ final class ExpressieBouwer {
      *  {@link Conditie.Kwantorvouw} lowering) answer the quantifier that was WRITTEN, instead of reading
      *  them all as a forall. Null for the bare definite "de", which names one object and no set at all. */
     private static Conditie.Kwantor geschrevenKwantor(OnderwerpContext o) {
-        if (o == null || o.kwantificatie() == null) return null;
-        KwantificatieContext q = o.kwantificatie();
+        return o == null ? null : geschrevenKwantor(o.kwantificatie());
+    }
+    private static Conditie.Kwantor geschrevenKwantor(KwantificatieContext q) {
+        if (q == null) return null;
         if (q.ALLE() != null || q.AL() != null) return Conditie.Kwantor.ALLE;
         if (q.GEEN_VAN_DE() != null)            return Conditie.Kwantor.GEEN;
         if (q.TEN_MINSTE() != null)             return Conditie.Kwantor.TEN_MINSTE;
@@ -2031,8 +2035,57 @@ final class ExpressieBouwer {
      *  same sentence. An unparseable or absent telwoord stays 0 and is refused downstream (WF-041), never
      *  silently read as 1. */
     private static int geschrevenDrempel(OnderwerpContext o) {
-        if (o == null || o.kwantificatie() == null) return 0;
-        return RuleChecker.telwoordWaarde(o.kwantificatie().telwoord());
+        return o == null ? 0 : geschrevenDrempel(o.kwantificatie());
+    }
+    private static int geschrevenDrempel(KwantificatieContext q) {
+        return q == null ? 0 : RuleChecker.telwoordWaarde(q.telwoord());
+    }
+
+    /** The facts a QUANTIFIED MEMBER PHRASE carries, read off the parse tree: the written quantor, its
+     *  telwoord, the element type it ranges over, and the written source (the {@code onderwerpBron} a
+     *  range binding is looked up by). */
+    record GekwantificeerdOnderwerp(Conditie.Kwantor kwantor, int drempel, Objecttype element,
+                                    String onderwerpBron) {}
+
+    /**
+     * §13.4.2.9 / ch. 4.5: the quantified member phrase an expression consists OF — "alle wachten van
+     * de Schouwploeg" as the WHOLE left operand of a §8.1.8 kenmerkcheck. The §13.4.2.9
+     * {@code kwantificatie? attribuutMetLidwoord VAN onderwerpKeten} puts the quantifier on the
+     * attribuutVanOnderwerp ITSELF there, not on an inner onderwerp, so the phrase resolves as "the
+     * &lt;wachten&gt; of the Schouwploeg" — a reference whose {@code set} bit is false and whose
+     * {@code kwantor} is null, which is why the fold's {@link RuleChecker} operand scan finds nothing
+     * to quantify. This is the parse-tree reading of the same facts, for the caller that folds over a
+     * MEMBERSHIP matrix instead of a value one.
+     *
+     * <p>Null for everything that is not exactly that shape: no quantifier or the bare definite "de"
+     * (one object, no set), a member phrase whose element type does not resolve — quantifying over an
+     * unresolved population is the silent-wrong-set failure a marker is preferable to — and a
+     * MULTI-STEP written range ("alle wachten van alle ploegen van de Haven"), whose {@code bronPad}
+     * spelling this lowering does not carry and whose first step is not the set the sentence names.
+     */
+    GekwantificeerdOnderwerp gekwantificeerdOnderwerp(ExpressieContext e) {
+        PrimaireExpressieContext p = e instanceof PrimaireExprContext pe ? pe.primaireExpressie() : null;
+        AttribuutVanOnderwerpContext a = p == null ? null : p.attribuutVanOnderwerp();
+        if (a == null || a.attribuutMetLidwoord() == null || a.attribuutMetLidwoord().kaleNaam() == null
+                || a.onderwerp() == null) return null;
+        Conditie.Kwantor q = geschrevenKwantor(a.kwantificatie());
+        if (q == null) return null;
+        String leden = src(a.attribuutMetLidwoord().kaleNaam());
+        // exactly ONE written hop: a chain quantifies a set this lowering cannot spell (see above). The
+        // greedy kaleNaam swallows an inner to-one step, so a written "van" on EITHER side of the hop —
+        // in the member phrase or in the anchor — is what tells the two apart (the quantifier's own "van
+        // de" is not part of either, which is why this is not counted over the whole phrase).
+        if (isSetOnderwerp(a.onderwerp()) || heeftVanStap(leden) || heeftVanStap(src(a.onderwerp())))
+            return null;
+        Objecttype elem = model.resolveObjecttype(leden);
+        if (elem == null) elem = typeViaMeervoud(leden);
+        return elem == null ? null
+                : new GekwantificeerdOnderwerp(q, geschrevenDrempel(a.kwantificatie()), elem, src(a));
+    }
+
+    /** Whether a written name carries a " van " navigation step of its own. */
+    private static boolean heeftVanStap(String naam) {
+        return naam != null && naam.toLowerCase().matches(".*\\s+van\\s+.*");
     }
 
     /** A possessive "zijn <kaleNaam>" resolves to the named attribute OF the rule subject,
