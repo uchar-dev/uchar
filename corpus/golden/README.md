@@ -90,22 +90,32 @@ of `ref/test/` (WV-1.2e), not by this case.
 `jutterswet-vormenkabinet` is a **verifier-only** golden: it carries no
 case files (gate 5 lists it explicitly as not replayed) and exists to
 witness, positively and verifier-clean, the well-formedness rules whose
-constructs no executing document carries yet — the dimensioned
-attribute with its cell read (WF-004/014/040), the enumeration domain
-with a label assignment (WF-006/039), the sign-restricted literal
-(WF-039), the variable-start timeline with its start point
-(WF-016/032), the day-kind definition (WF-017/031), two dated versions
-of one rule name (WF-021), the counting quantifier (WF-041), the time
-window (WF-042), and the whole-period qualifier over a time-dependent
-operand (WF-043). The rule at admission: when one of these constructs
-becomes executable, its witness moves into an executing document and
-the cabinet shrinks — it is scaffolding for the WF index, never a place
-for semantics. Several constructs have since gained executing witnesses
-elsewhere (the counting quantifier runs in nine composite goldens and,
-since 2026-09-16, on the quantifier fold; the dimensioned attribute got
-`jutterswet-seizoenvondst`; day kinds run in `jutterswet-schouwkalender`)
-while the cabinet document itself has not shrunk yet — pruning it is
-`backlog/new/20260917-kabinetkrimp.md`.
+constructs no executing document carries yet. The rule at admission:
+when one of these constructs becomes executable, its witness moves into
+an executing document and the cabinet shrinks — it is scaffolding for
+the WF index, never a place for semantics.
+
+That rule was applied for the first time on 2026-09-19. It now holds two
+rules and four rows: the dimensioned attribute with its cell read
+(WF-004/014/040), the variable-start timeline with its start point
+(WF-016/032), the time window (WF-042), and the day-kind spelling
+registry — WF-017's positive binding and WF-034 arm (s)'s identity half,
+both of which read the declaration table and need no executor at all.
+Five rows left, each to a named executing successor: the enumeration
+domain with its label assignment (WF-006/039, the enum slice of WF-023)
+to `jutterswet-keurstaat`; the sign-restricted literal (WF-039) to
+`anchor/jutterswet-taxatie` and four others; the counting quantifier
+(WF-041) to `jutterswet-wachtploeg` and eight further composite goldens,
+with `jutterswet-reddingsvloot` on the quantifier fold; the two dated
+versions of one rule name (WF-021) to `anchor/jutterswet-jutheffing`;
+the whole-period qualifier over a time-dependent operand (WF-043) to
+`jutterswet-keurploeg`, `jutterswet-ploegpremie`,
+`jutterswet-reddingsvloot` and `jutterswet-sleepvloot`; and the day-kind
+definition (WF-031) to `jutterswet-schouwkalender`. The cabinet's own
+`NOTE.md` carries the measurement per row, including the one the card
+that shrank it had expected to move and could not: the dimensioned
+attribute's only other carrier, `jutterswet-seizoenvondst`, is itself
+case-less, so that row has no *executing* successor yet.
 
 Gate 5 currently lists **two** goldens as not replayed: the cabinet and
 `jutterswet-seizoenvondst`.
