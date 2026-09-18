@@ -1893,13 +1893,25 @@ public final class DrlTranspiler {
         }
     }
 
-    /** How the §6.5/§6.6 collectors descend one {@link Expr.Let}: the VALUE is walked under the enclosing needs,
-     *  and only when the body READS the binder (ch. 10.6 clause 3 — an unread need runs no site at all); the need
-     *  list the BODY then sits behind (clause 2) is handed back. One statement of the scope rule for both walks. */
+    /**
+     * How the §6.5/§6.6 collectors descend one {@link Expr.Let}: the VALUE is walked only when the body READS the
+     * binder (ch. 10.6 clause 3 — an unread need runs no site at all), and the gate the BODY then sits behind
+     * (clause 2) is handed back. One statement of the scope rule for both walks.
+     *
+     * <p>The read may be CONDITIONAL, and then so is the value: a need only one ch. 10.2 arm reads is forced only
+     * when that arm runs, so a §6.5 site inside that value sits behind the arm's guard too. Walking the value
+     * under the bare gate instead fabricates an Inconsistentie for a division that never executed — the shape
+     * {@code synth3-takbarriere} would have hit the day its opslag definition gained one (lens finding
+     * 2026-09-18: ref consistent, this branch inconsistent).
+     */
     private static Poort letDescent(Expr.Let b, Poort poort,
                                     java.util.function.BiConsumer<Expr, Poort> walk) {
-        if (!leestBinder(b.body(), letSleutel(b.binder()))) return poort;
-        walk.accept(b.value(), poort);
+        Leesgarde garde = leesGarde(b.body(), letSleutel(b.binder()));
+        if (garde instanceof Nooit) return poort;
+        walk.accept(b.value(), garde instanceof Tak t ? poort.inTak(t.conditie(), t.positief()) : poort);
+        // The BODY itself always runs, so it inherits the enclosing gate plus this need — never the arm guard,
+        // which belongs to the value alone; a site in the body OUTSIDE the branch node would otherwise lose its
+        // companion. A site INSIDE an arm picks that arm's guard up from the branch descent.
         return poort.achterBehoefte(letSleutel(b.binder()), b.value());
     }
 
@@ -2439,8 +2451,25 @@ public final class DrlTranspiler {
     private Frag keuzeWaarde(Acc acc, Expr.IfThenElse k, Objecttype subject) {
         Frag test = keuzeConditie(acc, k.conditie(), subject);
         if (test == null) return Frag.todo("ch. 10.2-conditie buiten de gelowerde vorm", k.bron());
-        Frag dan = waarde(acc, k.dan(), subject), anders = waarde(acc, k.anders(), subject);
+        // The ternary evaluates one arm, but a Let INSIDE an arm hoists its need into the shared consequence
+        // prelude, which runs before the ternary does. So the arm's own guard joins {@link Acc#letBewaking} for
+        // the length of that arm: a need bound in the arm not taken is then forced under a false guard and stays
+        // unevaluated, exactly as ch. 10.2 says. Without this the prelude carried only the ENCLOSING needs and a
+        // division inside the unchosen arm really ran (lens finding 2026-09-18: ref answered 5,00 while this
+        // branch aborted the fire with "Breuk deling door 0").
+        Frag dan = inTak(acc, test.text(), () -> waarde(acc, k.dan(), subject));
+        Frag anders = inTak(acc, "!(" + test.text() + ")", () -> waarde(acc, k.anders(), subject));
         return Frag.from("(" + test.text() + " ? " + dan.text() + " : " + anders.text() + ")", test, dan, anders);
+    }
+
+    /** Lower one ch. 10.2 arm with its guard on the need-forcing gate, popped again however the lowering ends. */
+    private Frag inTak(Acc acc, String garde, java.util.function.Supplier<Frag> lowering) {
+        acc.letBewaking.add(garde);
+        try {
+            return lowering.get();
+        } finally {
+            acc.letBewaking.remove(acc.letBewaking.size() - 1);
+        }
     }
 
     /**
