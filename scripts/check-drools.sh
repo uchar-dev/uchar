@@ -199,7 +199,7 @@ EXPECTED_CHANNEL=(
   "anchor/jutterswet-aanspraaktelling|EXCLUDE|loader Refusal: functionDefs — no function section in the v0 backend"
   "anchor/jutterswet-bergingstoezicht|EXCLUDE|transpiler SKIP: verdeling (onopgelost naar_rato) — since the rolvelden card (2026-09-18) the repeated-pair reference field exists, so the refusal moved one layer deeper"
   "anchor/jutterswet-beschikkingsom|EXCLUDE|loader Refusal: Datatype:SumType"
-  "anchor/jutterswet-bootberging|EXCLUDE|loader Refusal: Functie.bronPad — the multi-step fold-source range (WF-102, 2026-09-11). The accumulate source joins the element to the rule subject through ONE role; a composite source with a pattern per intermediate hop is a measured change in BOTH branches with channel consequences of its own, and the card that introduced the field explicitly allowed the named refusal. The refusal is EXPLICIT rather than inherited: without it the loader drops the field and the by-pair search binds a coincidental direct subject-to-element relation, folding the wrong set while ref and clingo fold the right one — the very misbinding the field closes"
+  "anchor/jutterswet-bootberging|EXCLUDE|transpiler SKIP: the WF-102 path itself is CARRIED since 2026-09-18 (card drools-bronpad) and this golden's refusal moved one layer deeper, exactly as bergingstoezicht's did. Its middle relation `berging` declares BOTH roles to-many, so §13.3.9 — which stores a relation in one scalar reference field, on whichever end is the ONE side — derives no field at either end and the hop Boot -> Vondst has nothing to read. That is the erflijn shape, and lifting it is a bean-model change (a collection-valued representation for many-to-many) with channel consequences of its own, which the card that built the walk put out of scope"
   "anchor/jutterswet-erflijn|EXCLUDE|transpiler SKIP: aggregation join with BOTH sides plural — neither side stores a bean field (§13.3.9)"
   "anchor/jutterswet-gemeenteberging|EXCLUDE|transpiler SKIP: one bean field necessarily carries BOTH directions; the arm keeps refusing CONSERVATIVELY since 2026-09-10 — its old ground (the directed reading) is withdrawn by RUNTIME-SEMANTICS ch. 5.7a (§13.3.9)"
   "anchor/jutterswet-kustwacht|DIVERGE|the one value-divergence — full reason in EXCLUDE_KNOWN above (negation-as-failure is not stratified)"
@@ -222,7 +222,7 @@ EXPECTED_CHANNEL=(
   "jutterswet-kinderlet|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-kindermacht|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-kinderprocent|EXCLUDE|loader Refusal: Datatype:ListType"
-  "jutterswet-muntketen|EXCLUDE|loader Refusal: Functie.bronPad — the multi-step fold-source range (WF-102), the THIRD golden of that form and the first whose landing is NARROWED: elementObjecttype is a strict subtype of what the last step's role fills (ch. 2.2 / ch. 3.4b). The refusal is the same one bootberging and vondstketen carry and is unchanged by the narrowing; the one-step narrowing IS played here, by jutterswet-munttelling and jutterswet-muntpiek"
+  "jutterswet-muntketen|EXCLUDE|transpiler SKIP: the same many-to-many `berging` as bootberging above, and the same deeper refusal since 2026-09-18 — NOT the subtype landing it was written for, which the walk does carry (BronpadKetenWitnessTest pins a strict-subtype landing, both branches). The one-step narrowing IS played here, by jutterswet-munttelling and jutterswet-muntpiek"
   "jutterswet-meldplichtspoor|EXCLUDE|loader Refusal: Datatype:SumType"
   "jutterswet-meldtermijnen|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-penningbeschikking-catala|EXCLUDE|loader Refusal: Datatype:SumType"
@@ -233,7 +233,6 @@ EXPECTED_CHANNEL=(
   "jutterswet-vaarwatertoeslag-catala|EXCLUDE|loader Refusal: Expr:Match"
   "jutterswet-vangstwaardering|EXCLUDE|loader Refusal: Datatype:StructType"
   "jutterswet-vondsttarief|EXCLUDE|transpiler SKIP: regel — waarde buiten scope"
-  "jutterswet-vondstketen|EXCLUDE|loader Refusal: Functie.bronPad — the EMITTED witness of the same form (WF-102, 2026-09-11): the RegelSpraak frontend resolves the written two-step chain into a path, so this golden is exactly the document on which dropping the field answers 5,00 where the sentence says 3,00 (measured: without bronPad the same document is verifier-clean and ref, clingo AND this backend all answer 5,00). It refuses beside the hand-written anchor and for the same reason"
   "jutterswet-vormenkabinet|NOCASE|a golden with no case file — nothing to replay"
   "jutterswet-waarderingsinvoer|EXCLUDE|loader Refusal: Datatype:StructType"
   "synth2-afrondingscombinaties|EXCLUDE|transpiler SKIP: regel — waarde buiten scope"
@@ -507,7 +506,19 @@ EXPECTED_CHANNEL=(
 # 148 -> 149, DRL-text 121 -> 122, and no other golden changed channel. One exclusion REASON moved
 # without its channel: `anchor/jutterswet-bergingstoezicht` (a repeated pair itself) now refuses on its
 # verdeling's unresolved naar_rato instead of on the missing join field — deeper in, still EXCLUDE.
-EXPECTED_PLAYED=149
+# 2026-09-18 (card drools-bronpad), 149 -> 150: `jutterswet-vondstketen` joins as a NEW PLAYER — the WF-102
+# multi-step fold-source RANGE (IR-SPEC ch. 4.3, RUNTIME-SEMANTICS ch. 3.4b), which both branches now WALK
+# instead of refusing at the loader. It is the golden on which the difference is a VALUE and not a form:
+# drop the field and the same document stays verifier-clean while every executor answers 5,00 over the
+# coincidental direct `vondstaanmelding` relation where the sentence says 3,00 over the chain. A refusal here
+# left that agreement resting on ref = clingo; playing it closes the square on the form.
+# The other two goldens of the form did NOT join, and the reason is recorded above rather than hidden: their
+# middle relation is many-to-many, so §13.3.9 derives no bean field at either end and the walk refuses one
+# layer deeper than the loader used to. Measured before and after over ALL 199 goldens in BOTH branches:
+# exec 149 -> 150, DRL-text 122 -> 123, and exactly these three report lines move — no other golden changes
+# channel or reason, which also pins that giving every accumulate count its element variable (needed because
+# a source-less count leaves its bindings unresolved over the path's subnetwork) is semantics-free.
+EXPECTED_PLAYED=150
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the
