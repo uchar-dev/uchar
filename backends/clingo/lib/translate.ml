@@ -1344,21 +1344,107 @@ let rec reads_binder b (e : expr) : bool =
    takes the OTHER arm — where ref evaluates nothing at all (ch. 5.11: an
    operand never reached raises no fault and deposits no channel fact).
 
-   Termination: the result is an `If_then_else`, on which this returns [None].
-   Nested arms shrink the IfThenElse depth by one per rewrite. *)
+   Termination: the result is no longer a `Let` at its root, so this returns
+   [None] on it; each rewrite moves the node strictly deeper, and the depth
+   below it is finite.
+
+   The search runs THROUGH the pure arithmetic wrappers — `Binair`, `Afgerond`,
+   `Begrensd` and `TekstReeks`, the nodes that combine operands and do no
+   reading of their own — because an operator between the `Let` and the branch
+   node changes nothing about where the need is. `Let z = t/d in ((als … dan
+   0,00 anders z) plus 1,00)` reads z in exactly one arm just as the bare form
+   does, and ref evaluates the value in exactly the same place. A wrapper is
+   descended into only when EXACTLY ONE of its operands reads the binder: two
+   reading operands mean the value is needed whichever arm is taken, and there
+   is nothing to move.
+
+   A wrapper DISTRIBUTES rather than merely handing the Let down, and that is
+   the whole subtlety of this function. ch. 10.6 clause 2 makes the leeg-barrier
+   belong to the `Let` that bound the binder — "a nested `Let` empties itself,
+   never an enclosing one" — so the barrier's EXTENT is observable. Handing the
+   Let down into the arm and leaving `plus 1,00` outside would shrink that
+   extent from the whole expression to the arm, and a coalescing operator then
+   reads the emptied arm as 0,00 where ref answers leeg. Measured, on exactly
+   the form above with an absent divisor: ref `leeg`, the shrinking rewrite
+   `5,00`. Hoisting the branch node OUT of the wrapper instead —
+   `W[als c dan P anders Q]` becomes `als c dan W[P] anders W[Q]`, which every
+   one of these wrappers admits because each is a pure function of its operands
+   — keeps the extent exactly: the arm the Let lands in still carries the whole
+   wrapper, so emptying it empties what it emptied before.
+
+   The sibling operands are duplicated into both arms by that hoist. Their
+   fences and deposits are therefore emitted twice, which is not observable: a
+   §9.5 fact is keyed by (rule × subject) and collapses, and a `viol/2` witness
+   makes the program UNSAT whichever copy fires. What the hoist DOES move is
+   the ch.-5.11 position of the condition relative to those siblings — it is
+   now read first. In this lowering that is below the resolution of the
+   encoding, which models order as guarding and not as stopping; it is recorded
+   rather than claimed away. *)
+let rec hoist_branch binder (e : expr) : expr option =
+  let reads = reads_binder binder in
+  let opt_reads = function Some x -> reads x | None -> false in
+  (* descend into the single operand that reads the binder, then distribute
+     THIS wrapper over the two arms of the branch node it hands back. The
+     recursive result is always an `If_then_else`, so every level distributes
+     and what finally surfaces is one branch node carrying the OUTERMOST
+     wrapper's type — the type the caller's `Let` had, by WF-076. The siblings
+     ride into both arms, which is what keeps the barrier's extent whole. *)
+  let one_of typ bron (operands : (expr option * (expr -> expr)) list) =
+    match List.filter (fun (o, _) -> opt_reads o) operands with
+    | [ (Some o, rebuild) ] -> (
+        match hoist_branch binder o with
+        | Some (If_then_else { condition; then_; else_; _ }) ->
+            Some
+              (If_then_else
+                 { typ; condition; then_ = rebuild then_; else_ = rebuild else_; bron })
+        | Some _ | None -> None)
+    | _ -> None
+  in
+  match e with
+  | If_then_else { condition; then_; else_; _ }
+    when (not (Ir_v0.Checks.mentions_binder_cond binder condition))
+         && reads then_ <> reads else_ ->
+      Some e
+  | Binair { op; links; rechts; typ; bron } ->
+      one_of typ bron
+        [ (links, fun x -> Binair { op; links = Some x; rechts; typ; bron });
+          (rechts, fun x -> Binair { op; links; rechts = Some x; typ; bron }) ]
+  | Afgerond { basis; modus; decimalen; typ; bron } ->
+      one_of typ bron
+        [ (basis, fun x -> Afgerond { basis = Some x; modus; decimalen; typ; bron }) ]
+  | Begrensd { basis; minimum; maximum; typ; bron } ->
+      one_of typ bron
+        [ (basis, fun x -> Begrensd { basis = Some x; minimum; maximum; typ; bron });
+          (minimum, fun x -> Begrensd { basis; minimum = Some x; maximum; typ; bron });
+          (maximum, fun x -> Begrensd { basis; minimum; maximum = Some x; typ; bron }) ]
+  | Tekst_reeks { delen; typ; bron } ->
+      let at i x =
+        Tekst_reeks
+          { delen = List.mapi (fun j d -> if j = i then Ingevoegd { expr = Some x } else d) delen;
+            typ; bron }
+      in
+      one_of typ bron
+        (List.mapi
+           (fun i d -> ((match d with Ingevoegd { expr } -> expr | Letterlijk _ -> None), at i))
+           delen)
+  | _ -> None
+
 let let_into_arm (e : expr) : expr option =
   match e with
-  | Let
-      { binder; value;
-        body = If_then_else { typ; condition; then_; else_; bron = ite_bron };
-        bron; _ }
-    when (not (Ir_v0.Checks.mentions_binder_cond binder condition))
-         && reads_binder binder then_ <> reads_binder binder else_ ->
-      let push arm = Let { typ; binder; value; body = arm; bron } in
-      Some
-        (if reads_binder binder then_ then
-           If_then_else { typ; condition; then_ = push then_; else_; bron = ite_bron }
-         else If_then_else { typ; condition; then_; else_ = push else_; bron = ite_bron })
+  | Let { binder; value; body; bron; _ } -> (
+      (* hoist first, wrap second — in that order. The `Let` must end up
+         AROUND the whole arm the hoist built, not inside it beside the
+         siblings: its extent IS the barrier's extent (ch. 10.6 clause 2), and
+         wrapping only the inner read would leave the coalescing operator
+         outside it, answering 0,00 where ref answers leeg. *)
+      match hoist_branch binder body with
+      | Some (If_then_else { typ; condition; then_; else_; bron = ite_bron }) ->
+          let push arm = Let { typ; binder; value; body = arm; bron } in
+          Some
+            (if reads_binder binder then_ then
+               If_then_else { typ; condition; then_ = push then_; else_; bron = ite_bron }
+             else If_then_else { typ; condition; then_; else_ = push else_; bron = ite_bron })
+      | Some _ | None -> None)
   | _ -> None
 
 (* B3: a Let binder must be SELF-CONTAINED wherever it is read. A bare value
