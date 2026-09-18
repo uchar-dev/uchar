@@ -1379,7 +1379,29 @@ let rec reads_binder b (e : expr) : bool =
    the ch.-5.11 position of the condition relative to those siblings — it is
    now read first. In this lowering that is below the resolution of the
    encoding, which models order as guarding and not as stopping; it is recorded
-   rather than claimed away. *)
+   rather than claimed away.
+
+   A NESTED `Let` between the outer one and the branch node distributes the same
+   way, and for the same reason: `Let b = v in (als c dan P anders Q)` becomes
+   `als c dan (Let b = v in P) anders (Let b = v in Q)`. Exact under ch. 10.6:
+   only one arm runs, so `v` is still evaluated at most once (clause 1) and only
+   where a read demands it (clause 3), and the barrier's extent is unchanged —
+   the `Let b` node sat AT the branch node's position, and after the move the
+   arm it wraps IS that position's value (clause 2). Two guards, each a
+   correctness condition and not a taste:
+
+   - the branch CONDITION must not read `b`. The distribution leaves the
+     condition outside both arms, so a condition reading `b` would lose its
+     binding. That shape is not left to eager placement — it is measured to
+     diverge (a §6.5 place reported and a fail-fast guard fired on an arm ref
+     never enters, and a wrong VALUE besides) — so it is refused loudly below,
+     except where [let_into_arm]'s swap reaches it first.
+   - the nested VALUE must not mention the outer binder. The distribution copies
+     `v` into BOTH arms, so a `v` reading the outer binder would make both arms
+     read it and break the single-reading-arm invariant the wrap below relies
+     on. That case needs no rewrite anyway: the outer value is then demanded
+     through `b` as well as directly, so it is needed whichever arm is taken —
+     measured non-divergent, eager placement stays. *)
 let rec hoist_branch binder (e : expr) : expr option =
   let reads = reads_binder binder in
   let opt_reads = function Some x -> reads x | None -> false in
@@ -1405,6 +1427,23 @@ let rec hoist_branch binder (e : expr) : expr option =
     when (not (Ir_v0.Checks.mentions_binder_cond binder condition))
          && reads then_ <> reads else_ ->
       Some e
+  | Let { binder = b2; value = v2; body = lbody; typ; bron }
+    when norm b2 <> norm binder && not (Ir_v0.Checks.mentions_binder binder v2) -> (
+      match hoist_branch binder lbody with
+      | Some (If_then_else { condition; then_; else_; _ })
+        when not (Ir_v0.Checks.mentions_binder_cond b2 condition) ->
+          let push arm = Let { typ; binder = b2; value = v2; body = arm; bron } in
+          Some (If_then_else { typ; condition; then_ = push then_; else_ = push else_; bron })
+      | Some (If_then_else _) ->
+          fault
+            "a Let whose need is read in exactly one branch arm sits behind a nested Let whose own \
+             binder that branch's condition reads, with an arithmetic wrapper between them: the \
+             ch. 10.6 rewrite can neither lift the branch node out of the nested Let (the \
+             condition would lose its binder) nor swap the two Lets (the wrapper stands between \
+             them), and eager placement is measured to report a §6.5 divisor place, fire a \
+             fail-fast guard and answer a coalesced value on an arm ref never enters (no corpus \
+             case)"
+      | Some _ | None -> None)
   | Binair { op; links; rechts; typ; bron } ->
       one_of typ bron
         [ (links, fun x -> Binair { op; links = Some x; rechts; typ; bron });
@@ -1429,22 +1468,57 @@ let rec hoist_branch binder (e : expr) : expr option =
            delen)
   | _ -> None
 
-let let_into_arm (e : expr) : expr option =
+(* The SWAP, and why it sits here rather than in [hoist_branch]. Two ADJACENT
+   `Let`s commute: `Let a = V in (Let b = v in X)` and
+   `Let b = v in (Let a = V in X)` bind the same needs over the same body, and
+   under ch. 10.6 they are indistinguishable — each barrier still empties the
+   node that bound the binder that was read, and the OUTER of the pair sits at
+   the same position either way, so whichever fires, the position goes leeg
+   exactly as before. Swapping moves the outer `Let` one step closer to the
+   branch node, and repeating it walks a whole `Let` chain down until the branch
+   node is reached, where the ordinary wrap applies.
+
+   It reaches what the distribution cannot: a branch CONDITION reading the
+   nested binder blocks the distribution (the condition would lose its binding)
+   but not the swap, which leaves the nested `Let` standing around the branch
+   node. The two guards are the scope conditions of the exchange — the nested
+   value leaves the outer binder's scope, and the outer value enters the nested
+   binder's — plus the obvious shadowing one. What neither reaches is a WRAPPER
+   between the two `Let`s with a condition reading the nested binder: the swap
+   cannot step over the wrapper and the distribution cannot lift the branch
+   node, which is the loud refusal in [hoist_branch]. *)
+let rec let_into_arm (e : expr) : expr option =
   match e with
-  | Let { binder; value; body; bron; _ } -> (
-      (* hoist first, wrap second — in that order. The `Let` must end up
-         AROUND the whole arm the hoist built, not inside it beside the
-         siblings: its extent IS the barrier's extent (ch. 10.6 clause 2), and
-         wrapping only the inner read would leave the coalescing operator
-         outside it, answering 0,00 where ref answers leeg. *)
-      match hoist_branch binder body with
-      | Some (If_then_else { typ; condition; then_; else_; bron = ite_bron }) ->
-          let push arm = Let { typ; binder; value; body = arm; bron } in
-          Some
-            (if reads_binder binder then_ then
-               If_then_else { typ; condition; then_ = push then_; else_; bron = ite_bron }
-             else If_then_else { typ; condition; then_; else_ = push else_; bron = ite_bron })
-      | Some _ | None -> None)
+  | Let { binder; value; body; bron; typ } -> (
+      let swapped =
+        match body with
+        | Let { binder = b2; value = v2; body = lbody; bron = bron2; _ }
+          when norm b2 <> norm binder
+               && (not (Ir_v0.Checks.mentions_binder binder v2))
+               && not (Ir_v0.Checks.mentions_binder b2 value) -> (
+            (* WF-076 keeps both node types equal to the body type, so the pair
+               carries one type and the exchange needs no retyping *)
+            match let_into_arm (Let { typ; binder; value; body = lbody; bron }) with
+            | Some inner -> Some (Let { typ; binder = b2; value = v2; body = inner; bron = bron2 })
+            | None -> None)
+        | _ -> None
+      in
+      match swapped with
+      | Some _ -> swapped
+      | None -> (
+          (* hoist first, wrap second — in that order. The `Let` must end up
+             AROUND the whole arm the hoist built, not inside it beside the
+             siblings: its extent IS the barrier's extent (ch. 10.6 clause 2),
+             and wrapping only the inner read would leave the coalescing
+             operator outside it, answering 0,00 where ref answers leeg. *)
+          match hoist_branch binder body with
+          | Some (If_then_else { typ; condition; then_; else_; bron = ite_bron }) ->
+              let push arm = Let { typ; binder; value; body = arm; bron } in
+              Some
+                (if reads_binder binder then_ then
+                   If_then_else { typ; condition; then_ = push then_; else_; bron = ite_bron }
+                 else If_then_else { typ; condition; then_; else_ = push else_; bron = ite_bron })
+          | Some _ | None -> None))
   | _ -> None
 
 (* B3: a Let binder must be SELF-CONTAINED wherever it is read. A bare value
