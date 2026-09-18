@@ -155,7 +155,8 @@ weesclausule over.
 **Getuigen bij naam.** Alles in
 `backends/drools/src/test/java/io/github/yhavinga/regelspraak/cases/`.
 
-- `HeelperiodeKwantorvouwWitnessTest` — 19 → 24 rijen. De replay
+- `HeelperiodeKwantorvouwWitnessTest` — 19 → 27 rijen (24 na de
+  hoofdslag, 27 na de fixronde hieronder). De replay
   (`speel`) draait nu elke cel door BEIDE takken en eist dat zij
   hetzelfde verdict lezen, dus alle bestaande rijen (vacuüm, gat,
   gedeeltelijke dekking, grensgelijkheid, GEEN ≠ ¬ALLE, filter, de
@@ -184,7 +185,7 @@ weesclausule over.
   productieregel die de testnaad vroeg: dezelfde comparator-naad door
   beide takken, package-private, zonder productieaanroeper.
 
-De backend-suite groeide van 400 naar 405 checks, 0 skips.
+De backend-suite groeide van 400 naar 408 checks, 0 skips.
 
 **Mutatieproeven, feitelijk uitgevoerd en hersteld.**
 
@@ -206,11 +207,88 @@ De backend-suite groeide van 400 naar 405 checks, 0 skips.
    `beide_takken_spelen_de_vier_corpusgoldens` (reddingsvloot FAIL).
 
 Beide mutanten teruggedraaid; `mvn -o -f backends/drools/pom.xml package`
-daarna weer `Tests run: 405, Failures: 0, Errors: 0, Skipped: 0`.
+daarna weer `Tests run: 408, Failures: 0, Errors: 0, Skipped: 0`.
+
+**Fixronde na de lens (2026-09-18).** Vier dingen erbij, alle vier
+gemeten.
+
+*De weigeringsassen hadden geen getuige* — terwijl de weesclausule juist
+de gemeten faalmodus is. Er staan er nu drie, alledrie op de GEËMITTEERDE
+DRL-TEKST en niet alleen op de status, want een gemarkeerde regel
+compileert vaak gewoon en dan zegt alleen de tekst of er iets is
+achtergebleven:
+`een_weigeringsas_schrijft_geen_clausule_voor_hij_afketst` (een
+matrixgrens op het eigen attribuut van het element, mét ledenfilter: de
+arm is al door join en subselectie heen als hij afkeurt, en de tekst
+bevat geen `accumulate(`),
+`een_filter_dat_hijst_wordt_teruggedraaid_en_bij_naam_geweigerd` (een
+die/dat-subselectie die zelf een vouw is — die hijst in de `Acc` en geeft
+een lege inline zonder markering terug, dus alleen de clausuleteller
+vangt haar) en
+`een_vouw_onder_een_niet_conjunctieve_kwantor_weigert_bij_naam`. Beide
+takken weigeren in alle drie de rijen op DEZELFDE as met dezelfde reden.
+Letterlijk, met `--drl`:
+
+```
+EXCLUDE drl-transpiler MARKER: regel: Kenmerktoekenning zeewaardig — TODO §8.2 kwantorvouw (ALLE over Schuit) — een niet-scalaire matrixgrens (de eval na de accumulate bindt geen $subject): de wachtwaarde van alle schepen van de Vloot gedurende het gehele jaar groter is dan de grens
+EXCLUDE drl-transpiler MARKER: regel: Kenmerktoekenning zeewaardig — TODO §8.2 kwantorvouw (ALLE over Schuit) — een die/dat-subselectie die deze tak niet IN het elementpatroon kan schrijven (Kwantorvouw): de wachtwaarde van alle schepen van de Vloot gedurende het gehele jaar groter is dan de grens
+```
+
+*De disjunctievorm brak stuk.* Een vouw als kind van een
+niet-conjunctieve `Samengesteld` ("ten minste één van: alle schepen halen
+de matrix; de Vloot is vlaggend") antwoordt met een eigen when-clausule
+en een lege inline; de `||`-vouw schreef die lege inline als operand en
+het pakket stierf. Vóór, op HEAD van de eerste commit:
+
+```
+heelperiodematrix    --drl : EXCLUDE drl compile: [Message [id=1, … [ERR 101] Line 12:25 no viable alternative at input ')' in rule "Kenmerktoekenning zeewaardig"] …
+niet-temporele matrix --drl: EXCLUDE drl compile: [Message [id=1, … [ERR 101] Line 10:25 no viable alternative at input ')' in rule "Kenmerktoekenning zeewaardig"] …
+```
+
+Op `main` gemeten ter vergelijking: de heelperiodevorm markeerde daar nog
+netjes (`TODO voorwaarde: ten minste één van de volgende voorwaarden`) —
+zij kwam nooit tot schrijven — maar de NIET-temporele vorm brak daar al
+stuk, dus het defect is niet door deze kaart ontstaan, het is er alleen
+doorheen gegroeid. Ná, beide vormen:
+
+```
+EXCLUDE drl-transpiler MARKER: regel: Kenmerktoekenning zeewaardig — TODO kwantorvouw (ALLE over Schuit) onder een niet-conjunctieve kwantor: haar clausule is een eigen when-clausule en geen patroonconstraint, dus zij kan niet in een ||/!-vouw staan: ten minste één van de volgende voorwaarden
+```
+
+De exec-tak weigert dezelfde documenten met haar bestaande
+`voorwaarde buiten Phase-B scope`, en `ref` is de arbiter ernaast: beide
+documenten zijn `verifier: PASS` en `ref: oracle: PASS (2 expectations)`.
+Het blijft dus een benoemde KANAALweigering op een welgevormd document,
+geen semantiekwijziging. De vangst is één mechanisme voor beide routes:
+het hijsverbod reist mét de recursie mee naar beneden (sticky, want een
+binnenconjunctie binnen een disjunctie heft hem niet op), zodat de vouw
+weigert vóór zij iets schrijft en met haar eigen as in de reden; de
+clausuleteller op de `Samengesteld` blijft ernaast staan als net voor een
+kanaal dat een volgende knoop niet leest.
+
+*Mutatieproeven, opnieuw feitelijk uitgevoerd en hersteld.*
+`kvTerug` kortgesloten tot een kale markering (geen `aggTerug`) →
+**rood**, 1 check:
+`een_filter_dat_hijst_wordt_teruggedraaid_en_bij_naam_geweigerd` op "en
+geen weesclausule van het gehesen filter". Hijsvangst uit (vlag én net)
+→ **rood**, 1 check:
+`een_vouw_onder_een_niet_conjunctieve_kwantor_weigert_bij_naam` op
+"heelperiodematrix: een parsefout is geen benoemde weigering: drl
+compile: … [ERR 101] …". Beide hersteld; suite daarna weer
+`Tests run: 408, Failures: 0, Errors: 0, Skipped: 0`.
+
+*Onware javadoc weggewerkt.* `RegelSpraakRuntime.rsGeheelPeriodeGeen`
+zei "the DRL branch does not import it (it markers the node)". De
+geëmitteerde DRL van `ploegpremie` importeert en roept hem aan; de zin
+noemt nu beide takken en de datum waarop zij onwaar werd.
+
+*Corpusbrede `--drl`-sweep na de fixronde: byte-identiek aan die ervóór*
+— 105 PLAYED, geen enkele reden verschoven. De disjunctievangst raakt
+geen corpusdocument.
 
 **Gate-12-kanalen ongewijzigd.** `check-drools: PASS — played 148`,
 `channel floor 50 non-PLAYED goldens pinned by name; played matches the
-pinned 148`, `JUnit 405 tests, floor 239`. `EXPECTED_PLAYED` blijft dus
+pinned 148`, `JUnit 408 tests, floor 239`. `EXPECTED_PLAYED` blijft dus
 148 en `scripts/check-drools.sh` hoeft niet te wijzigen: poort 12 speelt
 de EXEC-tak, en die speelde deze vier al.
 
@@ -241,15 +319,19 @@ rood: 0
 
 ```
 backends/drools/src/main/java/io/github/yhavinga/regelspraak/cases/CaseRunner.java
+backends/drools/src/main/java/io/github/yhavinga/regelspraak/runtime/RegelSpraakRuntime.java
 backends/drools/src/main/java/io/github/yhavinga/regelspraak/transpiler/DrlTranspiler.java
 backends/drools/src/test/java/io/github/yhavinga/regelspraak/cases/HeelperiodeKwantorvouwWitnessTest.java
 backends/drools/src/test/java/io/github/yhavinga/regelspraak/cases/NietTemporeleKwantorvouwWitnessTest.java
-backlog/doing/20260917-drl-heelperiode-arm.md
+backlog/done/20260917-drl-heelperiode-arm.md
+backlog/new/20260917-drl-heelperiode-arm.md
 ```
 
-Binnen "May touch"; geen `scripts/`, geen `spec/`, geen `corpus/`.
-`backends/drools/src/main/.../runtime/` bleef ongemoeid: de drie helpers
-die deze kaart nodig had bestonden al en zijn hergebruikt zoals ze zijn.
+Binnen "May touch"; geen `scripts/`, geen `spec/`, geen `corpus/`. Van
+`runtime/` wijzigde alleen commentaar: de drie helpers die deze kaart
+nodig had bestonden al en zijn hergebruikt zoals ze zijn, maar de javadoc
+van `rsGeheelPeriodeGeen` beweerde nog dat de DRL-tak hem niet importeert
+— waar tot deze kaart, aantoonbaar onwaar erna.
 
 **Bewuste restscope.** De carried-set van de twee takken is op deze knoop
 nog steeds niet identiek, en dat is per as gemeten en benoemd gebleven,
@@ -260,7 +342,21 @@ route wél draagt; een geneste vouw als matrix weigeren beide; de
 `voorwaarts`-opslagrichting die de exec-tak kent heeft deze tak niet (zij
 joint op het veld aan de elementzijde, zoals haar aggregaties). De
 niet-scalaire matrixgrens weigert deze arm symmetrisch met de exec-tak,
-om dezelfde structurele reden. Buiten bereik gebleven zoals de kaart
+om dezelfde structurele reden. En één eigenschap van het
+`Samengesteld`-arm is vastgelegd in plaats van verbreed: de markering van
+een samengestelde voorwaarde VERVANGT de tekst van het gemarkeerde kind,
+dus de as van dat kind bereikt het rapport alleen als hij expliciet wordt
+doorgegeven — wat deze kaart voor de vouw doet (`Acc.hijsReden`) en voor
+geen enkele andere knoop; elke andere gemarkeerde kindvorm blijft daar
+"voorwaarde" heten. De doorgifte reikt bovendien één niveau diep
+(slotlens-meting): een vouw in een conjunctie bínnen een disjunctie
+weigert correct en luid, maar de tussenliggende conjunctie consumeert de
+as in haar herstel, zodat de buitenste markering de generieke tekst
+leest (`TODO voorwaarde: …`). Meegenomen opruiming, door de slotlens
+gemeten en hier genoteerd: het terugrolnet werkt nu ook op het
+conjunctieve markerpad, waar main op een verder gemarkeerde regel nog
+een weesclausule (`not Schuit( … )`) liet staan — veilig per
+constructie en corpussweep-byte-identiek. Buiten bereik gebleven zoals de kaart
 voorschreef: `bronPad`, geneste vouw, niet-temporele vouwproductie in de
 frontend, local bindings, standing-value writes, prioritized defaults.
 
@@ -348,16 +444,43 @@ correctie vraagt maar in beschermde of buiten-bereikzones ligt:
   which matrix FORMS each executor's condition translation carries, per
   form and by name". Statusproza, geen normatieve clausule — de
   semantiek zelf is ongewijzigd en had geen kaartmandaat nodig.
-- `corpus/golden/jutterswet-sleepvloot/NOTE.md` r. 77-78: "De
+- `corpus/golden/jutterswet-sleepvloot/NOTE.md` r. 77-79: "De
   DRL-tekst-tak markeert dit document voor zijn heelperiodematrix, zoals
   hij elke heelperiodevouw markeert; dat is de staande kanaalsplitsing en
-  zij …". Voorstel: "Beide Drools-takken spelen dit document sinds
-  2026-09-18; de DRL-tekst-tak leest de ontkende telling via dezelfde
-  gedeelde heelperiodehelpers."
-- `corpus/golden/jutterswet-keurploeg/NOTE.md` r. 103: "The DRL-text
-  branch markers …". Voorstel: die zin vervangen door "The DRL-text
-  branch plays this document since 2026-09-18; the filter is its
-  accumulate source."
+  zij beweegt hier niet." Voorstel: "De DRL-tekst-tak leest de ontkende
+  telling sinds 2026-09-18 zelf, langs dezelfde gedeelde
+  heelperiodehelpers en met de prefix op dezelfde telling
+  (`$kvtlN.size() - rsGeheelPeriodeTelling(...)`); beide Drools-takken
+  spelen dit document, en de kanaalsplitsing die hier stond is dicht."
+- `corpus/golden/jutterswet-keurploeg/NOTE.md` r. 103-105: "The DRL-text
+  branch markers this document by name — it lowers the non-temporal
+  matrix but not the §8.2 whole-period one — which is the standing
+  channel split, unchanged here." Voorstel: "The DRL-text branch plays
+  this document since 2026-09-18: it writes the filter into the
+  accumulate SOURCE of its own collectList fold, which is the same
+  element pattern its non-temporal witness route constrains — so the
+  filter has one reading in both Drools branches and not two."
+- `corpus/golden/jutterswet-vuurtoren/NOTE.md` r. 37-44, de hele
+  "What it covers that the other three do not"-alinea. Beide helften zijn
+  onwaar geworden: de DRL-tekst-tak markeert de heelperiodematrix niet
+  meer en ziet `jutterswet-reddingsvloot` dus wél, en daarmee is die
+  golden niet langer "zonder corpusgetuige". Omdat dit de
+  bestaansreden-alinea van deze golden is, hoort er een inhoudelijk
+  kloppende vervanging te staan in plaats van een schrapping — voorstel:
 
-Deze drie liggen in `spec/` respectievelijk `corpus/`, buiten de
+  > Both executor branches that carry a fold have TWO matrix routes, and
+  > the counting arms are separate code in each of them. This golden is
+  > the only corpus document that reaches the NON-TEMPORAL one: the
+  > Drools exec branch counts over a `collectList` accumulate of the
+  > CONTRIBUTORS instead of over their timelines, and the DRL-text branch
+  > writes a `Number( intValue <op> N ) from accumulate( … count(…) )`
+  > over the element pattern — a count over a pattern, where its
+  > whole-period sibling folds a collected list through
+  > `rsGeheelPeriodeTelling`. `jutterswet-reddingsvloot` pins the other
+  > route in both branches (it has since 2026-09-18, when the DRL-text
+  > branch gained the whole-period fold); without THIS golden the
+  > non-temporal counting route has no corpus witness in either of them,
+  > and the two routes could drift apart unseen.
+
+Deze vier liggen in `spec/` respectievelijk `corpus/`, buiten de
 May-touch van deze kaart, en staan hier daarom als voorstel.
