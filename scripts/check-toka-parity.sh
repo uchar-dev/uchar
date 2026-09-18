@@ -15,10 +15,19 @@
 #   1. the frontend builds (ANTLR parser + resolver + IR emitter, JDK 21+) and
 #      the TOKA test suite under toka/ compiles + passes against it with a
 #      NON-ZERO test count — a suite that ran nothing is a silent greenlight;
-#   2. every pinned parity dump (`toka/**/ir.json`, emitted once with the
-#      toolchain at the pin) re-emits through uchar's OWN frontend
-#      byte-identically — the feature-parity proof (frontend == toolchain on
-#      the ©-Belastingdienst casus the public corpus may never carry);
+#   2. every pinned parity dump (`toka/**/ir.json`) re-emits through uchar's
+#      OWN frontend byte-identically — the feature-parity proof (frontend ==
+#      toolchain on the ©-Belastingdienst casus the public corpus may never
+#      carry), MINUS the recorded divergences. The dump was emitted once with
+#      the toolchain at the pin; where uchar's emitter has since changed ON
+#      PURPOSE the pin was re-taken in that card and listed in toka/README.md
+#      ("Deliberate divergences from the toolchain emission"), and for those
+#      constructs this leg proves "frontend == the recorded state", not
+#      toolchain agreement. Today that list holds one entry: a Tekst literal's
+#      waarde is the PARSED string, not the source snippet with its own outer
+#      '"' (maintainer decision 2026-09-18). Divergence by holdout (toka-45,
+#      below) and divergence by re-pin are both recorded; a silent one is not
+#      available;
 #   3. every replay slice (`toka/cases/**/ir.json`) obeys the SAME metaschema
 #      + byte-round-trip discipline gate 2 enforces on the public corpus, run
 #      here in explicit mode via scripts/check-ir-schema.sh — one serialiser,
@@ -124,6 +133,10 @@ tests=$(printf '%s\n' "$suite_out" | sed -n 's/^\[ *\([0-9][0-9]*\) tests succes
 #    slice dumps under toka/cases/ (part 4's replay fixtures) carry no sibling
 #    .rgs and are NOT re-emittable, so they are excluded here — only casus dumps
 #    that sit beside their .rgs sources are the frontend==toolchain parity proof.
+#    A slice therefore does NOT follow the emitter: when an emitter change
+#    moves a construct, the slices move by hand in the same card
+#    (toka/README.md), or the zone carries two spellings of one construct and
+#    this leg cannot see it.
 casus_n=0; frag_n=0
 while IFS= read -r dump; do
   d=$(dirname "$dump"); name=${d#"$TOKA"/}

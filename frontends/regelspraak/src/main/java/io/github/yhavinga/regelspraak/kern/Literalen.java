@@ -101,8 +101,9 @@ public final class Literalen {
     }
 
     /** The string a Tekst literal or an enumeratiewaarde compares by (§13.3.3.4 / §13.2.14 — both are VALUE
-     *  equality). A Tekst literal's {@code waarde} IS that string, returned VERBATIM: IR-SPEC ch. 4.1 puts the
-     *  UNPARSED source string in that field, which is precisely what the reference interpreter reads into its text
+     *  equality). A Tekst literal's {@code waarde} IS that string, returned VERBATIM: since the 2026-09-18 canonicalisation IR-SPEC ch. 4.1 puts the
+     *  PARSED string in that field (the emitter strips only the outer delimiters; a hand-authored value may
+     *  carry any text, embedded quotes included), which is precisely what the reference interpreter reads into its text
      *  value and what a case input's {@code {"text": …}} carries. Any character removed here would compare one
      *  side of an equality against a string no other executor ever sees, so the two lexeme families that reach
      *  this reader both survive whole: a text with an EMBEDDED double quote ({@code merk "AA"}, which a

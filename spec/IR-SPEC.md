@@ -2523,7 +2523,7 @@ the schema when it does.
 
 | Node | Fields | Notes |
 |---|---|---|
-| Literal | `value`, `type`, `source` | **Delta (row 27):** v0 carries the unparsed source string as the value; v1 carries a typed value |
+| Literal | `value`, `type`, `source` | **Delta (row 27):** v0 carries a LEXEME as the value — a string the executors parse — and v1 carries a typed value. Which lexeme, per sort: WF-081 pins the bare number, WF-084 the ISO date, and a `Tekst` literal's value is the string BETWEEN the source delimiters (maintainer decision 2026-09-18). Two sorts still carry a source-shaped lexeme, tracked in row 27: WF-095 ADMITS the day-first snippet for `DatumTijd` (the v0 emitter still writes it — canonicalising it is its own card), and an enumeratiewaarde keeps its `'…'` delimiters, which readers strip (`Literalen.enumLabel`). The unparsed source slice always lives in `source` (`bron` on the v0 wire), which is where a reader that wants the author's spelling looks |
 | AttributeReference | `attribute`, `subjectType`, `path` (role steps), `type`, `source` | **Delta (row 4):** v0 splits navigation over `navigatieRol` + `navigatiePad` + a `set` flag (with the invariant that a non-empty path implies a role) and keeps the transpiler-facing `onderwerpBron`; v1 unifies into one explicit path of role steps, with result cardinality derived from the declared role cardinalities. **Landed (2026-08-18):** the symbolic path rides the v0 wire as the `navigatieBindingen` extension field (ch. 4.1a, WF-053); the anchor `jutterswet-kustwacht` executes all three navigated shapes through both executors. *Migration:* the v1 unification drops the written-name fields the bindings supersede |
 | ParameterReference | `parameter` (name ref), `type`, `source` | the v0 wire form is already symbolic (the emitter writes the name) — the "embed the model object" wart is in-memory only |
 | VariableReference | `name`, `type`, `source` | a rule-local let-binding (§13.4.2.10); binding is frontend scope resolution |
@@ -3274,6 +3274,24 @@ What this rule deliberately does NOT do: it does not force the emitter to
 write the canonical lexeme. That is the remaining open flank, recorded
 here so the next producer knows which form to target — the canonical one
 is what this rule names first and what a consumer reads.
+
+**The text-literal lexeme (maintainer decision 2026-09-18).** A `Literal`
+whose `type` is `Tekst` carries as its value the PARSED string: what
+stands between the source form's delimiters, with the outer `"…"` removed
+and every character between them kept verbatim — no unescaping, no
+whitespace folding, no case folding. The RegelSpraak string grammar admits
+no escape sequence (a `"` always closes the string), so the removal is
+total and lossless and an emitted value can never itself contain a `"`.
+Unlike WF-081/084/095 this is NOT a well-formedness rule and carries no WF
+number: a `Tekst` literal legitimately carries arbitrary text, so no wire
+value can be rejected on its shape — a hand-authored document whose value
+carries its own outer quotes stays well-formed, and every executor
+compares it VERBATIM (ch. 4.1's raw-string comparison). The rule binds the
+PRODUCER: an emitter that writes the delimiter-carrying snippet puts a
+second spelling of one text value on the wire, which is what this decision
+removed. Its machine-checkable artifacts are the emitter witness (`IrEmitt
+erTest.tekst_literal_lexeme_is_de_geparste_waarde_snippet_in_bron`, gate
+10) and gate 11's byte-identical re-emission of the pinned dumps.
 
 **The validity bound's lexeme (WF-101).** A validity window's bounds
 (ch. 3.10, v0 `Geldigheid`) are each either `null` — the open bound — or

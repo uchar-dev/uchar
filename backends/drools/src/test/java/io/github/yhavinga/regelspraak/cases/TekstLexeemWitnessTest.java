@@ -15,7 +15,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * One v0 {@code Literal} of type {@code Tekst}, one value — in BOTH transpiler branches. IR-SPEC ch. 4.1 puts the
- * unparsed source string in {@code waarde}; the reference interpreter reads it verbatim into its text value and a
+ * parsed string in {@code waarde} (the 2026-09-18 canonicalisation strips only the emitter's outer delimiters;
+ * a hand-authored value may carry any text); the reference interpreter reads it verbatim into its text value and a
  * case input's {@code {"text": …}} carries it verbatim too, so the value a back-end compares (or writes) must be
  * that string and nothing else. Until 2026-09-18 the two branches disagreed: the exec-model branch had a private
  * verbatim reader while the DRL-text branch went through a shared reader that removed EVERY double quote, and the
