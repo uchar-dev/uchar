@@ -202,6 +202,7 @@ let parse_ty st =
 
 let aggregates = [ "sum"; "count" ]
 let known_other_aggregates = [ "min"; "max"; "avg"; "collectset"; "collectbag" ]
+let cmp_ops = [ ">"; ">="; "<"; "<="; "="; "!="; "\\=" ]
 
 let rec parse_expr st = parse_add st
 
@@ -259,8 +260,11 @@ and parse_atom_expr st =
         "the aggregate %s{...}: the slice carries sum and count only" a
   | t -> refuse ~line:(line st) "expected a value expression, found %s" (show t)
 
-(* [sum{?V | ?V = <path>}] — Flora-2's own aggregate spelling, restricted
-   to the one goal shape uchar can lower: a path over a role. *)
+(* [sum{?V | ?V = <path>}] and [count{?V | ?V = <path>, G, …}] — Flora-2's
+   own aggregate spelling. Its body is a comma-separated conjunction of
+   literals; the slice reads the first conjunct as the role hop uchar can
+   lower and hands the rest to the lowering, which decides what they mean
+   (and refuses them on sum, which carries no subselection). *)
 and parse_agg st kind =
   advance st;
   expect st "{";
@@ -284,12 +288,17 @@ and parse_agg st kind =
       refuse ~line:(line st)
         "an aggregate over %s: the slice carries a path expression over a role only"
         (show_expr operand));
+  let goals = ref [] in
+  let rec loop () =
+    match peek st with
+    | P "," -> advance st; goals := parse_goal st :: !goals; loop ()
+    | _ -> ()
+  in
+  loop ();
   expect st "}";
-  E_agg (kind, operand)
+  E_agg (kind, v1, operand, List.rev !goals)
 
-let cmp_ops = [ ">"; ">="; "<"; "<="; "="; "!="; "\\=" ]
-
-let parse_goal st =
+and parse_goal st =
   check_reserved st;
   match (peek st, peek2 st) with
   | Var v, P ":" ->
@@ -382,17 +391,29 @@ let parse_stmt st : stmt =
           refuse ~line:l0
             "a class-level frame on a variable subject: HiLog and meta-programming"
       | _ -> ());
-      expect st "[";
-      let attr =
+      let head =
         match peek st with
-        | Atom a -> advance st; a
-        | Var _ ->
-            refuse ~line:l0 "a variable in an attribute position: HiLog and meta-programming"
-        | t -> refuse ~line:l0 "expected the target attribute, found %s" (show t)
+        (* the isa head [?S : k]: a characteristic assignment, written with
+           the colon Flora-2 uses for class membership and the slice already
+           reads as a characteristic CHECK in a body *)
+        | P ":" ->
+            advance st;
+            H_kenmerk (atom_of st)
+        | _ ->
+            expect st "[";
+            let attr =
+              match peek st with
+              | Atom a -> advance st; a
+              | Var _ ->
+                  refuse ~line:l0
+                    "a variable in an attribute position: HiLog and meta-programming"
+              | t -> refuse ~line:l0 "expected the target attribute, found %s" (show t)
+            in
+            expect st "->";
+            let value = parse_expr st in
+            expect st "]";
+            H_attr (attr, value)
       in
-      expect st "->";
-      let value = parse_expr st in
-      expect st "]";
       expect st ":-";
       let body = ref [ parse_goal st ] in
       let rec loop () =
@@ -411,7 +432,7 @@ let parse_stmt st : stmt =
         refuse ~line:l0
           "a rule with no id: write @!{'name'} before the head — a rule reaches the wire by \
            name, and a synthesised one would be this frontend's invention";
-      S_rule { r_id = rule_id; r_subj = v; r_attr = attr; r_value = value;
+      S_rule { r_id = rule_id; r_subj = v; r_head = head;
                r_body = List.rev !body; r_line = l0 }
   | Atom a -> (
       let no_id kind =

@@ -50,9 +50,13 @@ type expr =
   | E_var of string
   | E_path of string * string list (* ?K . 'rol' . attr *)
   | E_bin of string * expr * expr
-  | E_agg of string * expr (* sum{?V | ?V = <path>} — the path is the operand *)
+  (* [count{?V | ?V = <path>, G, …}] — kind, the collected variable, the
+     path operand, and the goals that narrow the comprehension. Flora-2's
+     aggregate body is a comma-separated conjunction; the slice reads the
+     first conjunct as the hop and the rest as the quantification. *)
+  | E_agg of string * string * expr * goal list
 
-type goal =
+and goal =
   | G_member of string * string * int (* ?V : C *)
   | G_bind of string * expr * int (* ?V = Expr *)
   | G_cmp of string * expr * expr * int
@@ -63,11 +67,16 @@ type sigitem =
 
 let sigitem_line = function Si_decl (_, _, _, l) | Si_val (_, _, l) -> l
 
+(* What a rule defines. [H_attr] is the frame head [?S[a -> Expr]];
+   [H_kenmerk] the isa head [?S : k], which Flora-2 writes with the same
+   colon the slice already reads as a characteristic CHECK in a body. A
+   characteristic has one value it can be given, so the head carries none. *)
+type head = H_attr of string * expr | H_kenmerk of string
+
 type rule = {
   r_id : string option;
   r_subj : string; (* the head variable, without the '?' *)
-  r_attr : string;
-  r_value : expr;
+  r_head : head;
   r_body : goal list;
   r_line : int;
 }
@@ -102,15 +111,40 @@ let is_bare (s : string) =
 
 let atom (s : string) = if is_bare s then s else "'" ^ s ^ "'"
 
+(* The aggregate's own variable reaches the wire as [?V] whatever letter the
+   author chose, so one comprehension has one spelling. Its goals speak of
+   that variable, so they are renamed with it rather than quoted verbatim. *)
+let rec rename_expr v = function
+  | E_num _ as e -> e
+  | E_var x -> E_var (if x = v then "V" else x)
+  | E_path (x, steps) -> E_path ((if x = v then "V" else x), steps)
+  | E_bin (op, l, r) -> E_bin (op, rename_expr v l, rename_expr v r)
+  | E_agg (k, av, operand, goals) ->
+      (* an inner aggregate binds its own variable; the outer rename stops
+         at that shadow *)
+      if av = v then E_agg (k, av, rename_expr v operand, goals)
+      else E_agg (k, av, rename_expr v operand, List.map (rename_goal v) goals)
+
+and rename_goal v = function
+  | G_member (x, c, l) -> G_member ((if x = v then "V" else x), c, l)
+  | G_bind (x, e, l) -> G_bind ((if x = v then "V" else x), rename_expr v e, l)
+  | G_cmp (op, l, r, ln) -> G_cmp (op, rename_expr v l, rename_expr v r, ln)
+
 let rec show_expr = function
   | E_num n -> n
   | E_var v -> "?" ^ v
   | E_path (v, steps) -> String.concat "." (("?" ^ v) :: List.map atom steps)
   | E_bin (op, l, r) -> Printf.sprintf "%s %s %s" (show_expr l) op (show_expr r)
-  | E_agg (k, operand) ->
-      Printf.sprintf "%s{?V | ?V = %s}" k (show_expr operand)
+  | E_agg (k, av, operand, goals) ->
+      Printf.sprintf "%s{?V | ?V = %s%s}" k (show_expr operand)
+        (String.concat ""
+           (List.map (fun g -> ", " ^ show_goal (rename_goal av g)) goals))
 
-let show_goal = function
+and show_goal = function
   | G_member (v, c, _) -> Printf.sprintf "?%s : %s" v (atom c)
   | G_bind (v, e, _) -> Printf.sprintf "?%s = %s" v (show_expr e)
   | G_cmp (op, l, r, _) -> Printf.sprintf "%s %s %s" (show_expr l) op (show_expr r)
+
+let show_head ~var = function
+  | H_attr (attr, _) -> Printf.sprintf "?%s.%s" var (atom attr)
+  | H_kenmerk k -> Printf.sprintf "?%s : %s" var (atom k)

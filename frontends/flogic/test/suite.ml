@@ -132,13 +132,13 @@ let () =
       ("refuse_teldrempel_nul.flogic", "WF-041");
       ("refuse_telling_rechts.flogic", "on the LEFT");
       ("refuse_teldrempel_geen_getal.flogic", "a whole, non-negative number");
-      ("refuse_alle_tweeling.flogic", "without its last goal");
+      ("refuse_alle_tweeling.flogic", "the ALLE spelling repeats the comprehension");
       ("refuse_gefilterde_telling_in_waarde.flogic", "is a QUANTIFICATION");
       ("refuse_gefilterde_som.flogic", "sum{...} carries no subselection");
       ("refuse_telling_tweede_hop.flogic", "ONE role hop");
       ("refuse_telling_vreemde_variabele.flogic", "speaks of ?S");
       ("refuse_kenmerkkop_onbekend.flogic", "declares no characteristic zeewaardig");
-      ("refuse_kenmerk_tweede_definitie.flogic", "two definitions") ]
+      ("refuse_kenmerk_tweede_definitie.flogic", "?X : sterk is defined twice") ]
   in
   List.iter
     (fun (src, needle) ->

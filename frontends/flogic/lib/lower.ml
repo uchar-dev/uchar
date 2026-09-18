@@ -355,7 +355,7 @@ let rec low_expr m (ctx : ctx) ~line (e : expr) : A.expr =
       let typ = join_num ~line (type_of ~line ll) (type_of ~line rr) in
       A.Binair { op = op'; links = Some ll; rechts = Some rr; typ = Some typ;
                  bron = Some (show_expr e) }
-  | E_agg (kind, operand) -> low_agg m ctx ~line ~kind ~operand ~whole:e
+  | E_agg (kind, _, operand, goals) -> low_agg m ctx ~line ~kind ~operand ~goals ~whole:e
 
 and type_of ~line (e : A.expr) =
   match e with
@@ -363,7 +363,7 @@ and type_of ~line (e : A.expr) =
   | A.Binair { typ = Some t; _ } | A.Functie { typ = Some t; _ } -> t
   | _ -> refuse ~line "an operand without a derivable type"
 
-and low_agg m ctx ~line ~kind ~operand ~whole =
+and low_agg m ctx ~line ~kind ~operand ~goals ~whole =
   let v, steps =
     match operand with
     | E_path (v, steps) -> (v, steps)
@@ -372,6 +372,22 @@ and low_agg m ctx ~line ~kind ~operand ~whole =
   if v <> ctx.c_var then
     refuse ~line "the aggregate path %s does not start at the rule's subject ?%s"
       (show_expr operand) ctx.c_var;
+  (* A comprehension reaches this point as a VALUE. A conditioned one is a
+     quantification and belongs in a rule body, compared with its threshold
+     — the F-logic counterpart of the set reading that has no fold source to
+     live in; see [low_kwantorvouw]. *)
+  (match (kind, goals) with
+  | _, [] -> ()
+  | "count", _ ->
+      refuse ~line
+        "count{...} with a condition on its members in a VALUE position: a comprehension that \
+         states a condition of the members it counts is a QUANTIFICATION, and a quantification \
+         needs a threshold to compare its count with — write it as a goal of the rule body, \
+         count{...} >= n"
+  | _ ->
+      refuse ~line
+        "sum{...} carries no subselection: the slice's SOM adds ONE attribute over one role hop, \
+         and a summed set states no condition of its members");
   match (kind, steps) with
   | "count", [ role ] ->
       let f, el = find_hop m ~line ~subject:ctx.c_subject role in
@@ -424,7 +440,67 @@ and low_agg m ctx ~line ~kind ~operand ~whole =
 
 (* --- conditions ------------------------------------------------------------ *)
 
-let low_cond m ctx (g : goal) : A.conditie =
+(* the vacuously true justification WF-050 asks of a base: ALLE over no
+   parts. F-logic writes no justification for an unconditional rule, so
+   the [bron] stays null rather than borrowing a phrase. *)
+let always = A.Samengesteld { kwantor = A.Alle; drempel = 0; onderdelen = []; bron = None }
+
+let conjoin ~bron = function
+  | [] -> always
+  | [ c ] -> c
+  | cs -> A.Samengesteld { kwantor = A.Alle; drempel = 0; onderdelen = cs; bron = Some bron }
+
+(* A [count] comprehension that states a condition of its members is a
+   QUANTIFICATION over them, and the node for that is the fold. The hop is
+   the first conjunct, the LAST goal is the matrix, and everything between
+   narrows the range — Flora-2 has no relative clause to hang a
+   subselection on, so the position carries the distinction. *)
+type quantification = {
+  q_var : string; (* the counted member's variable *)
+  q_role : string;
+  q_hop : expr;
+  q_filter : goal list;
+  q_matrix : goal;
+}
+
+let rec goal_vars = function
+  | G_member (v, _, _) -> [ v ]
+  | G_bind (v, e, _) -> v :: expr_vars e
+  | G_cmp (_, l, r, _) -> expr_vars l @ expr_vars r
+
+and expr_vars = function
+  | E_num _ -> []
+  | E_var v -> [ v ]
+  | E_path (v, _) -> [ v ]
+  | E_bin (_, l, r) -> expr_vars l @ expr_vars r
+  | E_agg (_, _, o, gs) -> expr_vars o @ List.concat_map goal_vars gs
+
+let is_counting_comprehension = function
+  | E_agg ("count", _, _, _ :: _) -> true
+  | _ -> false
+
+let as_quantification ~line = function
+  | E_agg ("count", av, hop, (_ :: _ as goals)) ->
+      let role =
+        match hop with
+        | E_path (_, [ r ]) -> r
+        | E_path (_, steps) ->
+            refuse ~line
+              "count{?V | ?V = %s, …} states a condition over a %d-step path: a quantifier \
+               ranges over INSTANCES, so its comprehension walks ONE role hop, ?X.rol"
+              (show_expr hop) (List.length steps)
+        | _ -> refuse ~line "count{...} over %s, which is not a role hop" (show_expr hop)
+      in
+      let rec split acc = function
+        | [ last ] -> (List.rev acc, last)
+        | g :: rest -> split (g :: acc) rest
+        | [] -> assert false
+      in
+      let q_filter, q_matrix = split [] goals in
+      Some { q_var = av; q_role = role; q_hop = hop; q_filter; q_matrix }
+  | _ -> None
+
+let rec low_cond m ctx (g : goal) : A.conditie =
   match g with
   | G_member (_, k, line) ->
       if not (find_kenmerk m ctx.c_subject k) then
@@ -433,6 +509,16 @@ let low_cond m ctx (g : goal) : A.conditie =
       A.Kenmerk_check
         { kenmerk = Some k; navigatie = None; negatie = false; eigenaar = None;
           periode = None; bron = Some (show_goal g); navigatie_binding = None }
+  | G_cmp (op, l, r, line) when as_quantification ~line l <> None ->
+      low_kwantorvouw m ctx ~line ~op ~rhs:r
+        ~q:(Option.get (as_quantification ~line l))
+        ~bron:(show_goal g)
+  | G_cmp (_, _, r, line) when is_counting_comprehension r ->
+      refuse ~line
+        "the counting comprehension %s stands on the RIGHT of the comparison: the slice reads \
+         the count on the LEFT and its threshold on the right, so one quantification has one \
+         spelling"
+        (show_expr r)
   | G_cmp (op, l, r, line) ->
       let op' =
         match op with
@@ -447,22 +533,100 @@ let low_cond m ctx (g : goal) : A.conditie =
           bron = Some (show_goal g) }
   | G_bind (v, _, line) -> refuse ~line "the binding of ?%s is not a condition" v
 
-(* the vacuously true justification WF-050 asks of a base: ALLE over no
-   parts. F-logic writes no justification for an unconditional rule, so
-   the [bron] stays null rather than borrowing a phrase. *)
-let always = A.Samengesteld { kwantor = A.Alle; drempel = 0; onderdelen = []; bron = None }
-
-let conjoin ~bron = function
-  | [] -> always
-  | [ c ] -> c
-  | cs -> A.Samengesteld { kwantor = A.Alle; drempel = 0; onderdelen = cs; bron = Some bron }
+(* The fold (IR-SPEC ch. 4.5, RUNTIME-SEMANTICS ch. 3.9a). All five
+   quantifiers are one comparison of a COUNT with a number, which is why no
+   negation form is needed and the slice's \naf / \neg refusal does not
+   move: GEEN is count = 0 and ALLE is count = |contributors|, written as
+   the same comprehension without its matrix. *)
+and low_kwantorvouw m ctx ~line ~op ~q ~rhs ~bron : A.conditie =
+  let f, el = find_hop m ~line ~subject:ctx.c_subject q.q_role in
+  (* Every goal speaks of the counted member and of nothing else: the
+     filter and the matrix are read PER CONTRIBUTOR with the element as
+     subject, so a condition of the outer subject has no reading inside.
+     That check is also what makes the rename below capture-free. *)
+  List.iter
+    (fun g ->
+      List.iter
+        (fun v ->
+          if v <> q.q_var then
+            refuse ~line
+              "the goal %s inside count{...} speaks of ?%s, not of the counted member ?%s: the \
+               filter and the matrix are read per contributor, with the member as subject"
+              (show_goal g) v q.q_var)
+        (goal_vars g))
+    (q.q_matrix :: q.q_filter);
+  (* the member reaches the wire as ?V whatever letter the author chose,
+     exactly as the aggregate's own rendering does *)
+  let ectx = { c_subject = el; c_var = "V"; c_binds = [] } in
+  let low g = low_cond m ectx (rename_goal q.q_var g) in
+  let filter =
+    match q.q_filter with
+    | [] -> None
+    | gs ->
+        Some
+          (conjoin
+             ~bron:(String.concat ", " (List.map (fun g -> show_goal (rename_goal q.q_var g)) gs))
+             (List.map low gs))
+  in
+  let toets = low q.q_matrix in
+  let threshold lex =
+    match int_of_string_opt lex with
+    | Some n when n >= 0 -> n
+    | _ ->
+        refuse ~line
+          "the threshold %s of a counting quantifier is not a whole, non-negative number: the \
+           wire carries an integer drempel (WF-108 (e), WF-041)"
+          lex
+  in
+  let kwantor, drempel =
+    match (op, rhs) with
+    | "=", E_agg ("count", _, _, _) ->
+        let twin = E_agg ("count", q.q_var, q.q_hop, q.q_filter) in
+        if show_expr rhs <> show_expr twin then
+          refuse ~line
+            "the ALLE spelling repeats the comprehension without its last goal, and this one \
+             does not — expected %s, found %s: ALLE is count(satisfiers) = count(members), and \
+             the members are the ones the filter leaves"
+            (show_expr twin) (show_expr rhs);
+        (A.Alle, None)
+    | (">=" | "<=" | "="), E_num lex -> (
+        match (op, threshold lex) with
+        | "=", 0 -> (A.Geen, None)
+        | _, 0 ->
+            refuse ~line
+              "a counting quantifier with threshold 0: WF-041 pins the bound at 1, and \"no \
+               member satisfies the matrix\" has its own spelling — count{...} = 0, which is GEEN"
+        | ">=", n -> (A.Ten_minste, Some n)
+        | "<=", n -> (A.Ten_hoogste, Some n)
+        | _, n -> (A.Precies, Some n))
+    | ((">" | "<") as o), E_num lex when int_of_string_opt lex <> None ->
+        let n = Option.get (int_of_string_opt lex) in
+        refuse ~line
+          "the strict comparison '%s %s' against a counting comprehension: the drempel on the \
+           wire is the number the source wrote, so the slice reads the direct spelling — write \
+           '%s'"
+          o lex
+          (if o = ">" then Printf.sprintf ">= %d" (n + 1) else Printf.sprintf "<= %d" (n - 1))
+    | _ ->
+        refuse ~line
+          "the counting comprehension is compared with %s: the right side of a count comparison \
+           is a whole, non-negative number (the threshold) or the same comprehension WITHOUT its \
+           last goal (the ALLE spelling)"
+          (show_expr rhs)
+  in
+  A.Kwantorvouw
+    { kv_kwantor = kwantor; kv_drempel = drempel; kv_element_objecttype = Some el;
+      kv_filter = filter; kv_toets = Some toets; kv_bron = Some bron;
+      kv_bron_rol = Some { rb_feittype = f.f_name; rb_rol = q.q_role }; kv_bron_pad = None }
 
 (* --- rules ----------------------------------------------------------------- *)
 
 type definition = {
   d_name : string option;
-  d_target : string * string; (* subject class, attribute *)
+  d_target : string * string; (* subject class, attribute or characteristic *)
   d_var : string; (* the head variable, for the [bron] renderings *)
+  d_kenmerk : bool; (* from the isa head ?S : k *)
+  d_doel_bron : string; (* the head in its own spelling *)
   d_barred : bool; (* from c[|attr -> v|], which is a base by decision *)
   d_cond : A.conditie option; (* None = unconditional: the base *)
   d_value : A.expr;
@@ -506,19 +670,35 @@ let low_rule m (r : rule) : definition =
         | g -> Some (low_cond m ctx g))
       r.r_body
   in
-  if find_kenmerk m subject r.r_attr then
-    refuse ~line:r.r_line
-      "the rule head writes the characteristic %s: the slice defines attribute values only"
-      r.r_attr;
-  let (_ : A.datatype) = attr_type m ~line:r.r_line subject r.r_attr in
-  let value = low_expr m ctx ~line:r.r_line r.r_value in
+  let target, value, kenmerk =
+    match r.r_head with
+    | H_kenmerk k ->
+        if not (find_kenmerk m subject k) then
+          refuse ~line:r.r_line
+            "the head ?%s : %s assigns a characteristic, but %s declares no characteristic %s \
+             (on it or on a supertype)"
+            r.r_subj k subject k;
+        (* a characteristic has ONE value it can be given, and the head does
+           not write it — the slice does not invent a lexeme for it either,
+           so the literal's [bron] stays null *)
+        (k, A.Literal { waarde = Some "waar"; typ = Some A.Booleaan; bron = None }, true)
+    | H_attr (attr, e) ->
+        if find_kenmerk m subject attr then
+          refuse ~line:r.r_line
+            "the rule head writes the characteristic %s as an attribute value: a characteristic \
+             is assigned with the isa head, ?%s : %s"
+            attr r.r_subj attr;
+        let (_ : A.datatype) = attr_type m ~line:r.r_line subject attr in
+        (attr, low_expr m ctx ~line:r.r_line e, false)
+  in
   let bron =
     String.concat ", " (List.filter_map (function
       | G_member (v, c, _) when v = r.r_subj && c = subject -> None
       | G_bind _ -> None
       | g -> Some (show_goal g)) r.r_body)
   in
-  { d_name = r.r_id; d_target = (subject, r.r_attr); d_var = r.r_subj; d_barred = false;
+  { d_name = r.r_id; d_target = (subject, target); d_var = r.r_subj; d_kenmerk = kenmerk;
+    d_doel_bron = show_head ~var:r.r_subj r.r_head; d_barred = false;
     d_cond = (if conds = [] then None else Some (conjoin ~bron conds));
     d_value = value; d_line = r.r_line }
 
@@ -526,12 +706,14 @@ let low_rule m (r : rule) : definition =
 
 let no_geldigheid = Some { A.geld_vanaf = None; geld_tot = None }
 
-let doel m ~subject ~attr ~var ~line =
-  let dt = attr_type m ~line subject attr in
+let doel m ~subject ~attr ~kenmerk ~bron ~var ~line =
+  (* a characteristic's target type is the boolean the assignment writes;
+     an attribute's is its declaration *)
+  let dt = if kenmerk then A.Booleaan else attr_type m ~line subject attr in
   A.Attribuut_ref
     { attribuut = Some attr; objecttype = Some subject;
       onderwerp_bron = Some ("?" ^ var); navigatie_rol = None; typ = Some dt;
-      bron = Some (show_expr (E_path (var, [ attr ]))); set = false; navigatie_pad = [];
+      bron = Some bron; set = false; navigatie_pad = [];
       navigatie_bindingen = None }
 
 let document (stmts : stmt list) : A.document =
@@ -597,7 +779,8 @@ let document (stmts : stmt list) : A.document =
                   o.o_name attr (show_expr e) attr o.o_name);
             let ctx = { c_subject = o.o_name; c_var = "self"; c_binds = [] } in
             let (_ : A.datatype) = attr_type m ~line o.o_name attr in
-            { d_name = Some id; d_target = (o.o_name, attr); d_var = "self"; d_barred = true;
+            { d_name = Some id; d_target = (o.o_name, attr); d_var = "self"; d_kenmerk = false;
+              d_doel_bron = show_head ~var:"self" (H_attr (attr, e)); d_barred = true;
               d_cond = None; d_value = low_expr m ctx ~line e; d_line = line })
           o.o_bases)
       m.otypes
@@ -616,6 +799,32 @@ let document (stmts : stmt list) : A.document =
   List.iter
     (fun ((subject, attr) as target) ->
       let here = List.filter (fun d -> d.d_target = target) (barred @ defs) in
+      (* A CHARACTERISTIC is attributed, not valued: there is one value it
+         can be given, so two definitions of one characteristic target
+         cannot conflict and the priority device has nothing to order. It
+         therefore stays a standing norm (ch. 7.8) with its condition as the
+         rule's own voorwaarde, and never becomes a defaults stack. A second
+         definition refuses for the same reason a second unconditional
+         attribute definition does: nothing in the slice orders them. *)
+      match here with
+      | ({ d_kenmerk = true; _ } as d) :: rest ->
+          (match rest with
+          | d2 :: _ ->
+              refuse ~line:d2.d_line
+                "?X : %s is defined twice on %s (line %d and line %d): a characteristic target \
+                 carries one definition — there is one value to give it, so nothing orders two"
+                attr subject d.d_line d2.d_line
+          | [] -> ());
+          resolved :=
+            !resolved
+            @ [ { A.rr_naam = d.d_name; rr_soort = Some A.Kenmerktoekenning;
+                  doel =
+                    Some
+                      (doel m ~subject ~attr ~kenmerk:true ~bron:d.d_doel_bron ~var:d.d_var
+                         ~line:d.d_line);
+                  waarde = Some d.d_value; rr_voorwaarde = d.d_cond;
+                  rr_geldigheid = no_geldigheid; rr_bron_annotaties = None } ]
+      | _ -> (
       let bases = List.filter (fun d -> d.d_cond = None) here in
       let excs = List.filter (fun d -> d.d_cond <> None) here in
       let base =
@@ -633,7 +842,10 @@ let document (stmts : stmt list) : A.document =
           resolved :=
             !resolved
             @ [ { A.rr_naam = b.d_name; rr_soort = Some A.Berekening;
-                  doel = Some (doel m ~subject ~attr ~var:b.d_var ~line:b.d_line);
+                  doel =
+                    Some
+                      (doel m ~subject ~attr ~kenmerk:false ~bron:b.d_doel_bron ~var:b.d_var
+                         ~line:b.d_line);
                   waarde = Some b.d_value; rr_voorwaarde = None;
                   rr_geldigheid = no_geldigheid; rr_bron_annotaties = None } ]
       | [], None -> ()
@@ -654,7 +866,7 @@ let document (stmts : stmt list) : A.document =
             !groups
             @ [ { A.pd_naam = naam; pd_onderwerp = subject; pd_kenmerk = None;
                   pd_attribuut = Some attr; defaults = members; pd_ongeordend = false;
-                  pd_bron = None; pd_geldigheid = no_geldigheid } ])
+                  pd_bron = None; pd_geldigheid = no_geldigheid } ]))
     !targets;
   let objecttypen =
     List.map

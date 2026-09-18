@@ -125,9 +125,34 @@ let rec conditie (c : conditie) : json =
           ("onderdelen", `List (List.map (fun c ->
              match c with
              | Vergelijking _ | Kenmerk_check _ -> conditie_leaf c
+             (* a fold beside an ordinary condition of the subject: the two
+                conjoin, and the fold keeps its own shape inside *)
+             | Kwantorvouw _ -> conditie c
              | _ -> failwith "Emit: nested composite not produced by the F-logic slice")
              onderdelen));
           bron br ]
+  (* The quantifier fold. [drempel] is present EXACTLY under the three
+     counting quantifiers (WF-108 (e)) and absent otherwise, so it is
+     written conditionally rather than as a null nobody may consult; the
+     range is always the one-step [bronRol], never [bronPad]. *)
+  | Kwantorvouw
+      { kv_kwantor; kv_drempel; kv_element_objecttype; kv_filter; kv_toets; kv_bron;
+        kv_bron_rol; kv_bron_pad } ->
+      if kv_bron_pad <> None then
+        failwith "Emit: the slice writes no multi-step quantifier range";
+      let rb =
+        match kv_bron_rol with
+        | Some rb -> rb
+        | None -> failwith "Emit: a quantifier fold without its role binding"
+      in
+      node "Kwantorvouw"
+        ([ ("kwantor", s (kwantor_s kv_kwantor)) ]
+        @ (match kv_drempel with None -> [] | Some d -> [ ("drempel", i d) ])
+        @ [ ("elementObjecttype", so kv_element_objecttype);
+            ("filter", opt conditie kv_filter);
+            ("toets", opt conditie kv_toets);
+            bron kv_bron;
+            ("bronRol", rol_binding rb) ])
   | c -> conditie_leaf c
 
 and conditie_leaf (c : conditie) : json =
