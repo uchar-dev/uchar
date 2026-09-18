@@ -45,10 +45,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * the implementation it was written beside proves nothing, so the three ways to get this construct wrong were
  * each built and run:
  * <ul>
- *   <li>the barrier dropped (an ALWAYS-WRITING Let) → 3 red:
+ *   <li>the barrier dropped (an ALWAYS-WRITING Let) → 5 red, among them
  *       {@code een_lege_behoefte_maakt_de_hele_let_leeg…}, {@code een_lege_buitenbehoefte…} and
  *       {@code het_lege_doel_is_observeerbaar_afwezig…};</li>
- *   <li>the Let always leeg (a NEVER-WRITING one) → 9 red, every filled pin among them;</li>
+ *   <li>the Let always leeg (a NEVER-WRITING one) → 11 red, every filled pin among them;</li>
  *   <li>the prelude's own guard dropped → {@code een_lege_buitenbehoefte…} ERRORS with
  *       "Breuk deling door 0", the fault ch. 10.6 says must not happen;</li>
  *   <li>the §6.5 companion walk left at the Let (no descent) →
