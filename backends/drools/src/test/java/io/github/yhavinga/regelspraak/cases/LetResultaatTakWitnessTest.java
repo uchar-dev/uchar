@@ -50,7 +50,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       {@code het_lege_doel_is_observeerbaar_afwezig…};</li>
  *   <li>the Let always leeg (a NEVER-WRITING one) → 9 red, every filled pin among them;</li>
  *   <li>the prelude's own guard dropped → {@code een_lege_buitenbehoefte…} ERRORS with
- *       "Breuk deling door 0", the fault ch. 10.6 says must not happen.</li>
+ *       "Breuk deling door 0", the fault ch. 10.6 says must not happen;</li>
+ *   <li>the §6.5 companion walk left at the Let (no descent) →
+ *       {@code een_deling_door_leeg_binnen_een_behoefte…} goes red: "verwacht inconsistent …, werkelijk
+ *       consistent", the silent direction;</li>
+ *   <li>the companion emitted WITHOUT its needs as a gate →
+ *       {@code een_deling_achter_een_lege_behoefte…} goes red: "verwacht consistent, werkelijk inconsistent",
+ *       a fault invented on a path the barrier cut off.</li>
  * </ul>
  */
 class LetResultaatTakWitnessTest {
@@ -104,6 +110,27 @@ class LetResultaatTakWitnessTest {
         // prelude's own guard load-bearing: measured by mutation (guard dropped), this branch reports
         // "Breuk deling door 0" here instead of playing. ref: garde leeg, consistent.
         beideSpelen(jutter(BARRIERE_VOOR_DE_DELING, leeg("garde") + ", " + leeg("quotient")));
+    }
+
+    // ---------------- 3b. the §6.5 fout companion walks through the binding ----------------
+
+    @Test void een_deling_door_leeg_binnen_een_behoefte_meldt_zich_nog_steeds() throws Exception {
+        // heffing := Let q = teller gedeeld door heffingsdeler in q plus 1,00, with the divisor ABSENT. §6.5
+        // Tabel 12 makes that a Fout: the value degrades to leeg and the §9.5 channel carries the reason, so
+        // ref answers INCONSISTENT. The DRL branch surfaces it through a SEPARATE companion rule built from a
+        // walk over the rule value — a walk that stops at a Let sees no division at all and leaves the run
+        // silently CONSISTENT, which is the direction that cannot be noticed from the outside.
+        beideSpelen(jutterMet(LEGE_HEFFINGSDELER, leeg("heffing") + ", " + waarde("bescherm", "50.00")
+                + ", { \"kind\": \"inconsistent\", \"rule\": \"heffing van een jutter\", \"label\": \"J1\" }"));
+    }
+
+    @Test void een_deling_achter_een_lege_behoefte_meldt_zich_juist_niet() throws Exception {
+        // the other direction, which a companion built WITHOUT the needs would get wrong: bescherm := Let
+        // veilig = inkomen in Let r = teller gedeeld door beschermdeler in veilig plus r, with BOTH inkomen and
+        // the divisor absent. The read of `veilig` empties the Let before `r` is ever forced, so no division
+        // runs and there is nothing to report — ref: bescherm leeg, CONSISTENT. A companion that fired on the
+        // bare "dividend vol, divisor leeg" pattern would invent an Inconsistentie on a path that never ran.
+        beideSpelen(jutter(LEGE_DELER_ACHTER_DE_BARRIERE, waarde("heffing", "11.00") + ", " + leeg("bescherm")));
     }
 
     // ---------------- 4. leeg beside gevuld: both mutants go red ----------------
@@ -204,18 +231,35 @@ class LetResultaatTakWitnessTest {
 
     // ---------------- the case inputs ----------------
 
-    /** teller/deler/staffel, the three inputs every case supplies the same way unless it says otherwise. */
+    /** The four divisors every case supplies the same way unless it says otherwise: a case that leaves one out
+     *  is making a point about THAT divisor, since a leeg divisor is a §6.5 Fout wherever its need is forced. */
     private static final String INVOER_REST =
-            "\"teller\": { \"number\": \"40.00\" }, \"deler\": { \"number\": \"4\" }, \"staffel\": { \"number\": \"4\" }";
+            "\"teller\": { \"number\": \"40.00\" }, \"deler\": { \"number\": \"4\" }, \"staffel\": { \"number\": \"4\" }, "
+            + "\"heffingsdeler\": { \"number\": \"4\" }, \"beschermdeler\": { \"number\": \"4\" }";
     private static final String GEVULD = "\"inkomen\": { \"number\": \"40.00\" }, " + INVOER_REST;
     private static final String LEEG = INVOER_REST;                     // inkomen ABSENT
     private static final String NULDELER =
             "\"inkomen\": { \"number\": \"40.00\" }, \"teller\": { \"number\": \"40.00\" }, "
-            + "\"deler\": { \"number\": \"0\" }, \"staffel\": { \"number\": \"4\" }";
+            + "\"deler\": { \"number\": \"0\" }, \"staffel\": { \"number\": \"4\" }, "
+            + "\"heffingsdeler\": { \"number\": \"4\" }, \"beschermdeler\": { \"number\": \"4\" }";
     private static final String BARRIERE_VOOR_DE_DELING =                // inkomen ABSENT and staffel 0
-            "\"teller\": { \"number\": \"40.00\" }, \"deler\": { \"number\": \"0\" }, \"staffel\": { \"number\": \"0\" }";
+            "\"teller\": { \"number\": \"40.00\" }, \"deler\": { \"number\": \"0\" }, \"staffel\": { \"number\": \"0\" }, "
+            + "\"heffingsdeler\": { \"number\": \"4\" }, \"beschermdeler\": { \"number\": \"4\" }";
+    /** `heffingsdeler` ABSENT: the §6.5 site inside a NEED's own value really runs, and faults. */
+    private static final String LEGE_HEFFINGSDELER =
+            "\"inkomen\": { \"number\": \"40.00\" }, \"teller\": { \"number\": \"40.00\" }, "
+            + "\"deler\": { \"number\": \"4\" }, \"staffel\": { \"number\": \"4\" }, "
+            + "\"beschermdeler\": { \"number\": \"4\" }";
+    /** `beschermdeler` AND inkomen ABSENT: the same site sits BEHIND a barrier that fires first. */
+    private static final String LEGE_DELER_ACHTER_DE_BARRIERE =
+            "\"teller\": { \"number\": \"40.00\" }, \"deler\": { \"number\": \"4\" }, "
+            + "\"staffel\": { \"number\": \"4\" }, \"heffingsdeler\": { \"number\": \"4\" }";
 
     private static String jutter(String attributen, String verwacht) {
+        return jutterMet(attributen, verwacht + ", { \"kind\": \"consistent\" }");
+    }
+
+    private static String jutterMet(String attributen, String verwacht) {
         return """
                 { "format": "uchar-case-v0", "asOfDate": null,
                   "input": { "instances": [
@@ -223,7 +267,7 @@ class LetResultaatTakWitnessTest {
                         "attributes": { %s },
                         "roles": {}, "characteristics": [] } ],
                     "parameters": {} },
-                  "expected": [ %s, { "kind": "consistent" } ] }
+                  "expected": [ %s ] }
                 """.formatted(attributen, verwacht);
     }
 
@@ -297,6 +341,8 @@ class LetResultaatTakWitnessTest {
         String teller = attr("teller", 2, false, NN);
         String deler = attr("deler", 0, true, NN);
         String staffel = attr("staffel", 0, true, NN);
+        String heffingsdeler = attr("heffingsdeler", 0, true, NN);
+        String beschermdeler = attr("beschermdeler", 0, true, NN);
         String dubbelDef = binair("MAAL", inkomen, lit("2", 0, true));
 
         String[][] rs = {
@@ -341,6 +387,15 @@ class LetResultaatTakWitnessTest {
             // the non-regression flank: a variable NO result read reaches gets no Let at all
             {"premie van een jutter", attr("premie", 2, false, ONBEPAALD), lit("7.00", 2, false),
              verg("GROTER", dubbelDef, lit("50.00", 2, false))},
+            // a §6.5 site inside a NEED's own value — the companion must still be built for it
+            {"heffing van een jutter", attr("heffing", 2, false, ONBEPAALD),
+             let("q", binair("GEDEELD_DOOR", teller, heffingsdeler),
+                 binair("PLUS", bref("q", ONBEPAALD), lit("1.00", 2, false)), ONBEPAALD), "null"},
+            // the same site BEHIND a barrier — the companion must carry that need as its gate
+            {"bescherm van een jutter", attr("bescherm", 2, false, ONBEPAALD),
+             let("veilig", inkomen,
+                 let("r", binair("GEDEELD_DOOR", teller, beschermdeler),
+                     binair("PLUS", bref("veilig", NN), bref("r", ONBEPAALD)), ONBEPAALD), ONBEPAALD), "null"},
         };
 
         StringBuilder namen = new StringBuilder(), regels = new StringBuilder();
@@ -350,10 +405,11 @@ class LetResultaatTakWitnessTest {
             regels.append(regel(r[0], r[1], r[2], r[3]));
         }
         StringBuilder attributen = new StringBuilder(
-                "\"inkomen\":%s,\"teller\":%s,\"deler\":%s,\"staffel\":%s".formatted(
-                        num(2, false, NN), num(2, false, NN), num(0, true, NN), num(0, true, NN)));
+                "\"inkomen\":%s,\"teller\":%s,\"deler\":%s,\"staffel\":%s,\"heffingsdeler\":%s,\"beschermdeler\":%s"
+                        .formatted(num(2, false, NN), num(2, false, NN), num(0, true, NN), num(0, true, NN),
+                                num(0, true, NN), num(0, true, NN)));
         for (String naam : new String[]{"aandeel", "gestaffeld", "quotient", "garde", "metlet", "zonderlet",
-                                        "dubbelop", "schaduw", "zusters", "premie"})
+                                        "dubbelop", "schaduw", "zusters", "premie", "heffing", "bescherm"})
             attributen.append(",\"%s\":%s".formatted(naam, num(2, false, ONBEPAALD)));
 
         return ("{\"formaat\":\"regelspraak-ir-v0\","
