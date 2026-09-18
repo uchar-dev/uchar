@@ -10,6 +10,18 @@ niet en mocht dat niet.*
 *Meetdatum van alle tellingen: 2026-09-19, op `main` @ `245f7152`. Alle
 veertien gates stonden bij die meting groen.*
 
+*Drift, nagekeken bij het afronden: `main` is tijdens het werk doorgelopen naar
+`15530f81` (twee kaarten: `asp-duw-tussenknopen` en `drl-som-over-bronrol`). Het
+raakt dit document op twee plekken en geen van beide ongeldig. (1)
+`backends/drools`' **DRL-tekst-transpiler** leest het vouwbereik sinds die
+kaarten van de wire in plaats van het per tak af te leiden — dat versterkt §2.2's
+bevinding dat de vouw-`bronRol` gelezen wordt en maakt de vouwhelft van P3 nog
+duidelijker al-gedaan; `IrLoader.java` zelf is byte-identiek, dus de
+autoriteitstabel in §2.2 staat. (2) `CONSTRUCTS.md` rijen 4 en 24 zijn
+aangevuld; **§9's derde registerrij richt zich op rij 4 en moet tegen die nieuwe
+tekst worden herlezen voor hij wordt toegepast.** De corpustellingen bewogen
+niet.*
+
 ---
 
 ## 0. Waarvoor dit document dient
@@ -23,7 +35,7 @@ opruiming:
 
 Die gebeurtenis is nooit ingepland, en de opgespaarde lijst is intussen niet
 meer te overzien uit één bron: hij staat verdeeld over de deltakolom van
-`spec/CONSTRUCTS.md` (40 rijen plus een knoopinventaris), zestig
+`spec/CONSTRUCTS.md` (40 rijen plus een knoopinventaris), drieënzestig
 `**Delta`-markeringen in `spec/IR-SPEC.md`, en een handvol besluiten die
 alleen in prozanoten staan. Dit document legt de lijst compleet op tafel, met
 per brekende delta wat er van de wire verdwijnt, wie er meebeweegt, hoe groot
@@ -228,7 +240,7 @@ gemeten in plaats van uit één alinea afgelezen:
 | `AttribuutRef.navigatieBindingen` | **genegeerd**, her-afgeleid uit `navigatieRol`/`navigatiePad` | port vóór B11 (P1) |
 | `Kenmerk.navigatieBinding` | **genegeerd**, her-afgeleid | port vóór B11 (P1) |
 | `ResolvedVerdeling.verbindendeRol` | **genegeerd**, her-afgeleid uit het typenpaar | port vóór B12 (P3) |
-| `Functie.bronRol` (vouw) | **gelezen** — zijkanaal, terugval voor het zelfgetypeerde paar | geen port nodig |
+| `Functie.bronRol` (vouw) | **gelezen** — zijkanaal, laatst geraadpleegde arm; beslissend voor het zelfgetypeerde én het herhaalde paar (sinds 2026-09-19 in beide Drools-takken) | geen port nodig |
 | `ResolvedObjectCreatie.verbindendeRol` | **gelezen** — en ch. 5.5 maakt hem GEZAGHEBBEND | geen port nodig |
 | feitcreatie `feittype/ankerRol/doelRol/joinRol`, uniciteit `scopeRol`, tussenstap `rolBinding` | **gelezen**, maar het BONENveld beslist | port vóór B7/B8 (P2) |
 
@@ -744,6 +756,11 @@ weg en de twee regels gaan mee. Drie `wf096-*`-getuigen en vier
 ---
 
 #### B12 — WF-048 vervalt: de binding wordt verplicht
+
+*(Afbakening: rij 4's zin over "a fold with NO range at all" betreft de vouw
+zónder geschreven rol én zonder `bronRol` — die weigert vandaag al overal.
+B12's 54 dragers hébben een geschreven rol of vallen onder WF-048's
+afleidbaarheidsarm; wat hier vervalt is die afleidbaarheids-toelating.)*
 
 **Wire-diff.**
 
@@ -1344,6 +1361,8 @@ om een besluit uit te stellen tot hij niet meer uitstelbaar is.
 
 ---
 
+### Familie F (vervolg) — de regellaag
+
 #### B27 — `ResolvedUniciteit` en `ResolvedUniciteitUnie` smelten samen
 
 **Wire-diff.**
@@ -1562,7 +1581,7 @@ Daarvan zijn er **171** getuige van een WF-regel die de klap raakt:
 | WF-034 rolcheck (2) + kenmerkcheck-eigenaar (1) + WF-100 (1) | **4** | B9, B10 | **geheel** |
 | WF-048 (2) + WF-098 (2) | **4** | B12, B23 | WF-048 geheel, WF-098 vormwijziging |
 | WF-024 (1) + WF-003 (1) + WF-039 (1) | **3** | B21, B16, B22b | WF-024/003 geheel, WF-039 blijft |
-| WF-034, overige armen | **34** | — | **blijven** |
+| WF-034, overige armen | **35** | — | **blijven** |
 | **totaal geraakt** | **171** | | |
 
 *Meetmethode: mapnaamprefix (`corpus/negatief/<wf###>-…`), wat de
@@ -2018,7 +2037,7 @@ al gemengd.
 
 **Aanbeveling: (a), maar niet nu.** Dit document is geschreven om beslissingen
 uit te lokken, niet om gepubliceerd te worden; vertalen vóór de besluiten kost
-werk aan tekst die op dertien punten nog gaat veranderen. Zodra de vragen
+werk aan tekst die op zeventien punten nog gaat veranderen. Zodra de vragen
 beantwoord zijn is de vertaling zinvol, en dan hoort de conventie er expliciet
 bij — want (c) leidt ertoe dat de leesbaarheid van de proposals-map van de
 schrijver afhangt, en dat is precies het soort stilzwijgende drift dat dit
@@ -2172,7 +2191,8 @@ boekhouding, niet per kaart opnieuw te bedenken:
 - de corpuszones regenereren en de vloeren opnieuw meten
   (`EXPECTED_MIN_DOCS` 192, `EXPECTED_MIN_NEGATIEF` 350, `EXPECTED_MIN_CASES`
   427, `EXPECTED_MIN_ROOD_CASES` 26);
-- gate 12's `EXPECTED_PLAYED` (vandaag 150) en zijn benoemde
+- gate 12's `EXPECTED_PLAYED` (vandaag 150; het DRL-tekst-kanaal dat rij 4
+  sinds 2026-09-19 ernaast pint staat op 123 en beweegt mee) en zijn benoemde
   `EXPECTED_CHANNEL`-lijst opnieuw vaststellen — dat is een **gelijkheid**, geen
   vloer, dus die beweegt bij elke M-kaart;
 - de negatief-getuigen langslopen die hun regel verliezen — zie hieronder.
@@ -2265,10 +2285,11 @@ zijn door deze kaart niet aangeraakt.*
    v0-bonenvelden zijn GEZAGHEBBEND, en **drie** symbolische uitbreidingen
    worden genegeerd en uit het model her-afgeleid: `AttribuutRef.navigatieBindingen`,
    `Kenmerk.navigatieBinding` en de verdelings-`verbindendeRol`. **Twee andere
-   worden wél gelezen** — de vouw-`bronRol` (`IrLoader` r. 448-449) en de
-   objectcreatie-`verbindendeRol` (r. 623-624), beide via de zijkanaal-kaart
-   `Loaded#rolBindingen`, omdat de recordtypen tot de gevendorde frontend-slice
-   behoren; en de objectcreatie-`verbindendeRol` is bovendien per
-   `RUNTIME-SEMANTICS.md` ch. 5.5 **gezaghebbend**, niet slechts gelezen. De
+   worden wél gelezen** via de zijkanaal-kaart `Loaded#rolBindingen`: de
+   vouw-`bronRol` (`IrLoader` r. 448-449 — rij 4 draagt die helft sinds de
+   som-over-bronrol-landing van 2026-09-19 zelf, dus dáár hoeft niets bij) en
+   de objectcreatie-`verbindendeRol` (r. 623-624), die bovendien per
+   `RUNTIME-SEMANTICS.md` ch. 5.5 **gezaghebbend** is, niet slechts gelezen —
+   dat laatste is het landbare nieuws van deze rij. De
    formulering "de symbolische opvolgers zijn de enige gelezen vorm" geldt voor
    `ref` en clingo op de feitcreatie, en nergens anders.
