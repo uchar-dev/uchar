@@ -34,12 +34,16 @@ be removed in one move.
 
 ## The holdout
 
-The full casus raises exactly **one** resolver ERROR — the §4.1 datum+datum
-casus-quirk in `toka-23` (the `bevestigingsinterval`, a Datum-tijd parameter
-added to a Datum-tijd, which typeringen §4.1 forbids). `CasusTest` pins that as
-the single tolerated diagnostic. Because `--ir` writes nothing for a model with
-any error, the pinned dump is emitted from every fragment **except** `toka-23`;
-the gate holds it out by name and fails if the holdout ever goes stale.
+The full casus raises exactly **two** resolver ERRORs, both pinned by
+`CasusTest` as the tolerated diagnostics: the §4.1 datum+datum casus-quirk in
+`toka-23` (the `bevestigingsinterval`, a Datum-tijd parameter added to a
+Datum-tijd, which typeringen §4.1 forbids), and the dimensional inconsistency
+in `toka-45` (decision 16Y, 2026-08-29: the identity unit typing types the
+product, so the written subtraction fails the §4 unit rule — uchar-v1
+deliberately diverges from the toolchain here). Because `--ir` writes nothing
+for a model with any error, the pinned dump is emitted from every fragment
+**except** those two; the gate holds both out by name and fails if either
+holdout ever goes stale.
 
 ## Deliberate divergences from the toolchain emission
 

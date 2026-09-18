@@ -96,9 +96,9 @@ diff-regels, en niets anders: 48 `"waarde"`-velden (12 in
 `toka/casus/ir.json`, 12 in elk van de drie slices) en 3 `"text"`-velden
 (één per slice-`case.json`). Elke `"bron"`-annotatie staat er nog met
 haar aanhalingstekens; geen enkel ander veld, geen sleutelvolgorde, geen
-inspringing bewoog. Machinaal gecontroleerd door alle `+`/`-`-regels van
-`git diff -U0 -- '*.json'` te tellen en te groeperen: 24 unieke
-regelvormen, alle van de vorm `"waarde": …` of `"text": …`. De
+inspringing bewoog. Machinaal gecontroleerd op alle `+`/`-`-regels van
+`git diff -U0 main...HEAD -- '*.json'`: 102 regels, 30 unieke
+regelvormen, 0 regels die niet met `"waarde":` of `"text":` beginnen. De
 casus-dump is her-geëmitteerd (`Resolver --ir` over de 45
 niet-uitgehouden fragmenten, precies gate 11's aanroep); de slices dragen
 geen `.rgs` en zijn met de hand meebewogen, waarde voor waarde tegen de
@@ -113,7 +113,8 @@ naast de bestaande rij kale lexemen (WF-081 getal, WF-084 datum):
 gevraagde `"Flevoland"` → `Flevoland`, met de snippet in `bron`),
 `tekst_literal_grammatica_kent_geen_escape_dus_nooit_een_ingebed_aanhalingsteken`
 en `tekst_literal_normaliseert_verder_niets` (dubbele spatie, backslash,
-enkele aanhalingstekens, lege string). Eén hulpje erbij, `emitRaw`, want
+enkele aanhalingstekens, lege string). Twee hulpjes erbij, `emitRaw` en
+`tekstBron`, want
 de bestaande `emitCompact` wist juist de witruimte die één getuige moet
 zien. De dual-branchgetuigen van de vorige kaart zijn niet aangeraakt en
 blijven groen: zij bouwen hun wire in geheugen, en de quote-dragende
@@ -238,7 +239,9 @@ refinements`), aan te hangen in de `v0→v1 delta`-kolom:
 > verifier kan een spelling afwijzen — het is een PRODUCENTENregel,
 > machinaal geborgd door de emittergetuige
 > (`IrEmitterTest.tekst_literal_lexeme_is_de_geparste_waarde_snippet_in_bron`,
-> gate 10) en door gate 11's byte-identieke her-emissie. De regel is aan
+> gate 10) en door gate 11's byte-identieke her-emissie — waarbij gate 11
+> tijdelijk is en de set met de toka-zone verlaat, waarna de
+> gate-10-emittergetuige de blijvende machinale borging is. De regel is aan
 > de grammatica gemeten: de RegelSpraak-string kent geen escape-vorm, dus
 > het strippen is totaal en verliesloos en een geëmitteerde waarde bevat
 > nooit zelf een `"`. Dit is een bewuste, geboekte divergentie van de
@@ -252,18 +255,27 @@ refinements`), aan te hangen in de `v0→v1 delta`-kolom:
 > wire is ongeldig geworden.
 
 REGISTERVOORSTEL 2 — `spec/IR-SPEC.md` ch. 4.1. De `Literal`-rij zegt nu
-"v0 carries the unparsed source string as the value"; dat is na WF-081,
-WF-084 en WF-095 al niet meer waar voor getal, datum en datum-tijd, en na
-deze kaart ook niet meer voor `Tekst` — er is geen literalsoort meer waar
-het geldt. Voorgestelde nieuwe notes-cel van de `Literal`-rij:
+"v0 carries the unparsed source string as the value"; dat is na WF-081
+(getal), WF-084 (datum) en deze kaart (`Tekst`) niet meer de regel — maar
+het geldt nog wél op twee plekken, door de slotlens gemeten: WF-095 laat
+voor `DatumTijd` de day-first-snippetvorm toe en de emitter schrijft die
+(`ExpressieBouwer.java:410`; vijf van de zeven publieke
+`DatumTijd`-literalen dragen de snippetvorm), en de enumeratiewaarde
+houdt haar `'…'`-delimiters in `waarde` (`ExpressieBouwer.java:419`;
+`Literalen.enumLabel` stript pas bij het lezen). Voorgestelde nieuwe
+notes-cel van de `Literal`-rij:
 
 > **Delta (row 27):** v0 carries a LEXEME as the value — a string the
-> executors parse — and v1 carries a typed value. The lexeme is the
-> PARSED form, never the raw source slice: WF-081 pins the bare number,
-> WF-084 the ISO date, WF-095 the ISO datetime, and (maintainer decision
-> 2026-09-18) a `Tekst` literal's value is the string BETWEEN the source
-> delimiters. The unparsed source slice lives in `source` (`bron` on the
-> v0 wire), which is where a reader that wants the author's spelling
+> executors parse — and v1 carries a typed value. Which lexeme, per
+> sort: WF-081 pins the bare number, WF-084 the ISO date, and a `Tekst`
+> literal's value is the string BETWEEN the source delimiters
+> (maintainer decision 2026-09-18). Two sorts still carry a
+> source-shaped lexeme, tracked in row 27: WF-095 ADMITS the day-first
+> snippet for `DatumTijd` (the v0 emitter still writes it —
+> canonicalising it is its own card), and an enumeratiewaarde keeps its
+> `'…'` delimiters, which readers strip (`Literalen.enumLabel`). The
+> unparsed source slice always lives in `source` (`bron` on the v0
+> wire), which is where a reader that wants the author's spelling
 > looks.
 
 en, in dezelfde paragrafenrij als WF-081/084/095, een nieuwe alinea —
