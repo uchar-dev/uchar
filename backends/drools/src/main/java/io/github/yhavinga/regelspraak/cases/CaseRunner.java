@@ -287,7 +287,12 @@ public final class CaseRunner {
         // route back up to its own binding (the exec branch has taken the same index since the Let-node card).
         // The defaults list is empty by the refusal above; it is passed rather than defaulted because the
         // ch. 7.8 standing classification's other_writer clause reads it (see DrlTranspiler's constructor).
-        DrlTranspiler t = DrlTranspiler.build(model, loaded.lets(), loaded.prioritizedDefaults(), loaded.bronPaden());
+        // ch. 4.3: and the symbolic role bindings, for the same reason the exec branch has taken them since
+        // 2026-08-30 — a fold whose argument is an ATTRIBUTE name has no written role to resolve its range
+        // from, so on a repeated or self-typed pair the wire's bronRol is the only route there is. Withheld,
+        // this branch markered exactly the folds its sister played.
+        DrlTranspiler t = DrlTranspiler.build(model, loaded.lets(), loaded.prioritizedDefaults(),
+                loaded.bronPaden(), loaded.rolBindingen());
         for (Dekking d : t.dekking())
             if (!d.lowered()) throw new Excluded("drl-transpiler " + d.verdict() + ": " + d.sleutel()
                     + (d.reden().isEmpty() ? "" : " — " + d.reden()));

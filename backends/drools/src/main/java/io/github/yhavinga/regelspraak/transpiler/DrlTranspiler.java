@@ -129,6 +129,21 @@ public final class DrlTranspiler {
     public DrlTranspiler(RegelSpraakModel model, List<Expr.Let> lets,
             List<io.github.yhavinga.regelspraak.ir.PrioritizedDefaults> defaults,
             java.util.Map<Object, java.util.List<RegelSpraakModel.RolBindingRef>> bronPaden) {
+        this(model, lets, defaults, bronPaden, java.util.Map.of());
+    }
+
+    /** @param rolBindingen the wire's symbolic (feittype, rol) binding per IR node
+     *      ({@code IrLoader.Loaded.rolBindingen}), by IDENTITY — on an aggregation {@link Expr.Functie} the
+     *      ch. 4.3 {@code bronRol}, naming the role the folded ELEMENT plays. Read as the LAST resort in
+     *      {@link #scope}, after the written element name and the by-pair search, so every join the model
+     *      already derives stays exactly as it was. Without it a fold whose argument is an ATTRIBUTE name
+     *      (SOM/MINIMUM/MAXIMUM/TOTAAL) has only the by-pair search, which is ambiguous by construction on a
+     *      repeated type pair — the marker this branch emitted there while the exec branch, which has taken
+     *      the binding since 2026-08-30, played. */
+    public DrlTranspiler(RegelSpraakModel model, List<Expr.Let> lets,
+            List<io.github.yhavinga.regelspraak.ir.PrioritizedDefaults> defaults,
+            java.util.Map<Object, java.util.List<RegelSpraakModel.RolBindingRef>> bronPaden,
+            java.util.Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen) {
         this.model = model;
         this.eff = new io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid(lets);
         this.dagsoorten = new Dagsoorten(model);
@@ -138,11 +153,19 @@ public final class DrlTranspiler {
             this.bronPaden = new java.util.IdentityHashMap<>();   // identity: the nodes are value-equal records
             this.bronPaden.putAll(bronPaden);
         }
+        if (rolBindingen != null && !rolBindingen.isEmpty()) {
+            this.rolBindingen = new java.util.IdentityHashMap<>();   // identity, for bronPaden's reason
+            this.rolBindingen.putAll(rolBindingen);
+        }
     }
 
     /** See the constructor parameter of the same name. Empty by default — every fold then carries the one-step
      *  range and this branch behaves exactly as it did before WF-102. */
     private java.util.Map<Object, java.util.List<RegelSpraakModel.RolBindingRef>> bronPaden = java.util.Map.of();
+
+    /** See the constructor parameter of the same name. Empty by default — every node then uses the by-pair
+     *  derivation alone, which is exactly the pre-2026-09-19 behaviour of this branch. */
+    private java.util.Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen = java.util.Map.of();
 
     public static String transpile(RegelSpraakModel model) { return new DrlTranspiler(model).run(); }
 
@@ -162,7 +185,14 @@ public final class DrlTranspiler {
     public static DrlTranspiler build(RegelSpraakModel model, List<Expr.Let> lets,
             List<io.github.yhavinga.regelspraak.ir.PrioritizedDefaults> defaults,
             java.util.Map<Object, java.util.List<RegelSpraakModel.RolBindingRef>> bronPaden) {
-        DrlTranspiler t = new DrlTranspiler(model, lets, defaults, bronPaden);
+        return build(model, lets, defaults, bronPaden, java.util.Map.of());
+    }
+
+    public static DrlTranspiler build(RegelSpraakModel model, List<Expr.Let> lets,
+            List<io.github.yhavinga.regelspraak.ir.PrioritizedDefaults> defaults,
+            java.util.Map<Object, java.util.List<RegelSpraakModel.RolBindingRef>> bronPaden,
+            java.util.Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen) {
+        DrlTranspiler t = new DrlTranspiler(model, lets, defaults, bronPaden, rolBindingen);
         t.drl0 = t.run();
         return t;
     }
@@ -3833,6 +3863,18 @@ public final class DrlTranspiler {
         if (subject != null && arg != null && f.kind() == Expr.FunctieKind.AANTAL)
             rol = model.verbindendeRolViaElementnaam(subject, arg.attribuut());
         if (rol == null && subject != null) rol = model.verbindendeRol(elem, subject);
+        if (rol == null) {
+            // The wire's symbolic bronRol, LAST — so every join the two arms above already derive stays
+            // exactly as it was. It names the role the ELEMENT plays; the SIBLING is the role the SUBJECT
+            // plays, i.e. the backref FIELD on the element, which is the side the join below reads. This is
+            // the ONLY route for a fold whose argument is an ATTRIBUTE name (SOM/MINIMUM/MAXIMUM/TOTAAL):
+            // there the by-name arm above does not apply — an attribute name must never be matched against
+            // role names — so on a REPEATED type pair, where the by-pair search is ambiguous by
+            // construction, this branch had nothing left and markered while its exec sister played. A
+            // to-many sibling carries no scalar field to join on and falls through to the refusal below.
+            RegelSpraakModel.Rol[] paar = gebondenRolpaar(rolBindingen.get(f));
+            if (paar != null && !paar[1].meervoudig()) rol = paar[1].naam();
+        }
         // §13.3.9 STORAGE DIRECTION: a resolved ROLE is not yet a bean FIELD. FactModelGenerator.leden derives a
         // scalar reference only where the role is to-one, uniquely reachable, and its name is not taken by a
         // declared member — so both arms above can hand back a role the beans do not carry. The join emitted
@@ -3857,6 +3899,39 @@ public final class DrlTranspiler {
         // ranges over the subject's related instances). Consistent with the resolver's "unresolvable
         // -> marker" rule.
         return Frag.todo("aggregatie-bereik", arg != null ? arg.onderwerpBron() : f.bron().snippet());
+    }
+
+    /** The role PAIR a symbolic (feittype, rol) wire binding names: {@code [bound, sibling]} — the role the wire
+     *  names (the folded element's) and the one the ANCHOR plays. The sibling's NAME is the reference field on
+     *  the bound end, and vice versa, which is exactly how {@code FactModelGenerator.leden} names them. A
+     *  §13.3.9.2 wederkerig fact type carries ONE role that is its own sibling. null when the binding names no
+     *  such fact type / role, or when a non-wederkerig fact type has no sibling role at all — for those
+     *  RESOLUTION failures the caller refuses loudly, never guesses.
+     *
+     *  <p>Resolution goes through the fact type the wire NAMES, not through the role name alone: two fact types
+     *  may declare an element role of the same name while their anchor roles differ, and the binding then still
+     *  selects exactly one. That is also why this is not {@code verbindendeRolViaElementnaam} with the bound
+     *  role's name — that search is by NAME over the whole model and answers null on such a document, which
+     *  would refuse where the wire is unambiguous.
+     *
+     *  <p>The exec branch resolves the very same bindings ({@code ExecModelTranspiler.gebondenRolpaar}); the two
+     *  must hand back the same pair for the same wire, and the dual-branch witnesses are what hold them
+     *  together. Filler agreement is NOT checked here or there: WF-047 is that fence (gate 3), so no corpus
+     *  artefact reaches this method mis-filled. */
+    private RegelSpraakModel.Rol[] gebondenRolpaar(RegelSpraakModel.RolBindingRef rb) {
+        if (rb == null || rb.feittype() == null || rb.rol() == null) return null;
+        RegelSpraakModel.Feittype ft = null;
+        for (java.util.Map.Entry<String, RegelSpraakModel.Feittype> e : model.feittypen.entrySet())
+            if (e.getKey().equalsIgnoreCase(rb.feittype())) { ft = e.getValue(); break; }
+        if (ft == null) return null;
+        RegelSpraakModel.Rol gebonden = null;
+        for (RegelSpraakModel.Rol r : ft.rollen)
+            if (r.naam() != null && r.naam().equalsIgnoreCase(rb.rol())) { gebonden = r; break; }
+        if (gebonden == null) return null;
+        if (ft.wederkerig) return new RegelSpraakModel.Rol[]{gebonden, gebonden};
+        for (RegelSpraakModel.Rol r : ft.rollen)
+            if (r != gebonden) return new RegelSpraakModel.Rol[]{gebonden, r};
+        return null;
     }
 
     /** §5.8/§13.4.14 an AGGREGATION (count / SUM / TOTAAL / MIN / MAX) as one side of a condition comparison ("het aantal /

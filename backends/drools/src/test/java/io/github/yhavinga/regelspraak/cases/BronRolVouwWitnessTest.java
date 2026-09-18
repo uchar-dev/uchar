@@ -5,6 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import io.github.yhavinga.regelspraak.loader.IrLoader;
+import io.github.yhavinga.regelspraak.transpiler.DrlTranspiler;
+import io.github.yhavinga.regelspraak.transpiler.kern.Dekking;
+
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
@@ -187,7 +191,36 @@ class BronRolVouwWitnessTest {
         }
     }
 
+    // ---------------- 4. the self-typed pair: the same gap, in the corpus ----------------
+
+    @Test void het_zelfgetypeerde_bereik_lowert_nu_ook_in_de_drl_tak() throws Exception {
+        // Two same-typed sibling roles of ONE feittype ("de som van de rang van alle opvolgers van de
+        // Wachter"): the by-pair search counts both and derives null, so this was the SECOND shape the
+        // DRL-text branch markered while exec played — and unlike the repeated pair it IS in the corpus.
+        // Measured before the card, on anchor/jutterswet-wachtersketen: exec PLAYED 2, DRL
+        // "MARKER: regel: opvolgerrang van een wachter — TODO aggregatie SOM". The golden keeps its DRL
+        // EXCLUDE either way (its objectcreatie is a separate, untouched marker), so the manifest is what
+        // says the fold itself now lowers — a channel the replay cannot show.
+        IrLoader.Loaded l = IrLoader.loadAll(JSON.readTree(
+                Files.readString(ir("anchor/jutterswet-wachtersketen"))));
+        DrlTranspiler t = DrlTranspiler.build(l.model(), l.lets(), l.prioritizedDefaults(),
+                l.bronPaden(), l.rolBindingen());
+        Dekking d = dekkingVan(t, "regel: opvolgerrang van een wachter");
+        assertTrue(d.lowered(), "the self-typed fold lowers: " + d.verdict() + " — " + d.reden());
+        // ...and WITHOUT the bindings it does not: the same model, the same branch, the binding withheld.
+        Dekking zonder = dekkingVan(
+                DrlTranspiler.build(l.model(), l.lets(), l.prioritizedDefaults(), l.bronPaden()),
+                "regel: opvolgerrang van een wachter");
+        assertTrue(!zonder.lowered() && zonder.reden().contains("aggregatie SOM"),
+                "withheld, the marker returns: " + zonder.verdict() + " — " + zonder.reden());
+    }
+
     // ---------------- fixtures ----------------
+
+    private static Dekking dekkingVan(DrlTranspiler t, String sleutel) {
+        for (Dekking d : t.dekking()) if (sleutel.equals(d.sleutel())) return d;
+        throw new AssertionError("no manifest entry " + sleutel);
+    }
 
     private static Path ir(String golden) {
         Path p = CORPUS.resolve(golden).resolve("ir.json");
