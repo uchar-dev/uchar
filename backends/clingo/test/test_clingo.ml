@@ -3987,6 +3987,300 @@ let () =
     ~case_text:(gpv_case ~tijdlijn:(heel_jaar "50") ~waar:true)
     ~needle:"between TWO timelines is not translated"
 
+(* --- ch. 10.2: de vertaling volgt de gekozen arm -------------------------
+   "de condition selects the branch; the other branch evaluates nothing"
+   (RUNTIME-SEMANTICS §5.11, de sweep-rij van `IfThenElse`) gaat over wat er
+   ONTSTAAT, niet alleen over de waarde: §5.11 zegt met zoveel woorden dat een
+   operand die nooit bereikt wordt geen fout wekt en geen kanaalfeit afzet.
+
+   Tot deze kaart deed de ASP-vertaling dat niet. De hekken en gardes van een
+   arm werden geëmitteerd zonder de takgarde, dus meldden en braken ze ook waar
+   ref de ANDERE arm speelde. Drie gemeten vormen, elk met ref PASS op dezelfde
+   invoer, en een vierde die dezelfde grens langs ch. 10.6 raakt:
+
+   1. een §6.5-plek (deling door leeg) in de niet-betreden arm — clingo zei
+      "the model carries 1 inconsistent fact(s)" waar ref consistent zei;
+   2. een deling door numeriek nul in de niet-betreden arm — clingo werd
+      UNSAT op viol("division by numeric zero") waar ref de dan-tak speelde;
+   3. één behoefte gelezen in de armen van TWEE knopen — de armen staan dan
+      onder een operator, de regelkop kan niet per tak gesplitst worden, en
+      clingo zei "expression kind not translated" waar ref speelde;
+   4. een behoefte (Let-binder) die alléén in de niet-betreden arm gelezen
+      wordt, met de §6.5-plek in haar waarde — clingo meldde, ref niet.
+
+   Elke vorm staat hier in BEIDE richtingen: de melding/afbraak is weg in de
+   niet-betreden arm en staat er onverkort in de betreden arm. Die tweede helft
+   is wat de eerste eerlijk houdt — een hek weghalen zou de eerste helft ook
+   groen maken. *)
+
+let tak_ob =
+  {|{ "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD",
+      "eenheid": null }|}
+
+let tak_nn =
+  {|{ "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "NIET_NEGATIEF",
+      "eenheid": null }|}
+
+let tak_attr ?(typ = tak_nn) naam =
+  Printf.sprintf
+    {|{ "node": "AttribuutRef", "attribuut": "%s", "objecttype": "Jutter",
+        "onderwerpBron": "zijn", "navigatieRol": null, "type": %s,
+        "bron": "zijn %s", "set": false, "navigatiePad": [] }|}
+    naam typ naam
+
+let tak_par naam =
+  Printf.sprintf
+    {|{ "node": "ParameterRef", "parameter": "%s", "type": %s, "bron": "de %s" }|}
+    naam tak_ob naam
+
+let tak_binder ?(typ = tak_nn) naam =
+  Printf.sprintf {|{ "node": "BinderRef", "name": "%s", "type": %s, "bron": "de %s" }|} naam typ
+    naam
+
+(* als <links> groter dan <rechts> dan <dan> anders <anders> *)
+let tak_ite ~typ ~links ~rechts ~dan ~anders =
+  Printf.sprintf
+    {|{ "node": "IfThenElse", "type": %s,
+        "condition": { "node": "Vergelijking", "op": "GROTER", "links": %s, "rechts": %s,
+                       "periode": null, "bron": "de grondslag boven de grens" },
+        "then": %s, "else": %s,
+        "bron": "boven de grens het een, daaronder het ander" }|}
+    typ links rechts dan anders
+
+let tak_let ~typ ~binder ~value ~body =
+  Printf.sprintf
+    {|{ "node": "Let", "type": %s, "binder": "%s", "value": %s, "body": %s,
+        "bron": "de %s is %s" }|}
+    typ binder value body binder binder
+
+let tak_doc ~attributen ~parameters ~doel_typ ~waarde =
+  Printf.sprintf
+    {|{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": {
+      "node": "Objecttype", "naam": "Jutter",
+      "attributen": { %s },
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {}, "bezield": true, "meervoud": "Jutters"
+    }
+  },
+  "domeinen": {},
+  "parameters": { %s },
+  "eenheidstelsels": {}, "feittypen": {}, "dimensies": {},
+  "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
+  "regels": [], "resolvedRegels": [
+    { "node": "ResolvedRegel", "naam": "heffing van een jutter", "soort": "BEREKENING",
+      "doel": { "node": "AttribuutRef", "attribuut": "heffing", "objecttype": "Jutter",
+                "onderwerpBron": "De heffing van een Jutter", "navigatieRol": null,
+                "type": %s, "bron": "De heffing van een Jutter",
+                "set": false, "navigatiePad": [] },
+      "waarde": %s,
+      "voorwaarde": null,
+      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }
+  ],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+  "regelGroepen": [], "diagnostics": []
+}|}
+    attributen parameters doel_typ waarde
+
+let tak_param naam =
+  Printf.sprintf {|"%s": { "node": "Parameter", "naam": "%s", "datatype": %s,
+                          "granulariteit": null }|} naam naam tak_ob
+
+(* de deling waarvan §6.5 de lege deler meldt en de numerieke nul-deler
+   afbreekt — in de ANDERS-arm van de knoop hieronder *)
+let tak_deling =
+  Printf.sprintf
+    {|{ "node": "Binair", "op": "GEDEELD_DOOR", "links": %s, "rechts": %s, "type": %s,
+        "bron": "de grondslag gedeeld door zijn restpost" }|}
+    (tak_binder "k") (tak_attr "restpost") tak_ob
+
+(* vorm 1 + 2: Let k = zijn inkomen in (als k > de drempel dan de basisheffing
+   anders k gedeeld door zijn restpost) *)
+let tak_doc12 =
+  tak_doc
+    ~attributen:
+      (Printf.sprintf {|"inkomen": %s, "restpost": %s, "heffing": %s|} tak_nn tak_nn tak_ob)
+    ~parameters:(tak_param "drempel" ^ ", " ^ tak_param "basisheffing")
+    ~doel_typ:tak_ob
+    ~waarde:
+      (tak_let ~typ:tak_ob ~binder:"k" ~value:(tak_attr "inkomen")
+         ~body:
+           (tak_ite ~typ:tak_ob ~links:(tak_binder "k") ~rechts:(tak_par "drempel")
+              ~dan:(tak_par "basisheffing") ~anders:tak_deling))
+
+(* vorm 4: dezelfde plek, nu achter een behoefte die ALLEEN de anders-arm
+   leest — Let k in (Let m = k / restpost in (als k > drempel dan de
+   basisheffing anders m)). ch. 10.6 evalueert m pas bij de lezing, dus op een
+   case die de dan-tak kiest gebeurt er niets. *)
+let tak_doc4 =
+  tak_doc
+    ~attributen:
+      (Printf.sprintf {|"inkomen": %s, "restpost": %s, "heffing": %s|} tak_nn tak_nn tak_ob)
+    ~parameters:(tak_param "drempel" ^ ", " ^ tak_param "basisheffing")
+    ~doel_typ:tak_ob
+    ~waarde:
+      (tak_let ~typ:tak_ob ~binder:"k" ~value:(tak_attr "inkomen")
+         ~body:
+           (tak_let ~typ:tak_ob ~binder:"m" ~value:tak_deling
+              ~body:
+                (tak_ite ~typ:tak_ob ~links:(tak_binder "k") ~rechts:(tak_par "drempel")
+                   ~dan:(tak_par "basisheffing")
+                   ~anders:(tak_binder ~typ:tak_ob "m"))))
+
+(* vorm 3: één behoefte in de armen van TWEE knopen. De knopen staan onder een
+   PLUS, dus de regelkop kan niet per tak gesplitst worden en de vertaling moet
+   de knoop zelf dragen. *)
+let tak_doc3 =
+  let arm rechts =
+    tak_ite ~typ:tak_nn ~links:(tak_binder "k") ~rechts
+      ~dan:(tak_binder "k")
+      ~anders:(Printf.sprintf {|{ "node": "Literal", "waarde": "0", "type": %s, "bron": "0" }|}
+                 tak_nn)
+  in
+  tak_doc
+    ~attributen:(Printf.sprintf {|"inkomen": %s, "heffing": %s|} tak_nn tak_nn)
+    ~parameters:(tak_param "drempel" ^ ", " ^ tak_param "hoge drempel")
+    ~doel_typ:tak_nn
+    ~waarde:
+      (tak_let ~typ:tak_nn ~binder:"k" ~value:(tak_attr "inkomen")
+         ~body:
+           (Printf.sprintf
+              {|{ "node": "Binair", "op": "PLUS", "links": %s, "rechts": %s, "type": %s,
+                  "bron": "de twee staffeldelen opgeteld" }|}
+              (arm (tak_par "drempel")) (arm (tak_par "hoge drempel")) tak_nn))
+
+let tak_case ~inkomen ?restpost ~parameters ~verwacht () =
+  Printf.sprintf
+    {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+      { "label": "J1", "objectType": "Jutter",
+        "attributes": { "inkomen": { "number": "%s" }%s },
+        "roles": {}, "characteristics": [] } ],
+    "parameters": { %s } },
+  %s }|}
+    inkomen
+    (match restpost with
+     | None -> ""
+     | Some r -> Printf.sprintf {|, "restpost": { "number": "%s" }|} r)
+    parameters verwacht
+
+let tak_params12 = {|"drempel": { "number": "10" }, "basisheffing": { "number": "5" }|}
+
+let tak_heffing_is_basis =
+  {|"expected": [
+      { "kind": "attributeValue", "label": "J1", "attribute": "heffing",
+        "value": { "number": "5" } },
+      { "kind": "consistent" } ]|}
+
+(* de betreden arm: heffing blijft leeg (de deler is leeg, §6.5 geeft geen
+   waarde) en het kanaalfeit van DEZE regel op DEZE jutter staat er *)
+let tak_heffing_leeg_en_gemeld =
+  {|"expected": [
+      { "kind": "attributeEmpty", "label": "J1", "attribute": "heffing" },
+      { "kind": "inconsistent", "rule": "heffing van een jutter", "label": "J1" } ]|}
+
+(* de rode spiegel: de plek zit in de arm die WEL betreden wordt, dus beide
+   executors moeten waarneembaar afbreken — ref met een fout die [needle]
+   draagt, clingo met UNSAT. Een model, of een fout met een andere reden, is
+   een failure: dit is de helft die de andere helft eerlijk houdt. *)
+let both_break ~name ~ir ~case_text ~needle =
+  let doc, case = load_pair ~ir ~case_text in
+  let env =
+    { Uchar_ref.Eval.doc; params = case.params; param_tls = case.param_tls;
+      as_of = case.as_of; locals = Uchar_ref.World.SMap.empty }
+  in
+  (match Uchar_ref.Eval.evaluate env case.world with
+  | _ -> check (name ^ ": ref breekt af (kreeg een wereld terug)") false
+  | exception Uchar_ref.Value.Fault m ->
+      check (name ^ ": ref breekt af (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle m));
+  let label = name ^ ": clingo is UNSAT" in
+  match Solve.run_clingo (translate doc case) with
+  | _, Unix.WEXITED 20 -> check label true
+  | _, Unix.WEXITED (10 | 30) -> check (label ^ " (vond een model)") false
+  | _, Unix.WEXITED 127 -> check (label ^ " (clingo NOT FOUND on PATH)") false
+  | _, Unix.WEXITED c -> check (label ^ Printf.sprintf " (clingo exited %d)" c) false
+  | _, _ -> check (label ^ " (clingo killed)") false
+  | exception Uchar_ref.Value.Fault m -> check (label ^ " (vertaalfout: " ^ m ^ ")") false
+
+let () =
+  (* vorm 1 — de §6.5-plek in de NIET-betreden arm. inkomen 40,00 ligt boven de
+     drempel 10,00, dus ref speelt de dan-tak en de lege restpost wordt nooit
+     gelezen. *)
+  let niet_betreden =
+    tak_case ~inkomen:"40" ~parameters:tak_params12 ~verwacht:tak_heffing_is_basis ()
+  in
+  ref_matches ~name:"ch10.2 §6.5-plek in de niet-betreden arm" ~ir:tak_doc12
+    ~case_text:niet_betreden;
+  clingo_matches ~name:"ch10.2 §6.5-plek in de niet-betreden arm meldt niet" ~ir:tak_doc12
+    ~case_text:niet_betreden;
+  (* vorm 1, de andere richting — inkomen 5,00 kiest de anders-tak, en dan
+     staat het §9.5-kanaalfeit er onverkort, in beide executors *)
+  let betreden =
+    tak_case ~inkomen:"5" ~parameters:tak_params12 ~verwacht:tak_heffing_leeg_en_gemeld ()
+  in
+  ref_matches ~name:"ch10.2 §6.5-plek in de BETREDEN arm" ~ir:tak_doc12 ~case_text:betreden;
+  clingo_matches ~name:"ch10.2 §6.5-plek in de BETREDEN arm meldt wel" ~ir:tak_doc12
+    ~case_text:betreden;
+  (* vorm 2 — de deling door numeriek NUL in de niet-betreden arm. Hetzelfde
+     document, een restpost van 0: de fail-fast-garde mag het programma niet
+     UNSAT maken zolang de andere arm speelt. *)
+  let nul_niet_betreden =
+    tak_case ~inkomen:"40" ~restpost:"0" ~parameters:tak_params12
+      ~verwacht:tak_heffing_is_basis ()
+  in
+  ref_matches ~name:"ch10.2 nuldeling in de niet-betreden arm" ~ir:tak_doc12
+    ~case_text:nul_niet_betreden;
+  clingo_matches ~name:"ch10.2 nuldeling in de niet-betreden arm breekt niet af" ~ir:tak_doc12
+    ~case_text:nul_niet_betreden;
+  (* de garde zelf staat er nog — een fix die het hek gewoon weghaalt zou de
+     regel hierboven ook groen maken *)
+  translates_carrying ~name:"ch10.2 de nulgarde staat nog in het programma" ~ir:tak_doc12
+    ~case_text:nul_niet_betreden ~needle:{|viol("division by numeric zero"|};
+  (* vorm 2, de andere richting: de arm WORDT betreden en dan breken beide
+     executors af, met dezelfde reden *)
+  both_break ~name:"ch10.2 nuldeling in de BETREDEN arm"
+    ~ir:tak_doc12
+    ~case_text:
+      (tak_case ~inkomen:"5" ~restpost:"0" ~parameters:tak_params12
+         ~verwacht:
+           {|"expectedFault": { "ref": "division by numeric zero",
+                                "clingo": "division by numeric zero" }|}
+         ())
+    ~needle:"division by numeric zero";
+  (* vorm 3 — één behoefte in de armen van twee knopen: 40,00 boven de drempel
+     van 10,00 en onder de hoge drempel van 100,00, dus 40,00 + 0,00 *)
+  let case3 =
+    tak_case ~inkomen:"40"
+      ~parameters:{|"drempel": { "number": "10" }, "hoge drempel": { "number": "100" }|}
+      ~verwacht:
+        {|"expected": [
+            { "kind": "attributeValue", "label": "J1", "attribute": "heffing",
+              "value": { "number": "40" } },
+            { "kind": "consistent" } ]|}
+      ()
+  in
+  ref_matches ~name:"ch10.2 één behoefte onder twee takgardes" ~ir:tak_doc3 ~case_text:case3;
+  translates_with ~name:"ch10.2 één behoefte onder twee takgardes vertaalt" ~ir:tak_doc3
+    ~case_text:case3;
+  clingo_matches ~name:"ch10.2 één behoefte onder twee takgardes speelt" ~ir:tak_doc3
+    ~case_text:case3;
+  (* vorm 4 — de behoefte wordt alleen in de niet-betreden arm gelezen, dus
+     ch. 10.6 evalueert haar waarde daar niet en de §6.5-plek erin zwijgt *)
+  ref_matches ~name:"ch10.6 behoefte alleen in de niet-betreden arm" ~ir:tak_doc4
+    ~case_text:niet_betreden;
+  clingo_matches ~name:"ch10.6 behoefte alleen in de niet-betreden arm meldt niet" ~ir:tak_doc4
+    ~case_text:niet_betreden;
+  (* en de spiegel: wordt die arm wél betreden, dan wordt de behoefte gelezen
+     en staat het kanaalfeit er *)
+  ref_matches ~name:"ch10.6 behoefte in de BETREDEN arm" ~ir:tak_doc4 ~case_text:betreden;
+  clingo_matches ~name:"ch10.6 behoefte in de BETREDEN arm meldt wel" ~ir:tak_doc4
+    ~case_text:betreden
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
