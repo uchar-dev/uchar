@@ -1326,6 +1326,41 @@ let rec reads_binder b (e : expr) : bool =
   | Begrensd { basis; minimum; maximum; _ } -> opt basis || opt minimum || opt maximum
   | _ -> Ir_v0.Checks.mentions_binder b e
 
+(* ch. 10.6 meets ch. 10.2, as a REWRITE rather than a guard. When the need
+   lives in exactly ONE arm and the condition does not force it, call-by-need
+   evaluates the value only where that arm is taken — so the `Let` BELONGS
+   inside the arm, and moving it there is exact. Returns the rewritten node, or
+   [None] where the shape does not apply: both arms reading needs no rewrite
+   (the value is needed either way), and neither reading is ch. 10.6 clause 3,
+   which every caller already handles above this one.
+
+   A rewrite, because no amount of guard threading could do it. Each of the
+   three lowerings translates a Let's value BEFORE it knows the body's
+   branches, so the arm guard does not exist yet at the moment the value's
+   fences, viol/2 guards and §9.5 deposits are emitted. Moving the node is what
+   puts the value inside the arm's scope; the arm guard then reaches it the
+   ordinary way. Without it a §6.5 divisor place in the value reports itself,
+   and a numeric zero there breaks the program off, on a document whose case
+   takes the OTHER arm — where ref evaluates nothing at all (ch. 5.11: an
+   operand never reached raises no fault and deposits no channel fact).
+
+   Termination: the result is an `If_then_else`, on which this returns [None].
+   Nested arms shrink the IfThenElse depth by one per rewrite. *)
+let let_into_arm (e : expr) : expr option =
+  match e with
+  | Let
+      { binder; value;
+        body = If_then_else { typ; condition; then_; else_; bron = ite_bron };
+        bron; _ }
+    when (not (Ir_v0.Checks.mentions_binder_cond binder condition))
+         && reads_binder binder then_ <> reads_binder binder else_ ->
+      let push arm = Let { typ; binder; value; body = arm; bron } in
+      Some
+        (if reads_binder binder then_ then
+           If_then_else { typ; condition; then_ = push then_; else_; bron = ite_bron }
+         else If_then_else { typ; condition; then_; else_ = push else_; bron = ite_bron })
+  | _ -> None
+
 (* B3: a Let binder must be SELF-CONTAINED wherever it is read. A bare value
    term (a ListLength count, a Fold result, an attribute read) is bound only by
    its value atoms [va]; the Let keeps those in [rule_guard], but coalesce0 (and
@@ -1458,6 +1493,9 @@ let emit_value_days ctx ~p ~attr ~sat =
   rules "g" "V" (String.concat "" (List.map (fun a -> ", " ^ a) sat))
 
 let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
+  match let_into_arm e with
+  | Some pushed -> expr_term ctx ~subject ~subject_ot pushed
+  | None ->
   match e with
   | Literal { waarde; typ; _ } -> (
       let lex = req "Literal.waarde" waarde in
@@ -4808,14 +4846,32 @@ and list_source ctx ~subject ~subject_ot (e : expr) : string * int =
    an Invoke inlines the acyclic FunctionDef body, and any other closed term
    is a single branch. The [guard_body] grounds the emitted range fences. *)
 and body_branches ctx ~guard_body ~witness (e : expr) : (string list * string * int) list =
+  match let_into_arm e with
+  | Some pushed -> body_branches ctx ~guard_body ~witness pushed
+  | None ->
   match e with
   | If_then_else { condition; then_; else_; _ } ->
       let catoms, pos, neg = body_condition ctx ~guard_body ~witness condition in
-      let arm extra branches =
-        List.map (fun (g, t, s) -> (catoms @ (extra :: g), t, s)) branches
+      (* ch. 10.2 inside a closed body — the third route, and the same rule:
+         the arm's guard goes into [guard_body] too, not only into the branch's
+         own result guard. [guard_body] is what grounds the fences and the
+         viol/2 fail-fast guards [closed_term] emits, so leaving it untouched
+         made a division by a zero element in the ELSE arm turn the program
+         UNSAT on a list whose every element takes the THEN arm — measured on a
+         fold lambda over one zero element, where ref folds to 1,00.
+
+         The §6.5 empty-divisor deposit cannot arise here (a closed body is
+         leeg-free, ch. 10.1), so what the arm guard buys in this route is the
+         fail-fast side: a viol/2 guard fires where its arm is taken and
+         nowhere else. The [Match] arm below already threaded its pattern this
+         way; this arm was the one that did not. *)
+      let arm extra e =
+        let guard_body = guard_body @ catoms @ [ extra ] in
+        List.map
+          (fun (g, t, s) -> (catoms @ (extra :: g), t, s))
+          (body_branches ctx ~guard_body ~witness e)
       in
-      arm pos (body_branches ctx ~guard_body ~witness then_)
-      @ arm neg (body_branches ctx ~guard_body ~witness else_)
+      arm pos then_ @ arm neg else_
   | Match { scrutinee; arms; _ } ->
       (* the enumeration variant of the keuzetype family is carried at rule
          level (translate_match, via the S2 symbolic operand) but not inside a
@@ -5513,45 +5569,15 @@ type vbranch = {
    and clingo's underivability coincide by construction. Any other value is a
    single branch via [expr_term]. Mirrors [body_branches] at value position. *)
 let rec value_branches ctx ~subject ~subject_ot (e : expr) : vbranch list =
+  match let_into_arm e with
+  | Some pushed -> value_branches ctx ~subject ~subject_ot pushed
+  | None ->
   match e with
   | Let { binder; body; _ } when not (reads_binder binder body) ->
       (* ch. 10.6 clause 3: an unread binder evaluates nothing — the value is
          not translated, so it deposits no atoms, no fence and no §9.5 channel
          fact, and the body's branches ARE the Let's *)
       value_branches ctx ~subject ~subject_ot body
-  | Let
-      { binder; value;
-        body = If_then_else { typ = ite_typ; condition; then_; else_; bron = ite_bron };
-        bron = let_bron; _ }
-    when (not (Ir_v0.Checks.mentions_binder_cond binder condition))
-         && reads_binder binder then_ <> reads_binder binder else_ ->
-      (* ch. 10.6 meets ch. 10.2: the need lives in exactly ONE arm, and the
-         condition does not force it — so under call-by-need the value is
-         evaluated only where that arm is taken, and the Let BELONGS inside the
-         arm. Pushing it there is an exact rewrite, and it is what makes the arm
-         guard reach the value: the arm's fences, viol/2 guards and §9.5
-         deposits then ride [rule_guard] through the [If_then_else] arm below,
-         like every other place in the arm.
-
-         Without it the value stays translated ONCE, outside both arms, and a
-         §6.5 divisor place inside it reports itself on a document whose case
-         takes the OTHER arm — ref evaluates nothing there (ch. 5.11: an operand
-         never reached deposits no channel fact). Clause 2's [vb_reads] already
-         kept such a branch from carrying the value's ATOMS; what it could not
-         do is un-emit the fences, because the value is translated before the
-         branches are known. The rewrite removes that ordering problem instead
-         of working around it.
-
-         Both arms reading the binder needs no rewrite (the value is needed
-         either way); neither reading is clause 3 above. *)
-      let push arm = Let { typ = ite_typ; binder; value; body = arm; bron = let_bron } in
-      let pushed =
-        if reads_binder binder then_ then
-          If_then_else { typ = ite_typ; condition; then_ = push then_; else_; bron = ite_bron }
-        else
-          If_then_else { typ = ite_typ; condition; then_; else_ = push else_; bron = ite_bron }
-      in
-      value_branches ctx ~subject ~subject_ot pushed
   | Let { binder; value; body; _ } ->
       let va, vt, vs = expr_term ctx ~subject ~subject_ot value in
       let saved_b = ctx.binders and saved_g = ctx.rule_guard in
