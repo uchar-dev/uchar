@@ -115,6 +115,10 @@ Gemeten grens, niet verzwegen: ch. 10.6 leest van links naar rechts, dus een
 §6.5-plek die VOOR de barriere-lezing staat draait in ref wel en hier niet.
 Dat is een gemiste melding, nooit een verzonnen; de companions hieronder
 zijn met dezelfde poort gebouwd, zodat tak en companion het eens blijven.
+Die grens is ook een verschil TUSSEN de twee Drools-takken, en dat hoort er
+expliciet bij: de exec-tak volgt het pad met haar sonde en MELDT zo'n plek
+wel, de DRL-tekst-tak niet. Beide blijven aan de niet-verzinnende kant, maar
+zij zijn op deze flank niet gelijk.
 
 **Wandelingen.** `verzamelEigenReads`, `verzamelNavRefs`,
 `verzamelFilterKenmerkReads`, `verzamelDelingen`, `verzamelWortels` en
@@ -173,6 +177,36 @@ de richting die de Acceptance eiste: de Out-of-scope-regel vervalt voor deze
 kaart en de als-dan-anders is in een tweede ronde direct meegenomen. Dezelfde
 grens raakte `synth3-conditielezing`, `synth3-drempelheffing` en
 `synth3-takbarriere`; alle vier spelen nu.
+
+**Lensronde 2026-09-18: twee beloften uit de tekst hierboven waren onwaar
+zoals geland, en zijn hersteld.** Een adversariële lens reproduceerde de hele
+kaart en toonde met eigen invoeren twee latente defecten aan — geen
+corpusgolden raakte ze, maar beide gaven een stil fout antwoord.
+
+*(1) "precies de gekozen arm wordt geëvalueerd" gold niet voor een `Let` ín
+een arm.* De ternair evalueert wel één arm, maar een geneste `Let` hoist zijn
+behoefte naar de gedeelde prelude, en die draait vóór de ternair.
+`keuzeWaarde` duwde de armgarde niet op de forceerpoort, dus de niet-betreden
+arm werd alsnog berekend. Op `Let k = inkomen in (als k > 10,00 dan 5,00
+anders Let z = teller ÷ nuldeler in z plus 1,00)` met inkomen 40,00 en
+nuldeler 0: verifier PASS, ref PASS (5,00), exec PLAYED 1, en `--drl`
+`[Error: rsGedeeld($subject.getTeller(), $subject.getNuldeler()): Breuk
+deling door 0]` — een afgebroken fire. De armgarde staat nu op
+`acc.letBewaking` zolang die arm vertaald wordt; ná de fix: `--drl PLAYED 1`.
+
+*(2) "een gemiste melding, nooit een verzonnen" gold niet voor een plek in de
+waarde van een voorwaardelijk gelezen behoefte.* `letDescent` wandelde
+`b.value()` onder de kale poort en negeerde dat de leesgarde een `Tak` kan
+zijn. Op `Let k = inkomen in Let z = teller ÷ gatdeler in (als k > 10,00 dan
+4,00 anders z)` met inkomen 40,00 en gatdeler afwezig: verifier PASS, ref
+PASS consistent, exec PLAYED 1, en `--drl` `FAIL case.json: verwacht
+consistent, werkelijk inconsistent (takgat van een jutter @ J1)` — een
+verzonnen melding. `synth3-takbarriere` heeft exact deze vorm: één deling in
+zijn opslag-definitie en die golden was rood gegaan op een fout die nooit
+liep. De wandeling draagt de takgarde nu mee in de waarde (de body houdt de
+kale poort, want die draait altijd); ná de fix: `--drl PLAYED 1`.
+
+Beide vormen staan nu als getuige in beide takken, elk met een mutatieproef.
 
 **De ch.-10.2-lowering.** De garde is één term door de GEDEELDE
 `rsAggVergelijk` — dezelfde helper als de ch.-10.2-lowering van de
@@ -239,21 +273,35 @@ companion van de getuige:
                        teller != null, takdeler == null )
 ```
 
-**Gemeten en niet weggepind — een ref/clingo-verschil dat deze kaart niet mag
-repareren.** Op een §6.5-plek in de NIET-betreden arm meldt de clingo-backend
-inconsistent waar ref consistent zegt (`MISMATCH: expected consistent, but
-the model carries 1 inconsistent fact(s)`); haar §6.5-hek is niet
-tak-volgend. Beide Drools-takken volgen ref. `backends/clingo` valt buiten de
-May touch van deze kaart, dus de vorm staat als getuige met ref als arbiter
-en wordt GEEN corpusgolden — gate 6 zou hem terecht afwijzen. Dit verdient
-een eigen kaart: "het §6.5-hek van de ASP-vertaling volgt de ch.-10.2-tak".
+**Gemeten en niet weggepind — ref/clingo-verschillen die deze kaart niet mag
+repareren.** In deze familie wijkt de clingo-backend op TWEE manieren af, en
+beide zijn hier gemeten:
+
+```
+§6.5-plek in de NIET-betreden arm : clingo MISMATCH: expected consistent, but the model carries 1 inconsistent fact(s)   (ref: consistent)
+deling door nul in die arm        : clingo UNSATISFIABLE — a fail-fast guard fired: viol("division by numeric zero","J1")  (ref: 5,00)
+```
+
+Haar §6.5-hek is dus niet tak-volgend, en haar fail-fast viol evenmin. Beide
+Drools-takken volgen ref. Een derde waarneming hoort erbij: de vorm waarin
+één behoefte onder twee VERSCHILLENDE takgardes gelezen wordt weigert clingo
+helemaal (`TRANSLATION FAULT: expression kind not translated`), waar ref haar
+gewoon uitrekent en de exec-tak haar speelt. `backends/clingo` valt buiten de
+May touch van deze kaart, dus alle drie de vormen staan als getuige met ref
+als arbiter en worden GEEN corpusgolden — gate 6 zou ze terecht afwijzen.
+Voorstel voor één vervolgkaart: "het ASP-hek volgt de ch.-10.2-tak", met de
+twee tak-onvolgende hekken als kern en de vertalingsweigering als derde,
+apart te wegen punt.
 
 **Wat de zestien Let-dragende goldens nu doen met `--drl`.** TIEN spelen —
 `anchor/jutterswet-tariefstelling`, `jutterswet-drempelvangst`,
 `jutterswet-kinderweging`, `jutterswet-lichterloon`,
 `jutterswet-vondstrecht`, `synth3-barrierebezit`, `synth3-conditielezing`,
 `synth3-drempelheffing`, `synth3-operandvolgorde` en `synth3-takbarriere` —
-waar alle zestien tevoren op de `Let` markeerden. Wat rest zijn twee
+waar TIEN van hen tevoren op de `Let` markeerden — de andere zes werden toen
+al door de loader of door de prioritized-defaultsweigering afgewezen, ruim
+voordat een `Let` in beeld kwam; de ronde-1-formulering "alle zestien
+markeerden op de Let" was in zoverre te breed. Wat rest zijn twee
 ch.-7-prioritized-defaultsweigeringen (`jutterswet-bergingstoeslag`,
 `jutterswet-tariefrecht-catala`; de luide weigering van die extensie blijft
 ongemoeid) en VIER loaderweigeringen (`jutterswet-kamerhuishouden-catala` op
@@ -300,18 +348,31 @@ document is opnieuw eerst gearbitreerd: verifier PASS, ref PASS op alle tien
 invoeren, clingo PASS op negen (de tiende is de gemelde tak-onvolgendheid
 hierboven), beide Drools-takken PLAYED 10.
 
-Mutatieproeven, feitelijk gebouwd, gedraaid en hersteld (tellingen over de 24
+De lensronde voegde er vier getuigen aan toe:
+`een_let_in_de_niet_betreden_tak_wordt_niet_geforceerd` (defect 1),
+`een_deling_in_een_ongelezen_behoefte_meldt_zich_niet` (defect 2),
+`beide_vormen_rekenen_gewoon_zodra_hun_tak_betreden_wordt` als gevulde
+tegenhanger van allebei, en
+`twee_verschillende_takgardes_op_een_lezing_worden_bij_naam_geweigerd` — de
+tot dan ongetuigde weigering, die in een eigen éénregelig document staat
+omdat een marker het hele document tot EXCLUDE maakt. Ook die is eerst
+gearbitreerd: verifier PASS, ref PASS (160,00), exec PLAYED, `--drl` EXCLUDE
+met de reden bij naam.
+
+Mutatieproeven, feitelijk gebouwd, gedraaid en hersteld (tellingen over de 28
 tests van de eindstand):
 
 ```
 barriere weg (altijd schrijven)           ->  6 rood, o.a. een_lege_behoefte…, het_lege_doel…
-Let altijd leeg (nooit schrijven)         -> 18 rood, elke gevulde pin erbij
-prelude-gardering weg                     ->  1 ERROR: "Breuk deling door 0" in een_lege_buitenbehoefte…
+Let altijd leeg (nooit schrijven)         -> 22 rood, elke gevulde pin erbij
+prelude-gardering weg                     ->  2 ERRORS: "Breuk deling door 0", o.a. een_lege_buitenbehoefte…
 companionwandeling stopt bij de Let       ->  2 rood: "verwacht inconsistent …, werkelijk consistent"
 companion zonder behoeftepoort            ->  1 rood: "verwacht consistent, werkelijk inconsistent"
-ch. 10.2: takken omgewisseld              ->  6 rood, beide takpins erbij
-companion zonder takgarde                 ->  1 rood: dezelfde_deling_in_de_niet_betreden_tak_meldt_zich_niet
-takgarde weg uit prelude en barriere      ->  1 rood: een_behoefte_die_alleen_de_niet_betreden_tak_leest…
+ch. 10.2: takken omgewisseld              ->  9 rood, beide takpins erbij
+companion zonder takgarde                 ->  2 rood, o.a. dezelfde_deling_in_de_niet_betreden_tak_meldt_zich_niet
+takgarde weg uit prelude en barriere      ->  2 rood, o.a. een_behoefte_die_alleen_de_niet_betreden_tak_leest…
+armgarde niet op de behoeftepoort         ->  1 ERROR: een_let_in_de_niet_betreden_tak_wordt_niet_geforceerd
+waardewandeling zonder inTak-poort        ->  1 rood: een_deling_in_een_ongelezen_behoefte_meldt_zich_niet
 ```
 
 `DrlEenheidsplekWitnessTest` bouwt nu langs dezelfde weg als de tak (model
@@ -324,7 +385,7 @@ verouderde alinea daarover is bijgesteld.
 **Tellingen.** Gate 12 meldt `played matches the pinned 148`:
 `EXPECTED_PLAYED` is ONGEWIJZIGD, zoals de kaart eist — het exec-kanaal is
 wat gate 12 telt en dat bewoog niet. De backend-suite groeide van 369 naar
-393 tests, vloer 239. Gate 13: de DRL-tekst-tak speelde 19 goldens vóór deze
+397 tests, vloer 239. Gate 13: de DRL-tekst-tak speelde 19 goldens vóór deze
 kaart en 21 na ronde 1, vloer 13; ná ronde 2 nog steeds 21, en dat is geen
 stilstand maar een eigenschap van de harnas-vraag: de vier takgoldens dragen
 samen NUL eenheiddragende annotaties (gemeten), dus er valt voor de
