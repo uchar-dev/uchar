@@ -1,0 +1,667 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Reddingspost": {
+      "node": "Objecttype",
+      "naam": "Reddingspost",
+      "attributen": {
+        "redderstal": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "paraat",
+        "geoefend",
+        "stil",
+        "wisselend"
+      ],
+      "kenmerkSoorten": {
+        "paraat": "BIJVOEGLIJK",
+        "geoefend": "BIJVOEGLIJK",
+        "stil": "BIJVOEGLIJK",
+        "wisselend": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Reddingsposten"
+    },
+    "Redder": {
+      "node": "Objecttype",
+      "naam": "Redder",
+      "attributen": {
+        "dienstjaren": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "conditie": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "gediplomeerd"
+      ],
+      "kenmerkSoorten": {
+        "gediplomeerd": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Redders"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {
+    "postindeling": {
+      "node": "Feittype",
+      "naam": "postindeling",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "post",
+          "objecttypeNaam": "Reddingspost",
+          "meervoud": null,
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "redder",
+          "objecttypeNaam": "Redder",
+          "meervoud": "redders",
+          "meervoudig": true
+        }
+      ]
+    }
+  },
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "paraat bij ploegkeur",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "geoefend bij ploegkeur",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "stil bij ploegkeur",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "wisselend bij ploegkeur",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "redderstal van een reddingspost",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "paraat bij ploegkeur",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "paraat",
+        "objecttype": "Reddingspost",
+        "onderwerpBron": "Een Reddingspost",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Reddingspost is paraat",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "Kwantorvouw",
+        "kwantor": "ALLE",
+        "elementObjecttype": "Redder",
+        "filter": null,
+        "toets": {
+          "node": "Samengesteld",
+          "kwantor": "ALLE",
+          "drempel": 0,
+          "onderdelen": [
+            {
+              "node": "Vergelijking",
+              "op": "GROTER",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "dienstjaren",
+                "objecttype": "Redder",
+                "onderwerpBron": "de redder",
+                "navigatieRol": null,
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "zijn dienstjaren",
+                "set": false,
+                "navigatiePad": []
+              },
+              "rechts": {
+                "node": "Literal",
+                "waarde": "5",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "5"
+              },
+              "periode": null,
+              "bron": "zijn dienstjaren groter zijn dan 5"
+            },
+            {
+              "node": "Kenmerk",
+              "kenmerk": "gediplomeerd",
+              "navigatie": null,
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "hij gediplomeerd is"
+            }
+          ],
+          "bron": "hij aan alle volgende voorwaarden voldoet: - zijn dienstjaren groter zijn dan 5 - hij gediplomeerd is."
+        },
+        "bron": "alle redders van de Reddingspost aan alle volgende voorwaarden voldoen",
+        "bronRol": {
+          "node": "RolBinding",
+          "feittype": "postindeling",
+          "rol": "redder"
+        }
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "geoefend bij ploegkeur",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "geoefend",
+        "objecttype": "Reddingspost",
+        "onderwerpBron": "Een Reddingspost",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Reddingspost is geoefend",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "Kwantorvouw",
+        "kwantor": "ALLE",
+        "elementObjecttype": "Redder",
+        "filter": null,
+        "toets": {
+          "node": "Samengesteld",
+          "kwantor": "TEN_MINSTE",
+          "drempel": 1,
+          "onderdelen": [
+            {
+              "node": "Vergelijking",
+              "op": "GROTER",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "conditie",
+                "objecttype": "Redder",
+                "onderwerpBron": "de redder",
+                "navigatieRol": null,
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "zijn conditie",
+                "set": false,
+                "navigatiePad": []
+              },
+              "rechts": {
+                "node": "Literal",
+                "waarde": "7",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "7"
+              },
+              "periode": null,
+              "bron": "zijn conditie groter is dan 7"
+            },
+            {
+              "node": "Samengesteld",
+              "kwantor": "ALLE",
+              "drempel": 0,
+              "onderdelen": [
+                {
+                  "node": "Kenmerk",
+                  "kenmerk": "gediplomeerd",
+                  "navigatie": null,
+                  "negatie": false,
+                  "eigenaar": null,
+                  "periode": null,
+                  "bron": "hij gediplomeerd is"
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GROTER",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "dienstjaren",
+                    "objecttype": "Redder",
+                    "onderwerpBron": "de redder",
+                    "navigatieRol": null,
+                    "type": {
+                      "node": "Numeriek",
+                      "geheel": true,
+                      "decimalen": 0,
+                      "teken": "ONBEPAALD",
+                      "eenheid": null
+                    },
+                    "bron": "zijn dienstjaren",
+                    "set": false,
+                    "navigatiePad": []
+                  },
+                  "rechts": {
+                    "node": "Literal",
+                    "waarde": "2",
+                    "type": {
+                      "node": "Numeriek",
+                      "geheel": true,
+                      "decimalen": 0,
+                      "teken": "ONBEPAALD",
+                      "eenheid": null
+                    },
+                    "bron": "2"
+                  },
+                  "periode": null,
+                  "bron": "zijn dienstjaren groter zijn dan 2"
+                }
+              ],
+              "bron": "hij aan alle volgende voorwaarden voldoet: - hij gediplomeerd is - zijn dienstjaren groter zijn dan 2."
+            }
+          ],
+          "bron": "hij aan ten minste 1 van de volgende voorwaarden voldoet: - zijn conditie groter is dan 7 - hij aan alle volgende voorwaarden voldoet: - hij gediplomeerd is - zijn dienstjaren groter zijn dan 2."
+        },
+        "bron": "alle redders van de Reddingspost aan ten minste 1 van de volgende voorwaarden voldoen",
+        "bronRol": {
+          "node": "RolBinding",
+          "feittype": "postindeling",
+          "rol": "redder"
+        }
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "stil bij ploegkeur",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "stil",
+        "objecttype": "Reddingspost",
+        "onderwerpBron": "Een Reddingspost",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Reddingspost is stil",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "Kwantorvouw",
+        "kwantor": "GEEN",
+        "elementObjecttype": "Redder",
+        "filter": null,
+        "toets": {
+          "node": "Samengesteld",
+          "kwantor": "ALLE",
+          "drempel": 0,
+          "onderdelen": [
+            {
+              "node": "Vergelijking",
+              "op": "GROTER",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "dienstjaren",
+                "objecttype": "Redder",
+                "onderwerpBron": "de redder",
+                "navigatieRol": null,
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "zijn dienstjaren",
+                "set": false,
+                "navigatiePad": []
+              },
+              "rechts": {
+                "node": "Literal",
+                "waarde": "5",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "5"
+              },
+              "periode": null,
+              "bron": "zijn dienstjaren groter zijn dan 5"
+            },
+            {
+              "node": "Kenmerk",
+              "kenmerk": "gediplomeerd",
+              "navigatie": null,
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "hij gediplomeerd is"
+            }
+          ],
+          "bron": "hij aan alle volgende voorwaarden voldoet: - zijn dienstjaren groter zijn dan 5 - hij gediplomeerd is."
+        },
+        "bron": "geen van de redders van de Reddingspost aan alle volgende voorwaarden voldoet",
+        "bronRol": {
+          "node": "RolBinding",
+          "feittype": "postindeling",
+          "rol": "redder"
+        }
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "wisselend bij ploegkeur",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "wisselend",
+        "objecttype": "Reddingspost",
+        "onderwerpBron": "Een Reddingspost",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Reddingspost is wisselend",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "Kwantorvouw",
+        "kwantor": "ALLE",
+        "elementObjecttype": "Redder",
+        "filter": null,
+        "toets": {
+          "node": "Samengesteld",
+          "kwantor": "TEN_HOOGSTE",
+          "drempel": 1,
+          "onderdelen": [
+            {
+              "node": "Kenmerk",
+              "kenmerk": "gediplomeerd",
+              "navigatie": null,
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "hij gediplomeerd is"
+            },
+            {
+              "node": "Vergelijking",
+              "op": "GROTER",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "conditie",
+                "objecttype": "Redder",
+                "onderwerpBron": "de redder",
+                "navigatieRol": null,
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "zijn conditie",
+                "set": false,
+                "navigatiePad": []
+              },
+              "rechts": {
+                "node": "Literal",
+                "waarde": "7",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "7"
+              },
+              "periode": null,
+              "bron": "zijn conditie groter is dan 7"
+            },
+            {
+              "node": "Vergelijking",
+              "op": "GROTER",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "dienstjaren",
+                "objecttype": "Redder",
+                "onderwerpBron": "de redder",
+                "navigatieRol": null,
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "zijn dienstjaren",
+                "set": false,
+                "navigatiePad": []
+              },
+              "rechts": {
+                "node": "Literal",
+                "waarde": "5",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "5"
+              },
+              "periode": null,
+              "bron": "zijn dienstjaren groter zijn dan 5"
+            }
+          ],
+          "bron": "hij aan ten hoogste 1 van de volgende voorwaarden voldoet: - hij gediplomeerd is - zijn conditie groter is dan 7 - zijn dienstjaren groter zijn dan 5."
+        },
+        "bron": "alle redders van de Reddingspost aan ten hoogste 1 van de volgende voorwaarden voldoen",
+        "bronRol": {
+          "node": "RolBinding",
+          "feittype": "postindeling",
+          "rol": "redder"
+        }
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "redderstal van een reddingspost",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "redderstal",
+        "objecttype": "Reddingspost",
+        "onderwerpBron": "een Reddingspost",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "Het redderstal van een Reddingspost",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "AANTAL",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "redders",
+            "objecttype": "Reddingspost",
+            "onderwerpBron": "de Reddingspost",
+            "navigatieRol": null,
+            "type": {
+              "node": "Onbekend",
+              "reden": "niet opgelost"
+            },
+            "bron": "redders van de Reddingspost",
+            "set": false,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": "Redder",
+        "leegwaarde": null,
+        "filter": null,
+        "dimensieSelectie": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "het aantal redders van de Reddingspost",
+        "granulariteit": null,
+        "bronRol": {
+          "node": "RolBinding",
+          "feittype": "postindeling",
+          "rol": "redder"
+        }
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

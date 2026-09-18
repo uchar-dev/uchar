@@ -1,0 +1,48 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "L1",
+        "objectType": "Loodspost",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "keurgrens": {
+        "number": "5"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "L1",
+      "attribute": "loodstal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "L1",
+      "characteristic": "bekwaam"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "L1",
+      "characteristic": "onbekwaam"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "L1",
+      "characteristic": "merendeels"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "P1",
+        "objectType": "Reddingspost",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "redderstal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "P1",
+      "characteristic": "paraat"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "P1",
+      "characteristic": "geoefend"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "P1",
+      "characteristic": "stil"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "P1",
+      "characteristic": "wisselend"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

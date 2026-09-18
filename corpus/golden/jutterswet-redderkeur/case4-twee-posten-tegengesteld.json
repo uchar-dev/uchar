@@ -1,0 +1,122 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "P1",
+        "objectType": "Reddingspost",
+        "attributes": {},
+        "roles": {
+          "redders": [
+            "R1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "P2",
+        "objectType": "Reddingspost",
+        "attributes": {},
+        "roles": {
+          "redders": [
+            "R2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "R1",
+        "objectType": "Redder",
+        "attributes": {
+          "dienstjaren": {
+            "number": "9"
+          },
+          "conditie": {
+            "number": "8"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gediplomeerd"
+        ]
+      },
+      {
+        "label": "R2",
+        "objectType": "Redder",
+        "attributes": {
+          "dienstjaren": {
+            "number": "2"
+          },
+          "conditie": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "redderstal",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "P1",
+      "characteristic": "paraat"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "P1",
+      "characteristic": "geoefend"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "P1",
+      "characteristic": "stil"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "P1",
+      "characteristic": "wisselend"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P2",
+      "attribute": "redderstal",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "P2",
+      "characteristic": "paraat"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "P2",
+      "characteristic": "geoefend"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "P2",
+      "characteristic": "stil"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "P2",
+      "characteristic": "wisselend"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

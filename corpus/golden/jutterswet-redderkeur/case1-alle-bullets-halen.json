@@ -1,0 +1,86 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "P1",
+        "objectType": "Reddingspost",
+        "attributes": {},
+        "roles": {
+          "redders": [
+            "R1",
+            "R2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "R1",
+        "objectType": "Redder",
+        "attributes": {
+          "dienstjaren": {
+            "number": "8"
+          },
+          "conditie": {
+            "number": "9"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gediplomeerd"
+        ]
+      },
+      {
+        "label": "R2",
+        "objectType": "Redder",
+        "attributes": {
+          "dienstjaren": {
+            "number": "6"
+          },
+          "conditie": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gediplomeerd"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "redderstal",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "P1",
+      "characteristic": "paraat"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "P1",
+      "characteristic": "geoefend"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "P1",
+      "characteristic": "stil"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "P1",
+      "characteristic": "wisselend"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

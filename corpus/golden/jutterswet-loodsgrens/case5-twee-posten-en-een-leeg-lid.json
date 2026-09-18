@@ -1,0 +1,128 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "L1",
+        "objectType": "Loodspost",
+        "attributes": {},
+        "roles": {
+          "loodsen": [
+            "A",
+            "B"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "L2",
+        "objectType": "Loodspost",
+        "attributes": {},
+        "roles": {
+          "loodsen": [
+            "C",
+            "D"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "A",
+        "objectType": "Loods",
+        "attributes": {
+          "ervaring": {
+            "number": "8"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "B",
+        "objectType": "Loods",
+        "attributes": {
+          "ervaring": {
+            "number": "6"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "C",
+        "objectType": "Loods",
+        "attributes": {
+          "ervaring": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "D",
+        "objectType": "Loods",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "keurgrens": {
+        "number": "5"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "L1",
+      "attribute": "loodstal",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "L1",
+      "characteristic": "bekwaam"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "L1",
+      "characteristic": "onbekwaam"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "L1",
+      "characteristic": "merendeels"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "L2",
+      "attribute": "loodstal",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "L2",
+      "characteristic": "bekwaam"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "L2",
+      "characteristic": "onbekwaam"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "L2",
+      "characteristic": "merendeels"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
