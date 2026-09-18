@@ -147,7 +147,10 @@ EXCLUDE_KNOWN=(
   # UNCHANGED pins; removing them is mandatory (a listed golden that plays trips the stale guard):
   #   (d') The ch. 7.8 SCALAR standing norm — ref's Desugar.standing_targets (~temporal:false) — plus the
   #       ch. 7.7 desugaring domain (Desugar.desugared_targets) that ref's scalar arm consults BESIDE it, both
-  #       ported into ExecModelTranspiler and read at the scalar write boundary (werkBij): on such a target a
+  #       ported into the SHARED transpiler/kern/StaandeDoelen — one derivation, read by BOTH Drools branches:
+  #       the exec-model branch at its scalar write boundary (werkBij) and the DRL-text branch at its emitted
+  #       modify guard (card drl-staande-waarden, 2026-09-18, which built the DRL-text arm; the timeline
+  #       emptiness test is RegelSpraakRuntime.rsTijdreeksGevuld, likewise shared): on such a target a
   #       leeg (null) computed value decides nothing, so the case input — or, in the desugaring domain, the
   #       initialisatie — stands. waardestelling was class (d) all along, not the class (b) its old reason
   #       line claimed: the spec DECIDED the doorval at ch. 7.8 and the backend simply had not built it.
@@ -156,7 +159,8 @@ EXCLUDE_KNOWN=(
   #       oscillation is gone — so the ratified PRIORITIZED-DEFAULTS-EVOLUTIE §9 Q11 note is discharged by
   #       construction rather than by the CaseRunner-taxonomy revisit it was waiting for. Note the domain
   #       gate is what carries this: with a SECOND computing rule on the target the v0 erase is unretired and
-  #       a leeg source still wipes the input (ref agrees) — pinned by StaandeScalaireNormWitnessTest.
+  #       a leeg source still wipes the input (ref agrees) — pinned by StaandeScalaireNormWitnessTest, dual-branch since 2026-09-18 (BeideTakken), with
+  #       the version flank beside it.
 )
 
 known_reason() { local n="$1"; for e in "${EXCLUDE_KNOWN[@]}"; do [ "${e%%|*}" = "$n" ] && { echo "${e#*|}"; return 0; }; done; return 1; }
