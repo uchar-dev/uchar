@@ -1,12 +1,16 @@
 #!/bin/sh
 # Gate 8: the red corpus — expected-fault cases (corpus/rood). Each
 # directory holds a verifier-clean ir.json whose case*.json declares
-# `expectedFault {ref, clingo}`: evaluation MUST fail observably in
-# BOTH executors, with the pinned fragment in each report (the runners
-# verify the fragment themselves and exit 0 only on the expected
-# fault). This is the standing regression fence for red paths — the
-# WF-044 unsolved state among them: Onopgelost surfaces, never
-# vanishes.
+# `expectedFault {ref, clingo}`: LOADING OR evaluation MUST fail
+# observably in BOTH executors, with the pinned fragment in each report
+# (the runners verify the fragment themselves and exit 0 only on the
+# expected fault). Both phases count, since 2026-09-19: the runners read
+# expectedFault on its own, BEFORE the world, so a refusal by the case
+# reader — an ambiguous role key, a link to an undeclared label — is
+# pinnable exactly like a fault at evaluation. Read the other way round
+# that whole class could only crash on exit 2, and no zone held it.
+# This is the standing regression fence for red paths — the WF-044
+# unsolved state among them: Onopgelost surfaces, never vanishes.
 #
 #   1. ref/ and backends/ build; clingo must be available;
 #   2. every corpus/rood/**/case*.json passes both runners in
@@ -143,6 +147,7 @@ if command -v java >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
         excl=$(mktemp) || exit 2
         # <rood-case-dir>|<reason the v0 Drools backend does not fault-pin this red form>
         cat > "$excl" <<'EOF'
+ambiguous-case-role-key|EXCLUDE measured 2026-09-19: the transpiler SKIPs the document's only rule (ligdiepte van een schuit — a navigated read, waarde buiten scope), so the backend never builds the fact model the ambiguous case key would be read into; the case input is never reached. A LOAD-fault witness: ref and clingo both refuse while READING the case, and this leg's vocabulary reserves FAULT for a genuine fault at fire, so a loader/transpiler refusal is an EXCLUDE even where the backend would agree
 ambiguous-fold-role-name|NOFAULT the v0 backend resolves the fold role without detecting the cross-type ambiguity ref/clingo reject; it runs to a model
 begrensd-reads-bounds-in-order|NOFAULT the v0 backend evaluates a Begrensd's MAXIMUM bound BEFORE its MINIMUM — the reverse of the ch. 5.11 wire order — so the ch. 10.6 barrier sitting in the maximum fires before the minimum's division is ever reached, and the fault never happens; it runs to a model. Measured both ways on this exact shape: with the division in the MAXIMUM instead, Drools DOES fault ("Breuk deling door 0") on the very document where ref and clingo do not. This is the operand-order divergence the witness exists to expose; the Drools-side correction is a card of its own
 closed-nonexact-division|EXCLUDE the v0 loader refuses the model's list datatype (ListType) — the fold-over-a-list form is not carried
@@ -160,6 +165,7 @@ struct-field-overprecision|EXCLUDE the v0 loader refuses the model's record data
 tijdsduur-reads-van-before-tot|NOFAULT the v0 backend enforces no van/tot ORDER on a TIJDSDUUR, so the ch. 10.6 barrier this witness plants never becomes a fault; it runs to a model — the mirror of begrensd-reads-bounds-in-order above, the same ch. 5.11 divergence. Reason category CORRECTED 2026-09-09 (card onopgelost-zijkanaal-opruiming), measured on both backends: the verdict was EXCLUDE while a Let was an Onopgelost carrier and the Rekendatum inside its body stayed a leaf to Expr.bevat, so the rule did not lower at all; with Let a real union node it lowers and fires. Both pinned legs are untouched — the case still pins expectedFault {ref, clingo}. Full account in the card and in the case's NOTE.md
 to-one-second-filler|EXCLUDE the case's role (aangemelde vondsten) has no uniquely derivable reference field in the v0 bean model — the role input is refused before the second-filler violation is reached
 uni-temporal-key-scalar|EXCLUDE the case sets a temporal attribute (kavelnummer) as a scalar while carrying NO asOfDate — the bucket convention (corpus/golden/README.md) gives that scalar no evaluation date to sit in, so the input is not carried and the ever-unique key is never reached
+unknown-role-target-label|EXCLUDE measured 2026-09-19: the backend's own loader refuses the same input and names the same dangling label (role 'liggers' names unknown label S9), but a loader refusal is an EXCLUDE in this leg's vocabulary, where FAULT means a genuine fault at fire. The agreement is real and recorded here rather than pinned: all three executors reject this case, and only the two that can carry a fragment do
 uu-temporal-key-scalar|EXCLUDE the case sets a temporal attribute (vondstnummer) as a scalar while carrying NO asOfDate — the bucket convention (corpus/golden/README.md) gives that scalar no evaluation date to sit in, so the input is not carried and the ever-unique key is never reached
 vintage-uncovered-date|EXCLUDE the v0 loader refuses the TemporalRead expression node (the vintage read) — the temporal-read form is not carried
 wf044-onopgelost-reached|EXCLUDE the reaching rule (waardering van een vondst) does not lower — a transpiler SKIP (waarde buiten scope); the Onopgelost marker never fires, so it is not Drools-carried (the WF-044 guard: listed, not fragment-pinned)

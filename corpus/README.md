@@ -26,7 +26,7 @@ construction**.
 | `golden/` | One directory per golden: `ir.json`, one or more `case*.json` with expected values, a `NOTE.md` with the hand computation, and — where a frontend carries the form — a source file (`bron.rgs`, `bron.catala_en` or `bron.flogic`) that must re-emit the committed IR byte-identically (gates 9, 10, 14) |
 | `golden/anchor/` | Hand-written cases with **absolute** expected values, permanently pinned — protected path |
 | `negatief/` | Deliberately ill-formed IR files; each directory name declares the WF rule it violates (`wf###-slug`) and gate 3 demands the verifier cite exactly that rule |
-| `rood/` | Verifier-clean documents whose cases declare `expectedFault {ref, clingo}`: evaluation must fail observably in both executors, substring-pinned (gate 8), the WF-044 unsolved state among them |
+| `rood/` | Verifier-clean documents whose cases declare `expectedFault {ref, clingo}`: **loading or** evaluation must fail observably in both executors, substring-pinned (gate 8), the WF-044 unsolved state among them. Since 2026-09-19 a refusal by the case reader counts — the runners read `expectedFault` before the world, so an ambiguous role key or a link to an undeclared label is pinnable like any fault |
 
 ## Admission rules
 

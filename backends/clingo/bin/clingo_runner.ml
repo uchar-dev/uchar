@@ -2,14 +2,15 @@
    clingo, and check the stable model against the case's expectations —
    the same absolute expectations gate 5 pins for ref/. On an
    expectedFault case (corpus/rood) the pair must instead fail
-   observably — a translation fault or UNSAT — with the pinned fragment
-   in the report; an UNSAT is diagnosed by re-running without the global
-   integrity constraint so the report names the viol/2 guard that
-   fired, and the fragment can pin the REASON, not just the failure.
+   observably — a case-reader refusal at LOAD, a translation fault, or
+   UNSAT — with the pinned fragment in the report; an UNSAT is
+   diagnosed by re-running without the global integrity constraint so
+   the report names the viol/2 guard that fired, and the fragment can
+   pin the REASON, not just the failure.
    Exit 0: every expectation matches, or the expected fault is
    observed. Exit 1: mismatch, translation/evaluation fault, an
    expected fault that does not occur, or a fault report without the
-   fragment. Exit 2: load error or clingo unavailable. *)
+   fragment. Exit 2: an unpinned load error, or clingo unavailable. *)
 
 (* the solver invocation itself lives in the library (Clingo_backend.Solve),
    so this runner and the backend's own suite call clingo the SAME way —
@@ -81,8 +82,30 @@ let () =
   match Sys.argv with
   | [| _; ir_path; case_path |] -> (
       try
+        (* Split reading, exactly as ref/bin/runner.ml does it: the
+           pinned fragment sits in the same file whose INPUT may be
+           unreadable, so the contract field is read on its own, before
+           the world. Both executors must agree on a load refusal the
+           same way they agree on a fault, or the red zone cannot hold
+           the class at all. *)
+        let pinned = Uchar_ref.Case.expected_fault_of_file case_path in
         let doc = Ir_v0.Loader.load_file ir_path in
-        let case = Uchar_ref.Case.load_file doc case_path in
+        let case =
+          try Uchar_ref.Case.load_file doc case_path
+          with Uchar_ref.Case.Error msg -> (
+            match pinned with
+            | None ->
+                Printf.eprintf "CASE ERROR: %s\n" msg;
+                exit 2
+            | Some { ef_clingo; _ } ->
+                let report = "CASE ERROR: " ^ msg in
+                if Uchar_ref.Case.contains ~needle:ef_clingo report then (
+                  Printf.printf "clingo: expected fault observed at load (%s)\n" ef_clingo;
+                  exit 0)
+                else (
+                  Printf.eprintf "EXPECTED FAULT MISMATCH: wanted %S in:\n%s\n" ef_clingo report;
+                  exit 1))
+        in
         match case.expected_fault with
         | Some { ef_clingo; _ } -> (
             (* the red path: translation or solving MUST fail with the

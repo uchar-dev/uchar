@@ -29,8 +29,8 @@ type expectation =
   | Consistent
   | Inconsistent of { rule : string option; label : string option }
 
-(* the red-path case form (corpus/rood): evaluation MUST fail
-   observably in every executor; each field is a substring the
+(* the red-path case form (corpus/rood): LOADING OR evaluation MUST
+   fail observably in every executor; each field is a substring the
    executor's own fault report must contain *)
 type expected_fault = { ef_ref : string; ef_clingo : string }
 
@@ -696,6 +696,30 @@ let load_expectation (doc : document) (world : World.t) (j : Yojson.Safe.t) : ex
       | rule, label -> Inconsistent { rule; label })
   | k -> fail "unknown expectation kind %S" k
 
+let expected_fault_of_kvs kvs =
+  match List.assoc_opt "expectedFault" kvs with
+  | None -> None
+  | Some j ->
+      let fk = obj j in
+      let frag what =
+        let s = str (field fk what) in
+        if s = "" then fail "expectedFault.%s: an empty fragment would match any fault" what;
+        s
+      in
+      Some { ef_ref = frag "ref"; ef_clingo = frag "clingo" }
+
+(* The pinned fragments read on their OWN, without the world — the
+   split every executor's runner performs before loading anything
+   else. A case whose expected fault falls while the INPUT is being
+   read (an ambiguous role key, a link to an undeclared label) never
+   reaches a parse that sits behind that input, so its fragments would
+   be unreachable in precisely the file that names them, and the whole
+   class of case-reader refusals could not be pinned at all. The field
+   is the case's contract, not part of its input, so it is parsed
+   without one. *)
+let expected_fault_of_file path : expected_fault option =
+  expected_fault_of_kvs (obj (Yojson.Safe.from_file path))
+
 let load_file (doc : document) path : t =
   let j = Yojson.Safe.from_file path in
   let kvs = obj j in
@@ -737,18 +761,7 @@ let load_file (doc : document) path : t =
       (SMap.empty, SMap.empty)
       (obj (field input "parameters"))
   in
-  let expected_fault =
-    match List.assoc_opt "expectedFault" kvs with
-    | None -> None
-    | Some j ->
-        let fk = obj j in
-        let frag what =
-          let s = str (field fk what) in
-          if s = "" then fail "expectedFault.%s: an empty fragment would match any fault" what;
-          s
-        in
-        Some { ef_ref = frag "ref"; ef_clingo = frag "clingo" }
-  in
+  let expected_fault = expected_fault_of_kvs kvs in
   let expected =
     match (List.assoc_opt "expected" kvs, expected_fault) with
     | Some (`List l), None -> List.map (load_expectation doc world) l

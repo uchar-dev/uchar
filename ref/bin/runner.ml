@@ -1,9 +1,10 @@
 (* The oracle runner: replay one uchar-case-v0 file against its ir.json.
    Exit 0: every expectation matches exactly — or, on an expectedFault
-   case (corpus/rood), the evaluation faults and the report contains the
-   pinned fragment. Exit 1: a mismatch, an unexpected fault, a fault
-   that does not occur, or a fault report without the fragment. Exit 2:
-   a load or cross-check error.
+   case (corpus/rood), the LOADING OR the evaluation faults and the
+   report contains the pinned fragment. Exit 1: a mismatch, an
+   unexpected fault, a fault that does not occur, or a fault report
+   without the fragment. Exit 2: a load or cross-check error that no
+   expectedFault pins.
 
    With --noop the evaluation is skipped and the expectations are
    checked against the raw input world — the gate-7 guard: a corpus a
@@ -19,8 +20,37 @@ let () =
         exit 2
   in
   try
+    (* Split reading. The pinned fragment sits in the same file whose
+       INPUT may be unreadable, so the contract field is read on its
+       own, before the world. Read the other way round — the field
+       parsed behind the world it is supposed to describe — a refusal
+       from the case reader could only ever crash on exit 2, and the
+       whole class of load faults both executors agree on stayed
+       unpinnable. *)
+    let pinned = Uchar_ref.Case.expected_fault_of_file case_path in
+    if noop && pinned <> None then (
+      prerr_endline "--noop is a golden-corpus guard; an expectedFault case has no use for it";
+      exit 2);
     let doc = Ir_v0.Loader.load_file ir_path in
-    let case = Uchar_ref.Case.load_file doc case_path in
+    let case =
+      try Uchar_ref.Case.load_file doc case_path
+      with Uchar_ref.Case.Error msg -> (
+        match pinned with
+        | None ->
+            Printf.eprintf "CASE ERROR: %s\n" msg;
+            exit 2
+        | Some { ef_ref; _ } ->
+            (* the red path's LOAD arm: the case reader refused, and
+               that refusal is as observable a failure as a fault at
+               evaluation — it is matched against the same pin *)
+            let report = "CASE ERROR: " ^ msg in
+            if Uchar_ref.Case.contains ~needle:ef_ref report then (
+              Printf.printf "oracle: expected fault observed at load (%s)\n" ef_ref;
+              exit 0)
+            else (
+              Printf.eprintf "EXPECTED FAULT MISMATCH: wanted %S in:\n%s\n" ef_ref report;
+              exit 1))
+    in
     let env =
       {
         Uchar_ref.Eval.doc;
@@ -32,11 +62,9 @@ let () =
     in
     match case.expected_fault with
     | Some { ef_ref; _ } -> (
-        if noop then (
-          prerr_endline "--noop is a golden-corpus guard; an expectedFault case has no use for it";
-          exit 2);
-        (* the red path: evaluation MUST fault, observably, with the
-           pinned fragment in the report — never a silent success *)
+        (* the red path's EVALUATION arm (the load arm is above): the
+           run MUST fault, observably, with the pinned fragment in the
+           report — never a silent success *)
         match Uchar_ref.Eval.evaluate env case.world with
         | (_ : Uchar_ref.World.t) ->
             prerr_endline "EXPECTED FAULT DID NOT OCCUR: evaluation succeeded";
