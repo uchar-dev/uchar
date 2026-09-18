@@ -48,6 +48,15 @@ every kernel extension that widens a node union breaks the build here
 instead of failing silently. That is why the verifier, `ref/`, the
 clingo backend and this frontend are OCaml.
 
+The **quantifier fold** is the second construct this frontend guards, and
+it arrived the same way. `Kwantorvouw` had three independent executors and
+no source language: RegelSpraak declines the non-temporal matrix, Catala
+does not carry the node, and the corpus witnesses for it were hand-written
+IR. Counting is native here — `count{…}` is an F-logic aggregate, and all
+five quantifiers are one comparison of a count with a number — so the node
+reaches the wire from a language with none of RegelSpraak's grammar, which
+is the same argument the subtype kernel got.
+
 Two further reasons. The slice is a syntactic subset of Flora-2 2.2, so
 every accepted program also parses in an independently maintained
 reasoner — the spelling is borrowed, not invented. And F-logic can write
@@ -75,6 +84,7 @@ in that reasoner. The rule the slice follows:
 | `@!{'name'} C[\|a -> 5\|].` | the inheritable class-level default: a defaults **base** on `C.a` |
 | `@!{'name'} ?X[a -> Expr] :- ?X : C.` | an unconditional definition of `C.a` |
 | `@!{'name'} ?X[a -> Expr] :- ?X : C, Cond, ….` | a conditional definition: an exception |
+| `@!{'name'} ?X : k :- ?X : C, Cond, ….` | a characteristic assignment: `C.k` holds where the body does |
 
 Flora-2's rule id is optional and unavailable outside a rule; here it is
 **required on every form that puts a name on the wire, and only on those**
@@ -99,6 +109,44 @@ and the two aggregates over one role hop —
 bodies carry the subject binding `?X : C`, characteristic checks `?X : k`,
 comparisons (`> >= < <= = !=`) and value bindings `?V = Expr`.
 
+## The quantifier fold: a count compared with a threshold
+
+Flora-2's aggregate body is a comma-separated conjunction of goals. A
+`count` comprehension that carries goals beside the hop states a condition
+of the members it counts, which is a **quantification** over them — the
+`Kwantorvouw` of `IR-SPEC.md` ch. 4.5 (semantics `RUNTIME-SEMANTICS.md`
+ch. 3.9a). The slice reads it in a rule body, compared with its threshold:
+
+```
+count{?V | ?V = ?X.role, F…, M} <op> <right>
+```
+
+The **first** goal is the role hop, the **last** is the matrix, and
+everything between narrows the range — the die/dat subselection. That
+position rule is the whole distinction, because F-logic has no relative
+clause to attach a filter to the range with. Both are read per contributor,
+with the member as subject, and the member reaches the wire as `?V`
+whatever letter the author chose.
+
+| form | quantifier |
+|---|---|
+| `… >= n`, n ≥ 1 | TEN MINSTE n |
+| `… <= n`, n ≥ 1 | TEN HOOGSTE n |
+| `… = n`, n ≥ 1 | PRECIES n |
+| `… = 0` | GEEN |
+| `… = count{?V \| ?V = ?X.role, F…}` — the same comprehension WITHOUT its last goal | ALLE |
+
+All five are one comparison of a count with a number, which is why the
+slice needs **no negation form** for them and the `\naf` / `\neg` refusals
+below did not move when the fold arrived: `GEEN` is `count = 0` and `ALLE`
+is `count = |contributors|`, which is what ch. 3.9a states. A comprehension
+with no goal beside the hop states no matrix and stays the plain instance
+fold; a quantifier over no condition would violate WF-108 (d).
+
+Corpus witness: `corpus/golden/jutterswet-vuurtoren-flogic`, the second
+source twin of the hand-written `corpus/golden/jutterswet-vuurtoren`, over
+one shared set of case expectations.
+
 ## How priority is decided
 
 F-logic's own way to order two definitions of one target is defeasible
@@ -116,6 +164,13 @@ the rule**:
   never becomes a standing norm;
 - two unconditional definitions of one target refuse: nothing in the slice
   orders them.
+
+A **characteristic** target is outside that device by construction, and
+stays a standing norm with its condition as the rule's own `voorwaarde`.
+The device orders two definitions of one target; a characteristic has one
+value it can be given, so two definitions could not conflict and there is
+nothing to order. A second definition of one characteristic target refuses,
+for the same reason a second unconditional attribute definition does.
 
 Inheritance itself is the kernel's, not the frontend's: the frontend only
 writes `supertype`.
@@ -169,6 +224,20 @@ the reason and the citation.
    instance fact, two unconditional definitions of one target, a definition
    with no id, an id on a form that names nothing, and two definitions
    sharing one id.
+8. **the quantifier fold's own edges**, each by name: a strict `>` or `<`
+   against a counting comprehension (the `drempel` on the wire is the number
+   the source wrote, so the message names the direct spelling), a threshold
+   of 0 under `>=` or `<=` (WF-041 pins the bound at 1, and `= 0` is the
+   GEEN spelling), the count on the RIGHT of the comparison, a count
+   compared with anything but a whole non-negative number or its matrix-free
+   twin, an ALLE twin that is a different comprehension, a conditioned
+   comprehension in a VALUE position (a quantification with no threshold to
+   compare against — the counterpart of the set reading a fold source cannot
+   host), a conditioned `sum` (the SOM carries no subselection), a
+   conditioned comprehension over an attribute path instead of one role hop,
+   a goal inside a comprehension that speaks of the outer subject instead of
+   the counted member, a characteristic head naming something the subject
+   does not declare, and two definitions of one characteristic target.
 
 ## Building and testing
 
