@@ -162,10 +162,11 @@ hertrigger blokkeert.
 **Feitenmodel van bestaande goldens, expliciet gemeten.** Het
 gegenereerde feitenmodel van alle 199 `ir.json` onder `corpus/golden`
 is vóór en ná gedumpt en per objecttype vergeleken. Vier blokken
-veranderen, en drie daarvan horen bij de nieuwe golden. De enige
-bestaande golden die beweegt is `anchor/jutterswet-bergingstoezicht` —
-zelf een herhaald paar — dat `Berger.berging` en `Berging.toezichthouder`
-krijgt. Alle andere feitenmodellen zijn byte-identiek.
+veranderen: TWEE van de nieuwe golden (`Haven` krijgt `vlaggenschip`,
+`Schuit` krijgt `thuishaven`, `winterhaven`, `keurhaven` en `vlaghaven`)
+en TWEE van `anchor/jutterswet-bergingstoezicht` — zelf een herhaald
+paar — dat `Berger.berging` en `Berging.toezichthouder` krijgt. Alle
+andere feitenmodellen zijn byte-identiek.
 
 **De nieuwe golden.** `corpus/golden/jutterswet-dubbelverbinding/`,
 eigen en rechtenvrij, bron-gedragen: vier feittypen over het paar
@@ -211,7 +212,7 @@ op het ontbrekende joinveld. `jutterswet-erflijn`,
 `jutterswet-gemeenteberging` en `jutterswet-penninguitgifte` bewogen
 geen letter.
 
-**Getuigen bij naam** (18, allemaal dubbel-tak waar de vorm dat toelaat):
+**Getuigen bij naam** (19, allemaal dubbel-tak waar de vorm dat toelaat):
 `de_bij_paar_afleiding_blijft_ambigu_en_raadt_niet`,
 `het_beanmodel_draagt_een_veld_per_toone_rol`,
 `de_telling_over_elke_geschreven_elementrol_kiest_haar_eigen_feittype`,
@@ -229,12 +230,17 @@ geen letter.
 `een_niet_unieke_rolnaam_leidt_geen_veld_af`,
 `naamdeling_met_een_gedeclareerd_lid_blijft_een_eigen_weigering`,
 `een_meervoudige_rol_zonder_opslagdragende_overzijde_blijft_geweigerd`,
+`de_overzijde_die_wel_een_veld_draagt_krijgt_niet_de_beide_zijden_zin`,
 `een_consument_zonder_geschreven_rol_vindt_het_paar_nog_altijd_ambigu`.
+De laatste vier zijn de weigeringen; de eerste drie daarvan lopen sinds
+de fixronde door `BeideTakken.geweigerd` en eisen dus dezelfde redenzin
+van beide takken.
 
 **Mutatieproeven, feitelijk gedraaid en hersteld.**
 
 - (a) rolkeuze verwisseld — `zetRollen` kiest de LAATSTE afgeleide rol
-  in plaats van de geschreven: 8 fouten + 3 errors van de 18. Onder meer
+  in plaats van de geschreven: 8 fouten + 3 errors (gemeten op de toen
+  18 rijen). Onder meer
   `de_geschreven_rol_landt_op_het_veld_van_dat_feittype` (`to-one rol
   'vlaghaven' krijgt een tweede, ander doel — WF-013`),
   `de_aangemaakte_koppeling_staat_op_het_veld_van_haar_eigen_feittype`
@@ -259,13 +265,13 @@ geen letter.
   ("Expected Excluded to be thrown, but nothing was thrown").
 
 **Gerichte checks.** `mvn -q -o -f backends/drools/pom.xml package` mét
-tests: 427 tests, 0 fouten (was 409; vloer 239).
+tests: 428 tests, 0 fouten (was 409; vloer 239).
 `scripts/check-regelspraak.sh`: PASS, 280 tests, 54 rgs-goldens
 re-emitteren byte-identiek (vloer 38). `scripts/check-drools.sh`: PASS,
 `played 149`. `scripts/check-reftype-derivation.sh`: PASS, 108
 unit-annotaties over 22 goldens, 100 replays, 21 DRL-gespeeld —
-ongewijzigd, want de nieuwe golden draagt 22 `type`-annotaties zonder
-eenheid en komt dus niet in de twist-set.
+ongewijzigd, want de nieuwe golden draagt 17 `type`-annotaties en al
+zijn 22 `eenheid`-velden zijn null, dus hij komt niet in de twist-set.
 
 **Veertien gates** (`eval $(opam env)`, elk `> /dev/null 2>&1`):
 
@@ -285,9 +291,11 @@ noop: 0                flogic: 0
 gemeten vóór en ná in beide takken, en geen andere golden wisselt van
 kanaal. Geen andere regel van dat script is aangeraakt.
 
-**May touch, geverifieerd** (`git diff --name-only main...HEAD`): 13
-bestanden, alle binnen de limitatieve lijst. `ContractValidator.java` en
-`ExecModelTranspiler.java` stonden op de lijst maar hoefden niet.
+**May touch, geverifieerd** (`git diff --name-only main...HEAD`): 17
+bestanden, alle binnen de limitatieve lijst. `ContractValidator.java`
+hoefde niet: hij vraagt het al aan dezelfde `leden`. `ExecModelTranspiler`
+is in de fixronde alsnog geraakt, voor één regel: de inline
+kardinaliteitszin is vervangen door de aanroep van de gedeelde.
 
 **Registervoorstel** voor `spec/CONSTRUCTS.md` rij 4 (*Fact types and
 role navigation*) — niet zelf geland:
@@ -313,23 +321,103 @@ role navigation*) — niet zelf geland:
 > idempotent since the same card, mirroring the exec branch — without it
 > creation and fold ping-pong forever on a repeated pair.
 
+**Fixronde na de lens (2026-09-18).** Vijf punten, alle binnen May
+touch.
+
+1. *De manifestnaam uit de artifactzone.* Een sectiekop in de
+   getuigenklasse noemde een private-toolchain-manifestnaam; vervangen
+   door "the old toolchain manifest's count". Corpus, backends,
+   frontends, spec en scripts zijn opnieuw gescand: nul treffers.
+2. *Drie getalcorrecties in dit Result* (feitenmodel-diff twee-en-twee,
+   17 `type`-annotaties, en restscope 2 herformuleerd), hieronder
+   doorgevoerd.
+3. *De doelgehoste voorwaarde zelf gemeten*, zie restscope 1.
+4. *`corpus/golden/jutterswet-dubbelverbinding/NOTE.md`* geschreven naar
+   de staande praktijk: wat de golden dekt dat geen andere dekt, de
+   handberekening als tabel, en de twee bewust niet-gedragen vormen met
+   hun reden. Zelfdragend; gate 1 groen.
+5. *Bev. 8 — één weigering, één diagnose.* De drie weigeringsgetuigen
+   staan nu alle drie dubbel-tak via een nieuwe `BeideTakken.geweigerd`.
+   Voor de derde (beide zijden meervoudig) was de kleinste eerlijke
+   ingreep NIET het vastleggen van de asymmetrie maar het opheffen
+   ervan: de kardinaliteitshelft stond als inline string in de exec-tak
+   en is verhuisd naar `FactModelGenerator.geenJoinveldReden`, naast de
+   redenzin die er al woonde omdat "beide takken weigeren dezelfde
+   vormen en moeten dat in dezelfde woorden zeggen". De DRL-tak herhaalt
+   haar op de foldjoin-naad — twee regels, en het verwijdert een
+   duplicaat in plaats van er een toe te voegen. Gemeten vóór: exec "de
+   rol 'thuishaven' op Schuit is meervoudig, dus haar opslag is het veld
+   aan de overzijde, en ook daar leidt het beanmodel er geen af (beide
+   zijden meervoudig)" tegenover DRL "het beanmodel leidt voor de rol
+   'thuishaven' op Schuit geen referentieveld naar Haven af"; ná:
+   identiek in beide takken.
+
+   **Eén ding ging daarbij eerst mis en is gemeten gecorrigeerd.** De
+   eerste versie van de gedeelde zin claimde "(beide zijden meervoudig)"
+   onvoorwaardelijk. In de exec-tak was dat altijd waar — die tak
+   weigert een enkelvoudige elementrol met meervoudige zusterrol al
+   eerder — maar de DRL-tak kent die conservatieve arm niet en kwam
+   ermee uit op `anchor/jutterswet-gemeenteberging`, waar de overzijde
+   (`Vondst.bergende gemeente`, to-één) het veld wél draagt. De zin is
+   nu voorwaardelijk: hij stopt bij "haar opslag is het veld aan de
+   overzijde" zodra die overzijde afleidt. Een negentiende getuige,
+   `de_overzijde_die_wel_een_veld_draagt_krijgt_niet_de_beide_zijden_zin`,
+   pint dat, inclusief de exec-kant die op haar eigen conservatieve arm
+   blijft weigeren.
+
+   Corpuseffect, gemeten over alle 199 `ir.json`: precies twee
+   statusregels wijzigen, beide in de DRL-tak en beide een BETERE
+   diagnose — `anchor/jutterswet-erflijn` krijgt de volledige
+   kardinaliteitszin (beide rollen meervoudig) en
+   `anchor/jutterswet-gemeenteberging` de afgekapte (de overzijde
+   draagt). Geen kanaalwissel; exec 149, DRL 122, onveranderd. Eén
+   bestaande getuige is meegescherpt:
+   `TakgelijkheidWitnessTest.de_drl_aggregatiejoin_weigert_een_join_zonder_veld`
+   vroeg de DRL-tak om de generieke zin terwijl hij de exec-tak al om de
+   kardinaliteitszin vroeg; hij vraagt nu beide takken hetzelfde.
+
 **Bewuste restscope.**
 
-1. *Het doelgehoste feitcreatiegeval kan niet in het corpus.* `ref`
-   FAULT op een kenmerkcheck die op een ander objecttype is gehost
-   (WF-100, onderhouderbesluit 2026-09-10), en de frontend maakt van een
-   doelvergelijking een `Onopgelost`. Beide Drools-takken lowéren de
-   vorm wél. Dat is een latente drie-uitvoerder-ongelijkheid die geen
-   gate ziet; de twee getuigen die haar pinnen zeggen dat ter plaatse.
-   De golden gebruikt daarom twee anker-gehoste voorwaarden (een kenmerk
-   en een vergelijking) en discrimineert per doel via de joinrol.
-2. *SOM/MIN/MAX over een herhaald paar splitst de takken.* Gemeten op
-   een variant van de nieuwe golden: exec `PLAYED` (via de symbolische
-   `bronRol` op de wire), DRL-tekst `MARKER: TODO aggregatie SOM` (die
-   tak leest geen wire-binding en heeft alleen de by-pair-zoektocht). De
-   golden vouwt daarom uitsluitend AANTAL. Dat is dezelfde
-   takongelijkheid die `anchor/jutterswet-bergingstoezicht` al droeg;
-   opheffen vergt een eigen kaart.
+1. *De doelgehoste feitcreatievoorwaarde is een STAANDE vierkantbreuk,
+   2 tegen 2.* Gemeten op één verifier-schoon document met een op de
+   doel gehoste kenmerkcheck:
+
+   ```
+   verifier : PASS
+   ref      : EVALUATION FAULT: characteristic check "gekeurd" is hosted on
+              "Schuit" while the subject is "Haven" … (WF-100)
+   clingo   : TRANSLATION FAULT: <identiek dezelfde zin>
+   exec     : PLAYED 1
+   drl      : PLAYED 1
+   ```
+
+   Dit is GEEN bijproduct van deze kaart. Dezelfde vier uitkomsten zijn
+   identiek gereproduceerd op een gewoon, ENKELVOUDIG verbonden
+   typepaar (de Kustvak–Sein-creatie van `jutterswet-postwacht` met een
+   kenmerk op het doel), en wel met een jar die uit de commit vóór deze
+   kaart is gebouwd — geverifieerd doordat diezelfde jar de nieuwe
+   golden nog weigert. De breuk staat dus los van het herhaalde
+   typepaar en van elke regel die hier veranderd is. De frontend maakt
+   bovendien van een doelVERGELIJKING een `Onopgelost`, dus die helft is
+   niet eens emitteerbaar. De golden gebruikt daarom twee anker-gehoste
+   voorwaarden (een kenmerk en een vergelijking) en discrimineert per
+   doel via de joinrol en via het kenmerk van de `ligprijs`-regel; de
+   twee doelgehoste vormen staan als backend-getuigen met die reden
+   erbij. **De hoofdsessie zet hier een eigen triagekaart voor op** —
+   het hoort niet bij deze kaart en het verdient een eigen meting van
+   wie er gelijk heeft.
+2. *SOM/MINIMUM/MAXIMUM over een herhaald paar splitst de takken —
+   nieuw bereikbaar door deze kaart.* Gemeten op een variant van de
+   nieuwe golden: exec `PLAYED` (via de symbolische `bronRol` op de
+   wire), DRL-tekst `MARKER: TODO aggregatie SOM` (die tak leest geen
+   wire-binding en houdt alleen de by-pair-zoektocht over, die hier
+   ambigu is). Vóór deze kaart was die split onbereikbaar: exec strandde
+   op hetzelfde ontbrekende beanveld als de DRL-tak, en ook
+   `anchor/jutterswet-bergingstoezicht` — waar de DRL-tak deze marker al
+   droeg — werd door de exec-tak geweigerd, dus er was geen
+   takongelijkheid zichtbaar. Nu wél, en de golden vouwt daarom
+   uitsluitend AANTAL: de split blijft bewust buiten het corpus.
+   Opheffen vergt een eigen kaart.
 3. *De conservatieve opslagrichtingweigeringen blijven staan* — de
    enkelvoudige elementrol met meervoudige zusterrol, in beide takken,
    met hun eigen reden. Deze kaart raakt ze niet.
