@@ -131,3 +131,58 @@ May touch: `spec/IR-SPEC.md` (**voorstel**), `spec/RUNTIME-SEMANTICS.md`
 - De declaratiehelft: WF-100 (geland 2026-09-10) sluit die.
 - Het clip-lid: WF-097 weigert de eigenaar daar al.
 - De `periode` op de scalaire kenmerkcheck — de §8.2-familie, eigen kaart.
+
+
+## Meetrapport 2026-09-19 (read-only meetsessie, samen met de
+feitcreatie-triagekaart; besluit ligt hierna bij de maintainer)
+
+De volledige tabel is gemeten op bdea4ff4 met eigen verifier-schone
+invoeren waarin het ANKER hetzelfde kenmerk draagt als het doel, zodat
+de lezing positief onderscheiden is (anker-lezing 2, doel-lezing 1):
+
+- Vorm A (doelkenmerk als feitcreatie-guard), uniek én herhaald paar:
+  verifier PASS, frontend emitteert, ref/clingo FAULT, beide
+  Drools-takken spelen de DOEL-lezing (1) — ook met twee tussenstappen
+  (doel 3, niet tussenstap 1 of anker 4; de guard kent maar twee
+  aanhechtingsplaatsen). Zelfgetypeerd is gedegenereerd (eigenaar-string
+  onderscheidt anker en doel niet; alle vier lezen het anker) en de
+  frontend heeft er geen route (Onopgelost-guard).
+- Vorm B (doelvergelijking): bij anker ≠ doel bestaat GEEN
+  verifier-schone instantie — structureel: de afgeleide lezing valt op
+  WF-045 (cyclus) of WF-053 (ambigu). Antwoord (1) generaliseert dus
+  niet naar de vergelijking zonder nieuw wire-veld. Beide Drools-takken
+  spelen documenten die de verifier afwijst.
+- Vorm C (vreemde eigenaar in een gewone regel): verifier PASS, geen
+  frontend-route, ref/clingo FAULT, beide takken EXCLUDE.
+
+Producentmeting bdea4ff4: 651 documenten, 264 kenmerkchecks, 10 met
+eigenaar, 2 vreemd (beide al-afgewezen negatief-getuigen), 0 in enige
+feitcreatie-voorwaarde, toka 9/0. Kosten gemeten: (1) is voor het kale
+kenmerk ~6 regels per OCaml-uitvoerder (guard na de keten per doel;
+owner_hosts stopt vanzelf met falen) maar generiek vergt het een
+gastheerveld dat B10/B11/B13 niet plannen en dat exec voor samengestelde
+guards niet kan dragen; (2) kost nul conforme documenten maar verplaatst
+de breuk naar de Onopgelost-guard en maakt exec meetbaar slechter
+(1 → stil 0); (3) is één ch.-5.8b-zin + een rood-getuige met
+NOFAULT-regel (gemeten haalbaar: ref/clingo voldoen aan expectedFault,
+Drools levert het NOFAULT-token).
+
+AANBEVELING van de meetsessie (maintainersprincipes gewogen): leg (3)
+nu scherp vast — het veld is een gastheerhint die alleen een
+meerpatroons-uitvoerder kan honoreren; conform maar niet herspeelbaar —
+mét de drie ontbrekende zinnen (derde-type-rij, Onopgelost-guard,
+zelfgetypeerde degeneratie) en één rood-getuige; en zet (1) apart als
+latere GENERIEKE kaart. Kies (1) niet stuksgewijs voor het kenmerk
+alleen; kies (2) niet zoals geformuleerd. V1-wisselwerking: dit is P7
+en blokkeert B10.
+
+Nieuwe metingen die aparte opvolging kregen
+(`20260919-exec-stille-guardflanken.md`): exec speelt STIL 0 op een
+Onopgelost-feitcreatie-guard (een Onopgelost verdwijnt — de
+gate-8-familie heeft op die positie geen getuige) en een
+derde-type-eigenaar splijt de twee Drools-takken (exec inert → geteld
+als gespeeld met 0, drl EXCLUDE). Los daarvan gemeten:
+`AttribuutRef.objecttype` met een vreemd type wordt door ALLE lezers
+stil als navigatie over de afgeleide relatie gelezen — de wire geeft
+daarmee twee tegengestelde antwoorden op dezelfde intuïtie; dat hoort
+bij dit besluit op tafel.

@@ -44,3 +44,17 @@ vormen kan een corpusgetuige worden zolang dit open staat.
 May touch: bij oppakken bepalen (raakt mogelijk spec/verifier —
 beschermd pad, voorstel-regime). Out of scope: de rolvelden-kaart zelf;
 de SOM-over-herhaald-paar-takongelijkheid (eigen kaartje).
+
+
+## Meettabel geland (2026-09-19)
+
+Acceptatiepunt (a) is uitgevoerd door de gecombineerde meetsessie; de
+volledige tabel en de kostenanalyse staan in
+`20260910-eigenaar-gastheer-object.md` (meetrapport-sectie). Kern: de
+2-tegen-2-splitsing geldt de doelkenmerk-vorm op uniek én herhaald
+paar; de doelvergelijking heeft bij anker ≠ doel geen verifier-schone
+instantie (WF-045/WF-053) en is dus een ander besluit; het
+zelfgetypeerde geval is gedegenereerd. Resteert acceptatiepunt (b), de
+genummerde normvraag — de aanbeveling van de meetsessie is antwoord
+(3) scherp vastleggen met rood-getuige, en de generieke doelfilter als
+eigen latere kaart. Besluit aan de maintainer.
