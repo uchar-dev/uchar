@@ -963,10 +963,11 @@ public final class ExecModelTranspiler {
         Objecttype joinDrager = voorwaarts ? subject : elem, joinDoel = voorwaarts ? elem : subject;
         String joinRol = voorwaarts ? elemRol : backref;
         if (!heeftReferentieVeld(joinDrager, joinRol, joinDoel)) {
-            aggregatieReden = "de aggregatie-join heeft geen beanveld — " + (model.naarVeelRol(joinDrager, joinDoel, joinRol)
-                    ? "de rol '" + joinRol + "' op " + joinDrager.naam + " is meervoudig, dus haar opslag is het veld"
-                      + " aan de overzijde, en ook daar leidt het beanmodel er geen af (beide zijden meervoudig)"
-                    : geenReferentieveldReden(joinDrager, joinRol, joinDoel))
+            // the cardinality half moved to FactModelGenerator.geenJoinveldReden (2026-09-18) so the DRL-text
+            // branch diagnoses this same failure in the same words; the sentence itself is unchanged.
+            aggregatieReden = "de aggregatie-join heeft geen beanveld — "
+                    + io.github.yhavinga.regelspraak.schema.FactModelGenerator
+                        .geenJoinveldReden(model, joinDrager, joinRol, joinDoel)
                     + " (§13.3.9 opslagrichting)";
             return null;
         }

@@ -69,8 +69,15 @@ class TakgelijkheidWitnessTest {
         assertTrue(e.getMessage().contains("de aggregatie-join heeft geen beanveld"), e.getMessage());
         String drl = drlReden(ir, c);
         assertTrue(drl.contains("aggregatie-join"), drl);
-        assertTrue(drl.contains("het beanmodel leidt voor de rol 'aanmelder' op Vondst geen referentieveld"
-                + " naar Jutter af"), drl);
+        // SHARPENED 2026-09-18 (card drools-rolvelden-herhaalde-typenparen). This row used to demand the GENERIC
+        // sentence here — "het beanmodel leidt voor de rol 'aanmelder' op Vondst geen referentieveld naar Jutter
+        // af" — while the exec assertion three lines up demands the CARDINALITY one. That gap was the last of the
+        // asymmetry this file exists to close: one fold-join failure, two diagnoses, and the DRL-text one silent
+        // about WHY. The cardinality half now lives beside the shared reason function
+        // (FactModelGenerator.geenJoinveldReden) and both branches restate it at this seam, so the row can ask
+        // for the same words it asks of the exec branch.
+        assertTrue(drl.contains("de rol 'aanmelder' op Vondst is meervoudig, dus haar opslag is het veld aan de"
+                + " overzijde, en ook daar leidt het beanmodel er geen af (beide zijden meervoudig)"), drl);
         assertTrue(drl.contains("§13.3.9 opslagrichting"), drl);
     }
 

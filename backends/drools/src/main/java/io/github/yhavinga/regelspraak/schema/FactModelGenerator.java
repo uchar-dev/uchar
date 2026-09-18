@@ -223,6 +223,37 @@ public final class FactModelGenerator {
     }
 
     /**
+     * WHY a FOLD's JOIN has no bean field — {@link #geenReferentieveldReden} plus the one diagnosis that reading
+     * cannot reach: the role is TO-MANY, so its storage is the far end's field, and the far end derives none
+     * either. That is a statement about CARDINALITY, not about a displaced or underivable name, and a fold that
+     * reported it as "the bean model derives no reference field" would blame the document for an ambiguity it
+     * does not have (the erflijn shape: `erfvolger` resolves perfectly; what stops it is that BOTH sides are
+     * to-many, so neither bean can hold the relation).
+     *
+     * <p>It lives HERE, beside {@link #geenReferentieveldReden}, for that function's own reason: both transpiler
+     * branches refuse the same shapes and must say so in the same words. Until 2026-09-18 this cardinality half
+     * was an inline string in the exec branch alone, so the two branches diagnosed one fold-join failure with two
+     * different sentences — measured on a both-sides-to-many model, exec named the cardinality and the DRL-text
+     * branch fell back to the generic reading. Callers still prefix their own reader name.
+     */
+    public static String geenJoinveldReden(RegelSpraakModel model, Objecttype drager, String rol, Objecttype doel) {
+        if (!model.naarVeelRol(drager, doel, rol)) return geenReferentieveldReden(drager, rol, doel);
+        // The far end is where a to-many role's storage lives. Whether it HAS a field there is a second
+        // question, and the answer decides how much this sentence may claim: "both sides to-many" is the
+        // erflijn shape, where neither bean can hold the relation, and asserting it where the far side does
+        // derive a field (the gemeenteberging shape: a to-one sibling, whose field exists and is simply on the
+        // other bean) would diagnose a cardinality defect the document does not have. The exec branch never
+        // reached that case — its own conservative arm refuses a to-one element role with a to-many sister
+        // first — but the DRL-text branch does not mirror that arm and arrives here.
+        Objecttype ver = model.objecttypeOpNaam(doel.naam);
+        String zuster = model.verbindendeRolViaElementnaam(drager, rol);
+        boolean overzijdeDraagt = zuster != null && ver != null && heeftReferentieVeld(model, ver, zuster, drager);
+        return "de rol '" + rol + "' op " + drager.naam + " is meervoudig, dus haar opslag is het veld aan de"
+                + " overzijde" + (overzijdeDraagt ? "" : ", en ook daar leidt het beanmodel er geen af"
+                                                        + " (beide zijden meervoudig)");
+    }
+
+    /**
      * §13.3.9.2 — the scalar to-one SELF-PAIR role a wederkerig feittype implies on {@code ot} (the role name,
      * hence the bean field name), or null when the model implies none.
      *

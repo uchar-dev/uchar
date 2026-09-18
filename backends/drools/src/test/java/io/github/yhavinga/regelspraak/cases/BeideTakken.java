@@ -29,6 +29,20 @@ final class BeideTakken {
         assertNull(CaseRunner.speelCase(ir, c, true), "drl-tekst — " + boodschap);
     }
 
+    /** Both branches REFUSE the document, each naming {@code fragment} — the per-form-exclusion sibling of
+     *  {@link #groen}. A refusal is a diagnosis, and {@code FactModelGenerator}'s reason functions exist so that
+     *  the two branches give the SAME one: a producer reading the gate report must not have to know which branch
+     *  answered. A row that asserts one branch's wording pins one branch, and the other is then free to drift —
+     *  which it had, on the fold join's cardinality half, until 2026-09-18. */
+    static void geweigerd(Path ir, JsonNode c, String fragment, String boodschap) throws Exception {
+        for (boolean viaDrl : new boolean[] { false, true }) {
+            String tak = viaDrl ? "drl-tekst" : "exec-model";
+            CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
+                    () -> CaseRunner.speelCase(ir, c, viaDrl), tak + " — " + boodschap);
+            assertTrue(e.getMessage().contains(fragment), tak + " names '" + fragment + "': " + e.getMessage());
+        }
+    }
+
     /** Both branches MISMATCH, each naming {@code fragment} — the flank form: what the expectation claims is
      *  observably NOT what happened, in both branches. Returns the exec-model verdict line. */
     static String rood(Path ir, JsonNode c, String fragment, String boodschap) throws Exception {

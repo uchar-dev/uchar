@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -98,7 +97,7 @@ class HerhaaldTypepaarWitnessTest {
                     "a to-many role's storage is the far end's field: " + rol);
     }
 
-    // ---------------- 2. the fold over a WRITTEN element role (the old PHASE_C count) ----------------
+    // ---------------- 2. the fold over a WRITTEN element role (the old toolchain manifest's count) ------
 
     @Test void de_telling_over_elke_geschreven_elementrol_kiest_haar_eigen_feittype() throws Exception {
         // The old toolchain's manifest carried one fixture of exactly this shape — a count whose written
@@ -240,31 +239,55 @@ class HerhaaldTypepaarWitnessTest {
         // Two feittypen whose Haven role carries the SAME name: the written name selects nothing, so no field
         // is derived for it and the fold that joins over it refuses — per NAME, not per pair. The sister
         // roles of the other feittypen keep their fields; only the shared name loses.
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(rolnaamBotsing(), JSON.readTree(tweeRollenCase("2", "0", "0", "1")), false));
-        assertTrue(e.getMessage().contains("de aggregatie-join heeft geen beanveld"), e.getMessage());
-        assertTrue(e.getMessage().contains("de rol 'thuishaven' op Schuit"), e.getMessage());
+        // BOTH branches, one sentence: a producer reading the gate report gets one diagnosis whichever branch
+        // produced it, which is the whole point of the shared reason function.
+        BeideTakken.geweigerd(rolnaamBotsing(), JSON.readTree(tweeRollenCase("2", "0", "0", "1")),
+                "het beanmodel leidt voor de rol 'thuishaven' op Schuit geen referentieveld naar Haven af",
+                "a role name two feittypen share derives nothing");
     }
 
     @Test void naamdeling_met_een_gedeclareerd_lid_blijft_een_eigen_weigering() throws Exception {
         // leden()'s dedup (attribuut > kenmerk > referentie) displaces the reference, so the field EXISTS as a
         // BigDecimal. That is a different failure from an underivable role and must keep its own sentence —
         // blaming ambiguity here would accuse the document of something it is not guilty of.
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(naamdelendeSchuit(), JSON.readTree(tweeRollenCase("2", "0", "0", "1")), false));
-        assertTrue(e.getMessage().contains("deelt haar naam met een gedeclareerd lid"), e.getMessage());
-        assertTrue(e.getMessage().contains("thuishaven"), e.getMessage());
+        BeideTakken.geweigerd(naamdelendeSchuit(), JSON.readTree(tweeRollenCase("2", "0", "0", "1")),
+                "de rol 'thuishaven' op Schuit deelt haar naam met een gedeclareerd lid",
+                "a declared member of the same name displaces the reference");
     }
 
     @Test void een_meervoudige_rol_zonder_opslagdragende_overzijde_blijft_geweigerd() throws Exception {
         // BOTH roles of one feittype to-many: a to-many role's storage is the far end's field, and here that
         // end is to-many too, so the model derives nothing at EITHER end. Its own sentence, naming the
-        // cardinality rather than a derivation that in fact succeeded.
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(beideZijdenMeervoudig(), JSON.readTree(tweeRollenCase("2", "0", "0", "1")), false));
-        assertTrue(e.getMessage().contains("de aggregatie-join heeft geen beanveld"), e.getMessage());
-        assertTrue(e.getMessage().contains("is meervoudig"), e.getMessage());
-        assertTrue(e.getMessage().contains("beide zijden meervoudig"), e.getMessage());
+        // CARDINALITY rather than a derivation that in fact succeeded.
+        //
+        // Dual since 2026-09-18. Measured before that: the exec branch named the cardinality while the DRL-text
+        // branch answered "het beanmodel leidt voor de rol 'thuishaven' op Schuit geen referentieveld naar Haven
+        // af" — one failure, two diagnoses, the second of them wrong about WHY. The cardinality half now lives
+        // beside the shared reason function (FactModelGenerator.geenJoinveldReden) and both branches restate it
+        // at the fold-join seam; this row is what keeps them together.
+        BeideTakken.geweigerd(beideZijdenMeervoudig(), JSON.readTree(tweeRollenCase("2", "0", "0", "1")),
+                "de rol 'thuishaven' op Schuit is meervoudig, dus haar opslag is het veld aan de overzijde,"
+                + " en ook daar leidt het beanmodel er geen af (beide zijden meervoudig)",
+                "both sides to-many: no bean can hold the relation");
+    }
+
+    @Test void de_overzijde_die_wel_een_veld_draagt_krijgt_niet_de_beide_zijden_zin() throws Exception {
+        // The half of that sentence the shared derivation must NOT over-claim. With the element role to-ONE and
+        // the subject's role to-many, the join field is missing HERE but present at the far end — one bean does
+        // hold the relation. Saying "beide zijden meervoudig" there would diagnose a cardinality defect the
+        // document does not have; measured on the corpus, `anchor/jutterswet-gemeenteberging` is exactly this
+        // shape, and the first cut of the shared sentence said it of that golden.
+        CaseRunner.Excluded drl = assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.speelCase(elementrolToOne(), JSON.readTree(tweeRollenCase("2", "0", "0", "1")), true));
+        assertTrue(drl.getMessage().contains("is meervoudig, dus haar opslag is het veld aan de overzijde"), drl.getMessage());
+        assertTrue(!drl.getMessage().contains("beide zijden meervoudig"),
+                "the far end DOES derive a field, so the sentence stops there: " + drl.getMessage());
+        // The exec branch refuses the same document EARLIER, on its own conservative arm (a to-one element role
+        // whose sister is to-many), which this card deliberately leaves standing. Pinned so the asymmetry is a
+        // recorded decision rather than an unnoticed drift.
+        CaseRunner.Excluded exec = assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.speelCase(elementrolToOne(), JSON.readTree(tweeRollenCase("2", "0", "0", "1")), false));
+        assertTrue(exec.getMessage().contains("Deze weigering staat CONSERVATIEF"), exec.getMessage());
     }
 
     @Test void een_consument_zonder_geschreven_rol_vindt_het_paar_nog_altijd_ambigu() throws Exception {
@@ -353,6 +376,17 @@ class HerhaaldTypepaarWitnessTest {
         houdRegels(ir, "liggertal van een haven", "wintertal van een haven");
         ((ObjectNode) ir.get("objecttypen").get("Schuit").get("attributen")).set("thuishaven", numeriek());
         return tijdelijk("dv-naamdeling", ir);
+    }
+
+    /** The counts-only model with thuisligging's cardinalities SWAPPED — the element role `ligger` to-one and
+     *  the subject's `thuishaven` to-many — so the join field is missing on the Schuit but present on the Haven. */
+    private static Path elementrolToOne() throws Exception {
+        ObjectNode ir = lees(DUBBELVERBINDING);
+        ir.putArray("feitCreaties");
+        houdRegels(ir, "liggertal van een haven", "wintertal van een haven");
+        for (JsonNode r : ir.get("feittypen").get("thuisligging").get("rollen"))
+            ((ObjectNode) r).put("meervoudig", "thuishaven".equals(r.get("naam").asText()));
+        return tijdelijk("dv-elementrol-toone", ir);
     }
 
     /** The counts-only model with BOTH roles of thuisligging to-many — no field at either end. */

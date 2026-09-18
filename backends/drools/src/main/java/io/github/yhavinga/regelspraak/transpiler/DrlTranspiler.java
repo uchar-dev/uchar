@@ -3693,6 +3693,13 @@ public final class DrlTranspiler {
         // measurement.
         if (rol != null && navVeld("aggregatie-join", elem, rol, subject))
             return Frag.ok(ident(rol, false) + " == " + SUBJECT);
+        // navVeld's generic sentence cannot reach the CARDINALITY diagnosis (a to-many role whose far end
+        // derives nothing either), and until 2026-09-18 only the exec branch named it — one fold-join failure,
+        // two sentences. Restate it here from the shared derivation, at the one seam where "both sides to-many"
+        // is the true reading; every other navVeld caller keeps the generic one, which is correct for them.
+        if (rol != null)
+            navReden = "aggregatie-join: "
+                    + FactModelGenerator.geenJoinveldReden(model, elem, rol, subject) + " (§13.3.9 opslagrichting)";
         // No join resolvable: emit a TODO marker, so accumulate() returns null and the aggregation
         // becomes a visible no-op — never a silently-wrong count over EVERY instance (§5.8.1: a count
         // ranges over the subject's related instances). Consistent with the resolver's "unresolvable
