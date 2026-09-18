@@ -3416,29 +3416,6 @@ public final class ExecModelTranspiler {
         return null;
     }
 
-    /** A condition that reduces to a fact-only {@code Predicate1<subject>} (no pattern variable, no exists-join), or
-     *  null when it is outside scope / needs a global / hoists a join. Shared by the single-constraint path and the
-     *  counting-quantifier fold, so the two stay in lock-step. Covers §8.1.8 own + to-one navigated kenmerkcheck,
-     *  §8.1.2 LEEG/GEVULD on an own attribute, §8.1.1 comparison of an own attribute vs a numeric literal, and the
-     *  §8.1.7 near-side rolcheck. A temporal (List<Segment>) operand returns null (Phase F). */
-    /** The string label of a comparison RHS that is a §13.3.3.4 Tekst literal or a §13.2.14 enumeratiewaarde 'X'
-     *  (single quotes stripped, via the shared reader). null otherwise — both compare by VALUE equality.
-     *  A Tekst literal's waarde is its RAW value; strip ONLY the paired double-quote DELIMITERS (exactly as
-     *  {@link Literalen#enumLabel} strips paired single quotes), so an EMBEDDED double quote survives into the
-     *  equality AND the computed-text write. The WIRE may carry such a quote (a hand-authored golden), which the
-     *  frontend's quote-free STRING_TEXT never can — so the shared reader's blanket {@code replace("\"","")} would
-     *  drop it and fire the comparison false. Mirrors ref (Value.Text lex verbatim) and clingo (quote escapes both
-     *  sides, S2): both compare the embedded quote, so the exec-model must too. */
-    private static String tekstOfEnumLabel(Expr e) {
-        if (!(e instanceof Expr.Literal lit)) return null;
-        if (lit.type().isTekst()) {
-            // Verbatim, exactly as ref reads the wire waarde (Value.Text): the corpus convention stores
-            // the raw text — no delimiters to strip, and an embedded quote must survive both sides of
-            // the comparison. The old shared reader stripped EVERY quote (the keurmerk divergence).
-            return lit.waarde();
-        }
-        return Literalen.enumLabel(lit.waarde());   // the shared enum reader (the shared kern)
-    }
     /** §5.3/§5.6 TEKST equality with the leegwaarde tables (the String analogue of the datum equality): GELIJK is Tabel 38
      *  (both present and equal; one/both-leeg -> onwaar); ONGELIJK is Tabel 44 (exactly-one-leeg -> WAAR, both-leeg ->
      *  onwaar). Matches DRL mvel's null-asymmetric string {@code ==}/{@code !=}. */
@@ -3459,6 +3436,11 @@ public final class ExecModelTranspiler {
         return null;
     }
 
+    /** A condition that reduces to a fact-only {@code Predicate1<subject>} (no pattern variable, no exists-join), or
+     *  null when it is outside scope / needs a global / hoists a join. Shared by the single-constraint path and the
+     *  counting-quantifier fold, so the two stay in lock-step. Covers §8.1.8 own + to-one navigated kenmerkcheck,
+     *  §8.1.2 LEEG/GEVULD on an own attribute, §8.1.1 comparison of an own attribute vs a numeric literal, and the
+     *  §8.1.7 near-side rolcheck. A temporal (List<Segment>) operand returns null (Phase F). */
     private Predicate1<Object> leafPredicate(Conditie c, Objecttype subject) {
         // §8.2 a whole-period-qualified predicate over a tijdsafhankelijk onderwerp, with a literal/own-attr grens
         // (0 globals) -> a fact-only "the check holds" predicate. A grens reading a Parameter-global returns null here
@@ -3781,13 +3763,13 @@ public final class ExecModelTranspiler {
         // on its label, so it lowers exactly like a Tekst. mvel string '==' is VALUE equality (.equals); ONGELIJK is
         // null-asymmetric (mvel reads `null != "x"` as TRUE) — mirror DrlTranspiler's `prop == "lit"`.
         if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && la.navigatieRol() == null
-                && v.rechts() instanceof Expr.Literal lit && tekstOfEnumLabel(lit) != null
+                && v.rechts() instanceof Expr.Literal lit && Literalen.tekstOfEnumLabel(lit) != null
                 && (v.op() == Conditie.Operator.GELIJK || v.op() == Conditie.Operator.ONGELIJK)) {
             if (subject == null || !subject.heeftLid(la.attribuut())) return null;            // not the subject's own member
             if (subject.granulariteitLeden().containsKey(la.attribuut())) return null;      // temporal -> Phase F
             if (!subject.dimensiesVan(la.attribuut()).isEmpty()) return null;                 // §3.6 gedimensioneerd -> marker
             String attr = la.attribuut();
-            String rhs = tekstOfEnumLabel(lit);   // Tekst verbatim (the ref mirror); enum labels via the shared single-quote reader
+            String rhs = Literalen.tekstOfEnumLabel(lit);   // the SHARED reader: Tekst verbatim, enum labels unwrapped
             boolean gelijk = v.op() == Conditie.Operator.GELIJK;
             return s -> rhs.equals(RegelSpraakRuntime.get(s, attr)) == gelijk;   // attr may be null; rhs non-null
         }
@@ -3796,14 +3778,14 @@ public final class ExecModelTranspiler {
         // equality decides — GELIJK of leeg vs the literal -> onwaar, ONGELIJK of leeg vs the literal -> WAAR (Tabel 44).
         // NOT a blanket short-circuit. Mirrors the navigated numeric comparison's null-relation handling.
         if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && la.navigatieRol() != null
-                && v.rechts() instanceof Expr.Literal lit && tekstOfEnumLabel(lit) != null
+                && v.rechts() instanceof Expr.Literal lit && Literalen.tekstOfEnumLabel(lit) != null
                 && (v.op() == Conditie.Operator.GELIJK || v.op() == Conditie.Operator.ONGELIJK)) {
             if (la.objecttype() == null || la.objecttype().granulariteitLeden().containsKey(la.attribuut())) return null;  // temporal -> Phase F
             if (!la.objecttype().dimensiesVan(la.attribuut()).isEmpty()) return null;                                       // §3.6 gedimensioneerd -> marker
             String rol = navComparisonRole(la, subject);
             if (rol == null) return null;
             String attr = la.attribuut();
-            String rhs = tekstOfEnumLabel(lit);
+            String rhs = Literalen.tekstOfEnumLabel(lit);
             boolean gelijk = v.op() == Conditie.Operator.GELIJK;
             return s -> {
                 Object rel = RegelSpraakRuntime.get(s, rol);
@@ -4049,10 +4031,11 @@ public final class ExecModelTranspiler {
             java.time.LocalDateTime dt = parseDatumTijd(dtl.waarde());
             return dt == null ? null : WaardeFn.constant(dt);
         }
-        // §13.3.3.4 Tekst / §13.2.14 enumeratiewaarde literal value -> its String label (an enumeratie/Tekst field is
-        // a String; the §12 beslistabel may SET such an attribute). DRL renders the same string, so both back-ends
-        // store the identical label; the value-side unit restatement is a no-op (scaledBy passes a non-number through).
-        String tekstLabel = tekstOfEnumLabel(e);
+        // §13.3.3.4 Tekst / §13.2.14 enumeratiewaarde literal value -> its String (an enumeratie/Tekst field is a
+        // String; the §12 beslistabel may SET such an attribute). The SAME shared reader the comparisons use, so a
+        // written value and a compared value are the same string; DRL renders that string through drlString, so both
+        // back-ends store it identically. The value-side unit restatement is a no-op (scaledBy passes a non-number through).
+        String tekstLabel = e instanceof Expr.Literal tlit ? Literalen.tekstOfEnumLabel(tlit) : null;
         if (tekstLabel != null) return WaardeFn.constant(tekstLabel);
         // §5.4/§13.4.17.9 tekstreeks "de reeks van <tekst> en <waarde> …": concatenate each part's text — a literal
         // segment verbatim, an inserted expression via rsTekst (leeg -> ""). Mirrors DrlTranspiler.tekstReeks.
@@ -5289,8 +5272,8 @@ public final class ExecModelTranspiler {
         // == (op is GELIJK); a violation otherwise. A leeg operand never equals the non-null literal, so a GELIJK
         // assertie over a leeg operand IS a violation (Tabel 38). Own or navigated LHS.
         if ((v.op() == Conditie.Operator.GELIJK || v.op() == Conditie.Operator.ONGELIJK)
-                && v.rechts() instanceof Expr.Literal tl && tekstOfEnumLabel(tl) != null) {
-            String rhs = tekstOfEnumLabel(tl);
+                && v.rechts() instanceof Expr.Literal tl && Literalen.tekstOfEnumLabel(tl) != null) {
+            String rhs = Literalen.tekstOfEnumLabel(tl);
             boolean assertGelijk = v.op() == Conditie.Operator.GELIJK;
             return s -> rhs.equals(lRead.apply(s)) != assertGelijk;   // violation = criterion not satisfied
         }

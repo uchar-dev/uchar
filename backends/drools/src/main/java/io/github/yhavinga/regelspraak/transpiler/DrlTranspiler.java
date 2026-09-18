@@ -3966,8 +3966,11 @@ public final class DrlTranspiler {
     private Frag literal(Expr.Literal lit) {
         Datatype t = lit.type();
         // §13.3.3.4 Tekst / §13.2.14 enumeratiewaarde 'X' (typed Onbekend at parse): both compare by VALUE
-        // equality on the label (§8.1.1), so render the label as a double-quoted string — embedded quotes
-        // ESCAPED, never stripped (escaping by construction), so the constraint compares against the REAL label.
+        // equality (§8.1.1). The VALUE comes from the shared reader — a Tekst verbatim, an enumeratiewaarde
+        // without its single-quote delimiters — and drlString only RENDERS it: every double quote in it is
+        // ESCAPED, never stripped, so the emitted constraint compares against the value the exec-model branch,
+        // ref and clingo compare against. Stripping here (the reader's old blanket replace) is what made this
+        // branch read `merk "AA"` as `merk AA` and a quote-delimited wire value as its bare interior.
         String label = Literalen.tekstOfEnumLabel(lit);
         if (label != null) return Frag.ok(drlString(label));
         if (t instanceof Datatype.Booleaan) return Frag.ok(Literalen.waar(lit.waarde()) ? "true" : "false");
