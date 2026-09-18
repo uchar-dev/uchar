@@ -22,25 +22,28 @@ Het wachttal van een Schouwploeg moet berekend worden als het aantal
 `RUNTIME-SEMANTICS.md` ch. 3.9a, whose formula is stated over an arbitrary
 `test` and whose worked examples until now only ran the temporal one.
 
-## Why this ir.json is hand-written and carries no bron.rgs
+## This ir.json was written by hand; its bron.rgs arrived later
 
-Measured on the frontend of this repository, both shapes, before the cases
-were written:
+The document was written against the schema, because at the time no
+RegelSpraak source produced these nodes. Measured on the frontend of this
+repository, both shapes, before the cases were written:
 
 - the comparison form without the §8.2 qualifier — *"indien de
   dagvergoeding van alle bergers van de Bergingsploeg groter is dan 40"* —
-  is refused: `setlezing buiten een vouwbron … hier wordt één waarde
+  was refused: `setlezing buiten een vouwbron … hier wordt één waarde
   verwacht (WF-096, IR-SPEC ch. 4.3)`. The lowering to `Kwantorvouw`
-  opens with "only the §8.2-qualified condition" and declines everything
-  else, deliberately (a set reading in a one-value slot has no quantifier
-  to give it a home);
+  opened with "only the §8.2-qualified condition" and declined everything
+  else;
 - the characteristic form — *"indien alle bergers van de Bergingsploeg
-  bevoegd zijn"* — resolves to `Onopgelost`.
+  bevoegd zijn"* — resolved to `Onopgelost`.
 
-So no RegelSpraak source produces this node today. The document is written
-by hand against the schema, and the frontend gate does not see it. Widening
-the lowering is a frontend question of its own and is not this witness's
-job.
+Since 2026-09-19 the frontend carries both: quantification and the
+whole-period check are independent productions in v2.3.0, so the
+unqualified spelling was never the language's boundary. `bron.rgs` now sits
+beside this document and re-emits it byte for byte — the hand-written IR is
+unchanged, and gate 10 sees it. That the hand-computed cells below and the
+emitted wire agree is what makes this a witness of the LOWERING and not
+only of the node.
 
 ## The four folds, and what each of them is for
 

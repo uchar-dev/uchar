@@ -1,0 +1,35 @@
+Objecttype de Schouwploeg (mv: Schouwploegen)
+    het wachttal Numeriek (geheel getal);
+    is ervaren kenmerk (bijvoeglijk);
+    is onervaren kenmerk (bijvoeglijk);
+    is bevoegd kenmerk (bijvoeglijk);
+    is sluitend kenmerk (bijvoeglijk);
+
+Objecttype de Strandwacht (mv: Strandwachten) (bezield)
+    de dienstjaren Numeriek (geheel getal);
+    is gediplomeerd kenmerk (bijvoeglijk);
+
+Feittype schouwindeling
+    de ploeg Schouwploeg
+    de wacht (mv: wachten) Strandwacht
+Eén ploeg omvat meerdere wachten
+
+Regel ervaren bij dienstjaren
+    geldig altijd
+        Een Schouwploeg is ervaren indien de dienstjaren van alle wachten van de Schouwploeg groter zijn dan 5.
+
+Regel onervaren bij dienstjaren
+    geldig altijd
+        Een Schouwploeg is onervaren indien de dienstjaren van geen van de wachten van de Schouwploeg groter zijn dan 5.
+
+Regel bevoegd bij diploma
+    geldig altijd
+        Een Schouwploeg is bevoegd indien alle wachten van de Schouwploeg gediplomeerd zijn.
+
+Regel sluitend bij diploma
+    geldig altijd
+        Een Schouwploeg is sluitend indien geen van de wachten van de Schouwploeg niet gediplomeerd is.
+
+Regel wachttal van een schouwploeg
+    geldig altijd
+        Het wachttal van een Schouwploeg moet berekend worden als het aantal wachten van de Schouwploeg.

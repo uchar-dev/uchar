@@ -1,0 +1,35 @@
+Objecttype de Vuurtoren (mv: Vuurtorens)
+    het lampental Numeriek (geheel getal);
+    is helder kenmerk (bijvoeglijk);
+    is zuinig kenmerk (bijvoeglijk);
+    is enkelvoudig kenmerk (bijvoeglijk);
+    is keurig kenmerk (bijvoeglijk);
+
+Objecttype de Lamp (mv: Lampen)
+    de sterkte Numeriek (geheel getal);
+    is gekeurd kenmerk (bijvoeglijk);
+
+Feittype torenindeling
+    de toren Vuurtoren
+    de lamp (mv: lampen) Lamp
+Eén toren omvat meerdere lampen
+
+Regel helder bij sterkte
+    geldig altijd
+        Een Vuurtoren is helder indien de sterkte van ten minste 2 van de lampen van de Vuurtoren groter is dan 5.
+
+Regel zuinig bij sterkte
+    geldig altijd
+        Een Vuurtoren is zuinig indien de sterkte van ten hoogste 1 van de lampen van de Vuurtoren groter is dan 5.
+
+Regel enkelvoudig bij sterkte
+    geldig altijd
+        Een Vuurtoren is enkelvoudig indien de sterkte van precies 1 van de lampen van de Vuurtoren groter is dan 5.
+
+Regel keurig bij sterkte
+    geldig altijd
+        Een Vuurtoren is keurig indien de sterkte van ten minste 2 van de lampen van de Vuurtoren die gekeurd zijn groter is dan 5.
+
+Regel lampental van een vuurtoren
+    geldig altijd
+        Het lampental van een Vuurtoren moet berekend worden als het aantal lampen van de Vuurtoren.

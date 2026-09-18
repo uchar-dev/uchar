@@ -22,15 +22,16 @@ Het lampental van een Vuurtoren moet berekend worden als het aantal lampen
 `IR-SPEC.md` ch. 4.5 (`QuantifierFold`, WF-108); semantics
 `RUNTIME-SEMANTICS.md` ch. 3.9a.
 
-## Why this ir.json is hand-written and carries no bron.rgs
+## This ir.json was written by hand; its bron.rgs arrived later
 
-The same reason `jutterswet-schouwploeg` is, measured again and unchanged:
-`RuleChecker.kwantorvouw` opens with "only the §8.2-QUALIFIED condition" and
-declines everything else, so the unqualified comparison raises WF-096
-(`setlezing buiten een vouwbron`) and the characteristic spelling resolves to
-`Onopgelost`. Widening that is a frontend card of its own; the counting
-quantifiers did not move it, and this document is written by hand against the
-schema. Gate 10 does not see it.
+For the same reason `jutterswet-schouwploeg` was, measured again and unchanged
+at the time: `RuleChecker.kwantorvouw` opened with "only the §8.2-QUALIFIED
+condition" and declined everything else, so the unqualified comparison raised
+WF-096 (`setlezing buiten een vouwbron`) and the characteristic spelling
+resolved to `Onopgelost`. The counting quantifiers did not move that gate;
+the frontend card that did land on 2026-09-19, and `bron.rgs` now sits beside
+this document and re-emits it byte for byte. The hand-written IR is
+unchanged; gate 10 sees it.
 
 ## What it covers that the other three do not
 
