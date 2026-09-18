@@ -41,10 +41,13 @@ import java.util.List;
 public final class Bronpad {
     private Bronpad() {}
 
-    /** One resolved hop. {@code van}/{@code naar} are the object types the hop connects, {@code veld} is the bean
-     *  property the join reads and {@code achterwaarts} says on which end it lives: true -> the field is on
-     *  {@code naar} and holds {@code van}; false -> the field is on {@code van} and holds {@code naar}. */
-    public record Stap(String feittype, String rol, Objecttype van, Objecttype naar, boolean achterwaarts, String veld) {}
+    /** One resolved hop, reduced to what a consumer reads: {@code veld} is the bean property the join reads, and
+     *  {@code achterwaarts} says on which end it lives — true -> the field is on the hop's TARGET and holds its
+     *  SOURCE; false -> the field is on the source and holds the target. The two object types the hop connects are
+     *  NOT repeated here: they are nodes {@code i-1} and {@code i} of {@link Plan#knoopTypen}, and a second copy
+     *  would be a second thing to keep true. The feittype and role NAMES stop at {@link #ontleed}, which is where
+     *  they are resolved and where the refusal sentences quote them. */
+    public record Stap(boolean achterwaarts, String veld) {}
 
     /** The lowering plan for one path, or a refusal.
      *
@@ -72,14 +75,6 @@ public final class Bronpad {
         public List<Integer> tussenknopen() {
             List<Integer> uit = new ArrayList<>();
             for (int i = voorwaarts + 1; i <= achterwaartsVanaf - 1; i++) uit.add(i);
-            return uit;
-        }
-
-        /** The steps that carry an explicit constraint: the ones between the two functional walks. Steps before
-         *  {@code voorwaarts} and after {@code achterwaartsVanaf} are already expressed by the chains. */
-        public List<Integer> vrijeStappen() {
-            List<Integer> uit = new ArrayList<>();
-            for (int i = voorwaarts + 1; i <= achterwaartsVanaf; i++) uit.add(i);
             return uit;
         }
 
@@ -162,7 +157,7 @@ public final class Bronpad {
                 return weiger("bronPad-stap " + i + " (" + van.naam + " -> " + naar.naam + ") heeft geen beanveld — "
                         + FactModelGenerator.geenJoinveldReden(model, van, gebonden.naam(), naar)
                         + " (§13.3.9 opslagrichting)");
-            stappen.add(new Stap(ft.naam, gebonden.naam(), van, naar, naarVeel, Namen.ident(rolveld, false)));
+            stappen.add(new Stap(naarVeel, Namen.ident(rolveld, false)));
             knopen.add(naar);
         }
         int voorwaarts = 0;
