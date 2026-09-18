@@ -1399,9 +1399,12 @@ let rec reads_binder b (e : expr) : bool =
    - the nested VALUE must not mention the outer binder. The distribution copies
      `v` into BOTH arms, so a `v` reading the outer binder would make both arms
      read it and break the single-reading-arm invariant the wrap below relies
-     on. That case needs no rewrite anyway: the outer value is then demanded
-     through `b` as well as directly, so it is needed whichever arm is taken —
-     measured non-divergent, eager placement stays. *)
+     on. Eager placement stays for that case, and it is EXACT only where the
+     body also reads the outer binder directly in both arms (the D5 witness).
+     Where the body reads the outer need ONLY through this nested value the
+     reading sits in exactly one arm and eager placement diverges — measured
+     2026-09-19 (lens), pre-existent, no corpus hit; that residual form is
+     follow-up-card material, deliberately left un-rewritten here. *)
 let rec hoist_branch binder (e : expr) : expr option =
   let reads = reads_binder binder in
   let opt_reads = function Some x -> reads x | None -> false in
