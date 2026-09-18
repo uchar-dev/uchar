@@ -4357,6 +4357,231 @@ let () =
   clingo_matches ~name:"ch10.6 behoefte in de BETREDEN arm meldt wel" ~ir:tak_doc4
     ~case_text:betreden
 
+(* --- ch. 10.2 in een GESLOTEN body: de derde route ------------------------
+   Een lambda- of functiebody heeft geen onderwerp en geen regelkop; hij lowert
+   over [body_branches] met een [guard_body] dat de hekken en gardes grondt.
+   Die route gaf haar armen tot deze kaart hetzelfde [guard_body], dus een
+   nuldeling in de anders-arm brak het programma af op een lijst waarvan elk
+   element de dan-arm kiest. De §6.5-melding kan hier niet ontstaan — een
+   gesloten body is leegvrij (ch. 10.1) — dus wat de armgarde in deze route
+   koopt is precies de fail-fast-kant.
+
+   Het document is een vouw over de kindertallen, afgeleid van de vorm van
+   `jutterswet-kinderdeler`: per kindertal telt de vouw 1,00 op, of — onder de
+   drempel — de grondslag gedeeld door dat kindertal. Eén drempelliteral
+   scheidt de twee richtingen: bij drempel 0 kiest een kindertal van 0 de
+   dan-arm (en mag de deling niets doen), bij drempel 4 kiest datzelfde
+   kindertal de anders-arm (en moet de deling wél vuren). *)
+
+let cb_num ?(geheel = true) ?(dec = 0) ?(teken = "NIET_NEGATIEF") () =
+  Printf.sprintf
+    {|{ "node": "Numeriek", "geheel": %b, "decimalen": %d, "teken": "%s", "eenheid": null }|}
+    geheel dec teken
+
+let cb_tel = cb_num ()
+let cb_som = cb_num ~geheel:false ~dec:2 ~teken:"ONBEPAALD" ()
+let cb_acc = Printf.sprintf {|{ "node": "BinderRef", "name": "acc", "type": %s,
+                               "bron": "het opgetelde deel" }|} cb_som
+let cb_x = Printf.sprintf {|{ "node": "BinderRef", "name": "x", "type": %s,
+                             "bron": "het kindertal" }|} cb_tel
+
+(* de deling die de fail-fast-garde draagt: de grondslag gedeeld door het
+   kindertal — nul zodra dat kindertal nul is *)
+let cb_deling =
+  Printf.sprintf
+    {|{ "node": "Binair", "op": "GEDEELD_DOOR",
+        "links": { "node": "ParameterRef", "parameter": "grondslag", "type": %s,
+                   "bron": "de grondslag" },
+        "rechts": %s, "type": %s,
+        "bron": "de grondslag gedeeld door het kindertal" }|}
+    cb_tel cb_x cb_som
+
+let cb_plus rechts bron =
+  Printf.sprintf
+    {|{ "node": "Binair", "op": "PLUS", "links": %s, "rechts": %s, "type": %s, "bron": "%s" }|}
+    cb_acc rechts cb_som bron
+
+(* [drempel] scheidt de twee richtingen; [anders] is de anders-arm, zodat de
+   ch.-10.6-variant (de deling achter een behoefte) hetzelfde raamwerk deelt *)
+let cb_doc ~drempel ~lambda_body =
+  Printf.sprintf
+    {|{ "formaat": "regelspraak-ir-v0",
+  "objecttypen": { "Jutter": { "node": "Objecttype", "naam": "Jutter",
+    "attributen": { "delertotaal": %s },
+    "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+    "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+    "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
+    "kenmerkTijdlijnAantal": {}, "bezield": true, "meervoud": "Jutters" } },
+  "domeinen": {},
+  "parameters": {
+    "grondslag": { "node": "Parameter", "naam": "grondslag", "datatype": %s,
+                   "granulariteit": null },
+    "kindertallen": { "node": "Parameter", "naam": "kindertallen",
+      "datatype": { "node": "ListType", "element": %s }, "granulariteit": null } },
+  "eenheidstelsels": {}, "feittypen": {}, "dimensies": {},
+  "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
+  "regels": [], "resolvedRegels": [
+    { "node": "ResolvedRegel", "naam": "delertotaal van een jutter", "soort": "BEREKENING",
+      "doel": { "node": "AttribuutRef", "attribuut": "delertotaal", "objecttype": "Jutter",
+                "onderwerpBron": "Het delertotaal van een Jutter", "navigatieRol": null,
+                "type": %s, "bron": "Het delertotaal van een Jutter",
+                "set": false, "navigatiePad": [] },
+      "waarde": { "node": "Fold", "type": %s,
+        "list": { "node": "ParameterRef", "parameter": "kindertallen",
+                  "type": { "node": "ListType", "element": %s }, "bron": "de kindertallen" },
+        "function": { "node": "Lambda",
+          "parameters": [ { "name": "acc", "datatype": %s },
+                          { "name": "x", "datatype": %s } ],
+          "body": %s,
+          "bron": "de kinddelen opgeteld" },
+        "init": { "node": "Literal", "waarde": "0.00", "type": %s, "bron": "0.00" },
+        "bron": "de kindertallen gevouwen tot het delertotaal" },
+      "voorwaarde": null,
+      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+  "regelGroepen": [], "diagnostics": [] }|}
+    cb_som cb_tel cb_tel cb_som cb_som cb_tel cb_som cb_tel (lambda_body ~drempel) cb_som
+
+(* als het kindertal groter of gelijk aan <drempel> is dan het opgetelde deel
+   plus 1,00 anders het opgetelde deel plus <anders> *)
+let cb_ite ~anders ~drempel =
+  Printf.sprintf
+    {|{ "node": "IfThenElse", "type": %s,
+        "condition": { "node": "Vergelijking", "op": "GROTER_OF_GELIJK", "links": %s,
+                       "rechts": { "node": "Literal", "waarde": "%d", "type": %s,
+                                   "bron": "%d" },
+                       "periode": null,
+                       "bron": "het kindertal groter of gelijk aan %d" },
+        "then": %s, "else": %s,
+        "bron": "boven de drempel tellen, daaronder delen" }|}
+    cb_som cb_x drempel cb_tel drempel drempel
+    (cb_plus
+       (Printf.sprintf {|{ "node": "Literal", "waarde": "1.00", "type": %s, "bron": "1.00" }|}
+          cb_som)
+       "het opgetelde deel plus 1,00")
+    (cb_plus anders "het opgetelde deel plus het deel")
+
+let cb_body_recht ~drempel = cb_ite ~anders:cb_deling ~drempel
+
+(* de ch.-10.6-variant IN een gesloten body: de deling zit achter een behoefte
+   die alleen de anders-arm leest *)
+let cb_body_let ~drempel =
+  Printf.sprintf
+    {|{ "node": "Let", "type": %s, "binder": "m", "value": %s, "body": %s,
+        "bron": "het deel is de grondslag gedeeld door het kindertal" }|}
+    cb_som cb_deling
+    (cb_ite
+       ~anders:
+         (Printf.sprintf {|{ "node": "BinderRef", "name": "m", "type": %s, "bron": "het deel" }|}
+            cb_som)
+       ~drempel)
+
+let cb_case ~kindertallen ~verwacht =
+  Printf.sprintf
+    {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "J1", "objectType": "Jutter", "attributes": {},
+                              "roles": {}, "characteristics": [] } ],
+    "parameters": { "grondslag": { "number": "60" },
+                    "kindertallen": { "list": [ %s ] } } },
+  %s }|}
+    kindertallen verwacht
+
+let cb_totaal n =
+  Printf.sprintf
+    {|"expected": [
+        { "kind": "attributeValue", "label": "J1", "attribute": "delertotaal",
+          "value": { "number": "%s" } },
+        { "kind": "consistent" } ]|}
+    n
+
+let () =
+  (* de niet-betreden arm: drempel 0, kindertal 0 — de dan-arm telt 1,00 op en
+     de deling door dat nul-kindertal mag het programma niet afbreken *)
+  let nul = {|{ "number": "0" }|} in
+  let recht_0 = cb_doc ~drempel:0 ~lambda_body:cb_body_recht in
+  let telt = cb_case ~kindertallen:nul ~verwacht:(cb_totaal "1.00") in
+  ref_matches ~name:"ch10.2 gesloten body: nuldeling in de niet-betreden arm" ~ir:recht_0
+    ~case_text:telt;
+  clingo_matches ~name:"ch10.2 gesloten body: nuldeling in de niet-betreden arm breekt niet af"
+    ~ir:recht_0 ~case_text:telt;
+  (* de garde staat er nog — een fix die het hek weghaalt zou de regel
+     hierboven ook groen maken *)
+  translates_carrying ~name:"ch10.2 gesloten body: de nulgarde staat nog in het programma"
+    ~ir:recht_0 ~case_text:telt ~needle:{|viol("division by numeric zero"|};
+  (* de betreden arm REKENT: drempel 4, kindertal 3 — 0,00 + 60/3 = 20,00 *)
+  let recht_4 = cb_doc ~drempel:4 ~lambda_body:cb_body_recht in
+  let rekent = cb_case ~kindertallen:{|{ "number": "3" }|} ~verwacht:(cb_totaal "20.00") in
+  ref_matches ~name:"ch10.2 gesloten body: de betreden arm rekent" ~ir:recht_4
+    ~case_text:rekent;
+  clingo_matches ~name:"ch10.2 gesloten body: de betreden arm rekent ook in clingo" ~ir:recht_4
+    ~case_text:rekent;
+  (* en de betreden arm VUURT: drempel 4, kindertal 0 — nu deelt de anders-arm
+     wel door nul, en dan breken beide executors af *)
+  both_break ~name:"ch10.2 gesloten body: nuldeling in de BETREDEN arm" ~ir:recht_4
+    ~case_text:
+      (cb_case ~kindertallen:nul
+         ~verwacht:
+           {|"expectedFault": { "ref": "division by numeric zero",
+                                "clingo": "division by numeric zero" }|})
+    ~needle:"division by numeric zero";
+  (* dezelfde grens langs ch. 10.6, binnen de gesloten body: de deling zit
+     achter een behoefte die alleen de anders-arm leest *)
+  let let_0 = cb_doc ~drempel:0 ~lambda_body:cb_body_let in
+  ref_matches ~name:"ch10.6 gesloten body: behoefte alleen in de niet-betreden arm" ~ir:let_0
+    ~case_text:telt;
+  clingo_matches
+    ~name:"ch10.6 gesloten body: behoefte alleen in de niet-betreden arm breekt niet af"
+    ~ir:let_0 ~case_text:telt;
+  let let_4 = cb_doc ~drempel:4 ~lambda_body:cb_body_let in
+  both_break ~name:"ch10.6 gesloten body: behoefte in de BETREDEN arm" ~ir:let_4
+    ~case_text:
+      (cb_case ~kindertallen:nul
+         ~verwacht:
+           {|"expectedFault": { "ref": "division by numeric zero",
+                                "clingo": "division by numeric zero" }|})
+    ~needle:"division by numeric zero"
+
+(* --- en dezelfde behoefte-grens op regelniveau ONDER een operator ---------
+   De Let staat er niet aan de kop van de waarde maar onder een PLUS, dus hij
+   lowert over [expr_term] in plaats van over [value_branches]. Die route gaf
+   vóór deze kaart niet alleen een verzonnen melding maar ook een verkeerde
+   WAARDE: de lege behoefte maakte de hele tak onafleidbaar, en de PLUS
+   coalesceerde die naar 0,00. *)
+let tak_doc6 =
+  tak_doc
+    ~attributen:
+      (Printf.sprintf {|"inkomen": %s, "restpost": %s, "heffing": %s|} tak_nn tak_nn tak_ob)
+    ~parameters:(tak_param "drempel" ^ ", " ^ tak_param "basisheffing")
+    ~doel_typ:tak_ob
+    ~waarde:
+      (tak_let ~typ:tak_ob ~binder:"k" ~value:(tak_attr "inkomen")
+         ~body:
+           (Printf.sprintf
+              {|{ "node": "Binair", "op": "PLUS", "links": %s, "rechts": %s, "type": %s,
+                  "bron": "het deel plus de basisheffing" }|}
+              (tak_let ~typ:tak_ob ~binder:"m" ~value:tak_deling
+                 ~body:
+                   (tak_ite ~typ:tak_ob ~links:(tak_binder "k") ~rechts:(tak_par "drempel")
+                      ~dan:(tak_par "basisheffing") ~anders:(tak_binder ~typ:tak_ob "m")))
+              (tak_par "basisheffing") tak_ob))
+
+let () =
+  let niet_betreden =
+    tak_case ~inkomen:"40" ~parameters:tak_params12
+      ~verwacht:
+        {|"expected": [
+            { "kind": "attributeValue", "label": "J1", "attribute": "heffing",
+              "value": { "number": "10" } },
+            { "kind": "consistent" } ]|}
+      ()
+  in
+  ref_matches ~name:"ch10.6 behoefte in de niet-betreden arm, onder een operator" ~ir:tak_doc6
+    ~case_text:niet_betreden;
+  clingo_matches
+    ~name:"ch10.6 behoefte in de niet-betreden arm onder een operator meldt niet en rekent"
+    ~ir:tak_doc6 ~case_text:niet_betreden
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
