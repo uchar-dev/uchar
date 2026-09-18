@@ -3114,6 +3114,11 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          rule level (a parameter read, a Match or a composite payload has no corpus case)"
   | Match { typ; scrutinee; arms; _ } ->
       translate_match ctx ~subject ~subject_ot ~typ ~scrutinee ~arms
+  | If_then_else { typ; condition; then_; else_; _ } ->
+      (* ch. 10.2 under an operator: the rule head cannot be split per branch
+         here, so the node lowers to its own helper predicate, arm-guarded —
+         see [translate_ite] *)
+      translate_ite ctx ~subject ~subject_ot ~typ ~condition ~then_ ~else_
   | Binder_ref { naam; _ } -> (
       (* ch. 9.2/10.2: the ASP variable the enclosing match arm's scrutinee
          pattern or the enclosing lambda/function parameter bound, at its
@@ -5371,83 +5376,18 @@ and closed_division ctx ~guard_body ~witness ~rounding ~links ~rechts : string l
         "a closed-body rounded division supports only the richting-nul abs-division collapse (no \
          corpus case for another rounding mode)"
 
-(* --- rule forms ---------------------------------------------------------- *)
+(* an IfThenElse condition (WF-077): a comparison whose operands are bound
+   binders, parameters or literals — never a bare attribute read. That is
+   exactly what keeps the else-branch the positive builtin's EXACT complement
+   (the operands are total, never leeg), so the two branches need no NAF over
+   derived atoms. Returns (binding atoms, positive builtin, complement
+   builtin).
 
-let head_body ctx head body = emit ctx "%s :- %s." head (String.concat ", " body)
-
-(* one guarded outcome of a rule value: the atoms its rule body joins, the
-   result term and its scale, plus [vb_reads] — does THIS branch read the
-   named Let binder? Under ch. 10.6 the leeg-barrier sits at the READ, so a
-   branch that never reads a binder must not carry that binder's value atoms;
-   [vb_reads] is what tells the [Let] arm below which branches to guard. *)
-type vbranch = {
-  vb_guard : string list;
-  vb_term : string;
-  vb_scale : int;
-  vb_reads : string -> bool;
-}
-
-(* the rule VALUE position (§6, guarded consequences): a Let binds an
-   intermediate whose value atoms guard the branches that READ it; an
-   IfThenElse (now reachable through Let bodies, WF-069) lowers to one guarded
-   outcome per branch — the condition a builtin over bound/parameter/literal
-   operands (WF-077) and its exact complement, NAF-free, so the leeg barrier
-   and clingo's underivability coincide by construction. Any other value is a
-   single branch via [expr_term]. Mirrors [body_branches] at value position. *)
-let rec value_branches ctx ~subject ~subject_ot (e : expr) : vbranch list =
-  match e with
-  | Let { binder; body; _ } when not (reads_binder binder body) ->
-      (* ch. 10.6 clause 3: an unread binder evaluates nothing — the value is
-         not translated, so it deposits no atoms, no fence and no §9.5 channel
-         fact, and the body's branches ARE the Let's *)
-      value_branches ctx ~subject ~subject_ot body
-  | Let { binder; value; body; _ } ->
-      let va, vt, vs = expr_term ctx ~subject ~subject_ot value in
-      let saved_b = ctx.binders and saved_g = ctx.rule_guard in
-      ctx.binders <- (norm binder, let_binder ctx ~subject ~subject_ot (va, vt, vs)) :: ctx.binders;
-      ctx.rule_guard <- ctx.rule_guard @ va;
-      let branches = value_branches ctx ~subject ~subject_ot body in
-      ctx.binders <- saved_b;
-      ctx.rule_guard <- saved_g;
-      (* ch. 10.6 clause 2: the value atoms guard exactly the READING branches
-         — a branch that never reads the binder survives a leeg value, which is
-         where L parts company with the old strict lowering. The read set moves
-         outward too: an outer binder is read on this branch either directly,
-         or because THIS binder is read and its value reads it. *)
-      List.map
-        (fun b ->
-          let read = b.vb_reads binder in
-          { b with
-            vb_guard = (if read then va else []) @ b.vb_guard;
-            vb_reads =
-              (fun o ->
-                (norm o <> norm binder && b.vb_reads o) || (read && reads_binder o value)) })
-        branches
-  | If_then_else { condition; then_; else_; _ } ->
-      let catoms, pos, neg = value_condition ctx ~subject ~subject_ot condition in
-      (* the condition is evaluated on EVERY branch, so a binder it reads is
-         read on every branch — the exactness the per-branch guard needs *)
-      let arm extra branches =
-        List.map
-          (fun b ->
-            { b with
-              vb_guard = catoms @ (extra :: b.vb_guard);
-              vb_reads =
-                (fun o -> Ir_v0.Checks.mentions_binder_cond o condition || b.vb_reads o) })
-          branches
-      in
-      arm pos (value_branches ctx ~subject ~subject_ot then_)
-      @ arm neg (value_branches ctx ~subject ~subject_ot else_)
-  | _ ->
-      let a, t, s = expr_term ctx ~subject ~subject_ot e in
-      [ { vb_guard = a; vb_term = t; vb_scale = s; vb_reads = (fun o -> reads_binder o e) } ]
-
-(* a value-position IfThenElse condition (WF-077): a comparison whose operands
-   are bound binders, parameters or literals — never a bare attribute read.
-   That is exactly what keeps the else-branch the positive builtin's EXACT
-   complement (the operands are total, never leeg), so the two branches need no
-   NAF over derived atoms. Returns (binding atoms, positive builtin, complement
-   builtin). *)
+   It sits in the [expr_term] group rather than beside [value_branches], where
+   it was written, because BOTH lowerings of ch. 10.2 now read it: the rule
+   head split ([value_branches]) and the helper-predicate route
+   ([translate_ite]) below. One reading of the condition, or the two routes
+   could disagree about which arm is taken. *)
 and value_condition ctx ~subject ~subject_ot (c : conditie) : string list * string * string =
   (* WF-077 admits arithmetic combinators (Binair/Afgerond/Begrensd/Tekst_reeks)
      over binders, parameters and literals as condition operands — the READS are
@@ -5493,6 +5433,181 @@ and value_condition ctx ~subject ~subject_ot (c : conditie) : string list * stri
       fault
         "a value-position IfThenElse condition is a comparison over bound operands (WF-077; no \
          corpus case for more)"
+
+(* ch. 10.2 at an ORDINARY expression position — an IfThenElse inside a Let
+   body that is NOT the body's whole outcome, so [value_branches] cannot split
+   the rule head per branch. The shape that gets there is one need read under
+   two different branch guards: `(als k > d dan k anders 0) plus (als k > h dan
+   k anders 0)`, where the two nodes sit under an operator and each arm is its
+   own guard. Until this arm existed that document faulted "expression kind not
+   translated" while ref played it.
+
+   One helper predicate, one rule per arm — the [translate_match] shape, for
+   the same reason: mutually exclusive guards, no NAF, and leeg by
+   underivability. What it adds over the match is the ARM GUARD riding
+   [rule_guard] while the arm is translated, so every range fence, viol/2
+   fail-fast guard and §9.5 inconsistent deposit the arm emits fires only where
+   the arm is TAKEN. ch. 10.2's "the other branch evaluates nothing" is a
+   statement about what comes into being, not only about the value.
+
+   The condition's own atoms are in both arms' guards, so a leeg operand leaves
+   NEITHER arm derivable — the ch. 10.6 barrier: a leeg need ends the Let, and
+   the whole node is leeg, exactly as the rule-head route reads it. *)
+and translate_ite ctx ~subject ~subject_ot ~typ ~condition ~then_ ~else_ =
+  let catoms, pos, neg = value_condition ctx ~subject ~subject_ot condition in
+  ctx.fresh <- ctx.fresh + 1;
+  let p = Printf.sprintf "ite%d" ctx.fresh in
+  let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
+  let out_scale = value_scale typ in
+  let saved = ctx.rule_guard in
+  let arm name extra e =
+    ctx.rule_guard <- saved @ catoms @ [ extra ];
+    let atoms, term, scale = expr_term ctx ~subject ~subject_ot e in
+    let body = (base :: ctx.rule_guard) @ atoms in
+    ctx.rule_guard <- saved;
+    (* WF-069 pins both branch TYPES to the node's own, so the only position
+       that can arrive at a different scale is the Literal, whose scale comes
+       from its LEXEME and not from its annotation (gate 13's named exemption):
+       `anders 0` under a two-decimal node is scale 1. It upscales by an exact
+       power of ten — what [fitted] does entering a write target — so the rule
+       head route (which fits every branch to the target) and this one carry the
+       same documents. A branch spelled FINER than its own node would have to
+       truncate, so it faults instead. *)
+    let term =
+      if scale = out_scale then term
+      else if scale > 0 && out_scale > scale && out_scale mod scale = 0 then
+        Printf.sprintf "((%s)*%d)" term (out_scale / scale)
+      else
+        fault
+          "the %s branch of an IfThenElse is at scale %d, which does not enter the node's \
+           declared scale %d exactly" name scale out_scale
+    in
+    emit ctx "%s(%s,%s) :- %s." p subject term (String.concat ", " body)
+  in
+  arm "then" pos then_;
+  arm "else" neg else_;
+  let v = fresh ctx "IT" in
+  ([ Printf.sprintf "%s(%s,%s)" p subject v ], v, out_scale)
+
+(* --- rule forms ---------------------------------------------------------- *)
+
+let head_body ctx head body = emit ctx "%s :- %s." head (String.concat ", " body)
+
+(* one guarded outcome of a rule value: the atoms its rule body joins, the
+   result term and its scale, plus [vb_reads] — does THIS branch read the
+   named Let binder? Under ch. 10.6 the leeg-barrier sits at the READ, so a
+   branch that never reads a binder must not carry that binder's value atoms;
+   [vb_reads] is what tells the [Let] arm below which branches to guard. *)
+type vbranch = {
+  vb_guard : string list;
+  vb_term : string;
+  vb_scale : int;
+  vb_reads : string -> bool;
+}
+
+(* the rule VALUE position (§6, guarded consequences): a Let binds an
+   intermediate whose value atoms guard the branches that READ it; an
+   IfThenElse (now reachable through Let bodies, WF-069) lowers to one guarded
+   outcome per branch — the condition a builtin over bound/parameter/literal
+   operands (WF-077) and its exact complement, NAF-free, so the leeg barrier
+   and clingo's underivability coincide by construction. Any other value is a
+   single branch via [expr_term]. Mirrors [body_branches] at value position. *)
+let rec value_branches ctx ~subject ~subject_ot (e : expr) : vbranch list =
+  match e with
+  | Let { binder; body; _ } when not (reads_binder binder body) ->
+      (* ch. 10.6 clause 3: an unread binder evaluates nothing — the value is
+         not translated, so it deposits no atoms, no fence and no §9.5 channel
+         fact, and the body's branches ARE the Let's *)
+      value_branches ctx ~subject ~subject_ot body
+  | Let
+      { binder; value;
+        body = If_then_else { typ = ite_typ; condition; then_; else_; bron = ite_bron };
+        bron = let_bron; _ }
+    when (not (Ir_v0.Checks.mentions_binder_cond binder condition))
+         && reads_binder binder then_ <> reads_binder binder else_ ->
+      (* ch. 10.6 meets ch. 10.2: the need lives in exactly ONE arm, and the
+         condition does not force it — so under call-by-need the value is
+         evaluated only where that arm is taken, and the Let BELONGS inside the
+         arm. Pushing it there is an exact rewrite, and it is what makes the arm
+         guard reach the value: the arm's fences, viol/2 guards and §9.5
+         deposits then ride [rule_guard] through the [If_then_else] arm below,
+         like every other place in the arm.
+
+         Without it the value stays translated ONCE, outside both arms, and a
+         §6.5 divisor place inside it reports itself on a document whose case
+         takes the OTHER arm — ref evaluates nothing there (ch. 5.11: an operand
+         never reached deposits no channel fact). Clause 2's [vb_reads] already
+         kept such a branch from carrying the value's ATOMS; what it could not
+         do is un-emit the fences, because the value is translated before the
+         branches are known. The rewrite removes that ordering problem instead
+         of working around it.
+
+         Both arms reading the binder needs no rewrite (the value is needed
+         either way); neither reading is clause 3 above. *)
+      let push arm = Let { typ = ite_typ; binder; value; body = arm; bron = let_bron } in
+      let pushed =
+        if reads_binder binder then_ then
+          If_then_else { typ = ite_typ; condition; then_ = push then_; else_; bron = ite_bron }
+        else
+          If_then_else { typ = ite_typ; condition; then_; else_ = push else_; bron = ite_bron }
+      in
+      value_branches ctx ~subject ~subject_ot pushed
+  | Let { binder; value; body; _ } ->
+      let va, vt, vs = expr_term ctx ~subject ~subject_ot value in
+      let saved_b = ctx.binders and saved_g = ctx.rule_guard in
+      ctx.binders <- (norm binder, let_binder ctx ~subject ~subject_ot (va, vt, vs)) :: ctx.binders;
+      ctx.rule_guard <- ctx.rule_guard @ va;
+      let branches = value_branches ctx ~subject ~subject_ot body in
+      ctx.binders <- saved_b;
+      ctx.rule_guard <- saved_g;
+      (* ch. 10.6 clause 2: the value atoms guard exactly the READING branches
+         — a branch that never reads the binder survives a leeg value, which is
+         where L parts company with the old strict lowering. The read set moves
+         outward too: an outer binder is read on this branch either directly,
+         or because THIS binder is read and its value reads it. *)
+      List.map
+        (fun b ->
+          let read = b.vb_reads binder in
+          { b with
+            vb_guard = (if read then va else []) @ b.vb_guard;
+            vb_reads =
+              (fun o ->
+                (norm o <> norm binder && b.vb_reads o) || (read && reads_binder o value)) })
+        branches
+  | If_then_else { condition; then_; else_; _ } ->
+      let catoms, pos, neg = value_condition ctx ~subject ~subject_ot condition in
+      (* ch. 10.2: the unchosen branch evaluates NOTHING, and that is a
+         statement about deposits and faults as much as about the value. The
+         arm's own guard therefore rides [rule_guard] while the arm is
+         translated, so the range fences, the viol/2 fail-fast guards and the
+         §9.5 inconsistent deposits the arm emits fire only where the arm is
+         taken — a §6.5 divisor place in the else-branch stopped reporting
+         itself on a document whose case takes the then-branch, and a numeric
+         zero divisor there stopped making the program UNSAT. The two arms are
+         sequenced by hand: [@] leaves its operand order unspecified, and the
+         guard is mutable state.
+
+         The condition is evaluated on EVERY branch, so a binder it reads is
+         read on every branch — the exactness the per-branch guard needs. *)
+      let saved = ctx.rule_guard in
+      let arm extra e =
+        ctx.rule_guard <- saved @ catoms @ [ extra ];
+        let branches = value_branches ctx ~subject ~subject_ot e in
+        ctx.rule_guard <- saved;
+        List.map
+          (fun b ->
+            { b with
+              vb_guard = catoms @ (extra :: b.vb_guard);
+              vb_reads =
+                (fun o -> Ir_v0.Checks.mentions_binder_cond o condition || b.vb_reads o) })
+          branches
+      in
+      let then_branches = arm pos then_ in
+      let else_branches = arm neg else_ in
+      then_branches @ else_branches
+  | _ ->
+      let a, t, s = expr_term ctx ~subject ~subject_ot e in
+      [ { vb_guard = a; vb_term = t; vb_scale = s; vb_reads = (fun o -> reads_binder o e) } ]
 
 (* fit a scaled term to the write target's declared scale: a coarser
    value upscales exactly (both scales are powers of ten); a finer one
