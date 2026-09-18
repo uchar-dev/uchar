@@ -1,0 +1,49 @@
+// Jutterswet — the counting quantifiers over a non-temporal matrix,
+// written in the F-logic slice. The twin of `jutterswet-vuurtoren`: the
+// same two object types, the same relation and the same five cases with
+// the same absolute values.
+//
+// All three counting quantifiers are one comparison of a COUNT with its
+// threshold, so no negation form appears anywhere — the slice's \naf and
+// \neg refusals stay exactly where they were.
+
+Vuurtoren[|lampental   => numeriek(onbepaald, geheel)|].
+Vuurtoren[|helder      => kenmerk(bijvoeglijk)|].
+Vuurtoren[|zuinig      => kenmerk(bijvoeglijk)|].
+Vuurtoren[|enkelvoudig => kenmerk(bijvoeglijk)|].
+Vuurtoren[|keurig      => kenmerk(bijvoeglijk)|].
+
+Lamp[|sterkte => numeriek(onbepaald, geheel)|].
+Lamp[|gekeurd => kenmerk(bijvoeglijk)|].
+
+// One Vuurtoren holds many Lampen. The relation is reified as a class
+// carrying its two role signatures; the cardinality braces say which end
+// is to-many, and its label is the one the case documents key on.
+torenindeling : feittype.
+torenindeling[|toren  {1..1} => Vuurtoren|].
+torenindeling[|lampen {0..*} => Lamp|].
+
+// The counted members are the lampen; the last goal of the comprehension
+// is the matrix asked of each of them.
+@!{'helder bij sterkte'}
+?T : helder :- ?T : Vuurtoren,
+    count{?V | ?V = ?T.lampen, ?V.sterkte > 5} >= 2.
+
+@!{'zuinig bij sterkte'}
+?T : zuinig :- ?T : Vuurtoren,
+    count{?V | ?V = ?T.lampen, ?V.sterkte > 5} <= 1.
+
+@!{'enkelvoudig bij sterkte'}
+?T : enkelvoudig :- ?T : Vuurtoren,
+    count{?V | ?V = ?T.lampen, ?V.sterkte > 5} = 1.
+
+// The die/dat subselection: the goal BEFORE the matrix narrows which
+// lampen the sentence is about.
+@!{'keurig bij sterkte'}
+?T : keurig :- ?T : Vuurtoren,
+    count{?V | ?V = ?T.lampen, ?V : gekeurd, ?V.sterkte > 5} >= 2.
+
+// The bare comprehension states no condition of its members, so it is the
+// plain instance fold and not a quantification.
+@!{'lampental van een vuurtoren'}
+?T[lampental -> count{?V | ?V = ?T.lampen}] :- ?T : Vuurtoren.

@@ -518,7 +518,16 @@ EXPECTED_CHANNEL=(
 # exec 149 -> 150, DRL-text 122 -> 123, and exactly these three report lines move — no other golden changes
 # channel or reason, which also pins that giving every accumulate count its element variable (needed because
 # a source-less count leaves its bindings unresolved over the path's subnetwork) is semantics-free.
-EXPECTED_PLAYED=150
+# 2026-09-19 (card flogic-kwantorvouw-borg), 150 -> 151: `jutterswet-vuurtoren-flogic` joins as a NEW
+# PLAYER — the counting quantifiers over a NON-temporal matrix, emitted from a `bron.flogic` instead of
+# hand-written. Nothing in this backend moved for it: the node, the filter and the threshold are the ones
+# `jutterswet-vuurtoren` already plays, and the twin shares that golden's five case files byte for byte,
+# so a played pass here says the F-logic frontend reached exactly the wire the hand-written document
+# states. What it buys is the direction the executors cannot cover: until now the fold had THREE
+# independent executors and no source language at all, the RegelSpraak frontend declining the
+# non-temporal form. Measured before and after over ALL goldens in BOTH branches: exec 150 -> 151,
+# DRL-text 123 -> 124, and exactly this one report line moves — no other golden changes channel or reason.
+EXPECTED_PLAYED=151
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the
