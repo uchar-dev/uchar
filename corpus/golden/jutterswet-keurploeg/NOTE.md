@@ -100,6 +100,8 @@ filter's atoms into the witness rule beside the range join, under BOTH
 quantifiers (under `ALLE` the witness is a contributor that FAILS the reified
 matrix, so the filter atoms must sit in the witness body and not in the
 reification); the Drools exec branch constrains the accumulate SOURCE with it,
-exactly as `Expr.Functie.filter` is constrained. The DRL-text branch markers
-this document by name — it lowers the non-temporal matrix but not the §8.2
-whole-period one — which is the standing channel split, unchanged here.
+exactly as `Expr.Functie.filter` is constrained. The DRL-text branch plays
+this document since 2026-09-18: it writes the filter into the accumulate
+SOURCE of its own collectList fold, which is the same element pattern its non-
+temporal witness route constrains — so the filter has one reading in both
+Drools branches and not two.

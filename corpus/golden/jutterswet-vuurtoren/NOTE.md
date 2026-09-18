@@ -34,14 +34,18 @@ schema. Gate 10 does not see it.
 
 ## What it covers that the other three do not
 
-Both executor branches that carry a fold have TWO matrix routes, and the counting
-arms are new code in each of them: the Drools exec branch counts over a
-`collectList` accumulate of the CONTRIBUTORS (the non-temporal route) instead of
-over their timelines, and the DRL-text branch — which markers the whole-period
-matrix and therefore never sees `jutterswet-reddingsvloot` — writes a
-`Number( intValue <op> N ) from accumulate( … count(…) )` over the element
-pattern. Without this golden the first of those two has no corpus witness and the
-second has none at all.
+Both executor branches that carry a fold have TWO matrix routes, and the
+counting arms are separate code in each of them. This golden is the only
+corpus document whose counting quantifier reaches the NON-TEMPORAL route: the
+Drools exec branch counts over a `collectList` accumulate of the CONTRIBUTORS
+instead of over their timelines, and the DRL-text branch writes a `Number(
+intValue <op> N ) from accumulate( ... count(...) )` over the element pattern
+— a count over a pattern, where its whole-period sibling folds a collected
+list through `rsGeheelPeriodeTelling`. `jutterswet-reddingsvloot` pins the
+other route in both branches (it has since 2026-09-18, when the DRL-text
+branch gained the whole-period fold); without THIS golden the non-temporal
+counting route has no corpus witness in either of them, and the two routes
+could drift apart unseen.
 
 ## The cells, computed by hand before any executor ran
 

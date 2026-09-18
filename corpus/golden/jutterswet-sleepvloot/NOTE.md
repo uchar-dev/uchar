@@ -74,6 +74,7 @@ doet hetzelfde: de matrixatomen dragen de ontkenning al, dus de `#count` telt
 de ontkende kant zonder aparte arm. De Drools-exec-tak kan dat niet — zijn
 heelperioderoute vraagt de runtime één boolean per bijdrager — en past de
 prefix daarom op de telling toe (`n - hits`), wat exact hetzelfde getal is.
-De DRL-tekst-tak markeert dit document voor zijn heelperiodematrix, zoals hij
-elke heelperiodevouw markeert; dat is de staande kanaalsplitsing en zij
-beweegt hier niet.
+De DRL-tekst-tak leest de ontkende telling sinds 2026-09-18 zelf, langs
+dezelfde gedeelde heelperiodehelpers en met de prefix op dezelfde telling
+(`$kvtlN.size() - rsGeheelPeriodeTelling(...)`); beide Drools-takken
+spelen dit document, en de kanaalsplitsing die hier stond is dicht.
