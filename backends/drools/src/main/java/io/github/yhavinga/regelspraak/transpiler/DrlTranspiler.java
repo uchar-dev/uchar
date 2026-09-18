@@ -360,10 +360,19 @@ public final class DrlTranspiler {
         return false;
     }
 
-    /** Every {@link Expr} child of an ORDINARY (non-ch.-4.10) node, condition operands included — the walk
-     *  {@link #leestBinder} and the §6.5/§6.6 site collectors descend with a SCOPE of their own. The ch. 4.10
-     *  nodes are deliberately absent: each carries a scope this accessor cannot express, so every caller matches
-     *  them itself (and an {@link Expr.IfThenElse} this branch does not lower reaches no caller at all). */
+    /**
+     * Every {@link Expr} child of an ORDINARY (non-ch.-4.10) node, condition operands included — the walk
+     * {@link #leestBinder} and the §6.5/§6.6 site collectors descend with a SCOPE of their own.
+     *
+     * <p>The two BINDING nodes are absent because each carries a scope this accessor cannot express, so every
+     * caller matches them itself. An {@link Expr.IfThenElse} is absent for a different reason: it binds
+     * nothing, but exactly ONE of its arms runs (ch. 10.2), which is a fire-time verdict no static child list
+     * can state — the exec branch answers it with a path probe, not with a wider accessor. This branch lowers
+     * no such node at all ({@link #waarde} markers it), so the conservative "no children" answer a walk gets
+     * here can never reach emitted DRL: the construct carrying it is inert before any of these walks decides
+     * anything. A branch that DID lower it must revisit {@link #leestBinder}, whose exactness rests on this
+     * very absence, rather than extend this list.
+     */
     private static List<Expr> gewoneKinderen(Expr e) {
         List<Expr> uit = new ArrayList<>();
         if (e instanceof Expr.Binair b) { uit.add(b.links()); uit.add(b.rechts()); }
