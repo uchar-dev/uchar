@@ -59,7 +59,8 @@ is the same argument the subtype kernel got.
 
 Two further reasons. The slice is a syntactic subset of Flora-2 2.2, so
 every accepted program also parses in an independently maintained
-reasoner — the spelling is borrowed, not invented. And F-logic can write
+reasoner — the spelling is borrowed, not invented (with the three forms
+listed under "The slice" excepted: argued, not measured). And F-logic can write
 what RegelSpraak cannot: a second parent. That makes this frontend the
 only place WF-106 (at most one supertype) has a refusing witness — on
 the wire the rule is structural (`supertype` is one string), so no
@@ -72,6 +73,28 @@ in that reasoner. The rule the slice follows:
 
 > where Flora-2 has a spelling, use Flora-2's; where it has none for
 > something the wire format carries, use uchar's own metamodel word.
+
+**Three forms are argued rather than measured.** The claim above was
+checked in the reasoner itself for every form the slice carried up to
+2026-09-12; the installation that check ran on is gone as of 2026-09-19,
+so the forms added since have been reasoned against Flora-2's documented
+grammar and **not run**. They are, exactly:
+
+1. the **conjunctive comprehension body** `count{?V | ?V = ?X.rol, G, …}` —
+   Flora-2's aggregate body is a comma-separated conjunction of literals,
+   and the slice only restricts which conjuncts it reads;
+2. the **isa head** `?X : k :- Body.` — a rule concluding class membership;
+3. `<=` as the non-strict less-than comparison. It was in the slice's
+   operator table before the fold arrived, but no program used it until
+   `karig` and `zuinig` did; Prolog and XSB spell that comparison `=<`, and
+   whether Flora-2 2.2 also accepts `<=` is the one form on this list whose
+   answer could be "no". If it is, the fix is mechanical and local: `=<`
+   replaces `<=` in the lexer's punctuation table, in the operator line
+   below and in the three sources that use it.
+
+That is the measuring list for the next session that has a reasoner. No
+synonym has been added on speculation: the slice's rule is to use Flora-2's
+spelling, not to accept two.
 
 | form | reading |
 |---|---|
@@ -128,6 +151,17 @@ clause to attach a filter to the range with. Both are read per contributor,
 with the member as subject, and the member reaches the wire as `?V`
 whatever letter the author chose.
 
+**A swapped filter and matrix are not a refusal but a different sentence**,
+and the position rule is the only thing standing between them. Under the
+counting quantifiers and GEEN the swap is invisible by arithmetic — those
+read `|{m : F(m) ∧ M(m)}|`, which is symmetric in the two — but under ALLE
+it is not: `count(F ∧ M) = count(F)` and `count(M ∧ F) = count(M)` are
+different claims, and both `ref` and the ASP backend answer the swapped
+document differently (measured). Writing the qualifying clause last is
+therefore a real error the frontend cannot catch: any heuristic that could
+would have to guess from the goals' shapes, and would refuse legitimate
+programs to do it.
+
 | form | quantifier |
 |---|---|
 | `… >= n`, n ≥ 1 | TEN MINSTE n |
@@ -165,12 +199,29 @@ the rule**:
 - two unconditional definitions of one target refuse: nothing in the slice
   orders them.
 
-A **characteristic** target is outside that device by construction, and
-stays a standing norm with its condition as the rule's own `voorwaarde`.
-The device orders two definitions of one target; a characteristic has one
-value it can be given, so two definitions could not conflict and there is
-nothing to order. A second definition of one characteristic target refuses,
-for the same reason a second unconditional attribute definition does.
+A **characteristic** target is outside that device, and stays a standing
+norm with its condition as the rule's own `voorwaarde`. Two reasons, and
+neither is "a characteristic cannot be over-determined" — on the wire it
+can: `PrioritizedDefaults` carries a `kenmerk` target and a `Default`
+carries `besluit`, so *attribute* and *do-not-attribute* are two competing
+decisions a defaults stack does order (RUNTIME-SEMANTICS ch. 7). The
+reasons are narrower:
+
+- **this slice has no do-not-attribute form.** `?X : k :- …` concludes
+  membership and nothing concludes its denial — the negation forms are
+  refused. Within this language two definitions of one characteristic
+  therefore cannot conflict, and a device that orders conflicts has
+  nothing to order;
+- **it is what the sibling frontend does.** The RegelSpraak frontend lowers
+  a conditional characteristic assignment to a `ResolvedRegel` with that
+  condition, not to a defaults group. Lowering the same sentence to a
+  group here would make two frontends disagree about the shape of one
+  meaning.
+
+A second definition of one characteristic target refuses, for the same
+reason a second unconditional attribute definition does: nothing in the
+slice orders them, and inventing an order would be this frontend's
+invention.
 
 Inheritance itself is the kernel's, not the frontend's: the frontend only
 writes `supertype`.

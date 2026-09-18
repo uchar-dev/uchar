@@ -35,9 +35,15 @@ carries the full table. What this document needs from it:
   membership conclusion. A fold is a CONDITION, and until this card the
   slice could only write attribute values, so there was nothing for a fold
   to be the condition OF. A characteristic target stays a standing norm with
-  its condition as the rule's `voorwaarde` — a characteristic has one value
-  it can be given, so two definitions could not conflict and the frontend's
-  priority device has nothing to order;
+  its condition as the rule's `voorwaarde`, and that is NOT because a
+  characteristic cannot be over-determined — on the wire it can, since a
+  defaults group carries a `kenmerk` target and a default carries `besluit`,
+  so attribute and do-not-attribute are two decisions a stack does order.
+  It is because this SLICE has no do-not-attribute form (the negation forms
+  are refused), so within F-logic two definitions of one characteristic
+  cannot conflict; and because it is the shape the RegelSpraak frontend
+  gives the same sentence — a conditional characteristic assignment lowers
+  to a `ResolvedRegel` there too, not to a group;
 - `torenindeling : feittype.` with two role signatures — the relation
   reified as a class, the cardinality braces saying which end is to-many.
 
