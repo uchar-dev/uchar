@@ -624,7 +624,19 @@ EXPECTED_CHANNEL=(
 # route, since ref and this backend answered what the ASP backend refused — and
 # that too is a red-zone form, carried by no golden. Both branches play both new
 # goldens, so EXPECTED_DRL_PLAYED moves by two as well.
-EXPECTED_PLAYED=161
+#
+# 161 -> 163 (2026-09-19, card eigenaar-gastheer-object): TWO new players, and this backend needed
+# no change at all for either. jutterswet-seinhijsing and jutterswet-mastsein carry the shape the
+# RegelSpraak frontend emits an `eigenaar` on — the guard of a §13.4.7 fact creation naming a
+# characteristic of the DOEL — which this backend has hosted on its `$doel` pattern in both branches
+# all along and the other two executors refused. WF-109 (IR-SPEC ch. 4.6 (q2)) made that reading
+# normative and taught ref and the ASP backend to walk the chain first and ask the guard per target,
+# so the square closes on a form where this backend was previously alone. The goldens are built to
+# make the reading identifiable rather than merely agreed: the characteristic is declared on the
+# anker, on every intermediate step and on the doel, with values chosen so the anker reading, each
+# intermediate reading and the doel reading give three different numbers. Both branches play both
+# goldens, so EXPECTED_DRL_PLAYED moves by two as well.
+EXPECTED_PLAYED=163
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -775,7 +787,10 @@ DRL_CHANNEL=(
 # play in this branch too — the DRL-text branch routes the day-kind duration forms to the same runtime
 # statics the exec branch does, through a session global holding the compiled predicate, so the two
 # branches were never going to differ here. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=138
+# 138 -> 140 (2026-09-19, card eigenaar-gastheer-object): the same two new goldens, for the same
+# reason — this branch already read the doel through its `$doel` pattern, and the card changed the
+# OTHER two executors to meet it. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=140
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a

@@ -71,10 +71,11 @@ class StilleGuardflankWitnessTest {
 
     @Test void de_derde_type_eigenaar_weigert_in_beide_takken() throws Exception {
         // A characteristic check whose `eigenaar` is a declared type that is NEITHER the anker NOR the doel — here
-        // the tussenstap's own type, which declares the characteristic, so WF-100's declaration half is satisfied and
-        // the document is verifier-clean. The creation has exactly two patterns to host a guard on; this names a
-        // third object. Measured RED FIRST on the pre-card jar:
-        //     verifier : PASS
+        // the tussenstap's own type, which declares the characteristic, so WF-100's declaration half is satisfied.
+        // The creation has exactly two patterns to host a guard on; this names a third object. Measured RED FIRST on
+        // the pre-card jar (the verifier line has MOVED since: WF-109, 2026-09-19, refuses this host by name, so the
+        // document is no longer verifier-clean and this row is the backend's own fence under that verdict):
+        //     verifier : PASS  (2026-09-19: WF-109 FAIL — the host is neither bound object)
         //     ref      : EVALUATION FAULT: characteristic check "risicopost" is hosted on "Post" while the subject
         //                is "Kustvak": the owner names the object the check is about (WF-100), and this reader has
         //                no other object to read
@@ -93,13 +94,13 @@ class StilleGuardflankWitnessTest {
 
     @Test void de_doel_gehoste_guard_speelt_nog_in_beide_takken() throws Exception {
         // The over-refusal flank on the side the refusal is nearest to: `eigenaar` names the DOEL, so the anker
-        // attempt declines and the doel attempt carries it — the reading `backlog/new/20260910-eigenaar-gastheer-object.md`
-        // measures and leaves open. It must keep playing, and keep playing the DOEL: S1 carries the characteristic
-        // and S2 does not, so the count is 1 and not 2 (the anker reading) or 0 (a dropped guard). Measured
-        // 2026-09-19, unchanged by this card:
+        // attempt declines and the doel attempt carries it. It must keep playing, and keep playing the DOEL: S1
+        // carries the characteristic and S2 does not, so the count is 1 and not 2 (the anker reading) or 0 (a dropped
+        // guard). Measured 2026-09-19, unchanged by this card — and the two OCaml lines have MOVED since, at the card
+        // that made this reading normative (WF-109; goldens jutterswet-seinhijsing and jutterswet-mastsein):
         //     verifier : PASS
-        //     ref      : EVALUATION FAULT (WF-100, the hosting question this card does not answer)
-        //     clingo   : TRANSLATION FAULT (idem)
+        //     ref      : EVALUATION FAULT (WF-100)  -> since 2026-09-19: reads the doel, the same 1
+        //     clingo   : TRANSLATION FAULT (idem)   -> since 2026-09-19: reads the doel, the same 1
         //     exec     : PLAYED 1 — vakseinaantal 1; probes at 0 and at 2 both FAIL observably
         //     drl-tekst: PLAYED 1 — the same three measurements
         Path ir = metKenmerkOpType("Sein", "gehesen", kenmerkGuard("gehesen", "Sein", "het sein gehesen is"));
