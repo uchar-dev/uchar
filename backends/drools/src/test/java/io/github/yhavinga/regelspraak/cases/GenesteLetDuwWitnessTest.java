@@ -174,13 +174,20 @@ class GenesteLetDuwWitnessTest {
         // refused by name now. A sibling spelling whose two bindings happened to AGREE played correctly before
         // and is refused too: the coincidence was not a reason to keep it.
         Path ir = schrijf(herbondenModel());
-        JsonNode c = jutter(n("saldo", "5.00") + ", " + n("inkomen", "40.00"),
-                waarde("5.00") + ", " + consistent());
-        assertNull(CaseRunner.speelCase(ir, c, false), "exec-model — de herbonden takgarde speelt");
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(ir, c, true),
-                "drl-tekst — de herbonden takgarde wordt geweigerd");
-        assertTrue(e.getMessage().contains("takgarde van een voorwaardelijk gelezen behoefte (ch. 10.2)"),
-                "drl-tekst noemt de weigering bij naam: " + e.getMessage());
+        // saldo 5,00 / inkomen 40,00 / restpost ABSENT — the fabricage flank: ref uit 5,00, CONSISTENT.
+        // saldo 5,00 / inkomen  8,00 / restpost 2,00  — the VALUE flank: ref uit 7,50 (5,00/2,00 + 5,00), and
+        //   it is 9,00 if the two `w`s are confused (8,00/2,00 + 5,00), so the two bindings are told apart by
+        //   a number here and not only by a report.
+        for (JsonNode c : new JsonNode[] {
+                jutter(n("saldo", "5.00") + ", " + n("inkomen", "40.00"), waarde("5.00") + ", " + consistent()),
+                jutter(n("saldo", "5.00") + ", " + n("inkomen", "8.00") + ", " + n("restpost", "2.00"),
+                        waarde("7.50") + ", " + consistent()) }) {
+            assertNull(CaseRunner.speelCase(ir, c, false), "exec-model — de herbonden takgarde speelt");
+            CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(ir, c, true),
+                    "drl-tekst — de herbonden takgarde wordt geweigerd");
+            assertTrue(e.getMessage().contains("takgarde van een voorwaardelijk gelezen behoefte (ch. 10.2)"),
+                    "drl-tekst noemt de weigering bij naam: " + e.getMessage());
+        }
     }
 
     // ---------------- helpers: replay ----------------
