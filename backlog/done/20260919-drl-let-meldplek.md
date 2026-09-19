@@ -261,15 +261,30 @@ niet. Dat is dezelfde pre-existente grens als bij een literal operand zonder
 Drools-takken de melding — en dus niet het gat van deze kaart. Rood gepind in de
 getuige, zodat het opheffen ervan een bewuste stap wordt.
 
+**Een behoefte die zélf een binder is, mist haar companion** (lensvondst
+2026-09-19, pre-existent, vóór én ná deze kaart identiek): `Let k = inkomen in
+(Let m = k in (m gedeeld door restpost))` is verifier-clean en ref, clingo én
+exec melden — de DRL-tekst-tak niet. Geïnstrumenteerd bevestigd: de behoeftelus
+roept `companionDeel` aan vóórdat de binderomgeving is opgezet, dus een
+behoefte-`BinderRef` lost op tegen een lege map en de companion valt weg
+(veilige kant). De naïeve herordening zou de bewust gedocumenteerde
+zelf-resolutiebescherming ongedaan maken; dit is een besluit, geen mechanische
+fix — bijgeschreven op `drl-geneste-let-duw`, waar hij aan reden (b) grenst.
+
 ## Open twijfel
 
-De binderomgeving wordt per foutplek opgebouwd uit `Foutplek.binders`, en dat is
-een map met één ingang per NAAM. Schaduwt een binnenste `Let` een buitenste met
-dezelfde binder, dan bestaat de buitenste behoefte in die map niet meer, en een
-binnenwaarde die de buitenste binder leest lost op naar niets — de companion
-valt weg. Dat is de veilige kant (een gemiste melding, nooit een verzonnen), en
-het gedroeg zich vóór deze kaart net zo, maar ik heb er geen getuige voor
-gebouwd en weet niet of een verifier-clean document die vorm kan aannemen.
+De schaduwtwijfel hieronder is door de lens gemeten en in beide richtingen
+ongegrond: de letterlijke zelfverwijzende vorm is niet verifier-clean (WF-076,
+`the let binder 'k' is referenced in its own value`), en een wél verifier-clean
+schaduwvorm — `Let a = inkomen in (Let a = saldo in (a gedeeld door
+restpost))` — gedraagt zich correct: ref, clingo, exec én de NA-DRL-tak melden
+alle vier `inconsistent`, en het patroon draagt de saldo-hekken zónder
+`inkomen != null`, wat juist is (ch. 10.6 clausule 3: de buitenste behoefte
+wordt nooit gelezen). De VOOR-DRL-tak miste die melding — een vijfde vorm die
+deze kaart blijkt te repareren. De oorspronkelijke twijfel, ter archivering:
+de binderomgeving is een map met één ingang per NAAM, dus schaduwing zou de
+buitenste behoefte kunnen verdringen — de meting laat zien dat precies dat
+gedrag het juiste antwoord oplevert.
 
 Tweede twijfel: het dubbele hek in het patroon (`inkomen != null, inkomen !=
 null, …`) als behoefte en operand dezelfde lezing zijn. Drools aanvaardt het en

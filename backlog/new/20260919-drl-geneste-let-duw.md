@@ -25,3 +25,13 @@ May touch: `backends/drools/**` (DrlTranspiler + tests),
 `scripts/check-drools.sh` uitsluitend kanaaltelling (voorstel),
 kaartverplaatsing. NB: serieel met drl-let-meldplek (zelfde bestand;
 die kaart eerst — vier goldens spelen pas als beide er zijn).
+
+## Aangrenzende lensvondst (2026-09-19, kaart drl-let-meldplek)
+
+Een behoefte die zélf een binder is mist haar companion in de
+DRL-tekst-tak: `Let k = inkomen in (Let m = k in (m gedeeld door
+restpost))` is verifier-clean, ref/clingo/exec melden `inconsistent`,
+de DRL-tak niet (pre-existent). Oorzaak gemeten: de behoeftelus roept
+`companionDeel` aan vóórdat de binderomgeving is opgezet; de naïeve
+herordening zou de zelf-resolutiebescherming breken, dus dit is een
+besluit binnen deze kaart, geen mechanische fix.
