@@ -145,7 +145,11 @@ Voorstel voor dat kaartje, kant-en-klaar over te nemen:
 > `backends/clingo/**`, `corpus/rood/**`, `scripts/check-rood.sh` (voorstel).
 
 Gate 8 blijft dus op 28 rode cases (vloer 26) en `scripts/check-rood.sh` is niet
-aangeraakt — er is geen beschermd-padvoorstel op deze branch. Wat de familie
+aangeraakt — er is geen beschermd-padvoorstel op deze branch. *Opgeheven
+2026-09-19 door `clingo-onopgelost-conditie`: clingo citeert WF-044 nu ook op
+de conditiepositie, en `corpus/rood/wf044-onopgelost-guard` draagt de
+guard-positie (gate 8 op 29); de bijbehorende `check-rood.sh`-lijstregel is
+bij die merge geland.* Wat de familie
 intussen wél heeft: `corpus/rood/wf044-onopgelost-reached` dekt de
 EXPRESSIE-positie, en de guard-positie is vanaf nu in beide Drools-takken luid.
 
@@ -203,8 +207,8 @@ stil was) en geen PLAN-scopewijziging.
   tekst zijn de twee vormen in het poortrapport niet te onderscheiden.
   `DrlTranspiler` viel buiten de May-touch, dus de symmetrie is niet afgemaakt.
 - De geweigerde documenten hebben nergens een *corpus*-huis: ref en clingo
-  werpen erop een fout, dus een golden kan de vorm niet dragen. De rode zone
-  kan vorm 1 pas dragen nadat clingo zijn WF-044-arm heeft (zie (c)); vorm 2
+  werpen erop een fout, dus een golden kan de vorm niet dragen. Vorm 1 is
+  sinds 2026-09-19 rood-gedekt (`corpus/rood/wf044-onopgelost-guard`); vorm 2
   is vandaag wél rood-bereikbaar — clingo werpt daar een echte WF-100-zin, de
   Drools-token is EXCLUDE — en is alleen op de normatieve grond van (c)'s
   slotalinea uitgesteld. Tot die tijd leeft de dekking in de eigen suite van
