@@ -547,7 +547,32 @@ EXPECTED_CHANNEL=(
 # translation, which used to refuse it. So the golden joins the square complete rather than red, and
 # this is the one report line that moves — measured before and after over ALL goldens in BOTH branches:
 # exec 153 -> 154, DRL-text 126 -> 127, no other golden changes channel or reason.
-EXPECTED_PLAYED=154
+# 2026-09-19 (card asp-ch102-vervolg), 154 -> 159: FIVE new goldens for the ch. 10.2 / ch. 10.6
+# branch forms the two preceding clingo cards made carriable — `synth3-takhek` (the arm fences on the
+# rule-head route), `synth3-operatortak` (the same fences with the branch node under an operator),
+# `synth3-armverdeling`, `synth3-armwissel` and `synth3-armvangst` (a nested `Let` between the need
+# and the branch node, over the distribution route, the exchange route, and the case where the nested
+# VALUE is the only reader of the outer need). All five arrive PLAYING in the exec-model branch: it
+# already carried the `Let`/`IfThenElse` chain, so what these goldens add is corpus evidence for what
+# until now only the executors' own suites held — that the non-entered arm deposits no §9.5 channel
+# reason and fires no fail-fast guard, and that a read in exactly one arm empties the whole `Let`
+# and not merely the arm. Measured before and after over ALL goldens in BOTH branches: exec
+# 154 -> 159, DRL-text 127 -> 127, and exactly these five report lines move — no other golden
+# changes channel or reason in either branch.
+# The DRL-TEXT branch plays NONE of the five, and the reasons are recorded here rather than left to
+# be rediscovered, because this gate does not measure that branch and nothing else would say it.
+# They are three, all pre-existing (this card changed no Drools source) and each measured on its own
+# minimal probe: (a) that branch deposits no §9.5 channel reason for a §6.5 place inside a `Let`
+# BODY — the same document without the `Let` plays, so the gap is the binding and not the branch —
+# which is what case 2 of takhek, operatortak, armverdeling and armvangst pins; (b) a SECOND nested
+# `Let` between the need and the branch node is still placed eagerly there, so armverdeling's case 1
+# answers leeg where ref, clingo and the exec branch answer 1,00, and its wrapper rule answers a
+# coalesced 5,00 where all three answer leeg — the value defect, not just a missing report; (c)
+# armwissel is refused LOUDLY by name (`TODO takgarde van een voorwaardelijk gelezen behoefte
+# (ch. 10.2)`), which is the honest channel. Carrying (a) and (b) is Drools work on the DRL-text
+# transpiler and belongs to its own card; weakening these goldens to make that branch pass would
+# have removed exactly the expectations ref and clingo agree on.
+EXPECTED_PLAYED=159
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the
