@@ -469,9 +469,11 @@ public final class RegelSpraakRuntime {
         java.time.LocalDate d = datum;
         java.time.LocalDate anker = datum;
         long geteld = 0, gat = 0;
-        // Bound the walk: a dagsoortdefinitie that matches NO calendar date (an author error, e.g. maand==13) would
-        // otherwise loop forever. The fence is uchar's normative one (RUNTIME-SEMANTICS ch. 3.8): a GAP of
-        // DAGSOORT_REIKWIJDTE consecutive calendar days with no day of the kind. It replaces the backend's own
+        // Bound the walk: without a fence a dagsoortdefinitie with no next occurrence ahead would run for ever.
+        // The fence is uchar's normative one (RUNTIME-SEMANTICS ch. 3.8): a GAP of DAGSOORT_REIKWIJDTE
+        // consecutive calendar days with no day of the kind. It says how far the walk LOOKS and diagnoses
+        // nothing about the definition — a year-bound day kind further out is perfectly well written and is
+        // refused all the same. It replaces the backend's own
         // 4 000 000-step TOTAL cap of the port, which refused a legitimate large N ("datum plus 5 000 werkdagen")
         // under a message blaming the definition, and which no other executor shared. The uchar spec beyond the
         // ported production semantics, as with the ch. 7 prioritizedDefaults lowering.

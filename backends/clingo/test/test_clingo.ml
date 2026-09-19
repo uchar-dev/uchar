@@ -6212,7 +6212,7 @@ let () =
 
 let dk_doc ?(registry = {|"nevelsdagen": "nevelsdag"|}) ?(dagsoorten = {|"nevelsdag"|})
     ?(dagsoorten_defs = "") ?(voorwaarde = "") ?(datum_type = {|{ "node": "DatumInDagen" }|})
-    ?doel_type ~waarde () =
+    ?doel_type ?(parameters = "") ~waarde () =
   let doel_type = match doel_type with Some t -> t | None -> datum_type in
   let dk_unit =
     {|{ "node": "Eenheid", "afkorting": "nevelsdagen", "stelsel": null,
@@ -6240,7 +6240,7 @@ let dk_doc ?(registry = {|"nevelsdagen": "nevelsdag"|}) ?(dagsoorten = {|"nevels
       "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
       "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Bakens" }
   },
-  "domeinen": {}, "parameters": {}, "eenheidstelsels": {}, "feittypen": {},
+  "domeinen": {}, "parameters": { %s }, "eenheidstelsels": {}, "feittypen": {},
   "dimensies": {}, "tijdlijnen": [],
   "dagsoorten": [ %s ],
   "dagsoortPerEenheid": { %s },
@@ -6260,7 +6260,7 @@ let dk_doc ?(registry = {|"nevelsdagen": "nevelsdag"|}) ?(dagsoorten = {|"nevels
   "diagnostics": []
 }
 |}
-    datum_type dk_unit doel_type dagsoorten registry doel_type waarde defs
+    datum_type dk_unit doel_type parameters dagsoorten registry doel_type waarde defs
 
 (* the wire shape of "de dag", of a date-part extractor over it, and of a
    comparison of that extractor against a whole literal *)
@@ -6443,6 +6443,57 @@ let () =
               (peildatum ~typ:{|{ "node": "DatumTijd" }|} ()))
          ())
     ~case_text:dt_case ~needle:"a recognised, unexecuted form";
+  (* F1: a parameter the case does not bind has NO truth value in the table
+     build — the backend must fault in ref's terms, not answer Empty and ship
+     a confident table. (The corpus witness is red case
+     dagsoortparameter-ongebonden; this is the translation-level twin.) *)
+  faults_with ~name:"ongebonden parameter in een dagsoortvoorwaarde faalt fail-fast"
+    ~ir:
+      (dk_doc
+         ~voorwaarde:
+           (Printf.sprintf
+              {|{ "node": "Vergelijking", "op": "LATER",
+                  "links": %s,
+                  "rechts": { "node": "ParameterRef", "parameter": "grensdatum",
+                              "type": { "node": "DatumInDagen" }, "bron": "de grensdatum" },
+                  "periode": null, "bron": "de dag later is dan de grensdatum" }|}
+              de_dag)
+         ~parameters:
+           {|"grensdatum": { "node": "Parameter", "naam": "grensdatum",
+               "datatype": { "node": "DatumInDagen" }, "granulariteit": null }|}
+         ~waarde:(stap ()) ())
+    ~case_text:dk_case ~needle:"is unbound in this case";
+  (* F4/F5: the two fences say ONE thing each. Every reach rule this backend
+     emits is guarded by the in-window atom, so a start past the window edge
+     draws the window refusal ALONE — the doubled, partly untrue diagnosis the
+     reach fence's own wording was chosen to avoid. And the reach fence has an
+     arm for a MISSING ANSWER RANK in a table that is NOT truncated, which is
+     the hole that let a step answer leeg in silence. *)
+  let prog =
+    let irf =
+      write_temp ".ir.json" (dk_doc ~voorwaarde:(deel_gelijk "DAG_UIT" "1") ~waarde:(stap ()) ())
+    in
+    let casef = write_temp ".case.json" dk_case in
+    let doc = Ir_v0.Loader.load_file irf in
+    let case = Uchar_ref.Case.load_file doc casef in
+    Sys.remove irf;
+    Sys.remove casef;
+    translate doc case
+  in
+  let reach_rules =
+    List.filter
+      (fun l -> Uchar_ref.Case.contains ~needle:"viol(\"day-kind walk: no day of the kind" l)
+      (String.split_on_char '\n' prog)
+  in
+  check "reikwijdteregels bestaan" (List.length reach_rules >= 6);
+  check "elke reikwijdteregel draagt de venster-voorwaarde"
+    (List.for_all (fun l -> Uchar_ref.Case.contains ~needle:"dki" l) reach_rules);
+  check "de reikwijdte heeft een arm voor een ontbrekende rang in een niet-afgekapte tabel"
+    (List.exists
+       (fun l ->
+         Uchar_ref.Case.contains ~needle:"_r(DKR+DKM), not " l
+         || Uchar_ref.Case.contains ~needle:"_r(DKR-DKM+1), not " l)
+       reach_rules);
   (* the §9.8 composition on a date OTHER than the bound day: the narrow
      route, refused here and in ref in the same words *)
   faults_with ~name:"geneste dagsoorttoets op een andere dag dan de gebonden dag"

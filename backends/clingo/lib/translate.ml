@@ -737,9 +737,12 @@ let dt_time_unit_of ~doc ~what (t : datatype option) =
       | Some tu -> tu
       | None ->
           if day_kind_of_unit_doc doc u then
+            (* ref's sentence, word for word: the two executors refuse the
+               same form for the same stated reason (ch. 3.8) *)
             fault
-              "%s over datum-tijd operands is a recognised, unexecuted form: a day kind \
-               classifies a civil day and ch. 3.8 fixes no time-of-day rule for it"
+              "%s in a day kind over datum-tijd operands is a recognised, unexecuted form: \
+               counting whole days of a kind between two instants needs a rule for the partial \
+               days at both ends and ch. 3.8 fixes none"
               what
           else
             fault
@@ -4267,7 +4270,12 @@ and dk_value ctx ~stack ~day (e : expr) : Value.t =
       | Some _ -> (
           match Eval.SMap.find_opt (norm nm) ctx.case.params with
           | Some v -> v
-          | None -> Value.Empty)
+          | None ->
+              (* fail-fast, in ref's terms: a day-kind voorwaarde that reads a
+                 parameter the case does not bind has no truth value, and
+                 answering Empty here would make the table — and therefore
+                 every duration over it — a confident wrong answer *)
+              fault "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)" nm)
       | None -> fault "unknown parameter %S" nm)
   | Functie { kind = (Jaar_uit | Maand_uit | Dag_uit) as k; argumenten; filter = None; _ } -> (
       match dk_value ctx ~stack ~day (one "a date-part extractor" argumenten) with
@@ -4298,28 +4306,53 @@ and dk_value ctx ~stack ~day (e : expr) : Value.t =
   | _ -> fault "a day-kind voorwaarde carries an expression this backend does not evaluate"
 
 (* the comparison of two day-kind operands. Dates compare as day numbers,
-   numbers as exact rationals; a leeg operand makes the comparison FALSE
-   rather than leeg — a day either is of the kind or is not. *)
+   numbers as exact rationals.
+
+   THE EMPTY RULES are ch. 1.2's, arm for arm — not a local invention, and
+   not "false everywhere". An ORDERING with an empty operand is onwaar; a
+   numeric GELIJK is waar only when BOTH are empty, and onwaar on the date
+   row even then (the v0 guard); ONGELIJK is waar when EXACTLY ONE is empty.
+   After the fail-fast parameter arm above, empty is in fact unreachable
+   here — a day-kind voorwaarde reads only the bound day, literals,
+   parameters and other day kinds, and none of the four can now produce one —
+   so these arms are a MIRROR kept deliberately rather than a live path: the
+   day this backend gains a fifth operand source, it agrees with ref by
+   construction instead of by luck. *)
 and dk_compare (op : vergelijk_op) (l : Value.t) (r : Value.t) : bool =
-  let c =
+  let empty = function Value.Empty -> true | _ -> false in
+  let cmp () =
     match (l, r) with
-    | Value.Empty, _ | _, Value.Empty -> None
-    | Value.Date a, Value.Date b -> Some (compare (a : int) b)
-    | Value.Num (a, _), Value.Num (b, _) -> Some (Q.compare a b)
-    | Value.Text a, Value.Text b -> Some (compare (a : string) b)
-    | Value.Bool a, Value.Bool b -> Some (compare (a : bool) b)
+    | Value.Date a, Value.Date b -> compare (a : int) b
+    | Value.Num (a, _), Value.Num (b, _) -> Q.compare a b
+    | Value.Text a, Value.Text b -> compare (a : string) b
+    | Value.Bool a, Value.Bool b -> compare (a : bool) b
     | a, b ->
         fault "a day-kind comparison over %s and %s is not evaluated" (Value.to_string a)
           (Value.to_string b)
   in
-  match (c, op) with
-  | None, _ -> false
-  | Some c, (Kleiner | Eerder) -> c < 0
-  | Some c, (Kleiner_of_gelijk | Eerder_of_gelijk) -> c <= 0
-  | Some c, (Groter | Later) -> c > 0
-  | Some c, (Groter_of_gelijk | Later_of_gelijk) -> c >= 0
-  | Some c, Gelijk -> c = 0
-  | Some c, Ongelijk -> c <> 0
+  let date_row = match (l, r) with Value.Date _, _ | _, Value.Date _ -> true | _ -> false in
+  let non_numeric =
+    match (l, r) with Value.Text _, _ | _, Value.Text _ | Value.Bool _, _ | _, Value.Bool _ -> true | _ -> false
+  in
+  match op with
+  | Kleiner | Eerder | Kleiner_of_gelijk | Eerder_of_gelijk | Groter | Later | Groter_of_gelijk
+  | Later_of_gelijk ->
+      if empty l || empty r then false
+      else
+        let c = cmp () in
+        (match op with
+        | Kleiner | Eerder -> c < 0
+        | Kleiner_of_gelijk | Eerder_of_gelijk -> c <= 0
+        | Groter | Later -> c > 0
+        | _ -> c >= 0)
+  | Gelijk ->
+      if empty l && empty r then (not date_row) && not non_numeric
+      else if empty l || empty r then false
+      else cmp () = 0
+  | Ongelijk ->
+      if empty l && empty r then false
+      else if empty l || empty r then not non_numeric
+      else cmp () <> 0
 
 and dk_cond ctx ~stack ~day (c : conditie) : bool =
   match c with
@@ -4592,32 +4625,57 @@ and dk_date_plus ctx ~subject ~subject_ot ~kind ~minus ~datetime date_e dur_e =
     subject tbl;
   emit ctx "%s(%s,DKX) :- %s(%s,_,DKM), %s(%s,DKR), %s(DKX,DKR-DKM+1)." res subject bwd subject rnk
     subject tbl;
-  (* the REACH fence, read off the table: no match within the reach of the
-     start, or a gap wider than the reach along the way *)
+  (* THE START IS INSIDE THE WINDOW — the precondition of every reach
+     statement below. Outside it the window guard has already spoken, and one
+     cause gets one sentence: without this, a start past the window's edge
+     drew BOTH a window refusal and a reach refusal, the second of them
+     untrue and the first of them the only one that explains anything. *)
+  let lo, hi = win in
+  let inwin = Printf.sprintf "dki%d" id in
+  emit ctx "%s(%s) :- %s(%s,DKD,_), DKD >= %d, DKD <= %d." inwin subject fwd subject lo hi;
+  emit ctx "%s(%s) :- %s(%s,DKD,_), DKD >= %d, DKD <= %d." inwin subject bwd subject lo hi;
+  let ia = Printf.sprintf "%s(%s)" inwin subject in
+  (* the REACH fence, read off the table. Three ways it fires, and they are
+     the three ways ref's walk hits it: no match within the reach of the
+     start; a gap wider than the reach along the way; and — the one a table
+     sees that a walk does not — a MISSING ANSWER RANK in a table that is NOT
+     truncated on that side. That last arm is what makes the fence total: the
+     table then holds every matching day the walk could ever have reached, so
+     a rank it does not hold is a rank no walk reaches either. *)
   let reach_msg =
     Printf.sprintf
       "day-kind walk: no day of the kind within %d calendar days (the walk reaches no further; \
        a day kind whose next occurrence lies beyond the reach is refused, not diagnosed)"
       day_kind_reach
   in
-  emit ctx "viol(\"%s\",%s) :- %s(%s,DKD,_), #count { DKX : %s(DKX,DKJ), DKX > DKD, DKX <= DKD+%d } == 0."
-    reach_msg subject fwd subject tbl day_kind_reach;
-  emit ctx "viol(\"%s\",%s) :- %s(%s,DKD,_), #count { DKX : %s(DKX,DKJ), DKX < DKD, DKX >= DKD-%d } == 0."
-    reach_msg subject bwd subject tbl day_kind_reach;
-  emit ctx "viol(\"%s\",%s) :- %s(%s,_,DKM), %s(%s,DKR), %s(DKQ), DKQ >= DKR+2, DKQ <= DKR+DKM."
-    reach_msg subject fwd subject rnk subject far;
-  emit ctx "viol(\"%s\",%s) :- %s(%s,_,DKM), %s(%s,DKR), %s(DKQ), DKQ >= DKR-DKM+2, DKQ <= DKR."
-    reach_msg subject bwd subject rnk subject far;
-  (* the WINDOW limit: the answer's rank is missing AND the table is
-     truncated on that side, so ref may step where this backend cannot see *)
+  emit ctx "viol(\"%s\",%s) :- %s(%s,DKD,_), %s, #count { DKX : %s(DKX,DKJ), DKX > DKD, DKX <= DKD+%d } == 0."
+    reach_msg subject fwd subject ia tbl day_kind_reach;
+  emit ctx "viol(\"%s\",%s) :- %s(%s,DKD,_), %s, #count { DKX : %s(DKX,DKJ), DKX < DKD, DKX >= DKD-%d } == 0."
+    reach_msg subject bwd subject ia tbl day_kind_reach;
+  emit ctx "viol(\"%s\",%s) :- %s(%s,_,DKM), %s, %s(%s,DKR), %s(DKQ), DKQ >= DKR+2, DKQ <= DKR+DKM."
+    reach_msg subject fwd subject ia rnk subject far;
+  emit ctx "viol(\"%s\",%s) :- %s(%s,_,DKM), %s, %s(%s,DKR), %s(DKQ), DKQ >= DKR-DKM+2, DKQ <= DKR."
+    reach_msg subject bwd subject ia rnk subject far;
+  emit ctx
+    "viol(\"%s\",%s) :- %s(%s,_,DKM), %s, %s(%s,DKR), not %s_r(DKR+DKM), not %s."
+    reach_msg subject fwd subject ia rnk subject tbl edge_hi;
+  emit ctx
+    "viol(\"%s\",%s) :- %s(%s,_,DKM), %s, %s(%s,DKR), not %s_r(DKR-DKM+1), not %s."
+    reach_msg subject bwd subject ia rnk subject tbl edge_lo;
+  (* the WINDOW limit: the answer's rank is missing AND the table IS truncated
+     on that side, so there may be matching days past the edge that ref steps
+     to and this backend cannot see. The residual, recorded: where ref would
+     have hit the reach fence out there anyway, the two executors fault with
+     DIFFERENT sentences — this backend cannot tell the two apart from a
+     truncated table, and says the one it can stand behind. *)
   emit ctx
     "viol(\"day-kind step beyond the window this backend materialises (the extension is \
-     truncated at its edge)\",%s) :- %s(%s,_,DKM), %s(%s,DKR), not %s_r(DKR+DKM), %s."
-    subject fwd subject rnk subject tbl edge_hi;
+     truncated at its edge)\",%s) :- %s(%s,_,DKM), %s, %s(%s,DKR), not %s_r(DKR+DKM), %s."
+    subject fwd subject ia rnk subject tbl edge_hi;
   emit ctx
     "viol(\"day-kind step beyond the window this backend materialises (the extension is \
-     truncated at its edge)\",%s) :- %s(%s,_,DKM), %s(%s,DKR), not %s_r(DKR-DKM+1), %s."
-    subject bwd subject rnk subject tbl edge_lo;
+     truncated at its edge)\",%s) :- %s(%s,_,DKM), %s, %s(%s,DKR), not %s_r(DKR-DKM+1), %s."
+    subject bwd subject ia rnk subject tbl edge_lo;
   let v = fresh ctx "DKP" in
   let atom = Printf.sprintf "%s(%s,%s)" res subject v in
   (* the ms-of-day rides through untouched, so the pair term's atoms come

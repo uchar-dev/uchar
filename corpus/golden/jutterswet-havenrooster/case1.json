@@ -1,0 +1,24 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "H1", "objectType": "Havenmeester",
+        "attributes": { "aanvraagdatum": { "date": "2026-02-10" }, "sluitdatum": { "date": "2026-05-01" },
+                        "doorlooptijd": { "number": "2" } },
+        "roles": {}, "characteristics": [] },
+      { "label": "H2", "objectType": "Havenmeester",
+        "attributes": { "aanvraagdatum": { "date": "2026-03-01" }, "sluitdatum": { "date": "2026-03-01" },
+                        "doorlooptijd": { "number": "1" } },
+        "roles": {}, "characteristics": [] }
+    ],
+    "parameters": { "openingsdatum": { "date": "2026-02-20" } }
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "H1", "attribute": "streefdatum", "value": { "date": "2026-04-01" } },
+    { "kind": "attributeValue", "label": "H1", "attribute": "havenspanne", "value": { "number": "3" } },
+    { "kind": "attributeValue", "label": "H2", "attribute": "streefdatum", "value": { "date": "2026-04-01" } },
+    { "kind": "attributeValue", "label": "H2", "attribute": "havenspanne", "value": { "number": "0" } },
+    { "kind": "consistent" }
+  ]
+}

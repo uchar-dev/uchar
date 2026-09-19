@@ -1,0 +1,18 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "H3", "objectType": "Havenmeester",
+        "attributes": { "aanvraagdatum": { "date": "2026-02-10" }, "sluitdatum": { "date": "2026-05-01" },
+                        "doorlooptijd": { "number": "2" } },
+        "roles": {}, "characteristics": [] }
+    ],
+    "parameters": { "openingsdatum": { "date": "2026-03-05" } }
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "H3", "attribute": "streefdatum", "value": { "date": "2026-05-01" } },
+    { "kind": "attributeValue", "label": "H3", "attribute": "havenspanne", "value": { "number": "2" } },
+    { "kind": "consistent" }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "P1",
+        "objectType": "Bergingsploeg",
+        "attributes": {
+          "meldingsdatum": {
+            "date": "2026-03-15"
+          },
+          "opleverdatum": {
+            "date": "1900-01-01"
+          },
+          "bergingsbestek": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "P2",
+        "objectType": "Bergingsploeg",
+        "attributes": {
+          "meldingsdatum": {
+            "date": "2200-01-01"
+          },
+          "opleverdatum": {
+            "date": "2200-01-01"
+          },
+          "bergingsbestek": {
+            "number": "0"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "ref": "no day of the kind within 40000 calendar days",
+    "clingo": "no day of the kind within 40000 calendar days",
+    "drools": "no day of the kind within 40000 calendar days"
+  }
+}

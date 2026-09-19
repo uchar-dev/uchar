@@ -131,7 +131,7 @@ de brontekst als toets, en genummerde restvragen waar de bron zwijgt.
 
 ---
 
-## Result (2026-09-19, herzien na de lensronde en twee maintainersbesluiten)
+## Result (2026-09-19, herzien na twee lensrondes en twee maintainersbesluiten)
 
 **Gedaan: gebouwd, niet genormeerd-geweigerd.** Beide duurvormen rekenen in
 `ref` én de ASP-backend, met dezelfde absolute waarden die de Drools-backend
@@ -283,6 +283,72 @@ De brontekst (RegelSpraak v2.3.0, gelezen als toets) noemt dagsoorten in
   afkorting voor iets anders — staat nergens. Opties: (a) zo laten, (b) dragen
   zodra de bron het zegt. *Aanbeveling: (a), met (b) expliciet open.*
 
+### De gerichte nalens op de ASP-lowering (F1–F5)
+
+De herbouwde extensietabel droeg vijf bevindingen. Alle vijf zijn gesloten,
+elk met zijn eigen machinegetoetste getuige.
+
+- **F4 (blokkerend) — het reikwijdtehek had een gat.** Viel de doelrang buiten
+  de tabel terwijl die aan die zijde **niet** afgekapt was, dan vuurde geen
+  enkele viol: het resultaatatoom werd stil niet afgeleid en een stap voorbij
+  de reikwijdte las **leeg**. Gemeten (anker 2026-03-15, tal 3, casusgrenzen
+  1900/2200): verifier PASS, `ref` EVALUATION FAULT, Drools
+  IllegalStateException — en clingo PASS met leeg. Precies wat ch. 3.8's "the
+  refusal is a FAULT and never a value" verbiedt. Gedicht met de zusterarmen
+  die de lens aanwees: een **ontbrekende rang in een niet-afgekapte tabel ís
+  de reikwijdtefout** — de tabel bevat dan elke treffer die een wandeling ooit
+  kon bereiken, dus een rang die zij niet heeft bereikt geen enkele wandeling.
+  Rode getuige `corpus/rood/dagsoort-reikwijdte-buiten-tabel`, met alle drie
+  de `expectedFault`-velden gepind.
+- **F1 — een ongebonden parameter werd stil `Empty`.** `ref` is daar
+  fail-fast (`parameter … is unbound in this case`, ch. 5.7); de tabelbouw las
+  hem als leeg en verscheepte een stellige tabel op een vergelijking die
+  stilletjes onwaar was geworden. Nu faalt clingo in refs woorden. Dekking:
+  er droeg **nul** document in enige zone een `ParameterRef` in een
+  `resolvedDagsoort` — een clausule zonder getuige. Daarom de golden
+  `corpus/golden/jutterswet-havenrooster` (twee cases die de parameter
+  **verschillend** binden, zodat elke gepinde waarde bewijst dat hij gelezen
+  wordt) plus de rode `corpus/rood/dagsoortparameter-ongebonden` en een
+  vertaaltijd-tweeling in de clingo-suite.
+- **F5 — dubbele, deels beschuldigende diagnose.** Een startdatum buiten het
+  backend-venster trok zowel de venstergrens als een **onterechte**
+  reikwijdte-viol. Elke reikwijdteregel draagt nu de in-venster-voorwaarde, en
+  de venster-stap-regel ook, zodat er één oorzaak en één zin overblijft;
+  gemeten op een dagsoort die elke maand voorkomt. Drie suite-checks pinnen de
+  structuur (alle reikwijdteregels dragen de venstervoorwaarde; de arm voor de
+  ontbrekende rang bestaat).
+- **F2 — `dk_value` draagt een DEELVERZAMELING van WF-031.** `Binair`,
+  `Afgerond`, `IfThenElse`, `Let` en `Match` zijn WF-031-schoon en `ref`
+  rekent ze; de ASP-backend weigert ze vorm-noemend. De weigering is luid en
+  aanvaardbaar als benoemde backend-grens, maar de tekst klopte niet:
+  `ASP-TRANSLATION.md` presenteerde WF-031's lijst als de evalueerbare
+  verzameling. Herschreven naar de werkelijke deelverzameling, met de
+  weigerzin erbij en de opmerking dat elke ontbrekende vorm één arm in
+  dezelfde evaluator is. In ch. 3.8 zijn de twee dragende zinnen zo
+  geformuleerd dat ze over het **hek** gaan en de F2-grens niet
+  mee-overclaimen.
+- **F3 en de kan-laters.** `dk_compare`'s lege-operandgedrag is niet langer
+  een lokale uitvinding maar ch. 1.2 arm voor arm (ordening onwaar; numerieke
+  GELIJK alleen waar bij twee legen, op de datumrij ook dan onwaar; ONGELIJK
+  waar bij precies één lege) — en na F1 aantoonbaar onbereikbaar, dus bewust
+  als spiegel bewaard. De "in the same words ref uses"-claim is waargemaakt in
+  plaats van afgezwakt: clingo's §6.10-datumtijdweigering is nu **woord voor
+  woord** refs zin (gemeten, beide regels naast elkaar). De NOTE schrijft de
+  klok-vangst nu aan de **min**-rij toe — één seconde kloktijd scheidt daar
+  1 maart van 15 maart. De twee nieuwe regels in check-roods
+  uitsluitingslijst staan alfabetisch (de hele lijst is opnieuw gesorteerd).
+  De "author error"-commentregel in de Drools-runtime claimt geen diagnose
+  meer.
+
+**De F2-asymmetrie, eerlijk genoteerd.** Er blijft één plek waar `ref` rekent
+en clingo vorm-noemend weigert: een dagsoortvoorwaarde die rekenkunde,
+afronding, begrenzing, `Let`, `IfThenElse` of `Match` gebruikt. Gemeten:
+`de dag later is dan 10 plus 5` → `ref` PASS, clingo TRANSLATION FAULT (`a
+day-kind voorwaarde carries an expression this backend does not evaluate`).
+Dat is geen semantisch verschil maar een smalle, per vorm benoemde en
+uitbreidbare backend-grens — geen document kan hem stil passeren, en geen
+golden kan hem dragen.
+
 ### De twee kloven
 
 **(a) `de dag` — GESLOTEN.** Zijn runtimebetekenis staat in
@@ -312,9 +378,9 @@ verschillend laten classificeren — precies wat ch. 5.4 ontkent.
   alleen: `wf098-onbekende-contextwaarde-naam` draagt `de dagX` op exact deze
   positie en meldt nog steeds alleen WF-098. De lege helft (`naam: null`)
   blijft ongemoeid.
-- **Nul over-afwijzing, direct gemeten over alle zones:** 673 documenten
-  (golden, negatief, rood, pariteitszone) dragen samen **31** `Constante`-
-  knopen binnen een `resolvedDagsoorten`-voorwaarde; **29** daarvan zijn
+- **Nul over-afwijzing, direct gemeten over alle zones:** 676 documenten
+  (golden, negatief, rood, pariteitszone) dragen samen **38** `Constante`-
+  knopen binnen een `resolvedDagsoorten`-voorwaarde; **36** daarvan zijn
   `de dag`, de andere twee zijn de hier genoemde getuigen.
 
 ### Uitvoerderdracht
@@ -345,30 +411,36 @@ plus het jaargebonden 2040-voorbeeld in alle drie de uitvoerders.
   getekende telling, absolute telling); twee cases, 22 handberekende
   verwachtingen. Speelt in `ref`, clingo én beide Drools-takken.
 - **golden `jutterswet-getijklok`** (met `bron.rgs`): de §6.11-stap op
-  datum-tijd, tien handberekende verwachtingen, kloktijd-behoud-rand en
-  leeg/nul. Speelt in alle vier.
+  datum-tijd, tien handberekende verwachtingen, de kloktijd-rand (de min-helft
+  van 23:59:59) en leeg/nul. Speelt in alle vier.
+- **golden `jutterswet-havenrooster`** (met `bron.rgs`, F1): de eerste
+  `ParameterRef` in een dagsoortvoorwaarde in enige zone; twee cases die de
+  parameter verschillend binden, acht handberekende verwachtingen. `ref` en
+  clingo spelen; beide Drools-takken weigeren, per naam gelijst.
 - **rood `dagsoort-onvervulbare-wandeling`**: de reikwijdte, gepind in alle
-  drie de uitvoerders (`expectedFault.drools` erbij).
+  drie de uitvoerders.
+- **rood `dagsoort-reikwijdte-buiten-tabel`** (F4, nieuw): de ontbrekende rang
+  in een niet-afgekapte tabel, alle drie gepind.
 - **rood `contextwaarde-de-dag-buiten-dagsoort`**: `de dag` zonder binding.
-- **rood `dagsoortverwijzing-andere-dag`** (nieuw): de §9.8-compositie op een
-  andere dag.
+- **rood `dagsoortverwijzing-andere-dag`**: de §9.8-compositie op een andere
+  dag.
+- **rood `dagsoortparameter-ongebonden`** (F1, nieuw): de ongebonden
+  parameter, in beide uitvoerders in dezelfde zin.
 - **negatief `wf031-sessiewaarde-in-dagsoort`**.
 - **`ref/test`**: 37 nieuwe gewerkte voorbeelden (643 → 680).
-- **`backends/clingo/test`**: 15 nieuwe checks (423 → 438).
-- **`backends/drools`**: `DagsoortDuurTest` (JUnit 478 → 496), de eerste test
-  die de runtime-statics aanraakt.
+- **`backends/clingo/test`**: 19 nieuwe checks (423 → 442), waaronder de drie
+  structuurchecks op de twee hekken en de fail-fast-parametercheck.
+- **`backends/drools`**: `DagsoortDuurTest` (JUnit 478 → 496).
 
 ### Gates (alle veertien, elk los, op de geland boom)
 
-1 PASS · 2 PASS (244 bestanden) · 3 PASS (244 golden, 399 negatief) ·
-4 PASS (579 cases) · 5 PASS (680 voorbeelden, 547 cases) ·
-6 PASS (438 checks, 547 cases) · 7 PASS (511 cases, 36 survivors) ·
-8 PASS (32 rode cases, Drools-leg 7 gepind / 25 met reden; 64 fragmenten
-citeren geen bodemzin) · 9 PASS (201 checks, 12 goldens) ·
-10 PASS (322 tests, 60 rgs-goldens) · 11 PASS · 12 PASS
-(`EXPECTED_PLAYED` 159 → **161**, `EXPECTED_DRL_PLAYED` 136 → **138**,
-JUnit 496) · 13 PASS (128 twists over 24 goldens, 0 survivors) ·
-14 PASS (130 checks, 2 goldens).
+1 PASS · 2 PASS (247 bestanden) · 3 PASS (247 golden, 399 negatief) ·
+4 PASS (583 cases) · 5 PASS (680 voorbeelden, 549 cases) ·
+6 PASS (442 checks, 549 cases) · 7 PASS · 8 PASS (34 rode cases, Drools-leg
+8 gepind / 26 met reden; 68 fragmenten citeren geen bodemzin) ·
+9 PASS (201 checks, 12 goldens) · 10 PASS (322 tests, 61 rgs-goldens) ·
+11 PASS · 12 PASS (`EXPECTED_PLAYED` 159 → **161**, `EXPECTED_DRL_PLAYED`
+136 → **138**, 52 niet-spelers per naam, JUnit 496) · 13 PASS · 14 PASS.
 
 ### Conformance-notitie (spec-first, het WF-017-precedent)
 

@@ -676,11 +676,24 @@ and this backend); declared factors and stelsel never enter.
   (RUNTIME-SEMANTICS ch. 3.8). This backend does NOT walk: the reach fence
   is 40 000 days and a ground per-day walk would materialise that many
   days per step and per subject. It uses WF-031's purity clause instead —
-  the voorwaarde reads only the day, literals, parameters and other day
-  kinds, and the translation is per case, so the predicate is EVALUATED
-  here, at translation time, over a window; what reaches the solver is the
-  day kind's EXTENSION, `dkt<i>(D, R)`, its matching days each with their
-  rank. §6.10 is then one `#count` over the matching days in the interval
+  a day-kind voorwaarde reaches no fact base and no session value, and the
+  translation is per case, so the predicate can be EVALUATED here, at
+  translation time, over a window; what reaches the solver is the day
+  kind's EXTENSION, `dkt<i>(D, R)`, its matching days each with their
+  rank. **What this backend evaluates is a NAMED SUBSET of what WF-031
+  admits**, and the difference is a backend limit rather than a semantic
+  one: comparisons, composites with any kwantor, leeg/gevuld tests, nested
+  day-kind tests on the bound day, and as operands the bound day, a
+  literal, a parameter, the date-part extractors and eerste-paasdag. A
+  voorwaarde built from anything else WF-031 lets through — arithmetic on
+  the day (`Binair`), a rounding, a clamp, an `IfThenElse`, a `Let`, a
+  `Match` — is verifier-clean and `ref` evaluates it, while this backend
+  REFUSES it by name ("a day-kind voorwaarde carries an expression this
+  backend does not evaluate"). The boundary is a straightforwardly
+  extensible one: each missing form is one arm in the same evaluator.
+  A parameter the case does not bind is a FAULT here, in `ref`'s own words
+  ("parameter … is unbound in this case"), never an empty value quietly
+  shipped into the table. §6.10 is then one `#count` over the matching days in the interval
   and §6.11 a rank lookup, since "the Nth day of the kind after A" IS "the
   day whose rank is rank(A) + N". The reach fence is read off the same
   table (no match within the reach of the start, or a gap wider than the
@@ -690,8 +703,8 @@ and this backend); declared factors and stelsel never enter.
   refused here where ref computes it — never answered from a table that
   does not reach. The DATUM-TIJD step form is carried (the day kind is
   judged on the civil day part of the pair term and the ms-of-day rides
-  through unchanged); the datum-tijd TIJDSDUUR stays refused, in the same
-  words `ref` uses.
+  through unchanged); the datum-tijd TIJDSDUUR stays refused, naming the
+  same form `ref` names and giving the same reason for it.
 - **Loud flanks**: the
   `DATUM_MET`/`DATUMTIJD_MET` constructors, the sub-day part extractors
   (`uur/minuut/seconde/milliseconde-uit`), and datum-tijd

@@ -1,0 +1,17 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "H1", "objectType": "Havenmeester",
+        "attributes": { "aanvraagdatum": { "date": "2026-02-10" }, "sluitdatum": { "date": "2026-05-01" },
+                        "doorlooptijd": { "number": "2" } },
+        "roles": {}, "characteristics": [] }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "ref": "parameter \"openingsdatum\" is unbound in this case",
+    "clingo": "parameter \"openingsdatum\" is unbound in this case"
+  }
+}

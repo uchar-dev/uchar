@@ -1612,12 +1612,24 @@ and was raised for exactly that reason (maintainer decision 2026-09-19).
 day kind whose next occurrence lies beyond the reach is refused although
 it exists: "the 1st of January 2200" stepped from 2026 faults, and no
 amount of correctness in the definition changes that. Three properties
-are what make the trade acceptable: the refusal is a FAULT and never a
-value, so the loss is never silent; it is identical in all three
-executors, so it is a property of the language and not of an engine; and
-the distance is stated in this chapter, so a model that needs more knows
-what it is asking for. Raising the number is a spec change, not a
-configuration knob.
+are what make the trade acceptable. **The refusal of a step beyond the
+reach is a FAULT and never a value** — this rule admits no arm that
+answers leeg, and each executor is held to that by red case
+`dagsoort-reikwijdte-buiten-tabel`, which exists because an early ASP
+lowering did answer leeg there in silence. **The fence itself is the same
+distance in every executor**, so how far a model may reach is a property
+of the language and not of an engine. And **the distance is written
+here**, so a model that needs more knows what it is asking for; raising
+the number is a spec change, not a configuration knob.
+
+What those three properties are about is the FENCE, and they do not claim
+that every executor evaluates every well-formed voorwaarde. Each executor
+states its own carried set and refuses the rest **by name** — the ASP
+backend, which evaluates the predicate rather than walking it, carries a
+named subset of WF-031's admission list (`spec/ASP-TRANSLATION.md`), and
+a voorwaarde outside it is refused there and computed in `ref`. That is a
+loud, per-form boundary and an extensible one; it is not a second fence
+and not a silent one.
 
 Worked examples (absolute; day kind = 25/26 December; each a `ref/` test
 verbatim): 20-12-2024 + 2 → **26-12-2024**; 25-12-2024 + 1 →

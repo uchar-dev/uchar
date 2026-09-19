@@ -1,0 +1,25 @@
+Dagsoort de havendag (mv: havendagen);
+
+Parameter de openingsdatum : Datum in dagen
+
+Objecttype de Havenmeester (mv: Havenmeesters) (bezield)
+    de aanvraagdatum Datum in dagen;
+    de sluitdatum Datum in dagen;
+    de doorlooptijd Numeriek (geheel getal) met eenheid havendagen;
+    de streefdatum Datum in dagen;
+    de havenspanne Numeriek (geheel getal) met eenheid havendagen;
+
+Regel Dagsoortdefinitie havendag
+    geldig altijd
+        Een dag is een havendag
+        indien er aan alle volgende voorwaarden wordt voldaan:
+        - de dag later is dan de openingsdatum
+        - de dag uit de dag gelijk is aan 1.
+
+Regel streefdatum van een havenmeester
+    geldig altijd
+        De streefdatum van een Havenmeester moet berekend worden als zijn aanvraagdatum plus zijn doorlooptijd.
+
+Regel havenspanne van een havenmeester
+    geldig altijd
+        De havenspanne van een Havenmeester moet berekend worden als de tijdsduur van zijn aanvraagdatum tot zijn sluitdatum in hele havendagen.
