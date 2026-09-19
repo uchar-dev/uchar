@@ -545,9 +545,8 @@ public final class DrlTranspiler {
      *       meant for an enclosing binding of that name would rebind.</li>
      * </ul>
      *
-     * <p>The trigger is the obstruction itself and nothing wider: the read-guard is a branch guard whose
-     * condition reads a binder the body's {@code Let} chain binds. A document whose guard already resolves at
-     * this position is returned untouched, so its DRL does not move.
+     * <p>The trigger is the obstruction itself and nothing wider ({@link #gardeLeestBinnenBinder}). A document
+     * whose guard already resolves at this position is returned untouched, so its DRL does not move.
      *
      * <p>Applied at BOTH descents of a {@code Let} — {@link #letWaarde} for the consequence and
      * {@link #letDescent} for the §6.5/§6.6 collectors — because it is pure and deterministic, so the two
@@ -556,7 +555,7 @@ public final class DrlTranspiler {
     private static Expr.Let letWissel(Expr.Let b) {
         String sleutel = letSleutel(b.binder());
         if (!(leesGarde(b.body(), sleutel) instanceof Tak t)) return b;
-        if (!(b.body() instanceof Expr.Let binnen) || !gardeLeestKetenBinder(t.conditie(), b.body())) return b;
+        if (!(b.body() instanceof Expr.Let binnen) || !gardeLeestBinnenBinder(t.conditie(), b.body())) return b;
         String binnenSleutel = letSleutel(binnen.binder());
         if (binnenSleutel.equals(sleutel)
                 || leestBinder(binnen.value(), sleutel) || leestBinder(b.value(), binnenSleutel)) return b;
@@ -566,15 +565,38 @@ public final class DrlTranspiler {
         return new Expr.Let(binnen.binder(), binnen.value(), geduwd, binnen.type(), binnen.bron());
     }
 
-    /** Whether {@code c} reads a binder bound by the {@code Let} chain starting at {@code e} — the forward
-     *  reference {@link #letWissel} exists to remove. The whole chain and not merely its first link: a guard
-     *  reading a binder two {@code Let}s down needs the first exchange too before the second can reach it. */
-    private static boolean gardeLeestKetenBinder(Conditie c, Expr e) {
-        while (e instanceof Expr.Let l) {
+    /**
+     * Whether {@code c} reads a binder that some {@code Let} INSIDE {@code e} binds. It is one question doing
+     * two jobs, because they are the same question: a branch guard is stated at the {@code Let} it gates while
+     * the branch node stands lower down, so if anything in between rebinds a name the condition reads, that
+     * name means two different things at the two positions.
+     *
+     * <ul>
+     *   <li>For {@link #letWissel} it is the OBSTRUCTION to remove — the exchange puts the guard's binder above
+     *       the need it guards, and then the same text means the same binding at both ends.</li>
+     *   <li>For {@link #letWaarde} it is the REFUSAL condition where the exchange could not reach: resolving
+     *       the name against whatever happens to be in scope up here is how a guard silently starts speaking
+     *       about another binding (measured 2026-09-19, pre-existing: a shadowed outer need made this branch
+     *       fabricate an Inconsistentie on a document ref, clingo and the exec branch call consistent).</li>
+     * </ul>
+     *
+     * <p>It over-approximates on purpose — a {@code Let} in a sibling operand or inside an arm trips it too,
+     * though neither can shadow the condition — because the alternative is to record the path down to the
+     * branch node just to be exact about a shape no corpus golden has. The over-approximation costs refusals,
+     * never wrong answers, and the corpus sweep measures that it costs none today.
+     */
+    private static boolean gardeLeestBinnenBinder(Conditie c, Expr e) {
+        if (e == null) return false;
+        if (e instanceof Expr.Let l) {
             String s = letSleutel(l.binder());
-            if (Conditie.bevatOperand(c, x -> leestBinder(x, s))) return true;
-            e = l.body();
+            return Conditie.bevatOperand(c, x -> leestBinder(x, s))
+                    || gardeLeestBinnenBinder(c, l.value()) || gardeLeestBinnenBinder(c, l.body());
         }
+        if (e instanceof Expr.IfThenElse k) {
+            return gardeLeestBinnenBinder(c, k.dan()) || gardeLeestBinnenBinder(c, k.anders())
+                    || Conditie.bevatOperand(k.conditie(), x -> gardeLeestBinnenBinder(c, x));
+        }
+        for (Expr kind : gewoneKinderen(e)) if (gardeLeestBinnenBinder(c, kind)) return true;
         return false;
     }
 
@@ -2627,11 +2649,13 @@ public final class DrlTranspiler {
             return Frag.todo("behoefte gelezen onder twee verschillende takgardes (ch. 10.2/10.6)", b.bron());
         // A read confined to ONE ch. 10.2 arm forces the need only when that arm runs, and its barrier fires only
         // then too. The guard is lowered in the CURRENT scope — this binder is deliberately not bound yet (a
-        // condition reading it would have answered ALTIJD), and a guard reading a binder bound DEEPER inside the
-        // body cannot resolve here, which markers rather than emitting a forward reference.
+        // condition reading it would have answered ALTIJD). A guard whose own binder is bound INSIDE the body is
+        // a different name here than it is at the branch node, and {@link #letWissel} above has already moved
+        // what it can: what is left really cannot be stated at this position, so it markers by name instead of
+        // resolving against whatever enclosing binding happens to carry the same name.
         String takTekst = null;
         if (garde instanceof Tak t) {
-            Frag test = keuzeConditie(acc, t.conditie(), subject);
+            Frag test = gardeLeestBinnenBinder(t.conditie(), b.body()) ? null : keuzeConditie(acc, t.conditie(), subject);
             if (test == null || test.marker())
                 return Frag.todo("takgarde van een voorwaardelijk gelezen behoefte (ch. 10.2)", b.bron());
             takTekst = t.positief() ? test.text() : "!(" + test.text() + ")";
