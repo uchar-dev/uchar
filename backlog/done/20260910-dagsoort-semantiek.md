@@ -310,7 +310,7 @@ en de geneste §9.8-verwijzing positief én ontkend (8 van 8).
 - **`backends/clingo/test`**: 13 nieuwe checks (423 → 436) — de vijf
   kwantoren, de geneste verwijzing positief/ontkend, en vijf weigeringen.
 - **`backends/drools`**: `DagsoortDuurTest`, de eerste test die de twee
-  runtime-statics aanraakt (JUnit 478, vloer 239).
+  runtime-statics aanraakt (JUnit 478 -> 486, vloer 239).
 
 ### Gates (alle veertien, elk los)
 
@@ -320,7 +320,7 @@ en de geneste §9.8-verwijzing positief én ontkend (8 van 8).
 8 PASS (31 rode cases, Drools-leg 7 gepind / 24 met reden) ·
 9 PASS (201 checks, 12 goldens) · 10 PASS (322 tests, 59 rgs-goldens) ·
 11 PASS (29 PLAYED) · 12 PASS (`EXPECTED_PLAYED` 159 → **160**,
-`EXPECTED_DRL_PLAYED` 132 → **133**, JUnit 478) ·
+`EXPECTED_DRL_PLAYED` 132 → **133**, JUnit 486) ·
 13 PASS (128 twists over 24 goldens, 0 survivors, 0 buiten de tabel) ·
 14 PASS (130 checks, 2 goldens).
 
