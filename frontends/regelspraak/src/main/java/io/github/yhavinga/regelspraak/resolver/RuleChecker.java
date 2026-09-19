@@ -465,15 +465,36 @@ final class RuleChecker {
     }
 
     // ==============================================================================================
-    // WF-096 (IR-SPEC ch. 4.3, maintainer decision 2026-09-09) — the set fence, producer side.
+    // WF-096 (IR-SPEC ch. 4.3, maintainer decisions 2026-09-09 and — the KIND half — 2026-09-19)
+    // — the set fence, producer side.
     // ==============================================================================================
 
-    /** The instance-fold kinds: the six value folds plus AANTAL — exactly the pair WF-093 and WF-096
-     *  key on, so the frontend's exemption and the verifier's are the same boundary. */
+    /** The six VALUE folds — the kinds that read a value per contributor, and so the only kinds that
+     *  consume what a set reading hands them. This is WF-096's exemption exactly as the verifier draws
+     *  it in {@code set_source_exempt} (arity one AND a value-folding kind AND a resolved element
+     *  type), so the frontend's fence and the wire's are once more the same boundary.
+     *
+     *  <p><b>AANTAL left this set on 2026-09-19</b> (maintainer decision, `spec/IR-SPEC.md` ch. 4.3):
+     *  a count folds the CONTRIBUTORS themselves — `RUNTIME-SEMANTICS.md` ch. 3.4a says so in as many
+     *  words and ch. 3.4b restates it for the union — so a set reading under a count names a
+     *  collection the node does not read. Keeping it here was a LEAK, not a stale comment: measured
+     *  2026-09-19, a count over a set reading passed this naloop untouched and was emitted with
+     *  {@code diagnostics: []} although the verifier rejects it under WF-096 and nothing else
+     *  ({@link io.github.yhavinga.regelspraak.AantalSetbronTest}).
+     *
+     *  <p><b>One boundary, one consumer — measured before narrowing.</b> The verifier had to SPLIT its
+     *  hoisted exemption, because one boolean there fed two rules (WF-034's sentinel fence, which
+     *  still exempts the whole folding family, and WF-096's set fence, which no longer does). Here no
+     *  split is needed and that was checked rather than assumed: this set has exactly ONE reader, the
+     *  fold-source test in {@link #keurSetlezing}, and it is the frontend's only collection of fold
+     *  kinds at all — the count's own element derivation keys on {@code kind == AANTAL} directly
+     *  ({@code ExpressieBouwer.aggregatieElement}) and never consults this set. So the narrowing moves
+     *  the set fence and nothing else. The SENTINEL half has no counterpart here: the frontend writes
+     *  the row-1 wart from its own route and WF-093 governs it, which is why the bare count stays
+     *  clean under this narrowing and its witness says so. */
     private static final Set<Expr.FunctieKind> VOUWSOORTEN = Set.of(
             Expr.FunctieKind.SOM, Expr.FunctieKind.TOTAAL, Expr.FunctieKind.MINIMUM,
-            Expr.FunctieKind.MAXIMUM, Expr.FunctieKind.EERSTE, Expr.FunctieKind.LAATSTE,
-            Expr.FunctieKind.AANTAL);
+            Expr.FunctieKind.MAXIMUM, Expr.FunctieKind.EERSTE, Expr.FunctieKind.LAATSTE);
 
     /** A §13.4.2 set quantifier ("alle &lt;mv&gt;", and every other quantor that is not the bare
      *  definite "de") makes a reference a SET reading: it names the members' values, one per member —
@@ -520,7 +541,7 @@ final class RuleChecker {
     }
 
     /** Walk {@code e} for WF-096 violations. {@code vouwbron} marks the ONE exempt position: the single
-     *  argument of a folding kind that carries an {@code elementObjecttype} — the source the fold
+     *  argument of a VALUE-folding kind that carries an {@code elementObjecttype} — the source the fold
      *  consumes. That is the boundary the verifier draws (arity, kind AND a resolved element type):
      *  narrower here would refuse a legitimate fold source, wider would let the frontend emit a
      *  document the verifier rejects. A {@link Expr.DimensieCel} wrapping the source is NOT that
@@ -537,8 +558,10 @@ final class RuleChecker {
                 if (a.set() && !vouwbron)
                     model.diagnostics.add(new Diagnostic(Severity.ERROR,
                             "setlezing buiten een vouwbron: '" + a.bron() + "' noemt de waarde van elk lid van de "
-                            + "verzameling — alleen toegestaan als bron van één vouw (som, totaal, minimum, maximum, "
-                            + "eerste, laatste, aantal); hier wordt één waarde verwacht (WF-096, IR-SPEC ch. 4.3)",
+                            + "verzameling — alleen toegestaan als bron van één waardevouw (som, totaal, minimum, "
+                            + "maximum, eerste, laatste); een telling vouwt de leden zelf en leest geen waarde per "
+                            + "lid, dus onder 'aantal' ook niet (besluit 2026-09-19); hier wordt één waarde verwacht "
+                            + "(WF-096, IR-SPEC ch. 4.3)",
                             a.bron().line()));
             }
             case Expr.Functie f -> {
