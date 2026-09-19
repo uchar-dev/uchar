@@ -3558,6 +3558,29 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       (* the unsolved-state guard: an Onopgelost node never vanishes —
          the rule that carries it fails observably (WF-044) *)
       fault "Onopgelost reached in translation: this rule fails observably (WF-044)"
+  | Functie { kind = Som; element_objecttype = None; _ } ->
+      (* the LISTED-operand som (§5.8.3, RUNTIME-SEMANTICS ch. 5.11): the
+         contributors are spelled out as operands and there is no instance
+         source. ref carries it — its contributor arm reads the operand list
+         wherever elementObjecttype is ABSENT — and this backend does not:
+         every som arm above ranges a #sum over an instance join, and a listed
+         fold hands it nothing to range over.
+         The arm exists for its NAME. Without it the form fell into the
+         fall-through below, whose "no corpus case exercises it" the red
+         witness corpus/rood/som-fallback-always-evaluated falsified by being
+         exactly such a case — the untruth the WF-044 arm above had just
+         cleared off the condition position, still live here. Naming the form
+         puts that fall-through back on forms that really have no corpus case.
+         ABSENT elementObjecttype is the crisp test for SOM and for SOM only:
+         every som arm above demands it PRESENT, so absent means listed. Its
+         sibling kinds do not share that property — TOTAAL's temporal
+         subject-own arms carry an absent one and AANTAL's listed form is no
+         som — so they keep the fall-through, which for them is still true. *)
+      fault
+        "a som over listed operands is not translated: every som this backend carries ranges a \
+         #sum over an instance source, and a listed fold has none; the addition chain that would \
+         carry it must also evaluate the ch. 5.11 stand-in unconditionally, and no corpus case \
+         pins a value for it"
   | _ -> fault "expression kind not translated (no corpus case exercises it)"
 
 (* gedeeld-door (§6.5, arith.div_gen) — three edges plus the value:

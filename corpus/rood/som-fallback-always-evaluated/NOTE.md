@@ -29,7 +29,17 @@ faults: the document has no answer.
 | executor | pinned fragment | why |
 |----------|-----------------|-----|
 | ref | `division by numeric zero` | the stand-in evaluates after the contributors and faults |
-| clingo | `expression kind not translated` | the listed-operand som is not carried by the ASP backend at all — an honest refusal, not an order observation |
+| clingo | `a som over listed operands is not translated` | the listed-operand som is not carried by the ASP backend at all — an honest refusal, not an order observation |
+
+The clingo fragment moved on 2026-09-19, and the move is this case's own
+doing. It used to read `expression kind not translated`, the translator's
+generic fall-through, whose full sentence continues *"(no corpus case
+exercises it)"* — a claim **this case** falsified the day it landed. The
+form now has a named arm of its own, so the fragment names the form and
+the fall-through's sentence is true again. Nothing about the document or
+its outcome changed: the ASP backend still declines the form, in both the
+old position and the new one, and the refusal is still the only thing
+this executor contributes to the row.
 
 ## What it catches
 

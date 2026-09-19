@@ -6053,6 +6053,105 @@ let () =
     ~ir:onopgelost_voorwaarde_doc ~case_text:onopgelost_voorwaarde_case
     ~needle:"Onopgelost condition reached in translation: this rule fails observably (WF-044)"
 
+(* DE GELIJSTE SOM KRIJGT EEN EIGEN ARM (kaart clingo-som-catchall-
+   eerlijkheid, 2026-09-19).
+
+   De expressiebodem van deze vertaler luidt "expression kind not translated
+   (no corpus case exercises it)", en tot deze kaart viel
+   `corpus/rood/som-fallback-always-evaluated` er precies op — dus was die zin
+   live onwaar: dezelfde onwaarheid die de WF-044-arm hierboven zojuist van de
+   CONDITIEpositie had gehaald, stond hier nog op de EXPRESSIEpositie. De
+   gelijste som heeft nu een arm die de VORM noemt, en de bodem is weer door
+   geen enkel corpusgeval bereikt.
+
+   Het corpus draagt de ene helft: de rode getuige pint het nieuwe fragment in
+   beide uitvoerders (gate 8). Wat het corpus NIET kan dragen is de ARMGRENS,
+   en dat is geen toeval — een rode getuige voor een buurvorm zou de bodemzin
+   onmiddellijk opnieuw falsifiëren, want hij zou de bodem weer met een
+   corpusgeval uitlokken. Precies daarom hoort de grens hier, in een suite die
+   geen corpuszone is. Twee assen, één frame per as:
+
+     · het KIND — MINIMUM over dezelfde twee gelijste operanden valt niet op
+       de somarm maar op de bodem (§5.8.3: dezelfde vertaling zou de vorm
+       dragen, geen corpusgeval, dus de bodem blijft waar voor hem);
+     · het ELEMENT — dezelfde SOM mét een elementObjecttype valt er evenmin
+       op. De arm test op een AFWEZIG elementObjecttype, wat voor SOM en
+       alleen voor SOM "gelijst" betekent, want elke dragende somarm eist het
+       aanwezig. Dit is bovendien de vorm die `ref` zelf weigert
+       ("unsupported instance-fold source shape"), geen vorm die deze backend
+       als enige laat liggen.
+
+   Het frame draagt GEEN leegwaarde, waar de rode getuige er wel een heeft:
+   de arm weigert de vorm, niet de invaller. *)
+
+let som_num0 =
+  {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD",
+      "eenheid": null }|}
+
+let som_operand naam =
+  Printf.sprintf
+    {|{ "node": "AttribuutRef", "attribuut": "%s", "objecttype": "Vangst",
+        "onderwerpBron": "zijn", "navigatieRol": null, "type": %s,
+        "bron": "zijn %s", "set": false, "navigatiePad": [] }|}
+    naam som_num0 naam
+
+let gelijste_vouw_doc ~kind ~element_objecttype =
+  Printf.sprintf
+    {|{ "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Vangst": { "node": "Objecttype", "naam": "Vangst",
+      "attributen": { "deelvangst": %s, "teller": %s, "vangstsom": %s },
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vangsten" } },
+  "domeinen": {}, "parameters": {}, "eenheidstelsels": {}, "feittypen": {},
+  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [
+    { "node": "ResolvedRegel", "naam": "vangstsom van een vangst", "soort": "BEREKENING",
+      "doel": { "node": "AttribuutRef", "attribuut": "vangstsom", "objecttype": "Vangst",
+                "onderwerpBron": "een Vangst", "navigatieRol": null, "type": %s,
+                "bron": "De vangstsom van een Vangst", "set": false, "navigatiePad": [] },
+      "waarde": { "node": "Functie", "kind": "%s", "argumenten": [ %s, %s ],
+                  "elementObjecttype": %s, "leegwaarde": null, "filter": null,
+                  "dimensieSelectie": null, "type": %s,
+                  "bron": "de vouw van zijn deelvangst en zijn teller",
+                  "granulariteit": null },
+      "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+  "regelGroepen": [], "diagnostics": []
+}
+|}
+    som_num0 som_num0 som_num0 som_num0 kind (som_operand "deelvangst")
+    (som_operand "teller") element_objecttype som_num0
+
+let gelijste_vouw_case =
+  {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+    { "label": "V1", "objectType": "Vangst",
+      "attributes": { "deelvangst": { "number": "5" }, "teller": { "number": "1" } },
+      "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }
+|}
+
+let () =
+  faults_with ~name:"§5.8.3 de gelijste som valt op haar eigen, vormnoemende arm"
+    ~ir:(gelijste_vouw_doc ~kind:"SOM" ~element_objecttype:"null")
+    ~case_text:gelijste_vouw_case
+    ~needle:"a som over listed operands is not translated";
+  (* armgrens, as KIND: hetzelfde frame, een buurvouw — de bodem, niet de som *)
+  faults_with ~name:"§5.8.3 armgrens: het gelijste MINIMUM houdt de bodem"
+    ~ir:(gelijste_vouw_doc ~kind:"MINIMUM" ~element_objecttype:"null")
+    ~case_text:gelijste_vouw_case
+    ~needle:"expression kind not translated (no corpus case exercises it)";
+  (* armgrens, as ELEMENT: dezelfde som mét bron-stempel — ook de bodem *)
+  faults_with ~name:"§5.8.3 armgrens: een som mét elementObjecttype houdt de bodem"
+    ~ir:(gelijste_vouw_doc ~kind:"SOM" ~element_objecttype:"\"Vangst\"")
+    ~case_text:gelijste_vouw_case
+    ~needle:"expression kind not translated (no corpus case exercises it)"
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
