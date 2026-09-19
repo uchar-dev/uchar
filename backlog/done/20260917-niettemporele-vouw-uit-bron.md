@@ -77,12 +77,32 @@ WILLEKEURIGE `test` stelt — er beweegt niets aan de kwantor, alleen het
 Gedragen, en dus gelowerd: de vergelijkingsvorm (§13.4.2.9 +
 §13.4.15.24/.23) en de lidmaatschapsvorm (§13.4.2.9 + §13.4.15.44/.45,
 "… gediplomeerd zijn"), elk onder alle vijf kwantoren van §13.4.14.5 en
-met de §5.6-deelselectie. Luid geweigerd gebleven, elk met zijn eigen
-reden: `DE` (één lid, geen kwantificatie — WF-108 (a)), een telwoord
-onder 1 (WF-041), een meerstapsbereik, een onbindbaar bereik, een
-niet-bindende die/dat, een §8.1.7 ROLCHECK van het element, en de
-§8.2-GEKWALIFICEERDE lidmaatschapsmatrix (die heeft hier geen
-uitgewerkte semantiek en houdt haar marker).
+met de §5.6-deelselectie.
+
+Wat op de lidmaatschapsroute geweigerd blijft is ZEVEN vormen, en niet
+alle zeven even hard. **Drie luid** (gemeten):
+
+- een telwoord onder 1 (WF-041) — WAARSCHUWING die de as noemt, marker;
+- de §8.2-GEKWALIFICEERDE lidmaatschapsmatrix — ERROR "de check op
+  volledige periode … kan alleen op een tijdsafhankelijk onderwerp
+  worden toegepast (§8.2)", `make ir` exit 2, niets geschreven;
+- een niet-bindende die/dat — ERROR uit `keurDeelselecties`, exit 2,
+  niets geschreven. Die was in de eerste ronde van deze kaart stuk; zie
+  "f-1" hieronder.
+
+**Vier stil**: `DE` (één lid, geen kwantificatie geschreven), een §8.1.7
+ROLCHECK van het element, een meerstapsbereik, en een onbindbaar
+bereik. Gemeten geeft elk een document met een `Onopgelost`-voorwaarde
+en NUL diagnoses. Dat is bestaand ontwerpgedrag — `Onopgelost` is de
+eerlijke marker van deze frontend voor elke onopgeloste conditie, en op
+main markeerde de HELE lidmaatschapsvorm zo — dus deze kaart voegt geen
+stilte toe, zij haalt er alleen voor de gedragen vormen een stuk vanaf.
+Het blijft niettemin een stilte over een zin die de lezer voor een
+kwantificatie aanziet. **Voorstel: een eigen kaartje** dat meet of een
+`Onopgelost` op een GEKWANTIFICEERDE conditiepositie een luide weigering
+hoort te zijn (de posture van `keurDeelselecties`), of dat de marker daar
+de juiste is. Buiten deze kaart gehouden omdat het een besluit over de
+markerdiscipline van de hele frontend is, niet over deze vouw.
 
 ### (b) Rood-eerst, letterlijk
 
@@ -175,10 +195,12 @@ kwam is dat die verwachtingen nu aan een BRON hangen.
 
 ### Sweep-effect
 
-Nul. Alle 56 rgs-goldens (was 54) re-emitteren byte-identiek, alle 29
-TOKA-fixtures ook, en de 12 catala- en 2 flogic-goldens eveneens. Dat is
-verwacht en het is een echte meting: een golden is verifier-schoon, dus
-kon geen enkele bestaande bron de geweigerde vorm dragen.
+Nul. Alle 56 rgs-goldens (was 54) re-emitteren byte-identiek, alle 45
+TOKA-`.rgs` ook (gate 11's her-emissieleg; de 29 die dezelfde gate noemt
+zijn zijn replay-slices, een ander getal over dezelfde zone), en de 12
+catala- en 2 flogic-goldens eveneens. Dat is verwacht en het is een
+echte meting: een golden is verifier-schoon, dus kon geen enkele
+bestaande bron de geweigerde vorm dragen.
 
 In de JUnit-suite verschoven precies DRIE rijen, alle drie pinnen van de
 poort die verdwijnt:
@@ -197,15 +219,17 @@ objectcreatie-toekenning) meten onveranderd de WF-096-FOUT.
 ### Getuigen en mutatieproeven
 
 Nieuw: `frontends/regelspraak/src/test/java/…/NietTemporeleVouwTest.java`
-— veertien rijen, met de spec-grond hierboven als klassecommentaar. Vijf
+— vijftien rijen, met de spec-grond hierboven als klassecommentaar. Vijf
 kwantoren over de vergelijking, vijf over de kenmerkvorm, de lege
 periode op de matrix, de eigen elementlezing, de deelselectie op beide
 routes, het getalpredicaat op een niet-temporeel attribuut, de
-stellende bulletvorm, en vier weigeringen (subjectkenmerk op het
+stellende bulletvorm, en VIJF weigeringen (subjectkenmerk op het
 element, telwoord onder 1, de gekwalificeerde kenmerkvorm, het
-meerstapsbereik). Suite: 283 → 297 tests, alle groen.
+meerstapsbereik, en — sinds de fixronde — de niet-bindende die/dat, die
+op ERROR gepind staat en niet op WAARSCHUWING). Suite: 283 → 298 tests,
+alle groen.
 
-Drie mutatieproeven, elk gedood:
+Vier mutatieproeven, elk gedood:
 
 1. **De poort weer dicht** (`if (periodeVan(c) == null) return c;`
    terug): `make ir` op `jutterswet-schouwploeg/bron.rgs` faalt met de
@@ -221,6 +245,80 @@ Drie mutatieproeven, elk gedood:
    `false`): de diff faalt op precies één regel —
    `"negatie": false` waar `true` hoort. De ontkenning zit dus
    aantoonbaar op de MATRIX en niet op de kwantor.
+4. **De teruggave van de deelselectie uit** (`geefDeelselectieTerug`
+   weggehaald): de f-1-zin emitteert weer stil (exit 0, document op
+   schijf) en de nieuwe JUnit-rij valt op "expected: <1> but was: <0>" —
+   de blokkerende fout is dus echt aan die ene regel opgehangen.
+
+### f-1 — de stilte die de fixronde vond, vóór en ná
+
+De lens vond één blokkerende regressie: een die/dat die niet tegen het
+element bindt, viel op de lidmaatschapsroute van een blokkerende fout
+terug naar een waarschuwing die de CLI niet eens print. Gemeten op
+
+```
+Een Schouwploeg is bevoegd indien alle wachten van de Schouwploeg die gekeurd zijn gediplomeerd zijn.
+```
+
+(`gekeurd` is een kenmerk van de Schouwploeg, niet van de Strandwacht,
+dus de deelselectie bindt niets).
+
+**Op het aftakpunt (`bdea4ff4`, de resolverbestanden teruggezet en
+opnieuw gebouwd):**
+
+```
+  ERROR (line 15): de 'die/dat'-deelselectie 'gekeurd zijn' wordt niet omgezet en zou stil wegvallen: …
+make: *** [ir] Error 1     exit=2     bestand geschreven: NEE
+```
+
+**Op de eerste ronde van deze kaart:** exit 0, bestand GESCHREVEN, met
+`{"node": "Onopgelost", …}` als voorwaarde en alleen een WARNING in
+`diagnostics` — precies de ruil die het commentaar van
+`keurDeelselecties` verbiedt ("ERROR, not WARNING, and the difference is
+the point").
+
+**Oorzaak.** `ExpressieBouwer.deelselectie` boekt het predicaat
+ONVOORWAARDELIJK als verbruikt vóórdat het weet of de vouw het aanneemt.
+Op de VERGELIJKINGSroute is dat juist: een geweigerde vouw laat de
+setlezing staan, WF-096 blokkeert het document, en de deelselectie wordt
+mét dat document geweigerd. Op de LIDMAATSCHAPSroute is er geen
+setlezing en dus geen WF-096 — `keurDeelselecties` was het enige slot, en
+dat zweeg omdat het predicaat als verbruikt geboekt stond.
+
+**Fix** (`66761ff6`): `ExpressieBouwer.geefDeelselectieTerug`, aangeroepen
+in de weigeringstak van `RuleChecker.kwantorKenmerk`. Ná:
+
+```
+  WARNING (line 15): de 'die/dat'-deelselectie in 'alle wachten van de Schouwploeg die gekeurd zijn' wordt niet omgezet naar een kwantorvouw-filter: zij bindt geen kenmerk of getalpredicaat van Strandwacht (§5.6, IR-SPEC ch. 4.5); …
+  ERROR (line 15): de 'die/dat'-deelselectie 'gekeurd zijn' wordt niet omgezet en zou stil wegvallen: …
+make: *** [ir] Error 1     exit=2     bestand geschreven: NEE
+```
+
+De fout is terug, en de waarschuwing staat er nu NAAST in plaats van in
+haar plaats: zij noemt de as waarop de binding faalde, wat de
+blokkerende fout niet kan. De vergelijkingsroute is onaangeraakt —
+`KwantorvouwFilterTest` meet daar onveranderd één WF-096-fout plus één
+waarschuwing.
+
+### Gemeten restvorm — de GENESTE kwantorvouw
+
+Met de poort weg is er een producentroute bij die niemand vroeg: een
+`Kwantorvouw` IN het filter van een `Kwantorvouw`. Hij loopt via de
+§13.4.13.4 samengestelde deelselectie, waarvan de bullets door
+`bouwElementair` gaan en dus nu ook vouwen. Gemeten met een eigen
+probe-document plus casebestand (`het wachttal van alle ploegen van de
+Haven die aan alle volgende voorwaarden voldoen: - hij keurbaar is -
+alle wachten van de Schouwploeg gediplomeerd zijn groter is dan 2`):
+**verifier PASS**, **ref PASS**, **clingo PASS**, en BEIDE Drools-takken
+weigeren luid per vorm (`EXCLUDE transpiler SKIP … een die/dat-subselectie
+die deze tak niet op de source kan binden` resp. `EXCLUDE drl-transpiler
+MARKER … niet IN het elementpatroon kan schrijven (Samengesteld)`).
+
+Benoemd en niet gebouwd: er is geen getuige en geen gate voor deze vorm,
+en drie-van-vier is geen vierkant. De weigeringen zijn luid en per vorm,
+dus de vorm kan niet stil verkeerd landen — maar wie hem wil pinnen moet
+er een golden voor schrijven, en dat verschuift gate-12-kanalen. Eigen
+kaart.
 
 ### (d) Registervoorstellen — NIET geland, exact geformuleerd
 
@@ -228,22 +326,37 @@ Rij 40, laatste kolom. **Voorstel 1** — de clausule "the frontend
 lowers only the whole-period-qualified condition — a NINTH, narrower
 shape — so ALL EIGHT measured WF-096 producer routes are untouched"
 vervangen door: *"the frontend lowers a quantified CONDITION, qualified
-or not; the EIGHT measured WF-096 producer routes are seven now, because
-the VOORWAARDE left that fence — a condition has a quantifier to give
-the collection a home. The four VALUE positions (rule value, composite
-operand, gelijkstelling/initialisatie value, objectcreatie toekenning)
-are untouched, and so is the §13.4.8 consistentieregel ASSERTION, fenced
-on its carrier's own terms."*
+or not, so the EIGHT measured WF-096 producer routes are SIX: BOTH
+CONDITION positions left that fence — the rule's own voorwaarde and the
+objectcreatie's, which are one and the same code path (`bouwVoorwaarde`,
+where every resultaatdeel kind's voorwaarde passes through) — because a
+condition has a quantifier to give the collection a home. What remains
+fenced is the four VALUE positions (rule value, composite operand,
+gelijkstelling/initialisatie value, objectcreatie toekenning), which take
+one value and name no quantifier, plus the §13.4.8 consistentieregel
+ASSERTION, fenced on its carrier's own terms."*
 
-**Voorstel 2** — de clausule "the frontend does NOT produce this shape —
-measured, both spellings … widening that is a frontend card of its own,
-and the witness is hand-written IR without a `bron.rgs`" en de twee
-herhalingen "the §8.2 gate is unmoved" / "The §8.2 gate is again
-unmoved" vervangen door één **Landed**-alinea:
+Gemeten, niet geredeneerd: op het aftakpunt gaf de
+objectcreatie-voorwaarde de WF-096-FOUT, op de branch een `Kwantorvouw`.
+`SetlezingZonderVouwTest` meet beide posities nu als verlaging en de
+vier waardeposities plus de consistentieregel onveranderd als FOUT.
+
+**Voorstel 2** — VIER stale clausules vervangen door één
+**Landed**-alinea. Het zijn: (1) "the frontend does NOT produce this
+shape — measured, both spellings … widening that is a frontend card of
+its own, and the witness is hand-written IR without a `bron.rgs`"; (2)
+"the §8.2 gate is unmoved: a fold whose matrix carries no whole-period
+qualifier still does not come from source"; (3) "The §8.2 gate is again
+unmoved — … so the non-temporal witness is hand-written IR and gate 10
+does not see it" (tellende-kwantoren-kaart); en (4) de
+NARROWS-passage van de bronpad-kaart, "`RuleChecker.kwantorvouw` still
+lowers the §8.2-QUALIFIED condition and nothing wider — the non-temporal
+matrix is still hand-written IR, and widening that is still a frontend
+card of its own". De alinea:
 
 > **Landed (2026-09-19, kaart niettemporele-vouw-uit-bron) — de
 > §8.2-POORT van dit knooppunt is WEG, en dat sluit de laatste
-> brongrens van deze rij.** Waar drie clausules hierboven zeggen dat de
+> brongrens van deze rij.** Waar vier clausules hierboven zeggen dat de
 > frontend deze vorm niet produceert en dat de poort onbewogen blijft:
 > hij is verdwenen, en de grond was spec-grond. v2.3.0 schrijft de
 > kwantificatie (§13.4.2.9, §13.4.17.5, vocabulaire §13.4.14.5) en de
@@ -264,18 +377,26 @@ unmoved" vervangen door één **Landed**-alinea:
 > bindt het kenmerk nu op het ELEMENTtype, met de door de gulzige parse
 > geabsorbeerde "niet" terug op de matrix. Alle vijf kwantoren en de
 > §5.6-deelselectie doen beide routes; wat blijft weigeren doet dat met
-> zijn eigen reden (`DE`, telwoord onder 1, meerstapsbereik, onbindbaar
-> bereik, niet-bindende die/dat, een rolcheck van het element, en de
-> §8.2-GEKWALIFICEERDE lidmaatschapsmatrix, die hier geen uitgewerkte
-> semantiek heeft). **En dit HAALT de woorden "hand-written IR" weg bij
+> zijn eigen reden, en op de lidmaatschapsroute zijn dat er zeven —
+> DRIE luid (een telwoord onder 1, de §8.2-GEKWALIFICEERDE matrix en een
+> niet-bindende die/dat, die laatste via `keurDeelselecties`' ERROR, dus
+> blokkerend) en VIER als `Onopgelost`-marker (`DE`, een §8.1.7 rolcheck
+> van het element, een meerstapsbereik en een onbindbaar bereik) —
+> bestaand markergedrag, niet door deze kaart toegevoegd, en een eigen
+> kaartje waard. **En dit HAALT de woorden "hand-written IR" weg bij
 > beide niet-temporele getuigen**: `corpus/golden/jutterswet-schouwploeg`
 > en `-vuurtoren` hebben hun `bron.rgs` en re-emitteren hun BESTAANDE
 > `ir.json` byte voor byte — de documenten zijn onaangeroerd, gate 10
-> telt 56 rgs-goldens en ziet ze nu. Sweep: nul, alle 56 rgs-, 29 TOKA-,
-> 12 catala- en 2 flogic-goldens re-emitteren identiek, en gate 12's
-> `EXPECTED_PLAYED` blijft staan (geen nieuwe golden). Drie JUnit-rijen
-> draaiden om, alle drie pinnen van de verdwenen poort; getuige
-> `NietTemporeleVouwTest` (veertien rijen).
+> telt 56 rgs-goldens en ziet ze nu. Sweep: nul — alle 56 rgs-goldens,
+> alle 45 TOKA-`.rgs` (gate 11's her-emissie; de 29 zijn zijn
+> replay-slices), en de 12 catala- en 2 flogic-goldens re-emitteren
+> identiek, en gate 12's `EXPECTED_PLAYED` blijft staan (geen nieuwe
+> golden). Drie JUnit-rijen draaiden om, alle drie pinnen van de
+> verdwenen poort; getuige `NietTemporeleVouwTest` (vijftien rijen). Eén
+> restvorm is GEMETEN en niet gebouwd: een `Kwantorvouw` in het FILTER
+> van een `Kwantorvouw`, via de §13.4.13.4 samengestelde deelselectie —
+> verifier, ref en clingo dragen hem, beide Drools-takken weigeren luid
+> per vorm, en er is geen getuige en geen gate.
 
 **Voorstel 3 (de gemeten herziening van (d))** — de getalpredicaat-
 clausule "but on THIS position that operand is temporal by construction,
@@ -307,6 +428,9 @@ wire, en de wire bewoog niet.
 
 ### (e) De veertien gates, exitcodes letterlijk
 
+Hermeten na de fixronde (de eerste ronde gaf dezelfde codes met 297 in
+plaats van 298 tests):
+
 ```
 check-self-contained      exit=0
 check-ir-schema           exit=0   226 files validate + round-trip (floor 192)
@@ -317,8 +441,9 @@ check-clingo              exit=0   backend suite 362 (floor 83); 516 cases repla
 check-noop                exit=0   480 cases refute a do-nothing executor; 36 survivors
 check-rood                exit=0   26 red cases fault in ref and clingo (floor 26)
 check-catala              exit=0   201 checks (floor 201); 12 catala goldens
-check-regelspraak         exit=0   297 tests (floor 173); 56 rgs goldens (floor 38)
-check-toka-parity         exit=0   ref 29 / clingo 29 / Drools 29 PLAYED
+check-regelspraak         exit=0   298 tests (floor 173); 56 rgs goldens (floor 38)
+check-toka-parity         exit=0   45 .rgs byte-identiek her-emitteerd (floor 45);
+                                   29 replay-slices: ref 29 / clingo 29 / Drools 29 PLAYED
 check-drools              exit=0   played 151; channel floor 49; JUnit 447 (floor 239)
 check-reftype-derivation  exit=0   108 annotations / 22 goldens; 100 replays, 21 DRL-text
 check-flogic              exit=0   130 checks (floor 81); 2 flogic goldens
@@ -331,6 +456,14 @@ geen nieuwe golden bij, dus `scripts/check-drools.sh` hoefde niet
 aangeraakt — de parallelle kaart die datzelfde script wél raakt, kan
 schoon rebasen.
 
+### May touch, geverifieerd
+
+`git diff --name-only bdea4ff4..HEAD` geeft exact twaalf paden: de kaart
+(twee, de verplaatsing), de twee genoemde goldens (bron.rgs + NOTE.md,
+vier) en zes bestanden onder `frontends/regelspraak/**` (twee resolvers,
+vier testbestanden waarvan één nieuw). Geen `scripts/`, geen `spec/`,
+geen backends-code, geen ander corpus.
+
 ### Open — de toolchain-naschok, te meten bij de eerstvolgende herpin
 
 Niet gemeten in deze kaart, met opzet: de gevendorde resolver in de
@@ -339,5 +472,5 @@ toolchain de NIET-temporele matrix dragen is daar een open vraag — een
 luide weigering is het te verwachten antwoord, maar dat is een meting
 aan de andere kant van de pin. De hoofdsessie meet hem bij de
 eerstvolgende `SPEC_REV`-herpin. Binnen dit repo staat de vraag niet
-open: gate 11 speelt alle 29 TOKA-fixtures byte-identiek door uchars
+open: gate 11 her-emitteert alle 45 TOKA-`.rgs` byte-identiek door uchars
 eigen frontend, dus onze kant van de grens is gemeten.
