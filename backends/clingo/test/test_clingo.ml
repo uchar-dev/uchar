@@ -2216,8 +2216,8 @@ let () =
          ~doel_eenheid:(eur mnd_eenheid))
     ~case_text:(setvouw_case ~v1:v1_timeline)
     ~needle:
-      "a minimum/maximum over the temporal attribute \"bewaartarief\" of a set has no defined \
-       moment to fold";
+      "a ranking fold (minimum/maximum/eerste/laatste) over the temporal attribute \
+       \"bewaartarief\" of a set has no defined moment to fold";
   (* the horizon rule on this frame too: one member with an asOfDate-bucket
      scalar instead of a timeline, refused BY NAME — ref's own convention *)
   faults_with ~name:"§7.1 horizon rule: a member with an asOfDate-bucket scalar (by name)"
@@ -5825,6 +5825,169 @@ let () =
   in
   verifier_refuses ~name:"ch10.6 aggregatielichaam tussen Let en tak (argument)"
     ~ir:argument_vorm ~wf:"WF-069"
+
+(* --- EERSTE/LAATSTE over een SETBRON (kaart eerste-laatste-setvouw-kloof,
+   2026-09-19) ------------------------------------------------------------
+
+   De setlezing onder EERSTE/LAATSTE was een levende producentroute waarop
+   deze backend als enige zweeg: `ref` antwoordde en hier viel de vorm door
+   naar "expression kind not translated". Sinds deze kaart rijden ze op de
+   min/max-setarm mee, want het IS dezelfde vouw — een ordening over de
+   WAARDEN (RUNTIME-SEMANTICS ch. 1.2e), niet een greep naar een lid.
+
+   Het WAARDE-bewijs ligt in het corpus (`jutterswet-vondstvenster`, door
+   gates 5 en 6 op handberekende pins). Wat hier staat is wat geen
+   corpusgetuige kan halen — de refusal op een temporele elementattribuut,
+   waar `ref` de vorm weigert en deze arm dus mee moet weigeren — plus één
+   discriminerend waardeframe: de LEDENvolgorde is precies omgekeerd aan de
+   WAARDEvolgorde, zodat een positionele lezing ("het eerste lid") een ander
+   antwoord geeft dan de ordenende. *)
+
+let venster_doc ~kind ~attribuut ~doel =
+  Printf.sprintf
+    {|{ "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": { "node": "Objecttype", "naam": "Jutter",
+      "attributen": { "%s": { "node": "DatumInDagen" } },
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {}, "bezield": true, "meervoud": "Jutters" },
+    "Vondst": { "node": "Objecttype", "naam": "Vondst",
+      "attributen": { "vondstdatum": { "node": "DatumInDagen" } },
+      "attribuutMeervoud": { "vondstdatum": "vondstdata" }, "attribuutDimensies": {},
+      "attribuutGranulariteit": {}, "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vondsten" } },
+  "domeinen": {}, "parameters": {}, "eenheidstelsels": {},
+  "feittypen": { "vondstaanmelding": { "node": "Feittype", "naam": "vondstaanmelding",
+    "wederkerig": false,
+    "rollen": [
+      { "node": "Rol", "naam": "aanmelder", "objecttypeNaam": "Jutter",
+        "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "vondst", "objecttypeNaam": "Vondst",
+        "meervoud": "vondsten", "meervoudig": true } ] } },
+  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
+  "regels": [ { "node": "Regel", "naam": "%s van een jutter", "soort": "regel" } ],
+  "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "%s van een jutter",
+    "soort": "BEREKENING",
+    "doel": { "node": "AttribuutRef", "attribuut": "%s", "objecttype": "Jutter",
+      "onderwerpBron": "een Jutter", "navigatieRol": null,
+      "type": { "node": "DatumInDagen" },
+      "bron": "De %s van een Jutter", "set": false, "navigatiePad": [] },
+    "waarde": { "node": "Functie", "kind": "%s", "argumenten": [
+      { "node": "AttribuutRef", "attribuut": "%s", "objecttype": "Vondst",
+        "onderwerpBron": "alle vondsten van de Jutter", "navigatieRol": null,
+        "type": { "node": "DatumInDagen" },
+        "bron": "de %s van alle vondsten van de Jutter", "set": true,
+        "navigatiePad": [] } ],
+      "elementObjecttype": "Vondst", "leegwaarde": null, "filter": null,
+      "dimensieSelectie": null, "type": { "node": "DatumInDagen" },
+      "bron": "de vouw van de %s van alle vondsten van de Jutter",
+      "granulariteit": null,
+      "bronRol": { "node": "RolBinding", "feittype": "vondstaanmelding", "rol": "vondst" } },
+    "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+  "regelGroepen": [], "diagnostics": []
+}|}
+    doel doel doel doel doel kind attribuut attribuut attribuut
+
+(* De leden staan in AFLOPENDE datumvolgorde, dus een positionele lezing van
+   "de eerste van" zou 2025-11-01 opleveren en "de laatste van" 2025-02-14 —
+   precies omgekeerd aan de ordenende lezing die hier gepind staat. V4 draagt
+   geen datum en valt weg (lege bijdragen worden overgeslagen, ch. 1.2e). *)
+let venster_case ~attribuut ~waarde =
+  Printf.sprintf
+    {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+    { "label": "J1", "objectType": "Jutter", "attributes": {},
+      "roles": { "vondsten": [ "V1", "V2", "V3", "V4" ] }, "characteristics": [] },
+    { "label": "V1", "objectType": "Vondst",
+      "attributes": { "vondstdatum": { "date": "2025-11-01" } }, "roles": {},
+      "characteristics": [] },
+    { "label": "V2", "objectType": "Vondst",
+      "attributes": { "vondstdatum": { "date": "2025-06-30" } }, "roles": {},
+      "characteristics": [] },
+    { "label": "V3", "objectType": "Vondst",
+      "attributes": { "vondstdatum": { "date": "2025-02-14" } }, "roles": {},
+      "characteristics": [] },
+    { "label": "V4", "objectType": "Vondst", "attributes": {}, "roles": {},
+      "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "%s",
+      "value": { "date": "%s" } },
+    { "kind": "consistent" } ] }|}
+    attribuut waarde
+
+(* De hele verzameling leeg: geen bijdrage, geen vouwwaarde. min/max/eerste/
+   laatste kennen geen leegwaardevorm, dus het doel blijft leeg — en de
+   presence guard is wat #min/#max hier van #sup/#inf weghoudt. *)
+let venster_leeg_case ~attribuut =
+  Printf.sprintf
+    {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+    { "label": "J1", "objectType": "Jutter", "attributes": {},
+      "roles": { "vondsten": [ "V1" ] }, "characteristics": [] },
+    { "label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {},
+      "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [
+    { "kind": "attributeEmpty", "label": "J1", "attribute": "%s" },
+    { "kind": "consistent" } ] }|}
+    attribuut
+
+let () =
+  let eerste =
+    venster_doc ~kind:"EERSTE" ~attribuut:"vondstdatum" ~doel:"eerste vondstdag"
+  in
+  let laatste =
+    venster_doc ~kind:"LAATSTE" ~attribuut:"vondstdatum" ~doel:"laatste vondstdag"
+  in
+  let eerste_case =
+    venster_case ~attribuut:"eerste vondstdag" ~waarde:"2025-02-14"
+  in
+  let laatste_case =
+    venster_case ~attribuut:"laatste vondstdag" ~waarde:"2025-11-01"
+  in
+  ref_matches ~name:"ch1.2e EERSTE over een setbron is de VROEGSTE waarde" ~ir:eerste
+    ~case_text:eerste_case;
+  clingo_matches ~name:"ch1.2e EERSTE over een setbron is de VROEGSTE waarde" ~ir:eerste
+    ~case_text:eerste_case;
+  ref_matches ~name:"ch1.2e LAATSTE over een setbron is de LAATSTE waarde" ~ir:laatste
+    ~case_text:laatste_case;
+  clingo_matches ~name:"ch1.2e LAATSTE over een setbron is de LAATSTE waarde" ~ir:laatste
+    ~case_text:laatste_case;
+  ref_matches ~name:"ch1.2e EERSTE over een lege setbron is leeg" ~ir:eerste
+    ~case_text:(venster_leeg_case ~attribuut:"eerste vondstdag");
+  clingo_matches ~name:"ch1.2e EERSTE over een lege setbron is leeg" ~ir:eerste
+    ~case_text:(venster_leeg_case ~attribuut:"eerste vondstdag");
+  ref_matches ~name:"ch1.2e LAATSTE over een lege setbron is leeg" ~ir:laatste
+    ~case_text:(venster_leeg_case ~attribuut:"laatste vondstdag");
+  clingo_matches ~name:"ch1.2e LAATSTE over een lege setbron is leeg" ~ir:laatste
+    ~case_text:(venster_leeg_case ~attribuut:"laatste vondstdag");
+  (* de temporele weigering: `ref` weigert elke RANGSCHIKKENDE vouw over een
+     tijdlijndragend elementattribuut (ch. 3.6 — alleen som en totaal dragen
+     de per-lid tijdlijnvouw), dus deze arm mag niet uit de asOfDate-emmers
+     antwoorden. Geen corpusgetuige kan dit halen: de vorm is in beide
+     uitvoerders dood. *)
+  faults_with ~name:"ch3.6 EERSTE over een temporele setbron blijft geweigerd"
+    ~ir:
+      (setvouw_doc ~kind:"EERSTE" ~operand_ot:"Vondst" ~tarief_eenheid:(eur mnd_eenheid)
+         ~doel_eenheid:(eur mnd_eenheid))
+    ~case_text:(setvouw_case ~v1:v1_timeline)
+    ~needle:
+      "a ranking fold (minimum/maximum/eerste/laatste) over the temporal attribute \
+       \"bewaartarief\" of a set has no defined moment to fold";
+  faults_with ~name:"ch3.6 LAATSTE over een temporele setbron blijft geweigerd"
+    ~ir:
+      (setvouw_doc ~kind:"LAATSTE" ~operand_ot:"Vondst" ~tarief_eenheid:(eur mnd_eenheid)
+         ~doel_eenheid:(eur mnd_eenheid))
+    ~case_text:(setvouw_case ~v1:v1_timeline)
+    ~needle:
+      "a ranking fold (minimum/maximum/eerste/laatste) over the temporal attribute \
+       \"bewaartarief\" of a set has no defined moment to fold"
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total

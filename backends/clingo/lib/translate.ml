@@ -2300,17 +2300,18 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         pow10 (attr_decimals ctx ~otype:el ~attr:a) )
   (* element-anchored like the som arm above, and unnarrowed on the
      operand's objecttype for the reason measured there *)
-  | Functie { kind = (Minimum | Maximum) as kind; argumenten = [ Attribuut_ref { attribuut; set = true; navigatie_rol = None; navigatie_pad = []; _ } ]; element_objecttype = Some el; bron_rol; bron_pad; filter; _ } ->
-      (* MAXIMUM/MINIMUM over a set-typed AttribuutRef (RUNTIME-SEMANTICS
-         ch. 1.2e, ref agg_max/agg_min = agg_extreme): the same contributor
-         gathering as the som arm, aggregated with #max/#min at the element
-         attribute's scale. Empty contributors contribute no tuple (the join is
-         the skip, exactly as the som), and the extreme is the max/min of the
-         contributed values. No fence: unlike #sum, min/max never accumulate —
-         the result IS one contributed value, already inside 2^31 by the load
-         fence. Unlike the listed eerste/laatste fold there is no scale
-         harmonisation (one attribute, one scale, one unit), so no per-operand
-         multiplication and no range guard. A leegwaarde on min/max is ignored
+  | Functie { kind = (Minimum | Maximum | Eerste | Laatste) as kind; argumenten = [ Attribuut_ref { attribuut; set = true; navigatie_rol = None; navigatie_pad = []; _ } ]; element_objecttype = Some el; bron_rol; bron_pad; filter; _ } ->
+      (* MAXIMUM/MINIMUM/EERSTE/LAATSTE over a set-typed AttribuutRef
+         (RUNTIME-SEMANTICS ch. 1.2e, ref agg_max/agg_min/agg_eerste/agg_laatste
+         = agg_extreme): the same contributor gathering as the som arm,
+         aggregated with #max/#min at the element attribute's scale. Empty
+         contributors contribute no tuple (the join is the skip, exactly as the
+         som), and the extreme is the max/min of the contributed values. No
+         fence: unlike #sum, min/max never accumulate — the result IS one
+         contributed value, already inside 2^31 by the load fence. Unlike the
+         listed eerste/laatste fold there is no scale harmonisation (one
+         attribute, one scale, one unit), so no per-operand multiplication and
+         no range guard. A leegwaarde on min/max is ignored
          here: agg_max/agg_min take no fallback, so a BENIGN leegwaarde is
          evaluated-and-discarded by ref (eval.ml's eager `let fallback = …
          leegwaarde`, computed before the kind match) and both agree. The one
@@ -2320,7 +2321,24 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          on a benign leegwaarde, so ignore is the ref-faithful default for the
          representable case. The presence guard is MANDATORY: #max/#min over the
          empty set yields #inf/#sup, which must never escape into a value — ref
-         derives Empty there. *)
+         derives Empty there.
+
+         EERSTE/LAATSTE ride the SAME arm because they are the same fold
+         (card eerste-laatste-setvouw-kloof, 2026-09-19). "De eerste van"
+         keeps the EARLIEST and "de laatste van" the LATEST value of the
+         folded set — an ordering over the VALUES, never a positional pick
+         of a member, so over a set of day numbers first IS #min and last IS
+         #max. That reading is the normative one on both sides of the
+         mirror: RUNTIME-SEMANTICS ch. 1.2e states it for the listed fold
+         ("de eerste van 5 en 3 is 3"), and it is what ref computes here
+         (agg_eerste/agg_laatste are agg_extreme with the non-strict
+         comparison). The tie-break differs on paper — agg_eerste keeps the
+         LATER equal operand where agg_min keeps the first-seen — and is
+         unobservable, because a tie means value equality and this fold
+         yields a value, never a member. Until this card the set spelling
+         of these two kinds reached no arm at all and the backend refused
+         the expression kind, while ref answered: a live one-answers-one-
+         refuses gap under a verifier-clean, frontend-emitted document. *)
       let a = req "fold attribute" attribuut in
       (* a TEMPORAL element attribute has no defined moment to rank at, so
          ref refuses the form outright (ch. 3.6: only som and totaal carry
@@ -2330,12 +2348,16 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          ([fold_operand_otype]) — where it always hung, and where the
          som/totaal arm above and the temporal-totaal refusal arm below
          now hang theirs too. This is the one set fold that STAYS refused
-         after 2026-09-05, because ref refuses it. *)
+         after 2026-09-05, because ref refuses it. ref's guard names the
+         four ranking kinds as one ("this aggregation over the temporal
+         attribute … has no defined moment to fold"), so eerste/laatste
+         inherit the refusal on the same ground rather than by a second
+         rule. *)
       if attr_temporal ctx ~otype:el ~attr:a then
         fault
-          "a minimum/maximum over the temporal attribute %S of a set has no defined moment to \
-           fold (ch. 3.6); ref refuses the form, so this arm must not answer from the asOfDate \
-           buckets"
+          "a ranking fold (minimum/maximum/eerste/laatste) over the temporal attribute %S of a \
+           set has no defined moment to fold (ch. 3.6); ref refuses the form, so this arm must \
+           not answer from the asOfDate buckets"
           a;
       let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty } in
       let v = fresh ctx "M" in
@@ -2353,7 +2375,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       ctx.fresh <- ctx.fresh + 1;
       let p = Printf.sprintf "extp%d" ctx.fresh in
       emit ctx "%s(%s) :- %s." p subject (String.concat ", " (base :: contrib_body));
-      let agg = match kind with Minimum -> "#min" | _ -> "#max" in
+      let agg = match kind with Minimum | Eerste -> "#min" | _ -> "#max" in
       ( [ Printf.sprintf "%s(%s)" p subject;
           Printf.sprintf "%s = %s { %s : %s }" v agg g (String.concat ", " contrib_body) ],
         v,
