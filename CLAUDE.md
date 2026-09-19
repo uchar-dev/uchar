@@ -161,8 +161,9 @@ green. Current gates:
    failure.
 8. `scripts/check-rood.sh` — the red corpus: every
    `corpus/rood/**/case*.json` declares `expectedFault {ref, clingo}`
-   and MUST fail observably in **both** executors with the pinned
-   fragment in each report (the unsolved-state guard among them:
+   and MUST fail observably — at load or at
+   evaluation (contract widened 2026-09-19) — in **both** executors with the
+   pinned fragment in each report (the unsolved-state guard among them:
    `Onopgelost` reached in evaluation faults with WF-044, never
    vanishes); an empty red set is a failure, never silently green.
 
