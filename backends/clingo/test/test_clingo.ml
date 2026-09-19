@@ -318,7 +318,7 @@ let () =
       [ ("m", Some (eenh ~stelsel:"Afstand" ~canoniek:"m" "m" (Some 1.0)));
         ("km", Some (eenh ~stelsel:"Afstand" ~canoniek:"m" "km" (Some 1000.0))) ]
   in
-  (match Normalise.finest_of_stelsel afstand with
+  (match Normalise.(finest_of_units ~where:"unit stelsel \"Afstand\"" (plain_units afstand)) with
   | finest, to_finest ->
       check "finest(Afstand) = m" (finest.Ir_v0.Ast.afkorting = Some "m");
       let km = eenh ~stelsel:"Afstand" ~canoniek:"m" "km" (Some 1000.0) in
@@ -334,7 +334,7 @@ let () =
       [ ("maand", Some (eenh ~stelsel:"Termijn" ~canoniek:"maand" "maand" (Some 1.0)));
         ("jaar", Some (eenh ~stelsel:"Termijn" ~canoniek:"maand" "jaar" (Some 12.0))) ]
   in
-  match Normalise.finest_of_stelsel termijn with
+  match Normalise.(finest_of_units ~where:"unit stelsel \"Termijn\"" (plain_units termijn)) with
   | finest, to_finest ->
       check "finest(Termijn) = maand" (finest.Ir_v0.Ast.afkorting = Some "maand");
       let jaar = eenh ~stelsel:"Termijn" ~canoniek:"maand" "jaar" (Some 12.0) in
@@ -350,7 +350,7 @@ let () =
       [ ("a", Some (eenh ~stelsel:"Broken" ~canoniek:"a" "a" (Some 2.0)));
         ("b", Some (eenh ~stelsel:"Broken" ~canoniek:"a" "b" (Some 3.0))) ]
   in
-  match Normalise.finest_of_stelsel broken with
+  match Normalise.(finest_of_units ~where:"unit stelsel \"Broken\"" (plain_units broken)) with
   | _ -> check "no-finest stelsel must fault, not silently pick" false
   | exception Uchar_ref.Value.Fault m ->
       check ("no-finest faults loudly (" ^ m ^ ")")
@@ -364,7 +364,7 @@ let () =
       [ ("base", Some (eenh ~stelsel:"Inexact" ~canoniek:"base" "base" (Some 1.0)));
         ("third", Some (eenh ~stelsel:"Inexact" ~canoniek:"base" "third" (Some (1.0 /. 3.0)))) ]
   in
-  match Normalise.finest_of_stelsel inexact with
+  match Normalise.(finest_of_units ~where:"unit stelsel \"Inexact\"" (plain_units inexact)) with
   | _ -> check "inexact-factor stelsel must fault" false
   | exception Uchar_ref.Value.Fault m ->
       check ("inexact factor faults loudly (" ^ m ^ ")")
@@ -496,6 +496,604 @@ let () =
   (match Uchar_ref.Case.check case final with
   | [] -> check "jaar/maand: ref pins looptijd = 27" true
   | ms -> check ("jaar/maand: ref pins looptijd = 27 (" ^ String.concat "; " ms ^ ")") false)
+
+(* --- the CROSS-SYSTEM unit form (card kruis-stelsel-eenheid, 2026-09-19) ---
+
+   Convertibility in this IR is a canonical-NAME law and says nothing about the
+   unit system that DECLARES a unit, so two declared systems may share a
+   canonical name and a conforming document may cross them. This backend used to
+   read `stelsel` as a fence and refused such a document at ALL FOUR unit
+   positions, while the verifier admitted it and ref and the Drools backend both
+   computed it. `golden/jutterswet-stelselweging` is the corpus witness of the
+   four positions in the full square; what the suite adds is what a green corpus
+   zone cannot carry — the two MUTATIONS that must turn the witnesses red, and
+   the cross-system fault modes no document may hold. *)
+
+(* a one-token textual substitution, so the cross-system document below is
+   written ONCE and re-read with the Massa system's canonical name or its ton
+   factor mutated. *)
+let replace ~tok ~by s =
+  let n = String.length tok and len = String.length s in
+  let b = Buffer.create len in
+  let i = ref 0 in
+  while !i < len do
+    if !i + n <= len && String.sub s !i n = tok then begin
+      Buffer.add_string b by;
+      i := !i + n
+    end
+    else begin
+      Buffer.add_char b s.[!i];
+      incr i
+    end
+  done;
+  Buffer.contents b
+
+let kg_gewicht : Ir_v0.Ast.eenheid = eenh ~stelsel:"Gewicht" ~canoniek:"kg" "kg" (Some 1.0)
+let kg_massa : Ir_v0.Ast.eenheid = eenh ~stelsel:"Massa" ~canoniek:"kg" "kg" (Some 1.0)
+let ton_massa : Ir_v0.Ast.eenheid = eenh ~stelsel:"Massa" ~canoniek:"kg" "t" (Some 1000.0)
+
+(* THE PREDICATE. [same_quantity] is what [Translate.units_identical_ok] reads
+   instead of record equality: the same canonical quantity at exact factor 1.
+   It must say yes ACROSS systems and keep saying no to everything that would
+   need a multiplication or that names no canonical at all. *)
+let () =
+  check "kg@Gewicht and kg@Massa are one quantity (only the system differs)"
+    (Normalise.same_quantity kg_gewicht kg_massa);
+  check "same_quantity is symmetric across the system boundary"
+    (Normalise.same_quantity kg_massa kg_gewicht);
+  check "kg@Gewicht and t@Massa are NOT one quantity (factor 1000 must be restated)"
+    (not (Normalise.same_quantity kg_gewicht ton_massa));
+  check "a different canonical name is never one quantity, whatever the system"
+    (not (Normalise.same_quantity kg_gewicht (eenh ~stelsel:"Massa" ~canoniek:"EUR" "EUR" (Some 1.0))));
+  (* proof obligation 3: units_convertible calls an UNNAMED unit (ch. 2.5's
+     opaque product) compatible with everything; reading that as a licence to
+     relabel would be a silent lie, so the naming demand refuses it. *)
+  let opaque : Ir_v0.Ast.eenheid =
+    { afkorting = None; stelsel = Some "Massa"; canoniek = None;
+      factor_naar_canoniek = None; noemer = None }
+  in
+  check "an unnamed (opaque) unit is never proven one quantity with a named one"
+    (not (Normalise.same_quantity kg_gewicht opaque));
+  check "two unnamed units are not proven one quantity either"
+    (not (Normalise.same_quantity opaque opaque))
+
+(* THE TABLE. The finest is folded over the units of BOTH systems that restate
+   into the target, and the ton's factor survives the crossing exactly. *)
+let () =
+  let where = "the canonical-kg conversion table (unit systems Gewicht, Massa)" in
+  (match Normalise.finest_of_units ~where [ kg_gewicht; kg_massa; ton_massa ] with
+  | finest, to_finest ->
+      check "cross-system finest is a factor-1 kg" (Q.equal (Uchar_ref.Arith.factor finest) Q.one);
+      check "t@Massa -> kg@Gewicht is x1000 across the system boundary"
+        (Q.equal (to_finest ton_massa) (Q.of_int 1000));
+      check "kg@Massa -> kg@Gewicht is x1 (the factorless crossing)"
+        (Q.equal (to_finest kg_massa) Q.one)
+  | exception Uchar_ref.Value.Fault m ->
+      check ("cross-system finest unexpected fault: " ^ m) false);
+  (* and the multiply-only invariant is NOT relaxed by crossing systems: a
+     cross-system ratio that is not a positive integer keeps the loud refusal *)
+  let half_ton : Ir_v0.Ast.eenheid = eenh ~stelsel:"Massa" ~canoniek:"kg" "ht" (Some 1.5) in
+  match Normalise.finest_of_units ~where [ kg_gewicht; half_ton ] with
+  | _ -> check "a non-integer CROSS-SYSTEM ratio must fault, not silently pick" false
+  | exception Uchar_ref.Value.Fault m ->
+      check ("cross-system non-integer ratio faults loudly (" ^ m ^ ")")
+        (Uchar_ref.Case.contains ~needle:"admits no finest base unit" m
+        && Uchar_ref.Case.contains ~needle:"unit systems Gewicht, Massa" m)
+
+(* THE FOUR POSITIONS, end to end. Two systems, Gewicht (kg) and Massa (kg, t),
+   both canonical kg. The document crosses them at the WF-099 clamp bound (a
+   Massa ton over a Gewicht kilogram base), the WF-023 write (a Gewicht value
+   into a Massa target), the WF-035 additive join (Gewicht plus Massa) and the
+   WF-036 comparison (a Massa attribute against a Gewicht literal). *)
+let kruis_doc ~mcanon ~tonf =
+  replace ~tok:"@TONF@" ~by:tonf (replace ~tok:"@MCANON@" ~by:mcanon {|{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Weging": {
+      "node": "Objecttype",
+      "naam": "Weging",
+      "attributen": {
+        "ruwgewicht": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+        },
+        "ondergewicht": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+        },
+        "spiegelgewicht": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null}
+        },
+        "somgewicht": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+        },
+        "keurgewicht": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Wegingen"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {
+    "Gewicht": {
+      "node": "Eenheidstelsel",
+      "naam": "Gewicht",
+      "eenheden": {
+        "kg": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+      },
+      "aliassen": {
+        "kilogram": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null},
+        "kilogrammen": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+      }
+    },
+    "Massa": {
+      "node": "Eenheidstelsel",
+      "naam": "Massa",
+      "eenheden": {
+        "kg": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null},
+        "kgm": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null},
+        "t": {"node": "Eenheid", "afkorting": "t", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": @TONF@, "noemer": null}
+      },
+      "aliassen": {
+        "kilogram": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null},
+        "kilogrammen": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null},
+        "ton": {"node": "Eenheid", "afkorting": "t", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": @TONF@, "noemer": null},
+        "tonnen": {"node": "Eenheid", "afkorting": "t", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": @TONF@, "noemer": null}
+      }
+    }
+  },
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "ondergewicht van een vangst",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "spiegelgewicht van een vangst",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "somgewicht van een vangst",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "toeslaggewicht van een vangst",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "lastgewicht van een vangst",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "keurgewicht van een vangst",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "ondergewicht van een weging",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "ondergewicht",
+        "objecttype": "Weging",
+        "onderwerpBron": "een Weging",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+        },
+        "bron": "Het ondergewicht van een Weging",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Begrensd",
+        "basis": {
+          "node": "AttribuutRef",
+          "attribuut": "ruwgewicht",
+          "objecttype": "Weging",
+          "onderwerpBron": "de Weging",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+          },
+          "bron": "het ruwgewicht van de Weging",
+          "set": false,
+          "navigatiePad": []
+        },
+        "minimum": {
+          "node": "Literal",
+          "waarde": "1",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": {"node": "Eenheid", "afkorting": "t", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": @TONF@, "noemer": null}
+          },
+          "bron": "1 t"
+        },
+        "maximum": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+        },
+        "bron": "het ruwgewicht van de Weging, met een minimum van 1 t"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "spiegelgewicht van een weging",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "spiegelgewicht",
+        "objecttype": "Weging",
+        "onderwerpBron": "een Weging",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null}
+        },
+        "bron": "Het spiegelgewicht van een Weging",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "AttribuutRef",
+        "attribuut": "ruwgewicht",
+        "objecttype": "Weging",
+        "onderwerpBron": "de Weging",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+        },
+        "bron": "het ruwgewicht van de Weging",
+        "set": false,
+        "navigatiePad": []
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "somgewicht van een weging",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "somgewicht",
+        "objecttype": "Weging",
+        "onderwerpBron": "een Weging",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+        },
+        "bron": "Het somgewicht van een Weging",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "PLUS",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "ruwgewicht",
+          "objecttype": "Weging",
+          "onderwerpBron": "de Weging",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+          },
+          "bron": "het ruwgewicht van de Weging",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "AttribuutRef",
+          "attribuut": "spiegelgewicht",
+          "objecttype": "Weging",
+          "onderwerpBron": "de Weging",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null}
+          },
+          "bron": "het spiegelgewicht van de Weging",
+          "set": false,
+          "navigatiePad": []
+        },
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+        },
+        "bron": "het ruwgewicht van de Weging plus het spiegelgewicht van de Weging"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "keurgewicht van een weging",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "keurgewicht",
+        "objecttype": "Weging",
+        "onderwerpBron": "een Weging",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+        },
+        "bron": "Het keurgewicht van een Weging",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "AttribuutRef",
+        "attribuut": "ruwgewicht",
+        "objecttype": "Weging",
+        "onderwerpBron": "de Weging",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+        },
+        "bron": "het ruwgewicht van de Weging",
+        "set": false,
+        "navigatiePad": []
+      },
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "GROTER",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "spiegelgewicht",
+          "objecttype": "Weging",
+          "onderwerpBron": "de Weging",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null}
+          },
+          "bron": "het spiegelgewicht van de Weging",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "1000",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+          },
+          "bron": "1000 kg"
+        },
+        "periode": null,
+        "bron": "het spiegelgewicht van de Weging groter is dan 1000 kg"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}
+|})
+
+let kruis_case ~onder = replace ~tok:"@ONDER@" ~by:onder {|{
+  "format": "uchar-case-v0", "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "W1", "objectType": "Weging",
+        "attributes": { "ruwgewicht": { "number": "250.00" } }, "roles": {}, "characteristics": [] }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "W1", "attribute": "ondergewicht", "value": { "number": "@ONDER@" } },
+    { "kind": "attributeValue", "label": "W1", "attribute": "spiegelgewicht", "value": { "number": "250.00" } },
+    { "kind": "attributeValue", "label": "W1", "attribute": "somgewicht", "value": { "number": "500.00" } },
+    { "kind": "attributeEmpty", "label": "W1", "attribute": "keurgewicht" },
+    { "kind": "consistent" }
+  ]
+}
+|}
+
+let kruis_load ~mcanon ~tonf ~onder =
+  let irf = write_temp ".ir.json" (kruis_doc ~mcanon ~tonf) in
+  let casef = write_temp ".case.json" (kruis_case ~onder) in
+  let doc = Ir_v0.Loader.load_file irf in
+  let case = Uchar_ref.Case.load_file doc casef in
+  Sys.remove irf;
+  Sys.remove casef;
+  (doc, case)
+
+(* the clamp's own derivation line for [attr] — not the standing input
+   fallback, and not another rule that happens to carry the same integer (the
+   WF-036 comparison in this document harmonises its own 1000 kg literal the
+   same way). Scoping the needle to this one line is what makes the factor
+   mutation below a real value witness. *)
+let derivation_line program attr =
+  List.find_opt
+    (fun l ->
+      Uchar_ref.Case.contains ~needle:(Printf.sprintf "val(S,%S," attr) l
+      && Uchar_ref.Case.contains ~needle:"ruwgewicht" l)
+    (String.split_on_char '\n' program)
+  |> Option.value ~default:""
+
+let ref_report doc (case : Uchar_ref.Case.t) =
+  let env =
+    { Uchar_ref.Eval.doc; params = case.params; param_tls = case.param_tls;
+      as_of = case.as_of; locals = Uchar_ref.World.SMap.empty }
+  in
+  Uchar_ref.Case.check case (Uchar_ref.Eval.evaluate env case.world)
+
+let () =
+  let doc, case = kruis_load ~mcanon:"kg" ~tonf:"1000" ~onder:"1000.00" in
+  let program =
+    match translate doc case with
+    | p ->
+        check "cross-system document translates at all four unit positions" true;
+        p
+    | exception Uchar_ref.Value.Fault m ->
+        check ("cross-system document translates (unexpected fault: " ^ m ^ ")") false;
+        ""
+  in
+  (* ref is the oracle the translation must reproduce: max(250; 1 t) = 1000,00 *)
+  (match ref_report doc case with
+  | [] -> check "cross-system: ref pins ondergewicht = 1000,00 (1 t restated)" true
+  | ms ->
+      check ("cross-system: ref pins ondergewicht = 1000,00 (" ^ String.concat "; " ms ^ ")") false);
+  (* THE VALUE, in the emitted program. The clamp bound is written at the
+     target's two decimals, so a restated 1 t is the ground integer 100000 and a
+     merely RELABELLED ton would be 100. The needle is what a wrong factor moves. *)
+  let klem = derivation_line program "ondergewicht" in
+  check "cross-system: the 1 t bound reaches the program restated to 1000, not relabelled to 1"
+    (Uchar_ref.Case.contains ~needle:"(1000*100)" klem
+    && not (Uchar_ref.Case.contains ~needle:"(1*100)" klem))
+
+(* MUTATION 1 — the system boundary closed again. The Massa units keep their
+   own canonical name, so no cross-system pair is convertible at all and every
+   one of the four positions must go back to the loud refusal. This is the
+   fence's regression witness: a widening that stopped reading canonical names
+   would pass this mutant. *)
+let () =
+  let doc, case = kruis_load ~mcanon:"kgm" ~tonf:"1000" ~onder:"1000.00" in
+  match translate doc case with
+  | (_ : string) ->
+      check "mutant: unconvertible cross-system units must NOT translate" false
+  | exception Uchar_ref.Value.Fault m ->
+      check ("mutant: unconvertible cross-system units refuse loudly (" ^ m ^ ")")
+        (Uchar_ref.Case.contains ~needle:"non-identical units" m)
+
+(* MUTATION 2 — the ton is half. Nothing about the document's SHAPE changes, only
+   the declared factor, so an implementation that relabelled the bound instead of
+   restating it would answer the same 1000,00 either way. ref moves to 500,00 and
+   the emitted ground integer moves with it. *)
+let () =
+  let doc, case = kruis_load ~mcanon:"kg" ~tonf:"500" ~onder:"500.00" in
+  (match ref_report doc case with
+  | [] -> check "mutant: a 500-kg ton moves ref to ondergewicht = 500,00" true
+  | ms -> check ("mutant: a 500-kg ton moves ref (" ^ String.concat "; " ms ^ ")") false);
+  match translate doc case with
+  | program ->
+      let klem = derivation_line program "ondergewicht" in
+      check "mutant: the emitted bound follows the declared factor (500, not 1000)"
+        (Uchar_ref.Case.contains ~needle:"(500*100)" klem
+        && not (Uchar_ref.Case.contains ~needle:"(1000*100)" klem))
+  | exception Uchar_ref.Value.Fault m ->
+      check ("mutant: a 500-kg ton still translates (unexpected fault: " ^ m ^ ")") false
 
 (* --- the retired Onbekend-arithmetic recursion arm (besluit 16Y+17b) --- *)
 
