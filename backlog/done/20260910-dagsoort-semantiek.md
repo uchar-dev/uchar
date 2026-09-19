@@ -131,235 +131,311 @@ de brontekst als toets, en genummerde restvragen waar de bron zwijgt.
 
 ---
 
-## Result (2026-09-19)
+## Result (2026-09-19, herzien na de lensronde en twee maintainersbesluiten)
 
 **Gedaan: gebouwd, niet genormeerd-geweigerd.** Beide duurvormen rekenen in
 `ref` én de ASP-backend, met dezelfde absolute waarden die de Drools-backend
-al speelde. Het vierkant sluit op één golden; de twee kloven zijn allebei
-dicht; de brontekst is per keuze getoetst en waar hij zwijgt staat er een
-genummerde restvraag.
+al speelde. Het vierkant sluit op twee goldens; de twee kloven zijn dicht; de
+brontekst is per keuze getoetst en waar hij zwijgt staat er een genummerde
+restvraag. Twee restvragen zijn na de eerste landing door de **maintainer
+beslist**, beide anders dan mijn voorlopige voorstel; ze staan hieronder met
+hun herkomst.
 
-### De hermeting (huidige main, vóór deze kaart)
+### De hermeting (main vóór de kaart)
 
-Per uitvoerder en per vorm, met een minimaal wire-document
-(`Baken.peildatum plus Baken.termijn` in `schouwdagen`, en
-`tijdsduur … in hele schouwdagen`), verifier-schoon in beide gevallen:
+Per uitvoerder en per vorm, met een minimaal wire-document verifier-schoon in
+beide gevallen:
 
 | vorm | verifier | `ref` | clingo | Drools (exec) | Drools (`--drl`) |
 |---|---|---|---|---|---|
 | §6.11 `datum ± N <dagsoort>` | PASS | EVALUATION FAULT `duration unit "schouwdagen" is not a recognised time unit (a day-kind duration is a recorded flank, not executed)` | TRANSLATION FAULT `date arithmetic unit "schouwdagen" …` | lowert | lowert |
 | §6.10 `tijdsduur … in hele <dagsoort>` | PASS | EVALUATION FAULT `tijdsduur unit … a day-kind tijdsduur is a recorded flank` | TRANSLATION FAULT `tijdsduur unit …` | lowert | lowert |
 
-Drools droeg **beide** vormen in **beide** takken, via één paar statics in
-`RegelSpraakRuntime` (`rsDatumPlusDagsoort`, `rsTijdsduurDagsoort`, plus hun
-datum-tijd-wikkels). Gemeten: vóór deze kaart noemde **niets** die vier
-statics behalve de twee transpilers — geen test, geen script, geen document
-in enige zone. Eén uitvoerder rekende dus, twee zwegen, en wat de ene rekende
-werd nergens getoetst.
-
-Dat `RUNTIME-SEMANTICS.md` ch. 3.8 al twee alinea's over de duurvormen droeg
-was óók een vondst: ze staan er sinds de allereerste ch.-3-draft
-(`85bd768a`), zonder uitvoerder, zonder gewerkt voorbeeld als test, zonder
-fence-definitie, zonder een woord over `de dag` of over resolutie.
+Drools droeg **beide** vormen in **beide** takken via één paar statics in
+`RegelSpraakRuntime`. Gemeten: vóór deze kaart noemde **niets** die statics
+behalve de twee transpilers — geen test, geen script, geen document in enige
+zone. Eén uitvoerder rekende, twee zwegen, en wat de ene rekende werd nergens
+getoetst. Dat `RUNTIME-SEMANTICS.md` ch. 3.8 al twee dagsoort-alinea's droeg
+was óók een vondst: ze staan er sinds de allereerste ch.-3-draft (`85bd768a`),
+zonder uitvoerder, zonder reikwijdte-definitie, zonder `de dag` en zonder
+resolutie.
 
 ### Het voorstel in vijf zinnen
 
-Een dagsoort is geen eenheid maar een predicaat over een kalenderdag, dus de
-eenheidsspelling wordt via `dagsoortPerEenheid` (getrimd, hoofdletterloos)
-tot een dagsoortnaam herleid en die naam tot zijn ene `ResolvedDagsoort`;
-`P_k(d)` is diens voorwaarde met **`de dag` gebonden aan d** en verder niets
-in scope, wat meteen de runtimebetekenis van die contextwaarde is. §6.10 telt
-de dagen `A < d ≤ B` die `P_k` vervullen — start exclusief, eind inclusief —
-getekend naar operandvolgorde, leeg propagerend, zonder fence, en een
-onvervulbare dagsoort telt daar gewoon 0. §6.11 stapt dag voor dag en levert
-de N-de vervullende dag; de startdag telt in geen van beide richtingen mee,
-`N = 0` en leeg-N geven de startdatum ongewijzigd terug (ook als die zelf
-geen dag van die soort is), een negatieve N loopt achteruit en een breuk kapt
-naar nul af. De wandeling termineert door een **normatieve gapgrens van
-3 660 kalenderdagen**: 3 660 opeenvolgende dagen zonder treffer is een fout,
-geen eindeloze lus — een grens op het gat en niet op het totaal, zodat
-`datum plus 5 000 werkdagen` beantwoordbaar blijft. De datum-tijd-kruising
-blijft een erkende, niet-uitgevoerde vorm die beide OCaml-uitvoerders in
-dezelfde woorden weigeren.
+Een dagsoort is een predicaat over een kalenderdag, dus de eenheidsspelling
+wordt via `dagsoortPerEenheid` (getrimd, hoofdletterloos) tot een dagsoortnaam
+herleid en die naam tot zijn ene `ResolvedDagsoort`; `P_k(d)` is diens
+voorwaarde met **`de dag` gebonden aan d**, wat meteen de runtimebetekenis van
+die contextwaarde is. §6.10 telt de dagen `A < d ≤ B` die `P_k` vervullen,
+getekend naar operandvolgorde, leeg propagerend, zonder fence — een
+onvervulbare dagsoort telt daar 0. §6.11 stapt naar de N-de vervullende dag;
+de startdag telt in geen richting mee, `N = 0` en leeg-N geven de startdatum
+ongewijzigd terug, negatieve N loopt achteruit en een breuk kapt naar nul af.
+De wandeling termineert door een **normatieve reikwijdte van 40 000
+kalenderdagen** — een grens op het gat, niet op het totaal, en een uitspraak
+over hoe ver de wandeling kijkt, niet over vervulbaarheid. Op een
+**datum-tijd**-operand draagt de §6.11-stap: de dagsoort wordt uitsluitend op
+het kalenderdatumdeel beoordeeld en de oorspronkelijke kloktijd blijft staan,
+terwijl de §6.10-tijdsduur tussen twee instants geweigerd blijft tot
+gedeeltelijke dagen en grensmomenten apart bepaald zijn.
+
+### De twee maintainersbesluiten
+
+**BESLUIT 1 (D4) — de reikwijdte is 40 000 dagen, niet 3 660.** Mijn
+voorlopige voorstel was tien jaar, afgeleid van de langste *gregoriaanse*
+terugkeer (de eeuwoverslaande schrikkeldag, 2 921 dagen). De lens bouwde het
+tegenvoorbeeld dat die afleiding breekt: **"de 1e of de 15e van 2040"** —
+verifier-schoon, zuiver, vervulbaar, en vanaf een meldingsdatum in 2026 meer
+dan een decennium weg. Een dagsoort kan jaar- of parametergebonden zijn, en
+dan zegt de gregoriaanse terugkeer niets. Doorgevoerd in `ref`
+(`day_kind_reach`), clingo, `RegelSpraakRuntime` (`DAGSOORT_REIKWIJDTE`), de
+spec en de rode case. Gemeten na de wijziging: alle drie de uitvoerders
+beantwoorden het 2040-voorbeeld (`2026-03-10 + 1 → 2040-01-01`).
+De **motivering is herschreven** zoals gevraagd: de grens is een
+reikwijdtebeperking, geen onvervulbaarheidsdetector. `an unsatisfiable
+day-kind definition?` is uit alle drie de foutzinnen weg; er staat nu *the
+walk reaches no further; a day kind whose next occurrence lies beyond the
+reach is refused, not diagnosed*. Ch. 3.8 benoemt de **geaccepteerde
+restkosten** in een eigen alinea: een vervulbare dagsoort voorbij de
+reikwijdte wordt geweigerd hoewel hij bestaat, en wat de afspraak draagbaar
+maakt is dat het een *fout* is en geen waarde, dat hij in alle drie de
+uitvoerders identiek is, en dat het getal in de spec staat en geen knop is.
+
+**BESLUIT 2 (D6) — de datum-tijd-kruising is GESPLITST.**
+- **(a) `datum-tijd ± N <dagsoort>` draagt** in `ref` en clingo (Drools droeg
+  hem al). Geverifieerd dat Drools precies dít doet — dagdeel beoordeeld,
+  kloktijd behouden — via de gepinde waarden van de nieuwe golden én een
+  unittest op `rsDatumTijdPlusDagsoort` zelf. De **Empty-arm-vondst van de
+  lens valt hiermee goed**: ref's "leeg N → datumtijd ongewijzigd" is onder
+  dit besluit *correct gedrag*, en staat zo vastgelegd in ch. 3.8 ("including
+  the leeg-count arm, which returns the datetime with its clock time, exactly
+  as it returns the date") en in de NOTE van de nieuwe golden.
+- **(b) De §6.10-tijdsduur over datumtijden blijft geweigerd**, en de
+  lens-fix is onverkort doorgevoerd: de **precisietoets staat vóór de
+  Empty-armen** in `ref/lib/arith.ml`, zodat óók een lege operand de
+  vorm-noemende weigering krijgt in plaats van de leeg-regel van een vorm die
+  niet gedragen wordt. Drie ref-checks erbij
+  (`WV-3.8-dk-dt-telling`, `…-leeg-links`, `…-leeg-rechts`).
+- **(c) De differentiële golden: `corpus/golden/jutterswet-getijklok`**, nieuw
+  en niet extra cases op `bergingsklok`. Motivering: `bergingsklok` declareert
+  dag-precieze attributen en zijn NOTE is om dat verhaal geschreven;
+  datum-tijd erbij zou hertypering en herpinning van alle 22 handberekende
+  waarden betekenen, en de kanaalboekhouding wordt er eerlijker van — de
+  nieuwe golden beweegt beide gate-12-pins op zijn eigen reden in plaats van
+  in andermans rij te verdwijnen. Zes handberekende waarden in case1, vier in
+  case2; **G2 is de rij die een herafgeleide klok vangt** (melding op een
+  springtijdag om **23:59:59**, stap naar 1 april om 23:59:59 — niet naar
+  middernacht en niet een dag verder), **G3** is de nulrij op middernacht, en
+  case2 is leeg/nul. Speelt in `ref`, clingo en **beide** Drools-takken.
+
+### De lens-fix (3): de geneste verwijzing op een andere dag
+
+Gemeten: `ref` en Drools rekenden, clingo weigerde. **Genormeerd langs de
+smalle route** — alle drie weigeren nu:
+- `ref` weigert vorm-noemend in clingo's woorden (`a nested day-kind test on
+  a date other than the bound day is a recognised, unexecuted form (the §9.8
+  composition is carried on the bound day only)`);
+- clingo ongewijzigd, zelfde zin;
+- de Drools-dagsoortcompiler (`transpiler/kern/Dagsoorten`) laat de
+  compositie **ongecompileerd** wanneer de operand niet de gebonden dag is,
+  zodat de bereikende regel een transpiler-SKIP wordt — **benoemd** in gate
+  8's Drools-uitsluitingslijst;
+- rode getuige `corpus/rood/dagsoortverwijzing-andere-dag`.
 
 ### De genummerde restvragen
 
 De brontekst (RegelSpraak v2.3.0, gelezen als toets) noemt dagsoorten in
-§6.11 wél expliciet en in **§6.10 geen enkele keer**; §9.8 geeft het
-predicaat, §3.12 de declaratie, §13.4.17.44 `de dag`. Waar hij zwijgt:
+§6.11 expliciet en in **§6.10 geen enkele keer**; §9.8 geeft het predicaat,
+§3.12 de declaratie, §13.4.17.44 `de dag`. Waar hij zwijgt:
 
-- **D1 — telt A mee in §6.10?** De bron zegt over §6.10 niets over
-  intervalinclusie en noemt dagsoorten daar niet. Opties: (a) `(A, B]`,
-  (b) `[A, B]`, (c) `[A, B)`. *Aanbeveling en gekozen (voorlopig): (a)* —
-  het is wat Drools doet en het is de enige lezing die met §6.11's expliciete
-  "X telt niet mee" strookt; `25-12 tot 26-12 = 1` is de getuige die (b) en
-  (a) scheidt.
-- **D2 — achteruit stappen met een dagsoort.** De bron beschrijft alleen
-  optellen ("de 5e werkdag ná X"). Opties: (a) spiegelbeeld — de N-de dag
-  strikt vóór X, (b) weigeren. *Aanbeveling en gekozen (voorlopig): (a)*;
-  Drools doet het al en `min` is grammaticaal toegelaten, dus (b) zou een
-  bestaande frontendvorm afsnijden.
-- **D3 — `N = 0` bij een dagsoort.** De bron spreekt zichzelf tegen: de
-  algemene 0-regel zegt "de oorspronkelijke datum", de dagsoortregel zegt
-  "het resultaat is altijd van die soort". Opties: (a) 0-regel wint,
-  (b) dagsoortregel wint (dus de eerstvolgende dag van die soort, óók bij 0),
-  (c) weigeren. *Aanbeveling en gekozen (voorlopig): (a)* — (b) maakt 0 en 1
-  gelijk voor een niet-vervullende startdag en breekt `leeg ≡ 0`.
-- **D4 — de fence.** De bron heeft **geen** bovengrens en **geen**
-  terminatieclausule voor dagsoorten (de enige iteratielimiet-eis, §9.10,
-  gaat over recursieve regelgroepen). Opties: (a) een totaalgrens (Drools'
-  4 000 000 stappen), (b) een **gapgrens**, (c) geen grens. *Aanbeveling en
-  gekozen (voorlopig): (b) met 3 660 dagen* — (a) weigert een legitieme grote
-  N onder een boodschap die de definitie beschuldigt, (c) is geen semantiek.
-  3 660 ligt boven de langste gregoriaanse terugkeer (de eeuwoverslaande
-  schrikkeldag, 2096-02-29 → 2104-02-29 = **2 921** dagen) en laag genoeg om
-  te gronden. **Gevolg, gedaan in deze kaart:** Drools' totaalgrens is de
-  gapgrens geworden, zodat de drie uitvoerders op dezelfde invoer in dezelfde
-  woorden falen.
-- **D5 — onvervulbaar in §6.10.** De bron zwijgt. Opties: (a) 0,
-  (b) fout. *Aanbeveling en gekozen (voorlopig): (a)* — een telling over een
-  lege verzameling ís een antwoord; alleen de stap heeft er geen.
-- **D6 — de datum-tijd-kruising.** De bron laat datum-tijd-operanden in §6.10
-  toe (typeringen §4.16) en zwijgt over de borrow-regel bij een dagsoort.
-  Opties: (a) tellen over de datumdelen zonder borrow (wat Drools doet),
-  (b) mét borrow, zoals de kalendereenheden, (c) weigeren. *Aanbeveling en
-  gekozen (voorlopig): (c)* — er is geen enkele getuige in enige zone, en een
-  clausule zonder getuige is een groene deelverzameling. Beide OCaml-
-  uitvoerders weigeren in dezelfde woorden; Drools' (a) is daarmee een
-  gedrag dat de spec niet draagt en dat geen document kan bereiken.
-- **D7 — het dagsoortpredicaat als regelvoorwaarde** (§8.1.5, "… is een
-  werkdag" in een `indien`). De bron laat het toe; uchar weigert het nog
-  steeds bij naam in beide OCaml-uitvoerders. Opties: (a) zo laten,
-  (b) uitvoeren (dan moet de ASP-kant een dag-domein rond een afgeleide datum
-  gronden). *Aanbeveling: (a) voor nu, eigen kaart voor (b)* — het is een
-  aparte semantische stap (ch. 5.4's framing) en niet nodig voor de
-  duurvormen. Binnen een dagsoortvoorwaarde is de geneste verwijzing (§9.8)
-  wél uitgevoerd, in beide uitvoerders.
-- **D8 — `de dag` buiten een dagsoortdefinitie: ook statisch weigeren?** De
-  bron plaatst `<dagsoortreferentie>` in de algemene `<referentie>`-alternatie
-  zonder contextconditie. Vandaag: runtimefout bij naam in beide
-  uitvoerders, gepind door `corpus/rood/contextwaarde-de-dag-buiten-dagsoort`.
-  Opties: (a) zo laten, (b) een positie-arm op WF-098. *Aanbeveling: (b),
-  eigen kaartje* — het is een tweede normbesluit op een beschermde regel die
-  WF-098 bewust plat heeft gelaten, en de spiegel ervan (WF-031's arm) is in
-  deze kaart wél genomen omdat de kaart daarom vroeg.
+- **D1 — telt A mee in §6.10?** Bron zwijgt. Opties: (a) `(A, B]`, (b)
+  `[A, B]`, (c) `[A, B)`. *Gekozen: (a)* — Drools' lezing, en de enige die met
+  §6.11's expliciete "X telt niet mee" strookt.
+- **D2 — achteruit stappen.** Bron beschrijft alleen optellen. Opties: (a)
+  spiegelbeeld, (b) weigeren. *Gekozen: (a)*; `min` is grammaticaal toegelaten,
+  dus (b) snijdt een bestaande frontendvorm af.
+- **D3 — `N = 0` bij een dagsoort.** Bron spreekt zichzelf tegen. *Gekozen:
+  de 0-regel wint* van "het resultaat is altijd van die soort".
+- **D4 — de grens. BESLIST door de maintainer: een gapgrens van 40 000
+  kalenderdagen**, als reikwijdtebeperking geformuleerd. (Mijn voorstel was
+  3 660; het tegenvoorbeeld staat hierboven.) De bron heeft geen enkele
+  terminatieclausule voor dagsoorten; §9.10's iteratielimiet-eis gaat over
+  recursieve regelgroepen.
+- **D5 — onvervulbaar in §6.10.** Bron zwijgt. *Gekozen: 0*, geen fout — een
+  telling over een lege verzameling ís een antwoord.
+- **D6 — datum-tijd. BESLIST door de maintainer: gesplitst** — de plus-vorm
+  draagt op het dagdeel met behoud van kloktijd, de tijdsduur tussen instants
+  blijft geweigerd. (Mijn voorstel was: beide weigeren.)
+- **D7 — het dagsoortpredicaat als regelvoorwaarde** (§8.1.5). Bron laat het
+  toe; uchar weigert het bij naam in beide OCaml-uitvoerders. *Aanbeveling:
+  zo laten, eigen kaart* — het is een aparte semantische stap (ch. 5.4) en
+  niet nodig voor de duurvormen. Binnen een dagsoortvoorwaarde is de geneste
+  verwijzing (§9.8) wél uitgevoerd, op de gebonden dag.
+- **D8 — `de dag` buiten een dagsoortdefinitie: ook statisch weigeren?**
+  Vandaag runtimefout bij naam in beide uitvoerders, rood gepind.
+  *Aanbeveling: ja, een positie-arm op WF-098, eigen kaartje* — het is een
+  tweede normbesluit op een regel die WF-098 bewust plat heeft gelaten.
+- **D9 (nieuw) — de §9.8-compositie op een ANDERE dag dan de gebonden dag.**
+  Nu in alle drie de uitvoerders geweigerd (de smalle route hierboven). De
+  **dragende lezing staat open** voor wie er een bron voor aandraagt: wat zo'n
+  toets op een vaste datum *betekent* binnen een definitie die over een
+  willekeurige dag gaat — een constante conjunct, een scopingfout, of een
+  afkorting voor iets anders — staat nergens. Opties: (a) zo laten, (b) dragen
+  zodra de bron het zegt. *Aanbeveling: (a), met (b) expliciet open.*
 
 ### De twee kloven
 
 **(a) `de dag` — GESLOTEN.** Zijn runtimebetekenis staat in
 `RUNTIME-SEMANTICS.md` **ch. 3.8**, bij de dagsoortevaluatie — niet in ch. 8.
-Motivering, en die staat er ook: ch. 8 is tijd*selectie* en gaat over de
-sessiewaarden; `de dag` is geen sessiewaarde maar de gebonden dag, dus zijn
-betekenis hoort waar de binding wordt gelegd. Ch. 8.2 kreeg een alinea die
-dat zegt en doorverwijst. Beide uitvoerders binden hem nu (`ref` via
-`env.locals` onder een NUL-sleutel die geen bronnaam kan botsen; clingo via
-`ctx.binders`, zodat elke operandvorm die `expr_term` al draagt ongewijzigd
-in een dagsoortvoorwaarde landt) en falen bij naam buiten die binding.
+Motivering ter plaatse: ch. 8 is tijd*selectie* en gaat over de sessiewaarden;
+`de dag` is de gebonden dag, dus zijn betekenis hoort waar de binding wordt
+gelegd. Ch. 8.2 kreeg een alinea die dat zegt en doorverwijst. `ref` bindt hem
+via `env.locals` onder een NUL-sleutel die geen bronnaam kan botsen; in clingo
+bestaat er sinds de extensie-tabel géén ASP-zijde meer voor, dus daar is elke
+`de dag` per constructie er een buiten zijn binding — en die weigert bij naam.
 
-**(b) Rekendatum in stratum 0 — GESLOTEN met een WF-clausule.** Besluit:
-**niet toelaatbaar**. WF-031's zuiverheidsclausule krijgt een positie-arm:
-binnen een dagsoortvoorwaarde is `de dag` de enige toegelaten contextwaarde,
-en `Rekendatum`/`Rekenjaar` worden geweigerd. Grond: de uitvoerders
-evalueren de voorwaarde nu per kalenderdag, dus een sessieafhankelijk `P_k`
-zou hetzelfde document dezelfde dag in twee sessies verschillend laten
-classificeren — precies wat ch. 5.4 ontkent.
-- **Rood-eerst:** de meting van 2026-09-10 ís de getuige geworden —
-  `corpus/negatief/wf031-sessiewaarde-in-dagsoort`, één veld van
-  `jutterswet-schouwrooster` omgezet, dat vóór de arm `verifier: PASS` en
-  `ref: oracle: PASS (7 expectations)` gaf.
-- **Arm-exactheid:** de arm noemt de twee sessienamen en niets anders, dus
-  `wf098-onbekende-contextwaarde-naam` — wiens `de dagX` op exact deze
-  positie staat — meldt nog steeds alleen WF-098, en de lege helft
-  (`naam: null`) blijft ongemoeid.
-- **Nul over-afwijzing, direct gemeten over alle zones:** 671 documenten
-  (golden, negatief, rood, pariteitszone) bevatten samen 26 `Constante`-knopen
-  binnen een `resolvedDagsoorten`-voorwaarde; alle 26 zijn `de dag` op de twee
-  hier genoemde getuigen na. Gate 3 groen: 242 golden schoon, 399 negatief
-  afgewezen op hun eigen regel.
+**(b) Rekendatum in stratum 0 — GESLOTEN met een WF-clausule.** Besluit: niet
+toelaatbaar. WF-031's zuiverheidsclausule krijgt een positie-arm: binnen een
+dagsoortvoorwaarde is `de dag` de enige toegelaten contextwaarde. Grond: de
+uitvoerders evalueren de voorwaarde nu per kalenderdag, dus een
+sessieafhankelijk `P_k` zou hetzelfde document dezelfde dag in twee sessies
+verschillend laten classificeren — precies wat ch. 5.4 ontkent.
+- **Rood-eerst:** de meting van 2026-09-10 ís de getuige geworden
+  (`corpus/negatief/wf031-sessiewaarde-in-dagsoort`), die vóór de arm
+  `verifier: PASS` en `ref: oracle: PASS (7 expectations)` gaf.
+- **Arm-exactheid:** de arm noemt de twee **genormaliseerde** sessienamen —
+  `norm`-vergelijking, waar WF-098 byte-exact vergelijkt. Die overlap is
+  bedoeld en gemeten: een kleine-letter `rekendatum` op deze positie meldt
+  **beide** regels, WF-098 omdat de spelling niet in de gesloten verzameling
+  zit en WF-031 omdat de naam waarnaar hij normaliseert hier niet mag staan.
+  Een naam buiten de verzameling die géén sessiewaarde is blijft van WF-098
+  alleen: `wf098-onbekende-contextwaarde-naam` draagt `de dagX` op exact deze
+  positie en meldt nog steeds alleen WF-098. De lege helft (`naam: null`)
+  blijft ongemoeid.
+- **Nul over-afwijzing, direct gemeten over alle zones:** 673 documenten
+  (golden, negatief, rood, pariteitszone) dragen samen **31** `Constante`-
+  knopen binnen een `resolvedDagsoorten`-voorwaarde; **29** daarvan zijn
+  `de dag`, de andere twee zijn de hier genoemde getuigen.
 
 ### Uitvoerderdracht
 
-`ref` loopt de wandeling; de ASP-backend **grondt** hem: de dagen die bezocht
-mogen worden worden een domeinpredicaat dat alleen uit de operanden volgt
-(voor §6.10 het operandinterval, voor §6.11 `N × 3 660`), de voorwaarde wordt
-een regel over dat domein met de gebonden dag als variabele, §6.10 leest een
-`#count` en §6.11 een recursieve (gevonden, gat)-rang. Dat het domein niet van
-de voorwaarde afhangt is precies wat het geheel gestratificeerd houdt. Eén
-venster is van deze backend alleen, luid en gedocumenteerd naar het
-S6a-precedent: een stap die meer dan 64 dagen van die soort tegelijk zoekt
-wordt hier geweigerd waar `ref` hem rekent.
+`ref` loopt de wandeling. De ASP-backend kán dat niet meer: met een
+reikwijdte van 40 000 dagen zou een gegronde dag-voor-dag-wandeling per stap
+en per subject zoveel dagen materialiseren. Hij gebruikt daarom WF-031's
+zuiverheidsclausule: `P_k` is een functie van de dag, van literalen en van
+parameters, en de ASP-vertaling is per case, dus de backend **evalueert het
+predicaat op vertaaltijd** over een venster en verscheept de **extensie** van
+de dagsoort — zijn treffers, elk met hun rang. §6.10 is dan één aggregaat en
+§6.11 een rangopzoeking, want "de N-de dag van die soort ná A" ís "de dag met
+rang rang(A) + N"; de reikwijdte wordt van diezelfde tabel afgelezen. Eén
+grens is van deze backend alleen en luid (het S6a-patroon): het venster dekt
+de datums van de case plus de reikwijdte aan beide kanten, en een vraag die
+daarbuiten valt wordt hier geweigerd waar `ref` hem rekent — nooit beantwoord
+uit een tabel die niet reikt.
 
-Differentieel gemeten buiten de golden om, ref ≡ clingo op handberekende
+Differentieel gemeten buiten de goldens om, ref ≡ clingo op handberekende
 data: alle vijf kwantoren in een dagsoortvoorwaarde, een kale vergelijking,
-en de geneste §9.8-verwijzing positief én ontkend (8 van 8).
+en de geneste §9.8-verwijzing op de gebonden dag positief én ontkend (8 van 8),
+plus het jaargebonden 2040-voorbeeld in alle drie de uitvoerders.
 
 ### Artefacten
 
-- **golden `corpus/golden/jutterswet-bergingsklok`** (met `bron.rgs`, dus
-  gate 10 emitteert hem byte-identiek terug): dagsoort `springtijdag` = de
-  1e of de 15e; vier regels (stap vooruit, stap achteruit, getekende telling,
-  absolute telling); twee cases, 22 handberekende verwachtingen. Speelt in
-  `ref`, clingo én **beide** Drools-takken — het vierkant.
-- **rood `dagsoort-onvervulbare-wandeling`**: de gapgrens, gepind in alle
+- **golden `jutterswet-bergingsklok`** (met `bron.rgs`): dagsoort
+  `springtijdag` = de 1e of de 15e; vier regels (stap vooruit, stap achteruit,
+  getekende telling, absolute telling); twee cases, 22 handberekende
+  verwachtingen. Speelt in `ref`, clingo én beide Drools-takken.
+- **golden `jutterswet-getijklok`** (met `bron.rgs`): de §6.11-stap op
+  datum-tijd, tien handberekende verwachtingen, kloktijd-behoud-rand en
+  leeg/nul. Speelt in alle vier.
+- **rood `dagsoort-onvervulbare-wandeling`**: de reikwijdte, gepind in alle
   drie de uitvoerders (`expectedFault.drools` erbij).
-- **rood `contextwaarde-de-dag-buiten-dagsoort`**: `de dag` zonder binding,
-  in beide OCaml-uitvoerders in dezelfde woorden.
+- **rood `contextwaarde-de-dag-buiten-dagsoort`**: `de dag` zonder binding.
+- **rood `dagsoortverwijzing-andere-dag`** (nieuw): de §9.8-compositie op een
+  andere dag.
 - **negatief `wf031-sessiewaarde-in-dagsoort`**.
-- **`ref/test`**: 28 nieuwe gewerkte voorbeelden (643 → 671), de ch.-3.8-tekst
-  verbatim plus de resolutie- en bindingshelft door `Eval`.
-- **`backends/clingo/test`**: 13 nieuwe checks (423 → 436) — de vijf
-  kwantoren, de geneste verwijzing positief/ontkend, en vijf weigeringen.
-- **`backends/drools`**: `DagsoortDuurTest`, de eerste test die de twee
-  runtime-statics aanraakt (JUnit 478 -> 486, vloer 239).
+- **`ref/test`**: 37 nieuwe gewerkte voorbeelden (643 → 680).
+- **`backends/clingo/test`**: 15 nieuwe checks (423 → 438).
+- **`backends/drools`**: `DagsoortDuurTest` (JUnit 478 → 496), de eerste test
+  die de runtime-statics aanraakt.
 
-### Gates (alle veertien, elk los)
+### Gates (alle veertien, elk los, op de geland boom)
 
-1 PASS · 2 PASS (242 bestanden) · 3 PASS (242 golden, 399 negatief) ·
-4 PASS (576 cases) · 5 PASS (671 voorbeelden, 545 cases) ·
-6 PASS (436 checks, 545 cases) · 7 PASS (509 cases, 36 survivors) ·
-8 PASS (31 rode cases, Drools-leg 7 gepind / 24 met reden) ·
-9 PASS (201 checks, 12 goldens) · 10 PASS (322 tests, 59 rgs-goldens) ·
-11 PASS (29 PLAYED) · 12 PASS (`EXPECTED_PLAYED` 159 → **160**,
-`EXPECTED_DRL_PLAYED` 132 → **133**, JUnit 486) ·
-13 PASS (128 twists over 24 goldens, 0 survivors, 0 buiten de tabel) ·
+1 PASS · 2 PASS (244 bestanden) · 3 PASS (244 golden, 399 negatief) ·
+4 PASS (579 cases) · 5 PASS (680 voorbeelden, 547 cases) ·
+6 PASS (438 checks, 547 cases) · 7 PASS (511 cases, 36 survivors) ·
+8 PASS (32 rode cases, Drools-leg 7 gepind / 25 met reden; 64 fragmenten
+citeren geen bodemzin) · 9 PASS (201 checks, 12 goldens) ·
+10 PASS (322 tests, 60 rgs-goldens) · 11 PASS · 12 PASS
+(`EXPECTED_PLAYED` 159 → **161**, `EXPECTED_DRL_PLAYED` 136 → **138**,
+JUnit 496) · 13 PASS (128 twists over 24 goldens, 0 survivors) ·
 14 PASS (130 checks, 2 goldens).
+
+### Conformance-notitie (spec-first, het WF-017-precedent)
+
+`backends/drools/runtime/RegelSpraakRuntime` is de **productiesemantiek**, hier
+geport. Deze kaart wijzigt hem op twee punten, en dat zijn **runtime-
+divergenties ten opzichte van upstream `regelspraak-java`** die de
+pin-bump-conformance-PR daar moet melden — de spec-first-volgorde van
+`CLAUDE.md`, eerst de clausule hier, dan de PR daar:
+
+1. **De wandelgrens.** `rsDatumPlusDagsoort` bond de wandeling aan
+   **4 000 000 TOTALE stappen** onder de boodschap
+   `onvervulbare dagsoortdefinitie?`. Hier is dat de normatieve **reikwijdte**
+   geworden: een **gat** van `DAGSOORT_REIKWIJDTE` (40 000) dagen, met een
+   foutzin die geen diagnose claimt. Gevolg voor een conform programma: een
+   legitieme grote N (`datum plus 5 000 werkdagen`) die upstream faalde, slaagt
+   hier; een dagsoort wiens eerstvolgende voorkomen voorbij de reikwijdte ligt
+   faalt hier waar upstream nog 4 000 000 dagen doorliep.
+2. **De §9.8-compositie op een andere dag.** `transpiler/kern/Dagsoorten`
+   compileerde een geneste dagsoorttoets op elke datum-operand; hier
+   compileert hij hem alleen op de gebonden dag en laat de rest ongecompileerd
+   (een gewone weigering van die compiler). Gevolg: een document met die vorm
+   lowert hier niet waar het upstream wél lowerde.
+
+Beide zijn bewust en gemeten; de derde plek waar dit backend de spec vóór de
+geporte semantiek uit implementeert (ch. 7 prioritizedDefaults) staat al in
+`CLAUDE.md`'s gate-12-beschrijving. **Deze kaart raakt `frontends/` niet** —
+alleen read-only geëmitteerd voor de metingen.
 
 ### Beschermde paden — voorstellen, niet gemerged
 
 Gemandateerd door de kaart: `spec/RUNTIME-SEMANTICS.md` (ch. 3.8 de
-dagsoortsectie, ch. 8.2 de contextwaarde-alinea, ch. 2.10 de
-uitzonderingsnoot, ch. 3.12 drie rijen), `spec/IR-SPEC.md` (ch. 3.7 WF-031's
-positie-arm, ch. 4.1 de ContextValue-rij, ch. 5.4, WF-098's vlakheidsalinea,
-de WF-031-regeltabelrij), `spec/verifier/**`.
+dagsoortsectie inclusief reikwijdte, restkosten en de datum-tijd-splitsing;
+ch. 8.2 de contextwaarde-alinea; ch. 2.10 de uitzonderingsnoot; ch. 3.12 vijf
+rijen), `spec/IR-SPEC.md` (ch. 3.7 WF-031's positie-arm, ch. 4.1 de
+ContextValue-rij, ch. 5.4, WF-098's vlakheidsalinea, de WF-031-regeltabelrij),
+`spec/verifier/**`.
 **Niet gemandateerd, wel voorgesteld en hier gemeld:**
-`spec/ASP-TRANSLATION.md` (drie plekken die vanaf nu onwaar zouden zijn: de
-"loud flanks"-lijst, de datumfamilie-samenvatting, en de DAGSOORT-predicaat-
-alinea) en de twee gatescripts `scripts/check-drools.sh` (de twee pins met
-hun redenblok) en `scripts/check-rood.sh` (één regel in de
-Drools-uitsluitingslijst).
+`spec/ASP-TRANSLATION.md` (drie plekken die anders onwaar zouden zijn) en de
+twee gatescripts `scripts/check-drools.sh` (twee pins met redenblok) en
+`scripts/check-rood.sh` (twee regels in de Drools-uitsluitingslijst).
 
 ### Registervoorstel voor `spec/CONSTRUCTS.md` (niet aangeraakt)
 
 De dagsoortrij (de rij die §3.12/§9.8 draagt) krijgt er als delta-tekst bij:
 
-> **Duurvormen uitgevoerd (2026-09-19).** §6.10 en §6.11 met een dagsoort
-> als eenheid draaien in `ref`, de ASP-backend en beide Drools-takken over
-> dag-precieze operanden (`RUNTIME-SEMANTICS.md` ch. 3.8; golden
-> `jutterswet-bergingsklok`). Vier **diverge-from-v0**-delta's, elk omdat de
-> bron zwijgt of zichzelf tegenspreekt: de halfopen telling `(A, B]` van
-> §6.10 (de bron noemt dagsoorten daar niet), de achterwaartse stap van
-> §6.11 (de bron beschrijft alleen optellen), de 0-regel die het wint van
-> "het resultaat is altijd van die soort", en een **gapgrens van 3 660
-> kalenderdagen** waar de bron geen enkele terminatieclausule heeft — de
-> Drools-backend gaf die grens als een totaal van 4 000 000 stappen en
-> volgt nu de genormeerde gapgrens. De datum-tijd-kruising blijft een
-> erkende, niet-uitgevoerde vorm (v0 telt daar over de datumdelen; uchar
-> weigert bij naam).
+> **Duurvormen uitgevoerd (2026-09-19).** §6.10 en §6.11 met een dagsoort als
+> eenheid draaien in `ref`, de ASP-backend en beide Drools-takken (goldens
+> `jutterswet-bergingsklok` dag-precies, `jutterswet-getijklok` op
+> datum-tijd; `RUNTIME-SEMANTICS.md` ch. 3.8). **Vijf diverge-from-v0-delta's**,
+> elk omdat de bron zwijgt of zichzelf tegenspreekt: de halfopen telling
+> `(A, B]` van §6.10 (de bron noemt dagsoorten daar niet); de achterwaartse
+> stap van §6.11 (de bron beschrijft alleen optellen); de 0-regel die het wint
+> van "het resultaat is altijd van die soort"; een **reikwijdte van 40 000
+> kalenderdagen** waar de bron geen terminatieclausule heeft (de
+> Drools-backend gaf die grens als een totaal van 4 000 000 stappen en volgt
+> nu de genormeerde reikwijdte); en de **datum-tijd-splitsing** — de stap
+> draagt op het kalenderdatumdeel met behoud van kloktijd, de tijdsduur tussen
+> twee instants blijft geweigerd tot gedeeltelijke dagen en grensmomenten
+> apart bepaald zijn (v0 telt daar over de bare datumdelen). Daarnaast is de
+> §9.8-compositie **op de gebonden dag** beperkt: v0 rekende hem op elke
+> datum-operand, uchar weigert dat in alle drie de uitvoerders (rood
+> `dagsoortverwijzing-andere-dag`).
 
 ### Niet gedaan, bewust
 
-D6 (datum-tijd × dagsoort), D7 (het dagsoortpredicaat als regelvoorwaarde) en
-D8 (een statische arm op `de dag` buiten zijn binding) zijn genummerd en
-gemotiveerd, niet gebouwd. De sleutelkant van `dagsoortPerEenheid`, WF-017's
-producentkant en de lege helft `Constante.naam: null` blijven zoals de kaart
-ze buiten scope plaatste.
+D7 (het dagsoortpredicaat als regelvoorwaarde), D8 (een statische arm op
+`de dag` buiten zijn binding) en D9 (de dragende lezing van de compositie op
+een andere dag) zijn genummerd en gemotiveerd, niet gebouwd. De sleutelkant
+van `dagsoortPerEenheid`, WF-017's producentkant en de lege helft
+`Constante.naam: null` blijven zoals de kaart ze buiten scope plaatste.
