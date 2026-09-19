@@ -44,6 +44,16 @@
     },
     {
       "kind": "characteristicAbsent",
+      "label": "W1",
+      "characteristic": "strandbemand"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "W1",
+      "characteristic": "strandvrij"
+    },
+    {
+      "kind": "characteristicAbsent",
       "label": "W2",
       "characteristic": "bemand"
     },
@@ -51,6 +61,16 @@
       "kind": "characteristicPresent",
       "label": "W2",
       "characteristic": "onbemand"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "W2",
+      "characteristic": "strandbemand"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "W2",
+      "characteristic": "strandvrij"
     }
   ]
 }

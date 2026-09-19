@@ -17,6 +17,23 @@
       "bezield": true,
       "meervoud": "Jutters"
     },
+    "Strandjutter": {
+      "node": "Objecttype",
+      "naam": "Strandjutter",
+      "supertype": "Jutter",
+      "attributen": {},
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Strandjutters"
+    },
     "Wachtpost": {
       "node": "Objecttype",
       "naam": "Wachtpost",
@@ -28,11 +45,15 @@
       "attribuutTijdlijnNaam": {},
       "kenmerken": [
         "bemand",
-        "onbemand"
+        "onbemand",
+        "strandbemand",
+        "strandvrij"
       ],
       "kenmerkSoorten": {
         "bemand": "BIJVOEGLIJK",
-        "onbemand": "BIJVOEGLIJK"
+        "onbemand": "BIJVOEGLIJK",
+        "strandbemand": "BIJVOEGLIJK",
+        "strandvrij": "BIJVOEGLIJK"
       },
       "kenmerkGranulariteit": {},
       "kenmerkTijdlijnAantal": {},
@@ -79,6 +100,16 @@
     {
       "node": "Regel",
       "naam": "onbemande wachtpost",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "strandbemande wachtpost",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "strandvrije wachtpost",
       "soort": "regel"
     }
   ],
@@ -152,6 +183,82 @@
         "backref": "toegewezen wachtpost",
         "negatie": true,
         "bron": "hij geen wachtjutter heeft"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "strandbemande wachtpost",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "strandbemand",
+        "objecttype": "Wachtpost",
+        "onderwerpBron": "Een Wachtpost",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Wachtpost is strandbemand",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "VerreRollidmaatschap",
+        "filler": "Strandjutter",
+        "backref": "toegewezen wachtpost",
+        "negatie": false,
+        "bron": "hij een strandjutter heeft"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "strandvrije wachtpost",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "strandvrij",
+        "objecttype": "Wachtpost",
+        "onderwerpBron": "Een Wachtpost",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Wachtpost is strandvrij",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "VerreRollidmaatschap",
+        "filler": "Strandjutter",
+        "backref": "toegewezen wachtpost",
+        "negatie": true,
+        "bron": "hij geen strandjutter heeft"
       },
       "geldigheid": {
         "node": "Geldigheid",
