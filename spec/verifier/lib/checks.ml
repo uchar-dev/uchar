@@ -2957,12 +2957,39 @@ let dagsoort_scan at (c0 : conditie) : violation list * string list =
            kind name)
       :: !viols
   in
+  let session name =
+    viols :=
+      v "WF-031" at
+        (Printf.sprintf
+           "day-kind condition reads the session value '%s' — a day kind classifies a bare date \
+            at stratum 0 (ch. 5.4), so its predicate is a function of THE DAY alone; the one \
+            context value admitted here is 'de dag', the bound day of the definition itself"
+           name)
+      :: !viols
+  in
   let rec ex (e : expr) =
     let opt = function Some e -> ex e | None -> () in
     match e with
     | Attribuut_ref { attribuut; _ } -> impure "attribute" (Option.value attribuut ~default:"?")
-    | Literal _ | Parameter_ref _ | Variabele_ref _ | Constante _ | Expr_onopgelost _ | Binder_ref _
-      ->
+    (* The context value is the one place this walk must read a NAME. WF-098
+       (ch. 4.1) closes the set to three and says nothing about POSITION; the
+       position rule belongs here, because it is a semantic one: the executors
+       evaluate the voorwaarde per calendar day, so a session-dependent
+       predicate would classify the same day differently in two sessions of
+       the same document. `de dag` IS that day and is admitted; the two
+       SESSION values are not.
+
+       The arm names those two and nothing else, which keeps it exact: a name
+       OUTSIDE the set is WF-098's to reject (and does not become a WF-031
+       report as well — measured on `wf098-onbekende-contextwaarde-naam`,
+       whose `de dagX` sits in exactly this position), and the EMPTY half
+       (`naam: null`) is left where WF-098 left it, its own open point in
+       ch. 4.1. *)
+    | Constante { naam = Some n; _ }
+      when norm n = norm "Rekendatum" || norm n = norm "Rekenjaar" ->
+        session n
+    | Constante _ | Literal _ | Parameter_ref _ | Variabele_ref _ | Expr_onopgelost _
+    | Binder_ref _ ->
         ()
     | Dimensie_cel { attribuut; _ } -> opt attribuut
     | Binair { links; rechts; _ } -> opt links; opt rechts

@@ -444,6 +444,12 @@ public final class RegelSpraakRuntime {
         return optellen ? datum.plus(n, u) : datum.minus(n, u);
     }
 
+    /** The normative GAP FENCE of the day-kind walk (uchar RUNTIME-SEMANTICS ch. 3.8): a step that passes this many
+     *  consecutive calendar days without finding one of the kind faults instead of looping. Ten calendar years —
+     *  above the longest recurrence gap a Gregorian day kind can have (the century-skipped leap day, 2 922 days)
+     *  and low enough for a grounding executor to materialise the walk. */
+    public static final int DAGSOORT_GAT_GRENS = 3_660;
+
     /** §6.11 "datum ± N &lt;dagsoort&gt;" ("5 werkdagen"): step one calendar day at a time, counting only days that
      *  ARE the dagsoort ({@code isDagsoort}), until N have passed — the Nth such day is the result. X itself NEVER
      *  counts (step before testing) and the result is always a dagsoort day, EXCEPT a 0 / leeg count returns X
@@ -459,14 +465,21 @@ public final class RegelSpraakRuntime {
         if (n < 0) { op = !op; n = -n; }
         if (n == 0) return datum;              // §6.11: 0 -> X onveranderd (zelfs als X geen dagsoort-dag is)
         java.time.LocalDate d = datum;
-        long geteld = 0, stappen = 0;
+        java.time.LocalDate anker = datum;
+        long geteld = 0, gat = 0;
         // Bound the walk: a dagsoortdefinitie that matches NO calendar date (an author error, e.g. maand==13) would
-        // otherwise loop forever. 4_000_000 days (~10000 years) is far beyond any real dagsoort spacing.
+        // otherwise loop forever. The fence is uchar's normative one (RUNTIME-SEMANTICS ch. 3.8): a GAP of
+        // DAGSOORT_GAT_GRENS consecutive calendar days with no day of the kind. It replaces the backend's own
+        // 4 000 000-step TOTAL cap of the port, which refused a legitimate large N ("datum plus 5 000 werkdagen")
+        // under a message blaming the definition, and which no other executor shared. The uchar spec beyond the
+        // ported production semantics, as with the ch. 7 prioritizedDefaults lowering.
         while (geteld < n) {
+            if (gat >= DAGSOORT_GAT_GRENS) throw new IllegalStateException(
+                    "day-kind walk: no day of the kind within " + DAGSOORT_GAT_GRENS + " calendar days of "
+                    + anker + " (an unsatisfiable day-kind definition?)");
             d = op ? d.plusDays(1) : d.minusDays(1);
-            if (++stappen > 4_000_000L) throw new IllegalStateException(
-                    "dagsoort-rekenkunde: geen " + n + "-de dagsoort-dag binnen 4000000 dagen (onvervulbare dagsoortdefinitie?)");
-            if (isDagsoort.test(d)) geteld++;
+            if (isDagsoort.test(d)) { geteld++; gat = 0; anker = d; }
+            else gat++;
         }
         return d;
     }
