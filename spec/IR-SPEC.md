@@ -2551,7 +2551,7 @@ the schema when it does.
 
 | Node | Fields | Notes |
 |---|---|---|
-| Literal | `value`, `type`, `source` | **Delta (row 27):** v0 carries a LEXEME as the value — a string the executors parse — and v1 carries a typed value. Which lexeme, per sort: WF-081 pins the bare number, WF-084 the ISO date, and a `Tekst` literal's value is the string BETWEEN the source delimiters (maintainer decision 2026-09-18). Two sorts still carry a source-shaped lexeme, tracked in row 27: WF-095 ADMITS the day-first snippet for `DatumTijd` (the v0 emitter still writes it — canonicalising it is its own card), and an enumeratiewaarde keeps its `'…'` delimiters, which readers strip (`Literalen.enumLabel`). The unparsed source slice always lives in `source` (`bron` on the v0 wire), which is where a reader that wants the author's spelling looks |
+| Literal | `value`, `type`, `source` | **Delta (row 27):** v0 carries a LEXEME as the value — a string the executors parse — and v1 carries a typed value. Which lexeme, per sort: WF-081 pins the bare number, WF-084 the ISO date, and a `Tekst` literal's value is the string BETWEEN the source delimiters (maintainer decision 2026-09-18). An enumeration value's lexeme is the BARE label, which WF-039 crosses byte-exactly against the declared value list, so the delimited spelling is ill-formed on this wire; the sentence that once stood here — "an enumeratiewaarde keeps its `'…'` delimiters, which readers strip" — described a FRONTEND reader, never the wire, and is corrected in the paragraph below (maintainer decision 2026-09-19). ONE sort still carries a source-shaped lexeme, tracked in row 27: WF-095 ADMITS the day-first snippet for `DatumTijd` (the v0 emitter still writes it — canonicalising it is its own card). The unparsed source slice always lives in `source` (`bron` on the v0 wire), which is where a reader that wants the author's spelling looks |
 | AttributeReference | `attribute`, `subjectType`, `path` (role steps), `type`, `source` | **Delta (row 4):** v0 splits navigation over `navigatieRol` + `navigatiePad` + a `set` flag (with the invariant that a non-empty path implies a role) and keeps the transpiler-facing `onderwerpBron`; v1 unifies into one explicit path of role steps, with result cardinality derived from the declared role cardinalities. **Landed (2026-08-18):** the symbolic path rides the v0 wire as the `navigatieBindingen` extension field (ch. 4.1a, WF-053); the anchor `jutterswet-kustwacht` executes all three navigated shapes through both executors. *Migration:* the v1 unification drops the written-name fields the bindings supersede |
 | ParameterReference | `parameter` (name ref), `type`, `source` | the v0 wire form is already symbolic (the emitter writes the name) — the "embed the model object" wart is in-memory only |
 | VariableReference | `name`, `type`, `source` | a rule-local let-binding (§13.4.2.10); binding is frontend scope resolution |
@@ -3332,6 +3332,41 @@ second spelling of one text value on the wire, which is what this decision
 removed. Its machine-checkable artifacts are the emitter witness (`IrEmitt
 erTest.tekst_literal_lexeme_is_de_geparste_waarde_snippet_in_bron`, gate
 10) and gate 11's byte-identical re-emission of the pinned dumps.
+
+**The enumeration-value lexeme (maintainer decision 2026-09-19).** A
+`Literal` whose `type` is an `Enumeration` carries as its value the BARE
+label — the text between the source form's `'…'` delimiters, nothing
+removed but those two characters. Unlike the text rule above this needs no
+new sentence to be normative: **WF-039** already crosses that value
+byte-exactly against the declared value list, so a delimited spelling
+names no declared value and is ill-formed, and **WF-034** (r) refuses the
+unknown sentinel in the `type` beside it. The wire was therefore never
+ambiguous here, and no document on it has ever carried the delimited form.
+What the decision corrects is a sentence that used to stand in ch. 4.1's
+`Literal` row — "an enumeratiewaarde keeps its `'…'` delimiters, which
+readers strip" — which described a FRONTEND reader rather than this wire,
+and a PRODUCER that had followed it: the RegelSpraak frontend wrote the
+delimited source snippet under the unknown sentinel and so could not emit
+the construct in any well-formed shape at all. That was a coverage gap,
+not a divergence.
+
+The second half of the rule is what makes the first half producible. An
+enumeration literal names a LABEL and not a domain, so which `Enumeration`
+its `type` must carry is a property of the literal's POSITION, not of its
+lexeme. Two positions supply one, and they are the two the value-membership
+rules already read: the **write target**'s declared datatype (WF-023's
+keuzetype clause, at each of that rule's three write positions) and the
+**other side of a comparison** (the sibling operand's type). The `type` a
+producer writes there is the declared domain repeated in full, which is
+what WF-088 demands of every use site. Where neither position names an
+`Enumeration` there is no domain to derive, and a producer emits an
+`Unresolved` marker rather than a guessed domain — a label written under a
+domain nobody declared for that position would be a silently wrong answer
+where the marker is a visible gap. The machine-checkable artifacts are the
+emitter witnesses (`IrEmitterTest.enum_literal_krijgt_zijn_domein_van_het_schrijfdoel`
+and its three siblings, gate 10) and the golden `jutterswet-vondstklasse`,
+which carries an enumeration literal in both positions and replays through
+ref and clingo against hand-computed values (gates 3, 5 and 6).
 
 **The validity bound's lexeme (WF-101).** A validity window's bounds
 (ch. 3.10, v0 `Geldigheid`) are each either `null` — the open bound — or
