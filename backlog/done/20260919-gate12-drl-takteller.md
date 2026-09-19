@@ -129,7 +129,7 @@ deze branch aangemaakt (zie onderaan).
 | gate 12 zoals op `main` (`git show main:` — gedraaid in deze worktree) | 1:34,7 |
 | gate 12 met de sweep erin | 3:20,0 |
 | de exec-sweep alleen, los gedraaid over alle 209 goldens | 1:23,8 |
-| de DRL-sweep alleen, gemeten door de gate zelf | 96s / 97s / 96s / 101s |
+| de DRL-sweep alleen, gemeten door de gate zelf | 96 / 97 / 96 / 101 / 102s |
 
 De sweep meet zichzelf en drukt dat in het rapport. Van de vier getallen in
 het script is er nu geen meer geschat: de exec-sweep kost **~84s** op deze
@@ -217,10 +217,12 @@ script en in dit Result.
 Uit de slotrun, ná de wijziging:
 
 ```
+  DRL-text sweep: 102s wall clock over 209 goldens
+check-drools: PASS
 played 159  (…matched the pinned ref≡clingo expectations)
 channel floor 50 non-PLAYED goldens pinned by name; played matches the pinned 159
 DRL-text branch played 132  (its OWN count — the narrower branch, not the square; pin 132)
-DRL-text floor 77 non-PLAYED goldens pinned by name; sweep cost 96s wall clock
+DRL-text floor 77 non-PLAYED goldens pinned by name; sweep cost 102s wall clock
 JUnit 478 tests, floor 239
 ```
 
@@ -244,11 +246,14 @@ die elf leest daarvan iets wat hun uitslag kan bewegen. Aan het *gedrag*
 van `backends/drools/` is in de hele kaart geen regel veranderd — de suite
 bleef op 478 tests, nul overgeslagen.
 
-De branch is tweemaal opnieuw op `main` gezet, laatst op `9f41f21a` (de
-stille-markers-kaart, die `backends/drools`' loader en de frontend raakt en
-daarmee via de gedeelde source root de backendbuild). Gate 12 is ná die
-rebase volledig hergedraaid: 159 en 132 onveranderd, dus de gemerge kaart
-verschuift geen kanaal.
+De branch is driemaal opnieuw op `main` gezet terwijl de hoofdsessie
+doorwerkte, laatst op `910b5d03`. Twee van die drie kwamen met werk dat
+gate 12 kon raken: de stille-markers-kaart (`backends/drools`' loader plus
+de frontend, die via de gedeelde source root in de backendbuild meedraait)
+en de setbron-kaart (verifier en negatief-corpus). Na elke rebase is gate 12
+volledig hergedraaid, en 159 en 132 bleven onveranderd — geen van beide
+kaarten verschuift een kanaal. Gate 1 en gate 3 zijn op de laatste basis
+ook nagelopen: PASS, met 398 negatieven waar er eerder 395 waren.
 
 ### Bewust niet
 
