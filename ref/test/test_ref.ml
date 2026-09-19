@@ -2678,6 +2678,182 @@ let () =
   expect_num "WV-3.4b-toone-stap" (ev "J1") "3.00";
   expect_leeg "WV-3.4b-toone-leeg-bereik" (ev "J2")
 
+(* --- ch. 3.4c: the filled-value count ---------------------------------- *)
+
+(* WV-3.4c: the ch. 3.4c worked examples, verbatim. Four groups, and none
+   of them is spare.
+
+   (1) The source shapes, each beside the INSTANCE count over the same
+   population, because the new kind is only discriminating next to the old
+   one: a member with no value is a member (3 against 2, and 1 against 0),
+   while an empty source answers 0 from both and leeg from neither.
+
+   (2) The typelessness of the test (decision G8): the same three
+   contributors folded once per declared type. The boolean row carries the
+   sharpest half — `onwaar` is a VALUE and counts as filled; leeg is the
+   absence of one.
+
+   (3) The filter narrows the contributors BEFORE the presence test
+   (ch. 3.4a): the leeg member fails the comparison and drops out, which is
+   why the filtered counts agree at 1 where the unfiltered ones part.
+
+   (4) The multi-step range counts ELEMENTS (ch. 3.4b): an element reachable
+   along two intermediate instances contributes once. That sentence has
+   waited for a carrier since the count's set source left the wire, and this
+   kind is it.
+
+   Plus the loud refusal: a bare role source hands the fold INSTANCES, which
+   this kind cannot read. WF-037 fences it on the wire; the fault stays as
+   the second line of defence. *)
+let () =
+  let num2kg : Ir_v0.Ast.datatype =
+    Numeriek
+      { geheel = false; decimalen = 2; teken = None;
+        eenheid =
+          Some { afkorting = Some "kg"; stelsel = Some "Gewicht"; canoniek = Some "kg";
+                 factor_naar_canoniek = Some 1.0; noemer = None } }
+  in
+  let kustvak : Ir_v0.Ast.datatype =
+    Enumeratie { domein = Some "kustvakken"; waarden = [ Some "noord"; Some "zuid" ] }
+  in
+  let rol naam otn mv meervoudig : Ir_v0.Ast.rol =
+    { rol_naam = Some naam; rol_objecttype_naam = Some otn; rol_meervoud = mv;
+      rol_meervoudig = meervoudig }
+  in
+  let ft naam rollen = (naam, { Ir_v0.Ast.ft_naam = Some naam; wederkerig = false; rollen }) in
+  let doc =
+    {
+      empty_doc with
+      domeinen = [ ("kustvakken", Some kustvak) ];
+      objecttypen =
+        [ ot "Jutter" [] []; ot "Boot" [] [];
+          ot "Vondst"
+            [ ("gewicht", Some num2kg); ("vindplaats", Some Tekst);
+              ("vondstdag", Some Datum_in_dagen); ("kustvak", Some kustvak);
+              ("geborgen", Some Booleaan) ]
+            [] ];
+      feittypen =
+        [ ft "vondstaanmelding"
+            [ rol "aanmelder" "Jutter" None false; rol "vondst" "Vondst" (Some "vondsten") true ];
+          ft "bemanning"
+            [ rol "schipper" "Jutter" None false;
+              rol "gevoerde boot" "Boot" (Some "gevoerde boten") true ];
+          ft "berging"
+            [ rol "bergende boot" "Boot" (Some "bergende boten") true;
+              rol "geborgen vondst" "Vondst" (Some "geborgen vondsten") true ] ];
+    }
+  in
+  let rb f r : Ir_v0.Ast.rol_binding = { rb_feittype = f; rb_rol = r } in
+  let setbron attr typ : Ir_v0.Ast.expr =
+    Attribuut_ref
+      { attribuut = Some attr; objecttype = Some "Vondst"; onderwerp_bron = None;
+        navigatie_rol = None; typ = Some typ; bron = None; set = true; navigatie_pad = [];
+        navigatie_bindingen = None }
+  in
+  (* the v0 instance-fold source: a role name under the unknown sentinel *)
+  let telbron : Ir_v0.Ast.expr =
+    Attribuut_ref
+      { attribuut = Some "vondsten"; objecttype = Some "Jutter"; onderwerp_bron = None;
+        navigatie_rol = None; typ = Some (Datatype_onbekend { reden = None }); bron = None;
+        set = false; navigatie_pad = []; navigatie_bindingen = None }
+  in
+  let vouw kind argumenten filter pad : Ir_v0.Ast.expr =
+    Functie
+      { kind; argumenten; element_objecttype = Some "Vondst"; leegwaarde = None; filter;
+        dimensie_selectie = None; typ = Some num0; bron = None; granulariteit = None;
+        bron_rol = (if pad = None then Some (rb "vondstaanmelding" "vondst") else None);
+        bron_pad = pad }
+  in
+  let gevuld ?filter attr typ = vouw Aantal_gevulde [ setbron attr typ ] filter None in
+  let aantal ?filter () = vouw Aantal [ telbron ] filter None in
+  let zwaarder lex : Ir_v0.Ast.conditie =
+    Vergelijking
+      { op = Groter; links = Some (aref "gewicht" "Vondst" num2kg);
+        rechts = Some (litv lex num2kg); periode = None; bron = None }
+  in
+  let env = env_of doc in
+  let links l = List.fold_left (fun m (k, v) -> World.SMap.add k v m) World.SMap.empty l in
+  let jutter label vondsten =
+    { (inst label "Jutter" []) with World.links = links [ ("vondsten", vondsten) ] }
+  in
+  let wereld insts = List.fold_left World.add_instance World.empty insts in
+  let w =
+    wereld
+      [ jutter "J1" [ "V1"; "V2"; "V3" ]; jutter "J2" []; jutter "J3" [ "V4" ];
+        jutter "J4" [ "V5"; "V6" ]; jutter "J5" [ "V7"; "V8" ];
+        inst "V1" "Vondst"
+          [ ("gewicht", n "2.50"); ("vindplaats", Value.Text "Noorderstrand");
+            ("vondstdag", Value.date_of_iso "2026-05-01"); ("kustvak", Value.Enum "noord");
+            ("geborgen", Value.Bool true) ];
+        inst "V2" "Vondst"
+          [ ("gewicht", n "1.25"); ("vindplaats", Value.Text "Zuiderhoofd");
+            ("vondstdag", Value.date_of_iso "2026-06-21"); ("kustvak", Value.Enum "zuid");
+            ("geborgen", Value.Bool false) ];
+        inst "V3" "Vondst" []; inst "V4" "Vondst" [];
+        inst "V5" "Vondst" [ ("gewicht", n "5.00") ];
+        inst "V6" "Vondst" [ ("gewicht", n "7.00") ];
+        inst "V7" "Vondst" []; inst "V8" "Vondst" [] ]
+  in
+  let ev w label e = Eval.eval_expr env w (World.get w label) ~err:no_err e in
+  (* (1) the source shapes, the filled count beside the instance count *)
+  expect_num "WV-3.4c-gemengd-aantal" (ev w "J1" (aantal ())) "3";
+  expect_num "WV-3.4c-gemengd-gevuld" (ev w "J1" (gevuld "gewicht" num2kg)) "2";
+  expect_num "WV-3.4c-alles-gevuld-aantal" (ev w "J4" (aantal ())) "2";
+  expect_num "WV-3.4c-alles-gevuld-gevuld" (ev w "J4" (gevuld "gewicht" num2kg)) "2";
+  expect_num "WV-3.4c-alles-leeg-aantal" (ev w "J5" (aantal ())) "2";
+  expect_num "WV-3.4c-alles-leeg-gevuld" (ev w "J5" (gevuld "gewicht" num2kg)) "0";
+  expect_num "WV-3.4c-enig-lid-leeg-aantal" (ev w "J3" (aantal ())) "1";
+  expect_num "WV-3.4c-enig-lid-leeg-gevuld" (ev w "J3" (gevuld "gewicht" num2kg)) "0";
+  expect_num "WV-3.4c-lege-bron-aantal" (ev w "J2" (aantal ())) "0";
+  expect_num "WV-3.4c-lege-bron-gevuld" (ev w "J2" (gevuld "gewicht" num2kg)) "0";
+  (* (2) every value type counts; the test is presence, not number *)
+  expect_num "WV-3.4c-type-numeriek" (ev w "J1" (gevuld "gewicht" num2kg)) "2";
+  expect_num "WV-3.4c-type-tekst" (ev w "J1" (gevuld "vindplaats" Tekst)) "2";
+  expect_num "WV-3.4c-type-datum" (ev w "J1" (gevuld "vondstdag" Datum_in_dagen)) "2";
+  expect_num "WV-3.4c-type-enumeratie" (ev w "J1" (gevuld "kustvak" kustvak)) "2";
+  (* onwaar is a VALUE: V2's `geborgen` is false and counts as filled *)
+  expect_num "WV-3.4c-type-booleaan" (ev w "J1" (gevuld "geborgen" Booleaan)) "2";
+  (* (3) the filter narrows the contributors before the presence test *)
+  expect_num "WV-3.4c-filter-aantal" (ev w "J1" (aantal ~filter:(zwaarder "2.00") ())) "1";
+  expect_num "WV-3.4c-filter-gevuld"
+    (ev w "J1" (gevuld ~filter:(zwaarder "2.00") "gewicht" num2kg))
+    "1";
+  expect_num "WV-3.4c-filter-alles-weg-aantal"
+    (ev w "J1" (aantal ~filter:(zwaarder "10.00") ()))
+    "0";
+  expect_num "WV-3.4c-filter-alles-weg-gevuld"
+    (ev w "J1" (gevuld ~filter:(zwaarder "10.00") "gewicht" num2kg))
+    "0";
+  (* (4) the multi-step range counts ELEMENTS, and a shared one counts once *)
+  let pad = Some [ rb "bemanning" "gevoerde boot"; rb "berging" "geborgen vondst" ] in
+  let over_pad = vouw Aantal_gevulde [ setbron "gewicht" num2kg ] None pad in
+  let boot label vondsten =
+    { (inst label "Boot" []) with
+      World.links = links [ ("geborgen vondsten", vondsten) ] }
+  in
+  let schipper label boten =
+    { (inst label "Jutter" []) with World.links = links [ ("gevoerde boten", boten) ] }
+  in
+  let vondsten =
+    [ inst "V1" "Vondst" [ ("gewicht", n "3.00") ]; inst "V2" "Vondst" [];
+      inst "V3" "Vondst" [ ("gewicht", n "5.00") ] ]
+  in
+  let w2 =
+    wereld
+      ([ schipper "J1" [ "B1"; "B2" ]; boot "B1" [ "V1"; "V2" ]; boot "B2" [ "V3" ] ] @ vondsten)
+  in
+  let w3 =
+    wereld
+      ([ schipper "J1" [ "B1"; "B2" ]; boot "B1" [ "V1"; "V2" ]; boot "B2" [ "V1"; "V3" ] ]
+      @ vondsten)
+  in
+  expect_num "WV-3.4c-bronpad-vlakke-unie" (ev w2 "J1" over_pad) "2";
+  expect_num "WV-3.4c-bronpad-gedeeld-element" (ev w3 "J1" over_pad) "2";
+  (* the second line of defence: a bare role source hands the fold instances *)
+  expect_fault_msg "WV-3.4c-kale-rolbron-faalt"
+    (fun () -> ev w "J1" (vouw Aantal_gevulde [ telbron ] None None))
+    "value aggregation over a bare role source"
+
 (* --- ch. 5.7a: what a supplied role link establishes -------------------- *)
 
 (* WV-5.7a: the `jutterswet-ketenband` worked example, verbatim (the

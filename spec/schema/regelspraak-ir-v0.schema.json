@@ -713,6 +713,7 @@
             "MAXIMUM",
             "EERSTE",
             "LAATSTE",
+            "AANTAL_GEVULDE",
             "WORTEL",
             "ABSOLUTE_WAARDE",
             "CONCATENATIE",

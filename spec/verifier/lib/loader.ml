@@ -162,7 +162,8 @@ let functie_kind =
   enum "FunctieKind"
     [ ("SOM", Som); ("TOTAAL", Totaal); ("AANTAL", Aantal);
       ("MINIMUM", Minimum); ("MAXIMUM", Maximum); ("EERSTE", Eerste);
-      ("LAATSTE", Laatste); ("WORTEL", Wortel);
+      ("LAATSTE", Laatste); ("AANTAL_GEVULDE", Aantal_gevulde);
+      ("WORTEL", Wortel);
       ("ABSOLUTE_WAARDE", Absolute_waarde); ("CONCATENATIE", Concatenatie);
       ("TIJDSDUUR", Tijdsduur); ("ABSOLUTE_TIJDSDUUR", Absolute_tijdsduur);
       ("EERSTE_PAASDAG", Eerste_paasdag);

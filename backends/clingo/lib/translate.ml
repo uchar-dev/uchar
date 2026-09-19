@@ -3646,6 +3646,22 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          #sum over an instance source, and a listed fold has none; and where it carries a \
          ch. 5.11 leegwaarde, the addition chain that would carry it must evaluate that stand-in \
          unconditionally. No corpus case pins a value for the form"
+  | Functie { kind = Aantal_gevulde; _ } ->
+      (* the filled-value count (IR-SPEC ch. 4.3, RUNTIME-SEMANTICS ch. 3.4c),
+         landed on the wire and in `ref` on 2026-09-20 and NOT translated
+         here yet: the ASP form is a #count over the same presence literal
+         the som already guards min/max with, and building it is the second
+         card's work.
+         The arm exists for its NAME, on the listed-som precedent above.
+         Without it the kind falls into the bottom sentence below, whose "no
+         corpus case exercises it" a red witness would falsify the moment one
+         is written — and the same sentence catches every other untranslated
+         form, so a pin on it witnesses none of them. Named here, the refusal
+         says which construct arrived and when it is due. *)
+      fault
+        "the filled-value count (AANTAL_GEVULDE) is not translated: this backend carries no \
+         #count over the presence of a set source's values yet, so it refuses the kind by name \
+         rather than answering"
   | _ -> fault "expression kind not translated (no corpus case exercises it)"
 
 (* gedeeld-door (§6.5, arith.div_gen) — three edges plus the value:

@@ -23,6 +23,11 @@ type bin_op =
 
 type functie_kind =
   | Som | Totaal | Aantal | Minimum | Maximum | Eerste | Laatste
+  | Aantal_gevulde
+      (* the filled-value count (IR-SPEC ch. 4.3, RUNTIME-SEMANTICS
+         ch. 3.4c): an instance fold that reads a VALUE per contributor
+         and answers how many of those values are not leeg. A uchar
+         dialect kind — the source language spells it nowhere. *)
   | Wortel | Absolute_waarde | Concatenatie
   | Tijdsduur | Absolute_tijdsduur | Eerste_paasdag
   | Tijdsevenredig_deel | Aantal_dagen_in

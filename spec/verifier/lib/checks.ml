@@ -3496,7 +3496,8 @@ let scalar_one_arg_kinds =
   [ Wortel; Absolute_waarde; Eerste_paasdag; Jaar_uit; Maand_uit; Dag_uit;
     Uur_uit; Minuut_uit; Seconde_uit; Milliseconde_uit ]
 
-let aggregation_kinds = [ Som; Totaal; Aantal; Minimum; Maximum; Eerste; Laatste ]
+let aggregation_kinds =
+  [ Som; Totaal; Aantal; Minimum; Maximum; Eerste; Laatste; Aantal_gevulde ]
 
 (* The folds that hand an ELEMENT through unchanged: they select a
    contributor, they never compute a new value, so the node's own type is
@@ -3642,10 +3643,19 @@ let far_role_candidates ctx ~subject ~filler ~backref =
       | _ -> [])
     ctx.doc.feittypen
 
-(* The six aggregation kinds that read a VALUE per contributor — every fold
+(* The SEVEN aggregation kinds that read a VALUE per contributor — every fold
    kind except AANTAL, which reads the contributors themselves (ch. 1.2e: a
    count is never empty because it never looks inside a member). WF-093's
-   discriminator; the wire spelling is the message's. *)
+   discriminator; the wire spelling is the message's.
+
+   Six until 2026-09-20, when AANTAL_GEVULDE joined them (IR-SPEC ch. 4.3,
+   RUNTIME-SEMANTICS ch. 3.4c). It is a count in its RESULT and a value fold
+   in its READING, and this list is about the reading: it asks each
+   contributor for a value and tests that value for presence. Joining here is
+   therefore not an exception to the 2026-09-19 narrowing but its application
+   — what left the wire that day was a count reading VALUES under a node
+   whose semantics fold CONTRIBUTORS, and this kind's semantics fold
+   values. *)
 let value_fold_name = function
   | Som -> Some "SOM"
   | Totaal -> Some "TOTAAL"
@@ -3653,6 +3663,7 @@ let value_fold_name = function
   | Maximum -> Some "MAXIMUM"
   | Eerste -> Some "EERSTE"
   | Laatste -> Some "LAATSTE"
+  | Aantal_gevulde -> Some "AANTAL_GEVULDE"
   | _ -> None
 
 (* The v0 instance-fold source wart (`CONSTRUCTS.md` row 1): a count/fold
@@ -4615,8 +4626,54 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
       @ (if
            List.mem f.kind aggregation_kinds && f.element_objecttype = None
            && f.dimensie_selectie = None && arity < 2 && f.kind <> Aantal
+           && f.kind <> Aantal_gevulde
          then [ v "WF-037" at "value fold with fewer than two operands" ]
          else [])
+      (* WF-037, the filled count's shape (IR-SPEC ch. 4.3, semantics
+         RUNTIME-SEMANTICS ch. 3.4c). Two of the three arms are new of
+         DIRECTION: everywhere else this rule forbids a facet or demands at
+         LEAST two operands, and here the law is the opposite — exactly one
+         argument, and that one a set reading. It is the only WF-037 arm that
+         demands a form instead of refusing one, and it has to be: a non-set
+         source is the subject's OWN read (the ch. 3.6 temporal total, the
+         row-1 wart), and the filled count of one own value is 0 or 1 — a
+         form no author writes and no executor should have to answer.
+
+         Drawn edge to edge with WF-093, which owns the sentinel: the bare
+         wart is a non-set reading by construction, so without the sentinel
+         exit below every wf093 witness under this kind would carry a second
+         citation for one defect. The arms return in order — arity, then the
+         element type, then the source — because each later one presupposes
+         what the earlier one established. *)
+      @ (if f.kind <> Aantal_gevulde then []
+         else if arity <> 1 then
+           [ v "WF-037" at
+               (Printf.sprintf
+                  "the filled count takes exactly ONE argument, its set source, and this node \
+                   carries %d: there is no listed form of this kind — the source language \
+                   spells it nowhere, so there is no articulated operand list to admit \
+                   (ch. 4.3)"
+                  arity) ]
+         else
+           match (f.element_objecttype, f.argumenten) with
+           | None, _ ->
+               [ v "WF-037" at
+                   "the filled count is an INSTANCE fold and MUST carry an element type: \
+                    without one its argument is no fold source at all, and the count has no \
+                    contributors whose values it could test for presence (ch. 4.3)" ]
+           | Some _, [ Attribuut_ref { set = true; _ } ] -> []
+           | Some _, [ Attribuut_ref { typ = Some (Datatype_onbekend _); _ } ] ->
+               (* the row-1 wart hands the fold linked INSTANCES rather than a
+                  value per contributor, which is WF-093's sentence and not a
+                  second defect — the exit keeps one malformation on one rule *)
+               []
+           | Some _, _ ->
+               [ v "WF-037" at
+                   "the filled count's single argument MUST be a set reading: this kind reads a \
+                    VALUE per contributor, so its source is the set source (ch. 4.3, \
+                    `set: true`) — a non-set source is the subject's own read, whose filled \
+                    count is 0 or 1, and a bare role source hands the fold instances instead \
+                    of values" ])
       (* WF-034: references *)
       @ (match f.element_objecttype with
          | Some t when objecttype ctx t = None ->
@@ -4860,7 +4917,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
       @ (let source_exempt =
            (* The ch. 4.3 fold SOURCE position, and exactly it. Drawn on the
               SAME pair WF-093 keys on — a SINGLE argument, and a kind that
-              folds (the six value folds of [value_fold_name] plus AANTAL) —
+              folds (the seven value folds of [value_fold_name] plus AANTAL) —
               so the rules that fence this branch meet edge to edge:
               single+AANTAL is the count source they leave alone,
               single+value-fold is WF-093's alone, and everything else is an
@@ -4891,7 +4948,16 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
               2 against 3 as soon as one member's attribute is leeg, and the
               ASP backend refused the kind. Both executors' arms stay as the
               second line of defence, unreachable through a well-formed
-              document rather than removed. *)
+              document rather than removed.
+
+              SIX became SEVEN on 2026-09-20 with AANTAL_GEVULDE, and the
+              formula did not move a letter: the exemption reads
+              [value_fold_name], and that list grew. The narrowing above is
+              unweakened by it. What left the wire was a node whose semantics
+              fold CONTRIBUTORS carrying a field that names their values; the
+              new kind's semantics fold the VALUES (ch. 3.4c), so `set` on its
+              source names exactly what the node consumes. The kinds differ,
+              the boundary does not. *)
            List.length f.argumenten = 1 && value_fold_name f.kind <> None
          in
          List.concat

@@ -128,6 +128,7 @@ empty or all-empty source differs per aggregation — this is the
 | som | **empty**, unless the declared fallback clause ("… of 0 als die er niet zijn") substitutes | som over {5, leeg, 3} = 8; som over {leeg, leeg} = leeg; with fallback = 0 |
 | totaal | **0**, unconditionally (§4.20) | totaal over {} = 0 |
 | aantal | 0 (a count, never empty) | aantal over {} = 0 |
+| aantal gevulde | 0 (a count, never empty) | aantal gevulde over {leeg} = 0; over {} = 0 (ch. 3.4c) |
 | minimum/maximum, eerste/laatste | **empty**; no fallback form exists | min(5, leeg, 3) = 3; min(leeg, leeg) = leeg |
 | dimension folds (§5.8.5) | empty cells skipped; all-empty selection = empty (som may use its fallback) | cells {Q1: 3, Q2: leeg, Q3: 2}: som over Q1–Q3 = 5; som over {Q2} = leeg |
 
@@ -1038,10 +1039,15 @@ stating because the nested reading answers differently:
    route at all; the maintainer took option (ii) of
    `backlog/done/20260909-eerste-laatste-setvouw-kloof.md` §6 and refused the
    wire form rather than amend a clause to fit an executor. So this clause's
-   own word, ELEMENTS, stands unchanged and keeps waiting for a carrier — a
-   separately defined operation is what the value count and the average will
-   get (`backlog/new/20260919-aantal-gevulde-gemiddelde.md`), not a count's
-   node with a `set` field on its source. Its two siblings left the asymmetry
+   own word, ELEMENTS, stands unchanged, and since 2026-09-20 it HAS its
+   carrier: the separately defined operation arrived as the filled count
+   (ch. 3.4c), which reads a value per contributor and therefore takes the
+   set source a path needs. Counted over a union it counts ELEMENTS — an
+   element reachable along two intermediate instances contributes once —
+   which is this clause's claim, pinned in ch. 3.4c's last worked example
+   rather than asserted here. What stays unexpressible is a counting FOLD
+   over a union under `AANTAL`, and that was never this clause's subject.
+   Its two siblings left the asymmetry
    the other way on the same day: `EERSTE`/`LAATSTE` over a set source are
    carried by both OCaml executors, witness `jutterswet-vondstvenster`.)
 3. A sum's `emptyFallback` fires at most ONCE, for a subject whose whole
@@ -1083,6 +1089,114 @@ so the sum is **15,00** and not 18,00; the minimum is **3,00** either way,
 which is why the sum is the witness. The same holds one step deeper: `V1`
 and `V3` both hold `K1` (2,50) while `V2` holds `K2` (1,25), so the
 three-step union is {K1, K2} and the minimum is **1,25**.
+
+### 3.4c The filled-value count
+
+*(Maintainer decisions G1–G8, 2026-09-19; landed 2026-09-20. Wire form and
+well-formedness: `IR-SPEC.md` ch. 4.3, "The filled count".)*
+
+One aggregation kind folds the contributors' VALUES by PRESENCE:
+`AANTAL_GEVULDE` counts the contributors whose value is not leeg. It is an
+instance fold and it reads a value per contributor, so it takes a SET source
+(`IR-SPEC.md` ch. 4.3, `set: true`), and that is required rather than
+optional. It has no listed form: the source language has no spelling for the
+operation at all, so there is no articulated operand list to admit.
+
+The contributor set is ch. 3.4a's, unchanged: reach ∩ population, narrowed
+further by the `filter` per contributor. FILLED is the ordinary ch. 1.2
+emptiness test — the one the source language's `is gevuld` predicate applies
+— so a contributor whose value is leeg is not filled and every other value
+is, **whatever its type**. The test asks for presence, not for a number: a
+text, a date, an enumeration value and a boolean all count as filled, and
+so does a boolean whose value is FALSE. False is a value; leeg is the
+absence of one. An instance that is not a contributor never reaches the
+test at all.
+
+`AANTAL_GEVULDE` over a source with no filled values is **0**, never leeg —
+a count is a cardinality and the empty collection has one, exactly as
+ch. 1.2e's count row says, and ch. 1.3 keeps that 0 apart from coalescing:
+it is the identity element of a rule over SETS, not an empty value dressed
+as a number. That ground belongs to every count and not to the word
+`AANTAL`. It carries no `emptyFallback`: there is no empty to fall back
+from, and WF-037's "sum only" clause already excludes it.
+
+The result is a whole, unitless number whatever unit the folded attribute
+carries, so a filled count has no rounding question and no unit derivation.
+It is the result type the instance count has, reached by a different fold.
+
+**The instance count and the filled count answer different questions, and it
+takes both to tell the two kinds of empty apart.** Over a source whose
+contributors are all leeg the filled count is 0 while the instance count is
+not; over a source with no contributors at all both are 0. ch. 3.4a's
+observation — that only a count separates an empty population from an empty
+value — is now sharper: the INSTANCE count separates them, the FILLED count
+does not, and a document that needs the distinction writes both.
+
+**What this does NOT give.** There is no average. `SOM ÷ AANTAL_GEVULDE` is
+the hand-spelled form and it is the author's to write; over a wholly empty
+source it divides by zero and faults, and that fault is deliberate
+(maintainer decision G1). What the kind does give the author is the GUARD
+that makes it avoidable: a filled count is an ordinary expression, so
+"indien het aantal gevulde … groter is dan 0" is writable in a rule's
+condition, where `AANTAL` could not serve — an instance count is 1 for a
+member without a value and would let the division through.
+
+**Worked examples (absolute; `ref/` tests verbatim, WV-3.4c-*).** The
+Jutterswet model: a Jutter aanmeldt Vondsten; a Vondst declares `gewicht`
+(kg, two decimals), `vindplaats` (tekst), `vondstdag` (datum), `kustvak`
+(enumeratie noord/zuid) and `geborgen` (booleaan).
+
+*The source shapes.* The `gewicht` fold over "alle vondsten van de Jutter",
+per jutter, beside the instance count over the same population:
+
+| contributors' values | aantal | aantal gevulde |
+|---|---|---|
+| 2,50; 1,25; leeg | 3 | **2** |
+| 5,00; 7,00 | 2 | 2 |
+| leeg; leeg | 2 | **0** |
+| leeg | 1 | **0** |
+| (no contributors) | 0 | **0** |
+
+The third and fourth rows are where the two counts part: a member with no
+value is a member. The fifth pins the empty source at 0 rather than leeg.
+
+*The typelessness of the test.* The same three contributors — two carrying
+values, one carrying none — folded once per declared type:
+
+| folded attribute | the three values | aantal gevulde |
+|---|---|---|
+| `gewicht` (numeriek, kg) | 2,50; 1,25; leeg | **2** |
+| `vindplaats` (tekst) | "Noorderstrand"; "Zuiderhoofd"; leeg | **2** |
+| `vondstdag` (datum) | 2026-05-01; 2026-06-21; leeg | **2** |
+| `kustvak` (enumeratie) | noord; zuid; leeg | **2** |
+| `geborgen` (booleaan) | waar; onwaar; leeg | **2** |
+
+The last row carries the sharpest half of it: `onwaar` is filled. The fold
+neither compares nor adds, so the operand family the ordering folds demand
+(`IR-SPEC.md` ch. 2.4) has no bearing here.
+
+*The filter narrows the contributors first.* Over the jutter whose vondsten
+weigh 2,50, 1,25 and leeg:
+
+| filter | aantal | aantal gevulde |
+|---|---|---|
+| none | 3 | **2** |
+| die zwaarder zijn dan 2,00 kg | 1 | **1** |
+| die zwaarder zijn dan 10,00 kg | 0 | **0** |
+
+The leeg member fails the comparison (ch. 1.2d) and drops out before the
+presence test, which is why the middle row's two counts agree: one
+contributor, and it has a value.
+
+*The multi-step range counts ELEMENTS (ch. 3.4b).* A Jutter sails boten, a
+Boot salvages vondsten. `J1` sails `B1` and `B2`; `B1` salvages `V1` (3,00)
+and `V2` (no gewicht); `B2` salvages `V3` (5,00). The union is {V1, V2, V3}
+and the filled count is **2**. With `B2` salvaging `V1` as well, the union
+is unchanged and the filled count is still **2**: an element reachable along
+two intermediate instances contributes once. This is the example ch. 3.4b's
+word ELEMENTS waited for; under `AANTAL` the shape has no wire form at all
+(WF-096 and WF-102 meet at that node), and the filled count is the operation
+that can carry it.
 
 ### 3.5 Temporal summation — the contributor-skipping rule (§5.8.2)
 

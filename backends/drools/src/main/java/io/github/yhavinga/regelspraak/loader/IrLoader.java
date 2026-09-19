@@ -411,7 +411,21 @@ public final class IrLoader {
             case "Functie" -> {
                 List<Expr> args = new ArrayList<>();
                 forEach(n.get("argumenten"), a -> args.add(expr(a)));
-                Expr.Functie f = new Expr.Functie(enumOf(Expr.FunctieKind.class, text(n, "kind")), args,
+                // A kind this backend's IR records do not carry is a NAMED per-form Refusal, on the
+                // Kwantorvouw.kwantor precedent below: Enum.valueOf would otherwise throw an unattributed
+                // IllegalArgumentException, which gate 12 reads as an ERROR on the golden rather than as a
+                // reasoned channel, and which names no form a reader could act on. The live case is
+                // AANTAL_GEVULDE (IR-SPEC ch. 4.3, RUNTIME-SEMANTICS ch. 3.4c), on the wire and carried by ref
+                // since 2026-09-20 and not yet by either transpiler branch here; the arm is written for the
+                // CLASS rather than for that kind, because the next wire-first kind deserves the same answer.
+                Expr.FunctieKind fk;
+                try { fk = enumOf(Expr.FunctieKind.class, text(n, "kind")); }
+                catch (IllegalArgumentException e) { fk = null; }
+                if (fk == null && text(n, "kind") != null)
+                    throw new Refusal("Functie.kind", "'" + text(n, "kind") + "' is an aggregation or builtin kind"
+                            + " this backend does not carry; the wire form is defined (IR-SPEC ch. 4.3) and a"
+                            + " transpiler arm for it has not landed here yet");
+                Expr.Functie f = new Expr.Functie(fk, args,
                         ot(text(n, "elementObjecttype")), expr(n.get("leegwaarde")), conditie(n.get("filter")),
                         dimensieSelectie(n.get("dimensieSelectie")), datatype(n.get("type")), bron(n),
                         enumOf(Granulariteit.class, text(n, "granulariteit")));

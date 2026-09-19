@@ -1621,6 +1621,18 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
       match contributors () with
       | `Instances is -> Arith.agg_aantal is
       | `Values vs -> Arith.agg_aantal (Arith.filled vs))
+  | Aantal_gevulde ->
+      (* ch. 3.4c: the filled-value count. It reads a VALUE per contributor
+         and counts the ones that are not leeg, so [values ()] is the whole
+         of it — a set source hands them over and every other source shape
+         reaches that function's loud refusal, which is where the bare role
+         source lands ("value aggregation over a bare role source"). WF-037
+         puts the same fence on the wire; the refusal here stays as the
+         second line of defence.
+         Never empty: [agg_aantal] over the empty list is 0, the identity
+         element of a rule over sets (ch. 1.3), and no `leegwaarde` is
+         consulted because WF-037 admits none. *)
+      Arith.agg_aantal (Arith.filled (values ()))
   | Som ->
       (* ch. 5.11, wire order: `argumenten` stands before `leegwaarde` in the
          node, so the contributors evaluate first and the stand-in after them.

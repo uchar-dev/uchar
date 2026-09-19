@@ -6713,6 +6713,111 @@ let () =
          ~waarde:(stap ()) ())
     ~case_text:dk_case ~needle:"on a date other than the bound day"
 
+(* The filled-value count (AANTAL_GEVULDE, IR-SPEC ch. 4.3, RUNTIME-SEMANTICS
+   ch. 3.4c) landed on the wire and in `ref` on 2026-09-20; this backend does
+   not translate it yet — the #count over the presence literal is the next
+   card's work — and it must refuse the kind BY NAME while it waits.
+
+   Why the check exists at all. Without its own arm the kind falls into the
+   expr_term fall-through, whose sentence is one of the thirty-six bottom
+   sentences gate 8 forbids a red pin from citing: it describes the position
+   ("expression kind not translated") and claims no corpus case reaches it,
+   so it identifies nothing and a pin on it would witness nothing. The arm
+   moves the refusal off that bottom before any red case can be tempted to
+   pin it, and this check is what keeps the arm honest — a reworded or
+   deleted arm fails here instead of passing silently into the bottom.
+
+   The document is well-formed on purpose: it is the shape the verifier
+   ADMITS, so the refusal being measured is the backend's own and not a
+   consequence of malformed input. *)
+
+let aantalgevulde_doc =
+  {|{ "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": { "node": "Objecttype", "naam": "Jutter",
+      "attributen": { "aantal gevulde vondstgewichten": |} ^ num0
+  ^ {| },
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {}, "bezield": true, "meervoud": "Jutters" },
+    "Vondst": { "node": "Objecttype", "naam": "Vondst",
+      "attributen": { "gewicht": { "node": "Numeriek", "geheel": false, "decimalen": 2,
+                                   "teken": "ONBEPAALD", "eenheid": null } },
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vondsten" } },
+  "domeinen": {}, "parameters": {}, "eenheidstelsels": {},
+  "feittypen": { "vondstaanmelding": { "node": "Feittype", "naam": "vondstaanmelding",
+    "wederkerig": false, "rollen": [
+      { "node": "Rol", "naam": "aanmelder", "objecttypeNaam": "Jutter",
+        "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "vondst", "objecttypeNaam": "Vondst",
+        "meervoud": "vondsten", "meervoudig": true } ] } },
+  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [
+    { "node": "ResolvedRegel", "naam": "aantal gevulde vondstgewichten", "soort": "BEREKENING",
+      "doel": { "node": "AttribuutRef", "attribuut": "aantal gevulde vondstgewichten",
+                "objecttype": "Jutter", "onderwerpBron": "een Jutter", "navigatieRol": null,
+                "type": |} ^ num0
+  ^ {|, "bron": "Het aantal gevulde vondstgewichten van een Jutter",
+                "set": false, "navigatiePad": [] },
+      "waarde": { "node": "Functie", "kind": "AANTAL_GEVULDE",
+        "argumenten": [ { "node": "AttribuutRef", "attribuut": "gewicht", "objecttype": "Vondst",
+                          "onderwerpBron": "alle vondsten van de Jutter", "navigatieRol": null,
+                          "type": { "node": "Numeriek", "geheel": false, "decimalen": 2,
+                                    "teken": "ONBEPAALD", "eenheid": null },
+                          "bron": "het gewicht van alle vondsten van de Jutter",
+                          "set": true, "navigatiePad": [] } ],
+        "elementObjecttype": "Vondst", "leegwaarde": null, "filter": null,
+        "dimensieSelectie": null, "type": |} ^ num0
+  ^ {|,
+        "bron": "het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter",
+        "granulariteit": null,
+        "bronRol": { "node": "RolBinding", "feittype": "vondstaanmelding", "rol": "vondst" } },
+      "voorwaarde": null,
+      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+  "regelGroepen": [], "diagnostics": []
+}
+|}
+
+let aantalgevulde_case =
+  {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+    { "label": "J1", "objectType": "Jutter", "attributes": {},
+      "roles": { "vondsten": ["V1", "V2"] }, "characteristics": [] },
+    { "label": "V1", "objectType": "Vondst", "attributes": { "gewicht": { "number": "2.50" } },
+      "roles": {}, "characteristics": [] },
+    { "label": "V2", "objectType": "Vondst", "attributes": {}, "roles": {},
+      "characteristics": [] } ], "parameters": {} },
+  "expected": [ { "kind": "attributeValue", "label": "J1",
+                  "attribute": "aantal gevulde vondstgewichten", "value": { "number": "1" } } ]
+}
+|}
+
+let () =
+  faults_with ~name:"AANTAL_GEVULDE: refused by name, never by the bottom sentence"
+    ~ir:aantalgevulde_doc ~case_text:aantalgevulde_case
+    ~needle:"the filled-value count (AANTAL_GEVULDE) is not translated";
+  (* and the refusal is NOT the fall-through: a pin on that sentence would
+     witness every untranslated form at once, which is what gate 8 forbids *)
+  let irf = write_temp ".ir.json" aantalgevulde_doc in
+  let casef = write_temp ".case.json" aantalgevulde_case in
+  let doc = Ir_v0.Loader.load_file irf in
+  let case = Uchar_ref.Case.load_file doc casef in
+  Sys.remove irf;
+  Sys.remove casef;
+  match translate doc case with
+  | (_ : string) -> check "AANTAL_GEVULDE: expected a loud fault, got a model" false
+  | exception Uchar_ref.Value.Fault m ->
+      check
+        ("AANTAL_GEVULDE: the refusal is not the expr_term bottom sentence (" ^ m ^ ")")
+        (not (Uchar_ref.Case.contains ~needle:"expression kind not translated" m))
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
