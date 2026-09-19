@@ -1,0 +1,101 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Kustvak",
+        "attributes": {
+          "gevarenklasse": {
+            "number": "7"
+          }
+        },
+        "roles": {
+          "posten": [
+            "P1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "P1",
+        "objectType": "Post",
+        "attributes": {
+          "hoogte": {
+            "number": "15"
+          }
+        },
+        "roles": {
+          "kustvak": [
+            "V1"
+          ],
+          "seinen": [
+            "S1",
+            "S2"
+          ]
+        },
+        "characteristics": [
+          "risicopost"
+        ]
+      },
+      {
+        "label": "S1",
+        "objectType": "Sein",
+        "attributes": {
+          "gewicht": {
+            "number": "4"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S2",
+        "objectType": "Sein",
+        "attributes": {
+          "gewicht": {
+            "number": "6"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W1",
+        "objectType": "Wachter",
+        "attributes": {
+          "wachtnummer": {
+            "number": "1"
+          }
+        },
+        "roles": {
+          "post": [
+            "P1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "W2",
+        "objectType": "Wachter",
+        "attributes": {
+          "wachtnummer": {
+            "number": "2"
+          }
+        },
+        "roles": {
+          "post": [
+            "P1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "ref": "Onopgelost condition reached in evaluation",
+    "clingo": "Onopgelost condition reached in translation"
+  }
+}

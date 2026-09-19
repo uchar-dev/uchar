@@ -1,0 +1,36 @@
+# wf044-onopgelost-guard
+
+The unsolved-state guard (WF-044) on the **condition** position. Its
+sibling `wf044-onopgelost-reached` pins the same marker as a computed
+*value*; this one pins it as a *guard* — the voorwaarde of a §13.4.7
+feitcreatie, where an `Onopgelost` is the shape a resolver hands the wire
+when it cannot rebuild the condition against the creation's target: a
+creation whose doel type equals its anker type has no second subject to
+resolve a doel-hosted guard against, so the anker's unresolved condition
+is passed through unchanged.
+
+The document is `jutterswet-postwacht`'s golden with **exactly one field
+changed** — the creation's `voorwaarde`, from `null` to the marker — and
+the case carries the same population that golden replays. Everything a
+green run needs is therefore present and correct; the only reason this
+case is red is the marker itself. Verifier-clean, as an honest marker
+must be: WF-044 is behavioural, not a well-formedness rule.
+
+Both executors that read every red form fault where they read the
+creation, and each names the position:
+
+- reference interpreter — `Onopgelost condition reached in evaluation
+  (WF-044)`;
+- ASP backend — `Onopgelost condition reached in translation: this rule
+  fails observably (WF-044)`.
+
+The Drools backend does not carry the form: both of its transpiler
+branches refuse the creation by construct, because a guard that lowers to
+neither the anker's nor the doel's pattern cannot be dropped without
+firing the rule unconditionally and over-creating the relation. That
+refusal is a not-carried outcome, listed with its reason in gate 8's
+Drools leg rather than pinned as a fault at fire.
+
+A harness in which this case stops failing has started guessing where the
+spec says "cannot express" — and, worse than in the value position, it
+has started guessing about *which objects a relation holds between*.
