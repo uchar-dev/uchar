@@ -28,10 +28,10 @@ For the same reason `jutterswet-schouwploeg` was, measured again and unchanged
 at the time: `RuleChecker.kwantorvouw` opened with "only the §8.2-QUALIFIED
 condition" and declined everything else, so the unqualified comparison raised
 WF-096 (`setlezing buiten een vouwbron`) and the characteristic spelling
-resolved to `Onopgelost`. The counting quantifiers did not move that gate;
-the frontend card that did land on 2026-09-19, and `bron.rgs` now sits beside
-this document and re-emits it byte for byte. The hand-written IR is
-unchanged; gate 10 sees it.
+resolved to `Onopgelost`. The counting quantifiers did not move that gate.
+The frontend card that did move it landed on 2026-09-19, and `bron.rgs` now
+sits beside this document and re-emits it byte for byte. The hand-written IR
+is unchanged; gate 10 sees it.
 
 ## What it covers that the other three do not
 

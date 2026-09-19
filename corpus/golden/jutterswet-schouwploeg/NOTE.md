@@ -26,24 +26,27 @@ Het wachttal van een Schouwploeg moet berekend worden als het aantal
 
 The document was written against the schema, because at the time no
 RegelSpraak source produced these nodes. Measured on the frontend of this
-repository, both shapes, before the cases were written:
+repository, on the sentences at the head of this note, before the cases
+were written:
 
 - the comparison form without the §8.2 qualifier — *"indien de
-  dagvergoeding van alle bergers van de Bergingsploeg groter is dan 40"* —
+  dienstjaren van alle wachten van de Schouwploeg groter zijn dan 5"* —
   was refused: `setlezing buiten een vouwbron … hier wordt één waarde
   verwacht (WF-096, IR-SPEC ch. 4.3)`. The lowering to `Kwantorvouw`
   opened with "only the §8.2-qualified condition" and declined everything
   else;
-- the characteristic form — *"indien alle bergers van de Bergingsploeg
-  bevoegd zijn"* — resolved to `Onopgelost`.
+- the characteristic form — *"indien alle wachten van de Schouwploeg
+  gediplomeerd zijn"* — resolved to `Onopgelost`, and did so silently:
+  there is no set reading in that spelling for WF-096 to name.
 
-Since 2026-09-19 the frontend carries both: quantification and the
+Since 2026-09-19 the frontend carries both. Quantification and the
 whole-period check are independent productions in v2.3.0, so the
 unqualified spelling was never the language's boundary. `bron.rgs` now sits
-beside this document and re-emits it byte for byte — the hand-written IR is
-unchanged, and gate 10 sees it. That the hand-computed cells below and the
-emitted wire agree is what makes this a witness of the LOWERING and not
-only of the node.
+beside this document, holds exactly the five sentences quoted above, and
+re-emits this `ir.json` byte for byte — the hand-written IR is unchanged,
+and gate 10 sees it. That the hand-computed cells below and the emitted
+wire agree is what makes this a witness of the LOWERING and not only of
+the node.
 
 ## The four folds, and what each of them is for
 

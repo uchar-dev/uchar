@@ -2270,6 +2270,11 @@ final class RuleChecker {
         if (toets == null) return null;
         ExpressieBouwer.Deelselectie ds = bouwer.deelselectie(lhsCtx, g.element(), null);
         if (ds != null && ds.filter() == null) {
+            // The comparison route can stop at a WARNING here because the set reading it leaves standing
+            // raises the WF-096 ERROR that blocks the document. This route has no set reading, so the
+            // subselectie goes back on keurDeelselecties' refusal list and the ERROR comes from there —
+            // the WARNING beside it names the axis the binding failed on, which that ERROR cannot.
+            bouwer.geefDeelselectieTerug(lhsCtx);
             model.diagnostics.add(new Diagnostic(Severity.WARNING,
                 "de 'die/dat'-deelselectie in '" + g.onderwerpBron() + "' wordt niet omgezet naar een "
                 + "kwantorvouw-filter: " + ds.reden() + "; de vouw wordt daarom NIET gelowerd — een vouw "

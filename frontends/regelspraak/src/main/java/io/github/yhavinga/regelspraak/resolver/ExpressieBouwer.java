@@ -1169,6 +1169,22 @@ final class ExpressieBouwer {
      *  the axis the subselectie was declined on rather than one generic text for every shape. */
     record Deelselectie(Conditie filter, String reden) {}
 
+    /**
+     * Give a subselectie back to {@code keurDeelselecties}. {@link #deelselectie} books the predicate as
+     * CONSUMED before it knows whether the fold will take it, and on the COMPARISON route that is right:
+     * a declined fold leaves the set reading standing, so WF-096 raises the ERROR that blocks the
+     * document and the subselectie is refused WITH it. On the MEMBERSHIP route there is no set reading
+     * and hence no WF-096 — a declined fold leaves nothing but a marker — so the predicate has to go
+     * back on the refusal list or the sentence falls silent, which is the one outcome
+     * {@code keurDeelselecties} exists to prevent ("ERROR, not WARNING, and the difference is the
+     * point"). Measured regression, fixed 2026-09-19.
+     */
+    void geefDeelselectieTerug(ParseTree operand) {
+        if (operand == null) return;
+        PredicaatContext p = vindDie(operand);
+        if (p != null) verbruikt.remove(p);
+    }
+
     Deelselectie deelselectie(ParseTree operand, Objecttype elem, Expr gekwantificeerd) {
         if (elem == null || operand == null) return null;
         PredicaatContext p = vindDie(operand);

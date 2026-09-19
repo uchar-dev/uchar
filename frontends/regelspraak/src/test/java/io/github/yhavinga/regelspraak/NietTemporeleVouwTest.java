@@ -297,6 +297,34 @@ class NietTemporeleVouwTest {
                 () -> "een kenmerk van het SUBJECT hoort op het element niets te binden:\n" + v);
     }
 
+    /**
+     * A die/dat that does not bind against the element must BLOCK the document, and this row is the one
+     * that says so out loud. On the comparison route a declined fold leaves the set reading standing and
+     * WF-096 raises the blocking ERROR; this route has no set reading, so the only thing between the
+     * sentence and a silent wrong set is {@code keurDeelselecties}, whose whole point is that it is an
+     * ERROR and not a WARNING. The fold therefore hands the subselectie BACK when it declines —
+     * measured regression during this card: for one commit the sentence produced a document with a
+     * silent {@code Onopgelost} and a WARNING the CLI does not even print.
+     */
+    @Test void een_niet_bindende_deelselectie_blokkeert_de_kenmerkvorm() {
+        // 'gekeurd' is a kenmerk of the SUBJECT, not of the element, so the subselectie binds nothing.
+        RegelSpraakModel m = resolveer(
+                KENMERK.formatted("alle", "").replace("van de Schouwploeg .", "van de Schouwploeg die gekeurd zijn gediplomeerd zijn."));
+        List<Diagnostic> stil = m.diagnostics.stream()
+                .filter(d -> d.message().startsWith("de 'die/dat'-deelselectie 'gekeurd zijn' wordt niet omgezet")).toList();
+        assertEquals(1, stil.size(), () -> "de weggevallen deelselectie hoort benoemd te worden: " + m.diagnostics);
+        assertEquals(Severity.ERROR, stil.get(0).severity(),
+                () -> "een WAARSCHUWING laat het document op schijf staan — dat is precies de stilte die "
+                        + "deze controle bestaat om te voorkomen: " + m.diagnostics);
+        // …and the axis the binding failed on is named beside it, which the blocking ERROR cannot say
+        assertTrue(m.diagnostics.stream().anyMatch(d -> d.severity() == Severity.WARNING
+                        && d.message().contains("bindt geen kenmerk of getalpredicaat van Strandwacht")),
+                () -> "de as van de weigering hoort erbij te staan: " + m.diagnostics);
+        assertTrue(voorwaarde(m).contains("\"node\":\"Onopgelost\""),
+                () -> "een niet-bindende deelselectie mag nooit als vouw over het VOLLE bereik landen:\n"
+                        + voorwaarde(m));
+    }
+
     /** A telwoord under 1 declines on the membership route for the reason it declines on the comparison
      *  one: WF-041 refuses that drempel on the wire, so emitting would only move the refusal
      *  downstream. The WARNING names the telwoord; the marker stays. */
