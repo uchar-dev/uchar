@@ -66,6 +66,17 @@ stays honest about where it no longer proves toolchain agreement.
   else in those seven files changed. The original toolchain still writes the
   snippet form, so for text literals this dump has stopped being a toolchain
   dump.
+- **2026-09-19 — every surviving `Onopgelost` carries a WARNING.** Maintainer
+  decision of that date, executed by the card
+  `backlog/done/20260919-frontend-stille-markers.md`: a marker stays the honest
+  wire form, but the author is told what stayed unresolved and why. The casus
+  holds exactly one marker — a bullet whose written name binds neither a kenmerk
+  nor a role of its subject — so one `Diagnostic` object was appended to
+  `casus/ir.json`'s `diagnostics` list. Six added lines; nothing else in the
+  file, and nothing in any `cases/` slice, moved. The original toolchain emits
+  no such diagnostic, so for this one list the dump has stopped being a
+  toolchain dump. The marker itself is byte-identical, which is the point: the
+  parity of every structural node is untouched.
 - The precedent runs the other way: `toka-45` (decision 16Y, 2026-08-29) is held
   **out** of the re-emission rather than re-pinned, because uchar's unit typing
   rejects the fragment as written. Divergence by holdout and divergence by

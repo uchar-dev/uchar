@@ -3728,6 +3728,12 @@
       "severity": "WARNING",
       "message": "beslistabel 'Belasting op basis van reisduur' heeft geen tabelinhoud (alleen een kop) \u2014 wordt niet naar IR/DRL omgezet",
       "line": 317
+    },
+    {
+      "node": "Diagnostic",
+      "severity": "WARNING",
+      "message": "onopgelost: de geschreven naam bindt geen kenmerk en geen rol van het onderwerp (\u00a78.1.7/\u00a78.1.8), dus er is geen lidmaatschap om te toetsen \u2014 'hij is een passagier jonger dan 18 jaar' blijft als marker op de wire staan",
+      "line": 287
     }
   ]
 }
