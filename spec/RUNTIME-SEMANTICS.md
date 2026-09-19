@@ -2733,6 +2733,20 @@ are linked in the created relation — **both ends** are written, so
 navigation from either side sees the link. A second distinct filler on
 a to-one role is a fault, never a silent overwrite.
 
+**The condition is about the anchor, or about the target, and the wire
+says which.** This is the one construct whose guard has two objects in
+scope, and a characteristic check's owner (`eigenaar`, ch. 5.8b) is what
+names the host: absent, or naming a type the anchor satisfies, the guard
+GATES the anchor exactly as written above — an anchor that fails it
+creates nothing at all. Naming a type the TARGET satisfies, it FILTERS
+the targets instead: the chain is navigated first and the condition is
+asked of each target reached, so the anchor still creates, but only
+toward the targets that pass. Nothing else in the fact creation changes,
+and no other condition form has a second object to be about (WF-109
+refuses an owner that names neither, and one that names both). The
+filtering reading is admitted only where the check IS the whole
+condition and does not navigate (`IR-SPEC.md` ch. 4.6 (q2)).
+
 Worked example (absolute; the anchor `jutterswet-gemeenteberging`
 verbatim): a kustgemeente creates `gemeentelijke berging` links to
 every vondst its ingeschreven jutters have aangemeld (one path step,
@@ -3038,12 +3052,14 @@ J1 **is wachtdoend** and **is not vrijgesteld**; J2's reference is absent,
 so J2 **is not wachtdoend** and **is vrijgesteld**. The reference and the ASP
 run agree on all four (link × {positive, negation}).
 
-### 5.8b The characteristic check's owner
+### 5.8b The characteristic check's owner: the host
 
 A characteristic check may carry an **owner** (the IR's `eigenaar`). It is
 **authoritative** (maintainer decision 2026-09-10; `IR-SPEC.md` ch. 4.6 (q1),
 WF-100): where the field is present it, and not the enclosing form's subject,
-decides what the check resolves against. The rules:
+decides what the check resolves against. And it is the **host** (maintainer
+decision 2026-09-19; ch. 4.6 (q2), WF-109): it names the object type the check
+lives on, which is the object read. The rules:
 
 1. **The owner is the declaration key.** Every declaration a reader consults
    for the characteristic is the one the NAMED type carries: whether the type
@@ -3060,43 +3076,48 @@ decides what the check resolves against. The rules:
    crossed there (WF-053), and the owner names neither that type nor a second
    declaration to consult; it stays what rule 2 makes of it, a statement about
    the host pattern, and nothing about the reached type's declarations moves.
-2. **The owner is also a hosting statement, and a reader that cannot honour
-   it refuses.** The field names the type whose PATTERN the constraint is
-   attached to — the v0 producer emits it on exactly one shape, the guard of a
-   fact creation that names a characteristic of the DOEL, so that the
+2. **The owner is the OBJECT read, and the position decides which objects
+   there are to read.** The field names the type whose PATTERN the constraint
+   is attached to — the v0 producer emits it on exactly one shape, the guard of
+   a fact creation that names a characteristic of the DOEL, so that the
    constraint lands on the doel pattern and never on the anker, even when the
-   anker declares a characteristic of the same name. A bean-model executor has
-   both patterns and honours it. The reference interpreter and the ASP backend
-   read **one** object per condition, the enclosing form's subject; so where
-   the owner is not that object's type there is no object here for the check
-   to be about, and they **fault**. They do not fall back to the subject:
-   that is the reading the decision rejected, and it is the reading that
-   answered before 2026-09-10 — measured on a verifier-clean document, both
+   anker declares a characteristic of the same name. Every condition position
+   in this language binds exactly ONE object, the enclosing form's subject,
+   with a single exception: the **guard of a fact creation** (ch. 5.5) binds
+   TWO — the anker it iterates and the doel its join chain reaches. The owner
+   names one of the bound objects, and that object is read. Where it is absent,
+   or names a type the subject satisfies (extensionally, `T ⊑ O`), the subject
+   is read, which is every reading that predates the rule. Where it names the
+   type the DOEL satisfies, the doel is read, and the guard filters the doelen
+   instead of gating the anker (ch. 5.5). An owner that names NO bound object,
+   or BOTH of them, is not a reading at all: WF-109 refuses the document before
+   any executor sees it. An executor that meets one anyway **faults** rather
+   than falling back to the subject — that is the reading the 2026-09-10
+   decision rejected, and it is the reading that answered before it, when both
    OCaml executors returned the subject's own value under the other type's
-   name while the third executor carried no rule at all. The two fault at
-   different moments, and that is inherited rather than new: the reference
-   interpreter is lazy and faults when the condition is evaluated, the ASP
-   backend is eager and faults at translation, exactly as they split on
-   WF-055.
-3. **In the two readers this RULE binds directly — the reference interpreter
-   and the ASP backend — the object read is always the subject.** Rule 2 is a
-   refusal, not a redirection: those two never read the owner's instances, so
-   where THEY answer, they answer about the subject. The delimitation belongs to
-   the rule and not to the chapter: this chapter norms every executor, and what
-   is scoped here is which readers this particular sentence fixes. A bean-model executor **does** read the owner's instances on
-   the producer shape, measured: both Drools branches play a fact creation whose
-   guard names a characteristic of the doel and both compute an answer that
-   depends on which DOEL instances carry it, not on the anker. Which of the two
-   is the OBJECT the construct is about is the open half of this field —
-   `IR-SPEC.md` ch. 4.6 (q1) records it as open and
-   `backlog/new/20260910-eigenaar-gastheer-object.md` carries the question. This
-   rule fixes what the two OCaml readers do; it does not settle that.
+   name while the third carried no rule at all. The two fault at different
+   moments, and that is inherited rather than new: the reference interpreter is
+   lazy and faults when the condition is evaluated, the ASP backend is eager
+   and faults at translation, exactly as they split on WF-055.
+3. **All four executors read the same object.** This is the point of rule 2 and
+   the reason it replaced a refusal on 2026-09-19. A bean-model executor reads
+   the owner's instances by construction — it attaches the constraint to that
+   type's pattern — and it did so a rule earlier than the others; the reference
+   interpreter and the ASP backend now reach the same object by the route their
+   own shapes allow, the interpreter by evaluating the guard once per doel
+   after the chain is walked, the ASP backend by placing the literal on the
+   doel variable the chain binds. A form that is verifier-clean under WF-100
+   and WF-109 is therefore carried by all four, with the same answer. The
+   scope fences that keep this true are in `IR-SPEC.md` ch. 4.6 (q2): the doel
+   is a bound object only where the check IS the whole guard and does not
+   navigate, because a nested or navigating doel host is a shape one of the four
+   cannot carry, and the verifier refuses what the four cannot agree on.
 
-Worked example (`ref/test/test_ref.ml` ch. 5.8b verbatim; its ASP mirror in
-`backends/clingo/test/test_clingo.ml`). Two object types, `Vondst` and
-`Jutter`, each declaring a characteristic named `gekeurd`, neither
-time-dependent. The world holds V1, a Vondst carrying `gekeurd`, and J1, a
-Jutter that does not. Over the subject V1:
+Worked example A, the single-object position (`ref/test/test_ref.ml` ch. 5.8b
+verbatim; its ASP mirror in `backends/clingo/test/test_clingo.ml`). Two object
+types, `Vondst` and `Jutter`, each declaring a characteristic named `gekeurd`,
+neither time-dependent. The world holds V1, a Vondst carrying `gekeurd`, and
+J1, a Jutter that does not. Over the subject V1:
 
 | check | owner | outcome |
 |---|---|---|
@@ -3109,18 +3130,35 @@ and over the subject J1 the mirror holds: owner absent gives **onwaar** (J1
 does not carry it), owner `Vondst` faults. A navigated check with the same
 foreign owner faults too, and faults BEFORE the hop is resolved (rule 1's
 closing sentence), which is why both suites assert the sentence and not merely
-the fault. The corpus carries no document with these four rows in it: the golden
-`jutterswet-keurhouder` carries row 2 alone — the owner naming the subject's own
-type, over a different characteristic — which is the one row a replayed case can
-hold. The refusing half lives in the two
-executors' own gated suites rather than in a corpus zone, and the reason is a
-zone rule and not an impossibility: a golden must replay, so the refusing shape
-is not one; and a red case must fault in every executor that CARRIES its form,
-which the bean-model executor does not do here — on a plain rule it drops the
-rule as a transpiler skip, and on the producer shape it plays and answers
-without faulting. Either way the case would need a reason-carrying NOFAULT
-entry in the protected gate script that owns the red corpus, which the card
-that wrote this clause had no mandate to touch.
+the fault. The last row is a document WF-109 refuses; the fault is the
+executors' fail-fast on a non-conforming input, and it is asserted in the two
+suites rather than in a corpus zone because a golden must replay and a red case
+must fault in every executor that carries its form — which the bean-model
+executor does not do on a plain rule, where it drops the rule as a transpiler
+skip. The golden `jutterswet-keurhouder` carries row 2, the owner naming the
+subject's own type.
+
+Worked example B, the two-object position (`ref/test/test_ref.ml` ch. 5.8b
+verbatim; the goldens `jutterswet-seinhijsing` and `jutterswet-mastsein` replay
+it in all four executors). A `Kustvak` anker, a `Sein` doel, and one
+intermediate `Post`; `gehesen` is declared on all three types. The creation
+"een vaksein van een Kustvak is een sein van de post van het kustvak indien het
+sein gehesen is" carries the guard `gehesen` with owner `Sein`, and a fold
+counts the created relation. The world holds V1 (a Kustvak that IS gehesen)
+with one post P1 (NOT gehesen) carrying S1 (gehesen) and S2 (not):
+
+| reading | which object the guard is asked of | `vakseinaantal` of V1 |
+|---|---|---|
+| anker | V1, which carries `gehesen` | 2 — every sein reached |
+| intermediate step | P1, which does not | 0 — the creation never fires |
+| **doel (normative)** | S1 and S2, each in turn | **1** — S1 only |
+
+The three readings give three different numbers, so the answer identifies the
+reading rather than merely agreeing with it. Over TWO intermediate steps
+(`jutterswet-mastsein`: V1 gehesen → P1 not → M1 gehesen → S1, S2, S3 with S1
+and S3 gehesen) the guard still reaches past both, and the four numbers are
+anker 3, first step 0, second step 3, **doel 2**. Negation rides along
+unchanged: "indien het sein niet gehesen is" filters the complement.
 
 ### 5.9 Uniqueness: the union and the scope
 

@@ -672,7 +672,14 @@ samenvoeging betrapt als hij fout is. Zie **V4**.
 
 ---
 
-#### B10 — `Kenmerk.eigenaar` verdwijnt
+#### B10 — `Kenmerk.eigenaar` hernoemt (was: verdwijnt)
+
+> **PLANBIJSTELLING, VOORSTEL (2026-09-19, kaart
+> `eigenaar-gastheer-object`).** De open vraag die deze post blokkeerde is
+> beantwoord en het antwoord is "ja": het veld gaat over de *instantie* van
+> het genoemde type. Daarmee vervalt de grondslag onder "verdwijnt". De
+> tekst hieronder is de bijgestelde post; de maintainer landt of verwerpt
+> hem, deze kaart schrijft hem alleen op.
 
 **Wire-diff.**
 
@@ -680,30 +687,53 @@ samenvoeging betrapt als hij fout is. Zie **V4**.
 // vóór
 { "node": "Kenmerk", "kenmerk": "bevoegd", "eigenaar": "Jutter", "negatie": false }
 // ná
-{ "node": "CharacteristicCheck", "characteristic": "bevoegd", "negated": false }
+{ "node": "CharacteristicCheck", "characteristic": "bevoegd", "host": "Jutter", "negated": false }
 ```
 
-**Partijen.** `E:` RegelSpraak. `C:` alle vier (de verifier onder WF-034 (q) en
-WF-100; `ref` en de ASP-backend weigeren waar de eigenaar niet het type van het
-gelezen object is). `S:` één property. `K:` 8 documenten (1 golden, 7 negatief).
-`T:` de pin.
+**Partijen.** `E:` RegelSpraak. `C:` alle vier (de verifier onder WF-034 (q),
+WF-100 en WF-109; `ref`, de ASP-backend en beide Drools-takken lezen het object
+dat het veld noemt). `S:` één property — een HERNOEMING, geen verwijdering.
+`K:` 13 documenten (3 golden, 10 negatief; geteld 2026-09-19). `T:` de pin.
 
-**Migratienota.** Het veld is een Drools-aanhechtingshint, alleen gezet op
-feitcreatie-guards. IR-SPEC ch. 4.5 noemt hem "dropped" in v1.
+**Migratienota.** Tot 2026-09-10 heette dit veld een Drools-aanhechtingshint en
+noemde IR-SPEC ch. 4.5 hem "dropped" in v1. Twee besluiten hebben die lezing
+achtereenvolgens weggenomen. WF-100 (2026-09-10) maakte het veld GEZAGHEBBEND
+voor de declaratie; WF-109 (2026-09-19) maakte hem de GASTHEER — het objecttype
+waarop de check woont — en alle vier de uitvoerders lezen dat object. Het veld
+is daarmee geen spiegelbagage meer maar betekenis die nergens anders op de wire
+staat: haal hem weg en de feitcreatie-guard kan niet meer zeggen of hij over het
+anker of over het doel gaat, en de vorm die de frontend zelf produceert is
+onuitdrukbaar.
 
-De delta is sinds 2026-09-10 **scherper dan hij was**, en dat is winst: WF-100
-maakte het veld GEZAGHEBBEND zolang het op de wire staat. In de woorden van
-CONSTRUCTS §2.2: "wat er in v1 verdwijnt is nu een veld met een uitgeschreven
-betekenis, geen leak met een onbekende". Weghalen betekent dus: het onderwerp is
-altijd de sleutel. Dat is precies de lezing die vóór WF-100 stilzwijgend gold.
+Wat B10 dus wél is: een **hernoeming** in familie B (de globale hernoeming),
+niet een verwijdering in familie C. `eigenaar` → `host` (werknaam; de keuze van
+het woord is een redactievraag, niet een semantische). De v0-naam en -vorm
+blijven ongewijzigd tot de klap: v0 is de getrouwe dump, en het besluit van
+2026-09-19 raakt de betekenis, niet de spelling.
 
-Eén ding blijft open en is gekaart, niet hier op te lossen: de OBJECT-helft —
-of een gastheer-voorwaarde over de *instantie* van het genoemde type gaat, wat
-het bonenmodel wél doet (`backlog/new/20260910-eigenaar-gastheer-object.md`).
-**Dat kaartje moet vóór B10 landen**, want als het antwoord "ja" is, is het veld
-geen hint maar betekenis, en dan verdwijnt het niet.
+**Wisselwerking met B11 en B13**, omdat beide posten dit veld aanraken zonder
+het te noemen:
 
-**Beslisvraag: geen** — maar de volgordeafhankelijkheid staat in §6.
+- **B11** haalt `navigatieRol`/`navigatiePad`/`onderwerpBron`/`set` van
+  `AttribuutRef` en maakt het pad symbolisch. Dat raakt de gastheer indirect
+  maar scherp: vandaag geeft de wire twee tegengestelde antwoorden op dezelfde
+  intuïtie — een vreemd type in `Kenmerk.eigenaar` betekent "lees het DAAR",
+  een vreemd type in `AttribuutRef.objecttype` wordt door alle lezers stil als
+  NAVIGATIE over de afgeleide relatie gelezen (gemeten 2026-09-19). Ná B11 is
+  de navigatie een expliciet pad en is die stille lezing niet meer nodig, dus
+  B11 is de plek waar de tegenspraak opgeruimd kán worden. Deze kaart lost hem
+  niet op en zet hem hier neer zodat B11 hem niet over het hoofd ziet.
+  `Kenmerk.navigatieBinding` blijft de bestaande P1-port vóór B11.
+- **B13** haalt de `type`-annotatie van referentieposities. De gastheer is óók
+  een referentiepositie, maar hij noemt een OBJECTTYPE en geen datatype, dus
+  B13 raakt hem niet — behalve dat de v1-wire er één type-verwijzing meer
+  overhoudt dan de B13-inventaris veronderstelt, en dat die verwijzing een
+  naam verdient die zegt wat hij doet.
+
+**Beslisvraag: geen nieuwe** — maar de volgordeafhankelijkheid in §6 verandert
+van richting: er is geen kaartje meer dat vóór B10 moet landen (het is
+geland), en B10 zelf verhuist van "verwijderen" naar "hernoemen", waarmee hij
+uit de risicovolle porten van V2 valt.
 
 ---
 
@@ -1520,7 +1550,7 @@ inplanbaar. **V16** stelt de vraag of hij in deze klap meegaat.
 | B7 | feitcreatie-spiegelvelden | C | 5 | 16 | — |
 | B8 | `scopeVeld` → `scopeRol` verplicht | C | 7 | 19 | — |
 | B9 | rollidmaatschap samensmelten | C | 3 | 8 | V4 |
-| B10 | `Kenmerk.eigenaar` | C | 1 | 8 | — |
+| B10 | `Kenmerk.eigenaar` → `host` (hernoeming; **bijgesteld 2026-09-19**, was verwijdering) | B | 3 | 13 | — |
 | B11 | `AttribuutRef`-navigatievelden + `set` | C | 201 | 537 | — |
 | B12 | WF-048 vervalt, binding verplicht | C | 16 | 60 | — |
 | B13 | referentiepositie-`type` van de wire | D | 206 | 567 | V5 |
@@ -1580,7 +1610,7 @@ Daarvan zijn er **171** getuige van een WF-regel die de klap raakt:
 | WF-095 | **5** | B22a | 4 van de 5 blijven (andere spellingen), 1 vervalt |
 | WF-054 (3) + WF-096 (3) | **6** | B8, B11 | WF-054 vormwijziging, WF-096 geheel |
 | WF-092 (3) + WF-081 (1) + WF-084 (2) | **6** | B22, B17 | **blijven** — ze zitten op de declaratie of op het lexeem |
-| WF-034 rolcheck (2) + kenmerkcheck-eigenaar (1) + WF-100 (1) | **4** | B9, B10 | **geheel** |
+| WF-034 rolcheck (2) + kenmerkcheck-eigenaar (1) | **3** | B9, B10 | WF-034-rolcheck **geheel**; de eigenaar-arm **vormwijziging** — het veld hernoemt (B10, bijgesteld 2026-09-19) en de kruising reist mee, net als WF-100 (1) en WF-109 (5 getuigen) |
 | WF-048 (2) + WF-098 (2) | **4** | B12, B23 | WF-048 geheel, WF-098 vormwijziging |
 | WF-024 (1) + WF-003 (1) + WF-039 (1) | **3** | B21, B16, B22b | WF-024/003 geheel, WF-039 blijft |
 | WF-034, overige armen | **35** | — | **blijven** |
@@ -2181,7 +2211,7 @@ stuk los te landen en verbeteren de v0-toestand ook als de klap nooit komt.
 | P4 | **Enumeratie-emissie gerepareerd** (V8 (a)): delimiters strippen **én** de literal typeren | frontend-dekkingsgat, geen wire-divergentie — de wire is gehekt (WF-039, WF-034 (r)), maar de frontend kan het construct niet welgevormd emitteren, dus geen `bron.rgs`-golden draagt er een | B22b |
 | P5 | **DatumTijd-lexeem gecanonicaliseerd** (WF-095 versmalt tot canoniek ISO) | één emitterregel, vijf negatief-getuigen, nul goldenregeneratie — de goedkoopste stap op de lijst | B22a |
 | P6 | **Getuige voor de verre rollidmaatschap** (V4 (b)) | de knoop heeft nul dragers; samenvoegen zonder getuige is onbewijsbaar | B9 |
-| P7 | **`eigenaar`-gastheerobject beslissen** (`backlog/new/20260910-eigenaar-gastheer-object.md`) | als de OBJECT-helft betekenis is, verdwijnt het veld niet | B10 |
+| P7 | ~~**`eigenaar`-gastheerobject beslissen**~~ — **GELAND 2026-09-19** (`backlog/done/20260910-eigenaar-gastheer-object.md`) | de OBJECT-helft IS betekenis, dus het veld verdwijnt niet: B10 is bijgesteld van verwijdering naar hernoeming (zie B10, voorstel) en verhuist daarmee van M2 naar M8 | ~~B10~~ |
 | P8 | **Kruis-stelsel-eenheidsdivergentie** (`backlog/new/20260910-kruis-stelsel-eenheid-divergentie.md`) | een levende ref≢clingo-splitsing onder de eenheidscanonicalisatie | B17 (ii) |
 | P9 | **Dagsoortsemantiek** (`backlog/new/20260910-dagsoort-semantiek.md`) | `de dag` krijgt geen knoopsoort voordat zijn looptijdbetekenis er staat | B23 / V10 |
 | P10 | **Naamtabel v0→v1 geëxtraheerd en getoetst** | IR-SPEC draagt elke Engelse naam al met een `v0 name:`-regel; extraheer die tot één machineleesbare tabel en toets hem op volledigheid tegen de 80 knopen en 193 properties van het schema | B6 |
@@ -2196,7 +2226,7 @@ codestuk raakt en de gates er per familie iets van merken:
 | # | Kaart | Deltas | Gates die bewegen |
 |---|---|---|---|
 | M1 | **Het schema en de container** | B1, B2, B3, B4, B5 | 2 (schema-id + `EXPECTED_MIN_DOCS`), 3 (19 getuigen), 4 |
-| M2 | **De spiegelbagage eruit** | B7, B8, B9, B10, B11, B12 | 3 (~30 getuigen), 5, 6, 12 |
+| M2 | **De spiegelbagage eruit** | B7, B8, B9, B11, B12 (**B10 eruit**, 2026-09-19: hij is geen spiegelbagage maar betekenis, en hernoemt bij M8) | 3 (~30 getuigen), 5, 6, 12 |
 | M3 | **De typeannotatie** | B13, B16 | 3 (72 getuigen: 57 identiteitsfamilie + 15 sentinel), **13** — zie **V15** |
 | M4 | **Het typesysteem** | B14, B15, B17 (i), B18 | 2, 3, 5, 6, 12 |
 | M5 | **De regellaag** | B19, B20, B21, B27, B28 | 3, 5, 6, 12 |
