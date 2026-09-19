@@ -1183,13 +1183,13 @@ final class ExpressieBouwer {
         Conditie filter = elementKenmerkFilter(p, elem);
         if (filter != null) return new Deelselectie(filter, null);
         // §5.6 getalpredicaat "die <op> <expr>" names no attribute of its own, so elementVergelijking
-        // re-anchors the FOLD's operand as its left side. On the quantifier-fold position that operand is
-        // TIJDSAFHANKELIJK by construction — §8.2 only qualifies a temporal onderwerp, and the qualifier is
-        // what admits the fold at all — and a timeline in a scalar slot has no reading (ch. 3.3). Every such
-        // filter therefore emits a document that falls over by name in all three executors, so admitting it
-        // here would be misleading: this is a FRONTEND boundary, not a wire one. The NODE carries the shape
-        // fine (a hand-written Kwantorvouw with a Vergelijking filter over a non-temporal member plays in
-        // ref, clingo and the Drools exec branch); it is this SENTENCE position that cannot produce it.
+        // re-anchors the FOLD's operand as its left side. When that operand is TIJDSAFHANKELIJK the filter
+        // has no reading — a timeline in a scalar slot (ch. 3.3) — and it is refused below. That used to be
+        // the case BY CONSTRUCTION on this position, because the §8.2 qualifier was what admitted the fold
+        // at all and §8.2 only qualifies a temporal onderwerp; since the unqualified fold landed
+        // (2026-09-19) the matrix is an ordinary condition and the operand is usually scalar, so the filter
+        // binds here. The refusal was always keyed to the ATTRIBUTE's granularity rather than to the
+        // position, so it needed no change — only its reason had to stop claiming the position.
         // A MEMBERSHIP fold (the kenmerkcheck over a quantified subject) quantifies no attribute at all,
         // so there is no operand for a getalpredicaat to re-anchor on; it falls into the reason below.
         filter = elementVergelijking(p, elem, gekwantificeerd == null ? List.of() : List.of(gekwantificeerd));
@@ -1199,9 +1199,9 @@ final class ExpressieBouwer {
         if (gekwantificeerd instanceof Expr.AttribuutRef q && q.objecttype() != null
                 && q.objecttype().granulariteitVan(q.attribuut()) != null)
             return new Deelselectie(null, "een getalpredicaat over het gekwantificeerde attribuut '"
-                    + q.attribuut() + "' heeft hier geen lezing: de §8.2-kwalificatie geldt alleen over een "
-                    + "TIJDSAFHANKELIJK onderwerp, en een tijdlijn in een scalaire sleuf heeft er geen "
-                    + "(ch. 3.3) — de knoop draagt de vorm wel, deze schrijfpositie kan hem niet leveren");
+                    + q.attribuut() + "' heeft hier geen lezing: dat attribuut is TIJDSAFHANKELIJK, en een "
+                    + "tijdlijn in een scalaire sleuf heeft er geen (ch. 3.3) — de knoop draagt de vorm wel, "
+                    + "over een niet-temporeel attribuut levert deze schrijfpositie hem ook");
         return new Deelselectie(filter, null);
     }
 
