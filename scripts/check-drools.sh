@@ -33,6 +33,19 @@
 # An empty played set is a FAILURE, never silently green. Report: played N, auto-excluded M,
 # value-divergence K (per reason), no-case L.
 #
+# SINCE 2026-09-19 the gate ALSO counts the backend's OTHER transpiler branch (card
+# gate12-drl-takteller). The DRL-TEXT branch — DrlTranspiler's emitted DRL text, compiled to a
+# KieBase behind the runner's own `--drl` entry — is deliberately NARROWER than the exec-model one:
+# it has no ch. 7 prioritizedDefaults lowering and it markers forms the exec branch lowers. So it is
+# NOT the differential square and its count is NOT EXPECTED_PLAYED. What it was until now is
+# UNCOUNTED: its standing lived in card Results and in this file's prose, and the only machine that
+# looked at it was gate 13's twist floor, over thirteen goldens. It now has its own EQUALITY pin
+# (EXPECTED_DRL_PLAYED) and its own reason-carrying NON-PLAYER list (DRL_CHANNEL), built exactly like
+# the two above and stale in exactly the same two directions. One difference is recorded rather than
+# hidden: here an ERROR is LISTABLE. In the exec branch a crash at fire fails the gate outright,
+# because that branch IS the square; in this one a crash is a defect of a branch nothing yet holds to
+# the corpus's values, and the list is what makes it visible instead of making the gate red.
+#
 # The backend's own JUnit suite must ALSO pass with a NON-ZERO test count (maintainer decision
 # 2026-08-30, the gate-10 model): a zero-test or skipped suite is a failure, never silently green.
 #
@@ -72,7 +85,10 @@ command -v mvn >/dev/null 2>&1 || fail "mvn not found — gate 12 builds the jar
 # that could halve unseen. The gate's OTHER counts stay as they are — the played set keeps its
 # EQUALITY pin (EXPECTED_PLAYED below, the precedent this regime generalised from, deliberately not
 # reopened), and the replayed-case total is the played goldens' case files, i.e. a subset of the
-# file set gate 5 floors, held per name here by EXPECTED_CHANNEL.
+# file set gate 5 floors, held per name here by EXPECTED_CHANNEL. The DRL-text branch's count, added
+# 2026-09-19, follows the played set and not the suite: an EQUALITY (EXPECTED_DRL_PLAYED) beside a
+# per-name list, for the same reason — a floor would let a branch that loses one golden and gains
+# another pass while the pair went unnoticed.
 EXPECTED_MIN_TESTS=239   # 2026-09-10: measured 239 (backends/drools, the surefire run)
 suite_out=$(mvn -o -f backends/drools/pom.xml package 2>&1)
 suite_status=$?
@@ -587,36 +603,180 @@ EXPECTED_CHANNEL=(
 # answered was a fabricated Inconsistentie).
 EXPECTED_PLAYED=159
 
-# --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
-# The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the
+# --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
+# Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
+# PLAYED is the default, only NON-players are listed. The channels are the four status tokens the
+# runner's --drl entry actually prints, so what is pinned IS what is measured:
+#   EXCLUDE  a per-form refusal — a loader Refusal, a DrlTranspiler MARKER, or the branch's own
+#            ch. 7 defaults refusal
+#   FAIL     the golden loads, lowers and fires without faulting, and answers a WRONG VALUE
+#   ERROR    the golden faults AT FIRE — a defect of this branch, not a semantic difference
+#   NOCASE   no case file to replay
+# Why the reasons are grouped rather than written one by one: sixty-eight of the seventy-seven
+# entries carry one of three class reasons, and a per-golden retelling of the same sentence would be
+# noise around the only thing that is compared, which is the CHANNEL. Each class is explained in the
+# comment that opens it; each golden still stands there BY NAME, which is what the stale guard needs.
+DRL_CHANNEL=(
+  # (A) ch. 7 prioritizedDefaults — 24. The standing asymmetry between the two branches, and the
+  # single largest reason this count sits 27 below the exec one: the exec branch grew a spec-ch.-7
+  # defaults lowering at the defaults-service card (2026-08-29) that the production toolchain does
+  # not have, and DrlTranspiler never did. Every golden here refuses on that one sentence.
+  "anchor/jutterswet-hardheid|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "anchor/jutterswet-nestdiepte|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "anchor/jutterswet-nestkenmerk|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "anchor/jutterswet-nestuitzondering|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "anchor/jutterswet-strandrechtketen|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "anchor/jutterswet-toelagegronden|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "anchor/jutterswet-uitsluiting|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "anchor/jutterswet-vondstwaardering|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "anchor/ww-herleving-inkomen|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "jutterswet-bergingsdrempel|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "jutterswet-bergingstoeslag|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "jutterswet-hardheidsaftrek-catala|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "jutterswet-overzeelezing-catala|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "jutterswet-penningrecht-catala|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "jutterswet-samenloop|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "jutterswet-tariefrecht-catala|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "jutterswet-vangstheffing-catala|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "jutterswet-wachtgeld|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "jutterswet-wrakbasis|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "jutterswet-wrakconflict|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "jutterswet-wrakerfbasis|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "jutterswet-wrakrecht|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "jutterswet-wrakrecht-flogic|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "synth3-nestkorting|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  # (B) loader Refusals — 34, and SHARED with the exec branch: both branches read the wire through
+  # the same IrLoader, so a v1 node neither carries refuses identically in both. Every one of these
+  # names an EXPECTED_CHANNEL entry above with the same reason; they are repeated here because this
+  # list must be readable on its own, and because the day the loader grows one of these forms BOTH
+  # counts move and both lists have to say so.
+  "anchor/jutterswet-aanmeldquotum|EXCLUDE|loader Refusal: Expr:TemporalRead"
+  "anchor/jutterswet-aanspraaktelling|EXCLUDE|loader Refusal: functionDefs"
+  "anchor/jutterswet-beschikkingsom|EXCLUDE|loader Refusal: Datatype:SumType"
+  "anchor/jutterswet-penningvintage|EXCLUDE|loader Refusal: Expr:TemporalRead"
+  "anchor/jutterswet-staffelvergoeding|EXCLUDE|loader Refusal: Datatype:ListType"
+  "anchor/jutterswet-vondstdossier|EXCLUDE|loader Refusal: Datatype:StructType"
+  "jutterswet-dossierrecht-catala|EXCLUDE|loader Refusal: Datatype:StructType"
+  "jutterswet-dossierspelling|EXCLUDE|loader Refusal: Datatype:StructType"
+  "jutterswet-kamerheffing-catala|EXCLUDE|loader Refusal: functionDefs"
+  "jutterswet-kamerhuishouden-catala|EXCLUDE|loader Refusal: functionDefs"
+  "jutterswet-kinderdeler|EXCLUDE|loader Refusal: Datatype:ListType"
+  "jutterswet-kinderfoldheffing|EXCLUDE|loader Refusal: Datatype:ListType"
+  "jutterswet-kinderkap|EXCLUDE|loader Refusal: Datatype:ListType"
+  "jutterswet-kinderkwart|EXCLUDE|loader Refusal: Datatype:ListType"
+  "jutterswet-kinderlet|EXCLUDE|loader Refusal: Datatype:ListType"
+  "jutterswet-kindermacht|EXCLUDE|loader Refusal: Datatype:ListType"
+  "jutterswet-kinderprocent|EXCLUDE|loader Refusal: Datatype:ListType"
+  "jutterswet-meldplichtspoor|EXCLUDE|loader Refusal: Datatype:SumType"
+  "jutterswet-meldtermijnen|EXCLUDE|loader Refusal: Datatype:ListType"
+  "jutterswet-penningbeschikking-catala|EXCLUDE|loader Refusal: Datatype:SumType"
+  "jutterswet-penningstaffel-catala|EXCLUDE|loader Refusal: Datatype:ListType"
+  "jutterswet-postenheffing|EXCLUDE|loader Refusal: Datatype:ListType"
+  "jutterswet-vaarwaterspelling|EXCLUDE|loader Refusal: Expr:Match"
+  "jutterswet-vaarwatertoeslag-catala|EXCLUDE|loader Refusal: Expr:Match"
+  "jutterswet-vangstwaardering|EXCLUDE|loader Refusal: Datatype:StructType"
+  "jutterswet-waarderingsinvoer|EXCLUDE|loader Refusal: Datatype:StructType"
+  "synth3-besluitschakel|EXCLUDE|loader Refusal: Datatype:SumType"
+  "synth3-keuringtal|EXCLUDE|loader Refusal: Datatype:ListType"
+  "synth3-letbeslag|EXCLUDE|loader Refusal: Datatype:SumType"
+  "synth3-metingtal|EXCLUDE|loader Refusal: Datatype:ListType"
+  "synth3-nestwaarde|EXCLUDE|loader Refusal: Datatype:StructType"
+  "synth3-standtarief|EXCLUDE|loader Refusal: Datatype:SumType"
+  "synth3-vangstsom|EXCLUDE|loader Refusal: Datatype:ListType"
+  "synth3-vondststaat|EXCLUDE|loader Refusal: Datatype:StructType"
+  # (C) DrlTranspiler MARKERs — 12, this branch's own per-form refusals, each naming the rule it
+  # could not lower. Ten of the twelve are goldens the exec branch also refuses (the many-to-many
+  # bean-field limit, the unresolved verdeling, the EERSTE fold over a set); TWO are this branch
+  # alone — jutterswet-keurstaat and jutterswet-vouwrand lower in neither branch's condition scope
+  # here while jutterswet-klipwacht is refused by both, so the pair is not a clean split and is not
+  # presented as one.
+  "anchor/jutterswet-bergingstoezicht|EXCLUDE|MARKER verdeling: unresolved naar_rato (opbrengst over bergingsaandeel)"
+  "anchor/jutterswet-bootberging|EXCLUDE|MARKER regel: bronPad step Boot -> Vondst has no bean field — the middle relation is many-to-many (§13.3.9)"
+  "anchor/jutterswet-erflijn|EXCLUDE|MARKER regel: aggregation join with both sides plural — neither end stores a bean field (§13.3.9)"
+  "anchor/jutterswet-gemeenteberging|EXCLUDE|MARKER regel: aggregation join whose storage direction is the far side (§13.3.9)"
+  "anchor/jutterswet-penninguitgifte|EXCLUDE|MARKER consistentie: unresolved consistency rule over every Penning"
+  "anchor/jutterswet-wachtersketen|EXCLUDE|MARKER objectcreatie: unresolved back-link to Wachter"
+  "jutterswet-keurstaat|EXCLUDE|MARKER regel: TODO voorwaarde — an enum-label equality in a condition"
+  "jutterswet-klipwacht|EXCLUDE|MARKER regel: TODO voorwaarde — the gedurende clip as a composite member"
+  "jutterswet-muntketen|EXCLUDE|MARKER regel: bronPad step Boot -> Munt has no bean field — the same many-to-many middle relation"
+  "jutterswet-vondstvenster|EXCLUDE|MARKER regel: TODO aggregatie EERSTE over a set source"
+  "jutterswet-vouwrand|EXCLUDE|MARKER regel: TODO voorwaarde — a conjunction of comparisons"
+  "synth2-budgetgrens-onder|EXCLUDE|MARKER objectcreatie: unresolved back-link to Wachter"
+  # (D) The §13.4.6 OBJECTCREATIE defect — 4, and the finding this list exists to surface. All four
+  # goldens carry exactly one objectCreatie; the exec branch PLAYS all four, and this branch neither
+  # plays them nor refuses them by name. Two answer leeg where every other executor answers a number
+  # (the creation's member writes do not land), and two FAULT AT FIRE with a reflective
+  # NullPointerException inside the creation's own consequence. That is not a semantic difference and
+  # it is not a carried form: it is a bug in this branch's creation lowering, and it is now pinned by
+  # name so that repairing it MUST move this list. Its own card; not this one's scope.
+  "anchor/jutterswet-rekenkamer|FAIL|objectcreatie defect: the created rekenkamer's heffing stays leeg, where ref, clingo and the exec branch answer 70 / 160 / -15 / 60"
+  "anchor/jutterswet-rekenkamer-overzee|ERROR|objectcreatie defect: reflective NullPointerException in the consequence of the creation rule, at fire"
+  "jutterswet-rekenkamerheffing-catala|FAIL|objectcreatie defect: the same leeg heffing on the Catala-emitted twin of jutterswet-rekenkamer"
+  "synth3-kamerheffing|ERROR|objectcreatie defect: the same reflective NullPointerException at fire as rekenkamer-overzee"
+  # (E) The one value-divergence this branch SHARES with the exec branch — negation-as-failure is not
+  # stratified, so a geen-<kenmerk> rule fires before the positive kenmerk is derived. The exec
+  # branch's full reason is in EXCLUDE_KNOWN above; both branches inherit it from the ported runtime.
+  "anchor/jutterswet-kustwacht|FAIL|the v0 negation-stratification divergence, identical in both branches (full reason in EXCLUDE_KNOWN)"
+  # (F) No case file — nothing to replay, in either branch.
+  "jutterswet-seizoenvondst|NOCASE|a golden with no case file"
+  "jutterswet-vormenkabinet|NOCASE|a golden with no case file"
+)
+# The count that closes the direction a played-by-default list cannot see: a NEW golden that plays in
+# THIS branch. An equality, for the reason EXPECTED_PLAYED is one.
+# 2026-09-19, FIRST measurement at 132 (card gate12-drl-takteller), over 209 goldens: 132 played, 70
+# per-form refusals, 3 wrong values, 2 faults at fire, 2 without a case file. The number was not
+# invented here — it was carried in card Results through the parity programme and last moved by the
+# two Let cards of 2026-09-19 (drl-let-meldplek and drl-geneste-let-duw, 130 -> 132, recorded in the
+# EXPECTED_PLAYED block above). This card re-measured it from scratch and got the same 132, which is
+# what is pinned. Every movement from here carries its reason at this pin, exactly as the exec one
+# does: a golden that starts playing LEAVES DRL_CHANNEL and raises this number by one.
+EXPECTED_DRL_PLAYED=132
+
+# --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
+# The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
 # floor without any golden noticing. Both holes were measured GREEN before these guards existed:
-#   (a) DUPLICATES — expected_channel() returns the FIRST match, so a second entry is dead text. An
-#       exact duplicate and a CONTRADICTORY one (the same golden pinned EXCLUDE *and* NOCASE) both
-#       passed, while the report line counted one pin more than the list actually holds.
-#   (b) A PLAYED ENTRY — the list holds only NON-players (PLAYED is the default), so pinning a
-#       player is not a pin at all: it agrees with whatever that golden measures.
-declare -a _seen_pin=()
-for _e in "${EXPECTED_CHANNEL[@]}"; do
-  _n="${_e%%|*}"; _rest="${_e#*|}"; _ch="${_rest%%|*}"; _why="${_rest#*|}"
-  for _p in "${_seen_pin[@]:-}"; do
-    if [ "$_p" = "$_n" ]; then
-      fail "duplicate channel pin: '$_n' appears more than once in EXPECTED_CHANNEL — the first entry silently wins and the rest is dead text (a contradictory second pin would never be read)"
+#   (a) DUPLICATES — the lookup returns the FIRST match, so a second entry is dead text. An exact
+#       duplicate and a CONTRADICTORY one (the same golden pinned EXCLUDE *and* NOCASE) both passed,
+#       while the report line counted one pin more than the list actually holds.
+#   (b) A PLAYED ENTRY — a list holds only NON-players (PLAYED is the default), so pinning a player
+#       is not a pin at all: it agrees with whatever that golden measures.
+# The DRL list arrived 2026-09-19 with the same two holes, which is why this is now one checker over
+# both rather than a second copy: the set of legal channels differs per list and nothing else does.
+keur_kanaallijst() {   # <list name> <legal channels> <entry>...
+  local lijst="$1" toegestaan="$2"; shift 2
+  local e n rest ch why p
+  local -a gezien=()
+  for e in "$@"; do
+    n="${e%%|*}"; rest="${e#*|}"; ch="${rest%%|*}"; why="${rest#*|}"
+    for p in "${gezien[@]:-}"; do
+      if [ "$p" = "$n" ]; then
+        fail "duplicate channel pin: '$n' appears more than once in $lijst — the first entry silently wins and the rest is dead text (a contradictory second pin would never be read)"
+      fi
+    done
+    gezien+=("$n")
+    case " $toegestaan " in
+      *" $ch "*) ;;
+      *) fail "malformed channel pin: '$n' is pinned '$ch' in $lijst — the list holds only NON-players ($toegestaan); PLAYED is the default, so pinning it exempts the golden from the floor instead of fixing it" ;;
+    esac
+    if [ -z "$why" ] || [ "$why" = "$rest" ]; then
+      fail "channel pin without a reason: '$n' in $lijst — every entry is '<golden>|<channel>|<why it is not PLAYED>'"
     fi
   done
-  _seen_pin+=("$_n")
-  case "$_ch" in
-    EXCLUDE|DIVERGE|NOCASE) ;;
-    *) fail "malformed channel pin: '$_n' is pinned '$_ch' — the list holds only NON-players (EXCLUDE / DIVERGE / NOCASE); PLAYED is the default, so pinning it exempts the golden from the floor instead of fixing it" ;;
-  esac
-  if [ -z "$_why" ] || [ "$_why" = "$_rest" ]; then
-    fail "channel pin without a reason: '$_n' — every entry is '<golden>|<channel>|<why it is not PLAYED>'"
-  fi
-done
-unset _e _n _rest _ch _why _p _seen_pin
+}
+keur_kanaallijst EXPECTED_CHANNEL "EXCLUDE DIVERGE NOCASE" "${EXPECTED_CHANNEL[@]}"
+keur_kanaallijst DRL_CHANNEL "EXCLUDE FAIL ERROR NOCASE" "${DRL_CHANNEL[@]}"
 
 expected_channel() {
   local n="$1" rest
   for e in "${EXPECTED_CHANNEL[@]}"; do
+    if [ "${e%%|*}" = "$n" ]; then rest="${e#*|}"; echo "${rest%%|*}"; return 0; fi
+  done
+  echo PLAYED
+}
+
+drl_expected_channel() {
+  local n="$1" rest
+  for e in "${DRL_CHANNEL[@]}"; do
     if [ "${e%%|*}" = "$n" ]; then rest="${e#*|}"; echo "${rest%%|*}"; return 0; fi
   done
   echo PLAYED
@@ -714,6 +874,59 @@ done
 # (c) the count closes the direction the played-by-default list cannot see: a NEW golden that plays
 [ "$played" -eq "$EXPECTED_PLAYED" ] || fail "played $played, but EXPECTED_PLAYED pins $EXPECTED_PLAYED — a golden entered or left the played channel without the list noticing (a new golden plays: raise the number; a golden went away: the corpus lost a player)"
 
+# --- the DRL-TEXT sweep (card gate12-drl-takteller, 2026-09-19) --------------------------------
+# A SECOND pass over every golden through the runner's --drl entry. It runs LAST, after the square
+# above is green, so an exec-side break still fails in the time it always did and the extra wall
+# clock is only ever paid by an otherwise-passing gate.
+# MEASURED COST 2026-09-19 on this branch: 96s wall clock for 207 java invocations (the two
+# case-less goldens are answered without one), against ~120s for the exec sweep it doubles.
+drl_begin=$(date +%s)
+declare -a DRL_SEEN=()
+declare -a DRL_DRIFT=()
+drl_played=0
+while IFS= read -r ir; do
+  dir=$(dirname "$ir"); name=${dir#corpus/golden/}
+  drl_cases=()
+  while IFS= read -r c; do drl_cases+=("$c"); done < <(find "$dir" -maxdepth 1 -name 'case*.json' | sort)
+  if [ ${#drl_cases[@]} -eq 0 ]; then
+    actual=NOCASE; out="(no case file)"
+  else
+    out=$(java -jar "$JAR" --drl "$ir" "${drl_cases[@]}" 2>/dev/null | tail -1)
+    case "${out%% *}" in
+      PLAYED)
+        # the same hollow-token guard the exec arm carries: PLAYED 0 replayed nothing at all
+        n_drl_cases=${out#PLAYED }
+        [ "${n_drl_cases:-0}" -gt 0 ] || fail "'$name' reports PLAYED 0 in the DRL-text branch — counted as a player but replayed no case at all"
+        drl_played=$((drl_played + 1)); actual=PLAYED ;;
+      EXCLUDE) actual=EXCLUDE ;;
+      FAIL)    actual=FAIL ;;
+      ERROR)   actual=ERROR ;;
+      *) fail "the DRL-text branch printed an unexpected status for '$name': $out" ;;
+    esac
+  fi
+  DRL_SEEN+=("$name")
+  want=$(drl_expected_channel "$name")
+  [ "$actual" = "$want" ] || DRL_DRIFT+=("$name :: pinned $want, measured $actual — $out")
+done < <(find corpus/golden -name ir.json | sort)
+
+if [ ${#DRL_DRIFT[@]} -gt 0 ]; then
+  echo "check-drools: FAIL — ${#DRL_DRIFT[@]} golden(s) changed channel in the DRL-TEXT branch:" >&2
+  for d in "${DRL_DRIFT[@]}"; do echo "    $d" >&2; done
+  echo "  A golden that GAINED its PLAYED status must leave DRL_CHANNEL and raise EXPECTED_DRL_PLAYED by one." >&2
+  echo "  A golden that LOST it is this branch shrinking: fix the cause, or pin it in DRL_CHANNEL with the" >&2
+  echo "  reason and drop EXPECTED_DRL_PLAYED by one. (A NEWLY ADDED golden that does not play was never" >&2
+  echo "  counted: pin it and leave EXPECTED_DRL_PLAYED alone.)" >&2
+  exit 1
+fi
+for e in "${DRL_CHANNEL[@]}"; do
+  n="${e%%|*}"; seen=0
+  for s in "${DRL_SEEN[@]:-}"; do [ "$s" = "$n" ] && seen=1; done
+  [ $seen -eq 1 ] || fail "stale DRL channel pin: '$n' is pinned in DRL_CHANNEL but no such golden was measured (gone, or renamed) — remove it"
+done
+[ "$drl_played" -gt 0 ] || fail "empty DRL-text played set — no golden replayed through the DRL-text branch"
+[ "$drl_played" -eq "$EXPECTED_DRL_PLAYED" ] || fail "the DRL-text branch played $drl_played, but EXPECTED_DRL_PLAYED pins $EXPECTED_DRL_PLAYED — a golden entered or left that branch's played channel without the list noticing (a new golden plays: raise the number; a golden went away: the branch lost a player)"
+drl_kosten=$(( $(date +%s) - drl_begin ))
+
 echo ""
 echo "check-drools: PASS"
 echo "  played $played  (loaded off the wire, wholly lowered, matched the pinned ref≡clingo expectations)"
@@ -726,4 +939,6 @@ fi
 echo "  value-divergence $div_excl  (listed with reason — the exec-model differs from ref/clingo)"
 echo "  no-case $nocase  (goldens without a case file)"
 echo "  channel floor ${#EXPECTED_CHANNEL[@]} non-PLAYED goldens pinned by name; played matches the pinned $EXPECTED_PLAYED"
+echo "  DRL-text branch played $drl_played  (its OWN count — the narrower branch, not the square; pin $EXPECTED_DRL_PLAYED)"
+echo "  DRL-text floor ${#DRL_CHANNEL[@]} non-PLAYED goldens pinned by name; sweep cost ${drl_kosten}s wall clock"
 echo "  JUnit $tests tests, floor $EXPECTED_MIN_TESTS  (the backend's own suite, green with a non-zero count)"
