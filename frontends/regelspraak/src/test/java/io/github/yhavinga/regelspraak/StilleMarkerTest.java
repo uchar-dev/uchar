@@ -84,9 +84,9 @@ class StilleMarkerTest {
     // ---------------- the condition routes ----------------
 
     /**
-     * The route the TOKA parity casus walks and this repository's own goldens never did: "hij is een
-     * &lt;naam&gt;" where the name is neither a kenmerk nor a role of the subject. Until this card the
-     * whole sentence became a marker without one word said about it.
+     * A route no corpus golden walks and real casus material does: "hij is een &lt;naam&gt;" where the
+     * name is neither a kenmerk nor a role of the subject. Until this card the whole sentence became a
+     * marker without one word said about it.
      */
     @Test void een_naam_die_geen_kenmerk_en_geen_rol_bindt_wordt_gemeld() {
         RegelSpraakModel m = resolveer("""
