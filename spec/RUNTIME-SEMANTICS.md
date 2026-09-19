@@ -1011,19 +1011,27 @@ stating because the nested reading answers differently:
    absorb, so `MINIMUM`/`MAXIMUM`/`EERSTE`/`LAATSTE` — which have no
    fallback — never have to decide what to do with one.
 2. A count over the union counts ELEMENTS, never intermediate instances.
-   (Named here and pinned nowhere, for the same kind of reason as (3): no
-   `sourcePath` carrier is a count. The kind itself is unsettled, and more
-   sharply than "untranslated": measured 2026-09-19, `ref` counts the FILLED
-   VALUES of a set source where the Drools backend counts the MEMBERS — 2
-   against 3 on one document as soon as a member's attribute is leeg — and
-   the ASP backend refuses the kind. So this clause's own word, ELEMENTS,
-   is what ch. 3.4a's worked example says and what one of the two carrying
-   executors does; whether the set source keeps that reading, takes the
-   other, or leaves the wire is a maintainer decision with three numbered
-   options in `backlog/done/20260909-eerste-laatste-setvouw-kloof.md` §6.
-   Its two siblings left this asymmetry on 2026-09-19: `EERSTE`/`LAATSTE`
-   over a set source are carried by both OCaml executors, witness
-   `jutterswet-vondstvenster`.)
+   (Named here and pinned nowhere, and since 2026-09-19 for a reason
+   stronger than "no carrier": under `AANTAL` a multi-step range is not
+   EXPRESSIBLE. A `sourcePath` is admissible only on the SET source
+   (`IR-SPEC.md` WF-102 (c)), and a set source is no longer admissible under
+   a count (WF-096, maintainer decision 2026-09-19) — the two fences meet, so
+   neither spelling of a counting union survives the wire. What prompted the
+   decision was this clause read the other way round: measured 2026-09-19,
+   `ref` counted the FILLED VALUES of a set source where the Drools backend
+   counted the MEMBERS — 2 against 3 on one document as soon as a member's
+   attribute was leeg — while the ASP backend refused the kind. Since ch. 1.2e
+   and ch. 3.4a already say a count folds the CONTRIBUTORS, one of those two
+   readings was not a variant but an error, and the form had no producer
+   route at all; the maintainer took option (ii) of
+   `backlog/done/20260909-eerste-laatste-setvouw-kloof.md` §6 and refused the
+   wire form rather than amend a clause to fit an executor. So this clause's
+   own word, ELEMENTS, stands unchanged and keeps waiting for a carrier — a
+   separately defined operation is what the value count and the average will
+   get (`backlog/new/20260919-aantal-gevulde-gemiddelde.md`), not a count's
+   node with a `set` field on its source. Its two siblings left the asymmetry
+   the other way on the same day: `EERSTE`/`LAATSTE` over a set source are
+   carried by both OCaml executors, witness `jutterswet-vondstvenster`.)
 3. A sum's `emptyFallback` fires at most ONCE, for a subject whose whole
    range is empty — never once per empty intermediate instance. (With a
    zero fallback the two readings agree numerically; with any other they do

@@ -2360,8 +2360,15 @@ SET-typed source now translate too — the `#min`/`#max` aggregation
 arm, S8, `jutterswet-vondstpiek` and `jutterswet-vondstvenster` — while
 minimum/maximum over LISTED operands stay under this catch-all: the
 same listed-fold encoding would serve, no corpus case; the AANTAL set
-source stays under it too, awaiting the maintainer decision in
-`backlog/done/20260909-eerste-laatste-setvouw-kloof.md` §6);
+source stays under it too, and since 2026-09-19 it is the one entry in
+this inventory that will never leave the catch-all by being translated
+— the maintainer took option (ii) of
+`backlog/done/20260909-eerste-laatste-setvouw-kloof.md` §6 and the WIRE
+now refuses the form (`IR-SPEC.md` WF-096, negatiefs
+`wf096-aantal-setbron*`), so this backend's refusal, which was the
+strictest of the three readings, is what the verifier came round to.
+The arm stays as a second line of defence rather than a gap: a count
+folds the contributors, and a set source hands it values);
 what remains under it for composites is the member-less
 counting list (`a counting composite without members is not
 translated (no corpus case)`) and every member kind that keeps its
