@@ -1,0 +1,71 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "W1",
+        "objectType": "Wachtpost",
+        "attributes": {},
+        "roles": {
+          "wachtjutters": [
+            "J1",
+            "J2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "W2",
+        "objectType": "Wachtpost",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "W1",
+      "characteristic": "bemand"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "W1",
+      "characteristic": "onbemand"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "W2",
+      "characteristic": "bemand"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "W2",
+      "characteristic": "onbemand"
+    }
+  ]
+}

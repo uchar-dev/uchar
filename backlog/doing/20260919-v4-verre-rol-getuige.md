@@ -99,6 +99,26 @@ zelf en de lader materialiseert het omgekeerde been, dus het onderwerp
 draagt de schakel naar de vuller al — de verre check is de
 bestaansvraag over die schakel, niet een tweede, eigen leesroute.
 
+## Handberekening vóór de eerste run (2026-09-20)
+
+De golden is `corpus/golden/jutterswet-postbezetting`. Twee regels op de
+Wachtpost, allebei de verre vorm — `bemand` indien hij een wachtjutter
+heeft, `onbemand` indien hij er geen heeft. De verwachtingen zijn hier
+uitgerekend vóór ref of clingo het document ooit zag:
+
+| geval | invoer | W1 | W2 |
+|---|---|---|---|
+| `case1-bezette-post` | J1 draagt `toegewezen wachtpost = W1`; W2 staat leeg | bemand, niet onbemand | niet bemand, onbemand |
+| `case2-dubbele-wacht` | W1 draagt `wachtjutters = [J1, J2]`; J3 heeft geen post; W2 staat leeg | bemand, niet onbemand | niet bemand, onbemand |
+
+De twee gevallen dragen met opzet dezelfde uitkomst en om twee
+verschillende redenen. Geval 1 spelt de relatie aan de JUTTERSKANT, dus
+W1's oordeel hangt aan een been dat geen enkele caseregel voor W1
+schrijft — het been dat ch. 5.7a laat materialiseren. Geval 2 spelt hem
+aan de POSTKANT en zet er twee vullers in plus een jutter zonder post:
+twee vullers geven hetzelfde antwoord als één (bestaan is geen telling)
+en een losse jutter bemant niets.
+
 May touch: nieuwe goldenmap onder `corpus/golden/`,
 `corpus/negatief/**`, `ref/**` en `backends/**` uitsluitend waar (b)
 dragend maken vergt, `spec/verifier/**` en `spec/IR-SPEC.md` ch. 4.5

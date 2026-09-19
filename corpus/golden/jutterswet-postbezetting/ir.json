@@ -1,0 +1,173 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": {
+      "node": "Objecttype",
+      "naam": "Jutter",
+      "attributen": {},
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Jutters"
+    },
+    "Wachtpost": {
+      "node": "Objecttype",
+      "naam": "Wachtpost",
+      "attributen": {},
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "bemand",
+        "onbemand"
+      ],
+      "kenmerkSoorten": {
+        "bemand": "BIJVOEGLIJK",
+        "onbemand": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Wachtposten"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {
+    "wachtindeling": {
+      "node": "Feittype",
+      "naam": "wachtindeling",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "wachtjutter",
+          "objecttypeNaam": "Jutter",
+          "meervoud": "wachtjutters",
+          "meervoudig": true
+        },
+        {
+          "node": "Rol",
+          "naam": "toegewezen wachtpost",
+          "objecttypeNaam": "Wachtpost",
+          "meervoud": null,
+          "meervoudig": false
+        }
+      ]
+    }
+  },
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "bemande wachtpost",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "onbemande wachtpost",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "bemande wachtpost",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "bemand",
+        "objecttype": "Wachtpost",
+        "onderwerpBron": "Een Wachtpost",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Wachtpost is bemand",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "VerreRollidmaatschap",
+        "filler": "Jutter",
+        "backref": "toegewezen wachtpost",
+        "negatie": false,
+        "bron": "hij een wachtjutter heeft"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "onbemande wachtpost",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "onbemand",
+        "objecttype": "Wachtpost",
+        "onderwerpBron": "Een Wachtpost",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Wachtpost is onbemand",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "VerreRollidmaatschap",
+        "filler": "Jutter",
+        "backref": "toegewezen wachtpost",
+        "negatie": true,
+        "bron": "hij geen wachtjutter heeft"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}
