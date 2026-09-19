@@ -647,7 +647,17 @@ EXPECTED_CHANNEL=(
 # bron.rgs: the frontend tags a guard with the doel's own type and never with an ancestor, so no
 # source produces this shape and gate 10 has nothing to re-emit. EXPECTED_DRL_PLAYED moves by one
 # as well.
-EXPECTED_PLAYED=164
+#
+# 164 -> 165 (2026-09-20, card v4-verre-rol-getuige): ONE more player, and this branch needed no
+# change at all. jutterswet-postbezetting is the first corpus document in any zone to carry a
+# far-side role check (VerreRollidmaatschap); both Drools branches already lowered that form — the
+# exists-join on the filler's stored reference — and were measured playing it against the
+# hand-computed expectations before anything else moved. What the card changed is the other two
+# executors: ref and the ASP backend caught the form in a residual arm and refused it with a
+# BOTTOM SENTENCE, so they now carry a named arm for it and the square closes on the values. The
+# golden is hand-written IR with no bron.rgs (a wire witness needs no producer route), so gate 10
+# has nothing to re-emit. EXPECTED_DRL_PLAYED moves by one as well.
+EXPECTED_PLAYED=165
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -804,7 +814,11 @@ DRL_CHANNEL=(
 # 140 -> 141 (2026-09-19, same card, lens round): jutterswet-bakensein, the supertype host. This
 # branch refused it too and for the same reason, and the fix is shared between the two. Reason block
 # at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=141
+# 141 -> 142 (2026-09-20, card v4-verre-rol-getuige): jutterswet-postbezetting, the far-side role
+# check's first corpus carrier. This branch lowers the form as an `exists`/`not` clause beside the
+# subject pattern and played it unchanged; the card's work was in ref and the ASP backend. Reason
+# block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=142
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
