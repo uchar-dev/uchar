@@ -5,8 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -31,9 +35,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       field — a fault at fire that takes the whole {@code fireAllRules} pass down.</li>
  * </ul>
  *
- * <p>Both rows therefore demand the SAME verdict of both branches. The models are corpus goldens' own
- * {@code ir.json} read off the wire; every case is authored here and replayed through {@code ref/} first,
- * so no corpus expectation is read, moved or touched.
+ * <p>Those rows demand the SAME verdict of both branches. Two further rows below cover the SCOPES the
+ * forward write rides on — a displaced reference field, and the to-many arm that has no forward field at
+ * all — and one of them is deliberately NOT a branch mirror: there the two branches genuinely differ
+ * today, so it pins each one's own answer rather than pretending to a shared one.
+ *
+ * <p>The models are corpus goldens' own {@code ir.json} read off the wire, or a programmatic variant of
+ * one; every case is authored here and replayed through {@code ref/} first, so no corpus expectation is
+ * read, moved or touched.
  */
 class DrlCreatieTakWitnessTest {
 
@@ -50,6 +59,9 @@ class DrlCreatieTakWitnessTest {
      *  NULLABLE Booleaan attribute on the subject, and the mint's own heffing rule branches on the mark —
      *  so true, false and LEEG each have a different observable outcome. */
     private static final String OVERZEE = "anchor/jutterswet-rekenkamer-overzee";
+    /** The §9.5 model whose ONE subject type carries BOTH creation arms: a to-MANY penning (the marker
+     *  guard, no forward write) and a 1:1 dossier (the linked-instance guard, forward write). */
+    private static final String PENNING = "anchor/jutterswet-penninguitgifte";
 
     // ---------------- ch. 5.5: both ends of the back-link ----------------
 
@@ -106,6 +118,54 @@ class DrlCreatieTakWitnessTest {
         assertTrue(exec.contains("6000"), exec);
     }
 
+    // ---------------- the two guards the forward write rides on ----------------
+    //
+    // ch. 5.5 links both ends, but only the end the BEAN MODEL can hold. The forward write is therefore
+    // scoped twice, and each scope has its own shape below. Both documents are programmatic variants of a
+    // corpus golden, both are verifier-clean, and both were replayed through ref/ first.
+
+    @Test void een_gelijknamig_lid_verdringt_het_voorwaartse_veld() throws Exception {
+        // FactModelGenerator.leden carries ONE bean property per name, attribuut > kenmerk > referentie: a
+        // Jutter that also declares a Numeriek `rekenkamer` keeps the NUMBER and loses the REFERENCE. The
+        // forward write must then not be emitted at all — `$subject.setRekenkamer($new)` would push a fact
+        // into a BigDecimal field, which sinks the WHOLE package on a document ref plays (measured: the
+        // KieBuilder answers "Unable to Analyse Expression … $subject.setRekenkamer").
+        Path ir = gelijknamigLid();
+
+        // THE TWO BRANCHES DIVERGE HERE, and this row pins what each one really does rather than demanding
+        // one verdict of both. The exec branch REFUSES the creation by name — its ch. 5.5 reading is that a
+        // link the bean cannot hold on the side it asked for is not-carried. This branch LOWERS it and plays:
+        // the back-reference on the mint is written, the forward one is skipped, so the mint exists and is
+        // reachable from itself. Levelling the two is a decision about ch. 5.5's refusal-to-guess and belongs
+        // with the koppelloos card (the neighbouring shape in the same method), not here.
+        assertNull(CaseRunner.speelCase(ir, jutterZonderLezing(), true),
+                "drl-tekst — the creation lowers and fires; only the displaced end is skipped");
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.speelCase(ir, jutterZonderLezing(), false),
+                "exec-model — the same shape is refused by name");
+        assertTrue(e.getMessage().contains("objectcreatie"), e.getMessage());
+        assertTrue(e.getMessage().contains("deelt haar naam met een gedeclareerd lid"), e.getMessage());
+
+        // and the DRL row is not "no complaint": the comparator is live on this very document.
+        String fout = CaseRunner.speelCase(ir, jutterMetOnwareVerwachting(), true);
+        assertNotNull(fout, "the played document must be observably empty on heffing, not merely unasserted");
+        assertTrue(fout.contains("heffing"), fout);
+    }
+
+    @Test void de_naar_veel_arm_koppelt_alleen_aan_de_gemunte_zijde() throws Exception {
+        // A to-MANY created-side role has no bean field on the subject — FactModelGenerator derives the
+        // scalar reference on the ONE side only — so the link is stored solely as the mint's own back-
+        // reference and there is no forward end to write. The document below carries BOTH arms of the same
+        // method at once: `penning` is to-many (the CreationMarker guard, no forward write) and `dossier` is
+        // 1:1 (the linked-instance guard, forward write), so one replay walks both.
+        //   What it holds: a fold FROM the subject over the created relation reaches the mint through that
+        // back-reference (1 penning, totalling 7, and 1 dossier). A lowering that wrote the forward end here
+        // anyway would reach `$subject.setPenning(…)`, which no Jutter bean carries — measured, and the whole
+        // package then fails to build, so this row is what keeps the write on the arm that has a field.
+        BeideTakken.groen(penningVorm(), penningJutter(),
+                "the to-many arm links on the created side only, and the fold still reaches the mint");
+    }
+
     // ---------------- the authored documents ----------------
 
     private static Path ir(String golden) {
@@ -143,6 +203,92 @@ class DrlCreatieTakWitnessTest {
                                   "value": { "number": "6" } },
                                 { "kind": "consistent" } ] }
                 """);
+    }
+
+    /** The rekenkamer model with a Numeriek attribute named after the CREATED-SIDE role (`rekenkamer`), which
+     *  displaces the reference field on the Jutter bean, AND without the rule that navigates through it — that
+     *  rule refuses in both branches on the same §13.3.9 reason, and would hide the creation's own answer
+     *  behind it. What is left is a document whose only user of the displaced field is the creation. */
+    private static Path gelijknamigLid() throws Exception {
+        var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(REKENKAMER)));
+        ((com.fasterxml.jackson.databind.node.ObjectNode) ir.get("objecttypen").get("Jutter").get("attributen"))
+                .set("rekenkamer", JSON.readTree("""
+                        { "node": "Numeriek", "geheel": true, "decimalen": 0,
+                          "teken": "ONBEPAALD", "eenheid": null }"""));
+        for (String sectie : new String[] { "regels", "resolvedRegels" })
+            ir.set(sectie, zonder(ir.get(sectie), "heffing van een jutter"));
+        return schrijf(ir, "gelijknamig-lid");
+    }
+
+    /** The penninguitgifte model with BOTH §9.5 consistenties (and their regels) removed: this branch markers
+     *  each of them, which would refuse the document before either creation arm ran. What is left is the two
+     *  creations — one to-many, one 1:1 — and the three folds that read them back. */
+    private static Path penningVorm() throws Exception {
+        var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(PENNING)));
+        for (JsonNode c : ir.get("consistenties")) {
+            String naam = c.path("naam").asText();
+            for (String sectie : new String[] { "regels", "resolvedRegels" })
+                ir.set(sectie, zonder(ir.get(sectie), naam));
+        }
+        ir.set("consistenties", JSON.createArrayNode());
+        return schrijf(ir, "penning-vorm");
+    }
+
+    private static com.fasterxml.jackson.databind.node.ArrayNode zonder(JsonNode lijst, String naam) {
+        var behouden = JSON.createArrayNode();
+        for (JsonNode n : lijst) if (!naam.equals(n.path("naam").asText())) behouden.add(n);
+        return behouden;
+    }
+
+    /** J1 on the displaced-field model: nothing writes its heffing, so the assertion is that the document
+     *  RAN — a package that did not build never reaches the comparator at all. */
+    private static JsonNode jutterZonderLezing() throws Exception {
+        return JSON.readTree("""
+                { "format": "uchar-case-v0", "asOfDate": null,
+                  "input": { "instances": [ { "label": "J1", "objectType": "Jutter",
+                      "attributes": { "grondslag": { "number": "240" }, "aftrek": { "number": "90" } },
+                      "roles": {}, "characteristics": [] } ], "parameters": {} },
+                  "expected": [ { "kind": "attributeEmpty", "label": "J1", "attribute": "heffing" },
+                                { "kind": "consistent" } ] }
+                """);
+    }
+
+    /** The same input claiming a heffing it cannot have — the flank that shows the comparator is live. */
+    private static JsonNode jutterMetOnwareVerwachting() throws Exception {
+        return JSON.readTree("""
+                { "format": "uchar-case-v0", "asOfDate": null,
+                  "input": { "instances": [ { "label": "J1", "objectType": "Jutter",
+                      "attributes": { "grondslag": { "number": "240" }, "aftrek": { "number": "90" } },
+                      "roles": {}, "characteristics": [] } ], "parameters": {} },
+                  "expected": [ { "kind": "attributeValue", "label": "J1", "attribute": "heffing",
+                                  "value": { "number": "150" } },
+                                { "kind": "consistent" } ] }
+                """);
+    }
+
+    /** One penninggerechtigde jutter: the to-many arm mints one penning (bedrag = vondstwaarde) and the 1:1
+     *  arm one dossier; all three folds read their mint back. ref agrees on this model and case. */
+    private static JsonNode penningJutter() throws Exception {
+        return JSON.readTree("""
+                { "format": "uchar-case-v0", "asOfDate": null,
+                  "input": { "instances": [ { "label": "J1", "objectType": "Jutter",
+                      "attributes": { "vondstwaarde": { "number": "7" } },
+                      "roles": {}, "characteristics": ["penninggerechtigd"] } ], "parameters": {} },
+                  "expected": [ { "kind": "attributeValue", "label": "J1", "attribute": "aantal penningen",
+                                  "value": { "number": "1" } },
+                                { "kind": "attributeValue", "label": "J1", "attribute": "penningtotaal",
+                                  "value": { "number": "7" } },
+                                { "kind": "attributeValue", "label": "J1", "attribute": "aantal dossiers",
+                                  "value": { "number": "1" } },
+                                { "kind": "consistent" } ] }
+                """);
+    }
+
+    private static Path schrijf(JsonNode ir, String naam) throws Exception {
+        Path p = Files.createTempDirectory("uchar-drlcreatie-" + naam).resolve("ir.json");
+        Files.writeString(p, JSON.writerWithDefaultPrettyPrinter().writeValueAsString(ir));
+        p.toFile().deleteOnExit();
+        return p;
     }
 
     /** One Jutter on the OVERZEE model: {@code overzees} supplied true/false, or ABSENT for the leeg flank. */

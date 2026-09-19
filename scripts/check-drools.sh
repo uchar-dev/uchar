@@ -742,8 +742,10 @@ DRL_CHANNEL=(
 # ends of the back-link and leaves a kenmerkwaardetoekenning's false-or-empty value unset
 # (RUNTIME-SEMANTICS ch. 5.5, the two clauses the ported production lowering does not have), so the
 # four goldens of the old class D answer the values gates 5 and 6 pin instead of reading leeg or
-# faulting at fire. Measured over 210 goldens: 136 played, 70 per-form refusals, 1 wrong value, no
-# faults at fire, 2 without a case file; the exec sweep beside it is byte-identical and
+# faulting at fire. Measured over 210 goldens: 136 played, 71 per-form refusals, 1 wrong value, no
+# faults at fire, 2 without a case file — 136 + 74 pinned non-players, and the 71 is the EXCLUDE
+# count of THIS list (A 24 + B 35 + C 12), recounted rather than carried over from the block above,
+# where it was 70 against a corpus of 209; the exec sweep beside it is byte-identical and
 # EXPECTED_PLAYED does not move. Every movement from here carries its reason at this pin, exactly as
 # the exec one does: a golden that starts playing LEAVES DRL_CHANNEL and raises this number by one.
 EXPECTED_DRL_PLAYED=136

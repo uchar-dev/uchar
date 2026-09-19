@@ -170,14 +170,19 @@ verder niets, in beide takken.
 ## De getuigen, en de mutatieproef
 
 Nieuw bestand `backends/drools/src/test/java/…/cases/
-DrlCreatieTakWitnessTest.java`, zeven rijen, allemaal door
-`BeideTakken` — één geschreven document, dezelfde uitspraak geëist van
-BEIDE takken. Geen bestaand testbestand gewijzigd. De vijf
-casedocumenten zijn eerst door `ref/` gedraaid (`oracle: PASS`) en pas
-daarna geasserteerd.
+DrlCreatieTakWitnessTest.java`, NEGEN rijen. Geen bestaand testbestand
+gewijzigd. Alle zeven casedocumenten zijn eerst door `ref/` gedraaid
+(`oracle: PASS`) en pas daarna geasserteerd; de twee programmatische
+IR-varianten zijn ook door de verifier (`verifier: PASS`).
 
-ROOD AANGETOOND vóór de fix: 7 tests, 3 failures en 1 error — één per
-symptoomklasse plus de twee extra markwaarden:
+Zeven rijen lopen door `BeideTakken` — één geschreven document,
+dezelfde uitspraak geëist van BEIDE takken. Eén rij doet dat bewust
+NIET, en dat staat zo in het bestand: op het gelijknamig-lid-geval
+verschillen de takken vandaag werkelijk, dus die rij pint per tak wat er
+gebeurt in plaats van een gedeeld oordeel voor te wenden.
+
+ROOD AANGETOOND vóór de fix (de eerste zeven rijen): 7 tests, 3 failures
+en 1 error — één per symptoomklasse plus de twee extra markwaarden:
 
     beide_takken_bereiken_de_mint_vanaf_het_subject
         drl-tekst — verwacht 150, werkelijk leeg
@@ -186,17 +191,72 @@ symptoomklasse plus de twee extra markwaarden:
     een_onware_kenmerkwaarde_laat_de_mark_… — verwacht 5000, werkelijk leeg
     een_lege_kenmerkwaarde_laat_de_mark_…  — ConsequenceException at fire
 
-MUTATIEPROEF, beide kernen apart teruggedraaid en daarna samen:
+### De twee gardes van het voorwaartse schrijven, apart gepind
 
-    kern 1 weg (voorwaarts schrijven)  -> 7 tests, 4 failures, 0 errors
-    kern 2 weg (TRUE-garde)            -> 7 tests, 0 failures, 1 error
-    beide weg, jar herbouwd            -> de vier goldens terug op
-                                          FAIL / ERROR / FAIL / ERROR
+De lensronde vond ze ongetest, en ze zijn dat niet meer. Twee rijen
+erbij, elk op een eigen minimaal document:
 
-Die laatste is de gatekant: tegen de nieuwe pins meldt de kanaalcheck
-vier drifts bij naam en leest `EXPECTED_DRL_PLAYED` 132 tegen een pin van
-136 — beide richtingen van het hek vuren. Daarna hersteld en herbouwd;
-suite weer 485 groen.
+**(a) `een_gelijknamig_lid_verdringt_het_voorwaartse_veld`.** Het
+rekenkamer-model plus een Numeriek `rekenkamer` op Jutter — dat
+verdringt het referentieveld (`leden()`: attribuut > kenmerk >
+referentie) — en ZONDER de regel die door die rol heen leest. Die regel
+weigert in beide takken op dezelfde §13.3.9-reden en zou het antwoord
+van de creatie erachter verbergen; wat overblijft is een document waar
+de creatie de enige gebruiker van het verdrongen veld is. Gemeten, en
+per tak gepind omdat ze verschillen:
+
+    ref    oracle: PASS (2 expectations)
+    exec   EXCLUDE transpiler SKIP: objectcreatie: richt de rekenkamer op
+           — de rol 'rekenkamer' op Jutter deelt haar naam met een
+           gedeclareerd lid …
+    drl    PLAYED 1
+
+De exec-tak weigert de creatie bij naam; deze tak lowert hem en speelt,
+met alleen het verdrongen uiteinde overgeslagen. Het gelijktrekken van
+die twee is een besluit over ch. 5.5's weigering-te-gissen en hoort bij
+de koppelloos-kaart (dezelfde methode, aangrenzende vorm). De rij draagt
+ook een flank: een case die op dat document 150 claimt moet falen, en
+faalt.
+
+**(b) `de_naar_veel_arm_koppelt_alleen_aan_de_gemunte_zijde`.** Het
+penninguitgifte-model zonder zijn twee §9.5-consistenties (die markeert
+deze tak, en dan weigert het document voordat een van beide armen
+draait). Wat overblijft draagt BEIDE armen in één document: `penning`
+is naar-veel (CreationMarker-garde, geen voorwaarts schrijven) en
+`dossier` is 1:1 (koppelinstantie-garde, wel voorwaarts schrijven). Eén
+replay loopt ze allebei. `BeideTakken.groen` op 1 penning / totaal 7 /
+1 dossier; ref PASS (4 expectations), exec PLAYED 1, drl PLAYED 1.
+
+### Mutatieproef, vier mutanten
+
+    kern 1 weg (voorwaarts schrijven)   -> 4 failures  (rijen 1,5,6,7)
+    kern 2 weg (TRUE-garde)             -> 1 error     (rij 5)
+    beide kernen weg, jar herbouwd      -> de vier goldens terug op
+                                           FAIL / ERROR / FAIL / ERROR
+    garde `heeftReferentieVeld` weg     -> 1 error: rij (a), "drl compile:
+                                           Unable to Analyse Expression …
+                                           $subject.setRekenkamer"
+    OOK de `eenOpEen`-scoping weg       -> 2 errors: rij (a) en rij (b),
+                                           de tweede op $subject.setPenning
+
+De derde is de gatekant: tegen de nieuwe pins meldt de kanaalcheck vier
+drifts bij naam en leest `EXPECTED_DRL_PLAYED` 132 tegen een pin van 136
+— beide richtingen van het hek vuren.
+
+EERLIJKE UITKOMST van die laatste twee, gemeten en niet weggelaten: de
+`eenOpEen`-scoping APART weggehaald (met `heeftReferentieVeld` intact)
+is op beide documenten ONZICHTBAAR — beide blijven PLAYED. Dat is geen
+toeval maar een insluiting: `eenOpEen` onwaar betekent óf een naar-veel
+created-side-rol (dan leidt het bean geen veld af, dus
+`heeftReferentieVeld` vangt hem al), óf de koppelloos-route (die de hele
+constructie markeert, dus niets vuurt). De `eenOpEen`-scoping is
+daarmee vandaag een uitgesproken BEDOELING en geen tweede hek; het
+werkende hek is `heeftReferentieVeld`. Rij (b) pint de naar-veel-arm dus
+tegen het wegvallen van BEIDE, niet tegen het wegvallen van `eenOpEen`
+alleen, en dat staat hier zo in plaats van dat de proef sterker wordt
+voorgesteld dan hij is.
+
+Na elke mutant hersteld en herbouwd; suite weer 487 groen.
 
 ## De scriptwijziging (gemandateerd voorstel, beschermd pad)
 
@@ -217,11 +277,22 @@ redenblokken:
   NB de 71 stond er al goed sinds de vorige kaart hem rechttrok.
 - `EXPECTED_DRL_PLAYED` 132 -> 136, met het bewegingsblok eronder in de
   vorm die daar staat: de datum, de kaart, de reden, en de nieuwe
-  verdeling (136 gespeeld, 70 vormweigeringen, 1 verkeerde waarde, geen
-  fouten bij het vuren, 2 zonder case).
+  verdeling — 136 gespeeld, **71** vormweigeringen, 1 verkeerde waarde,
+  geen fouten bij het vuren, 2 zonder case.
+
+  Die 71 is een lenscorrectie en het is de moeite waard waarom. De
+  eerste schrijfbeurt nam de 70 over uit het blok erboven, en dan telt
+  de verdeling op tot 209 terwijl de sweep 210 goldens ziet en de lijst
+  74 regels draagt. Hertelling uit de lijst zelf: `EXCLUDE` 71 (A 24 +
+  B 35 + C 12), `FAIL` 1, `NOCASE` 2 = 74, en 136 + 74 = 210. De 70
+  hierboven was daar op zijn plaats: bij díe meting stond de corpus op
+  209 en droeg klasse (B) nog 34 regels; `synth3-armlichaam` maakte er
+  later 35 van zonder dat die historische zin meebewoog — wat klopt,
+  want het is een gedateerde meting. Het nieuwe blok zegt nu expliciet
+  dat het hertelde in plaats van overnam.
 
 Niet aangeraakt: `EXPECTED_PLAYED`, `EXPECTED_CHANNEL`, `EXCLUDE_KNOWN`,
-`EXPECTED_MIN_TESTS` (de suite groeide 478 -> 485, een vloer hoeft niet
+`EXPECTED_MIN_TESTS` (de suite groeide 478 -> 487, een vloer hoeft niet
 mee omhoog), en het kopblok over de listbaarheid van `ERROR` — dat
 beschrijft de regel, niet de bezetting, en blijft dus waar.
 
@@ -237,12 +308,32 @@ beschrijft de regel, niet de bezetting, en blijft dus waar.
 
 Slotstanden waar deze kaart aan raakt: gate 12 `played 159`,
 `DRL-text branch played 136` (pin 136), `DRL-text floor 74`,
-`JUnit 485 tests` (vloer 239), DRL-sweep 104s. Gate 13 speelt nu 22 van
+`JUnit 487 tests` (vloer 239), DRL-sweep 111s. Gate 13 speelt nu 22 van
 zijn twistbare goldens in de DRL-tekst-tak (vloer 13, was 13 bij de
 meting van 2026-09-10); geen pin daar is een gelijkheid, dus die groei
 vraagt geen bump. Gate 5 543 cases / 643 worked examples, gate 6 543
 cases / 423 suite-checks, gate 10 322 tests / 58 rgs-goldens, gate 14
 130 checks / 2 flogic-goldens — geen van alle bewogen door deze kaart.
+
+NA DE LENSRONDE opnieuw gedraaid op de rebase (`ead26db3`, de
+tripwire-kaart, die `scripts/check-rood.sh` en `ref/bin/runner.ml`
+raakte — disjunct van deze kaart): gate 12 volledig (dezelfde
+slotgetallen, 111s sweep, JUnit 485 -> 487 door de twee nieuwe rijen),
+gate 8 op het nieuwe bodemzinnen-been (`29 red cases … 58 pinned
+fragments cite none of the 36 listed bottom sentences`, Drools-been 6
+fault-pinned / 23 not-carried), en gate 1. De overige elf zijn NIET
+opnieuw gedraaid en dat is een gemotiveerde keuze, geen weglating: de
+rebase raakt `check-rood.sh` (gate 8, gedraaid) en `ref/bin/runner.ml`
+(de ref-runner, die gate 5 en 7 aansturen, en gate 8 draait hem net
+groen op dezelfde binary), en de drie bestanden die deze ronde zelf
+wijzigt zijn een testbestand, een commentaarregel in `check-drools.sh`
+en dit kaartbestand — niets daarvan raakt de schema-, verifier-,
+frontend- of twistpaden van de gates 2, 3, 4, 6, 9, 10, 11, 13 en 14,
+die alle veertien eerder in deze kaart groen gemeten zijn op dezelfde
+broncode. Gate 12 is hier twee keer gedraaid: de eerste liep per
+ongeluk gelijk op met gate 8, die de shaded jar óók onvoorwaardelijk
+herbouwt, dus hij is daarna alleen gedraaid en dat is de meting die
+hierboven staat.
 
 ## Registervoorstellen (niet geland — hoofdsessie)
 
@@ -257,12 +348,31 @@ formuleringskwestie voor de hoofdsessie, geen delta.
 
 De koppelloos-route (`rolNaarSubject == null`) en de symbolische
 `verbindendeRol`-binding: `20260919-drl-creatie-koppelloos.md`, serieel
-hierna. Tweede punt, eerlijk: de TRUE-garde evalueert de kenmerkwaarde
-tweemaal (garde en setter), net als de idempotentiegarde in `regel()`,
-en leunt op dezelfde aanname dat waarde-expressies puur zijn. En anders
-dan de exec-tak werpt deze tak GEEN luide fout bij een niet-booleaanse
-kenmerkwaarde: mvel draagt geen `throw`, dus een niet-booleaanse waarde
-blijft hier stil ongezet. WF-027 en de verifier vangen die vorm vóór
-deze tak hem ziet, en de rode zone bereikt de DRL-tak helemaal niet
-(gate 8 draait alleen de exec-tak) — maar het is een asymmetrie tussen
-de twee takken en ze staat hier opgeschreven in plaats van weggelaten.
+hierna, zelfde methode.
+
+Tweede punt, eerlijk: de TRUE-garde evalueert de kenmerkwaarde tweemaal
+(garde en setter), net als de idempotentiegarde in `regel()`, en leunt
+op dezelfde aanname dat waarde-expressies puur zijn.
+
+Derde punt, en de eerste schrijfbeurt gaf hier een ONJUISTE reden die de
+lens terecht afkeurde. Anders dan de exec-tak — die een niet-booleaanse
+kenmerkinitialisatie met een `IllegalStateException` en WF-027 in de
+tekst afbreekt — laat deze tak zo'n waarde stil ongezet. De reden die
+hier eerst stond, "mvel draagt geen `throw`", is feitelijk onjuist:
+deze tak roept haar hele rekenkern aan als `import function`-statics uit
+`RegelSpraakRuntime`, en dat bestand draagt veertien `throw new`-plekken
+(dertien `IllegalState`/`IllegalArgument`/`Arithmetic`), die via die
+statics gewoon in een consequence terechtkomen. Een luide weigering is
+hier dus technisch te bouwen —
+via een werpende static in de consequence, precies zoals de bestaande
+`rs*`-helpers het doen. Wat er werkelijk aan de hand is, is een
+SCOPEKEUZE: deze kaart bouwt de fail-fast niet, omdat het gedragspunt
+(waar de twee takken bij een niet-carrybare of niet-typebare
+kenmerkwaarde uiteenlopen) in hetzelfde codegebied ligt als de
+koppelloos-route en daar wordt belegd — samen met de andere
+tak-asymmetrie die deze kaart gemeten heeft, het
+gelijknamig-lid-geval van rij (a). WF-027 en de verifier vangen de vorm
+vóór deze tak hem ziet, en de rode zone bereikt de DRL-tak helemaal niet
+(gate 8 draait alleen de exec-tak), dus er staat vandaag geen gate op —
+wat het des te meer een genoteerd openstaand punt maakt en geen
+technische onmogelijkheid.
