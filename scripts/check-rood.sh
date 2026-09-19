@@ -89,22 +89,41 @@ if [ "$n_cases" -lt "$EXPECTED_MIN_ROOD_CASES" ]; then
 fi
 
 # --- the bodemzin fence: a pin may not cite a bottom sentence (2026-09-19) ---------------------
-# Both executors end their node-kind matches in a BOTTOM ARM whose sentence designates the refused
-# construct only by its POSITION or KIND CLASS — "expression kind not translated", "unsupported
-# rule target" — never by the form. Several of those sentences go on to claim that no corpus case
-# reaches them. A red case that pins such a sentence makes the claim live-false AND pins nothing of
-# its own: any other uncarried form satisfies the same fragment, so the witness stops witnessing
-# its own form. Not hypothetical — som-fallback-always-evaluated pinned "expression kind not
-# translated" until 2026-09-19, when the listed som finally got the named arm it deserved, and only
-# a reader's eye caught it. The cure is always that one: give the form its own arm with its own
-# sentence, then pin THAT. This fence makes the recidive fail by name instead of waiting for a
-# reader.
+# Both executors match on node KIND and end those matches in a fall-through arm. A BOTTOM SENTENCE
+# is such an arm's refusal, and its defining property is that it is INVARIANT over everything the
+# arm catches: it describes the position and what the backend does carry there — "expression kind
+# not translated", "a list source here is an own list-typed attribute, a list parameter, a MapList
+# or a FilterList", "a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count shape"
+# — and never the construct actually rejected. A red case that pins one witnesses nothing of its
+# own: every other uncarried form at that position satisfies the same fragment, so the witness
+# stops witnessing its form, and where the sentence also claims no corpus case reaches it, the pin
+# makes that claim live-false. Not hypothetical — som-fallback-always-evaluated pinned "expression
+# kind not translated" until 2026-09-19, when the listed som finally got the named arm it deserved,
+# and only a reader's eye caught it. The cure is always that one: give the form its own arm with
+# its own sentence, then pin THAT. This fence makes the recidive fail by name.
 #
-# The boundary is drawn strictly: a refusal that NAMES the form is not a bottom sentence and is
-# freely pinnable — "a filter on a listed-operand fold has no v0 form", "unsupported AttribuutRef
-# shape (set/sentinel outside a fold)" both name what they refuse, so neither is listed. Nor are
-# the well-formedness diagnostics ("tijdsduur expects two arguments"): they name a violated
-# expectation, not an unreached capacity.
+# THE BOUNDARY, and it is the whole difficulty of the list. A refusal that identifies the REJECTED
+# construct is not a bottom sentence and stays freely pinnable, whether it names it outright ("a
+# ListLiteral list source is not translated", "allocation validity windows are not translated"),
+# interpolates it ("the fold source %S is not a list-typed own attribute"), or states the one
+# property that defines it ("non-numeric arithmetic operand", "negative exponent", "som fallback
+# other than 0"). Listed instead is every refusal that delimits only against the set of forms the
+# implementation happens to carry TODAY — the "X here is A, B or C", "takes only", "supports only",
+# "Carried: …", "other than <the carried list>" formulations — because that set moves with the
+# code, so the sentence tells a reader nothing stable about the witness. Well-formedness
+# diagnostics are outside the question entirely ("tijdsduur expects two arguments"): they name a
+# violated expectation, not an unreached capacity, and their arm catches one thing.
+#
+# Two entries carry the INTERPOLATION-FREE part of their sentence (ref's literal_value and
+# run_rule): the runtime tail is a lexeme or a rule name and differs per document, so no pin can
+# ever match it.
+#
+# BOTH match directions count: the fragment inside the sentence (the som defect's shape) and the
+# sentence inside the fragment (a pin that quotes a bottom sentence whole and adds a tail).
+# Accepted consequence of the first direction, and intended: a pin short and generic enough to sit
+# inside a bottom sentence — "not translated" — is refused even where it would describe a
+# form-naming refusal at replay. That is a pin-quality rule, not an accident: a fragment that short
+# does not identify its witness either, and the red contract is that a pin names what it witnesses.
 #
 # Scope is ref + clingo, the two executors that carry fragments. The Drools leg below pins its
 # not-carried forms by NAME in its exclusion list rather than by fragment, so it needs no fence.
@@ -113,75 +132,103 @@ fi
 # a bottom sentence reworded, moved or newly added in ref/clingo without this list moving with it
 # leaves the fence blind to exactly that sentence.
 #
-# Entries carry the INTERPOLATION-FREE part of each sentence: that is all a pinned fragment can
-# ever match, since the runtime tail (a rule name, a lexeme) differs per document.
-# <source file> <function>|<bottom sentence, verbatim>|<why this one names no form>
+# <source file> <function>|<bottom sentence, verbatim>|<what it delimits against instead of naming>
 bodem=$(mktemp) || exit 2
 cat > "$bodem" <<'EOF'
-ref/lib/eval.ml literal_value|literal of this datatype not implemented|the residual arm over declared datatypes; it says "this datatype" and interpolates the LEXEME, never which datatype has no reader
-ref/lib/eval.ml eval_expr|expression kind not implemented in this card|the residual arm over expr node kinds — the refused node class is not named
+ref/lib/eval.ml literal_value|literal of this datatype not implemented|the residual arm over declared datatypes: it says "this datatype" and interpolates the LEXEME, never which datatype has no reader
+ref/lib/eval.ml eval_expr|expression kind not implemented in this card|the residual arm over expr node kinds — it names the node CLASS, not the kind it rejected
 ref/lib/eval.ml eval_expr|unsupported temporal-read basis shape|the wildcard arm under Temporal_read: it says "shape" and names none
-ref/lib/eval.ml eval_functie|unsupported instance-fold source shape|the residual arm over fold-source combinations — the unsupported combination is not named
+ref/lib/eval.ml eval_functie|unsupported gedurende condition shape (WF-055: an own temporal characteristic, a per-segment comparison of an own temporal attribute, or an ALLE composite of such shapes)|the wildcard arm of the gedurende period reader: the parenthetical enumerates the three CARRIED shapes, so the rejected one stays unnamed
+ref/lib/eval.ml eval_functie|unsupported instance-fold source shape|the residual arm over fold-source combinations — the rejected combination is not named
 ref/lib/eval.ml eval_functie|function kind not implemented in this card|the wildcard arm over function kinds
 ref/lib/eval.ml eval_cond|predicate kind not implemented in this card|the residual Predicaat arm, after the carried predicate kinds
 ref/lib/eval.ml eval_cond|condition kind not implemented in this card|the residual arm over condition kinds
+ref/lib/eval.ml run_pro_rata|unsupported pro-rata condition shape (an own temporal characteristic; no corpus case for more)|the wildcard arm over pro-rata conditions: it names the one carried shape and claims no corpus case for the rest
+ref/lib/eval.ml run_pro_rata|unsupported day-count condition shape (an own temporal characteristic; no corpus case for more)|the wildcard arm over day-count conditions, the mirror of the pro-rata one above
+ref/lib/eval.ml run_pro_rata|a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count shape (a gedurende condition over an own temporal characteristic); no corpus case for more|the wildcard arm over temporal targets: "takes only" enumerates the carried shapes, the rejected target stays unnamed
 ref/lib/eval.ml run_rule|unsupported target shape|the wildcard arm over rule targets; the sentence prefixes the RULE name, never the shape it refuses
+backends/clingo/lib/translate.ml symbolic_term|a text/enum/boolean operand here is an own-subject attribute read or a literal (no corpus case for more)|the wildcard arm over text/enum/boolean operands: "here is A or B" is the carried list
+backends/clingo/lib/translate.ml expr_term|unsupported gedurende condition shape (WF-055: an own temporal characteristic, a per-segment comparison of an own temporal attribute, or an ALLE composite of such shapes)|the wildcard arm of the gedurende period reader, word for word ref's
 backends/clingo/lib/translate.ml expr_term|unsupported temporal-read basis shape|the wildcard arm under the temporal read, the mirror of ref's
+backends/clingo/lib/translate.ml expr_term|a Construct payload other than a literal or an own attribute read is not translated at rule level (a parameter read, a Match or a composite payload has no corpus case)|the residual Construct arm: "other than a literal or an own attribute read" delimits against the carried pair; the parenthetical lists three candidates and settles none
 backends/clingo/lib/translate.ml expr_term|expression kind not translated (no corpus case exercises it)|the wildcard arm over expr node kinds; its parenthetical is the claim a red pin falsifies — the 2026-09-19 defect itself
-backends/clingo/lib/translate.ml cond_atoms|condition kind not translated (no corpus case exercises it)|the wildcard arm over condition kinds, carrying the same no-corpus-case claim
+backends/clingo/lib/translate.ml dt_term|datum-tijd here is not the pair term's arithmetic. Carried: a datum-tijd literal, an own-subject read, datetime ± duration, and eerste/laatste over listed operands. A loud flank, no corpus case: a datum-tijd PARAMETER read, a Let/BinderRef-bound datum-tijd (and the residual VariabeleRef), a set-typed fold, a datum-met or datumtijd-met constructor, and a navigated datum-tijd read|the wildcard arm over datum-tijd terms: it spells out what is "Carried:" and what is a flank, never which of them arrived
+backends/clingo/lib/translate.ml whole_period_fails|a whole-period comparison against a bound other than a literal or a scalar parameter is not translated: the bound rides inside the per-segment rule, which binds only the timeline's own subject (no corpus case)|the wildcard arm over whole-period bounds: "other than a literal or a scalar parameter" is the carried pair in complement form
+backends/clingo/lib/translate.ml cond_atoms|condition kind not translated (no corpus case exercises it)|the wildcard arm over condition kinds, carrying the same no-corpus-case claim as the expression one
+backends/clingo/lib/translate.ml construct_ground_term|a Construct payload other than a literal is not a ground term (a payload that must be bound needs a body atom this position cannot carry; no corpus case)|the residual arm over Construct payloads in ground position: "other than a literal" delimits against the one carried form
+backends/clingo/lib/translate.ml sum_term|a sum-typed operand here is an own-subject attribute read or a Construct (no corpus case for more)|the wildcard arm over sum-typed operands: "here is A or B" is the carried list
+backends/clingo/lib/translate.ml struct_base|a struct field-access base here is an own-subject attribute read, a bound binder or a struct-typed field access (no corpus case for more)|the wildcard arm over struct field-access bases: "here is A, B or C" is the carried list
+backends/clingo/lib/translate.ml scrutinee_pattern|a match scrutinee here is an own-subject sum-typed attribute read (no corpus case for more)|the wildcard arm over match scrutinees: "here is A" is the one carried form
+backends/clingo/lib/translate.ml list_source|a list source here is an own list-typed attribute, a list parameter, a MapList or a FilterList (no corpus case for more)|the wildcard arm over list sources: "here is A, B, C or D" is the carried list
+backends/clingo/lib/translate.ml body_condition|an IfThenElse condition in a closed body is a comparison over bound terms (no corpus case for more)|the wildcard arm over closed-body IfThenElse conditions: it states the carried shape, not the rejected one
+backends/clingo/lib/translate.ml closed_term|a closed-body field access reads a bound struct binder (no corpus case for more)|the wildcard arm over closed-body field accesses: it states the one carried base
+backends/clingo/lib/translate.ml closed_term|a closed-body term here is a bound binder, a literal, a parameter, a +/-/×/percentage-of combination, a division (bare or abs), a power by a constant integer exponent, a Construct or a Let (no corpus case for more)|the wildcard arm over closed-body terms: "here is" followed by the whole carried inventory
+backends/clingo/lib/translate.ml sum_operand|a sum-typed operand in a closed body is a bound binder or a Construct (no corpus case for more)|the wildcard arm over sum-typed operands in a closed body: the carried pair, not the rejection
+backends/clingo/lib/translate.ml filter_condition|a FilterList condition here is a sum-typed (in)equality over the bound element (no corpus case for more)|the wildcard arm over FilterList conditions: "here is" the one carried shape
+backends/clingo/lib/translate.ml closed_division|a closed-body rounded division supports only the richting-nul abs-division collapse (no corpus case for another rounding mode)|the residual arm over closed-body rounding modes: "supports only" names the carried collapse, and "another rounding mode" is the complement of it
+backends/clingo/lib/translate.ml value_condition|a value-position IfThenElse condition is a comparison over bound operands (WF-077; no corpus case for more)|the wildcard arm over value-position IfThenElse conditions: the carried shape, not the rejected one
+backends/clingo/lib/translate.ml translate_regel|a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count shape (a gedurende condition over an own temporal characteristic); no corpus case for more|the wildcard arm over temporal targets, word for word ref's
 backends/clingo/lib/translate.ml translate_regel|rule kind not translated|the wildcard arm over rule kinds
 backends/clingo/lib/translate.ml translate_regel|unsupported rule target|the wildcard arm over rule targets
+backends/clingo/lib/translate.ml bool_atoms|a characteristic-initialisation expression here is an own-subject boolean attribute read (no corpus case for more)|the wildcard arm over characteristic-initialisation expressions: "here is" the one carried read
 EOF
 n_bodem=$(grep -c '|' "$bodem")
 
-# The fragments are read WITHOUT a JSON parser on purpose: this fence sits on the CI-blocking
-# ref/clingo legs, which today need only dune and clingo, and a text check may not add a tool
-# requirement to them. The rood zone's expectedFault block holds one "<key>": "<fragment>" per line
-# and gate 4 pins that shape; a case from which neither key can be read FAILS below, so a broken
-# extraction shows up as a red gate rather than as a fence that quietly matches nothing.
-bodem_frag() {
-    awk -v key="$2" '
-        /"expectedFault"[[:space:]]*:/ { inblk = 1; next }
-        inblk && /^[[:space:]]*}/ { inblk = 0 }
-        inblk {
-            pat = "\"" key "\"[[:space:]]*:[[:space:]]*\""
-            if (match($0, pat)) {
-                s = substr($0, RSTART + RLENGTH)
-                sub(/",?[[:space:]]*$/, "", s)
-                gsub(/\\"/, "\"", s)
-                print s
-            }
-        }
-    ' "$1"
-}
+# The fragments are DECODED, not scraped. A pinned fragment is a JSON string and may spell any
+# character as an escape; a shell-side text scrape compares the escape and misses the match, which
+# is the one failure mode a fence like this may not have. So the reading and the comparing happen
+# where the red path already does both: `ref --bodemzin` reads expectedFault with the same reader
+# the runner above uses, and compares with Case.contains, the same substring matcher it runs a
+# fault report through — so the fence tests exactly the relation the pin has at replay. No new
+# build or install requirement: ref is already built and required by this gate, and the shell side
+# adds only POSIX text handling (a read loop, an awk line lookup).
+sent=$(mktemp) || exit 2
+while IFS='|' read -r _src sentence _reason; do printf '%s\n' "$sentence"; done < "$bodem" > "$sent"
+
+# Standing proof that the DECODING path is the live one (the \u mutation, permanent). A synthetic
+# pin spells its first character as an escape and must still be caught; a text scrape cannot catch
+# it. The pair is self-contained on purpose — it tests the mechanism, not the inventory, so
+# rewording a real bottom sentence never touches it.
+probe_s=$(mktemp) || exit 2
+probe_c=$(mktemp) || exit 2
+printf 'expression kind not translated (no corpus case exercises it)\n' > "$probe_s"
+printf '{ "expectedFault": { "ref": "\\u0065xpression kind not translated", "clingo": "a pin that cites nothing" } }\n' > "$probe_c"
+probe_out=$("$REF" --bodemzin "$probe_s" "$probe_c" 2>&1)
+probe_hits=$(printf '%s\n' "$probe_out" | grep -c '^HIT ')
+if [ "$probe_hits" != "1" ] || ! printf '%s\n' "$probe_out" | grep -q '^HIT ref '; then
+    printf 'FAIL: the bodemzin self-test did not catch an escaped citation (expected exactly one HIT on ref, got %s) — the fence is comparing escapes instead of the characters they stand for, so every pin it clears is cleared for the wrong reason:\n%s\n' \
+        "$probe_hits" "$probe_out" >&2
+    status=1
+fi
+rm -f "$probe_s" "$probe_c"
 
 n_frag=0
+hits=$(mktemp) || exit 2
 while IFS= read -r case; do
     name=$(basename "$(dirname "$case")")
-    for key in ref clingo; do
-        frag=$(bodem_frag "$case" "$key")
-        if [ -z "$frag" ]; then
-            echo "FAIL: $name declares no readable expectedFault.$key — the red contract pins both executors, and a fragment this fence cannot read is a fence that holds nothing" >&2
-            status=1
-            continue
-        fi
-        n_frag=$((n_frag + 1))
-        # BOTH directions are a hit: the fragment inside the sentence (the som defect's shape) and
-        # the sentence inside the fragment (a pin that quotes a bottom sentence whole, plus a tail).
-        while IFS='|' read -r src sentence reason; do
-            [ -z "$sentence" ] && continue
-            hit=0
-            case "$sentence" in *"$frag"*) hit=1 ;; esac
-            case "$frag" in *"$sentence"*) hit=1 ;; esac
-            if [ "$hit" -eq 1 ]; then
-                printf 'FAIL: %s pins expectedFault.%s = "%s", which cites the bottom sentence "%s" (%s — %s). A bottom sentence refuses a whole node class without naming the form, so the pin witnesses nothing of its own: give the form its own arm with its own sentence, then pin that.\n' \
-                    "$name" "$key" "$frag" "$sentence" "$src" "$reason" >&2
-                status=1
-            fi
-        done < "$bodem"
-    done
+    if ! out=$("$REF" --bodemzin "$sent" "$case" 2>&1); then
+        printf 'FAIL: %s — the pinned fragments could not be read; the red contract pins both executors, and a pin this fence cannot read is a fence that holds nothing:\n%s\n' \
+            "$name" "$out" >&2
+        status=1
+        continue
+    fi
+    printf '%s\n' "$out" > "$hits"
+    pins=$(awk '$1 == "PINS" { print $2; exit }' "$hits")
+    if [ -z "$pins" ]; then
+        printf 'FAIL: %s — the fence reported no PINS count (script/runner contract broken):\n%s\n' "$name" "$out" >&2
+        status=1
+        continue
+    fi
+    n_frag=$((n_frag + pins))
+    while read -r tok key line frag; do
+        [ "$tok" = "HIT" ] || continue
+        entry=$(awk -v n="$line" 'NR == n' "$bodem")
+        printf 'FAIL: %s pins expectedFault.%s = %s, which cites the bottom sentence on line %s of the list (%s). A bottom sentence is the same refusal for every form its arm catches, so the pin witnesses nothing of its own: give the form its own arm with its own sentence, then pin that.\n' \
+            "$name" "$key" "$frag" "$line" "$entry" >&2
+        status=1
+    done < "$hits"
 done < "$list"
-rm -f "$bodem"
+rm -f "$bodem" "$sent" "$hits"
 if [ "$n_frag" -eq 0 ]; then
     echo 'FAIL: the bodemzin fence read no fragment at all — an unmeasured fence is never silently green' >&2
     status=1

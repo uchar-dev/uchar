@@ -8,15 +8,82 @@
 
    With --noop the evaluation is skipped and the expectations are
    checked against the raw input world — the gate-7 guard: a corpus a
-   do-nothing executor satisfies has stopped testing anything. *)
+   do-nothing executor satisfies has stopped testing anything.
+
+   With --bodemzin the case's PINS are read and compared against a list
+   of refusal sentences; no ir.json, no world, no evaluation. See
+   [bodemzin] below. *)
+
+(* --- the bodemzin fence, gate 8's fourth leg ----------------------------
+   A red pin must cite a refusal that NAMES the form it refuses, never a
+   fall-through arm's message, which is the same sentence for every form
+   that arm catches. The gate owns the reason-carrying sentence list; this
+   mode owns the two things that must not be approximated in shell:
+   DECODING the fragment (a JSON string may spell any character as an
+   escape — \u00XX, or a backslashed quote — and a text scrape would
+   compare the escape instead of the character it stands for) and
+   COMPARING it — with [Case.contains], the very matcher the
+   red path above runs a fault report through, so the fence tests exactly
+   the relation the pin will have at replay.
+
+     runner --bodemzin <sentences-file> <case.json>
+
+   stdout: "PINS <n>", then one "HIT <key> <line> <fragment>" per
+   citation, the fragment printed %S so a control character in it cannot
+   break the line the gate reads back. A case declaring no readable
+   expectedFault exits 2: the fence may not be hollowed out by silence. *)
+let bodemzin sentences_path case_path =
+  let sentences =
+    let ic = open_in_bin sentences_path in
+    let rec go acc n =
+      match input_line ic with
+      | line -> go ((n, line) :: acc) (n + 1)
+      | exception End_of_file ->
+          close_in ic;
+          List.rev acc
+    in
+    go [] 1
+  in
+  if sentences = [] then (
+    Printf.eprintf "BODEMZIN: %s lists no sentence — an empty fence is never green\n"
+      sentences_path;
+    exit 2);
+  match
+    try Uchar_ref.Case.expected_fault_of_file case_path with
+    | Uchar_ref.Case.Error msg | Sys_error msg | Yojson.Json_error msg ->
+        Printf.eprintf "BODEMZIN: %s is unreadable: %s\n" case_path msg;
+        exit 2
+  with
+  | None ->
+      Printf.eprintf "BODEMZIN: %s declares no expectedFault to check\n" case_path;
+      exit 2
+  | Some { ef_ref; ef_clingo } ->
+      print_endline "PINS 2";
+      List.iter
+        (fun (key, frag) ->
+          List.iter
+            (fun (n, sentence) ->
+              (* an empty line would match everything (contains ~needle:"" is
+                 true), so it is skipped rather than allowed to indict the corpus *)
+              if
+                sentence <> ""
+                && (Uchar_ref.Case.contains ~needle:frag sentence
+                   || Uchar_ref.Case.contains ~needle:sentence frag)
+              then Printf.printf "HIT %s %d %S\n" key n frag)
+            sentences)
+        [ ("ref", ef_ref); ("clingo", ef_clingo) ]
 
 let () =
   let noop, ir_path, case_path =
     match Sys.argv with
+    | [| _; "--bodemzin"; sentences; case |] ->
+        bodemzin sentences case;
+        exit 0
     | [| _; "--noop"; ir; case |] -> (true, ir, case)
     | [| _; ir; case |] -> (false, ir, case)
     | _ ->
-        prerr_endline "usage: runner [--noop] <ir.json> <case.json>";
+        prerr_endline
+          "usage: runner [--noop] <ir.json> <case.json> | runner --bodemzin <sentences> <case.json>";
         exit 2
   in
   try
