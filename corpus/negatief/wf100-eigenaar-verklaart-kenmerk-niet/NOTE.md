@@ -29,15 +29,23 @@ emits a property constraint against a bean that has no such field while the
 exec-model branch reaches `RegelSpraakRuntime.get` on a getter that does not
 exist. WF-100 keeps that document off the wire.
 
-Falsifiable in two directions, each turning this case clean:
+Falsifiable in two directions, one of which narrowed on 2026-09-19:
 
 - give `Jutter` a `gekeurd` of its own — the owner then declares the
-  characteristic and WF-100 has nothing to say (the document stays clean for
-  the verifier and is refused by the executors instead, which is a different
-  rule and a different report: `spec/RUNTIME-SEMANTICS.md` ch. 5.8b);
+  characteristic and WF-100 has nothing to say. *Until WF-109 landed that left
+  the document verifier-clean and refused by the executors instead; since then
+  the object half is the verifier's too, so that direction lands on WF-109 and
+  its own witness, `wf109-gastheer-buiten-bereik`.* Either way it is a
+  different rule and a different report;
 - put `Vondst` back in the field, or empty the field — the golden.
 
-Arm-exact: this is the only document in the four zones whose verdict the rule
-moves. Measured over the verifier-gated zones on the day it landed (golden
-167, negatief 360, rood 26 — 553 documents), the before/after sweep moves this
-verdict and not one other report line anywhere.
+Arm-exact, as measured when WF-100 landed: this was the only document in the
+four zones whose verdict that rule moved. Measured over the verifier-gated
+zones on the day it landed (golden 167, negatief 360, rood 26 — 553
+documents), the before/after sweep moved this verdict and not one other report
+line anywhere. **Since 2026-09-19 this file reports TWO rules**, because the
+host it names is also an object nothing here is — the second citation is
+WF-109's, and it is the one rule this directory does not declare. The declared
+rule still fires and still fires first-class; the document violates both
+obligations at one field, which is what two independent crosses on one field
+look like.

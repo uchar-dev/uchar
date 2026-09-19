@@ -6156,7 +6156,14 @@ and check_fold_fn ctx ~binders ~subject at ~params ~result (fn : fold_fn) : viol
          ^ "', but must be an inline lambda (a named function reaches a fold via a lambda body \
             that invokes it)") ]
 
-and walk_cond ctx ~binders ~subject ?(body = Rule_pos) at (c : conditie) : violation list =
+(* [fc_doel] is the SECOND object a position binds, and exactly one position
+   has one: the guard of a fact creation (IR-SPEC ch. 3.4), which iterates the
+   anker and reaches the doel. It is passed only at that guard's OWN node and
+   never propagated — the recursive calls below all omit it — so the composite
+   arm, the expression walk and every other descent see a one-object position,
+   which is the positional half of WF-109's scope (ch. 4.6 (q2)). *)
+and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie) :
+    violation list =
   let sub p = at ^ "/" ^ p in
   let whole_period_check periode operands =
     match periode with
@@ -6329,6 +6336,61 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) at (c : conditie) : viola
            [ v "WF-034" (sub "eigenaar")
                ("characteristic check's owner '" ^ e
               ^ "' is not a declared object type: the check resolves against no declaration") ]
+       | _ -> [])
+      @ (* THE HOST (WF-109, maintainer decision 2026-09-19; IR-SPEC ch. 4.6
+           (q2)). The owner names the object type the check LIVES ON, and the
+           object it names must be one the position actually binds — exactly
+           one. Every position binds the enclosing form's subject and nothing
+           else, except the fact-creation guard, which binds the anker AND the
+           doel ([fc_doel] above).
+
+           Until this rule the ZERO case was an EXECUTOR refusal: `ref` and the
+           ASP backend faulted on a host they had no object for, while the two
+           Drools branches dropped or markered the form — a verifier-clean
+           document no executor answered. Moving the verdict here is what lets
+           the remaining forms be carried by all four.
+
+           The TWO case is new and is not a corner: with a self-typed anker/doel
+           pair (and with any common supertype of the two) the type string names
+           both objects and settles nothing. No precedence is invented for it,
+           because nothing wrote one.
+
+           Two deliberate step-asides. An UNDECLARED owner belongs to WF-034
+           (q) above: a name that resolves to no declaration has no satisfaction
+           question to ask, and reporting both would make one defect two rules.
+           A SUBJECT-LESS position (the day-kind condition, which binds no
+           object at all) has nothing to cross, and WF-031 refuses that document
+           for reading object state in the first place.
+
+           The doel counts as bound only for a NON-navigated check: a navigated
+           owner names the host while the characteristic lives on the type the
+           hop reaches, a shape the producer never emits and no executor pair
+           has been measured on, so the anker stays the only bound object
+           there. *)
+      (match eigenaar with
+       | Some e when objecttype ctx e <> None ->
+           let bound =
+             match fc_doel, navigatie with
+             | Some d, None -> (
+                 match subject with
+                 | Some a -> [ ("anker", a); ("doel", d) ]
+                 | None -> [ ("doel", d) ])
+             | _ -> ( match subject with Some s -> [ ("subject", s) ] | None -> [])
+           in
+           let named (r, t) = "the " ^ r ^ " '" ^ t ^ "'" in
+           let here = String.concat " and " (List.map named bound) in
+           (match bound, List.filter (fun (_, t) -> is_sub ctx ~sub:t ~super:e) bound with
+            | [], _ | _, [ _ ] -> []
+            | _, [] ->
+                [ v "WF-109" (sub "eigenaar")
+                    ("the characteristic check is hosted on '" ^ e
+                   ^ "', which no object bound here is: this position binds " ^ here) ]
+            | _, hits ->
+                [ v "WF-109" (sub "eigenaar")
+                    ("the characteristic check is hosted on '" ^ e
+                   ^ "', which "
+                    ^ String.concat " and " (List.map named hits)
+                    ^ " both are: the host names one object and this names two") ])
        | _ -> [])
       @ (match kenmerk with
        | None ->
@@ -6854,7 +6916,9 @@ let expression_layer ctx =
       (fun (i, r) ->
         match r.fc_voorwaarde with
         | Some c ->
-            walk_cond ctx ~binders:[] ~subject:r.anker
+            (* the ONE position that binds two objects: the anker it iterates
+               and the doel its join chain reaches (WF-109, ch. 4.6 (q2)) *)
+            walk_cond ctx ~binders:[] ~subject:r.anker ?fc_doel:r.fc_doel
               (Printf.sprintf "/feitCreaties/%d/voorwaarde" i) c
         | None -> [])
       (List.mapi (fun i r -> (i, r)) ctx.doc.feit_creaties)
