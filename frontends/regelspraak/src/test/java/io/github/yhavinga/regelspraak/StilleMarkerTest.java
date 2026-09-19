@@ -261,6 +261,145 @@ class StilleMarkerTest {
                 () -> "precies één sweep-melding over de overgebleven marker: " + m.diagnostics);
     }
 
+    // ---------------- the remaining reason-carrying routes ----------------
+
+    /**
+     * §13.4.14.6: the indentation-blind bullet grammar can absorb a dedented sibling into a deeper
+     * list, so a list whose direct bullets differ in COLUMN or in GLYPH did not nest the way it reads.
+     * One '-' beside one '..' is the smallest such sentence.
+     */
+    @Test void inconsistente_bullets_melden_de_onduidelijke_nesting() {
+        RegelSpraakModel m = resolveer("""
+            Regel bevoegde ploeg
+                geldig altijd
+                    Een Schouwploeg is bevoegd
+                    indien hij aan alle volgende voorwaarden voldoet:
+                    - het wachttal van de Schouwploeg is groter dan 0
+                    .. hij is gekeurd.
+            """);
+        markerMetMelding(m, "staan op verschillende kolommen of dragen verschillende tekens");
+    }
+
+    /**
+     * §13.4.14.6 again, one level in: a die/dat subselectie under a COUNTING quantifier whose own
+     * bullets carry a further compound. The same flattening changes WHAT is counted, so the selection
+     * declines. Note the aggregation route ALSO warns here (its caller names the set-aside aggregation);
+     * the two say different things — that one the aggregation is dropped, this one why the selection
+     * could not be structured — and only this one reaches the fold route, where nothing else speaks.
+     */
+    @Test void een_tellende_kwantor_over_diepere_nesting_wordt_gemeld() {
+        RegelSpraakModel m = resolveer("""
+            Regel wachttal van een ploeg
+                geldig altijd
+                    Het wachttal van een Schouwploeg moet berekend worden als het aantal wachten van de Schouwploeg die aan ten minste 2 van de volgende voorwaarden voldoen:
+                    .. hij is gediplomeerd
+                    .. hij voldoet aan alle volgende voorwaarden:
+                    .. hij is gediplomeerd
+                    .. hij voldoet aan alle volgende voorwaarden:
+                    .. zijn dienstjaren zijn groter dan 3.
+            """);
+        markerMetMelding(m, "een tellende kwantor over een deelselectie");
+    }
+
+    /**
+     * §8.1: the greedy onderwerp parse pulls a trailing "niet" INTO the operand, and a comparison
+     * cannot put it back — emitting the positive form would invert the question. Written here in the
+     * VRAGENDE register ("… niet groter is dan"), which is {@code uitToplevelKaal}'s guard.
+     */
+    @Test void een_geabsorbeerde_niet_op_een_vergelijking_wordt_gemeld() {
+        RegelSpraakModel m = resolveer("""
+            Regel bevoegde ploeg
+                geldig altijd
+                    Een Schouwploeg is bevoegd
+                    indien zijn wachttal niet groter is dan 0.
+            """);
+        markerMetMelding(m, "trok de ontkenning 'niet' in het onderwerp");
+    }
+
+    /**
+     * The same refusal in the STELLENDE register ("… niet is groter dan"), which is
+     * {@code uitNonToplevelKaal}'s guard — a second production site, reached through the bullet
+     * grammar. Both carry ONE text on purpose: it is one refusal, and two spellings of a sentence
+     * should not read as two different problems. That the two sites are genuinely distinct was
+     * measured by marking one of them apart: this sentence changed, the one above did not.
+     */
+    @Test void dezelfde_weigering_in_het_stellende_register() {
+        RegelSpraakModel m = resolveer("""
+            Regel bevoegde ploeg
+                geldig altijd
+                    Een Schouwploeg is bevoegd
+                    indien hij aan alle volgende voorwaarden voldoet:
+                    - zijn wachttal niet is groter dan 0
+                    - hij is gekeurd.
+            """);
+        markerMetMelding(m, "trok de ontkenning 'niet' in het onderwerp");
+    }
+
+    // ---------------- routes that only an ill-formed document reaches ----------------
+
+    /**
+     * Four production sites are structural fall-throughs: every alternative their grammar rule offers
+     * is handled above them, so only ANTLR's ERROR RECOVERY — which hands the resolver a context with
+     * missing children — can reach them. Such a document already carries a syntax ERROR and
+     * {@code --ir} writes nothing for it, so these witnesses assert the reason AND the blocking error
+     * instead of a successful emission: that pairing IS the statement about the route.
+     *
+     * <p>Their siblings that no input reaches at all carry a GEEN GETUIGE comment at the production
+     * site instead ({@code bouwUitKnopen}, {@code bouwCriterium}, {@code bouwElementair},
+     * {@code kenmerkPredicaat}'s §8.2 arm, {@code bouw}'s fall-through, {@code bouwPrimair(null)} and
+     * {@code bouwAttribuut}'s guard).
+     */
+    private static void meldingBijSyntaxfout(RegelSpraakModel m, String fragment) {
+        assertTrue(m.diagnostics.stream().anyMatch(d -> d.severity() == Severity.WARNING
+                        && d.message().contains(fragment)),
+                () -> "verwachtte een WARNING met '" + fragment + "', kreeg: " + m.diagnostics);
+        assertTrue(m.diagnostics.stream().anyMatch(d -> d.isError() && d.message().startsWith("syntaxfout")),
+                () -> "deze route is alleen via foutherstel bereikbaar, dus er hoort een syntaxfout naast "
+                        + "te staan — anders meet deze test iets anders dan zij denkt: " + m.diagnostics);
+    }
+
+    /** {@code bouwVoorwaarde}: a voorwaardendeel whose §13.4.13 alternative never completed. */
+    @Test void een_voorwaardendeel_zonder_vorm_wordt_gemeld() {
+        RegelSpraakModel m = resolveer("""
+            Regel bevoegde ploeg
+                geldig altijd
+                    Een Schouwploeg is bevoegd
+                    indien zijn wachttal.
+            """);
+        meldingBijSyntaxfout(m, "het voorwaardendeel heeft geen van de §13.4.13-vormen");
+    }
+
+    /** {@code bouwGenest}: a bullet whose §13.4.14 alternative never completed. */
+    @Test void een_bullet_zonder_vorm_wordt_gemeld() {
+        RegelSpraakModel m = resolveer("""
+            Regel bevoegde ploeg
+                geldig altijd
+                    Een Schouwploeg is bevoegd
+                    indien hij aan alle volgende voorwaarden voldoet:
+                    - zijn wachttal
+                    - hij is gekeurd.
+            """);
+        meldingBijSyntaxfout(m, "deze bullet van de samengestelde voorwaarde is geen geneste");
+    }
+
+    /** {@code bouw(null)} and {@code bouwPrimair}'s fall-through, in one document: the recovery leaves
+     *  an operand position empty and a primaire expressie that binds nothing. */
+    @Test void een_ontbrekende_expressie_en_een_onbindbare_primaire_worden_gemeld() {
+        RegelSpraakModel m = resolveer("""
+            Regel wachttal van een ploeg
+                geldig altijd
+                    Het wachttal van een Schouwploeg moet berekend worden als het aantal wachten van de Schouwploeg die aan ten minste 2 van de volgende voorwaarden voldoen:
+                    .. hij is gediplomeerd
+                    .. hij voldoet aan alle volgende voorwaarden:
+                    ... hij is gediplomeerd
+                    ... zijn dienstjaren zijn groter dan 3.
+            """);
+        meldingBijSyntaxfout(m, "er is geen expressie om te bouwen");
+        meldingBijSyntaxfout(m, "deze primaire expressie bindt geen literal");
+    }
+
+    // ---------------- what must NOT happen ----------------
+
     /** The diagnostics ride the v0 wire (the emitter writes them), so the sweep must raise NOTHING on
      *  a document without markers — otherwise every golden's ir.json would move. */
     @Test void een_schoon_document_krijgt_geen_enkele_melding() {

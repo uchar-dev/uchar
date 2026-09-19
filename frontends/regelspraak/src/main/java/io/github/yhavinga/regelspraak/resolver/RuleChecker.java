@@ -1726,10 +1726,8 @@ final class RuleChecker {
         if (herNest == null && (bulletsInconsistent(onderdeel)
                 || (kwantor != Conditie.Kwantor.ALLE && kwantor != Conditie.Kwantor.DE && ambiguusGenesteBullets(onderdelen))))
             return new Conditie.Onopgelost(bron(heel),
-                    "de opsomming van de samengestelde voorwaarde is niet eenduidig genest: haar bullets staan "
-                    + "op verschillende kolommen of dragen verschillende tekens, dus welke bullet onder welke "
-                    + "hoort ligt niet vast (§13.4.14.6) — een verkeerd samengevoegde bullet zou onder een "
-                    + "tellende kwantor iets anders tellen dan de zin zegt");
+                    "de bullets van de samengestelde voorwaarde staan op verschillende kolommen of dragen "
+                    + "verschillende tekens, dus welke bullet onder welke hoort ligt niet vast (§13.4.14.6)");
         return new Conditie.Samengesteld(kwantor, drempel, onderdelen, bron(heel));
     }
 
@@ -1822,6 +1820,10 @@ final class RuleChecker {
             else if (k.ctx().elementaireVoorwaarde() != null)
                 uit.add(bouwElementair(k.ctx().elementaireVoorwaarde()));
             else
+                // GEEN GETUIGE: genesteVoorwaarde is `bullet (genesteSamengesteldeVoorwaarde |
+                // elementaireVoorwaarde) DOT?`, dus een knoop draagt er altijd één — en deze tak wordt
+                // pas bereikt NA een geslaagde kolom-hernesting, die een kapotte ontleding juist afwijst.
+                // De reden staat er voor het geval de grammatica een derde tak krijgt.
                 uit.add(new Conditie.Onopgelost(bron(k.ctx()),
                         "deze bullet van de hernestte opsomming is geen geneste samengestelde voorwaarde en "
                         + "geen elementaire voorwaarde (§13.4.14)"));
@@ -1966,6 +1968,8 @@ final class RuleChecker {
             return bouwCriteria(c.consistentieKwantificatie(), c.samengesteldCriteriumOnderdeel(), bron(c));
         }
         if (g.elementaireVoorwaarde() != null) return bouwElementair(g.elementaireVoorwaarde());
+        // GEEN GETUIGE: genestCriterium draagt altijd een van beide takken, en een consistentieregel met
+        // een kapot criterium strandt eerder — op de syntaxfout, met haar eigen ERROR. Gemeten 2026-09-19.
         return new Conditie.Onopgelost(bron(g),
                 "dit geneste consistentiecriterium is geen samengesteld criterium en geen elementaire "
                 + "voorwaarde (§13.4.8)");
@@ -2025,6 +2029,9 @@ final class RuleChecker {
             return bouwPeriode(c.periodevergelijkingElementair().periodevergelijkingEnkelvoudig());
         // §8.1.9 / §13.4.15.66: the "regelversie <X> is gevuurd|inconsistent" regelpredicaat as a bullet.
         if (c.consistentieVoorwaarde() != null) return bouwRegelversie(c.consistentieVoorwaarde());
+        // GEEN GETUIGE: elementaireVoorwaarde heeft precies drie takken en alle drie staan hierboven, dus
+        // een gevulde context bereikt deze regel niet; een kapotte bullet valt een niveau hoger uit
+        // (bouwGenest, dat wel een getuige heeft). Gemeten 2026-09-19.
         return new Conditie.Onopgelost(bron(c),
                 "de elementaire voorwaarde heeft geen van de §13.4.15-vormen — geen expressie met operator, "
                 + "geen periodevergelijking en geen regelpredicaat");
@@ -2497,6 +2504,11 @@ final class RuleChecker {
         // §8.1.7 rolcheck) the qualifier has no defined meaning -> an honest marker, never silently dropped.
         return c instanceof Conditie.Kenmerk k
                 ? new Conditie.Kenmerk(k.kenmerk(), k.navigatie(), k.negatie(), k.eigenaar(), periode, k.bron())
+                // GEEN GETUIGE: deze marker haalt het model nooit. Hij ontstaat alleen met een §8.2-
+                // kwalificatie, en dan loopt hij altijd door keurGeheelPeriode, die een Onopgelost nooit
+                // tijdsafhankelijk acht en hem dus vervangt door haar eigen marker MET ERROR. De reden
+                // staat er omdat zij de weigering van DEZE route beschrijft; dat keurGeheelPeriode
+                // vervolgens harder ingrijpt is haar besluit, niet dat van deze plek. Gemeten 2026-09-19.
                 : new Conditie.Onopgelost(bron,
                         "de controle 'gedurende de/het gehele <periode>' hoort bij een kenmerkcontrole over een "
                         + "tijdsafhankelijk onderwerp; over deze lidmaatschapsvorm (een §8.1.7-rolcontrole) heeft "

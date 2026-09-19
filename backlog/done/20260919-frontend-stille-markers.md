@@ -56,7 +56,7 @@ Regelnummers van de eindtoestand.
 | regel | route | was | nieuw |
 |---|---|---|---|
 | 1662 | `bouwVoorwaarde` valt door: geen §13.4.13-vorm | stil | "het voorwaardendeel heeft geen van de §13.4.13-vormen — geen samengestelde voorwaarde, geen elementaire voorwaarde met operator, geen regelpredicaat en geen periodevergelijking" |
-| 1728 | `bouwSamengesteld`: bullets kolom-/tekeninconsistent (§13.4.14.6) | stil | "de opsomming … is niet eenduidig genest: haar bullets staan op verschillende kolommen of dragen verschillende tekens … een verkeerd samengevoegde bullet zou onder een tellende kwantor iets anders tellen dan de zin zegt" |
+| 1728 | `bouwSamengesteld`: bullets kolom-/tekeninconsistent (§13.4.14.6) | stil | "de bullets van de samengestelde voorwaarde staan op verschillende kolommen of dragen verschillende tekens, dus welke bullet onder welke hoort ligt niet vast (§13.4.14.6)" |
 | 1825 | `bouwUitKnopen`: hernestte bullet is geen van beide vormen | stil | "deze bullet van de hernestte opsomming is geen geneste samengestelde voorwaarde en geen elementaire voorwaarde (§13.4.14)" |
 | 1920 | `samengesteldeElementFilter`: tellende kwantor over een diepere geneste voorwaarde | stil | "een tellende kwantor over een deelselectie waarvan een bullet zelf nog een diepere samengestelde voorwaarde draagt … dan telt de selectie een andere verzameling dan de zin noemt" |
 | 1969 | `bouwCriterium` valt door | stil | "dit geneste consistentiecriterium is geen samengesteld criterium en geen elementaire voorwaarde (§13.4.8)" |
@@ -173,10 +173,13 @@ zelf (gate 11, 27 tests) veranderden niet: `CasusTest` toetst op ERRORs en
 
 ### Getuigen
 
-Nieuw: `frontends/regelspraak/src/test/java/io/github/yhavinga/regelspraak/StilleMarkerTest.java`,
-11 tests, rood-eerst gedraaid vóór de wijziging — negen faalden met letterlijk
-`kreeg: []`, de lege diagnoselijst die de stilte is; de twee anti-tests waren
-meteen groen.
+Nieuw: `frontends/regelspraak/src/test/java/io/github/yhavinga/regelspraak/StilleMarkerTest.java`
+(18 tests) en `…/MarkerRedenPinTest.java` (de klem, 1 test). De eerste elf zijn
+rood-eerst gedraaid vóór de wijziging: van de elf toenmalige tests faalden er
+acht met letterlijk `kreeg: []` — de lege diagnoselijst die de stilte ís — en
+een negende (`een_luide_route_wordt_niet_twee_keer_gemeld`) op `expected: <1>
+but was: <0>`, want de sweep bestond nog niet. De twee anti-tests waren meteen
+groen.
 
 - `een_naam_die_geen_kenmerk_en_geen_rol_bindt_wordt_gemeld` — route 2480, de
   vorm die de pariteitscasus loopt, in eigen Jutterswet-materiaal
@@ -195,7 +198,84 @@ meteen groen.
 - `een_schoon_document_krijgt_geen_enkele_melding` — de wire-klem: lege
   `diagnostics` blijft leeg
 
-Geen bestaande test gewijzigd. De frontend-suite telt 309 tests (was 298),
+Erbij in de lensronde (zie hieronder):
+
+- `inconsistente_bullets_melden_de_onduidelijke_nesting` — route 1728
+- `een_tellende_kwantor_over_diepere_nesting_wordt_gemeld` — route 1920
+- `een_geabsorbeerde_niet_op_een_vergelijking_wordt_gemeld` — route 2124
+- `dezelfde_weigering_in_het_stellende_register` — route 2449
+- `een_voorwaardendeel_zonder_vorm_wordt_gemeld` — route 1662, foutherstel
+- `een_bullet_zonder_vorm_wordt_gemeld` — route 2011, foutherstel
+- `een_ontbrekende_expressie_en_een_onbindbare_primaire_worden_gemeld` —
+  routes 243 en 444, foutherstel
+- `elke_null_reden_staat_op_de_gesanctioneerde_lijst` — de klem zelf
+
+## Lensronde (2026-09-19) — drie correcties
+
+De lens bevond het ontwerp houdbaar (de sweep uitputtend; het meldplek-argument
+beslissend bewezen door plek 2144 bij constructie te laten melden, waarop vier
+bestaande kwantorvouw-tests braken; geen wire-lek; de toka-herpinning feitelijk
+juist) en wees twee gaten plus een onnauwkeurigheid aan.
+
+### Klem op de null-conventie (`MarkerRedenPinTest`)
+
+Gemeten gat: `RuleChecker:2480` op `null` muteren liet 308 van de 309 tests
+groen. De compiler dwingt bij een nieuwe plek wel een argument af, maar niet dat
+het een reden IS — een toekomstige plek die `null` schrijft was dus weer stil.
+
+Gekozen: **de broncontrole**, niet de runtimeklem. De runtimevariant — een
+overlevende `null`-marker in een model met een lege diagnoselijst is bewezen
+stilte — is goedkoop maar heuristisch: één luide melding elders in het document
+maskeert de stilte, en bij een syntaxfout maskeert zij ze allemaal. Juist de
+foutherstelroutes hieronder zouden er structureel buiten vallen. De broncontrole
+is exact en volgt het huispatroon van de gates: een redendragende lijst die
+faalt als er één bijkomt én als er één verdwijnt. De prijs is onderhoud, en die
+prijs is het punt — een `null` schrijven wordt daarmee een bewuste daad met een
+opgeschreven belofte, zoals het optrekken van een gatevloer dat is.
+
+De klem telt per (bestand, omvattende methode) en niet per regelnummer, want
+regelnummers schuiven. Tekstliteralen en regelcommentaar worden eerst geblankt:
+het woord "onopgelost" staat in het proza van zes meldingen. Zes lijstregels
+dekken de dertien gesanctioneerde nullen; een vloer van 30 gevonden
+bouwplekken (gemeten 32) zorgt dat een patroon dat niets meer matcht niet
+stilzwijgend alles goedkeurt, en een lege reden (`""`) faalt apart.
+
+Beide richtingen gemeten met een gesimuleerde mutatie, daarna teruggedraaid:
+`negeer()` zijn reden afnemen geeft *"nieuwe reden==null-plek(ken) zonder
+vermelding: [RuleChecker.java#negeer]"*, en `dagsoortOperandFout` een reden
+géven geeft *"de lijst is verouderd — deze plek(ken) bouwen geen null-marker
+meer: [RuleChecker.java#dagsoortOperandFout]"*.
+
+### Getuigenstand: elke redendragende plek gedekt
+
+De negentien redendragende plekken vallen in vier klassen. Zeven getuigen zijn
+erbij gekomen; zeven plekken dragen nu een `GEEN GETUIGE`-commentaarzin met de
+reden dat er geen invoer bestaat die hen bereikt.
+
+| klasse | plekken | dekking |
+|---|---|---|
+| A — bereikbaar op een welgevormd document dat emitteert | RC 1728, 1920, 2124, 2144, 2449, 2480, 2516; EB 2279; plus de vier vouwweigeringen | JUnit-getuige (elf) |
+| B — alleen via ANTLR-foutherstel; het document draagt dan een syntaxfout en emitteert nooit | RC 1662, 2011; EB 243, 444 | JUnit-getuige die de melding én de blokkerende fout vastlegt (drie tests) |
+| C — structureel onbereikbaar: elke grammaticatak wordt hierboven afgehandeld | EB 284 (zeven takken), EB 347, EB 1750; RC 1825, 1969, 2028 | `GEEN GETUIGE`-commentaar bij de plek |
+| D — wél geproduceerd, maar altijd vervangen voordat het model af is | RC 2500 | `GEEN GETUIGE`-commentaar: `keurGeheelPeriode` acht een `Onopgelost` nooit tijdsafhankelijk en zet er haar eigen marker mét ERROR voor in de plaats |
+
+Twee bevindingen uit die ronde zijn het noteren waard. EB 243 (`bouw(null)`) is
+wél bereikbaar — de lens vermoedde van niet — en zijn zuster EB 347
+(`bouwPrimair(null)`) niet, omdat ANTLR de `primaireExpr`-tak pas kiest ná een
+geslaagde match. En RC 2500 blijkt een reden te dragen die nooit gerapporteerd
+kan worden; de reden blijft staan omdat zij de weigering van díe route
+beschrijft, en het commentaar zegt waarom zij zwijgt.
+
+RC 1728 en 1920 zijn beide bereikbaar met een zesregelige eigen bron. Bij 1920
+meldt óók de aggregatie-aanroeper; dat is een bewust aanvaarde dubbeling van
+twee verschillende uitspraken (die ene zet de aggregatie opzij, deze zegt waarom
+de deelselectie niet te structureren was) — en op de vouwroute, waar dezelfde
+marker het filter van een `Kwantorvouw` wordt, spreekt niemand anders.
+
+De 1728-meldtekst is ingekort tot de kern: van ~55 woorden naar de
+kolom-/tekenconstatering met haar §-verwijzing.
+
+Geen bestaande test gewijzigd. De frontend-suite telt 317 tests (was 298),
 allemaal groen; gate 10's vloer staat op 173 en hoeft niet omhoog.
 
 ### Gates (alle veertien, los gedraaid)
@@ -205,7 +285,7 @@ allemaal groen; gate 10's vloer staat op 173 en hoeft niet omhoog.
 PASS (568 cases) · 5 oracle PASS (ref-suite 643, vloer 489; 539 cases) ·
 6 clingo PASS (419 checks, vloer 83; 539 cases) · 7 noop PASS (503 cases,
 36 survivors) · 8 rood PASS (29 rode cases, vloer 26) · 9 catala PASS (201
-checks; 12 goldens) · **10 regelspraak PASS (309 tests, vloer 173; 58
+checks; 12 goldens) · **10 regelspraak PASS (317 tests, vloer 173; 58
 rgs-goldens byte-identiek, vloer 38)** · 11 toka-parity PASS (45 fragmenten
 byte-identiek na herpinning; 29 cases door ref/clingo/Drools) · 12 drools PASS
 (159 played, 478 JUnit-tests) · 13 reftype-derivation PASS (126 twists over 23
@@ -222,7 +302,8 @@ want de wire draagt geen `reden`.
 
 `frontends/regelspraak/src/main/java/io/github/yhavinga/regelspraak/ir/Conditie.java`,
 `…/ir/Expr.java`, `…/resolver/RuleChecker.java`, `…/resolver/ExpressieBouwer.java`,
-`…/resolver/Resolver.java`, nieuw `…/src/test/java/…/StilleMarkerTest.java`,
+`…/resolver/Resolver.java`, nieuw `…/src/test/java/…/StilleMarkerTest.java` en
+`…/src/test/java/…/MarkerRedenPinTest.java`,
 `backends/drools/src/main/java/io/github/yhavinga/regelspraak/loader/IrLoader.java`,
 `toka/casus/ir.json` (herpinning), `toka/README.md` (de afwijking opgeschreven).
 `spec/CONSTRUCTS.md` en `spec/PLAN.md` onaangeroerd; geen spec-voorstel nodig.

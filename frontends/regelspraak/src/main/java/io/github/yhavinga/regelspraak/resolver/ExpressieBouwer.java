@@ -281,6 +281,8 @@ final class ExpressieBouwer {
             if (mm[1] != null) meldBegrenzing(basis.type(), mm[1].type(), s);
             return new Expr.Begrensd(basis, mm[0], mm[1], bron);
         }
+        // GEEN GETUIGE: expressie heeft zeven gelabelde takken en alle zeven staan hierboven, dus geen
+        // enkele ontleding — ook geen herstelde — bereikt deze regel. Gemeten 2026-09-19.
         return onopgelost(e,
                 "deze expressievorm wordt niet naar IR omgezet — zij is geen som, product, macht, percentage, "
                 + "afronding, begrenzing of primaire expressie (§13.4.16/.17)");
@@ -344,6 +346,9 @@ final class ExpressieBouwer {
 
     // ---------------- §13.4.17 primaire expressie ----------------
     private Expr bouwPrimair(PrimaireExpressieContext p) {
+        // GEEN GETUIGE: ANTLR kiest de primaireExpr-tak van `expressie` pas NA een geslaagde match, dus
+        // een PrimaireExprContext zonder kind is niet te produceren. De zusterwacht in bouw(e) is wel
+        // bereikbaar (zie StilleMarkerTest). Gemeten 2026-09-19.
         if (p == null) return onopgelost(p,
                 "er is geen primaire expressie om te bouwen — de ontleding leverde op deze plaats geen boom op");
         Bron bron = bron(p);
@@ -1746,6 +1751,9 @@ final class ExpressieBouwer {
             Expr geblokkeerd = keurRangtelwoord(a.rangtelwoord(), src(a.kaleNaam()), a, bron);
             return geblokkeerd != null ? geblokkeerd : attribuutRef(src(a.kaleNaam()), a.onderwerp(), bron);
         }
+        // GEEN GETUIGE: de enige aanroeper geeft een gevulde context mee, `attribuutMetLidwoord` is
+        // `lidwoord? kaleNaam` (de naam is er dus altijd), en de rangtelwoord-vorm is hierboven al
+        // afgehandeld — er blijft geen invoer over die hier uitkomt. Gemeten 2026-09-19.
         if (a == null || a.attribuutMetLidwoord() == null || a.attribuutMetLidwoord().kaleNaam() == null)
             return onopgelost(a,
                     "de attribuutverwijzing noemt geen attribuutnaam met lidwoord (§13.4.2.9)");
