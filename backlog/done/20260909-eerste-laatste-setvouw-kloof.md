@@ -303,13 +303,14 @@ weigert die vier als één klasse ("this aggregation over the temporal attribute
 … has no defined moment to fold"), dus de arm weigert mee in plaats van uit de
 `asOfDate`-emmers te antwoorden.
 
-**Suite-getuigen** (`backends/clingo/test/test_clingo.ml`, 408 → 418 checks):
-vier waardeparen `ref`+clingo op een frame waarin de LEDENvolgorde omgekeerd
-is aan de WAARDEvolgorde (een positionele lezing zou 2025-11-01 als "eerste"
-geven waar 2025-02-14 gepind staat), vier paren op de geheel-lege bron
-(beide leeg), en twee weigeringen op een temporeel elementattribuut — die
-laatste twee kan geen corpusgetuige halen, want de vorm is in beide
-uitvoerders dood.
+**Suite-getuigen** (`backends/clingo/test/test_clingo.ml`, 408 → 418 checks —
+tien nieuwe checks). Vier daarvan staan op een frame waarin de LEDENvolgorde
+omgekeerd is aan de WAARDEvolgorde (een positionele lezing zou 2025-11-01 als
+"eerste" geven waar 2025-02-14 gepind staat): twee soorten × twee uitvoerders,
+`ref` en clingo elk apart gecontroleerd. Vier staan op de geheel-lege bron,
+dezelfde twee-bij-twee (beide soorten leeg in beide uitvoerders). De laatste
+twee zijn weigeringen op een temporeel elementattribuut, één per soort, en die
+kan geen corpusgetuige halen — de vorm is daar in beide uitvoerders dood.
 
 **Mutatieproef, werkelijk uitgevoerd.**
 
@@ -348,9 +349,13 @@ genoemde marker (`TODO aggregatie EERSTE`). De golden is dus een ref ≡
 clingo-paar en niet het volle vierkant, en dát staat in
 `scripts/check-drools.sh` opgeschreven in plaats van weggelaten: één regel in
 `EXPECTED_CHANNEL` met de reden. `EXPECTED_PLAYED` blijft 159 — het script
-zegt zelf dat een NIEUWE golden die niet speelt nooit is meegeteld — en de
-kanaalvloer gaat van 49 naar 50 gepinde niet-spelers. Dat zijn de twee
-toegestane plekken in dat script en er is verder niets aan veranderd.
+zegt zelf dat een NIEUWE golden die niet speelt nooit is meegeteld — en het
+aantal bij naam gepinde niet-spelers dat het rapport meldt gaat van 49 naar
+50. Dat getal is geen constante die ik heb bijgesteld: het is de lengte van de
+`EXPECTED_CHANNEL`-lijst, die het script zelf telt, dus het volgt uit die ene
+toegevoegde regel. De teller (`EXPECTED_PLAYED`) en de lijst zijn de twee
+plekken die de kaart mandateert; alleen de lijst is geraakt en verder is er
+niets aan het script veranderd.
 
 ### 5. Corpussweep en poorten
 
@@ -371,7 +376,7 @@ golden zelf. Geen enkele bestaande golden beweegt in welke uitvoerder dan ook.
 | 9 | `check-catala.sh` | 0 — 201 checks, 12 goldens |
 | 10 | `check-regelspraak.sh` | 0 — 298 tests, 58 rgs-goldens (was 57) |
 | 11 | `check-toka-parity.sh` | 0 |
-| 12 | `check-drools.sh` | 0 — played 159, kanaalvloer 50 |
+| 12 | `check-drools.sh` | 0 — played 159, 50 niet-spelers bij naam gepind |
 | 13 | `check-reftype-derivation.sh` | 0 — 126 twists over 23 goldens |
 | 14 | `check-flogic.sh` | 0 — 130 checks, 2 goldens |
 
@@ -492,8 +497,9 @@ wordt voorgesteld te vervangen door
 > waarin de ledenvolgorde omgekeerd aan de waardevolgorde staat), `ref` ≡
 > clingo op handberekende absoluten. De Drools-kant draagt geen van beide
 > takken — exec-model SKIP, DRL-tekst marker — en dat staat als
-> reden-dragende kanaalregel in gate 12 (`EXPECTED_PLAYED` onveranderd 159,
-> kanaalvloer 49 → 50). **AANTAL** blijft open en is nu scherper gemeten dan
+> reden-dragende kanaalregel in gate 12 (`EXPECTED_PLAYED` onveranderd 159;
+> de lijst met bij naam gepinde niet-spelers wordt er één langer, 49 → 50).
+> **AANTAL** blijft open en is nu scherper gemeten dan
 > "een kloof": `ref` telt gevulde waarden waar Drools LEDEN telt (2 tegen 3
 > zodra één lid het attribuut mist), de ASP-backend weigert, er is geen
 > producentroute — de frontend weigert de natuurlijke zin met haar eigen
@@ -512,9 +518,126 @@ eerste / laatste over de SET-typed source", en de zin over wat nog ónder de
 catch-all valt houdt de gelijste min/max en krijgt de AANTAL-setbron erbij,
 met de verwijzing naar de vervolgkaart.
 
-Geen voorstel voor `spec/IR-SPEC.md`: ch. 4.3 spreekt over de POSITIE en die
-is niet geraakt; de soortbeslissing van deze kaart verandert geen enkele
-normatieve MUST.
+**Geen normatieve MUST beweegt — maar het metingsproza eromheen wel.** WF-096
+zelf blijft woord voor woord staan: de clausule fencet de POSITIE, en die is
+niet geraakt. Wat wél geraakt is, is de PROZA die rond die clausule (en rond
+WF-102) vastlegt wat de uitvoerders op deze vormen dóén, en die proza is op
+drie punten door deze kaart gefalsifieerd. Hieronder de letterlijke
+vervangingsvoorstellen; alle drie de documenten zijn beschermd pad, dus dit
+zijn voorstellen en geen landingen.
+
+**Voorstel 1 — `spec/IR-SPEC.md` r. 4316–4328** (de EXEMPTION-alinea van
+WF-096). Zij draagt de drie gefalsifieerde beweringen: (a) EERSTE/LAATSTE
+worden "by `ref` alone" beantwoord — sinds deze kaart onwaar; (b)
+SOM/TOTAAL/MINIMUM/MAXIMUM zijn "carried and agree" — op een DATUM-setbron
+onwaar; (c) AANTAL wordt "by `ref` and Drools alike" beantwoord — juist de
+hoofdvondst is dat ze verschillen. De hangende backlog-pointer op r. 4327
+beweegt mee naar `done/`. Van
+
+> And the EXEMPTION itself: this rule fences the POSITION, never the fold
+> KIND, so a set source under `EERSTE`, `LAATSTE` or `AANTAL` passes the
+> exemption and remains verifier-clean while the executors split on it —
+> measured 2026-09-09 with the kind as the only variable: `SOM`, `TOTAAL`,
+> `MINIMUM` and `MAXIMUM` are carried and agree, `EERSTE` and `LAATSTE` are
+> answered by `ref` alone (the ASP backend refuses the expression kind,
+> Drools skips the rule) from a LIVE producer route, and `AANTAL` is answered
+> by `ref` and Drools alike while the ASP backend refuses. That is the PLAN §6
+> class one door further in and it is NOT a regression of this rule — the
+> boundary is WF-093's pre-existing pair — so it is cut as its own card
+> (`backlog/new/20260909-eerste-laatste-setvouw-kloof.md`) rather than settled
+> here, where the decision was about the position.
+
+naar
+
+> And the EXEMPTION itself: this rule fences the POSITION, never the fold
+> KIND, so a set source under `EERSTE`, `LAATSTE` or `AANTAL` passes the
+> exemption and remains verifier-clean whatever the executors do with it.
+> That is the PLAN §6 class one door further in and it is NOT a regression of
+> this rule — the boundary is WF-093's pre-existing pair — so it was cut as
+> its own card rather than settled here, where the decision was about the
+> position. **That card is done (2026-09-19,
+> `backlog/done/20260909-eerste-laatste-setvouw-kloof.md`), and it answered
+> the kinds one at a time.** `EERSTE` and `LAATSTE` are CLOSED: they are the
+> same fold as `MINIMUM`/`MAXIMUM` — an ordering over the contributed VALUES,
+> never a positional pick of a member (`RUNTIME-SEMANTICS.md` ch. 1.2e) — so
+> the ASP backend carries them on the very arm those two already used, and
+> `ref` ≡ clingo holds on hand-computed absolutes (`jutterswet-vondstvenster`,
+> emitted from the live producer sentence; gates 5, 6 and 10). The Drools
+> backend lowers neither of its transpiler branches for the form and refuses
+> the golden per form with a named reason, recorded in gate 12's channel list:
+> a two-executor agreement, stated as such. `AANTAL` is OPEN, and the card
+> measured the reason to be sharper than "one refuses": the two executors that
+> DO carry it disagree as soon as one member's attribute is leeg — `ref` counts
+> the FILLED VALUES and Drools counts the MEMBERS, 2 against 3 on the same
+> document — while the ASP backend refuses the kind outright. Both readings are
+> verifier-clean today, `RUNTIME-SEMANTICS.md` ch. 3.4a/3.4b say a count folds
+> INSTANCES, and no producer emits the shape at all (the RegelSpraak frontend
+> refuses the one sentence that would write it, citing this very rule). Three
+> numbered options — the wire refuses the form, or it counts members, or it
+> counts values — sit with the maintainer in that card's §6. The four kinds
+> that predate the question stay carried and agree over a NUMERIC set source;
+> over a DATE one the card measured them apart, and the break is named rather
+> than left in the sentence: `SOM`/`TOTAAL` fault in `ref` (date plus date)
+> while the ASP backend adds the day numbers and Drools throws, and
+> `MINIMUM`/`MAXIMUM` agree in the two OCaml executors while Drools throws —
+> all under verifier-clean documents, none of them reachable from a producer
+> (the frontend types the sentence out), and all of it that card's follow-up
+> finding rather than this rule's business.
+
+**Voorstel 2 — `spec/IR-SPEC.md` r. 4413–4417** (de COUNT-bullet van WF-102's
+vlakke-unie-alinea). De benoeming "the standing EERSTE/LAATSTE/AANTAL set-fold
+gap, tracked on its own card" is op twee punten verouderd: de kaart is done en
+twee derde van het gat is dicht. Van
+
+> Like the sum's below, this divergence is **named and pinned nowhere**, and
+> for a sharper reason: no `sourcePath` carrier is a count, and a count over a
+> SET source is a form the ASP backend does not translate at all (the standing
+> EERSTE/LAATSTE/AANTAL set-fold gap, tracked on its own card). The reading is
+> decided here; its differential witness waits on that card.
+
+naar
+
+> Like the sum's below, this divergence is **named and pinned nowhere**, and
+> for a sharper reason: no `sourcePath` carrier is a count, and the count over
+> a SET source is the one kind of that family still without a settled
+> executor reading. Its siblings are settled — the ASP backend has carried
+> `EERSTE`/`LAATSTE` over a set source since 2026-09-19, on the same arm as
+> `MINIMUM`/`MAXIMUM` — but the count is not merely untranslated there: `ref`
+> counts the FILLED VALUES of the set where the Drools backend counts the
+> MEMBERS, so the two executors that carry it already disagree by 1 whenever a
+> member's attribute is leeg, which is exactly the shape a multi-step range
+> makes commonplace. The reading is decided here; its differential witness
+> waits on the maintainer decision recorded in
+> `backlog/done/20260909-eerste-laatste-setvouw-kloof.md` §6.
+
+**Voorstel 3 — `spec/RUNTIME-SEMANTICS.md` r. 1013–1018** (gevolg 2 van
+ch. 3.4b). Dezelfde verouderde benoeming, in uchar's eigen semantiektekst — en
+hier steekt zij scherper, want deze passage stelt wél normatief dat een telling
+ELEMENTEN telt, terwijl `ref` op de setbron gevulde WAARDEN telt. Van
+
+> 2. A count over the union counts ELEMENTS, never intermediate instances.
+>    (Named here and pinned nowhere, for the same kind of reason as (3): no
+>    `sourcePath` carrier is a count, and a count over a SET source is a form
+>    the ASP backend does not translate at all — the standing executor
+>    asymmetry of the EERSTE/LAATSTE/AANTAL set-fold gap, whose own card owns
+>    it. So the divergence is real, stated, and has no differential witness.)
+
+naar
+
+> 2. A count over the union counts ELEMENTS, never intermediate instances.
+>    (Named here and pinned nowhere, for the same kind of reason as (3): no
+>    `sourcePath` carrier is a count. The kind itself is unsettled, and more
+>    sharply than "untranslated": measured 2026-09-19, `ref` counts the FILLED
+>    VALUES of a set source where the Drools backend counts the MEMBERS — 2
+>    against 3 on one document as soon as a member's attribute is leeg — and
+>    the ASP backend refuses the kind. So this clause's own word, ELEMENTS,
+>    is what ch. 3.4a's worked example says and what one of the two carrying
+>    executors does; whether the set source keeps that reading, takes the
+>    other, or leaves the wire is a maintainer decision with three numbered
+>    options in `backlog/done/20260909-eerste-laatste-setvouw-kloof.md` §6.
+>    Its two siblings left this asymmetry on 2026-09-19: `EERSTE`/`LAATSTE`
+>    over a set source are carried by both OCaml executors, witness
+>    `jutterswet-vondstvenster`.)
 
 ### 8. Open twijfel
 
