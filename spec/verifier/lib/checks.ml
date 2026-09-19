@@ -3615,6 +3615,33 @@ let connecting_role_candidates ctx ~from_type ~to_type =
       | _ -> [])
     ctx.doc.feittypen
 
+(* WF-034 (t), ch. 4.6: the FAR-side role check's pair. Counted in
+   (subject role, far role) PAIRS on ONE fact type, because that is what the
+   node's two fields together denote and a fact type carrying only one end
+   answers nothing: [backref] names the role the SUBJECT fills, and the role
+   at the OTHER end of the same fact type must be filled by [filler]. Name
+   identity is ch. 2.1's — declared name or declared plural under [norm] —
+   as in every other role lookup here. The reciprocal shape is the one case
+   where the two ends are one role, so it contributes iff both sides hold of
+   it. Deliberately NOT a mirror of ref's exists-join: the verifier derives
+   this from the declarations alone, sharing no code with any executor. *)
+let far_role_candidates ctx ~subject ~filler ~backref =
+  let named (r : rol) =
+    (match r.rol_naam with Some n -> norm n = norm backref | None -> false)
+    || match r.rol_meervoud with Some m -> norm m = norm backref | None -> false
+  in
+  List.concat_map
+    (fun (_, (ft : feittype)) ->
+      let f inst role = fills ctx ~inst ~role in
+      match ft.rollen with
+      | [ a; b ] ->
+          (if f subject a && named a && f filler b then [ (a, b) ] else [])
+          @ (if f subject b && named b && f filler a then [ (b, a) ] else [])
+      | [ r ] when ft.wederkerig ->
+          if f subject r && named r && f filler r then [ (r, r) ] else []
+      | _ -> [])
+    ctx.doc.feittypen
+
 (* The six aggregation kinds that read a VALUE per contributor — every fold
    kind except AANTAL, which reads the contributors themselves (ch. 1.2e: a
    count is never empty because it never looks inside a member). WF-093's
@@ -6638,7 +6665,48 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
               "role check without an anderTeFiller: the connecting role is derived from that \
                type and from nothing else, so the check resolves against no declaration" ]
       | _ -> [])
-  | Verre_rollidmaatschap _ -> []
+  | Verre_rollidmaatschap { filler; backref; _ } -> (
+      (* WF-034 (t) (maintainer decision 2026-09-20; IR-SPEC ch. 4.6 (t)):
+         the FAR-side role check ("de Wachtpost heeft een wachtjutter",
+         ch. 5.8a read from the other end). Unlike its near-side twin (o)
+         this node carries NO written role name at all, so [filler] and
+         [backref] together are the whole of the reference — which is why
+         the rule crosses the PAIR and not each field on its own. A
+         [backref] naming a real role on the wrong SIDE (the filler's own
+         role instead of the subject's) resolves as a name and still leaves
+         the exists-join ranging over an empty relation; that is the shape
+         `wf034-verre-rolcheck-verkeerde-zijde` pins, and it is the mistake
+         a producer makes.
+
+         One cross, against the role fillers, mirroring (o): an EMPTY
+         candidate list is this arm's report; several entries stay WF-048's
+         ambiguity question; a subject the walk does not know keeps the arm
+         silent. The two absent spellings fold in on the (s) precedent —
+         with either field gone the node carries no reference whatever.
+         Arity is deliberately uncrossed: ch. 5.7a makes the relation
+         symmetric, so neither OCaml executor needs a direction, and the
+         bean-model executor refuses the shape it cannot store per form,
+         with its own reason. *)
+      match (filler, backref, subject) with
+      | None, _, _ ->
+          [ v "WF-034" (sub "filler")
+              "far-side role check without a filler: the exists-join ranges over the objects \
+               of that type and over nothing else, so the check resolves against no \
+               declaration" ]
+      | _, None, _ ->
+          [ v "WF-034" (sub "backref")
+              "far-side role check without a backref: the join is on the role the subject \
+               fills and the node names it in that field alone, so the check resolves against \
+               no declaration" ]
+      | Some f, Some b, Some st
+        when far_role_candidates ctx ~subject:st ~filler:f ~backref:b = [] ->
+          [ v "WF-034" (sub "backref")
+              (Printf.sprintf
+                 "no declared fact type holds the subject '%s' in a role named '%s' with '%s' \
+                  at the other end: the far-side role check's filler and back-reference \
+                  resolve against no single declaration"
+                 st b f) ]
+      | _ -> [])
   | Periode_conditie { vanaf; tot; _ } ->
       (if vanaf = None && tot = None then
          [ v "WF-042" at "time window without any bound" ]
