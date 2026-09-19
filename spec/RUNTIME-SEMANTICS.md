@@ -588,6 +588,15 @@ reads it there:
   operator's parameter — "de tijdsduur van A tot B **in jaren**"
   (WF-038) — not a derived result.
 
+Since 2026-09-19 the second and third of those carry **more** than a
+calendar unit: where the spelling names a declared day kind rather than a
+unit on the ch. 3.8 table, it selects the PREDICATE the duration walks
+(ch. 3.8, the day-kind forms). The exemption is therefore stronger at a
+day-kind position than at a calendar one — twisting the annotation there
+would not merely restate a number, it would ask a different question — and
+that is why gate 13 leaves both positions untwisted for a reason it already
+carried.
+
 **A fourth class, and it says something weaker.** A *position* whose result
 unit v0 does not *derive* at all — a division (`GEDEELD_DOOR`), a power
 (`TOT_DE_MACHT`), a percentage-of (`PERCENTAGE_VAN`), an absolute value, a

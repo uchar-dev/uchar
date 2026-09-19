@@ -672,7 +672,20 @@ and this backend); declared factors and stelsel never enter.
     packed decomposition's pre-epoch and year-zero fences. Emptiness is
     unchanged: the datetime operand PROPAGATES by its bare `dt/2` join, the
     duration COALESCES through `coalesce0`.
-- **Loud flanks**: day-kind (dagsoort) durations/tijdsduren, the
+- **Day-kind (dagsoort) durations** are translated since 2026-09-19 over
+  DAY-PRECISION operands (RUNTIME-SEMANTICS ch. 3.8): the walk is GROUND
+  here rather than run — the days it may visit become a domain predicate
+  derived from the operands alone, the voorwaarde becomes a rule over that
+  domain with the bound day as its variable, and the §6.10 count reads a
+  `#count` over it while the §6.11 step reads a recursive (found, gap)
+  rank. Stratification is what the derivation buys: the domain never
+  depends on the voorwaarde's own `not`. The gap fence is the chapter's
+  own (3 660 days) and fires as `viol/2`; one window is this backend's
+  alone and loud, the S6a pattern — a step seeking more than 64 days of
+  the kind at once is refused here where ref computes it. Over DATUM-TIJD
+  operands the form stays a recognised, unexecuted flank, refused in the
+  same words `ref` uses.
+- **Loud flanks**: the
   `DATUM_MET`/`DATUMTIJD_MET` constructors, the sub-day part extractors
   (`uur/minuut/seconde/milliseconde-uit`), and datum-tijd
   **(on)gelijk-aan** still fault at translation — outside the arithmetic,
@@ -2278,8 +2291,10 @@ former datum-tijd embargo, so datetime ± duration and sub-day/day-based
 tijdsduur over datetimes now translate WITHOUT a datetime's absolute ms
 value entering clingo's integer range whole, S6a, golden
 `jutterswet-getijdenpaar` — the ch. 3.8 borrow corner as the differential
-square, ref ≡ clingo), and what stays loud in the date family is
-day-kind (dagsoort) durations and tijdsduren,
+square, ref ≡ clingo) and, since 2026-09-19, the day-kind (dagsoort)
+durations and tijdsduren over day-precision operands (the ground walk
+above, golden `jutterswet-bergingsklok`); what stays loud in the date
+family is those two forms over DATUM-TIJD operands,
 `DATUM_MET`/`DATUMTIJD_MET`, the sub-day part extractors
 (uur/minuut/seconde/milliseconde-uit, still under the catch-all;
 outside ref too — the extractor slice is not the ms layer's
@@ -2422,9 +2437,12 @@ to-many role …`, RUNTIME-SEMANTICS ch. 5.8a rule 3; rood
 `near-side-rolcheck-to-many`)). The **day-kind (DAGSOORT) predicate** — a
 reference to a declared day kind used as a condition — is itself a loud
 non-translation here: clingo reaches this condition catch-all and ref
-refuses the predicate outright, so a reference to a day kind faults loudly
+refuses the predicate by name, so a reference to a day kind faults loudly
 in both executors, never silently, even though a day kind's own definition
-is well-formed (WF-031).
+is well-formed (WF-031). Since 2026-09-19 that holds of the predicate as a
+RULE condition only: INSIDE a day-kind voorwaarde the nested reference is
+the §9.8 composition and both executors evaluate it, which is what WF-085's
+reference graph is about.
 
 *Sum types (S14) — carriage and shapes without a corpus case:*
 **temporal sum carriage** is a recorded flank — the value model admits a
