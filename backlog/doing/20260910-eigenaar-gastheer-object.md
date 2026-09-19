@@ -108,29 +108,53 @@ Drie mogelijke antwoorden, elk met een prijs:
   anker→doel-terugval een toevalstreffer die op de meerstaps-tussenstappen
   breekt?
 
-## Acceptance
+## Acceptance (aangescherpt op het maintainersbesluit, antwoord (1))
 
-- De genummerde vraag beantwoord, met de reden en de prijs uitgeschreven.
-- De meting hierboven gedaan en genoteerd.
-- Bij antwoord (1): een golden met absolute verwachtingen die alle drie de
-  uitvoerders halen, en de weigering uit `ref`/ASP verwijderd in dezelfde
-  commit als de vervanging (nooit een gat ertussen).
-- Bij antwoord (2): een `corpus/negatief/wf###-<slug>/`, plus de meting dat
-  geen bestaande bron de vorm produceert.
-- Bij antwoord (3): de zin in `RUNTIME-SEMANTICS.md` ch. 5.8b die de
-  permanente splitsing als besluit draagt, plus de reden-dragende regel in
-  gate 12.
-- Alle dertien gates groen.
+De vraag is beantwoord; wat rest is de uitvoering van dat antwoord.
+
+- **Spec-voorstel.** `spec/IR-SPEC.md` normeert het `eigenaar`-veld als
+  GASTHEERVELD — het zegt op welk objecttype de check woont — en draagt de
+  bereikbaarheidseis als MUST met eigen WF-ID, verifier-check, passende
+  golden en falende negatief-case. `spec/RUNTIME-SEMANTICS.md` ch. 5.8b gaat
+  van weigering naar semantiek, met een worked example met concrete
+  verwachte uitkomst die verbatim in `ref/test/` staat. De wire-naam en
+  -vorm blijven v0 (`eigenaar`, een objecttype-string); een v1-hernoeming is
+  een voorstel in `spec/proposals/V1-WIREMIGRATIE.md`, geen wijziging hier.
+- **De meettabel van 2026-09-19 is de rood-eerst-basis.** Elke rij die de
+  nieuwe spec legaal verklaart wordt een verwachting; elke rij die zij
+  afwijst wordt een negatief- of rood-getuige.
+- **Alle vier de uitvoerders dragen de vorm.** De weigering in `ref` en de
+  ASP-backend verdwijnt in DEZELFDE commit als de vervangende
+  implementatie. Een gastheer die geen bereikbaar object noemt is
+  verifier-werk, geen uitvoerder-weigering; zo sluit het vierkant.
+- **Ten minste één golden** met absolute verwachtingen die alle vier halen,
+  die het doel-gastheerpad POSITIEF onderscheidt van de ankerlezing (anker
+  draagt hetzelfde kenmerk: ankerlezing 2, doellezing 1). Plus
+  `jutterswet-postwacht` hermeten.
+- **Drools-getuigen in beide takken** pinnen de doel-lezing tegen de nieuwe
+  spec-tekst, inclusief het meerstapsgeval, met uitgevoerde en
+  teruggedraaide mutatieproeven.
+- **Alle veertien gates groen**, elk los gedraaid; de gate-12-pins
+  herberekend en gedocumenteerd.
 
 May touch: `spec/IR-SPEC.md` (**voorstel**), `spec/RUNTIME-SEMANTICS.md`
-(**voorstel**), `spec/verifier/**` (**voorstel**), `ref/**`,
-`backends/clingo/**`, `backends/drools/**`, `corpus/**`, `backlog/`.
+(**voorstel**), `spec/verifier/**` (**voorstel**),
+`spec/proposals/V1-WIREMIGRATIE.md` (**voorstel**), `ref/**`,
+`backends/clingo/**`, `backends/drools/**`, `corpus/**`, `scripts/`
+(gate-12-pins, **voorstel**), `backlog/`.
 
 ## Out of scope
 
 - De declaratiehelft: WF-100 (geland 2026-09-10) sluit die.
 - Het clip-lid: WF-097 weigert de eigenaar daar al.
 - De `periode` op de scalaire kenmerkcheck — de §8.2-familie, eigen kaart.
+- **Vorm B uit het meetrapport (de doelVERGELIJKING).** Dat veld bestaat op
+  de vergelijking niet en de frontend produceert de vorm niet; antwoord (1)
+  generaliseert er zonder nieuw wire-veld niet heen.
+- **De `AttribuutRef.objecttype`-spanning.** Een vreemd type wordt daar door
+  alle lezers stil als navigatie over de afgeleide relatie gelezen — de wire
+  geeft twee tegengestelde antwoorden op dezelfde intuïtie. Deze kaart
+  benoemt die spanning in het spec-voorstel en lost haar niet op.
 
 
 ## Meetrapport 2026-09-19 (read-only meetsessie, samen met de
