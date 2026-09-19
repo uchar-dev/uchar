@@ -923,11 +923,23 @@ let unit_free_ok ctx e =
    additive join, the comparison, the write boundary — multiply by an
    exact conversion factor (a hunted silent split: 1 m plus 50 cm
    grounded as 1+50). The integer encoding carries no factor, so only
-   IDENTICAL declared units (factor 1) or a unitless side (which adopts
-   the other unit, value unchanged) translate; anything else faults. *)
+   units that need NO factor — the same quantity, or a unitless side that
+   adopts the other unit with its value unchanged — translate; anything
+   else faults.
+
+   "The same quantity" is not record equality. Convertibility here is a
+   canonical-NAME law ([Ir_v0.Checks.units_convertible], the predicate the
+   verifier and ref/ both read), and it says nothing about the system that
+   DECLARES a unit; so `kg` in system Gewicht and `kg` in system Massa are one
+   unit in two records, their exact conversion factor is 1, and their ground
+   integers already sit in one scale. Refusing that pair was this backend
+   inventing a fence the norm does not carry — it split the executors on a
+   verifier-clean document (ref and Drools both computed). [Normalise] owns the
+   test, together with the restating that carries a factor≠1 pair here as one
+   record. *)
 let units_identical_ok ~what (l : eenheid option) (r : eenheid option) =
   match (l, r) with
-  | Some a, Some b when a <> b ->
+  | Some a, Some b when a <> b && not (Normalise.same_quantity a b) ->
       fault
         "non-identical units under %s are not translated (ref restates with an exact \
          conversion factor this integer encoding does not carry)"
