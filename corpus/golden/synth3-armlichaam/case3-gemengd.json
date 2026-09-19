@@ -1,0 +1,23 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "grondslag": { "number": "60" },
+      "kindertallen": { "list": [ { "number": "0" }, { "number": "3" }, { "number": "-5" }, { "number": "-2" } ] }
+    }
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "lichaamtotaal", "value": { "number": "-40.00" } },
+    { "kind": "consistent" }
+  ]
+}
