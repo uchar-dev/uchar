@@ -126,3 +126,83 @@ dragend maken vergt, `spec/verifier/**` en `spec/IR-SPEC.md` ch. 4.5
 (voorstel), kaartverplaatsing. Out of scope: het samenvoegen zelf
 (dat is de v1-klap), `frontends/**` (geen producentroute nodig voor
 een handgeschreven getuige).
+
+Result: de verre rollidmaatschapsvorm heeft zijn getuige, en de
+stopregel trad niet in werking. De hermeting (hierboven) liet zien dat
+de aanname waarop V4 stond half waar was: `ref` weigert de vorm
+inderdaad, maar met een BODEMZIN — en clingo ook, en beide zinnen staan
+woordelijk in de verbodslijst van gate 8. De vorm was dus niet geweigerd
+als vorm; hij was ongeschreven. Beide Drools-takken speelden hem al, en
+tweezijdig gemeten (met één verwachting omgedraaid melden ze `FAIL`).
+
+Wat er staat. `corpus/golden/jutterswet-postbezetting` is de eerste
+drager van `VerreRollidmaatschap` in welke zone dan ook: artikel 12 van
+de Jutterswet, twee regels op de Wachtpost, geen `bron.rgs`, twee
+gevallen met handberekende absoluten die vóór de eerste run in dit
+dossier stonden. Alle vier de uitvoerders spelen ze — `ref` 4 en 4,
+clingo 4 en 4, beide Drools-takken `PLAYED 2` — dus het vierkant sluit
+op de verre vorm. `ref` en de ASP-backend kregen daarvoor elk een
+BENOEMDE arm, geen herformuleerde bodem, met één gedeelde afleiding van
+het paar (`Eval.far_side_role`) zodat de twee de knoop niet verschillend
+kunnen lezen. `RUNTIME-SEMANTICS.md` ch. 5.8a draagt de verre helft met
+vier regels en dit document als bewerkt voorbeeld; de voorbeelden staan
+verbatim in `ref/test/test_ref.ml` (695 voorbeelden, was 694 vóór de
+laatste toevoeging, vloer 489).
+
+De kruising. WF-034 krijgt arm (t) en geen nieuw nummer: WF-034 IS de
+resolutieregel en de spec noemde deze twee velden zelf al "de verre
+tweelingzus van (o)". De zin is opgeschreven vóór hij geïmplementeerd
+werd. Hij kruist het PAAR — `filler` en `backref` moeten samen op één
+gedeclareerd feittype uitkomen, met `backref` als de rol die het
+onderwerp vervult — omdat de knoop geen geschreven rolnaam draagt en het
+paar dus de hele verwijzing is. Negatief:
+`corpus/negatief/wf034-verre-rolcheck-verkeerde-zijde`, met `backref`
+aan de kant van de vuller: beide namen lossen op, het paar niet.
+Rood-eerst: vóór de arm ging dat document schoon door de verifier. De
+veegslag over 690 documenten (217 golden + 34 rood + 409 negatief + 30
+pariteit) verplaatst precies één oordeel en één rapportregel, en de arm
+is armexact falsifieerbaar — neutraliseer hem en alleen dat document
+wordt schoon.
+
+Wat de kaart met opzet NIET doet. De kardinaliteit blijft ongekruist:
+`RUNTIME-SEMANTICS.md` ch. 5.7a maakt de relatie symmetrisch, dus geen
+van beide OCaml-uitvoerders leest een richting, en een MUST daar zou
+documenten weigeren die twee van de vier uitvoerders correct uitvoeren.
+Het boonmodel weigert zijn eigen grens al per vorm met een eigen reden.
+De twee lege spellingen (`filler` weg, `backref` weg) vouwen op het
+(s)-precedent in dezelfde arm in plaats van elk een eigen negatief te
+krijgen; ze zijn buiten het corpus gemeten en ze zijn NIET hetzelfde
+defect — een lege `backref` is overal luid, een lege `filler` laat beide
+Drools-takken ongeclassificeerd omvallen met een `NullPointerException`.
+Het samenvoegen van de twee knopen blijft de v1-klap, en `frontends/**`
+is niet aangeraakt.
+
+Gates, elk los gedraaid, alle veertien groen: 1 PASS; 2 PASS (251
+documenten, vloer 192); 3 PASS (251 golden schoon, 409 negatief
+geweigerd voor hun eigen regel, vloer 350); 4 PASS (588 casebestanden);
+5 PASS (695 bewerkte voorbeelden, vloer 489; 554 cases exact, vloer
+427); 6 PASS (452 suitechecks, vloer 83; 554 cases); 7 PASS (518 cases
+weerleggen de nietsdoener, 36 overlevers); 8 PASS (34 rode cases, vloer
+26; 68 fragmenten citeren geen van de 36 bodemzinnen); 9 PASS (201
+checks, 12 catala-goldens); 10 PASS (322 tests, 63 rgs-goldens); 11 PASS
+(29/29 in ref, clingo en Drools); 12 PASS (played 165, DRL-tekst 142,
+JUnit 502 tests, vloer 239); 13 PASS (129 verdraaiingen over 25 goldens,
+vloer 74); 14 PASS (130 checks, 2 flogic-goldens).
+
+Buiten de kaart gemeld. (1) `scripts/check-drools.sh`: alleen de twee
+gelijkheidspinnen, `EXPECTED_PLAYED` 164 → 165 en `EXPECTED_DRL_PLAYED`
+141 → 142, elk met een redenblok erboven; geen enkele kanaallijstregel
+erbij of eraf, want de golden komt als SPELER binnen. (2)
+`spec/RUNTIME-SEMANTICS.md` stond niet in "May touch" en is toch
+aangeraakt, tweemaal en minimaal: de verre helft van ch. 5.8a is
+toegevoegd (een semantiekclausule zonder tekst zou een arm zonder
+uitspraak zijn) en in de operandvolgorde-tabel is de regel
+"*(ref declines `VerreRollidmaatschap`)*" geschrapt, die door deze kaart
+onwaar werd. Beide zijn beschermd-padvoorstellen, net als de
+IR-SPEC-wijzigingen. (3) `ref/lib/eval.ml`: de restarm die de verre vorm
+ving draagt nu alleen nog `Periode_conditie`, met ongewijzigde bodemzin.
+Die zin beschrijft daarmee één bekende vorm in plaats van een restklasse
+— een verbetering die een eigen kaartje verdient, want de cure is een
+benoemde arm voor de periodeconditie en die raakt de lijst in
+`scripts/check-rood.sh` (beschermd, en een parallelle kaart zit daar
+ook).
