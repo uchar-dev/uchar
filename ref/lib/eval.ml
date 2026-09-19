@@ -2060,13 +2060,29 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
          back at this subject), which is the same relation seen from the side
          their fact model happens to store.
 
+         The FILLER is read TWICE and both readings are load-bearing. It
+         resolves the pair, and it then FILTERS what the relation reached:
+         an object counts only where its own type is ⊑ the named filler
+         (ch. 2.2, extensionally — the same one-sided test [fills] applies
+         to a role). Dropping the second reading makes the node answer the
+         ROLE's whole population instead of the named one, which is a
+         different sentence wherever the filler is a strict SUBTYPE of the
+         role's declared type — measured 2026-09-20 on
+         `jutterswet-postbezetting` cases 1 and 3, where the role-wide
+         reading reports a post manned by a Strandjutter it does not have,
+         verifier-clean and against both Drools branches.
+
          "heeft geen" is the plain complement — unlike the navigated
          characteristic check of ch. 5.8, nothing sits behind a hop here, so
-         an empty relation makes the negated form true. *)
+         a relation with no filler OF THAT CLASS makes the negated form
+         true. It rides the same filtered list, so the two forms can never
+         disagree about which objects count. *)
       let f = req "VerreRollidmaatschap.filler" filler in
       let b = req "VerreRollidmaatschap.backref" backref in
       let role = far_side_role env ~self_type:self.otype ~filler:f ~backref:b in
-      let has_one = role_links world self role <> [] in
+      let has_one =
+        List.exists (fun (i : World.instance) -> isa env i.otype f) (role_links world self role)
+      in
       if negatie then not has_one else has_one
   | Periode_conditie _ -> Value.fault "condition kind not implemented in this card"
   | Conditie_onopgelost _ -> Value.fault "Onopgelost condition reached in evaluation (WF-044)"
