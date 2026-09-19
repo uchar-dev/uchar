@@ -50,3 +50,23 @@ de kern. Los defect, eigen kaart: de vier goldens waar de
 terugkoppeling WÉL oplost en het vuren faalt
 (`20260919-drl-objectcreatie-defect.md`) — disjunct codepad, niet
 samenvoegen.
+
+Erbij belegd (lens op de objectcreatie-defect-kaart, 2026-09-19; zelfde
+codegebied, zelfde weigerklasse — hier oppakken):
+
+- **Weigeren bij naam waar exec dat doet.** Bij een gedeclareerd lid
+  dat het referentieveld verdringt (naamdeling rol/lid) weigert exec de
+  creatie bij naam (`transpiler SKIP: … deelt haar naam met een
+  gedeclareerd lid`), maar de DRL-tak speelt stil door met een half
+  geschreven koppeling — het voorwaartse schrijven blijft achter de
+  `heeftReferentieVeld`-garde uit, zonder melding. Vandaag onschadelijk
+  (geen golden draagt de vorm; elke lezer van het veld weigert zelf),
+  maar het is de stilteklasse die het gate-12-regime uitsluit.
+- **De fail-fast op een niet-booleaanse kenmerkwaarde.** Exec werpt
+  luid (WF-027-fail-fast, `IR-SPEC.md` verwijst de vorm expliciet naar
+  de runtime); de DRL-tak laat sinds de defect-kaart stil ongezet —
+  vóór die kaart blies de klasse luid op bij het vuren. Een werpende
+  helper is beschikbaar (de tak importeert de runtime-statics en
+  `RegelSpraakRuntime` werpt zelf), dus dit is een keuze, geen
+  onmogelijkheid; bouw de fail-fast of leg normatief vast waarom de
+  takken hier verschillen.
