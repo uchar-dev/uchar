@@ -4782,12 +4782,35 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
               so the rules that fence this branch meet edge to edge:
               single+AANTAL is the count source they leave alone,
               single+value-fold is WF-093's alone, and everything else is an
-              ordinary read. Hoisted because TWO rules need the identical
-              boundary — WF-034's sentinel fence below and WF-096's set
-              fence — and a boundary written twice is a boundary that
-              drifts. *)
+              ordinary read. This is WF-034's sentinel fence's boundary; the
+              set fence's is [set_source_exempt] below, and the one kind they
+              disagree about is stated there. *)
            List.length f.argumenten = 1
            && (value_fold_name f.kind <> None || f.kind = Aantal)
+         in
+         let set_source_exempt =
+           (* WF-096's boundary, NARROWER than the sentinel fence's by exactly
+              AANTAL (maintainer decision 2026-09-19): the source of a
+              single-argument VALUE fold. `set` says the read hands the fold
+              the members' VALUES, one per member, and only a value fold reads
+              a value per contributor — a count folds the CONTRIBUTORS
+              themselves (`RUNTIME-SEMANTICS.md` ch. 1.2e/3.4a), so under
+              AANTAL the field names a collection the node does not consume
+              and the wire form mixes two meanings.
+
+              The two boundaries differ on that kind alone, deliberately: v0's
+              own spelling of a count source is the SENTINEL, which
+              [source_exempt] still admits (the 81 bare warts the four zones
+              carry are untouched), while `set` under AANTAL is the form the
+              decision took off the wire. What it was: verifier-clean with no
+              producer route — the RegelSpraak frontend refuses the sentence
+              that would write it, citing this very rule — while `ref` counted
+              the FILLED VALUES where the Drools backend counted the MEMBERS,
+              2 against 3 as soon as one member's attribute is leeg, and the
+              ASP backend refused the kind. Both executors' arms stay as the
+              second line of defence, unreachable through a well-formed
+              document rather than removed. *)
+           List.length f.argumenten = 1 && value_fold_name f.kind <> None
          in
          List.concat
           (List.mapi
@@ -4806,13 +4829,15 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                   [walk_expr], whose own arm speaks the same sentence, and
                   reporting here as well would say it twice. *)
                (match a, f.element_objecttype with
-                | Attribuut_ref { set = true; _ }, Some _ when not source_exempt ->
+                | Attribuut_ref { set = true; _ }, Some _ when not set_source_exempt ->
                     [ v "WF-096" p
-                        "set reading on a fold operand that is not a fold SOURCE: a set \
-                         reading is admissible on the single argument of an AGGREGATION alone \
-                         (ch. 4.3) — with two or more arguments the node is the listed value \
-                         fold, whose operands are ordinary reads, and at a non-aggregation \
-                         kind there is no source at all" ]
+                        "set reading on a fold operand that is not a VALUE fold's SOURCE: a set \
+                         reading is admissible on the single argument of a value AGGREGATION \
+                         alone (ch. 4.3) — with two or more arguments the node is the listed \
+                         value fold, whose operands are ordinary reads; at a non-aggregation \
+                         kind there is no source at all; and under AANTAL the fold reads the \
+                         CONTRIBUTORS, never a value per contributor, so a set reading there \
+                         names a collection the count does not consume" ]
                 | _ -> [])
                @
                match a, f.element_objecttype with
@@ -5308,9 +5333,11 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
       (* WF-096 (maintainer decision 2026-09-09): `set` says the read yields
          the members' values, one per member — a COLLECTION. Every position
          this walk reaches wants ONE value, so the field has nothing here to
-         be consumed by: the only node that consumes a collection is the fold
-         that owns the source, and a source is reached by the aggregation
-         branch above, never by this one. Placed beside the type prologue and
+         be consumed by: the only node that consumes a collection is the VALUE
+         fold that owns the source (a count folds the contributors themselves —
+         the 2026-09-19 narrowing, stated at [set_source_exempt]), and a source
+         is reached by the aggregation branch above, never by this one. Placed
+         beside the type prologue and
          before the resolution below deliberately, and for the same reason the
          fold branch computes its half ahead of its arms: the endpoint arm at
          the bottom returns WF-034 alone on a reference whose object type is
@@ -5330,8 +5357,9 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
            [ v "WF-096" at
                "set reading at an ordinary read position: a set reading names the members' \
                 values, one per member, and is admissible only as the SOURCE of a \
-                single-argument instance fold (ch. 4.3) — here nothing consumes the \
-                collection and the slot wants one value" ]
+                single-argument VALUE fold (ch. 4.3; a count folds the contributors, not \
+                their values) — here nothing consumes the collection and the slot wants \
+                one value" ]
          else [])
       @
       match otn with

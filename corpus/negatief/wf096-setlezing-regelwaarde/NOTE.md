@@ -8,9 +8,9 @@ rule value is a scalar write position: nothing here consumes the set.
 
     WF-096 FAIL /resolvedRegels/0/waarde: set reading at an ordinary read
     position: a set reading names the members' values, one per member, and
-    is admissible only as the SOURCE of a single-argument instance fold
-    (ch. 4.3) — here nothing consumes the collection and the slot wants one
-    value
+    is admissible only as the SOURCE of a single-argument VALUE fold
+    (ch. 4.3; a count folds the contributors, not their values) — here
+    nothing consumes the collection and the slot wants one value
 
 The document. Two object types related by one fact type (`Jutter` —
 `vondstaanmelding` — `Vondst`, one aanmelder to many vondsten), and one

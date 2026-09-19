@@ -8,10 +8,13 @@ subject. The set reading is the SOURCE's field, so beside a second operand it
 is as ill-formed as it is anywhere else outside a fold.
 
     WF-096 FAIL /resolvedRegels/0/waarde/argumenten/1: set reading on a fold
-    operand that is not a fold SOURCE: a set reading is admissible on the
-    single argument of an AGGREGATION alone (ch. 4.3) — with two or more
-    arguments the node is the listed value fold, whose operands are ordinary
-    reads, and at a non-aggregation kind there is no source at all
+    operand that is not a VALUE fold's SOURCE: a set reading is admissible on
+    the single argument of a value AGGREGATION alone (ch. 4.3) — with two or
+    more arguments the node is the listed value fold, whose operands are
+    ordinary reads; at a non-aggregation kind there is no source at all; and
+    under AANTAL the fold reads the CONTRIBUTORS, never a value per
+    contributor, so a set reading there names a collection the count does not
+    consume
 
 The document. A `MAXIMUM` with two arguments and `elementObjecttype:
 "Vondst"`; operand 0 an ordinary read of the subject's `drempelgewicht`,

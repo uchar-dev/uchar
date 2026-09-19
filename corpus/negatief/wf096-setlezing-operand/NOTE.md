@@ -8,9 +8,9 @@ collection.
 
     WF-096 FAIL /resolvedRegels/0/waarde/links: set reading at an ordinary
     read position: a set reading names the members' values, one per member,
-    and is admissible only as the SOURCE of a single-argument instance fold
-    (ch. 4.3) — here nothing consumes the collection and the slot wants one
-    value
+    and is admissible only as the SOURCE of a single-argument VALUE fold
+    (ch. 4.3; a count folds the contributors, not their values) — here
+    nothing consumes the collection and the slot wants one value
 
 The document. The same model as the sibling case with one attribute added
 (`drempelgewicht` on `Jutter`, kg with two decimals), and one BEREKENING
