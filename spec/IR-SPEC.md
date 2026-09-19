@@ -4130,8 +4130,9 @@ describes.
   about a value fold over this source in either direction, which is why
   this is a well-formedness rule and not a semantics clause.
   **Division of labour with WF-096, since 2026-09-19.** This rule sends the
-  wart to `AANTAL` and keeps saying so in both spellings; it does not admit
-  either. The SET spelling of the wart — the sentinel AND `set: true` under
+  wart to `AANTAL` in both spellings, and sending is not admitting: it says
+  which kind the sentinel demands and stops there. The SET spelling of the
+  wart — the sentinel AND `set: true` under
   a count — is refused by **WF-096**, whose exemption narrowed to the six
   value folds that day, so the two rules now divide the wart's spellings
   between them: the bare one is admissible and is this rule's business, the
@@ -4500,8 +4501,10 @@ three places:
   The scope of that sentence is this node and not the IR: whether some OTHER
   node counts over a multi-step range is that node's own question under its own
   rule, and a claim about it would need its own witness before it could be
-  written here. The flat-union reading stated here
-  therefore remains the reading — it is what ch. 3.4a's worked example says
+  written here.
+
+  The flat-union reading stated here therefore remains the reading — it is
+  what ch. 3.4a's worked example says
   and what `RUNTIME-SEMANTICS.md` ch. 1.2e demands of a count — and it waits
   for a carrier that a normatively defined counting operation would give it
   (`backlog/new/20260919-aantal-gevulde-gemiddelde.md` asks the neighbouring
