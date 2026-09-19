@@ -3057,8 +3057,10 @@ let () =
    The third line is the decision (2026-09-10): the field is authoritative, so
    an owner that is not the subject's type is not a decoration to be read past.
    Measured before the rule, on this document: the check answered `true` — V1's
-   value under J1's name. The corpus cannot hold this witness because the
-   document it needs is exactly the one both executors now refuse.
+   value under J1's name. Since WF-109 (2026-09-19) such a document is refused
+   by the VERIFIER, so the fault below is this reader's fail-fast on a
+   non-conforming input and not the answer to a conforming one; the corpus
+   cannot hold the witness for exactly that reason.
 
    Six owners in the block below, not three: each of the three is also read from
    the OTHER subject, and the last pair is the NAVIGATED form. The navigated
@@ -3071,12 +3073,15 @@ let () =
    message and not merely the fault is asserted here: a bare `expect_fault`
    would also pass on an unresolvable role. Measured on the postwacht shape with
    the reached type in the field (`risicopost` via `post`, owner `Post`, subject
-   `Wachter`): verifier PASS before AND after — the cross is correctly out of
-   scope — `ref` and the ASP backend PASS (10) before and faulting after, and
-   both Drools branches refusing all along (a transpiler SKIP on one branch, a
-   `TODO kenmerk 'risicopost' hoort bij Post` marker on the other). So after
-   this rule that form has NO answering executor at all. That is deliberate, and
-   this is its machine-checked witness. *)
+   `Wachter`): verifier PASS before AND after WF-100 — the declaration cross is
+   correctly out of scope — `ref` and the ASP backend PASS (10) before and
+   faulting after, and both Drools branches refusing all along (a transpiler
+   SKIP on one branch, a `TODO kenmerk 'risicopost' hoort bij Post` marker on
+   the other). That form had NO answering executor at all, deliberately, and
+   WF-109 has since taken it off the wire (a navigating check's host must be a
+   type the subject satisfies, `wf109-doelgastheer-genavigeerd`). This block
+   stays the machine-checked witness that the reader does not soften the fence
+   into a fallback. *)
 
 let () =
   let doc =
@@ -3112,6 +3117,90 @@ let () =
       check ("WV-5.8b-genavigeerde-vreemde-eigenaar-weigert (got: " ^ m ^ ")")
         (Case.contains ~needle:"is hosted on \"Jutter\" while the subject is \"Vondst\"" m)
   | _ -> check "WV-5.8b-genavigeerde-vreemde-eigenaar-weigert (no fault at all)" false
+
+(* --- ch. 5.8b worked example B: the two-object position (WF-109) --------
+   The RUNTIME-SEMANTICS ch. 5.8b second worked example, verbatim, and the
+   ch. 5.5 clause it belongs to. A fact creation over `Kustvak` -> `Post` ->
+   `Sein` whose guard is the bare characteristic `gehesen`; all three types
+   declare that characteristic, so the reading is identified by its VALUE and
+   not merely by its name:
+
+     host "Sein"    -> the DOEL reading, the guard filters the targets  = 1
+     host "Kustvak" -> the ANKER reading, the guard gates the anker     = 2
+     host "Post"    -> the intermediate step, which no pattern hosts    = refused
+
+   V1 (a Kustvak that IS gehesen) reaches P1 (a Post that is NOT) carrying S1
+   (gehesen) and S2 (not), so the three readings give 1, 2 and 0-by-refusal.
+   The goldens `jutterswet-seinhijsing` and `jutterswet-mastsein` replay the
+   same law through all four executors; this block is the interpreter's own
+   witness, and it is where the ANKER reading is pinned on the SAME document —
+   a golden can only carry one host per creation.
+
+   The third row is WF-109's zero flank: `Post` is an object the chain walks
+   through, not one the guard is about, and the verifier refuses that document
+   before any executor sees it. The fault here is this reader's fail-fast on a
+   non-conforming input, and it is asserted by SENTENCE because a bare fault
+   would also pass on an unresolvable role. *)
+
+let () =
+  let rol naam otn mv meervoudig : Ir_v0.Ast.rol =
+    { rol_naam = Some naam; rol_objecttype_naam = Some otn; rol_meervoud = Some mv;
+      rol_meervoudig = meervoudig }
+  in
+  let ft naam rollen = (naam, { Ir_v0.Ast.ft_naam = Some naam; wederkerig = false; rollen }) in
+  let rb f r : Ir_v0.Ast.rol_binding = { rb_feittype = f; rb_rol = r } in
+  let vaksein_rol = rol "vaksein" "Sein" "vakseinen" true in
+  let doc_of eigenaar =
+    {
+      empty_doc with
+      objecttypen =
+        [ ot "Kustvak" [] [ "gehesen" ]; ot "Post" [] [ "gehesen" ]; ot "Sein" [] [ "gehesen" ] ];
+      feittypen =
+        [ ft "kustligging"
+            [ rol "kustvak" "Kustvak" "kustvakken" false; rol "post" "Post" "posten" true ];
+          ft "seinvoering"
+            [ rol "post" "Post" "posten" false; rol "sein" "Sein" "seinen" true ];
+          ft "vakbeseining"
+            [ rol "seinvak" "Kustvak" "seinvakken" false; vaksein_rol ] ];
+      feit_creaties =
+        [ { fc_naam = Some "vakbeseining door het kustvak";
+            anker = Some "Kustvak"; fc_doel = Some "Sein";
+            zet_veld = Some "seinvak"; join_veld = Some "post";
+            tussenstappen =
+              [ { ts_type = Some "Post"; veld = Some "kustvak"; via_ouder_veld = false;
+                  ts_rol = Some (rb "kustligging" "post") } ];
+            fc_voorwaarde =
+              Some
+                (Kenmerk_check
+                   { kenmerk = Some "gehesen"; navigatie = None; negatie = false; eigenaar;
+                     periode = None; bron = None; navigatie_binding = None });
+            fc_geldigheid = None; fc_feittype = Some "vakbeseining";
+            anker_rol = Some "seinvak"; doel_rol = Some "vaksein";
+            join_rol = Some (rb "seinvoering" "sein") } ];
+    }
+  in
+  let links l = List.fold_left (fun m (k, v) -> World.SMap.add k v m) World.SMap.empty l in
+  let w =
+    List.fold_left World.add_instance World.empty
+      [ { (inst "v1" "Kustvak" []) with chars = [ "gehesen" ];
+          links = links [ ("posten", [ "p1" ]) ] };
+        { (inst "p1" "Post" []) with
+          links = links [ ("kustvak", [ "v1" ]); ("seinen", [ "s1"; "s2" ]) ] };
+        { (inst "s1" "Sein" []) with chars = [ "gehesen" ] };
+        inst "s2" "Sein" [] ]
+  in
+  let vakseinen eigenaar =
+    let final = Eval.evaluate (env_of (doc_of eigenaar)) w in
+    List.length (Eval.role_links final (World.get final "v1") vaksein_rol)
+  in
+  check "WV-5.8b-B-doelgastheer-filtert-de-doelen" (vakseinen (Some "Sein") = 1);
+  check "WV-5.8b-B-ankergastheer-poort-de-anker" (vakseinen (Some "Kustvak") = 2);
+  check "WV-5.8b-B-gastheerloze-guard-poort-de-anker" (vakseinen None = 2);
+  match vakseinen (Some "Post") with
+  | exception Value.Fault m ->
+      check ("WV-5.8b-B-tussenstap-gastheer-weigert (got: " ^ m ^ ")")
+        (Case.contains ~needle:"is hosted on \"Post\" while the subject is \"Kustvak\"" m)
+  | _ -> check "WV-5.8b-B-tussenstap-gastheer-weigert (no fault at all)" false
 
 (* --- ch. 3.9: the whole-period qualifier over a characteristic ----------
    The RUNTIME-SEMANTICS ch. 3.9 worked examples, verbatim: the four rows of

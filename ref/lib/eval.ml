@@ -147,25 +147,28 @@ let kenmerk_temporal (ot : objecttype) name =
   List.exists (fun (k, _) -> norm k = norm name) ot.kenmerk_granulariteit
 
 (* WF-100 / IR-SPEC ch. 4.6 (q1), maintainer decision 2026-09-10: on a
-   characteristic check the `eigenaar` is AUTHORITATIVE. It names the object
-   type the check is HOSTED on — the v0 producer sets it on exactly one shape,
-   the fact-creation guard that names a characteristic of the DOEL, so that a
-   bean-model transpiler attaches the constraint to the doel pattern "and never
-   the anker, even when the anker declares a same-named kenmerk".
+   characteristic check the `eigenaar` is AUTHORITATIVE for the declaration.
+   WF-109 / ch. 4.6 (q2), maintainer decision 2026-09-19: it is also the
+   GASTHEER — it names the object type the check LIVES ON, and that object is
+   the one read. The v0 producer sets it on exactly one shape, the
+   fact-creation guard that names a characteristic of the DOEL, so that the
+   constraint lands on the doel "and never the anker, even when the anker
+   declares a same-named kenmerk".
 
-   ref reads exactly one object per condition, the enclosing form's subject. So
-   where the owner is not that object's type there is no object here for the
-   check to be about, and answering from the subject anyway is precisely the
-   reading the decision rejected (the subject would then be authoritative after
-   all). It faults instead. Measured on this document before the rule
-   (2026-09-10): verifier PASS, `ref` and the ASP backend both answered from the
-   subject, while the Drools backend dropped the whole rule as a transpiler skip
-   — one verifier-clean document, three executors, two readings. The refusal
-   puts the two OCaml executors where the third already was.
+   This helper is the fence for the one-object positions, which is every
+   position except that guard: there the host must be a type the subject
+   satisfies, and a host naming anything else has no object here to be about.
+   Answering from the subject anyway is precisely the reading the decision
+   rejected. Since WF-109 such a document is refused by the VERIFIER, so this
+   fault is fail-fast on a non-conforming input rather than the answer to a
+   conforming one — which is why it may not be softened to a fallback.
+
+   The fact-creation guard is handled at [run_feit_creatie]: that position
+   binds two objects, the guard is evaluated on the one the host names, and
+   this helper then sees a subject the host is satisfied by.
 
    Where the field is ABSENT, or names the subject's own type, nothing changes:
-   the declaration consulted and the object read coincide, which is every
-   document the corpus holds. *)
+   the declaration consulted and the object read coincide. *)
 let owner_hosts (doc : document) ~(otype : string) ~(kenmerk : string option)
     (eigenaar : string option) =
   match eigenaar with
@@ -178,6 +181,22 @@ let owner_hosts (doc : document) ~(otype : string) ~(kenmerk : string option)
          object the check is about (WF-100), and this reader has no other object to read"
         (Option.value kenmerk ~default:"?") e otype
   | _ -> ()
+
+(* RUNTIME-SEMANTICS ch. 5.5 / ch. 5.8b, WF-109: is this fact creation's guard
+   about the DOEL? The guard is the one condition position with two objects in
+   scope, and the host field is what names which. True exactly when a BARE
+   characteristic check names a type the doel satisfies and the anker does not;
+   an absent host, a host the anker satisfies, a composite and every other
+   condition form answer false and gate the anker, byte-identically to what
+   this reader did before the rule. A host naming NEITHER (or, on a self-typed
+   pair, BOTH) is refused by the verifier and answers false here, so
+   [owner_hosts] still faults on it rather than silently reading the anker. *)
+let guard_on_doel (doc : document) (fc : resolved_feit_creatie) =
+  match (fc.anker, fc.fc_doel, fc.fc_voorwaarde) with
+  | Some a, Some d, Some (Kenmerk_check { navigatie = None; eigenaar = Some e; _ }) ->
+      Ir_v0.Checks.subtype_of doc ~sub:d ~super:e
+      && not (Ir_v0.Checks.subtype_of doc ~sub:a ~super:e)
+  | _ -> false
 
 (* ch. 3.9, the §8.2 whole-period qualifier over a CHARACTERISTIC, and the
    one place ch. 3.3's refusal must not reach.
@@ -2310,10 +2329,16 @@ let run_feit_creatie env world (fc : resolved_feit_creatie) =
     let role rname = bound_role env { rb_feittype = ftn; rb_rol = rname } in
     let anker_rol = role (req "FeitCreatie.ankerRol" fc.anker_rol) in
     let doel_rol = role (req "FeitCreatie.doelRol" fc.doel_rol) in
+    (* ch. 5.5: the host splits the guard into the two readings this position
+       has. On the doel it FILTERS the targets — so the chain is walked first
+       and the condition asked once per target — and on the anker it GATES the
+       anker, which short-circuits the chain exactly as before. *)
+    let doel_guard = if guard_on_doel env.doc fc then fc.fc_voorwaarde else None in
+    let anker_guard = if doel_guard = None then fc.fc_voorwaarde else None in
     over_subjects env world ~otype:(req "FeitCreatie.anker" fc.anker) ~rule:name
       (fun w self err ->
         let fire =
-          match fc.fc_voorwaarde with Some c -> eval_cond env w self ~err c | None -> true
+          match anker_guard with Some c -> eval_cond env w self ~err c | None -> true
         in
         if not fire then (w, false)
         else
@@ -2326,6 +2351,11 @@ let run_feit_creatie env world (fc : resolved_feit_creatie) =
               [ self ] fc.tussenstappen
           in
           let targets = hop mids (req "FeitCreatie.joinRol" fc.join_rol) in
+          let targets =
+            match doel_guard with
+            | None -> targets
+            | Some c -> List.filter (fun t -> eval_cond env w t ~err c) targets
+          in
           List.fold_left
             (fun (w, ch) (t : World.instance) ->
               let w, c1 =

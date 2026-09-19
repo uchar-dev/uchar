@@ -3028,8 +3028,10 @@ let () =
 (* --- WF-100: the characteristic check's owner (IR-SPEC ch. 4.6 (q1)) -----
    The ASP mirror of ref's ch. 5.8b worked example. `Vondst` and `Jutter` both
    declare a characteristic named `gekeurd`, so the owner names a real
-   declaration either way and the document is verifier-clean either way — the
-   corpus therefore cannot hold the refusing half, and this is where it lives.
+   declaration either way and WF-100 is satisfied either way. Since WF-109
+   (2026-09-19) the foreign-owner document is refused by the VERIFIER instead,
+   so the corpus cannot hold the refusing half and this is where it lives: the
+   backend's fail-fast on a non-conforming input.
    The two executors split on WHEN, not on WHAT: `ref` faults lazily, at
    evaluation of the condition, the ASP backend eagerly, at translation. Both
    say the same sentence, and neither answers from the subject any more. *)
@@ -3114,13 +3116,150 @@ let () =
      on, and that is the subject's here too. It fires BEFORE the hop is
      resolved, which the pinned sentence is what proves. Measured on the
      postwacht shape (`risicopost` via `post`, owner `Post`, subject `Wachter`):
-     verifier PASS before and after, this backend PASS (10) before and faulting
-     after, both Drools branches refusing throughout — so after the rule that
-     form has no answering executor at all, deliberately. *)
+     verifier PASS before and after WF-100, this backend PASS (10) before and
+     faulting after, both Drools branches refusing throughout — that form had no
+     answering executor at all, deliberately, and WF-109 has since taken it off
+     the wire. *)
   faults_with ~name:"WF-100 vreemde eigenaar op de genavigeerde check"
     ~ir:(eigenaar_doc ~navigatie:{|"vinder"|} ~eigenaar:{|"Jutter"|} ())
     ~case_text:eigenaar_case
     ~needle:"is hosted on \"Jutter\" while the subject is \"Vondst\""
+
+(* --- WF-109: the characteristic check's HOST (IR-SPEC ch. 4.6 (q2)) ------
+   The ASP mirror of ref's ch. 5.8b worked example B, and the second half of
+   the field: WF-100 settles which DECLARATION the check resolves against,
+   WF-109 which OBJECT it is about. A fact creation Kustvak -> Post -> Sein
+   whose guard is the bare characteristic `gehesen`, which all three types
+   declare — so each reading is identified by its VALUE:
+
+     host "Sein"    -> the DOEL reading, the guard filters the targets  = 1
+     host "Kustvak" -> the ANKER reading, the guard gates the anker     = 2
+     host absent    -> the same as the anker reading                    = 2
+     host "Post"    -> the intermediate step, which no pattern hosts    = refused
+
+   V1 (a Kustvak that IS gehesen) reaches P1 (a Post that is NOT) carrying S1
+   (gehesen) and S2 (not). Every row is pinned in BOTH executors from the same
+   document, which is what makes them the differential and not two beliefs;
+   the corpus goldens `jutterswet-seinhijsing` and `jutterswet-mastsein` pin
+   the doel row a third and fourth time, through the Drools backend's two
+   branches.
+
+   Measured 2026-09-19 before the rule: this backend faulted at translation on
+   the doel row (the superseded hosting refusal) while both Drools branches
+   played it and answered 1. The last row is the fault that STAYS — the
+   verifier refuses that document now, and this is the backend's fail-fast on
+   a non-conforming input, asserted by sentence. *)
+
+let gastheer_doc ~eigenaar () =
+  Printf.sprintf
+    {|{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Kustvak": { "node": "Objecttype", "naam": "Kustvak",
+      "attributen": { "vakseinaantal": { "node": "Numeriek", "geheel": true, "decimalen": 0,
+        "teken": "ONBEPAALD", "eenheid": null } },
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [ "gehesen" ], "kenmerkSoorten": { "gehesen": "BIJVOEGLIJK" },
+      "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
+      "bezield": false, "meervoud": "Kustvakken" },
+    "Post": { "node": "Objecttype", "naam": "Post", "attributen": {},
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [ "gehesen" ], "kenmerkSoorten": { "gehesen": "BIJVOEGLIJK" },
+      "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
+      "bezield": false, "meervoud": "Posten" },
+    "Sein": { "node": "Objecttype", "naam": "Sein", "attributen": {},
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [ "gehesen" ], "kenmerkSoorten": { "gehesen": "BIJVOEGLIJK" },
+      "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
+      "bezield": false, "meervoud": "Seinen" }
+  },
+  "domeinen": {}, "parameters": {}, "eenheidstelsels": {},
+  "feittypen": {
+    "kustligging": { "node": "Feittype", "naam": "kustligging", "wederkerig": false, "rollen": [
+      { "node": "Rol", "naam": "kustvak", "objecttypeNaam": "Kustvak", "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "post", "objecttypeNaam": "Post", "meervoud": "posten", "meervoudig": true } ] },
+    "seinvoering": { "node": "Feittype", "naam": "seinvoering", "wederkerig": false, "rollen": [
+      { "node": "Rol", "naam": "post", "objecttypeNaam": "Post", "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "sein", "objecttypeNaam": "Sein", "meervoud": "seinen", "meervoudig": true } ] },
+    "vakbeseining": { "node": "Feittype", "naam": "vakbeseining", "wederkerig": false, "rollen": [
+      { "node": "Rol", "naam": "seinvak", "objecttypeNaam": "Kustvak", "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "vaksein", "objecttypeNaam": "Sein", "meervoud": "vakseinen", "meervoudig": true } ] }
+  },
+  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
+  "regels": [ { "node": "Regel", "naam": "vakseinaantal van een kustvak", "soort": "regel" } ],
+  "resolvedRegels": [
+    { "node": "ResolvedRegel", "naam": "vakseinaantal van een kustvak", "soort": "BEREKENING",
+      "doel": { "node": "AttribuutRef", "attribuut": "vakseinaantal", "objecttype": "Kustvak",
+        "onderwerpBron": "een Kustvak", "navigatieRol": null,
+        "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
+        "bron": "Het vakseinaantal van een Kustvak", "set": false, "navigatiePad": [] },
+      "waarde": { "node": "Functie", "kind": "AANTAL", "argumenten": [
+          { "node": "AttribuutRef", "attribuut": "vakseinen", "objecttype": "Kustvak",
+            "onderwerpBron": "het kustvak", "navigatieRol": null,
+            "type": { "node": "Onbekend", "reden": "niet opgelost" },
+            "bron": "vakseinen van het kustvak", "set": false, "navigatiePad": [] } ],
+        "elementObjecttype": "Sein", "leegwaarde": null, "filter": null, "dimensieSelectie": null,
+        "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "NIET_NEGATIEF", "eenheid": null },
+        "bron": "het aantal vakseinen van het kustvak", "granulariteit": null,
+        "bronRol": { "node": "RolBinding", "feittype": "vakbeseining", "rol": "vaksein" } },
+      "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }
+  ],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "uniciteiten": [], "uniciteitUnies": [],
+  "feitCreaties": [
+    { "node": "ResolvedFeitCreatie", "naam": "vakbeseining door het kustvak",
+      "anker": "Kustvak", "doel": "Sein", "zetVeld": "seinvak", "joinVeld": "post",
+      "tussenstappen": [ { "node": "Tussenstap", "type": "Post", "veld": "kustvak", "viaOuderVeld": false,
+        "rolBinding": { "node": "RolBinding", "feittype": "kustligging", "rol": "post" } } ],
+      "voorwaarde": { "node": "Kenmerk", "kenmerk": "gehesen", "navigatie": null, "negatie": false,
+        "eigenaar": %s, "periode": null, "bron": "het sein gehesen is" },
+      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null },
+      "feittype": "vakbeseining", "ankerRol": "seinvak", "doelRol": "vaksein",
+      "joinRol": { "node": "RolBinding", "feittype": "seinvoering", "rol": "sein" } }
+  ],
+  "resolvedStartpunten": [], "regelGroepen": [], "diagnostics": []
+}
+|}
+    eigenaar
+
+let gastheer_case ~aantal () =
+  Printf.sprintf
+    {|{
+  "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+      { "label": "V1", "objectType": "Kustvak", "attributes": {}, "roles": { "posten": [ "P1" ] },
+        "characteristics": [ "gehesen" ] },
+      { "label": "P1", "objectType": "Post", "attributes": {},
+        "roles": { "kustvak": [ "V1" ], "seinen": [ "S1", "S2" ] }, "characteristics": [] },
+      { "label": "S1", "objectType": "Sein", "attributes": {}, "roles": {}, "characteristics": [ "gehesen" ] },
+      { "label": "S2", "objectType": "Sein", "attributes": {}, "roles": {}, "characteristics": [] }
+    ], "parameters": {} },
+  "expected": [
+    { "kind": "attributeValue", "label": "V1", "attribute": "vakseinaantal", "value": { "number": %s } },
+    { "kind": "consistent" }
+  ]
+}
+|}
+    aantal
+
+let () =
+  List.iter
+    (fun (naam, eigenaar, aantal) ->
+      let ir = gastheer_doc ~eigenaar () and case_text = gastheer_case ~aantal () in
+      ref_matches ~name:naam ~ir ~case_text;
+      clingo_matches ~name:naam ~ir ~case_text)
+    [ ("WF-109 gastheer is het doel", {|"Sein"|}, {|"1"|});
+      ("WF-109 gastheer is de anker", {|"Kustvak"|}, {|"2"|});
+      ("WF-109 gastheer afwezig", "null", {|"2"|}) ];
+  (* the intermediate step is an object the chain walks THROUGH, not one the
+     guard is about: two patterns, a name for neither *)
+  faults_with ~name:"WF-109 gastheer is de tussenstap"
+    ~ir:(gastheer_doc ~eigenaar:{|"Post"|} ())
+    ~case_text:(gastheer_case ~aantal:{|"1"|} ())
+    ~needle:"is hosted on \"Post\" while the subject is \"Kustvak\""
 
 (* ch. 3.9 — the §8.2 whole-period qualifier over a NAVIGATED characteristic.
 

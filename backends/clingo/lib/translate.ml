@@ -7063,10 +7063,21 @@ let translate_feit_creatie ctx (fc : resolved_feit_creatie) =
   let doel_rol = role (req "doelRol" fc.doel_rol) in
   let anker = req "FeitCreatie.anker" fc.anker in
   let subject = "S" in
-  let cond =
+  (* RUNTIME-SEMANTICS ch. 5.5 / ch. 5.8b, WF-109: the guard is the one
+     condition position with two objects in scope, and the host field names
+     which. On the anker the literals ride the subject variable, as they always
+     did; on the doel they ride the variable the join chain binds, so the same
+     rule body FILTERS the targets instead of gating the anker. The chain and
+     the head are one rule either way — no second predicate, no stratification
+     to redo. The two branches are kept apart rather than merged so that the
+     anker case emits its literals before the chain exactly as before, and the
+     generated program for every document that predates the rule is unchanged
+     down to its fresh-name numbering. *)
+  let on_doel = Eval.guard_on_doel ctx.doc fc in
+  let cond_anker =
     match fc.fc_voorwaarde with
-    | Some c -> cond_atoms ctx ~subject ~subject_ot:anker c
-    | None -> []
+    | Some c when not on_doel -> cond_atoms ctx ~subject ~subject_ot:anker c
+    | _ -> []
   in
   let hop (atoms, cur) rb =
     let v = fresh ctx "H" in
@@ -7080,7 +7091,15 @@ let translate_feit_creatie ctx (fc : resolved_feit_creatie) =
       ([], subject) fc.tussenstappen
   in
   let chain, target = hop mids (req "joinRol" fc.join_rol) in
-  let body = (Printf.sprintf "isa(%s,%s)" subject (str anker) :: cond) @ chain in
+  let cond_doel =
+    match fc.fc_voorwaarde with
+    | Some c when on_doel ->
+        cond_atoms ctx ~subject:target ~subject_ot:(req "FeitCreatie.doel" fc.fc_doel) c
+    | _ -> []
+  in
+  let body =
+    (Printf.sprintf "isa(%s,%s)" subject (str anker) :: cond_anker) @ chain @ cond_doel
+  in
   head_body ctx (Printf.sprintf "rol(%s,%s,%s)" subject (str (role_canonical doel_rol)) target) body;
   head_body ctx (Printf.sprintf "rol(%s,%s,%s)" target (str (role_canonical anker_rol)) subject) body;
   (* a second distinct filler on a to-one end faults in ref/
