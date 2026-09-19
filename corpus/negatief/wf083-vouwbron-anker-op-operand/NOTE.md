@@ -59,8 +59,21 @@ read carrying the written role. Schema-valid — `set` is a boolean on every
 
 Falsifiable, arm-exact: in `aggregation_source_check`, anchor the
 self-denotation test back on the operand (`self_denoting_role ctx
-~otype:otn nr` instead of `~otype:st`). Measured over golden + rood +
-negatief + parity — 508 documents — exactly one report changes and this
-case, alone, turns clean; the sibling `wf083-fold-source-navigates-away`
-(whose operand objecttype IS the subject) stays rejected, and so do the
-three other WF-083 cases.
+~otype:otn nr` instead of `~otype:st`). The proof is stated at the report
+LINE rather than at the verdict, and that is a change of 2026-09-19: this
+document is an `AANTAL` whose source carries `set: true`, so since the
+narrowing of WF-096's exemption (`spec/IR-SPEC.md` ch. 4.3; the set fence
+now exempts the six VALUE folds alone) it also carries a co-firing WF-096
+line, and it therefore stays REJECTED under any WF-083 mutant. The older
+wording promised it would turn clean; that promise could not survive the
+second rule, and the falsification is the line.
+
+Re-measured on the narrowed head over golden + rood + negatief + parity —
+666 documents, up from the 508 of the first measurement. Exactly three
+report lines move and NO verdict anywhere changes: this case loses its
+WF-083 line and keeps its WF-096 one, and the two `wf093-wratvouw-set-*`
+siblings each GAIN a WF-083 line, because re-anchoring on the operand
+reaches the wart as well — which is the second half of what the arm buys
+and was not visible when the corpus held neither of those cases. The
+sibling `wf083-fold-source-navigates-away` (whose operand objecttype IS
+the subject) stays rejected, and so do the three other WF-083 cases.

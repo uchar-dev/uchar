@@ -1015,8 +1015,11 @@ stating because the nested reading answers differently:
    stronger than "no carrier": under `AANTAL` a multi-step range is not
    EXPRESSIBLE. A `sourcePath` is admissible only on the SET source
    (`IR-SPEC.md` WF-102 (c)), and a set source is no longer admissible under
-   a count (WF-096, maintainer decision 2026-09-19) — the two fences meet, so
-   neither spelling of a counting union survives the wire. What prompted the
+   a count (WF-096, maintainer decision 2026-09-19) — the two fences meet at
+   this NODE, so neither spelling of a counting FOLD over a union survives
+   the wire. The claim is the fold's and not the IR's: another node that
+   counts over a range answers to its own rule, and nothing here is evidence
+   about it. What prompted the
    decision was this clause read the other way round: measured 2026-09-19,
    `ref` counted the FILLED VALUES of a set source where the Drools backend
    counted the MEMBERS — 2 against 3 on one document as soon as a member's

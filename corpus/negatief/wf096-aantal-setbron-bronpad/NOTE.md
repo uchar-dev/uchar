@@ -5,7 +5,7 @@ third spelling: the count's set source with a MULTI-STEP range (`bronPad`,
 WF-102) instead of a one-step `bronRol`. It is the form
 `RUNTIME-SEMANTICS.md` ch. 3.4b consequence 2 speaks about — "a count over
 the union counts ELEMENTS, never intermediate instances" — and after this
-narrowing that clause has no wire form left to describe.
+narrowing no `AANTAL` FOLD can carry that clause.
 
     WF-096 FAIL /resolvedRegels/0/waarde/argumenten/0: set reading on a
     fold operand that is not a VALUE fold's SOURCE: a set reading is
@@ -29,9 +29,12 @@ Why both spellings of a counting union fall. A `bronPad` is admissible only
 on the SET source (WF-102 (c) — the non-set sources hand the fold something
 else entirely), and a set source is no longer admissible under a count.
 With `set: true` the node is this rule's; with `set: false` the range is
-WF-102's. The two fences meet, so a count over a multi-step range is not
-expressible at all, and that is recorded in ch. 3.4b rather than left for a
-reader to derive.
+WF-102's. The two fences meet at this NODE, so a count over a multi-step
+range is not expressible as an `AANTAL` fold, and that is recorded in
+ch. 3.4b rather than left for a reader to derive. The claim is scoped to the
+fold deliberately: whether some other node counts over a multi-step range is
+that node's own question under its own rule, and this case is no evidence
+either way.
 
 Executors, on this document (the anchor golden's own chain case, trimmed to
 the two-step model: `J1` reaches `V1` 3,00, `V2` 7,00 and `V3` 5,00 — three

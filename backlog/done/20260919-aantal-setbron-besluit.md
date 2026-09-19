@@ -164,9 +164,16 @@ twee tegenstrijdige claims — de WF-083 (c)-vraag, en het huis-antwoord is
 - `ref`'s setbron-telarm en de Drools-lowering staan ongewijzigd. Ze zijn nu
   onbereikbaar voor een welgevormd document en blijven als tweede
   verdedigingslijn staan — het huispatroon, geen dode tak.
-- `frontends/**` niet aangeraakt; de WF-096-meldingstekst van de frontend
-  belooft nog steeds `aantal` als vouwsoort en verdient een herformulering
-  bij de landing.
+- `frontends/**` niet aangeraakt, en het vervolgklusje is BREDER dan een
+  meldingstekst. Twee plekken in `RuleChecker.java` lopen achter op de
+  wire: de melding belooft `aantal` als vouwsoort, en de verzameling
+  `VOUWSOORTEN` (r. 471–476) houdt `AANTAL` in de frontend-exemptie, met
+  een commentaar dat zegt dat "the frontend's exemption and the verifier's
+  are the same boundary" — sinds dit besluit onwaar: de frontend is RUIMER
+  dan de wire. Gemeten is er geen lek — vier natuurlijke producentzinnen
+  weigeren met de eigen WF-096-ERROR vóór emissie, dus de frontend schrijft
+  de vorm niet — maar de klus is de verzameling, het commentaar én de
+  tekst, niet de tekst alleen.
 - `spec/CONSTRUCTS.md` en `spec/PLAN.md` niet aangeraakt (§5 draagt de
   voorgestelde rijtekst letterlijk).
 - Geen nieuw WF-nummer. Het besluit is een versmalling van WF-096's
@@ -182,9 +189,14 @@ mandaat, de maintainer merget):**
   bron van een WAARDEvouw), de alinea "The set reading is the SOURCE's
   field", de EXEMPTION-alinea (AANTAL van OPEN naar GESLOTEN, met de
   kosten en de drie negatiefs), de WF-102-COUNT-bullet (de telling over een
-  meerstapsbereik is nu ONUITDRUKBAAR, want WF-102 (c) en WF-096 sluiten
-  elkaars spelling af), de flank-(5)-telling (een tweede meelopend
-  document) en de WF-096-registerrij met de drie nieuwe negatiefs.
+  meerstapsbereik is onuitdrukbaar ALS AANTAL-VOUW — de claim is op de
+  KNOOP geschaald, niet op de IR; of een andere knoop over een
+  meerstapsbereik telt is die knoop zijn eigen vraag onder zijn eigen
+  regel), de flank-(5)-telling (een tweede meelopend document, en het
+  onderscheid verdict/zin), de WF-093-clausule (één kruisverwijzing: de
+  SETSPELLING van de wrat onder een telling is sinds dit besluit WF-096's
+  zaak, de kale blijft WF-093's) en de WF-096-registerrij met de drie
+  nieuwe negatiefs.
 - `spec/RUNTIME-SEMANTICS.md` — ch. 3.4b gevolg 2: de drie-optiesalinea
   wordt het besluit; het woord ELEMENTS blijft staan en wacht op een drager.
 - `spec/ASP-TRANSLATION.md` — de catch-all-inventaris: de AANTAL-setbron is
@@ -210,9 +222,12 @@ wordt voorgesteld te vervangen door
 > daarop. De grond is gemeten, niet beredeneerd: `ref` telde GEVULDE
 > WAARDEN waar Drools LEDEN telde (2 tegen 3 zodra één lid het attribuut
 > mist), de ASP-backend weigerde de soort, beide lezingen waren
-> verifier-schoon, en `RUNTIME-SEMANTICS.md` ch. 1.2e/3.4a/3.4b plus de
-> normatieve RegelSpraak §5.8.1 zeggen alle drie dat een telling INSTANTIES
-> vouwt — waarmee één van de twee lezingen niet anders maar fout is. Er is
+> verifier-schoon, en de normtekst geeft één van de twee lezingen ongelijk:
+> `RUNTIME-SEMANTICS.md` ch. 3.4a zegt met zoveel woorden dat een telling
+> INSTANTIES vouwt en geen waarden, ch. 3.4b herhaalt het voor de unie
+> (ELEMENTEN), en de normatieve RegelSpraak §5.8.1 definieert de telling
+> over instanties; ch. 1.2e voegt daar alleen de buurclausule aan toe dat
+> een telling nooit leeg is. Er is
 > geen producentroute: de frontend weigert de natuurlijke zin met haar
 > eigen WF-096-melding. Drie negatiefs, één per wire-spelling
 > (`wf096-aantal-setbron`, de gemeten vorm over een `bronRol`;
@@ -220,7 +235,8 @@ wordt voorgesteld te vervangen door
 > de uitvoerders het EENS zijn en het veld inert is — daar pint de wire de
 > tegenstrijdigheid, niet een kloof; `wf096-aantal-setbron-bronpad`, het
 > meerstapsbereik, waar nog maar één uitvoerder antwoordt en tegen ch. 3.4b
-> in). `ref`'s setbron-arm en de Drools-lowering blijven staan als tweede
+> in — onuitdrukbaar als AANTAL-VOUW, een claim op de knoop en niet op de
+> IR). `ref`'s setbron-arm en de Drools-lowering blijven staan als tweede
 > verdedigingslijn, onbereikbaar voor een welgevormd document. Arm-exact
 > gemeten: de mutant die `AANTAL` terugzet in `set_source_exempt` beweegt
 > exact vier documenten in 666 en geen enkel verdict buiten de negatiefzone
@@ -237,11 +253,13 @@ wordt voorgesteld te vervangen door
     corpus/negatief/wf096-setlezing-operand/NOTE.md         citaatblok bijgewerkt
     corpus/negatief/wf096-setlezing-regelwaarde/NOTE.md     citaatblok bijgewerkt
     corpus/negatief/wf096-setlezing-geleste-operand/NOTE.md citaatblok bijgewerkt
+    corpus/negatief/wf083-vouwbron-anker-op-operand/NOTE.md  falsificatiealinea herzien
     spec/IR-SPEC.md, spec/RUNTIME-SEMANTICS.md, spec/ASP-TRANSLATION.md
 
-De drie bijgewerkte NOTEs zijn bestaande artefacten: hun woordelijke
-verifier-citaat was door de meldingsherschrijving verouderd. Geen document
-en geen verdict daar bewoog; alleen het geciteerde blok. Geen bestaande
+De VIER bijgewerkte NOTEs zijn bestaande artefacten. Bij drie was het
+woordelijke verifier-citaat door de meldingsherschrijving verouderd; bij
+`wf083-vouwbron-anker-op-operand` was het de falsificatiealinea (§9, fix 1).
+Geen document en geen verdict daar bewoog; alleen proza. Geen bestaande
 test of check is gewijzigd.
 
 ### 7. Poorten (alle veertien, elk als losse aanroep)
@@ -273,3 +291,73 @@ omdat de wire twee tegenstrijdige dingen niet hoort te zeggen. Wie die
 afweging anders maakt, weegt "geen enkele consument leest dat veld daar"
 tegen "één betekenis, één spelling" — en die weging staat hier genoteerd in
 plaats van weggeschreven.
+
+### 9. Lensronde (2026-09-19): zes correcties, alle tekstueel
+
+De lens draaide dertien poorten zelf groen (gate 9 kon daar niet draaien,
+catala ontbrak in die omgeving), reproduceerde de mutantsweep en bevestigde
+de splitsing van de twee grenzen — één gezamenlijke grens zou dertig
+golden/rood-documenten vuil maken, waar ik 81 wratposities telde: dezelfde
+bevinding, een andere teller. Geen van de zes punten raakt de verifier of
+een document; `spec/verifier/lib/checks.ml` is sinds §2 geen letter
+gewijzigd en de md5's in §2 staan.
+
+**Fix 1 — de falsificatiealinea van `wf083-vouwbron-anker-op-operand`.** Die
+beloofde dat het document onder de WF-083-armmutant "alone, turns clean".
+Dat kan niet meer: het is een `AANTAL` met een setbron, dus het draagt sinds
+deze kaart een meelopende WF-096-regel en blijft afgewezen onder elke
+WF-083-mutant. De alinea stelt de proef nu op de REGEL in plaats van op het
+verdict, en is opnieuw gemeten op de versmalde kop: de re-ankering
+(`self_denoting_role ctx ~otype:otn nr` in plaats van `~otype:st`)
+verplaatst over 666 documenten exact DRIE rapportregels en GEEN enkel
+verdict — dit document verliest zijn WF-083-regel en houdt zijn
+WF-096-regel, en de twee `wf093-wratvouw-set-*`-zusters KRIJGEN er elk één,
+omdat de re-ankering ook de wrat bereikt. Dat laatste was onzichtbaar toen
+de alinea werd geschreven (508 documenten, geen van beide zusters bestond)
+en staat er nu bij.
+
+**Fix 2 — de overclaim over uitdrukbaarheid.** "a count over a multi-step
+range is not expressible on the wire at all" was te breed: de lens bouwde
+een verifier-schoon document met een tellende kwantor over een tweestaps
+`bronPad` dat ref én clingo beantwoorden. De claim is versmald tot "niet
+uitdrukbaar als AANTAL-VOUW", met de schaal er expliciet bij (de KNOOP, niet
+de IR) op alle vier de plekken waar hij stond: de WF-102-COUNT-bullet, de
+WF-096-registerrij, de NOTE van `wf096-aantal-setbron-bronpad` en ch. 3.4b
+gevolg 2. De positieve claim over de kwantorvouw-route is bewust NIET
+opgenomen — een specszin zonder machine-controleerbaar artefact hoort hier
+niet, en de getuige-golden raakt de gate-12-kanaallijsten die een parallelle
+kaart herstructureert. Dat is werk voor een eigen kaartje.
+
+**Fix 3 — verdict versus zin.** De flank-(5)-telling zei "no golden, red
+case or other negatief moves a sentence". Vier negatiefs bewegen wél een
+zin: de meldingsherschrijving, precies zoals §2(5) al rapporteerde. De
+telling zegt nu VERDICT en noemt de zinsbeweging er apart bij.
+
+**Fix 4 — de bronvermelding klopte niet.** "ch. 1.2e/3.4a/3.4b plus §5.8.1
+zeggen alle drie" was op twee manieren onzuiver: het zijn vier bronnen, en
+ch. 1.2e draagt de instantieclaim niet — die staat expliciet in ch. 3.4a
+("a count folds instances, not values"), ch. 3.4b herhaalt hem voor de unie
+(ELEMENTEN), en §5.8.1 definieert de telling zo; ch. 1.2e voegt alleen toe
+dat een telling nooit leeg is. Herschreven op de drie plekken in
+`spec/IR-SPEC.md` én in de voorgestelde CONSTRUCTS-rijtekst in §5, want die
+landt de hoofdsessie letterlijk.
+
+**Fix 5 — de taakverdeling WF-093/WF-096 staat er nu.** De WF-093-clausule
+draagt één kruisverwijzing: de SETSPELLING van de wrat onder een telling is
+sinds dit besluit WF-096's zaak, de kale spelling blijft WF-093's, en onder
+een niet-tellende soort zijn beide spellingen nog steeds WF-093's — wat de
+zin "`set` does not enter the rule" betekent en waarom die onveranderd
+blijft staan.
+
+**Fix 6 — het frontend-klusje is breder.** Zie §4: niet alleen de
+meldingstekst maar ook de `VOUWSOORTEN`-verzameling en het commentaar dat
+frontend- en wire-grens gelijk noemt. Gemeten geen lek, wel een onware zin.
+
+**Poorten na deze ronde.** Gate 2 en gate 3 opnieuw gedraaid, want zij zijn
+de enige die de gewijzigde bestanden lezen: gate 2 leest golden- en
+rood-`ir.json` (niet bewogen, maar hij bewaakt ook de serialisatievorm die
+de NOTE-wijzigingen hadden kunnen raken) en gate 3 leest de negatiefzone
+plus de verifier. De overige twaalf lezen geen van de aangeraakte bestanden
+— de fixes raken alleen `.md`-proza en geen `ir.json`, geen casus, geen
+script, geen broncode — en hun uitvoer van §7 staat dus. Gate 1 is er voor
+de zekerheid bij gedraaid omdat hij proza in de artefactzones leest.
