@@ -6108,6 +6108,28 @@ ch. 3.12), and it belongs to whoever measures it.
   the same arm on the (s) precedent: an absent `filler` leaves no type to
   range over and an absent `backref` no role to join on, and with either one
   gone the node carries no reference whatever.
+  *What the crossing settles about `filler`, and what the EXECUTORS then
+  do with it.* The cross reads `filler` one-sidedly — `filler ⊑` the far
+  role's declared type, the same `fills` test every other arm here uses —
+  so a **strict subtype** of the role's type is well-formed and a type
+  ABOVE it is refused. That refusal is arm (o)'s own strictness carried
+  over, recorded as a deliberate choice rather than discovered: a filler
+  the role cannot hold names a population the relation cannot reach.
+  What the subtype admission costs is that the field then carries MEANING
+  beyond resolution, and every reader must spend it — the objects the
+  relation reaches count only where their own type is ⊑ `filler`
+  (ch. 2.2, extensionally; `RUNTIME-SEMANTICS.md` ch. 5.8a rule 2). A
+  reader that resolves the pair and stops answers the ROLE's whole
+  population instead of the named one. Not hypothetical: it is what `ref`
+  and the ASP backend did when this clause first landed, measured
+  2026-09-20 on a verifier-clean document with a `Strandjutter` under the
+  `Jutter` — both reported a post manned by a beachcomber it did not
+  have, while both Drools branches, which filter on the filler class,
+  answered correctly. The corpus now carries the discriminator
+  (`jutterswet-postbezetting` cases 1 and 3); a witness whose filler
+  equals the role's declared type cannot tell the two readings apart at
+  all, which is why the card's first witness could not catch this and the
+  second was built to.
   *What this arm deliberately does NOT cross, and why.* Not the ARITY of
   either role. A producer writes the far form where the named role is to-many
   from the subject, and a bean-model executor needs the `backref` role to be
@@ -6133,9 +6155,10 @@ ch. 3.12), and it belongs to whoever measures it.
   — and the same card gave each a named arm, which is why the golden now
   closes the differential square (ref ≡ clingo ≡ Drools) on the far form.
   *Cost: none.* The sweep runs over golden + rood + negatief + parity —
-  **690** documents on 2026-09-20 (217 + 34 + 409 + 30) — and the corpus
-  carries exactly **two** far-side checks, both this card's: the golden and
-  its negatief. Arm-exact: neutering this arm in `walk_cond` turns
+  **690** documents on 2026-09-20 (217 + 34 + 409 + 30) — and the whole
+  corpus carries **6** far-side checks over **2** documents, both this
+  card's: the golden's four and the negatief's two. Arm-exact: neutering
+  this arm in `walk_cond` turns
   `corpus/negatief/wf034-verre-rolcheck-verkeerde-zijde` clean and moves no
   other verdict and no other report line over all 690.
   *The two empty spellings are measured off corpus*, each one edit from the

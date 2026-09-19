@@ -142,7 +142,7 @@ ref/lib/eval.ml eval_functie|unsupported gedurende condition shape (WF-055: an o
 ref/lib/eval.ml eval_functie|unsupported instance-fold source shape|the residual arm over fold-source combinations — the rejected combination is not named
 ref/lib/eval.ml eval_functie|function kind not implemented in this card|the wildcard arm over function kinds
 ref/lib/eval.ml eval_cond|predicate kind not implemented in this card|the residual Predicaat arm, after the carried predicate kinds
-ref/lib/eval.ml eval_cond|condition kind not implemented in this card|the residual arm over condition kinds
+ref/lib/eval.ml eval_cond|condition kind not implemented in this card|was the residual arm over condition kinds; since 2026-09-20 (card v4-verre-rol-getuige gave the far-side rolcheck its own arm) it catches exactly one form, Periode_conditie, while still naming none — a bottom sentence over a one-element set, which is a refusal waiting for its named arm and stays listed until it gets one
 ref/lib/eval.ml run_pro_rata|unsupported pro-rata condition shape (an own temporal characteristic; no corpus case for more)|the wildcard arm over pro-rata conditions: it names the one carried shape and claims no corpus case for the rest
 ref/lib/eval.ml run_pro_rata|unsupported day-count condition shape (an own temporal characteristic; no corpus case for more)|the wildcard arm over day-count conditions, the mirror of the pro-rata one above
 ref/lib/eval.ml run_pro_rata|a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count shape (a gedurende condition over an own temporal characteristic); no corpus case for more|the wildcard arm over temporal targets: "takes only" enumerates the carried shapes, the rejected target stays unnamed

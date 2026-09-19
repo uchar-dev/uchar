@@ -3052,43 +3052,71 @@ let () =
      the loader materialises the leg the case did not spell) and what every
      runtime link write produces (both legs, always).
 
-     Case 1 pins the two corners and their negations; case 2 separates
-     existence from counting (two fillers on one post read the same as one)
-     and from sheer presence (a Jutter in no relation leaves every post
-     alone). The pair-resolution fault is the reader's own refusal of the
-     shape WF-034 (t) refuses ahead of it. *)
-  let post_met wachters =
-    { (inst "w1" "Wachtpost" []) with
+     Case 1 pins the two corners and their negations AND the filler class:
+     a plain Jutter leaves the post strandvrij. Case 2 separates existence
+     from counting (two fillers on one post read the same as one) and from
+     sheer presence (a Jutter in no relation leaves every post alone), with
+     the Strandjutter among them so the narrowed question answers too. Case
+     3 is the sharpest: two posts, each with one filler, differing only in
+     CLASS — `bemand` holds of both and `strandbemand` of one, so the
+     role-wide reading and the filler reading come apart inside one world.
+     The pair-resolution fault is the reader's own refusal of the shape
+     WF-034 (t) refuses ahead of it. *)
+  let doc_sj =
+    { doc with
+      objecttypen =
+        doc.objecttypen
+        @ [ (let n, o = ot "Strandjutter" [] [] in
+             (n, { o with ot_supertype = Some "Jutter" })) ] }
+  in
+  let env = env_of doc_sj in
+  let post label wachters =
+    { (inst label "Wachtpost" []) with
       links = World.SMap.add "wachtjutters" wachters World.SMap.empty }
   in
-  let jutter_op label post =
-    { (inst label "Jutter" []) with
+  let jutter_op label otype post =
+    { (inst label otype []) with
       links = World.SMap.add "toegewezen wachtpost" [ post ] World.SMap.empty }
   in
   let wereld insts = List.fold_left World.add_instance World.empty insts in
-  let verre backref negatie : Ir_v0.Ast.conditie =
+  let verre filler backref negatie : Ir_v0.Ast.conditie =
     Verre_rollidmaatschap
-      { filler = Some "Jutter"; backref = Some backref; negatie; bron = None }
+      { filler = Some filler; backref = Some backref; negatie; bron = None }
   in
+  let bemand = verre "Jutter" "toegewezen wachtpost" in
+  let strandbemand = verre "Strandjutter" "toegewezen wachtpost" in
   let w1 =
-    wereld [ post_met [ "j1" ]; inst "w2" "Wachtpost" []; jutter_op "j1" "w1" ]
+    wereld [ post "w1" [ "j1" ]; inst "w2" "Wachtpost" []; jutter_op "j1" "Jutter" "w1" ]
   in
   let ev1 label c = Eval.eval_cond env w1 (World.get w1 label) ~err:no_err c in
-  check "WV-5.8a-ver-w1-bemand" (ev1 "w1" (verre "toegewezen wachtpost" false));
-  check "WV-5.8a-ver-w1-niet-onbemand" (not (ev1 "w1" (verre "toegewezen wachtpost" true)));
-  check "WV-5.8a-ver-w2-niet-bemand" (not (ev1 "w2" (verre "toegewezen wachtpost" false)));
-  check "WV-5.8a-ver-w2-onbemand" (ev1 "w2" (verre "toegewezen wachtpost" true));
+  check "WV-5.8a-ver-w1-bemand" (ev1 "w1" (bemand false));
+  check "WV-5.8a-ver-w1-niet-onbemand" (not (ev1 "w1" (bemand true)));
+  check "WV-5.8a-ver-w2-niet-bemand" (not (ev1 "w2" (bemand false)));
+  check "WV-5.8a-ver-w2-onbemand" (ev1 "w2" (bemand true));
+  check "WV-5.8a-ver-w1-niet-strandbemand" (not (ev1 "w1" (strandbemand false)));
+  check "WV-5.8a-ver-w1-strandvrij" (ev1 "w1" (strandbemand true));
   let w2 =
     wereld
-      [ post_met [ "j1"; "j2" ]; inst "w2" "Wachtpost" []; jutter_op "j1" "w1";
-        jutter_op "j2" "w1"; inst "j3" "Jutter" [] ]
+      [ post "w1" [ "j1"; "j2" ]; inst "w2" "Wachtpost" []; jutter_op "j1" "Jutter" "w1";
+        jutter_op "j2" "Strandjutter" "w1"; inst "j3" "Jutter" [] ]
   in
   let ev2 label c = Eval.eval_cond env w2 (World.get w2 label) ~err:no_err c in
-  check "WV-5.8a-ver-twee-vullers-telt-niet" (ev2 "w1" (verre "toegewezen wachtpost" false));
-  check "WV-5.8a-ver-twee-vullers-niet-onbemand"
-    (not (ev2 "w1" (verre "toegewezen wachtpost" true)));
-  check "WV-5.8a-ver-losse-jutter-bemant-niets" (ev2 "w2" (verre "toegewezen wachtpost" true));
-  expect_fault "WV-5.8a-ver-verkeerde-zijde" (fun () -> ev1 "w1" (verre "wachtjutter" false));
+  check "WV-5.8a-ver-twee-vullers-telt-niet" (ev2 "w1" (bemand false));
+  check "WV-5.8a-ver-twee-vullers-niet-onbemand" (not (ev2 "w1" (bemand true)));
+  check "WV-5.8a-ver-subtype-vult-supertype" (ev2 "w1" (strandbemand false));
+  check "WV-5.8a-ver-losse-jutter-bemant-niets" (ev2 "w2" (bemand true));
+  let w3 =
+    wereld
+      [ post "w1" [ "j1" ]; post "w2" [ "s1" ]; jutter_op "j1" "Jutter" "w1";
+        jutter_op "s1" "Strandjutter" "w2" ]
+  in
+  let ev3 label c = Eval.eval_cond env w3 (World.get w3 label) ~err:no_err c in
+  check "WV-5.8a-ver-klasse-splitst-w1-bemand" (ev3 "w1" (bemand false));
+  check "WV-5.8a-ver-klasse-splitst-w1-strandvrij" (ev3 "w1" (strandbemand true));
+  check "WV-5.8a-ver-klasse-splitst-w2-bemand" (ev3 "w2" (bemand false));
+  check "WV-5.8a-ver-klasse-splitst-w2-strandbemand" (ev3 "w2" (strandbemand false));
+  expect_fault "WV-5.8a-ver-verkeerde-zijde" (fun () ->
+      ev1 "w1" (verre "Jutter" "wachtjutter" false));
   (* the pair pins BOTH ends at once, so a second fact type carrying a
      same-named subject role over the same type pair denotes a second
      relation and there is no tie-break: a fault, never a pick. The verifier
@@ -3096,7 +3124,7 @@ let () =
      several entries stay the ambiguity question — so the reader is where it
      is caught, and this is its only witness. *)
   let doc_ambigu =
-    { doc with
+    { doc_sj with
       feittypen =
         [ ft_wacht false;
           ( "reservewacht",
@@ -3110,8 +3138,7 @@ let () =
             } ) ] }
   in
   expect_fault "WV-5.8a-ver-ambigu-paar" (fun () ->
-      Eval.eval_cond (env_of doc_ambigu) w1 (World.get w1 "w1") ~err:no_err
-        (verre "toegewezen wachtpost" false))
+      Eval.eval_cond (env_of doc_ambigu) w1 (World.get w1 "w1") ~err:no_err (bemand false))
 
 (* --- ch. 5.8b: the characteristic check's owner (WF-100) ----------------
    The RUNTIME-SEMANTICS ch. 5.8b worked example, verbatim. `Vondst` and

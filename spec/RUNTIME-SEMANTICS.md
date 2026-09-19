@@ -3067,17 +3067,28 @@ reader faults. The rules:
 
 1. **Existence, never a count and never a pick.** One filler and ten
    fillers give the same verdict, and no reader ever selects among them.
-2. **It reads the RELATION, not a direction.** By ch. 5.7a a supplied
+2. **The FILLER is a class test, and it is extensional.** The objects the
+   relation reaches count only where their own type is a subtype-or-equal
+   of the named filler (ch. 2.2). `filler` is therefore read twice — once
+   to resolve the pair, once to narrow what the relation reached — and a
+   reader that performs only the first answers a **different sentence**:
+   the role's whole population instead of the named one. The two coincide
+   exactly where the filler IS the role's declared type, which is why a
+   witness needs a strict subtype to tell them apart.
+3. **It reads the RELATION, not a direction.** By ch. 5.7a a supplied
    link establishes the relation itself and both roles read it, so the
    join may be taken from either side and gives the same answer. A
    reference-field executor asks the mirror-image question — does some
-   filler's stored reference point back at this subject — because that is
-   the side its fact model stores; it is the same relation.
-3. **"heeft geen" is the plain complement.** Nothing sits behind a hop
-   here, so an empty relation makes the negated form **waar** — the same
-   flip the near-side negation has, and not the asymmetry of the
-   navigated characteristic check (ch. 5.8 rule 3).
-4. **Arity is not a condition of this reading.** The form is written
+   filler of that class hold a stored reference back at this subject —
+   because that is the side its fact model stores; it is the same
+   relation and the same class test.
+4. **"heeft geen" is the plain complement.** Nothing sits behind a hop
+   here, so a relation with no filler **of that class** makes the negated
+   form **waar** — the same flip the near-side negation has, and not the
+   asymmetry of the navigated characteristic check (ch. 5.8 rule 3). Both
+   forms read the same narrowed set, so they cannot disagree about which
+   objects count.
+5. **Arity is not a condition of this reading.** The form is written
    where the named role is to-many from the subject, and a bean-model
    executor needs the `backref` role to be to-one to hold a field for it,
    but neither property changes the verdict. An executor whose model
@@ -3086,17 +3097,29 @@ reader faults. The rules:
 
 Worked example (the `jutterswet-postbezetting` golden, verbatim in gates
 5–6 and in `ref/test/test_ref.ml`): the same feittype wachtindeling, with
-the Wachtpost as subject. "Een Wachtpost is bemand indien hij een
-wachtjutter heeft" and "Een Wachtpost is onbemand indien hij geen
-wachtjutter heeft" — both `VerreRollidmaatschap` with filler Jutter and
-back-reference toegewezen wachtpost, the second negated. Case 1: J1 is
-assigned to W1, W2 has nobody. W1 **is bemand** and **is not onbemand**;
-W2 **is not bemand** and **is onbemand** — and W1's verdict rides on a
-link no case line names for W1 at all, the case spelling only J1's leg.
-Case 2 separates existence from counting and from sheer presence: J1 and
-J2 are both assigned to W1, J3 to no post at all, W2 still empty. W1's
-two fillers give exactly case 1's verdict — bemand, not onbemand — and
-J3, who stands in no relation, leaves W2 onbemand.
+the Wachtpost as subject, and a **Strandjutter** declared under the
+Jutter. Four rules, two far-side checks each with its negation, differing
+only in filler: "Een Wachtpost is bemand indien hij een wachtjutter
+heeft" / "is onbemand indien hij geen wachtjutter heeft" (filler Jutter),
+and "is strandbemand indien hij een strandjutter heeft" / "is strandvrij
+indien hij geen strandjutter heeft" (filler Strandjutter). All four carry
+back-reference toegewezen wachtpost.
+
+| case | input | W1 | W2 |
+|---|---|---|---|
+| 1 | J1, a plain Jutter, assigned to W1; W2 empty | bemand, **not** strandbemand (strandvrij) | onbemand, strandvrij |
+| 2 | W1 holds wachtjutters J1 (Jutter) and J2 (Strandjutter); J3 assigned to no post; W2 empty | bemand, strandbemand | onbemand, strandvrij |
+| 3 | J1 (Jutter) assigned to W1, S1 (Strandjutter) assigned to W2 | bemand, strandvrij | bemand, **strandbemand** |
+
+Each row carries one of rules 1–4. Case 1's W1 verdict rides on a link no
+case line names for W1 at all — the case spells only J1's leg (rule 3) —
+and its *strandvrij* is rule 2: the relation is there and the class is
+not. Case 2's two fillers give exactly one filler's verdict (rule 1),
+J3 in no relation leaves W2 alone, and the Strandjutter satisfies the
+Jutter filler as well as its own (rule 2, extensionally). Case 3 is where
+the two readings come apart inside one world: both posts are **bemand**
+and only W2 is **strandbemand**, so a reader that skipped the class test
+answers case 3 wrong on W1 while answering `bemand` right everywhere.
 
 ### 5.8b The characteristic check's owner: the host
 

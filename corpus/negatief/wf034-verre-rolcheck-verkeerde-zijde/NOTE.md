@@ -60,10 +60,14 @@ its own position. That is why this case could not have been a red one, and
 why the same card gave both executors a named arm for the form.
 
 *Measured breadth:* zero documents lose anything. Over golden, rood, negatief
-and the parity zone — **689** documents on 2026-09-20 (216 + 34 + 409 + 30) —
-exactly **one** carried a `VerreRollidmaatschap` before this card, namely this
-one, and the before/after sweep moves exactly one verdict and one report line:
-this document's. Nothing else changes.
+and the parity zone — **690** documents at the branch tip on 2026-09-20
+(217 golden + 34 rood + 409 negatief + 30 parity) — **zero** carried a
+`VerreRollidmaatschap` before this card and **two** carry one after it, both
+the card's own: this document, with two of them, and
+`corpus/golden/jutterswet-postbezetting`, with four. So every other document
+in every zone is a non-over-rejection witness by construction, and the
+before/after sweep moves exactly one verdict and one report line: this
+document's. Nothing else changes.
 
 A hand-written document in the `jutterswet-wachtindeling` world — feittype
 `wachtindeling`, the to-many role `wachtjutter` against the to-one role
@@ -72,5 +76,5 @@ since both fields are typed `["string","null"]` on the v0 wire.
 
 Falsifiable, arm-exact: neuter the guard of the `Verre_rollidmaatschap` arm of
 `walk_cond` (`spec/verifier/lib/checks.ml`) and this case, alone in all four
-zones, turns clean — 689 documents compared, one verdict moved, no report
+zones, turns clean — 690 documents compared, one verdict moved, no report
 elsewhere.

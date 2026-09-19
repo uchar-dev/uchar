@@ -5081,16 +5081,26 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
          a document that reaches here with an unresolvable pair still faults
          loudly).
 
-         The lowering is the near-side arm's, one role over: a bare rol/3
-         join whose filler variable is free, so N groundings collapse onto
-         one head and existence needs no aggregate, no count and no pick.
-         "heeft geen" is a helper deriving that presence, negated as failure,
-         with the subject kept bound by the caller's is_a base — the same
-         inverse test the near-side negation uses, and the same flip
-         ch. 5.8a rule 3 states. Reading the subject's OWN links is reading
-         the relation, not a direction (ch. 5.7a): the case emission mirrors
-         every supplied link and every materialised reverse leg into rol/3
-         alike, so both ends see the one relation. *)
+         The lowering is the near-side arm's, one role over and one literal
+         longer: a rol/3 join whose filler variable is free, narrowed by
+         isa/2 to the NAMED filler class. N groundings collapse onto one
+         head, so existence needs no aggregate, no count and no pick. The
+         isa/2 literal is the second, filtering reading of [filler] and it
+         is load-bearing: isa/2 is the program's extensional membership
+         closure (ch. 2.2), so a subtype instance satisfies a supertype
+         filler and a sibling one does not. Without it the node answers the
+         ROLE's whole population — measured 2026-09-20 on
+         `jutterswet-postbezetting` cases 1 and 3, verifier-clean and
+         against both Drools branches, which filter on the filler class.
+         "heeft geen" is a helper deriving that same narrowed presence,
+         negated as failure, with the subject kept bound by the caller's
+         is_a base — the same inverse test the near-side negation uses, and
+         the same flip ch. 5.8a rule 3 states; both forms carry the isa/2
+         literal so they cannot disagree about which objects count. Reading
+         the subject's OWN links is reading the relation, not a direction
+         (ch. 5.7a): the case emission mirrors every supplied link and every
+         materialised reverse leg into rol/3 alike, so both ends see the one
+         relation. *)
       let f = req "VerreRollidmaatschap.filler" filler in
       let b = req "VerreRollidmaatschap.backref" backref in
       let env =
@@ -5104,13 +5114,14 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
         ctx.fresh <- ctx.fresh + 1;
         let p = Printf.sprintf "vrm%d" ctx.fresh in
         let n = fresh ctx "N" in
-        emit ctx "%s(%s) :- isa(%s,%s), rol(%s,%s,%s)." p subject subject (str subject_ot)
-          subject (str canonical) n;
+        emit ctx "%s(%s) :- isa(%s,%s), rol(%s,%s,%s), isa(%s,%s)." p subject subject
+          (str subject_ot) subject (str canonical) n n (str f);
         [ Printf.sprintf "not %s(%s)" p subject ]
       end
       else
         let n = fresh ctx "N" in
-        [ Printf.sprintf "rol(%s,%s,%s)" subject (str canonical) n ]
+        [ Printf.sprintf "rol(%s,%s,%s)" subject (str canonical) n;
+          Printf.sprintf "isa(%s,%s)" n (str f) ]
   | Samengesteld { kwantor = Alle | De; onderdelen; _ } ->
       (* the conjunctive short circuit (RUNTIME-SEMANTICS ch. 5.10): member i is
          read only where members 1..i-1 all held, so the accumulated PREFIX
