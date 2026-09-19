@@ -46,6 +46,59 @@ worden afgerond en de bevinding gaat als genummerde vraag met opties en
 aanbeveling terug naar de maintainer (optie (c) uit V4 — schrappen —
 komt dan opnieuw op tafel).
 
+## Hermeting (2026-09-20, vóór elke wijziging)
+
+Het meetdocument is met de hand geschreven naar het model van
+`corpus/golden/jutterswet-wachtindeling` — feittype `wachtindeling`, rol
+`wachtjutter` (Jutter, meervoudig) tegenover rol `toegewezen wachtpost`
+(Wachtpost, enkelvoudig) — maar met het ONDERWERP aan de andere kant:
+een Wachtpost is `bemand` indien hij een wachtjutter heeft, en
+`onbemand` indien hij er geen heeft. De voorwaarde is dus tweemaal
+`{"node":"VerreRollidmaatschap","filler":"Jutter","backref":"toegewezen
+wachtpost"}`, eenmaal positief en eenmaal genegeerd. Invoer: W1 en W2
+zijn Wachtposten, J1 is een Jutter met `toegewezen wachtpost = W1`.
+Handberekend: W1 bemand en niet onbemand, W2 onbemand en niet bemand.
+
+| lezer | uitkomst | exit |
+|---|---|---|
+| verifier | `verifier: PASS` — geen enkele kruising op `filler`/`backref` | 0 |
+| `ref` | `EVALUATION FAULT: condition kind not implemented in this card` | 1 |
+| clingo | `TRANSLATION FAULT: condition kind not translated (no corpus case exercises it)` | 1 |
+| Drools exec-model | `PLAYED 1` — exact de vier handberekende waarden | 0 |
+| Drools DRL-tekst | `PLAYED 1` — exact de vier handberekende waarden | 0 |
+
+Twee dingen die de meting toevoegt aan wat V4 aannam. Ten eerste
+weigeren `ref` én clingo, maar allebei met een **bodemzin**: beide
+sentences staan woordelijk in de verbodslijst van
+`scripts/check-rood.sh` (`ref/lib/eval.ml eval_cond` en
+`backends/clingo/lib/translate.ml cond_atoms`). Zo'n weigering zegt
+niets over de verre vorm — ze zegt alleen dat de arm die haar ving geen
+naam heeft voor wat hij ving. De remedie die het gate-stelsel daarvoor
+voorschrijft is precies deze kaart: een benoemde arm, geen herformuleerde
+bodem. Ten tweede is de Drools-uitkomst tweezijdig gemeten: met één
+verwachting omgedraaid meldt elke tak `FAIL … kenmerk bemand: verwacht
+afwezig, werkelijk aanwezig`, dus beide takken vergelijken werkelijk en
+bevestigen de handberekening.
+
+De kruisingsschending, op hetzelfde document gemeten met
+`backref: "wachtjutter"` (de rol van de VULLER in plaats van die van het
+onderwerp — de fout die een producent maakt):
+
+| lezer | uitkomst |
+|---|---|
+| verifier | `verifier: PASS` — het gat dat (c) dicht |
+| `ref` / clingo | dezelfde twee bodemzinnen; ze kijken niet naar de velden |
+| Drools exec-model | `EXCLUDE transpiler SKIP: … verre rollidmaatschapscheck: het beanmodel leidt voor de rol 'wachtjutter' op Jutter geen referentieveld naar Wachtpost af` |
+| Drools DRL-tekst | `EXCLUDE drl-transpiler MARKER:` met dezelfde zin |
+
+Conclusie voor (b): de stopregel treedt NIET in werking. De vorm is in
+beide OCaml-uitvoerders gewoon niet geschreven; hij is niet
+onuitvoerbaar. `RUNTIME-SEMANTICS.md` ch. 5.7a maakt hem in `ref` en
+clingo zelfs goedkoop: een aangeleverde rolschakel vestigt de relatie
+zelf en de lader materialiseert het omgekeerde been, dus het onderwerp
+draagt de schakel naar de vuller al — de verre check is de
+bestaansvraag over die schakel, niet een tweede, eigen leesroute.
+
 May touch: nieuwe goldenmap onder `corpus/golden/`,
 `corpus/negatief/**`, `ref/**` en `backends/**` uitsluitend waar (b)
 dragend maken vergt, `spec/verifier/**` en `spec/IR-SPEC.md` ch. 4.5
