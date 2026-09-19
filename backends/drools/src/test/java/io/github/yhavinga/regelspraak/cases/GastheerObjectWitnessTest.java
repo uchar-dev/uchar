@@ -40,6 +40,10 @@ class GastheerObjectWitnessTest {
     /** Two intermediate steps (Kustvak -> Post -> Mast -> Sein), one doel-hosted guard. */
     private static final String MASTSEIN = "jutterswet-mastsein";
 
+    /** The doel's SUPERTYPE in the host field (Sein extends Baken, host "Baken") — hand-written IR, because
+     *  the frontend tags a guard with the doel's own type and never with an ancestor. */
+    private static final String BAKENSEIN = "jutterswet-bakensein";
+
     /** The reason both branches print for a guard that lowers to neither pattern. */
     private static final String REDEN = "voorwaarde niet naar anker of doel te lowereren";
 
@@ -108,6 +112,29 @@ class GastheerObjectWitnessTest {
                 "noch de anker noch de tweede tussenstap (3) is wat er gelezen wordt");
         BeideTakken.rood(ir, metVerwachting(MASTSEIN, "vakseinaantal", "0"), "werkelijk 2",
                 "de eerste tussenstap (0) is het evenmin");
+    }
+
+    // ---------------- 5. the EXTENSIONAL host: a supertype is this pattern's type too ----------------
+
+    @Test void de_supertype_gastheer_leest_het_doel_in_beide_takken() throws Exception {
+        // IR-SPEC ch. 4.6 (q2) reads "an object of type T satisfies host O iff T ⊑ O", so a host naming an
+        // ANCESTOR of the doel is legal and must be carried. Until 2026-09-19 both branches asked the question by
+        // NAME IDENTITY (`k.eigenaar() != subject`) and refused it, while the verifier, ref and the ASP backend all
+        // carried the document — two executors answering and two refusing one verifier-clean form, which is the
+        // split WF-109 exists to close. Measured RED FIRST on the pre-fix jar:
+        //     verifier : PASS
+        //     ref      : PASS (3 expectations)  — vakseinaantal 1, the doel reading
+        //     clingo   : PASS (3 expectations)  — idem
+        //     exec     : EXCLUDE transpiler SKIP: feitcreatie (voorwaarde niet naar anker of doel te lowereren)
+        //     drl-tekst: EXCLUDE drl-transpiler MARKER: the same reason line
+        // The golden carries `gehesen` on Baken (inherited by the Sein doel) and a SEPARATE `gehesen` on the
+        // Kustvak anker and on the Post step, so the anker reading (2) and the step reading (0) stay observable.
+        Path ir = golden(BAKENSEIN);
+        BeideTakken.groen(ir, geval(BAKENSEIN), "de supertype-gastheer is de doel-gastheer, in beide takken");
+        BeideTakken.rood(ir, metVerwachting(BAKENSEIN, "vakseinaantal", "2"), "werkelijk 1",
+                "de ankerlezing (2) is niet wat er gebeurt");
+        BeideTakken.rood(ir, metVerwachting(BAKENSEIN, "vakseinaantal", "0"), "werkelijk 1",
+                "de tussenstaplezing (0) is het evenmin");
     }
 
     // ---------------- fixtures ----------------

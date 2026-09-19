@@ -2232,7 +2232,7 @@ codestuk raakt en de gates er per familie iets van merken:
 | M5 | **De regellaag** | B19, B20, B21, B27, B28 | 3, 5, 6, 12 |
 | M6 | **De expressielaag** | B22 (a/b/c), B23, B24-of-niet, B25 | 2, 3 (~8 getuigen), 5, 6, 9, 10, 14 |
 | M7 | **De bronverwijzing** | **B26** | 2, 3, 9, 10, 14 — 551 documenten, maar geen enkele uitvoerder leest het veld, dus gates 5/6/12 mogen niet bewegen; doen ze dat wel, dan leest er tóch iemand |
-| M8 | **De hernoeming** | B6 | **alle veertien** |
+| M8 | **De hernoeming** | B6, **B10** (2026-09-19: B10 is een hernoeming geworden en verhuist hierheen uit M2 — voorstel) | **alle veertien** |
 
 **M7 is opzettelijk een eigen kaart en niet bij M6 gevoegd.** B26 raakt meer
 documenten dan elk ander item (551) en verandert geen enkele betekenis — dat

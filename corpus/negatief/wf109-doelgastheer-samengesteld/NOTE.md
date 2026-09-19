@@ -5,7 +5,7 @@ at that nested position the anker is the only object bound — so `Sein` names
 nothing.
 
     WF-109 FAIL /feitCreaties/0/voorwaarde/onderdelen/0/eigenaar: the
-    characteristic check is hosted on 'Sein', which no object bound here is:
+    characteristic check is hosted on 'Sein', which no object bound here can be:
     this position binds the subject 'Kustvak'
 
 Broken from `corpus/golden/jutterswet-seinhijsing` by wrapping one field: the

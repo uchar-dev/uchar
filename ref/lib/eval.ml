@@ -184,18 +184,56 @@ let owner_hosts (doc : document) ~(otype : string) ~(kenmerk : string option)
 
 (* RUNTIME-SEMANTICS ch. 5.5 / ch. 5.8b, WF-109: is this fact creation's guard
    about the DOEL? The guard is the one condition position with two objects in
-   scope, and the host field is what names which. True exactly when a BARE
-   characteristic check names a type the doel satisfies and the anker does not;
-   an absent host, a host the anker satisfies, a composite and every other
-   condition form answer false and gate the anker, byte-identically to what
-   this reader did before the rule. A host naming NEITHER (or, on a self-typed
-   pair, BOTH) is refused by the verifier and answers false here, so
-   [owner_hosts] still faults on it rather than silently reading the anker. *)
+   scope, and the host field is what names which.
+
+   The question is asked with the SAME two predicates the verifier uses, from
+   the same shared module, so a document cannot be legal there and read
+   differently here. A binding SATISFIES the host when `T ⊑ O` (every object it
+   holds is one); it OVERLAPS the host when some object could be both. Exactly
+   one satisfying binding and no second overlapping one is the single reading
+   the wire settles — anything else designates two objects with one name.
+
+   Three answers, and each is the chapter's:
+
+   - DOEL — the satisfying binding is the doel. The guard filters the targets.
+   - ANKER (false) — the satisfying binding is the anker, the host is absent,
+     the check navigates or carries a whole-period qualifier, or the condition
+     is anything else. Byte-identical to what this reader did before the rule.
+     The whole-period fence is WF-109's third (ch. 4.6 (q2)) and is held here
+     as well as in the verifier: under a qualifier both bean-model branches run
+     the ch. 3.9 fold arm before they look at the host, so the form is off the
+     wire and this reader must not answer it from a route the others lack.
+   - FAULT — the host designates more than one of the two. ch. 5.8b requires a
+     fault there and, until 2026-09-19, this helper returned false instead and
+     let the anker answer: the one reading the decision rejects, delivered
+     silently. WF-109 makes that document unreachable through the verifier, so
+     this arm is fail-fast on a non-conforming input; it is a NAMED arm about
+     this construct and not a fall-through, because the sentence has to say
+     which two objects one name reached.
+
+   ZERO satisfying bindings is deliberately NOT a fault here: it falls to the
+   anker, where [owner_hosts] faults with its own named sentence one step
+   later. One refusal per defect. *)
 let guard_on_doel (doc : document) (fc : resolved_feit_creatie) =
   match (fc.anker, fc.fc_doel, fc.fc_voorwaarde) with
-  | Some a, Some d, Some (Kenmerk_check { navigatie = None; eigenaar = Some e; _ }) ->
-      Ir_v0.Checks.subtype_of doc ~sub:d ~super:e
-      && not (Ir_v0.Checks.subtype_of doc ~sub:a ~super:e)
+  | ( Some a,
+      Some d,
+      Some (Kenmerk_check { navigatie = None; periode = None; eigenaar = Some e; kenmerk; _ }) ) -> (
+      let bound = [ ("anker", a); ("doel", d) ] in
+      let hits = List.filter (fun (_, t) -> Ir_v0.Checks.subtype_of doc ~sub:t ~super:e) bound in
+      let near = List.filter (fun (_, t) -> Ir_v0.Checks.populations_overlap doc t e) bound in
+      let ambiguous () =
+        Value.fault
+          "characteristic check %S is hosted on %S, which reaches BOTH objects the fact creation \
+           binds (anker %S, doel %S): the host names exactly one (WF-109), and this reader will \
+           not pick for it"
+          (Option.value kenmerk ~default:"?") e a d
+      in
+      match (hits, near) with
+      | [ (r, _) ], [ _ ] -> r = "doel"
+      | [ _ ], _ -> ambiguous ()
+      | _ :: _ :: _, _ -> ambiguous ()
+      | [], _ -> false)
   | _ -> false
 
 (* ch. 3.9, the §8.2 whole-period qualifier over a CHARACTERISTIC, and the

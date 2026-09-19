@@ -86,17 +86,21 @@ heeft een winterschuit), `ligprijs` S1 leeg en S2 = 35, en de
 ## Wat deze golden bewust NIET draagt
 
 - **Een voorwaarde die op het DOEL is gehost.** "koppel alleen de
-  gekeurde liggers" is als constructie beschikbaar, maar de referentie-
-  interpretatie weigert een kenmerkcheck die bij een ander objecttype
-  hoort (WF-100: de eigenaar noemt het object waar de check over gaat, en
-  die lezer heeft geen tweede object) en de ASP-backend weigert hem
-  identiek. Beide Drools-takken lowéren hem wél. Die vierkantbreuk is
-  ouder dan deze golden en staat los van het herhaalde typepaar; hij is
-  gereproduceerd op een gewoon, enkelvoudig verbonden typepaar. Daarom
-  gebruiken beide creaties hier een voorwaarde op het ANKER — een kenmerk
-  en een vergelijking — en zit de per-doel-selectie in de joinrol en in
-  het kenmerk van de `ligprijs`-regel. De doelgehoste vorm is als
-  backend-getuige vastgelegd, met die reden erbij.
+  gekeurde liggers" is als constructie beschikbaar en wordt sinds
+  2026-09-19 door alle vier de uitvoerders gedragen (WF-109,
+  `spec/IR-SPEC.md` ch. 4.6 (q2)): de gastheer zegt op welk objecttype de
+  check woont, en de guard filtert dan de doelen in plaats van de anker te
+  poorten. *Tot die regel weigerden de referentie-interpretatie en de
+  ASP-backend de vorm terwijl beide Drools-takken hem wél lowerden — een
+  vierkantbreuk die ouder was dan deze golden en losstond van het
+  herhaalde typepaar.* Deze golden draagt hem nog steeds niet, nu om een
+  kleinere reden: hij bestaat om het HERHAALDE TYPEPAAR te pinnen, en de
+  doelgehoste vorm heeft inmiddels zijn eigen goldens
+  (`jutterswet-seinhijsing`, `jutterswet-mastsein`,
+  `jutterswet-bakensein`). Beide creaties hier gebruiken daarom een
+  voorwaarde op het ANKER — een kenmerk en een vergelijking — en zit de
+  per-doel-selectie in de joinrol en in het kenmerk van de
+  `ligprijs`-regel.
 - **Een SOM/MINIMUM/MAXIMUM over dit typepaar.** Het argument van zo'n
   vouw is een ATTRIBUUTnaam, geen rolnaam, dus een uitvoerder die geen
   symbolische rolbinding van de wire leest houdt alleen de

@@ -5,7 +5,7 @@ hops — from its host to a `Baak`, reading `brandend` there — while claiming
 bound.
 
     WF-109 FAIL /feitCreaties/0/voorwaarde/eigenaar: the characteristic check
-    is hosted on 'Sein', which no object bound here is: this position binds
+    is hosted on 'Sein', which no object bound here can be: this position binds
     the subject 'Kustvak'
 
 Built from a Jutterswet model whose fact creation runs `Kustvak` → `Post` →

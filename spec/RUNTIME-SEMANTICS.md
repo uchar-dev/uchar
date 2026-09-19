@@ -2745,7 +2745,9 @@ toward the targets that pass. Nothing else in the fact creation changes,
 and no other condition form has a second object to be about (WF-109
 refuses an owner that names neither, and one that names both). The
 filtering reading is admitted only where the check IS the whole
-condition and does not navigate (`IR-SPEC.md` ch. 4.6 (q2)).
+condition, does not navigate and carries no whole-period qualifier
+(`IR-SPEC.md` ch. 4.6 (q2)); outside those three the anchor is the only
+bound object and an owner naming anything else is refused.
 
 Worked example (absolute; the anchor `jutterswet-gemeenteberging`
 verbatim): a kustgemeente creates `gemeentelijke berging` links to
@@ -3085,20 +3087,36 @@ lives on, which is the object read. The rules:
    in this language binds exactly ONE object, the enclosing form's subject,
    with a single exception: the **guard of a fact creation** (ch. 5.5) binds
    TWO — the anker it iterates and the doel its join chain reaches. The owner
-   names one of the bound objects, and that object is read. Where it is absent,
-   or names a type the subject satisfies (extensionally, `T ⊑ O`), the subject
-   is read, which is every reading that predates the rule. Where it names the
-   type the DOEL satisfies, the doel is read, and the guard filters the doelen
-   instead of gating the anker (ch. 5.5). An owner that names NO bound object,
-   or BOTH of them, is not a reading at all: WF-109 refuses the document before
-   any executor sees it. An executor that meets one anyway **faults** rather
-   than falling back to the subject — that is the reading the 2026-09-10
-   decision rejected, and it is the reading that answered before it, when both
-   OCaml executors returned the subject's own value under the other type's
-   name while the third carried no rule at all. The two fault at different
-   moments, and that is inherited rather than new: the reference interpreter is
-   lazy and faults when the condition is evaluated, the ASP backend is eager
-   and faults at translation, exactly as they split on WF-055.
+   designates one of the bound objects, and that object is read.
+
+   **Designation is extensional, and it asks two questions.** A binding whose
+   declared type is `T` SATISFIES owner `O` iff `T ⊑ O` — every object it can
+   hold is an `O`, so a supertype owner is satisfied and an inherited
+   characteristic is read on the object that hosts it. It OVERLAPS `O` iff some
+   object could be both, which the declared type graph answers. The owner
+   designates a binding when exactly one binding satisfies it and no second
+   binding overlaps it. Where the owner is absent, or names a type the subject
+   satisfies, the subject is read — every reading that predates the rule. Where
+   it names a type the DOEL satisfies, the doel is read, and the guard filters
+   the doelen instead of gating the anker (ch. 5.5).
+
+   **An owner that designates nothing, or two things, is not a reading.**
+   WF-109 refuses the document before any executor sees it, and an executor
+   that meets one anyway **faults** rather than falling back to the subject —
+   that is the reading the 2026-09-10 decision rejected, and it is the reading
+   that answered before it, when both OCaml executors returned the subject's
+   own value under the other type's name while the third carried no rule at
+   all. The two faults are distinct and both are named. An owner no bound
+   object can be is refused where the check is read: "the owner names the
+   object the check is about … and this reader has no other object to read".
+   An owner that reaches BOTH objects of a fact-creation guard is refused where
+   the guard's host is decided, naming the two it reached — the arm that was
+   missing until 2026-09-19, when the helper answered "not the doel" and let
+   the anker read, which is the silent form of the rejected reading. The
+   executors still fault at different moments, and that is inherited rather
+   than new: the reference interpreter is lazy and faults when the condition is
+   evaluated, the ASP backend is eager and faults at translation, exactly as
+   they split on WF-055.
 3. **All four executors read the same object.** This is the point of rule 2 and
    the reason it replaced a refusal on 2026-09-19. A bean-model executor reads
    the owner's instances by construction — it attaches the constraint to that
@@ -3109,9 +3127,16 @@ lives on, which is the object read. The rules:
    doel variable the chain binds. A form that is verifier-clean under WF-100
    and WF-109 is therefore carried by all four, with the same answer. The
    scope fences that keep this true are in `IR-SPEC.md` ch. 4.6 (q2): the doel
-   is a bound object only where the check IS the whole guard and does not
-   navigate, because a nested or navigating doel host is a shape one of the four
-   cannot carry, and the verifier refuses what the four cannot agree on.
+   is a bound object only where the check IS the whole guard, does not navigate
+   and carries no whole-period qualifier, because each of those three is a shape
+   one of the four cannot carry — and the verifier refuses what the four cannot
+   agree on. The third fence is the youngest and the most clearly temporary:
+   under `gedurende het gehele <periode>` both bean-model branches run the
+   ch. 3.9 fold arm BEFORE they look at the owner, so the field decides nothing
+   there; it falls the day the §8.2 family norms the position. The EXTENSIONAL
+   reading had to be made true of the bean model as well — both its branches
+   compared owner and pattern by NAME until 2026-09-19, which refused a legal
+   supertype owner in both while the other three answered.
 
 Worked example A, the single-object position (`ref/test/test_ref.ml` ch. 5.8b
 verbatim; its ASP mirror in `backends/clingo/test/test_clingo.ml`). Two object
@@ -3152,13 +3177,17 @@ with one post P1 (NOT gehesen) carrying S1 (gehesen) and S2 (not):
 | anker | V1, which carries `gehesen` | 2 — every sein reached |
 | intermediate step | P1, which does not | 0 — the creation never fires |
 | **doel (normative)** | S1 and S2, each in turn | **1** — S1 only |
+| doel, owner a SUPERTYPE of `Sein` | the same objects | **1** — the test is `T ⊑ O` |
 
 The three readings give three different numbers, so the answer identifies the
 reading rather than merely agreeing with it. Over TWO intermediate steps
 (`jutterswet-mastsein`: V1 gehesen → P1 not → M1 gehesen → S1, S2, S3 with S1
 and S3 gehesen) the guard still reaches past both, and the four numbers are
 anker 3, first step 0, second step 3, **doel 2**. Negation rides along
-unchanged: "indien het sein niet gehesen is" filters the complement.
+unchanged: "indien het sein niet gehesen is" filters the complement. A
+SUPERTYPE owner reads the same doel — the golden `jutterswet-bakensein` puts
+`gehesen` on a `Baken` the doel inherits from, with the anker and the step
+each declaring a `gehesen` of their own, and all four executors answer 1.
 
 ### 5.9 Uniqueness: the union and the scope
 

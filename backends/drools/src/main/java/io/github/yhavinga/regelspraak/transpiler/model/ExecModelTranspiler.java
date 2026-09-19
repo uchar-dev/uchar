@@ -20,6 +20,7 @@ import io.github.yhavinga.regelspraak.runtime.RegelSpraakRuntime;
 import io.github.yhavinga.regelspraak.schema.FactModelGenerator;
 import io.github.yhavinga.regelspraak.transpiler.kern.Dagsoorten;
 import io.github.yhavinga.regelspraak.transpiler.kern.Dekking;
+import io.github.yhavinga.regelspraak.transpiler.kern.Gastheer;
 import io.github.yhavinga.regelspraak.transpiler.kern.Eenheidsconflict;
 import io.github.yhavinga.regelspraak.kern.Literalen;
 import io.github.yhavinga.regelspraak.transpiler.kern.Namen;
@@ -3604,7 +3605,9 @@ public final class ExecModelTranspiler {
         // §8.1.8 kenmerkcheck — an own kenmerk (boolean property == !negatie) or a to-one navigated one
         // ("zijn partner heeft een <k>"), read null-safely through the reference (a null relation never matches).
         if (c instanceof Conditie.Kenmerk k) {
-            if (k.eigenaar() != null && k.eigenaar() != subject) return null;   // a feitcreatie doel-kenmerk hosts elsewhere
+            // WF-109: the host is satisfied EXTENSIONALLY (subject ⊑ host), not by name identity — a
+            // supertype host is this pattern's too. Shared with the DRL-text branch so the two cannot drift.
+            if (!Gastheer.hostOp(k, subject)) return null;   // a feitcreatie doel-kenmerk hosts elsewhere
             Objecttype kHouder = k.navigatie() == null ? subject
                     : (subject != null ? model.rolDoeltypeNaarSubject(subject, k.navigatie()) : null);
             if (kHouder != null && kHouder.kenmerkGranulariteitLeden().containsKey(k.kenmerk())) return null;  // temporal -> Phase F

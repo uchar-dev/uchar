@@ -3196,11 +3196,56 @@ let () =
   check "WV-5.8b-B-doelgastheer-filtert-de-doelen" (vakseinen (Some "Sein") = 1);
   check "WV-5.8b-B-ankergastheer-poort-de-anker" (vakseinen (Some "Kustvak") = 2);
   check "WV-5.8b-B-gastheerloze-guard-poort-de-anker" (vakseinen None = 2);
-  match vakseinen (Some "Post") with
+  (match vakseinen (Some "Post") with
   | exception Value.Fault m ->
       check ("WV-5.8b-B-tussenstap-gastheer-weigert (got: " ^ m ^ ")")
         (Case.contains ~needle:"is hosted on \"Post\" while the subject is \"Kustvak\"" m)
-  | _ -> check "WV-5.8b-B-tussenstap-gastheer-weigert (no fault at all)" false
+  | _ -> check "WV-5.8b-B-tussenstap-gastheer-weigert (no fault at all)" false);
+  (* --- the EXTENSIONAL half of the host (ch. 5.8b rule 2, WF-109) ---
+     `T ⊑ O`, not `T = O`. A host naming a SUPERTYPE of the doel is satisfied
+     through inheritance and reads the doel; the golden `jutterswet-bakensein`
+     replays the same law through all four executors, and this is the
+     interpreter's own row. Measured 2026-09-19: both Drools branches refused
+     this form until the same day, asking the question by name identity. *)
+  let super_doc host =
+    let d = doc_of host in
+    let baken = snd (ot "Baken" [] [ "gehesen" ]) in
+    let sein = snd (ot "Sein" [] []) in
+    { d with
+      objecttypen =
+        ("Baken", baken)
+        :: List.map
+             (fun (n, o) -> if n = "Sein" then (n, { sein with ot_supertype = Some "Baken" }) else (n, o))
+             d.objecttypen }
+  in
+  let super_vakseinen host =
+    let final = Eval.evaluate (env_of (super_doc host)) w in
+    List.length (Eval.role_links final (World.get final "v1") vaksein_rol)
+  in
+  check "WV-5.8b-B-supertype-gastheer-leest-het-doel" (super_vakseinen (Some "Baken") = 1);
+  (* --- the AMBIGUOUS host faults, and says which two objects it reached ---
+     Populations are extensional: with `Sein ⊑ Kustvak` a concrete Sein fills an
+     anker declared Kustvak, so a `Sein` host designates the anker AND the doel.
+     ch. 5.8b requires a fault there; until 2026-09-19 this reader silently
+     answered from the anker instead, which is the reading the decision rejects.
+     WF-109 makes the document unreachable through the verifier, so this is
+     fail-fast on a non-conforming input — and a corpus zone cannot hold it: a
+     golden must replay and a red case must be verifier-clean. *)
+  let overlap_doc =
+    let d = doc_of (Some "Sein") in
+    let sein = snd (ot "Sein" [] []) in
+    { d with
+      objecttypen =
+        List.map
+          (fun (n, o) -> if n = "Sein" then (n, { sein with ot_supertype = Some "Kustvak" }) else (n, o))
+          d.objecttypen }
+  in
+  match Eval.evaluate (env_of overlap_doc) w with
+  | exception Value.Fault m ->
+      check ("WV-5.8b-B-ambigue-gastheer-weigert (got: " ^ m ^ ")")
+        (Case.contains ~needle:"reaches BOTH objects the fact creation binds" m
+        && Case.contains ~needle:"anker \"Kustvak\", doel \"Sein\"" m)
+  | _ -> check "WV-5.8b-B-ambigue-gastheer-weigert (no fault at all)" false
 
 (* --- ch. 3.9: the whole-period qualifier over a characteristic ----------
    The RUNTIME-SEMANTICS ch. 3.9 worked examples, verbatim: the four rows of

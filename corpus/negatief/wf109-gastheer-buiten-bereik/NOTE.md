@@ -4,7 +4,7 @@ position binds is the subject, a `Vondst`. The host names the object the check
 lives on, and here it names none.
 
     WF-109 FAIL /resolvedRegels/0/voorwaarde/eigenaar: the characteristic
-    check is hosted on 'Jutter', which no object bound here is: this position
+    check is hosted on 'Jutter', which no object bound here can be: this position
     binds the subject 'Vondst'
 
 Broken from `corpus/golden/jutterswet-keurhouder` by moving one field and

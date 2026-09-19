@@ -13,6 +13,7 @@ import io.github.yhavinga.regelspraak.schema.FactModelGenerator;
 import io.github.yhavinga.regelspraak.transpiler.kern.Dagsoorten;
 import io.github.yhavinga.regelspraak.transpiler.kern.Dekking;
 import io.github.yhavinga.regelspraak.transpiler.kern.Eenheidsconflict;
+import io.github.yhavinga.regelspraak.transpiler.kern.Gastheer;
 import io.github.yhavinga.regelspraak.kern.Literalen;
 import io.github.yhavinga.regelspraak.transpiler.kern.Operatoren;
 import io.github.yhavinga.regelspraak.transpiler.kern.Tijdlijnen;
@@ -4393,7 +4394,9 @@ public final class DrlTranspiler {
             // eigenaar emits ONLY on that type's pattern (a marker elsewhere), so it never lands on the
             // anker — even when the anker happens to declare a same-named kenmerk. An untagged kenmerk
             // (the single-subject rule) is unconstrained and emits on whatever pattern hosts the voorwaarde.
-            if (k.eigenaar() != null && k.eigenaar() != subject)
+            // WF-109: the host is satisfied EXTENSIONALLY (subject ⊑ host), not by name identity — a
+            // supertype host is this pattern's too. Shared with the exec branch so the two cannot drift.
+            if (!Gastheer.hostOp(k, subject))
                 return LoweredConditie.marker("kenmerk '" + k.kenmerk() + "' hoort bij " + k.eigenaar().naam, c.bron());
             // §13.3.6/§8.2: a tijdsafhankelijk kenmerk is a List<Segment> boolean timeline — a bare "<k> == true"
             // membership check (or the §8.2 "gedurende het gehele jaar <k> is/heeft") would compare the List to a

@@ -417,6 +417,34 @@ let type_compatible ctx a b = is_sub ctx ~sub:a ~super:b || is_sub ctx ~sub:b ~s
 let effective_ot doc name = objecttype { doc } name
 let subtype_of doc ~sub ~super = is_sub { doc } ~sub ~super
 
+(* CAN one object be both an [a] and a [b]? Populations are EXTENSIONAL — a
+   declaration names a set of objects, and a subtype's objects are its
+   supertype's too — so the question is whether the DECLARED type graph holds a
+   type below both. `⊑` answers only half of it: `a ⊑ b` says every a IS a b,
+   while this says some object MIGHT be both, which is the weaker and, for an
+   ambiguity test, the right question.
+
+   WF-109 (IR-SPEC ch. 4.6 (q2)) needs exactly this. Counting hosts by `⊑`
+   alone was measured wrong on 2026-09-19: with `Sein ⊑ Kustvak` a concrete
+   `Sein` fills an anker position declared `Kustvak`, so an owner naming `Sein`
+   designates the anker AND the doel at run time while a `⊑` count sees one.
+   Verifier, `ref` and the ASP backend all passed that document.
+
+   Written as the EXISTENTIAL and not as `comparable`, though the two coincide
+   while `supertype` is a single bare string (a chain is linear, so a common
+   descendant puts both types on one chain): the extensional question is what
+   the rule means, and a wire that ever grows a second parent must not silently
+   change this answer. The two direct directions ride in front as the fast path
+   and as the answer for a type the table does not declare. *)
+let populations_overlap doc a b =
+  let ctx = { doc } in
+  is_sub ctx ~sub:a ~super:b
+  || is_sub ctx ~sub:b ~super:a
+  || List.exists
+       (fun ((name, _) : string * objecttype) ->
+         is_sub ctx ~sub:name ~super:a && is_sub ctx ~sub:name ~super:b)
+       doc.objecttypen
+
 (* The type on [from]'s chain that DECLARES [member] — [from] itself when it
    declares it. The ch. 7.2 conflict key names this type and not the
    instance's concrete type: a target is declared once, and keying on the
@@ -6362,16 +6390,39 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
            object at all) has nothing to cross, and WF-031 refuses that document
            for reading object state in the first place.
 
-           The doel counts as bound only for a NON-navigated check: a navigated
-           owner names the host while the characteristic lives on the type the
-           hop reaches, a shape the producer never emits and no executor pair
-           has been measured on, so the anker stays the only bound object
-           there. *)
+           The doel counts as bound only for a NON-navigated check WITHOUT a
+           whole-period qualifier. A navigated owner names the host while the
+           characteristic lives on the type the hop reaches, a shape the
+           producer never emits and no executor pair has been measured on. A
+           QUALIFIED one is fenced for a measured reason (2026-09-19): in both
+           bean-model branches the ch. 3.9 fold arm runs BEFORE the host test,
+           so a doel host under `gedurende het gehele jaar` is decided by the
+           fold's own subject search and not by this field — measured on one
+           verifier-clean document, `ref` and the ASP backend answered the doel
+           reading, the exec branch reached the same number by another route,
+           and the DRL-text branch lowered the fold onto the ANKER and sank the
+           package at compile (`Unable to Analyse Expression
+           rsGeheelPeriode($subject.getGehesen(), "JAAR", …)`). The §8.2 family
+           is another card's; until it norms the shape the anker stays the only
+           bound object here, and this fence falls the day that card lands.
+
+           TWO questions, not one, and the difference is the whole of the
+           2026-09-19 fix. A binding SATISFIES the host when every object it can
+           hold is one (`T ⊑ O`) — that is the reading, and it must hold for
+           exactly one binding. A binding merely OVERLAPS the host when SOME
+           object could be both ([populations_overlap]) — that is the ambiguity,
+           and no second binding may have it. Counting by `⊑` alone let a
+           subtype edge smuggle a second candidate past: `Sein ⊑ Kustvak` makes
+           a concrete `Sein` fill an anker declared `Kustvak`, so a `Sein` host
+           names two objects at run time and one on paper. Overlap alone is not
+           enough either: it would ADMIT a host naming a strict subtype of the
+           binding, where the reading holds for some objects and faults for
+           others — a verdict the wire cannot settle, so it keeps failing. *)
       (match eigenaar with
        | Some e when objecttype ctx e <> None ->
            let bound =
-             match fc_doel, navigatie with
-             | Some d, None -> (
+             match fc_doel, navigatie, periode with
+             | Some d, None, None -> (
                  match subject with
                  | Some a -> [ ("anker", a); ("doel", d) ]
                  | None -> [ ("doel", d) ])
@@ -6379,18 +6430,34 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
            in
            let named (r, t) = "the " ^ r ^ " '" ^ t ^ "'" in
            let here = String.concat " and " (List.map named bound) in
-           (match bound, List.filter (fun (_, t) -> is_sub ctx ~sub:t ~super:e) bound with
-            | [], _ | _, [ _ ] -> []
-            | _, [] ->
-                [ v "WF-109" (sub "eigenaar")
-                    ("the characteristic check is hosted on '" ^ e
-                   ^ "', which no object bound here is: this position binds " ^ here) ]
-            | _, hits ->
-                [ v "WF-109" (sub "eigenaar")
-                    ("the characteristic check is hosted on '" ^ e
-                   ^ "', which "
-                    ^ String.concat " and " (List.map named hits)
-                    ^ " both are: the host names one object and this names two") ])
+           let hits = List.filter (fun (_, t) -> is_sub ctx ~sub:t ~super:e) bound in
+           let near = List.filter (fun (_, t) -> populations_overlap ctx.doc t e) bound in
+           let fail m = [ v "WF-109" (sub "eigenaar") m ] in
+           let hosted = "the characteristic check is hosted on '" ^ e ^ "', which " in
+           (match bound, hits, near with
+            | [], _, _ -> []
+            (* the one reading the wire settles: one binding is it, and no other
+               binding's objects can be *)
+            | _, [ _ ], [ _ ] -> []
+            | _, [ h ], others ->
+                fail
+                  (hosted ^ named h
+                 ^ " is — but so can "
+                  ^ String.concat " and "
+                      (List.map named (List.filter (fun b -> b <> h) others))
+                 ^ " be, because the model declares a type below both: the host names one object \
+                    on paper and two at run time")
+            | _, [], [] -> fail (hosted ^ "no object bound here can be: this position binds " ^ here)
+            | _, [], others ->
+                fail
+                  (hosted ^ "no object bound here IS: only SOME objects of "
+                  ^ String.concat " and " (List.map named others)
+                 ^ " are one, so the host would hold for some of them and fault for the rest")
+            | _, hs, _ ->
+                fail
+                  (hosted
+                  ^ String.concat " and " (List.map named hs)
+                 ^ " both are: the host names one object and this names two"))
        | _ -> [])
       @ (match kenmerk with
        | None ->

@@ -6,7 +6,7 @@ hosted on `Post`, the intermediate step's type. Two patterns, a name for
 neither.
 
     WF-109 FAIL /feitCreaties/0/voorwaarde/eigenaar: the characteristic check
-    is hosted on 'Post', which no object bound here is: this position binds
+    is hosted on 'Post', which no object bound here can be: this position binds
     the anker 'Kustvak' and the doel 'Sein'
 
 Broken from `corpus/golden/jutterswet-seinhijsing` by moving one field: the

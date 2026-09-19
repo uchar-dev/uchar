@@ -55,13 +55,20 @@ measured on this document:
 - `eigenaar` -> `"Jutter"` (a declared type that does not declare `gekeurd`):
   the verifier refuses it, WF-100. That is the negatief witness.
 - `eigenaar` -> a type that DOES declare `gekeurd` but is not the subject's:
-  verifier-clean, and both executors refuse it at run time — the reading that
-  used to answer from the subject. The document that shows it cannot live in
-  a corpus zone (golden replays must pass, red cases must fault in every
-  executor that carries the form, and the Drools backend drops the rule as a
-  transpiler skip rather than faulting), so its witnesses are the executors'
-  own suites: `ref/test/test_ref.ml` (ch. 5.8b) and
+  **WF-109 refuses it** (ch. 4.6 (q2), 2026-09-19) — the host names no object
+  this position binds. *Until that rule the same twist was verifier-CLEAN and
+  refused by both OCaml executors at run time, the reading that used to answer
+  from the subject; the verdict moved to the verifier so that what stays on the
+  wire is carried by all four.* The negatief witness is
+  `corpus/negatief/wf109-gastheer-buiten-bereik`, which is exactly this twist.
+  The executors still fault on the document, fail-fast, and their own suites
+  keep asserting the sentence: `ref/test/test_ref.ml` (ch. 5.8b) and
   `backends/clingo/test/test_clingo.ml`.
+- `eigenaar` -> a SUPERTYPE of `Vondst` that declares `gekeurd`: clean, and the
+  answers do not move — satisfaction is extensional (`T ⊑ O`). Pointed at a
+  strict SUBTYPE instead it is WF-109 again, on the partial-population flank
+  (`corpus/negatief/wf109-gastheer-deelpopulatie`): only some `Vondst`en are
+  one.
 - `eigenaar` -> `null` on both rules: the answers do not move. An absent owner
   and an owner naming the subject's own type are the same reading, which is
   why every other golden in the corpus is unaffected by the rule.
