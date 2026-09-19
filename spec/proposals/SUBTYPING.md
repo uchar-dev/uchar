@@ -11,12 +11,13 @@ is the deliverable of the research card
 numbered questions in decided form, so that
 `20260910-subtype-kernel`, `20260910-subtype-regelspraak-dialect` and
 `20260910-flogic-frontend-minimaal` can be executed without open
-design questions. The maintainer's mandate
-`OPDRACHT_OBJECTTYPE_HIERARCHIE_20260910.md` is BINDING throughout, in
-particular its decision 2 (single inheritance) and its decision 3
+design questions. The maintainer's 2026-09-10 mandate
+document has since been ABSORBED into this proposal (recorded
+2026-09-19): its decision 2 (single inheritance) and its decision 3
 (inheritance is defaults-group inheritance with base override, one
-priority axis). That mandate is the maintainer's own document and is
-deliberately left untracked on this branch: it uses one of the terms
+priority axis) are stated in full below, and this proposal — not the
+old untracked file — is the citable source. The original document was
+deliberately left untracked: it uses one of the terms
 the 2026-08-29 prioritized-defaults rename retired, so gate 1's rename
 tripwire goes red the moment it is tracked, and neither that tripwire
 nor the mandate is in this card's may-touch set (§11 point 6).
@@ -1347,7 +1348,8 @@ and the kernel witnesses are the semantic referee.
 6. **the unbarred class-level value** `c[attr->v]` (§8.6);
 7. anything outside the slice as widened by §8.6.
 
-Every refusal cites `OPDRACHT_OBJECTTYPE_HIERARCHIE_20260910.md`, per
+Every refusal cites `spec/proposals/SUBTYPING.md` (originally the
+2026-09-10 mandate document, since absorbed into this proposal), per
 the F-logic card.
 
 ### 9.4 Decided (question 7)

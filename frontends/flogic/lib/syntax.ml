@@ -10,7 +10,7 @@
    slice uses uchar's own (Dutch) metamodel vocabulary as an ordinary
    term. Everything outside refuses, loudly and by name. *)
 
-let mandate = "OPDRACHT_OBJECTTYPE_HIERARCHIE_20260910.md"
+let mandate = "spec/proposals/SUBTYPING.md"
 
 (* Fail fast with file/line context. Every refusal names the mandate
    document that fixed the slice, so a reader of the message can find the

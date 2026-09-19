@@ -1,6 +1,6 @@
 # Minimale F-logic-frontend: subtypen uit een tweede taal, met Flora-2 als externe maat
 
-Goal: `frontends/flogic` met de minimale F-logic-snede uit `spec/proposals/SUBTYPING.md` vraag 6: subklasse-declaratie (`c::d`), lidmaatschap (`o:c`), signatures (`c[attr=>type]`), attribuutwaarden (`o[attr->v]`) en Horn-regels, gelowered naar dezelfde kernel-subtypering als het RegelSpraak-dialect; alles buiten de snede (HiLog, meta-programmeren, defeasible inheritance, negatievormen, meervoudige ouders) weigert luid met verwijzing naar `OPDRACHT_OBJECTTYPE_HIERARCHIE_20260910.md`. De use case van opdrachtdeel 1.5 wordt in F-logic-bron toegevoegd en per frontend-diff (de penningrecht-methode van Phase-5d) naast de dialectvorm gelegd: elk verschil wordt gecategoriseerd en alleen administratieve of getrackte verschillen zijn toelaatbaar. Als de onderzoekskaart Flora-2 bruikbaar verklaarde: draai de use case ook door Flora-2 en leg de uitkomstvergelijking vast als externe-executor-notitie (geen gate, wel bewijsstuk dat onze inheritance-semantiek de JACM-lijn niet stilzwijgend tegenspreekt).
+Goal: `frontends/flogic` met de minimale F-logic-snede uit `spec/proposals/SUBTYPING.md` vraag 6: subklasse-declaratie (`c::d`), lidmaatschap (`o:c`), signatures (`c[attr=>type]`), attribuutwaarden (`o[attr->v]`) en Horn-regels, gelowered naar dezelfde kernel-subtypering als het RegelSpraak-dialect; alles buiten de snede (HiLog, meta-programmeren, defeasible inheritance, negatievormen, meervoudige ouders) weigert luid met verwijzing naar het opdrachtdocument van 2026-09-10 (opgegaan in `spec/proposals/SUBTYPING.md`). De use case van opdrachtdeel 1.5 wordt in F-logic-bron toegevoegd en per frontend-diff (de penningrecht-methode van Phase-5d) naast de dialectvorm gelegd: elk verschil wordt gecategoriseerd en alleen administratieve of getrackte verschillen zijn toelaatbaar. Als de onderzoekskaart Flora-2 bruikbaar verklaarde: draai de use case ook door Flora-2 en leg de uitkomstvergelijking vast als externe-executor-notitie (geen gate, wel bewijsstuk dat onze inheritance-semantiek de JACM-lijn niet stilzwijgend tegenspreekt).
 
 Acceptance: de F-logic-golden speelt groen door frontend → verifier → executorreeks en is via de frontend-diff tegen de dialect-golden verantwoord (geen categorie-(iii)-verschillen); de weigeringslijst heeft per punt een negatieve fixture; de volledige gate-reeks is groen; de eventuele Flora-2-vergelijking staat als notitie in het proposal of de kaartafronding.
 
@@ -49,7 +49,7 @@ reasoning (argumentatietheorieën, `\overrides`, `\neg`); negatievormen
 overerving is niet-monotoon per besluit 3 en de twee modi zijn niet
 uitwisselbaar; de ongebalkte `c[attr->v]`; en al het overige buiten de
 verbrede snede. Elke weigering verwijst naar
-`OPDRACHT_OBJECTTYPE_HIERARCHIE_20260910.md`.
+het opdrachtdocument van 2026-09-10 (opgegaan in `spec/proposals/SUBTYPING.md`).
 
 **Golden.** `corpus/golden/jutterswet-wrakrecht-flogic` (het
 `-flogic`-achtervoegsel volgt de bestaande `-catala`-conventie), naast

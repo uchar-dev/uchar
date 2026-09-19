@@ -49,7 +49,7 @@ let check name ok detail =
   if ok then Printf.printf "  ok   %s\n%!" name
   else (incr failures; Printf.printf "  FAIL %s -- %s\n%!" name detail)
 
-let mandate = "OPDRACHT_OBJECTTYPE_HIERARCHIE_20260910.md"
+let mandate = "spec/proposals/SUBTYPING.md"
 
 let () =
   let frontend, verifier, refx, clingo =
