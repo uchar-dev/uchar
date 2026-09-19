@@ -1634,23 +1634,31 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
   | Predicaat { soort = Dagsoort; dagsoort; operand; negatie; _ }
     when SMap.mem day_kind_binder env.locals ->
       (* A NESTED day-kind reference, inside a day-kind voorwaarde (ch. 3.7,
-         the WF-085 reference graph): the operand is a date the referenced
-         kind is tested on, and it defaults to the bound day — that is the
-         §9.8 composition ("a day is a holiday when it is a Christmas day
-         or …"). Outside a day-kind voorwaarde the predicate stays refused
-         (the arm below): ch. 5.4's framing is that a day kind is consulted
-         as a stratum-0 classifier, never as a derived read in the rule
-         fixpoint, and the ASP backend carries the same boundary. The leeg
-         rule is the source's own exception: a leeg value is never of a day
-         kind, so the test is false rather than leeg-propagating. *)
+         the WF-085 reference graph): the §9.8 composition, "a day is a
+         holiday when it is a Christmas day or …". It is carried on the
+         BOUND DAY ONLY — a test on some other date is a recognised,
+         unexecuted form, refused in the same words by the ASP backend (the
+         narrow route, 2026-09-19: ref and the Drools day-kind compiler both
+         answered it while the ASP backend refused it, and a form one
+         executor computes and another refuses is the asymmetry this card
+         exists to end). Outside a day-kind voorwaarde the predicate stays
+         refused altogether (the arm below): ch. 5.4's framing is that a day
+         kind is consulted as a stratum-0 classifier, never as a derived read
+         in the rule fixpoint. The leeg rule is the source's own exception: a
+         leeg value is never of a day kind, so the test is false rather than
+         leeg-propagating. *)
+      (match operand with
+      | None -> ()
+      | Some (Constante { naam = Some n; _ }) when norm n = norm "de dag" -> ()
+      | Some _ ->
+          Value.fault
+            "a nested day-kind test on a date other than the bound day is a recognised, \
+             unexecuted form (the \xc2\xa79.8 composition is carried on the bound day only)");
       let d =
-        match operand with
-        | None -> (
-            match SMap.find_opt day_kind_binder env.locals with
-            | Some (Now v) -> v
-            | Some (Later f) -> f ()
-            | None -> assert false (* guarded by the [when] above *))
-        | Some o -> eval_expr env world self ~err o
+        match SMap.find_opt day_kind_binder env.locals with
+        | Some (Now v) -> v
+        | Some (Later f) -> f ()
+        | None -> assert false (* guarded by the [when] above *)
       in
       let hit =
         match d with

@@ -93,7 +93,7 @@ class DagsoortDuurTest {
     }
 
     @Test
-    void stap_valt_op_de_gatgrens_en_loopt_niet_eindeloos() {
+    void stap_valt_op_de_reikwijdte_en_loopt_niet_eindeloos() {
         IllegalStateException e =
                 assertThrows(
                         IllegalStateException.class,
@@ -104,18 +104,42 @@ class DagsoortDuurTest {
         assertEquals(
                 true,
                 e.getMessage()
-                        .contains("no day of the kind within " + RegelSpraakRuntime.DAGSOORT_GAT_GRENS
+                        .contains("no day of the kind within " + RegelSpraakRuntime.DAGSOORT_REIKWIJDTE
                                 + " calendar days"));
     }
 
     @Test
-    void de_gatgrens_ligt_boven_de_langste_gregoriaanse_terugkeer() {
-        // the century-skipped leap day: 2096-02-29 -> 2104-02-29, 2 921 days, still steps
+    void de_reikwijdte_ligt_boven_de_langste_gregoriaanse_terugkeer() {
+        // the century-skipped leap day: 2096-02-29 -> 2104-02-29, 2 921 days, still steps. And the case the
+        // reach was RAISED for (maintainer decision 2026-09-19): a year-bound day kind more than a decade out.
         Predicate<LocalDate> schrikkeldag = x -> x.getMonthValue() == 2 && x.getDayOfMonth() == 29;
         LocalDate uit =
                 RegelSpraakRuntime.rsDatumPlusDagsoort(
                         d("2096-02-29"), BigDecimal.ONE, schrikkeldag, true);
         assertEquals(d("2104-02-29"), uit);
         assertEquals(2921, uit.toEpochDay() - d("2096-02-29").toEpochDay());
+
+        Predicate<LocalDate> in2040 =
+                x -> x.getYear() == 2040 && (x.getDayOfMonth() == 1 || x.getDayOfMonth() == 15);
+        assertEquals(
+                d("2040-01-01"),
+                RegelSpraakRuntime.rsDatumPlusDagsoort(d("2026-03-10"), BigDecimal.ONE, in2040, true));
+    }
+
+    @Test
+    void datumtijd_stapt_op_het_dagdeel_en_houdt_de_kloktijd() {
+        // maintainer decision 2026-09-19: the day kind is judged on the civil day part alone and the original
+        // local clock time rides through unchanged; zero, leeg and negative follow the day-precision rules
+        java.time.LocalDateTime t = java.time.LocalDateTime.parse("2024-12-20T09:15:30");
+        assertEquals(
+                java.time.LocalDateTime.parse("2024-12-26T09:15:30"),
+                RegelSpraakRuntime.rsDatumTijdPlusDagsoort(t, new BigDecimal("2"), KERST, true));
+        assertEquals(
+                java.time.LocalDateTime.parse("2024-12-25T09:15:30"),
+                RegelSpraakRuntime.rsDatumTijdPlusDagsoort(
+                        java.time.LocalDateTime.parse("2024-12-26T09:15:30"), BigDecimal.ONE, KERST, false));
+        assertEquals(t, RegelSpraakRuntime.rsDatumTijdPlusDagsoort(t, BigDecimal.ZERO, KERST, true));
+        assertEquals(t, RegelSpraakRuntime.rsDatumTijdPlusDagsoort(t, null, KERST, true));
+        assertNull(RegelSpraakRuntime.rsDatumTijdPlusDagsoort(null, BigDecimal.ONE, KERST, true));
     }
 }

@@ -672,19 +672,26 @@ and this backend); declared factors and stelsel never enter.
     packed decomposition's pre-epoch and year-zero fences. Emptiness is
     unchanged: the datetime operand PROPAGATES by its bare `dt/2` join, the
     duration COALESCES through `coalesce0`.
-- **Day-kind (dagsoort) durations** are translated since 2026-09-19 over
-  DAY-PRECISION operands (RUNTIME-SEMANTICS ch. 3.8): the walk is GROUND
-  here rather than run — the days it may visit become a domain predicate
-  derived from the operands alone, the voorwaarde becomes a rule over that
-  domain with the bound day as its variable, and the §6.10 count reads a
-  `#count` over it while the §6.11 step reads a recursive (found, gap)
-  rank. Stratification is what the derivation buys: the domain never
-  depends on the voorwaarde's own `not`. The gap fence is the chapter's
-  own (3 660 days) and fires as `viol/2`; one window is this backend's
-  alone and loud, the S6a pattern — a step seeking more than 64 days of
-  the kind at once is refused here where ref computes it. Over DATUM-TIJD
-  operands the form stays a recognised, unexecuted flank, refused in the
-  same words `ref` uses.
+- **Day-kind (dagsoort) durations** are translated since 2026-09-19
+  (RUNTIME-SEMANTICS ch. 3.8). This backend does NOT walk: the reach fence
+  is 40 000 days and a ground per-day walk would materialise that many
+  days per step and per subject. It uses WF-031's purity clause instead —
+  the voorwaarde reads only the day, literals, parameters and other day
+  kinds, and the translation is per case, so the predicate is EVALUATED
+  here, at translation time, over a window; what reaches the solver is the
+  day kind's EXTENSION, `dkt<i>(D, R)`, its matching days each with their
+  rank. §6.10 is then one `#count` over the matching days in the interval
+  and §6.11 a rank lookup, since "the Nth day of the kind after A" IS "the
+  day whose rank is rank(A) + N". The reach fence is read off the same
+  table (no match within the reach of the start, or a gap wider than the
+  reach along the way) and fires as `viol/2`. One limit is this backend's
+  alone and loud, the S6a pattern: the window covers the case's dates
+  extended by the reach on both sides, and a query that leaves it is
+  refused here where ref computes it — never answered from a table that
+  does not reach. The DATUM-TIJD step form is carried (the day kind is
+  judged on the civil day part of the pair term and the ms-of-day rides
+  through unchanged); the datum-tijd TIJDSDUUR stays refused, in the same
+  words `ref` uses.
 - **Loud flanks**: the
   `DATUM_MET`/`DATUMTIJD_MET` constructors, the sub-day part extractors
   (`uur/minuut/seconde/milliseconde-uit`), and datum-tijd
@@ -2292,9 +2299,10 @@ tijdsduur over datetimes now translate WITHOUT a datetime's absolute ms
 value entering clingo's integer range whole, S6a, golden
 `jutterswet-getijdenpaar` — the ch. 3.8 borrow corner as the differential
 square, ref ≡ clingo) and, since 2026-09-19, the day-kind (dagsoort)
-durations and tijdsduren over day-precision operands (the ground walk
-above, golden `jutterswet-bergingsklok`); what stays loud in the date
-family is those two forms over DATUM-TIJD operands,
+durations and tijdsduren (the extension table above, goldens
+`jutterswet-bergingsklok` and `jutterswet-getijklok`, the latter over
+datum-tijd operands); what stays loud in the date family is the day-kind
+TIJDSDUUR over DATUM-TIJD operands,
 `DATUM_MET`/`DATUMTIJD_MET`, the sub-day part extractors
 (uur/minuut/seconde/milliseconde-uit, still under the catch-all;
 outside ref too — the extractor slice is not the ms layer's

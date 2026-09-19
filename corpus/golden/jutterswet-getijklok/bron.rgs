@@ -1,0 +1,22 @@
+Dagsoort de springtijdag (mv: springtijdagen);
+
+Objecttype de Getijpost (mv: Getijposten) (bezield)
+    het meldtijdstip Datum en tijd in millisecondes;
+    de wachttermijn Numeriek (geheel getal) met eenheid springtijdagen;
+    het sluittijdstip Datum en tijd in millisecondes;
+    het openingstijdstip Datum en tijd in millisecondes;
+
+Regel Dagsoortdefinitie springtijdag
+    geldig altijd
+        Een dag is een springtijdag
+        indien er aan ten minste 1 van de volgende voorwaarden wordt voldaan:
+        - de dag uit de dag gelijk is aan 1
+        - de dag uit de dag gelijk is aan 15.
+
+Regel sluittijdstip van een getijpost
+    geldig altijd
+        Het sluittijdstip van een Getijpost moet berekend worden als zijn meldtijdstip plus zijn wachttermijn.
+
+Regel openingstijdstip van een getijpost
+    geldig altijd
+        Het openingstijdstip van een Getijpost moet berekend worden als zijn meldtijdstip min zijn wachttermijn.

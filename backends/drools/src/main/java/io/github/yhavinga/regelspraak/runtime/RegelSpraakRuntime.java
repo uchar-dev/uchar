@@ -444,11 +444,13 @@ public final class RegelSpraakRuntime {
         return optellen ? datum.plus(n, u) : datum.minus(n, u);
     }
 
-    /** The normative GAP FENCE of the day-kind walk (uchar RUNTIME-SEMANTICS ch. 3.8): a step that passes this many
-     *  consecutive calendar days without finding one of the kind faults instead of looping. Ten calendar years —
-     *  above the longest recurrence gap a Gregorian day kind can have (the century-skipped leap day, 2 921 days)
-     *  and low enough for a grounding executor to materialise the walk. */
-    public static final int DAGSOORT_GAT_GRENS = 3_660;
+    /** The normative REACH of the day-kind walk (uchar RUNTIME-SEMANTICS ch. 3.8): a step that passes this many
+     *  consecutive calendar days without finding one of the kind faults instead of looping. It states how far the
+     *  walk looks, NOT that the definition is unsatisfiable — a day kind whose next occurrence lies further is
+     *  perfectly satisfiable and is refused all the same; that residual cost is accepted and recorded in ch. 3.8.
+     *  40 000 days (a little over 109 years) keeps a YEAR-BOUND or PARAMETER-BOUND day kind answerable ("the 1st
+     *  or the 15th of 2040"), which a ten-year reach did not. */
+    public static final int DAGSOORT_REIKWIJDTE = 40_000;
 
     /** §6.11 "datum ± N &lt;dagsoort&gt;" ("5 werkdagen"): step one calendar day at a time, counting only days that
      *  ARE the dagsoort ({@code isDagsoort}), until N have passed — the Nth such day is the result. X itself NEVER
@@ -469,14 +471,15 @@ public final class RegelSpraakRuntime {
         long geteld = 0, gat = 0;
         // Bound the walk: a dagsoortdefinitie that matches NO calendar date (an author error, e.g. maand==13) would
         // otherwise loop forever. The fence is uchar's normative one (RUNTIME-SEMANTICS ch. 3.8): a GAP of
-        // DAGSOORT_GAT_GRENS consecutive calendar days with no day of the kind. It replaces the backend's own
+        // DAGSOORT_REIKWIJDTE consecutive calendar days with no day of the kind. It replaces the backend's own
         // 4 000 000-step TOTAL cap of the port, which refused a legitimate large N ("datum plus 5 000 werkdagen")
         // under a message blaming the definition, and which no other executor shared. The uchar spec beyond the
         // ported production semantics, as with the ch. 7 prioritizedDefaults lowering.
         while (geteld < n) {
-            if (gat >= DAGSOORT_GAT_GRENS) throw new IllegalStateException(
-                    "day-kind walk: no day of the kind within " + DAGSOORT_GAT_GRENS + " calendar days of "
-                    + anker + " (an unsatisfiable day-kind definition?)");
+            if (gat >= DAGSOORT_REIKWIJDTE) throw new IllegalStateException(
+                    "day-kind walk: no day of the kind within " + DAGSOORT_REIKWIJDTE + " calendar days of "
+                    + anker + " (the walk reaches no further; a day kind whose next occurrence lies beyond the "
+                    + "reach is refused, not diagnosed)");
             d = op ? d.plusDays(1) : d.minusDays(1);
             if (isDagsoort.test(d)) { geteld++; gat = 0; anker = d; }
             else gat++;

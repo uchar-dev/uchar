@@ -1,0 +1,27 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "G1", "objectType": "Getijpost",
+        "attributes": { "meldtijdstip": { "dateTime": "2026-03-10T09:15:30" }, "wachttermijn": { "number": "3" } },
+        "roles": {}, "characteristics": [] },
+      { "label": "G2", "objectType": "Getijpost",
+        "attributes": { "meldtijdstip": { "dateTime": "2026-03-15T23:59:59" }, "wachttermijn": { "number": "1" } },
+        "roles": {}, "characteristics": [] },
+      { "label": "G3", "objectType": "Getijpost",
+        "attributes": { "meldtijdstip": { "dateTime": "2026-03-20T00:00:00" }, "wachttermijn": { "number": "0" } },
+        "roles": {}, "characteristics": [] }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "G1", "attribute": "sluittijdstip", "value": { "dateTime": "2026-04-15T09:15:30" } },
+    { "kind": "attributeValue", "label": "G1", "attribute": "openingstijdstip", "value": { "dateTime": "2026-02-01T09:15:30" } },
+    { "kind": "attributeValue", "label": "G2", "attribute": "sluittijdstip", "value": { "dateTime": "2026-04-01T23:59:59" } },
+    { "kind": "attributeValue", "label": "G2", "attribute": "openingstijdstip", "value": { "dateTime": "2026-03-01T23:59:59" } },
+    { "kind": "attributeValue", "label": "G3", "attribute": "sluittijdstip", "value": { "dateTime": "2026-03-20T00:00:00" } },
+    { "kind": "attributeValue", "label": "G3", "attribute": "openingstijdstip", "value": { "dateTime": "2026-03-20T00:00:00" } },
+    { "kind": "consistent" }
+  ]
+}

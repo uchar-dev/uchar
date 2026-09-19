@@ -1,0 +1,22 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "G4", "objectType": "Getijpost",
+        "attributes": { "meldtijdstip": { "dateTime": "2026-03-10T09:15:30" } },
+        "roles": {}, "characteristics": [] },
+      { "label": "G5", "objectType": "Getijpost",
+        "attributes": { "wachttermijn": { "number": "2" } },
+        "roles": {}, "characteristics": [] }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "G4", "attribute": "sluittijdstip", "value": { "dateTime": "2026-03-10T09:15:30" } },
+    { "kind": "attributeValue", "label": "G4", "attribute": "openingstijdstip", "value": { "dateTime": "2026-03-10T09:15:30" } },
+    { "kind": "attributeEmpty", "label": "G5", "attribute": "sluittijdstip" },
+    { "kind": "attributeEmpty", "label": "G5", "attribute": "openingstijdstip" },
+    { "kind": "consistent" }
+  ]
+}

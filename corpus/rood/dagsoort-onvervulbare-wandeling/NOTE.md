@@ -1,8 +1,8 @@
 # dagsoort-onvervulbare-wandeling
 
-The **gap fence** of the day-kind walk (`RUNTIME-SEMANTICS.md` ch. 3.8): a
-step that passes 3 660 consecutive calendar days without finding a day of the
-kind faults, instead of walking for ever.
+The **reach fence** of the day-kind walk (`RUNTIME-SEMANTICS.md` ch. 3.8): a
+step that passes 40 000 consecutive calendar days — a little over 109 years —
+without finding a day of the kind faults, instead of walking for ever.
 
 ## The shape
 
@@ -29,8 +29,8 @@ here: `tijdsduur … in hele nevelsdagen` over an unsatisfiable day kind is
 
 | executor | route | pinned fragment |
 |---|---|---|
-| `ref` | walks, counting the gap; faults when it reaches the fence | `no day of the kind within 3660 calendar days` |
-| clingo | GROUNDS the walk over `[D+1, D+N·3660]` and derives the fence atom | same |
+| `ref` | walks, counting the gap; faults when it reaches the reach | `no day of the kind within 40000 calendar days` |
+| clingo | reads the fence off the day kind's EXTENSION — no matching day within a reach of the start — and derives the fault atom | same |
 | Drools | walks in `RegelSpraakRuntime.rsDatumPlusDagsoort`, `IllegalStateException` at fire | same |
 
 All three carry it, which is why this red case pins `expectedFault.drools`
@@ -41,15 +41,24 @@ bounded the walk at 4 000 000 TOTAL steps, not at a gap, under the message
 `onvervulbare dagsoortdefinitie?`. Two things were wrong with that as a
 uchar fence: it refused a legitimate large N (`datum plus 5 000 werkdagen`
 walks some nineteen years) while blaming the definition, and no other
-executor shared it. It is now the same gap fence, in the same words — the
+executor shared it. It is now the same reach fence, in the same words — the
 backend implementing the uchar spec beyond the ported semantics, as it
 already does for the ch. 7 prioritizedDefaults lowering.
 
-## Why 3 660
+## Why 40 000, and what the fault does NOT say
 
-Ten calendar years. It has to exceed the longest recurrence gap a Gregorian
-day kind can have — the century-skipped leap day, 2096-02-29 to 2104-02-29,
-which is **2 921** days — and stay low enough for an executor that GROUNDS
-the walk to materialise it. `ref`'s own suite pins both ends: the leap-day
-step across the century still succeeds, and the difference it walks is
-measured at 2 921.
+A little over 109 calendar years. The number has to clear two bars. The
+longest recurrence gap a Gregorian day kind can have is the century-skipped
+leap day — 2096-02-29 to 2104-02-29, **2 921** days — but a day kind may also
+be bound to a YEAR or to a PARAMETER ("the 1st or the 15th of 2040"), and
+such a kind is verifier-clean, perfectly satisfiable, and may lie decades
+past any date the case carries. A ten-year reach refused those; 40 000 days
+does not. `ref`'s own suite pins both: the leap-day step across the century,
+and the 2040 kind stepped from 2026.
+
+The fault text says the walk **reaches no further**. It does not say the
+definition is unsatisfiable, and this case is the reason the wording matters:
+a reader who takes the message as a diagnosis will look for a defect in a
+definition that may have none. The residual cost is accepted and stated in
+ch. 3.8 — a day kind whose next occurrence lies beyond the reach is refused
+although it exists. What the fence buys is termination, nothing more.

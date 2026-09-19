@@ -603,20 +603,27 @@ EXPECTED_CHANNEL=(
 # between the Let and the branch node (that one used to answer, and what it
 # answered was a fabricated Inconsistentie).
 #
-# 159 -> 160 (2026-09-19, card dagsoort-semantiek): a NEW PLAYER,
-# jutterswet-bergingsklok — the first corpus golden whose DAY-KIND predicate is
+# 159 -> 161 (2026-09-19, card dagsoort-semantiek): TWO new players.
+# jutterswet-bergingsklok is the first corpus golden whose DAY-KIND predicate is
 # evaluated, carrying both duration forms (§6.10 count, §6.11 step, forward and
-# backward, signed and absolute, the zero and leeg corners). The backend needed
+# backward, signed and absolute, the zero and leeg corners); jutterswet-getijklok
+# carries the §6.11 step over DATUM-TIJD operands (maintainer decision
+# 2026-09-19: the day kind is judged on the civil day part and the original
+# clock time rides through unchanged), with the 23:59:59 and midnight rows that
+# catch a re-derived clock. The backend needed
 # no new lowering for it: the ported production runtime carried both forms all
 # along and nothing exercised them — measured 2026-09-19, before this golden
 # `rsDatumPlusDagsoort` and `rsTijdsduurDagsoort` were named by the two
 # transpilers and by no test, no script and no document in any zone. What DID
 # move in the backend is the walk's fence, from a 4 000 000-step TOTAL cap to
-# the spec's 3 660-day GAP fence (RUNTIME-SEMANTICS ch. 3.8), so the three
+# the spec's 40 000-day REACH fence (RUNTIME-SEMANTICS ch. 3.8), so the three
 # executors fault on the same input in the same words; the fence is a red-zone
-# form and moves no golden. Both branches play this golden, so
-# EXPECTED_DRL_PLAYED moves by one too.
-EXPECTED_PLAYED=160
+# form and moves no golden. The day-kind predicate compiler also stopped
+# carrying the §9.8 composition on a date OTHER than the bound day — the narrow
+# route, since ref and this backend answered what the ASP backend refused — and
+# that too is a red-zone form, carried by no golden. Both branches play both new
+# goldens, so EXPECTED_DRL_PLAYED moves by two as well.
+EXPECTED_PLAYED=161
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -762,11 +769,11 @@ DRL_CHANNEL=(
 # where it was 70 against a corpus of 209; the exec sweep beside it is byte-identical and
 # EXPECTED_PLAYED does not move. Every movement from here carries its reason at this pin, exactly as
 # the exec one does: a golden that starts playing LEAVES DRL_CHANNEL and raises this number by one.
-# 136 -> 137 (2026-09-19, card dagsoort-semantiek): jutterswet-bergingsklok plays in this branch too —
-# the DRL-text branch routes both day-kind duration forms to the same two runtime statics the exec
-# branch does, through a session global holding the compiled predicate, so the two branches were
-# never going to differ here. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=137
+# 136 -> 138 (2026-09-19, card dagsoort-semantiek): jutterswet-bergingsklok and jutterswet-getijklok
+# play in this branch too — the DRL-text branch routes the day-kind duration forms to the same runtime
+# statics the exec branch does, through a session global holding the compiled predicate, so the two
+# branches were never going to differ here. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=138
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a

@@ -684,16 +684,19 @@ let coalesce0 ctx ~subject ~subject_ot (atoms, term, scale) =
 (* the counted unit, resolved by SPELLING from a static type through the
    shared table (Ir_v0.Checks, RUNTIME-SEMANTICS ch. 3.8): day-precision
    units only — sub-day, day-kind and missing units fault loudly *)
-(* The reserved binder key the bound day of a day-kind definition rides on
-   (ch. 3.7, the `de dag` context value). It carries a NUL so no declared
-   binder name can collide with it: every other key in [ctx.binders] is a
-   [norm]-ed source name, and [norm] neither produces nor preserves one. *)
-let day_kind_binder = "\x00de dag"
+(* the normative REACH of the day-kind walk (RUNTIME-SEMANTICS ch. 3.8): a
+   step that passes this many consecutive calendar days without finding one
+   of the kind faults. It is a statement about reach, not about
+   satisfiability, and it is what sizes the extension window below. *)
+let day_kind_reach = 40_000
 
-(* the normative gap fence of the day-kind walk (RUNTIME-SEMANTICS ch. 3.8):
-   a step that passes this many consecutive calendar days without finding one
-   of the kind faults. It is what bounds the ground walk below. *)
-let day_kind_gap_fence = 3_660
+(* the day-kind extension tables emitted for THIS document, by normalised
+   day-kind name: the table is a property of the day kind and the case, not
+   of a use site, so two duration positions on one day kind share it. Reset
+   per translation (the one entry point below). *)
+let dk_tables :
+    (string, string * string * string * string * (int * int)) Hashtbl.t =
+  Hashtbl.create 4
 
 (* is this unit SPELLING registered as a day kind? (IR-SPEC ch. 2.9: the
    lookup is trimmed and case-insensitive). The document-level form, for the
@@ -3160,7 +3163,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       (* the spelling may name a declared day kind rather than a calendar
          unit — then the step is ch. 3.8's day-by-day walk (§6.11) *)
       (match day_kind_unit_of ctx (Ir_v0.Checks.typ_of_expr dur_e) with
-      | Some k -> dk_date_plus ctx ~subject ~subject_ot ~kind:k ~minus date_e dur_e
+      | Some k -> (
+          let atoms, day, _ = dk_date_plus ctx ~subject ~subject_ot ~kind:k ~minus ~datetime:false date_e dur_e in
+          (atoms, day, 1))
       | None ->
       let tu =
         day_time_unit_of ~what:"date arithmetic" (Ir_v0.Checks.typ_of_expr dur_e)
@@ -3386,17 +3391,16 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let after_lo = match lo with Some (t, s) -> mx bh (scale_to t s) | None -> bh in
       let clamped = match hi with Some (t, s) -> mn after_lo (scale_to t s) | None -> after_lo in
       (b_atoms, clamped, m)
-  | Constante { naam = Some n; _ } when Ir_v0.Checks.norm n = Ir_v0.Checks.norm "de dag" -> (
+  | Constante { naam = Some n; _ } when Ir_v0.Checks.norm n = Ir_v0.Checks.norm "de dag" ->
       (* ch. 3.7/3.8: the BOUND DAY of a day-kind definition — not a session
          value (that is Rekendatum, below) but the day the defining predicate
-         is being applied to. It rides the binder environment, and only a
-         day-kind walk ever puts one there. *)
-      match List.assoc_opt day_kind_binder ctx.binders with
-      | Some b -> b
-      | None ->
-          fault
-            "the 'de dag' context value is the bound day of a day-kind definition (ch. 3.7); \
-             outside a day-kind evaluation it denotes nothing")
+         is being applied to. It never reaches an ASP term: the day-kind
+         predicate is evaluated at translation time (the extension table),
+         so the only way here is a `de dag` OUTSIDE a day-kind voorwaarde,
+         which denotes nothing. *)
+      fault
+        "the 'de dag' context value is the bound day of a day-kind definition (ch. 3.7); \
+         outside a day-kind evaluation it denotes nothing"
   | Constante { naam = Some n; _ } when Ir_v0.Checks.norm n = Ir_v0.Checks.norm "Rekendatum" -> (
       (* ch. 8.2: the execution-date constant is a program constant — the
          session's one evaluation date as a civil day number *)
@@ -3712,6 +3716,15 @@ and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string 
                  v0 does not commute)"
             (if minus then "\xe2\x88\x92" else "+")
       in
+      (* a DAY-KIND spelling is the §6.11 step, carried on datum-tijd since
+         2026-09-19: the kind is judged on the civil day part and the clock
+         time rides through unchanged (RUNTIME-SEMANTICS ch. 3.8) *)
+      (match day_kind_unit_of ctx (Ir_v0.Checks.typ_of_expr dur_e) with
+      | Some k -> (
+          match dk_date_plus ctx ~subject ~subject_ot ~kind:k ~minus ~datetime:true date_e dur_e with
+          | atoms, day, Some ms -> (atoms, day, ms)
+          | _, _, None -> assert false)
+      | None ->
       let tu = dt_time_unit_of ~doc:ctx.doc ~what:"datum-tijd arithmetic" (Ir_v0.Checks.typ_of_expr dur_e) in
       let da, dd, dm = dt_term ctx ~subject ~subject_ot date_e in
       let bn, tn, sn =
@@ -3729,7 +3742,7 @@ and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string 
             ~n:n_term ~u
       | None ->
           datetime_plus_calendar ctx ~subject ~subject_ot ~tu ~date_atoms:da ~dd ~dm
-            ~dur_atoms:bn ~n:n_term)
+            ~dur_atoms:bn ~n:n_term))
   | Functie { kind = (Eerste | Laatste) as kind; argumenten = (_ :: _ :: _ as args); filter; _ } ->
       (* the datum-tijd ordering fold (RUNTIME-SEMANTICS ch. 1.2e + ch. 3.8):
          EERSTE/LAATSTE over >= 2 datum-tijd operands. ref orders the pair
@@ -4167,18 +4180,32 @@ and whole_period_fails ctx ~subject_ot ~op ~links ~rechts ~(gp : geheel_periode)
 
 (* --- day kinds as duration units (ch. 3.7/3.8) --------------------------
    A declared day kind is a PREDICATE over a calendar day, so neither
-   duration form has a closed formula: both walk the calendar. This backend
-   grounds that walk instead of running it — the days it may visit become a
-   DOMAIN predicate, the day-kind voorwaarde becomes a rule over that domain,
-   and the count (§6.10) or the ranked step (§6.11) reads it. The domain is
-   exactly the walk ref performs, so the two executors agree day for day:
-   for the count it is the operand interval, for the step the normative gap
-   fence times the number of days sought.
+   duration form has a closed formula: ref WALKS the calendar. This backend
+   cannot: the reach fence is 40 000 days (ch. 3.8), and a ground walk would
+   materialise that many days per step and per subject.
 
-   What makes the whole construction stratified — and therefore a definite
-   answer rather than a guess — is that the domain is derived from the
-   operands ALONE. The voorwaarde's `not` (a GEEN composite, a missed day in
-   the walk) never reaches back into the domain. *)
+   So it does not walk. WF-031's purity clause says the voorwaarde reads
+   only the day, literals, parameters and other day kinds — no fact base, no
+   session value — and the ASP translation is PER CASE, so the parameters
+   are known here too. The predicate is therefore a function this backend
+   can EVALUATE, at translation time, over a window of calendar days; what
+   reaches the solver is the day kind's EXTENSION — its matching days, each
+   with its rank — and the two duration forms become rank arithmetic over
+   that table. The count (§6.10) is one `#count` over the matching days in
+   the interval; the step (§6.11) is a rank lookup, since "the Nth day of
+   the kind after A" IS "the day whose rank is rank(A) + N".
+
+   Two fences, both loud, and they say different things. The REACH fence is
+   the chapter's (`day_kind_reach`) and is read off the table: a gap of more
+   than the reach between two consecutive matching days, or no matching day
+   within the reach of the start. The WINDOW is this backend's own, the S6a
+   pattern: the table covers the case's dates extended by the reach on both
+   sides, and a query that leaves it is refused here where ref computes it —
+   never answered from a table that does not reach.
+
+   The evaluator below is this backend's own, not a call into `ref`: the two
+   executors implement the semantics separately and the corpus differential
+   is what says they agree. *)
 
 and day_kind_of_unit ctx (u : eenheid) : string option =
   match u.afkorting with
@@ -4197,193 +4224,405 @@ and day_kind_unit_of ctx (t : datatype option) : string option =
       day_kind_of_unit ctx u
   | _ -> None
 
-(* the day-kind voorwaarde as a predicate over (subject, day), every rule
-   guarded by [dom]. What it carries is the WF-031 admission list; a form
-   outside it faults loudly, naming itself. *)
-and dk_condition ctx ~subject ~subject_ot ~dom ~stack (c : conditie) : string =
-  ctx.fresh <- ctx.fresh + 1;
-  let p = Printf.sprintf "dkc%d" ctx.fresh in
-  let x = "DKX" in
-  let dom_atom = Printf.sprintf "%s(%s,%s)" dom subject x in
-  let self p' = Printf.sprintf "%s(%s,%s)" p' subject x in
-  let head = Printf.sprintf "%s(%s,%s)" p subject x in
-  let with_day f =
-    (* the bound day rides the binder environment, so every operand form
-       [expr_term] already carries — literals, parameters, the date-part
-       extractors, eerste-paasdag — reaches a day-kind condition unchanged.
-       The domain atom joins the RULE GUARD for the same span: the fences
-       those operands emit (the pre-epoch fence of the civil decomposition,
-       the Gauss chain's year fence) build their bodies from it, and without
-       it the day variable would be unsafe in exactly those rules. *)
-    let bs = ctx.binders and rg = ctx.rule_guard in
-    ctx.binders <- (day_kind_binder, ([], x, 1)) :: bs;
-    ctx.rule_guard <- dom_atom :: rg;
-    Fun.protect
-      ~finally:(fun () ->
-        ctx.binders <- bs;
-        ctx.rule_guard <- rg)
-      f
-  in
-  (match c with
-  | Vergelijking { op; links; rechts; periode = None; _ } ->
-      let al, tl, sl, ar, tr, sr =
-        with_day (fun () ->
-            let al, tl, sl =
-              expr_term ctx ~subject ~subject_ot (req "Vergelijking.links" links)
-            in
-            let ar, tr, sr =
-              expr_term ctx ~subject ~subject_ot (req "Vergelijking.rechts" rechts)
-            in
-            (al, tl, sl, ar, tr, sr))
-      in
-      let m = max sl sr in
-      let lift t s = if s = m then t else Printf.sprintf "((%s)*%d)" t (m / s) in
-      emit ctx "%s :- %s, %s %s %s." head
-        (String.concat ", " (dom_atom :: (al @ ar)))
-        (lift tl sl) (cmp_sym op) (lift tr sr)
-  | Samengesteld { kwantor; drempel; onderdelen; _ } -> (
-      let parts =
-        List.map (fun o -> self (dk_condition ctx ~subject ~subject_ot ~dom ~stack o)) onderdelen
-      in
-      match kwantor with
-      | De | Alle -> emit ctx "%s :- %s." head (String.concat ", " (dom_atom :: parts))
-      | Geen ->
-          emit ctx "%s :- %s." head
-            (String.concat ", " (dom_atom :: List.map (fun a -> "not " ^ a) parts))
-      | Ten_minste | Ten_hoogste | Precies ->
-          let m = Printf.sprintf "%s_m" p in
-          List.iteri
-            (fun i a -> emit ctx "%s(%s,%s,%d) :- %s." m subject x i a)
-            parts;
-          let sym =
-            match kwantor with Ten_minste -> ">=" | Ten_hoogste -> "<=" | _ -> "=="
-          in
-          emit ctx "%s :- %s, DKN = #count { DKI : %s(%s,%s,DKI) }, DKN %s %d." head dom_atom m
-            subject x sym drempel)
-  | Predicaat { soort = Dagsoort; dagsoort; operand; negatie; periode = None; _ } ->
-      (* a NESTED day-kind reference (WF-085's reference graph): the §9.8
-         composition, "a day is a holiday when it is a Christmas day or …".
-         Its operand is the bound day — a test on some OTHER date would need
-         a domain this walk does not carry, and says so. *)
-      (match operand with
-      | None -> ()
-      | Some (Constante { naam = Some n; _ })
-        when Ir_v0.Checks.norm n = Ir_v0.Checks.norm "de dag" ->
-          ()
-      | Some _ ->
-          fault
-            "a nested day-kind test on a date other than the bound day is not translated (the \
-             walked domain carries the bound day only)");
-      let q =
-        day_kind_hit ctx ~subject ~subject_ot ~dom ~stack (req "Predicaat.dagsoort" dagsoort)
-      in
-      emit ctx "%s :- %s, %s%s." head dom_atom (if negatie then "not " else "") (self q)
-  | _ ->
-      fault
-        "a day-kind voorwaarde of this form is not translated (WF-031 admits comparisons, \
-         composites and nested day-kind tests)");
-  p
-
-and day_kind_hit ctx ~subject ~subject_ot ~dom ~stack (name : string) : string =
-  if List.exists (fun n -> norm n = norm name) stack then
-    fault
-      "day-kind reference cycle at %S: a day-kind definition that references itself has no \
-       fixpoint (WF-085)"
-      name;
+and day_kind_definition ctx (name : string) : resolved_dagsoort =
   match
     List.find_opt
       (fun (d : resolved_dagsoort) ->
         match d.rd_naam with Some n -> norm n = norm name | None -> false)
       ctx.doc.resolved_dagsoorten
   with
+  | Some d -> d
   | None -> fault "day kind %S has no definition (WF-031)" name
-  | Some { rd_voorwaarde = None; _ } ->
-      fault "day kind %S has a definition without a condition (WF-031)" name
-  | Some { rd_voorwaarde = Some c; _ } ->
-      dk_condition ctx ~subject ~subject_ot ~dom ~stack:(name :: stack) c
 
-(* §6.10: the days of the kind in (A, B], signed by operand order. The domain
-   IS the operand interval, so this form needs no fence of its own — and an
-   unsatisfiable day kind counts 0 here, exactly as in ref. *)
+(* --- the day-kind predicate, evaluated here ---------------------------- *)
+
+(* the value of one expression inside a day-kind voorwaarde, at one civil
+   day. The WF-031 admission list is what this carries; a form outside it
+   faults by name rather than guessing. *)
+and dk_value ctx ~stack ~day (e : expr) : Value.t =
+  let one what = function
+    | [ x ] -> x
+    | l -> fault "%s takes one argument in a day-kind voorwaarde, got %d" what (List.length l)
+  in
+  match e with
+  | Constante { naam = Some n; _ } when norm n = norm "de dag" -> Value.Date day
+  | Constante { naam = Some n; _ } ->
+      fault
+        "day-kind condition reads the session value %S — the one context value a day-kind \
+         voorwaarde admits is 'de dag' (WF-031)"
+        n
+  | Literal { waarde; typ; _ } -> (
+      let lex = req "Literal.waarde" waarde in
+      match typ with
+      | Some Datum_in_dagen -> Value.date_of_iso lex
+      | Some (Numeriek _ | Percentage _) | None ->
+          Value.Num (Value.q_of_lexeme lex, Value.Unitless)
+      | Some Tekst -> Value.Text lex
+      | _ -> fault "a day-kind voorwaarde carries a literal this backend does not evaluate")
+  | Parameter_ref { parameter; _ } -> (
+      let nm = req "ParameterRef.parameter" parameter in
+      match Ir_v0.Checks.find_ci ctx.doc.parameters nm with
+      | Some { par_granulariteit = Some _; _ } ->
+          fault "granular parameter %S in a day-kind voorwaarde is refused (ch. 3.3/8)" nm
+      | Some _ -> (
+          match Eval.SMap.find_opt (norm nm) ctx.case.params with
+          | Some v -> v
+          | None -> Value.Empty)
+      | None -> fault "unknown parameter %S" nm)
+  | Functie { kind = (Jaar_uit | Maand_uit | Dag_uit) as k; argumenten; filter = None; _ } -> (
+      match dk_value ctx ~stack ~day (one "a date-part extractor" argumenten) with
+      | Value.Empty -> Value.Empty
+      | Value.Date z ->
+          let y, m, dd = Value.civil_from_days z in
+          Value.Num
+            (Q.of_int (match k with Jaar_uit -> y | Maand_uit -> m | _ -> dd), Value.Unitless)
+      | v -> fault "a date-part extractor needs a day-precision date, got %s" (Value.to_string v))
+  | Functie { kind = Eerste_paasdag; argumenten; filter = None; _ } -> (
+      match dk_value ctx ~stack ~day (one "eerste-paasdag" argumenten) with
+      | Value.Empty -> Value.Empty
+      | Value.Num (q, Value.Unitless) when Q.den q = Z.one ->
+          (* the Gauss/Anonymous chain, RUNTIME-SEMANTICS ch. 3.8 verbatim *)
+          let j = Z.to_int (Q.num q) in
+          let a = j mod 19 and b = j / 100 and c = j mod 100 in
+          let d = b / 4 and e = b mod 4 in
+          let f = (b + 8) / 25 in
+          let g = (b - f + 1) / 3 in
+          let h = ((19 * a) + b - d - g + 15) mod 30 in
+          let i = c / 4 and k = c mod 4 in
+          let l = (32 + (2 * e) + (2 * i) - h - k) mod 7 in
+          let m = (a + (11 * h) + (22 * l)) / 451 in
+          let maand = (h + l - (7 * m) + 114) / 31 in
+          let dag = ((h + l - (7 * m) + 114) mod 31) + 1 in
+          Value.Date (Value.days_from_civil ~y:j ~m:maand ~d:dag)
+      | v -> fault "eerste-paasdag needs a whole unitless year, got %s" (Value.to_string v))
+  | _ -> fault "a day-kind voorwaarde carries an expression this backend does not evaluate"
+
+(* the comparison of two day-kind operands. Dates compare as day numbers,
+   numbers as exact rationals; a leeg operand makes the comparison FALSE
+   rather than leeg — a day either is of the kind or is not. *)
+and dk_compare (op : vergelijk_op) (l : Value.t) (r : Value.t) : bool =
+  let c =
+    match (l, r) with
+    | Value.Empty, _ | _, Value.Empty -> None
+    | Value.Date a, Value.Date b -> Some (compare (a : int) b)
+    | Value.Num (a, _), Value.Num (b, _) -> Some (Q.compare a b)
+    | Value.Text a, Value.Text b -> Some (compare (a : string) b)
+    | Value.Bool a, Value.Bool b -> Some (compare (a : bool) b)
+    | a, b ->
+        fault "a day-kind comparison over %s and %s is not evaluated" (Value.to_string a)
+          (Value.to_string b)
+  in
+  match (c, op) with
+  | None, _ -> false
+  | Some c, (Kleiner | Eerder) -> c < 0
+  | Some c, (Kleiner_of_gelijk | Eerder_of_gelijk) -> c <= 0
+  | Some c, (Groter | Later) -> c > 0
+  | Some c, (Groter_of_gelijk | Later_of_gelijk) -> c >= 0
+  | Some c, Gelijk -> c = 0
+  | Some c, Ongelijk -> c <> 0
+
+and dk_cond ctx ~stack ~day (c : conditie) : bool =
+  match c with
+  | Vergelijking { op; links; rechts; periode = None; _ } ->
+      dk_compare op
+        (dk_value ctx ~stack ~day (req "Vergelijking.links" links))
+        (dk_value ctx ~stack ~day (req "Vergelijking.rechts" rechts))
+  | Samengesteld { kwantor; drempel; onderdelen; _ } -> (
+      let hits = List.length (List.filter (dk_cond ctx ~stack ~day) onderdelen) in
+      let n = List.length onderdelen in
+      match kwantor with
+      | De | Alle -> hits = n
+      | Geen -> hits = 0
+      | Ten_minste -> hits >= drempel
+      | Ten_hoogste -> hits <= drempel
+      | Precies -> hits = drempel)
+  | Predicaat { soort = Leeg; operand; negatie; periode = None; _ } ->
+      let v = dk_value ctx ~stack ~day (req "Predicaat.operand" operand) in
+      if negatie then v <> Value.Empty else v = Value.Empty
+  | Predicaat { soort = Gevuld; operand; negatie; periode = None; _ } ->
+      let v = dk_value ctx ~stack ~day (req "Predicaat.operand" operand) in
+      if negatie then v = Value.Empty else v <> Value.Empty
+  | Predicaat { soort = Dagsoort; dagsoort; operand; negatie; periode = None; _ } ->
+      (* the §9.8 composition, on the BOUND DAY only — a test on some other
+         date is a recognised, unexecuted form in BOTH OCaml executors
+         (2026-09-19, the narrow route) *)
+      (match operand with
+      | None -> ()
+      | Some (Constante { naam = Some n; _ }) when norm n = norm "de dag" -> ()
+      | Some _ ->
+          fault
+            "a nested day-kind test on a date other than the bound day is a recognised, \
+             unexecuted form (the \xc2\xa79.8 composition is carried on the bound day only)");
+      let hit = dk_holds ctx ~stack (req "Predicaat.dagsoort" dagsoort) day in
+      if negatie then not hit else hit
+  | _ ->
+      fault
+        "a day-kind voorwaarde of this form is not evaluated (WF-031 admits comparisons, \
+         composites, leeg/gevuld tests and nested day-kind tests)"
+
+and dk_holds ctx ~stack (name : string) (day : int) : bool =
+  if List.exists (fun n -> norm n = norm name) stack then
+    fault
+      "day-kind reference cycle at %S: a day-kind definition that references itself has no \
+       fixpoint (WF-085)"
+      name;
+  match (day_kind_definition ctx name).rd_voorwaarde with
+  | None -> fault "day kind %S has a definition without a condition (WF-031)" name
+  | Some c -> dk_cond ctx ~stack:(name :: stack) ~day c
+
+(* --- the extension table ------------------------------------------------ *)
+
+(* Every day-precision date this translation can SEE, as civil day numbers:
+   the case's own values (attributes, timelines, parameters, the asOfDate)
+   and the date literals of the document. The document walk is deliberately
+   PERMISSIVE — a literal it misses only narrows the window, and a narrowed
+   window is LOUD (the window fence below), never a wrong answer. *)
+and dk_seen_days ctx : int list =
+  let acc = ref [] in
+  let add_v = function
+    | Value.Date z -> acc := z :: !acc
+    | Value.Date_time t -> acc := fst (split_datetime t) :: !acc
+    | _ -> ()
+  in
+  Eval.SMap.iter
+    (fun _ (i : Uchar_ref.World.instance) ->
+      Eval.SMap.iter (fun _ v -> add_v v) i.attrs;
+      Eval.SMap.iter (fun _ tl -> List.iter (fun (s : Uchar_ref.Timeline.segment) -> add_v s.s_waarde) tl) i.tls)
+    ctx.case.world.instances;
+  Eval.SMap.iter (fun _ v -> add_v v) ctx.case.params;
+  (match ctx.case.as_of with Some d -> add_v (Value.date_of_iso d) | None -> ());
+  let rec ex (e : expr) =
+    let opt = function Some x -> ex x | None -> () in
+    match e with
+    | Literal { waarde = Some lex; typ = Some Datum_in_dagen; _ } -> add_v (Value.date_of_iso lex)
+    | Literal { waarde = Some lex; typ = Some Datum_tijd; _ } -> (
+        match Value.datetime_of_lexeme lex with Value.Date_time _ as v -> add_v v | _ -> ())
+    | Binair { links; rechts; _ } -> opt links; opt rechts
+    | Afgerond { basis; _ } -> opt basis
+    | Begrensd { basis; minimum; maximum; _ } -> opt basis; opt minimum; opt maximum
+    | Functie { argumenten; leegwaarde; filter; _ } ->
+        List.iter ex argumenten;
+        opt leegwaarde;
+        (match filter with Some c -> co c | None -> ())
+    | If_then_else { condition; then_; else_; _ } -> co condition; ex then_; ex else_
+    | Let { value; body; _ } -> ex value; ex body
+    | Match { scrutinee; arms; _ } -> ex scrutinee; List.iter (fun (_, _, b) -> ex b) arms
+    | Construct { argument; _ } -> opt argument
+    | Field_access { base; _ } -> ex base
+    | Struct_literal { velden; _ } -> List.iter (fun (_, x) -> ex x) velden
+    | List_literal { elements; _ } -> List.iter ex elements
+    | Temporal_read { basis; datum; _ } -> ex basis; ex datum
+    | Invoke { arguments; _ } -> List.iter ex arguments
+    | Tekst_reeks { delen; _ } ->
+        List.iter (function Ingevoegd { expr = Some x } -> ex x | _ -> ()) delen
+    | _ -> ()
+  and co (c : conditie) =
+    let opt = function Some x -> ex x | None -> () in
+    match c with
+    | Vergelijking { links; rechts; _ } -> opt links; opt rechts
+    | Predicaat { operand; _ } -> opt operand
+    | Periode_conditie { vanaf; tot; _ } -> opt vanaf; opt tot
+    | Samengesteld { onderdelen; _ } -> List.iter co onderdelen
+    | Kwantorvouw { kv_toets; kv_filter; _ } ->
+        (match kv_toets with Some t -> co t | None -> ());
+        (match kv_filter with Some f -> co f | None -> ())
+    | _ -> ()
+  in
+  List.iter
+    (fun (r : resolved_regel) ->
+      (match r.waarde with Some e -> ex e | None -> ());
+      match r.rr_voorwaarde with Some c -> co c | None -> ())
+    ctx.doc.resolved_regels;
+  List.iter
+    (fun (d : resolved_dagsoort) ->
+      match d.rd_voorwaarde with Some c -> co c | None -> ())
+    ctx.doc.resolved_dagsoorten;
+  !acc
+
+(* the day kind's extension, emitted once per document and shared by every
+   use site: `p(D,R)` for the R-th matching day in the window, plus the
+   ranks whose gap to the previous match exceeds the reach, plus the two
+   edge markers that make a TRUNCATED table loud instead of wrong. Returns
+   (predicate, far-predicate, lo-edge fact, hi-edge fact, window). *)
+and dk_table ctx (name : string) : string * string * string * string * (int * int) =
+  let key = norm name in
+  match Hashtbl.find_opt dk_tables key with
+  | Some t -> t
+  | None ->
+      let seen = dk_seen_days ctx in
+      let lo, hi =
+        match seen with
+        | [] -> fault "a day-kind duration needs a date to reckon from; this case carries none"
+        | d :: rest ->
+            let mn = List.fold_left min d rest and mx = List.fold_left max d rest in
+            (mn - day_kind_reach, mx + day_kind_reach)
+      in
+      let n = Hashtbl.length dk_tables + 1 in
+      let p = Printf.sprintf "dkt%d" n and far = Printf.sprintf "dkf%d" n in
+      let edge_lo = Printf.sprintf "dkl%d" n and edge_hi = Printf.sprintf "dkh%d" n in
+      let rank = ref 0 and prev = ref None and fars = ref 0 in
+      for d = lo to hi do
+        if dk_holds ctx ~stack:[] name d then begin
+          incr rank;
+          emit ctx "%s(%d,%d)." p d !rank;
+          (* the rank projection, so a MISSING rank can be tested with `not`
+             without an anonymous variable under negation *)
+          emit ctx "%s_r(%d)." p !rank;
+          (match !prev with
+          | Some q when d - q > day_kind_reach ->
+              incr fars;
+              emit ctx "%s(%d)." far !rank
+          | _ -> ());
+          prev := Some d
+        end
+      done;
+      (* the table is TRUNCATED where its outermost match sits within a reach
+         of the window edge: beyond it there may be matching days ref would
+         step to, so a missing rank there is this backend's limit and not the
+         chapter's fence *)
+      (match !prev with
+      | Some q when hi - q <= day_kind_reach -> emit ctx "%s." edge_hi
+      | _ -> emit ctx "%s :- #false." edge_hi);
+      (* the LOW edge mirrors it: a first match within a reach of the window
+         floor means the extension may be truncating a backward step *)
+      let rec first d =
+        if d > lo + day_kind_reach then None
+        else if dk_holds ctx ~stack:[] name d then Some d
+        else first (d + 1)
+      in
+      (match first lo with
+      | Some _ -> emit ctx "%s." edge_lo
+      | None -> emit ctx "%s :- #false." edge_lo);
+      (* every predicate a rule below reads positively or under `not` gets a
+         head even when it has no instance, so gringo reports no "atom does
+         not occur in any rule head" for a table that simply has no far gap
+         and no truncated edge *)
+      if !rank = 0 then begin
+        emit ctx "%s(0,0) :- #false." p;
+        emit ctx "%s_r(0) :- #false." p
+      end;
+      if !fars = 0 then emit ctx "%s(0) :- #false." far;
+      let t = (p, far, edge_lo, edge_hi, (lo, hi)) in
+      Hashtbl.replace dk_tables key t;
+      t
+
+(* the guard that keeps an operand inside the materialised window. It is
+   this backend's own limit, loud and named, never a silent narrowing. *)
+and dk_window_guard ctx ~subject ~body ~(win : int * int) (t : string) =
+  let lo, hi = win in
+  let msg =
+    Printf.sprintf
+      "day-kind duration: a date outside the window this backend materialises (%d..%d) cannot \
+       be reckoned against the day kind's extension"
+      lo hi
+  in
+  emit ctx "viol(\"%s\",%s) :- %s, (%s) < %d." msg subject (String.concat ", " body) t lo;
+  emit ctx "viol(\"%s\",%s) :- %s, (%s) > %d." msg subject (String.concat ", " body) t hi
+
+(* §6.10: the days of the kind in (A, B], signed by operand order. The
+   interval bounds the work, so this form has no reach fence of its own, and
+   an unsatisfiable day kind counts 0 here exactly as in ref. *)
 and dk_tijdsduur ctx ~subject ~subject_ot ~kind ~absolute a b =
   let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
   let ba, ta, sa = expr_term ctx ~subject ~subject_ot a in
   let bb, tb, sb = expr_term ctx ~subject ~subject_ot b in
   if sa <> 1 || sb <> 1 then fault "tijdsduur operands must be unscaled day terms";
+  let tbl, _far, _el, _eh, win = dk_table ctx kind in
   ctx.fresh <- ctx.fresh + 1;
   let id = ctx.fresh in
-  let seed = Printf.sprintf "dks%d" id
-  and dom = Printf.sprintf "dkd%d" id
-  and res = Printf.sprintf "dkr%d" id in
-  emit ctx "%s(%s,%s,%s) :- %s." seed subject ta tb
-    (String.concat ", " ((base :: ctx.rule_guard) @ ba @ bb));
-  emit ctx "%s(%s,(DKA+1)..DKB) :- %s(%s,DKA,DKB), DKA < DKB." dom subject seed subject;
-  emit ctx "%s(%s,(DKB+1)..DKA) :- %s(%s,DKA,DKB), DKB < DKA." dom subject seed subject;
-  let hit = day_kind_hit ctx ~subject ~subject_ot ~dom ~stack:[] kind in
-  emit ctx "%s(%s,DKN) :- %s(%s,DKA,DKB), DKA <= DKB, DKN = #count { DKQ : %s(%s,DKQ) }." res
-    subject seed subject hit subject;
-  emit ctx "%s(%s,-DKN) :- %s(%s,DKA,DKB), DKB < DKA, DKN = #count { DKQ : %s(%s,DKQ) }." res
-    subject seed subject hit subject;
+  let seed = Printf.sprintf "dks%d" id and res = Printf.sprintf "dkr%d" id in
+  let gbody = (base :: ctx.rule_guard) @ ba @ bb in
+  emit ctx "%s(%s,%s,%s) :- %s." seed subject ta tb (String.concat ", " gbody);
+  dk_window_guard ctx ~subject ~body:gbody ~win ta;
+  dk_window_guard ctx ~subject ~body:gbody ~win tb;
+  emit ctx "%s(%s,DKN) :- %s(%s,DKA,DKB), DKA <= DKB, DKN = #count { DKX : %s(DKX,DKJ), DKX > DKA, DKX <= DKB }."
+    res subject seed subject tbl;
+  emit ctx "%s(%s,-DKN) :- %s(%s,DKA,DKB), DKB < DKA, DKN = #count { DKX : %s(DKX,DKJ), DKX > DKB, DKX <= DKA }."
+    res subject seed subject tbl;
   let v = fresh ctx "DKV" in
   ( [ Printf.sprintf "%s(%s,%s)" res subject v ],
     (if absolute then Printf.sprintf "|%s|" v else v),
     1 )
 
-(* §6.11: the Nth day of the kind, the start day never counting. The walk is
-   a running (found, gap) recursion over a pre-materialised domain; the gap
-   fence is ch. 3.8's own, so the fault fires exactly where ref's does. *)
-and dk_date_plus ctx ~subject ~subject_ot ~kind ~minus date_e dur_e =
+(* §6.11: the Nth day of the kind, the start day never counting — a RANK
+   lookup over the extension. On a datum-tijd operand (maintainer decision
+   2026-09-19) the day kind is judged on the civil day part and the original
+   clock time rides through unchanged, so the pair term is rebuilt around the
+   stepped day. *)
+and dk_date_plus ctx ~subject ~subject_ot ~kind ~minus ~datetime date_e dur_e =
   let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
-  let bd, td, sd = expr_term ctx ~subject ~subject_ot date_e in
-  if sd <> 1 then fault "date operand must be an unscaled day term";
+  let bd, td, ms =
+    if datetime then
+      let a, d, m = dt_term ctx ~subject ~subject_ot date_e in
+      (a, d, Some m)
+    else
+      let a, d, sd = expr_term ctx ~subject ~subject_ot date_e in
+      if sd <> 1 then fault "date operand must be an unscaled day term";
+      (a, d, None)
+  in
   let bn, tn, sn =
     coalesce0 ctx ~subject ~subject_ot (expr_term ctx ~subject ~subject_ot dur_e)
   in
   let sn = numeric_scale ~what:"a day-kind duration" sn in
   let n_term = if sn = 1 then tn else Printf.sprintf "((%s)/%d)" tn sn in
   let n_term = if minus then Printf.sprintf "(0-(%s))" n_term else n_term in
+  let tbl, far, edge_lo, edge_hi, win = dk_table ctx kind in
   ctx.fresh <- ctx.fresh + 1;
   let id = ctx.fresh in
-  let seed = Printf.sprintf "dkw%d" id
-  and zero = Printf.sprintf "dkz%d" id
-  and dom = Printf.sprintf "dke%d" id
-  and run = Printf.sprintf "dkn%d" id
+  let zero = Printf.sprintf "dkz%d" id
+  and fwd = Printf.sprintf "dkw%d" id
+  and bwd = Printf.sprintf "dkb%d" id
+  and rnk = Printf.sprintf "dkk%d" id
   and res = Printf.sprintf "dkp%d" id in
-  let gbody = String.concat ", " ((base :: ctx.rule_guard) @ bd @ bn) in
-  emit ctx "%s(%s,%s) :- %s, %s == 0." zero subject td gbody n_term;
-  emit ctx "%s(%s,%s,%s,1) :- %s, %s > 0." seed subject td n_term gbody n_term;
-  emit ctx "%s(%s,%s,0-(%s),-1) :- %s, %s < 0." seed subject td n_term gbody n_term;
-  (* the ASP walk materialises its days, so the count of days SOUGHT carries
-     a window this executor states for itself: 64 × the gap fence is a
-     quarter-million ground days per use site, and past it the answer is
-     refused rather than ground (ref, which steps, reaches further —
-     fail-fast, never a silent divergence) *)
-  emit ctx "%s(%s,(DKD+1)..(DKD+(DKM*%d))) :- %s(%s,DKD,DKM,1), DKM <= 64." dom subject
-    day_kind_gap_fence seed subject;
-  emit ctx "%s(%s,(DKD-(DKM*%d))..(DKD-1)) :- %s(%s,DKD,DKM,-1), DKM <= 64." dom subject
-    day_kind_gap_fence seed subject;
-  emit ctx
-    "viol(\"day-kind step of more than 64 days of the kind is beyond this backend's ground \
-     walk\",%s) :- %s(%s,_,DKM,_), DKM > 64."
-    subject seed subject;
-  let hit = day_kind_hit ctx ~subject ~subject_ot ~dom ~stack:[] kind in
-  emit ctx "%s(%s,DKD,0,0) :- %s(%s,DKD,_,_)." run subject seed subject;
-  emit ctx
-    "%s(%s,DKX+DKR,DKK+1,0) :- %s(%s,DKX,DKK,DKG), %s(%s,_,DKM,DKR), DKK < DKM, DKG < %d, \
-     %s(%s,DKX+DKR), %s(%s,DKX+DKR)."
-    run subject run subject seed subject day_kind_gap_fence dom subject hit subject;
-  emit ctx
-    "%s(%s,DKX+DKR,DKK,DKG+1) :- %s(%s,DKX,DKK,DKG), %s(%s,_,DKM,DKR), DKK < DKM, DKG < %d, \
-     %s(%s,DKX+DKR), not %s(%s,DKX+DKR)."
-    run subject run subject seed subject day_kind_gap_fence dom subject hit subject;
-  emit ctx "%s(%s,DKX) :- %s(%s,DKX,DKM,_), %s(%s,_,DKM,_)." res subject run subject seed subject;
+  let gbody = (base :: ctx.rule_guard) @ bd @ bn in
+  let g = String.concat ", " gbody in
+  dk_window_guard ctx ~subject ~body:gbody ~win td;
+  emit ctx "%s(%s,%s) :- %s, %s == 0." zero subject td g n_term;
+  emit ctx "%s(%s,%s,%s) :- %s, %s > 0." fwd subject td n_term g n_term;
+  emit ctx "%s(%s,%s,0-(%s)) :- %s, %s < 0." bwd subject td n_term g n_term;
+  (* the rank the walk starts from: matches UP TO the start going forward,
+     matches STRICTLY BEFORE it going backward — the start day itself never
+     counts, in either direction *)
+  emit ctx "%s(%s,DKR) :- %s(%s,DKD,_), DKR = #count { DKX : %s(DKX,DKJ), DKX <= DKD }." rnk subject
+    fwd subject tbl;
+  emit ctx "%s(%s,DKR) :- %s(%s,DKD,_), DKR = #count { DKX : %s(DKX,DKJ), DKX < DKD }." rnk subject
+    bwd subject tbl;
   emit ctx "%s(%s,DKD) :- %s(%s,DKD)." res subject zero subject;
+  emit ctx "%s(%s,DKX) :- %s(%s,_,DKM), %s(%s,DKR), %s(DKX,DKR+DKM)." res subject fwd subject rnk
+    subject tbl;
+  emit ctx "%s(%s,DKX) :- %s(%s,_,DKM), %s(%s,DKR), %s(DKX,DKR-DKM+1)." res subject bwd subject rnk
+    subject tbl;
+  (* the REACH fence, read off the table: no match within the reach of the
+     start, or a gap wider than the reach along the way *)
+  let reach_msg =
+    Printf.sprintf
+      "day-kind walk: no day of the kind within %d calendar days (the walk reaches no further; \
+       a day kind whose next occurrence lies beyond the reach is refused, not diagnosed)"
+      day_kind_reach
+  in
+  emit ctx "viol(\"%s\",%s) :- %s(%s,DKD,_), #count { DKX : %s(DKX,DKJ), DKX > DKD, DKX <= DKD+%d } == 0."
+    reach_msg subject fwd subject tbl day_kind_reach;
+  emit ctx "viol(\"%s\",%s) :- %s(%s,DKD,_), #count { DKX : %s(DKX,DKJ), DKX < DKD, DKX >= DKD-%d } == 0."
+    reach_msg subject bwd subject tbl day_kind_reach;
+  emit ctx "viol(\"%s\",%s) :- %s(%s,_,DKM), %s(%s,DKR), %s(DKQ), DKQ >= DKR+2, DKQ <= DKR+DKM."
+    reach_msg subject fwd subject rnk subject far;
+  emit ctx "viol(\"%s\",%s) :- %s(%s,_,DKM), %s(%s,DKR), %s(DKQ), DKQ >= DKR-DKM+2, DKQ <= DKR."
+    reach_msg subject bwd subject rnk subject far;
+  (* the WINDOW limit: the answer's rank is missing AND the table is
+     truncated on that side, so ref may step where this backend cannot see *)
   emit ctx
-    "viol(\"day-kind walk: no day of the kind within %d calendar days (an unsatisfiable \
-     day-kind definition?)\",%s) :- %s(%s,_,_,%d)."
-    day_kind_gap_fence subject run subject day_kind_gap_fence;
+    "viol(\"day-kind step beyond the window this backend materialises (the extension is \
+     truncated at its edge)\",%s) :- %s(%s,_,DKM), %s(%s,DKR), not %s_r(DKR+DKM), %s."
+    subject fwd subject rnk subject tbl edge_hi;
+  emit ctx
+    "viol(\"day-kind step beyond the window this backend materialises (the extension is \
+     truncated at its edge)\",%s) :- %s(%s,_,DKM), %s(%s,DKR), not %s_r(DKR-DKM+1), %s."
+    subject bwd subject rnk subject tbl edge_lo;
   let v = fresh ctx "DKP" in
-  ([ Printf.sprintf "%s(%s,%s)" res subject v ], v, 1)
+  let atom = Printf.sprintf "%s(%s,%s)" res subject v in
+  (* the ms-of-day rides through untouched, so the pair term's atoms come
+     back with the answer: the caller rebuilds dt(day, ms) around it *)
+  (match ms with None -> [ atom ] | Some _ -> bd @ [ atom ]), v, ms
 
 and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
   match c with
@@ -7905,6 +8144,10 @@ let translate_case ctx (case : Case.t) =
 (* --- the program --------------------------------------------------------- *)
 
 let translate (doc : document) (case : Case.t) : string =
+  (* the day-kind extension tables are per DOCUMENT+CASE (their window is
+     read off the case's dates), so the store starts empty at every call —
+     a suite that translates twice must not inherit the first window *)
+  Hashtbl.reset dk_tables;
   (* the ch. 7.7 v0 desugaring: initialisation-plus-computation pairs
      read as prioritized defaults here, so the defaults machinery (including
      the defeasible input) carries them — while ref/ replays the v0 forms

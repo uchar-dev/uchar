@@ -19,11 +19,17 @@ executor evaluating the predicate to make it one. With the duration forms
 executing, there is.
 
 Arm exactness, both directions. The arm names the two SESSION values
-(`Rekendatum`, `Rekenjaar`) and nothing else, so a name outside WF-098's
-closed set stays WF-098's alone — `wf098-onbekende-contextwaarde-naam`
-carries `de dagX` in this very position and still reports WF-098 only —
-and the EMPTY half (`naam: null`) is untouched, the open point ch. 4.1
-records. Measured over all 671 documents of the four zones plus the parity
-zone: 26 `Constante` nodes sit inside a `resolvedDagsoorten` voorwaarde
-and every one of them is `de dag` but the two witnesses named here, so the
+(`Rekendatum`, `Rekenjaar`) and matches them through `norm` — lower-cased
+and whitespace-collapsed — where WF-098 matches BYTE for byte. The two
+rules therefore overlap on purpose rather than by accident: a `rekendatum`
+in this position reports BOTH, WF-098 because the spelling is not one of
+the three, WF-031 because the name it normalises to may not stand here.
+A name outside WF-098's closed set that is no session value stays WF-098's
+alone — `wf098-onbekende-contextwaarde-naam` carries `de dagX` in this very
+position and still reports WF-098 only — and the EMPTY half (`naam: null`)
+is untouched, the open point ch. 4.1 records.
+
+Measured over all 673 documents of the four zones plus the parity zone:
+**31** `Constante` nodes sit inside a `resolvedDagsoorten` voorwaarde,
+**29** of them `de dag` and the other two the witnesses named above, so the
 arm costs nothing.

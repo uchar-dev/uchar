@@ -6212,7 +6212,8 @@ let () =
 
 let dk_doc ?(registry = {|"nevelsdagen": "nevelsdag"|}) ?(dagsoorten = {|"nevelsdag"|})
     ?(dagsoorten_defs = "") ?(voorwaarde = "") ?(datum_type = {|{ "node": "DatumInDagen" }|})
-    ~waarde () =
+    ?doel_type ~waarde () =
+  let doel_type = match doel_type with Some t -> t | None -> datum_type in
   let dk_unit =
     {|{ "node": "Eenheid", "afkorting": "nevelsdagen", "stelsel": null,
         "canoniek": "nevelsdagen", "factorNaarCanoniek": 1, "noemer": null }|}
@@ -6259,7 +6260,7 @@ let dk_doc ?(registry = {|"nevelsdagen": "nevelsdag"|}) ?(dagsoorten = {|"nevels
   "diagnostics": []
 }
 |}
-    datum_type dk_unit datum_type dagsoorten registry datum_type waarde defs
+    datum_type dk_unit doel_type dagsoorten registry doel_type waarde defs
 
 (* the wire shape of "de dag", of a date-part extractor over it, and of a
    comparison of that extractor against a whole literal *)
@@ -6397,18 +6398,70 @@ let () =
   faults_with ~name:"geregistreerde eenheid zonder dagsoortdefinitie (WF-031)"
     ~ir:(dk_doc ~dagsoorten_defs:"" ~voorwaarde:"null" ~waarde:(stap ()) ())
     ~case_text:dk_case ~needle:"without a condition";
-  faults_with ~name:"dagsoortduur over datum-tijd-operanden blijft een erkende flank"
-    ~ir:
-      (dk_doc ~datum_type:{|{ "node": "DatumTijd" }|} ~voorwaarde:(deel_gelijk "DAG_UIT" "1")
-         ~waarde:(stap ~typ:{|{ "node": "DatumTijd" }|} ()) ())
-    ~case_text:
-      {|{ "format": "uchar-case-v0", "asOfDate": null,
+  (* §6.11 on a DATUM-TIJD operand is CARRIED since 2026-09-19: the day kind
+     is judged on the civil day part and the clock time rides through *)
+  let dt_case =
+    {|{ "format": "uchar-case-v0", "asOfDate": null,
   "input": { "instances": [ { "label": "B1", "objectType": "Baken",
       "attributes": { "peildatum": { "dateTime": "2026-03-10T09:00:00" }, "termijn": { "number": "1" } },
       "roles": {}, "characteristics": [] } ], "parameters": {} },
   "expected": [ { "kind": "consistent" } ] }
 |}
-    ~needle:"a recognised, unexecuted form"
+  in
+  let irf = write_temp ".ir.json"
+      (dk_doc ~datum_type:{|{ "node": "DatumTijd" }|} ~voorwaarde:(deel_gelijk "DAG_UIT" "1")
+         ~waarde:(stap ~typ:{|{ "node": "DatumTijd" }|} ()) ())
+  in
+  let casef = write_temp ".case.json" dt_case in
+  let doc = Ir_v0.Loader.load_file irf in
+  let case = Uchar_ref.Case.load_file doc casef in
+  Sys.remove irf;
+  Sys.remove casef;
+  (match translate doc case with
+  | (_ : string) -> check "datum-tijd plus dagsoort translates" true
+  | exception Uchar_ref.Value.Fault m ->
+      check ("datum-tijd plus dagsoort translates (unexpected fault: " ^ m ^ ")") false);
+  (* the §6.10 twin stays refused by name, in ref's words *)
+  faults_with ~name:"dagsoorttijdsduur over datum-tijd-operanden blijft een erkende flank"
+    ~ir:
+      (dk_doc ~datum_type:{|{ "node": "DatumTijd" }|}
+         ~doel_type:
+           {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD",
+               "eenheid": { "node": "Eenheid", "afkorting": "nevelsdagen", "stelsel": null,
+                            "canoniek": "nevelsdagen", "factorNaarCanoniek": 1, "noemer": null } }|}
+         ~voorwaarde:(deel_gelijk "DAG_UIT" "1")
+         ~waarde:
+           (Printf.sprintf
+              {|{ "node": "Functie", "kind": "TIJDSDUUR",
+                  "argumenten": [ %s, %s ], "elementObjecttype": null, "leegwaarde": null,
+                  "filter": null, "dimensieSelectie": null,
+                  "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD",
+                            "eenheid": { "node": "Eenheid", "afkorting": "nevelsdagen", "stelsel": null,
+                                         "canoniek": "nevelsdagen", "factorNaarCanoniek": 1, "noemer": null } },
+                  "bron": "de tijdsduur", "granulariteit": null }|}
+              (peildatum ~typ:{|{ "node": "DatumTijd" }|} ())
+              (peildatum ~typ:{|{ "node": "DatumTijd" }|} ()))
+         ())
+    ~case_text:dt_case ~needle:"a recognised, unexecuted form";
+  (* the §9.8 composition on a date OTHER than the bound day: the narrow
+     route, refused here and in ref in the same words *)
+  faults_with ~name:"geneste dagsoorttoets op een andere dag dan de gebonden dag"
+    ~ir:
+      (dk_doc ~dagsoorten:{|"nevelsdag", "mistdag"|}
+         ~dagsoorten_defs:
+           (Printf.sprintf
+              {|{ "node": "ResolvedDagsoort", "naam": "nevelsdag",
+                  "voorwaarde": { "node": "Predicaat", "soort": "DAGSOORT",
+                                  "operand": { "node": "Literal", "waarde": "2026-03-15",
+                                               "type": { "node": "DatumInDagen" }, "bron": "15-03-2026" },
+                                  "dagsoort": "mistdag", "negatie": false, "cijfers": 0,
+                                  "periode": null, "bron": "15-03-2026 een mistdag is" },
+                  "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } },
+                { "node": "ResolvedDagsoort", "naam": "mistdag", "voorwaarde": %s,
+                  "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }|}
+              (deel_gelijk "DAG_UIT" "1"))
+         ~waarde:(stap ()) ())
+    ~case_text:dk_case ~needle:"on a date other than the bound day"
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total

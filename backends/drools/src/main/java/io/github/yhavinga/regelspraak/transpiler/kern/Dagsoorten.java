@@ -73,6 +73,14 @@ public final class Dagsoorten {
             return d -> vergelijk(lo.apply(d), ro.apply(d), op);
         }
         if (c instanceof Conditie.Predicaat p && p.soort() == Conditie.Predicaatsoort.DAGSOORT) {
+            // The §9.8 composition is carried ON THE BOUND DAY ONLY (uchar RUNTIME-SEMANTICS ch. 3.8, the narrow
+            // route of 2026-09-19): a nested test on some OTHER date is a recognised, unexecuted form in `ref` and
+            // in the ASP backend, so this backend does not answer it either — one executor computing what two
+            // refuse is exactly the asymmetry the day-kind card set out to end. Uncompiled, so the form leaves
+            // through this compiler's ordinary refusal channel and the transpiler names it.
+            Expr od = p.operand();
+            if (!(od == null || (od instanceof Expr.Constante oc && "de dag".equalsIgnoreCase(oc.naam()))))
+                return null;
             Function<LocalDate, Object> o = waarde(p.operand());
             Predicate<LocalDate> inner = predikaat(p.dagsoort());
             if (o == null || inner == null) return null;

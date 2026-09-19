@@ -2064,9 +2064,11 @@ let () =
      toward zero before the walk (the calendar-unit rule, unchanged) *)
   check "WV-3.8-dk-stap-negatief" (plus "2024-12-27" "-1" = d "2024-12-26");
   check "WV-3.8-dk-stap-breuk" (plus "2024-12-20" "2,9" = d "2024-12-26");
-  (* the gap fence: an unsatisfiable day kind FAULTS, never an endless walk,
-     and the walk it bounds is the GAP — the leap day, whose widest
-     Gregorian gap is 2 921 days, still steps *)
+  (* the REACH fence: a day kind no calendar day satisfies FAULTS, never an
+     endless walk. What the fence bounds is the GAP, and the two kinds it
+     must NOT refuse are pinned beside it — the century-skipped leap day
+     (2 921 days, the widest Gregorian recurrence) and a YEAR-BOUND kind
+     decades out, which is the case the reach was raised for *)
   expect_fault "WV-3.8-dk-stap-onvervulbaar" (fun () -> plus ~matches:nooit "2024-12-20" "1");
   let schrikkeldag z =
     let _, m, dd = Value.civil_from_days z in
@@ -2074,15 +2076,39 @@ let () =
   in
   check "WV-3.8-dk-stap-eeuwsprong"
     (plus ~matches:schrikkeldag "2096-02-29" "1" = d "2104-02-29");
-  check "WV-3.8-dk-gatgrens-2921"
+  check "WV-3.8-dk-reikwijdte-2921"
     (day (plus ~matches:schrikkeldag "2096-02-29" "1") - day (d "2096-02-29") = 2921);
-  (* the one cross left standing: datum-tijd operands are refused by name *)
-  expect_fault "WV-3.8-dk-datumtijd-stap" (fun () ->
-      Arith.date_plus_day_kind ~matches:kerst (Value.Date_time (Case.ms_of_datetime "2024-12-20T10:00:00")) (n "1"));
-  expect_fault "WV-3.8-dk-datumtijd-telling" (fun () ->
-      Arith.tijdsduur_day_kind ~matches:kerst
-        (Value.Date_time (Case.ms_of_datetime "2024-12-20T10:00:00"))
-        (Value.Date_time (Case.ms_of_datetime "2024-12-31T10:00:00")))
+  let in2040 z =
+    let y, _, dd = Value.civil_from_days z in
+    y = 2040 && (dd = 1 || dd = 15)
+  in
+  check "WV-3.8-dk-stap-jaargebonden" (plus ~matches:in2040 "2026-03-10" "1" = d "2040-01-01");
+  (* §6.11 ON A DATUM-TIJD OPERAND (maintainer decision 2026-09-19): the day
+     kind is judged on the CIVIL DAY PART and the clock time rides through
+     unchanged; zero, leeg and negative follow the day-precision rules *)
+  let dtk s = Value.Date_time (Case.ms_of_datetime s) in
+  let plus_dt from lex = Arith.date_plus_day_kind ~matches:kerst (dtk from) (n lex) in
+  let min_dt from lex = Arith.date_plus_day_kind ~minus:true ~matches:kerst (dtk from) (n lex) in
+  check "WV-3.8-dk-dt-stap" (plus_dt "2024-12-20T09:15:30" "2" = dtk "2024-12-26T09:15:30");
+  check "WV-3.8-dk-dt-stap-start-uit"
+    (plus_dt "2024-12-25T23:59:59" "1" = dtk "2024-12-26T23:59:59");
+  check "WV-3.8-dk-dt-stap-terug" (min_dt "2024-12-26T09:15:30" "1" = dtk "2024-12-25T09:15:30");
+  check "WV-3.8-dk-dt-stap-nul" (plus_dt "2024-12-20T09:15:30" "0" = dtk "2024-12-20T09:15:30");
+  check "WV-3.8-dk-dt-stap-leeg-telling"
+    (Arith.date_plus_day_kind ~matches:kerst (dtk "2024-12-20T09:15:30") leeg
+    = dtk "2024-12-20T09:15:30");
+  expect_leeg "WV-3.8-dk-dt-stap-leeg-datum"
+    (Arith.date_plus_day_kind ~matches:kerst leeg (n "2"));
+  (* §6.10 over datum-tijd operands stays REFUSED by name — and the precision
+     test runs BEFORE the leeg arms, so a leeg operand gets the refusal that
+     names the form instead of the leeg rule of a form that is not carried *)
+  expect_fault "WV-3.8-dk-dt-telling" (fun () ->
+      Arith.tijdsduur_day_kind ~matches:kerst (dtk "2024-12-20T10:00:00")
+        (dtk "2024-12-31T10:00:00"));
+  expect_fault "WV-3.8-dk-dt-telling-leeg-links" (fun () ->
+      Arith.tijdsduur_day_kind ~matches:kerst leeg (dtk "2024-12-31T10:00:00"));
+  expect_fault "WV-3.8-dk-dt-telling-leeg-rechts" (fun () ->
+      Arith.tijdsduur_day_kind ~matches:kerst (dtk "2024-12-20T10:00:00") leeg)
 
 (* --- ch. 3.8 through Eval: resolving a day kind and binding `de dag` -----
    The half the kernel block cannot see: a unit SPELLING resolved through
@@ -2187,6 +2213,25 @@ let () =
   expect_fault "WV-3.8-dk-eval-cyclus" (fun () ->
       Eval.eval_expr
         (env_of { doc with resolved_dagsoorten = [ cyclisch ] })
+        w self ~err:no_err (stap "1"));
+  (* the §9.8 composition is carried ON THE BOUND DAY ONLY: a nested test on
+     some other date is refused, in the ASP backend's words (the narrow route
+     of 2026-09-19 — ref and the Drools compiler answered it while the ASP
+     backend refused, and one executor computing what another refuses is the
+     asymmetry this card ends) *)
+  let ander : Ir_v0.Ast.resolved_dagsoort =
+    { rd_naam = Some "kerstdag";
+      rd_voorwaarde =
+        Some
+          (Predicaat
+             { soort = Dagsoort; dagsoort = Some "kerstdag";
+               operand = Some (litv "2024-12-25" Datum_in_dagen); negatie = false; cijfers = 0;
+               periode = None; bron = None });
+      rd_geldigheid = None }
+  in
+  expect_fault "WV-3.8-dk-eval-geneste-andere-dag" (fun () ->
+      Eval.eval_expr
+        (env_of { doc with resolved_dagsoorten = [ ander ] })
         w self ~err:no_err (stap "1"))
 
 (* --- ch. 3.8: date-part extraction and the Easter builtin (worked

@@ -1,0 +1,16 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "P1", "objectType": "Bergingsploeg",
+        "attributes": { "meldingsdatum": { "date": "2026-03-10" }, "bergingsbestek": { "number": "1" } },
+        "roles": {}, "characteristics": [] }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "ref": "a nested day-kind test on a date other than the bound day",
+    "clingo": "a nested day-kind test on a date other than the bound day"
+  }
+}

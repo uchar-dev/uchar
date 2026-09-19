@@ -77,11 +77,16 @@ no script and no corpus document in any zone.
 
 ## What this golden deliberately leaves to the red zone and the suites
 
-- **The gap fence.** Nothing here walks far; the unsatisfiable day kind that
-  makes the walk fault is `corpus/rood/dagsoort-onvervulbare-wandeling`.
+- **The reach fence.** Nothing here walks far; the day kind no calendar day
+  satisfies is `corpus/rood/dagsoort-onvervulbare-wandeling`.
 - **`de dag` outside its binding** is `corpus/rood/contextwaarde-de-dag-buiten-dagsoort`.
-- **The other composite quantors and the §9.8 nested reference** are in the
-  two executors' own suites (`ref/test`, `backends/clingo/test`), where the
-  eight arms were measured against each other on hand-computed dates.
-- **Datum-tijd operands** are a recognised, unexecuted form: both OCaml
-  executors refuse the cross by name, so no document can carry it.
+- **The §9.8 composition on a date other than the bound day** is
+  `corpus/rood/dagsoortverwijzing-andere-dag`.
+- **The other composite quantors and the §9.8 nested reference on the bound
+  day** are in the two executors' own suites (`ref/test`,
+  `backends/clingo/test`), where the eight arms were measured against each
+  other on hand-computed dates.
+- **Datum-tijd operands** are golden `jutterswet-getijklok`'s: the §6.11 step
+  is carried there (the day kind judged on the civil day part, the clock time
+  preserved), while the §6.10 count over two instants stays refused by name
+  in both OCaml executors.

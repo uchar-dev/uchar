@@ -10,8 +10,8 @@
     "parameters": {}
   },
   "expectedFault": {
-    "ref": "no day of the kind within 3660 calendar days",
-    "clingo": "no day of the kind within 3660 calendar days",
-    "drools": "no day of the kind within 3660 calendar days"
+    "ref": "no day of the kind within 40000 calendar days",
+    "clingo": "no day of the kind within 40000 calendar days",
+    "drools": "no day of the kind within 40000 calendar days"
   }
 }
