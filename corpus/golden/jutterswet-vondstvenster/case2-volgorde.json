@@ -1,0 +1,49 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J5",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": { "vondsten": ["V6", "V7", "V8", "V9"] },
+        "characteristics": []
+      },
+      {
+        "label": "V6",
+        "objectType": "Vondst",
+        "attributes": { "vondstdatum": { "date": "2025-06-30" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V7",
+        "objectType": "Vondst",
+        "attributes": { "vondstdatum": { "date": "2025-02-14" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V8",
+        "objectType": "Vondst",
+        "attributes": { "vondstdatum": { "date": "2025-11-01" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V9",
+        "objectType": "Vondst",
+        "attributes": { "vondstdatum": { "date": "2025-02-14" } },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "J5", "attribute": "eerste vondstdag", "value": { "date": "2025-02-14" } },
+    { "kind": "attributeValue", "label": "J5", "attribute": "laatste vondstdag", "value": { "date": "2025-11-01" } },
+    { "kind": "consistent" }
+  ]
+}

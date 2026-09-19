@@ -1,0 +1,83 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": { "vondsten": ["V1", "V2", "V3"] },
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": { "vondsten": ["V4"] },
+        "characteristics": []
+      },
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": { "vondsten": ["V5"] },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": { "vondstdatum": { "date": "2024-01-15" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": { "vondstdatum": { "date": "2024-03-01" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V4",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V5",
+        "objectType": "Vondst",
+        "attributes": { "vondstdatum": { "date": "2023-12-31" } },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "eerste vondstdag", "value": { "date": "2024-01-15" } },
+    { "kind": "attributeValue", "label": "J1", "attribute": "laatste vondstdag", "value": { "date": "2024-03-01" } },
+    { "kind": "attributeEmpty", "label": "J2", "attribute": "eerste vondstdag" },
+    { "kind": "attributeEmpty", "label": "J2", "attribute": "laatste vondstdag" },
+    { "kind": "attributeEmpty", "label": "J3", "attribute": "eerste vondstdag" },
+    { "kind": "attributeEmpty", "label": "J3", "attribute": "laatste vondstdag" },
+    { "kind": "attributeValue", "label": "J4", "attribute": "eerste vondstdag", "value": { "date": "2023-12-31" } },
+    { "kind": "attributeValue", "label": "J4", "attribute": "laatste vondstdag", "value": { "date": "2023-12-31" } },
+    { "kind": "consistent" }
+  ]
+}

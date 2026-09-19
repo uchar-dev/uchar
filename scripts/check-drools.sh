@@ -233,6 +233,7 @@ EXPECTED_CHANNEL=(
   "jutterswet-vaarwatertoeslag-catala|EXCLUDE|loader Refusal: Expr:Match"
   "jutterswet-vangstwaardering|EXCLUDE|loader Refusal: Datatype:StructType"
   "jutterswet-vondsttarief|EXCLUDE|transpiler SKIP: regel — waarde buiten scope"
+  "jutterswet-vondstvenster|EXCLUDE|transpiler SKIP: regel 'eerste vondstdag van een jutter' — waarde buiten scope. The EERSTE/LAATSTE fold over a SET source (card eerste-laatste-setvouw-kloof, 2026-09-19) is carried by ref and, since that card, by the ASP backend; this backend lowers neither branch of it — the exec-model transpiler drops the rule per form, and the DRL-text branch deposits a named marker ('TODO aggregatie EERSTE'). So the golden's absolute pins are a ref = clingo pair, not the full square, and that is recorded here rather than hidden: the two-executor agreement is what gates 5 and 6 verify on it. Lifting either branch is Drools work with its own card"
   "jutterswet-vormenkabinet|NOCASE|a golden with no case file — nothing to replay"
   "jutterswet-waarderingsinvoer|EXCLUDE|loader Refusal: Datatype:StructType"
   "synth2-afrondingscombinaties|EXCLUDE|transpiler SKIP: regel — waarde buiten scope"
