@@ -4304,28 +4304,48 @@ target clause and not by the expression walk. It is left open on evidence
 rather than fenced without a witness, and the population is counted with its
 predicate stated: the four zones hold **783** rule-target positions — **357**
 of them in the two zones that must stay clean (golden and rood) — and not one
-carries `set: true`. On a hand-built twist all THREE executors IGNORE the
-field and write the scalar (12.00 from `ref`, from the ASP backend and from
-Drools alike). That
-is three-way agreement on an inert annotation, not the one-refuses-two-answer
-class this rule closes — it is WF-083 (c)'s question instead ("a field nobody
-reads is a field that can say anything"), and it belongs to whoever asks it.
-The fold argument whose RESOLVING PAIR is incomplete: there `attribuut` or
-`objecttype` is absent and WF-034 reports the missing name; the set clause is
-computed ahead of those arms precisely so the field's rule cannot hide behind
-the name's, and no document in the four zones carries the combination. And the
-EXEMPTION itself: this rule fences the POSITION, never the fold KIND, so a set
-source under `EERSTE`, `LAATSTE` or `AANTAL` passes the exemption and remains
-verifier-clean while the executors split on it — measured 2026-09-09 with the
-kind as the only variable: `SOM`, `TOTAAL`, `MINIMUM` and `MAXIMUM` are
-carried and agree, `EERSTE` and `LAATSTE` are answered by `ref` alone (the ASP
-backend refuses the expression kind, Drools skips the rule) from a LIVE
-producer route, and `AANTAL` is answered by `ref` and Drools alike while the
-ASP backend refuses. That is the PLAN §6 class one door further in and it is
-NOT a regression of this rule — the boundary is WF-093's pre-existing pair —
-so it is cut as its own card
-(`backlog/new/20260909-eerste-laatste-setvouw-kloof.md`) rather than settled
-here, where the decision was about the position.
+carries `set: true`. On a hand-built twist all THREE executors IGNORE the field
+and write the scalar (12.00 from `ref`, from the ASP backend and from Drools
+alike). That is three-way agreement on an inert annotation, not the
+one-refuses-two-answer class this rule closes — it is WF-083 (c)'s question
+instead ("a field nobody reads is a field that can say anything"), and it
+belongs to whoever asks it. The fold argument whose RESOLVING PAIR is
+incomplete: there `attribuut` or `objecttype` is absent and WF-034 reports the
+missing name; the set clause is computed ahead of those arms precisely so the
+field's rule cannot hide behind the name's, and no document in the four zones
+carries the combination. And the EXEMPTION itself: this rule fences the
+POSITION, never the fold KIND, so a set source under `EERSTE`, `LAATSTE` or
+`AANTAL` passes the exemption and remains verifier-clean whatever the executors
+do with it. That is the PLAN §6 class one door further in and it is NOT a
+regression of this rule — the boundary is WF-093's pre-existing pair — so it
+was cut as its own card rather than settled here, where the decision was about
+the position. **That card is done (2026-09-19,
+`backlog/done/20260909-eerste-laatste-setvouw-kloof.md`), and it answered the
+kinds one at a time.** `EERSTE` and `LAATSTE` are CLOSED: they are the same
+fold as `MINIMUM`/`MAXIMUM` — an ordering over the contributed VALUES, never a
+positional pick of a member (`RUNTIME-SEMANTICS.md` ch. 1.2e) — so the ASP
+backend carries them on the very arm those two already used, and `ref` ≡ clingo
+holds on hand-computed absolutes (`jutterswet-vondstvenster`, emitted from the
+live producer sentence; gates 5, 6 and 10). The Drools backend lowers neither
+of its transpiler branches for the form and refuses the golden per form with a
+named reason, recorded in gate 12's channel list: a two-executor agreement,
+stated as such. `AANTAL` is OPEN, and the card measured the reason to be
+sharper than "one refuses": the two executors that DO carry it disagree as soon
+as one member's attribute is leeg — `ref` counts the FILLED VALUES and Drools
+counts the MEMBERS, 2 against 3 on the same document — while the ASP backend
+refuses the kind outright. Both readings are verifier-clean today,
+`RUNTIME-SEMANTICS.md` ch. 3.4a/3.4b say a count folds INSTANCES, and no
+producer emits the shape at all (the RegelSpraak frontend refuses the one
+sentence that would write it, citing this very rule). Three numbered options —
+the wire refuses the form, or it counts members, or it counts values — sit with
+the maintainer in that card's §6. The four kinds that predate the question stay
+carried and agree over a NUMERIC set source; over a DATE one the card measured
+them apart, and the break is named rather than left in the sentence:
+`SOM`/`TOTAAL` fault in `ref` (date plus date) while the ASP backend adds the
+day numbers and Drools throws, and `MINIMUM`/`MAXIMUM` agree in the two OCaml
+executors while Drools throws — all under verifier-clean documents, none of
+them reachable from a producer (the frontend types the sentence out), and all
+of it that card's follow-up finding rather than this rule's business.
 
 **The fold-source role name and the type-pair fallback (WF-034).** The
 v0 instance-fold source (the row-1 wart) writes a role name in its
@@ -4409,12 +4429,19 @@ three places:
   fold, and the flat reading never asks.
 - **COUNT.** They do not coincide at all. A count over the flat union counts
   ELEMENTS; a count of counts counts INTERMEDIATE INSTANCES. On the worked
-  example: three finds against two boats. Like the sum's below, this
-  divergence is **named and pinned nowhere**, and for a sharper reason: no
-  `sourcePath` carrier is a count, and a count over a SET source is a form
-  the ASP backend does not translate at all (the standing EERSTE/LAATSTE/
-  AANTAL set-fold gap, tracked on its own card). The reading is decided
-  here; its differential witness waits on that card.
+  example: three finds against two boats. Like the sum's below, this divergence
+  is **named and pinned nowhere**, and Like the sum's below, this divergence is
+  **named and pinned nowhere**, and for a sharper reason: no `sourcePath`
+  carrier is a count, and the count over a SET source is the one kind of that
+  family still without a settled executor reading. Its siblings are settled —
+  the ASP backend has carried `EERSTE`/`LAATSTE` over a set source since
+  2026-09-19, on the same arm as `MINIMUM`/`MAXIMUM` — but the count is not
+  merely untranslated there: `ref` counts the FILLED VALUES of the set where
+  the Drools backend counts the MEMBERS, so the two executors that carry it
+  already disagree by 1 whenever a member's attribute is leeg, which is exactly
+  the shape a multi-step range makes commonplace. The reading is decided here;
+  its differential witness waits on the maintainer decision recorded in
+  `backlog/done/20260909-eerste-laatste-setvouw-kloof.md` §6.
 - **SUM with an `emptyFallback`** ("of 0 als die er niet zijn"). The flat
   reading fires the fallback at most once, for a subject that reaches no
   element at all; the nested reading fires it once per empty intermediate

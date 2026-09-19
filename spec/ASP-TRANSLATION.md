@@ -927,7 +927,8 @@ stays loud (S19). The *sum* is doubly fenced: each contributor at 46340
 so the accumulated sum provably stays inside 2^31. The bare count
 carries no fence — a `#count` cannot approach 2^31 before grounding
 itself becomes infeasible (recorded, not guarded; ch. 6c).
-**Minimum / Maximum** (set-form, ch. 1.2e, ref `agg_min`/`agg_max`):
+**Minimum / Maximum / Eerste / Laatste** (set-form, ch. 1.2e, ref
+`agg_min`/`agg_max`/`agg_eerste`/`agg_laatste`):
 the SAME contributor gathering as the som over a set-typed
 `AttribuutRef`, aggregated with `V = #min { G : ⟨body⟩ }` (resp.
 `#max`) at the element attribute's scale. An empty contributor is
@@ -936,7 +937,15 @@ contributed value — no accumulation, so no range fence — with a
 **mandatory presence guard** `extpN(S)`: `#min`/`#max` over the empty
 set yield `#sup`/`#inf`, which must never escape into a value, so an
 all-empty or empty set derives nothing (ref → Empty). A `leegwaarde` on
-min/max is ignored, mirroring ref. Unlike the listed eerste/laatste
+min/max is ignored, mirroring ref. **Eerste and laatste ride this
+very arm** (card eerste-laatste-setvouw-kloof, 2026-09-19): they are
+the same ordering fold over the contributed VALUES — ch. 1.2e, and
+the normative source reads earliest/latest of the values — so over day
+numbers eerste is `#min` and laatste `#max`, with the same
+empty-skip, the same presence guard and the same temporal refusal (the
+four kinds refuse as one ranking class). Witnessed by
+`jutterswet-vondstvenster`, whose member-order-reversed case falsifies
+a positional pick in both directions. Unlike the listed eerste/laatste
 fold there is one attribute, one scale, one unit — no harmonisation.
 Witnessed by `jutterswet-vondstpiek` (both extremes, the presence guard
 and the empty-skip corners).
@@ -2346,11 +2355,13 @@ translate through the cqN count encoding (S7:
 `jutterswet-rubriektabel`, `jutterswet-vrijgavetoets`,
 `jutterswet-sluimerwacht`, `jutterswet-tweevoudkeur`) and left this
 catch-all, as did the articulated eerste/laatste fold (S8,
-`jutterswet-peildatum`; minimum/maximum over the SET-typed source now
-translate too — the `#min`/`#max` aggregation arm, S8,
-`jutterswet-vondstpiek` — while minimum/maximum over LISTED operands
-stay under this catch-all: the same listed-fold encoding would serve, no
-corpus case);
+`jutterswet-peildatum`; minimum / maximum / eerste / laatste over the
+SET-typed source now translate too — the `#min`/`#max` aggregation
+arm, S8, `jutterswet-vondstpiek` and `jutterswet-vondstvenster` — while
+minimum/maximum over LISTED operands stay under this catch-all: the
+same listed-fold encoding would serve, no corpus case; the AANTAL set
+source stays under it too, awaiting the maintainer decision in
+`backlog/done/20260909-eerste-laatste-setvouw-kloof.md` §6);
 what remains under it for composites is the member-less
 counting list (`a counting composite without members is not
 translated (no corpus case)`) and every member kind that keeps its
