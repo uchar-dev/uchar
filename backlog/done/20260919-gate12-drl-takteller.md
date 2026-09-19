@@ -129,7 +129,7 @@ deze branch aangemaakt (zie onderaan).
 | gate 12 zoals op `main` (`git show main:` — gedraaid in deze worktree) | 1:34,7 |
 | gate 12 met de sweep erin | 3:20,0 |
 | de exec-sweep alleen, los gedraaid over alle 209 goldens | 1:23,8 |
-| de DRL-sweep alleen, gemeten door de gate zelf | 96 / 97 / 96 / 101 / 102s |
+| de DRL-sweep alleen, gemeten door de gate zelf | 96 / 97 / 96 / 101 / 102 / 97s |
 
 De sweep meet zichzelf en drukt dat in het rapport. Van de vier getallen in
 het script is er nu geen meer geschat: de exec-sweep kost **~84s** op deze
@@ -217,12 +217,12 @@ script en in dit Result.
 Uit de slotrun, ná de wijziging:
 
 ```
-  DRL-text sweep: 102s wall clock over 209 goldens
+  DRL-text sweep: 97s wall clock over 209 goldens
 check-drools: PASS
 played 159  (…matched the pinned ref≡clingo expectations)
 channel floor 50 non-PLAYED goldens pinned by name; played matches the pinned 159
 DRL-text branch played 132  (its OWN count — the narrower branch, not the square; pin 132)
-DRL-text floor 77 non-PLAYED goldens pinned by name; sweep cost 102s wall clock
+DRL-text floor 77 non-PLAYED goldens pinned by name; sweep cost 97s wall clock
 JUnit 478 tests, floor 239
 ```
 
@@ -246,14 +246,15 @@ die elf leest daarvan iets wat hun uitslag kan bewegen. Aan het *gedrag*
 van `backends/drools/` is in de hele kaart geen regel veranderd — de suite
 bleef op 478 tests, nul overgeslagen.
 
-De branch is driemaal opnieuw op `main` gezet terwijl de hoofdsessie
-doorwerkte, laatst op `910b5d03`. Twee van die drie kwamen met werk dat
-gate 12 kon raken: de stille-markers-kaart (`backends/drools`' loader plus
-de frontend, die via de gedeelde source root in de backendbuild meedraait)
-en de setbron-kaart (verifier en negatief-corpus). Na elke rebase is gate 12
-volledig hergedraaid, en 159 en 132 bleven onveranderd — geen van beide
-kaarten verschuift een kanaal. Gate 1 en gate 3 zijn op de laatste basis
-ook nagelopen: PASS, met 398 negatieven waar er eerder 395 waren.
+De branch is vier keer opnieuw op `main` gezet terwijl de hoofdsessie
+doorwerkte, laatst op `078c9102`. Drie daarvan brachten werk dat gate 12 kon
+raken: de stille-markers-kaart en de AANTAL-setbron-frontendklus (beide
+raken de RegelSpraak-frontend, die via de gedeelde source root in de
+backendbuild meedraait; de eerste ook `backends/drools`' loader) en de
+setbron-besluitkaart (verifier en negatief-corpus). Na elke rebase is
+gate 12 volledig hergedraaid, en 159 en 132 bleven onveranderd — geen van
+die kaarten verschuift een kanaal. Gate 1 en gate 3 zijn onderweg ook
+nagelopen: PASS, met 398 negatieven waar er eerder 395 waren.
 
 ### Bewust niet
 
