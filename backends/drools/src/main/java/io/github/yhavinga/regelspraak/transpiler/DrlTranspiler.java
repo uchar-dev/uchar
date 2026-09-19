@@ -522,6 +522,63 @@ public final class DrlTranspiler {
     }
 
     /**
+     * ch. 10.2/10.6 — the EXCHANGE of two adjacent {@code Let}s, and the ONLY rewrite this branch performs on
+     * the tree it lowers.
+     *
+     * <p><b>Why one is needed at all.</b> This branch does not MOVE a {@code Let} into the arm that reads it:
+     * it lowers the binding as control flow, so laziness is a guard on a prelude line and the node stays where
+     * it stands. One thing that placement cannot express is ORDER. A need read in exactly one ch. 10.2 arm is
+     * forced under that arm's guard, and the guard is lowered at the {@code Let}'s own position — so a guard
+     * reading a binder bound DEEPER in the body is a forward reference to a prelude line that does not exist
+     * yet, and the honest answer there was a refusal by name ({@code synth3-armwissel}).
+     *
+     * <p><b>The exchange, and why it is exact.</b> Two adjacent {@code Let}s commute. Under ch. 10.6 a need is
+     * evaluated at its first READ, never at its binding, so the nesting order of a pair does not order their
+     * evaluations at all; and each barrier still empties the node that bound the binder that was read, while
+     * the OUTER of the pair sits at the same position either way. Swapping moves the {@code Let} one step
+     * closer to the branch node, and repeating it walks the whole chain down until the guard's binder stands
+     * above it. Three scope conditions, each a correctness requirement:
+     * <ul>
+     *   <li>the two binders differ — otherwise the exchange is a shadowing change;</li>
+     *   <li>the nested value does not read the outer binder — it would leave that binder's scope;</li>
+     *   <li>the outer value does not read the nested binder's NAME — it would enter the nested scope and a read
+     *       meant for an enclosing binding of that name would rebind.</li>
+     * </ul>
+     *
+     * <p>The trigger is the obstruction itself and nothing wider: the read-guard is a branch guard whose
+     * condition reads a binder the body's {@code Let} chain binds. A document whose guard already resolves at
+     * this position is returned untouched, so its DRL does not move.
+     *
+     * <p>Applied at BOTH descents of a {@code Let} — {@link #letWaarde} for the consequence and
+     * {@link #letDescent} for the §6.5/§6.6 collectors — because it is pure and deterministic, so the two
+     * sides see one tree. Termination: each exchange moves the node strictly deeper into a finite body.
+     */
+    private static Expr.Let letWissel(Expr.Let b) {
+        String sleutel = letSleutel(b.binder());
+        if (!(leesGarde(b.body(), sleutel) instanceof Tak t)) return b;
+        if (!(b.body() instanceof Expr.Let binnen) || !gardeLeestKetenBinder(t.conditie(), b.body())) return b;
+        String binnenSleutel = letSleutel(binnen.binder());
+        if (binnenSleutel.equals(sleutel)
+                || leestBinder(binnen.value(), sleutel) || leestBinder(b.value(), binnenSleutel)) return b;
+        // WF-076 keeps both node types equal to the body type, so the pair carries ONE type and the exchange
+        // needs no retyping; each node keeps its own bron, so a marker below still names the node it is about.
+        Expr.Let geduwd = letWissel(new Expr.Let(b.binder(), b.value(), binnen.body(), b.type(), b.bron()));
+        return new Expr.Let(binnen.binder(), binnen.value(), geduwd, binnen.type(), binnen.bron());
+    }
+
+    /** Whether {@code c} reads a binder bound by the {@code Let} chain starting at {@code e} — the forward
+     *  reference {@link #letWissel} exists to remove. The whole chain and not merely its first link: a guard
+     *  reading a binder two {@code Let}s down needs the first exchange too before the second can reach it. */
+    private static boolean gardeLeestKetenBinder(Conditie c, Expr e) {
+        while (e instanceof Expr.Let l) {
+            String s = letSleutel(l.binder());
+            if (Conditie.bevatOperand(c, x -> leestBinder(x, s))) return true;
+            e = l.body();
+        }
+        return false;
+    }
+
+    /**
      * Every {@link Expr} child of an ORDINARY (non-BINDING) node, condition operands included — the walk
      * {@link #leesGarde} and the §6.5/§6.6 site collectors descend with a SCOPE (or a branch guard) of their own.
      *
@@ -1925,33 +1982,35 @@ public final class DrlTranspiler {
      * body's sites never run, so a companion built WITHOUT them would insert an Inconsistentie for a division
      * that never executed.
      */
-    private record Foutplek(Expr plek, List<Expr> behoeften, List<Tak> takken,
-                            java.util.Map<String, Expr> binders) {}
+    private record Foutplek(Expr plek, List<Behoefte> behoeften, List<Tak> takken) {}
+
+    /** One ch. 4.10 need on the way down to a §6.5/§6.6 site: the binder it binds together with the value that
+     *  need IS. The two travel as one pair because the companion has to state them in the same walk order — the
+     *  need's own leeg/vol guard, and the binding it then puts in scope for everything below it. */
+    private record Behoefte(String sleutel, Expr waarde) {}
 
     /**
      * What stands between the rule firing and a §6.5/§6.6 site running, as the collectors walk down to it: the
      * ch. 10.6 NEEDS whose barrier could end the {@code Let} first, and the ch. 10.2 branch guards whose arm must
      * be the chosen one. Immutable and handed down the walk, so two siblings can never inherit each other's gate.
      */
-    private record Poort(List<Expr> behoeften, List<Tak> takken, java.util.Map<String, Expr> binders) {
-        static final Poort OPEN = new Poort(List.of(), List.of(), java.util.Map.of());
+    private record Poort(List<Behoefte> behoeften, List<Tak> takken) {
+        static final Poort OPEN = new Poort(List.of(), List.of());
 
-        Foutplek plek(Expr e) { return new Foutplek(e, behoeften, takken, binders); }
+        Foutplek plek(Expr e) { return new Foutplek(e, behoeften, takken); }
 
         /** Behind one more need, and with its binder in scope — a branch guard below may READ that binder, and a
          *  companion has to re-read the need itself to state it. */
         Poort achterBehoefte(String sleutel, Expr waarde) {
-            List<Expr> b = new ArrayList<>(behoeften);
-            b.add(waarde);
-            java.util.Map<String, Expr> env = new java.util.LinkedHashMap<>(binders);
-            env.put(sleutel, waarde);   // WF-064: an inner binder of the same name shadows for this sub-walk only
-            return new Poort(b, takken, env);
+            List<Behoefte> b = new ArrayList<>(behoeften);
+            b.add(new Behoefte(sleutel, waarde));
+            return new Poort(b, takken);
         }
 
         Poort inTak(Conditie c, boolean positief) {
             List<Tak> t = new ArrayList<>(takken);
             t.add(new Tak(c, positief));
-            return new Poort(behoeften, t, binders);
+            return new Poort(behoeften, t);
         }
     }
 
@@ -1967,20 +2026,26 @@ public final class DrlTranspiler {
      *  installed around the branch guards alone, so a §6.5 site whose operand was a BINDER — every site inside a
      *  {@code Let} body — decomposed to null and its companion silently vanished, while the same site one `Let`
      *  less deep kept it (measured: {@code heffing := Let k = zijn inkomen in (k gedeeld door zijn restpost)}
-     *  reported nothing where the un-bound spelling reported §9.5). The environment is built HERE, in walk
-     *  order, which is also what keeps a shadowing inner need from resolving through itself, and torn down
-     *  again whichever way this returns. */
+     *  reported nothing where the un-bound spelling reported §9.5).
+     *
+     *  <p><b>One walk, not two</b> (2026-09-19, the second half of that correction). The needs and the
+     *  environment are the SAME chain read twice, so they are stated once: each need is decomposed against the
+     *  bindings strictly OUTSIDE it and then put in scope for everything below. Decomposing the needs first, in
+     *  their own loop, meant a need that was ITSELF a binder ({@code Let k = inkomen in (Let m = k in (m gedeeld
+     *  door restpost))}) met an empty environment and dropped the companion — the same miss one level up. The
+     *  order is what protects against self-resolution: a need is never resolved through its own binding, so the
+     *  environment cannot close a cycle, and a shadowing inner need reads the ENCLOSING binding of that name
+     *  (WF-076: the value lives in the enclosing scope), which the collapsed map could not express at all. */
     private String plekGuards(Acc acc, Foutplek fp, Objecttype subject, java.util.function.Supplier<String> plekDeel) {
         StringBuilder b = new StringBuilder();
-        for (Expr n : fp.behoeften()) {
-            OperandDeel d = companionDeel(acc, n, subject);
-            if (d == null) return null;
-            b.append(d.vol()).append(", ");
-        }
         java.util.Map<String, OperandDeel> vorige = new java.util.LinkedHashMap<>(acc.binderDeel);
         try {
-            for (java.util.Map.Entry<String, Expr> e : fp.binders().entrySet())
-                acc.binderDeel.put(e.getKey(), companionDeel(acc, e.getValue(), subject));
+            for (Behoefte n : fp.behoeften()) {
+                OperandDeel d = companionDeel(acc, n.waarde(), subject);
+                if (d == null) return null;
+                b.append(d.vol()).append(", ");
+                acc.binderDeel.put(n.sleutel(), d);
+            }
             for (Tak t : fp.takken()) {
                 String g = takGarde(acc, t, subject);
                 if (g == null) return null;
@@ -2028,7 +2093,7 @@ public final class DrlTranspiler {
             verzamelWortels(bg.minimum(), poort, uit);
             verzamelWortels(bg.maximum(), poort, uit);
         } else if (e instanceof Expr.Let b) {
-            verzamelWortels(b.body(), letDescent(b, poort, (x, p) -> verzamelWortels(x, p, uit)), uit);
+            letDescent(b, poort, (x, p) -> verzamelWortels(x, p, uit));
         } else if (e instanceof Expr.IfThenElse k) {
             Conditie.bevatOperand(k.conditie(), x -> { verzamelWortels(x, poort, uit); return false; });
             verzamelWortels(k.dan(), poort.inTak(k.conditie(), true), uit);
@@ -2046,16 +2111,22 @@ public final class DrlTranspiler {
      * under the bare gate instead fabricates an Inconsistentie for a division that never executed — the shape
      * {@code synth3-takbarriere} would have hit the day its opslag definition gained one (lens finding
      * 2026-09-18: ref consistent, this branch inconsistent).
+     *
+     * <p>It walks BOTH sides itself rather than handing the body's gate back, so that {@link #letWissel} has one
+     * place to stand for every collector: the exchange changes which node is the outer one, and a caller that
+     * kept walking its own {@code b.body()} would have descended the unexchanged tree while the consequence
+     * lowered the exchanged one — two trees, one companion, and no way to notice.
      */
-    private static Poort letDescent(Expr.Let b, Poort poort,
-                                    java.util.function.BiConsumer<Expr, Poort> walk) {
+    private static void letDescent(Expr.Let b0, Poort poort,
+                                   java.util.function.BiConsumer<Expr, Poort> walk) {
+        Expr.Let b = letWissel(b0);   // ch. 10.2: the same exchange the consequence lowering makes
         Leesgarde garde = leesGarde(b.body(), letSleutel(b.binder()));
-        if (garde instanceof Nooit) return poort;
+        if (garde instanceof Nooit) { walk.accept(b.body(), poort); return; }
         walk.accept(b.value(), garde instanceof Tak t ? poort.inTak(t.conditie(), t.positief()) : poort);
         // The BODY itself always runs, so it inherits the enclosing gate plus this need — never the arm guard,
         // which belongs to the value alone; a site in the body OUTSIDE the branch node would otherwise lose its
         // companion. A site INSIDE an arm picks that arm's guard up from the branch descent.
-        return poort.achterBehoefte(letSleutel(b.binder()), b.value());
+        walk.accept(b.body(), poort.achterBehoefte(letSleutel(b.binder()), b.value()));
     }
 
     /** §6.5 / Tabel 12: a "waarde gedeeld door leeg" is a Fout. The value side already degrades it to leeg
@@ -2112,7 +2183,7 @@ public final class DrlTranspiler {
             verzamelDelingen(bg.minimum(), poort, uit);
             verzamelDelingen(bg.maximum(), poort, uit);
         } else if (e instanceof Expr.Let b) {
-            verzamelDelingen(b.body(), letDescent(b, poort, (x, p) -> verzamelDelingen(x, p, uit)), uit);
+            letDescent(b, poort, (x, p) -> verzamelDelingen(x, p, uit));
         } else if (e instanceof Expr.IfThenElse k) {
             // ch. 10.2: a site in the CONDITION always runs; a site in an arm runs only when that arm is chosen.
             Conditie.bevatOperand(k.conditie(), x -> { verzamelDelingen(x, poort, uit); return false; });
@@ -2545,9 +2616,10 @@ public final class DrlTranspiler {
      * does run in {@code ref} and does not here — a MISSED fault, never an invented one, and the §6.5/§6.6
      * companions are gated by the same needs so they agree with this lowering.
      */
-    private Frag letWaarde(Acc acc, Expr.Let b, Objecttype subject) {
+    private Frag letWaarde(Acc acc, Expr.Let b0, Objecttype subject) {
         if (acc.letVoorspel == null)   // no consequence to carry the need — honest marker, never a half lowering
-            return Frag.todo("Let buiten de resultaatwaarde van een berekening (ch. 4.10)", b.bron());
+            return Frag.todo("Let buiten de resultaatwaarde van een berekening (ch. 4.10)", b0.bron());
+        Expr.Let b = letWissel(b0);    // ch. 10.2: the guard's binder must stand ABOVE the need it guards
         String sleutel = letSleutel(b.binder());
         Leesgarde garde = leesGarde(b.body(), sleutel);
         if (garde instanceof Nooit) return waarde(acc, b.body(), subject);   // clause 3
