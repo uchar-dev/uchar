@@ -1,0 +1,96 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vangst",
+        "attributes": { "ruwgewicht": { "number": "250.00" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vangst",
+        "attributes": { "ruwgewicht": { "number": "4200.00" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vangst",
+        "attributes": { "ruwgewicht": { "number": "1750.50" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V4",
+        "objectType": "Vangst",
+        "attributes": { "ruwgewicht": { "number": "1000.00" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V5",
+        "objectType": "Vangst",
+        "attributes": { "ruwgewicht": { "number": "1000.01" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V6",
+        "objectType": "Vangst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "V1", "attribute": "ondergewicht", "value": { "number": "1000.00" } },
+    { "kind": "attributeValue", "label": "V1", "attribute": "spiegelgewicht", "value": { "number": "250.00" } },
+    { "kind": "attributeValue", "label": "V1", "attribute": "somgewicht", "value": { "number": "500.00" } },
+    { "kind": "attributeValue", "label": "V1", "attribute": "toeslaggewicht", "value": { "number": "1250.00" } },
+    { "kind": "attributeValue", "label": "V1", "attribute": "lastgewicht", "value": { "number": "250.00" } },
+    { "kind": "attributeEmpty", "label": "V1", "attribute": "keurgewicht" },
+
+    { "kind": "attributeValue", "label": "V2", "attribute": "ondergewicht", "value": { "number": "4200.00" } },
+    { "kind": "attributeValue", "label": "V2", "attribute": "spiegelgewicht", "value": { "number": "4200.00" } },
+    { "kind": "attributeValue", "label": "V2", "attribute": "somgewicht", "value": { "number": "8400.00" } },
+    { "kind": "attributeValue", "label": "V2", "attribute": "toeslaggewicht", "value": { "number": "5200.00" } },
+    { "kind": "attributeValue", "label": "V2", "attribute": "lastgewicht", "value": { "number": "2000.00" } },
+    { "kind": "attributeValue", "label": "V2", "attribute": "keurgewicht", "value": { "number": "4200.00" } },
+
+    { "kind": "attributeValue", "label": "V3", "attribute": "ondergewicht", "value": { "number": "1750.50" } },
+    { "kind": "attributeValue", "label": "V3", "attribute": "spiegelgewicht", "value": { "number": "1750.50" } },
+    { "kind": "attributeValue", "label": "V3", "attribute": "somgewicht", "value": { "number": "3501.00" } },
+    { "kind": "attributeValue", "label": "V3", "attribute": "toeslaggewicht", "value": { "number": "2750.50" } },
+    { "kind": "attributeValue", "label": "V3", "attribute": "lastgewicht", "value": { "number": "1750.50" } },
+    { "kind": "attributeValue", "label": "V3", "attribute": "keurgewicht", "value": { "number": "1750.50" } },
+
+    { "kind": "attributeValue", "label": "V4", "attribute": "ondergewicht", "value": { "number": "1000.00" } },
+    { "kind": "attributeValue", "label": "V4", "attribute": "spiegelgewicht", "value": { "number": "1000.00" } },
+    { "kind": "attributeValue", "label": "V4", "attribute": "somgewicht", "value": { "number": "2000.00" } },
+    { "kind": "attributeValue", "label": "V4", "attribute": "toeslaggewicht", "value": { "number": "2000.00" } },
+    { "kind": "attributeValue", "label": "V4", "attribute": "lastgewicht", "value": { "number": "1000.00" } },
+    { "kind": "attributeEmpty", "label": "V4", "attribute": "keurgewicht" },
+
+    { "kind": "attributeValue", "label": "V5", "attribute": "ondergewicht", "value": { "number": "1000.01" } },
+    { "kind": "attributeValue", "label": "V5", "attribute": "spiegelgewicht", "value": { "number": "1000.01" } },
+    { "kind": "attributeValue", "label": "V5", "attribute": "somgewicht", "value": { "number": "2000.02" } },
+    { "kind": "attributeValue", "label": "V5", "attribute": "toeslaggewicht", "value": { "number": "2000.01" } },
+    { "kind": "attributeValue", "label": "V5", "attribute": "lastgewicht", "value": { "number": "1000.01" } },
+    { "kind": "attributeValue", "label": "V5", "attribute": "keurgewicht", "value": { "number": "1000.01" } },
+
+    { "kind": "attributeEmpty", "label": "V6", "attribute": "ondergewicht" },
+    { "kind": "attributeEmpty", "label": "V6", "attribute": "spiegelgewicht" },
+    { "kind": "attributeValue", "label": "V6", "attribute": "somgewicht", "value": { "number": "0.00" } },
+    { "kind": "attributeValue", "label": "V6", "attribute": "toeslaggewicht", "value": { "number": "1000.00" } },
+    { "kind": "attributeEmpty", "label": "V6", "attribute": "lastgewicht" },
+    { "kind": "attributeEmpty", "label": "V6", "attribute": "keurgewicht" },
+
+    { "kind": "consistent" }
+  ]
+}

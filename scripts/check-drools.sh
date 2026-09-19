@@ -539,7 +539,15 @@ EXPECTED_CHANNEL=(
 # and a NON-numeric one. Measured before and after over ALL goldens in BOTH branches: exec 151 -> 153,
 # DRL-text 126 -> 126 with its whole report byte-identical (this card does not touch DrlTranspiler), and
 # exactly these two report lines move — no other golden changes channel or reason.
-EXPECTED_PLAYED=153
+# 2026-09-19 (card kruis-stelsel-eenheid), 153 -> 154: `jutterswet-stelselweging` arrives as a NEW
+# GOLDEN and plays immediately. It carries the cross-system unit form — two declared unit systems
+# sharing a canonical name, crossed at all four unit positions (WF-023 write, WF-035 additive join,
+# WF-036 comparison, WF-099 clamp bound), with and without a conversion factor. The Drools backend
+# already answered that form on BOTH branches before the card; what the card changed is the clingo
+# translation, which used to refuse it. So the golden joins the square complete rather than red, and
+# this is the one report line that moves — measured before and after over ALL goldens in BOTH branches:
+# exec 153 -> 154, DRL-text 126 -> 127, no other golden changes channel or reason.
+EXPECTED_PLAYED=154
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the

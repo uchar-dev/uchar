@@ -1,0 +1,40 @@
+Eenheidsysteem Gewicht
+    het kilogram (mv: kilogrammen) kg
+
+Eenheidsysteem Massa
+    het kilogram (mv: kilogrammen) kg kgm
+    de ton (mv: tonnen) t = 1000 kg
+
+Objecttype de Vangst (mv: Vangsten)
+    het ruwgewicht Numeriek (getal met 2 decimalen) met eenheid kg;
+    het ondergewicht Numeriek (getal met 2 decimalen) met eenheid kg;
+    het spiegelgewicht Numeriek (getal met 2 decimalen) met eenheid kgm;
+    het somgewicht Numeriek (getal met 2 decimalen) met eenheid kg;
+    het toeslaggewicht Numeriek (getal met 2 decimalen) met eenheid kg;
+    het lastgewicht Numeriek (getal met 2 decimalen) met eenheid kgm;
+    het keurgewicht Numeriek (getal met 2 decimalen) met eenheid kg;
+
+Regel ondergewicht van een vangst
+    geldig altijd
+        Het ondergewicht van een Vangst moet berekend worden als het ruwgewicht van de Vangst, met een minimum van 1 t.
+
+Regel spiegelgewicht van een vangst
+    geldig altijd
+        Het spiegelgewicht van een Vangst moet berekend worden als het ruwgewicht van de Vangst.
+
+Regel somgewicht van een vangst
+    geldig altijd
+        Het somgewicht van een Vangst moet berekend worden als het ruwgewicht van de Vangst plus het spiegelgewicht van de Vangst.
+
+Regel toeslaggewicht van een vangst
+    geldig altijd
+        Het toeslaggewicht van een Vangst moet berekend worden als het ruwgewicht van de Vangst plus 1 t.
+
+Regel lastgewicht van een vangst
+    geldig altijd
+        Het lastgewicht van een Vangst moet berekend worden als het ruwgewicht van de Vangst, met een maximum van 2 t.
+
+Regel keurgewicht van een vangst
+    geldig altijd
+        Het keurgewicht van een Vangst moet berekend worden als het ruwgewicht van de Vangst
+        indien het spiegelgewicht van de Vangst groter is dan 1000 kg.
