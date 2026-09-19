@@ -1,0 +1,24 @@
+Domein Vondstklasse is van het type Enumeratie
+    'drijfgoed'
+    'strandgoed'
+    'wrakgoed'
+
+Objecttype de Vondst (mv: Vondsten)
+    de klasse Vondstklasse;
+    de bestemming Vondstklasse;
+    is bergingsplichtig kenmerk (bijvoeglijk);
+
+Regel bestemming van drijfgoed
+    geldig altijd
+        De bestemming van een Vondst moet gesteld worden op 'wrakgoed'
+        indien zijn klasse gelijk is aan 'drijfgoed'.
+
+Regel bestemming van overig goed
+    geldig altijd
+        De bestemming van een Vondst moet gesteld worden op zijn klasse
+        indien zijn klasse ongelijk is aan 'drijfgoed'.
+
+Regel bergingsplicht
+    geldig altijd
+        Een Vondst is bergingsplichtig
+        indien zijn bestemming gelijk is aan 'wrakgoed'.

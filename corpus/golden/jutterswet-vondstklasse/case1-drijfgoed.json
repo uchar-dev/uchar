@@ -1,0 +1,38 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "klasse": {
+            "enumeration": "drijfgoed"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "bestemming",
+      "value": {
+        "enumeration": "wrakgoed"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "bergingsplichtig"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

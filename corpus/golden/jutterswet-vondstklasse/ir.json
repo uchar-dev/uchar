@@ -1,0 +1,330 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Vondst": {
+      "node": "Objecttype",
+      "naam": "Vondst",
+      "attributen": {
+        "klasse": {
+          "node": "Enumeratie",
+          "domein": "Vondstklasse",
+          "waarden": [
+            "drijfgoed",
+            "strandgoed",
+            "wrakgoed"
+          ]
+        },
+        "bestemming": {
+          "node": "Enumeratie",
+          "domein": "Vondstklasse",
+          "waarden": [
+            "drijfgoed",
+            "strandgoed",
+            "wrakgoed"
+          ]
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "bergingsplichtig"
+      ],
+      "kenmerkSoorten": {
+        "bergingsplichtig": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Vondsten"
+    }
+  },
+  "domeinen": {
+    "Vondstklasse": {
+      "node": "Enumeratie",
+      "domein": "Vondstklasse",
+      "waarden": [
+        "drijfgoed",
+        "strandgoed",
+        "wrakgoed"
+      ]
+    }
+  },
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "bestemming van drijfgoed",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "bestemming van overig goed",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "bergingsplicht",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "bestemming van drijfgoed",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "bestemming",
+        "objecttype": "Vondst",
+        "onderwerpBron": "een Vondst",
+        "navigatieRol": null,
+        "type": {
+          "node": "Enumeratie",
+          "domein": "Vondstklasse",
+          "waarden": [
+            "drijfgoed",
+            "strandgoed",
+            "wrakgoed"
+          ]
+        },
+        "bron": "De bestemming van een Vondst",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "wrakgoed",
+        "type": {
+          "node": "Enumeratie",
+          "domein": "Vondstklasse",
+          "waarden": [
+            "drijfgoed",
+            "strandgoed",
+            "wrakgoed"
+          ]
+        },
+        "bron": "'wrakgoed'"
+      },
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "GELIJK",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "klasse",
+          "objecttype": "Vondst",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "Enumeratie",
+            "domein": "Vondstklasse",
+            "waarden": [
+              "drijfgoed",
+              "strandgoed",
+              "wrakgoed"
+            ]
+          },
+          "bron": "zijn klasse",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "drijfgoed",
+          "type": {
+            "node": "Enumeratie",
+            "domein": "Vondstklasse",
+            "waarden": [
+              "drijfgoed",
+              "strandgoed",
+              "wrakgoed"
+            ]
+          },
+          "bron": "'drijfgoed'"
+        },
+        "periode": null,
+        "bron": "zijn klasse gelijk is aan 'drijfgoed'"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "bestemming van overig goed",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "bestemming",
+        "objecttype": "Vondst",
+        "onderwerpBron": "een Vondst",
+        "navigatieRol": null,
+        "type": {
+          "node": "Enumeratie",
+          "domein": "Vondstklasse",
+          "waarden": [
+            "drijfgoed",
+            "strandgoed",
+            "wrakgoed"
+          ]
+        },
+        "bron": "De bestemming van een Vondst",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "AttribuutRef",
+        "attribuut": "klasse",
+        "objecttype": "Vondst",
+        "onderwerpBron": "zijn",
+        "navigatieRol": null,
+        "type": {
+          "node": "Enumeratie",
+          "domein": "Vondstklasse",
+          "waarden": [
+            "drijfgoed",
+            "strandgoed",
+            "wrakgoed"
+          ]
+        },
+        "bron": "zijn klasse",
+        "set": false,
+        "navigatiePad": []
+      },
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "ONGELIJK",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "klasse",
+          "objecttype": "Vondst",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "Enumeratie",
+            "domein": "Vondstklasse",
+            "waarden": [
+              "drijfgoed",
+              "strandgoed",
+              "wrakgoed"
+            ]
+          },
+          "bron": "zijn klasse",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "drijfgoed",
+          "type": {
+            "node": "Enumeratie",
+            "domein": "Vondstklasse",
+            "waarden": [
+              "drijfgoed",
+              "strandgoed",
+              "wrakgoed"
+            ]
+          },
+          "bron": "'drijfgoed'"
+        },
+        "periode": null,
+        "bron": "zijn klasse ongelijk is aan 'drijfgoed'"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "bergingsplicht",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "bergingsplichtig",
+        "objecttype": "Vondst",
+        "onderwerpBron": "Een Vondst",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Vondst is bergingsplichtig",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "GELIJK",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "bestemming",
+          "objecttype": "Vondst",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "Enumeratie",
+            "domein": "Vondstklasse",
+            "waarden": [
+              "drijfgoed",
+              "strandgoed",
+              "wrakgoed"
+            ]
+          },
+          "bron": "zijn bestemming",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "wrakgoed",
+          "type": {
+            "node": "Enumeratie",
+            "domein": "Vondstklasse",
+            "waarden": [
+              "drijfgoed",
+              "strandgoed",
+              "wrakgoed"
+            ]
+          },
+          "bron": "'wrakgoed'"
+        },
+        "periode": null,
+        "bron": "zijn bestemming gelijk is aan 'wrakgoed'"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}
