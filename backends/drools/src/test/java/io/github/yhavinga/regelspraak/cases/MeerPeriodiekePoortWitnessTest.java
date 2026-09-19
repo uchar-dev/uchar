@@ -46,6 +46,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>Every model below is SYNTHETIC, built in memory from a golden's {@code ir.json} off the wire; the corpus files are
  * read and never written. Each test names the position it gates and the PRE-FIX measurement it reverses.
+ *
+ * <p>The tests that replay ({@link #beideTakkenSpelen}) cannot go quietly true — a probe document that stopped
+ * carrying its construct would change the played status or the case count. The §8.2 test compares OUTPUTS instead,
+ * and that shape can: it stood on {@code jutterswet-vormenkabinet} until that cabinet shrank (2026-09-19) and
+ * stopped reading its temporal attribute, after which it compared two identical documents that exercised nothing.
+ * It now stands on a replaying golden and asserts up front that the construct is still emitted.
  */
 class MeerPeriodiekePoortWitnessTest {
 
@@ -62,9 +68,10 @@ class MeerPeriodiekePoortWitnessTest {
     private static final String CLIPPRORATA = "synth2-clip-over-prorata";
     /** A §7.1 "het totaal van" over a temporal attribute, no clip. One case, both branches PLAYED. */
     private static final String TEMPOTOTAAL = "jutterswet-tempototaal";
-    /** The verifier-only witness cabinet — the corpus's living carrier of {@code attribuutTijdlijnAantal: 1}, on the
-     *  very attribute over which it states a §8.2 whole-period comparison. Deliberately case-less. */
-    private static final String VORMENKABINET = "jutterswet-vormenkabinet";
+    /** A §8.2 whole-period comparison over the MAAND-granular {@code keurvergoeding}, quantified over a navigated
+     *  set. It carries NO {@code attribuutTijdlijnAantal} entry, so {@link #metAantal} writes the explicit 1 the
+     *  §8.2 test below needs — the count table is the probe's, not the corpus's. */
+    private static final String KEURPLOEG = "jutterswet-keurploeg";
 
     // ---------------- the predicate itself ----------------
 
@@ -142,16 +149,24 @@ class MeerPeriodiekePoortWitnessTest {
     }
 
     @Test void de_gehele_periode_vergelijking_leest_het_aantal_helemaal_niet() throws Exception {
-        // The card's question 3 on the position its living corpus witness occupies: jutterswet-vormenkabinet carries
-        // attribuutTijdlijnAantal {"waterstand": 1} on the very attribute over which it states a §8.2 whole-period
-        // COMPARISON. Measured here rather than assumed — and the answer is NO for this one position: the scalar §8.2
-        // arm gates on granularity alone (DrlTranspiler.isTemporeelAttribuut / ExecModelTranspiler.isTemporeel82), so
-        // the count table is not consulted and the document transpiles identically with and without the key. The SET
-        // arm of the same section (isTemporeelSetAttribuut / isTemporeelSet82) DOES read the count and is fixed with
-        // the rest; no corpus document reaches it.
+        // The card's question 3 on the position a REPLAYING corpus document occupies: jutterswet-keurploeg states a
+        // §8.2 whole-period matrix (a Kwantorvouw) over the MAAND-granular keurvergoeding. Measured rather than
+        // assumed: THIS position routes through the fold's whole-period arm, whose gate elementTijdlijnLid
+        // (DrlTranspiler / ExecModelTranspiler) DOES consult the count table — and must classify an explicit 1 as
+        // single-periodic, where the PRE-FIX containsKey test refused it. That is exactly why the mutant kills this
+        // test, and it makes this a stronger witness than the cabinet position ever was (that one never consulted
+        // the table at all). The SET gates (isTemporeelSetAttribuut/isTemporeelSet82) are reached by no corpus
+        // document: every §8.2 operand in golden carries set:false (re-measured 2026-09-19).
         // Verdict compared byte for byte on the DRL text and construct for construct on both coverage manifests.
-        Path met = ir(VORMENKABINET), zonder = zonderAantal(VORMENKABINET, "Schouwveld", "attribuutTijdlijnAantal");
-        assertEquals(drlTekst(zonder), drlTekst(met),
+        Path zonder = ir(KEURPLOEG);
+        Path met = metAantal(KEURPLOEG, "Keurmeester", "attribuutTijdlijnAantal", "keurvergoeding", 1);
+        String drl = drlTekst(zonder);
+        // The guard that keeps this witness from emptying silently: it pins that the document under probe still
+        // EMITS the construct being gated. This test once stood on jutterswet-vormenkabinet and went trivially true
+        // when that cabinet shrank (2026-09-19) and stopped reading its temporal attribute at all — no gate saw it.
+        assertTrue(drl.contains("rsGeheelPeriode"),
+                "het probe-document moet de §8.2-vergelijking nog emitteren, anders is de gelijkheid hieronder leeg");
+        assertEquals(drl, drlTekst(met),
                 "de §8.2-vergelijking leest het periodeaantal niet — de DRL is identiek met en zonder de sleutel");
         assertEquals(dekking(zonder), dekking(met),
                 "en de exec-model-dekking eveneens");
@@ -235,13 +250,6 @@ class MeerPeriodiekePoortWitnessTest {
         ObjectNode d = (ObjectNode) JSON.readTree(Files.readString(ir(golden)));
         ((ObjectNode) d.get("objecttypen").get(objecttype).get(tabel)).put(lid, aantal);
         return tijdelijk(golden + "-" + lid + "-" + aantal, d);
-    }
-
-    /** The golden's ir.json with a whole count table emptied — the "as if no producer had written it" control. */
-    private static Path zonderAantal(String golden, String objecttype, String tabel) throws Exception {
-        ObjectNode d = (ObjectNode) JSON.readTree(Files.readString(ir(golden)));
-        ((ObjectNode) d.get("objecttypen").get(objecttype)).set(tabel, JSON.createObjectNode());
-        return tijdelijk(golden + "-zonder-" + tabel, d);
     }
 
     private static Path tijdelijk(String naam, JsonNode d) throws Exception {

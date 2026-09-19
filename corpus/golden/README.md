@@ -95,16 +95,16 @@ when one of these constructs becomes executable, its witness moves into
 an executing document and the cabinet shrinks — it is scaffolding for
 the WF index, never a place for semantics.
 
-That rule was applied for the first time on 2026-09-19. It now holds two
-rules and four rows: the dimensioned attribute with its cell read
-(WF-004/014/040), the variable-start timeline with its start point
-(WF-016/032), the time window (WF-042), and the day-kind spelling
+That rule was applied for the first time on 2026-09-19, over the ten rows
+the cabinet then held. **Four stayed**: the dimensioned attribute with its
+cell read (WF-004/014/040), the variable-start timeline with its start
+point (WF-016/032), the time window (WF-042), and the day-kind spelling
 registry — WF-017's positive binding and WF-034 arm (s)'s identity half,
 both of which read the declaration table and need no executor at all.
-Five rows left, each to a named executing successor: the enumeration
-domain with its label assignment (WF-006/039, the enum slice of WF-023)
-to `jutterswet-keurstaat`; the sign-restricted literal (WF-039) to
-`anchor/jutterswet-taxatie` and four others; the counting quantifier
+**Six left**, each to a named executing successor: the enumeration domain
+with its label assignment (WF-006/039, the enum slice of WF-023) to
+`jutterswet-keurstaat`; the sign-restricted literal (WF-039) to
+`anchor/jutterswet-taxatie` and five others; the counting quantifier
 (WF-041) to `jutterswet-wachtploeg` and eight further composite goldens,
 with `jutterswet-reddingsvloot` on the quantifier fold; the two dated
 versions of one rule name (WF-021) to `anchor/jutterswet-jutheffing`;

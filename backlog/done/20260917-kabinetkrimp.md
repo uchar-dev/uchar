@@ -25,8 +25,17 @@ daarmee voor die rijen niet uitgevoerd.
 ---
 
 Result (2026-09-19, `card/kabinetkrimp`): het kabinet is gekrompen van
-zeven regels naar twee. Vijf rijen hadden een uitvoerende opvolger en
-zijn eruit; vier rijen blijven, elk met de meting waarom.
+zeven regels naar twee. Van de tien rijen die het droeg hadden er **zes**
+een uitvoerende opvolger en zijn eruit — zes rijen in vijf ingrepen op het
+document, want WF-021 en WF-043 zaten in hetzelfde regelpaar. **Vier**
+blijven, elk met de meting waarom. Die telling (zes weg, vier blijvend)
+loopt gelijk door NOTE, README, commitboodschap en de tabel hieronder.
+
+Fixronde 2026-09-19 na de lens: de tien rijmetingen zijn onafhankelijk
+gereproduceerd en houden stand; vier blokkerende punten zijn verholpen —
+een stil leeggelopen Drools-getuige, twee onwaar geworden negatief-NOTE's,
+de bereikbaarheid van de peiling-weigering, en de teloplossing. Elk punt
+staat hieronder bij zijn onderdeel.
 
 ## Meting per kabinetrij
 
@@ -38,14 +47,14 @@ Criterium: draagt een golden **mét cases** (en dus gespeeld door gates
 | Rij (WF) | Gedekt? | Door wie, en waarmee gemeten |
 |---|---|---|
 | enumeratiedomein + labeltoekenning (WF-006, WF-039 enum-arm, enum-plak van WF-023) | **ja** | `jutterswet-keurstaat`: domein `keurklasse`, en `stempel voor een veilbare vondst` is een `GELIJKSTELLING` die het `Literal` `gaaf` met `Enumeratie`-type op een `Enumeratie`-doel schrijft — dezelfde knoop op dezelfde positie. Tweede drager: `jutterswet-vaarwatertoeslag-catala` |
-| tekenbeperkt literal (WF-039 teken-arm) | **ja** | `anchor/jutterswet-taxatie` (`2` en `3`, beide `NIET_NEGATIEF` getypeerd), `anchor/jutterswet-aanspraaktelling` (`0.00`), `anchor/jutterswet-hardheid`, `jutterswet-postenheffing`, `synth3-vondststaat`. **Verschil gemeld, niet weggepoetst**: daar staat het literal als *operand*, hier stond het op de schrijfpositie (`resolvedRegels[].waarde`) — gemeten: die positie kwam buiten het kabinet nergens voor. WF-039 leest het type van het literal zelf, overal waar `walk_expr` komt (`spec/verifier/lib/checks.ml:4414`), dus het is dezelfde knoop onder dezelfde clausule |
+| tekenbeperkt literal (WF-039 teken-arm) | **ja** | `anchor/jutterswet-taxatie` (`2` en `3`, beide `NIET_NEGATIEF` getypeerd), `anchor/jutterswet-aanspraaktelling` (`0.00`), `anchor/jutterswet-hardheid`, `anchor/jutterswet-vondstdossier` (`120.50`, `3`), `jutterswet-postenheffing`, `synth3-vondststaat`. **Verschil gemeld, niet weggepoetst**: daar staat het literal als *operand*, hier stond het op de schrijfpositie (`resolvedRegels[].waarde`) — gemeten: die positie kwam buiten het kabinet nergens voor. WF-039 leest het type van het literal zelf, overal waar `walk_expr` komt (`spec/verifier/lib/checks.ml:4414`), dus het is dezelfde knoop onder dezelfde clausule |
 | tellende kwantor (WF-041) | **ja** | `jutterswet-wachtploeg` draagt `TEN_MINSTE` met drempel 2 op de `Samengesteld`-gastheer — letterlijk de vorm die hier stond. Acht verdere composiet-goldens dragen de andere kwantoren/drempels (`paasvondst`, `rubriektabel`, `seinwacht`, `sluimerwacht`, `tweevoudkeur`, `vacuumwacht`, `vrijgavetoets`, `wachtdeling`) — samen de negen uit de aanleiding — en `jutterswet-reddingsvloot` de vouwgastheer (WF-108 (e)) |
 | twee gedateerde versies van één naam (WF-021) | **ja** | `anchor/jutterswet-jutheffing`: `jutheffing naar jaartarief #1`/`#2`. Gemeten met de versiestrip die WF-021 zelf toepast (`checks.ml:1364`, `strip_version`): dat is het enige andere corpusdocument waarvan regelnamen tot één groep vallen. `jutterswet-vensterheffing` draagt wel begrensde vensters, maar onder twee verschillende namen — dat is de vorm niet |
 | geheel-periode over een tijdsafhankelijke operand (WF-043) | **ja** | `jutterswet-keurploeg`, `jutterswet-ploegpremie`, `jutterswet-reddingsvloot`, `jutterswet-sleepvloot`: elk een `GeheelPeriode` (`jaar: true`) op een vergelijking over een `MAAND`-granulair attribuut, de laatste genegeerd (`niet: true`). `synth-gehelejaarkenmerk` draagt de kenmerkvariant |
 | dagsoortdefinitie (WF-031) | **ja** | `jutterswet-schouwkalender` (twee zuivere definities, door gates 5–6 gespeeld over zijn gewone regel) en `jutterswet-schouwrooster` |
 | gedimensioneerd attribuut + celllezing (WF-004/014/040) | **NEE** | De enige andere drager van `Dimensie`/`DimensieCel` in het hele corpus is `jutterswet-seizoenvondst` — en dat is zelf **caseloos**, de tweede verifier-only golden. Er is dus geen *uitvoerend* document. De aanleiding van deze kaart had de constructie gemeten en niet de uitvoering; de rij blijft |
-| tijdlijn met variabel startpunt + startpunt (WF-016/032) | **NEE** | `jutterswet-penningjaar` is de andere tijdlijn-golden, maar zijn `het penningjaar` heeft `variabelStartpunt: false`; `resolvedStartpunten` is niet-leeg in dit document en in geen enkel ander |
-| tijdvenster (WF-042) | **NEE** | `"node": "Periode"` komt in geen ander corpusdocument voor, en beide uitvoerders weigeren het nog (gemeten, hieronder) |
+| tijdlijn met variabel startpunt + startpunt (WF-016/032) | **NEE** | `jutterswet-penningjaar` is de andere tijdlijn-golden, maar zijn `het penningjaar` heeft `variabelStartpunt: false`; dit is de enige GOLDEN met een niet-lege `resolvedStartpunten`. Twee negatiefs dragen de knoop wel (`wf032-fixed-start-anchor`, `wf034-wees-attribuutdimensies`), maar een weigering pint geen positieve vorm |
+| tijdvenster (WF-042) | **NEE** | `"node": "Periode"` komt in geen andere GOLDEN voor; `wf042-empty-window` en `wf034-wees-attribuutdimensies` dragen hem aan de weigerende kant. Beide uitvoerders weigeren hem nog (gemeten, hieronder) |
 | spellingsregister: WF-017 positief + WF-034 arm (s) identiteitshelft | **NEE** | `jutterswet-schouwrooster` draagt de *byte-identieke* bindingen, maar gemeten over golden + negatief + rood zijn de enige registerwaarden die níét byte-identiek aan hun declaratie zijn, die twee hier (`"SchouwDag"`, `"  schouwdag  "`) plus die van `corpus/negatief/wf034-dagsoorteenheid-onbekende-dagsoort` — de weigerende kant. De identiteitshelft is nog steeds alleen hier positief gepind. Beide regels lezen de **declaratietabel**, niet de definities, dus dit blijft staan terwijl WF-031 vertrekt |
 
 ## De krimp-diff, samengevat
@@ -78,10 +87,18 @@ Hermeten na de krimp, op het document zelf:
 
 - `ref` op het hele document met één `Schouwveld`:
   `EVALUATION FAULT: expression kind not implemented in this card`;
-- `ref` op alleen `peiling bij dubbele borging`:
+- `ref` op alleen `peiling bij dubbele borging`, met een `Schouwveld`
+  dat **zowel `bewaakt` als `omheind`** draagt:
   `EVALUATION FAULT: condition kind not implemented in this card`, bij
   `asOfDate` null én `2026-06-01` — de weigering is de `Periode`, niet
-  de vertrokken kwantor;
+  de vertrokken kwantor. **Correctie uit de fixronde**: die weigering is
+  wél instantie-afhankelijk geworden. `ref` stopt een `ALLE`-composiet
+  bij het eerste onware lid, dus een kale instantie en een instantie met
+  alléén `bewaakt` geven `oracle: PASS` en bereiken het venster nooit;
+  onder de `TEN_MINSTE 2` van vóór de krimp moest elke instantie alle
+  drie de leden tellen en kwam er dus altijd. De eerste regel weigert
+  wél op elke instantie, dus voor het document als geheel verandert er
+  niets — maar de NOTE-reproductie zei het onjuist en is hersteld;
 - `clingo` weigert beide regels
   (`TRANSLATION FAULT: expression kind not translated` /
   `condition kind not translated (no corpus case exercises it)`);
@@ -89,7 +106,71 @@ Hermeten na de krimp, op het document zelf:
   steeds — het argument in de NOTE tegen een gefabriceerde case staat
   dus onveranderd overeind.
 
-## Gates (alle veertien, na de krimp, op de gecommitte stand)
+## Fixronde: de stil leeggelopen getuige, en twee onware NOTE's
+
+**De getuige (gemandateerde uitbreiding van May touch, bestand 1 van 2).**
+`backends/drools/…/cases/MeerPeriodiekePoortWitnessTest.java`, test
+`de_gehele_periode_vergelijking_leest_het_aantal_helemaal_niet`, stond op
+het kabinet: hij vergeleek de DRL-tekst van het kabinet mét en zónder zijn
+`attribuutTijdlijnAantal`-tabel om te pinnen dat de §8.2-vergelijking het
+periodeaantal niet leest. De krimp haalde de enige lezer van `waterstand`
+weg, waarna de test twee documenten vergeleek die de constructie geen van
+beide nog emitteren — triviaal waar, en geen gate die het ziet. Gemeten,
+niet aangenomen:
+
+- `PROBE-KABINET-WATERSTAND: false` — de DRL van het gekrompen kabinet
+  noemt `Waterstand` nergens meer;
+- **mutatieproef, vóór**: met de PRE-FIX-semantiek terug in
+  `Tijdlijnen.meerPeriodiek` (`return aantal != null;`, de
+  `containsKey`-vorm die de kaart van 2026-09-11 juist wegnam) meldt de
+  oude assertie `PROBE-OUDE-ASSERTIE-HOUDT-ONDER-MUTANT: true`. De test
+  overleefde dus de regressie die hij moest vangen: dood.
+
+Hersteld door hem op `jutterswet-keurploeg` te richten — een golden met
+zeven cases die de §8.2-vergelijking wél emitteert en die géén
+`attribuutTijdlijnAantal`-ingang draagt, zodat de bestaande helper
+`metAantal` de expliciete 1 schrijft en het corpus onaangeroerd blijft.
+Gemeten ná:
+
+- de geëmitteerde constructie is
+  `eval( rsGeheelPeriodeAlle($kvtl1, "JAAR", 2, new java.math.BigDecimal("40")) == true )`;
+- **mutatieproef, ná**: onder dezelfde mutant faalt de test op zijn eigen
+  regel — `PROBE-DRL-VERSCHIL: false`, gevolgd door
+  `de §8.2-vergelijking leest het periodeaantal niet — de DRL is identiek
+  met en zonder de sleutel ==> expected: <…>`. Van de acht tests in de
+  klasse vallen er onder de mutant zeven om (2 failures, 5 errors); zonder
+  mutant draaien alle acht groen. De mutant is daarna teruggedraaid uit
+  `Tijdlijnen.java` en `git status` op `backends/drools/src/main/` is leeg.
+
+Tegen herhaling draagt de test nu een vóóraf-assertie dat het
+probe-document de constructie nog emitteert (`drl.contains("rsGeheelPeriode")`),
+en de klasse-javadoc legt het verschil vast tussen de tests die replayen —
+die kunnen niet stil leeglopen, want status en case-telling bewegen mee —
+en deze, die outputs vergelijkt en dat wél kan. De helper `zonderAantal`
+had geen gebruiker meer en is mee verwijderd.
+
+Eén zin uit het oude commentaar is niet meegenomen in plaats van
+klakkeloos overgeschreven: "The SET arm … DOES read the count … no corpus
+document reaches it". Die uitspraak is met deze kaart niet opnieuw
+gemeten, en `jutterswet-keurploeg` draagt op de wire dezelfde vorm als het
+kabinet droeg (een `Vergelijking` met `periode: GeheelPeriode` over een
+`AttribuutRef` met `set: false`), dus welk arm hij raakt is niet vanzelf
+hetzelfde verhaal. Wat wél gemeten is, is dat de test de regressie weer
+vangt — de mutatieproef hierboven.
+
+**`corpus/negatief/wf031-dagsoort-venster/NOTE.md`** zei dat het kabinet de
+passerende ALTIJD-vorm draagt. Sinds de krimp niet meer: herschreven naar
+`jutterswet-schouwkalender` en `jutterswet-schouwrooster`, mét de reden en
+de datum, zodat de verhuizing navolgbaar blijft.
+
+**`corpus/negatief/wf034-wees-attribuutdimensies/NOTE.md`** noemde zichzelf
+"one line diff" tegen het kabinet. Dat was al onjuist vóór deze kaart — de
+registeringangen van 2026-09-09/10 stonden er niet in — en is nu 332
+regels. Herschreven: het is een variant *afgeleid van* het kabinet waarvan
+alleen de toegevoegde `attribuutDimensies`-sleutel dragend is, en de basis
+is inmiddels twee keer verschoven.
+
+## Gates (alle veertien, na de fixronde, op de gecommitte stand)
 
 ```
 1  check-self-contained.sh        EXIT 0
@@ -108,6 +189,12 @@ Hermeten na de krimp, op het document zelf:
 14 check-flogic.sh                EXIT 0   suite 130 checks (floor 81); 2 flogic goldens
 ```
 
+Daarnaast, apart gedraaid omdat de fixronde een testbestand raakt:
+`mvn -q -o -f backends/drools/pom.xml package` mét tests — EXIT 0. De
+JUnit-telling van gate 12 blijft 447 (vloer 239): er is één test
+herschreven, geen test verdwenen; de verwijderde `zonderAantal` was een
+helper, geen test.
+
 Geen scriptregel hoefde mee te bewegen, en dat is **gecontroleerd**, niet
 aangenomen:
 
@@ -122,12 +209,28 @@ aangenomen:
   vloer daalt: gate 2 (226), 3 (226), 5 (516) en 4 (542) blijven gelijk —
   de krimp verwijdert geen document en geen case.
 
-## May touch — gerespecteerd
+## May touch — gerespecteerd, met twee gemelde uitbreidingen
 
-`corpus/golden/jutterswet-vormenkabinet/**` (ir.json, NOTE.md),
-`corpus/golden/README.md`, en de kaartverplaatsing. Verder niets: geen
-script, geen spec, geen ander corpusdocument. `git diff --stat` tegen
-`bdea4ff4` raakt precies die vier paden.
+Binnen de kaart: `corpus/golden/jutterswet-vormenkabinet/**` (ir.json,
+NOTE.md), `corpus/golden/README.md`, en de kaartverplaatsing.
+
+Twee bestanden daarbuiten, allebei in de fixronde, allebei hier
+verantwoord omdat de krimp ze onwaar maakte:
+
+1. `backends/drools/src/test/java/io/github/yhavinga/regelspraak/cases/MeerPeriodiekePoortWitnessTest.java`
+   — **gemandateerd** (testmandaat: wijziging van een bestaande check,
+   gemeld). Uitsluitend dit ene testbestand in die module; een parallelle
+   kaart werkt er, dus productiecode is niet aangeraakt (de mutatieproef
+   is teruggedraaid en geverifieerd). De wijziging maakt een getuige die
+   door deze kaart leegliep weer betekenisvol — niet meer dan dat.
+2. `corpus/negatief/wf031-dagsoort-venster/NOTE.md` en
+   `corpus/negatief/wf034-wees-attribuutdimensies/NOTE.md` — negatief-
+   NOTE's zijn zone-eigen documentatie, geen beschermd pad. Alleen de
+   zinnen die door de krimp onwaar werden.
+
+Verder niets: geen script, geen spec, geen `ir.json` buiten het kabinet,
+geen case. `git diff --stat` tegen `bdea4ff4` raakt precies deze zeven
+paden.
 
 ## Voorstellen voor beschermde paden (niet geland)
 
@@ -151,7 +254,7 @@ per rij alleen de Golden-kolom:
 | WF-039 | `` `jutterswet-vormenkabinet` (the gaaf label and the sign-restricted aanwas) `` | `` `jutterswet-keurstaat` (the gaaf label) + `anchor/jutterswet-taxatie` (the sign-restricted literals 2 and 3) `` |
 | WF-041 | `` `jutterswet-vormenkabinet` (ten minste 2, on the composite) + `jutterswet-reddingsvloot` (all three counting quantifiers on the fold, thresholds 1 and 2) `` | `` `jutterswet-wachtploeg` (ten minste 2, on the composite) + `jutterswet-reddingsvloot` (all three counting quantifiers on the fold, thresholds 1 and 2) `` |
 | WF-043 | `` `jutterswet-vormenkabinet` (whole-year over the waterstand) `` | `` `jutterswet-keurploeg` (whole-year over the MAAND-granular keurvergoeding) + `jutterswet-sleepvloot` (the negated one) `` |
-| WF-088 | `` … + `jutterswet-vormenkabinet` (the `kwaliteit` domain) `` | schrap die clausule; `jutterswet-vaarwatertoeslag-catala` blijft, eventueel aangevuld met `` + `jutterswet-keurstaat` (the `keurklasse` domain at three attribute datatypes and one `Literal` type) `` |
+| WF-088 | `` … + `jutterswet-vormenkabinet` (the `kwaliteit` domain) `` | schrap die clausule; `jutterswet-vaarwatertoeslag-catala` blijft, eventueel aangevuld met `` + `jutterswet-keurstaat` (the `keurklasse` domain repeated at ELEVEN use sites: three attribute datatypes, five `AttribuutRef` types and three `Literal` types) `` — geteld op de knopen, niet geschat |
 | WF-089 | `` `jutterswet-vaarwatertoeslag-catala` + `jutterswet-vormenkabinet` (enumeration references) `` | `` `jutterswet-vaarwatertoeslag-catala` + `jutterswet-keurstaat` (enumeration references) `` |
 
 De acht cellen die het kabinet terecht blijven noemen — WF-004, WF-014,
@@ -159,17 +262,22 @@ WF-016, WF-017, WF-032, WF-034 (s), WF-040, WF-042 — en de twee
 prozapassages (ch. 2.9 regel 1798, ch. 4.6 regel 5795) zijn nagelopen en
 kloppen woordelijk nog.
 
-**`spec/proposals/LEGALRULEML-AUDIT.md`: kandidaat C3 is vervuld.** Het
-document schrijft (regel 355-366) dat het enige begrensd-`geldigheid`-
-document in het corpus het kabinet is en stelt als C3 voor: "a golden
-with two dated versions of one rule built from executable constructs,
-plus cases with an `asOfDate` in each window — after which the cabinet's
-WF-021 row moves out". `anchor/jutterswet-jutheffing` is precies dat,
-`jutterswet-vensterheffing` is een tweede begrensd document, en de rij
-is nu verhuisd. Voorstel: C3 als geland markeren en de drie
-kabinet-citaten (regels 133, 283, 361) herschrijven naar jutheffing. Dit
-was al deels achterhaald vóór deze kaart; de krimp maakt ook de
-"verifier-only by its own NOTE"-clausule onwaar.
+**`spec/proposals/LEGALRULEML-AUDIT.md`: vier kabinet-citaten aflossen.**
+Correctie op de eerste doorgang van dit Result, die schreef dat C3 "als
+geland gemarkeerd" moest worden: dat staat er al — regel 367 draagt
+**"Delivered (2026-08-25)"** met `anchor/jutterswet-jutheffing`. Wat
+wél moet bewegen zijn vier zinnen die het kabinet nog als WF-021-getuige
+opvoeren. En let op de aard van de onwaarheid: het kabinet blijft
+verifier-only (het houdt geen case), dus die clausule klopt — onwaar is
+dat het de WF-021-getuige is, en dat het het enige begrensd-
+`geldigheid`-document is. Te herschrijven:
+
+| Regel | Nu, verkort | Waarom onwaar |
+|---|---|---|
+| 133 (tabelrij) | "the witness is **verifier-only**: `jutterswet-vormenkabinet` … the **only** corpus document with a bounded `geldigheid` window at all … zero replaying cases → candidate C3" | Al achterhaald vóór deze kaart (`anchor/jutterswet-jutheffing` en `jutterswet-vensterheffing` dragen begrensde vensters en repliceren); ná de krimp draagt het kabinet er zelf geen meer |
+| 283 | "verifier-witnessed (WF-021, `jutterswet-vormenkabinet` — verifier-only by its own NOTE)" | Het kabinet is nog steeds verifier-only; het is geen WF-021-getuige meer. Vervang de naam, niet de clausule |
+| 357-361 (C3's probleemstelling) | "The only bounded-`geldigheid` document in the corpus is the verifier-only witness cabinet" | Zelfde twee gronden; de zin staat boven een reeds geleverde kandidaat en kan naar de verleden tijd |
+| 371 | "the WF-021 index row now names it beside the cabinet" | Na de WF-021-indexcel hierboven noemt die rij alleen nog jutheffing |
 
 **`spec/ASP-TRANSLATION.md`: geen wijziging voorgesteld.** Regel 892 zet
 het kabinet in een "Further:"-lijst onder "Witnesses (gate 6)" naast
@@ -188,19 +296,33 @@ both executors") is hermeten en klopt nog letterlijk.
    `uchar-case-v0` een per-cel-invoervariant geven — de reden die
    `jutterswet-seizoenvondst`'s eigen NOTE noteert). Dat is een
    uitvoerderskaart, geen corpuskaart.
-2. **Dagsoortdeclaraties zonder definitie.** Het kabinet houdt nu twee
-   `dagsoorten`-declaraties met hun registerspellingen, maar géén
-   `resolvedDagsoorten`. Gemeten: geen enkele WF-regel eist een
-   definitie bij een declaratie (WF-031 loopt alleen van definitie naar
-   declaratie, `checks.ml:3053-3063`), en gate 3 is groen. Toch is dit
-   een vorm die geen frontend uitstoot. Alternatief, niet gekozen: één
-   definitie laten staan — maar dan was WF-031 niet vertrokken. Als de
-   maintainer de vorm liever niet in het corpus heeft, is de kleine
-   terugdraai: beide definities terug en WF-031's kabinetcitaat laten
-   staan.
+2. ~~**Dagsoortdeclaraties zonder definitie.**~~ **Gesloten in de
+   fixronde.** De twijfel rustte op "een vorm die geen frontend
+   uitstoot", en dat is gemeten onjuist. Een eigen drieregelige
+   Jutterswet-bron — twee `Dagsoort`-declaraties (schouwdag,
+   stormvloeddag) plus één gewone regel, zonder enige definitie —
+   emitteert `dagsoorten` met beide namen, een gevulde
+   `dagsoortPerEenheid` en `resolvedDagsoorten: []`. Het is dus precies
+   de vorm die de frontend voor declaraties zónder definitie
+   produceert. In de pariteitszone
+   dragen 29 van de 30 documenten met een `dagsoorten`-veld dezelfde
+   vorm. Daarbovenop eist geen WF-regel een definitie bij een declaratie
+   (WF-031 loopt alleen van definitie naar declaratie,
+   `checks.ml:3053-3063`) en is gate 3 groen. De terugdraai vervalt.
 3. **`scripts/` is deels niet-executable in de index** (`check-verifier`,
    `check-case-schema`, `check-clingo`, `check-oracle`, `admit.sh` staan
    op `100644`), dus ze draaien alleen via `sh scripts/…`;
    `check-flogic.sh` is juist bash-specifiek (`done < <(…)`) en faalt
    ónder `sh` met exitcode 2. Bestond al vóór deze kaart, buiten
    may-touch, hier alleen gemeld.
+4. ~~**Welk transpiler-arm de geretargete getuige raakt.**~~ **Gesloten
+   door de slotlens (2026-09-19), met een meting die de retarget
+   VERSTERKT**: het probe-document loopt niet via het scalaire of het
+   SET-arm maar via de heelperiode-matrix van de kwantorvouw, wier
+   poort `elementTijdlijnLid` de teltabel WÉL raadpleegt — en een
+   expliciete 1 als enkel-periodiek moet classificeren. Dat is precies
+   waarom de mutant de test doodt; de oude kabinetpositie raadpleegde
+   de tabel nooit en kón dus niet regresseren. De SET-poorten
+   (`isTemporeelSetAttribuut`/`isTemporeelSet82`) bereikt geen enkel
+   corpusdocument: alle twaalf §8.2-operanden in golden dragen
+   `set: false` (hermeten).

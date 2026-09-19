@@ -43,9 +43,12 @@ beside (ch. 4.6 (g)).
 *Measured breadth:* zero documents lose anything. All 9 `attribuutDimensies` keys
 the four zones held before this card name a declared attribute.
 
-A hand-broken variant of `corpus/golden/jutterswet-vormenkabinet/ir.json` — one key added, a one-line diff;
-schema-valid, since the eight tables are `additionalProperties`-typed maps on
-the v0 wire.
+A hand-broken variant DERIVED from `corpus/golden/jutterswet-vormenkabinet/ir.json`: the defect is one added
+`attribuutDimensies` key, and nothing else here is load-bearing. The base has
+moved on twice since (the day-kind registry entries of 2026-09-09/10, the
+cabinet's shrink of 2026-09-19), so this file is no longer a small diff against
+the cabinet and is read on its own terms. Schema-valid, since the eight tables
+are `additionalProperties`-typed maps on the v0 wire.
 
 Falsifiable, arm-exact: delete the `orphan otn "attribuutDimensies" ...` line from
 `wf034_zijtabelsleutels` (`spec/verifier/lib/checks.ml`) and this case, alone
