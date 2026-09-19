@@ -3558,7 +3558,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       (* the unsolved-state guard: an Onopgelost node never vanishes —
          the rule that carries it fails observably (WF-044) *)
       fault "Onopgelost reached in translation: this rule fails observably (WF-044)"
-  | Functie { kind = Som; element_objecttype = None; _ } ->
+  | Functie { kind = Som; element_objecttype = None; dimensie_selectie = None; _ } ->
       (* the LISTED-operand som (§5.8.3, RUNTIME-SEMANTICS ch. 5.11): the
          contributors are spelled out as operands and there is no instance
          source. ref carries it — its contributor arm reads the operand list
@@ -3571,16 +3571,26 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          exactly such a case — the untruth the WF-044 arm above had just
          cleared off the condition position, still live here. Naming the form
          puts that fall-through back on forms that really have no corpus case.
-         ABSENT elementObjecttype is the crisp test for SOM and for SOM only:
-         every som arm above demands it PRESENT, so absent means listed. Its
-         sibling kinds do not share that property — TOTAAL's temporal
-         subject-own arms carry an absent one and AANTAL's listed form is no
-         som — so they keep the fall-through, which for them is still true. *)
+         THE GUARD TAKES TWO FIELDS, because an absent elementObjecttype means
+         listed OR dimension cell. Every som arm above demands the stamp
+         PRESENT, so its absence rules the instance folds out — but WF-037
+         grants the DIMENSION som an explicit arity exemption (a sum over the
+         cells of one dimension is a single-operand fold with a
+         dimensieSelectie and no stamp), and that form is not listed and not
+         this arm's: ref refuses it earlier and by its own reason (`dimension
+         selection not implemented in this card`), before it ever asks where
+         the contributors come from. So this arm also demands an ABSENT
+         dimensieSelectie, and the dimension som keeps the fall-through, which
+         for it is still true — no corpus document carries a dimensieSelectie
+         on a Functie at all. The sibling KINDS keep it too, for their own
+         reason: TOTAAL's temporal subject-own arms carry an absent stamp, so
+         absence does not mean listed there, and AANTAL's listed form is no
+         som. *)
       fault
         "a som over listed operands is not translated: every som this backend carries ranges a \
-         #sum over an instance source, and a listed fold has none; the addition chain that would \
-         carry it must also evaluate the ch. 5.11 stand-in unconditionally, and no corpus case \
-         pins a value for it"
+         #sum over an instance source, and a listed fold has none; and where it carries a \
+         ch. 5.11 leegwaarde, the addition chain that would carry it must evaluate that stand-in \
+         unconditionally. No corpus case pins a value for the form"
   | _ -> fault "expression kind not translated (no corpus case exercises it)"
 
 (* gedeeld-door (§6.5, arith.div_gen) — three edges plus the value:

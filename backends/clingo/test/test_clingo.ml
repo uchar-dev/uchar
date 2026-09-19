@@ -6069,20 +6069,32 @@ let () =
    en dat is geen toeval — een rode getuige voor een buurvorm zou de bodemzin
    onmiddellijk opnieuw falsifiëren, want hij zou de bodem weer met een
    corpusgeval uitlokken. Precies daarom hoort de grens hier, in een suite die
-   geen corpuszone is. Twee assen, één frame per as:
+   geen corpuszone is. Drie assen, één frame per as:
 
      · het KIND — MINIMUM over dezelfde twee gelijste operanden valt niet op
        de somarm maar op de bodem (§5.8.3: dezelfde vertaling zou de vorm
        dragen, geen corpusgeval, dus de bodem blijft waar voor hem);
      · het ELEMENT — dezelfde SOM mét een elementObjecttype valt er evenmin
-       op. De arm test op een AFWEZIG elementObjecttype, wat voor SOM en
-       alleen voor SOM "gelijst" betekent, want elke dragende somarm eist het
-       aanwezig. Dit is bovendien de vorm die `ref` zelf weigert
-       ("unsupported instance-fold source shape"), geen vorm die deze backend
-       als enige laat liggen.
+       op. Elke dragende somarm eist het stempel aanwezig, dus afwezigheid
+       sluit de instantievouwen uit. Dit is bovendien de vorm die `ref` zelf
+       weigert ("unsupported instance-fold source shape"), geen vorm die deze
+       backend als enige laat liggen;
+     · de DIMENSIE — en dit is waarom afwezigheid van het stempel alléén te
+       weinig is. WF-037 geeft de dimensiesom een uitdrukkelijke
+       arity-uitzondering: één operand, een `dimensieSelectie`, geen stempel
+       (`spec/verifier/lib/checks.ml`). Die vorm is verifier-SCHOON, is niet
+       gelijst, en `ref` weigert hem eerder en op eigen grond ("dimension
+       selection not implemented in this card"). Vóór de wacht op
+       `dimensieSelectie` kreeg hij het somfragment te horen — gemeten
+       2026-09-19, en dat is precies de soort onwaarheid waar deze kaart over
+       gaat. Hij houdt nu de bodem, en voor hém is die zin waar: geen enkel
+       corpus- of pariteitsdocument draagt een `dimensieSelectie` op een
+       `Functie` (gemeten: nul).
 
-   Het frame draagt GEEN leegwaarde, waar de rode getuige er wel een heeft:
-   de arm weigert de vorm, niet de invaller. *)
+   De gelijste frames dragen GEEN leegwaarde, waar de rode getuige er wel een
+   heeft: de arm weigert de VORM, niet de invaller — en het weigerfragment
+   conditioneert de ch.-5.11-bijzin daarom ook op het bestaan van die
+   invaller. *)
 
 let som_num0 =
   {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD",
@@ -6095,37 +6107,53 @@ let som_operand naam =
         "bron": "zijn %s", "set": false, "navigatiePad": [] }|}
     naam som_num0 naam
 
-let gelijste_vouw_doc ~kind ~element_objecttype =
+(* de dimensie-as: het attribuut draagt een dimensie en de vouw selecteert
+   haar cellen. WF-037 laat dan één operand toe waar een gelijste vouw er twee
+   eist — de uitzondering die "stempel afwezig" dubbelzinnig maakt. *)
+let som_dimensies =
+  {|"seizoen": { "node": "Dimensie", "naam": "seizoen", "naamMeervoud": "seizoenen",
+                 "voorzetsel": "in", "waarden": [ "voorjaar", "najaar" ] }|}
+
+let som_dimensieselectie =
+  {|{ "node": "DimensieSelectie", "dimensie": "seizoen",
+      "labels": [ "voorjaar", "najaar" ], "bron": "in alle seizoenen" }|}
+
+let gelijste_vouw_doc ?(dimensies = "") ?(attribuut_dimensies = "")
+    ?(dimensie_selectie = "null") ?argumenten ~kind ~element_objecttype () =
+  let argumenten =
+    match argumenten with
+    | Some a -> a
+    | None -> som_operand "deelvangst" ^ ", " ^ som_operand "teller"
+  in
   Printf.sprintf
     {|{ "formaat": "regelspraak-ir-v0",
   "objecttypen": {
     "Vangst": { "node": "Objecttype", "naam": "Vangst",
       "attributen": { "deelvangst": %s, "teller": %s, "vangstsom": %s },
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutMeervoud": {}, "attribuutDimensies": { %s }, "attribuutGranulariteit": {},
       "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
       "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
       "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vangsten" } },
   "domeinen": {}, "parameters": {}, "eenheidstelsels": {}, "feittypen": {},
-  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
+  "dimensies": { %s }, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
   "regels": [],
   "resolvedRegels": [
     { "node": "ResolvedRegel", "naam": "vangstsom van een vangst", "soort": "BEREKENING",
       "doel": { "node": "AttribuutRef", "attribuut": "vangstsom", "objecttype": "Vangst",
                 "onderwerpBron": "een Vangst", "navigatieRol": null, "type": %s,
                 "bron": "De vangstsom van een Vangst", "set": false, "navigatiePad": [] },
-      "waarde": { "node": "Functie", "kind": "%s", "argumenten": [ %s, %s ],
+      "waarde": { "node": "Functie", "kind": "%s", "argumenten": [ %s ],
                   "elementObjecttype": %s, "leegwaarde": null, "filter": null,
-                  "dimensieSelectie": null, "type": %s,
-                  "bron": "de vouw van zijn deelvangst en zijn teller",
-                  "granulariteit": null },
+                  "dimensieSelectie": %s, "type": %s,
+                  "bron": "de vouw van zijn deelvangst", "granulariteit": null },
       "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
   "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
   "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
   "regelGroepen": [], "diagnostics": []
 }
 |}
-    som_num0 som_num0 som_num0 som_num0 kind (som_operand "deelvangst")
-    (som_operand "teller") element_objecttype som_num0
+    som_num0 som_num0 som_num0 attribuut_dimensies dimensies som_num0 kind argumenten
+    element_objecttype dimensie_selectie som_num0
 
 let gelijste_vouw_case =
   {|{ "format": "uchar-case-v0", "asOfDate": null,
@@ -6136,20 +6164,43 @@ let gelijste_vouw_case =
   "expected": [ { "kind": "consistent" } ] }
 |}
 
+(* de dimensiecel-case levert geen scalaire waarde voor het gedimensioneerde
+   attribuut: het draagt cellen, geen scalair *)
+let dimensie_vouw_case =
+  {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+    { "label": "V1", "objectType": "Vangst", "attributes": {},
+      "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }
+|}
+
 let () =
   faults_with ~name:"§5.8.3 de gelijste som valt op haar eigen, vormnoemende arm"
-    ~ir:(gelijste_vouw_doc ~kind:"SOM" ~element_objecttype:"null")
+    ~ir:(gelijste_vouw_doc ~kind:"SOM" ~element_objecttype:"null" ())
     ~case_text:gelijste_vouw_case
     ~needle:"a som over listed operands is not translated";
   (* armgrens, as KIND: hetzelfde frame, een buurvouw — de bodem, niet de som *)
   faults_with ~name:"§5.8.3 armgrens: het gelijste MINIMUM houdt de bodem"
-    ~ir:(gelijste_vouw_doc ~kind:"MINIMUM" ~element_objecttype:"null")
+    ~ir:(gelijste_vouw_doc ~kind:"MINIMUM" ~element_objecttype:"null" ())
     ~case_text:gelijste_vouw_case
     ~needle:"expression kind not translated (no corpus case exercises it)";
   (* armgrens, as ELEMENT: dezelfde som mét bron-stempel — ook de bodem *)
   faults_with ~name:"§5.8.3 armgrens: een som mét elementObjecttype houdt de bodem"
-    ~ir:(gelijste_vouw_doc ~kind:"SOM" ~element_objecttype:"\"Vangst\"")
+    ~ir:(gelijste_vouw_doc ~kind:"SOM" ~element_objecttype:"\"Vangst\"" ())
     ~case_text:gelijste_vouw_case
+    ~needle:"expression kind not translated (no corpus case exercises it)";
+  (* armgrens, as DIMENSIE: WF-037's arity-uitzondering — stempel afwezig,
+     dimensieSelectie gezet. Verifier-SCHOON (gemeten met de gate-3-binair op
+     dit frame) en toch niet gelijst; hij houdt de bodem. Vóór de wacht op
+     dimensieSelectie kreeg hij het somfragment, wat onwaar was: `ref` weigert
+     hem op eigen grond, "dimension selection not implemented in this card". *)
+  faults_with ~name:"WF-037 armgrens: de dimensiecel-som houdt de bodem"
+    ~ir:
+      (gelijste_vouw_doc ~dimensies:som_dimensies
+         ~attribuut_dimensies:{|"deelvangst": [ "seizoen" ]|}
+         ~dimensie_selectie:som_dimensieselectie
+         ~argumenten:(som_operand "deelvangst") ~kind:"SOM" ~element_objecttype:"null" ())
+    ~case_text:dimensie_vouw_case
     ~needle:"expression kind not translated (no corpus case exercises it)"
 
 let () =
