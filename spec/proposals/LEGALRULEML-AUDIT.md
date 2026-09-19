@@ -130,7 +130,7 @@ timelines (RS ch. 3). The mismatch runs in *both* directions.
 
 | LegalRuleML concept | Verdict | Evidence and boundary |
 |---|---|---|
-| **Applicability axis** (gating: does the norm apply on date d) | **DEELS** | The evaluation date **gates** a versioned form against its validity window: WF-021 (version windows non-overlapping), `IR-SPEC.md` ch. 3.10, RS ch. 8.2. But the witness is **verifier-only**: `jutterswet-vormenkabinet` (two dated versions of one rule name) is the witness cabinet — by its own NOTE it carries no `case*.json` and *cannot* replay (its other rules fault in both executors), and it is the **only** corpus document with a bounded `geldigheid` window at all. So WF-021 well-formedness is witnessed by gate 3 (plus negatief `wf021-version-overlap`), while the RS ch. 8.2 *runtime* gating is exercised by **zero** replaying cases — the same missing-executor-witness class as C1. → candidate C3 (§7): a replaying two-dated-versions golden with an `asOfDate` case in each window. |
+| **Applicability axis** (gating: does the norm apply on date d) | **DEELS** | The evaluation date **gates** a versioned form against its validity window: WF-021 (version windows non-overlapping), `IR-SPEC.md` ch. 3.10, RS ch. 8.2. The witness WAS verifier-only until C3 delivered: `anchor/jutterswet-jutheffing` carries two dated versions of one rule name with per-window absolute values replaying through both executors (gates 5–6), and `jutterswet-vensterheffing` is a second bounded-`geldigheid` document; since the 2026-09-19 cabinet shrink the cabinet itself carries no bounded window anymore. WF-021 well-formedness stays witnessed by gate 3 (plus negatief `wf021-version-overlap`); the RS ch. 8.2 runtime gating replays through jutheffing. → candidate C3 (§7): **Delivered**. |
 | **Parameter versioning over time** (LegalRuleML's "penalty 500\$/750\$/1000\$ by crime date" example, §4.2.3.2) | **GEDEKT** | The vintage read: a granular parameter read at the evaluation date, `read(tl_p, Rekendatum)` — RS ch. 8.3–8.4, WF-018/005; witnesses `jutterswet-penningjaar` and `anchor/jutterswet-penningvintage` (RS ch. 8.5 worked example verbatim, gates 5–6), with a session-start coverage check that faults on a missing vintage before any rule fires. This is precisely LegalRuleML's "point to the correct penalty according to the time." |
 | **Content-event timelines** (durations, per-period values) | **GEDEKT** (and *beyond* LegalRuleML) | Object/attribute timelines with granularity, cut-merge, pro-rata, day counts: RS ch. 3, WF-005/015/016/055/056/058; witnesses `jutterswet-getijdenwacht`, `anchor/jutterswet-borgdeel`, `anchor/jutterswet-dagentelling`. LegalRuleML deliberately does **not** model this — §4.3.5's own exclusion carries the claim; PLAN §6 (Phase 5) makes the same richer-on-time prediction, though about Catala, not LegalRuleML. |
 | **Multiple *norm-status* axes** (entry-into-force vs **efficacy** vs applicability, held distinct) | **NIET** | uchar collapses valuation = calculation = vintage into one axis by design. Consequence: a **documented decision**, not an accident — PLAN §9 decision 2 ("single time axis … accepted v1 scope"); `CONSTRUCTS.md` row 12 ("Second time axis (knowledge time / retroactivity) — later(v2) … LegalRuleML distinguishes in-force / efficacy / application — the extension point must not hard-code 'exactly two axes'"). The extension point is *named* in RS ch. 8.1 ("a second, knowledge-time axis … a session-shape change, not a re-foundation"). |
@@ -280,9 +280,9 @@ prioritized defaults ch. 6.1 / RS ch. 7, anchors
 to — **yes for vintage selection**, with richer content-event timelines
 than LegalRuleML models (cluster 2: WF-018, RS ch. 8,
 `-penningvintage`), but **version gating only DEELS**: the mechanism is
-specified and verifier-witnessed (WF-021, `jutterswet-vormenkabinet` —
-verifier-only by its own NOTE), while no replaying corpus case exercises
-the RS ch. 8.2 runtime gating (→ candidate C3).
+specified and witnessed by `anchor/jutterswet-jutheffing`
+(replaying through gates 5–6 since C3 delivered), which also exercises
+the RS ch. 8.2 runtime gating (→ candidate C3, Delivered).
 But the standing test's own three headline items split: **override** is
 only **DEELS** — uchar has intra-target defaults priority, not
 LegalRuleML's free `r1 > r2` superiority relation or its
@@ -356,19 +356,19 @@ here):
   **Proposed (2026-08-25):** `spec/proposals/PRIORITY-RELATION.md`
   recommends not building the free relation or strength tags; its five
   numbered ratification questions await the maintainer.
-- **C3 — Witness runtime version gating with a replaying golden.** The
-  only bounded-`geldigheid` document in the corpus is the verifier-only
-  witness cabinet (`jutterswet-vormenkabinet`, no `case*.json` by
-  design), so RS ch. 8.2's date-gating of rule versions is exercised by
-  zero replaying cases. Candidate: a golden with two dated versions of
+- **C3 — Witness runtime version gating with a replaying golden.** At
+  the time of the audit the only bounded-`geldigheid` document in the
+  corpus was the verifier-only witness cabinet (`jutterswet-vormenkabinet`,
+  no `case*.json` by design), so RS ch. 8.2's date-gating of rule
+  versions was exercised by zero replaying cases. Candidate: a golden with two dated versions of
   one rule built from executable constructs, plus cases with an
   `asOfDate` in each window — after which the cabinet's WF-021 row moves
   out, per its own NOTE's shrink rule.
   **Delivered (2026-08-25):** `anchor/jutterswet-jutheffing` — two dated
   versions of one rule name, per-window absolute values (230/270) and
   the outside-every-window flank pinned as a leeg outcome, replaying
-  through both executors (gates 5–6); the WF-021 index row now names it
-  beside the cabinet.
+  through both executors (gates 5–6); the WF-021 index row names it as the
+  sole witness since the 2026-09-19 cabinet shrink.
 
 - **Documented, no card (for completeness):** second time axis + status
   developments → PLAN §9 (2) / `CONSTRUCTS.md` row 12 (later v2, extension
