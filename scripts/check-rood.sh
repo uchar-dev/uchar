@@ -15,7 +15,10 @@
 #   1. ref/ and backends/ build; clingo must be available;
 #   2. every corpus/rood/**/case*.json passes both runners in
 #      expected-fault mode (exit 0);
-#   3. an empty red set is a failure, never silently green.
+#   3. an empty red set is a failure, never silently green;
+#   4. no pinned fragment cites a BOTTOM SENTENCE of ref or clingo — the
+#      refusal a node-kind match falls through to, which names no form
+#      (the bodemzin fence, 2026-09-19).
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
 
@@ -83,6 +86,105 @@ fi
 if [ "$n_cases" -lt "$EXPECTED_MIN_ROOD_CASES" ]; then
     echo "FAIL: $n_cases red case(s) replayed, but EXPECTED_MIN_ROOD_CASES pins at least $EXPECTED_MIN_ROOD_CASES — the red fence shrank (a deliberate removal lowers the floor in the same commit)" >&2
     exit 1
+fi
+
+# --- the bodemzin fence: a pin may not cite a bottom sentence (2026-09-19) ---------------------
+# Both executors end their node-kind matches in a BOTTOM ARM whose sentence designates the refused
+# construct only by its POSITION or KIND CLASS — "expression kind not translated", "unsupported
+# rule target" — never by the form. Several of those sentences go on to claim that no corpus case
+# reaches them. A red case that pins such a sentence makes the claim live-false AND pins nothing of
+# its own: any other uncarried form satisfies the same fragment, so the witness stops witnessing
+# its own form. Not hypothetical — som-fallback-always-evaluated pinned "expression kind not
+# translated" until 2026-09-19, when the listed som finally got the named arm it deserved, and only
+# a reader's eye caught it. The cure is always that one: give the form its own arm with its own
+# sentence, then pin THAT. This fence makes the recidive fail by name instead of waiting for a
+# reader.
+#
+# The boundary is drawn strictly: a refusal that NAMES the form is not a bottom sentence and is
+# freely pinnable — "a filter on a listed-operand fold has no v0 form", "unsupported AttribuutRef
+# shape (set/sentinel outside a fold)" both name what they refuse, so neither is listed. Nor are
+# the well-formedness diagnostics ("tijdsduur expects two arguments"): they name a violated
+# expectation, not an unreached capacity.
+#
+# Scope is ref + clingo, the two executors that carry fragments. The Drools leg below pins its
+# not-carried forms by NAME in its exclusion list rather than by fragment, so it needs no fence.
+#
+# Known weakness, recorded rather than hidden — the weakness of every pinned list in this gate set:
+# a bottom sentence reworded, moved or newly added in ref/clingo without this list moving with it
+# leaves the fence blind to exactly that sentence.
+#
+# Entries carry the INTERPOLATION-FREE part of each sentence: that is all a pinned fragment can
+# ever match, since the runtime tail (a rule name, a lexeme) differs per document.
+# <source file> <function>|<bottom sentence, verbatim>|<why this one names no form>
+bodem=$(mktemp) || exit 2
+cat > "$bodem" <<'EOF'
+ref/lib/eval.ml literal_value|literal of this datatype not implemented|the residual arm over declared datatypes; it says "this datatype" and interpolates the LEXEME, never which datatype has no reader
+ref/lib/eval.ml eval_expr|expression kind not implemented in this card|the residual arm over expr node kinds — the refused node class is not named
+ref/lib/eval.ml eval_expr|unsupported temporal-read basis shape|the wildcard arm under Temporal_read: it says "shape" and names none
+ref/lib/eval.ml eval_functie|unsupported instance-fold source shape|the residual arm over fold-source combinations — the unsupported combination is not named
+ref/lib/eval.ml eval_functie|function kind not implemented in this card|the wildcard arm over function kinds
+ref/lib/eval.ml eval_cond|predicate kind not implemented in this card|the residual Predicaat arm, after the carried predicate kinds
+ref/lib/eval.ml eval_cond|condition kind not implemented in this card|the residual arm over condition kinds
+ref/lib/eval.ml run_rule|unsupported target shape|the wildcard arm over rule targets; the sentence prefixes the RULE name, never the shape it refuses
+backends/clingo/lib/translate.ml expr_term|unsupported temporal-read basis shape|the wildcard arm under the temporal read, the mirror of ref's
+backends/clingo/lib/translate.ml expr_term|expression kind not translated (no corpus case exercises it)|the wildcard arm over expr node kinds; its parenthetical is the claim a red pin falsifies — the 2026-09-19 defect itself
+backends/clingo/lib/translate.ml cond_atoms|condition kind not translated (no corpus case exercises it)|the wildcard arm over condition kinds, carrying the same no-corpus-case claim
+backends/clingo/lib/translate.ml translate_regel|rule kind not translated|the wildcard arm over rule kinds
+backends/clingo/lib/translate.ml translate_regel|unsupported rule target|the wildcard arm over rule targets
+EOF
+n_bodem=$(grep -c '|' "$bodem")
+
+# The fragments are read WITHOUT a JSON parser on purpose: this fence sits on the CI-blocking
+# ref/clingo legs, which today need only dune and clingo, and a text check may not add a tool
+# requirement to them. The rood zone's expectedFault block holds one "<key>": "<fragment>" per line
+# and gate 4 pins that shape; a case from which neither key can be read FAILS below, so a broken
+# extraction shows up as a red gate rather than as a fence that quietly matches nothing.
+bodem_frag() {
+    awk -v key="$2" '
+        /"expectedFault"[[:space:]]*:/ { inblk = 1; next }
+        inblk && /^[[:space:]]*}/ { inblk = 0 }
+        inblk {
+            pat = "\"" key "\"[[:space:]]*:[[:space:]]*\""
+            if (match($0, pat)) {
+                s = substr($0, RSTART + RLENGTH)
+                sub(/",?[[:space:]]*$/, "", s)
+                gsub(/\\"/, "\"", s)
+                print s
+            }
+        }
+    ' "$1"
+}
+
+n_frag=0
+while IFS= read -r case; do
+    name=$(basename "$(dirname "$case")")
+    for key in ref clingo; do
+        frag=$(bodem_frag "$case" "$key")
+        if [ -z "$frag" ]; then
+            echo "FAIL: $name declares no readable expectedFault.$key — the red contract pins both executors, and a fragment this fence cannot read is a fence that holds nothing" >&2
+            status=1
+            continue
+        fi
+        n_frag=$((n_frag + 1))
+        # BOTH directions are a hit: the fragment inside the sentence (the som defect's shape) and
+        # the sentence inside the fragment (a pin that quotes a bottom sentence whole, plus a tail).
+        while IFS='|' read -r src sentence reason; do
+            [ -z "$sentence" ] && continue
+            hit=0
+            case "$sentence" in *"$frag"*) hit=1 ;; esac
+            case "$frag" in *"$sentence"*) hit=1 ;; esac
+            if [ "$hit" -eq 1 ]; then
+                printf 'FAIL: %s pins expectedFault.%s = "%s", which cites the bottom sentence "%s" (%s — %s). A bottom sentence refuses a whole node class without naming the form, so the pin witnesses nothing of its own: give the form its own arm with its own sentence, then pin that.\n' \
+                    "$name" "$key" "$frag" "$sentence" "$src" "$reason" >&2
+                status=1
+            fi
+        done < "$bodem"
+    done
+done < "$list"
+rm -f "$bodem"
+if [ "$n_frag" -eq 0 ]; then
+    echo 'FAIL: the bodemzin fence read no fragment at all — an unmeasured fence is never silently green' >&2
+    status=1
 fi
 
 # --- the Drools leg (decision V3-b, 2026-08-27) -----------------------------------------------
@@ -254,7 +356,7 @@ else
 fi
 
 if [ "$status" -eq 0 ]; then
-    printf 'check-rood: PASS (%s red cases fault observably in ref and clingo, floor %s)\n' \
-        "$n_cases" "$EXPECTED_MIN_ROOD_CASES"
+    printf 'check-rood: PASS (%s red cases fault observably in ref and clingo, floor %s; %s pinned fragments cite none of the %s listed bottom sentences)\n' \
+        "$n_cases" "$EXPECTED_MIN_ROOD_CASES" "$n_frag" "$n_bodem"
 fi
 exit "$status"
