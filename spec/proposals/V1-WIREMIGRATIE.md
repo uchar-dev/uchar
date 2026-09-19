@@ -1561,6 +1561,8 @@ de klap kost en wat gate 3 daarna nog bewaakt.*
 
 ### V14 — Krijgt elke vervallende WF-regel een opvolgergetuige? **(begin hier)**
 
+**BESLIST (2026-09-19, maintainer): (a) — per test een stempel: herschreven, vervangen of verwijderd-met-reden (naamdragende lijst); de vloer gemotiveerd omlaag in dezelfde commit.**
+
 Dit is de grootste post van het hele programma en de enige vraag waarop een
 verkeerd antwoord de gate-set stilzwijgend uitholt.
 
@@ -1621,6 +1623,8 @@ omlaag, met de reden erbij; dat is precies wat het tel-vloerregime voorschrijft
 
 ### V15 — Wat gebeurt er met gate 13?
 
+**BESLIST (2026-09-19, maintainer): (b) — gate 13 wordt herzien tot het harnas op de posities die onder V5 (a) blijven; valt terug op intrekken (mét CLAUDE.md-passage) als er niets overblijft.**
+
 Gate 13 (`check-reftype-derivation.sh`) verdraait elke eenheiddragende
 `type`-annotatie op referentie- en composietposities en eist dat ref, clingo en
 beide Drools-takken exact hun ongetwiste uitkomst reproduceren. **Als B13 landt
@@ -1654,6 +1658,8 @@ argument dat expliciet moet worden aanvaard in plaats van afgeleid. Het hoort in
 
 ### V1 — Hoe heet het formaat, en verhuist het schema?
 
+**BESLIST (2026-09-19, maintainer): (b) — `uchar-ir-v1`, consistent met `uchar-case-v0`.**
+
 De huidige `const` is `regelspraak-ir-v0` en het schemabestand heet zo.
 De naam draagt de brontaal van de eerste frontend, terwijl de wire er drie
 bedient (RegelSpraak, Catala, F-logic) en de missie "engine-neutral" is.
@@ -1673,6 +1679,8 @@ versienummer, precies zoals `uchar-case-v0` dat is.
 ---
 
 ### V2 — Eén klap of twee epochen?
+
+**BESLIST (2026-09-19, maintainer): (a) — één klap, met de voorwaarde dat B11 en B7 vóór de klap landen (§6). Deelvraag B4: (ii) — `diagnostics` blijft, met een normatieve WF-regel.**
 
 De lijst valt schoon in tweeën: de **opruiming** (B2–B5, B7–B12, B16, B18,
 B19–B21 — wegnemen wat superseded of inert is) en de **hernoeming** (B1, B6 —
@@ -1712,6 +1720,8 @@ bezwaar van WF-083 (c), toegepast op zichzelf.
 
 ### V3 — Blijft de topcontainer vlak, of nestelt hij?
 
+**BESLIST (2026-09-19, maintainer): (b) — de wire nestelt: `{format, model, rules}`.**
+
 IR-SPEC ch. 2 noemt "a **model**" de rootcontainer en geeft hem acht velden —
 alle acht declaraties. De v0-wire is vlak: 24 top-level sleutels waarin
 declaraties en `Resolved*`-lijsten door elkaar staan. Ch. 2 zegt daarbij "The v1
@@ -1745,6 +1755,8 @@ elk één zin die dat zegt.
 
 ### V4 — Hoe smelten de twee rollidmaatschapsknopen samen zonder getuige?
 
+**BESLIST (2026-09-19, maintainer): (b) — eerst de getuige (golden + negatief van de verre vorm), dan samenvoegen; hoort in de voorbereiding.**
+
 `VerreRollidmaatschap` heeft **nul dragers in alle 650 documenten**, en IR-SPEC
 ch. 4.5 zegt dat `filler` en `backref` daarom ongekruist blijven. Een knoop
 samenvoegen die niemand schrijft is gratis en ongecontroleerd tegelijk.
@@ -1768,6 +1780,8 @@ echte v1-winst is.
 ---
 
 ### V5 — Hoe ver gaat B13?
+
+**BESLIST (2026-09-19, maintainer): (a) — alleen de referentieposities; de afgeleide posities houden hun annotatie, de afleidingswet per operator is een eigen latere ontwerpstap.**
 
 De referentiepositie-`type` verlaat de wire. Maar welke posities precies?
 Gate 13 verdraait vandaag "every unit-bearing `type` annotation on reference and
