@@ -615,7 +615,7 @@ EXPECTED_PLAYED=159
 #   FAIL     printed — the golden loads, lowers and fires without faulting, and answers a WRONG VALUE
 #   ERROR    printed — the golden faults AT FIRE; a defect of this branch, not a semantic difference
 #   NOCASE   the sweep's own token, never printed by the branch: no case file, so no run at all
-# Why the reasons are grouped rather than written one by one: sixty-nine of the seventy-eight
+# Why the reasons are grouped rather than written one by one: seventy-one of the seventy-eight
 # entries carry one of three class reasons, and a per-golden retelling of the same sentence would be
 # noise around the only thing that is compared, which is the CHANNEL. Each class is explained in the
 # comment that opens it; each golden still stands there BY NAME, which is what the stale guard needs.
