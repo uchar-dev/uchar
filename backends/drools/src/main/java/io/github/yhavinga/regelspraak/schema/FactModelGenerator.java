@@ -254,6 +254,89 @@ public final class FactModelGenerator {
     }
 
     /**
+     * IR-SPEC ch. 4.3 — the role PAIR a symbolic {@code (feittype, rol)} wire binding names:
+     * {@code [gebonden, zuster]}, the role the wire names (the folded element's / the created object's) and the
+     * one the ANCHOR plays. The sibling's NAME is the reference field on the bound end, and vice versa, which is
+     * exactly how {@link #leden} names them. A §13.3.9.2 wederkerig fact type carries ONE role that is its own
+     * sibling. null when the binding names no such fact type / role, or when a non-wederkerig fact type has no
+     * sibling role at all — for those RESOLUTION failures the caller refuses loudly, never guesses. Mirrors
+     * {@code ref/lib/eval.ml}'s {@code bound_role} + {@code resolve_binding}, whose Error flank is a fault there.
+     *
+     * <p>Resolution goes through the fact type the wire NAMES, not through the role name alone: two fact types
+     * may declare an element role of the same name while their anchor roles differ, and the binding then still
+     * selects exactly one. That is also why this is not {@code verbindendeRolViaElementnaam} with the bound
+     * role's name — that search is by NAME over the whole model and answers null on such a document, which would
+     * refuse where the wire is unambiguous.
+     *
+     * <p>It lives HERE for {@link #geenJoinveldReden}'s reason, one step on: until 2026-09-19 BOTH transpiler
+     * branches carried this method privately, line for line identical, and only the dual-branch witnesses held
+     * them together. A second implementation is a second chance to drift, and the drift is invisible — two
+     * branches that resolve the same wire differently produce two different SETS, not an error. One derivation,
+     * two consumers, as {@code StaandeDoelen} already is for the ch. 7.8 standing norm.
+     *
+     * <p><b>What this does NOT check, and why.</b> The FILLERS. A binding may resolve perfectly and still be
+     * wrong for its use site — the bound role filled by the anchor's type instead of the created object's — and
+     * this method hands that pair back without a word. That is division of labour, not oversight: <b>WF-047 is
+     * the fence</b> ("role binding resolves; fillers agree with the use site"), checked by gate 3 with its own
+     * negatief cases, {@code wf047-bound-role-fills-source} and {@code wf047-creation-binding-wrong-filler}, so
+     * no corpus artefact reaches this method mis-filled. Measured on an {@code anchor/jutterswet-rekenkamer}
+     * variant whose creation binding names the SIBLING role: the verifier FAILS it twice on WF-047, while ref
+     * does not fault at all — it takes the wrong binding silently and reads a MISMATCH. A duplicate filler check
+     * HERE was weighed and rejected: it would need the expected filler pair at each call site (creation, fold
+     * source, the quantifier fold's contributors), i.e. a second fence that can drift from gate 3's. What the
+     * callers DO carry is the typed reference-field gate ({@link #heeftReferentieVeld}), which catches the usual
+     * downstream consequence — but that is a bean-model question, not a filler check, and does not claim to be.
+     */
+    public static Rol[] gebondenRolpaar(RegelSpraakModel model, RegelSpraakModel.RolBindingRef rb) {
+        if (model == null || rb == null || rb.feittype() == null || rb.rol() == null) return null;
+        Feittype ft = null;
+        for (Map.Entry<String, Feittype> e : model.feittypen.entrySet())
+            if (e.getKey().equalsIgnoreCase(rb.feittype())) { ft = e.getValue(); break; }
+        if (ft == null) return null;
+        Rol gebonden = null;
+        for (Rol r : ft.rollen)
+            if (r.naam() != null && r.naam().equalsIgnoreCase(rb.rol())) { gebonden = r; break; }
+        if (gebonden == null) return null;
+        if (ft.wederkerig) return new Rol[]{gebonden, gebonden};
+        for (Rol r : ft.rollen)
+            if (r != gebonden) return new Rol[]{gebonden, r};
+        return null;
+    }
+
+    /** What {@link #bereikjoin} decided: the scalar join ROLE the wire binding yields, or the REASON it yields
+     *  none. Exactly one of the two is non-null; both null means the wire named no range at all, and the caller's
+     *  own generic refusal — the one it gave before there were bindings — stands unchanged. */
+    public record Bereikjoin(String rol, String weigering) {}
+
+    /**
+     * THE fold RANGE a ch. 4.3 wire binding yields — the one derivation both transpiler branches read at every
+     * seam where a fold resolves its own set, and the one SENTENCE they both refuse with.
+     *
+     * <p>The role handed back is the SIBLING's name: the binding names the role the ELEMENT plays, and the
+     * sibling — the role the anchor plays — is the reference field ON the element, which is the side the join
+     * reads. It is consulted LAST by every caller, after the written element name and after the by-pair search,
+     * so every join the model already derived stays exactly as it was; it is the only route left for a fold over
+     * a REPEATED type pair (where the by-pair search is ambiguous by construction) or a SELF-TYPED one.
+     *
+     * <p>A TO-MANY sibling is the one arm that needed a shared sentence. Its storage is the far end's field
+     * (§13.3.9), so the element carries no scalar reference to join on — a resolution success with a cardinality
+     * refusal behind it. Until 2026-09-19 each branch answered that with its own GENERIC note (the exec branch's
+     * "aggregatie buiten Phase-C scope", the DRL-text branch's bare {@code TODO aggregatie}), so one fold-join
+     * failure had two names and neither named the cause. The branches now say the same thing, for
+     * {@link #geenJoinveldReden}'s reason: a producer reading the gate report must not have to know which branch
+     * answered.
+     */
+    public static Bereikjoin bereikjoin(RegelSpraakModel model, RegelSpraakModel.RolBindingRef rb) {
+        Rol[] paar = gebondenRolpaar(model, rb);
+        if (paar == null) return new Bereikjoin(null, null);        // no range on the wire -> the caller's own refusal
+        if (!paar[1].meervoudig()) return new Bereikjoin(paar[1].naam(), null);
+        return new Bereikjoin(null, "aggregatie-bereik: de wire-binding wijst de rol '" + paar[0].naam()
+                + "' aan, wiens zusterrol '" + paar[1].naam() + "' MEERVOUDIG is — die naam zou het referentieveld"
+                + " op " + paar[0].objecttypeNaam() + " zijn, maar de opslag van een meervoudige rol ligt aan de"
+                + " overzijde, dus dat veld bestaat niet (§13.3.9 opslagrichting)");
+    }
+
+    /**
      * §13.3.9.2 — the scalar to-one SELF-PAIR role a wederkerig feittype implies on {@code ot} (the role name,
      * hence the bean field name), or null when the model implies none.
      *

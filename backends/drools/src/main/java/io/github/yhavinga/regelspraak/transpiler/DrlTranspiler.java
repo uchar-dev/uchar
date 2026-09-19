@@ -3212,7 +3212,19 @@ public final class DrlTranspiler {
         Objecttype elem = f.elementObjecttype();
         if (elem == null || subject == null) return null;
         String rol = model.verbindendeRol(elem, subject);
-        if (rol == null) return null;                                  // unresolvable join -> marker
+        if (rol == null) {
+            // ch. 4.3, the same LAST arm the instance fold takes, from the same shared derivation. This fold
+            // resolves its own range, so a repeated (or self-typed) type pair leaves the by-pair search with
+            // nothing while the wire names the relation exactly — measured 2026-09-19 on a two-feittype
+            // Jutter/Vondst document: verifier PASS, and BOTH branches refused it generically, the same answer
+            // they give a document that carries no range at all (which WF-048 rejects outright).
+            FactModelGenerator.Bereikjoin bj = FactModelGenerator.bereikjoin(model, rolBindingen.get(f));
+            rol = bj.rol();
+            if (rol == null) {
+                if (bj.weigering() != null) navReden = bj.weigering();
+                return null;                                           // unresolvable join -> marker
+            }
+        }
         // §13.3.9: this fold resolves its own join, so it asks the shared question itself. Measured 2026-09-11 on a
         // verifier-clean model whose element role is to-many (the field lives at the far end): the emitted
         // `bewarendeJutter == $subject` sank the package. Mirrors the exec branch's gate on the same fold.
@@ -3865,15 +3877,14 @@ public final class DrlTranspiler {
         if (rol == null && subject != null) rol = model.verbindendeRol(elem, subject);
         if (rol == null) {
             // The wire's symbolic bronRol, LAST — so every join the two arms above already derive stays
-            // exactly as it was. It names the role the ELEMENT plays; the SIBLING is the role the SUBJECT
-            // plays, i.e. the backref FIELD on the element, which is the side the join below reads. This is
-            // the ONLY route for a fold whose argument is an ATTRIBUTE name (SOM/MINIMUM/MAXIMUM/TOTAAL):
-            // there the by-name arm above does not apply — an attribute name must never be matched against
-            // role names — so on a REPEATED type pair, where the by-pair search is ambiguous by
-            // construction, this branch had nothing left and markered while its exec sister played. A
-            // to-many sibling carries no scalar field to join on and falls through to the refusal below.
-            RegelSpraakModel.Rol[] paar = gebondenRolpaar(rolBindingen.get(f));
-            if (paar != null && !paar[1].meervoudig()) rol = paar[1].naam();
+            // exactly as it was. This is the ONLY route for a fold whose argument is an ATTRIBUTE name
+            // (SOM/MINIMUM/MAXIMUM/TOTAAL): there the by-name arm above does not apply — an attribute name
+            // must never be matched against role names — so on a REPEATED type pair, where the by-pair
+            // search is ambiguous by construction, this branch had nothing left. The derivation AND the
+            // to-many-sibling refusal are FactModelGenerator's, shared with the exec branch.
+            FactModelGenerator.Bereikjoin bj = FactModelGenerator.bereikjoin(model, rolBindingen.get(f));
+            rol = bj.rol();
+            if (rol == null && bj.weigering() != null) navReden = bj.weigering();
         }
         // §13.3.9 STORAGE DIRECTION: a resolved ROLE is not yet a bean FIELD. FactModelGenerator.leden derives a
         // scalar reference only where the role is to-one, uniquely reachable, and its name is not taken by a
@@ -3899,39 +3910,6 @@ public final class DrlTranspiler {
         // ranges over the subject's related instances). Consistent with the resolver's "unresolvable
         // -> marker" rule.
         return Frag.todo("aggregatie-bereik", arg != null ? arg.onderwerpBron() : f.bron().snippet());
-    }
-
-    /** The role PAIR a symbolic (feittype, rol) wire binding names: {@code [bound, sibling]} — the role the wire
-     *  names (the folded element's) and the one the ANCHOR plays. The sibling's NAME is the reference field on
-     *  the bound end, and vice versa, which is exactly how {@code FactModelGenerator.leden} names them. A
-     *  §13.3.9.2 wederkerig fact type carries ONE role that is its own sibling. null when the binding names no
-     *  such fact type / role, or when a non-wederkerig fact type has no sibling role at all — for those
-     *  RESOLUTION failures the caller refuses loudly, never guesses.
-     *
-     *  <p>Resolution goes through the fact type the wire NAMES, not through the role name alone: two fact types
-     *  may declare an element role of the same name while their anchor roles differ, and the binding then still
-     *  selects exactly one. That is also why this is not {@code verbindendeRolViaElementnaam} with the bound
-     *  role's name — that search is by NAME over the whole model and answers null on such a document, which
-     *  would refuse where the wire is unambiguous.
-     *
-     *  <p>The exec branch resolves the very same bindings ({@code ExecModelTranspiler.gebondenRolpaar}); the two
-     *  must hand back the same pair for the same wire, and the dual-branch witnesses are what hold them
-     *  together. Filler agreement is NOT checked here or there: WF-047 is that fence (gate 3), so no corpus
-     *  artefact reaches this method mis-filled. */
-    private RegelSpraakModel.Rol[] gebondenRolpaar(RegelSpraakModel.RolBindingRef rb) {
-        if (rb == null || rb.feittype() == null || rb.rol() == null) return null;
-        RegelSpraakModel.Feittype ft = null;
-        for (java.util.Map.Entry<String, RegelSpraakModel.Feittype> e : model.feittypen.entrySet())
-            if (e.getKey().equalsIgnoreCase(rb.feittype())) { ft = e.getValue(); break; }
-        if (ft == null) return null;
-        RegelSpraakModel.Rol gebonden = null;
-        for (RegelSpraakModel.Rol r : ft.rollen)
-            if (r.naam() != null && r.naam().equalsIgnoreCase(rb.rol())) { gebonden = r; break; }
-        if (gebonden == null) return null;
-        if (ft.wederkerig) return new RegelSpraakModel.Rol[]{gebonden, gebonden};
-        for (RegelSpraakModel.Rol r : ft.rollen)
-            if (r != gebonden) return new RegelSpraakModel.Rol[]{gebonden, r};
-        return null;
     }
 
     /** §5.8/§13.4.14 an AGGREGATION (count / SUM / TOTAAL / MIN / MAX) as one side of a condition comparison ("het aantal /

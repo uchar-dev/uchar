@@ -17,6 +17,7 @@ import io.github.yhavinga.regelspraak.runtime.Accessors;
 import io.github.yhavinga.regelspraak.runtime.CreationMarker;
 import io.github.yhavinga.regelspraak.runtime.RuleFired;
 import io.github.yhavinga.regelspraak.runtime.RegelSpraakRuntime;
+import io.github.yhavinga.regelspraak.schema.FactModelGenerator;
 import io.github.yhavinga.regelspraak.transpiler.kern.Dagsoorten;
 import io.github.yhavinga.regelspraak.transpiler.kern.Dekking;
 import io.github.yhavinga.regelspraak.transpiler.kern.Eenheidsconflict;
@@ -930,12 +931,13 @@ public final class ExecModelTranspiler {
         if (rol == null && subject != null) rol = model.verbindendeRol(elem, subject);
         if (rol == null) {
             // The wire's symbolic bronRol, LAST — so every join the model already derives stays exactly as it was.
-            // It names the role the ELEMENT plays; the SIBLING is the role the SUBJECT plays, i.e. the backref
-            // FIELD on the element (the same reading gebondenRolpaar gives the creation's back-link). This is the
-            // only route for a SELF-TYPED aggregation ("de som van de rang van alle opvolgers van de Wachter"),
-            // whose by-pair search counts two same-typed sibling roles and derives null by construction.
-            RegelSpraakModel.Rol[] paar = gebondenRolpaar(rolBindingen.get(f));
-            if (paar != null && !paar[1].meervoudig()) rol = paar[1].naam();   // to-many: no scalar field to join on
+            // The only route for a SELF-TYPED aggregation ("de som van de rang van alle opvolgers van de Wachter"),
+            // whose by-pair search counts two same-typed sibling roles and derives null by construction, and for a
+            // REPEATED type pair. The derivation AND the to-many-sibling refusal are FactModelGenerator's, shared
+            // with the DRL-text branch.
+            FactModelGenerator.Bereikjoin bj = FactModelGenerator.bereikjoin(model, rolBindingen.get(f));
+            rol = bj.rol();
+            if (rol == null && bj.weigering() != null) { aggregatieReden = bj.weigering(); return null; }
         }
         if (rol == null) return null;
         final String backref = rol;
@@ -971,7 +973,7 @@ public final class ExecModelTranspiler {
         String elemRol = count && arg != null ? model.verbindendeRolViaNaam(subject, elem, arg.attribuut()) : null;
         if (elemRol == null) elemRol = model.verbindendeRol(subject, elem);
         if (elemRol == null) {
-            RegelSpraakModel.Rol[] paar = gebondenRolpaar(rolBindingen.get(f));
+            RegelSpraakModel.Rol[] paar = FactModelGenerator.gebondenRolpaar(model, rolBindingen.get(f));
             if (paar != null) elemRol = paar[0].naam();
         }
         boolean voorwaarts = elemRol != null && !model.naarVeelRol(subject, elem, elemRol);
@@ -1231,7 +1233,16 @@ public final class ExecModelTranspiler {
         Class<?> elemClass = factClass(elem);
         if (elemClass == null) return null;
         String rol = model.verbindendeRol(elem, subject);
-        if (rol == null) return null;
+        if (rol == null) {
+            // ch. 4.3, the same LAST arm the instance fold takes, from the same shared derivation — see the
+            // DRL-text twin for the 2026-09-19 measurement that put it here.
+            FactModelGenerator.Bereikjoin bj = FactModelGenerator.bereikjoin(model, rolBindingen.get(f));
+            rol = bj.rol();
+            if (rol == null) {
+                if (bj.weigering() != null) navReden = bj.weigering();
+                return null;
+            }
+        }
         // §13.3.9: this fold has its OWN join, resolved apart from the one {@link #aggregatie} gates, so it must ask
         // the shared question apart too. Measured 2026-09-11 on a verifier-clean model whose element role is to-many
         // (so the bean field lives at the far end and this end derives none): ERROR ConstraintEvaluationException at
@@ -2978,7 +2989,7 @@ public final class ExecModelTranspiler {
         }
 
         // ---- the CONTRIBUTORS: the instance fold's range, with the instance fold's §13.3.9 questions ----
-        RegelSpraakModel.Rol[] paar = gebondenRolpaar(kv.bronRol());
+        RegelSpraakModel.Rol[] paar = FactModelGenerator.gebondenRolpaar(model, kv.bronRol());
         String backref = model.verbindendeRol(elem, subject);    // the role the SUBJECT plays: the field on the element
         if (backref == null && paar != null && !paar[1].meervoudig()) backref = paar[1].naam();
         if (backref == null)
@@ -6164,46 +6175,6 @@ public final class ExecModelTranspiler {
         return n;
     }
 
-    /** The role PAIR a symbolic (feittype, rol) wire binding names: {@code [bound, sibling]} — the role the wire
-     *  names (the created object's / the aggregated element's) and the one the ANCHOR plays. The sibling's NAME is
-     *  the reference field on the bound end, and vice versa, which is exactly how {@link FactModelGenerator#leden}
-     *  names them. A §13.3.9.2 wederkerig fact type carries ONE role that is its own sibling. null when the binding
-     *  names no such fact type / role, or when a non-wederkerig fact type has no sibling role at all — for those
-     *  RESOLUTION failures the caller refuses loudly, never guesses. Mirrors {@code ref/lib/eval.ml}'s
-     *  {@code bound_role} + {@code resolve_binding}, whose Error flank is a fault there.
-     *
-     *  <p><b>What this does NOT check, and why (lens 2, 2026-08-30).</b> The FILLERS. A binding may resolve
-     *  perfectly and still be wrong for its use site — the bound role filled by the anchor's type instead of the
-     *  created object's — and this method hands that pair back without a word. That is not an oversight but the
-     *  division of labour: <b>WF-047 is the fence</b> ("role binding resolves; fillers agree with the use site"),
-     *  checked by gate 3 with its own negatief cases, {@code wf047-bound-role-fills-source} and
-     *  {@code wf047-creation-binding-wrong-filler}, so no corpus artefact can reach this method mis-filled.
-     *  Measured on an {@code anchor/jutterswet-rekenkamer} variant whose creation binding names the SIBLING role
-     *  ({@code taxatieopdracht.opdrachtgever} instead of {@code .rekenkamer}): the verifier
-     *  FAILS it twice on WF-047; ref does not fault at all — it takes the wrong binding silently and reads
-     *  {@code J1.heffing = leeg} (a MISMATCH, not an error); this backend, before the typed field gate, died deep
-     *  and unattributed ("ConstraintEvaluationException: Error evaluating constraint ''"). A duplicate filler check
-     *  HERE was weighed and rejected: it would need the expected filler pair at each of the three call sites
-     *  (creation, fold source ×2), i.e. a second fence that can drift from gate 3's. What the callers DO carry is
-     *  the typed reference-field gate, which catches the usual downstream consequence — on that same variant the
-     *  creation now refuses loudly ("geen referentieveld naar Jutter af") instead of crashing — but that is a
-     *  bean-model question, not a filler check, and does not claim to be one. */
-    private RegelSpraakModel.Rol[] gebondenRolpaar(RegelSpraakModel.RolBindingRef rb) {
-        if (rb == null || rb.feittype() == null || rb.rol() == null) return null;
-        RegelSpraakModel.Feittype ft = null;
-        for (Map.Entry<String, RegelSpraakModel.Feittype> e : model.feittypen.entrySet())
-            if (e.getKey().equalsIgnoreCase(rb.feittype())) { ft = e.getValue(); break; }
-        if (ft == null) return null;
-        RegelSpraakModel.Rol gebonden = null;
-        for (RegelSpraakModel.Rol r : ft.rollen)
-            if (r.naam() != null && r.naam().equalsIgnoreCase(rb.rol())) { gebonden = r; break; }
-        if (gebonden == null) return null;
-        if (ft.wederkerig) return new RegelSpraakModel.Rol[]{gebonden, gebonden};
-        for (RegelSpraakModel.Rol r : ft.rollen)
-            if (r != gebonden) return new RegelSpraakModel.Rol[]{gebonden, r};
-        return null;
-    }
-
     // ---------------- §13.4.6 objectcreatie / §13.4.7 feitcreatie (Phase G) ----------------
     /** §13.4.6 objectcreatie: the subject creates a NEW object of {@code nieuwType}, sets each toekenning value, links
      *  new object and subject over the back-link relation, and inserts it. Gated by the voorwaarde (incl. a §8.1.7
@@ -6251,7 +6222,7 @@ public final class ExecModelTranspiler {
         boolean backVeel, fwdVeel;
         RegelSpraakModel.RolBindingRef vr = rolBindingen.get(oc);
         if (vr != null) {
-            RegelSpraakModel.Rol[] paar = gebondenRolpaar(vr);
+            RegelSpraakModel.Rol[] paar = FactModelGenerator.gebondenRolpaar(model, vr);
             if (paar == null)
                 return skip("objectcreatie (de verbindendeRol-binding '" + vr.feittype() + "." + vr.rol()
                         + "' wijst geen rolpaar aan): " + oc.naam());

@@ -191,6 +191,23 @@ class BronRolVouwWitnessTest {
         }
     }
 
+    @Test void de_meervoudige_zusterrol_weigert_in_beide_takken_met_dezelfde_zin() throws Exception {
+        // The row above says both branches refuse; THIS one says they refuse in the SAME WORDS. Until
+        // 2026-09-19 they did not: one fold-join cardinality failure had two generic names — the exec branch's
+        // "aggregatie buiten Phase-C scope" and the DRL-text branch's bare "TODO aggregatie SOM" — and neither
+        // named the cause. A producer reading the gate report should not have to know which branch answered, so
+        // the sentence comes from FactModelGenerator.bereikjoin, the same place both branches now take the
+        // derivation from. No corpus golden reaches this arm (measured, whole corpus, both branches), which is
+        // exactly why the branches were free to drift here.
+        ObjectNode ir = somModel();
+        for (JsonNode r : ir.get("feittypen").get("thuisligging").get("rollen"))
+            ((ObjectNode) r).put("meervoudig", true);
+        BeideTakken.geweigerd(tijdelijk("bronrol-gedeelde-zin", ir),
+                JSON.readTree(zaak("liggertal", "19", "20", null)),
+                "wiens zusterrol 'thuishaven' MEERVOUDIG is",
+                "one cardinality refusal, one sentence");
+    }
+
     // ---------------- 4. the self-typed pair: the same gap, in the corpus ----------------
 
     @Test void het_zelfgetypeerde_bereik_lowert_nu_ook_in_de_drl_tak() throws Exception {
