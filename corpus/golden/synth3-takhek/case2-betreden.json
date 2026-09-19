@@ -1,0 +1,39 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {
+          "inkomen": {
+            "number": "5.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "drempel": {
+        "number": "10.00"
+      },
+      "basisheffing": {
+        "number": "5.00"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "J4",
+      "attribute": "heffing"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "heffing van een jutter",
+      "label": "J4"
+    }
+  ]
+}
