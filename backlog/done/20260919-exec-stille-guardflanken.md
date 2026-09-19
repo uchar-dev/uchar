@@ -203,6 +203,9 @@ stil was) en geen PLAN-scopewijziging.
   tekst zijn de twee vormen in het poortrapport niet te onderscheiden.
   `DrlTranspiler` viel buiten de May-touch, dus de symmetrie is niet afgemaakt.
 - De geweigerde documenten hebben nergens een *corpus*-huis: ref en clingo
-  werpen erop een fout, dus een golden kan de vorm niet dragen, en de rode zone
-  kan hem pas dragen nadat clingo zijn WF-044-arm heeft (zie (c)). Tot die tijd
-  leeft de dekking in de eigen suite van de backend.
+  werpen erop een fout, dus een golden kan de vorm niet dragen. De rode zone
+  kan vorm 1 pas dragen nadat clingo zijn WF-044-arm heeft (zie (c)); vorm 2
+  is vandaag wél rood-bereikbaar — clingo werpt daar een echte WF-100-zin, de
+  Drools-token is EXCLUDE — en is alleen op de normatieve grond van (c)'s
+  slotalinea uitgesteld. Tot die tijd leeft de dekking in de eigen suite van
+  de backend.

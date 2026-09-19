@@ -162,8 +162,9 @@ kenmerk ~6 regels per OCaml-uitvoerder (guard na de keten per doel;
 owner_hosts stopt vanzelf met falen) maar generiek vergt het een
 gastheerveld dat B10/B11/B13 niet plannen en dat exec voor samengestelde
 guards niet kan dragen; (2) kost nul conforme documenten maar verplaatst
-de breuk naar de Onopgelost-guard en maakt exec meetbaar slechter
-(1 → stil 0); (3) is één ch.-5.8b-zin + een rood-getuige met
+de breuk naar de Onopgelost-guard, waar sinds
+`20260919-exec-stille-guardflanken` **beide Drools-takken weigeren** —
+geen enkele uitvoerder antwoordt de vorm dan nog; (3) is één ch.-5.8b-zin + een rood-getuige met
 NOFAULT-regel (gemeten haalbaar: ref/clingo voldoen aan expectedFault,
 Drools levert het NOFAULT-token).
 
@@ -176,12 +177,13 @@ latere GENERIEKE kaart. Kies (1) niet stuksgewijs voor het kenmerk
 alleen; kies (2) niet zoals geformuleerd. V1-wisselwerking: dit is P7
 en blokkeert B10.
 
-Nieuwe metingen die aparte opvolging kregen
-(`20260919-exec-stille-guardflanken.md`): exec speelt STIL 0 op een
-Onopgelost-feitcreatie-guard (een Onopgelost verdwijnt — de
-gate-8-familie heeft op die positie geen getuige) en een
-derde-type-eigenaar splijt de twee Drools-takken (exec inert → geteld
-als gespeeld met 0, drl EXCLUDE). Los daarvan gemeten:
+Nieuwe metingen die aparte opvolging kregen én intussen gedicht zijn
+(`20260919-exec-stille-guardflanken.md`, gemeten VÓÓR die kaart): exec
+speelde STIL 0 op een Onopgelost-feitcreatie-guard (een Onopgelost
+verdween — de gate-8-familie heeft op die positie nog geen getuige) en
+een derde-type-eigenaar spleet de twee Drools-takken (exec inert →
+geteld als gespeeld met 0, drl EXCLUDE); sinds die kaart weigeren
+beide takken benoemd. Los daarvan gemeten:
 `AttribuutRef.objecttype` met een vreemd type wordt door ALLE lezers
 stil als navigatie over de afgeleide relatie gelezen — de wire geeft
 daarmee twee tegengestelde antwoorden op dezelfde intuïtie; dat hoort
