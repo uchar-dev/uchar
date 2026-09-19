@@ -122,3 +122,9 @@ May touch: `spec/RUNTIME-SEMANTICS.md` (**voorstel** — beschermd pad),
 - **De lege helft `Constante.naam: null`** — de (n)/(o)-precedent, vastgelegd
   met zijn meting bij WF-098 in ch. 4.1; een eigen clausule met een eigen
   beslissing.
+
+## Maintainersbesluit (2026-09-19): oppakken
+
+De kaart wordt gebouwd: het semantiekvoorstel in RUNTIME-SEMANTICS met
+gewerkte voorbeelden, met Drools' bestaande gedrag als vertrekpunt en
+de brontekst als toets, en genummerde restvragen waar de bron zwijgt.

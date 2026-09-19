@@ -27,3 +27,11 @@ een maintainersbesluit — niet per vorm hier beslissen.
 
 May touch: `frontends/regelspraak/**`, kaartverplaatsing; spec-teksten
 alleen als voorstel.
+
+## Maintainersbesluit (2026-09-19): diagnoseplicht, WARNING
+
+Elke `Onopgelost`-productie van de frontend krijgt een diagnose
+ernaast met severity WARNING: het document blijft emitteerbaar — de
+marker blijft de eerlijke wire-vorm — maar de schrijver ziet het.
+Eerst de (a)-inventaris over de hele frontend, dan de uitvoering per
+route met getuigen.

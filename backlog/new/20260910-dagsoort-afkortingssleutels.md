@@ -115,3 +115,10 @@ zonder dat de kaart opnieuw gesneden wordt.
   (`backlog/done/20260909-wf017-sleutel-en-spellingsbotsing.md`).
 - De producent-diagnostiek op de stille `putIfAbsent` — dezelfde done-kaart
   noemt hem als conformance-werk; verwante frontendkant, andere vraag.
+
+## Maintainersbesluit (2026-09-19): verbod naar dertig én één leesvolgorde
+
+Beide sluitingen in één kaart: het WF-017-verbod gaat alle dertig
+kalenderspellingen dekken (met negatieve getuigen per klasse), én de
+opzoekvolgorde van de eenheid wordt in alle uitvoerders gelijkgetrokken
+— de gemeten bron van de divergentie dicht mee.

@@ -188,3 +188,14 @@ beide takken benoemd. Los daarvan gemeten:
 stil als navigatie over de afgeleide relatie gelezen — de wire geeft
 daarmee twee tegengestelde antwoorden op dezelfde intuïtie; dat hoort
 bij dit besluit op tafel.
+
+## Maintainersbesluit (2026-09-19): antwoord (1) — het gastheerveld
+
+De maintainer kiest de GENERIEKE draagroute nu, en volgt daarmee de
+aanbeveling van de meetsessie (antwoord 3) bewust niet: de vorm wordt
+legaal via een gastheerveld dat zegt op welk objecttype de check
+woont, en alle vier de uitvoerders leren hem. Uitvoering spec-first:
+het IR-veld en de WF-100-herziening als beschermd-padvoorstel, de
+meettabel van deze kaart als rood-eerst-basis, en de v1-interactie
+expliciet vastgelegd — B10/B11/B13 plannen vandaag géén gastheerveld,
+dus de uitvoeringskaart draagt die planbijstelling als voorstel mee.

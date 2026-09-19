@@ -29,3 +29,11 @@ exec-pin al zo en bleek werkbaar).
 
 May touch: `scripts/check-drools.sh` (voorstel — beschermd pad),
 kaartverplaatsing. Besluit aan de maintainer.
+
+## Maintainersbesluit (2026-09-19): de volle vorm
+
+Besluit (a): een `EXPECTED_DRL_PLAYED`-gelijkheidspin mét een
+reden-dragende niet-spelerslijst voor de DRL-tak; de gate draait de
+DRL-sweep zelf en de looptijdkosten worden gemeten en gemeld in het
+Result. Uitvoerbaar met dit mandaat (beschermd pad via de
+gebruikelijke lens- en maintainersmerge-route).
