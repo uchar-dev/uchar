@@ -395,11 +395,14 @@ public final class DrlTranspiler {
          *  context, and scoped by save/restore around each {@link Expr.Let} body, so a binding dies with its body
          *  (WF-064: an inner binder of the same name SHADOWS, it never mutates the outer one in place). */
         final java.util.Map<String, String> binders = new java.util.LinkedHashMap<>();
-        /** The same environment for the CONDITION side: binder key -&gt; the need's own re-readable PATTERN text
-         *  (a bare property), or null when the need does not decompose into one. A companion rule is a separate
-         *  rule and cannot see the host consequence's locals, so a §6.5/§6.6 guard that mentions a binder must
-         *  re-read the need itself — and drop the companion when it cannot ({@link #takGarde}). */
-        final java.util.Map<String, String> binderPatroon = new java.util.LinkedHashMap<>();
+        /** The same environment for the CONDITION side: binder key -&gt; the need's own re-readable DECOMPOSITION
+         *  ({@link OperandDeel}: its leeg/vol guards and its bare-property value), or null when the need does not
+         *  decompose into one. A companion rule is a separate rule and cannot see the host consequence's locals,
+         *  so a §6.5/§6.6 guard OR SITE that mentions a binder must re-read the need itself — and drop the
+         *  companion when it cannot ({@link #takGarde}, {@link #companionDeel}). The whole decomposition and not
+         *  merely its value text, because a §6.5 SITE tests leegte: {@code k gedeeld door restpost} needs
+         *  {@code k}'s vol-guard exactly as the un-bound {@code inkomen gedeeld door restpost} needs its own. */
+        final java.util.Map<String, OperandDeel> binderDeel = new java.util.LinkedHashMap<>();
         /** Set while lowering the children of a NON-conjunctive {@link Conditie.Samengesteld}: their verdicts are
          *  folded with {@code ||} / {@code !}, so a child that answers with a SEPARATE when-clause instead of an
          *  inline constraint has no faithful place there — the clause would assert unconditionally what the fold
@@ -879,8 +882,15 @@ public final class DrlTranspiler {
      *  reached by a to-ONE navigation — the only shapes that lower to a re-readable leeg/vol guard a separate
      *  insert-only rule can re-test. null for a literal / parameter / to-many / unresolvable operand (which
      *  still degrades to leeg on the value side but raises no Inconsistentie). An own attribute reuses the bare
-     *  property form, so the companion is byte-identical to the original EIGEN-only emission. */
+     *  property form, so the companion is byte-identical to the original EIGEN-only emission.
+     *
+     *  <p>ch. 4.10 moves the VALUE, not the duty to report it: writing a {@code Let} around a §6.5 site does not
+     *  make the site a different site, so a BINDER operand stands for its need's own decomposition
+     *  ({@link Acc#binderDeel}) — the same substitution {@link #takGarde} already makes on the guard side. A
+     *  binder whose need does not decompose (or is not in scope here) is null like any other undecomposable
+     *  operand, which drops the companion rather than guarding it wrongly. */
     private OperandDeel companionDeel(Acc acc, Expr e, Objecttype subject) {
+        if (e instanceof Expr.BinderRef br) return acc.binderDeel.get(letSleutel(br.naam()));
         if (!(e instanceof Expr.AttribuutRef a)) return null;
         NaviSoort s = naviResolve(a, subject).soort();
         if (s != NaviSoort.EIGEN && s != NaviSoort.GENAVIGEERD) return null;
@@ -1727,14 +1737,18 @@ public final class DrlTranspiler {
         for (Foutplek fp : wortels) {
             Expr.Functie w = (Expr.Functie) fp.plek();
             if (w.argumenten().size() != 1) continue;
-            OperandDeel rd = companionDeel(acc, w.argumenten().get(0), subject);
-            String behoeften = plekGuards(acc, fp, subject);   // ch. 10.6 clause 2 / ch. 10.2 — null = drop
-            if (rd != null && behoeften != null)
+            // ch. 10.6 clause 2 / ch. 10.2 gates, then the radicand itself — in the binder scope the gates
+            // establish, so a radicand that is a BINDER re-reads its need. null = drop.
+            String garde = plekGuards(acc, fp, subject, () -> {
+                OperandDeel rd = companionDeel(acc, w.argumenten().get(0), subject);
+                if (rd == null) return null;
                 // a navigated radicand must guard its root before the "." dereference (mvel is not null-safe);
                 // an own attribute reads `basis < 0` directly (a null is false for "< 0", no NPE) — byte-identical.
-                guards.add(behoeften + (rd.genavigeerd()
+                return rd.genavigeerd()
                         ? rd.vol() + " && " + rd.waarde() + " < new java.math.BigDecimal(\"0\")"
-                        : rd.waarde() + " < new java.math.BigDecimal(\"0\")"));
+                        : rd.waarde() + " < new java.math.BigDecimal(\"0\")";
+            });
+            if (garde != null) guards.add(garde);
         }
         for (int i = 0; i < guards.size(); i++) {
             String pattern = (voorwaarde.isEmpty() ? "" : voorwaarde + ", ") + guards.get(i);
@@ -1941,44 +1955,49 @@ public final class DrlTranspiler {
         }
     }
 
-    /** The needs AND branch guards a site sits behind, as companion-pattern constraints
-     *  ({@code "<vol>, <garde>, "}, empty for none), or null when one of them does not decompose into a
-     *  re-readable form — the companion is then DROPPED, which is the same scope limit a literal/parameter
-     *  operand already carries: a fault that degrades to leeg but raises no Inconsistentie, never a fault
-     *  invented on a path the barrier or the unentered arm cut off. */
-    private String plekGuards(Acc acc, Foutplek fp, Objecttype subject) {
+    /** One §6.5/§6.6 companion's WHOLE pattern: the needs and branch guards the site sits behind
+     *  ({@code "<vol>, <garde>, "}), followed by the site's own constraint from {@code plekDeel}. null when any
+     *  part of it does not decompose into a re-readable form — the companion is then DROPPED, which is the same
+     *  scope limit a literal/parameter operand already carries: a fault that degrades to leeg but raises no
+     *  Inconsistentie, never a fault invented on a path the barrier or the unentered arm cut off.
+     *
+     *  <p>{@code plekDeel} is a callback rather than a caller-computed string because it must run INSIDE the
+     *  site's CONDITION-side environment: each binder in scope stands for its need's own re-readable read, since
+     *  the companion is a separate rule and sees no consequence local. Until 2026-09-19 that environment was
+     *  installed around the branch guards alone, so a §6.5 site whose operand was a BINDER — every site inside a
+     *  {@code Let} body — decomposed to null and its companion silently vanished, while the same site one `Let`
+     *  less deep kept it (measured: {@code heffing := Let k = zijn inkomen in (k gedeeld door zijn restpost)}
+     *  reported nothing where the un-bound spelling reported §9.5). The environment is built HERE, in walk
+     *  order, which is also what keeps a shadowing inner need from resolving through itself, and torn down
+     *  again whichever way this returns. */
+    private String plekGuards(Acc acc, Foutplek fp, Objecttype subject, java.util.function.Supplier<String> plekDeel) {
         StringBuilder b = new StringBuilder();
         for (Expr n : fp.behoeften()) {
             OperandDeel d = companionDeel(acc, n, subject);
             if (d == null) return null;
             b.append(d.vol()).append(", ");
         }
-        if (fp.takken().isEmpty()) return b.toString();
-        // The branch guards are rendered in the CONDITION-side environment of the site: each binder in scope
-        // stands for its need's own re-readable read, since the companion is a separate rule and sees no
-        // consequence local. Built here, from the walk's own scope, and torn down again.
-        java.util.Map<String, String> vorige = new java.util.LinkedHashMap<>(acc.binderPatroon);
+        java.util.Map<String, OperandDeel> vorige = new java.util.LinkedHashMap<>(acc.binderDeel);
         try {
-            for (java.util.Map.Entry<String, Expr> e : fp.binders().entrySet()) {
-                OperandDeel d = companionDeel(acc, e.getValue(), subject);
-                acc.binderPatroon.put(e.getKey(), d == null ? null : d.waarde());
-            }
+            for (java.util.Map.Entry<String, Expr> e : fp.binders().entrySet())
+                acc.binderDeel.put(e.getKey(), companionDeel(acc, e.getValue(), subject));
             for (Tak t : fp.takken()) {
                 String g = takGarde(acc, t, subject);
                 if (g == null) return null;
                 b.append(g).append(", ");
             }
+            String plek = plekDeel.get();
+            return plek == null ? null : b.append(plek).toString();
         } finally {
-            acc.binderPatroon.clear();
-            acc.binderPatroon.putAll(vorige);
+            acc.binderDeel.clear();
+            acc.binderDeel.putAll(vorige);
         }
-        return b.toString();
     }
 
     /**
      * One ch. 10.2 branch guard as a companion-PATTERN constraint. It is the same {@code rsAggVergelijk} term the
      * consequence's ternary tests, but lowered condition-side — a companion is a separate rule and sees no
-     * consequence local, so a binder operand stands for its need's own re-readable read ({@link Acc#binderPatroon}).
+     * consequence local, so a binder operand stands for its need's own re-readable read ({@link Acc#binderDeel}).
      * null when any part of that fails, and the caller then drops the companion rather than guard it wrongly.
      */
     private String takGarde(Acc acc, Tak t, Objecttype subject) {
@@ -2055,10 +2074,14 @@ public final class DrlTranspiler {
         List<String> patronen = new ArrayList<>();   // "dividend-vol, divisor-leeg" per qualifying division
         for (Foutplek fp : delingen) {
             Expr.Binair d = (Expr.Binair) fp.plek();
-            OperandDeel dividend = companionDeel(acc, d.links(), subject), divisor = companionDeel(acc, d.rechts(), subject);
-            String behoeften = plekGuards(acc, fp, subject);   // ch. 10.6 clause 2 / ch. 10.2 — null = drop
-            if (dividend != null && divisor != null && behoeften != null)
-                patronen.add(behoeften + dividend.vol() + ", " + divisor.leeg());
+            // ch. 10.6 clause 2 / ch. 10.2 gates, then the site itself — the latter in the binder scope the
+            // former establishes, so a dividend or divisor that is a BINDER re-reads its need. null = drop.
+            String patroon = plekGuards(acc, fp, subject, () -> {
+                OperandDeel dividend = companionDeel(acc, d.links(), subject);
+                OperandDeel divisor = companionDeel(acc, d.rechts(), subject);
+                return dividend == null || divisor == null ? null : dividend.vol() + ", " + divisor.leeg();
+            });
+            if (patroon != null) patronen.add(patroon);
         }
         for (int i = 0; i < patronen.size(); i++) {
             String pattern = (voorwaarde.isEmpty() ? "" : voorwaarde + ", ") + patronen.get(i);
@@ -4722,9 +4745,9 @@ public final class DrlTranspiler {
             // ch. 4.10 on the CONDITION side: a separate rule (a §6.5/§6.6 companion) cannot read the host
             // consequence's local, so the binder stands for the need's OWN re-readable form. A need without one
             // markers, which drops the companion instead of inventing a guard — see takGarde.
-            String patroon = acc.binderPatroon.get(letSleutel(br.naam()));
-            return patroon == null ? Frag.todo("binder zonder herleesbare behoefte in een patroon", br.bron())
-                    : Frag.ok(patroon);
+            OperandDeel deel = acc.binderDeel.get(letSleutel(br.naam()));
+            return deel == null ? Frag.todo("binder zonder herleesbare behoefte in een patroon", br.bron())
+                    : Frag.ok(deel.waarde());
         }
         if (e instanceof Expr.DimensieCel c)
             // §3.6 a dimensioned cell on the CONDITION side is deferred to a marker (the value/then side
