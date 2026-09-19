@@ -417,6 +417,26 @@ class IrEmitterTest {
                 () -> "de rechterzijde moet het domein van de linker enumeratiewaarde leveren:\n" + links);
     }
 
+    @Test void enum_literal_door_de_letketen_van_een_variabelendeel() {
+        // §11/ch. 4.10: a value written through the variabelendeel denotes exactly what the bare literal
+        // denotes (ch. 10.6), so it must reach the wire in the same shape — and the whole chain must, not
+        // just its value: Let and BinderRef are typed FROM the value, so an unpromoted chain would carry
+        // the unknown sentinel at THREE positions WF-034 (r) refuses instead of one. This is also what
+        // keeps the variabelendeel diagnostically transparent (VariabeledeelLoweringTest pins that the
+        // §13.3.4.2 membership check says the same thing through the chain as beside it).
+        String c = emitCompact(enumBron("""
+            Regel oordeel
+                geldig altijd
+                    Het oordeel van een Vondst moet gesteld worden op de tint.
+                    Daarbij geldt:
+                        de tint is 'gaaf'.
+            """));
+        String enumType = "{\"node\":\"Enumeratie\",\"domein\":\"Keurklasse\",\"waarden\":[\"gaaf\",\"beschadigd\"]}";
+        assertTrue(c.contains("\"node\":\"Let\",\"type\":" + enumType + ",\"binder\":\"tint\",\"value\":"
+                        + GAAF_GETYPEERD + ",\"body\":{\"node\":\"BinderRef\",\"name\":\"tint\",\"type\":" + enumType),
+                () -> "de hele letketen moet het domein van het schrijfdoel dragen:\n" + c);
+    }
+
     @Test void enum_literal_zonder_domeincontext_blijft_een_luide_marker() {
         // The fail-fast half of the rule: where NEITHER a write target nor a comparison sibling names
         // an Enumeratie, the frontend has no domain to derive and emits the honest marker rather than
@@ -458,12 +478,12 @@ class IrEmitterTest {
                 geldig altijd
                     De kleur van een Jutter moet gesteld worden op 'licht  blauw'.
             """);
-        assertTrue(raw.contains("\"waarden\": [\"licht  blauw\", \"rood\"]"),
-                () -> "de declaratie houdt de witruimte-run van de gedeclareerde waarde:\n" + raw);
         assertTrue(raw.contains("\"waarde\": \"licht  blauw\""),
                 () -> "het label moet dezelfde witruimte-run houden als de declaratie:\n" + raw);
         assertTrue(raw.contains("\"bron\": \"'licht  blauw'\""),
                 () -> "bron is de tokentekst, niet de gevouwen snippet:\n" + raw);
+        assertFalse(raw.contains("licht blauw"),
+                () -> "geen enkele positie mag de gevouwen vorm dragen — declaratie en label zouden uiteenlopen:\n" + raw);
     }
 
     @Test void tijdsevenredig_deel_draagt_basistype_geen_sentinel() {
