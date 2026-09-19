@@ -278,7 +278,7 @@ kolom-/tekenconstatering met haar §-verwijzing.
 Geen bestaande test gewijzigd. De frontend-suite telt 317 tests (was 298),
 allemaal groen; gate 10's vloer staat op 173 en hoeft niet omhoog.
 
-### Gates (alle veertien, los gedraaid)
+### Gates (alle veertien, los gedraaid; opnieuw gedraaid ná de lensronde)
 
 1 self-contained PASS · 2 ir-schema PASS (238 bestanden, vloer 192) ·
 3 verifier PASS (238 golden schoon, 395 negatief, vloer 350) · 4 case-schema
@@ -297,6 +297,11 @@ rechtenprikkel leest ook testproza — commentaar herschreven), gate 12 omdat
 `backends/drools` de `ir`-bronnen van de frontend als source root meeneemt (de
 "no copy"-opzet), zodat `IrLoader` de nieuwe component moest meegeven: `null`,
 want de wire draagt geen `reden`.
+
+De lensronde raakte geen enkele gate-uitslag: de ingekorte 1728-tekst staat in
+geen enkel artefact (geen golden draagt een marker, en de toka-casus draagt de
+2480-tekst, die niet veranderde), en de twee nieuwe testklassen bewegen alleen
+de testtelling van gate 10 (309 -> 317).
 
 ### Gewijzigde bestanden
 
