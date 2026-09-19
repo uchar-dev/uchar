@@ -1,0 +1,505 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Kustvak": {
+      "node": "Objecttype",
+      "naam": "Kustvak",
+      "attributen": {
+        "vakseinaantal": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "duisteraantal": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "gehesen"
+      ],
+      "kenmerkSoorten": {
+        "gehesen": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Kustvakken"
+    },
+    "Post": {
+      "node": "Objecttype",
+      "naam": "Post",
+      "attributen": {
+        "seinaantal": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "gehesen"
+      ],
+      "kenmerkSoorten": {
+        "gehesen": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Posten"
+    },
+    "Sein": {
+      "node": "Objecttype",
+      "naam": "Sein",
+      "attributen": {},
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "gehesen"
+      ],
+      "kenmerkSoorten": {
+        "gehesen": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Seinen"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {
+    "kustligging": {
+      "node": "Feittype",
+      "naam": "kustligging",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "kustvak",
+          "objecttypeNaam": "Kustvak",
+          "meervoud": null,
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "post",
+          "objecttypeNaam": "Post",
+          "meervoud": "posten",
+          "meervoudig": true
+        }
+      ]
+    },
+    "seinvoering": {
+      "node": "Feittype",
+      "naam": "seinvoering",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "post",
+          "objecttypeNaam": "Post",
+          "meervoud": null,
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "sein",
+          "objecttypeNaam": "Sein",
+          "meervoud": "seinen",
+          "meervoudig": true
+        }
+      ]
+    },
+    "vakbeseining": {
+      "node": "Feittype",
+      "naam": "vakbeseining",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "seinvak",
+          "objecttypeNaam": "Kustvak",
+          "meervoud": null,
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "vaksein",
+          "objecttypeNaam": "Sein",
+          "meervoud": "vakseinen",
+          "meervoudig": true
+        }
+      ]
+    },
+    "vakverduistering": {
+      "node": "Feittype",
+      "naam": "vakverduistering",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "duistervak",
+          "objecttypeNaam": "Kustvak",
+          "meervoud": null,
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "duistersein",
+          "objecttypeNaam": "Sein",
+          "meervoud": "duisterseinen",
+          "meervoudig": true
+        }
+      ]
+    }
+  },
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "seinaantal van een post",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "vakbeseining door het kustvak",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "vakverduistering door het kustvak",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "vakseinaantal van een kustvak",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "duisteraantal van een kustvak",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "seinaantal van een post",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "seinaantal",
+        "objecttype": "Post",
+        "onderwerpBron": "een Post",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "Het seinaantal van een Post",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "AANTAL",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "seinen",
+            "objecttype": "Post",
+            "onderwerpBron": "de post",
+            "navigatieRol": null,
+            "type": {
+              "node": "Onbekend",
+              "reden": "niet opgelost"
+            },
+            "bron": "seinen van de post",
+            "set": false,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": "Sein",
+        "leegwaarde": null,
+        "filter": null,
+        "dimensieSelectie": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "het aantal seinen van de post",
+        "granulariteit": null,
+        "bronRol": {
+          "node": "RolBinding",
+          "feittype": "seinvoering",
+          "rol": "sein"
+        }
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "vakseinaantal van een kustvak",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "vakseinaantal",
+        "objecttype": "Kustvak",
+        "onderwerpBron": "een Kustvak",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "Het vakseinaantal van een Kustvak",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "AANTAL",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "vakseinen",
+            "objecttype": "Kustvak",
+            "onderwerpBron": "het kustvak",
+            "navigatieRol": null,
+            "type": {
+              "node": "Onbekend",
+              "reden": "niet opgelost"
+            },
+            "bron": "vakseinen van het kustvak",
+            "set": false,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": "Sein",
+        "leegwaarde": null,
+        "filter": null,
+        "dimensieSelectie": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "het aantal vakseinen van het kustvak",
+        "granulariteit": null,
+        "bronRol": {
+          "node": "RolBinding",
+          "feittype": "vakbeseining",
+          "rol": "vaksein"
+        }
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "duisteraantal van een kustvak",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "duisteraantal",
+        "objecttype": "Kustvak",
+        "onderwerpBron": "een Kustvak",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "Het duisteraantal van een Kustvak",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "AANTAL",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "duisterseinen",
+            "objecttype": "Kustvak",
+            "onderwerpBron": "het kustvak",
+            "navigatieRol": null,
+            "type": {
+              "node": "Onbekend",
+              "reden": "niet opgelost"
+            },
+            "bron": "duisterseinen van het kustvak",
+            "set": false,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": "Sein",
+        "leegwaarde": null,
+        "filter": null,
+        "dimensieSelectie": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "het aantal duisterseinen van het kustvak",
+        "granulariteit": null,
+        "bronRol": {
+          "node": "RolBinding",
+          "feittype": "vakverduistering",
+          "rol": "duistersein"
+        }
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [
+    {
+      "node": "ResolvedFeitCreatie",
+      "naam": "vakbeseining door het kustvak",
+      "anker": "Kustvak",
+      "doel": "Sein",
+      "zetVeld": "seinvak",
+      "joinVeld": "post",
+      "tussenstappen": [
+        {
+          "node": "Tussenstap",
+          "type": "Post",
+          "veld": "kustvak",
+          "viaOuderVeld": false,
+          "rolBinding": {
+            "node": "RolBinding",
+            "feittype": "kustligging",
+            "rol": "post"
+          }
+        }
+      ],
+      "voorwaarde": {
+        "node": "Kenmerk",
+        "kenmerk": "gehesen",
+        "navigatie": null,
+        "negatie": false,
+        "eigenaar": "Sein",
+        "periode": null,
+        "bron": "het sein gehesen is"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      },
+      "feittype": "vakbeseining",
+      "ankerRol": "seinvak",
+      "doelRol": "vaksein",
+      "joinRol": {
+        "node": "RolBinding",
+        "feittype": "seinvoering",
+        "rol": "sein"
+      }
+    },
+    {
+      "node": "ResolvedFeitCreatie",
+      "naam": "vakverduistering door het kustvak",
+      "anker": "Kustvak",
+      "doel": "Sein",
+      "zetVeld": "duistervak",
+      "joinVeld": "post",
+      "tussenstappen": [
+        {
+          "node": "Tussenstap",
+          "type": "Post",
+          "veld": "kustvak",
+          "viaOuderVeld": false,
+          "rolBinding": {
+            "node": "RolBinding",
+            "feittype": "kustligging",
+            "rol": "post"
+          }
+        }
+      ],
+      "voorwaarde": {
+        "node": "Kenmerk",
+        "kenmerk": "gehesen",
+        "navigatie": null,
+        "negatie": true,
+        "eigenaar": "Sein",
+        "periode": null,
+        "bron": "het sein niet gehesen is"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      },
+      "feittype": "vakverduistering",
+      "ankerRol": "duistervak",
+      "doelRol": "duistersein",
+      "joinRol": {
+        "node": "RolBinding",
+        "feittype": "seinvoering",
+        "rol": "sein"
+      }
+    }
+  ],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

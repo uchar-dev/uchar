@@ -1,0 +1,53 @@
+Objecttype het Kustvak (mv: Kustvakken)
+    is gehesen kenmerk (bijvoeglijk);
+    het vakseinaantal Numeriek (geheel getal);
+    het duisteraantal Numeriek (geheel getal);
+
+Objecttype de Post (mv: Posten)
+    is gehesen kenmerk (bijvoeglijk);
+    het seinaantal Numeriek (geheel getal);
+
+Objecttype het Sein (mv: Seinen)
+    is gehesen kenmerk (bijvoeglijk);
+
+Feittype kustligging
+    het kustvak Kustvak
+    de post (mv: posten) Post
+Eén kustvak telt meerdere posten
+
+Feittype seinvoering
+    de post Post
+    het sein (mv: seinen) Sein
+Eén post telt meerdere seinen
+
+Feittype vakbeseining
+    het seinvak Kustvak
+    het vaksein (mv: vakseinen) Sein
+Eén seinvak telt meerdere vakseinen
+
+Feittype vakverduistering
+    het duistervak Kustvak
+    het duistersein (mv: duisterseinen) Sein
+Eén duistervak telt meerdere duisterseinen
+
+Regel seinaantal van een post
+    geldig altijd
+        Het seinaantal van een Post moet berekend worden als het aantal seinen van de post.
+
+Regel vakbeseining door het kustvak
+    geldig altijd
+        Een vaksein van een Kustvak is een sein van de post van het kustvak
+        indien het sein gehesen is.
+
+Regel vakverduistering door het kustvak
+    geldig altijd
+        Een duistersein van een Kustvak is een sein van de post van het kustvak
+        indien het sein niet gehesen is.
+
+Regel vakseinaantal van een kustvak
+    geldig altijd
+        Het vakseinaantal van een Kustvak moet berekend worden als het aantal vakseinen van het kustvak.
+
+Regel duisteraantal van een kustvak
+    geldig altijd
+        Het duisteraantal van een Kustvak moet berekend worden als het aantal duisterseinen van het kustvak.

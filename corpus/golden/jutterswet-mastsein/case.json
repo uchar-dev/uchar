@@ -1,0 +1,100 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Kustvak",
+        "attributes": {},
+        "roles": {
+          "posten": [
+            "P1"
+          ]
+        },
+        "characteristics": [
+          "gehesen"
+        ]
+      },
+      {
+        "label": "P1",
+        "objectType": "Post",
+        "attributes": {},
+        "roles": {
+          "kustvak": [
+            "V1"
+          ],
+          "masten": [
+            "M1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "M1",
+        "objectType": "Mast",
+        "attributes": {},
+        "roles": {
+          "post": [
+            "P1"
+          ],
+          "seinen": [
+            "S1",
+            "S2",
+            "S3"
+          ]
+        },
+        "characteristics": [
+          "gehesen"
+        ]
+      },
+      {
+        "label": "S1",
+        "objectType": "Sein",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "gehesen"
+        ]
+      },
+      {
+        "label": "S2",
+        "objectType": "Sein",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S3",
+        "objectType": "Sein",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "gehesen"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "M1",
+      "attribute": "seinaantal",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vakseinaantal",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

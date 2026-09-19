@@ -9,12 +9,14 @@ what a reader does with it.
 **The delimitation, stated because it matters more than the "first".** The
 shape this golden carries — owner equal to the subject's own type — is one the
 v0 producer never writes: the frontend sets the field only on a fact-creation
-guard where the doel differs from the anker. And the shape the producer DOES
-write cannot become a golden under this decision, because two of the three
-executors fault on it (`RUNTIME-SEMANTICS.md` ch. 5.8b rule 2). So the only
-owner shape that replays everywhere has no producer, and the producer's shape
-has no replay: this document pins that the form loads, lowers and replays
-identically in all three executors, not that the decision changed its answer.
+guard where the doel differs from the anker. *Until 2026-09-19 the shape the
+producer DOES write could not become a golden either, because two of the three
+executors faulted on it* — so the only owner shape that replayed everywhere had
+no producer, and the producer's shape had no replay. WF-109 (ch. 4.6 (q2))
+closed that, and `jutterswet-seinhijsing` is the producer's own shape replaying
+in all four executors. What this document pins is the other half, and it is
+still its own: that an owner naming the subject's type loads, lowers and
+replays identically everywhere, which is the reading an ABSENT owner has.
 What pins the DECISION is the negatief witness (the verifier half) and the two
 executor suites (the executor half).
 

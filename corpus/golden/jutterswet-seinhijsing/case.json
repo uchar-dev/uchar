@@ -1,0 +1,82 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Kustvak",
+        "attributes": {},
+        "roles": {
+          "posten": [
+            "P1"
+          ]
+        },
+        "characteristics": [
+          "gehesen"
+        ]
+      },
+      {
+        "label": "P1",
+        "objectType": "Post",
+        "attributes": {},
+        "roles": {
+          "kustvak": [
+            "V1"
+          ],
+          "seinen": [
+            "S1",
+            "S2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S1",
+        "objectType": "Sein",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "gehesen"
+        ]
+      },
+      {
+        "label": "S2",
+        "objectType": "Sein",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "seinaantal",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vakseinaantal",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "duisteraantal",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
