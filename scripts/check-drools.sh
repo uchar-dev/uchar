@@ -636,7 +636,18 @@ EXPECTED_CHANNEL=(
 # anker, on every intermediate step and on the doel, with values chosen so the anker reading, each
 # intermediate reading and the doel reading give three different numbers. Both branches play both
 # goldens, so EXPECTED_DRL_PLAYED moves by two as well.
-EXPECTED_PLAYED=163
+#
+# 163 -> 164 (2026-09-19, same card, lens round): ONE more player, and this one DID need a change
+# here. jutterswet-bakensein hosts the guard on a SUPERTYPE of the doel (Sein extends Baken, host
+# "Baken"), which IR-SPEC ch. 4.6 (q2) admits — satisfaction is extensional, `T ⊑ O`. Both branches
+# asked that question by NAME IDENTITY and refused the whole creation by name, while the verifier,
+# ref and the ASP backend carried the document: measured 2026-09-19, one verifier-clean form with
+# two executors answering and two refusing. Both now ask it through the declared chain, from one
+# shared place (transpiler/kern/Gastheer), and both play. The golden is hand-written IR with no
+# bron.rgs: the frontend tags a guard with the doel's own type and never with an ancestor, so no
+# source produces this shape and gate 10 has nothing to re-emit. EXPECTED_DRL_PLAYED moves by one
+# as well.
+EXPECTED_PLAYED=164
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -790,7 +801,10 @@ DRL_CHANNEL=(
 # 138 -> 140 (2026-09-19, card eigenaar-gastheer-object): the same two new goldens, for the same
 # reason — this branch already read the doel through its `$doel` pattern, and the card changed the
 # OTHER two executors to meet it. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=140
+# 140 -> 141 (2026-09-19, same card, lens round): jutterswet-bakensein, the supertype host. This
+# branch refused it too and for the same reason, and the fix is shared between the two. Reason block
+# at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=141
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
