@@ -693,7 +693,7 @@ samenvoeging betrapt als hij fout is. Zie **V4**.
 **Partijen.** `E:` RegelSpraak. `C:` alle vier (de verifier onder WF-034 (q),
 WF-100 en WF-109; `ref`, de ASP-backend en beide Drools-takken lezen het object
 dat het veld noemt). `S:` één property — een HERNOEMING, geen verwijdering.
-`K:` 13 documenten (3 golden, 10 negatief; geteld 2026-09-19). `T:` de pin.
+`K:` 15 documenten met 22 voorkomens (3 golden, 12 negatief; geteld 2026-09-19 ná deze kaart). `T:` de pin.
 
 **Migratienota.** Tot 2026-09-10 heette dit veld een Drools-aanhechtingshint en
 noemde IR-SPEC ch. 4.5 hem "dropped" in v1. Twee besluiten hebben die lezing
@@ -1550,7 +1550,7 @@ inplanbaar. **V16** stelt de vraag of hij in deze klap meegaat.
 | B7 | feitcreatie-spiegelvelden | C | 5 | 16 | — |
 | B8 | `scopeVeld` → `scopeRol` verplicht | C | 7 | 19 | — |
 | B9 | rollidmaatschap samensmelten | C | 3 | 8 | V4 |
-| B10 | `Kenmerk.eigenaar` → `host` (hernoeming; **bijgesteld 2026-09-19**, was verwijdering) | B | 3 | 13 | — |
+| B10 | `Kenmerk.eigenaar` → `host` (hernoeming; **bijgesteld 2026-09-19**, was verwijdering) | B | 22 | 15 | — |
 | B11 | `AttribuutRef`-navigatievelden + `set` | C | 201 | 537 | — |
 | B12 | WF-048 vervalt, binding verplicht | C | 16 | 60 | — |
 | B13 | referentiepositie-`type` van de wire | D | 206 | 567 | V5 |

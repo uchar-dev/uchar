@@ -28,10 +28,11 @@ import java.util.Set;
  * <p>Every model below is built in memory from {@code jutterswet-postwacht}'s {@code ir.json} off the wire, reduced
  * to its creation plus the rule that COUNTS what the creation makes; the corpus files are read and never written.
  * Each was pushed through the verifier, {@code ref/} and the clingo backend, and the measurements are recorded at
- * the test that pins them (2026-09-19). This card changes the exec branch's answer only — the guard semantics, and
- * with it the open hosting question of {@code backlog/new/20260910-eigenaar-gastheer-object.md}, is untouched: the
- * two flanks at the bottom pin that a guard which DOES lower to a side still plays, with the same values, in both
- * branches.
+ * the test that pins them (2026-09-19). This card changed the exec branch's answer only — the guard semantics was
+ * untouched: the two flanks at the bottom pin that a guard which DOES lower to a side still plays, with the same
+ * values, in both branches. The hosting question they left open was decided the same day
+ * ({@code backlog/done/20260910-eigenaar-gastheer-object.md}, WF-109), which moved the verifier and the two OCaml
+ * executors and not this backend; the per-test measurement blocks below carry the lines that moved.
  */
 class StilleGuardflankWitnessTest {
 

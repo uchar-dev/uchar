@@ -223,3 +223,206 @@ het IR-veld en de WF-100-herziening als beschermd-padvoorstel, de
 meettabel van deze kaart als rood-eerst-basis, en de v1-interactie
 expliciet vastgelegd — B10/B11/B13 plannen vandaag géén gastheerveld,
 dus de uitvoeringskaart draagt die planbijstelling als voorstel mee.
+
+## Uitvoeringsdossier (2026-09-19)
+
+### Rood-eerst, gemeten vóór elke regel bestond
+
+Op de producentvorm zelf, geëmitteerd door de frontend uit de nieuwe bron
+(`corpus/golden/jutterswet-seinhijsing/bron.rgs`), vóór WF-109 en vóór de
+ref/clingo-vervanging:
+
+| lezer | uitkomst |
+| --- | --- |
+| verifier | `verifier: PASS` |
+| `ref` | `EVALUATION FAULT: characteristic check "gehesen" is hosted on "Sein" while the subject is "Kustvak" …` |
+| clingo | `TRANSLATION FAULT` — dezelfde zin |
+| Drools exec | `PLAYED 1` |
+| Drools drl-tekst | `PLAYED 1` |
+
+De vijf negatief-getuigen kregen dezelfde behandeling: alle vijf
+`verifier: PASS` vóór de regel, alle vijf precies één `WF-109 FAIL` erna.
+
+### Handberekeningen, opgeschreven vóór de eerste run
+
+**`jutterswet-seinhijsing`.** Wereld: V1 (Kustvak, gehesen) → P1 (Post,
+NIET gehesen) → S1 (Sein, gehesen) en S2 (Sein, niet).
+
+- `seinaantal` van P1 = aantal seinen van de post = |{S1, S2}| = **2**.
+- `vakseinaantal` van V1: de keten bereikt {S1, S2}; de guard woont op
+  `Sein`, dus hij wordt aan S1 (toegelaten) en aan S2 (afgevallen)
+  gesteld → één link → **1**. Ankerlezing zou 2 geven (V1 is gehesen),
+  tussenstaplezing 0 (P1 niet).
+- `duisteraantal` van V1: dezelfde keten, guard ontkend → alleen S2 →
+  **1**. Samen 1 + 1 = 2 = `seinaantal`.
+- `consistent`: geen consistentieregel, geen tweede vuller op een
+  enkelvoudige rol.
+
+**`jutterswet-mastsein`.** Wereld: V1 (Kustvak, gehesen) → P1 (Post,
+niet) → M1 (Mast, gehesen) → S1, S3 (gehesen), S2 (niet).
+
+- `seinaantal` van M1 = |{S1, S2, S3}| = **3**.
+- `vakseinaantal` van V1 = |{S1, S3}| = **2**. Anker 3, eerste
+  tussenstap 0, tweede tussenstap 3 — vier lezingen, drie getallen, en
+  alleen de doellezing geeft 2.
+
+Alle getallen kwamen er zo uit; geen enkele verwachting is achteraf
+bijgesteld.
+
+### Mutatieproeven (uitgevoerd en teruggedraaid)
+
+1. **Drools, beide takken.** `ExecModelTranspiler.leafPredicate` en
+   `DrlTranspiler.conditie` het gastheerveld laten negeren →
+   `mvn -o test -Dtest=GastheerObjectWitnessTest` → **MUTATIE exit=1**,
+   5 van 5 getuigen falen en noemen de ankerlezing bij naam
+   (`vakseinaantal: verwacht 1, werkelijk 2`;
+   `verwacht 2, werkelijk 3`; `duisteraantal: verwacht 1, werkelijk 0`);
+   de weigeringsgetuige meldt "Expected Excluded to be thrown, but
+   nothing was thrown". Daarna `git checkout -- backends/drools/src/main/java`
+   → **HERSTEL exit=0**, 5 van 5 groen.
+2. **`ref`.** De doelfilter vervangen door `targets` →
+   **MUTATIE-ref exit=1**, `MISMATCH: V1.vakseinaantal = 2, expected 1`
+   en `V1.duisteraantal = 2, expected 1`. Teruggedraaid →
+   **HERSTEL-ref exit=0**, `oracle: PASS (4 expectations)`.
+3. **clingo.** `cond_doel` leeggemaakt → **MUTATIE-clingo exit=1**,
+   gevangen door de eigen suite (`FAIL WF-109 gastheer is het doel:
+   clingo pins the values (V1.vakseinaantal = [2], expected 1)`).
+   Teruggedraaid → **HERSTEL-clingo exit=0**.
+4. **verifier.** De WF-109-arm uitgeschakeld →
+   **MUTATIE-verifier exit=1**, vijf regels `passed the verifier (must
+   violate WF-109)`. Teruggedraaid → **HERSTEL-verifier exit=0**.
+
+### Meting over de zones (vóór de eigen getuigen)
+
+646 documenten (golden 213, negatief 399, rood 34), 260 kenmerkchecks,
+10 met een expliciete eigenaar: acht noemen het eigen onderwerptype, één
+noemt een ONGEDECLAREERD type (WF-034 (q), waarvoor WF-109 opzij stapt)
+en precies één noemt een gedeclareerd type dat het onderwerp niet is —
+de al-afgewezen WF-100-getuige. De pariteitszone: 30 documenten, 9
+kenmerkchecks, 0 eigenaren. Ná deze kaart dragen 15 documenten het veld
+(3 golden, 12 negatief) met 22 voorkomens.
+
+## Result (2026-09-19)
+
+Antwoord (1) uitgevoerd in de generieke vorm. Het `eigenaar`-veld is
+genormeerd als GASTHEER — het zegt op welk objecttype de kenmerkcheck
+woont — en alle vier de uitvoerders honoreren hem. De weigering die
+`ref` en de ASP-backend uitspraken is een verifierregel geworden, zodat
+elke verifier-schone vorm door alle vier gedragen wordt: het
+differentiaalvierkant sluit op de vorm die de frontend zelf produceert.
+De wire-naam en -vorm zijn niet aangeraakt.
+
+**Wat er ligt.**
+
+- **Spec-voorstel (beschermd pad, ongemerged).** `spec/IR-SPEC.md`:
+  ch. 4.6 **(q2)** met **WF-109**, de WF-tabelrij, de
+  `CharacteristicCheck`-knooprij, en een ch. 3.4-alinea die zegt dat de
+  feitcreatie-guard de enige positie met twee gebonden objecten is; de
+  zinnen in (q1), in de WF-100-rij en in ch. 4.5/4.6 die het besluit
+  achterhaalt zijn herschreven in plaats van blijven staan.
+  `spec/RUNTIME-SEMANTICS.md`: ch. 5.8b van weigering naar semantiek
+  (regel 2 herschreven, regel 3 vervangen), ch. 5.5 uitgebreid met de
+  filter-lezing, plus **worked example B** met concrete verwachte
+  uitkomsten — verbatim in `ref/test/test_ref.ml` en gespiegeld in
+  `backends/clingo/test/test_clingo.ml`. `spec/verifier/lib/checks.ml`:
+  de WF-109-arm. Aan `spec/schema/` is niets veranderd: het veld bestaat
+  al en de vorm wijzigt niet.
+- **WF-109 in één zin.** De eigenaar MOET een type noemen dat precies
+  één object dat de positie bindt is. Eén object overal — het onderwerp
+  van de omvattende vorm — behalve bij de guard van een §13.4.7
+  feitcreatie, die er twee bindt: de anker en het doel. Nul → FAIL (de
+  check gaat over geen object). Twee → FAIL (het zelfgetypeerde paar en
+  elk gemeenschappelijk supertype; geen voorrang verzonnen). Het doel
+  telt alleen mee waar de check de HELE guard is en niet navigeert; die
+  twee hekken dragen hun reden en hun getuige.
+- **Corpus.** Twee goldens met bron, `jutterswet-seinhijsing` (één
+  tussenstap, beide polariteiten) en `jutterswet-mastsein` (twee
+  tussenstappen); beide onderscheiden de doellezing POSITIEF van de
+  anker- en tussenstaplezing doordat het kenmerk op álle betrokken
+  typen is gedeclareerd en elk lezing een ander getal geeft. Vijf
+  negatief-getuigen: `wf109-gastheer-buiten-bereik`,
+  `wf109-gastheer-derde-type`, `wf109-gastheer-ambigu-zelfgetypeerd`,
+  `wf109-doelgastheer-samengesteld`, `wf109-doelgastheer-genavigeerd`.
+- **Uitvoerders.** `ref` evalueert de guard per doel zodra hij een
+  doel-gastheer draagt (de keten eerst, dan de filter) en is
+  byte-identiek voor elke andere vorm; clingo hangt de literal aan de
+  ketenvariabele, met de ankerarm ongewijzigd zodat elk ouder document
+  hetzelfde programma krijgt. De `owner_hosts`-weigering blijft staan
+  als fail-fast onder een document dat de verifier nu al afwijst — niet
+  verzacht tot een terugval. Aan `backends/drools` is geen regel
+  gewijzigd: beide takken lazen het doel al.
+- **Drools-getuigen.** `GastheerObjectWitnessTest` (5 tests, additief)
+  pint in BEIDE takken de doellezing, de ankerlezing en de
+  tussenstap-weigering op hetzelfde document, plus waardeprobes; het
+  meerstapsgeval zit erbij. Mutatieproeven uitgevoerd en teruggedraaid
+  (zie dossier).
+- **Gate-pins.** `EXPECTED_PLAYED` 161 → **163**, `EXPECTED_DRL_PLAYED`
+  138 → **140**, beide met hun redenblok in het script.
+- **V1-planbijstelling.** `spec/proposals/V1-WIREMIGRATIE.md`: B10 gaat
+  van "verdwijnt" naar "hernoemt", verhuist van familie C naar B en van
+  kaart M2 naar M8; P7 is afgevinkt; de V14-rij is bijgesteld; de
+  wisselwerking met B11 (de `AttribuutRef.objecttype`-spanning) en B13
+  staat er expliciet bij. Alles gemarkeerd als VOORSTEL.
+
+**Wat er bewust NIET ligt.**
+
+- **Geen rode getuige.** De kaart beloofde er een voor antwoord (3); bij
+  (1) bestaat de vorm niet meer waarvoor hij nodig was. Elke
+  gastheer-vorm is nu óf verifier-schoon en door alle vier gedragen, óf
+  verifier-afgewezen (negatief). Een verifier-schoon document dat op de
+  gastheer faalt bestaat niet meer, en een rode zone-case zou dus niets
+  getuigen.
+- **Vorm B (de doelVERGELIJKING)** blijft buiten scope; de grens staat
+  als zodanig in ch. 4.6 (q2).
+- **De `AttribuutRef.objecttype`-spanning** is in (q2) als open spanning
+  benoemd en niet opgelost.
+- **De twee reikwijdtehekken** (samengesteld, genavigeerd) zijn
+  weigeringen met reden, geen normen voor de eeuwigheid: elk kost een
+  getuige in alle vier de uitvoerders om op te heffen.
+
+**Afwijkingen van de acceptatie.** Geen, op de rode getuige na — die is
+hierboven verantwoord. De acceptatie vroeg "minstens één golden"; het
+zijn er twee geworden omdat het meerstapsgeval anders alleen in een
+JUnit-getuige had gestaan.
+
+**Aangeraakte bestaande tests, met reden.** Geen enkele CHECK is
+gewijzigd; wel is achterhaald COMMENTAAR bijgewerkt in
+`ref/test/test_ref.ml` (ch. 5.8b), `backends/clingo/test/test_clingo.ml`
+(WF-100) en `backends/drools/.../StilleGuardflankWitnessTest.java` — die
+blokken beweerden dat de doel-gehoste vorm géén antwoordende uitvoerder
+heeft, wat na deze kaart onwaar is. Ook bijgewerkt: de NOTE's van
+`corpus/negatief/wf100-eigenaar-verklaart-kenmerk-niet` (dat document
+draagt nu twee citaties) en `corpus/golden/jutterswet-keurhouder` (de
+alinea die zei dat de producentvorm geen golden kon worden).
+
+**Frontend.** `frontends/regelspraak` is NIET gewijzigd. Er zijn nu
+**63** rgs-goldens (was 61). Geen toolchain-herpin nodig.
+
+**Gates.** Alle veertien los gedraaid, alle veertien groen. Kerngetallen:
+gate 2 249 bestanden; gate 3 249 golden schoon / 404 negatief afgewezen;
+gate 4 585 cases; gate 5 684 worked examples en 551 cases; gate 6 449
+checks en 551 cases; gate 7 515 cases, 36 survivors; gate 8 34 rode
+cases, 68 fragmenten; gate 9 201 checks, 12 catala-goldens; gate 10 322
+tests, 63 rgs-goldens; gate 11 29/29/29; gate 12 played 163, DRL 140,
+JUnit 501; gate 13 129 twists over 25 goldens; gate 14 130 checks.
+
+**Registervoorstel voor `spec/CONSTRUCTS.md`** (hoofdsessie landt dit
+serieel; deze kaart raakt het bestand niet). De rij over
+`Kenmerk.eigenaar` (ch. 2.2) draagt vandaag dat het veld een
+Drools-aanhechtingshint is die in v1 verdwijnt, met WF-100 als scherpere
+betekenis. Voorgestelde toevoeging aan die rij:
+
+> **Bijgesteld 2026-09-19 (WF-109, IR-SPEC ch. 4.6 (q2)).** De
+> OBJECT-helft is beslist en het veld is de GASTHEER: het noemt het
+> objecttype waarop de check woont, en dat object is wat elke uitvoerder
+> leest. De guard van een §13.4.7 feitcreatie is de enige conditiepositie
+> met twee gebonden objecten (anker en doel); overal elders is er één.
+> Daarmee is dit geen spiegelbagage meer maar betekenis die nergens
+> anders op de wire staat, en de v1-delta is een HERNOEMING in plaats van
+> een verwijdering (`proposals/V1-WIREMIGRATIE.md` B10, voorstel). Eerste
+> goldens die de producentvorm dragen: `jutterswet-seinhijsing`,
+> `jutterswet-mastsein`.
+
+Diezelfde rij eindigt vandaag op een pad dat niet meer bestaat
+(`backlog/new/20260910-…`); bij het landen mag dat `backlog/done/…`
+worden. Voor `spec/PLAN.md` is geen scopewijziging nodig.
