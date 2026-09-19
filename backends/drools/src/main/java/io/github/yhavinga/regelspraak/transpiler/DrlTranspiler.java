@@ -2574,7 +2574,19 @@ public final class DrlTranspiler {
                 : "(" + String.join(" && ", poorten) + ") ? " + v.text() + " : null";
         acc.letVoorspel.add("    " + var + " = " + bewaakt + ";\n");
         String vorige = acc.binders.put(sleutel, var);   // WF-064: an inner binder SHADOWS, it never overwrites
-        acc.letBewaking.add(var + " != null");
+        // ch. 10.6 clause 2, at the binding Let. Under a branch guard the barrier carries it too: a need the
+        // unentered arm never read is null because it was never forced, and that must NOT empty the Let.
+        String barriere = takTekst == null ? var + " == null" : "(" + takTekst + ") && " + var + " == null";
+        // What stands between a DEEPER need and the consequence is this Let's BARRIER, not this need's emptiness
+        // — and under a branch guard the two are different propositions. On the arm that does not read this need
+        // it is never forced, so the variable is null there for a reason that has nothing to do with ch. 10.6: a
+        // deeper need gated on `!= null` was then not forced EITHER, and its own barrier (which carries the OTHER
+        // arm's guard) emptied its Let. Measured before this line said `!barriere`: `Let k in Let z = k/restpost
+        // in Let w = 1,00 in (als k > 10,00 dan w anders z)` answered leeg on the dan-arm where ref, clingo and
+        // the exec branch answer 1,00, and with a coalescing wrapper around the branch node 5,00 where all three
+        // answer 6,00 — the barrier shrunk to the arm. The unguarded spelling stays `var != null` verbatim: it is
+        // the same proposition, and every document without a conditionally-read need keeps its DRL byte for byte.
+        acc.letBewaking.add(takTekst == null ? var + " != null" : "!(" + barriere + ")");
         Frag body;
         try {
             body = waarde(acc, b.body(), subject);
@@ -2582,9 +2594,6 @@ public final class DrlTranspiler {
             acc.letBewaking.remove(acc.letBewaking.size() - 1);
             if (vorige == null) acc.binders.remove(sleutel); else acc.binders.put(sleutel, vorige);
         }
-        // ch. 10.6 clause 2, at the binding Let. Under a branch guard the barrier carries it too: a need the
-        // unentered arm never read is null because it was never forced, and that must NOT empty the Let.
-        String barriere = takTekst == null ? var + " == null" : "(" + takTekst + ") && " + var + " == null";
         return Frag.from("(" + barriere + " ? null : " + body.text() + ")", v, body);
     }
 
