@@ -3054,6 +3054,50 @@ J1 **is wachtdoend** and **is not vrijgesteld**; J2's reference is absent,
 so J2 **is not wachtdoend** and **is vrijgesteld**. The reference and the ASP
 run agree on all four (link × {positive, negation}).
 
+**The far side: "heeft een &lt;rol&gt;"** (the IR's
+`VerreRollidmaatschap`) is the same §8.1.7 sentence read from the other
+end. There the subject does **not** fill the named role — it is the
+relation's other end — so the question is not a null-test on a reference
+it holds but an **existence** question over the relation: does any object
+of the named filler stand in that relation to this subject. The node
+carries no written role name at all; `filler` names the type at the far
+end and `backref` the role the **subject** itself fills, and the two must
+meet on one declared fact type (`IR-SPEC.md` ch. 4.6 (t)) or every
+reader faults. The rules:
+
+1. **Existence, never a count and never a pick.** One filler and ten
+   fillers give the same verdict, and no reader ever selects among them.
+2. **It reads the RELATION, not a direction.** By ch. 5.7a a supplied
+   link establishes the relation itself and both roles read it, so the
+   join may be taken from either side and gives the same answer. A
+   reference-field executor asks the mirror-image question — does some
+   filler's stored reference point back at this subject — because that is
+   the side its fact model stores; it is the same relation.
+3. **"heeft geen" is the plain complement.** Nothing sits behind a hop
+   here, so an empty relation makes the negated form **waar** — the same
+   flip the near-side negation has, and not the asymmetry of the
+   navigated characteristic check (ch. 5.8 rule 3).
+4. **Arity is not a condition of this reading.** The form is written
+   where the named role is to-many from the subject, and a bean-model
+   executor needs the `backref` role to be to-one to hold a field for it,
+   but neither property changes the verdict. An executor whose model
+   cannot store the direction refuses the form with its reason (ch. 5.5),
+   it never reads a spuriously empty side and calls that an answer.
+
+Worked example (the `jutterswet-postbezetting` golden, verbatim in gates
+5–6 and in `ref/test/test_ref.ml`): the same feittype wachtindeling, with
+the Wachtpost as subject. "Een Wachtpost is bemand indien hij een
+wachtjutter heeft" and "Een Wachtpost is onbemand indien hij geen
+wachtjutter heeft" — both `VerreRollidmaatschap` with filler Jutter and
+back-reference toegewezen wachtpost, the second negated. Case 1: J1 is
+assigned to W1, W2 has nobody. W1 **is bemand** and **is not onbemand**;
+W2 **is not bemand** and **is onbemand** — and W1's verdict rides on a
+link no case line names for W1 at all, the case spelling only J1's leg.
+Case 2 separates existence from counting and from sheer presence: J1 and
+J2 are both assigned to W1, J3 to no post at all, W2 still empty. W1's
+two fillers give exactly case 1's verdict — bemand, not onbemand — and
+J3, who stands in no relation, leaves W2 onbemand.
+
 ### 5.8b The characteristic check's owner: the host
 
 A characteristic check may carry an **owner** (the IR's `eigenaar`). It is
@@ -3534,7 +3578,7 @@ rather than by a node name it does not have.
 | `TemporalRead` | `datum` only — `basis` **names** the timeline and is never evaluated (ch. 3.3) | invisible | — |
 | `Predicaat` — leeg / gevuld | `operand` | invisible | — |
 | `Predicaat` — elfproef / numeriek met exact / dagsoort | `operand` | invisible | — *(ref declines them)* |
-| `Kenmerk`, `Rollidmaatschap`, `VerreRollidmaatschap`, `Regelversie` | none | invisible | — *(ref declines `VerreRollidmaatschap`)* |
+| `Kenmerk`, `Rollidmaatschap`, `VerreRollidmaatschap`, `Regelversie` | none | invisible | — |
 | `Literal`, `AttribuutRef`, `ParameterRef`, `VariabeleRef`, `Constante`, `BinderRef`, `ExprOnopgelost`, `ConditieOnopgelost` | none | invisible | — (a `BinderRef` forces its ch. 10.6 need **at its own position** in the parent's order) |
 | `Lambda` | — | not an operand position | never a value (WF-069): it is only the `functie` slot of a `Fold`/`MapList`, applied once per element under that node's row |
 

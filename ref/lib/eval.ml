@@ -539,6 +539,51 @@ let role_by_name ?to_type env ~self_type ~name =
   | [] -> Value.fault "no role named %S reachable from %S" name self_type
   | _ -> Value.fault "ambiguous role name %S from %S" name self_type
 
+(* the FAR-side role check's own resolution (RUNTIME-SEMANTICS ch. 5.8a, far
+   half; IR-SPEC ch. 4.6 (t)): [backref] names the role the SUBJECT fills and
+   [filler] the object type at the OTHER end of the same fact type. What the
+   join ranges over is that other end, so that is what this returns — the role
+   the FILLER fills, which is the sister of the one [backref] names.
+
+   It cannot be [reachable_roles_by_name], and the difference is the whole
+   point of the node: that function matches the name at the FAR end, while
+   `backref` names the role on the SUBJECT's own side. Both ends are pinned
+   at once, which is why an ambiguous pair is a fault and not a pick: two fact
+   types relating the same two types through same-named subject roles denote
+   two different relations, and v0 has no tie-break. Shared with the ASP
+   backend so both executors resolve the node identically. *)
+let far_side_role env ~self_type ~filler ~backref =
+  let named (r : rol) =
+    (match r.rol_naam with Some n -> norm n = norm backref | None -> false)
+    || match r.rol_meervoud with Some m -> norm m = norm backref | None -> false
+  in
+  let candidates =
+    List.concat_map
+      (fun (_, (ft : feittype)) ->
+        let f t r = fills env t r in
+        match ft.rollen with
+        | [ a; b ] ->
+            (if f self_type a && named a && f filler b then [ b ] else [])
+            @ (if f self_type b && named b && f filler a then [ a ] else [])
+        | [ r ] when ft.wederkerig ->
+            (* the reciprocal shape: one role is both ends of the hop, so it
+               is its own back-reference *)
+            if f self_type r && named r && f filler r then [ r ] else []
+        | _ -> [])
+      env.doc.feittypen
+  in
+  match candidates with
+  | [ r ] -> r
+  | [] ->
+      Value.fault
+        "no fact type holds %S in a role named %S with %S at the other end: the far-side role \
+         check's filler and back-reference resolve against no single declaration"
+        self_type backref filler
+  | _ ->
+      Value.fault
+        "the far-side role check from %S over %S to %S is ambiguous (%d candidate relations)"
+        self_type backref filler (List.length candidates)
+
 (* the zero-hop self-reference (WF-053, IR-SPEC ch. 4.1a): a single
    bindingless written step on a reference whose endpoint type equals
    the subject type may denote the subject ITSELF, by a role the
@@ -1996,8 +2041,34 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
                 read (if hit then hits + 1 else hits) (left - 1) rest)
       in
       read 0 n members
-  | Verre_rollidmaatschap _ | Periode_conditie _ ->
-      Value.fault "condition kind not implemented in this card"
+  | Verre_rollidmaatschap { filler; backref; negatie; _ } ->
+      (* ch. 5.8a FAR-side rolcheck ("de Wachtpost heeft een wachtjutter"):
+         the same §8.1.7 sentence read from the other end. The subject does
+         NOT fill the named role; it is the relation's other end, and the
+         check asks whether ANY object of [filler] stands in that relation to
+         it — an existence question over the relation, never a count and
+         never a first pick.
+
+         It reads the RELATION, not a direction, and that is ch. 5.7a's law:
+         a supplied link establishes the relation itself and both roles read
+         it, the loader materialising the leg the case did not spell. So the
+         join is the subject's own links over the role the filler fills, the
+         same reading every other navigation here uses — a second,
+         instance-scanning route would be a second reading of one relation
+         and could come apart from it. The bean-model executors ask the
+         mirror-image question (does some filler's stored reference point
+         back at this subject), which is the same relation seen from the side
+         their fact model happens to store.
+
+         "heeft geen" is the plain complement — unlike the navigated
+         characteristic check of ch. 5.8, nothing sits behind a hop here, so
+         an empty relation makes the negated form true. *)
+      let f = req "VerreRollidmaatschap.filler" filler in
+      let b = req "VerreRollidmaatschap.backref" backref in
+      let role = far_side_role env ~self_type:self.otype ~filler:f ~backref:b in
+      let has_one = role_links world self role <> [] in
+      if negatie then not has_one else has_one
+  | Periode_conditie _ -> Value.fault "condition kind not implemented in this card"
   | Conditie_onopgelost _ -> Value.fault "Onopgelost condition reached in evaluation (WF-044)"
 
 (* --- day kinds as duration units (ch. 3.7/3.8) --------------------------

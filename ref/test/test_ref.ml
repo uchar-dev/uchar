@@ -3042,7 +3042,54 @@ let () =
   check "WV-5.8a-geen-j2" (ec "j2" (rolcheck true));
   let doc_mm = { doc with feittypen = [ ft_wacht true ] } in
   expect_fault "WV-5.8a-naar-veel-refuseert" (fun () ->
-      Eval.eval_cond (env_of doc_mm) w (World.get w "j1") ~err:no_err (rolcheck false))
+      Eval.eval_cond (env_of doc_mm) w (World.get w "j1") ~err:no_err (rolcheck false));
+
+  (* WV-5.8a-ver: the `jutterswet-postbezetting` worked example — the same
+     §8.1.7 sentence read from the OTHER end. The Wachtpost does not fill
+     wachtjutter; it is the relation's other end, so "heeft een wachtjutter"
+     is an existence question over the relation. The worlds below carry BOTH
+     legs of every relation, which is what a loaded case carries (ch. 5.7a:
+     the loader materialises the leg the case did not spell) and what every
+     runtime link write produces (both legs, always).
+
+     Case 1 pins the two corners and their negations; case 2 separates
+     existence from counting (two fillers on one post read the same as one)
+     and from sheer presence (a Jutter in no relation leaves every post
+     alone). The pair-resolution fault is the reader's own refusal of the
+     shape WF-034 (t) refuses ahead of it. *)
+  let post_met wachters =
+    { (inst "w1" "Wachtpost" []) with
+      links = World.SMap.add "wachtjutters" wachters World.SMap.empty }
+  in
+  let jutter_op label post =
+    { (inst label "Jutter" []) with
+      links = World.SMap.add "toegewezen wachtpost" [ post ] World.SMap.empty }
+  in
+  let wereld insts = List.fold_left World.add_instance World.empty insts in
+  let verre backref negatie : Ir_v0.Ast.conditie =
+    Verre_rollidmaatschap
+      { filler = Some "Jutter"; backref = Some backref; negatie; bron = None }
+  in
+  let w1 =
+    wereld [ post_met [ "j1" ]; inst "w2" "Wachtpost" []; jutter_op "j1" "w1" ]
+  in
+  let ev1 label c = Eval.eval_cond env w1 (World.get w1 label) ~err:no_err c in
+  check "WV-5.8a-ver-w1-bemand" (ev1 "w1" (verre "toegewezen wachtpost" false));
+  check "WV-5.8a-ver-w1-niet-onbemand" (not (ev1 "w1" (verre "toegewezen wachtpost" true)));
+  check "WV-5.8a-ver-w2-niet-bemand" (not (ev1 "w2" (verre "toegewezen wachtpost" false)));
+  check "WV-5.8a-ver-w2-onbemand" (ev1 "w2" (verre "toegewezen wachtpost" true));
+  let w2 =
+    wereld
+      [ post_met [ "j1"; "j2" ]; inst "w2" "Wachtpost" []; jutter_op "j1" "w1";
+        jutter_op "j2" "w1"; inst "j3" "Jutter" [] ]
+  in
+  let ev2 label c = Eval.eval_cond env w2 (World.get w2 label) ~err:no_err c in
+  check "WV-5.8a-ver-twee-vullers-telt-niet" (ev2 "w1" (verre "toegewezen wachtpost" false));
+  check "WV-5.8a-ver-twee-vullers-niet-onbemand"
+    (not (ev2 "w1" (verre "toegewezen wachtpost" true)));
+  check "WV-5.8a-ver-losse-jutter-bemant-niets" (ev2 "w2" (verre "toegewezen wachtpost" true));
+  expect_fault "WV-5.8a-ver-verkeerde-zijde" (fun () ->
+      ev1 "w1" (verre "wachtjutter" false))
 
 (* --- ch. 5.8b: the characteristic check's owner (WF-100) ----------------
    The RUNTIME-SEMANTICS ch. 5.8b worked example, verbatim. `Vondst` and
