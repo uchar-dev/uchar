@@ -253,7 +253,7 @@ EXPECTED_CHANNEL=(
   "jutterswet-vormenkabinet|NOCASE|a golden with no case file — nothing to replay"
   "jutterswet-waarderingsinvoer|EXCLUDE|loader Refusal: Datatype:StructType"
   "synth2-afrondingscombinaties|EXCLUDE|transpiler SKIP: regel — waarde buiten scope"
-  "synth3-armlichaam|EXCLUDE|loader Refusal: Datatype:ListType — a closed lambda body needs a list-typed fold operand (WF-069), which the v0 loader does not carry; the form itself is pinned by ref and clingo"
+  "synth3-armlichaam|EXCLUDE|loader Refusal: Datatype:ListType — a closed lambda body needs a list-typed fold operand (WF-069/WF-070), which the v0 loader does not carry; the form itself is pinned by ref and clingo"
   "synth3-besluitschakel|EXCLUDE|loader Refusal: Datatype:SumType"
   "synth3-keuringtal|EXCLUDE|loader Refusal: Datatype:ListType"
   "synth3-letbeslag|EXCLUDE|loader Refusal: Datatype:SumType"
@@ -615,7 +615,7 @@ EXPECTED_PLAYED=159
 #   FAIL     printed — the golden loads, lowers and fires without faulting, and answers a WRONG VALUE
 #   ERROR    printed — the golden faults AT FIRE; a defect of this branch, not a semantic difference
 #   NOCASE   the sweep's own token, never printed by the branch: no case file, so no run at all
-# Why the reasons are grouped rather than written one by one: sixty-eight of the seventy-seven
+# Why the reasons are grouped rather than written one by one: sixty-nine of the seventy-eight
 # entries carry one of three class reasons, and a per-golden retelling of the same sentence would be
 # noise around the only thing that is compared, which is the CHANNEL. Each class is explained in the
 # comment that opens it; each golden still stands there BY NAME, which is what the stale guard needs.
@@ -654,7 +654,7 @@ DRL_CHANNEL=(
   "jutterswet-wrakrecht|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-wrakrecht-flogic|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "synth3-nestkorting|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  # (B) loader Refusals — 34, and SHARED with the exec branch: both branches read the wire through
+  # (B) loader Refusals — 35, and SHARED with the exec branch: both branches read the wire through
   # the same IrLoader, so a v1 node neither carries refuses identically in both. Every one of these
   # names an EXPECTED_CHANNEL entry above with the same reason; they are repeated here because this
   # list must be readable on its own, and because the day the loader grows one of these forms BOTH
@@ -685,7 +685,7 @@ DRL_CHANNEL=(
   "jutterswet-vaarwatertoeslag-catala|EXCLUDE|loader Refusal: Expr:Match"
   "jutterswet-vangstwaardering|EXCLUDE|loader Refusal: Datatype:StructType"
   "jutterswet-waarderingsinvoer|EXCLUDE|loader Refusal: Datatype:StructType"
-  "synth3-armlichaam|EXCLUDE|loader Refusal: Datatype:ListType — a closed lambda body needs a list-typed fold operand (WF-069), which the v0 loader does not carry; the form itself is pinned by ref and clingo"
+  "synth3-armlichaam|EXCLUDE|loader Refusal: Datatype:ListType — a closed lambda body needs a list-typed fold operand (WF-069/WF-070), which the v0 loader does not carry; the form itself is pinned by ref and clingo"
   "synth3-besluitschakel|EXCLUDE|loader Refusal: Datatype:SumType"
   "synth3-keuringtal|EXCLUDE|loader Refusal: Datatype:ListType"
   "synth3-letbeslag|EXCLUDE|loader Refusal: Datatype:SumType"

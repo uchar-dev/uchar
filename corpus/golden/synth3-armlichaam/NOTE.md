@@ -30,30 +30,60 @@ three cases keep that from being the whole story: case 2 shows the anders-arm
 really computes with `m` rather than skipping it, case 3 interleaves the two
 arms over one accumulator, and case 4 pins the fold base.
 
-**The falsifying twin is already in the corpus, and it faults.**
-`corpus/rood/closed-runtime-division-by-zero` is the same fold over the same
-`grondslag = 60` with a `0` among the kindertallen and NO branch node, and both
-executors fault there with *"division by numeric zero"*. Same divisor, same
-dividend, one structural difference — so case 1 answering 1,00 in both
-executors is a measurement of the arm placement and not of an absent fence.
+**The nearest relative in the corpus is not the falsification.**
+`corpus/rood/closed-runtime-division-by-zero` folds the same runtime division
+over the same `grondslag = 60` and faults in both executors on a `0` divisor —
+but it is NOT this document minus its branch node. It carries no `Let` at all
+(its body is `acc + grondslag / x` directly), its element type is
+`NIET_NEGATIEF`, its list is `[2, 0]`, and it writes another attribute. It
+establishes that the numeric-zero fence exists in closed-body context; it
+isolates nothing about what keeps that fence quiet here.
 
-The element type is `teken: ONBEPAALD` on purpose. With the sign declaration of
+**The branch-strip probe is.** A copy of THIS document with the single
+`IfThenElse` node removed — the `Let` body becomes its anders arm, `acc plus
+m`, and nothing else changes — is still `verifier: PASS`, so the branch node
+carries no well-formedness weight. Against these same four cases:
+
+| case | ref | clingo |
+|---|---|---|
+| case1-nuldeler | EVALUATION FAULT: division by numeric zero | UNSATISFIABLE — `viol("division by numeric zero",…)` |
+| case2-maatdeel | PASS (2 expectations) | PASS (2 expectations) |
+| case3-gemengd | EVALUATION FAULT: division by numeric zero | UNSATISFIABLE — the same `viol/2` |
+| case4-leeg-lijst | PASS (2 expectations) | PASS (2 expectations) |
+
+Removing ONE node flips exactly the two cases that carry a `0` among the
+kindertallen from an exact answer to a fault, in both executors. The other two
+are unmoved for reasons that are themselves checks: case 2's arm was the anders
+arm all along, and case 4 never enters the body. That is the measurement the
+pinned values rest on.
+
+The element type is `teken: ONBEPAALD` on purpose, and that is a CONTRACT
+choice rather than a stylistic one. With the sign declaration of
 `jutterswet-kinderdeler` (`NIET_NEGATIEF`) the condition `x >= 0` would be
-vacuously true and the anders arm unreachable, which would make the document a
-one-armed witness dressed as a two-armed one.
+vacuously true and the anders arm unreachable — a one-armed witness dressed as
+a two-armed one. Worse, it would be silently so: measured on a copy of this
+document with the element flipped to `NIET_NEGATIEF`, the verifier still passes
+and ref and clingo BOTH still replay cases 2 and 3 to the same values, negative
+kindertallen and all. No executor enforces a declared sign on a list-element
+case input, so under `NIET_NEGATIEF` those two cases would sit outside the
+declared contract with nothing to catch them.
 
 ## What the ASP translation does with it, verbatim
 
 The `Let` value stands syntactically OUTSIDE the branch node, and the ch.-10.6
 rewrite moves it into the single arm that reads it. In the emitted program that
 is visible as the arm guard `V < 0` — the complement of `x >= 0` — on every one
-of the six `viol/2` rules the division brings (two operand range fences, the
-numeric-zero fence, the exactness fence, two result range fences) and on the
-anders recurrence, while the dan-arm's own two range fences and its recurrence
-carry `V >= 0` and no fence of the division appears under them at all:
+of the six `viol/2` rules the anders arm brings and on the anders recurrence.
+Per rule, what each one actually fences: two range fences on the division's own
+OPERANDS (`|P2|`, `|V|`), the numeric-zero fence, the exactness fence, and the
+two range fences of the enclosing `plus` — one on the ACCUMULATOR `|A|`, one on
+the quotient. The dan arm carries that same `plus`'s two operand fences, there
+the accumulator and the scaled literal, and no fence of the division at all:
 
-    viol("division by numeric zero",…) :- …, lelem(…,I,V), V < 0,
+    viol("division by numeric zero",…)   :- …, lelem(…,I,V), V < 0,
         param("grondslag",P2), (V) == 0.
+    viol("arithmetic range exceeded…",…) :- …, V < 0, param("grondslag",P2),
+        (V) != 0, ((P2)*100) \ (V) == 0, |(A)| > 1073741823.
     fa1(…,I,(A+(((P2)*100)/(V)))) :- …, V < 0, param("grondslag",P2),
         (V) != 0, ((P2)*100) \ (V) == 0.
     fa1(…,I,(A+100))              :- …, lelem(…,I,V), V >= 0.
@@ -62,7 +92,7 @@ carry `V >= 0` and no fence of the division appears under them at all:
 than derives a `viol/2`. (clingo's grounder prints an `info: operation
 undefined ((100*P2)\V)` while instantiating the exactness fence at `V = 0`; the
 rule instance is discarded on `V < 0` regardless, and the same message appears
-on the red twin above, so it is a pre-existing grounder remark and not a
+on the red relative above, so it is a pre-existing grounder remark and not a
 property of this document.)
 
 ## Hand-computed absolutes (`grondslag = 60`, fold base `0.00`)
@@ -116,12 +146,13 @@ line
     EXCLUDE loader: form not carried by the v0 Drools backend:
       Datatype:ListType (unknown datatype node)
 
-A closed lambda body needs a list-typed fold operand (WF-069) or a function
-section (`functionDefs`), and the v0 loader carries neither, so the refusal is
-per form and is pinned by name in both of that gate's channel lists. The
-absolute values above are therefore a ref = clingo agreement anchored to
-hand-written numbers, not the full three-executor square — recorded here rather
-than left to be inferred from a count. It is the one member of its family in
+A closed lambda body exists only as a `Fold`/`MapList` function operand
+(WF-069) or as a function section (`functionDefs`), and such a fold's `list`
+operand MUST be list-typed (WF-070); the v0 loader carries neither of those two
+routes, so the refusal is per form and is pinned by name in both of that gate's
+channel lists. The absolute values above are therefore a ref = clingo agreement
+anchored to hand-written numbers, not the full three-executor square — recorded
+here rather than left to be inferred from a count. It is the one member of its family in
 that position: the exec branch plays the other five ch.-10.2/10.6 goldens,
 which put the same chain at rule level where no list type is involved.
 
