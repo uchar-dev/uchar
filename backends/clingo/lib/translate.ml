@@ -695,6 +695,17 @@ let day_kind_binder = "\x00de dag"
    of the kind faults. It is what bounds the ground walk below. *)
 let day_kind_gap_fence = 3_660
 
+(* is this unit SPELLING registered as a day kind? (IR-SPEC ch. 2.9: the
+   lookup is trimmed and case-insensitive). The document-level form, for the
+   refusal sites that run before the translation context exists. *)
+let day_kind_of_unit_doc (doc : document) (u : eenheid) =
+  match u.afkorting with
+  | None -> false
+  | Some a -> (
+      match Ir_v0.Checks.find_ci doc.dagsoort_per_eenheid a with
+      | Some (Some k) -> String.trim k <> ""
+      | _ -> false)
+
 let day_time_unit_of ~what (t : datatype option) =
   match t with
   | Some (Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ }) -> (
@@ -706,8 +717,7 @@ let day_time_unit_of ~what (t : datatype option) =
           else tu
       | None ->
           fault
-            "%s unit %S is not a recognised time unit (a day-kind form is a recorded \
-             flank, not executed)"
+            "%s unit %S is neither a recognised time unit nor a declared day kind (WF-035/WF-038)"
             what
             (Option.value u.afkorting ~default:"?"))
   | _ -> fault "%s without a time unit on its static type" what
@@ -717,17 +727,23 @@ let day_time_unit_of ~what (t : datatype option) =
    the millisecond layer). A day-kind (dagsoort-as-unit) spelling stays a
    loud flank; a sub-day unit is admitted here because the operand carries a
    time-of-day. *)
-let dt_time_unit_of ~what (t : datatype option) =
+let dt_time_unit_of ~doc ~what (t : datatype option) =
   match t with
   | Some (Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ }) -> (
       match Ir_v0.Checks.time_unit_of_eenheid u with
       | Some tu -> tu
       | None ->
-          fault
-            "%s unit %S is not a recognised time unit (a day-kind form is a recorded \
-             flank, not executed)"
-            what
-            (Option.value u.afkorting ~default:"?"))
+          if day_kind_of_unit_doc doc u then
+            fault
+              "%s over datum-tijd operands is a recognised, unexecuted form: a day kind \
+               classifies a civil day and ch. 3.8 fixes no time-of-day rule for it"
+              what
+          else
+            fault
+              "%s unit %S is neither a recognised time unit nor a declared day kind \
+               (WF-035/WF-038)"
+              what
+              (Option.value u.afkorting ~default:"?"))
   | _ -> fault "%s without a time unit on its static type" what
 
 (* the ms size of a sub-day unit, or None for a day-precision unit
@@ -2928,7 +2944,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
            whole_units_between_ms. *)
         if not (is_datetime_operand (Some a) && is_datetime_operand (Some b)) then
           fault "tijdsduur mixes date precisions (WF-038)";
-        let tu = dt_time_unit_of ~what:"tijdsduur" typ in
+        let tu = dt_time_unit_of ~doc:ctx.doc ~what:"tijdsduur" typ in
         let da_atoms, da, msa = dt_term ctx ~subject ~subject_ot a in
         let db_atoms, db, msb = dt_term ctx ~subject ~subject_ot b in
         let gbody = (base :: ctx.rule_guard) @ da_atoms @ db_atoms in
@@ -3696,7 +3712,7 @@ and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string 
                  v0 does not commute)"
             (if minus then "\xe2\x88\x92" else "+")
       in
-      let tu = dt_time_unit_of ~what:"datum-tijd arithmetic" (Ir_v0.Checks.typ_of_expr dur_e) in
+      let tu = dt_time_unit_of ~doc:ctx.doc ~what:"datum-tijd arithmetic" (Ir_v0.Checks.typ_of_expr dur_e) in
       let da, dd, dm = dt_term ctx ~subject ~subject_ot date_e in
       let bn, tn, sn =
         coalesce0 ctx ~subject ~subject_ot (expr_term ctx ~subject ~subject_ot dur_e)

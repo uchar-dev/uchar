@@ -2018,6 +2018,177 @@ let () =
   expect_fault "WV-3.8-subday-tijdsduur" (fun () -> td Tu_uur "2024-01-01" "2024-01-02");
   expect_fault "WV-3.8-subday-plus" (fun () -> plus Tu_uur "2024-01-01" "3")
 
+(* --- ch. 3.8: the day-kind duration forms (worked examples verbatim) -----
+   The kernel level: the predicate arrives as a function over the civil day
+   number, so these pin the COUNTING and the WALK. The Eval block below pins
+   the other half — resolving a unit spelling to a day kind and binding
+   `de dag`. The day kind of the chapter's own examples is 25/26 December. *)
+
+let () =
+  let d = Value.date_of_iso in
+  let day = function Value.Date z -> z | _ -> failwith "date" in
+  let kerst z =
+    let _, m, dd = Value.civil_from_days z in
+    m = 12 && (dd = 25 || dd = 26)
+  in
+  let nooit _ = false in
+  let td ?(absolute = false) ?(matches = kerst) a b =
+    Arith.tijdsduur_day_kind ~absolute ~matches (d a) (d b)
+  in
+  let plus ?(matches = kerst) date lex = Arith.date_plus_day_kind ~matches (d date) (n lex) in
+  let min_ ?(matches = kerst) date lex =
+    Arith.date_plus_day_kind ~minus:true ~matches (d date) (n lex)
+  in
+  (* §6.10, the count over (A, B]: start exclusive, end inclusive *)
+  expect_num "WV-3.8-dk-telling-2" (td "2024-12-20" "2024-12-31") "2";
+  expect_num "WV-3.8-dk-telling-start-uit" (td "2024-12-25" "2024-12-26") "1";
+  expect_num "WV-3.8-dk-telling-omgekeerd" (td "2024-12-31" "2024-12-20") "-2";
+  expect_num "WV-3.8-dk-telling-absoluut" (td ~absolute:true "2024-12-31" "2024-12-20") "2";
+  expect_num "WV-3.8-dk-telling-gelijk" (td "2024-12-25" "2024-12-25") "0";
+  expect_leeg "WV-3.8-dk-telling-leeg"
+    (Arith.tijdsduur_day_kind ~matches:kerst leeg (d "2024-12-31"));
+  (* an unsatisfiable day kind COUNTS 0 — an answer, where a step is not *)
+  expect_num "WV-3.8-dk-telling-onvervulbaar" (td ~matches:nooit "2024-12-20" "2024-12-31") "0";
+  (* §6.11, the walk: the Nth day of the kind, the start never counting *)
+  check "WV-3.8-dk-stap-2" (plus "2024-12-20" "2" = d "2024-12-26");
+  check "WV-3.8-dk-stap-start-uit" (plus "2024-12-25" "1" = d "2024-12-26");
+  check "WV-3.8-dk-stap-jaargrens" (plus "2024-12-26" "1" = d "2025-12-25");
+  check "WV-3.8-dk-stap-nul" (plus "2024-12-20" "0" = d "2024-12-20");
+  check "WV-3.8-dk-stap-leeg-telling"
+    (Arith.date_plus_day_kind ~matches:kerst (d "2024-12-20") leeg = d "2024-12-20");
+  expect_leeg "WV-3.8-dk-stap-leeg-datum"
+    (Arith.date_plus_day_kind ~matches:kerst leeg (n "2"));
+  check "WV-3.8-dk-stap-terug" (min_ "2024-12-27" "1" = d "2024-12-26");
+  check "WV-3.8-dk-stap-terug-jaargrens" (min_ "2024-12-25" "1" = d "2023-12-26");
+  (* a negative count flips the direction, a fractional one truncates
+     toward zero before the walk (the calendar-unit rule, unchanged) *)
+  check "WV-3.8-dk-stap-negatief" (plus "2024-12-27" "-1" = d "2024-12-26");
+  check "WV-3.8-dk-stap-breuk" (plus "2024-12-20" "2,9" = d "2024-12-26");
+  (* the gap fence: an unsatisfiable day kind FAULTS, never an endless walk,
+     and the walk it bounds is the GAP — the leap day, whose widest
+     Gregorian gap is 2 921 days, still steps *)
+  expect_fault "WV-3.8-dk-stap-onvervulbaar" (fun () -> plus ~matches:nooit "2024-12-20" "1");
+  let schrikkeldag z =
+    let _, m, dd = Value.civil_from_days z in
+    m = 2 && dd = 29
+  in
+  check "WV-3.8-dk-stap-eeuwsprong"
+    (plus ~matches:schrikkeldag "2096-02-29" "1" = d "2104-02-29");
+  check "WV-3.8-dk-gatgrens-2921"
+    (day (plus ~matches:schrikkeldag "2096-02-29" "1") - day (d "2096-02-29") = 2921);
+  (* the one cross left standing: datum-tijd operands are refused by name *)
+  expect_fault "WV-3.8-dk-datumtijd-stap" (fun () ->
+      Arith.date_plus_day_kind ~matches:kerst (Value.Date_time (Case.ms_of_datetime "2024-12-20T10:00:00")) (n "1"));
+  expect_fault "WV-3.8-dk-datumtijd-telling" (fun () ->
+      Arith.tijdsduur_day_kind ~matches:kerst
+        (Value.Date_time (Case.ms_of_datetime "2024-12-20T10:00:00"))
+        (Value.Date_time (Case.ms_of_datetime "2024-12-31T10:00:00")))
+
+(* --- ch. 3.8 through Eval: resolving a day kind and binding `de dag` -----
+   The half the kernel block cannot see: a unit SPELLING resolved through
+   `dagsoortPerEenheid` (trimmed, case-insensitive), the definition found by
+   name, and the voorwaarde evaluated with `de dag` bound to the walked day.
+   The `de dag` context value outside that binding faults by name. *)
+
+let () =
+  let kerstdagen = unit_ ~canoniek:"kerstdagen" "kerstdagen" in
+  let num_kd : Ir_v0.Ast.datatype =
+    Numeriek { geheel = true; decimalen = 0; teken = None; eenheid = Some kerstdagen }
+  in
+  let de_dag : Ir_v0.Ast.expr =
+    Constante { naam = Some "de dag"; typ = Some Datum_in_dagen; bron = None }
+  in
+  let deel kind : Ir_v0.Ast.expr =
+    Functie
+      { kind; argumenten = [ de_dag ]; element_objecttype = None; leegwaarde = None;
+        filter = None; dimensie_selectie = None;
+        typ = Some (Numeriek { geheel = true; decimalen = 0; teken = None; eenheid = None });
+        bron = None; granulariteit = None; bron_rol = None; bron_pad = None }
+  in
+  let eq (l : Ir_v0.Ast.expr) lex : Ir_v0.Ast.conditie =
+    Vergelijking
+      { op = Gelijk; links = Some l;
+        rechts = Some (litv lex (Numeriek { geheel = true; decimalen = 0; teken = None; eenheid = None }));
+        periode = None; bron = None }
+  in
+  let kerstdag : Ir_v0.Ast.resolved_dagsoort =
+    { rd_naam = Some "kerstdag";
+      rd_voorwaarde =
+        Some
+          (Samengesteld
+             { kwantor = Alle; drempel = 0;
+               onderdelen =
+                 [ eq (deel Maand_uit) "12";
+                   Samengesteld
+                     { kwantor = Ten_minste; drempel = 1;
+                       onderdelen = [ eq (deel Dag_uit) "25"; eq (deel Dag_uit) "26" ];
+                       bron = None } ];
+               bron = None });
+      rd_geldigheid = None }
+  in
+  let doc =
+    {
+      empty_doc with
+      objecttypen =
+        [ ot "Post" [ ("aanvang", Some Datum_in_dagen); ("sluiting", Some Datum_in_dagen) ] [] ];
+      dagsoorten = [ Some "kerstdag" ];
+      (* the registry couples a SPELLING to the day kind; the lookup is
+         trimmed and case-insensitive, which the odd key here exercises *)
+      dagsoort_per_eenheid = [ ("  KERSTDAGEN  ", Some "Kerstdag") ];
+      resolved_dagsoorten = [ kerstdag ];
+    }
+  in
+  let env = env_of doc in
+  let w =
+    World.add_instance World.empty
+      (inst "p" "Post"
+         [ ("aanvang", Value.date_of_iso "2024-12-20");
+           ("sluiting", Value.date_of_iso "2024-12-31") ])
+  in
+  let self = World.get w "p" in
+  let ev = Eval.eval_expr env w self ~err:no_err in
+  let stap lex : Ir_v0.Ast.expr =
+    Binair
+      { op = Plus; links = Some (aref "aanvang" "Post" Datum_in_dagen);
+        rechts = Some (litv lex num_kd); typ = Some Datum_in_dagen; bron = None }
+  in
+  let telling : Ir_v0.Ast.expr =
+    Functie
+      { kind = Tijdsduur;
+        argumenten =
+          [ aref "aanvang" "Post" Datum_in_dagen; aref "sluiting" "Post" Datum_in_dagen ];
+        element_objecttype = None; leegwaarde = None; filter = None; dimensie_selectie = None;
+        typ = Some num_kd; bron = None; granulariteit = None; bron_rol = None; bron_pad = None }
+  in
+  check "WV-3.8-dk-eval-stap" (ev (stap "2") = Value.date_of_iso "2024-12-26");
+  expect_num "WV-3.8-dk-eval-telling" (ev telling) "2";
+  (* `de dag` has no value outside a day-kind evaluation — a fault that
+     names the form, never a fall-through and never leeg *)
+  expect_fault "WV-3.8-dk-eval-de-dag-buiten" (fun () -> ev de_dag);
+  (* an unregistered spelling is neither a calendar unit nor a day kind *)
+  let doc_leeg = { doc with dagsoort_per_eenheid = [] } in
+  expect_fault "WV-3.8-dk-eval-onbekende-eenheid" (fun () ->
+      Eval.eval_expr (env_of doc_leeg) w self ~err:no_err (stap "2"));
+  (* a registry entry naming an undeclared day kind faults at resolution *)
+  let doc_zoek = { doc with resolved_dagsoorten = [] } in
+  expect_fault "WV-3.8-dk-eval-geen-definitie" (fun () ->
+      Eval.eval_expr (env_of doc_zoek) w self ~err:no_err (stap "2"));
+  (* a self-referential definition has no fixpoint (WF-085): ref faults
+     rather than looping, even though the verifier refuses it first *)
+  let cyclisch : Ir_v0.Ast.resolved_dagsoort =
+    { rd_naam = Some "kerstdag";
+      rd_voorwaarde =
+        Some
+          (Predicaat
+             { soort = Dagsoort; operand = None; dagsoort = Some "kerstdag"; negatie = false;
+               cijfers = 0; periode = None; bron = None });
+      rd_geldigheid = None }
+  in
+  expect_fault "WV-3.8-dk-eval-cyclus" (fun () ->
+      Eval.eval_expr
+        (env_of { doc with resolved_dagsoorten = [ cyclisch ] })
+        w self ~err:no_err (stap "1"))
+
 (* --- ch. 3.8: date-part extraction and the Easter builtin (worked
    examples verbatim) ----------------------------------------------------- *)
 

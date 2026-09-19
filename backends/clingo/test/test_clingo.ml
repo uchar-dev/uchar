@@ -6203,6 +6203,213 @@ let () =
     ~case_text:dimensie_vouw_case
     ~needle:"expression kind not translated (no corpus case exercises it)"
 
+(* --- ch. 3.8: the day-kind duration forms -------------------------------
+   The corpus witness (golden jutterswet-bergingsklok) carries ONE day-kind
+   shape: a top-level TEN_MINSTE composite over date-part comparisons, both
+   duration forms, day-precision operands. Everything else about this node
+   lives here — the composite arms no golden spells, the §9.8 nested
+   composition, and the four refusals a green corpus cannot hold. *)
+
+let dk_doc ?(registry = {|"nevelsdagen": "nevelsdag"|}) ?(dagsoorten = {|"nevelsdag"|})
+    ?(dagsoorten_defs = "") ?(voorwaarde = "") ?(datum_type = {|{ "node": "DatumInDagen" }|})
+    ~waarde () =
+  let dk_unit =
+    {|{ "node": "Eenheid", "afkorting": "nevelsdagen", "stelsel": null,
+        "canoniek": "nevelsdagen", "factorNaarCanoniek": 1, "noemer": null }|}
+  in
+  let defs =
+    if dagsoorten_defs <> "" then dagsoorten_defs
+    else
+      Printf.sprintf
+        {|{ "node": "ResolvedDagsoort", "naam": "nevelsdag", "voorwaarde": %s,
+            "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }|}
+        voorwaarde
+  in
+  Printf.sprintf
+    {|{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Baken": { "node": "Objecttype", "naam": "Baken",
+      "attributen": {
+        "peildatum": %s,
+        "termijn": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": %s },
+        "uitkomst": %s },
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Bakens" }
+  },
+  "domeinen": {}, "parameters": {}, "eenheidstelsels": {}, "feittypen": {},
+  "dimensies": {}, "tijdlijnen": [],
+  "dagsoorten": [ %s ],
+  "dagsoortPerEenheid": { %s },
+  "regels": [],
+  "resolvedRegels": [
+    { "node": "ResolvedRegel", "naam": "uitkomst van een baken", "soort": "BEREKENING",
+      "doel": { "node": "AttribuutRef", "attribuut": "uitkomst", "objecttype": "Baken",
+                "onderwerpBron": "een Baken", "navigatieRol": null, "type": %s,
+                "bron": "De uitkomst van een Baken", "set": false, "navigatiePad": [] },
+      "waarde": %s,
+      "voorwaarde": null,
+      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }
+  ],
+  "resolvedDagsoorten": [ %s ],
+  "objectCreaties": [], "verdelingen": [], "consistenties": [], "uniciteiten": [],
+  "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [], "regelGroepen": [],
+  "diagnostics": []
+}
+|}
+    datum_type dk_unit datum_type dagsoorten registry datum_type waarde defs
+
+(* the wire shape of "de dag", of a date-part extractor over it, and of a
+   comparison of that extractor against a whole literal *)
+let de_dag = {|{ "node": "Constante", "naam": "de dag", "type": { "node": "DatumInDagen" }, "bron": "de dag" }|}
+
+let heel = {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null }|}
+
+let deel_uit kind =
+  Printf.sprintf
+    {|{ "node": "Functie", "kind": "%s", "argumenten": [ %s ], "elementObjecttype": null,
+        "leegwaarde": null, "filter": null, "dimensieSelectie": null, "type": %s,
+        "bron": "de %s uit de dag", "granulariteit": null }|}
+    kind de_dag heel kind
+
+let deel_gelijk kind lex =
+  Printf.sprintf
+    {|{ "node": "Vergelijking", "op": "GELIJK", "links": %s,
+        "rechts": { "node": "Literal", "waarde": "%s", "type": %s, "bron": "%s" },
+        "periode": null, "bron": "de %s uit de dag gelijk is aan %s" }|}
+    (deel_uit kind) lex heel lex kind lex
+
+let samengesteld kwantor drempel onderdelen =
+  Printf.sprintf
+    {|{ "node": "Samengesteld", "kwantor": "%s", "drempel": %d, "onderdelen": [ %s ],
+        "bron": "%s" }|}
+    kwantor drempel (String.concat ", " onderdelen) kwantor
+
+(* the two duration forms, over the Baken's own peildatum/termijn *)
+let peildatum ?(typ = {|{ "node": "DatumInDagen" }|}) () =
+  Printf.sprintf
+    {|{ "node": "AttribuutRef", "attribuut": "peildatum", "objecttype": "Baken",
+        "onderwerpBron": "zijn", "navigatieRol": null, "type": %s,
+        "bron": "zijn peildatum", "set": false, "navigatiePad": [] }|}
+    typ
+
+let termijn =
+  {|{ "node": "AttribuutRef", "attribuut": "termijn", "objecttype": "Baken",
+      "onderwerpBron": "zijn", "navigatieRol": null,
+      "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD",
+                "eenheid": { "node": "Eenheid", "afkorting": "nevelsdagen", "stelsel": null,
+                             "canoniek": "nevelsdagen", "factorNaarCanoniek": 1, "noemer": null } },
+      "bron": "zijn termijn", "set": false, "navigatiePad": [] }|}
+
+let stap ?(typ = {|{ "node": "DatumInDagen" }|}) () =
+  Printf.sprintf
+    {|{ "node": "Binair", "op": "PLUS", "links": %s, "rechts": %s, "type": %s,
+        "bron": "zijn peildatum plus zijn termijn" }|}
+    (peildatum ~typ ()) termijn typ
+
+let dk_case =
+  {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "B1", "objectType": "Baken",
+      "attributes": { "peildatum": { "date": "2026-03-10" }, "termijn": { "number": "1" } },
+      "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }
+|}
+
+let dk_translates ~name ~ir =
+  let irf = write_temp ".ir.json" ir in
+  let casef = write_temp ".case.json" dk_case in
+  let doc = Ir_v0.Loader.load_file irf in
+  let case = Uchar_ref.Case.load_file doc casef in
+  Sys.remove irf;
+  Sys.remove casef;
+  match translate doc case with
+  | (_ : string) -> check (name ^ ": clingo translates") true
+  | exception Uchar_ref.Value.Fault m ->
+      check (name ^ ": clingo translates (unexpected fault: " ^ m ^ ")") false
+
+let () =
+  (* the composite arms the golden does not spell: ALLE, GEEN, and the three
+     counting quantors, each over the bound day *)
+  List.iter
+    (fun (naam, kwantor, drempel) ->
+      dk_translates
+        ~name:("dagsoortvoorwaarde " ^ naam ^ " over de gebonden dag")
+        ~ir:
+          (dk_doc
+             ~voorwaarde:
+               (samengesteld kwantor drempel
+                  [ deel_gelijk "MAAND_UIT" "12"; deel_gelijk "DAG_UIT" "25" ])
+             ~waarde:(stap ()) ()))
+    [ ("ALLE", "ALLE", 0); ("GEEN", "GEEN", 0); ("TEN_MINSTE", "TEN_MINSTE", 1);
+      ("TEN_HOOGSTE", "TEN_HOOGSTE", 1); ("PRECIES", "PRECIES", 1) ];
+  (* a bare comparison, with no composite around it at all *)
+  dk_translates ~name:"dagsoortvoorwaarde zonder samenstelling"
+    ~ir:(dk_doc ~voorwaarde:(deel_gelijk "DAG_UIT" "1") ~waarde:(stap ()) ());
+  (* the §9.8 composition: one day kind referencing another, on the bound day,
+     positive and negated. No corpus document carries this shape. *)
+  let twee_defs neg =
+    Printf.sprintf
+      {|{ "node": "ResolvedDagsoort", "naam": "nevelsdag",
+          "voorwaarde": { "node": "Predicaat", "soort": "DAGSOORT", "operand": null,
+                          "dagsoort": "mistdag", "negatie": %b, "cijfers": 0,
+                          "periode": null, "bron": "de dag is een mistdag" },
+          "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } },
+        { "node": "ResolvedDagsoort", "naam": "mistdag", "voorwaarde": %s,
+          "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }|}
+      neg (deel_gelijk "DAG_UIT" "1")
+  in
+  List.iter
+    (fun (naam, neg) ->
+      dk_translates
+        ~name:("geneste dagsoortverwijzing " ^ naam)
+        ~ir:
+          (dk_doc ~dagsoorten:{|"nevelsdag", "mistdag"|} ~dagsoorten_defs:(twee_defs neg)
+             ~waarde:(stap ()) ()))
+    [ ("positief", false); ("ontkend", true) ];
+  (* the four refusals, each named rather than fallen through to *)
+  faults_with ~name:"'de dag' buiten een dagsoortevaluatie"
+    ~ir:
+      (dk_doc ~voorwaarde:(deel_gelijk "DAG_UIT" "1")
+         ~waarde:
+           (Printf.sprintf
+              {|{ "node": "Binair", "op": "PLUS", "links": %s, "rechts": %s,
+                  "type": { "node": "DatumInDagen" }, "bron": "de dag plus zijn termijn" }|}
+              de_dag termijn)
+         ())
+    ~case_text:dk_case ~needle:"the bound day of a day-kind definition";
+  faults_with ~name:"dagsoortverwijzingscyclus (WF-085)"
+    ~ir:
+      (dk_doc
+         ~dagsoorten_defs:
+           {|{ "node": "ResolvedDagsoort", "naam": "nevelsdag",
+               "voorwaarde": { "node": "Predicaat", "soort": "DAGSOORT", "operand": null,
+                               "dagsoort": "nevelsdag", "negatie": false, "cijfers": 0,
+                               "periode": null, "bron": "de dag is een nevelsdag" },
+               "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }|}
+         ~waarde:(stap ()) ())
+    ~case_text:dk_case ~needle:"day-kind reference cycle";
+  faults_with ~name:"eenheidsspelling die geen dagsoort en geen kalendereenheid is"
+    ~ir:(dk_doc ~registry:"" ~voorwaarde:(deel_gelijk "DAG_UIT" "1") ~waarde:(stap ()) ())
+    ~case_text:dk_case
+    ~needle:"neither a recognised time unit nor a declared day kind";
+  faults_with ~name:"geregistreerde eenheid zonder dagsoortdefinitie (WF-031)"
+    ~ir:(dk_doc ~dagsoorten_defs:"" ~voorwaarde:"null" ~waarde:(stap ()) ())
+    ~case_text:dk_case ~needle:"without a condition";
+  faults_with ~name:"dagsoortduur over datum-tijd-operanden blijft een erkende flank"
+    ~ir:
+      (dk_doc ~datum_type:{|{ "node": "DatumTijd" }|} ~voorwaarde:(deel_gelijk "DAG_UIT" "1")
+         ~waarde:(stap ~typ:{|{ "node": "DatumTijd" }|} ()) ())
+    ~case_text:
+      {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "B1", "objectType": "Baken",
+      "attributes": { "peildatum": { "dateTime": "2026-03-10T09:00:00" }, "termijn": { "number": "1" } },
+      "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }
+|}
+    ~needle:"a recognised, unexecuted form"
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

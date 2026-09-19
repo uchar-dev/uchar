@@ -673,7 +673,7 @@ let whole_count_of q =
    that passes [day_kind_gap_fence] consecutive calendar days without
    finding one of the kind faults. The number is 3 660 — ten calendar
    years — because it must exceed the longest recurrence gap a Gregorian
-   day kind can have (the century-skipped leap day, 2 922 days: 2096-02-29
+   day kind can have (the century-skipped leap day, 2 921 days: 2096-02-29
    to 2104-02-29) and must stay small enough for a bounded executor to
    materialise the walk. It is a PER-STEP gap, not a total: "datum plus
    5 000 werkdagen" walks some 19 years and is answerable, while a day kind

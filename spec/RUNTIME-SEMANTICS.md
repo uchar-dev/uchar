@@ -1494,8 +1494,8 @@ units — runs in ref and clingo. Anchor `jutterswet-jutleeftijd`
 carries the three worked examples above verbatim (plus the leeg
 corner); golden `jutterswet-vervaltermijn` pins the month-end clamp,
 the empty-duration standstill, the quarter step and the
-fractional truncation. The day-kind (dagsoort-as-unit) forms stay
-unexecuted, loud — tracked debt, never a silent skip. The datum-tijd
+fractional truncation. The day-kind (dagsoort-as-unit) forms are their
+own section below and run since 2026-09-19. The datum-tijd
 millisecond layer is executed in ref per the paragraph below and,
 since the pair-term encoding landed (2026-08-28, lifting the
 2026-08-25 embargo), in the ASP backend as well —
@@ -1503,23 +1503,106 @@ since the pair-term encoding landed (2026-08-28, lifting the
 `jutterswet-getijdenpaar` pins it through both executors, the borrow
 corner included.
 
-**Duration in a day-kind** ("de tijdsduur van A tot B in werkdagen")
-counts the days d with `A < d ≤ B` — **start exclusive, end inclusive**
-(the "A itself does not count" rule) — that satisfy the day-kind's
-defining predicate; signed by operand order; leeg operand → leeg. Worked
-examples (absolute; day-kind = 25/26 December): 20-12 tot 31-12 → **2**;
-25-12 tot 26-12 → **1** (the 25th is the excluded start); reversed →
-**−2**, absolute variant **+2**; equal dates → **0**.
+#### The day-kind duration forms (§6.10, §6.11)
 
-**Date plus N day-kind days** steps one calendar day at a time, counting
-only matching days; the result is the Nth matching day. The start date
-itself never counts; N = 0 or leeg N returns the start date unchanged
-(even when that date is not itself a matching day); negative N walks
-backward; a leeg date propagates. An unsatisfiable day-kind definition is
-a hard fault (the walk is bounded), never an endless loop. Worked
-examples (absolute; day-kind = 25/26 December): 20-12 + 2 → **26-12**;
-25-12 + 1 → **26-12**; 26-12-2024 + 1 → **25-12-2025**; 20-12 + 0 →
-**20-12**; 27-12 − 1 → **26-12**; 25-12-2024 − 1 → **26-12-2023**.
+A **day kind** is not a unit on the spelling table above: it is a
+declared predicate over a calendar day (`IR-SPEC.md` ch. 2.9, ch. 3.7).
+Written where a duration unit is written, it names *which days count*,
+and both duration forms then have to WALK the calendar — there is no
+closed formula, because there is no arithmetic that knows which days are
+salvage days.
+
+**Resolution — spelling to predicate.** The duration's unit spelling is
+looked up in `dagsoortPerEenheid`, **trimmed and case-insensitive**; the
+value names a declared day kind, and that name selects its single
+`ResolvedDagsoort` (case-insensitive again; WF-031 keeps the definition
+unique, so there is nothing to disambiguate). A spelling the calendar
+table does not know and the registry does not carry is ill-formed
+(WF-035/WF-038). The definition's `geldigheid` is **not consulted**: it
+MUST be ALTIJD (WF-031), so there is no window to read.
+
+**Evaluation — the predicate of one day.** `P_k(d)` is the definition's
+`voorwaarde`, evaluated with **`de dag` bound to d** and nothing else in
+scope. That binding IS the runtime meaning of the `de dag` context value
+(`IR-SPEC.md` ch. 4.1): it is not a session value — ch. 8.2's evaluation
+date is — but the arbitrary day the definition is about, and it denotes
+nothing anywhere else. An executor that meets `de dag` outside a day-kind
+evaluation **faults**, naming the form; it never reads as leeg and never
+falls back on the evaluation date (red case
+`contextwaarde-de-dag-buiten-dagsoort` pins both executors).
+
+`P_k` is a function of **the day alone**. WF-031's purity clause is what
+makes that true: the voorwaarde reaches no fact base, and — the position
+arm, landed with this chapter — no session value either, so the same
+document classifies the same calendar day identically in every session.
+A definition may reference other day kinds (`P_k` calls `P_j` on the same
+bound day, the §9.8 composition); the reference graph is acyclic
+(WF-085), and an executor that meets a cycle anyway faults rather than
+looping.
+
+**§6.10 — the count.** "de tijdsduur van A tot B in hele werkdagen"
+counts the days d with `A < d ≤ B` — **start exclusive, end inclusive**
+(the "A itself does not count" rule, taken from §6.11's explicit reading,
+since §6.10 says nothing about a day kind at all) — that satisfy `P_k`;
+signed by operand order, the absolute variant dropping the sign; any leeg
+operand → leeg, never 0. The interval bounds the work, so this form
+carries **no fence**, and an unsatisfiable day kind counts **0** here: a
+count over an empty set is an answer, where a step to a day that does not
+exist is not.
+
+Worked examples (absolute; day kind = 25/26 December; each a `ref/` test
+verbatim): 20-12-2024 tot 31-12-2024 → **2**; 25-12-2024 tot 26-12-2024 →
+**1** (the 25th is the excluded start); reversed, 31-12-2024 tot
+20-12-2024 → **−2**, absolute variant **+2**; equal dates → **0**; leeg
+tot 31-12-2024 → **leeg**; with an unsatisfiable day kind, 20-12-2024 tot
+31-12-2024 → **0**.
+
+**§6.11 — the step.** "datum plus N werkdagen" steps one calendar day at
+a time and counts only the days satisfying `P_k`; the result is the Nth
+such day, and is therefore always itself a day of the kind. The **start
+date never counts**, in either direction, even when it is itself a day of
+the kind. `N = 0` — and a leeg N, which coalesces to 0 (ch. 1.2) —
+returns the start date **unchanged**, even when that date is not a day of
+the kind: the source's general zero rule wins over its "the result is
+always such a day" sentence, which is about the stepping case. A
+fractional N truncates toward zero before the walk. A negative N (or the
+`min` operator) walks backward — the mirror image, which the source leaves
+unwritten. A leeg date propagates.
+
+**The gap fence (normative).** A step that passes **3 660 consecutive
+calendar days** without finding a day of the kind is a **fault**, never
+an endless walk. The number is ten calendar years: above the longest
+recurrence gap a Gregorian day kind can have (the century-skipped leap
+day — 2096-02-29 to 2104-02-29 is 2 921 days) and low enough that a
+grounding executor can materialise the walk. It is a fence on the GAP,
+not on the total: "datum plus 5 000 werkdagen" walks some nineteen years
+and is answerable, while a day kind no calendar day satisfies faults
+after 3 660 days. Red case `dagsoort-onvervulbare-wandeling` pins the
+fault in all three executors.
+
+Worked examples (absolute; day kind = 25/26 December; each a `ref/` test
+verbatim): 20-12-2024 + 2 → **26-12-2024**; 25-12-2024 + 1 →
+**26-12-2024** (the start is of the kind and still does not count);
+26-12-2024 + 1 → **25-12-2025**; 20-12-2024 + 0 → **20-12-2024** (not
+itself of the kind); 20-12-2024 + leeg → **20-12-2024**; leeg + 2 →
+**leeg**; 27-12-2024 − 1 → **26-12-2024**; 25-12-2024 − 1 →
+**26-12-2023**; with an unsatisfiable day kind, 20-12-2024 + 1 →
+**fault**.
+
+**Executed (2026-09-19, ref and clingo; the Drools backend plays the same
+values):** both forms run over **day-precision** operands. Golden
+`jutterswet-bergingsklok` closes the square on hand-computed values —
+the step forward and backward, the zero and leeg counts, the signed and
+absolute counts — and the two red cases above pin the two faults. The one
+cross left standing is **datum-tijd**: a day-kind duration over
+millisecond-precision operands is a recognised, unexecuted form, refused
+in the same words by both OCaml executors, because a day kind classifies
+a civil day and this chapter fixes no time-of-day rule for it (the
+calendar units settle theirs with the borrow rule above). The ASP backend
+grounds the walk rather than running it, so its step form carries one
+window of its own, loud and fail-fast as the S6a int31 fence is: a step
+seeking more than 64 days of the kind at once is refused there where ref
+computes it.
 
 **Date ± whole calendar units** clamps to the month end: date + n
 maanden advances the proleptic month (12·year + month − 1) by n and
@@ -2188,6 +2271,9 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 | Whole-period qualifier, the **ordering/equality** test over a value timeline | **specified and executed, ch. 3.9** — the reference interpreter and the ASP backend built it 2026-09-16 (the heelperiode-forall card), the Drools backend carried it already; witnessed by `corpus/golden/jutterswet-ploegpremie` and by each executor's own suite. The **date-valued** form stays refused (its own row above), and the navigated form is untouched |
 | Whole-period qualifier, the **leeg/gevuld** tests | specified (ch. 3.9), **not executed** by either OCaml executor — both refuse them by name, no corpus case. The threshold clause the leeg test needs (touched-days rather than calendar days) is stated in ch. 3.9 and implemented in the Drools runtime alone; the sibling that landed above deliberately did not take it along, because a clause with no witness on this side would be a green subset |
 | **Quantifier fold** over a linked instance set (ch. 3.9a) | **specified and executed** — ALLE and GEEN in all three executors, over a WHOLE-PERIOD matrix (witness `corpus/golden/jutterswet-ploegpremie`) and, since 2026-09-16, over a NON-temporal one (witness `corpus/golden/jutterswet-schouwploeg`: five cases carrying six verdict rows — two ploegen share one of them, which is what pins the RANGE — both quantifiers, two matrix shapes and a negated matrix). The executor asymmetry this row used to record is **gone**: the ASP backend REIFIES the matrix into a helper predicate and negates that one atom (negation-as-failure over a reified conjunction is an ordinary ASP body, where the complement of an arbitrary conjunction of atoms is not), and both Drools branches ask the matrix through their ordinary per-subject condition lowering with the element as subject — the exec branch collecting the contributors, the DRL-text branch denying the failure witness with a `not` pattern. What stays bounded is which matrix FORMS each executor's condition translation carries: a form outside it is refused by name, per form, never silently. **All five quantifiers are executed since 2026-09-16**: the counting three — the named extension point this row used to record — are built in all three executors over BOTH matrix routes, each of them reading the SIZE of the satisfier set where ALLE and GEEN read a witness (the ASP backend a `#count` with the range join INSIDE the aggregate, the Drools exec branch a counting twin of the ch. 3.9 fold helpers and a count over the collected contributors, the DRL-text branch a count accumulate over the element pattern). Witnesses `corpus/golden/jutterswet-reddingsvloot` (the §8.2 matrix, seven verdict rows), `corpus/golden/jutterswet-vuurtoren` (a non-temporal one, six) and `corpus/golden/jutterswet-sleepvloot` (the NIET prefix, which under a threshold lands on the COUNT because there is no quantifier to flip into — three rows, four of whose cells invert if `count(P)` is read for `count(¬P)`). What is left on the quantifier field is `DE`, refused by name by WF-108 (a); all matrix routes of this node are executed by all four executors since 2026-09-18; what stays bounded is which matrix FORMS each executor's condition translation carries, per form and by name. Since 2026-09-19 the node also has a SOURCE language: `corpus/golden/jutterswet-vuurtoren-flogic` is the F-logic-emitted twin of the hand-written `jutterswet-vuurtoren`, over the same five case files byte for byte, played by all four executors |
+| **Day-kind duration forms** (§6.10 count, §6.11 step) over day-precision operands | **specified and executed, ch. 3.8** — ref and clingo since 2026-09-19, the Drools backend playing the same values (golden `jutterswet-bergingsklok`; red cases `dagsoort-onvervulbare-wandeling` and `contextwaarde-de-dag-buiten-dagsoort`). The gap fence and the backward step are DELTAS: the source gives neither, and the source's N = 0 sentence contradicts its own "always a day of the kind" sentence, which ch. 3.8 resolves in favour of the zero rule |
+| Day-kind duration forms over **datum-tijd** operands | refused by name in both OCaml executors, no corpus case — a day kind classifies a civil day and ch. 3.8 fixes no time-of-day rule for it; the Drools backend counts over the date parts, which is a reading this spec has not adopted |
+| The day-kind **predicate as a rule condition** (§8.1.5, "… is een werkdag") | refused by name in both OCaml executors (ch. 5.4's framing: a day kind is consulted as a stratum-0 classifier, never as a derived read inside the rule fixpoint). It IS evaluated inside a day-kind voorwaarde, where the nested reference is the §9.8 composition — that arm is executed |
 | Gap-vs-absent timeline observability (temporal total: 0 vs leeg) | mirrored residual; stays OPEN here — the ch. 1.4 freeze covers the scalar discipline, not this temporal residual |
 | Sorted/non-overlapping input invariant | delta candidate (WF rule, data plane), ch. 3.1 |
 | Non-terminating pro-rata stored at 16 digits | v0 residual (normative: exact fraction), ch. 3.7 |
@@ -3684,6 +3770,18 @@ normative:
   `Constante` named `Rekendatum` (day precision; its sibling
   `Rekenjaar`, a whole number, is not yet exercised by any corpus case
   and executors fault on it, recorded).
+
+**The third context value is not a session value.** `IR-SPEC.md` ch. 4.1
+admits a third `Constante` name, `de dag`, and this chapter does **not**
+own it: it denotes the BOUND DAY of a day-kind definition, and its
+runtime meaning is stated where that binding is made — ch. 3.8, the
+day-kind duration forms. Two consequences follow, and both are checked.
+Outside a day-kind evaluation `de dag` denotes nothing and every executor
+faults by name (red case `contextwaarde-de-dag-buiten-dagsoort`); and the
+converse, a SESSION value inside a day-kind voorwaarde, is refused
+statically (WF-031's position arm, `IR-SPEC.md` ch. 3.7), because a
+stratum-0 classification that moved with the session would classify the
+same calendar day differently in two runs of the same document.
 
 ### 8.3 The vintage read
 

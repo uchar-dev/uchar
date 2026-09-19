@@ -602,7 +602,21 @@ EXPECTED_CHANNEL=(
 # between the two Lets, and a branch guard whose own binder is rebound
 # between the Let and the branch node (that one used to answer, and what it
 # answered was a fabricated Inconsistentie).
-EXPECTED_PLAYED=159
+#
+# 159 -> 160 (2026-09-19, card dagsoort-semantiek): a NEW PLAYER,
+# jutterswet-bergingsklok — the first corpus golden whose DAY-KIND predicate is
+# evaluated, carrying both duration forms (§6.10 count, §6.11 step, forward and
+# backward, signed and absolute, the zero and leeg corners). The backend needed
+# no new lowering for it: the ported production runtime carried both forms all
+# along and nothing exercised them — measured 2026-09-19, before this golden
+# `rsDatumPlusDagsoort` and `rsTijdsduurDagsoort` were named by the two
+# transpilers and by no test, no script and no document in any zone. What DID
+# move in the backend is the walk's fence, from a 4 000 000-step TOTAL cap to
+# the spec's 3 660-day GAP fence (RUNTIME-SEMANTICS ch. 3.8), so the three
+# executors fault on the same input in the same words; the fence is a red-zone
+# form and moves no golden. Both branches play this golden, so
+# EXPECTED_DRL_PLAYED moves by one too.
+EXPECTED_PLAYED=160
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -748,7 +762,11 @@ DRL_CHANNEL=(
 # where it was 70 against a corpus of 209; the exec sweep beside it is byte-identical and
 # EXPECTED_PLAYED does not move. Every movement from here carries its reason at this pin, exactly as
 # the exec one does: a golden that starts playing LEAVES DRL_CHANNEL and raises this number by one.
-EXPECTED_DRL_PLAYED=136
+# 136 -> 137 (2026-09-19, card dagsoort-semantiek): jutterswet-bergingsklok plays in this branch too —
+# the DRL-text branch routes both day-kind duration forms to the same two runtime statics the exec
+# branch does, through a session global holding the compiled predicate, so the two branches were
+# never going to differ here. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=137
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a

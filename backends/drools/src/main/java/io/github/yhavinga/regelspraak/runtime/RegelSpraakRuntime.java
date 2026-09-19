@@ -446,7 +446,7 @@ public final class RegelSpraakRuntime {
 
     /** The normative GAP FENCE of the day-kind walk (uchar RUNTIME-SEMANTICS ch. 3.8): a step that passes this many
      *  consecutive calendar days without finding one of the kind faults instead of looping. Ten calendar years —
-     *  above the longest recurrence gap a Gregorian day kind can have (the century-skipped leap day, 2 922 days)
+     *  above the longest recurrence gap a Gregorian day kind can have (the century-skipped leap day, 2 921 days)
      *  and low enough for a grounding executor to materialise the walk. */
     public static final int DAGSOORT_GAT_GRENS = 3_660;
 
