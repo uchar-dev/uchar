@@ -661,6 +661,112 @@ let whole_count_of q =
   | n -> n
   | exception Z.Overflow -> fault "duration count %s is out of range" (Q.to_string q)
 
+(* --- the day-kind walk (ch. 3.8) ---------------------------------------
+   A declared day kind is a PREDICATE over a calendar day, so neither
+   duration form has a closed formula: both walk the calendar one day at a
+   time. The kernel takes the predicate as a function over the civil day
+   number and knows nothing about conditions — resolving the day kind and
+   evaluating its voorwaarde is the caller's (Eval's) work, which keeps the
+   calendar kernel free of the fact base exactly as the rest of this file.
+
+   THE GAP FENCE is normative and the reason the walk terminates: a step
+   that passes [day_kind_gap_fence] consecutive calendar days without
+   finding one of the kind faults. The number is 3 660 — ten calendar
+   years — because it must exceed the longest recurrence gap a Gregorian
+   day kind can have (the century-skipped leap day, 2 922 days: 2096-02-29
+   to 2104-02-29) and must stay small enough for a bounded executor to
+   materialise the walk. It is a PER-STEP gap, not a total: "datum plus
+   5 000 werkdagen" walks some 19 years and is answerable, while a day kind
+   no calendar day satisfies faults after 3 660 days instead of looping. *)
+
+let day_kind_gap_fence = 3_660
+
+(* The one cross this card leaves standing, refused in the same words by both
+   OCaml executors: a day-kind duration over MILLISECOND-precision operands.
+   A day kind classifies a day, so the layer needs a rule for the time of day
+   the calendar units settle with their borrow rule (ch. 3.8) — and no
+   document in any zone carries the cross, so the rule would be written
+   against no witness. A recognised, unexecuted flank, named rather than
+   fallen through to. *)
+let day_kind_datetime_flank what =
+  fault
+    "%s over datum-tijd operands is a recognised, unexecuted form: a day kind classifies a \
+     civil day and ch. 3.8 fixes no time-of-day rule for it"
+    what
+
+(* the Nth day of the kind, walking from [from] in one direction. The START
+   DAY ITSELF NEVER COUNTS (ch. 3.8): the step precedes the test, in both
+   directions. n >= 1. *)
+let nth_day_of_kind ~matches ~forward ~from n =
+  let step = if forward then 1 else -1 in
+  let rec go d found gap =
+    if gap >= day_kind_gap_fence then
+      fault
+        "day-kind walk: no day of the kind within %d calendar days of %s (an unsatisfiable \
+         day-kind definition?)"
+        day_kind_gap_fence
+        (iso_of_date (d - (gap * step)))
+    else
+      let d = d + step in
+      if matches d then if found + 1 = n then d else go d (found + 1) 0
+      else go d found (gap + 1)
+  in
+  go from 0 0
+
+(* the days of the kind in (A, B] — start exclusive, end inclusive — signed
+   by operand order (ch. 3.8). An unsatisfiable day kind counts 0 here: a
+   count over an interval is answerable where a step is not, so this form
+   carries no fence beyond the interval its own operands name. *)
+let count_days_of_kind ~matches a b =
+  let lo, hi, sign = if b >= a then (a, b, 1) else (b, a, -1) in
+  let n = ref 0 in
+  for d = lo + 1 to hi do
+    if matches d then incr n
+  done;
+  sign * !n
+
+(* date ± N days of a kind (ch. 3.8; empty rules ch. 1.2, unchanged): a leeg
+   date propagates; a leeg count coalesces to 0 and returns the date
+   unchanged — even when that date is not itself of the kind. A fractional
+   count truncates toward zero before the walk, as at every other duration
+   position. On a datum-tijd operand the walk acts on the civil day part and
+   reattaches the time-of-day, exactly as the calendar units do. *)
+let date_plus_day_kind ?(minus = false) ~matches d dur =
+  let signed_n () =
+    let q, _u = num_exn (if minus then "min" else "plus") dur in
+    let n = whole_count_of q in
+    if minus then -n else n
+  in
+  let walk z =
+    let n = signed_n () in
+    if n = 0 then z else nth_day_of_kind ~matches ~forward:(n > 0) ~from:z (abs n)
+  in
+  match (d, dur) with
+  | Empty, _ -> Empty
+  | Date z, Empty -> Date z
+  | Date_time t, Empty -> Date_time t
+  | Date z, _ -> Date (walk z)
+  | Date_time _, _ -> day_kind_datetime_flank "date \xc2\xb1 N days of a kind"
+  | v, _ -> fault "date arithmetic: expected a date, got %s" (to_string v)
+
+(* tijdsduur van A tot B in a day kind (ch. 3.8): the count above, with the
+   node's declared unit on the result. Any leeg operand propagates, never 0.
+   On datum-tijd operands the count runs over the CIVIL DAY PARTS and the
+   times of day are dropped — a day kind classifies a day, not an instant,
+   so there is no partial day to borrow back (the borrow rule of the
+   calendar units does not apply). *)
+let tijdsduur_day_kind ?(absolute = false) ~matches ?(result_unit = Unitless) a b =
+  let day_of = function
+    | Date z -> z
+    | Date_time _ -> day_kind_datetime_flank "tijdsduur in a day kind"
+    | v -> fault "tijdsduur: expected two dates, got %s" (to_string v)
+  in
+  match (a, b) with
+  | Empty, _ | _, Empty -> Empty
+  | _ ->
+      let n = count_days_of_kind ~matches (day_of a) (day_of b) in
+      Num (Q.of_int (if absolute then abs n else n), result_unit)
+
 (* date ± duration (ch. 3.8; empty rules ch. 1.2): empty date propagates;
    empty duration coalesces to 0 — the date unchanged, the only duration
    that coalesces. The non-empty step needs the resolved time unit. *)

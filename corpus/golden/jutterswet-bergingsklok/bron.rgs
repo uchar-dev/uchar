@@ -1,0 +1,34 @@
+// Bron: art. 5a-5c Jutterswet
+Dagsoort de springtijdag (mv: springtijdagen);
+
+Objecttype de Bergingsploeg (mv: Bergingsploegen) (bezield)
+    de meldingsdatum Datum in dagen;
+    de opleverdatum Datum in dagen;
+    het bergingsbestek Numeriek (geheel getal) met eenheid springtijdagen;
+    de uiterste bergingsdatum Datum in dagen;
+    de vroegste meldingsdatum Datum in dagen;
+    de bergingsspanne Numeriek (geheel getal) met eenheid springtijdagen;
+    de bergingsafstand Numeriek (geheel getal) met eenheid springtijdagen;
+
+Regel Dagsoortdefinitie springtijdag
+    geldig altijd
+        Een dag is een springtijdag
+        indien er aan ten minste 1 van de volgende voorwaarden wordt voldaan:
+        - de dag uit de dag gelijk is aan 1
+        - de dag uit de dag gelijk is aan 15.
+
+Regel uiterste bergingsdatum van een bergingsploeg
+    geldig altijd
+        De uiterste bergingsdatum van een Bergingsploeg moet berekend worden als zijn meldingsdatum plus zijn bergingsbestek.
+
+Regel vroegste meldingsdatum van een bergingsploeg
+    geldig altijd
+        De vroegste meldingsdatum van een Bergingsploeg moet berekend worden als zijn meldingsdatum min zijn bergingsbestek.
+
+Regel bergingsspanne van een bergingsploeg
+    geldig altijd
+        De bergingsspanne van een Bergingsploeg moet berekend worden als de tijdsduur van zijn meldingsdatum tot zijn opleverdatum in hele springtijdagen.
+
+Regel bergingsafstand van een bergingsploeg
+    geldig altijd
+        De bergingsafstand van een Bergingsploeg moet berekend worden als de absolute tijdsduur van zijn opleverdatum tot zijn meldingsdatum in hele springtijdagen.

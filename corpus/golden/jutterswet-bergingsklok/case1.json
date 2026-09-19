@@ -1,0 +1,36 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "P1", "objectType": "Bergingsploeg",
+        "attributes": { "meldingsdatum": { "date": "2026-03-10" }, "opleverdatum": { "date": "2026-04-20" },
+                        "bergingsbestek": { "number": "3" } },
+        "roles": {}, "characteristics": [] },
+      { "label": "P2", "objectType": "Bergingsploeg",
+        "attributes": { "meldingsdatum": { "date": "2026-03-15" }, "opleverdatum": { "date": "2026-03-15" },
+                        "bergingsbestek": { "number": "1" } },
+        "roles": {}, "characteristics": [] },
+      { "label": "P3", "objectType": "Bergingsploeg",
+        "attributes": { "meldingsdatum": { "date": "2026-03-20" }, "opleverdatum": { "date": "2026-03-01" },
+                        "bergingsbestek": { "number": "0" } },
+        "roles": {}, "characteristics": [] }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "P1", "attribute": "uiterste bergingsdatum", "value": { "date": "2026-04-15" } },
+    { "kind": "attributeValue", "label": "P1", "attribute": "vroegste meldingsdatum", "value": { "date": "2026-02-01" } },
+    { "kind": "attributeValue", "label": "P1", "attribute": "bergingsspanne", "value": { "number": "3" } },
+    { "kind": "attributeValue", "label": "P1", "attribute": "bergingsafstand", "value": { "number": "3" } },
+    { "kind": "attributeValue", "label": "P2", "attribute": "uiterste bergingsdatum", "value": { "date": "2026-04-01" } },
+    { "kind": "attributeValue", "label": "P2", "attribute": "vroegste meldingsdatum", "value": { "date": "2026-03-01" } },
+    { "kind": "attributeValue", "label": "P2", "attribute": "bergingsspanne", "value": { "number": "0" } },
+    { "kind": "attributeValue", "label": "P2", "attribute": "bergingsafstand", "value": { "number": "0" } },
+    { "kind": "attributeValue", "label": "P3", "attribute": "uiterste bergingsdatum", "value": { "date": "2026-03-20" } },
+    { "kind": "attributeValue", "label": "P3", "attribute": "vroegste meldingsdatum", "value": { "date": "2026-03-20" } },
+    { "kind": "attributeValue", "label": "P3", "attribute": "bergingsspanne", "value": { "number": "-1" } },
+    { "kind": "attributeValue", "label": "P3", "attribute": "bergingsafstand", "value": { "number": "1" } },
+    { "kind": "consistent" }
+  ]
+}

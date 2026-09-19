@@ -1,0 +1,548 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Bergingsploeg": {
+      "node": "Objecttype",
+      "naam": "Bergingsploeg",
+      "attributen": {
+        "meldingsdatum": {
+          "node": "DatumInDagen"
+        },
+        "opleverdatum": {
+          "node": "DatumInDagen"
+        },
+        "bergingsbestek": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "springtijdagen",
+            "stelsel": null,
+            "canoniek": "springtijdagen",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        },
+        "uiterste bergingsdatum": {
+          "node": "DatumInDagen"
+        },
+        "vroegste meldingsdatum": {
+          "node": "DatumInDagen"
+        },
+        "bergingsspanne": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "springtijdagen",
+            "stelsel": null,
+            "canoniek": "springtijdagen",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        },
+        "bergingsafstand": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "springtijdagen",
+            "stelsel": null,
+            "canoniek": "springtijdagen",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Bergingsploegen"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [
+    "springtijdag"
+  ],
+  "dagsoortPerEenheid": {
+    "springtijdag": "springtijdag",
+    "springtijdagen": "springtijdag"
+  },
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "Dagsoortdefinitie springtijdag",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "uiterste bergingsdatum van een bergingsploeg",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "vroegste meldingsdatum van een bergingsploeg",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "bergingsspanne van een bergingsploeg",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "bergingsafstand van een bergingsploeg",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "uiterste bergingsdatum van een bergingsploeg",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "uiterste bergingsdatum",
+        "objecttype": "Bergingsploeg",
+        "onderwerpBron": "een Bergingsploeg",
+        "navigatieRol": null,
+        "type": {
+          "node": "DatumInDagen"
+        },
+        "bron": "De uiterste bergingsdatum van een Bergingsploeg",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "PLUS",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "meldingsdatum",
+          "objecttype": "Bergingsploeg",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "zijn meldingsdatum",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "AttribuutRef",
+          "attribuut": "bergingsbestek",
+          "objecttype": "Bergingsploeg",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": {
+              "node": "Eenheid",
+              "afkorting": "springtijdagen",
+              "stelsel": null,
+              "canoniek": "springtijdagen",
+              "factorNaarCanoniek": 1,
+              "noemer": null
+            }
+          },
+          "bron": "zijn bergingsbestek",
+          "set": false,
+          "navigatiePad": []
+        },
+        "type": {
+          "node": "DatumInDagen"
+        },
+        "bron": "zijn meldingsdatum plus zijn bergingsbestek"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "vroegste meldingsdatum van een bergingsploeg",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "vroegste meldingsdatum",
+        "objecttype": "Bergingsploeg",
+        "onderwerpBron": "een Bergingsploeg",
+        "navigatieRol": null,
+        "type": {
+          "node": "DatumInDagen"
+        },
+        "bron": "De vroegste meldingsdatum van een Bergingsploeg",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Binair",
+        "op": "MIN",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "meldingsdatum",
+          "objecttype": "Bergingsploeg",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "zijn meldingsdatum",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "AttribuutRef",
+          "attribuut": "bergingsbestek",
+          "objecttype": "Bergingsploeg",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": {
+              "node": "Eenheid",
+              "afkorting": "springtijdagen",
+              "stelsel": null,
+              "canoniek": "springtijdagen",
+              "factorNaarCanoniek": 1,
+              "noemer": null
+            }
+          },
+          "bron": "zijn bergingsbestek",
+          "set": false,
+          "navigatiePad": []
+        },
+        "type": {
+          "node": "DatumInDagen"
+        },
+        "bron": "zijn meldingsdatum min zijn bergingsbestek"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "bergingsspanne van een bergingsploeg",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "bergingsspanne",
+        "objecttype": "Bergingsploeg",
+        "onderwerpBron": "een Bergingsploeg",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "springtijdagen",
+            "stelsel": null,
+            "canoniek": "springtijdagen",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        },
+        "bron": "De bergingsspanne van een Bergingsploeg",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "TIJDSDUUR",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "meldingsdatum",
+            "objecttype": "Bergingsploeg",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "DatumInDagen"
+            },
+            "bron": "zijn meldingsdatum",
+            "set": false,
+            "navigatiePad": []
+          },
+          {
+            "node": "AttribuutRef",
+            "attribuut": "opleverdatum",
+            "objecttype": "Bergingsploeg",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "DatumInDagen"
+            },
+            "bron": "zijn opleverdatum",
+            "set": false,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": null,
+        "leegwaarde": null,
+        "filter": null,
+        "dimensieSelectie": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "springtijdagen",
+            "stelsel": null,
+            "canoniek": "springtijdagen",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        },
+        "bron": "de tijdsduur van zijn meldingsdatum tot zijn opleverdatum in hele springtijdagen",
+        "granulariteit": null
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "bergingsafstand van een bergingsploeg",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "bergingsafstand",
+        "objecttype": "Bergingsploeg",
+        "onderwerpBron": "een Bergingsploeg",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "springtijdagen",
+            "stelsel": null,
+            "canoniek": "springtijdagen",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        },
+        "bron": "De bergingsafstand van een Bergingsploeg",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "ABSOLUTE_TIJDSDUUR",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "opleverdatum",
+            "objecttype": "Bergingsploeg",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "DatumInDagen"
+            },
+            "bron": "zijn opleverdatum",
+            "set": false,
+            "navigatiePad": []
+          },
+          {
+            "node": "AttribuutRef",
+            "attribuut": "meldingsdatum",
+            "objecttype": "Bergingsploeg",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "DatumInDagen"
+            },
+            "bron": "zijn meldingsdatum",
+            "set": false,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": null,
+        "leegwaarde": null,
+        "filter": null,
+        "dimensieSelectie": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "springtijdagen",
+            "stelsel": null,
+            "canoniek": "springtijdagen",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        },
+        "bron": "de absolute tijdsduur van zijn opleverdatum tot zijn meldingsdatum in hele springtijdagen",
+        "granulariteit": null
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [
+    {
+      "node": "ResolvedDagsoort",
+      "naam": "springtijdag",
+      "voorwaarde": {
+        "node": "Samengesteld",
+        "kwantor": "TEN_MINSTE",
+        "drempel": 1,
+        "onderdelen": [
+          {
+            "node": "Vergelijking",
+            "op": "GELIJK",
+            "links": {
+              "node": "Functie",
+              "kind": "DAG_UIT",
+              "argumenten": [
+                {
+                  "node": "Constante",
+                  "naam": "de dag",
+                  "type": {
+                    "node": "DatumInDagen"
+                  },
+                  "bron": "de dag"
+                }
+              ],
+              "elementObjecttype": null,
+              "leegwaarde": null,
+              "filter": null,
+              "dimensieSelectie": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              },
+              "bron": "de dag uit de dag",
+              "granulariteit": null
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "1",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "1"
+            },
+            "periode": null,
+            "bron": "de dag uit de dag gelijk is aan 1"
+          },
+          {
+            "node": "Vergelijking",
+            "op": "GELIJK",
+            "links": {
+              "node": "Functie",
+              "kind": "DAG_UIT",
+              "argumenten": [
+                {
+                  "node": "Constante",
+                  "naam": "de dag",
+                  "type": {
+                    "node": "DatumInDagen"
+                  },
+                  "bron": "de dag"
+                }
+              ],
+              "elementObjecttype": null,
+              "leegwaarde": null,
+              "filter": null,
+              "dimensieSelectie": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              },
+              "bron": "de dag uit de dag",
+              "granulariteit": null
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "15",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "15"
+            },
+            "periode": null,
+            "bron": "de dag uit de dag gelijk is aan 15"
+          }
+        ],
+        "bron": "er aan ten minste 1 van de volgende voorwaarden wordt voldaan: - de dag uit de dag gelijk is aan 1 - de dag uit de dag gelijk is aan 15."
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

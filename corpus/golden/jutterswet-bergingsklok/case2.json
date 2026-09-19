@@ -1,0 +1,26 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "P4", "objectType": "Bergingsploeg",
+        "attributes": { "meldingsdatum": { "date": "2026-03-10" } },
+        "roles": {}, "characteristics": [] },
+      { "label": "P5", "objectType": "Bergingsploeg",
+        "attributes": { "opleverdatum": { "date": "2026-04-20" }, "bergingsbestek": { "number": "2" } },
+        "roles": {}, "characteristics": [] }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "P4", "attribute": "uiterste bergingsdatum", "value": { "date": "2026-03-10" } },
+    { "kind": "attributeValue", "label": "P4", "attribute": "vroegste meldingsdatum", "value": { "date": "2026-03-10" } },
+    { "kind": "attributeEmpty", "label": "P4", "attribute": "bergingsspanne" },
+    { "kind": "attributeEmpty", "label": "P4", "attribute": "bergingsafstand" },
+    { "kind": "attributeEmpty", "label": "P5", "attribute": "uiterste bergingsdatum" },
+    { "kind": "attributeEmpty", "label": "P5", "attribute": "vroegste meldingsdatum" },
+    { "kind": "attributeEmpty", "label": "P5", "attribute": "bergingsspanne" },
+    { "kind": "attributeEmpty", "label": "P5", "attribute": "bergingsafstand" },
+    { "kind": "consistent" }
+  ]
+}

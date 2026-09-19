@@ -45,6 +45,21 @@ type env = {
 
 let req what = function Some x -> x | None -> Value.fault "missing %s in IR node" what
 
+(* The key the bound day of a day-kind definition rides on in [env.locals]
+   (ch. 3.7, the `de dag` context value). It carries a NUL so that no
+   declared binder name can ever collide with it: every other key in that
+   map is a [norm]-ed source name, and [norm] neither produces nor preserves
+   a NUL. Its presence is also the marker that evaluation is INSIDE a
+   day-kind voorwaarde — which is the only place a nested day-kind predicate
+   is evaluated (ch. 5.4). *)
+let day_kind_binder = "\x00de dag"
+
+(* The day kinds currently being evaluated, innermost first. WF-085 makes a
+   reference cycle ill-formed, so this guard never fires on a conforming
+   document; it is here because a hand-built one must fault rather than
+   loop. Single-threaded and exception-safe: the pop runs on every exit. *)
+let day_kind_stack : string list ref = ref []
+
 (* --- operand order (ch. 5.11) ------------------------------------------
    The order in which a node's operands are evaluated is normative, because
    it is observable: a fault and a §9.5 channel fact come into being — or
@@ -768,17 +783,25 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                 then
                   Value.fault
                     "sub-day date arithmetic needs a datum-tijd operand (WF-035)"
-                else tu
-            | None ->
-                Value.fault
-                  "duration unit %S is not a recognised time unit (a day-kind duration is \
-                   a recorded flank, not executed)"
-                  (Option.value u.afkorting ~default:"?"))
+                else `Calendar tu
+            | None -> (
+                (* not a calendar unit: the spelling may name a declared day
+                   kind, which is the ch. 3.8 day-by-day step (§6.11) *)
+                match day_kind_of_unit env u with
+                | Some k -> `Day_kind k
+                | None ->
+                    Value.fault
+                      "duration unit %S is neither a recognised time unit nor a declared day \
+                       kind (WF-035)"
+                      (Option.value u.afkorting ~default:"?")))
         | _ -> Value.fault "date \xc2\xb1 duration without a time unit (WF-035)"
       in
       let d = eval_expr env world self ~err le in
       let dur = eval_expr env world self ~err re in
-      Arith.date_plus_duration ~minus ~unit_ d dur)
+      match unit_ with
+      | `Calendar tu -> Arith.date_plus_duration ~minus ~unit_:tu d dur
+      | `Day_kind k ->
+          Arith.date_plus_day_kind ~minus ~matches:(day_kind_pred env world self ~err k) d dur)
   | Binair { op; links; rechts; _ } -> (
       let l = eval_expr env world self ~err (req "Binair.links" links) in
       let r = eval_expr env world self ~err (req "Binair.rechts" rechts) in
@@ -829,12 +852,18 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                     then
                       Value.fault
                         "sub-day tijdsduur needs datum-tijd operands (WF-038)"
-                    else tu
-                | None ->
-                    Value.fault
-                      "tijdsduur unit %S is not a recognised time unit (a day-kind \
-                       tijdsduur is a recorded flank, not executed)"
-                      (Option.value u.afkorting ~default:"?"))
+                    else `Calendar tu
+                | None -> (
+                    (* not a calendar unit: the spelling may name a declared
+                       day kind, which is the ch. 3.8 count over (A, B]
+                       (§6.10) *)
+                    match day_kind_of_unit env u with
+                    | Some k -> `Day_kind k
+                    | None ->
+                        Value.fault
+                          "tijdsduur unit %S is neither a recognised time unit nor a declared \
+                           day kind (WF-038)"
+                          (Option.value u.afkorting ~default:"?")))
             | _ ->
                 Value.fault "tijdsduur without a recognised time unit on its node type \
                              (WF-038)"
@@ -844,10 +873,14 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
              evaluates "tot" first — the reverse of the phrase. *)
           let van = eval_expr env world self ~err a in
           let tot = eval_expr env world self ~err b in
-          Arith.tijdsduur
-            ~absolute:(kind = Absolute_tijdsduur)
-            ~unit_ ~result_unit:(unit_of_datatype typ)
-            van tot
+          let absolute = kind = Absolute_tijdsduur in
+          let result_unit = unit_of_datatype typ in
+          (match unit_ with
+          | `Calendar tu -> Arith.tijdsduur ~absolute ~unit_:tu ~result_unit van tot
+          | `Day_kind k ->
+              Arith.tijdsduur_day_kind ~absolute
+                ~matches:(day_kind_pred env world self ~err k)
+                ~result_unit van tot)
       | _ -> Value.fault "tijdsduur expects two arguments")
   | Functie { kind; argumenten; element_objecttype; leegwaarde; filter; dimensie_selectie; granulariteit; bron_rol; bron_pad; typ = _; bron = _ } ->
       eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leegwaarde ~filter
@@ -871,6 +904,19 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
             "the Rekendatum constant needs an evaluation date; the case carries asOfDate null")
   | Constante { naam = Some n; _ } when norm n = norm "Rekenjaar" ->
       Value.fault "the Rekenjaar constant is not exercised by any corpus case (ch. 8.2)"
+  | Constante { naam = Some n; _ } when norm n = norm "de dag" -> (
+      (* ch. 3.7/3.8: the BOUND DAY of a day-kind definition — the day the
+         defining predicate is being applied to. It is not a session value
+         (that is Rekendatum, above) and it has a value only inside a
+         day-kind evaluation, which is exactly where [day_kind_binding]
+         puts one. *)
+      match SMap.find_opt day_kind_binder env.locals with
+      | Some (Now v) -> v
+      | Some (Later f) -> f ()
+      | None ->
+          Value.fault
+            "the 'de dag' context value is the bound day of a day-kind definition (ch. 3.7); \
+             outside a day-kind evaluation it denotes nothing")
   | Dimensie_cel _ | Variabele_ref _ | Constante _ ->
       Value.fault "expression kind not implemented in this card"
   | Temporal_read { basis; datum; typ = _; bron = _ } -> (
@@ -1585,6 +1631,44 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
       let v = eval_expr env world self ~err (req "Predicaat.operand" operand) in
       let is_filled = v <> Value.Empty in
       if negatie then not is_filled else is_filled
+  | Predicaat { soort = Dagsoort; dagsoort; operand; negatie; _ }
+    when SMap.mem day_kind_binder env.locals ->
+      (* A NESTED day-kind reference, inside a day-kind voorwaarde (ch. 3.7,
+         the WF-085 reference graph): the operand is a date the referenced
+         kind is tested on, and it defaults to the bound day — that is the
+         §9.8 composition ("a day is a holiday when it is a Christmas day
+         or …"). Outside a day-kind voorwaarde the predicate stays refused
+         (the arm below): ch. 5.4's framing is that a day kind is consulted
+         as a stratum-0 classifier, never as a derived read in the rule
+         fixpoint, and the ASP backend carries the same boundary. The leeg
+         rule is the source's own exception: a leeg value is never of a day
+         kind, so the test is false rather than leeg-propagating. *)
+      let d =
+        match operand with
+        | None -> (
+            match SMap.find_opt day_kind_binder env.locals with
+            | Some (Now v) -> v
+            | Some (Later f) -> f ()
+            | None -> assert false (* guarded by the [when] above *))
+        | Some o -> eval_expr env world self ~err o
+      in
+      let hit =
+        match d with
+        | Value.Empty -> false
+        | Value.Date z -> day_kind_matches env world self ~err (req "Predicaat.dagsoort" dagsoort) z
+        | Value.Date_time t ->
+            day_kind_matches env world self ~err
+              (req "Predicaat.dagsoort" dagsoort)
+              (fst (Arith.split_ms t))
+        | v -> Value.fault "a day-kind test needs a date operand, got %s" (Value.to_string v)
+      in
+      if negatie then not hit else hit
+  | Predicaat { soort = Dagsoort; dagsoort; _ } ->
+      Value.fault
+        "the day-kind predicate ('is een %s') is a recognised, unexecuted form outside a \
+         day-kind definition (ch. 5.4): a day kind classifies a bare date at stratum 0, and no \
+         executor reads one inside the rule fixpoint"
+        (Option.value dagsoort ~default:"?")
   | Predicaat _ -> Value.fault "predicate kind not implemented in this card"
   | Kenmerk_check { kenmerk; navigatie = None; negatie; navigatie_binding; eigenaar; periode; _ }
     ->
@@ -1850,6 +1934,58 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
   | Verre_rollidmaatschap _ | Periode_conditie _ ->
       Value.fault "condition kind not implemented in this card"
   | Conditie_onopgelost _ -> Value.fault "Onopgelost condition reached in evaluation (WF-044)"
+
+(* --- day kinds as duration units (ch. 3.7/3.8) --------------------------
+   Two steps stand between a unit SPELLING on a duration node and a verdict
+   about one calendar day. Resolution: the spelling names a day kind through
+   `dagsoortPerEenheid` (trimmed, case-insensitive — IR-SPEC ch. 2.9), and
+   the name names its definition in `resolvedDagsoorten`. Evaluation: the
+   definition's voorwaarde is an ordinary condition, evaluated with the day
+   bound to `de dag` and with no other binder in scope — WF-031's purity
+   clause is what makes that sound, since a pure condition never reaches the
+   fact base and the `self` it is handed is never read. *)
+
+and day_kind_definition env (name : string) : resolved_dagsoort =
+  match
+    List.find_opt
+      (fun (d : resolved_dagsoort) ->
+        match d.rd_naam with Some n -> norm n = norm name | None -> false)
+      env.doc.resolved_dagsoorten
+  with
+  | Some d -> d
+  | None -> Value.fault "day kind %S has no definition (WF-031)" name
+
+and day_kind_matches env world self ~err (name : string) (day : int) : bool =
+  if List.exists (fun n -> norm n = norm name) !day_kind_stack then
+    Value.fault
+      "day-kind reference cycle at %S: a day-kind definition that references itself has no \
+       fixpoint (WF-085)"
+      name;
+  let def = day_kind_definition env name in
+  let c = match def.rd_voorwaarde with
+    | Some c -> c
+    | None -> Value.fault "day kind %S has a definition without a condition (WF-031)" name
+  in
+  let saved = !day_kind_stack in
+  day_kind_stack := name :: saved;
+  Fun.protect
+    ~finally:(fun () -> day_kind_stack := saved)
+    (fun () ->
+      let env = { env with locals = SMap.add day_kind_binder (Now (Value.Date day)) env.locals } in
+      eval_cond env world self ~err c)
+
+(* the day kind a duration UNIT spelling names, or None when the spelling is
+   not registered as one (then it is a calendar unit, or ill-formed) *)
+and day_kind_of_unit env (u : eenheid) : string option =
+  match u.afkorting with
+  | None -> None
+  | Some a -> (
+      match Ir_v0.Checks.find_ci env.doc.dagsoort_per_eenheid a with
+      | Some (Some k) when String.trim k <> "" -> Some k
+      | _ -> None)
+
+and day_kind_pred env world self ~err (name : string) : int -> bool =
+  fun day -> day_kind_matches env world self ~err name day
 
 let rule_name (r : resolved_regel) = Option.value r.rr_naam ~default:"<naamloos>"
 
