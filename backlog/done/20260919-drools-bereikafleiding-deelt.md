@@ -276,7 +276,9 @@ noop: 0                flogic: 0
 ```
 
 Gate 12: `played 154`, kanaalvloer 49 niet-PLAYED goldens bij naam,
-JUnit **466 tests, 0 skips** (was 447; vloer 239). Gate 13: 126
+JUnit **466 tests, 0 skips** (was 459; vloer 239 — de lensronde
+corrigeerde het hier eerst genoteerde 447, een achtergebleven getal
+uit de eerste meetronde). Gate 13: 126
 eenheidsannotaties over 23 goldens (vloer 74), 104 replays, 22
 DRL-gespeeld (vloer 13) — beide taktellingen gelijk aan wat de basis
 zonder deze wijziging meet. Gate 10: 298 tests, 57 rgs-goldens. Gate 11:
@@ -350,3 +352,24 @@ navigation*) — niet zelf geland:
    `elemRol`-arm. Die vraagt het rolPAAR, niet de joinrol, dus
    `bereikjoin` past er niet op; het delen zit in de afleiding eronder,
    die wél gedeeld is.
+
+## Lensronde (2026-09-19, naschrift hoofdsessie)
+
+Alle twaalf lenspunten CONFIRMED (de deling, de gedeelde zin, beide
+rood-eerst-bewijzen letterlijk gereproduceerd, drie mutatieproeven,
+sweep in beide takken leeg, veertien gates, conflictvrije rebase met
+played 159 en een lege sweepdiff tegen de nieuwe main), advies MERGE;
+gemerged op `17cb1d76`. Twee tekstcorrecties door de hoofdsessie: het
+JUnit-basisgetal hierboven (447 → 459), en in de gelande
+rij-4-registertekst de naadzin — de §13.4.6-creatie-terugkoppeling
+leest de wire-binding alléén in exec; `DrlTranspiler.objectCreatie`
+leidt haar uit het gedeclareerde model af en raadpleegt de binding
+nooit. Uit die meting kwam een vijfde naad als eigen kaart
+(`20260919-drl-creatie-koppelloos`): bij een onoplosbare
+`verbindendeRol` zet de DRL-tak geen marker maar emitteert een
+commentaarregel en voert `insert($new)` tóch uit — een aangemaakt
+object zonder koppeling, zonder zichtbare weigering, zonder getuige
+(`ObjectCreatieWitnessTest` draait exec-only). Nitpick uit de lens,
+vastgelegd: de twee "regel voor regel identieke" privé-kopieën
+verschilden op precies één regel (`java.util.Map.Entry` vs
+`Map.Entry`).
