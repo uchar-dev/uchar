@@ -245,7 +245,14 @@ green. Current gates:
     count closes the one direction a played-by-default list cannot see: a
     newly arrived player. The gate rebuilds the jar and runs the
     backend's own JUnit suite, which must pass with a non-zero, zero-skip
-    test count (maintainer decision 2026-08-30). An empty played set is
+    test count (maintainer decision 2026-08-30). Since 2026-09-19 the
+    gate also counts the DRL-TEXT branch (card gate12-drl-takteller):
+    its own sweep over every golden through the replay runner's branch
+    flag, an EXPECTED_DRL_PLAYED equality pin plus a reason-carrying
+    DRL_CHANNEL non-player list (played is the default; both lists
+    share one guard function), stale-failing in both directions by
+    name; the sweep runs as the gate's final block, so only an
+    otherwise-green gate pays its cost. An empty played set is
     a failure. CI leg unconditional and blocking.
 
 13. `scripts/check-reftype-derivation.sh` — the annotation-indifference
