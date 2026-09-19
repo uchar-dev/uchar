@@ -1816,6 +1816,8 @@ blijft, mits B13 eerst gaat.
 
 ### V6 — Wat draagt de AANTAL-telbron als `Onbekend` verdwijnt?
 
+**BESLIST (2026-09-19, maintainer): (a) — niets: V5 (a) haalt de annotatie van de positie, WF-093 wordt een vouwsoortregel; de verzamelingsverwijzing als eigen latere kaart.**
+
 WF-093 (2026-09-06) maakt de telwrat normatief: een eenargumentige
 instantievouwbron die het onbekend-sentinel op zijn eigen `type` draagt MOET
 soort `AANTAL` hebben. Dat is vandaag de **enige** toegelaten sentinelpositie op
@@ -1838,6 +1840,8 @@ hij verdient een eigen meting.
 ---
 
 ### V7 — Landt de canonieke-eenheid-wire in deze klap?
+
+**BESLIST (2026-09-19, maintainer): (b), beide stappen in deze klap, in deze interne volgorde: (1) exacte rationale factoren; (2) één geteste canonicalisatiepas over álle waarde- en casusposities; (3) daarna pas de corpusregeneratie. Grond: de blokkerende kruis-stelsel-divergentie is op 2026-09-19 gesloten, en onder V2 (a) — één klap — is een latere tweede waardenmigratie onaantrekkelijk. TERUGVAL: kan de volledige canonicalisatiepas niet vóór de klap met absolute voorbeelden worden bewezen, dan geldt (a) — alleen de exacte breuk.**
 
 B17 bestaat uit twee stappen: **(i)** `factorNaarCanoniek` wordt een exacte
 `{num, den}`, **(ii)** de wire draagt canonieke eenheden in plaats van
@@ -1865,6 +1869,8 @@ als de eenheid op de wire blijft staan.
 ---
 
 ### V8 — Het enumeratiewaarde-gat in de frontend: nu of bij de klap?
+
+**BESLIST (2026-09-19, maintainer): (a) — nu, als eigen v0-kaart naar het tekstlexeem-model (strippen én contextueel typeren, emittergetuige, bron-golden, spec-zin).**
 
 B22b. Let op wat dit **niet** is: geen levende wire-divergentie en geen stil
 fout antwoord. De wire is dubbel gehekt (WF-039 op het label, WF-034 (r) op het
@@ -1905,10 +1911,12 @@ herpin vraagt, is met één meting vast te stellen bij de uitvoering.
 
 ### V9 — Worden literalen echte JSON-waarden?
 
+**BESLIST (2026-09-19, maintainer): (a) — volledig getypeerde waarden, onder drie voorwaarden: (1) `number` blijft een exacte string — `{"number": "12.50"}`, nooit een JSON-getal; (2) de verifier kruist de value-variant tegen `Literal.type`; (3) `source` bewaart de oorspronkelijke juridische spelling.**
+
 B22c. Vandaag is `Literal.waarde` altijd een string; elke consument parseert
 hem. De rij-27-delta zegt "literals become typed values".
 
-- **(a) Volledig**: `{"number": 12.50}` / `{"date": "2026-03-15"}` /
+- **(a) Volledig**: `{"number": "12.50"}` / `{"date": "2026-03-15"}` /
   `{"text": "…"}` / `{"boolean": true}` / `{"enumeration": "Ruimzee"}` — precies
   de vormen die `uchar-case-v0` al gebruikt voor casuswaarden.
 - **(b) Alleen de exactheid**: een getal wordt een JSON-string die exact is
