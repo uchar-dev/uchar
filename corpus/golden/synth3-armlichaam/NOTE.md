@@ -46,9 +46,11 @@ one-armed witness dressed as a two-armed one.
 
 The `Let` value stands syntactically OUTSIDE the branch node, and the ch.-10.6
 rewrite moves it into the single arm that reads it. In the emitted program that
-is visible as the arm guard `V < 0` — the complement of `x >= 0` — on the
-value's three fences and on its recurrence, while the dan-arm's recurrence
-carries `V >= 0` and no fence of the division at all:
+is visible as the arm guard `V < 0` — the complement of `x >= 0` — on every one
+of the six `viol/2` rules the division brings (two operand range fences, the
+numeric-zero fence, the exactness fence, two result range fences) and on the
+anders recurrence, while the dan-arm's own two range fences and its recurrence
+carry `V >= 0` and no fence of the division appears under them at all:
 
     viol("division by numeric zero",…) :- …, lelem(…,I,V), V < 0,
         param("grondslag",P2), (V) == 0.
