@@ -3088,8 +3088,30 @@ let () =
   check "WV-5.8a-ver-twee-vullers-niet-onbemand"
     (not (ev2 "w1" (verre "toegewezen wachtpost" true)));
   check "WV-5.8a-ver-losse-jutter-bemant-niets" (ev2 "w2" (verre "toegewezen wachtpost" true));
-  expect_fault "WV-5.8a-ver-verkeerde-zijde" (fun () ->
-      ev1 "w1" (verre "wachtjutter" false))
+  expect_fault "WV-5.8a-ver-verkeerde-zijde" (fun () -> ev1 "w1" (verre "wachtjutter" false));
+  (* the pair pins BOTH ends at once, so a second fact type carrying a
+     same-named subject role over the same type pair denotes a second
+     relation and there is no tie-break: a fault, never a pick. The verifier
+     leaves this one alone — WF-034 (t) reports the EMPTY candidate list and
+     several entries stay the ambiguity question — so the reader is where it
+     is caught, and this is its only witness. *)
+  let doc_ambigu =
+    { doc with
+      feittypen =
+        [ ft_wacht false;
+          ( "reservewacht",
+            { ft_naam = Some "reservewacht"; wederkerig = false;
+              rollen =
+                [ { rol_naam = Some "reservejutter"; rol_objecttype_naam = Some "Jutter";
+                    rol_meervoud = Some "reservejutters"; rol_meervoudig = true };
+                  { rol_naam = Some "toegewezen wachtpost";
+                    rol_objecttype_naam = Some "Wachtpost"; rol_meervoud = None;
+                    rol_meervoudig = false } ];
+            } ) ] }
+  in
+  expect_fault "WV-5.8a-ver-ambigu-paar" (fun () ->
+      Eval.eval_cond (env_of doc_ambigu) w1 (World.get w1 "w1") ~err:no_err
+        (verre "toegewezen wachtpost" false))
 
 (* --- ch. 5.8b: the characteristic check's owner (WF-100) ----------------
    The RUNTIME-SEMANTICS ch. 5.8b worked example, verbatim. `Vondst` and

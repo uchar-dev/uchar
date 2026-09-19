@@ -5070,6 +5070,47 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
       else
         let n = fresh ctx "N" in
         [ Printf.sprintf "rol(%s,%s,%s)" subject (str canonical) n ]
+  | Verre_rollidmaatschap { filler; backref; negatie; _ } ->
+      (* the FAR-side rolcheck (RUNTIME-SEMANTICS ch. 5.8a, far half): the
+         same §8.1.7 sentence read from the other end. The subject does not
+         fill the named role — it is the relation's other end — so the
+         question is existence over the relation: does any object of [filler]
+         stand in it. [backref] names the SUBJECT's own role and the join
+         ranges over the role at the other end, which Eval.far_side_role
+         derives from the pair (WF-034 (t) crosses it ahead of translation;
+         a document that reaches here with an unresolvable pair still faults
+         loudly).
+
+         The lowering is the near-side arm's, one role over: a bare rol/3
+         join whose filler variable is free, so N groundings collapse onto
+         one head and existence needs no aggregate, no count and no pick.
+         "heeft geen" is a helper deriving that presence, negated as failure,
+         with the subject kept bound by the caller's is_a base — the same
+         inverse test the near-side negation uses, and the same flip
+         ch. 5.8a rule 3 states. Reading the subject's OWN links is reading
+         the relation, not a direction (ch. 5.7a): the case emission mirrors
+         every supplied link and every materialised reverse leg into rol/3
+         alike, so both ends see the one relation. *)
+      let f = req "VerreRollidmaatschap.filler" filler in
+      let b = req "VerreRollidmaatschap.backref" backref in
+      let env =
+        { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
+          as_of = None; locals = Eval.SMap.empty }
+      in
+      let canonical =
+        role_canonical (Eval.far_side_role env ~self_type:subject_ot ~filler:f ~backref:b)
+      in
+      if negatie then begin
+        ctx.fresh <- ctx.fresh + 1;
+        let p = Printf.sprintf "vrm%d" ctx.fresh in
+        let n = fresh ctx "N" in
+        emit ctx "%s(%s) :- isa(%s,%s), rol(%s,%s,%s)." p subject subject (str subject_ot)
+          subject (str canonical) n;
+        [ Printf.sprintf "not %s(%s)" p subject ]
+      end
+      else
+        let n = fresh ctx "N" in
+        [ Printf.sprintf "rol(%s,%s,%s)" subject (str canonical) n ]
   | Samengesteld { kwantor = Alle | De; onderdelen; _ } ->
       (* the conjunctive short circuit (RUNTIME-SEMANTICS ch. 5.10): member i is
          read only where members 1..i-1 all held, so the accumulated PREFIX
