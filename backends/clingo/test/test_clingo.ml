@@ -5531,6 +5531,82 @@ let () =
     ~ir:tak_doc14 ~case_text:leeg40
     ~needle:"read in exactly one branch arm"
 
+(* --- de VANGST-vorm: de body leest de buitenste behoefte alleen via de
+   geneste waarde ----------------------------------------------------------
+   D5 hierboven is de vorm waarin de geneste waarde de buitenste behoefte leest
+   EN de body haar ook zelf leest; dan is zij nodig welke arm ook loopt en is
+   eager plaatsing exact. Laat die directe lezing weg en het beeld kantelt: de
+   lezing zit dan in precies één arm, want de geneste binder wordt maar in één
+   arm gelezen en zijn waarde evalueert alleen daar (clausule 3). De
+   syntactische guard van de distributie ("de geneste waarde noemt de buitenste
+   binder") zag dat verschil niet en liet eager plaatsing staan. Gemeten op de
+   merge-base van deze kaart: ref PASS, clingo MISMATCH (1 inconsistent fact)
+   bij een lege deler en UNSATISFIABLE bij deler 0. *)
+
+let tak_w_uit_z ~dan =
+  tak_let ~typ:tak_ob ~binder:"w"
+    ~value:(tak_plus (tak_binder ~typ:tak_ob "z") (tak_lit "1.00") "de behoefte plus 1,00")
+    ~body:
+      (tak_ite ~typ:tak_ob ~links:(tak_binder "k") ~rechts:(tak_par "drempel") ~dan
+         ~anders:(tak_binder ~typ:tak_ob "w"))
+
+(* V1 — kaal: Let w = (z plus 1,00) in (als k > de drempel dan 0,00 anders w) *)
+let tak_doc16 = tak_genest ~romp:(tak_w_uit_z ~dan:(tak_lit "0.00"))
+
+(* V2 — dezelfde vorm onder een WIKKEL. Dit is de reikwijdte-pin van deze
+   route: leegt de barrière alleen de arm, dan leest de plus die arm als 0,00
+   en antwoordt 5,00 waar ref leeg zegt. *)
+let tak_doc17 =
+  tak_genest
+    ~romp:(tak_plus (tak_w_uit_z ~dan:(tak_lit "0.00")) (tak_par "basisheffing")
+             "het deel plus de basisheffing")
+
+(* V3 — de CONDITIE leest de geneste binder, die op zijn beurt de buitenste
+   behoefte leest. Dan wordt die behoefte op elke tak geforceerd en is eager
+   plaatsing exact: niets te verplaatsen. *)
+let tak_doc18 =
+  tak_genest
+    ~romp:
+      (tak_let ~typ:tak_ob ~binder:"w"
+         ~value:(tak_plus (tak_binder ~typ:tak_ob "z") (tak_lit "1.00") "de behoefte plus 1,00")
+         ~body:
+           (tak_ite ~typ:tak_ob ~links:(tak_binder ~typ:tak_ob "w") ~rechts:(tak_par "drempel")
+              ~dan:(tak_lit "0.00") ~anders:(tak_lit "1.00")))
+
+(* V4 — de ene arm leest de behoefte DIRECT, de andere via de geneste waarde.
+   Beide armen lezen haar dus, en eager plaatsing is opnieuw exact. *)
+let tak_doc19 = tak_genest ~romp:(tak_w_uit_z ~dan:(tak_binder ~typ:tak_ob "z"))
+
+let () =
+  (* V1 en V2 krijgen de volle vier hoeken van [tak_vier], de reikwijdte-pin
+     inbegrepen: de dan-arm levert 0,00 respectievelijk 0,00 plus de
+     basisheffing, en de betreden anders-arm leegt het GEHEEL. *)
+  tak_vier ~naam:"ch10.6 vangst: de body leest de behoefte alleen via de geneste waarde"
+    ~ir:tak_doc16 ~niet_betreden:"0";
+  tak_vier ~naam:"ch10.6 vangst onder een wikkel" ~ir:tak_doc17 ~niet_betreden:"5"
+
+let () =
+  (* V3 en V4 — de andere kant van de guard, en de reden dat hij een TOETS is
+     en geen verplaatsing: hier is de behoefte op beide takken nodig, dus de
+     herschrijving moet zich inhouden. Beide executors melden en leggen leeg op
+     de case die de DAN-arm kiest — de arm waar V1 juist niets mag doen. *)
+  verifier_clean ~name:"ch10.6 vangst: de conditie leest de geneste binder" ~ir:tak_doc18;
+  verifier_clean ~name:"ch10.6 vangst: de andere arm leest de behoefte direct" ~ir:tak_doc19;
+  let leeg40 = tak_case ~inkomen:"40" ~parameters:tak_params12
+                 ~verwacht:tak_heffing_leeg_en_gemeld () in
+  let nul40 =
+    tak_case ~inkomen:"40" ~restpost:"0" ~parameters:tak_params12 ~verwacht:tak_breekt ()
+  in
+  List.iter
+    (fun (naam, ir) ->
+      ref_matches ~name:(naam ^ ", lege deler op de dan-arm") ~ir ~case_text:leeg40;
+      clingo_matches ~name:(naam ^ ", lege deler op de dan-arm meldt en leegt") ~ir
+        ~case_text:leeg40;
+      both_break ~name:(naam ^ ", nuldeler op de dan-arm") ~ir ~case_text:nul40
+        ~needle:"division by numeric zero")
+    [ ("ch10.6 vangst: de conditie leest de geneste binder", tak_doc18);
+      ("ch10.6 vangst: de andere arm leest de behoefte direct", tak_doc19) ]
+
 (* --- knoop 1, tweede helft: de GESLOTEN body ------------------------------
    Dezelfde twee routes in de derde lowering. De §6.5-melding kan hier niet
    ontstaan (een gesloten body is leegvrij, ch. 10.1), dus wat er te meten valt

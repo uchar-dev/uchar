@@ -1409,14 +1409,18 @@ let rec reads_binder b (e : expr) : bool =
      never enters, and a wrong VALUE besides) — so it is refused loudly below,
      except where [let_into_arm]'s swap reaches it first.
    - the nested VALUE must not mention the outer binder. The distribution copies
-     `v` into BOTH arms, so a `v` reading the outer binder would make both arms
-     read it and break the single-reading-arm invariant the wrap below relies
-     on. Eager placement stays for that case, and it is EXACT only where the
-     body also reads the outer binder directly in both arms (the D5 witness).
-     Where the body reads the outer need ONLY through this nested value the
-     reading sits in exactly one arm and eager placement diverges — measured
-     2026-09-19 (lens), pre-existent, no corpus hit; that residual form is
-     follow-up-card material, deliberately left un-rewritten here. *)
+     `v` into BOTH arms, and a `v` mentioning the outer binder would make both
+     copies mention it — which is why the SYNTACTIC form of this guard used to
+     stop the rewrite outright. It stopped too much. Whether the outer need is
+     really read in both arms is a ch.-10.6 question, not a syntactic one: the
+     copy in the arm that never reads `b` never evaluates `v` either (clause 3),
+     so the outer need is read exactly where `b` is. Since 2026-09-19 that case
+     therefore has its OWN arm below, which searches with `b` instead of with
+     the outer binder, drops the copy in the arm that does not read `b`, and
+     then CHECKS the single-reading-arm invariant on the result rather than
+     assuming it. Where the check fails — the outer binder read in both arms,
+     directly or through `v` — eager placement stays and is exact, which is the
+     D5 witness. *)
 let rec hoist_branch binder (e : expr) : expr option =
   let reads = reads_binder binder in
   let opt_reads = function Some x -> reads x | None -> false in
@@ -1458,6 +1462,42 @@ let rec hoist_branch binder (e : expr) : expr option =
              them), and eager placement is measured to report a §6.5 divisor place, fire a \
              fail-fast guard and answer a coalesced value on an arm ref never enters (no corpus \
              case)"
+      | Some _ | None -> None)
+  (* THE CAPTURE ARM. The nested value mentions the outer binder, so the arm
+     above declines and the question moves one binder along: the outer need is
+     reached THROUGH `b2`, hence read wherever `b2` is read. So ask the WHOLE
+     rewrite where `b2` lands — [let_into_arm] on the nested `Let` itself, not
+     [hoist_branch] on its body — and then TEST the invariant the caller relies
+     on instead of inferring it: the outer binder must end up read in exactly
+     one of the two arms. The test fails exactly where the need is genuinely
+     wanted either way (read in both arms, directly or through `v2`), and there
+     eager placement is what ch. 10.6 asks for.
+
+     Asking the whole rewrite, and not its search half, is what keeps this arm
+     from ANSWERING for a shape that is not its own. [let_into_arm] tries the
+     swap first, hands the `Let b2` into the one arm that reads it (an unread
+     `Let` is its own body, clause 3 — which is also what keeps a copy carrying
+     a now-unbound outer binder from being built), and raises the loud refusal
+     only where the refusal belongs. Reaching past it into [hoist_branch] made
+     this arm raise D3's refusal on a shape the swap settles — measured: five
+     suite witnesses red.
+
+     Searching with a DIFFERENT binder also costs one guard the ordinary arm
+     gets for free. Every branch node the rewrite hands back has a condition
+     that does not mention the binder it was searched WITH, and the caller wraps
+     its `Let` around one arm only, leaving the condition outside it. Here the
+     search key is `b2`, so the outer binder must be tested against the
+     condition separately or the wrap strands it: measured without that test,
+     `TRANSLATION FAULT: unbound binder "k"`. A condition that does read the
+     outer binder forces the need on every branch anyway, so declining is also
+     the right answer. *)
+  | Let { binder = b2; value = v2; body = lbody; typ; bron }
+    when norm b2 <> norm binder && Ir_v0.Checks.mentions_binder binder v2 -> (
+      match let_into_arm (Let { typ; binder = b2; value = v2; body = lbody; bron }) with
+      | Some (If_then_else { condition; then_; else_; _ } as moved)
+        when (not (Ir_v0.Checks.mentions_binder_cond binder condition))
+             && reads then_ <> reads else_ ->
+          Some moved
       | Some _ | None -> None)
   | Binair { op; links; rechts; typ; bron } ->
       one_of typ bron
@@ -1502,7 +1542,7 @@ let rec hoist_branch binder (e : expr) : expr option =
    between the two `Let`s with a condition reading the nested binder: the swap
    cannot step over the wrapper and the distribution cannot lift the branch
    node, which is the loud refusal in [hoist_branch]. *)
-let rec let_into_arm (e : expr) : expr option =
+and let_into_arm (e : expr) : expr option =
   match e with
   | Let { binder; value; body; bron; typ } -> (
       let swapped =
