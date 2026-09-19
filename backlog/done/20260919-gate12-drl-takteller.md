@@ -76,6 +76,28 @@ de twee guards die de exec-lijst ook heeft (kanaaldrift bij naam; een pin
 waarvan het golden weg is) plus de holle-token-guard (`PLAYED 0` telt niet
 als speler).
 
+**De groepskoppen van A en C zijn na de lensronde gecorrigeerd, met een
+eigen exec-sweep over alle 209 goldens ernaast gelegd.** Wat er nu staat is
+gemeten en niet geschat:
+
+- Klasse C is níét tien-om-twee gedeeld. **Negen** van de twaalf weigert
+  exec ook (`jutterswet-keurstaat` hoort daarbij — exec: `transpiler SKIP:
+  voorwaarde buiten Phase-B scope` — net als `jutterswet-klipwacht`).
+  **Drie** zijn tak-alleen, en exec speelt ze: `anchor/jutterswet-wachtersketen`
+  (PLAYED 2), `synth2-budgetgrens-onder` (PLAYED 1) en `jutterswet-vouwrand`
+  (PLAYED 1). De eerste twee dragen een objectcreatie-MARKER op dezelfde
+  onopgeloste terugkoppeling — dat is de **luide** helft van het
+  objectcreatie-gat, waar klasse D de stille helft is. Beide koppen wijzen
+  nu naar elkaar, zodat het gat compleet in het bestand staat.
+- Klasse A framede `anchor/jutterswet-toelagegronden` ten onrechte als deel
+  van de asymmetrie tussen de takken. Exec weigert dat golden óók, op een
+  andere zin (kenmerk-doel deelt zijn naam met een attribuut, een
+  v0-beanmodel-limiet), dus het draagt 0 bij aan het gat van 27. De kop
+  noemt dat nu expliciet en rekent het gat voor: 30 exec-only-spelers min 3
+  goldens die deze tak speelt en exec niet (`anchor/jutterswet-vindersloon`,
+  `jutterswet-vondsttarief`, `synth2-afrondingscombinaties`). De pinregel
+  van toelagegronden zelf was en blijft correct.
+
 **Eén verschil is bewust en staat als zodanig in het bestand:** hier is een
 fout bij het vuren *lijstbaar*. In het exec-kanaal laat een `ERROR` de gate
 vallen, want dat kanaal ís het vierkant; deze tak is een smallere meting die
@@ -94,7 +116,8 @@ creatieregel (`anchor/jutterswet-rekenkamer-overzee`, `synth3-kamerheffing`).
 Dat is geen semantisch verschil en geen niet-gedragen vorm, maar een gat in
 de creatie-lowering van deze tak. Het staat nu bij naam gepind, zodat
 repareren de lijst *moet* bewegen. Niet gerepareerd — dat is backend-werk
-met een eigen kaart; voorstel onderaan.
+met een eigen kaart: `backlog/new/20260919-drl-objectcreatie-defect.md`, in
+deze branch aangemaakt (zie onderaan).
 
 ### Looptijd, wall-clock gemeten op deze branch
 
@@ -103,12 +126,15 @@ met een eigen kaart; voorstel onderaan.
 | gate 12 zoals op `main` (`git show main:` — gedraaid in deze worktree) | 1:34,7 |
 | gate 12 met de sweep erin | 3:20,0 |
 
-De sweep meet zichzelf ook en drukt dat in het slotrapport: **97s**, voor 207
-java-aanroepen (de twee goldens zonder casus kosten er geen). Het verschil
-tussen de twee runs is 105s, de resterende 8s is ruis van de incrementele
-`mvn package`. De prijs is dus ruwweg een verdubbeling van de gate, en die
-wordt alleen betaald door een gate die verder groen is: bij een gebroken
-vierkant faalt hij nog steeds in de tijd die hij altijd had.
+De sweep meet zichzelf ook en drukt dat in het slotrapport. Drie metingen
+gaven 96s, 97s en (door de lens) 100s, voor 207 java-aanroepen (de twee
+goldens zonder casus kosten er geen). Het getal staat daarom als **~100s**
+in het script én hier: het is een orde van grootte en geen constante, en
+het verse getal van de run zelf is wat je moet geloven. De prijs is ruwweg
+een verdubbeling van de gate, en die wordt alleen betaald door een gate die
+verder groen is: bij een gebroken vierkant faalt hij nog steeds in de tijd
+die hij altijd had — de lens mat dat na op 1m54 zonder de DRL-regels te
+bereiken.
 
 ### Mutatieproeven
 
@@ -132,6 +158,27 @@ foutteksten noemen nu de lijstnaam erbij. Verder zijn twee bestaande
 commentaarblokken bijgewerkt (de kopnotitie en de vloer-notitie) zodat ze de
 tweede pin vermelden. Geen enkele bestaande *waarde* is aangeraakt.
 
+**Na de lensronde is die toets aangescherpt.** De eerste versie testte
+kanaallidmaatschap als substring over de samengevoegde string
+(`case " $toegestaan " in *" $ch "*`), en dat is strikt zwakker dan de
+exacte `case` die hij verving: een samengesteld kanaal wordt geaccepteerd.
+Nagemeten, los van de gate:
+
+```
+OUD (substring): ACCEPTEERT "EXCLUDE DIVERGE"
+NIEUW (token): WIJST AF "EXCLUDE DIVERGE"
+```
+
+De toets loopt nu per token met stringgelijkheid. Onschadelijk was het wel
+— zo'n pin sneuvelt later alsnog op de driftvergelijking — maar een guard
+die zwakker is dan zijn voorganger is geen guard. Herbewijs, één
+mutatieproef per lijst, beide door de volle gate:
+
+| lijst | proef | uitkomst |
+| --- | --- | --- |
+| `EXPECTED_CHANNEL` | `jutterswet-seizoenvondst` op `EXCLUDE DIVERGE` | `FAIL — malformed channel pin: … is pinned 'EXCLUDE DIVERGE' in EXPECTED_CHANNEL …`; exit 1 |
+| `DRL_CHANNEL` | `jutterswet-vormenkabinet` op `EXCLUDE FAIL` | `FAIL — malformed channel pin: … is pinned 'EXCLUDE FAIL' in DRL_CHANNEL …`; exit 1 |
+
 ### De exec-pins staan onbewogen
 
 Uit de slotrun, ná de wijziging:
@@ -140,7 +187,7 @@ Uit de slotrun, ná de wijziging:
 played 159  (…matched the pinned ref≡clingo expectations)
 channel floor 50 non-PLAYED goldens pinned by name; played matches the pinned 159
 DRL-text branch played 132  (its OWN count — the narrower branch, not the square; pin 132)
-DRL-text floor 77 non-PLAYED goldens pinned by name; sweep cost 97s wall clock
+DRL-text floor 77 non-PLAYED goldens pinned by name; sweep cost 96s wall clock
 JUnit 478 tests, floor 239
 ```
 
@@ -154,6 +201,15 @@ overlevers) · 8 PASS (29 rood) · 9 PASS (201 checks, 12 goldens) ·
 13 PASS (126 verdraaiingen, 22 door de DRL-tak gespeeld) · 14 PASS (130
 checks, 2 goldens).
 
+Ná de lens-fixronde opnieuw gedraaid: **1** (de scriptproza veranderde),
+**12** (PASS, slotgetallen hierboven, 3:20,7 totaal) en **13** (PASS,
+onveranderd — hij deelt de jar en dezelfde vlag van de replay-runner). De
+overige elf zijn niet herhaald en dat is een bewuste afweging, geen
+vergetelheid: die ronde raakte alleen commentaar en één guard in
+`scripts/check-drools.sh` plus twee backlog-bestanden, en geen van die elf
+leest een van die bestanden. Aan `backends/drools/` is in de hele kaart
+geen regel veranderd.
+
 ### Bewust niet
 
 Het objectcreatie-defect van klasse D niet gerepareerd (backend-bron, buiten
@@ -162,30 +218,19 @@ is van de maintainer. `spec/CONSTRUCTS.md` en `spec/PLAN.md` niet aangeraakt.
 Geen poging de DRL-tak dichter bij 159 te brengen: dit is een teller, geen
 takverbreding.
 
-### Voorgestelde vervolgkaart (letterlijk, voor de hoofdsessie)
+### Vervolgkaart, aangemaakt in deze branch
 
-`backlog/new/20260919-drl-objectcreatie-defect.md`:
+`backlog/new/20260919-drl-objectcreatie-defect.md` staat er nu als bestand
+in plaats van als voorstel in dit Result. Hij draagt de tekst die hier
+eerder stond, plus de luide helft uit klasse C, plus de regel die de
+lensronde vroeg:
 
-> # drl-objectcreatie-defect: de creatie-lowering van de DRL-tekst-tak
->
-> Gemeten spanning (drl-takteller, 2026-09-19): vier goldens met precies één
-> `objectCreatie` spelen wel in het exec-kanaal en niet in de DRL-tekst-tak,
-> zonder dat die tak ze bij naam weigert. `anchor/jutterswet-rekenkamer` en
-> `jutterswet-rekenkamerheffing-catala` antwoorden leeg waar ref, clingo en
-> exec 70 / 160 / -15 / 60 geven — de toekenningen van de creatie landen
-> niet. `anchor/jutterswet-rekenkamer-overzee` en `synth3-kamerheffing`
-> vallen bij het vuren om met een reflectieve `NullPointerException` in de
-> consequence van de creatieregel. Sinds de takteller staan ze gepind in
-> `DRL_CHANNEL` (klasse D, kanalen `FAIL` en `ERROR`), dus repareren beweegt
-> die lijst en `EXPECTED_DRL_PLAYED` met vier omhoog.
->
-> ## Acceptatie
->
-> - (a) De NPE bij het vuren is weg of is een luide weigering per vorm.
-> - (b) De twee leeg-antwoordende goldens spelen met de gepinde waarden, of
->   hun afwijking draagt een reden die zegt waarom dit v0-semantiek is.
-> - (c) `DRL_CHANNEL` en `EXPECTED_DRL_PLAYED` bewegen mee; de exec-pins
->   bewegen niet; alle veertien poorten groen.
->
-> May touch: `backends/drools/` (`DrlTranspiler` en zijn eigen suite),
-> `scripts/check-drools.sh` (voorstel — beschermd pad), kaartverplaatsing.
+> NB serieel met `20260919-drl-creatie-koppelloos.md` (beide raken
+> `DrlTranspiler.objectCreatie`).
+
+Niet samengevoegd met die koppelloos-kaart, en de reden staat in het
+bestand: disjuncte codepaden, disjuncte goldens, disjuncte symptomen. De
+vier klasse-D-goldens nemen de `rolNaarSubject == null`-tak niet — hun
+terugkoppeling lóst op en het misgaan zit bij het vuren; de goldens die die
+tak wél nemen staan in klasse C als `EXCLUDE`. De koppelloos-kaart zelf is
+ongemoeid gelaten; de hermeet-notitie daar is werk voor de hoofdsessie.

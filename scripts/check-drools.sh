@@ -617,10 +617,16 @@ EXPECTED_PLAYED=159
 # noise around the only thing that is compared, which is the CHANNEL. Each class is explained in the
 # comment that opens it; each golden still stands there BY NAME, which is what the stale guard needs.
 DRL_CHANNEL=(
-  # (A) ch. 7 prioritizedDefaults — 24. The standing asymmetry between the two branches, and the
-  # single largest reason this count sits 27 below the exec one: the exec branch grew a spec-ch.-7
-  # defaults lowering at the defaults-service card (2026-08-29) that the production toolchain does
-  # not have, and DrlTranspiler never did. Every golden here refuses on that one sentence.
+  # (A) ch. 7 prioritizedDefaults — 24, and the single largest reason this count sits 27 below the
+  # exec one: the exec branch grew a spec-ch.-7 defaults lowering at the defaults-service card
+  # (2026-08-29) that the production toolchain does not have, and DrlTranspiler never did. Every
+  # golden here refuses on that one sentence.
+  # 23 of the 24 ARE that asymmetry — the exec branch plays them. anchor/jutterswet-toelagegronden
+  # is NOT, and is named here so the class is not read as 24 exec-only players: the exec branch
+  # refuses it too, on a different sentence (its kenmerk target shares its name with an attribute,
+  # a v0 bean-model limit), so it contributes nothing to the gap. The 27 is 30 exec-only players
+  # minus 3 goldens this branch plays and the exec one does not (anchor/jutterswet-vindersloon,
+  # jutterswet-vondsttarief, synth2-afrondingscombinaties, all three a transpiler SKIP over there).
   "anchor/jutterswet-hardheid|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestdiepte|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestkenmerk|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
@@ -685,11 +691,16 @@ DRL_CHANNEL=(
   "synth3-vangstsom|EXCLUDE|loader Refusal: Datatype:ListType"
   "synth3-vondststaat|EXCLUDE|loader Refusal: Datatype:StructType"
   # (C) DrlTranspiler MARKERs — 12, this branch's own per-form refusals, each naming the rule it
-  # could not lower. Ten of the twelve are goldens the exec branch also refuses (the many-to-many
-  # bean-field limit, the unresolved verdeling, the EERSTE fold over a set); TWO are this branch
-  # alone — jutterswet-keurstaat and jutterswet-vouwrand lower in neither branch's condition scope
-  # here while jutterswet-klipwacht is refused by both, so the pair is not a clean split and is not
-  # presented as one.
+  # could not lower. Measured against the exec sweep on 2026-09-19: NINE of the twelve are goldens
+  # the exec branch refuses too, on its own wording of the same limit (the many-to-many bean field,
+  # the unresolved verdeling, the consistency rule, the EERSTE fold over a set, and both
+  # out-of-scope conditions — jutterswet-keurstaat and jutterswet-klipwacht are shared, not split).
+  # THREE are this branch alone, and the exec branch PLAYS all three:
+  #   anchor/jutterswet-wachtersketen (exec PLAYED 2), synth2-budgetgrens-onder (exec PLAYED 1) —
+  #     both an OBJECTCREATIE marker on the same unresolved back-link to Wachter, which is this
+  #     branch's §13.4.6 gap showing its LOUD side: where class D below faults or answers leeg, here
+  #     the same lowering refuses by name. Read the two classes together and the gap is whole.
+  #   jutterswet-vouwrand (exec PLAYED 1) — a TODO voorwaarde on a conjunction of comparisons.
   "anchor/jutterswet-bergingstoezicht|EXCLUDE|MARKER verdeling: unresolved naar_rato (opbrengst over bergingsaandeel)"
   "anchor/jutterswet-bootberging|EXCLUDE|MARKER regel: bronPad step Boot -> Vondst has no bean field — the middle relation is many-to-many (§13.3.9)"
   "anchor/jutterswet-erflijn|EXCLUDE|MARKER regel: aggregation join with both sides plural — neither end stores a bean field (§13.3.9)"
@@ -708,7 +719,10 @@ DRL_CHANNEL=(
   # (the creation's member writes do not land), and two FAULT AT FIRE with a reflective
   # NullPointerException inside the creation's own consequence. That is not a semantic difference and
   # it is not a carried form: it is a bug in this branch's creation lowering, and it is now pinned by
-  # name so that repairing it MUST move this list. Its own card; not this one's scope.
+  # name so that repairing it MUST move this list. Its own card; not this one's scope. The SILENT
+  # half of that gap is here; the LOUD half is the two objectcreatie MARKERs in class C above, and
+  # the two are different code paths — here the back-link resolves and the fault is at fire, there
+  # it does not resolve and the rule is refused before anything fires.
   "anchor/jutterswet-rekenkamer|FAIL|objectcreatie defect: the created rekenkamer's heffing stays leeg, where ref, clingo and the exec branch answer 70 / 160 / -15 / 60"
   "anchor/jutterswet-rekenkamer-overzee|ERROR|objectcreatie defect: reflective NullPointerException in the consequence of the creation rule, at fire"
   "jutterswet-rekenkamerheffing-catala|FAIL|objectcreatie defect: the same leeg heffing on the Catala-emitted twin of jutterswet-rekenkamer"
@@ -744,7 +758,7 @@ EXPECTED_DRL_PLAYED=132
 # both rather than a second copy: the set of legal channels differs per list and nothing else does.
 keur_kanaallijst() {   # <list name> <legal channels> <entry>...
   local lijst="$1" toegestaan="$2"; shift 2
-  local e n rest ch why p
+  local e n rest ch why p k ok
   local -a gezien=()
   for e in "$@"; do
     n="${e%%|*}"; rest="${e#*|}"; ch="${rest%%|*}"; why="${rest#*|}"
@@ -754,10 +768,13 @@ keur_kanaallijst() {   # <list name> <legal channels> <entry>...
       fi
     done
     gezien+=("$n")
-    case " $toegestaan " in
-      *" $ch "*) ;;
-      *) fail "malformed channel pin: '$n' is pinned '$ch' in $lijst — the list holds only NON-players ($toegestaan); PLAYED is the default, so pinning it exempts the golden from the floor instead of fixing it" ;;
-    esac
+    # Token equality, not a substring test over the joined string: a substring test accepts a pin
+    # spelled "EXCLUDE DIVERGE", which the inline `case` this function replaced rejected. Such a pin
+    # would still fail later on the drift comparison, so the hole was harmless — but a guard that is
+    # strictly weaker than the one it replaces is not a guard, it is a regression with a green light.
+    ok=0
+    for k in $toegestaan; do [ "$ch" = "$k" ] && ok=1; done
+    [ $ok -eq 1 ] || fail "malformed channel pin: '$n' is pinned '$ch' in $lijst — the list holds only NON-players ($toegestaan); PLAYED is the default, so pinning it exempts the golden from the floor instead of fixing it"
     if [ -z "$why" ] || [ "$why" = "$rest" ]; then
       fail "channel pin without a reason: '$n' in $lijst — every entry is '<golden>|<channel>|<why it is not PLAYED>'"
     fi
@@ -878,8 +895,10 @@ done
 # A SECOND pass over every golden through the runner's --drl entry. It runs LAST, after the square
 # above is green, so an exec-side break still fails in the time it always did and the extra wall
 # clock is only ever paid by an otherwise-passing gate.
-# MEASURED COST 2026-09-19 on this branch: 96s wall clock for 207 java invocations (the two
-# case-less goldens are answered without one), against ~120s for the exec sweep it doubles.
+# MEASURED COST 2026-09-19 on this branch: ~100s wall clock for 207 java invocations (the two
+# case-less goldens are answered without one) — three measurements gave 96s, 97s and 100s, so the
+# number is reported as a magnitude and not as a constant. The gate as a whole goes from ~1m35 to
+# ~3m20. The sweep prints its own figure in the report below, which is the one to believe.
 drl_begin=$(date +%s)
 declare -a DRL_SEEN=()
 declare -a DRL_DRIFT=()
