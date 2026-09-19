@@ -9,6 +9,29 @@ huidige AANTAL-setbron-vorm wordt in de zusterkaart
 (`20260919-aantal-setbron-besluit.md`) geweigerd, en deze kaart bouwt
 de nette vervanger.
 
+## Voortgang
+
+**Kaart 1 GELAND (2026-09-20):** `backlog/done/20260920-aantal-gevulde-wire.md`
+— de wire-enumwaarde, de drie WF-037-arms, de WF-038-scope-zin, WF-096's
+zes-wordt-zeven, `RUNTIME-SEMANTICS.md` ch. 3.4c met de ch. 1.2e-rij, `ref`
+met zijn worked examples, zeven negatiefs, en een BENOEMDE weigerarm met
+getuige in clingo en in de Drools-loader zodat de vorm nooit in een bodemzin
+verdwijnt. Alle veertien poorten groen; geen golden, geen rode casus, geen
+`scripts/`-beweging.
+Eén afwijking van de uitvoeringsschets, uitgeschreven in dat Result §2:
+WF-093's MECHANISME bewoog niet zoals §3.4 voorspelde, maar zijn regeltekst
+droeg een OPSOMMING van zes soorten, en die moest wel meegroeien — anders
+zegt de regel het tegendeel van wat hij doet. Idem op vier andere plaatsen
+waar "de zes waardevouwen" als getal in lopende tekst stond. De twee
+WF-096-MELDINGEN hoefden juist niets: zij noemen geen getal.
+
+**Kaart 2 OPEN:** clingo, beide Drools-takken en de vier getuigen van §5.
+De overdrachtsnotitie staat in het Result van kaart 1, §9 — welke
+weigerarmen er nu staan, wat ze zeggen, en welke twee stappen Drools in
+welke volgorde moet zetten (de `Expr.FunctieKind`-constante hoort bij kaart
+2, niet bij de dialectkaart, want de backend compileert dat record mee).
+Deze ontwerpkaart blijft in `doing/` tot kaart 2 landt.
+
 ## Besluiten (2026-09-19, maintainer)
 
 Genomen op het ontwerp hieronder. Eén regel per vraag; het ontwerp is
