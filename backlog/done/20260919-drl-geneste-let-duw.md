@@ -435,3 +435,22 @@ oplosbaar tegen de OMSLUITENDE binding van die naam, wat WF-076 zegt — maar de
 vorm die dat zou testen is door WF-076 zelf verboden en kan niet van de wire
 komen. Die verbetering is dus onfalsifieerbaar, en ik heb haar niet weggehaald
 omdat het alternatief (de map weer samenvouwen) meer code is om minder te doen.
+
+## Lensronde (2026-09-19, naschrift hoofdsessie)
+
+Alle tien lenspunten CONFIRMED — de lens draaide alle vijf mutaties
+(niet drie), bevestigde dat de over-approximatie in elke eigen probe
+foute antwoorden in weigeringen omzet, en bouwde zelf de ontbrekende
+drie-lagen-getuige, die houdt (EXCLUDE→PLAYED met 1,00 en 3,50, ref
+en clingo eens). Advies FIX-dan-MERGE: twee éénregel-correcties in de
+registervoorstellen, door de hoofdsessie bij het landen doorgevoerd —
+clingo weigert het fabricagedocument luid (het stond ten onrechte bij
+de consistent-zeggers) en het stale takteller-getal was 127, niet
+130. Twee observaties, vastgelegd zonder kaart: (1) een derde
+geweigerde vorm — de wissel herbekijkt zijn eigen teruggegeven
+buitenknoop niet, dus een arm-gebonden tussenlaag tript de weigering;
+de gemeten éénregel-fixpoint-variant degradeert één flank tot een
+gemiste melding, dus de huidige luide weigering is het betere
+antwoord; (2) de openingszin "geen knoopverplaatsende herschrijving"
+is aangezet — de wissel ís er één, zoals zijn eigen javadoc zegt, en
+de kwalificatie volgt pas in de zin erna.
