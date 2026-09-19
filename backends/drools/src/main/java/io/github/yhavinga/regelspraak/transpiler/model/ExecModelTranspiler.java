@@ -219,8 +219,10 @@ public final class ExecModelTranspiler {
      *  discipline is the recorded skip ({@link #skip}/{@link #skipList} append to
      *  {@link #overgeslagen}), so "the emitter grew the skip list" IS the SKIP verdict — the wrapper
      *  measures that growth instead of re-deriving scope decisions. A construct that emits no rule
-     *  WITHOUT recording (the feitcreatie inert-voorwaarde case) is a correct never-fire lowering,
-     *  so it stays LOWERED. A SKIP also raises a deduplicated WARNING (never silent). */
+     *  WITHOUT recording would stay LOWERED here, which is why no emitter does: the one that did —
+     *  the feitcreatie's inert voorwaarde — refuses by name since 2026-09-19, so emitting nothing and
+     *  saying nothing is now unreachable rather than merely discouraged. A SKIP also raises a
+     *  deduplicated WARNING (never silent). */
     private <T> T meet(String soort, String naam, java.util.function.Supplier<T> emitter) {
         int voor = overgeslagen.size();
         navReden = null;   // a reason belongs to the construct that produced it; never carried into the next one
@@ -6480,8 +6482,8 @@ public final class ExecModelTranspiler {
     /** §13.4.7 feitcreatie: for each {@code anker} and each {@code doel} ALREADY related to it (the §9.4 path: the
      *  optional multi-hop {@code tussenstappen} then the final {@code joinVeld}), CREATE the new relation by setting
      *  {@code zetVeld} on the doel -> {@code modify($doel){ set zetVeld($subject) }}, NO_LOOP. The voorwaarde gates the
-     *  anker (its pattern) or the doel (its pattern); a guard lowerable to NEITHER makes the rule INERT (a never-true
-     *  guard) rather than over-creating. Mirrors DrlTranspiler.feitCreatie. null -> skip (unresolved). */
+     *  anker (its pattern) or the doel (its pattern); a guard lowerable to NEITHER is REFUSED by name, never lowered
+     *  to a silent never-fire. Mirrors DrlTranspiler.feitCreatie. null -> skip (unresolved). */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private Rule feitCreatie(io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie fc) {
         Objecttype anker = fc.anker(), doel = fc.doel();
@@ -6508,11 +6510,24 @@ public final class ExecModelTranspiler {
                 if (doelGuard == null) inert = true;                // lowerable to NEITHER -> never-fire, never over-create
             }
         }
-        // An inert voorwaarde is a CORRECT lowering (create NOTHING — the model analog of DRL's eval(false) no-op),
-        // NOT an unmigrated skip: emit no rule and do NOT record overgeslagen, so the differential FIRES it (both
-        // back-ends create nothing -> agree). A model that wrongly goes inert where DRL lowers then surfaces as a real
-        // divergence rather than a hidden skip.
-        if (inert) return null;
+        // A guard that lowers to NEITHER side is a REFUSAL, not a nul-creatie. Until 2026-09-19 it emitted no rule
+        // and recorded nothing, which the manifest reads as LOWERED: the document PLAYED with the creation's count
+        // at zero. But "created nothing" is also the honest answer for a guard that is merely false, and the two are
+        // not the same document. The forms that reach here are the UNREADABLE ones — measured, both verifier-clean on
+        // jutterswet-postwacht: an Onopgelost guard (the shape the frontend emits when doel and anker are the same
+        // type; ref EVALUATION FAULT WF-044, clingo TRANSLATION FAULT) and a kenmerkcheck hosted on a THIRD type
+        // (ref and clingo both WF-100). A fault that becomes an ordinary zero in the third executor is exactly what
+        // the differential exists to catch, and the played channel counted it as agreement.
+        // The DRL-text branch has refused it by name since its guard arm was written (an eval(false) carrying the
+        // marker, hence a MARKER verdict); this records the SAME sentence, plus the guard's own source text, so the
+        // gate report can tell the two forms apart. The over-creation the old comment worried about is not at stake:
+        // a refused construct creates nothing either.
+        if (inert) {
+            io.github.yhavinga.regelspraak.ir.Bron gb = fc.voorwaarde().bron();
+            String snip = gb == null ? null : gb.snippet();
+            return skip("feitcreatie (voorwaarde niet naar anker of doel te lowereren"
+                    + (snip == null || snip.isBlank() ? "" : ": " + snip) + "): " + fc.naam());
+        }
 
         // §9.4 multi-hop: bind each intermediate object, joining to the previous; $prev starts at the anker.
         // §13.3.9 STORAGE DIRECTION, at all THREE positions this construct touches a role field (2026-09-11): each
