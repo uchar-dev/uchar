@@ -51,7 +51,8 @@ The matrix is a `Samengesteld`, at three depths: `paraat` and `stil` carry a
 one-level ALLE composite, `wisselend` a one-level TEN HOOGSTE, and `geoefend` a
 TEN MINSTE whose SECOND bullet is itself an ALLE composite — a composite inside
 a composite inside a fold. Four of the five quantifier vocabulary entries appear
-at the composite position (ALLE, TEN MINSTE, TEN HOOGSTE) and two at the fold
+in this document — three at the composite position (ALLE, TEN MINSTE, TEN
+HOOGSTE) and two at the fold
 position (ALLE, GEEN), so the two levels cannot be confused for one another: a
 reader that folded the inner quantifier into the outer would answer `geoefend`
 and `wisselend` wrong in opposite directions.
