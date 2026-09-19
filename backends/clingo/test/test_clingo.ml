@@ -3150,17 +3150,23 @@ let () =
    verifier refuses that document now, and this is the backend's fail-fast on
    a non-conforming input, asserted by sentence. *)
 
-let gastheer_doc ~eigenaar () =
+(* [extra_type] splices one more object type into the map and [sein_eigen] replaces the Sein
+   declaration's own supertype-and-kenmerken fragment, so the two subtyping rows below reuse this
+   model instead of copying it. Both default to the flat shape the first four rows want. *)
+let vlak = {|"kenmerken": [ "gehesen" ], "kenmerkSoorten": { "gehesen": "BIJVOEGLIJK" },|}
+
+let gastheer_doc ?(extra_type = "") ?(kustvak_eigen = vlak) ?(sein_eigen = vlak) ~eigenaar () =
   Printf.sprintf
     {|{
   "formaat": "regelspraak-ir-v0",
   "objecttypen": {
+    %s
     "Kustvak": { "node": "Objecttype", "naam": "Kustvak",
       "attributen": { "vakseinaantal": { "node": "Numeriek", "geheel": true, "decimalen": 0,
         "teken": "ONBEPAALD", "eenheid": null } },
       "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
       "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [ "gehesen" ], "kenmerkSoorten": { "gehesen": "BIJVOEGLIJK" },
+      %s
       "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
       "bezield": false, "meervoud": "Kustvakken" },
     "Post": { "node": "Objecttype", "naam": "Post", "attributen": {},
@@ -3172,7 +3178,7 @@ let gastheer_doc ~eigenaar () =
     "Sein": { "node": "Objecttype", "naam": "Sein", "attributen": {},
       "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
       "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [ "gehesen" ], "kenmerkSoorten": { "gehesen": "BIJVOEGLIJK" },
+      %s
       "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
       "bezield": false, "meervoud": "Seinen" }
   },
@@ -3223,7 +3229,7 @@ let gastheer_doc ~eigenaar () =
   "resolvedStartpunten": [], "regelGroepen": [], "diagnostics": []
 }
 |}
-    eigenaar
+    extra_type kustvak_eigen sein_eigen eigenaar
 
 let gastheer_case ~aantal () =
   Printf.sprintf
@@ -3260,6 +3266,60 @@ let () =
     ~ir:(gastheer_doc ~eigenaar:{|"Post"|} ())
     ~case_text:(gastheer_case ~aantal:{|"1"|} ())
     ~needle:"is hosted on \"Post\" while the subject is \"Kustvak\""
+
+(* --- WF-109's EXTENSIONAL half, and its ambiguity flank (2026-09-19) -------
+   The two rows the SUBTYPE edge adds. Both ask the SHARED host decision
+   ([Eval.guard_on_doel]) rather than anything this backend owns, and that is
+   why they are pinned here as well as in ref's suite: the helper has two
+   callers and one of them is this one.
+
+   (a) SUPERTYPE host. `Sein extends Baken`, `gehesen` declared on `Baken`
+       alone, host "Baken" — the doel satisfies it through inheritance
+       (`T ⊑ O`) while the anker, unrelated to `Baken`, does not. Legal, and
+       the answer is the DOEL's 1. The golden `jutterswet-bakensein` replays
+       the same law through all four executors; this row is this backend's own.
+   (b) AMBIGUOUS host. `Kustvak` and `Sein` BOTH extend `Baken`, host "Baken" —
+       the anker and the doel each satisfy it, so one name reaches two objects.
+       WF-109 refuses the document; this backend refuses it at translation, by
+       the arm that names the two it reached. Until 2026-09-19 that arm did not
+       exist and the helper answered "not the doel", after which the anker was
+       read silently — the reading the decision rejects.
+
+       The sister shape, a SUBTYPE edge between anker and doel
+       (`Sein extends Kustvak`, host "Sein"), is refused by the same arm and is
+       pinned in ref's own suite instead: over the case wire a `Sein` that is
+       also a `Kustvak` reaches the role name `post` along two feittypen, so the
+       loader stops at an ambiguous role key before the host is ever consulted.
+       The corpus witness `wf109-subtype-overlap` renames that role to get past
+       it; a unit row does not need to. *)
+
+let baken_type =
+  {|"Baken": { "node": "Objecttype", "naam": "Baken", "attributen": {},
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [ "gehesen" ], "kenmerkSoorten": { "gehesen": "BIJVOEGLIJK" },
+      "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
+      "bezield": false, "meervoud": "Bakens" },|}
+
+(* a type that declares nothing of its own and inherits from [ouder] — WF-105
+   forbids re-declaring a name along one chain, so the characteristic HAS to be
+   inherited for these two rows to be about the host and not about the
+   declaration *)
+let erft ouder =
+  Printf.sprintf {|"supertype": "%s", "kenmerken": [], "kenmerkSoorten": {},|} ouder
+
+let () =
+  let ir_super = gastheer_doc ~extra_type:baken_type ~sein_eigen:(erft "Baken")
+      ~eigenaar:{|"Baken"|} () in
+  let case_super = gastheer_case ~aantal:{|"1"|} () in
+  ref_matches ~name:"WF-109 supertype-gastheer leest het doel" ~ir:ir_super ~case_text:case_super;
+  clingo_matches ~name:"WF-109 supertype-gastheer leest het doel" ~ir:ir_super ~case_text:case_super;
+  faults_with ~name:"WF-109 gastheer bereikt anker en doel"
+    ~ir:
+      (gastheer_doc ~extra_type:baken_type ~kustvak_eigen:(erft "Baken")
+         ~sein_eigen:(erft "Baken") ~eigenaar:{|"Baken"|} ())
+    ~case_text:(gastheer_case ~aantal:{|"1"|} ())
+    ~needle:"reaches BOTH objects the fact creation binds"
 
 (* ch. 3.9 — the §8.2 whole-period qualifier over a NAVIGATED characteristic.
 

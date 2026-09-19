@@ -35,8 +35,20 @@ that family norms a qualified host, this fence falls and this witness turns into
 a golden — which is why the refusal is positional (the doel is simply not bound
 here) and not a claim that the form is meaningless.
 
-Falsifiable in three directions, each turning this case clean:
+Falsifiable in three directions — and **only one of them turns this case
+clean**, which is worth writing down because the other two land somewhere else
+and a recipe that claimed three clean exits would be false:
 
-- drop the qualifier — the bare doel host, which is the golden;
-- host it on `Kustvak` — the anker reading, qualifier and all;
-- empty the field — the guard gates the anker.
+- **drop the qualifier** — `verifier: PASS`. The bare doel host, which is the
+  golden's own shape. This is the one direction that clears the document;
+- **host it on `Kustvak`** — `WF-043 FAIL /feitCreaties/0/voorwaarde:
+  whole-period qualifier on a non-time-dependent characteristic`. The host is
+  the DECLARATION key (WF-100, ch. 4.6 (q1)), and `gehesen` is time-dependent on
+  `Sein` alone; move the key to `Kustvak` and the qualifier sits on a scalar
+  characteristic. WF-109 goes silent — the anker satisfies the host — and
+  WF-043 answers instead;
+- **empty the field** — the same `WF-043 FAIL`, for the same reason: with the
+  host absent the key is the enclosing subject, which is the anker.
+
+So the qualifier and the host are entangled here rather than independent, and
+the document has exactly one clean neighbour. Measured 2026-09-20, all three.

@@ -28,9 +28,12 @@ sometimes applies has zero of the first.
 normative question nobody has answered; refusing it leaves that open, and
 answering it would settle it by accident.
 
-Falsifiable in three directions, each turning this case clean:
+Falsifiable in three directions; **two turn this case clean and the third
+moves it to another rule**:
 
-- put `Vondst` back in the field, or empty it — the golden;
-- declare the subject `Strandvondst` instead — host and subject then coincide;
-- drop the `Strandvondst` declaration — the host resolves to nothing and the
-  document is WF-034 (q) instead, a different rule and a different report.
+- put `Vondst` back in the field, or empty it — clean, the golden;
+- declare the subject `Strandvondst` instead — clean: host and subject then
+  coincide;
+- drop the `Strandvondst` declaration — NOT clean. The host then resolves to
+  nothing and the document is **WF-034 (q)** instead, a different rule and a
+  different report; WF-109 steps aside for an undeclared host.

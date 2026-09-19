@@ -381,6 +381,23 @@ doel …)"), getoetst door een ref-unittest op een geconstrueerd document;
 corpus/rood kan hem niet dragen omdat een rode case verifier-schoon moet
 zijn.
 
+### Wat de vier nieuwe getuigen werkelijk zijn
+
+Twee van de vier zijn NIEUWE ARMEN in de verifier — code die er niet was:
+
+- `wf109-subtype-overlap` → de overlap-arm ("…is — but so can … be");
+- `wf109-gastheer-deelpopulatie` → de deelpopulatie-arm ("no object bound here
+  IS: only SOME objects of …").
+
+De andere twee zijn nieuwe DOCUMENTVORMEN op armen die er al waren, en dat is
+geen mindere bijdrage — het is precies wat een arm zonder getuige mist:
+
+- `wf109-gastheer-ambigu-supertype` valt op de bestaande twee-treffers-arm, die
+  de spec al bij name noemde en die alleen het zelfgetypeerde paar als getuige
+  had;
+- `wf109-doelgastheer-periode` valt op de bestaande nul-treffers-arm, via het
+  nieuwe DERDE reikwijdtehek — het hek is nieuw, de arm niet.
+
 ### Mutatieproeven van de lensronde (uitgevoerd en teruggedraaid)
 
 | mutatie | uitkomst | gevangen door |
@@ -412,6 +429,22 @@ gastheerbeslissing werkelijk vangt zijn de goldens door de twee
 Drools-takken (gate 12) en de verifier-negatieven (gate 3). Dit is een
 bestaand patroon in deze repo — `clingo` leent meer helpers van `ref` —
 maar het hoort bij deze claim genoemd te worden.
+
+**En er is een tweede deling, één laag dieper.** `ref` leest de typegraaf
+door `Ir_v0.Checks` — `subtype_of` en, sinds deze kaart,
+`populations_overlap` — en dat is de bibliotheek van de VERIFIER. Ook dat
+is bestaand patroon (`spec/verifier/lib` levert bewust "the same three
+answers for a consumer that holds a DOCUMENT"), maar op WF-109 betekent
+het dat verifier en `ref` het per constructie eens zijn over de
+typegraafhelft: wie `T ⊑ O` en wie "kan allebei zijn" is, is één
+definitie met drie aanroepers. Wat wél tweemaal onafhankelijk geschreven
+staat is de COMBINATIETOETS — de verifier telt bindingen en rapporteert
+per flank, `guard_on_doel` beslist anker/doel/fault — en de
+bonenmodel-tak loopt de keten in Java, los van allebei. Dus: de
+typegraafhelft is één implementatie met drie lezers, de combinatiehelft
+staat er drie keer (verifier, `ref`+clingo samen, Drools). Dat is minder
+differentiaal dan "vier uitvoerders" suggereert, en het staat hier omdat
+de lezer dat moet kunnen wegen.
 
 ## Result (2026-09-19)
 
@@ -511,6 +544,10 @@ De wire-naam en -vorm zijn niet aangeraakt.
   het gebonden object noemt) is geweigerd, niet gelezen. Of zo'n gastheer
   ONWAAR zou moeten opleveren voor de objecten die hij niet dekt is een
   normvraag die niemand heeft beantwoord; weigeren houdt haar open.
+- **De DRL-zink onder een heelperiode-guard** is niet gerepareerd, alleen
+  omheind: `backlog/new/20260920-drl-periode-zink.md` draagt de meting en
+  de keuze (bedrading gericht maken, of per construct weigeren). Dat is
+  disjunct codegebied en hoort bij de §8.2-familie.
 
 **Afwijkingen van de acceptatie.** Geen, op de rode getuige na — die is
 hierboven verantwoord. De acceptatie vroeg "minstens één golden"; het

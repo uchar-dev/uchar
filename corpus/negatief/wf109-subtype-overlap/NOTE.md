@@ -11,8 +11,14 @@ the reason the hit test is no longer a plain `⊑` count.
 IS a `Kustvak` and can fill any position declared `Kustvak` — including the
 anker of this fact creation. So `eigenaar: "Sein"` designates the doel (always)
 and the anker (whenever the anker object happens to be a `Sein`), which is one
-name for two objects. The case that makes it concrete delivers exactly that:
-the anker `A1` is an instance of `Sein`.
+name for two objects.
+
+The defect is in the DOCUMENT and the negatief zone carries documents, not
+cases — this directory holds an `ir.json` and nothing else, as every negatief
+directory does. The measurement below was taken with a throw-away population in
+which the anker is an instance of `Sein`; that population is what makes the
+ambiguity concrete, and it is deliberately not committed, because a case here
+would have nothing to replay against.
 
 Broken from `corpus/golden/jutterswet-seinhijsing` by three moves, each
 necessary: `Sein` gets `supertype: "Kustvak"`; its own `gehesen` declaration is
@@ -23,10 +29,10 @@ also a `Kustvak` inherits `kustligging`'s `post` participation and the two
 same-named roles would be an unrelated ambiguity. The second creation and its
 `duisteraantal` are dropped — one defect, one creation.
 
-Why it has to exist. Measured 2026-09-19 on this exact document, BEFORE the
-rule was sharpened: schema **PASS**, verifier **PASS**, `ref` **PASS** and the
-ASP backend **PASS**, all four agreeing on a number while the host was
-ambiguous. The old test counted a binding as a hit when its DECLARED type was
+Why it has to exist. Measured 2026-09-19 on this exact document with that
+population, BEFORE the rule was sharpened: schema **PASS**, verifier **PASS**,
+`ref` **PASS** and the ASP backend **PASS**, all four agreeing on a number while
+the host was ambiguous. The old test counted a binding as a hit when its DECLARED type was
 `⊑` the host, and a declared `Kustvak` is not a `Sein` — so the anker was
 invisible to it. Populations are extensional and the count has to be too: a
 binding is near the host when the declared type graph holds a type below both
