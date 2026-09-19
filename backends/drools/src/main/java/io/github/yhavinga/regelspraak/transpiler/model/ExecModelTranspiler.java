@@ -2991,9 +2991,15 @@ public final class ExecModelTranspiler {
         // ---- the CONTRIBUTORS: the instance fold's range, with the instance fold's §13.3.9 questions ----
         RegelSpraakModel.Rol[] paar = FactModelGenerator.gebondenRolpaar(model, kv.bronRol());
         String backref = model.verbindendeRol(elem, subject);    // the role the SUBJECT plays: the field on the element
-        if (backref == null && paar != null && !paar[1].meervoudig()) backref = paar[1].naam();
-        if (backref == null)
-            return kvSkip(kv, "geen verbindende rol tussen " + subject.naam + " en " + elem.naam);
+        if (backref == null) {
+            // the to-many-sibling arm this seam carried inline is FactModelGenerator.bereikjoin's, shared with
+            // the DRL-text branch since 2026-09-19 — one cardinality refusal, one sentence
+            FactModelGenerator.Bereikjoin bj = FactModelGenerator.bereikjoin(model, kv.bronRol());
+            backref = bj.rol();
+            if (backref == null)
+                return kvSkip(kv, bj.weigering() != null ? bj.weigering()
+                        : "geen verbindende rol tussen " + subject.naam + " en " + elem.naam);
+        }
         String elemRol = model.verbindendeRol(subject, elem);    // the role the ELEMENT plays: the field on the subject
         if (elemRol == null && paar != null) elemRol = paar[0].naam();
         boolean voorwaarts = elemRol != null && !model.naarVeelRol(subject, elem, elemRol);

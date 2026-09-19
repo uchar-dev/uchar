@@ -4476,8 +4476,18 @@ public final class DrlTranspiler {
         // §13.3.9 STORAGE DIRECTION, the question scope() asks for an aggregation join: the role the SUBJECT
         // plays is read as a FIELD ON THE ELEMENT, and a resolved role is not yet a bean field.
         String rol = model.verbindendeRol(elem, subject);
-        if (rol == null)
-            return kvMarker(kv, "geen verbindende rol tussen " + subject.naam + " en " + elem.naam);
+        if (rol == null) {
+            // ch. 4.3, the same LAST arm the instance fold and the temporal set fold take, from the same
+            // shared derivation. Measured 2026-09-19 on jutterswet-keurploeg with a SECOND feittype over
+            // (Keurploeg, Keurmeester) and nothing else changed: exec PLAYED all seven cases — it has read
+            // kv.bronRol() since the fold landed — against this branch's whole-document refusal on "geen
+            // verbindende rol tussen Keurploeg en Keurmeester". Same wire, two answers.
+            FactModelGenerator.Bereikjoin bj = FactModelGenerator.bereikjoin(model, kv.bronRol());
+            rol = bj.rol();
+            if (rol == null)
+                return kvMarker(kv, bj.weigering() != null ? bj.weigering()
+                        : "geen verbindende rol tussen " + subject.naam + " en " + elem.naam);
+        }
         if (!navVeld("kwantorvouw-bereik", elem, rol, subject))
             return kvMarker(kv, "de bereik-join heeft geen beanveld — " + navReden);
         final int mark = acc.clausules.size();
