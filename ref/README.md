@@ -26,7 +26,8 @@ normalisation.
   declared names, value variants, role targets).
 - `bin/runner.ml` — `runner <ir.json> <case.json>`; exit 0 = every
   expectation matches exactly, 1 = mismatch or evaluation fault,
-  2 = load or cross-check error.
+  2 = a load or cross-check error that no expectedFault pins (a
+  pinned load fault observes as exit 0 since 2026-09-19).
 - `test/test_ref.ml` — the worked examples of ch. 1–2 verbatim, plus the
   ch. 4.6 allocation examples (`dune build @ref/runtest`).
 

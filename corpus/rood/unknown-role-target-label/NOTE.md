@@ -3,7 +3,9 @@
 The **referential-integrity arm** of the case readers: a role link that
 names a label the case never declares. `H1` is a `Haven` whose `liggers`
 are `S1` and `S9`; only `S1` is an instance. Both executors refuse with
-the same sentence:
+the same sentence — by construction, not as independent confirmation:
+ref and the ASP backend share one case reader (`Case.load_file`), so for
+load faults this zone is a regression fence, not a differential:
 
     role "liggers" on "H1" links unknown label "S9"
 
