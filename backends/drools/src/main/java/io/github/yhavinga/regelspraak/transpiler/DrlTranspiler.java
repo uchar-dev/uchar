@@ -1299,7 +1299,19 @@ public final class DrlTranspiler {
     }
 
     /** §13.4.6 objectcreatie -> a rule that inserts a new fact, sets its attributes,
-     *  and links it back to the subject through the feittype role.
+     *  and links it to the subject through the feittype role.
+     *
+     *  <p>TWO deliberate departures from the ported production lowering, both implementing
+     *  {@code RUNTIME-SEMANTICS.md} ch. 5.5 where production does not — the spec is the product, and the exec-model
+     *  branch has implemented the same two since its own creation card (card drl-objectcreatie-defect, 2026-09-19,
+     *  which measured what production answers on four corpus goldens: two read leeg, two faulted at fire):
+     *  <ul>
+     *    <li><b>Both ends</b> of the back-link are written — the created object's reference to the subject AND,
+     *        on the 1:1 arm, the subject's reference to the mint. Production writes only the first, so a fold
+     *        over the created type finds the mint and a to-one navigation from the subject reads leeg.</li>
+     *    <li>A <b>kenmerkwaardetoekenning</b> (§13.4.6.4) sets the mark only when its value is true; false or
+     *        empty leaves it unset, instead of unboxing a leeg into the primitive boolean field.</li>
+     *  </ul>
      *
      *  <p>§9 idempotence: the creation must be a FUNCTION of the fact base, not of the fire count. {@code no-loop}
      *  only blocks the rule re-activating on its OWN insertion — when ANOTHER rule later modifies a matched
@@ -1326,7 +1338,20 @@ public final class DrlTranspiler {
             // collapses through rsWaarde so a Breuk never reaches a BigDecimal setter (mvel strict-mode) — inert for a
             // plain BigDecimal, skipped for a marker / a non-Breuk-capable value.
             if (kanBreukOpleveren(t.waarde()) && !v.marker()) { fnImport("rsWaarde"); v = Frag.from("rsWaarde(" + v.text() + ")", v); }
-            setters.add("    $new." + setter(t.attribuut()) + "( " + v.text() + " );");
+            // §13.4.6.4 kenmerkwaardetoekenning, RUNTIME-SEMANTICS ch. 5.5: the mark is SET when its value
+            // evaluates true and, evaluating FALSE OR EMPTY, is left unset — an absent initialisation under the
+            // closed-world reading a kenmerkcheck applies. The bean field is a PRIMITIVE boolean whose default
+            // IS unset, so "leave it" is a skipped write. The ported production lowering wrote the value through
+            // unconditionally, and a LEEG one then unboxed null into that field: a NullPointerException inside
+            // the consequence, which takes the whole fireAllRules pass down (measured 2026-09-19 on the anchor
+            // rekenkamer-overzee and synth3-kamerheffing cases whose subject carries no mark). The guard is the
+            // file's own Objects.equals idiom, and it evaluates the value twice exactly as the regel() write
+            // guard does — value expressions are pure, so the second read costs only the reading.
+            if (t.kenmerk() && !v.marker())
+                setters.add("    if (java.util.Objects.equals( " + v.text() + ", true )) {\n"
+                        + "        $new." + setter(t.attribuut()) + "( true );\n    }");
+            else
+                setters.add("    $new." + setter(t.attribuut()) + "( " + v.text() + " );");
         }
 
         if (subject == null || nieuw == null) {
@@ -1361,6 +1386,27 @@ public final class DrlTranspiler {
             dan.append("    insert(new CreationMarker(\"").append(escapeRegelNaam(oc.naam())).append("\", ")
                .append(SUBJECT).append("));\n");
         }
+        // RUNTIME-SEMANTICS ch. 5.5: new object and subject are linked over the back-link relation — BOTH ENDS,
+        // so a to-one navigation FROM the subject reaches the mint. The ported production lowering writes only
+        // the created object's back-reference above: a fold over the created type then finds the mint while
+        // "de heffing van haar rekenkamer" reads leeg, and the subject's own attribute — computed from that
+        // navigation — stays empty with no complaint at all. The modify is required, not cosmetic: $subject is
+        // an already-matched fact, so without it every rule that navigates to the mint keeps its pre-creation
+        // match. It cannot re-mint — no-loop blocks the self-retrigger and the 1:1 guard above is false the
+        // moment the insert lands (a recursief-group creation drops no-loop and leans on that guard alone).
+        //   Scoped to the 1:1 arm, which is where the field exists: eenOpEen implies the created-side role is
+        // to-ONE, and only a to-one role derives a bean field (FactModelGenerator.leden) — on the to-many arm
+        // the link is stored solely as the created object's own reference, which the write above already set.
+        // The eenOpEen test also keeps the rolNaarSubject == null route (the "onopgelost terugkoppeling"
+        // comment above) untouched; that route markers the whole construct, so it never fires either way.
+        String rolNaarNieuw = eenOpEen ? model.verbindendeRol(subject, nieuw) : null;   // field on the subject -> new object
+        // ...and a to-one role is a WRITABLE end only when the bean carries its reference field TYPED: leden()'s
+        // name-dedup (attribuut > kenmerk > referentie) lets a declared member of the same name displace it, and
+        // the write would then push a fact into a BigDecimal field. Asked of the ONE member derivation both
+        // branches navigate by, exactly as the exec branch asks it.
+        if (rolNaarNieuw != null && FactModelGenerator.heeftReferentieVeld(model, subject, rolNaarNieuw, nieuw))
+            dan.append("    modify(").append(SUBJECT).append(") {\n        ")
+               .append(setter(rolNaarNieuw)).append("( $new )\n    }\n");
 
         // Like the feitcreatie anker, a §8.1.7 far-side guard on the objectcreatie subject hosts its exists/not
         // join after the subject pattern; a near guard yields empty extra and keeps the output byte-identical.

@@ -615,19 +615,19 @@ EXPECTED_PLAYED=159
 #   FAIL     printed — the golden loads, lowers and fires without faulting, and answers a WRONG VALUE
 #   ERROR    printed — the golden faults AT FIRE; a defect of this branch, not a semantic difference
 #   NOCASE   the sweep's own token, never printed by the branch: no case file, so no run at all
-# Why the reasons are grouped rather than written one by one: seventy-one of the seventy-eight
+# Why the reasons are grouped rather than written one by one: seventy-one of the seventy-four
 # entries carry one of three class reasons, and a per-golden retelling of the same sentence would be
 # noise around the only thing that is compared, which is the CHANNEL. Each class is explained in the
 # comment that opens it; each golden still stands there BY NAME, which is what the stale guard needs.
 DRL_CHANNEL=(
-  # (A) ch. 7 prioritizedDefaults — 24, and the single largest reason this count sits 27 below the
-  # exec one: the exec branch grew a spec-ch.-7 defaults lowering at the defaults-service card
-  # (2026-08-29) that the production toolchain does not have, and DrlTranspiler never did. Every
-  # golden here refuses on that one sentence.
+  # (A) ch. 7 prioritizedDefaults — 24, and since the objectcreatie repair below the ONLY remaining
+  # reason of size for this count sitting 23 below the exec one: the exec branch grew a spec-ch.-7
+  # defaults lowering at the defaults-service card (2026-08-29) that the production toolchain does
+  # not have, and DrlTranspiler never did. Every golden here refuses on that one sentence.
   # 23 of the 24 ARE that asymmetry — the exec branch plays them. anchor/jutterswet-toelagegronden
   # is NOT, and is named here so the class is not read as 24 exec-only players: the exec branch
   # refuses it too, on a different sentence (its kenmerk target shares its name with an attribute,
-  # a v0 bean-model limit), so it contributes nothing to the gap. The 27 is 30 exec-only players
+  # a v0 bean-model limit), so it contributes nothing to the gap. The 23 is 26 exec-only players
   # minus 3 goldens this branch plays and the exec one does not (anchor/jutterswet-vindersloon,
   # jutterswet-vondsttarief, synth2-afrondingscombinaties, all three a transpiler SKIP over there).
   "anchor/jutterswet-hardheid|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
@@ -701,9 +701,12 @@ DRL_CHANNEL=(
   # out-of-scope conditions — jutterswet-keurstaat and jutterswet-klipwacht are shared, not split).
   # THREE are this branch alone, and the exec branch PLAYS all three:
   #   anchor/jutterswet-wachtersketen (exec PLAYED 2), synth2-budgetgrens-onder (exec PLAYED 1) —
-  #     both an OBJECTCREATIE marker on the same unresolved back-link to Wachter, which is this
-  #     branch's §13.4.6 gap showing its LOUD side: where class D below faults or answers leeg, here
-  #     the same lowering refuses by name. Read the two classes together and the gap is whole.
+  #     both an OBJECTCREATIE marker on the same unresolved back-link to Wachter. That is what is
+  #     LEFT of this branch's §13.4.6 gap: the SILENT half — four goldens that fired and answered
+  #     leeg, or faulted at fire — was a class of its own here until the creation lowering learned
+  #     ch. 5.5's two clauses (card drl-objectcreatie-defect, 2026-09-19), and those four now play.
+  #     What remains is the LOUD half, refused by name before anything fires: a different code path
+  #     (the rolNaarSubject == null route), and its own card.
   #   jutterswet-vouwrand (exec PLAYED 1) — a TODO voorwaarde on a conjunction of comparisons.
   "anchor/jutterswet-bergingstoezicht|EXCLUDE|MARKER verdeling: unresolved naar_rato (opbrengst over bergingsaandeel)"
   "anchor/jutterswet-bootberging|EXCLUDE|MARKER regel: bronPad step Boot -> Vondst has no bean field — the middle relation is many-to-many (§13.3.9)"
@@ -717,25 +720,14 @@ DRL_CHANNEL=(
   "jutterswet-vondstvenster|EXCLUDE|MARKER regel: TODO aggregatie EERSTE over a set source"
   "jutterswet-vouwrand|EXCLUDE|MARKER regel: TODO voorwaarde — a conjunction of comparisons"
   "synth2-budgetgrens-onder|EXCLUDE|MARKER objectcreatie: unresolved back-link to Wachter"
-  # (D) The §13.4.6 OBJECTCREATIE defect — 4, and the finding this list exists to surface. All four
-  # goldens carry exactly one objectCreatie; the exec branch PLAYS all four, and this branch neither
-  # plays them nor refuses them by name. Two answer leeg where every other executor answers a number
-  # (the creation's member writes do not land), and two FAULT AT FIRE with a reflective
-  # NullPointerException inside the creation's own consequence. That is not a semantic difference and
-  # it is not a carried form: it is a bug in this branch's creation lowering, and it is now pinned by
-  # name so that repairing it MUST move this list. Its own card; not this one's scope. The SILENT
-  # half of that gap is here; the LOUD half is the two objectcreatie MARKERs in class C above, and
-  # the two are different code paths — here the back-link resolves and the fault is at fire, there
-  # it does not resolve and the rule is refused before anything fires.
-  "anchor/jutterswet-rekenkamer|FAIL|objectcreatie defect: the created rekenkamer's heffing stays leeg, where ref, clingo and the exec branch answer 70 / 160 / -15 / 60"
-  "anchor/jutterswet-rekenkamer-overzee|ERROR|objectcreatie defect: reflective NullPointerException in the consequence of the creation rule, at fire"
-  "jutterswet-rekenkamerheffing-catala|FAIL|objectcreatie defect: the same leeg heffing on the Catala-emitted twin of jutterswet-rekenkamer"
-  "synth3-kamerheffing|ERROR|objectcreatie defect: the same reflective NullPointerException at fire as rekenkamer-overzee"
-  # (E) The one value-divergence this branch SHARES with the exec branch — negation-as-failure is not
+  # (D) The one value-divergence this branch SHARES with the exec branch — negation-as-failure is not
   # stratified, so a geen-<kenmerk> rule fires before the positive kenmerk is derived. The exec
   # branch's full reason is in EXCLUDE_KNOWN above; both branches inherit it from the ported runtime.
+  # It is the ONLY wrong value this branch still answers: the §13.4.6 class that stood here until
+  # 2026-09-19 — four goldens reading leeg or faulting at fire on a creation — is gone, repaired
+  # rather than pinned (card drl-objectcreatie-defect), and with it the last ERROR entry.
   "anchor/jutterswet-kustwacht|FAIL|the v0 negation-stratification divergence, identical in both branches (full reason in EXCLUDE_KNOWN)"
-  # (F) No case file — nothing to replay, in either branch.
+  # (E) No case file — nothing to replay, in either branch.
   "jutterswet-seizoenvondst|NOCASE|a golden with no case file"
   "jutterswet-vormenkabinet|NOCASE|a golden with no case file"
 )
@@ -745,10 +737,16 @@ DRL_CHANNEL=(
 # per-form refusals, 3 wrong values, 2 faults at fire, 2 without a case file. The number was not
 # invented here — it was carried in card Results through the parity programme and last moved by the
 # two Let cards of 2026-09-19 (drl-let-meldplek and drl-geneste-let-duw, 130 -> 132, recorded in the
-# EXPECTED_PLAYED block above). This card re-measured it from scratch and got the same 132, which is
-# what is pinned. Every movement from here carries its reason at this pin, exactly as the exec one
-# does: a golden that starts playing LEAVES DRL_CHANNEL and raises this number by one.
-EXPECTED_DRL_PLAYED=132
+# EXPECTED_PLAYED block above). That card re-measured it from scratch and got the same 132.
+# 132 -> 136, same day, card drl-objectcreatie-defect: the §13.4.6 creation lowering now writes BOTH
+# ends of the back-link and leaves a kenmerkwaardetoekenning's false-or-empty value unset
+# (RUNTIME-SEMANTICS ch. 5.5, the two clauses the ported production lowering does not have), so the
+# four goldens of the old class D answer the values gates 5 and 6 pin instead of reading leeg or
+# faulting at fire. Measured over 210 goldens: 136 played, 70 per-form refusals, 1 wrong value, no
+# faults at fire, 2 without a case file; the exec sweep beside it is byte-identical and
+# EXPECTED_PLAYED does not move. Every movement from here carries its reason at this pin, exactly as
+# the exec one does: a golden that starts playing LEAVES DRL_CHANNEL and raises this number by one.
+EXPECTED_DRL_PLAYED=136
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
