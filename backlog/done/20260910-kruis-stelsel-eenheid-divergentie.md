@@ -564,3 +564,24 @@ volledig gedeclareerd zusterstelsel` tot en met
 - **`spec/ASP-TRANSLATION.md` S6** beschrijft de normalisatiepas; de
   stelselverruiming hoort daar op termijn ook in. Niet aangeraakt — beschermd
   noch gemandateerd door deze kaart; genoemd zodat het niet wegvalt.
+
+## Lensronde (2026-09-19, naschrift hoofdsessie)
+
+Alle vijftien lenspunten CONFIRMED, advies MERGE; gemerged en de drie
+registervoorstellen geland op `ead29076` — de registerrij kreeg daarbij
+een tijdslaag-aanhef op de oude kostenclausule van 2026-09-10, zodat de
+twee Cost-zinnen elk hun eigen landing dragen. De lens voegde eigen
+bewijs toe: alle 526 bestaande ASP-programma's zijn vóór/ná
+byte-identiek, dus de tabelverruiming is aantoonbaar de identiteit over
+het bestaande corpus. Drie staande aantekeningen, niet blokkerend:
+
+- de opmaakstring van de omrekentabel-fout (enkelvoud/meervoud "unit
+  system(s)" plus de stelsellijst) wordt nergens rechtstreeks
+  geasserteerd; formaatdrift zou onopgemerkt blijven;
+- `restate_lit` berekent `to_finest` voor een literaleenheid die niet
+  in de tabel hoeft te zitten, dus de positief-geheel-verplichting dekt
+  een ongedeclareerde literaleenheid niet — pre-existent en door deze
+  kaart VERKLEIND (`unit_in_stelsel` eiste alleen stelselgelijkheid,
+  `restates_into` eist óók canonieke-naamconvertibiliteit);
+- het Result citeert bij mutatieproef 2 twee van de twaalf
+  MISMATCH-regels (selectie, geen onjuistheid).
