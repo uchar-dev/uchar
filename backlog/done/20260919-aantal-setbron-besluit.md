@@ -370,3 +370,80 @@ verzoenen. Gate 1, 2 en 3 opnieuw groen op de gecombineerde boom, en gate 10
 er ter controle bij omdat de andere kaart de frontend-suite veranderde: PASS
 met 317 tests (was 298; de negentien erbij zijn de hare). De overige tien
 lezen niets wat een van beide kaarten daar bewoog.
+
+## Naschrift: frontend-klus (2026-09-19)
+
+Het klusje dat §4 als "breder dan een meldingstekst" beschreef, uitgevoerd
+na de landing van deze kaart. Drie onderdelen, alles binnen
+`frontends/regelspraak`; branch `klus/wf096-frontend`.
+
+**Het was een LEK, geen verouderd commentaar.** Dat is de vondst van deze
+klus en zij scherpt de lensmeting aan. De lens mat vier natuurlijke zinnen
+die vandaag al weigeren, en concludeerde "geen lek". Die vier weigeren
+echter op de POSITIE-helft van WF-096, niet op de soort: een telling leidt
+haar elementtype af uit het GESCHREVEN WOORD van haar argument
+(`ExpressieBouwer.aantalElement`), niet uit het objecttype van dat argument
+zoals de zes waardevouwen doen. Bindt dat woord geen element, dan valt de
+telling terug op de parameterlezing en wordt de setlezing geweigerd omdat er
+geen vouw omheen staat. Bindt het wél een element — en daarvoor is een
+naamsbotsing nodig — dan liep de setlezing zó door de exemptie heen.
+Gemeten op
+
+    Feittype weging
+        de weger Jutter
+        het gewicht (mv: gewichten) Vondst      <- rol heet als het attribuut
+
+    Het aantal aangemelde vondsten van een Jutter moet berekend worden als
+    het aantal gewichten van alle gewichten van de Jutter.
+
+emitteerde de frontend met `diagnostics: []` een document dat de verifier
+afwijst op **WF-096 en niets anders** — precies de vorm van
+`corpus/negatief/wf096-aantal-setbron`. Zo'n model is welgevormd: rolnamen
+en ledennamen zijn gescheiden naamruimten (CONSTRUCTS rij 4, 2026-09-10).
+
+**(1) De meldtekst.** "alleen toegestaan als bron van één vouw (som, totaal,
+minimum, maximum, eerste, laatste, aantal)" wordt "… als bron van één
+WAARDEvouw (som, totaal, minimum, maximum, eerste, laatste); een telling
+vouwt de leden zelf en leest geen waarde per lid, dus onder 'aantal' ook
+niet (besluit 2026-09-19)". Eén bestaande test pinde de oude tekst
+woordelijk — `SetlezingZonderVouwTest.MELDING` — en is bijgewerkt; drie
+andere plekken toetsen met `startsWith`/`contains` op het eerste zinsdeel en
+bewegen niet.
+
+**(2) `VOUWSOORTEN`, met de meting VOORAF.** De verifier moest zijn gehoiste
+exemptie SPLITSEN omdat één booleaan daar twee regels voedde. Hier niet, en
+dat is gecontroleerd in plaats van aangenomen: `VOUWSOORTEN` heeft exact
+ÉÉN lezer (de vouwbron-toets in `keurSetlezing`, r. 546) en het is de enige
+verzameling van vouwsoorten in de hele frontend — de telling leidt haar
+element rechtstreeks uit `kind == AANTAL` af en raadpleegt de verzameling
+niet. `AANTAL` is er dus gezamenlijk uit gehaald; de versmalling verplaatst
+het sethek en niets anders. De sentinel-helft heeft hier geen tegenhanger:
+de wrat komt langs een eigen route en blijft WF-093's zaak.
+
+**(3) Het commentaar.** "the frontend's exemption and the verifier's are the
+same boundary" is weer WAAR gemaakt in plaats van herschreven: beide grenzen
+zijn nu arity 1 ∧ waardevouw ∧ een opgelost elementtype. Het commentaar
+noemt er de datum, het lek en de eenlezer-meting bij, en zegt waar de twee
+nog wél verschillen (de sentinelfence van WF-034, die geen frontendhelft
+heeft).
+
+**Getuigen, rood-eerst.** Nieuwe klasse `AantalSetbronTest`, vijf tests. Op
+de ongewijzigde kop faalden er DRIE: de telling gaf `verwacht één
+WF-096-melding, kreeg: []`, de regelnummertest viel mee, en de wire-test gaf
+"de telling met setbron levert geen fout meer op". De twee tegenproeven
+slaagden meteen, zoals het hoort — dezelfde setbron onder een `SOM` blijft
+schoon, en de kale telwrat (`set: false`, sentinel) blijft schoon, want die
+81 posities in de vier zones mogen niet meebewegen. Suite 317 → **322**,
+nul fouten.
+
+`MarkerRedenPinTest` is niet geraakt: de diff voegt geen `Onopgelost`-plek
+toe en haalt er geen weg — alleen een enumconstante uit een `Set`, een
+meldtekst en commentaar.
+
+**Poorten.** 10 PASS (322 tests, vloer 173; **58 rgs-goldens byte-identiek**,
+vloer 38 — geen emissie bewoog, zoals verwacht: geen golden draagt de vorm),
+11 PASS (29 PLAYED), 12 PASS (played 159, kanaalvloer 50, JUnit 478), 1 PASS.
+De overige tien zijn niet gedraaid en dat volstaat: de diff zit volledig in
+`frontends/regelspraak` en geen van die tien leest daar iets — gate 10, 11
+en 12 zijn precies de drie die de frontend wél aanraken (suite + goldens,
+toka, en de backend die de frontend-ir-bronnen als source root deelt).
