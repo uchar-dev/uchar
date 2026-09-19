@@ -460,7 +460,9 @@ public final class IrLoader {
             case "ParameterRef" -> new Expr.ParameterRef(param(text(n, "parameter")), bron(n));
             case "VariabeleRef" -> new Expr.VariabeleRef(text(n, "naam"), datatype(n.get("type")), bron(n));
             case "Constante" -> new Expr.Constante(text(n, "naam"), datatype(n.get("type")), bron(n));
-            case "Onopgelost" -> new Expr.Onopgelost(datatype(n.get("type")), bron(n));
+            // reden null: it is the FRONTEND's own field (the WARNING it raises over a surviving marker)
+            // and the v0 wire carries no such key, so a marker read off the wire has none to recover.
+            case "Onopgelost" -> new Expr.Onopgelost(datatype(n.get("type")), bron(n), null);
             // IR-SPEC ch. 4.10 the Let cluster — all three are ORDINARY union nodes, built straight into the tree
             // with nothing riding beside them. Note the wire's field names: a BinderRef's is "name", an
             // IfThenElse's are "condition"/"then"/"else" — the condition reuses the ordinary conditie union.
@@ -590,7 +592,7 @@ public final class IrLoader {
                         rolBinding(n.get("bronRol")), List.of(), bron(n));
             }
             case "Regelversie" -> new Conditie.Regelversie(text(n, "regel"), bool(n, "inconsistent"), bron(n));
-            case "Onopgelost" -> new Conditie.Onopgelost(bron(n));
+            case "Onopgelost" -> new Conditie.Onopgelost(bron(n), null);   // frontend-internal field, absent from the wire
             default -> throw new Refusal("Conditie:" + node, "unknown condition node");
         };
     }
