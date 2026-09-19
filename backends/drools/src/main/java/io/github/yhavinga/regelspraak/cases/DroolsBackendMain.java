@@ -22,8 +22,10 @@ public final class DroolsBackendMain {
 
     public static void main(String[] args) {
         // --drl replays through the OTHER transpiler branch (DrlTranspiler's DRL text, compiled here) instead of
-        // the exec-model back-end. It is a measurement/harness entry, never the gate-12 path: gate 12 passes no
-        // flag and reaches exactly the code it always did.
+        // the exec-model back-end. Since 2026-09-19 (card gate12-drl-takteller) this flag is ALSO a gate-12
+        // path: the gate sweeps every golden through it and pins the played count (EXPECTED_DRL_PLAYED) beside
+        // the exec-model square's own. The two sweeps stay separate — a flagless run still reaches exactly the
+        // code it always did, and that run alone is the differential square.
         boolean viaDrl = args.length > 0 && args[0].equals("--drl");
         if (viaDrl) args = java.util.Arrays.copyOfRange(args, 1, args.length);
         if (args.length < 2) {

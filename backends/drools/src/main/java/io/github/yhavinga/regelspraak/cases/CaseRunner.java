@@ -87,9 +87,13 @@ public final class CaseRunner {
     }
 
     /** The same replay through the OTHER transpiler branch: {@link DrlTranspiler} emits DRL TEXT, which is
-     *  compiled to a {@link KieBase} here (the classic DRL build; the exec-model branch is untouched). The
-     *  gate path never calls this — it is the harness/measurement entry (a {@code --drl} run of
-     *  {@link DroolsBackendMain}), so gate 12's numbers cannot move with it. */
+     *  compiled to a {@link KieBase} here (the classic DRL build; the exec-model branch is untouched).
+     *  SINCE 2026-09-19 THIS IS A GATE-12 PATH (card gate12-drl-takteller): check-drools.sh sweeps every
+     *  golden through it (a {@code --drl} run of {@link DroolsBackendMain}) and pins the result in
+     *  {@code EXPECTED_DRL_PLAYED} plus a reason-carrying non-player list, so gate 12's numbers DO move
+     *  with it — alongside, and separately from, the exec-model square's own {@code EXPECTED_PLAYED}.
+     *  Before that card it was the harness/measurement entry only; gate 13 has driven it since
+     *  2026-09-04. */
     public static Result viaDrlTekst(Path irPath, List<Path> casePaths) {
         return replay(irPath, casePaths, true);
     }

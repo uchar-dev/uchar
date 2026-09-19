@@ -605,13 +605,15 @@ EXPECTED_PLAYED=159
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
-# PLAYED is the default, only NON-players are listed. The channels are the four status tokens the
-# runner's --drl entry actually prints, so what is pinned IS what is measured:
-#   EXCLUDE  a per-form refusal — a loader Refusal, a DrlTranspiler MARKER, or the branch's own
-#            ch. 7 defaults refusal
-#   FAIL     the golden loads, lowers and fires without faulting, and answers a WRONG VALUE
-#   ERROR    the golden faults AT FIRE — a defect of this branch, not a semantic difference
-#   NOCASE   no case file to replay
+# PLAYED is the default, only NON-players are listed. Three of the four listable channels are status
+# tokens the runner's --drl entry prints verbatim, so what is pinned IS what is measured; the fourth
+# is the sweep's own. The branch's FIFTH token, PLAYED, is deliberately not listable — it is the
+# default and pinning it would exempt a golden instead of holding it.
+#   EXCLUDE  printed — a per-form refusal: a loader Refusal, a DrlTranspiler MARKER, or the branch's
+#            own ch. 7 defaults refusal
+#   FAIL     printed — the golden loads, lowers and fires without faulting, and answers a WRONG VALUE
+#   ERROR    printed — the golden faults AT FIRE; a defect of this branch, not a semantic difference
+#   NOCASE   the sweep's own token, never printed by the branch: no case file, so no run at all
 # Why the reasons are grouped rather than written one by one: sixty-eight of the seventy-seven
 # entries carry one of three class reasons, and a per-golden retelling of the same sentence would be
 # noise around the only thing that is compared, which is the CHANNEL. Each class is explained in the
@@ -895,10 +897,12 @@ done
 # A SECOND pass over every golden through the runner's --drl entry. It runs LAST, after the square
 # above is green, so an exec-side break still fails in the time it always did and the extra wall
 # clock is only ever paid by an otherwise-passing gate.
-# MEASURED COST 2026-09-19 on this branch: ~100s wall clock for 207 java invocations (the two
-# case-less goldens are answered without one) — three measurements gave 96s, 97s and 100s, so the
-# number is reported as a magnitude and not as a constant. The gate as a whole goes from ~1m35 to
-# ~3m20. The sweep prints its own figure in the report below, which is the one to believe.
+# MEASURED COST 2026-09-19 on this branch, all four numbers from runs on one machine: this sweep
+# ~96s wall clock for 207 java invocations (the two case-less goldens are answered without one),
+# against ~84s for the exec sweep beside it — so the DRL leg is the MORE expensive of the two, not
+# a doubling of a longer one. The gate as a whole goes from ~1m35 to ~3m20. Elsewhere the sweep has
+# measured 100s, so read all of these as magnitudes; the figure the sweep prints below is the one
+# to believe, and it is printed on the failing path too.
 drl_begin=$(date +%s)
 declare -a DRL_SEEN=()
 declare -a DRL_DRIFT=()
@@ -927,6 +931,10 @@ while IFS= read -r ir; do
   want=$(drl_expected_channel "$name")
   [ "$actual" = "$want" ] || DRL_DRIFT+=("$name :: pinned $want, measured $actual — $out")
 done < <(find corpus/golden -name ir.json | sort)
+# computed BEFORE the checks, and printed here: a FAILING sweep costs exactly as much as a passing
+# one, so hiding the figure behind a pass would hide it from the run that most wants to know it.
+drl_kosten=$(( $(date +%s) - drl_begin ))
+echo "  DRL-text sweep: ${drl_kosten}s wall clock over ${#DRL_SEEN[@]} goldens"
 
 if [ ${#DRL_DRIFT[@]} -gt 0 ]; then
   echo "check-drools: FAIL — ${#DRL_DRIFT[@]} golden(s) changed channel in the DRL-TEXT branch:" >&2
@@ -944,7 +952,6 @@ for e in "${DRL_CHANNEL[@]}"; do
 done
 [ "$drl_played" -gt 0 ] || fail "empty DRL-text played set — no golden replayed through the DRL-text branch"
 [ "$drl_played" -eq "$EXPECTED_DRL_PLAYED" ] || fail "the DRL-text branch played $drl_played, but EXPECTED_DRL_PLAYED pins $EXPECTED_DRL_PLAYED — a golden entered or left that branch's played channel without the list noticing (a new golden plays: raise the number; a golden went away: the branch lost a player)"
-drl_kosten=$(( $(date +%s) - drl_begin ))
 
 echo ""
 echo "check-drools: PASS"

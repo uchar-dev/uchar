@@ -57,10 +57,13 @@ verhoogt.
 
 `DRL_CHANNEL`, 77 regels `"<golden>|<kanaal>|<reden>"`, dezelfde vorm als
 `EXPECTED_CHANNEL`: spelen is de default, alleen niet-spelers staan er, en
-alleen het kanaal wordt vergeleken. De kanalen zijn de vier statustokens die
-de tak zelf drukt, zodat wat gepind is precies is wat gemeten wordt. Per
-redenklasse, elk met een groepskop die de klasse uitlegt en met elke golden
-bij naam eronder:
+alleen het kanaal wordt vergeleken. Van de vier lijstbare kanalen zijn er
+drie statustokens die de tak letterlijk drukt (`EXCLUDE`, `FAIL`, `ERROR`);
+`NOCASE` is een token van de sweep zelf, want een golden zonder casus wordt
+nooit gedraaid. Het vijfde token van de tak, `PLAYED`, is bewust niet
+lijstbaar: dat is de default, en pinnen zou een golden vrijstellen in plaats
+van vasthouden. Per redenklasse, elk met een groepskop die de klasse uitlegt
+en met elke golden bij naam eronder:
 
 | klasse | n | reden |
 | --- | --- | --- |
@@ -125,15 +128,18 @@ deze branch aangemaakt (zie onderaan).
 | --- | --- |
 | gate 12 zoals op `main` (`git show main:` — gedraaid in deze worktree) | 1:34,7 |
 | gate 12 met de sweep erin | 3:20,0 |
+| de exec-sweep alleen, los gedraaid over alle 209 goldens | 1:23,8 |
+| de DRL-sweep alleen, gemeten door de gate zelf | 96s / 97s / 96s / 101s |
 
-De sweep meet zichzelf ook en drukt dat in het slotrapport. Drie metingen
-gaven 96s, 97s en (door de lens) 100s, voor 207 java-aanroepen (de twee
-goldens zonder casus kosten er geen). Het getal staat daarom als **~100s**
-in het script én hier: het is een orde van grootte en geen constante, en
-het verse getal van de run zelf is wat je moet geloven. De prijs is ruwweg
-een verdubbeling van de gate, en die wordt alleen betaald door een gate die
-verder groen is: bij een gebroken vierkant faalt hij nog steeds in de tijd
-die hij altijd had — de lens mat dat na op 1m54 zonder de DRL-regels te
+De sweep meet zichzelf en drukt dat in het rapport. Van de vier getallen in
+het script is er nu geen meer geschat: de exec-sweep kost **~84s** op deze
+machine en de DRL-sweep **~96s**, dus de **DRL-sweep is het duurdere been**
+van de twee — niet, zoals de eerste versie van de kostenregel beweerde, een
+verdubbeling van een langer been. Elders is de DRL-sweep op 100s gemeten,
+dus alles hier leest als orde van grootte; het verse getal dat de run zelf
+drukt is wat je moet geloven. De prijs wordt alleen betaald door een gate
+die verder groen is: bij een gebroken vierkant faalt hij nog steeds in de
+tijd die hij altijd had — nagemeten op 1m54 zonder de DRL-regels te
 bereiken.
 
 ### Mutatieproeven
@@ -179,6 +185,33 @@ mutatieproef per lijst, beide door de volle gate:
 | `EXPECTED_CHANNEL` | `jutterswet-seizoenvondst` op `EXCLUDE DIVERGE` | `FAIL — malformed channel pin: … is pinned 'EXCLUDE DIVERGE' in EXPECTED_CHANNEL …`; exit 1 |
 | `DRL_CHANNEL` | `jutterswet-vormenkabinet` op `EXCLUDE FAIL` | `FAIL — malformed channel pin: … is pinned 'EXCLUDE FAIL' in DRL_CHANNEL …`; exit 1 |
 
+### Nog drie onwaarheden uit de tweede lensrun
+
+**De kosten waren onzichtbaar op het faalpad.** `drl_kosten` werd ná de
+checks berekend, dus juist de run die wilde weten wat de sweep kostte kreeg
+het niet te zien. De berekening staat nu direct achter de lus en drukt een
+eigen regel, vóór elke check. Nagemeten met de pin op 131:
+
+```
+  DRL-text sweep: 101s wall clock over 209 goldens
+check-drools: FAIL — the DRL-text branch played 132, but EXPECTED_DRL_PLAYED pins 131 — …
+```
+
+**Twee commentaren in `backends/drools` waren door deze kaart onwaar
+geworden** (mandaat hiervoor apart verleend; alleen commentaar, geen
+gedragswijziging, de suite blijft op 478 tests). `CaseRunner.viaDrlTekst`
+zei "The gate path never calls this … so gate 12's numbers cannot move with
+it" en `DroolsBackendMain` zei "never the gate-12 path". Sinds deze kaart is
+die ingang wél een gate-12-pad — `EXPECTED_DRL_PLAYED` beweegt er precies
+mee. Beide claims zijn omgedraaid, met de datum en de kaartnaam erbij, en
+met de scheiding die blijft gelden: een vlagloze run bereikt nog steeds
+exact de code van vroeger, en die run alleen is het vierkant.
+
+**De tokenzin klopte niet.** Zie de kanaalbeschrijving hierboven: drie van
+de vier lijstbare kanalen drukt de tak, `NOCASE` is van de sweep, en het
+vierde gedrukte token is `PLAYED` — bewust niet lijstbaar. Rechtgezet in het
+script en in dit Result.
+
 ### De exec-pins staan onbewogen
 
 Uit de slotrun, ná de wijziging:
@@ -202,13 +235,20 @@ overlevers) · 8 PASS (29 rood) · 9 PASS (201 checks, 12 goldens) ·
 checks, 2 goldens).
 
 Ná de lens-fixronde opnieuw gedraaid: **1** (de scriptproza veranderde),
-**12** (PASS, slotgetallen hierboven, 3:20,7 totaal) en **13** (PASS,
-onveranderd — hij deelt de jar en dezelfde vlag van de replay-runner). De
-overige elf zijn niet herhaald en dat is een bewuste afweging, geen
-vergetelheid: die ronde raakte alleen commentaar en één guard in
-`scripts/check-drools.sh` plus twee backlog-bestanden, en geen van die elf
-leest een van die bestanden. Aan `backends/drools/` is in de hele kaart
-geen regel veranderd.
+**12** (PASS, slotgetallen hierboven) en **13** (PASS, onveranderd — hij
+deelt de jar en dezelfde vlag van de replay-runner). De overige elf zijn
+niet herhaald en dat is een bewuste afweging, geen vergetelheid: die ronde
+raakte alleen commentaar en één guard in `scripts/check-drools.sh`, twee
+javadoc-blokken in `backends/drools` en twee backlog-bestanden, en geen van
+die elf leest daarvan iets wat hun uitslag kan bewegen. Aan het *gedrag*
+van `backends/drools/` is in de hele kaart geen regel veranderd — de suite
+bleef op 478 tests, nul overgeslagen.
+
+De branch is tweemaal opnieuw op `main` gezet, laatst op `9f41f21a` (de
+stille-markers-kaart, die `backends/drools`' loader en de frontend raakt en
+daarmee via de gedeelde source root de backendbuild). Gate 12 is ná die
+rebase volledig hergedraaid: 159 en 132 onveranderd, dus de gemerge kaart
+verschuift geen kanaal.
 
 ### Bewust niet
 
