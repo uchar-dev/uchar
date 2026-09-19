@@ -1552,7 +1552,7 @@ staat dat bij het item zelf.*
 ## 5. De genummerde beslisvragen
 
 *Zestien vragen: **V1–V11** en **V13–V17** hier, **V12** — de toka-volgorde — in
-§6. Alle zeventien staan open. De aanbeveling is de aanbeveling van deze kaart,
+§6. Alle zeventien zijn op 2026-09-19 door de maintainer BESLIST — zie de **BESLIST**-regel onder elke kop. De aanbeveling is de aanbeveling van deze kaart,
 niet een besluit. De nummering volgt de volgorde waarin de vragen zijn ontstaan;
 de **leesvolgorde is een andere**, en daarom staat V14 vooraan: hij bepaalt wat
 de klap kost en wat gate 3 daarna nog bewaakt.*
@@ -1939,6 +1939,8 @@ serialisatie gratis kan doen.
 
 ### V10 — Krijgt `de dag` een eigen knoopsoort?
 
+**BESLIST (2026-09-19, maintainer): (c) gevolgd door (a) — eerst de dagsoort-semantiekkaart (op 2026-09-19 uitvoerbaar verklaard); landt zij vóór de klap, dan krijgt `de dag` de eigen knoop, anders blijft de drie-namen-vorm zonder nieuwe schuld.**
+
 IR-SPEC ch. 4.1 laat dit uitdrukkelijk open. Zes documenten dragen de vorm.
 
 - **(a) Eigen knoop** (`BoundDay`), want het ís iets anders: geen sessiewaarde
@@ -1959,6 +1961,8 @@ al gekaart. Als die kaart landt vóór de klap, wordt het (a); landt hij niet, d
 ---
 
 ### V11 — Gaat B24 (`Onopgelost`-reden) mee in deze klap?
+
+**BESLIST (2026-09-19, maintainer): (c) — eerst de meetkaart: de taxonomie gemeten tegen de ~24 `Onopgelost`-productieplekken van de v0-toolchain plus de routes die uchars eigen frontend heeft toegevoegd. B24 gaat alleen met de klap mee als die kaart vóór de klap de taxonomie vastlegt; anders landt de reden later additief (een optioneel veld breekt niets).**
 
 IR-SPEC ch. 4.4 markeert de taxonomie als **OPEN** "until the negatief corpus
 fixes the taxonomy's values", en die voorwaarde is niet vervuld. Twee
@@ -1982,6 +1986,8 @@ zinvol als eigen kaart, los van de klap.
 
 ### V13 — Blijft `Regelversie` in v1?
 
+**BESLIST (2026-09-19, maintainer): EIGEN BESLUIT, geen van de drie opties: beide statussen BLIJVEN. `is gevuurd` krijgt de oorspronkelijke v2.3.0-betekenis — een globale, monotone status die waar wordt zodra de genoemde geldige regelversie voor minstens één subject heeft gevuurd, ook bij een no-op. Volgorde: eerst een golden met volledige ref ≡ clingo ≡ Drools-pariteit op die semantiek; daarna pas de v1-knoopvorm vastleggen.**
+
 B25. Nul dragers in alle 650 documenten; geen emitter produceert hem; IR-SPEC
 ch. 4.5 markeert zijn v1-toelaatbaarheid als OPEN.
 
@@ -2004,6 +2010,8 @@ wire-entry-discipline: additief, met een getuige.
 ---
 
 ### V16 — Gaat het `Bron`-record in deze klap mee?
+
+**BESLIST (2026-09-19, maintainer): (b) — het record met `snippet` verplicht en `file`/`line`/`column` optioneel; de bestaande string wordt mechanisch `{"snippet": …}` en beweegt één keer mee met de klap.**
 
 B26 is naar voorkomens de grootste delta (4987 in 551 documenten) en naar
 betekenis een van de kleinste (geen uitvoerder leest het veld). IR-SPEC koppelt
@@ -2038,6 +2046,8 @@ B26 expliciet aan één van de epochen worden toegewezen.
 
 ### V17 — In welke taal staan de proposals?
 
+**BESLIST (2026-09-19, maintainer): (a) — proposals zijn Engels; dít document wordt vertaald nadat alle zeventien antwoorden verwerkt zijn, en de conventie wordt dan in CLAUDE.md bijgeschreven.**
+
 Een vraag over dit document zelf, niet over de wire. `spec/proposals/` bevat tien
 documenten en die zijn **alle tien Engels** (`DEONTIEK-EISENLIJST`,
 `LEGALRULEML-AUDIT`, `PHASE4-DEFAULTS`, `PHASE5-CATALA`, `PHASE5B-KERNEL`,
@@ -2070,6 +2080,8 @@ project elders mechanisch afvangt.
 ## 6. De toka-volgordevraag
 
 ### V12 — Zone opruimen vóór de migratie, of mee-regenereren?
+
+**BESLIST (2026-09-19, maintainer): EIGEN BESLUIT, een vierde route: TOKA blijft behouden als PRIVATE GEDRAGSacceptatieset, niet als wire-pariteitsset. Bij v1 vervalt de bytevergelijking en worden geen v1-IR-dumps gepind; de `.rgs`-bronnen lopen in de test via de actuele RegelSpraak-frontend en tijdelijk uchar-IR naar Drools, en alleen de oorspronkelijke absolute casusverwachtingen worden gecontroleerd. Vóór de publieke flip verhuist het materiaal naar `regelspraak-werkbank` of een aparte private testrepository en wordt het inclusief geschiedenis uit uchar verwijderd. Bestaande holdouts blijven naam- en redendragend.**
 
 **Wat er op het spel staat.** Gate 11 vergelijkt uchar's eigen frontend tegen
 `toka/casus/ir.json` — een dump die **één keer met de originele toolchain** is
