@@ -5989,6 +5989,70 @@ let () =
       "a ranking fold (minimum/maximum/eerste/laatste) over the temporal attribute \
        \"bewaartarief\" of a set has no defined moment to fold"
 
+(* WF-044 op de CONDITIE-positie.
+
+   De expressie-arm van deze vertaler werpt de onopgelost-fout al sinds de
+   wacht bestaat; de conditie-arm ontbrak, dus een `Onopgelost`-voorwaarde
+   viel in de generieke bodem: "condition kind not translated (no corpus case
+   exercises it)" (gemeten 2026-09-19, vóór de arm). Die zin is geen
+   weigering maar een capaciteitsmelding — ze beweert dat geen corpusgeval de
+   vorm uitlokt, precies terwijl een rode getuige dat doet.
+
+   Het corpus pint de vorm op de §13.4.7-creatieguard
+   (corpus/rood/wf044-onopgelost-guard, de guard die de frontend aflevert als
+   doel en anker hetzelfde objecttype zijn). Deze getuige pint de ANDERE
+   conditiepositie — de voorwaarde van een gewone rekenregel — die geen
+   corpusdocument draagt: een golden zou erop falen en de rode zone houdt één
+   getuige per vorm. Beide posities lopen door dezelfde arm in [cond_atoms].
+   Het fragment spiegelt `ref` in de positie ("Onopgelost condition reached
+   in …") en de expressie-arm in de fase ("… in translation …"), zodat de
+   twee uitvoerders dezelfde plek in dezelfde woorden noemen. *)
+let onopgelost_voorwaarde_doc =
+  {|{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Vondst": {
+      "node": "Objecttype", "naam": "Vondst",
+      "attributen": { "waardering": { "node": "Numeriek", "geheel": true, "decimalen": 0,
+                                      "teken": "ONBEPAALD", "eenheid": null } },
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vondsten" } },
+  "domeinen": {}, "parameters": {}, "eenheidstelsels": {}, "feittypen": {},
+  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [
+    { "node": "ResolvedRegel", "naam": "waardering van een vondst", "soort": "BEREKENING",
+      "doel": { "node": "AttribuutRef", "attribuut": "waardering", "objecttype": "Vondst",
+                "onderwerpBron": "een Vondst", "navigatieRol": null,
+                "type": { "node": "Numeriek", "geheel": true, "decimalen": 0,
+                          "teken": "ONBEPAALD", "eenheid": null },
+                "bron": "De waardering van een Vondst", "set": false, "navigatiePad": [] },
+      "waarde": { "node": "Literal", "waarde": "1",
+                  "type": { "node": "Numeriek", "geheel": true, "decimalen": 0,
+                            "teken": "ONBEPAALD", "eenheid": null }, "bron": "1" },
+      "voorwaarde": { "node": "Onopgelost",
+                      "bron": "de taxatie volgens het niet-gemodelleerde protocol" },
+      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+  "regelGroepen": [], "diagnostics": []
+}
+|}
+
+let onopgelost_voorwaarde_case =
+  {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "V1", "objectType": "Vondst", "attributes": {},
+                              "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }
+|}
+
+let () =
+  faults_with ~name:"WF-044 een Onopgeloste regelvoorwaarde wordt geciteerd, niet weggeslikt"
+    ~ir:onopgelost_voorwaarde_doc ~case_text:onopgelost_voorwaarde_case
+    ~needle:"Onopgelost condition reached in translation: this rule fails observably (WF-044)"
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

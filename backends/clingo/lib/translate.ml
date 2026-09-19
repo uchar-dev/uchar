@@ -4757,6 +4757,16 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
       else
         let atoms, _, _ = expr_term ctx ~subject ~subject_ot operand in
         atoms
+  | Conditie_onopgelost _ ->
+      (* the unsolved-state guard on the CONDITION position — the sibling of
+         [Expr_onopgelost] above, and the form the §13.4.7 creation guard takes
+         when doel and anker are the same type. Without this arm the node fell
+         through to the catch-all, whose sentence claims no corpus case
+         exercises it: a red witness on this position would have made its own
+         message untrue. Wording follows ref (`Onopgelost condition reached in
+         …`) so both executors name the same position, and the expression arm
+         (`… in translation …`) so the phase stays this backend's own. *)
+      fault "Onopgelost condition reached in translation: this rule fails observably (WF-044)"
   | _ -> fault "condition kind not translated (no corpus case exercises it)"
 
 (* the ground term of a Construct (ch. 9.1): a Literal payload scaled to the
