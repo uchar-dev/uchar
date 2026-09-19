@@ -125,9 +125,10 @@ aangeraakt):
     takken; de D1-vorm met een derde `Let` ertussen geeft in de
     DRL-tekst-tak `FAIL: attribuut heffing: verwacht 1.00, werkelijk leeg`
     waar ref, clingo én exec 1,00 antwoorden. Dat is een VERKEERDE WAARDE,
-    niet alleen een gemiste melding — en `armverdeling`'s wikkelregel
-    antwoordt daar 5,00 waar alle drie de andere leeg zeggen, dus ook de
-    reikwijdte staat daar nog verkeerd.
+    niet alleen een gemiste melding — en op diezelfde case antwoordt
+    `armverdeling`'s wikkelregel 5,00 waar alle drie de andere 6,00 zeggen,
+    dus de barrière is daar tot de arm verkleind. (Op `case2` antwoorden
+    alle vier leeg; de eerdere lezing van deze zin verwarde de twee cases.)
 (c) `armwissel` wordt LUID geweigerd: `EXCLUDE drl-transpiler MARKER:
     regel: heffing van een jutter — TODO takgarde van een voorwaardelijk
     gelezen behoefte (ch. 10.2)`. Dat is het eerlijke kanaal.
@@ -159,6 +160,41 @@ met een `plus de basisheffing` eromheen (V2).
 
 NÁ: alle zes `clingo: PASS`. Identiek op main gemeten (deze tak is main
 plus de kaartverplaatsing op het moment van meten), dus pre-existent.
+
+## Er IS een corpustreffer — hij divergeert alleen niet
+
+De kopregel van deze kaart noemt de capture-vorm "pre-existent, geen
+corpustreffer". Het eerste klopt, het tweede niet, en dat is gemeten in
+plaats van aangenomen. Ik heb alle 537 (golden, case)-programma's die de
+vertaling voortbrengt vóór en ná de verbreding gedumpt en byte-voor-byte
+vergeleken (tijdelijke dumphaak in `solve.ml`, daarna teruggedraaid; de
+"vóór"-kant is de MV-mutant, dus de arm eruit en verder niets). Zes
+programma's veranderen. Twee daarvan zijn `synth3-armvangst`, de golden
+die deze kaart er juist voor aanlegt. Van de 527 BESTAANDE programma's
+zijn er 523 byte-identiek en veranderen er VIER: `synth3-drempelheffing`,
+alle vier de cases.
+
+Dat document heeft de capture-vorm al: `Let g = grondslag in Let ruw = g
+maal tarief in Let volle = ruw afgerond op 2 in (als g > drempel dan …)`.
+`ruw` wordt alleen gelezen via de waarde van `volle`, en `volle` alleen in
+de dan-arm — precies de vorm die de oude syntactische guard liet liggen.
+
+Wat er verandert, kanoniek vergeleken (variabelennamen en atoomvolgorde
+genormaliseerd, want het vernummeren van de verse variabelen verschuift
+verder niets): per programma krijgen EXACT TWEE regels de armgarde erbij,
+de twee operandhekken van de `maal`
+
+    viol("arithmetic range exceeded (clingo grounds in machine integers)",S)
+      :- …, |(C#)| > 46340.
+
+waaraan `let#(S,LB#), param("drempel",P#), LB# > P#` wordt toegevoegd. Er
+verdwijnt niets, er beweegt geen andere regel, en alle vier de cases
+slagen vóór én ná met identieke antwoorden (ref en clingo, `PASS (2
+expectations)` elk). De verbreding is daar dus strikt vernauwend en
+waardebehoudend: twee hekken die in de niet-betreden arm stonden staan nu
+onder de arm waar ze horen. De vorm divergeerde op dit document niet —
+`46340` is voor deze getallen onbereikbaar — maar de verbreding betaalt
+zich er wel uit, en "geen corpustreffer" is als formulering te sterk.
 
 ## De keuze: DRAGEN, en waarom
 

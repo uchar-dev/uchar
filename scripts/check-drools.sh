@@ -567,7 +567,8 @@ EXPECTED_CHANNEL=(
 # which is what case 2 of takhek, operatortak, armverdeling and armvangst pins; (b) a SECOND nested
 # `Let` between the need and the branch node is still placed eagerly there, so armverdeling's case 1
 # answers leeg where ref, clingo and the exec branch answer 1,00, and its wrapper rule answers a
-# coalesced 5,00 where all three answer leeg — the value defect, not just a missing report; (c)
+# coalesced 5,00 on that same case where all three answer 6,00 — the barrier shrunk to the arm, so a
+# value defect and not just a missing report; (c)
 # armwissel is refused LOUDLY by name (`TODO takgarde van een voorwaardelijk gelezen behoefte
 # (ch. 10.2)`), which is the honest channel. Carrying (a) and (b) is Drools work on the DRL-text
 # transpiler and belongs to its own card; weakening these goldens to make that branch pass would
