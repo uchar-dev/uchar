@@ -5687,8 +5687,9 @@ ch. 3.12), and it belongs to whoever measures it.
   names the object type the check LIVES ON, and it MUST DESIGNATE exactly one
   of the objects bound at the check's own position — exactly one of them
   SATISFIES it (`T ⊑ O`) and no second one OVERLAPS it (the declared type graph
-  holds a type below both) (**WF-109**, maintainer decision 2026-09-19). This is the object half (q1) left open, and
-  it is settled in the direction (q1)'s wire reading already pointed — the
+  holds a type below both) (**WF-109**, maintainer decision 2026-09-19). This
+  is the object half (q1) left open, and it is settled in the direction (q1)'s
+  wire reading already pointed — the
   field says which pattern hosts the constraint — with the consequence (q1)
   did not draw: every executor honours it, so a verifier-clean owner is
   carried by all four and the differential square closes over the form.

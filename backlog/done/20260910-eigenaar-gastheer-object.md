@@ -582,10 +582,10 @@ lensronde: de supertype-golden is bewust handgeschreven IR, precies om
 die wijziging en de herpin te vermijden. Er zijn nu **63** rgs-goldens
 (was 61). Geen toolchain-herpin nodig.
 
-**Gates.** Alle veertien los gedraaid, alle veertien groen (na de
-lensronde opnieuw). Kerngetallen: gate 2 250 bestanden; gate 3 250 golden
+**Gates.** Alle veertien los gedraaid, alle veertien groen (na elke
+lensronde opnieuw; laatste volle ronde 2026-09-20). Kerngetallen: gate 2 250 bestanden; gate 3 250 golden
 schoon / 408 negatief afgewezen; gate 4 586 cases; gate 5 686 worked
-examples en 552 cases; gate 6 449 checks en 552 cases; gate 7 516 cases,
+examples en 552 cases; gate 6 452 checks en 552 cases; gate 7 516 cases,
 36 survivors; gate 8 34 rode cases, 68 fragmenten; gate 9 201 checks, 12
 catala-goldens; gate 10 322 tests, 63 rgs-goldens; gate 11 29/29/29;
 gate 12 played **164**, DRL **141**, JUnit 502; gate 13 129 twists over
