@@ -1031,7 +1031,16 @@ fold over ≥ 2 listed operands; dispatched by argument shape within
 v0's listed family minimum/maximum/eerste/laatste only — the vestigial
 `elementObjecttype` v0 stamps on a listed fold names no instance
 source, while a multi-operand som/totaal/aantal keeps its loud fault
-in both executors, v0's accumulate consuming the element there; the
+in both executors WHERE THAT STAMP IS PRESENT, v0's accumulate
+consuming the element there. Where it is ABSENT the two executors part
+(measured 2026-09-19 on `corpus/rood/som-fallback-always-evaluated`):
+`ref` CARRIES the listed som — its contributor arm reads the operand
+list whenever `elementObjecttype` is absent, whatever the kind — and
+this backend does not, since every som arm it has ranges a `#sum` over
+an instance source a listed fold never supplies. That refusal now names
+the form (`a som over listed operands is not translated`) instead of
+falling through, for the reason the catch-all inventory below records;
+the
 numeric operands are RS ch. 1.2e's v1 widening, ratified 2026-09-04):
 one helper
 predicate per fold site. Each operand's
@@ -2368,7 +2377,23 @@ now refuses the form (`IR-SPEC.md` WF-096, negatiefs
 `wf096-aantal-setbron*`), so this backend's refusal, which was the
 strictest of the three readings, is what the verifier came round to.
 The arm stays as a second line of defence rather than a gap: a count
-folds the contributors, and a set source hands it values);
+folds the contributors, and a set source hands it values). The LISTED
+som left this catch-all on 2026-09-19 and is the inventory's second
+departure that is not a translation: it has a named arm of its own
+(`a som over listed operands is not translated …`) and is refused
+exactly as before. The form is `SOM` with an ABSENT `elementObjecttype`
+— the crisp test, since every som arm this backend carries demands one
+present — and the reason it needed a name is the catch-all's own
+sentence: `corpus/rood/som-fallback-always-evaluated` fell here, so
+"no corpus case exercises it" was false while that witness stood, the
+same untruth WF-044's condition arm had just removed from the
+condition half. Its two boundaries are pinned in the backend's own
+suite and cannot be pinned by the corpus: a red witness for either
+would re-falsify the sentence by exercising the catch-all again. The
+sibling kinds keep the catch-all and it stays true for them — TOTAAL's
+temporal subject-own arms carry an absent `elementObjecttype`, so
+absence does not mean "listed" there, and the AANTAL listed form is no
+som;
 what remains under it for composites is the member-less
 counting list (`a counting composite without members is not
 translated (no corpus case)`) and every member kind that keeps its
