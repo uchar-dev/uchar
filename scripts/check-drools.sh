@@ -527,7 +527,19 @@ EXPECTED_CHANNEL=(
 # independent executors and no source language at all, the RegelSpraak frontend declining the
 # non-temporal form. Measured before and after over ALL goldens in BOTH branches: exec 150 -> 151,
 # DRL-text 123 -> 124, and exactly this one report line moves — no other golden changes channel or reason.
-EXPECTED_PLAYED=151
+# 2026-09-19 (card exec-bladvertaling-verbreedt), 151 -> 153: `jutterswet-redderkeur` and
+# `jutterswet-loodsgrens` join as NEW PLAYERS — the two fold-matrix forms the exec branch declined while
+# the DRL-text branch carried and played them (measured per form in both branches): a `Samengesteld`
+# matrix, at any depth, and a matrix whose bound is a Parameter. Both were already verifier-clean, played
+# by `ref`, by clingo and by the DRL-text branch, so the two goldens landed RED here on purpose and this
+# step is what turns them green. The exec branch now asks ch. 3.9a's `test` through one recursive matrix
+# lowering: the composite's quantifier and threshold fold its bullets over the leaf translation that was
+# already there, and a §5.6 numeric Parameter binds as the single pattern variable the post-accumulate eval
+# has room for. What stays refused is named on its own axis — a matrix reading TWO different parameters,
+# and a NON-numeric one. Measured before and after over ALL goldens in BOTH branches: exec 151 -> 153,
+# DRL-text 126 -> 126 with its whole report byte-identical (this card does not touch DrlTranspiler), and
+# exactly these two report lines move — no other golden changes channel or reason.
+EXPECTED_PLAYED=153
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
 # The floor below compares each MEASURED golden against ITS pin, so a malformed list can weaken the
