@@ -2024,6 +2024,34 @@ do not read it; and ref's within-branch evaluation order (a deposit made
 has a corpus case; both are the same class as the S19 inventory —
 report-and-fail territory the moment a witness exists.
 
+*Clause 2 again — the rewrite, not a guard.* Where the barrier's place is
+decided by the ARM rather than by the branch prefix, no amount of guard
+threading suffices: each lowering translates a `Let`'s value before it
+knows the body's branches, so the arm guard does not yet exist when that
+value's fences, `viol/2` guards and §9.5 deposits are emitted. A `Let`
+whose need is read in exactly one arm is therefore MOVED into that arm
+(`let_into_arm`), and the branch node is lifted out of any pure arithmetic
+wrapper standing between them so the barrier's extent stays the whole
+expression rather than the arm — a coalescing wrapper would otherwise read
+the emptied arm as 0. A nested `Let` between the two is handled by
+distributing it over the arms, or, where the condition reads its own
+binder, by exchanging the two `Let`s; and where the nested value is the
+only reader of the outer need, the rewrite asks where the nested `Let`
+lands and then CHECKS that the outer need is left read in exactly one arm,
+rather than inferring it from a mention. Where that check fails the
+rewrite declines and eager placement stays — measured both on a need
+genuinely read on both branches (where eager is exact) and on a landing
+that is not a bare branch node. Corpus witnesses: `synth3-takhek` and
+`synth3-operatortak` (the arm fences, on the rule-head route and under an
+operator), `synth3-armverdeling`, `synth3-armwissel` and
+`synth3-armvangst` (the nested `Let`, over all three routes) ;
+`synth3-armverdeling` and `synth3-armvangst` pin, on the entered arm, that
+the barrier empties the whole expression and not just the arm,
+`synth3-takhek` and `synth3-armwissel` carry no wrapper to test, and
+`synth3-operatortak` pins the complementary edge — an operator wrapper
+coalesces the emptied arm to 5,00 precisely because only a `Let` is a
+barrier.
+
 **(b) Guarded consequences.** A rule value now reaches an `IfThenElse`
 through `Let` bodies (WF-069 widened). At value position it lowers to
 **one guarded outcome rule per branch** (`value_branches`): the
