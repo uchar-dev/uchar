@@ -2751,10 +2751,12 @@ public final class ExecModelTranspiler {
         return null;
     }
 
-    /** WHY a non-temporal matrix was declined, on the axis it was actually declined on. The node CLASS alone is
-     *  too coarse and was measured misleading on 2026-09-16: a {@code Vergelijking} is carried in general, and a
+    /** WHY a non-temporal matrix LEAF was declined, on the axis it was actually declined on. The node CLASS alone
+     *  is too coarse and was measured misleading on 2026-09-16: a {@code Vergelijking} is carried in general, and a
      *  comparison against a Parameter is declined for its OPERAND, not for being a comparison. So a node that has
-     *  operands is named by its operands; one that does not falls back to its class. */
+     *  operands is named by its operands; one that does not falls back to its class. A COMPOSITE matrix does not
+     *  reach here: {@link #matrixVertaling} refuses it on the bullet that actually declined, and that bullet is
+     *  named through this method with the composite path in front of it. */
     private static String matrixAs(Conditie c) {
         if (c instanceof Conditie.Vergelijking v)
             return "een vergelijking van " + operandAs(v.links()) + " met " + operandAs(v.rechts());
@@ -2773,6 +2775,86 @@ public final class ExecModelTranspiler {
         if (e instanceof Expr.Literal l) return "de literal '" + l.waarde() + "'";
         if (e instanceof Expr.Functie f) return "een " + f.kind() + "-functie";
         return "een operand van soort " + e.getClass().getSimpleName();
+    }
+
+    /** A lowered NON-temporal fold matrix: a {@code (contributor, boundValue) -> boolean} test plus the ONE
+     *  Parameter-global it reads, or {@code bound == null} when it reads none. A REFUSAL is the same record with
+     *  a null test and {@code weigering} naming the axis — carried in the value rather than signalled by null, so
+     *  the reason is written where the decline happens and a composite hands its bullet's reason up unchanged.
+     *  Two arities are needed because the eval that asks this rides AFTER the {@code collectList} accumulate: it
+     *  binds the collected list, and at most ONE further pattern variable. */
+    private record Matrix(Global<BigDecimal> bound, Predicate2<Object, BigDecimal> test, String weigering) {
+        static Matrix nee(String reden) { return new Matrix(null, null, reden); }
+        boolean ok() { return test != null; }
+    }
+
+    /** RUNTIME-SEMANTICS ch. 3.9a's {@code test} lowered per contributor, with the ELEMENT as subject. Three
+     *  shapes, in this order:
+     *  <ul>
+     *    <li>a {@code Samengesteld} — §13.4.14's composite, RECURSIVELY and at any depth: each bullet is lowered
+     *        by this same method and the results are folded into ONE test by the composite's own quantifier and
+     *        threshold, read with ch. 5.10's stop triggers ({@link #vastgesteld}) and settled by the shared
+     *        {@link #telVerdict}. The composite's quantifier and the FOLD's are therefore evaluated at their own
+     *        levels and never collapse into one another;</li>
+     *    <li>a §5.6 comparison against a numeric Parameter, written on EITHER side — the bound arrives as a
+     *        pattern variable ({@link #globalBullet}, shared with {@link #filterSource}), which is why this
+     *        method returns a two-argument test at all;</li>
+     *    <li>every other shape — the fact-only {@link #leafPredicate}, the per-subject leaf translation every
+     *        other condition of this backend uses, widened to the same arity by ignoring the bound.</li>
+     *  </ul>
+     *
+     *  <p><b>At most ONE distinct Parameter-global over the WHOLE matrix.</b> The eval that asks the matrix rides
+     *  after the accumulate and binds the collected list plus one variable, so a second, different bound has
+     *  nowhere to land and the matrix is refused by name. This is the SAME restriction {@link #filterSource}'s
+     *  counting arm carries for the same structural reason — and it is why the filter position keeps its own
+     *  fold ({@link #leafCompound}) rather than calling this one: there the bullets are constraints on the
+     *  accumulate SOURCE pattern, where a conjunctive arm can bind each bullet's own global on its own
+     *  {@code .expr}, and depth is refused to stay symmetric with the DRL-text branch's parity guard.
+     *
+     *  <p>Never returns null: a refusal is a {@link Matrix} carrying its reason, so the caller can name the axis
+     *  it was declined on rather than reporting the node class. */
+    private Matrix matrixVertaling(Conditie c, Objecttype elem) {
+        if (c instanceof Conditie.Samengesteld s) {
+            final Conditie.Kwantor kw = s.kwantor();
+            final int drempel = s.drempel();
+            Global<BigDecimal> bound = null;
+            List<Predicate2<Object, BigDecimal>> delen = new ArrayList<>();
+            for (Conditie deel : s.onderdelen()) {
+                Matrix m = matrixVertaling(deel, elem);
+                if (!m.ok()) return Matrix.nee("in de " + kw + "-samenstelling: " + m.weigering());
+                if (m.bound() != null) {
+                    if (bound != null && bound != m.bound())
+                        return Matrix.nee("een " + kw + "-samenstelling die twee verschillende parameters leest:"
+                                + " de eval na de accumulate bindt er één");
+                    bound = m.bound();
+                }
+                delen.add(m.test());
+            }
+            final List<Predicate2<Object, BigDecimal>> fd = delen;
+            return new Matrix(bound, (e, gv) -> {
+                int t = 0;
+                for (int i = 0; i < fd.size(); i++) {
+                    Boolean vast = vastgesteld(kw, drempel, t, i, fd.size() - i);   // ch. 5.10 short circuit
+                    if (vast != null) return vast;
+                    if (fd.get(i).test(e, gv)) t++;
+                }
+                return telVerdict(kw, drempel, t, fd.size());
+            }, null);
+        }
+        // §8.1.1 the bound written on the LEFT ("de keurgrens kleiner is dan zijn ervaring"): swap the operands
+        // and REVERSE the operator, the same normalisation leafPredicate applies to a literal-LHS comparison and
+        // for the same reason — every recogniser below keys on an attribute LHS, so the unswapped form would
+        // decline a sentence that means exactly the swapped one. Only a form that would otherwise decline is
+        // rewritten, and after the swap the parameter sits on the right, so it cannot re-trigger.
+        if (c instanceof Conditie.Vergelijking pv && pv.links() instanceof Expr.ParameterRef
+                && !(pv.rechts() instanceof Expr.ParameterRef))
+            c = new Conditie.Vergelijking(Operatoren.omkeren(pv.op()), pv.rechts(), pv.links(),
+                    pv.periode(), pv.bron());
+        GlobalVergelijking gb = globalBullet(c, elem);   // §5.6 a getalachtig Parameter bound
+        if (gb != null) return new Matrix(gb.global(), gb.test(), null);
+        Predicate1<Object> lp = leafPredicate(c, elem);
+        if (lp != null) return new Matrix(null, (e, gv) -> lp.test(e), null);
+        return Matrix.nee(matrixAs(c));
     }
 
     /** Is {@code a} a read of a SINGLE-PERIOD tijdlijn member of {@code elem} written with the ELEMENT as subject?
@@ -2797,8 +2879,8 @@ public final class ExecModelTranspiler {
      *    <li>the {@code toets} takes one of two routes. A §8.2 whole-period predicate over the contributor's own
      *        timeline folds the collected {@code List<List<Segment>>} through the ch. 3.9 helper per contributor;
      *        every OTHER matrix is an ordinary condition of the element, so the CONTRIBUTORS THEMSELVES are
-     *        collected and the per-subject {@link #leafPredicate} — the same leaf translation every other
-     *        condition of this backend uses — is asked of each, with the element as the subject.</li>
+     *        collected and {@link #matrixVertaling} — the per-subject leaf translation, widened with §13.4.14's
+     *        composite and a §5.6 Parameter bound — is asked of each, with the element as the subject.</li>
      *  </ul>
      *
      *  <p><b>Where the NIET prefix binds.</b> ch. 3.9a makes {@code toets} an ORDINARY condition evaluated with the
@@ -2808,7 +2890,7 @@ public final class ExecModelTranspiler {
      *  the outer comparison. A per-contributor negation needs no third runtime helper: ∀c.¬P = ¬∃c.P and
      *  ¬∃c.¬P = ∀c.P, so a NIET matrix simply FLIPS ALLE into GEEN and back. On the NON-temporal route not even
      *  that happens: there the negation is a field of the condition node ({@code Kenmerk.negatie}, or the
-     *  comparison's own operator) and {@link #leafPredicate} reads it, so the quantifier is untouched.
+     *  comparison's own operator) and {@link #matrixVertaling} reads it, so the quantifier is untouched.
      *
      *  <p>An EMPTY contributor set is WAAR for both quantifiers (ch. 3.9a), which both helpers give directly.
      *  Every shape outside this scope goes to {@link #kvSkip} with its own reason — never a silently wrong verdict. */
@@ -2834,20 +2916,21 @@ public final class ExecModelTranspiler {
         // contributor with the ELEMENT as subject, so the fold's shape does not depend on which condition it
         // is — only on how one member is asked. A §8.2 whole-period predicate over ONE tijdlijn member is
         // asked through the ch. 3.9 runtime helpers (the long branch below, which has to pick a field, a
-        // check code and a grens); every OTHER matrix is asked through the same per-subject leaf translation
-        // every other condition of this backend uses, with the element as that subject. A form that leaf
-        // translation does not carry is named, never silently skipped.
+        // check code and a grens); every OTHER matrix is asked through matrixVertaling — the per-subject leaf
+        // translation every other condition of this backend uses, carrying §13.4.14's composite over those
+        // leaves and a §5.6 Parameter as the bound — with the element as that subject. A form it does not
+        // carry is named on the axis it declined on, never silently skipped.
         Conditie.GeheelPeriode gp = geheelPeriodeVan(kv.toets());
-        Predicate1<Object> statischeMatrix = null;   // the NON-temporal route: one leaf, asked per contributor
+        Matrix statischeMatrix = null;   // the NON-temporal route: the lowered matrix, asked per contributor
         String gran = null;
         String tlVeld = null;   // the contributor field holding the List<Segment> the matrix reads
         int toetsCode = 0;      // the rsGeheelPeriode check encoding
         WaardeFn grensFn = null;
         if (gp == null) {
-            statischeMatrix = leafPredicate(kv.toets(), elem);
-            if (statischeMatrix == null)
+            statischeMatrix = matrixVertaling(kv.toets(), elem);
+            if (!statischeMatrix.ok())
                 return kvSkip(kv, "een niet-temporele matrix die de per-subject bladvertaling niet draagt: "
-                        + matrixAs(kv.toets()));
+                        + statischeMatrix.weigering());
         } else {
             gran = gp.jaar() ? "JAAR" : "MAAND";
             if (kv.toets() instanceof Conditie.Vergelijking v) {
@@ -2933,24 +3016,35 @@ public final class ExecModelTranspiler {
             Variable elemsVar = DSL.declarationOf(List.class, "$kvel_" + (seq++));   // the collected contributors
             RuleItemBuilder accStatisch = DSL.accumulate(src,
                     DSL.accFunction(accFn("CollectListAccumulateFunction"), elemVar).as(elemsVar));
-            final Predicate1<Object> matrix = statischeMatrix;
+            final Predicate2<Object, BigDecimal> matrix = statischeMatrix.test();
             final Conditie.Kwantor kwS = kv.kwantor();
             final int dS = kv.drempel();
             // ch. 3.9a's count over the collected contributors, read with ch. 5.10's stop triggers — the same
             // {@link #vastgesteld} table the composite uses, with the contributors as its members. ALLE is
-            // hits == n and GEEN is hits == 0, so all five quantifiers are one comparison.
-            Predicate1<Object> evStatisch = leden -> {
+            // hits == n and GEEN is hits == 0, so all five quantifiers are one comparison. The matrix takes the
+            // bound as its second argument; it is null exactly when the matrix reads no Parameter.
+            Predicate2<Object, BigDecimal> tel = (leden, grens) -> {
                 List<?> ls = (List<?>) leden;
                 int n = ls.size(), hits = 0;
                 for (int i = 0; i < n; i++) {
                     Boolean vast = vastgesteld(kwS, dS, hits, i, n - i);
                     if (vast != null) return vast;
-                    if (matrix.test(ls.get(i))) hits++;
+                    if (matrix.test(ls.get(i), grens)) hits++;
                 }
                 return telVerdict(kwS, dS, hits, n);
             };
-            PatternDSL.PatternDef checkStatisch =
-                    PatternDSL.pattern(elemsVar).expr(nextId("kv"), (Predicate1) evStatisch);
+            Global<BigDecimal> grensGlobal = statischeMatrix.bound();
+            PatternDSL.PatternDef checkStatisch;
+            if (grensGlobal == null) {
+                Predicate1<Object> evStatisch = leden -> tel.test(leden, null);
+                checkStatisch = PatternDSL.pattern(elemsVar).expr(nextId("kv"), (Predicate1) evStatisch);
+            } else {
+                // The §5.6 bound rides as a pattern variable on the SAME eval, exactly as it does on the §8.2
+                // timeline route below — one global, bound once, read per contributor inside the fold.
+                Predicate2<Object, Object> evStatisch = (leden, gv) -> tel.test(leden, (BigDecimal) gv);
+                checkStatisch = PatternDSL.pattern(elemsVar)
+                        .expr(nextId("kv"), (Variable) grensGlobal, (Predicate2) evStatisch);
+            }
             return new Gate(pattern, List.of(accStatisch, checkStatisch));
         }
 

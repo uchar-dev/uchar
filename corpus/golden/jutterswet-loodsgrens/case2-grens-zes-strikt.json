@@ -81,6 +81,11 @@
       "characteristic": "merendeels"
     },
     {
+      "kind": "characteristicAbsent",
+      "label": "L1",
+      "characteristic": "gangbaar"
+    },
+    {
       "kind": "consistent"
     }
   ]

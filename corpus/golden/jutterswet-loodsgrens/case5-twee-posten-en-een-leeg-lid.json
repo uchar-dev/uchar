@@ -99,6 +99,11 @@
       "characteristic": "merendeels"
     },
     {
+      "kind": "characteristicPresent",
+      "label": "L1",
+      "characteristic": "gangbaar"
+    },
+    {
       "kind": "attributeValue",
       "label": "L2",
       "attribute": "loodstal",
@@ -120,6 +125,11 @@
       "kind": "characteristicAbsent",
       "label": "L2",
       "characteristic": "merendeels"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "L2",
+      "characteristic": "gangbaar"
     },
     {
       "kind": "consistent"

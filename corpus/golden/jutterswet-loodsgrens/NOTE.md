@@ -15,6 +15,8 @@ Een Loodspost is onbekwaam   indien de ervaring van geen van de loodsen van de
                              Loodspost groter is dan de keurgrens.
 Een Loodspost is merendeels  indien de ervaring van ten minste 2 van de loodsen
                              van de Loodspost groter is dan de keurgrens.
+Een Loodspost is gangbaar    indien de keurgrens kleiner is dan de ervaring van
+                             alle loodsen van de Loodspost.
 Het loodstal van een Loodspost moet berekend worden als het aantal loodsen van
                              de Loodspost.
 ```
@@ -40,19 +42,26 @@ not merely PRESENT in the matrix here, it is the thing the cells measure.
 The three fold quantifiers are on one matrix, so each case also says what the
 other two make of the same satisfier count.
 
+`gangbaar` is `bekwaam` with the bound written on the OTHER SIDE of the
+comparison — `de keurgrens kleiner is dan de ervaring …` instead of `de ervaring
+… groter is dan de keurgrens`. The two sentences mean the same thing, so the two
+columns are equal in every cell, and THAT equality is the assertion: operand
+order is not a form of its own, and a consumer that recognises the bound only on
+the right must normalise rather than decline.
+
 ## The cells, computed by hand before any executor ran
 
 `count` is the number of loodsen of the post whose `ervaring` exceeds the
 keurgrens; the comparison is STRICT (`groter dan`).
 
-| case | keurgrens | post | de loodsen van de post (ervaring) | loodstal | count | bekwaam (alle) | onbekwaam (geen) | merendeels (≥2) |
-|---|---|---|---|---|---|---|---|---|
-| 1 | 4 | L1 | 8, 6, 5 | 3 | 3 | **ja** | nee | **ja** |
-| 2 | 6 | L1 | 8, 6, 5 | 3 | 1 | nee | nee | nee |
-| 3 | 9 | L1 | 8, 6, 5 | 3 | 0 | nee | **ja** | nee |
-| 4 | 5 | L1 | — | 0 | 0 | **ja** | **ja** | nee |
-| 5 | 5 | L1 | 8, 6 | 2 | 2 | **ja** | nee | **ja** |
-| 5 | 5 | L2 | 3, leeg | 2 | 0 | nee | **ja** | nee |
+| case | keurgrens | post | de loodsen van de post (ervaring) | loodstal | count | bekwaam (alle) | onbekwaam (geen) | merendeels (≥2) | gangbaar (alle, grens links) |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | 4 | L1 | 8, 6, 5 | 3 | 3 | **ja** | nee | **ja** | **ja** |
+| 2 | 6 | L1 | 8, 6, 5 | 3 | 1 | nee | nee | nee | nee |
+| 3 | 9 | L1 | 8, 6, 5 | 3 | 0 | nee | **ja** | nee | nee |
+| 4 | 5 | L1 | — | 0 | 0 | **ja** | **ja** | nee | **ja** |
+| 5 | 5 | L1 | 8, 6 | 2 | 2 | **ja** | nee | **ja** | **ja** |
+| 5 | 5 | L2 | 3, leeg | 2 | 0 | nee | **ja** | nee | nee |
 
 Reading the cells:
 
