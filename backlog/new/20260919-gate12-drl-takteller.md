@@ -7,7 +7,7 @@ daar; dat de DRL-tekst-tak ze om drie pre-existente redenen niet
 speelt, staat alleen in het reden-commentaarblok van de bump — en
 commentaar is documentatie, geen check. Het vierkant is op die vormen
 groen door de takkeuze van de gate, niet door takdekking. De
-DRL-PLAYED-stand (nu 127) werd in het pariteitsprogramma handmatig in
+DRL-PLAYED-stand (nu 132, na de twee Let-kaarten van 2026-09-19) werd in het pariteitsprogramma handmatig in
 Results bijgehouden; niets hekt hem tegen stille krimp behalve gate
 13's twist-vloer (DRL-PLAYED ≥ 13, alleen over twist-goldens).
 

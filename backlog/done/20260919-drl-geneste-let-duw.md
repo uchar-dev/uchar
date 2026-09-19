@@ -358,8 +358,9 @@ DOOR
     two `Let`s, the same shape neither ASP route reaches, and a branch guard
     whose own binder is REBOUND between the `Let` and the branch node, where
     resolving that name against whatever stood in scope higher up had made this
-    branch FABRICATE an Inconsistentie on a document ref, clingo and the
-    exec-model branch call consistent (measured 2026-09-19, pre-existing).
+    branch FABRICATE an Inconsistentie on a document ref and the exec-model
+    branch call consistent — clingo refuses it with its own loud TRANSLATION
+    FAULT (measured 2026-09-19, pre-existing).
 
 **`scripts/check-drools.sh`, het redenblok bij `EXPECTED_PLAYED`** (de alinea die
 met "The DRL-TEXT branch plays THREE of the five" begint). Zij beschrijft (b) en
@@ -393,7 +394,7 @@ blijft 159. Voorstel, als vervanging van die alinea:
     # answered was a fabricated Inconsistentie).
 
 **Voor de kaart `gate12-drl-takteller`** (maintainersbesluit 2026-09-19, de volle
-vorm): de DRL-PLAYED-stand die daar gepind moet worden is **132**, niet de 130
+vorm): de DRL-PLAYED-stand die daar gepind moet worden is **132**, niet de 127
 die in die kaarttekst staat — deze kaart heeft hem met twee opgehoogd.
 
 ## Wat NIET af is, en wat gemeten tegenviel

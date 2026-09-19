@@ -560,26 +560,31 @@ EXPECTED_CHANNEL=(
 # and not merely the arm. Measured before and after over ALL goldens in BOTH branches: exec
 # 154 -> 159, DRL-text 127 -> 127, and exactly these five report lines move — no other golden
 # changes channel or reason in either branch.
-# The DRL-TEXT branch plays THREE of the five since 2026-09-19 (card
-# drl-let-meldplek), and the two it does not are recorded here rather than
-# left to be rediscovered, because this gate does not measure that branch and
-# nothing else would say it. Of the three reasons measured when these goldens
-# landed, (a) is CLOSED: that branch deposited no §9.5 channel reason for a
-# §6.5 place inside a `Let` BODY — the same document without the `Let` played,
-# so the gap was the binding and not the branch — and its companion follows
-# the binding now, so takhek, operatortak and armvangst PLAY there (DRL-text
-# 127 -> 130, measured over all goldens in both branches; this gate's exec
-# count is unmoved and its whole exec report byte-identical). Two remain, both
-# pre-existing: (b) a SECOND nested `Let` between the need and the branch node
-# is still placed eagerly there, so armverdeling's case 1 answers leeg where
-# ref, clingo and the exec branch answer 1,00, and its wrapper rule answers a
-# coalesced 5,00 on that same case where all three answer 6,00 — the barrier
-# shrunk to the arm, so a value defect and not just a missing report;
-# (c) armwissel is refused LOUDLY by name (`TODO takgarde van een
-# voorwaardelijk gelezen behoefte (ch. 10.2)`), which is the honest channel.
-# Carrying (b) is Drools work on the DRL-text transpiler and belongs to its
-# own card (drl-geneste-let-duw); weakening these goldens to make that branch
-# pass would have removed exactly the expectations ref and clingo agree on.
+# The DRL-TEXT branch plays ALL FIVE since 2026-09-19 (cards
+# drl-let-meldplek and drl-geneste-let-duw). That is recorded here rather
+# than left to be rediscovered, because this gate does not measure that
+# branch and nothing else would say it. All three reasons measured when
+# these goldens landed are now CLOSED. (a) The branch deposited no §9.5
+# channel reason for a §6.5 place inside a `Let` BODY — the same document
+# without the `Let` played, so the gap was the binding and not the branch —
+# and its companion follows the binding now (DRL-text 127 -> 130). (b) A
+# second nested `Let` between the need and the branch node was placed
+# eagerly, so armverdeling's case 1 answered leeg where ref, clingo and the
+# exec branch answer 1,00, and its wrapper rule a coalesced 5,00 where all
+# three answer 6,00. The cause was the forcing GATE and not the placement:
+# what stands between a deeper need and the consequence is the enclosing
+# Let's BARRIER, not that need's emptiness, and under a branch guard those
+# differ on the arm that does not read it. (c) armwissel was refused LOUDLY
+# by name (`TODO takgarde van een voorwaardelijk gelezen behoefte
+# (ch. 10.2)`); two adjacent Lets commute, so the exchange gives that guard
+# its binder. DRL-text 130 -> 132, measured over all goldens in both
+# branches; this gate's exec count is unmoved at 159 and its whole exec
+# report byte-identical, so EXPECTED_PLAYED does not move. What that branch
+# still refuses by name, each measured on its own minimal input and each
+# the same boundary the ASP side has: an arithmetic wrapper standing
+# between the two Lets, and a branch guard whose own binder is rebound
+# between the Let and the branch node (that one used to answer, and what it
+# answered was a fabricated Inconsistentie).
 EXPECTED_PLAYED=159
 
 # --- the list's own two guards (fixronde 2026-09-06) -------------------------------------------
