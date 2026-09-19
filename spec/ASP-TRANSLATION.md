@@ -1031,16 +1031,8 @@ fold over ≥ 2 listed operands; dispatched by argument shape within
 v0's listed family minimum/maximum/eerste/laatste only — the vestigial
 `elementObjecttype` v0 stamps on a listed fold names no instance
 source, while a multi-operand som/totaal/aantal keeps its loud fault
-in both executors WHERE THAT STAMP IS PRESENT, v0's accumulate
-consuming the element there. Where it is ABSENT the two executors part
-(measured 2026-09-19 on `corpus/rood/som-fallback-always-evaluated`):
-`ref` CARRIES the listed som — its contributor arm reads the operand
-list whenever `elementObjecttype` is absent, whatever the kind — and
-this backend does not, since every som arm it has ranges a `#sum` over
-an instance source a listed fold never supplies. That refusal now names
-the form (`a som over listed operands is not translated`) instead of
-falling through, for the reason the catch-all inventory below records;
-the
+in both executors *where that stamp is present*, v0's accumulate
+consuming the element there; the
 numeric operands are RS ch. 1.2e's v1 widening, ratified 2026-09-04):
 one helper
 predicate per fold site. Each operand's
@@ -1064,6 +1056,23 @@ integer encoding does not carry — and the S6 range bound on any
 harmonisation product. Minimum/maximum over listed operands would
 take the same encoding; no corpus case exercises them yet, so they
 keep the loud S19 fault.
+
+*Where the stamp is ABSENT, the som parts company with that row*
+(measured 2026-09-19 on `corpus/rood/som-fallback-always-evaluated`,
+which is exactly this shape): `ref` CARRIES the listed som — its
+contributor arm reads the operand list whenever `elementObjecttype` is
+absent, whatever the kind — while this backend does not, since every
+som arm it has ranges a `#sum` over an instance source a listed fold
+never supplies. That refusal is now a NAMED one (`a som over listed
+operands is not translated …`) rather than the expression fall-through,
+for the reason the catch-all inventory below records. Its guard takes
+TWO wire fields, not one: an absent `elementObjecttype` means listed
+*or* dimension cell, because WF-037 grants the DIMENSION som an
+explicit arity exemption (one operand, a `dimensieSelectie`, no stamp),
+and that form is not listed — `ref` refuses it earlier and on its own
+ground, `dimension selection not implemented in this card`. So the
+named arm demands an absent `dimensieSelectie` too, and the dimension
+som keeps the fall-through.
 
 Witnesses (gate 6): count by `jutterswet-erflijn`,
 `jutterswet-maatschap`, `jutterswet-kustregister`, the self-denoting
@@ -2378,22 +2387,28 @@ now refuses the form (`IR-SPEC.md` WF-096, negatiefs
 strictest of the three readings, is what the verifier came round to.
 The arm stays as a second line of defence rather than a gap: a count
 folds the contributors, and a set source hands it values). The LISTED
-som left this catch-all on 2026-09-19 and is the inventory's second
-departure that is not a translation: it has a named arm of its own
-(`a som over listed operands is not translated …`) and is refused
-exactly as before. The form is `SOM` with an ABSENT `elementObjecttype`
-— the crisp test, since every som arm this backend carries demands one
-present — and the reason it needed a name is the catch-all's own
-sentence: `corpus/rood/som-fallback-always-evaluated` fell here, so
-"no corpus case exercises it" was false while that witness stood, the
-same untruth WF-044's condition arm had just removed from the
-condition half. Its two boundaries are pinned in the backend's own
-suite and cannot be pinned by the corpus: a red witness for either
-would re-falsify the sentence by exercising the catch-all again. The
-sibling kinds keep the catch-all and it stays true for them — TOTAAL's
-temporal subject-own arms carry an absent `elementObjecttype`, so
-absence does not mean "listed" there, and the AANTAL listed form is no
-som;
+som left this catch-all on 2026-09-19 WITHOUT being translated: it has
+a named arm of its own (`a som over listed operands is not translated
+…`) and is refused exactly as before. The reason it needed a name is
+the catch-all's own sentence:
+`corpus/rood/som-fallback-always-evaluated` fell here, so "no corpus
+case exercises it" was false while that witness stood — the same
+untruth WF-044's condition arm had just removed from the condition
+half. The form is `SOM` with an absent `elementObjecttype` AND an
+absent `dimensieSelectie`: the first rules out the instance folds
+(every som arm this backend carries demands the stamp present), and the
+second is needed because absence of the stamp alone means listed *or*
+dimension cell — WF-037 exempts the dimension som from the arity rule,
+and `ref` refuses that form on its own ground before asking where the
+contributors come from. Its three boundaries — the kind, the stamp and
+the dimension selection — are pinned in the backend's own suite and
+cannot be pinned by the corpus: a red witness for any of them would
+re-falsify the sentence by exercising the catch-all again. What keeps
+the catch-all keeps it truthfully: TOTAAL's temporal subject-own arms
+carry an absent `elementObjecttype`, so absence does not mean "listed"
+there; the AANTAL listed form is no som; and no document in any zone
+carries a `dimensieSelectie` on a `Functie` at all (measured
+2026-09-19: zero over corpus and parity);
 what remains under it for composites is the member-less
 counting list (`a counting composite without members is not
 translated (no corpus case)`) and every member kind that keeps its
