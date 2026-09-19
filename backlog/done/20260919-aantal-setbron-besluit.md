@@ -361,3 +361,12 @@ plus de verifier. De overige twaalf lezen geen van de aangeraakte bestanden
 — de fixes raken alleen `.md`-proza en geen `ir.json`, geen casus, geen
 script, geen broncode — en hun uitvoer van §7 staat dus. Gate 1 is er voor
 de zekerheid bij gedraaid omdat hij proza in de artefactzones leest.
+
+Daarna is de tak herbased op de nieuwe `main` (`9f41f21a`, de kaart
+frontend-stille-markers). De twee verzamelingen bestanden zijn DISJUNCT —
+die kaart raakt `frontends/regelspraak/**` en haar eigen kaartbestand, deze
+kaart `corpus/negatief/**`, `spec/**` en de verifier — dus er viel niets te
+verzoenen. Gate 1, 2 en 3 opnieuw groen op de gecombineerde boom, en gate 10
+er ter controle bij omdat de andere kaart de frontend-suite veranderde: PASS
+met 317 tests (was 298; de negentien erbij zijn de hare). De overige tien
+lezen niets wat een van beide kaarten daar bewoog.
