@@ -446,7 +446,7 @@ in de backends: kaart 2", en die wordt:
 > vertaalt de soort als een `#count` over dezelfde aanwezigheidsliteral
 > waarmee de som zijn lege bijdragers overslaat, gesleuteld op het
 > ELEMENT zodat de vlakke unie van een `bronPad` een element één keer
-> telt; beide Drools-takken lowerenhem als hun bestaande telaccumulate
+> telt; beide Drools-takken lagen hem naar hun bestaande telaccumulate
 > over een bron versmald tot de gevulde leden. De vier uitvoerders
 > antwoorden daarmee gelijk op vier goldens — de telling naast de
 > instantietelling, het meerstapsbereik, de typeloosheid over tekst,

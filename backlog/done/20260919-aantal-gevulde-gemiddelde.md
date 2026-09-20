@@ -25,12 +25,51 @@ zegt de regel het tegendeel van wat hij doet. Idem op vier andere plaatsen
 waar "de zes waardevouwen" als getal in lopende tekst stond. De twee
 WF-096-MELDINGEN hoefden juist niets: zij noemen geen getal.
 
-**Kaart 2 OPEN:** clingo, beide Drools-takken en de vier getuigen van §5.
-De overdrachtsnotitie staat in het Result van kaart 1, §9 — welke
-weigerarmen er nu staan, wat ze zeggen, en welke twee stappen Drools in
-welke volgorde moet zetten (de `Expr.FunctieKind`-constante hoort bij kaart
-2, niet bij de dialectkaart, want de backend compileert dat record mee).
-Deze ontwerpkaart blijft in `doing/` tot kaart 2 landt.
+**Kaart 2 GELAND (2026-09-20):** `backlog/done/20260920-aantal-gevulde-backends.md`
+— clingo vertaalt de soort als een `#count` over de aanwezigheidsliteral van
+de som, beide Drools-takken lagen hem naar hun bestaande telaccumulate over
+een bron versmald tot de gevulde leden, `Expr.FunctieKind` kreeg de constante
+(leesverbreding, geen emissiewijziging), en het corpus draagt vier goldens en
+twee rode casussen. Alle veertien poorten groen; poort 12's twee
+gelijkheidspinnen 165 → 169 en 142 → 146, poort 8 34 → 36 rode casussen,
+poort 13 129 → 131 twists.
+
+## Slotnotitie (2026-09-20) — het ontwerp is af
+
+Beide uitvoeringskaarten zijn geland en deze ontwerpkaart gaat met de tweede
+mee naar `done/`. Wat er van §5 terechtkwam, eerlijk:
+
+**De vier getuigen van §5 zijn er alle vier**, inclusief de bewaakte deling,
+die in de opdracht van kaart 2 niet stond maar meetbaar bleek zodra de andere
+drie speelden. Zij heeft er een rode tweelingbroer bij gekregen die de andere
+helft van besluit G1 pint: de ONgewaakte deling faalt luid in alle drie de
+uitvoerders die haar bereiken. De ruil van G1 — stil verkeerd wordt luid
+fout, mét een schrijfbare ontsnapping — is daarmee geen berekening in een
+kaart meer maar een artefact in het corpus.
+
+**Twee voorspellingen van §5 zijn gemeten en klopten**: poort 13 hoefde niets
+te leren (de twisttabel raakt de telling niet maar wél haar bron: 129 → 131,
+en de klem sloeg niet aan), en `EXPECTED_MIN_TWISTS` hoefde niet omhoog.
+
+**Eén voorspelling van §5 klopte NIET, in het voordeel.** §3.5 en §5 zeiden
+dat de `bronPad`-golden naar verwachting niet zou spelen in Drools, omdat de
+transpiler een `bronPad`-stap zonder beanveld overslaat. Dat geldt voor de
+relatievorm die de ANKERgolden gebruikt (een veel-op-veel-middenrelatie, waar
+het beanmodel aan geen van beide kanten een veld aflegt), niet voor de vorm
+die het gedeelde element óók draagt: een veel-op-één-middenrelatie, waarvan
+het veld aan de veel-kant staat. Kaart 2 koos die vorm en de golden speelt in
+alle vier de uitvoerders. De gevreesde genoemde weigering op poort 12's
+kanaallijst is er dus niet gekomen.
+
+**Wat er NIET kwam, zoals besloten.** Geen `GEMIDDELDE`-vouw (G1); geen
+producentroute in enige frontend (G9, kaart 3); `dimensieSelectie` en
+`granulariteit` blijven ill-formed en uitgesteld (G7). Nieuw genoteerd door
+kaart 2: de drie eenheidsafleiders van de ASP-backend dragen de soort niet en
+dragen `AANTAL` evenmin — een verbreding daar is een eigen vraag met vandaag
+geen getuige in het gepoorte corpus.
+
+De enige open vervolgkaart uit dit ontwerp is **kaart 3, de dialectzin**
+(besluit G9), met het voorstel en de inertheidswaarschuwing in §4 hierboven.
 
 ## Besluiten (2026-09-19, maintainer)
 
