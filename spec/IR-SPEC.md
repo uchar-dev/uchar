@@ -1699,9 +1699,12 @@ Spelling lookup is trimmed and case-insensitive.
   built-in calendar units, and MUST NOT collide with another day-kind's
   spellings. The calendar spellings are the **thirty** of the normative
   time-unit table (`RUNTIME-SEMANTICS.md` ch. 3.8) — the nine units'
-  singular, abbreviation and plural, plus the second plurals `secondes` and
-  `millisecondes` — and the comparison is against that table itself, so the
-  rule and the arithmetic that would read the spelling cannot drift apart.
+  singular, abbreviation and plural (twenty-seven), plus the second's second
+  abbreviation `s` and the second plurals `secondes` and `millisecondes`
+  (thirty) — and the comparison is against that table itself, so the rule and
+  the arithmetic that would read the spelling cannot drift apart. Spellings
+  are compared trimmed and case-insensitively, as ch. 3.8 states and the
+  ch. 2.1 identity has it.
   *v0 mirror note:* the built-in collision warns and skips; the
   day-kind/day-kind collision is silently first-wins. **Delta (promotion).**
 
@@ -1749,17 +1752,21 @@ not make the document admissible, and this arm is why it is not.
 ordinary entries was verifier-clean, while the same spelling DECLARED was
 already refused by clause 1. Here the IR was weaker than its own producer, and
 what carries that is the REGISTRATION GUARD rather than the grammar: the
-RegelSpraak frontend refuses to register a spelling that coincides with any of
-the eighteen built-in time-unit names, warns, and drops the entry. *Measured
-2026-09-10 over all eighteen as a day-kind plural:* fourteen do not even parse
-— the names are grammar keywords, and the frontend exits non-zero without
-emitting (`Dagsoort de vaardag (mv: weken)`) — while four parse cleanly,
-`uren`, `minuten`, `seconden` and `milliseconden`. For those four the frontend
-emits with exit 0, the guard alone keeps the spelling out of the registry, and
-its warning surfaces in the emitted document's `diagnostics` array instead of
-on the console. Either way no document this frontend emits can carry the shape;
-it is wire-only, which is exactly why it must be a wire rule or nothing.
-Witness: `corpus/negatief/wf017-eenheidsleutel-schaduwt-kalendereenheid`.
+RegelSpraak frontend refuses to register a spelling that coincides with a
+calendar spelling, warns, and drops the entry. It compares against all thirty
+since 2026-09-20 (the paragraph below); what follows is the measurement of the
+day it still knew eighteen, kept because it is what shows the guard and not the
+grammar doing the work. *Measured 2026-09-10 over all eighteen as a day-kind
+plural:* fourteen do not even parse — the names are grammar keywords, and the
+frontend exits non-zero without emitting (`Dagsoort de vaardag (mv: weken)`) —
+while four parse cleanly, `uren`, `minuten`, `seconden` and `milliseconden`.
+For those four the frontend emits with exit 0 and the guard alone keeps the
+spelling out of the registry; its warning is carried in the emitted document's
+`diagnostics` array, and since 2026-09-19 it is also printed to stderr, so a
+producer reading either surface sees it. Either way no document this frontend
+emits can carry the shape; it is wire-only, which is exactly why it must be a
+wire rule or nothing. Witness:
+`corpus/negatief/wf017-eenheidsleutel-schaduwt-kalendereenheid`.
 
 *The comparison is the TABLE, all thirty spellings of it (maintainer decision
 2026-09-19, landed 2026-09-20).* Until then arm (a) and clause 1 both compared

@@ -109,6 +109,22 @@ class DagsoortOpzoekvolgordeWitnessTest {
                 "the tijdsduur position takes the same route: " + eersteDatumRegel(drl));
     }
 
+    // ---------------- the same table, read case-insensitively ----------------
+
+    @Test void een_hoofdletterspelling_is_dezelfde_kalendereenheid() throws Exception {
+        // ch. 3.8 recognises a unit "by SPELLING, case-insensitive", and until 2026-09-20 this branch pair
+        // did not: the plural reducer handed an unrecognised spelling straight back in its ORIGINAL case, so
+        // only the nine `-en` plurals survived a capital. Measured on this document before the repair — the
+        // golden's unit respelled `WK` and NOTHING registered, a verifier-clean document — `ref` replayed all
+        // 13 expectations while both branches here refused the rule ("datum-rekenkunde (dagsoort/onbekende
+        // tijdseenheid)"): a 3-against-2 split with no day kind involved at all. It is LOUD, never silent,
+        // which is why it cost no corpus verdict; it is still two executors answering a question the other
+        // three answer.
+        BeideTakken.groen(tijdelijk("dagsoort-hoofdletterspelling", hoofdletterdocument()),
+                JSON.readTree(KALENDERZAAK),
+                "a capitalised calendar spelling is the same unit — the table is case-insensitive");
+    }
+
     // ---------------- the counter-measurement: a REAL day kind still walks the calendar ----------------
 
     @Test void een_spelling_buiten_de_tabel_blijft_de_dagsoortwandeling() throws Exception {
@@ -133,22 +149,31 @@ class DagsoortOpzoekvolgordeWitnessTest {
      *  says `wk` is a day-kind unit while the table says it is the week. */
     private static ObjectNode splijtdocument() throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(CORPUS.resolve(BERGINGSKLOK).resolve("ir.json")));
-        herdoop(ir);
+        herdoop(ir, "wk");
         ((ObjectNode) ir.get("dagsoortPerEenheid")).put("wk", "springtijdag");
         return ir;
     }
 
-    /** Respell every {@code Eenheid} that reads `springtijdagen` as `wk` — the declarations and the wire's
-     *  repetitions of them alike, so no position is left disagreeing with the declaration it came from. */
-    private static void herdoop(JsonNode x) {
+    /** The golden with its unit respelled `WK` and NOTHING registered beside it — no day kind is involved,
+     *  so what this document asks is only whether the table is read case-insensitively. */
+    private static ObjectNode hoofdletterdocument() throws Exception {
+        ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(CORPUS.resolve(BERGINGSKLOK).resolve("ir.json")));
+        herdoop(ir, "WK");
+        return ir;
+    }
+
+    /** The golden with its day-kind unit RESPELLED as the calendar abbreviation, in the case {@code spelling}
+     *  gives — the declarations and the wire's repetitions of them alike, so no position is left disagreeing
+     *  with the declaration it came from. */
+    private static void herdoop(JsonNode x, String spelling) {
         if (x instanceof ObjectNode o) {
             if ("Eenheid".equals(o.path("node").asText()) && "springtijdagen".equals(o.path("afkorting").asText())) {
-                o.put("afkorting", "wk");
-                if ("springtijdagen".equals(o.path("canoniek").asText())) o.put("canoniek", "wk");
+                o.put("afkorting", spelling);
+                if ("springtijdagen".equals(o.path("canoniek").asText())) o.put("canoniek", spelling);
             }
-            o.forEach(DagsoortOpzoekvolgordeWitnessTest::herdoop);
+            o.forEach(k -> herdoop(k, spelling));
         } else if (x.isArray()) {
-            x.forEach(DagsoortOpzoekvolgordeWitnessTest::herdoop);
+            x.forEach(k -> herdoop(k, spelling));
         }
     }
 

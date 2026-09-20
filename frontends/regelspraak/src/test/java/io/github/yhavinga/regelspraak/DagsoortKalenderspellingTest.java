@@ -55,10 +55,14 @@ class DagsoortKalenderspellingTest {
     }
 
     /** The single diagnostic of severity {@code s}, or an assertion failure naming what was there instead. */
-    private static String enige(RegelSpraakModel m, Severity s) {
+    private static Diagnostic enigeDiagnostic(RegelSpraakModel m, Severity s) {
         List<Diagnostic> d = van(m, s);
         assertEquals(1, d.size(), "exactly one " + s + ": " + m.diagnostics);
-        return d.get(0).message();
+        return d.get(0);
+    }
+
+    private static String enige(RegelSpraakModel m, Severity s) {
+        return enigeDiagnostic(m, s).message();
     }
 
     // ---------------- the declared NAME: an ERROR, so nothing is emitted ----------------
@@ -97,11 +101,19 @@ class DagsoortKalenderspellingTest {
     // ---------------- a declared PLURAL: a WARNING, the entry dropped, the document emits ----------------
 
     @Test void een_afkorting_als_meervoudsvorm_wordt_niet_geregistreerd() {
-        RegelSpraakModel m = resolveer("Dagsoort de vaardag (mv: wk);");
-        assertTrue(enige(m, Severity.WARNING).contains("'wk'"), "the warning quotes the spelling it dropped");
+        RegelSpraakModel m = resolveer("""
+            Dagsoort de zeildag (mv: zeildagen);
+            Dagsoort de vaardag (mv: wk);
+            """);
+        Diagnostic d = enigeDiagnostic(m, Severity.WARNING);
+        assertTrue(d.message().contains("'wk'"), "the warning quotes the spelling it dropped");
+        // The line was hard-coded 0 until 2026-09-20, which points an author at nothing when a document
+        // declares several day kinds — as this one does, so a warning that still said 0 or 1 fails here.
+        assertEquals(2, d.line(), "and points at the declaration it dropped it from: " + d);
         assertTrue(m.isOk(), "a dropped plural leaves a well-formed document — only that spelling is gone");
-        assertEquals(List.of("vaardag"), m.dagsoorten);
-        assertEquals(List.of("vaardag"), List.copyOf(m.dagsoortPerEenheid.keySet()),
+        assertEquals(List.of("zeildag", "vaardag"), m.dagsoorten);
+        assertEquals(List.of("zeildag", "zeildagen", "vaardag"),
+                List.copyOf(m.dagsoortPerEenheid.keySet()),
                 "the day kind keeps its own name as a unit spelling; `wk` stays the calendar week");
     }
 

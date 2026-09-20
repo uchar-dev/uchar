@@ -304,7 +304,7 @@ final class ExpressieBouwer {
         // §6.11: "datum plus 2 kerstdagen" — a declared dagsoort as duration unit is a valid date shift
         // (day-by-day through the §9.8 predicate); the matrix itself cannot know the declared dagsoorten.
         // Through the shared reader, so this typing question and the four lowering positions in the Drools
-        // branches read the spelling in ONE order (ch. 1.2: the calendar table first).
+        // branches read the spelling in ONE order (ch. 3.8: the calendar table first).
         boolean dagsoortRechts = (op == Expr.BinOp.PLUS || op == Expr.BinOp.MIN)
                 && rechts.type() != null
                 && Tijdrekening.dagsoortVoorEenheid(model, rechts.type().eenheidOf()) != null;

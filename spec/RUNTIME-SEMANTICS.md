@@ -1653,6 +1653,20 @@ stepped ± 3 weeks and counted whole weeks (2026-03-31, 2026-02-17, 5,
 the wire no longer carries the contradiction; the order is what keeps
 a consumer from acting on it either way.
 
+*And "case-insensitive" is read as written.* The same day closed a
+second way the executors could part on this table, with no day kind
+involved at all: both Drools branches lower-cased only the nine `-en`
+plurals, because those are the spellings their plural reducer replaced
+while every other one fell through it in its original case. Measured
+2026-09-20 on `jutterswet-bergingsklok` with its unit respelled `WK`
+and nothing registered — a verifier-clean document — the verifier,
+`ref` and the ASP backend reckoned in weeks while both Drools branches
+refused the rule as an unknown time unit. That split was LOUD, never
+silent, and it cost no corpus verdict; it was still two executors
+answering a question the other three answered. A spelling is now
+trimmed and lower-cased before the lookup in every reader, which is
+the ch. 2.1 identity this table has always been compared under.
+
 **Operand order and precision.** The date stands on the **left** of
 both plus and min — a duration-left operand (duration + date, duration
 − date) is ill-formed, as is date ± date (WF-035): v0's typing opens

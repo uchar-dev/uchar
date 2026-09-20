@@ -1129,8 +1129,8 @@ let calendar_spelling s = time_unit_of_spelling (norm s) <> None
    keywords, no IR is emitted at all) and FOUR parse cleanly: `uren`,
    `minuten`, `seconden`, `milliseconden`. For those four the frontend emits
    with exit 0 and the guard alone does the work — the registry comes out
-   without the spelling and the warning lands in the emitted document's
-   `diagnostics` array rather than on the console.
+   without the spelling and the warning is carried in the emitted document's
+   `diagnostics` array and, since 2026-09-19, printed to stderr besides.
    Witnesses: `corpus/negatief/wf017-eenheidsleutel-schaduwt-kalendereenheid`
    and, since the widening below,
    `corpus/negatief/wf017-eenheidsleutel-schaduwt-kalenderafkorting` and
