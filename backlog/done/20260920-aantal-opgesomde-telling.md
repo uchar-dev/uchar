@@ -321,8 +321,24 @@ in de fixronde WÉL aangeraakt (§7b) — dezelfde map die de parallelle kaart
 minimaal en additief gehouden: één arm plus één helper in
 `ExpressieBouwer`, één nieuw testbestand, een commentaarblok bij de
 grammaticaregel en een nieuwe sectie achteraan `DIVERGENCES.md`. Geen
-bestaande productieregel is herschreven en geen bestaande test gewijzigd,
-dus een merge met die kaart raakt alleen aangrenzende regels.
+bestaande productieregel is herschreven en geen bestaande test gewijzigd.
+
+**Nagemeten bij de herbasering op `07732562`, waarin die kaart geland is.**
+Twee conflicten, beide van het soort dat een additieve aanraking
+oplevert. In `ExpressieBouwer.meldAggregatie` landden twee nieuwe
+`case`-armen op dezelfde regel: die kaart `AANTAL_GEVULDE -> null`
+(WF-038's scope-zin), deze kaart `AANTAL -> tellingAriteitFout(...)`.
+Ze staan nu naast elkaar, haar blok byte-identiek eerst, met één zin
+erbij die zegt waarom ze elkaar niet raken — elke telling draagt haar
+eigen ariteitswet. In `DIVERGENCES.md` voegden beide een sectie achteraan
+toe: haar §6 (de dialectextensie) en deze §13.4.17.47; het resultaat
+heeft haar bestand als byte-exacte PREFIX, met mijn sectie erachter, en
+mijn openingszin telt nu drie secties in plaats van twee.
+`RegelSpraak.g4` mergede vanzelf — haar nieuwe alternatief staat ONDER de
+`aantalFunc`-regel waar mijn commentaarblok boven staat. Beide hekken
+daarna nagemeten op de som: de dialectzin emitteert
+`corpus/golden/jutterswet-gevuldetelling` byte-identiek aan de gecommitte
+golden, en de drie opgesomde zinnen bereiken de schijf nog steeds niet.
 
 **May touch, eerlijk gelezen.** Twee aanrakingen liggen buiten wat de
 kaartregel letterlijk vrijgaf. `ref/**` staat in de kaart onder route (b)
@@ -426,7 +442,7 @@ voorschrijft.
                                       citeren geen van de 36 bodemzinnen;
                                       Drools-been 9 gepind, 30 niet-gedragen
      9 check-catala             PASS  201 checks, vloer 201; 12 goldens, vloer 12
-    10 check-regelspraak        PASS  345 JUnit-tests, vloer 173; 64 rgs-goldens
+    10 check-regelspraak        PASS  358 JUnit-tests, vloer 173; 65 rgs-goldens
                                       BYTE-IDENTIEK, vloer 38
     11 check-toka-parity        PASS  29 cases, vloer 29; nul divergenties
                                       (ref 29, clingo 29, Drools 29 PLAYED)
@@ -437,12 +453,14 @@ voorschrijft.
                                       128 replays, 25 DRL-tekst, vloer 13
     14 check-flogic             PASS  130 checks, vloer 81; 2 goldens, vloer 1
 
-Alle veertien opnieuw gedraaid na de fixronde; dit zijn de cijfers van
-die tweede ronde. Geen enkele vloer aangeraakt. De negatiefteller gaat
+Alle veertien nog eens gedraaid na de herbasering op `07732562`; dit
+zijn de cijfers van die derde ronde, op de SOM van deze kaart en de
+dialectzin-kaart. Geen enkele vloer aangeraakt. De negatiefteller gaat
 van 420 naar 423; `EXPECTED_MIN_NEGATIEF` blijft 350 — groei hoeft de
-vloer niet op te tillen. Poort 10 gaat van 338 naar 345 tests: de zeven
-van `AantalOpgesomdTest`. **De 64 rgs-goldens re-emitteren nog steeds
-byte-identiek** — dat is de controle die de frontend-fix moest doorstaan
+vloer niet op te tillen. Poort 10 staat op 358 tests: 351 van `main`
+(waarvan de dialectzin-kaart de hare bracht) plus de zeven van
+`AantalOpgesomdTest`; de 65e rgs-golden is die van de dialectzin.
+**Alle 65 rgs-goldens re-emitteren byte-identiek** — dat is de controle die de frontend-fix moest doorstaan
 en zij bevestigt dat de nieuwe ERROR geen bestaande emissie raakt (geen
 enkele golden-bron draagt de opgesomde vorm). Poort 12 is in de eerste
 ronde twee keer gedraaid, één keer parallel aan poort 8 die ook de
