@@ -205,13 +205,13 @@ final class ExpressieBouwer {
         try { return f.get(); } finally { binderModus = vorige; }
     }
 
-    /** The functie kinds that range over a SET or a TIMELINE and therefore read their operand's shape: the seven
+    /** The functie kinds that range over a SET or a TIMELINE and therefore read their operand's shape: the eight
      *  instance/dimension aggregations, plus the two §7 temporal operators whose operand must be a single-period
      *  temporal attribuut ({@code TIJDSEVENREDIG_DEEL}) or whose "dat …" condition clips one
      *  ({@code AANTAL_DAGEN_IN}). {@link #ingelijnd} covers exactly these. */
     private static boolean aggregeert(Expr.FunctieKind kind) {
         return switch (kind) {
-            case AANTAL, SOM, TOTAAL, MINIMUM, MAXIMUM, EERSTE, LAATSTE,
+            case AANTAL, SOM, TOTAAL, MINIMUM, MAXIMUM, EERSTE, LAATSTE, AANTAL_GEVULDE,
                  TIJDSEVENREDIG_DEEL, AANTAL_DAGEN_IN -> true;
             default -> false;
         };
@@ -512,9 +512,27 @@ final class ExpressieBouwer {
         // a fire-time reflection abort). The plural-binding in attribuutRef already mapped a written plural
         // onto its declared singular, so only a genuinely unknown member reaches this.
         boolean aggregatieKind = switch (kind) {
-            case AANTAL, SOM, TOTAAL, MINIMUM, MAXIMUM, EERSTE, LAATSTE -> true;
+            case AANTAL, SOM, TOTAAL, MINIMUM, MAXIMUM, EERSTE, LAATSTE, AANTAL_GEVULDE -> true;
             default -> false;
         };
+        // WF-037's filled-count shape (IR-SPEC ch. 4.3): the single argument MUST be a SET reading.
+        // Refused HERE, at the operator, because every other kind admits a non-set source for a reason
+        // of its own — the §7.1 timeline fold, the row-1 count wart — so the wire fence is per kind and
+        // the frontend must draw the same one or it emits a document the verifier rejects. ERROR, so
+        // irModus writes nothing: the dialect phrase is new, no committed expectation depends on the
+        // laxer reading, and a silent marker would leave the author with a fold over nothing.
+        if (kind == Expr.FunctieKind.AANTAL_GEVULDE
+                && !(argumenten.size() == 1
+                     && argumenten.get(0) instanceof Expr.AttribuutRef zb && zb.set())) {
+            model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                    "het aantal gevulde waarden van vereist een setlezing als bron: deze vouw leest een WAARDE "
+                            + "per bijdrager, dus haar bron noemt de leden ('… van alle <meervoud> van …') — '"
+                            + bron.snippet() + "' noemt er geen, en het gevulde aantal van één eigen waarde is "
+                            + "0 of 1 (WF-037, IR-SPEC ch. 4.3)", f.getStart().getLine()));
+            // the aggregation's OWN type, not the unknown sentinel: a refused fold must still leave a
+            // well-formed marker (IR-SPEC ch. 2.4), exactly as keurVouwbron's three refusals do
+            return new Expr.Onopgelost(type, bron, null);   // the ERROR above is this marker's diagnosis
+        }
         if (aggregatieKind && argumenten.size() == 1
                 && argumenten.get(0) instanceof Expr.AttribuutRef sa && sa.set()
                 && sa.objecttype() != null && !sa.objecttype().heeftLid(sa.attribuut())) {
@@ -1385,6 +1403,11 @@ final class ExpressieBouwer {
             // §4.16/§4.17 typeringen: the two operands of a (absolute) tijdsduur must BOTH be datum AND have the
             // SAME tijd-precisie.
             case TIJDSDUUR, ABSOLUTE_TIJDSDUUR -> tijdsduurPrecisieFout(kind, typen);
+            // WF-038's scope sentence, spelled out rather than left to the default arm: the filled
+            // count is NOT a numeric fold. Its test is presence, so every operand type counts
+            // (decision G8, RUNTIME-SEMANTICS ch. 3.4c) — a getalAggregatie check here would
+            // silently undo that by refusing a tekst/datum/enumeratie/booleaan source.
+            case AANTAL_GEVULDE -> null;
             default -> null;
         };
         if (fout != null)
@@ -1494,7 +1517,10 @@ final class ExpressieBouwer {
     private Objecttype aggregatieElement(Expr.FunctieKind kind, List<Expr> args) {
         if (args.isEmpty() || !(args.get(0) instanceof Expr.AttribuutRef a)) return null;
         return switch (kind) {
-            case SOM, TOTAAL, MINIMUM, MAXIMUM, EERSTE, LAATSTE -> a.objecttype();
+            // AANTAL_GEVULDE rides the VALUE-fold derivation, not the count's: its argument is an
+            // ATTRIBUTE read over a set, so the element type is the attribute's owner — the very
+            // asymmetry RuleChecker's VOUWSOORTEN note names (a count's element word is a ROLE)
+            case SOM, TOTAAL, MINIMUM, MAXIMUM, EERSTE, LAATSTE, AANTAL_GEVULDE -> a.objecttype();
             case AANTAL -> aantalElement(a.attribuut());
             default -> null;
         };
@@ -1598,7 +1624,9 @@ final class ExpressieBouwer {
             // precision is carded); the first operand's precision would be order-dependent.
             case MINIMUM, MAXIMUM -> args.size() <= 1 || !(eerste instanceof Datatype.Numeriek n) ? eerste
                     : new Datatype.Numeriek(alleGeheel(args), minDecimalen(args), n.teken(), n.eenheid());
-            case AANTAL -> new Datatype.Numeriek(true, 0, Datatype.Teken.NIET_NEGATIEF, null); // a count
+            // both counts: a cardinality is a whole, UNITLESS number whatever the folded attribute
+            // measures (RUNTIME-SEMANTICS ch. 3.4c) — the source's kg never reaches the result
+            case AANTAL, AANTAL_GEVULDE -> new Datatype.Numeriek(true, 0, Datatype.Teken.NIET_NEGATIEF, null);
             // §5.7/§13.4.17.2: a concatenatie is a MULTI-VALUED set (§5.8.1 "altijd meervoudig"), NOT a scalar
             // Tekst — it carries the common type of its operands and is only meaningful once an aggregation
             // (het aantal / de som / de min-max / de eerste-laatste) consumes it (§5.8). This "de concatenatie
@@ -1635,6 +1663,7 @@ final class ExpressieBouwer {
     private Expr.FunctieKind functieKind(FunctieAanroepContext f) {
         if (f instanceof SomFuncContext)        return Expr.FunctieKind.SOM;
         if (f instanceof AantalFuncContext)     return Expr.FunctieKind.AANTAL;
+        if (f instanceof AantalGevuldeFuncContext) return Expr.FunctieKind.AANTAL_GEVULDE;
         if (f instanceof TotaalFuncContext)     return Expr.FunctieKind.TOTAAL;
         if (f instanceof WortelFuncContext)     return Expr.FunctieKind.WORTEL;
         if (f instanceof AbsWaardeFuncContext)  return Expr.FunctieKind.ABSOLUTE_WAARDE;

@@ -100,9 +100,10 @@ public sealed interface Expr {
      *
      *  <p>{@code AANTAL_GEVULDE} is the one member with NO source-language spelling: the filled-value
      *  count (IR-SPEC ch. 4.3, RUNTIME-SEMANTICS ch. 3.4c) is a uchar dialect kind, written first on
-     *  the wire and read here by the Drools backend, which compiles this record. The RegelSpraak
-     *  parser emits it from nothing and no grammar rule produces it — the dialect spelling is a
-     *  separate, later card — so this constant widens what can be READ, never what is written. */
+     *  the wire and read here by the Drools backend, which compiles this record. Since 2026-09-20 it
+     *  also has a PRODUCER route, and that route is a dialect extension of this frontend's grammar
+     *  rather than a v2.3.0 form: "het aantal gevulde waarden van &lt;setlezing&gt;", measured inert on
+     *  official documents in {@code grammar/DIVERGENCES.md} §6. */
     enum FunctieKind {
         SOM, TOTAAL, AANTAL, MINIMUM, MAXIMUM, EERSTE, LAATSTE, AANTAL_GEVULDE, WORTEL, ABSOLUTE_WAARDE,
         CONCATENATIE, TIJDSDUUR, ABSOLUTE_TIJDSDUUR, EERSTE_PAASDAG, TIJDSEVENREDIG_DEEL,

@@ -934,6 +934,13 @@ functieAanroep
     // takes a higher-precedence primaireExpressie: a trailing 'maal'/'plus' binds OUTSIDE the
     // count. Deliberate divergence from the symmetric EBNF — see docs/grammar-divergences.md.
     | HET AANTAL_WORD primaireExpressie ( COMMA primaireExpressie )* ( EN primaireExpressie )?    # aantalFunc
+    // uchar DIALECT EXTENSION (grammar/DIVERGENCES.md §6, decision G9 2026-09-19): the FILLED-value
+    // count, which the source language spells nowhere. Exactly ONE operand and no facet slot — no
+    // leegwaardeAlternatief (a count has no empty to fall back from), no dimensieSelectie and no
+    // conditieBijExpressie (both ill-formed on this kind), so those refusals need no resolver arm.
+    // primaireExpressie for the same precedence reason the telling above gives: a trailing
+    // 'maal'/'plus' binds OUTSIDE the count.
+    | AANTAL_GEVULDE_WAARDEN_VAN primaireExpressie                                                # aantalGevuldeFunc
     | TOTAAL_VAN expressie conditieBijExpressie? leegwaardeAlternatief?                            # totaalFunc      // §13.4.17.56
     | ( MAXIMALE_WAARDE_VAN | MINIMALE_WAARDE_VAN ) expressie ( COMMA expressie )* ( EN expressie )? dimensieSelectie? # minMaxFunc // §13.4.17.15/.16/.47
     | ( EERSTE_VAN | LAATSTE_VAN ) expressie ( COMMA expressie )* ( EN expressie )?                 # eersteLaatsteFunc // §13.4.17.39/.40/.49

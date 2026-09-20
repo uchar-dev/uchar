@@ -272,3 +272,142 @@ silently fold the wrong set, which is by far the worse of the two.
 - The clause declares the relation only. Nothing about the defaults-stack
   composition is authored from source; that is the kernel's, keyed on the
   relation this extension writes.
+
+---
+
+## §6 The filled-value-count extension — `het aantal gevulde waarden van`
+
+Origin: `spec/IR-SPEC.md` ch. 4.3 and `spec/RUNTIME-SEMANTICS.md` ch. 3.4c
+(maintainer decision G9, 2026-09-19). The uchar IR carries an aggregation kind
+`AANTAL_GEVULDE`: over one set source it counts the contributors whose value is
+not leeg, so `{5, 7, leeg}` answers **2** where the instance count answers 3.
+The kind was written on the wire first and answered by all four executors
+before any frontend could author it; this extension is its producer route.
+
+**Official RegelSpraak v2.3.0 has no spelling for the operation at all.**
+§5.8's `<getalaggregatiefunctie>` is a closed alternation of four phrases (the
+count, the maximum, the minimum, the sum), with two more for dates; there is no
+fifth number form and no place to write one. `gevuld` exists in the language
+only as a PREDICATE — §8.1.2, typing §5.11, a boolean test on one subject
+expression — and never as an aggregation. So a flat document can neither write
+this fold nor mean it.
+
+### Surface syntax (additive; one new alternative of `functieAanroep`)
+
+```
+Het aantal gewogen vondsten van een Jutter moet berekend worden als
+    het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter.
+```
+
+New token: `AANTAL_GEVULDE_WAARDEN_VAN`, a whole-phrase token
+(`'het aantal gevulde waarden van'`). The operand is a `primaireExpressie`, for
+the same precedence reason the §13.4.17.47 telling gives: a trailing
+`plus`/`maal` binds OUTSIDE the count, which is what an author means. The
+alternative carries **no facet slot** — no `leegwaardeAlternatief`, no
+`dimensieSelectie`, no `conditieBijExpressie` — because all three are ill-formed
+on this kind (WF-037's "sum only" and "sum/min/max only", and decision G7). A
+facet that cannot be written needs no refusal.
+
+**The extension reserves no name word.** Unlike `Uitzonderingen`/`ongeordend`
+(§4), a whole-phrase token takes only the whole phrase: `gevulde` and `waarden`
+keep lexing as `LOWER_ID` everywhere else, and an attribute or role whose name
+merely begins with "gevulde" is untouched. Only the exact five-word sequence
+changes meaning — and under maximal munch it takes precedence over
+`HET AANTAL_WORD`, which is the risk this section measures.
+
+### Inertness — measured, not assumed
+
+The `is een` extension (§5) could argue inertness from the shape of the
+construct; this one cannot, because the phrase *extends* an existing one. A
+document naming a role or attribute "gevulde waarden …" would have its count
+sentence re-read. So the claim is a measurement, taken 2026-09-20 over **800
+flat RegelSpraak documents** — every one reachable at the time of writing: the
+64 emitter goldens of this corpus, the 47 official-casus documents of the
+repository's temporary parity zone, 176 documents of the reference toolchain's
+own corpus, and 513 documents of an operational ruleset collection — plus the
+six markdown documents of the v2.3.0 specification set (the main specification,
+the typing document, the syntax-diagram document, the ANTLR-targeted draft, the
+casus document and its conversion notes).
+
+- **The phrase occurs nowhere.** Zero occurrences of `aantal gevulde` in any of
+  the 800 documents, and zero in the six specification documents.
+- **The word `gevulde` occurs twice in 800 documents**, both inside `//` line
+  comments in the operational collection, where the lexer cannot reach it. The
+  single specification hit is the substring inside "ingevulde" in a prose figure
+  caption, not a RegelSpraak name.
+- **Every document emits byte-identically before and after.** Each of the 800
+  was run through the frontend built at the commit before this extension and at
+  the commit after it, and the emitted IR plus the diagnostics compared. Zero
+  reinterpretations. Two TEXT changes appear and are accounted for, neither of
+  them a reading: WF-096's message lists the admissible kinds and that list grew
+  by one name, and the ANTLR "expecting {…}" set in a syntax-error message names
+  the new token. Normalising exactly those two leaves no residual difference in
+  any document.
+
+**What the measurement does not claim.** It cannot exclude that some unmeasured
+document names a role "gevulde waarden". What bounds that case is the grammar
+itself: the phrase consumes its `van`, so what follows must be the fold's
+operand, and on such a document the remainder is a to-ONE reading rather than a
+set reading — which the refusal below rejects at ERROR level. The shift is loud,
+never a different answer. That pair — measured absence plus a bounded failure —
+is the whole argument, and both halves carry a fixture
+(`AantalGevuldeDialectTest`).
+
+### Lowering (resolver)
+
+The phrase builds an ordinary `Expr.Functie` with `kind = AANTAL_GEVULDE` and
+one argument, reusing the value folds' machinery rather than adding any:
+
+- the element type is the argument's own object type (`aggregatieElement`), the
+  VALUE-fold derivation — not the count's, whose element word is a role name;
+- the range is the shared one: a single written step goes out as `bronRol`, and
+  a resolved multi-step range as `bronPad` (WF-102), which is ch. 3.4b's flat
+  union and the reason the kind exists at that width;
+- the `die/dat` subselectie rides the shared `aggregatieFilter` path;
+- the result type is a whole, unitless, non-negative number whatever the folded
+  attribute measures (ch. 3.4c). The source's unit is deliberately NOT inherited;
+  a cardinality has none.
+- `meldAggregatie` carries an explicit no-check arm for the kind. Decision G8
+  makes the test typeless — presence is asked of a text, a date, an enumeration
+  value and a boolean alike — so a numeric-operand check here would undo the
+  decision in silence.
+
+`RuleChecker.VOUWSOORTEN` grows with the kind in the same movement, because
+WF-096 admits a set reading on a value fold's source alone and a filled count
+is a count in its RESULT but a value fold in its READING. That set and the
+verifier's `set_source_exempt` are one boundary in two languages;
+`VouwsoortenGrensTest` now READS the verifier's own kind list and the line that
+keys on it, so the two cannot drift again in either direction.
+
+### Fail-fast refusals (resolver, loud diagnostics)
+
+- **WF-037** — a source that is not a set reading. The kind reads a value per
+  contributor, so a to-one source ("… van het gewicht van de Vondst") would ask
+  for the filled count of one own value, which is 0 or 1 and a form no author
+  writes. ERROR, so the document never reaches disk; every other kind admits a
+  non-set source for a reason of its own (the §7.1 timeline fold, the row-1
+  count wart), which is why the fence is drawn per kind.
+- The refusals the value folds already carry reach the new kind unchanged,
+  because it joined the shared aggregation predicate: a source naming no
+  declared member of the element type markers with a WARNING, and the three
+  fold-source refusals (a nested set step, an intermediate to-one anchor, a
+  by-pair binding the written name contradicts) keep refusing here too.
+
+### Emission
+
+Nothing about emission is new: the kind reaches the wire through the same
+`Functie` writer as the other seven, with the same `bronRol`/`bronPad`
+exclusivity. A document that does not write the phrase emits exactly what it
+emitted before, which is the measurement above stated as a property.
+
+### Scope / limitations of this card
+
+- Only the ONE-operand form exists. There is no listed variant ("het aantal
+  gevulde waarden van A, B en C"), because the wire has none: WF-037 pins the
+  arity at exactly one.
+- The temporal set source stays refused downstream, not here. A filled count
+  over a timeline attribute has no moment at which to ask, and the two OCaml
+  executors refuse it by name (`corpus/rood/aantalgevulde-temporele-setbron`);
+  the frontend admits the sentence, as it does for the other folds.
+- The catala and flogic frontends do not get the kind. Each carries its own
+  refusal list, and a wire kind they never write costs them nothing.

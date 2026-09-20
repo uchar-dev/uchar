@@ -37,6 +37,20 @@ unit-bearing operand is also what the annotation-indifference harness
 twists: it substitutes a convertible sister unit on the source and demands
 the same pinned counts back.
 
-No `bron.rgs`: the source language has no spelling for this operation at
-all, so the kind is written first on the wire and has no producer route
-in any frontend.
+`bron.rgs` arrived 2026-09-20 and is this zone's producer-route witness.
+The source language has no spelling for the operation at all, so the kind
+was written on the wire first, with no frontend able to author it; the
+sentence here is a **dialect extension** of the RegelSpraak frontend
+(`frontends/regelspraak/grammar/DIVERGENCES.md` §6, where its inertness on
+official documents is measured rather than asserted):
+
+    het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter
+
+Both rules matter to that witness and neither is spare. The first writes
+the INSTANCE count, whose source is a bare role reading with the row-1
+sentinel; the second writes the filled count, whose source is a SET
+reading of the folded attribute. The two spellings sit one line apart over
+one population, so the re-emission pins that the extension reaches the
+second without disturbing the first. The IR is hand-written and the
+frontend re-emits it byte-identically: the source was written toward this
+file, never the other way round.
