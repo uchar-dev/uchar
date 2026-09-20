@@ -881,7 +881,7 @@ public final class CaseRunner {
         if (leegVerwacht)
             return werkelijk == null ? null : "verwacht leeg, werkelijk " + werkelijk;
         Object verwacht = waardeNaarArg(v.get("value"), attr);
-        return gelijk(verwacht, werkelijk) ? null
+        return gelijkeWaarde(v.get("value"), verwacht, werkelijk) ? null
                 : "attribuut " + attr + ": verwacht " + render(verwacht) + ", werkelijk " + render(werkelijk);
     }
 
@@ -1004,6 +1004,23 @@ public final class CaseRunner {
         if (verw == null) return werkelijk == null;
         if (verw instanceof BigDecimal b) return werkelijk instanceof BigDecimal w && b.compareTo(w) == 0;
         return verw.equals(werkelijk);
+    }
+
+    /** {@link #gelijk} with the ONE value form whose identity is not byte equality: an ENUMERATION label is a
+     *  DECLARED NAME, and ref compares those up to {@code Checks.norm} ({@code arith.ml}: {@code Enum a, Enum b
+     *  -> norm a = norm b}), while the ASP backend stores the normalised label outright. The bean holds the
+     *  case's own spelling — ref keeps that too — so an input written in a capitalisation other than the
+     *  declaration's reads back byte-different and value-equal, and a byte comparator here would report a
+     *  divergence that neither other executor has. {@code corpus/golden/jutterswet-keurstaat} spells one
+     *  deliberately ("Beschadigd" against a declared "beschadigd") and that is what this arm exists for; it was
+     *  unreachable until the enumeration literal reader stopped refusing the whole document (card
+     *  `drools-enumlabel-lezer`, 2026-09-20). The expectation NODE decides, not the Java type: a Tekst value
+     *  arrives as the same String and keeps the exact equality §13.3.3.4 gives it. */
+    private static boolean gelijkeWaarde(JsonNode verwachtNode, Object verw, Object werkelijk) {
+        if (verwachtNode != null && verwachtNode.has("enumeration"))
+            return verw instanceof String a && werkelijk instanceof String b
+                    && Namen.norm(a).equals(Namen.norm(b));
+        return gelijk(verw, werkelijk);
     }
 
     /** The Java value a uchar case value node denotes — the already-normalised scalar the bean setter /
