@@ -462,9 +462,17 @@ in de backends: kaart 2", en die wordt:
 > instantietelling, het meerstapsbereik, de typeloosheid over tekst,
 > datum, enumeratie en booleaan (`onwaar` telt als gevuld), en de
 > handgespelde bewaakte deling — en twee rode casussen pinnen de twee
-> weigeringen: de temporele setbron, die geen moment heeft om op te
-> vouwen, en de ONgewaakte deling, die in alle drie de uitvoerders luid
-> faalt. `Expr.FunctieKind` kreeg de constante omdat de Drools-backend
+> weigeringen: de temporele setbron, die geen moment heeft waarop een
+> gevulde telling een tijdlijn naar gevuldheid kan vragen, en de
+> ONgewaakte deling, die in alle drie de uitvoerders luid faalt. De
+> eerste weigering spreken `ref` en de ASP-backend uit in een EIGEN,
+> benoemde arm die de VOUW noemt en niet alleen de positie: de gedeelde
+> val-door van de per-element-tijdlijnvouw is invariant over vijf
+> vouwsoorten en matchte gemeten woord voor woord ook onder `MINIMUM`,
+> dus een pin erop getuigde van vijf vormen en wees er geen aan; die
+> val-door staat sindsdien op poort 8's bodemzinlijst (36 → 37) en de
+> vier rangschikkende vouwen delen hem nog, tot een rode casus er een
+> wil pinnen. `Expr.FunctieKind` kreeg de constante omdat de Drools-backend
 > het gedeelde IR-record meecompileert; dat is een LEESverbreding, geen
 > emissiewijziging, en de producentroute blijft kaart 3 (besluit G9).
 > De drie eenheidsafleiders van de ASP-backend kregen de soort NIET: een
@@ -639,16 +647,12 @@ Geen vloer bewoog; de twee gelijkheidspinnen van poort 12 bleven op 169 en
 37, een strenger hek), de ref-suite (+1 worked example en zijn
 zustermeting) en de clingo-suite (+1).
 
-### 12. Het rijvoorstel, bijgewerkt
+### 12. Het rijvoorstel
 
-De slotzin van het voorstel in §6 spreekt nu over de eigen arm. Vervang de
-zin over de twee rode casussen door:
-
-> … en twee rode casussen pinnen de twee weigeringen: de temporele
-> setbron, die geen moment heeft waarop een gevulde telling een tijdlijn
-> naar gevuldheid kan vragen — een weigering die `ref` en de ASP-backend
-> sinds de fixronde in een EIGEN, benoemde arm uitspreken, omdat de
-> gedeelde val-door van de per-element-tijdlijnvouw invariant is over vijf
-> vouwsoorten en gemeten woord voor woord ook onder `MINIMUM` matchte;
-> die val-door staat sindsdien op poort 8's bodemzinlijst (36 → 37) — en
-> de ONgewaakte deling, die in alle drie de uitvoerders luid faalt.
+**Het voorstel in §6 is ter plaatse bijgewerkt en staat daar in zijn
+definitieve vorm** — de maintainer kan het blok daar woordelijk overnemen.
+Wat de fixronde eraan veranderde is één passage: de temporele weigering
+heet nu bij haar eigen naam en de zin vertelt waarom dat moest (de
+gedeelde val-door is invariant over vijf vouwsoorten en matchte gemeten
+ook onder `MINIMUM`; hij staat nu op poort 8's bodemzinlijst, 36 → 37).
+Er is geen tweede, concurrerende versie van de rijtekst.
