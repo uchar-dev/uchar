@@ -690,7 +690,7 @@ EXPECTED_CHANNEL=(
 # source, while the wire carries the BARE label (WF-039 crosses it byte-exactly against the declared
 # domain). It therefore answered null on every conforming document, and the five arms that guard on
 # `tekstOfEnumLabel(lit) != null` — the own-attribute, navigated and assertie condition arms plus the
-# VALUE arm in the exec branch, one condition arm in the DRL-text branch — refused every enumeration
+# VALUE arm in the exec branch, the literal lowering of the DRL-text branch — refused every enumeration
 # EQUALITY and every enumeration WRITE. Measured red first in both branches, and the write half
 # separately on the same document with its condition removed (exec `waarde buiten scope`, DRL-text
 # `TODO literal: wrakgoed`), since the condition arm otherwise refuses first and hides it.

@@ -22,10 +22,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * literal through {@code enumLabel}, which demands the {@code '…'} delimiters of the RegelSpraak source.
  * The wire never carries them: IR-SPEC ch. 4.1 puts the BARE label in {@code waarde} and WF-039 crosses it
  * byte-exactly against the declared domain. So on every conforming document the reader answered null, and
- * the five arms that guard on {@code tekstOfEnumLabel(lit) != null} — three condition arms and the assertie
- * arm in the exec-model branch, one in the DRL-text branch, plus the VALUE arm that turns a written literal
- * into a String constant — refused the whole rule. Both branches therefore refused every enumeration
- * EQUALITY and every enumeration WRITE.
+ * the FIVE arms that read through it refused the whole rule: FOUR in the exec-model branch — the
+ * own-attribute condition arm, the navigated one, the assertie arm, and the VALUE arm that turns a written
+ * literal into a String constant — and ONE in the DRL-text branch, whose general literal lowering serves
+ * the condition and the value position alike. Both branches therefore refused every enumeration EQUALITY
+ * and every enumeration WRITE.
  *
  * <p><b>Red first, measured 2026-09-20 on the pre-fix jar</b> (card `drools-enumlabel-lezer`):
  * <pre>

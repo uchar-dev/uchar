@@ -4,10 +4,14 @@ Uit kaart `20260919-v8-enum-emitter` (2026-09-20, lens + mini-fixronde):
 `Literalen.tekstOfEnumLabel` leest een enumeratiewaarde door `enumLabel`,
 dat delimiters verlangt, terwijl de wire per WF-039 het kale label
 draagt. Vijf plekken lezen door die lezer heen, en het zijn niet alleen
-vergelijkingen: `ExecModelTranspiler` 3913 (eigen attribuut), 3928
-(genavigeerd) en 5422, `DrlTranspiler` 5114, en de WAARDE-arm
-`ExecModelTranspiler:4185`, die een enumliteral als geschreven waarde
-omzet. Beide Drools-takken weigeren daardoor zowel elke enumgelijkheid
+vergelijkingen: `ExecModelTranspiler` 3935 (eigen attribuut), 3950
+(genavigeerd) en 5445 (assertie), `DrlTranspiler` 5126 (de
+literal-verlaging van die tak, die ook de waardepositie bedient), en de
+WAARDE-arm `ExecModelTranspiler:4207`, die een enumliteral als
+geschreven waarde omzet. (Het `new/`-kaartje noteerde 3913/3928/5422,
+5114 en 4185; die stonden zo'n 22 regels eerder in de boom van vóór dit
+kaartje en zijn hier bijgetrokken naar de basis van deze branch,
+c4f12743, zodat het dossier als vindplaats bruikbaar blijft.) Beide Drools-takken weigeren daardoor zowel elke enumgelijkheid
 als elke enumtoekenning — apart gemeten op een voorwaardeloze variant:
 exec-model `waarde buiten scope`, DRL-tekst `TODO literal: wrakgoed`. De
 twee geraakte goldens zijn `jutterswet-keurstaat` en
@@ -142,7 +146,7 @@ die ook vastlegt dat verbatim verbatim betekent: een gedelimiteerde
 waarde op een Enumeratie-type wordt NIET alsnog gestript, want WF-039
 keurt haar af en een lezer die haar repareert verzint een label dat de
 verifier nooit gezien heeft. Geen bestaande check gewijzigd; de suites
-groeien 509 → 514 (Drools) en 333 → 338 (frontend).
+groeien 509 → 514 (Drools) en 337 → 338 (frontend — één @Test erbij).
 
 DE SWEEP (kaartpunt c). Alle 222 goldens, beide takken, met de jar vóór
 en de jar na, regel voor regel gedift: precies VIER rapportregels
@@ -158,7 +162,13 @@ en 74 in het rapport, was 53 en 76). Eén telling in de PROZA gecorrigeerd
 omdat zij al scheef stond: de klassekop van de DrlTranspiler-markeringen
 zei "12" over een lijst van 13 — de v8-toevoeging was niet meegeteld —
 en staat nu op 11, met acht gedeelde en drie tak-eigen, herteld tegen de
-exec-sweep.
+exec-sweep. In de mini-fixronde één woord in datzelfde redenblok
+gecorrigeerd: de DRL-kant heette daar "one condition arm", maar
+`DrlTranspiler:5126` zit in `literal()` — de algemene literal-verlaging
+van die tak, die ook de waardepositie bedient (vandaar de gemeten
+weigering `TODO literal: wrakgoed`), dus er staat nu "the literal
+lowering of the DRL-text branch". Beide wijzigingen zijn TEKST in een
+beschermd script; geen enkele pin, lijst of controle beweegt erdoor.
 
 NIET GEBOUWD, en gemeten in plaats van verzwegen. De RULE-kant van
 diezelfde naamidentiteit: beide Drools-takken vergelijken enumlabels in
