@@ -125,7 +125,7 @@ Route (a) uitgevoerd. De opgesomde telling is van de wire geweerd met
 eerlijke correctie op wat de kaart over `ref` aannam. Nul beweging in
 golden, rood en de pariteitszone; alle veertien poorten groen.
 
-### 1. De hermeting op deze HEAD (`ccf7c793`)
+### 1. De hermeting (basis `ccf7c793`, herbased op `0f8ca33c`)
 
 De kaartmeting reproduceert woordelijk, en zij reproduceert breder dan
 de kaart hem stelde. Het meetdocument: een `Functie` met
@@ -140,8 +140,10 @@ kg-lezingen van het onderwerp zelf, casus met één gevulde en één lege.
                             Phase-C scope)
     Drools DRL-tekst  EXCLUDE drl-transpiler MARKER: TODO aggregatie AANTAL
 
-Eén antwoordt, drie weigeren. De sweep die dat cijfer plaatst, over alle
-715 `ir.json` van golden + rood + negatief + pariteit:
+Eén antwoordt, drie weigeren. De sweep die dat cijfer plaatst, over de
+**712** `ir.json` van golden + rood + negatief + pariteit die er VÓÓR deze
+kaart stonden (na de drie nieuwe negatiefs zijn het er 715, en dat is het
+getal dat in de mutantsweeps hieronder staat):
 
     AANTAL,          ariteit 1, MET elementtype   109   de gewone telling
     AANTAL,          ariteit 2, ZONDER elementtype  1   wf091-aantal-decimalen
@@ -311,9 +313,99 @@ steunt op de nu-onbereikbare vorm.
   pint `a som over listed operands is not translated` — de opgesomde
   SOM, die een legale wire-vorm blijft.
 
-**Nul aanrakingen in de botsingszone.** `backends/clingo/**` en
-`backends/drools/**` zijn niet gewijzigd; ze zijn alleen uitgevoerd om
-te meten. De diff tegen `main` bevat geen enkel bestand daar.
+**De botsingszone, per map.** `backends/clingo/**` en `backends/drools/**`
+zijn NIET gewijzigd; ze zijn alleen uitgevoerd om te meten, en de diff
+tegen `main` bevat geen enkel bestand daar. `frontends/regelspraak/**` is
+in de fixronde WÉL aangeraakt (§7b) — dezelfde map die de parallelle kaart
+`20260920-aantal-gevulde-dialectzin` raakt. De aanraking is bewust
+minimaal en additief gehouden: één arm plus één helper in
+`ExpressieBouwer`, één nieuw testbestand, een commentaarblok bij de
+grammaticaregel en een nieuwe sectie achteraan `DIVERGENCES.md`. Geen
+bestaande productieregel is herschreven en geen bestaande test gewijzigd,
+dus een merge met die kaart raakt alleen aangrenzende regels.
+
+**May touch, eerlijk gelezen.** Twee aanrakingen liggen buiten wat de
+kaartregel letterlijk vrijgaf. `ref/**` staat in de kaart onder route (b)
+of (c), niet onder route (a); de uitvoeringsopdracht van de maintainer
+noemt de aanraking expliciet ("ref (alleen de defensieve route + test)")
+en dat mandaat is hier gevolgd — comment plus additieve getuigen, geen
+gedragswijziging. `frontends/**` staat in de kaart onder Out of scope, op
+een grond die gemeten ONWAAR bleek; de fixronde-opdracht draagt het
+mandaat, en §7b legt de grond opnieuw vast.
+
+### 7b. De producentroute — de kaart, en deze notitie, hadden ongelijk
+
+Toegevoegd in de fixronde. De kaart zegt op twee plaatsen dat er geen
+producentroute is en dat `frontends/**` daarom buiten scope valt. **Dat
+is onwaar, en het is met een zin gemeten.** De grammatica van deze
+frontend spelt de opgesomde telling zelf:
+
+    | HET AANTAL_WORD primaireExpressie ( COMMA primaireExpressie )*
+                                        ( EN primaireExpressie )?   # aantalFunc
+
+waar §13.4.17.46 de telling één `<expressie>` geeft en §5.8.1 haar over
+instanties laat lopen. De operandenlijst is een VERRUIMING, overgenomen
+van de `minMaxFunc`- en `eersteLaatsteFunc`-alternatieven ernaast die
+haar wél mogen hebben, en zij stond in `DIVERGENCES.md` NIET
+geregistreerd — het commentaar bij de regel registreert alleen de andere,
+narrowende afwijking (`primaireExpressie` in plaats van `expressie`).
+`ExpressieBouwer.args` bouwt elk kind als eigen argument, dus de lijst
+bereikte de wire.
+
+**Rood-eerst, drie zinnen, gemeten vóór de fix:**
+
+    en-spelling      AANTAL ariteit 2, elementObjecttype null, diagnostics: []
+    komma-spelling   AANTAL ariteit 3, elementObjecttype null, diagnostics: []
+    element-spelling AANTAL ariteit 2, elementObjecttype "Vondst", alleen een
+                     WARNING (over een die/dat-subselectie) — die blokkeert niet
+
+De takverifier wijst alle drie af op WF-037; de basisverifier liet de
+eerste twee door en wees de derde af op WF-034. Geen poort zag dit: geen
+enkele golden-bron draagt de vorm, dus poort 10 komt er niet langs.
+
+**De fix: fail-fast in de resolver, niet in de grammatica.**
+`ExpressieBouwer.meldAggregatie` krijgt één arm, `tellingAriteitFout`,
+ERROR-niveau — `Resolver.irModus` schrijft niets bij een fout, dus het
+document bereikt de schijf niet. De letterlijke melding:
+
+    opgesomde telling: '<bron>' noemt N operanden — een telling vouwt de
+    INSTANTIES waar zij over gaat en heeft geen opgesomde vorm; de
+    brontaal spelt er geen (§5.8.1 telt over onderwerpexpressies,
+    typeringen §4.11 sluit de waardelezing uit), dus er is geen
+    operandenlijst om te lezen. De enige lezing die een lijst een telling
+    overlaat is 'tel de gevulde operanden', en die betekenis draagt
+    AANTAL_GEVULDE over een setbron — een eigen soort op de wire (besluit
+    2026-09-20) (WF-037, IR-SPEC ch. 4.3)
+
+Na de fix bereiken alle drie de zinnen de schijf niet meer, elk met deze
+ene ERROR (de element-spelling houdt daarnaast haar bestaande WARNING).
+
+**Wat er met de grammatica gebeurde: niets, en dat is een keuze met een
+reden.** De lijst blijft staan, nu wél geregistreerd in
+`grammar/DIVERGENCES.md` §13.4.17.47, met de weigering erbij. Drie
+gronden, in volgorde van gewicht: (1) het schrappen van
+`( EN primaireExpressie )?` is een PARSE-wijziging, geen
+diagnose-wijziging — die staart beslist hoe een nalopend voegwoord bindt
+binnen een grotere zin, en 64 byte-identieke emitter-goldens hangen aan
+elke parse; (2) mirror-then-diverge: een verruiming die je schrapt houdt
+op geregistreerd te zijn, en de volgende lezer ontdekt haar opnieuw; (3)
+de weigering is hoe dan ook dezelfde — het verschil is alleen of de
+auteur een benoemde weigering met regelcitaat krijgt of een
+syntaxfout. Dit is precies de houding die `AantalSetbronTest` één besluit
+eerder vastlegt: als de wire versmalt, beweegt het hek van de frontend en
+niet haar grammatica.
+
+**Getuige:** `AantalOpgesomdTest`, zeven checks — de en-spelling
+(inclusief het geïnterpoleerde operandental), de komma-spelling op drie,
+de element-spelling, het regelnummer, de niet-op-schijf-eigenschap, plus
+twee tegenproeven die moeten blijven staan: de eenargumentstelling en de
+OPGESOMDE WAARDEVOUW (dezelfde zinsvorm, dezelfde twee operanden, een
+andere soort). Rood-eerst gemeten: 5 van de 7 faalden vóór de arm, de
+twee tegenproeven slaagden meteen. Geen bestaande test gewijzigd.
+
+**Dit maakt deze kaart een HERPIN-kaart.** Zij wijzigt de frontend, dus
+de toolchain-pin volgt spec-first zoals `CLAUDE.md` § Repo relationships
+voorschrijft.
 
 ### 8. Poorten, alle veertien, elk als losse aanroep
 
@@ -334,8 +426,8 @@ te meten. De diff tegen `main` bevat geen enkel bestand daar.
                                       citeren geen van de 36 bodemzinnen;
                                       Drools-been 9 gepind, 30 niet-gedragen
      9 check-catala             PASS  201 checks, vloer 201; 12 goldens, vloer 12
-    10 check-regelspraak        PASS  338 JUnit-tests, vloer 173; 64 rgs-goldens,
-                                      vloer 38
+    10 check-regelspraak        PASS  345 JUnit-tests, vloer 173; 64 rgs-goldens
+                                      BYTE-IDENTIEK, vloer 38
     11 check-toka-parity        PASS  29 cases, vloer 29; nul divergenties
                                       (ref 29, clingo 29, Drools 29 PLAYED)
     12 check-drools             PASS  gespeeld 172 (pin 172), kanaalvloer 51;
@@ -345,11 +437,17 @@ te meten. De diff tegen `main` bevat geen enkel bestand daar.
                                       128 replays, 25 DRL-tekst, vloer 13
     14 check-flogic             PASS  130 checks, vloer 81; 2 goldens, vloer 1
 
-Geen enkele vloer aangeraakt. De negatiefteller gaat van 420 naar 423;
-`EXPECTED_MIN_NEGATIEF` blijft 350 — groei hoeft de vloer niet op te
-tillen. Poort 12 is twee keer gedraaid: de eerste keer parallel aan
-poort 8, die ook de shaded jar herbouwt, en daarna nog eens serieel
-alleen. Beide keren PASS met dezelfde gepinde cijfers.
+Alle veertien opnieuw gedraaid na de fixronde; dit zijn de cijfers van
+die tweede ronde. Geen enkele vloer aangeraakt. De negatiefteller gaat
+van 420 naar 423; `EXPECTED_MIN_NEGATIEF` blijft 350 — groei hoeft de
+vloer niet op te tillen. Poort 10 gaat van 338 naar 345 tests: de zeven
+van `AantalOpgesomdTest`. **De 64 rgs-goldens re-emitteren nog steeds
+byte-identiek** — dat is de controle die de frontend-fix moest doorstaan
+en zij bevestigt dat de nieuwe ERROR geen bestaande emissie raakt (geen
+enkele golden-bron draagt de opgesomde vorm). Poort 12 is in de eerste
+ronde twee keer gedraaid, één keer parallel aan poort 8 die ook de
+shaded jar herbouwt en daarna serieel alleen; beide keren PASS met
+dezelfde gepinde cijfers, en in de tweede ronde nog eens.
 
 ### 9. Openstaande flanken na deze kaart
 
@@ -371,12 +469,16 @@ alleen. Beide keren PASS met dezelfde gepinde cijfers.
    over `wf096-aantal-setbron-wrat` noteerde: wie "geen enkele consument
    leest dit door" zwaarder weegt dan "één betekenis, één spelling",
    weegt anders. Genoteerd in plaats van weggeschreven.
-3. De frontend-kant is leeg gebleven, zoals de kaart zegt: de brontaal
-   kent de opgesomde telling niet, dus er is geen producentroute te
-   snijden. Niet nagemeten of de RegelSpraak-frontend hem via een
-   naamsbotsing tóch kan emitteren — dat was bij WF-096 wél het geval
-   (naschrift van die kaart) en is hier niet onderzocht. Genoteerd als
-   ongemeten, niet als afwezig.
+3. **De telling van een LIJSTLITERAAL, deel van flank 1 en de scherpste
+   spelling ervan.** Eén `ListLiteral`-argument (ch. 4.8) is ariteit 1,
+   dus de arm zwijgt. Gemeten 2026-09-20: verifier PASS, `ref` antwoordt
+   **1** bij een lijst van twee elementen én bij een LEGE lijst — hij telt
+   het OPERAND en niet de inhoud — clingo TRANSLATION FAULT, en de
+   Drools-loader weigert `Expr:ListLiteral` benoemd. Die spelling staat in
+   het kaartje van flank 1, zodat het sluiten ervan haar niet kan missen.
+4. Niet gemeten: of `ExpressieBouwer` een telling ZONDER elementtype kan
+   emitteren, en langs welke zin. Die vraag hoort bij flank 1 en staat in
+   dat kaartje; hier is alleen de opgesomde route gesneden.
 
 ### 10. Gewijzigde bestanden
 
@@ -388,6 +490,14 @@ alleen. Beide keren PASS met dezelfde gepinde cijfers.
     ref/lib/eval.ml                                           alleen comment
     ref/test/test_ref.ml                                      zes checks erbij
     spec/IR-SPEC.md, spec/RUNTIME-SEMANTICS.md                VOORSTEL
+
+Fixronde erbij:
+
+    frontends/regelspraak/src/main/.../ExpressieBouwer.java   één switch-arm + helper
+    frontends/regelspraak/src/test/.../AantalOpgesomdTest.java        nieuw
+    frontends/regelspraak/grammar/RegelSpraak.g4              alleen commentaar
+    frontends/regelspraak/grammar/DIVERGENCES.md              §13.4.17.47 erbij
+    backlog/new/20260920-aantal-zonder-bron.md                nieuw (flank 1)
 
 De NOTE van `wf091-aantal-decimalen` is een BESTAAND artefact en de
 wijziging is verplicht, geen opsmuk: haar falsificatiealinea beloofde
@@ -432,7 +542,19 @@ te laten en er één alinea aan toe te voegen:
 > Drie negatiefs (`wf037-aantal-opgesomd`, de gemeten vorm;
 > `-drietal`, dat het open eind van de grens pint via het
 > geïnterpoleerde operandental; `-element`, de spelling met de tweede
-> claim). Arm-exact gemeten: de mutant die de arm uitzet is over 715
+> claim). **En het is een doorsnijding van een LEVENDE producentroute,
+> niet het sluiten van een deur die niemand gebruikte** — de grond
+> waarop de kaart route (a) "kost geen enkele uitvoerder werk" noemde,
+> is in dat ene opzicht onjuist gebleken: de grammatica van de
+> RegelSpraak-frontend spelt bij `aantalFunc` zelf een operandenlijst,
+> een ongeregistreerde verruiming van de één-operand-EBNF, en drie
+> zinnen emitteerden daarlangs ongeblokkeerd (twee met
+> `diagnostics: []`). De frontend weigert ze sinds deze kaart bij de
+> knoop met een benoemde ERROR die het document van de schijf houdt; de
+> grammatica houdt de verruiming, nu geregistreerd, omdat een
+> alternatief schrappen zinnen herassocieert in plaats van ze te
+> weigeren. Deze kaart is daarmee een HERPIN-kaart.
+> Arm-exact gemeten: de mutant die de arm uitzet is over 715
 > documenten gedragsmatig letterlijk de oude verifier — nul
 > verdictverschillen, nul zinsverschillen — en de 109 eenargumentstellingen
 > in de vier zones bewegen niet. Kosten: nul bestaande documenten; de
@@ -444,6 +566,10 @@ te laten en er één alinea aan toe te voegen:
 > ÉÉN operand zonder elementtype, of met nul, is geen opgesomde vorm,
 > valt buiten dit besluit en blijft welgevormd — een benoemde open
 > flank, gepind in `ref/test/` en in WF-037 zelf, niet stilzwijgend
-> meegenomen. De opgesomde gevuldtelling blijft uitdrukbaar zodra
+> meegenomen, met een eigen kaart
+> (`backlog/new/20260920-aantal-zonder-bron.md`). Haar scherpste
+> spelling is de telling van een LIJSTLITERAAL: gemeten antwoordt `ref`
+> daar **1**, ook bij een LEGE lijst, want de ariteit-1-route telt het
+> operand en niet de inhoud. De opgesomde gevuldtelling blijft uitdrukbaar zodra
 > iemand er een bronvorm voor normeert; `AANTAL_GEVULDE` draagt de
 > betekenis sinds 2026-09-20 over een setbron.
