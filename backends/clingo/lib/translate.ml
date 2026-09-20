@@ -2008,10 +2008,22 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          comes out — the ordering folds over a date source are well defined
          (ch. 1.2e) and ref = clingo carries them, witness
          `golden/jutterswet-vondstbereik`.
+         WHY [Datum_in_dagen] EXACTLY and not [is_date]. The DAY-typed date
+         is the whole reach this position has, measured 2026-09-20 rather
+         than assumed. A datum-tijd set source never arrives: its rule is
+         routed through [dt_term] one node earlier (the target is
+         datum-tijd typed, and a numeric target would be WF-091), and that
+         arm refuses it there — loudly, though with a sentence that
+         enumerates what it carries. Writing [is_date] here would claim a
+         reach this arm does not have and leave a branch no document can
+         enter. The OTHER non-numeric datatypes are fenced before this
+         point: a text/enum/boolean member reaches [symbolic_term]'s
+         refusal, and under an ORDERING fold the verifier already rejects
+         the document (WF-038).
          Asked of the DECLARATION on the element type (§2.10), never of the
          wire annotation, like every other read in this arm. *)
       (match Ir_v0.Checks.find_ci (objecttype ctx el).attributen a with
-      | Some (Some dt) when Ir_v0.Checks.is_date dt ->
+      | Some (Some Datum_in_dagen) ->
           fault
             "a %s fold over the set source %S adds DATE-valued members of %S: an additive fold is \
              arithmetic, a date is a calendar POSITION, and adding two of them has no meaning — \

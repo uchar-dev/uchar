@@ -58,14 +58,25 @@ public final class Vouwwaarde {
         String kop = "vouw " + f.kind() + " over de setbron '" + attr + "' van " + elem.naam
                 + ": die leden zijn van type " + dt.naam() + " en niet getalachtig, terwijl beide takken"
                 + " elke waardevouw in BigDecimal accumuleren";
-        return optellend
-                ? kop + ". Optellen is rekenkunde en alleen bedragen tellen op; ref werpt op de optelling"
-                        + " zelf een typefout, want een datum is een kalenderPOSITIE en de som van twee"
-                        + " posities is er geen. Geen enkele uitvoerder draagt deze vorm (§5.8.2/§4.20)"
-                : kop + ". De ordenende lezing KIEST één bijgedragen waarde (ch. 1.2e) en is over een"
-                        + " datumbron welgedefinieerd — ref en de ASP-backend dragen haar, getuige"
-                        + " golden/jutterswet-vondstbereik — maar deze tak heeft haar niet gebouwd. Een gat"
-                        + " in deze backend, geen semantisch verschil (§5.8.3)";
+        if (optellend)
+            return kop + ". Optellen is rekenkunde en alleen bedragen tellen op; ref werpt op de optelling"
+                    + " zelf een typefout. Geen enkele uitvoerder draagt deze vorm (§5.8.2/§4.20)";
+        // The ordering tail is chosen on the MEMBER TYPE and never on the kind, because the claim it
+        // makes is about the member type. Over a DATE the reading exists and two executors carry it,
+        // so this branch is the one that is behind; over anything else non-numeric NOBODY carries it
+        // (measured 2026-09-20 on a text source: ref "unordered comparison", clingo declines, and the
+        // verifier refuses the document outright under WF-038 — an ordering fold demands a number or
+        // a date). Choosing on the kind said the first sentence in both cases, which was simply untrue
+        // of the second, and a refusal that misdiagnoses points its reader at the wrong card.
+        if (dt.isDatum())
+            return kop + ". De ordenende lezing KIEST één bijgedragen waarde (ch. 1.2e) en is over een"
+                    + " datumbron welgedefinieerd — ref en de ASP-backend dragen haar, getuige"
+                    + " golden/jutterswet-vondstbereik — maar deze tak heeft haar niet gebouwd. Een gat"
+                    + " in deze backend, geen semantisch verschil (§5.8.3)";
+        return kop + ". De ordenende lezing vraagt een ORDENING op de leden en dit type heeft er geen:"
+                + " geen enkele uitvoerder draagt de vorm, en de verifier laat het document niet eens"
+                + " door (WF-038 eist een getal of een datum onder een ordenende vouw). Deze weigering"
+                + " staat als tweede verdedigingslinie (§5.8.3)";
     }
 
     /** The chain-closed declaration of {@code attr} on {@code ot}, asked through the shared name

@@ -32,6 +32,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * construct. Gate 12 sees the first as an ERROR — which it rightly refuses to excuse — and the
  * second as a channel with no diagnosis in it.
  *
+ * <p>ONE row below rides a document the verifier REJECTS, and it says so in its own comment: an
+ * ORDERING fold over text is WF-038 FAIL, so it can witness no carried form. It is here because the
+ * reason is chosen on the MEMBER TYPE, and that choice needs a case where the two candidate
+ * sentences differ. Every other row is verifier-clean.
+ *
  * <p>The refusals carry TWO different reasons on purpose, and the rows below pin that difference,
  * because it is the whole finding of the card. An ADDITIVE fold over a date has no reading anywhere:
  * {@code ref} faults on the addition itself and the ASP backend declines in translation. An ORDERING
@@ -94,15 +99,37 @@ class DatumSetvouwWitnessTest {
         }
     }
 
-    @Test void een_tekstbron_valt_in_dezelfde_arm() throws Exception {
-        // The second member type that reaches the BigDecimal accumulate on a verifier-clean document,
+    @Test void een_tekstbron_onder_de_optelvouw_valt_in_dezelfde_arm() throws Exception {
+        // The second member type that reaches the BigDecimal accumulate on a VERIFIER-CLEAN document,
         // and the second crash the one arm closes (java.lang.String instead of java.time.LocalDate).
-        // It rides the same fixture so the row cannot pass by testing a different mechanism; only the
-        // case carries text instead of dates, because a date value against a Tekst declaration would
-        // be refused by the case reader and never reach the transpiler at all.
-        BeideTakken.geweigerd(tijdelijk("tekstsetbron", alsTekst(BEREIK)), JSON.readTree(TEKSTZAAK),
-                "vouw MINIMUM over de setbron 'vondstdatum' van Vondst: die leden zijn van type Tekst",
-                "a text set source refuses by name in both branches");
+        // The kind has to be SOM: an ORDERING fold over text is rejected by the verifier itself
+        // (WF-038 — "operand of the MINIMUM ordering fold is text, must be a number or a date",
+        // measured 2026-09-20), so under min/max there is no clean document for this backend to be
+        // wrong about. Under the additive kinds there is: retyped end to end, the document passes.
+        // Only the case carries text instead of dates, because a date value against a Tekst
+        // declaration is refused by the case reader and never reaches the transpiler at all.
+        BeideTakken.geweigerd(tijdelijk("tekstsetbron", alsTekst(BEREIK, "SOM")), JSON.readTree(TEKSTZAAK),
+                "vouw SOM over de setbron 'vondstdatum' van Vondst: die leden zijn van type Tekst en "
+                        + "niet getalachtig, terwijl beide takken elke waardevouw in BigDecimal "
+                        + "accumuleren. Optellen is rekenkunde en alleen bedragen tellen op",
+                "a text set source under an additive fold refuses by name in both branches");
+    }
+
+    @Test void de_ordenende_tekstbron_krijgt_de_derde_zin() throws Exception {
+        // DEFENCE IN DEPTH, and labelled as such. This document is NOT verifier-clean — WF-038
+        // rejects it — so no corpus zone can hold it and the row exists only to pin that the reason
+        // is chosen on the MEMBER TYPE and not on the kind. Choosing on the kind gave a text source
+        // the date sentence ("is over een datumbron welgedefinieerd — ref en de ASP-backend dragen
+        // haar"), which is false of text in every executor: measured 2026-09-20, ref faults
+        // "unordered comparison: \"bb\" vs \"aa\"" and the ASP backend declines. A refusal that
+        // misdiagnoses points its reader at the wrong card, which is the whole cost of getting a
+        // reason wrong.
+        BeideTakken.geweigerd(tijdelijk("tekstordening", alsTekst(BEREIK, null)), JSON.readTree(TEKSTZAAK),
+                "vouw MINIMUM over de setbron 'vondstdatum' van Vondst: die leden zijn van type Tekst en "
+                        + "niet getalachtig, terwijl beide takken elke waardevouw in BigDecimal "
+                        + "accumuleren. De ordenende lezing vraagt een ORDENING op de leden en dit type "
+                        + "heeft er geen",
+                "a text set source under an ordering fold gets the nobody-carries-it sentence");
     }
 
     @Test void een_getalbron_onder_dezelfde_soorten_blijft_spelen() throws Exception {
@@ -124,9 +151,14 @@ class DatumSetvouwWitnessTest {
     }
 
     /** The bereik golden retyped to Tekst end to end — the member declaration, the fold's own type
-     *  and both targets — which is what keeps it past WF-091 (a fold's type must follow its operand). */
-    private static ObjectNode alsTekst(String golden) throws Exception {
+     *  and both targets — which is what carries it past WF-091 (a fold's type must follow its
+     *  operand). WF-038 is the one that then decides: with {@code kind} an additive one the document
+     *  is verifier-CLEAN, with the golden's own MINIMUM/MAXIMUM left standing ({@code kind} null) it
+     *  is verifier-REJECTED, and the two rows above say which they are. */
+    private static ObjectNode alsTekst(String golden, String kind) throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(golden)));
+        if (kind != null)
+            for (JsonNode r : ir.get("resolvedRegels")) ((ObjectNode) r.get("waarde")).put("kind", kind);
         ObjectNode tekst = JSON.createObjectNode().put("node", "Tekst");
         ObjectNode jutter = (ObjectNode) ir.get("objecttypen").get("Jutter").get("attributen");
         jutter.set("vroegste vondstdag", tekst);

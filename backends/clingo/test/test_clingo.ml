@@ -6123,6 +6123,26 @@ let venster_case ~attribuut ~waarde =
 (* De hele verzameling leeg: geen bijdrage, geen vouwwaarde. min/max/eerste/
    laatste kennen geen leegwaardevorm, dus het doel blijft leeg — en de
    presence guard is wat #min/#max hier van #sup/#inf weghoudt. *)
+(* PRECIES ÉÉN gevulde bijdrager: de fold heeft geen tweede operand, dus
+   `agg_som`/`agg_totaal` geven dat ene lid ongewijzigd terug in plaats van
+   iets op te tellen. Over een datumbron is dat een DATUM — het pad waarop
+   `ref` antwoordt zonder ooit de optelling te raken. *)
+let venster_singleton_case ~attribuut ~waarde =
+  Printf.sprintf
+    {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+    { "label": "J1", "objectType": "Jutter", "attributes": {},
+      "roles": { "vondsten": [ "V1" ] }, "characteristics": [] },
+    { "label": "V1", "objectType": "Vondst",
+      "attributes": { "vondstdatum": { "date": "%s" } }, "roles": {},
+      "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "%s",
+      "value": { "date": "%s" } },
+    { "kind": "consistent" } ] }|}
+    waarde attribuut waarde
+
 let venster_leeg_case ~attribuut =
   Printf.sprintf
     {|{ "format": "uchar-case-v0", "asOfDate": null,
@@ -6235,15 +6255,36 @@ let () =
     ~case_text:min_case
     ~needle:
       "a TOTAAL fold over the set source \"vondstdatum\" adds DATE-valued members of \"Vondst\"";
-  (* de weigering hangt aan de DECLARATIE, niet aan de casusdata: met een
-     lege verzameling bereikt geen enkele optelling de dagnummers, en toch
-     weigert de vertaling. Hier loopt `ref` uiteen — zij antwoordt leeg (SOM)
-     respectievelijk 0 (TOTAAL) omdat zij de optelling nooit uitvoert — en die
-     asymmetrie staat opgeschreven in corpus/rood/datumsetbron-totaalvouw. *)
+  (* DE ASYMMETRIE, en zij is hier voor de helft UITVOERBAAR vastgelegd.
+     De weigering hangt aan de DECLARATIE en niet aan de casusdata: met een
+     lege bijdragenverzameling bereikt geen enkele optelling een dagnummer,
+     en toch weigert de vertaling. `ref` voert de optelling daar nooit uit en
+     antwoordt dus wél — leeg bij SOM, 0 bij TOTAAL — dus op die casussen
+     lopen de twee uiteen. Het paar hieronder is die divergentie zelf: één
+     document, één casus, clingo weigert en `ref` antwoordt leeg.
+     De TOTAAL-helft is NIET te pinnen en dat is gemeten, niet overgeslagen:
+     `ref` antwoordt daar het GETAL 0 in een `Datum in dagen`-slot, en een
+     verwachting die dat opschrijft bestaat niet — de casuslezer wijst
+     `{"number": "0"}` tegen een datumdeclaratie af met "value variant
+     \"number\" does not match the declared datatype". Dat de uitkomst niet
+     eens op te schrijven is, is scherper dan een pin zou zijn geweest; zij
+     staat in corpus/rood/datumsetbron-totaalvouw/NOTE.md. *)
   faults_with ~name:"de datum-setbron-weigering gaat over het document, niet over de casus"
     ~ir:(venster_doc ~kind:"SOM" ~attribuut:"vondstdatum" ~doel:"eerste vondstdag")
     ~case_text:(venster_leeg_case ~attribuut:"eerste vondstdag")
-    ~needle:"Declined in translation"
+    ~needle:"Declined in translation";
+  ref_matches ~name:"ref antwoordt leeg op de lege datum-SOM waar clingo weigert"
+    ~ir:(venster_doc ~kind:"SOM" ~attribuut:"vondstdatum" ~doel:"eerste vondstdag")
+    ~case_text:(venster_leeg_case ~attribuut:"eerste vondstdag");
+  (* de SINGLETON-helft van dezelfde asymmetrie, en zij is scherper dan de
+     lege: met PRECIES ÉÉN datumlid heeft `agg_som` geen tweede operand om
+     bij op te tellen, dus zij geeft dat ene lid ongewijzigd terug — een
+     DATUM, niet een getal — terwijl de vertaling ook daar weigert. Gemeten
+     2026-09-20. Dit is de casus die laat zien dat de grens niet bij "leeg"
+     ligt maar bij "minder dan twee bijdragers". *)
+  ref_matches ~name:"ref geeft bij precies EEN datumlid dat lid terug (geen optelling)"
+    ~ir:(venster_doc ~kind:"SOM" ~attribuut:"vondstdatum" ~doel:"eerste vondstdag")
+    ~case_text:(venster_singleton_case ~attribuut:"eerste vondstdag" ~waarde:"2025-06-30")
 
 (* WF-044 op de CONDITIE-positie.
 
