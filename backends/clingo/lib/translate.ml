@@ -5488,6 +5488,24 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
          …`) so both executors name the same position, and the expression arm
          (`… in translation …`) so the phase stays this backend's own. *)
       fault "Onopgelost condition reached in translation: this rule fails observably (WF-044)"
+  | Periode_conditie _ ->
+      (* the ch. 4.5 TimeWindow, given its own arm for ref's reason (see
+         [Eval.eval_cond]): the wildcard below reports the position, and this
+         construct is refused for something specific to it. The refusal, not
+         the gate, is what this backend can honestly carry — ch. 8.2 norms the
+         window in one sentence without a worked example and points at the
+         ch. 3.10 validity window, whose bounds are BOTH inclusive where this
+         node's are from-inclusive and to-exclusive unless `totInclusief`.
+         [applies] above is therefore not the reading to reuse, and grounding
+         one this backend chose itself would put the ASP leg of the
+         differential ahead of the spec instead of behind it. Wording follows
+         ref word for word up to the phase, as the whole-period reader does,
+         so a reader who sees one sentence has seen both. *)
+      fault
+        "a TimeWindow condition (ch. 4.5 Periode, the §8.4.3 van/tot window) gates a rule on the \
+         evaluation date, and no runtime clause fixes that gate: ch. 8.2 names the window in one \
+         sentence and carries no worked example, and it is NOT the ch. 3.10 validity window, whose \
+         two bounds are both inclusive. Declined in translation rather than grounded on a guess"
   | _ -> fault "condition kind not translated (no corpus case exercises it)"
 
 (* the ground term of a Construct (ch. 9.1): a Literal payload scaled to the

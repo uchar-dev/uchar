@@ -2116,7 +2116,32 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
         List.exists (fun (i : World.instance) -> isa env i.otype f) (role_links world self role)
       in
       if negatie then not has_one else has_one
-  | Periode_conditie _ -> Value.fault "condition kind not implemented in this card"
+  | Periode_conditie _ ->
+      (* The ch. 4.5 TimeWindow, and a NAMED refusal rather than the residual
+         sentence this arm used to carry. Since the far-side rolcheck got its
+         own arm (2026-09-20) this match has caught exactly one construct, so
+         a sentence that named none described a one-element set — a refusal
+         waiting for its name.
+
+         Why it is refused and not evaluated, which is the part a reader
+         needs. The window IS normed as a gate: RUNTIME-SEMANTICS ch. 8.2
+         says the evaluation date is tested against it. But that clause
+         carries no worked example and calls the node "the ch. 3.10 period
+         condition", and ch. 3.10 is the VALIDITY window, whose two bounds
+         are both inclusive — this node's are from-inclusive, to-exclusive
+         unless `totInclusief`. So [applies] above is not the reading to
+         reuse; it is the reading with a known off-by-one in it. What a
+         time-free session (asOfDate null) makes of the window, and what the
+         window does to a temporal target, are unstated as well. Both Drools
+         branches DO carry the form (they lower it to "rekendatum inside
+         [vanaf, tot)"), so the corpus cannot arbitrate a reading either: the
+         square splits two-two and `corpus/rood/periodeconditie-bereikt` pins
+         that state. The cure is the period-family card, not a guess here. *)
+      Value.fault
+        "a TimeWindow condition (ch. 4.5 Periode, the §8.4.3 van/tot window) gates a rule on the \
+         evaluation date, and no runtime clause fixes that gate: ch. 8.2 names the window in one \
+         sentence and carries no worked example, and it is NOT the ch. 3.10 validity window, whose \
+         two bounds are both inclusive. Declined here rather than guessed"
   | Conditie_onopgelost _ -> Value.fault "Onopgelost condition reached in evaluation (WF-044)"
 
 (* --- day kinds as duration units (ch. 3.7/3.8) --------------------------

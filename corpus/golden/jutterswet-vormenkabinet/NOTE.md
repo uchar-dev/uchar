@@ -66,7 +66,7 @@ a single expectation can be checked:
 | Rule | Construct (WF row) | Fault the reference interpreter raises |
 |---|---|---|
 | `vakcijfer uit voorjaarsopbrengst` | dimension-cell read of the dimensioned `opbrengst` (WF-004/014/040) | `expression kind not implemented in this card` |
-| `peiling bij dubbele borging` | composite condition with a time-window (`Periode`) member (WF-042) | `condition kind not implemented in this card` — but only on an instance that REACHES the member, see below |
+| `peiling bij dubbele borging` | composite condition with a time-window (`Periode`) member (WF-042) | `a TimeWindow condition (ch. 4.5 Periode, the §8.4.3 van/tot window) gates a rule on the evaluation date, and no runtime clause fixes that gate…` (named arm since 2026-09-20) — but only on an instance that REACHES the member, see below |
 
 The ASP backend mirrors these same refusals by construction
 (`backends/clingo/lib/translate.ml`: everything outside the
@@ -234,16 +234,25 @@ dimension-cell read of the first rule, which needs nothing of the instance.
 
 The second rule needs a reaching instance. Filtering `resolvedRegels` down
 to it (for example with `jq`) and replaying a `Schouwveld` that carries
-**both** `bewaakt` and `omheind` reproduces
-`condition kind not implemented in this card`, at any `asOfDate`, a null
-one included: the refusal is the `Periode` member. An instance with one
+**both** `bewaakt` and `omheind` reproduces the TimeWindow refusal
+(`a TimeWindow condition (ch. 4.5 Periode, the §8.4.3 van/tot window)
+gates a rule on the evaluation date…`), at any `asOfDate`, a null one
+included: the refusal is the `Periode` member. An instance with one
 characteristic or none gives `oracle: PASS` instead — the `ALLE` composite
 stops at the first false member and never reads the window (see the
 instance-dependence note above). `backends/clingo` needs no such care: it
 refuses both rules on any case at all, in its own words —
-`TRANSLATION FAULT: expression kind not translated` and
-`TRANSLATION FAULT: condition kind not translated (no corpus case exercises
-it)`.
+`TRANSLATION FAULT: expression kind not translated` and the same TimeWindow
+sentence, closing "Declined in translation rather than grounded on a
+guess".
+
+Both TimeWindow sentences are NAMED arms since 2026-09-20 (card
+`ref-periodeconditie-arm`); until then this position reported the residual
+`condition kind not implemented in this card`. The construct itself is
+unchanged here — it is still refused, and the reaching instance is still
+what it takes to see it. Its own red witness is
+`corpus/rood/periodeconditie-bereikt`, a document whose whole condition IS
+the window.
 
 All of the above re-measured 2026-09-19 on the shrunken document. The
 validity-window wrinkle this section used to record went out with the two
