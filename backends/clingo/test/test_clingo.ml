@@ -6188,6 +6188,63 @@ let () =
       "a ranking fold (minimum/maximum/eerste/laatste) over the temporal attribute \
        \"bewaartarief\" of a set has no defined moment to fold"
 
+(* --- de DATUM-setbron splijt op ORDENEN tegen OPTELLEN (kaart
+   datum-setbron-breuk, 2026-09-20) ---------------------------------------
+
+   Hetzelfde documentframe als hierboven, alleen de vouwSOORT verschilt, en
+   daar loopt de grens: de ordenende vouwen KIEZEN één bijgedragen waarde
+   (een dagnummer erin, hetzelfde dagnummer eruit) en de optellende vouwen
+   TELLEN hun bijdragen OP, wat over kalenderposities niets betekent.
+
+   Gemeten 2026-09-19 en hermeten op de kop van deze kaart: op een
+   verifier-SCHOON document antwoordde deze backend 39520 — 19737 + 19783 —
+   waar `ref` op de optelling zelf een typefout werpt. Een stellig fout getal
+   is het enige wat een backend niet mag produceren, dus de arm weigert nu bij
+   naam. Het corpus pint beide helften (`rood/datumsetbron-somvouw` en zijn
+   TOTAAL-tweeling; `golden/jutterswet-vondstbereik`); wat hier staat is wat
+   het corpus niet kan zeggen — dat MINIMUM en MAXIMUM op HETZELFDE frame
+   dezelfde waarden geven als EERSTE en LAATSTE hierboven (ch. 1.2e: het is
+   één vouw onder twee namen), en dat de weigering over het DOCUMENT gaat en
+   niet over de casus: ook met een lege bijdragenverzameling, waar geen
+   optelling plaatsvindt, weigert de vertaling. *)
+
+let () =
+  let minimum =
+    venster_doc ~kind:"MINIMUM" ~attribuut:"vondstdatum" ~doel:"eerste vondstdag"
+  in
+  let maximum =
+    venster_doc ~kind:"MAXIMUM" ~attribuut:"vondstdatum" ~doel:"laatste vondstdag"
+  in
+  let min_case = venster_case ~attribuut:"eerste vondstdag" ~waarde:"2025-02-14" in
+  let max_case = venster_case ~attribuut:"laatste vondstdag" ~waarde:"2025-11-01" in
+  ref_matches ~name:"ch1.2e MINIMUM over een datum-setbron is EERSTE's waarde" ~ir:minimum
+    ~case_text:min_case;
+  clingo_matches ~name:"ch1.2e MINIMUM over een datum-setbron is EERSTE's waarde" ~ir:minimum
+    ~case_text:min_case;
+  ref_matches ~name:"ch1.2e MAXIMUM over een datum-setbron is LAATSTE's waarde" ~ir:maximum
+    ~case_text:max_case;
+  clingo_matches ~name:"ch1.2e MAXIMUM over een datum-setbron is LAATSTE's waarde" ~ir:maximum
+    ~case_text:max_case;
+  faults_with ~name:"SOM over een datum-setbron telt geen dagnummers op"
+    ~ir:(venster_doc ~kind:"SOM" ~attribuut:"vondstdatum" ~doel:"eerste vondstdag")
+    ~case_text:min_case
+    ~needle:
+      "a SOM fold over the set source \"vondstdatum\" adds DATE-valued members of \"Vondst\"";
+  faults_with ~name:"TOTAAL over een datum-setbron telt geen dagnummers op"
+    ~ir:(venster_doc ~kind:"TOTAAL" ~attribuut:"vondstdatum" ~doel:"eerste vondstdag")
+    ~case_text:min_case
+    ~needle:
+      "a TOTAAL fold over the set source \"vondstdatum\" adds DATE-valued members of \"Vondst\"";
+  (* de weigering hangt aan de DECLARATIE, niet aan de casusdata: met een
+     lege verzameling bereikt geen enkele optelling de dagnummers, en toch
+     weigert de vertaling. Hier loopt `ref` uiteen — zij antwoordt leeg (SOM)
+     respectievelijk 0 (TOTAAL) omdat zij de optelling nooit uitvoert — en die
+     asymmetrie staat opgeschreven in corpus/rood/datumsetbron-totaalvouw. *)
+  faults_with ~name:"de datum-setbron-weigering gaat over het document, niet over de casus"
+    ~ir:(venster_doc ~kind:"SOM" ~attribuut:"vondstdatum" ~doel:"eerste vondstdag")
+    ~case_text:(venster_leeg_case ~attribuut:"eerste vondstdag")
+    ~needle:"Declined in translation"
+
 (* WF-044 op de CONDITIE-positie.
 
    De expressie-arm van deze vertaler werpt de onopgelost-fout al sinds de

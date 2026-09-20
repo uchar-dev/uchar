@@ -1994,6 +1994,32 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          rows of that table side by side) — so a mirrored pair of arms
          could only drift. *)
       let a = req "fold attribute" attribuut in
+      (* THE ADDITIVE FOLD IS ARITHMETIC, so its members must be amounts.
+         A DATE is not: this encoding gives it a day number (the only
+         non-numeric datatype [decimals_of_datatype] hands a scale at all),
+         and the #sum below would add two calendar positions into a number
+         no calendar reads back. Measured 2026-09-19 on a verifier-CLEAN
+         document, remeasured 2026-09-20: 19737 + 19783 = 39520 answered
+         here where ref faults on the addition itself. A definite wrong
+         number is the one outcome a backend may not produce, so the arm
+         declines instead.
+         WHY ONLY HERE and not one arm down: #min/#max RETURN one
+         contributed value, so a day number goes in and the same day number
+         comes out — the ordering folds over a date source are well defined
+         (ch. 1.2e) and ref = clingo carries them, witness
+         `golden/jutterswet-vondstbereik`.
+         Asked of the DECLARATION on the element type (§2.10), never of the
+         wire annotation, like every other read in this arm. *)
+      (match Ir_v0.Checks.find_ci (objecttype ctx el).attributen a with
+      | Some (Some dt) when Ir_v0.Checks.is_date dt ->
+          fault
+            "a %s fold over the set source %S adds DATE-valued members of %S: an additive fold is \
+             arithmetic, a date is a calendar POSITION, and adding two of them has no meaning — \
+             this translation would add their day numbers and answer a definite number no calendar \
+             reads back. Declined in translation"
+            (match kind with Som -> "SOM" | _ -> "TOTAAL")
+            a el
+      | _ -> ());
       (* THE TEMPORALITY ANCHOR: [el], the elementObjecttype (see
          [fold_operand_otype]). Every read below hangs on the element
          variable and every declaration is looked up on [el], so [el] is
