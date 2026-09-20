@@ -133,3 +133,103 @@ Beide sluitingen in één kaart: het WF-017-verbod gaat alle dertig
 kalenderspellingen dekken (met negatieve getuigen per klasse), én de
 opzoekvolgorde van de eenheid wordt in alle uitvoerders gelijkgetrokken
 — de gemeten bron van de divergentie dicht mee.
+
+## Result (2026-09-20)
+
+Beide sluitingen geland. De kaart heet naar de twaalf afkortingen, maar de
+tabel telt er dertig en dat is wat de regel nu vergelijkt: WF-017 roept
+`time_unit_of_spelling` aan — dezelfde opzoeking waarop WF-035/WF-038 de
+duurrekenkunde routeren — in zowel de gedeclareerde-naam-clausule als arm (a),
+zodat de regel en de semantiek niet meer uiteen kunnen lopen. De vier
+Drools-dagsoortplekken lezen de kalendertabel eerst; die volgorde staat op één
+plek (`Tijdrekening.dagsoortVoorEenheid`) en de frontend-typering leest hem
+ook, zodat vijf lezers hem niet los van elkaar kunnen verliezen.
+
+**Hermeten op 598e3060 (binair md5 `97239d1f8c2706a2548594b0541b5f34`), alle
+vijf metingen van de kaart bevestigd**: de twaalf als registersleutel PASS; een
+gedeclareerde `wk` PASS; de frontend emitteert `Dagsoort de wk (mv: wks)` met
+exit 0, `dagsoorten ["wk"]`, `dagsoortPerEenheid {wk, wks}` en `diagnostics []`;
+`jutterswet-vervaltermijn` draagt `wk`/`mnd`/`kw` als levende kalendereenheid;
+en de OCaml-lezers zijn onverschillig (PASS + `ref` 7/7/8 op de drie cases).
+
+**Rood-eerst, drie getuigen, elk precies één regel**:
+`wf017-eenheidsleutel-schaduwt-kalenderafkorting` (sleutel, afkorting),
+`wf017-dagsoortnaam-schaduwt-kalenderafkorting` (gedeclareerde naam) en
+`wf017-eenheidsleutel-schaduwt-tweede-meervoudsvorm` (`secondes` — geen
+afkorting, en de klasse die een halve reparatie zou laten staan). Alle drie
+PASS onder het binair van vóór de kaart.
+
+**Nul over-afwijzing**: baseline en landed-stand over de vier corpuszones plus
+de pariteitszone (699 documenten) zijn regel voor regel identiek — geen verdict
+en geen rapportregel beweegt. **Arm-exact**: met alleen de verbreding inert
+(de vergelijking terug naar de achttien) worden over alle 702 documenten
+precies de drie nieuwe getuigen schoon en verandert nergens anders een regel.
+
+**De frontend beweegt mee, en verder dan de sleutelkant.** De wacht vergelijkt
+met dezelfde tabel; een gedeclareerde NAAM in de tabel is daar een ERROR, die
+de emissie tegenhoudt. Dat is bewust geen waarschuwing-en-laten-vallen zoals de
+meervoudsvorm krijgt: de naam laten vallen zou zijn §9.8-definitie laten wijzen
+naar een dagsoort die niet meer gedeclareerd is, en dat weigert de verifier op
+zichzelf. Zeven getuigen in `DagsoortKalenderspellingTest` (vijf rood vóór de
+wijziging) plus de dertig-spellingenpin in `TijdrekeningTest`. Hiermee gaat ook
+een oudere, niet-gekaarte flank dicht: `Dagsoort de uren (mv: urens)` emitteerde
+vóór deze kaart met exit 0 een document dat WF-017 al jaren weigert.
+
+**De splijting, gemeten en gesloten.** Splijtdocument: `jutterswet-bergingsklok`
+met zijn eenheid als `wk` gespeld én `wk` geregistreerd. Vóór de ommekeer las
+`ref` de kalender (2026-03-31 / 2026-02-17 / 5 / 5) waar beide Drools-takken de
+dagsoort liepen (2026-04-15 / 2026-02-01 / 3 / 3) — `PLAYED 1` op de
+dagsoortverwachtingen. Na de ommekeer spelen beide takken de
+kalenderverwachtingen die `ref` bevestigt (13 expectations). Omdat het
+verbrede WF-017 dat document afwijst, woont de getuige in de Drools-suite
+(`DagsoortOpzoekvolgordeWitnessTest`, vier rijen: de waarde in beide takken, de
+DRL-tekst, en twee tegenmetingen dat een spelling buiten de tabel nog steeds de
+dagsoortwandeling is). Mutatieproef uitgevoerd en teruggedraaid: de gedeelde
+volgorde terugdraaien laat de getuige falen bij naam in beide takken en over
+acht cellen; één enkele plek terugdraaien (DrlTranspiler §6.11) laat alleen
+`drl-tekst` vallen en alleen op de vier datumcellen.
+
+**Alle veertien gates groen.** Gate 12: `played 165` (pin 165) en DRL-tekst 142
+(pin 142) — geen kanaal bewoog, dus `scripts/check-drools.sh` is niet
+aangeraakt; geen enkel gate-script is aangeraakt. Gate 11 (pariteitszone)
+PASS: geen toka-fixture beweegt onder de frontend-wacht.
+
+**Meegenomen, met reden.** (1) De spellingstabel werd overal aan
+`RUNTIME-SEMANTICS.md` ch. 1.2 toegeschreven; ch. 1.2 is het leegregime en de
+tabel staat normatief in ch. 3.8. Gecorrigeerd in de alinea's die deze kaart
+toch herschreef, in de verifier-comment, in de vier WF-017-NOTE's en in de
+nieuwe code/tests. (2) `Tijdrekening.chronoUnit` struikelde over een `Eenheid`
+zonder afkorting — een vorm die de wire toelaat en die `ref` als "geen eenheid"
+leest; nu null in plaats van een NPE.
+
+**Bewust NIET gedaan.** De producent-diagnostiek op de stille `putIfAbsent`
+(arm (b)'s frontendkant) blijft buiten scope, zoals de kaart zegt. De frontend
+wijzigt, dus de toolchain-herpin is nodig: `SPEC_REV` bumpen en de
+conformance-PR in `regelspraak-java` moet de dertig-spellingenwacht en het
+ERROR-antwoord op de gedeclareerde naam overnemen.
+
+**Registervoorstel** voor `spec/CONSTRUCTS.md` rij 23, aan te vullen achter de
+WF-017-landing van 2026-09-10:
+
+> **Verbreed (2026-09-20, WF-017 gedeclareerde-naam-clausule + arm (a),
+> IR-SPEC ch. 2.9):** de botsingslijst is niet langer de achttien namen van de
+> frontend-wacht maar de **dertig spellingen** van de normatieve tijdseenheid-
+> tabel (`RUNTIME-SEMANTICS.md` ch. 3.8), vergeleken via de tabelopzoeking
+> zelf, zodat regel en duurrekenkunde één bron delen. De twaalf die erbij komen
+> zijn de tien afkortingen (`jr`, `mnd`, `kw`, `wk`, `dg`, `u`, `min`, `sec`,
+> `s`, `ms`) en de twee tweede meervoudsvormen `secondes`/`millisecondes`;
+> getuigen `wf017-eenheidsleutel-schaduwt-kalenderafkorting`,
+> `wf017-dagsoortnaam-schaduwt-kalenderafkorting`,
+> `wf017-eenheidsleutel-schaduwt-tweede-meervoudsvorm`, nul over-afwijzing
+> gemeten over 699 documenten. Anders dan de achttien was deze klasse
+> PRODUCEERBAAR, dus de frontend-wacht bewoog mee (spec-first): een
+> gedeclareerde naam in de tabel is daar een ERROR die de emissie tegenhoudt,
+> een meervoudsvorm blijft waarschuwing-en-laten-vallen. **Leesvolgorde
+> gelijkgetrokken:** ch. 3.8 stelt de volgorde normatief — kalendertabel eerst,
+> dagsoortregister in de val-door-tak — en beide Drools-takken lazen op alle
+> vier hun dagsoortplekken andersom, waardoor de uitvoerders op één toegelaten
+> document uiteenliepen (gemeten: `ref` 2026-03-31/5 tegen Drools
+> 2026-04-15/3). Nu één gedeelde lezer (`Tijdrekening.dagsoortVoorEenheid`),
+> ook door de frontend-typering gebruikt; getuige
+> `DagsoortOpzoekvolgordeWitnessTest` in de Drools-suite, want het
+> splijtdocument is sinds de verbreding niet meer welgevormd.
