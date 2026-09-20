@@ -955,7 +955,25 @@ directly (ref `agg_som (Some 0)`). A som WITHOUT a `leegwaarde` adds a
 least one contributor exists, carried by the reading rule — so the empty
 set leaves the term underivable and the result is leeg, not 0 (ref
 `agg_som None → Empty`; `jutterswet-buitsom`). A fallback OTHER than 0
-stays loud (S19). The *sum* is doubly fenced: each contributor at 46340
+stays loud (S19). A set source whose ELEMENT ATTRIBUTE is declared a
+DAY-TYPED date (`Datum in dagen`) is refused BY NAME, naming the kind,
+the source and the member datatype, before anything grounds: the
+additive fold is arithmetic and the day number this encoding gives a
+date is a POSITION, not an amount, so `#sum` would answer a definite
+number no calendar reads back (measured 2026-09-19 on a
+verifier-clean document: 19737 + 19783 = 39520, where `ref` faults on
+the addition itself). The arm matches that ONE datatype and not dates
+in general, because that is its whole reach: a datum-tijd set source
+is routed through `dt_term` one node earlier and refused there
+(measured 2026-09-20), so a wider match would claim reach this
+position does not have. The question is asked of the DECLARATION on
+the element type (§2.10), so it does not depend on what a case
+supplies: a set with FEWER THAN TWO filled contributors is refused
+too, where `ref` answers without ever performing an addition — the
+single member itself at one contributor, and leeg (som) or 0 (totaal)
+at none. Those two edges are where the two executors part; both are
+recorded in `corpus/rood/datumsetbron-totaalvouw`. Witnesses
+`corpus/rood/datumsetbron-somvouw` and its TOTAAL twin. The *sum* is doubly fenced: each contributor at 46340
 *and* the contributor count at 46340 (`viol` when `46340 < #count{...}`),
 so the accumulated sum provably stays inside 2^31. The bare count
 carries no fence — a `#count` cannot approach 2^31 before grounding
@@ -981,7 +999,13 @@ four kinds refuse as one ranking class). Witnessed by
 a positional pick in both directions. Unlike the listed eerste/laatste
 fold there is one attribute, one scale, one unit — no harmonisation.
 Witnessed by `jutterswet-vondstpiek` (both extremes, the presence guard
-and the empty-skip corners).
+and the empty-skip corners). A DATE element attribute is carried here
+and refused at the som: these folds RETURN one contributed value, so
+a day number goes in and the same day number comes out, and the
+ordering over day numbers IS the ordering over dates. Witness
+`jutterswet-vondstbereik` (hand-computed absolute dates; the same two
+cases as `jutterswet-vondstvenster`, whose EERSTE/LAATSTE are the
+same fold under another name).
 
 Every fold join closes with `isa(X,el)` on the ELEMENT variable — the
 ch. 2.2 population, joined against the reach the `rol/3` atoms deliver.
