@@ -87,25 +87,36 @@ smaakkwestie, en hij is vandaag met verifier-schone invoer bereikbaar.
 ## Acceptance
 
 - Rood-eerst per gesloten clausule: een negatief dat onder de verifier van vóór
-  de kaart PASS is en daarna één regel met regel-ID en positie.
-- Arm-exact: alleen die clausule weg → alleen de nieuwe getuige(n) weer schoon,
-  over de volle vier-zone-sweep plus de pariteitszone.
+  de kaart PASS is en daarna precies één regel met WF-017 en positie. Minstens
+  twee: een afkorting als registersleutel en een afkorting als gedeclareerde
+  dagsoortnaam. De twee klassen — afkorting én tweede meervoudsvorm — worden
+  apart gedekt.
+- Arm-exact: alleen de nieuwe clausule weg → alleen de nieuwe getuigen weer
+  schoon, over de volle vier-zone-sweep plus de pariteitszone.
 - Nul over-afwijzing, gedateerd gemeten, met baseline en landed-stand apart
   benoemd — inclusief de twaalf afkortingen als gewone kalendereenheid, die
-  verifier-schoon MOETEN blijven (`jutterswet-vervaltermijn` is de drager).
-- Als de frontend-wacht meebeweegt: die wijziging is conformance-werk aan
-  `frontends/regelspraak` en heeft zijn eigen getuige in gate 10.
-- Als de Drools-volgorde meebeweegt: een gate-12-getuige die de splitsing
-  vandaag zou aantonen en na de kaart niet meer.
+  verifier-schoon MOETEN blijven (`jutterswet-vervaltermijn` is de drager: `wk`,
+  `mnd`, `kw`; die golden mag geen byte bewegen).
+- De frontend-wacht beweegt mee en krijgt zijn getuige in de frontend-JUnit-
+  suite (gate 10), rood-eerst: eerst de huidige diagnosticloze emissie
+  vastgelegd, dan de wacht.
+- De Drools-volgorde beweegt mee op alle vier de gemeten plekken en krijgt een
+  gate-12-getuige die de splitsing vandaag zou aantonen en na de kaart niet
+  meer. Het splijtdocument (`wk` als dagsoorteenheid geregistreerd én als
+  kalendereenheid gebruikt) wordt onder het verbrede WF-017 verifier-AFGEWEZEN,
+  dus de getuige is een test direct op beide transpilers in de Drools-JUnit-
+  suite; de rood-eerst-meting op het nog wire-bereikbare document staat in het
+  dossier.
 - ch. 2.9 en ch. 1.2 vertellen na afloop de werkelijke dekking; de flank-alinea
-  in ch. 2.9 wordt vervangen door de landing.
-- Alle dertien gates groen.
+  in ch. 2.9 wordt vervangen door de landing, en `secondes`/`millisecondes`
+  worden daar expliciet benoemd.
+- Alle veertien gates groen (de regel hierboven zei dertien; de gateset is sinds
+  het schrijven van deze kaart gegroeid).
 
 May touch: `spec/verifier/**` (voorstel), `spec/IR-SPEC.md` en
 `spec/RUNTIME-SEMANTICS.md` (voorstel), `corpus/negatief/**`,
-`corpus/golden/**`, `backlog/`; bij beslissing (1) ook `frontends/regelspraak`
-en bij (2) `backends/drools` — maar niet in dezelfde kaart als de wire-clausule
-zonder dat de kaart opnieuw gesneden wordt.
+`corpus/golden/**`, `backlog/`, `frontends/regelspraak`, `backends/drools` —
+het besluit hieronder snijdt de kaart opnieuw en neemt beide kanten mee.
 
 ## Out of scope
 
