@@ -1,6 +1,6 @@
 Violates WF-017 (`spec/IR-SPEC.md` ch. 2.9), arm (a): a KEY of
 `dagsoortPerEenheid` that is one of the thirty spellings the normative calendar
-table of `RUNTIME-SEMANTICS.md` ch. 1.2 recognises — here the ABBREVIATION `wk`.
+table of `RUNTIME-SEMANTICS.md` ch. 3.8 recognises — here the ABBREVIATION `wk`.
 
     WF-017 FAIL /dagsoortPerEenheid/wk: registered day-kind unit spelling
     'wk' shadows a built-in calendar unit
@@ -12,7 +12,7 @@ twelve in between — `jr`, `mnd`, `kw`, `wk`, `dg`, `u`, `min`, `sec`, `s`, `ms
 and the second plurals `secondes` and `millisecondes` — fell through the rule
 entirely. The contradiction is the same one
 `corpus/negatief/wf017-eenheidsleutel-schaduwt-kalendereenheid` states for
-`dagen`: ch. 1.2 settles that a duration's unit is recognised by spelling
+`dagen`: ch. 3.8 settles that a duration's unit is recognised by spelling
 through the table and that "a spelling outside the table is a declared day
 kind", while this key says `wk` IS a day-kind unit. Both readings at once is not
 a reading a consumer can hold.
@@ -23,7 +23,7 @@ one of them as a day-kind unit says two things about the same spelling, and
 until 2026-09-19 the executors answered differently: the verifier, `ref` and the
 ASP backend consult the table first, the Drools backend asked the registry
 first at all four of its day-kind positions. That lookup order is turned around
-now, so all four read ch. 1.2's order — which removes the split but not the
+now, so all four read ch. 3.8's order — which removes the split but not the
 contradiction, and the contradiction is what this document carries.
 
 **Unlike the eighteen, this class was PRODUCIBLE.** Measured 2026-09-20 on the

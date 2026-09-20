@@ -1619,6 +1619,40 @@ and demand millisecond-precision (datum-tijd) operands. A spelling
 outside the table is a declared day kind (the day-kind forms above) or
 ill-formed (WF-035/WF-038).
 
+**Thirty spellings, and every one of them is a calendar unit.** The
+table is read as a whole: nine units, thirty spellings, and no spelling
+in it is available for anything else. Three of the thirty are worth
+naming because they are easy to read past. `s` is a spelling of the
+second, one character long. `secondes` and `millisecondes` are SECOND
+PLURAL FORMS, standing beside `seconden` and `milliseconden` rather
+than replacing them — they are not abbreviations, and a reader who
+sorts the thirty into "singulars, plurals and abbreviations" will lose
+exactly those two. The ten abbreviations (`jr`, `mnd`, `kw`, `wk`,
+`dg`, `u`, `min`, `sec`, `s`, `ms`) plus those two are the twelve that
+are neither the singular nor the `-en` plural, and **WF-017 refuses all
+thirty equally** as a day-kind spelling — as a declared name and as a
+key of `dagsoortPerEenheid` alike (`IR-SPEC.md` ch. 2.9;
+maintainer decision 2026-09-19). The twelve stay ordinary calendar
+units wherever a unit is written; golden `jutterswet-vervaltermijn`
+carries `wk`, `mnd` and `kw` that way.
+
+**The lookup ORDER is normative, and it is this table first.** "Outside
+the table" is a test on the table, so a consumer resolving a duration's
+unit spelling consults THIS table first and the day-kind registry
+(`dagsoortPerEenheid`) only where the table has nothing. Every executor
+reads it in that order — the verifier's WF-035/WF-038 clauses, the
+reference interpreter, the ASP backend and both Drools branches. The
+two Drools branches asked the registry first until 2026-09-20, at all
+four of their day-kind positions, and on a document that registered a
+calendar spelling as a day-kind unit the executors therefore answered
+differently: measured on `jutterswet-bergingsklok` with its unit
+spelled `wk` and `wk` registered beside it, the reference interpreter
+stepped ± 3 weeks and counted whole weeks (2026-03-31, 2026-02-17, 5,
+5) while both Drools branches walked the day kind (2026-04-15,
+2026-02-01, 3, 3). WF-017 refuses that document since the same day, so
+the wire no longer carries the contradiction; the order is what keeps
+a consumer from acting on it either way.
+
 **Operand order and precision.** The date stands on the **left** of
 both plus and min — a duration-left operand (duration + date, duration
 − date) is ill-formed, as is date ± date (WF-035): v0's typing opens

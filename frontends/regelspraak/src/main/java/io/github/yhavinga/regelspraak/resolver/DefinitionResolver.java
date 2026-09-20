@@ -810,7 +810,7 @@ public final class DefinitionResolver {
     }
 
     /** A dagsoort unit spelling that collides with a spelling of the NORMATIVE calendar table
-     *  (uchar's RUNTIME-SEMANTICS ch. 1.2 — thirty spellings, abbreviations and second plurals included) is
+     *  (uchar's RUNTIME-SEMANTICS ch. 3.8 — thirty spellings, abbreviations and second plurals included) is
      *  NOT registered: it must not shadow the calendar arithmetic of {@code datum ± N dagen}; warn instead.
      *  The comparison goes through {@link Tijdrekening} rather than a list of its own, so this guard and the
      *  arithmetic that reads a unit spelling can never come to know different tables — which is what they

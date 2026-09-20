@@ -1083,7 +1083,7 @@ let wf016 ctx =
       | _ -> [])
     ctx.doc.tijdlijnen
 
-(* A spelling the NORMATIVE calendar table carries (RUNTIME-SEMANTICS ch. 1.2).
+(* A spelling the NORMATIVE calendar table carries (RUNTIME-SEMANTICS ch. 3.8).
    The comparison goes through `time_unit_of_spelling` — the same table WF-035
    and WF-038 route duration arithmetic on — rather than through a list of its
    own, so the rule that forbids a day-kind spelling and the semantics that
@@ -1104,7 +1104,7 @@ let calendar_spelling s = time_unit_of_spelling (norm s) <> None
    over `/dagsoorten` above them is unchanged.
 
    ARM (a) — a registry KEY that shadows a built-in calendar unit. Such a key
-   makes the document contradict itself: `RUNTIME-SEMANTICS.md` ch. 1.2 states
+   makes the document contradict itself: `RUNTIME-SEMANTICS.md` ch. 3.8 states
    normatively that a duration's unit is recognised by spelling through the
    calendar table and that "a spelling outside the table is a declared day
    kind", while a registry key declares exactly that spelling to be a day-kind
@@ -1139,7 +1139,7 @@ let calendar_spelling s = time_unit_of_spelling (norm s) <> None
    WIDENED to the THIRTY-spelling table (maintainer decision 2026-09-19, card
    `20260910-dagsoort-afkortingssleutels`). Until then arm (a) and the clause
    above compared against the EIGHTEEN names the frontend's registration guard
-   knew — the singular and the plural of the nine units — while ch. 1.2
+   knew — the singular and the plural of the nine units — while ch. 3.8
    recognises thirty. The twelve that are neither (`jr`, `mnd`, `kw`, `wk`,
    `dg`, `u`, `min`, `sec`, `s`, `ms`, and the second plurals `secondes` and
    `millisecondes`) fell through both, measured 2026-09-20 on the pre-card
@@ -1153,7 +1153,7 @@ let calendar_spelling s = time_unit_of_spelling (norm s) <> None
    an ERROR there, which blocks the emission, because dropping the name alone
    would leave its §9.8 definition dangling), and the Drools backend's lookup
    order was turned around at all four of its day-kind positions so that every
-   executor reads ch. 1.2's order — table first, registry in the fall-through.
+   executor reads ch. 3.8's order — table first, registry in the fall-through.
    The comparison is `time_unit_of_spelling` itself, so the rule and the
    arithmetic share one table by construction. Cost, measured 2026-09-20 over
    all four corpus zones plus the read-only parity zone (699 documents): not one

@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The ORDER in which a §6.10/§6.11 duration unit is recognised, held to RUNTIME-SEMANTICS ch. 1.2: the
+ * The ORDER in which a §6.10/§6.11 duration unit is recognised, held to RUNTIME-SEMANTICS ch. 3.8: the
  * calendar table first, the day-kind registry only where the table has nothing — "a spelling outside the
  * table is a declared day kind", so outside is what the registry gets.
  *
@@ -50,7 +50,7 @@ class DagsoortOpzoekvolgordeWitnessTest {
     /** The §6.10/§6.11 day-kind golden: a springtijdag walk over date + duration and both tijdsduur forms. */
     private static final String BERGINGSKLOK = "jutterswet-bergingsklok";
 
-    /** The golden's own case1 inputs with the CALENDAR outcome pinned — `wk` is the week of the ch. 1.2 table,
+    /** The golden's own case1 inputs with the CALENDAR outcome pinned — `wk` is the week of the ch. 3.8 table,
      *  so the two steps are ± 3 weeks and the two counts are whole weeks. Hand-computed, and reproduced
      *  exactly by {@code ref} on this document (13 expectations, measured 2026-09-20). */
     private static final String KALENDERZAAK = """
@@ -114,7 +114,7 @@ class DagsoortOpzoekvolgordeWitnessTest {
     @Test void een_spelling_buiten_de_tabel_blijft_de_dagsoortwandeling() throws Exception {
         // A reversal that simply stopped consulting the registry would pass the row above and break every
         // day-kind duration there is. The unmodified golden's unit is `springtijdagen`, which stands outside
-        // the table, so ch. 1.2 makes it a declared day kind — and both branches must still walk it.
+        // the table, so ch. 3.8 makes it a declared day kind — and both branches must still walk it.
         Path ir = CORPUS.resolve(BERGINGSKLOK).resolve("ir.json");
         JsonNode zaak = JSON.readTree(Files.readString(CORPUS.resolve(BERGINGSKLOK).resolve("case1.json")));
         BeideTakken.groen(ir, zaak, "a spelling outside the table is still a declared day kind");

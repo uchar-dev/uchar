@@ -12,7 +12,7 @@ read the first place only, so its built-in conjunct held for the declared name
 and for no other registered spelling.
 
 **What is wrong with this key: the document contradicts itself.**
-`RUNTIME-SEMANTICS.md` ch. 1.2 settles the reading normatively — a duration's
+`RUNTIME-SEMANTICS.md` ch. 3.8 settles the reading normatively — a duration's
 unit is recognised by spelling through the calendar table, and "a spelling
 outside the table is a declared day kind". This document registers `dagen` as a
 day-kind unit while the table carries it as the plural of `dag`. Both readings

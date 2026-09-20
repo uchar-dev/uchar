@@ -1695,12 +1695,15 @@ v0 name: the `dagsoorten` registry (the day-kind's *definition* — a
 predicate over a date — is a rule-layer form, `CONSTRUCTS.md` row 23).
 Spelling lookup is trimmed and case-insensitive.
 
-- **WF-017** A day-kind's spellings MUST NOT collide with the built-in
-  calendar units (day/week/month/quarter/year/hour/minute/second/
-  millisecond, singular or plural), and MUST NOT collide with another
-  day-kind's spellings. *v0 mirror note:* the built-in collision warns and
-  skips; the day-kind/day-kind collision is silently first-wins. **Delta
-  (promotion).**
+- **WF-017** A day-kind's spellings MUST NOT collide with a spelling of the
+  built-in calendar units, and MUST NOT collide with another day-kind's
+  spellings. The calendar spellings are the **thirty** of the normative
+  time-unit table (`RUNTIME-SEMANTICS.md` ch. 3.8) — the nine units'
+  singular, abbreviation and plural, plus the second plurals `secondes` and
+  `millisecondes` — and the comparison is against that table itself, so the
+  rule and the arithmetic that would read the spelling cannot drift apart.
+  *v0 mirror note:* the built-in collision warns and skips; the
+  day-kind/day-kind collision is silently first-wins. **Delta (promotion).**
 
 *What the wire checks, spelled out because a day kind's spellings live in two
 places.* On the v0 wire the singular name stands in the `dagsoorten` list, and
@@ -1720,7 +1723,7 @@ MUST, checked wherever a spelling is registered):
 | 4 | registered spelling × another day kind's spelling | **WF-017 arm (b)**, over `/dagsoortPerEenheid/<key>` — in the one form the wire can see: a DECLARED name registered as another day kind's spelling. The collision as such leaves no trace (one value per key), so no clause can reach it |
 
 *Arm (a) — a key that shadows a calendar unit.* Such a key makes the document
-contradict itself. `RUNTIME-SEMANTICS.md` ch. 1.2 settles the reading
+contradict itself. `RUNTIME-SEMANTICS.md` ch. 3.8 settles the reading
 normatively: a duration's unit is recognised by spelling through the calendar
 table, and "a spelling outside the table is a declared day kind". A registry
 key says *this spelling is a day-kind unit*; a spelling the table carries says
@@ -1728,17 +1731,19 @@ key says *this spelling is a day-kind unit*; a spelling the table carries says
 can hold, and it is not a defect any one consumer must notice for the wire to
 be wrong.
 
-Two of them do not, and one does — *measured 2026-09-10, and it is the second
+Two of them did not, and two did — *measured 2026-09-10, and it is the second
 reason the arm exists.* The verifier (WF-035, WF-038), `ref` and the ASP
 backend all consult the calendar table FIRST and reach the day-kind registry
 only where the table has nothing, so on those three a key `dagen` changes
-nothing at all: `datum + 5 dagen` stays calendar arithmetic. The Drools backend
-reverses the order at all four of its day-kind positions — it asks the registry
-before the table — so on the same document it reads day-kind arithmetic where
-the other three read calendar arithmetic. The executors SPLIT, which is what
-makes this a wire question rather than a taste. (The lookup order itself
-contradicts the normative sentence above; correcting it is the backend's own
-change, and it does not remove the contradiction on the wire.)
+nothing at all: `datum + 5 dagen` stays calendar arithmetic. Both Drools
+branches reversed the order at all four of their day-kind positions — they
+asked the registry before the table — so on the same document they read
+day-kind arithmetic where the other three read calendar arithmetic. The
+executors SPLIT, which is what makes this a wire question rather than a taste.
+*Closed 2026-09-20:* the order is normative (`RUNTIME-SEMANTICS.md` ch. 3.8,
+the paragraph on the lookup order) and all four of those positions now read the
+table first, so no consumer acts on the contradiction either way — which does
+not make the document admissible, and this arm is why it is not.
 
 *Measured 2026-09-10:* before this arm, `"dagen": "schouwdag"` beside the
 ordinary entries was verifier-clean, while the same spelling DECLARED was
@@ -1756,22 +1761,44 @@ on the console. Either way no document this frontend emits can carry the shape;
 it is wire-only, which is exactly why it must be a wire rule or nothing.
 Witness: `corpus/negatief/wf017-eenheidsleutel-schaduwt-kalendereenheid`.
 
-*What arm (a) does not reach: the ABBREVIATIONS, and it is a real flank.* Arm
-(a) and clause 1 both compare against the eighteen names the frontend's
-registration guard knows — the singular and plural of the nine units. The
-calendar table of `RUNTIME-SEMANTICS.md` ch. 1.2 recognises **thirty**
-spellings; the twelve that are neither singular nor plural (`jr`, `mnd`, `kw`,
-`wk`, `dg`, `u`, `min`, `sec`, `s`, `ms`, `secondes`, `millisecondes`) fall
-through both. *Measured 2026-09-10:* all twelve are verifier-clean as registry
-keys, and unlike the eighteen this flank is NOT wire-only — the frontend emits
-`Dagsoort de wk (mv: wks)` with exit 0, an empty `diagnostics` array and the
-registry key `wk`, and it admits `wk` as a declared name as well. Goldens
-carry the abbreviations as live calendar units (`jutterswet-vervaltermijn`
-uses `wk`, `mnd` and `kw`), so with the executors' lookup-order divergence
-above such a document splits them in earnest. Widening the comparison to the
-thirty-spelling table is not a free edit — the frontend's guard would have to
-widen with it, which is the conformance side of the pin — and it is carded:
-`backlog/new/20260910-dagsoort-afkortingssleutels.md`.
+*The comparison is the TABLE, all thirty spellings of it (maintainer decision
+2026-09-19, landed 2026-09-20).* Until then arm (a) and clause 1 both compared
+against the eighteen names the frontend's registration guard knew — the
+singular and plural of the nine units — while the calendar table of
+`RUNTIME-SEMANTICS.md` ch. 3.8 recognises **thirty**. The twelve that are
+neither singular nor `-en` plural fell through both: the ten abbreviations
+`jr`, `mnd`, `kw`, `wk`, `dg`, `u`, `min`, `sec`, `s`, `ms`, and the two SECOND
+PLURAL FORMS `secondes` and `millisecondes`, which are not abbreviations at all
+and which a repair aimed at abbreviations alone would have left standing. They
+get the same answer, and the second plurals are named here because that is the
+only thing that keeps them from being read past. *Measured 2026-09-20 on the
+binary of the day before (md5 `97239d1f8c2706a2548594b0541b5f34`):* all twelve
+were verifier-clean as registry keys AND as declared names.
+
+Unlike the eighteen this flank was NOT wire-only, which is what made it
+urgent: the frontend emitted `Dagsoort de wk (mv: wks)` with exit 0, an EMPTY
+`diagnostics` array, the registry key `wk` and `wk` in `dagsoorten`. Goldens
+carry the abbreviations as live calendar units (`jutterswet-vervaltermijn` uses
+`wk`, `mnd` and `kw`), so under the lookup-order divergence above such a
+document split the executors in earnest — measured on `jutterswet-bergingsklok`
+respelled to `wk`: `ref` 2026-03-31 / 2026-02-17 / 5 / 5 against both Drools
+branches' 2026-04-15 / 2026-02-01 / 3 / 3.
+
+Both halves moved with the widening, which is what made it a single change
+rather than three. The **comparison** is now the table lookup itself rather
+than a list beside it, so a rule and the arithmetic it fences cannot come to
+know different tables. The **producer** moved with it, spec-first: the
+frontend's registration guard compares against the same table, and a declared
+NAME that stands in it is an ERROR there — which blocks the emission, because
+dropping the name alone would leave its §9.8 definition pointing at a day kind
+`dagsoorten` no longer declares. The **executors** moved with it too (the
+paragraph above). *Cost, measured 2026-09-20 over the four corpus zones plus
+the read-only parity zone, 699 documents:* not one verdict and not one report
+line moves, and the twelve stay verifier-clean wherever they are written as
+ordinary calendar units. Witnesses: `wf017-eenheidsleutel-schaduwt-kalenderafkorting`
+(a key), `wf017-dagsoortnaam-schaduwt-kalenderafkorting` (a declared name), and
+`wf017-eenheidsleutel-schaduwt-tweede-meervoudsvorm` (the second-plural class,
+which the other two do not reach).
 
 *Arm (b) — a declared name that binds to another day kind.* Here the producer
 is exactly as weak as the wire. Registration is `putIfAbsent` — first-wins,
@@ -7472,7 +7499,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-014 | dimension labels non-empty, duplicate-free, ordered | gate 3 | `jutterswet-vormenkabinet` (the seizoen labels) | `wf014-empty-labels` |
 | WF-015 | one timeline declaration per normalized name; references resolve | gate 3 | `jutterswet-penningjaar` | `wf015-timeline-collision` |
 | WF-016 | variable-start timeline is anchored (rule-layer check) | gate 3 (existence of the determination; the anchor-write typing is WF-032/WF-023) | `jutterswet-vormenkabinet` (the variable-start boekjaar with its start point) | `wf016-unanchored-variable-start` |
-| WF-017 | day-kind spellings shadow no built-in unit and no other day-kind | gate 3, three clauses over the two wire positions a spelling can occupy (ch. 2.9): the DECLARED name against the built-ins, plus **arm (a)** a registry KEY against the built-ins and **arm (b)** a declared name registered as a DIFFERENT day kind's unit spelling — the wire-visible form of the silent first-wins collision, whose losing registration the wire cannot show (one value per key). A key that is not a declared name stays free: no plural field exists on the v0 wire (the (s) argument, ch. 4.6) | `jutterswet-vormenkabinet` (two day kinds, each bound to itself — one of them only through the ch. 2.1 identity — and two plural keys, `schouwdagen` and `stormvloeddagen`, each binding to its own day kind and colliding with no declaration) | `wf017-daykind-shadows-builtin` + `wf017-eenheidsleutel-schaduwt-kalendereenheid` (arm (a)) + `wf017-dagsoortnaam-bindt-vreemde-dagsoort` (arm (b), the frontend's own emission) |
+| WF-017 | day-kind spellings shadow no built-in unit and no other day-kind | gate 3, three clauses over the two wire positions a spelling can occupy (ch. 2.9): the DECLARED name against the built-ins, plus **arm (a)** a registry KEY against the built-ins and **arm (b)** a declared name registered as a DIFFERENT day kind's unit spelling — the wire-visible form of the silent first-wins collision, whose losing registration the wire cannot show (one value per key). "The built-ins" are the THIRTY spellings of the normative time-unit table (`RUNTIME-SEMANTICS.md` ch. 3.8), compared through that table itself since 2026-09-20, abbreviations and the second plurals `secondes`/`millisecondes` included; the producer moved with it (a declared name in the table is an ERROR in the RegelSpraak frontend) and so did the executors' lookup order. A key that is not a declared name stays free: no plural field exists on the v0 wire (the (s) argument, ch. 4.6) | `jutterswet-vormenkabinet` (two day kinds, each bound to itself — one of them only through the ch. 2.1 identity — and two plural keys, `schouwdagen` and `stormvloeddagen`, each binding to its own day kind and colliding with no declaration); `jutterswet-vervaltermijn` from the other side (`wk`, `mnd` and `kw` as ordinary calendar units, which the widening must leave clean) | `wf017-daykind-shadows-builtin` + `wf017-eenheidsleutel-schaduwt-kalendereenheid` (arm (a)) + `wf017-dagsoortnaam-bindt-vreemde-dagsoort` (arm (b), the frontend's own emission) + the three of the thirty-spelling widening: `wf017-eenheidsleutel-schaduwt-kalenderafkorting`, `wf017-dagsoortnaam-schaduwt-kalenderafkorting`, `wf017-eenheidsleutel-schaduwt-tweede-meervoudsvorm` |
 | WF-018 | parameter datatype resolves; timeline facet well-formed | gate 3 (datatype clause; the facet clause carries the WF-005 caveat) | `jutterswet-penningjaar` | `wf018-parameter-onbekend` |
 | WF-019 | serialization preserves declaration order | `scripts/check-ir-schema.sh` (byte-identical round-trip) | `jutterswet-vondsttelling` (multi-element ordered lists round-trip) | OPEN (no data-shaped counterexample exists: the canonical re-emit is a serializer property, so a reordering fault lives in a consumer, never in admissible data — recorded) |
 | WF-020 | form names unique across all NAMED forms (ci) — the ch. 3 versioned rule forms and the ch. 6.1 defaults groups, one namespace. *Widened 2026-09-12* to the defaults groups: the sentence already said "across all rule forms" and only the list the check read was short, so this is an existing number reaching a form it always described, not a new rule. Deliberately NOT split off under its own number — one property, one number, or one collision would cite WF-020 between two rules and something else between a rule and a group. The widening also narrowed a false second report: the bare-versus-versioned arm now needs a versioned member to mix with, since without one the entries are an exact duplicate the first arm already names (it frees nothing — with no versioned member the stripped name IS the name) | gate 3 (via the v0 " #i" strip-and-group migration reading) | `jutterswet-vondstnummer`; and every defaults golden, whose group names differ from every rule name — measured 2026-09-12 over the four zones (golden 184, rood 26, negatief 386, parity 30): 626 documents, 1107 named forms of which 69 are defaults groups, and not one collision outside this rule's own witnesses | `wf020-crossform-collision` (between two ch. 3 forms) + `wf020-defaultsgroep-botst-met-regel` (a group against a rule) + `wf020-defaultsgroep-duplicaat` (two groups) — the three fall independently: a check reading only the ch. 3 list refuses the first and passes the other two, and one that adds the groups to only the cross arm or only the within arm passes one of those two |

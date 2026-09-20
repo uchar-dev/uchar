@@ -1,6 +1,6 @@
 Violates WF-017 (`spec/IR-SPEC.md` ch. 2.9), the DECLARED-NAME clause: a day
 kind in `dagsoorten` whose name is one of the thirty spellings the normative
-calendar table of `RUNTIME-SEMANTICS.md` ch. 1.2 recognises — here the
+calendar table of `RUNTIME-SEMANTICS.md` ch. 3.8 recognises — here the
 ABBREVIATION `wk`.
 
     WF-017 FAIL /dagsoorten: day-kind 'wk' shadows a built-in calendar unit

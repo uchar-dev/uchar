@@ -29,7 +29,7 @@ public final class Tijdrekening {
         return e == null ? null : chronoUnitVanSpelling(e.afkorting());
     }
 
-    /** Whether {@code spelling} stands in the NORMATIVE calendar table (uchar's RUNTIME-SEMANTICS ch. 1.2,
+    /** Whether {@code spelling} stands in the NORMATIVE calendar table (uchar's RUNTIME-SEMANTICS ch. 3.8,
      *  thirty spellings over nine units). That table is what decides which of the two readings a duration
      *  unit has — "a spelling outside the table is a declared day kind" — so the day-kind registration guard
      *  must compare against exactly it and against no list of its own, or the producer admits a spelling the
@@ -63,7 +63,7 @@ public final class Tijdrekening {
      *  it names none — and null, too, whenever the spelling stands in the calendar table, WHATEVER the day-kind
      *  registry says about it.
      *
-     *  <p>That order is the point of this method, and it is normative: RUNTIME-SEMANTICS ch. 1.2 recognises a
+     *  <p>That order is the point of this method, and it is normative: RUNTIME-SEMANTICS ch. 3.8 recognises a
      *  duration's unit by spelling through the table and settles the remainder with "a spelling outside the
      *  table is a declared day kind" — outside, so the table goes first. The verifier (WF-035, WF-038), the
      *  reference interpreter and the ASP backend have always read it that way; both Drools branches asked the

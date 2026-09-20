@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The registration guard against the NORMATIVE CALENDAR TABLE (`RUNTIME-SEMANTICS.md` ch. 1.2), the
+ * The registration guard against the NORMATIVE CALENDAR TABLE (`RUNTIME-SEMANTICS.md` ch. 3.8), the
  * producer half of WF-017 (`IR-SPEC.md` ch. 2.9).
  *
  * <p><b>Red first, measured 2026-09-20 on the commit before this card.</b> The guard compared against
@@ -64,7 +64,7 @@ class DagsoortKalenderspellingTest {
     // ---------------- the declared NAME: an ERROR, so nothing is emitted ----------------
 
     @Test void een_afkorting_als_dagsoortnaam_is_een_fout() {
-        // THE ROW. `wk` is the week's abbreviation in the ch. 1.2 table, so a day kind of that name makes
+        // THE ROW. `wk` is the week's abbreviation in the ch. 3.8 table, so a day kind of that name makes
         // a document WF-017 refuses. Silent before this card.
         RegelSpraakModel m = resolveer("Dagsoort de wk (mv: wks);");
         assertTrue(enige(m, Severity.ERROR).contains("'wk'"), "the refusal quotes the name it refused");
@@ -116,7 +116,7 @@ class DagsoortKalenderspellingTest {
 
     @Test void een_gewone_dagsoort_wordt_onveranderd_geregistreerd() {
         // A guard that refuses too much is as wrong as one that refuses nothing: every spelling OUTSIDE
-        // the table is a declared day kind (ch. 1.2), and both of this one's spellings are.
+        // the table is a declared day kind (ch. 3.8), and both of this one's spellings are.
         RegelSpraakModel m = resolveer("Dagsoort de schouwdag (mv: schouwdagen);");
         assertEquals(List.of(), m.diagnostics, "no diagnostic on an ordinary day kind");
         assertEquals(List.of("schouwdag"), m.dagsoorten);

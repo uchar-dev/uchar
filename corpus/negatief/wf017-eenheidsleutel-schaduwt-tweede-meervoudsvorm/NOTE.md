@@ -1,6 +1,6 @@
 Violates WF-017 (`spec/IR-SPEC.md` ch. 2.9), arm (a): a KEY of
 `dagsoortPerEenheid` that is one of the thirty spellings of the normative
-calendar table (`RUNTIME-SEMANTICS.md` ch. 1.2) — here `secondes`, which is
+calendar table (`RUNTIME-SEMANTICS.md` ch. 3.8) — here `secondes`, which is
 neither an abbreviation nor the `-en` plural but a SECOND PLURAL FORM.
 
     WF-017 FAIL /dagsoortPerEenheid/secondes: registered day-kind unit spelling

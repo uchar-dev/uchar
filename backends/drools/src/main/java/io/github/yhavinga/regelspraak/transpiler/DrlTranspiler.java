@@ -2487,7 +2487,7 @@ public final class DrlTranspiler {
             // ANNOTATION BY DESIGN (WF-035, RUNTIME-SEMANTICS ch. 2.10 exception 2): the duration operand's
             // calendar unit is what routes date arithmetic, and ref routes on the same static type.
             io.github.yhavinga.regelspraak.model.Eenheid durEenheid = durExpr.type().eenheidOf();
-            // ch. 1.2 puts the CALENDAR TABLE first — see Tijdrekening.dagsoortVoorEenheid for the order and why.
+            // ch. 3.8 puts the CALENDAR TABLE first — see Tijdrekening.dagsoortVoorEenheid for the order and why.
             String dagsoortUnit = Tijdrekening.dagsoortVoorEenheid(model, durEenheid);
             if (dagsoortUnit != null) {
                 // §4.1/§4.2 Tabel 2/5 rule 2: a datum-EN-tijd left operand yields a datum-en-tijd result — step over the
@@ -2934,7 +2934,7 @@ public final class DrlTranspiler {
         // ANNOTATION BY DESIGN (WF-038, ch. 2.10 exception 3): a tijdsduur's own unit IS the operator's parameter
         // ("in hele werkdagen"), not a derived result type.
         io.github.yhavinga.regelspraak.model.Eenheid dagE = f.type().eenheidOf();
-        // ch. 1.2 puts the CALENDAR TABLE first — see Tijdrekening.dagsoortVoorEenheid for the order.
+        // ch. 3.8 puts the CALENDAR TABLE first — see Tijdrekening.dagsoortVoorEenheid for the order.
         String dagsoortUnit = Tijdrekening.dagsoortVoorEenheid(model, dagE);
         if (dagsoortUnit != null) {
             Expr a0 = f.argumenten().get(0), a1 = f.argumenten().get(1);
