@@ -67,6 +67,34 @@ stil crashen.
   beschermd-padvoorstel.
 - (g) Alle veertien poorten los groen, met kerngetallen.
 
+## Hermeting op de kop van de kaart (2026-09-20, HEAD ccf7c793 + claim)
+
+Eén document — `corpus/golden/jutterswet-vondstvenster/ir.json`, beide
+regels op dezelfde `kind` gezet — en één casus: J1 met V1 (2024-01-15)
+en V2 (2024-03-01). Dagnummers: 2024-01-15 = 19737, 2024-03-01 = 19783.
+Alleen `kind` verschilt tussen de rijen.
+
+| kind | verifier | `ref` | clingo | Drools exec | Drools `--drl` |
+|---|---|---|---|---|---|
+| SOM | PASS | FOUT `plus: expected a number, got 2024-01-15` | **39520** | ERROR `ClassCastException: LocalDate → BigDecimal` | EXCLUDE `drl compile` |
+| TOTAAL | PASS | idem | **39520** | ERROR idem | EXCLUDE `drl compile` |
+| MINIMUM | PASS | 2024-01-15 | 2024-01-15 | ERROR `kan accumulate-resultaat niet naar BigDecimal omzetten: LocalDate` | EXCLUDE `drl compile` |
+| MAXIMUM | PASS | 2024-03-01 | 2024-03-01 | ERROR idem | EXCLUDE `drl compile` |
+| EERSTE | PASS | 2024-01-15 | 2024-01-15 | EXCLUDE `transpiler SKIP … waarde buiten scope` | EXCLUDE `MARKER TODO aggregatie EERSTE` |
+| LAATSTE | PASS | 2024-03-01 | 2024-03-01 | EXCLUDE `transpiler SKIP … waarde buiten scope` | EXCLUDE `MARKER TODO aggregatie LAATSTE` |
+
+De stand is ongewijzigd ten opzichte van 2026-09-19 met één toevoeging
+die de kaart niet noemde: EERSTE/LAATSTE zijn sinds de setvouw-kaart in
+clingo gedragen, dus zij zijn géén deel van de breuk meer — ref ≡ clingo
+draagt vier van de zes soorten en de ASP-backend antwoordt alleen op de
+twee optelsoorten een getal waar de arbiter faalt.
+
+Producentroute, opnieuw gemeten: er is er geen voor ENIGE van de vier
+soorten. De frontend typt SOM weg (`som van vereist numerieke operanden,
+kreeg Datum in dagen`) en MINIMUM/MAXIMUM net zo (`minimale waarde van
+vereist numerieke operanden, kreeg Datum in dagen`). Alleen EERSTE en
+LAATSTE hebben een levende bronzin — die van `jutterswet-vondstvenster`.
+
 May touch: `backends/clingo/**`, `backends/drools/**` (weigeringen),
 `corpus/golden/**` en `corpus/rood/**`, `scripts/check-drools.sh` en
 `scripts/check-rood.sh` uitsluitend telling/lijst (voorstel),
