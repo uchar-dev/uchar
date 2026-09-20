@@ -2437,13 +2437,22 @@ bounds and refuse the rest, and refuse the condition under counting
 quantifiers; the IR admits any date expression (WF-042).
 **Executed since 2026-09-20** by all four executors — the six clauses and
 this worked example are pinned case by case in
-`corpus/golden/jutterswet-premievenster`, at both wire positions (a rule's
-whole condition and a member of an `ALLE` composite), and the example runs
-verbatim in each OCaml executor's own suite. The two OCaml executors carry
-exactly the mirror note's two bound shapes and refuse the wider date
-expression BY NAME, with the phase in the sentence;
-`corpus/rood/periodegrens-parameterdatum` is that refusal's witness, and
-all four executors decline the form there.
+`corpus/golden/jutterswet-premievenster`, and the example runs verbatim in
+each OCaml executor's own suite. Per WIRE POSITION, because the mirror
+note's two bounds land on different ones and a single "executed" would
+hide that:
+
+| the window sits | status |
+|---|---|
+| as a rule's whole condition | executed by all four (five rules in the golden, one per spelling) |
+| as a member of an `ALLE` or `DE` composite | executed by all four (the golden's `borgpremie`) |
+| under `GEEN` or a counting quantifier | REFUSED by all four — the mirror note's second bound; red case `corpus/rood/periodevenster-tellende-kwantor` |
+
+Both bound shapes the mirror note carries are executed (a date literal and
+the subject's own scalar date attribute); the wider date expression WF-042
+admits is refused BY NAME in the two OCaml executors, with the phase in
+the sentence, and `corpus/rood/periodegrens-parameterdatum` is that
+refusal's witness — all four executors decline the form there.
 
 **Temporal target — the clip (v1 semantics, delta).** When the rule's
 target is time-dependent, gating all-or-nothing on the evaluation date is
@@ -2465,8 +2474,13 @@ clip semantics above, and `ref/` is to implement them first. *Not built
 yet (2026-09-20):* both OCaml executors refuse a period condition on a
 temporal target by name, AT THE RULE rather than in the condition —
 the case distinction above is on the target, and a condition cannot see
-one — so the scalar gate can never be applied to a timeline by accident.
-Each executor's own suite pins that refusal. The analogous
+one. "Time-dependent" is asked of BOTH declaration tables, the
+attribute's granularity and the characteristic's: a characteristic target
+declares its timeline in the second one, and an executor reading only the
+first applied the scalar gate to a timeline (measured 2026-09-20, before
+the fix, in the ASP backend). Red case
+`corpus/rood/periodevenster-tijdlijnkenmerk` is that position's witness,
+and each executor's own suite pins the refusal. The analogous
 interaction with a rule *version's* validity window is **not** decided
 here: a validity window on a temporal write mixes the version-selection
 axis with the timeline axis, and belongs to the single-axis decision of
@@ -2549,8 +2563,9 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 | Timeline arithmetic beyond plus/min (verminderd-met, maal, division, percentage) | refused (mirrored); OPEN — per-period lifting of ch. 1.2 rules is the candidate |
 | Scalar broadcast into timeline arithmetic / unconditional temporal characteristic | refused (mirrored); OPEN — both need a time domain for unbounded segments |
 | min/max/eerste/laatste over timelines | refused (mirrored); OPEN — the two readings (per-period vs over-time) must be defined apart |
-| §8.4.3 period condition on a **scalar** target | **specified and executed, ch. 3.10** — all four executors since 2026-09-20, witness `corpus/golden/jutterswet-premievenster` (six clauses, both wire positions) |
-| §8.4.3 period condition on a temporal target | **specified (delta): the clip, ch. 3.10**; NOT executed — both OCaml executors refuse it by name at the rule, suite-pinned |
+| §8.4.3 period condition on a **scalar** target | **specified and executed, ch. 3.10** — all four executors since 2026-09-20, witness `corpus/golden/jutterswet-premievenster` (six clauses; as a rule's whole condition and as an ALLE/DE composite member) |
+| §8.4.3 period condition under a counting quantifier | refused by name in all four executors (the mirror note's second bound; red case `periodevenster-tellende-kwantor`) — OPEN, backend maturity |
+| §8.4.3 period condition on a temporal target | **specified (delta): the clip, ch. 3.10**; NOT executed — all four executors refuse it by name, the two OCaml ones at the rule; red case `periodevenster-tijdlijnkenmerk`, attribute and characteristic targets alike |
 | A period-condition bound other than a literal or an own scalar attribute | refused by name in all four executors (red case `periodegrens-parameterdatum`); the IR admits any date expression (WF-042), so this is backend maturity — OPEN |
 | Negated temporal-characteristic condition | **specified (delta) within a clipped span, ch. 3.11**; unbounded complement OPEN; the navigated case stays refused/OPEN — as a WRITE producer only; the navigated whole-period READ is the row below |
 | Version-validity window on a temporal write | OPEN — the ch. 8 axis decision |

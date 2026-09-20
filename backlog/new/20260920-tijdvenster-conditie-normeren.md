@@ -50,6 +50,34 @@ mengt de versie-as met de tijdlijn-as, en dat is de één-as-beslissing van
 ch. 8 (PLAN §9, besluit 2). De clip zelf hangt daar niet aan, maar wie
 beide tegelijk aanraakt wel.
 
+## (3) Het venster onder een tellende kwantor
+
+Sinds 2026-09-20 geweigerd door alle vier, met de grens gemeten in plaats
+van gekozen: beide Drools-takken spelen onder `ALLE` en `DE` en weigeren
+onder `GEEN`, `TEN_MINSTE`, `TEN_HOOGSTE` en `PRECIES`, waar de DRL-tak de
+limiet zelf noemt. Rode getuige
+`corpus/rood/periodevenster-tellende-kwantor`. De mirror-note van ch. 3.10
+zegt precies dit ("refuse the condition under counting quantifiers"), dus
+te beslissen is of v1 die begrenzing overneemt als norm (WF-regel +
+negatief) of hem opheft (dan moet er een lezing komen voor wat het
+COMPLEMENT van een vensterverdict betekent in een tijdvrije sessie — dat
+is waar de vorm vandaag stil een onbenoemd antwoord gaf).
+
+De kwantorVOUW (`Kwantorvouw`, ch. 3.9a) rijdt mee op dezelfde weigering
+zonder eigen Drools-meting: dezelfde kwantoren, dezelfde kwantificatie
+over instanties in plaats van delen. Die meting hoort bij deze kaart.
+
+## Latent, nu onbereikbaar: de volgorde van de twee grensfouten
+
+`ref`'s vensterarm evalueert `vanaf` vóór `tot` (ch. 5.11) en dwingt sinds
+2026-09-20 ook de volgorde van de twee grens-TYPEcontroles af met een
+`let` — OCaml legt de volgorde binnen een tuple niet vast. Vandaag is dat
+onbereikbaar: WF-042 weigert een niet-datumgrens vóór elke uitvoerder, en
+de twee gedragen grensvormen kunnen niet falen. Met de grens-expressie van
+(1) wordt het scherp: dat is de eerste grensvorm die bij evaluatie KAN
+falen, en dan is "welke grens faalt eerst" de waarneembare ch. 5.11-orde
+waar de getuigentabel van dat hoofdstuk vandaag "none yet" bij zet.
+
 ## Samenhang
 
 `backlog/new/20260920-drl-periode-zink.md` gaat over `GeheelPeriode` — de
@@ -64,8 +92,8 @@ uitgevoerd) en de grensvorm (OPEN, backend-rijpheid).
 
 ## Acceptance (bij oppakken aanscherpen)
 
-- (a) Per helft een besluit met reden, en de spec-tekst die het draagt
-  (**voorstel**).
+- (a) Per helft — grensvorm, clip, tellende kwantor — een besluit met
+  reden, en de spec-tekst die het draagt (**voorstel**).
 - (b) Wat uitvoerbaar wordt, wordt uitgevoerd in `ref` én clingo, met een
   golden met handberekende absoluten; wat geweigerd blijft, houdt zijn
   benoemde arm mét fase-staart en zijn getuige.
