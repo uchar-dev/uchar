@@ -646,11 +646,12 @@ bedoeling. Drie `wf054-*`-getuigen verliezen hun onderwerp.
 ```
 
 **Partijen.** `E:` RegelSpraak. `C:` alle vier (de Drools-backend leest
-`backref` als bonenproperty; `ref` weigert de verre vorm bij evaluatie). `S:`
+`backref` als bonenproperty; `ref` en de ASP-backend dragen de verre vorm sinds 2026-09-20, kaart `v4-verre-rol-getuige`, met de extensionele fillertoets). `S:`
 twee `$def`s worden één; de properties `anderTeFiller`, `filler`, `backref`
 vervallen. `K:` `Rollidmaatschap` in 8 documenten (2 golden, 1 rood, 3 negatief,
-2 toka); **`VerreRollidmaatschap` in 0 documenten**, `backref` en `filler`
-eveneens in 0. `T:` de pin.
+2 toka); **`VerreRollidmaatschap` in 2 documenten** (6 knopen: golden
+`jutterswet-postbezetting`, negatief `wf034-verre-rolcheck-verkeerde-zijde`),
+`backref` en `filler` in dezelfde 2. `T:` de pin.
 
 **Migratienota.** IR-SPEC ch. 4.5 draagt hem: "near-side → the named role;
 far-side → the subject-side role of the relation". De nabije vorm noemt vandaag
@@ -661,12 +662,12 @@ die afleiding gaat langs dezelfde weg als B7.
 samensmelting ook de **topniveaubeperking** van de verre vorm — een
 Drools-patroonartefact dat CONSTRUCTS rij 5 al in 2026-08 als leak aanwees en
 dat, in de woorden van diezelfde rij, "has no translation target" in de
-ASP-vertaling. Ten tweede: de verre vorm heeft **nul corpusdragers in alle
-zones**, en IR-SPEC ch. 4.5 zegt daar uitdrukkelijk over dat `filler` en
-`backref` daarom ongekruist blijven — "no document in any zone carries one, so a
-clause there would have no witness". Een knoop zonder getuige samenvoegen is de
-goedkoopste delta op deze lijst, en tegelijk de riskantste: er is niets dat de
-samenvoeging betrapt als hij fout is. Zie **V4**.
+ASP-vertaling. Ten tweede: de verre vorm had **nul corpusdragers** tot
+2026-09-20; sinds kaart `v4-verre-rol-getuige` dragen golden
+`jutterswet-postbezetting` (klasse-onderscheidend, drie cases) en negatief
+`wf034-verre-rolcheck-verkeerde-zijde` de vorm, kruist WF-034 (t) `filler` en
+`backref` wél, en sluit het vierkant erop — de samenvoeging heeft haar getuige
+(P6). Zie **V4**.
 
 **Beslisvraag: V4.**
 
@@ -2210,7 +2211,7 @@ stuk los te landen en verbeteren de v0-toestand ook als de klap nooit komt.
 | P3 | **`backends/drools` leest `verbindendeRol` op de VERDELING** | de enige nog her-afgeleide binding van de drie; de vouw-`bronRol` en de objectcreatie-`verbindendeRol` worden al gelezen (§2.2), dus deze kaart is een derde van wat hij leek | B12 |
 | P4 | **Enumeratie-emissie gerepareerd** (V8 (a)): delimiters strippen **én** de literal typeren | frontend-dekkingsgat, geen wire-divergentie — de wire is gehekt (WF-039, WF-034 (r)), maar de frontend kan het construct niet welgevormd emitteren, dus geen `bron.rgs`-golden draagt er een | B22b |
 | P5 | **DatumTijd-lexeem gecanonicaliseerd** (WF-095 versmalt tot canoniek ISO) | één emitterregel, vijf negatief-getuigen, nul goldenregeneratie — de goedkoopste stap op de lijst | B22a |
-| P6 | **Getuige voor de verre rollidmaatschap** (V4 (b)) | de knoop heeft nul dragers; samenvoegen zonder getuige is onbewijsbaar | B9 |
+| P6 | ~~**Getuige voor de verre rollidmaatschap** (V4 (b))~~ — **GELAND 2026-09-20** (`backlog/done/20260919-v4-verre-rol-getuige.md`) | de getuige staat: golden `jutterswet-postbezetting` (klasse-onderscheidend), negatief `wf034-verre-rolcheck-verkeerde-zijde`, WF-034 (t), alle vier de uitvoerders dragen de vorm | B9 |
 | P7 | ~~**`eigenaar`-gastheerobject beslissen**~~ — **GELAND 2026-09-19** (`backlog/done/20260910-eigenaar-gastheer-object.md`) | de OBJECT-helft IS betekenis, dus het veld verdwijnt niet: B10 is bijgesteld van verwijdering naar hernoeming (zie B10, voorstel) en verhuist daarmee van M2 naar M8 | ~~B10~~ |
 | P8 | **Kruis-stelsel-eenheidsdivergentie** (`backlog/new/20260910-kruis-stelsel-eenheid-divergentie.md`) | een levende ref≢clingo-splitsing onder de eenheidscanonicalisatie | B17 (ii) |
 | P9 | **Dagsoortsemantiek** (`backlog/new/20260910-dagsoort-semantiek.md`) | `de dag` krijgt geen knoopsoort voordat zijn looptijdbetekenis er staat | B23 / V10 |
