@@ -1231,7 +1231,9 @@ herschrijven, en **nul goldenregeneratie**. Dit is de goedkoopste brekende stap
 van de hele lijst.
 
 **B22b — de enumeratiewaarde-delimiters: een frontend-dekkingsgat, geen
-wire-divergentie.** De eerste doorgang van deze kaart las dit als de
+wire-divergentie.** **(Gedicht 2026-09-20, kaart `20260919-v8-enum-emitter`: de
+emitter schrijft het kale label met het positiegetypeerde domein; de meting
+hieronder is de stand van vóór die kaart.)** De eerste doorgang van deze kaart las dit als de
 tweelingbroer van de tekstlexeem-kaart — twee spellingen, verbatim vergelijking,
 stil fout antwoord. **Dat is onjuist en de tegenproef wijst het aan.** De
 gemeten stand:
@@ -2209,7 +2211,7 @@ stuk los te landen en verbeteren de v0-toestand ook als de klap nooit komt.
 | P1 | **`backends/drools` leest `navigatieBindingen`** | de loader negeert ze vandaag en leidt navigatie her-af uit `navigatieRol`/`navigatiePad`; die velden verdwijnen bij B11 | B11 |
 | P2 | **`backends/drools` leidt bonenvelden af uit de rolbindingen** — feitcreatie (`zetVeld`/`joinVeld`/`Tussenstap.*`) en uniciteitsscope (`scopeVeld`) | de backend *voert die velden uit*; ze weghalen is zonder deze port een amputatie | B7, B8 |
 | P3 | **`backends/drools` leest `verbindendeRol` op de VERDELING** | de enige nog her-afgeleide binding van de drie; de vouw-`bronRol` en de objectcreatie-`verbindendeRol` worden al gelezen (§2.2), dus deze kaart is een derde van wat hij leek | B12 |
-| P4 | **Enumeratie-emissie gerepareerd** (V8 (a)): delimiters strippen **én** de literal typeren | frontend-dekkingsgat, geen wire-divergentie — de wire is gehekt (WF-039, WF-034 (r)), maar de frontend kan het construct niet welgevormd emitteren, dus geen `bron.rgs`-golden draagt er een | B22b |
+| P4 | ~~**Enumeratie-emissie gerepareerd** (V8 (a))~~ — **GELAND 2026-09-20** (`backlog/done/20260919-v8-enum-emitter.md`) | de emitter stript én typeert tegen de positie; eerste `bron.rgs`-golden `jutterswet-vondstklasse`; de consumentenkant (Drools-lezer) heeft een eigen kaart | B22b |
 | P5 | **DatumTijd-lexeem gecanonicaliseerd** (WF-095 versmalt tot canoniek ISO) | één emitterregel, vijf negatief-getuigen, nul goldenregeneratie — de goedkoopste stap op de lijst | B22a |
 | P6 | ~~**Getuige voor de verre rollidmaatschap** (V4 (b))~~ — **GELAND 2026-09-20** (`backlog/done/20260919-v4-verre-rol-getuige.md`) | de getuige staat: golden `jutterswet-postbezetting` (klasse-onderscheidend), negatief `wf034-verre-rolcheck-verkeerde-zijde`, WF-034 (t), alle vier de uitvoerders dragen de vorm | B9 |
 | P7 | ~~**`eigenaar`-gastheerobject beslissen**~~ — **GELAND 2026-09-19** (`backlog/done/20260910-eigenaar-gastheer-object.md`) | de OBJECT-helft IS betekenis, dus het veld verdwijnt niet: B10 is bijgesteld van verwijdering naar hernoeming (zie B10, voorstel) en verhuist daarmee van M2 naar M8 | ~~B10~~ |
@@ -2344,7 +2346,9 @@ zijn door deze kaart niet aangeraakt.*
    documenten** de gedelimiteerde vorm. De zin in IR-SPEC ch. 4.1 ("an
    enumeratiewaarde keeps its `'…'` delimiters, which readers strip") beschrijft
    de **frontend** — `Literalen.enumLabel` zit dáár — en niet de wire; op de wire
-   is het kale label de enige welgevormde vorm (zie V8).
+   is het kale label de enige welgevormde vorm (zie V8). **Gedicht 2026-09-20**
+   — de emitter stript en typeert sindsdien (kaart `20260919-v8-enum-emitter`);
+   `jutterswet-vondstklasse` is de eerste `bron.rgs`-golden met het construct.
 3. **Rijen 4/5/22, deltakolom:** de gemeten autoriteitsverhouding in de
    Drools-loader, met de begrenzing die de javadoc zelf aanbrengt. De
    v0-bonenvelden zijn GEZAGHEBBEND, en **drie** symbolische uitbreidingen
