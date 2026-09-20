@@ -1083,10 +1083,14 @@ let wf016 ctx =
       | _ -> [])
     ctx.doc.tijdlijnen
 
-let builtin_units =
-  [ "dag"; "dagen"; "week"; "weken"; "maand"; "maanden"; "kwartaal"; "kwartalen";
-    "jaar"; "jaren"; "uur"; "uren"; "minuut"; "minuten"; "seconde"; "seconden";
-    "milliseconde"; "milliseconden" ]
+(* A spelling the NORMATIVE calendar table carries (RUNTIME-SEMANTICS ch. 1.2).
+   The comparison goes through `time_unit_of_spelling` — the same table WF-035
+   and WF-038 route duration arithmetic on — rather than through a list of its
+   own, so the rule that forbids a day-kind spelling and the semantics that
+   would read it can never drift apart. Composed with `norm` (collapse
+   whitespace, lower case), which is the ch. 2.1 identity every one of WF-017's
+   three positions compares under. *)
+let calendar_spelling s = time_unit_of_spelling (norm s) <> None
 
 (* WF-017 over the whole SPELLING SPACE of a day kind (maintainer decision
    2026-09-10; IR-SPEC ch. 2.9). The rule is one promoted MUST with two
@@ -1104,47 +1108,58 @@ let builtin_units =
    normatively that a duration's unit is recognised by spelling through the
    calendar table and that "a spelling outside the table is a declared day
    kind", while a registry key declares exactly that spelling to be a day-kind
-   unit. Note what this arm does NOT claim, measured 2026-09-10: `day_kind_unit`
-   is consulted here (WF-035, WF-038) only in the None branch of
-   `time_unit_of_eenheid`, and `ref` and the ASP backend resolve in the same
-   order, so on those three a key `dagen` changes nothing — `datum + 5 dagen`
-   stays calendar arithmetic. The Drools backend reverses the order at all four
-   of its day-kind positions (it asks the registry before the table), so the
-   same document reads as day-kind arithmetic there. That divergence — the
-   executors splitting on one document — is the arm's second reason; the
-   backend's lookup order is its own conformance question and does not remove
-   the contradiction on the wire. Measured 2026-09-10 on the pre-arm binary (md5
+   unit. Note what this arm does NOT claim: `day_kind_unit` is consulted here
+   (WF-035, WF-038) only in the None branch of `time_unit_of_eenheid`, so a key
+   `dagen` changes nothing for this verifier — `datum + 5 dagen` stays calendar
+   arithmetic. That is the order every executor reads since 2026-09-20, the
+   Drools backend included (see the widening below); until then it asked the
+   registry first at all four of its day-kind positions and read the same
+   document as day-kind arithmetic, and that split — the executors disagreeing
+   on one admitted document — was the arm's second reason. Measured 2026-09-10
+   on the pre-arm binary (md5
    67becaba23c6d3364a9f1a080355541e), `jutterswet-schouwrooster` with one
    entry added and nothing else changed: `"dagen": "schouwdag"` beside the four
    ordinary entries was `verifier: PASS`, while the same spelling DECLARED is
-   refused by the clause above. Here the IR is weaker than its own producer,
+   refused by the clause above. Here the IR was weaker than its own producer,
    and what carries that is the REGISTRATION GUARD, not the grammar: the
-   reference frontend refuses to register a spelling that coincides with any of
-   the eighteen built-in time-unit names, warns, and drops the entry. The
-   grammar helps for most of them but not all — measured 2026-09-10 over all
+   reference frontend refuses to register a spelling that coincides with a
+   calendar spelling, warns, and drops the entry. The grammar helps for most of
+   the singulars and plurals but not all — measured 2026-09-10 over all
    eighteen as a day-kind plural, FOURTEEN fail to parse (the names are
    keywords, no IR is emitted at all) and FOUR parse cleanly: `uren`,
    `minuten`, `seconden`, `milliseconden`. For those four the frontend emits
    with exit 0 and the guard alone does the work — the registry comes out
    without the spelling and the warning lands in the emitted document's
-   `diagnostics` array rather than on the console. Either way no document this
-   frontend emits carries the shape, so the arm is wire-only, and that is
-   precisely why it must be a wire rule or nothing.
-   Witness: `corpus/negatief/wf017-eenheidsleutel-schaduwt-kalendereenheid`.
+   `diagnostics` array rather than on the console.
+   Witnesses: `corpus/negatief/wf017-eenheidsleutel-schaduwt-kalendereenheid`
+   and, since the widening below,
+   `corpus/negatief/wf017-eenheidsleutel-schaduwt-kalenderafkorting` and
+   `corpus/negatief/wf017-eenheidsleutel-schaduwt-tweede-meervoudsvorm`.
 
-   The FLANK this arm leaves open, named because it is not small: the guard's
-   eighteen names are the singulars and plurals, while the calendar table
-   recognises THIRTY spellings. The twelve abbreviations (`jr`, `mnd`, `kw`,
-   `wk`, `dg`, `u`, `min`, `sec`, `s`, `ms`, `secondes`, `millisecondes`) pass
-   both this arm and the clause above. Measured 2026-09-10: all twelve are
-   verifier-clean as registry keys, and this flank is NOT wire-only — the
-   frontend emits `Dagsoort de wk (mv: wks)` with exit 0 and an empty
-   `diagnostics`, registering `wk`. Goldens use the abbreviations as live
-   calendar units (`jutterswet-vervaltermijn`: `wk`, `mnd`, `kw`), so with the
-   Drools lookup order above such a document splits the executors in earnest.
-   Widening to the thirty-spelling table would have to move the frontend's
-   guard with it; carded as
-   `backlog/new/20260910-dagsoort-afkortingssleutels.md`.
+   WIDENED to the THIRTY-spelling table (maintainer decision 2026-09-19, card
+   `20260910-dagsoort-afkortingssleutels`). Until then arm (a) and the clause
+   above compared against the EIGHTEEN names the frontend's registration guard
+   knew — the singular and the plural of the nine units — while ch. 1.2
+   recognises thirty. The twelve that are neither (`jr`, `mnd`, `kw`, `wk`,
+   `dg`, `u`, `min`, `sec`, `s`, `ms`, and the second plurals `secondes` and
+   `millisecondes`) fell through both, measured 2026-09-20 on the pre-card
+   binary (md5 97239d1f8c2706a2548594b0541b5f34): all twelve verifier-clean as
+   registry keys AND as declared names. That flank was not wire-only either —
+   the frontend emitted `Dagsoort de wk (mv: wks)` with exit 0 and an EMPTY
+   `diagnostics` — and goldens carry the abbreviations as live calendar units
+   (`jutterswet-vervaltermijn`: `wk`, `mnd`, `kw`), so such a document split the
+   executors in earnest. Both halves moved with this widening: the frontend's
+   guard now compares against the same thirty (a declared NAME in the table is
+   an ERROR there, which blocks the emission, because dropping the name alone
+   would leave its §9.8 definition dangling), and the Drools backend's lookup
+   order was turned around at all four of its day-kind positions so that every
+   executor reads ch. 1.2's order — table first, registry in the fall-through.
+   The comparison is `time_unit_of_spelling` itself, so the rule and the
+   arithmetic share one table by construction. Cost, measured 2026-09-20 over
+   all four corpus zones plus the read-only parity zone (699 documents): not one
+   verdict and not one report line moves; the twelve abbreviations as ordinary
+   calendar UNITS stay verifier-clean, which is what `jutterswet-vervaltermijn`
+   carries.
 
    ARM (b) — a DECLARED day-kind name that occurs as a key must bind to
    ITSELF. This is the wire-visible form of the day-kind/day-kind collision.
@@ -1196,14 +1211,14 @@ let wf017 ctx =
   List.concat_map
     (fun d ->
       match d with
-      | Some d when List.mem (norm d) builtin_units ->
+      | Some d when calendar_spelling d ->
           [ v "WF-017" "/dagsoorten"
               ("day-kind '" ^ d ^ "' shadows a built-in calendar unit") ]
       | _ -> [])
     ctx.doc.dagsoorten
   @ List.filter_map
       (fun (spelling, _) ->
-        if List.mem (norm spelling) builtin_units then
+        if calendar_spelling spelling then
           Some
             (v "WF-017"
                ("/dagsoortPerEenheid/" ^ spelling)
