@@ -151,25 +151,31 @@ woordelijk en zijn meebewogen; zie "Gewijzigde bestaande checks" onder Result.
 ### Stap 4 — de maximal-munch-meting
 
 De kaart eist meten, niet aannemen. Gemeten op 2026-09-20 over **800 vlakke
-RegelSpraak-documenten** — elk document dat op dat moment bereikbaar was — plus
-de zes markdowndocumenten van de v2.3.0-specificatieset:
+RegelSpraak-documenten** in vier corpora, plus de zes markdowndocumenten van de
+v2.3.0-specificatieset. De lensronde van dezelfde dag vond er drie corpora bij
+en mat die na — samen 76 bestanden, alle 76 IR-identiek — zodat de meting op
+**876 documenten** staat:
 
     64   emittergoldens van dit corpus
     47   officiële casusdocumenten van de pariteitszone
     176  documenten van het eigen corpus van de referentietoolchain
     513  documenten van een operationele ruleset-verzameling
     ---
-    800
+    800  (deze sessie)
+     76  nameting lensronde: regelspraak-dagloon-service,
+         regelspraak-herleving-ww, regelspraak-rules (44 unieke hashes)
+    ---
+    876
 
 Drie metingen, alle drie nul:
 
 1. **de woordgroep komt nergens voor** — nul treffers op `aantal gevulde` in
-   alle 800, en nul in de zes specificatiedocumenten;
-2. **het woord `gevulde` komt twee keer voor in 800 documenten**, beide keren
+   alle 876, en nul in de zes specificatiedocumenten;
+2. **het woord `gevulde` komt twee keer voor in 876 documenten**, beide keren
    binnen een `//`-regelcommentaar in de operationele verzameling, waar de lexer
    niet komt. De ene treffer in de specificatie is de deelreeks binnen
    "ingevulde" in een prozabijschrift bij een figuur, geen RegelSpraak-naam;
-3. **elk document emitteert byte-identiek vóór en ná.** Alle 800 zijn door de
+3. **elk document emitteert byte-identiek vóór en ná.** Alle 876 zijn door de
    frontend van de commit VÓÓR de uitbreiding en die van de commit ERNA gehaald,
    en de geëmitteerde IR plus de diagnostiek is vergeleken. NUL
    herinterpretaties. Er zijn twee TEKSTverschillen en die zijn verantwoord,
@@ -274,15 +280,16 @@ grens van wat de meting NIET beweert.
 
 ### 2. De inertheidsmeting — wat gemeten is en wat niet kon
 
-Gemeten over 800 vlakke RegelSpraak-documenten plus zes
+Gemeten over 876 vlakke RegelSpraak-documenten plus zes
 specificatiedocumenten. Byte-identieke emissie vóór en ná, per corpus:
 
     64 / 64    emittergoldens van dit corpus
     47 / 47    officiële casusdocumenten van de pariteitszone
     176 / 176  het eigen corpus van de referentietoolchain
     513 / 513  een operationele ruleset-verzameling
+     76 /  76  drie collecties uit de nameting van de lensronde
     ---------
-    800 / 800  NUL herinterpretaties
+    876 / 876  NUL herinterpretaties
 
 Twee tekstverschillen, beide verantwoord en geen van beide een lezing: de
 WF-096-melding somt de soorten op (zes → zeven namen), en de
@@ -295,10 +302,22 @@ bestaat zijn de vier normatieve markdowndocumenten plus het casusdocument en de
 conversienotities (zes stuks, alle zes doorzocht: nul treffers, de ene grep-hit
 is de deelreeks binnen "ingevulde" in een prozabijschrift) en de
 voorbeeldverzamelingen die de toolchain en de werkbank zelf dragen — die zijn
-alle vier meegemeten en staan hierboven. Er is dus geen corpus overgeslagen dat
-op deze machine bereikbaar was; wat ontbreekt is een canonieke uitgave die er
-niet is. Een document buiten deze 800 kan de woordgroep dragen, en de begrenzing
-daarvan staat onder Stap 4: de verschuiving is dan luid, niet stil.
+alle vier meegemeten en staan hierboven. Wat ontbreekt is dus een canonieke
+uitgave die er niet is. Een document buiten de gemeten verzameling kan de
+woordgroep dragen, en de begrenzing daarvan staat onder Stap 4: de verschuiving
+is dan luid, niet stil.
+
+**De vier corpora hierboven waren NIET alles wat op deze machine stond**, en dat
+is gemeten in plaats van aangenomen — de lensronde vond er drie die deze sessie
+had gemist: `regelspraak-dagloon-service`, `regelspraak-herleving-ww` en
+`regelspraak-rules`, samen 76 bestanden met 44 unieke inhouds-hashes. De
+oorspronkelijke zin hier ("geen corpus overgeslagen dat op deze machine
+bereikbaar was") was daarmee te sterk en is hierboven ingetrokken. De nameting
+van die 76 bestanden is alle 76 IR-identiek met nul diagnostiekverschillen, dus
+de verbrede meting staat op **876 documenten met nul herinterpretaties** en de
+conclusie wordt er sterker van in plaats van zwakker. De les is de zin, niet het
+getal: "alles wat bereikbaar was" is een bewering die een tweede lezer moet
+natellen, en die telling heeft er drie gevonden.
 
 ### 3. De melding voor de herpin
 
@@ -306,12 +325,30 @@ daarvan staat onder Stap 4: de verschuiving is dan luid, niet stil.
 leesverbreding. Wat de toolchain-herpin moet overnemen:
 
 - het lexertoken `AANTAL_GEVULDE_WAARDEN_VAN` en het parseralternatief;
-- de resolverarmen (elementafleiding, resultaattype, de WF-037-weigering, de
-  niets-toetsen-arm van `meldAggregatie`);
+- de resolverarmen, en het zijn er ZES, niet vier — de twee onderaan zijn in de
+  eerste opsomming van deze kaart vergeten en staan er hier bij, omdat een
+  herpin die alleen de opsomming volgt ze allebei mist:
+  - de elementafleiding (de VALUE-fold-tak van `aggregatieElement`);
+  - het resultaattype (`functieType`: geheel, eenheidloos, niet-negatief);
+  - de WF-037-weigering op een niet-set bron;
+  - de niets-toetsen-arm van `meldAggregatie` (besluit G8);
+  - **`aggregeert()`** — zonder die arm loopt de Let-inlijning mis: een
+    aggregatie is een structuurgevoelige positie en moet met
+    GESUBSTITUEERDE variabelelezingen worden opgebouwd, en een soort die
+    daar ontbreekt leest de vorm van een `BinderRef` in plaats van van de
+    opgeloste operand;
+  - **`aggregatieKind`** in `bouwFunctie` — zonder die arm slaat de
+    gedeclareerde-lid-WARNING de soort over, en een bron die geen
+    gedeclareerd lid noemt vouwt dan over een getter die niet bestaat in
+    plaats van eerlijk te markeren;
 - `VOUWSOORTEN` zes → zeven, en de WF-096-meldingstekst die de zeven opsomt.
+  Let op de ZICHTBAARHEID: het veld ging van `private static final` naar
+  package-private `static final`, zodat `VouwsoortenGrensTest` het kan lezen.
+  Dat is geen gedragswijziging maar wel een handtekeningwijziging, en een
+  herpin die hem overslaat krijgt een getuige die niet compileert.
 
 Tellingen ná deze kaart: **65 rgs-goldens** (was 64), JUnit-suite **351** (was
-338, +13: elf nieuwe dialectfixtures en drie grensgetuigen, minus niets). Geen
+338, +13: TIEN nieuwe dialectfixtures en DRIE grensgetuigen, minus niets). Geen
 vloer opgehoogd — poort 10's vloeren staan op 173 en 38 en groeiden vanzelf
 voorbij.
 
@@ -357,6 +394,16 @@ De tweede lander hoeft hier niets voor te rebasen.
 
 Geen enkele vloer en geen enkele pin bewogen.
 
+**Poort 12's JUnit-getal is 514 en blijft dat na de rebase — nagemeten.** De
+lensronde meldde 518 en schreef dat verschil toe aan de enumlezer-kaart. Dat
+klopt niet voor deze tak, en het is nagemeten in plaats van beredeneerd: de
+backendsuite op de taktop telt 514 (`mvn -o -f backends/drools/pom.xml
+package`, 0 overgeslagen), het registerwerk van de enumlezer zit AL in de
+merge-base, en het enige wat `main` sindsdien toevoegde is één kaartbestand
+onder `backlog/new/`. Een rebase kan dus geen test toevoegen. 518 hoort bij een
+werkboom die ook ongemergde kaarten draagt; 514 is wat deze tak, voor en na de
+rebase, oplevert.
+
 ### 6. Gewijzigde bestaande checks (testmandaat)
 
 Additief was vrij; deze vier zijn WIJZIGINGEN en worden daarom gemeld:
@@ -395,11 +442,11 @@ dat kaart 2 voorstelde:
 > whole-phrase token met één setlezing als operand en geen facetgleuf — die
 > geen naamwoord reserveert: alleen de exacte vijfwoordreeks verandert van
 > betekenis. Dat de uitbreiding op bestaande documenten inert is, is GEMETEN en
-> niet aangenomen: 800 vlakke RegelSpraak-documenten (het eigen corpus, de
-> pariteitszone, het corpus van de referentietoolchain en een operationele
-> ruleset-verzameling) emitteren byte-identiek vóór en ná, met nul
+> niet aangenomen: 876 vlakke RegelSpraak-documenten (het eigen corpus, de
+> pariteitszone, het corpus van de referentietoolchain en vier operationele
+> ruleset-verzamelingen) emitteren byte-identiek vóór en ná, met nul
 > herinterpretaties en twee verantwoorde tekstverschillen in meldingen; de
-> woordgroep komt in geen van die 800 en in geen van de zes
+> woordgroep komt in geen van die 876 en in geen van de zes
 > specificatiedocumenten voor. Wat de meting niet kan uitsluiten begrenst de
 > grammatica: op een opzettelijk botsend model verschuift de lezing wél, en zij
 > verschuift naar een LUIDE WF-037-weigering in plaats van naar een ander

@@ -320,22 +320,23 @@ changes meaning — and under maximal munch it takes precedence over
 The `is een` extension (§5) could argue inertness from the shape of the
 construct; this one cannot, because the phrase *extends* an existing one. A
 document naming a role or attribute "gevulde waarden …" would have its count
-sentence re-read. So the claim is a measurement, taken 2026-09-20 over **800
-flat RegelSpraak documents** — every one reachable at the time of writing: the
-64 emitter goldens of this corpus, the 47 official-casus documents of the
-repository's temporary parity zone, 176 documents of the reference toolchain's
-own corpus, and 513 documents of an operational ruleset collection — plus the
-six markdown documents of the v2.3.0 specification set (the main specification,
-the typing document, the syntax-diagram document, the ANTLR-targeted draft, the
-casus document and its conversion notes).
+sentence re-read. So the claim is a measurement, taken 2026-09-20 over **876
+flat RegelSpraak documents** in seven collections: the 64 emitter goldens of
+this corpus, the 47 official-casus documents of the repository's temporary
+parity zone, 176 documents of the reference toolchain's own corpus, 513
+documents of an operational ruleset collection, and 76 more across three
+further rule collections found on a second pass — plus the six markdown
+documents of the v2.3.0 specification set (the main specification, the typing
+document, the syntax-diagram document, the ANTLR-targeted draft, the casus
+document and its conversion notes).
 
 - **The phrase occurs nowhere.** Zero occurrences of `aantal gevulde` in any of
-  the 800 documents, and zero in the six specification documents.
-- **The word `gevulde` occurs twice in 800 documents**, both inside `//` line
+  the 876 documents, and zero in the six specification documents.
+- **The word `gevulde` occurs twice in 876 documents**, both inside `//` line
   comments in the operational collection, where the lexer cannot reach it. The
   single specification hit is the substring inside "ingevulde" in a prose figure
   caption, not a RegelSpraak name.
-- **Every document emits byte-identically before and after.** Each of the 800
+- **Every document emits byte-identically before and after.** Each of the 876
   was run through the frontend built at the commit before this extension and at
   the commit after it, and the emitted IR plus the diagnostics compared. Zero
   reinterpretations. Two TEXT changes appear and are accounted for, neither of
@@ -343,15 +344,30 @@ casus document and its conversion notes).
   by one name, and the ANTLR "expecting {…}" set in a syntax-error message names
   the new token. Normalising exactly those two leaves no residual difference in
   any document.
+- **The seventh collection was found by a second reader, not by the first.**
+  Three of the seven were missed on the first pass, and the sentence that
+  claimed the sweep was exhaustive was therefore too strong. It is recorded here
+  because the lesson outlives the number: a coverage claim over "everything
+  reachable" is one a second reader has to re-count, and that re-count found
+  three. The re-count agreed — 76 of 76 identical, no diagnostic differences —
+  so the conclusion widened rather than moved.
 
 **What the measurement does not claim.** It cannot exclude that some unmeasured
-document names a role "gevulde waarden". What bounds that case is the grammar
-itself: the phrase consumes its `van`, so what follows must be the fold's
-operand, and on such a document the remainder is a to-ONE reading rather than a
-set reading — which the refusal below rejects at ERROR level. The shift is loud,
-never a different answer. That pair — measured absence plus a bounded failure —
-is the whole argument, and both halves carry a fixture
-(`AantalGevuldeDialectTest`).
+document names a role or an attribute with the exact phrase. What bounds that
+case is the grammar itself, and both of its failure modes are LOUD:
+
+- a colliding **role or count sentence** — the phrase consumes its `van`, so
+  what follows must be the fold's operand, and there the remainder is a to-ONE
+  reading rather than a set reading, which the WF-037 refusal below rejects at
+  ERROR level;
+- a colliding **attribute name** never reaches a rule at all: the phrase is a
+  token, so a member declaration containing it breaks on its own declaration
+  line with a syntax error ("extraneous input 'het aantal gevulde waarden
+  van'"), and the document does not resolve.
+
+The shift is loud in both, never a different answer. That pair — measured
+absence plus a bounded failure — is the whole argument, and both halves carry a
+fixture (`AantalGevuldeDialectTest`).
 
 ### Lowering (resolver)
 
@@ -405,6 +421,14 @@ emitted before, which is the measurement above stated as a property.
 - Only the ONE-operand form exists. There is no listed variant ("het aantal
   gevulde waarden van A, B en C"), because the wire has none: WF-037 pins the
   arity at exactly one.
+- **The token matches lowercase `het` only**, as `AANTAL_DAGEN_IN` and
+  `TOTAAL_VAN` do, so a sentence-initial "Het aantal gevulde waarden van …"
+  falls back to the pre-extension reading — the instance count swallows the
+  words as its element name and markers with a WARNING. Measured 2026-09-20:
+  that document still reaches disk, exactly as it did before the extension. It
+  is no regression (the base behaviour is unchanged) and no aggregation phrase
+  in this grammar is written sentence-initially, but it is a real asymmetry with
+  the lowercase form and is recorded rather than discovered.
 - The temporal set source stays refused downstream, not here. A filled count
   over a timeline attribute has no moment at which to ask, and the two OCaml
   executors refuse it by name (`corpus/rood/aantalgevulde-temporele-setbron`);
