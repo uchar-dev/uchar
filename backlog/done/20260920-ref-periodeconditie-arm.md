@@ -99,101 +99,19 @@ Conclusie: de vorm is verifier-schoon en wire-bereikbaar (de
 RegelSpraak-emitter schrijft hem, `corpus/golden/jutterswet-vormenkabinet`
 draagt er een), dus een `corpus/rood`-getuige is de juiste artefactvorm.
 
-Result: de laatste bodemzin onder de condities heeft geen drager meer.
-`ref`'s conditie-match was al uitputtend — geen jokerarm, alleen een
-zin die niets noemde — dus met de benoemde `Periode_conditie`-arm erbij
-kan geen enkele invoer `condition kind not implemented in this card` nog
-produceren, en die zin is uit de gate-8-lijst verwijderd (37 → 36
-bodemzinnen). Clingo's evenknie bleef: `cond_atoms` eindigt in een echte
-joker die de ongedragen `Predicaat`-soorten en `Regelversie` nog vangt,
-dus daar kreeg de periodeconditie een eigen arm vóór de val-door en
-bleef de lijstregel staan.
-
-De twee zinnen, woordelijk. `ref`:
-
-> a TimeWindow condition (ch. 4.5 Periode, the §8.4.3 van/tot window)
-> gates a rule on the evaluation date, and no runtime clause fixes that
-> gate: ch. 8.2 names the window in one sentence and carries no worked
-> example, and it is NOT the ch. 3.10 validity window, whose two bounds
-> are both inclusive. Declined here rather than guessed
-
-clingo spreekt hem woordelijk na tot aan de slotzin, die de fase van
-deze backend noemt: *Declined in translation rather than grounded on a
-guess*. Dat is het patroon van de heelperiode-lezer en van de
-WF-044-arm: één constructie, één formulering, twee fasen.
-
-**Waarom een weigering en geen semantiek.** De kaart vroeg armen, geen
-normering, en de hermeting laat zien waarom dat ook het eerlijke
-antwoord is. De speczin bestaat: ch. 8.2 zegt dat de periodeconditie de
-rekendatum tegen een venster toetst. Maar hij draagt geen bewerkt
-voorbeeld en hij noemt de knoop "the ch. 3.10 period condition" —
-terwijl ch. 3.10 het GELDIGHEIDsvenster is, met twee inclusieve
-grenzen, waar deze knoop er één exclusieve draagt (ch. 4.5, tenzij
-`totInclusief`). `Eval.applies` hergebruiken zou dus een weigering
-inruilen voor een gok met een bekende randfout. Daar komt bij dat de
-tijdvrije sessie en het temporele doel ongezegd zijn, en dat het corpus
-niet kan arbitreren: beide Drools-takken spelen de vorm, beide
-OCaml-uitvoerders niet, dus het vierkant splijt twee-twee en een golden
-van deze vorm kan niet bestaan. Die hele toestand staat nu vast in
-`corpus/rood/periodeconditie-bereikt` (`ir.json` + `case1.json` +
-`NOTE.md`), en het vervolg heeft een eigen kaart:
-`backlog/new/20260920-tijdvenster-conditie-normeren.md`.
-
-**Rood-eerst en mutatieproeven.** De getuige is in commit `ee6ddd1e`
-vóór de armen geland en zette gate 8 rood op precies drie punten (beide
-pins mismatch, plus een rode case zonder Drools-regel). Drie mutaties
-daarna, elk uitgevoerd en teruggedraaid: `ref`'s armzin terug naar de
-bodemzin laat gate 8 falen op naam
-(`corpus/rood/periodeconditie-bereikt/case1.json — ref did not observe
-the expected fault`); clingo's arm weghalen laat de vorm terugvallen in
-de joker en de pin mismatchen; en de clingo-pin naar de bodemzin zetten
-laat het bodemzin-hek zelf toeslaan, met regelnummer en reden. Dat
-laatste is de proef dat de gekozen zin echt nodig was en niet cosmetisch.
-
-**Samenhang met `backlog/new/20260920-drl-periode-zink.md` — die kaart
-blijft liggen, en terecht.** De zink daar zit op `GeheelPeriode`, de
-§8.2-heelperiode-KWALIFICATIE op een feitcreatie-guard, waar de
-DRL-tak `rsGeheelPeriode($subject.…)` in het `$doel`-patroon zet en het
-hele pakket omvalt. Deze kaart gaat over `Periode`, de
-§8.4.3-CONDITIE — een andere wireknoop, een andere positie, en een tak
-die hem juist wél speelt. Ze delen alleen het woord "periode". Deze
-kaart raakt `backends/drools/**` dan ook niet, en het derde WF-109-hek
-(geen heelperiode-kwalificatie op een doel-gastheer) valt hier
-evenmin: dat hek hangt aan de zink-kaart, niet aan deze. Wie beide
-families in één kaart wil nemen, doet dat als bewuste bundeling.
-
-**Buiten de kaart gemeld.** (1) `scripts/check-rood.sh` (beschermd pad,
-mandaat: "May touch … **voorstel**") krijgt drie wijzigingen: de
-lijstregel van `ref`'s conditie-bodemzin is verwijderd, er staat een
-alinea boven de lijst die vastlegt dat de lijst KRIMPT als een zin zijn
-laatste drager verliest — met deze ene, gedateerde verwijdering en haar
-reden erin — en de Drools-uitsluitingslijst krijgt de regel
-`periodeconditie-bereikt|NOFAULT …`, omdat beide takken de vorm spelen.
-Geen telling in het script beweegt: `EXPECTED_MIN_ROOD_CASES` blijft 26
-(26 ≤ 37, een ondergrens die groei niet hoeft te volgen). (2)
-`corpus/golden/jutterswet-vormenkabinet/NOTE.md`: twee plekken noemden
-de oude bodemzin als reproductie-instructie en werden door deze kaart
-onwaar; ze citeren nu de benoemde zin en verwijzen naar de rode
-getuige. (3) `spec/**` is NIET aangeraakt: er verandert geen
-speculaire uitspraak — ch. 5.11 zegt nog steeds dat `ref` de vorm
-weigert — en de correctie van ch. 8.2 hoort bij de normeringskaart, met
-het bewerkte voorbeeld erbij. (4) `spec/CONSTRUCTS.md` en
-`spec/PLAN.md` zijn niet aangeraakt; er is geen v1-delta bij, dus er is
-geen rijvoorstel, alleen de nieuwe kaart hierboven.
-
-Gates, elk los gedraaid, alle veertien groen: 1 PASS; 2 PASS (259
-documenten, vloer 192); 3 PASS (259 golden schoon, 420 negatief
-geweigerd voor hun eigen regel, vloer 350); 4 PASS (601 casebestanden);
-5 PASS (726 bewerkte voorbeelden, vloer 489; 564 cases exact, vloer
-427); 6 PASS (457 suitechecks, vloer 83; 564 cases); 7 PASS (528 cases
-weerleggen de nietsdoener, 36 overlevers); 8 PASS (37 rode cases, vloer
-26; 74 fragmenten citeren geen van de 36 bodemzinnen; Drools-been 9
-fout-gepind, 28 niet-gedragen met reden); 9 PASS (201 checks, 12
-catala-goldens); 10 PASS (337 tests, 64 rgs-goldens); 11 PASS (29/29 in
-ref, clingo en Drools); 12 PASS (played 169, DRL-tekst 146, JUnit 509
-tests, vloer 239); 13 PASS (131 verdraaiingen over 27 goldens, vloer
-74; 128 replays, 25 gespeeld door de DRL-teksttak, vloer 13); 14 PASS
-(130 checks, 2 flogic-goldens).
+**Tussenstand, INGETROKKEN (hier bewaard omdat de fixronde hem
+weerlegt).** De eerste afronding van deze kaart liet het bij BENOEMDE
+WEIGERINGEN: `ref` en clingo kregen elk een arm die zei dat ch. 8.2 het
+venster in één zin normeert zonder bewerkt voorbeeld, dat de knoop niet
+het geldigheidsvenster van IR-SPEC ch. 3.10 is, en dat de vorm daarom
+geweigerd werd in plaats van gegokt. Daar stond een rode getuige onder
+(`corpus/rood/periodeconditie-bereikt`) en de conclusie dat het vierkant
+twee-twee spleet zonder arbiter. De lens heeft die redenering weerlegd —
+zie de fixronde hieronder — en alle drie de onderdelen zijn vervangen: de
+armen door de gate, de rode getuige door een golden, de conclusie door
+haar tegendeel. Wat staande bleef is het uitgangspunt: de bodemzin
+`condition kind not implemented in this card` had één drager, die drager
+is weg, en de zin is uit de gate-8-lijst.
 
 ---
 
@@ -290,3 +208,110 @@ stopt een `ALLE` bij het eerste onware lid. Dat is precies de
 instantieafhankelijkheid die het kabinet noteerde, nu als groene
 eigenschap in plaats van als weigering. Twaalf verwachtingen per geval
 werden er veertien; alle vier de uitvoerders spelen ze.
+
+## Result (na de fixronde)
+
+De scalaire periodeconditie is GEBOUWD, niet geweigerd. `ref` en de
+ASP-backend voeren `RUNTIME-SEMANTICS.md` ch. 3.10 uit in alle zes
+clausules — `vanaf` inclusief, `tot` exclusief, "tot en met" inclusief,
+een afwezige grens open, een ongezette evaluatiedatum matcht nooit, een
+lege grens matcht nooit — met de twee grensvormen die ch. 3.10's
+v0-mirror-note draagt: een datumliteral en een eigen scalair
+datumattribuut van het onderwerp. Het vierkant sluit:
+`corpus/golden/jutterswet-premievenster` (zes regels, zes gevallen,
+veertien verwachtingen per geval) wordt door alle vier de uitvoerders
+gespeeld, `PLAYED 6` in beide Drools-takken. Het worked example van het
+hoofdstuk staat verbatim in `ref/test` als `WV-3.10`, het hoofdstuk dat
+tot vandaag als enige geen WV-getuige had.
+
+Wat het NIET doet, en dat bij naam. Twee helften van ch. 3.10 blijven
+liggen en weigeren nu elk met een eigen zin waarin de FASE staat, zodat
+een faseverwisseling niet ongezien passeert (het WF-044-zusterpatroon):
+
+- de grens-EXPRESSIE die WF-042 toelaat en de mirror-note uitstelt —
+  `"the <zijde> bound of a period condition is neither a date literal nor
+  an own scalar date attribute of the subject: ch. 3.10's mirror note
+  carries those two and defers the general date expression WF-042 admits.
+  Declined at evaluation"`, en in clingo woordelijk hetzelfde met
+  `Declined in translation`. Rode getuige:
+  `corpus/rood/periodegrens-parameterdatum`, waar alle vier de
+  uitvoerders weigeren — de DRL-tak noemt de grens zelfs zelf.
+- de CLIP op een tijdlijndoel (ch. 3.10's tweede geval) —
+  `"a period condition on the temporal target <attr> is ch. 3.10's CLIP,
+  not the evaluation-date gate: the window intersects the written
+  timeline instead of deciding whether the rule applies, and that half of
+  the chapter is not built. Declined at evaluation"`, idem met
+  `in translation`. Die weigering zit met opzet BIJ DE REGEL en niet in
+  de conditie: de gevalsonderscheiding van het hoofdstuk hangt aan het
+  DOEL, en een conditie ziet er geen — zonder die plaatsing zou een
+  tijdlijn stilletjes de scalaire poort krijgen, wat de verkeerde as is.
+  Beide uitvoerders delen daarvoor één loopje (`Eval.bevat_periode`), zoals
+  de verre rolcheck `Eval.far_side_role` deelt, zodat ze de grens van het
+  geval niet verschillend kunnen leggen. Suite-gepind in beide.
+
+Mutatieproeven, uitgevoerd en teruggedraaid. `vanaf` inclusief →
+exclusief laat `case2-op-de-vanafgrens` bij naam vallen (en `case4` op de
+tweede ondergrens); `tot` exclusief → inclusief laat `case4-op-de-totgrens`
+vallen (en `case2` op de open-ondergrens); "tijdvrij matcht altijd" laat
+`case6-tijdvrij` vallen; "lege grens is open" laat V2's `bergloon` in vijf
+gevallen vallen. Het nieuwe krimphek is óók bewezen: één lijstzin in
+`ref/lib/eval.ml` herschreven en gate 8 faalt met naam en reden.
+
+Gates, elk los gedraaid, alle veertien groen: 1 PASS; 2 PASS (260
+documenten, vloer 192); 3 PASS (260 golden schoon, 420 negatief, vloer
+350); 4 PASS (607 casebestanden); 5 PASS (746 bewerkte voorbeelden, vloer
+489; 570 cases exact, vloer 427); 6 PASS (461 suitechecks, vloer 83; 570
+cases); 7 PASS (534 cases weerleggen de nietsdoener, 36 overlevers); 8
+PASS (37 rode cases, vloer 26; 74 fragmenten citeren geen van de 36
+bodemzinnen; Drools-been 9 fout-gepind, 28 niet-gedragen met reden); 9
+PASS (201 checks, 12 catala-goldens); 10 PASS (337 tests, 64
+rgs-goldens); 11 PASS (29/29); 12 PASS (played 170, DRL-tekst 147, JUnit
+509 tests, vloer 239); 13 PASS (131 verdraaiingen over 27 goldens, vloer
+74; 128 replays, 25 DRL-tekst); 14 PASS (130 checks, 2 flogic-goldens).
+
+Buiten de kaart gemeld, met mandaat. (1) `scripts/check-rood.sh`
+(**voorstel**): de bodemzin `condition kind not implemented in this card`
+is uit de lijst (37 → 36) omdat `ref`'s conditie-match uitputtend is en
+haar laatste vangst de gate werd; het krimpprotocol staat erboven; de
+NOFAULT-regel van de oude rode getuige is vervangen door de
+EXCLUDE-regel van de nieuwe; en het protocol kreeg zijn MACHINALE hek —
+elke lijstzin moet in haar genoemde bronbestand terug te vinden zijn, met
+OCaml-regelvervolg, escaped quotes én escaped BYTES genormaliseerd
+(`translate.ml` schrijft ± als `\xc2\xb1`). Dat hek betrapte meteen een
+echte val: zonder de byte-normalisatie meldde het de `dt_term`-zin ten
+onrechte als dragerloos. (2) `scripts/check-drools.sh` (**voorstel**):
+alleen de twee gelijkheidspinnen, `EXPECTED_PLAYED` 169 → **170** en
+`EXPECTED_DRL_PLAYED` 146 → **147**, elk met een redenblok. Geen
+kanaallijstregel erbij of eraf — de golden komt als SPELER binnen, want
+deze backend hoefde niets: hij droeg §8.4.3 al. Let op bij het mergen:
+de parallelle kaart `drools-enumlabel-lezer` raakt hetzelfde bestand;
+mijn pinstand is gemeten op HEAD van deze branch en moet na die merge
+herrekend worden als die kaart een kanaal verschuift. (3)
+`spec/RUNTIME-SEMANTICS.md` (**voorstel**): ch. 3.10 noteert dat de
+scalaire poort sinds 2026-09-20 door alle vier wordt uitgevoerd en dat de
+clip dat niet is; de ch. 5.11-rijen zeggen niet langer dat `ref` de vorm
+weigert; de statustabel van ch. 3.12 heeft drie rijen in plaats van één.
+(4) `corpus/golden/jutterswet-vormenkabinet/NOTE.md`: de WF-042-rij is
+sinds vandaag KLAAR OM TE VERTREKKEN — het venster voert uit, en de
+opvolger bestaat. Het kabinet zelf is NIET gekrompen: de krimp van
+2026-09-19 laat zien dat dat een eigen kaart is (welke declaraties een
+blijvende rij nog nodig heeft, welke WF-indexcellen verschuiven), en een
+halve krimp is erger dan geen.
+
+Registervoorstel voor `spec/CONSTRUCTS.md` (niet aangeraakt; hoofdsessie
+landt). Er landt nu WEL semantiek, en de rij die deze vorm draagt is
+**rij 11** ("Timelines (granularity, variable starting points) +
+parameter vintages") samen met de §8.4.3-noemingen in de
+clip-delta-tekst. Voorgestelde toevoeging aan rij 11, achteraan:
+*"**Landed (2026-09-20, card `ref-periodeconditie-arm`):** de §8.4.3
+periodeconditie op een SCALAIR doel — RUNTIME-SEMANTICS ch. 3.10's
+evaluatiedatum-poort — wordt uitgevoerd door alle vier de uitvoerders
+(`ref` en de ASP-backend gebouwd bij deze kaart, beide Drools-takken
+droegen hem al), met de zes clausules en het worked example gepind in
+`corpus/golden/jutterswet-premievenster` op beide wireposities en in
+`ref/test` als `WV-3.10`. Twee helften blijven tracked: de grensvorm
+buiten de v0-mirror-note (rode getuige `periodegrens-parameterdatum`,
+alle vier weigeren) en de CLIP op een temporeel doel (ch. 3.10's tweede
+geval, in beide OCaml-uitvoerders geweigerd bij de regel en suite-gepind)
+— vervolgkaart
+`backlog/new/20260920-tijdvenster-conditie-normeren.md`."*
