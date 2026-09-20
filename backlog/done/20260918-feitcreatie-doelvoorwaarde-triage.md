@@ -107,3 +107,19 @@ een kaart is:
 Wat NIET meer open is: de normvraag zelf, de meettabel, en het
 zelfgetypeerde geval (dat is WF-109's ambiguïteitsflank, met getuige
 `wf109-gastheer-ambigu-zelfgetypeerd`).
+
+## Result (hertriage hoofdsessie, 2026-09-20): gesloten zonder restkaart
+
+Alle drie de acceptatiepunten zijn geland — (a) de meettabel in de
+gastheerkaart, (b) het maintainersbesluit (antwoord 1, generiek), (c)
+de uitvoering als WF-109 met drie goldens en negen negatieven. De drie
+punten die de vorige notitie open noemde krijgen GEEN eigen kaart, elk
+met reden: de doelVERGELIJKING heeft geen producent, geen
+verifier-schone instantie en vergt een eigen wire-besluit — genoteerd
+als scope-grens in ch. 4.6 (q2) en bij de v1-post B11, waar het besluit
+thuishoort zodra iemand de vorm wil; de drie reikwijdtehekken dragen
+elk hun reden in de spec en het derde valt met de periodefamilie
+(`20260920-drl-periode-zink.md`, `20260920-ref-periodeconditie-arm.md`);
+de `AttribuutRef.objecttype`-spanning is in (q2) benoemd en B11 is haar
+opruimplek. Een kaart zonder uitvoerbaar werk houdt de backlog niet
+scherper — dit dossier is het naslagpunt.
