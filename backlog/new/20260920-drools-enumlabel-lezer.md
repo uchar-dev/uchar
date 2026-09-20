@@ -35,3 +35,13 @@ call sites hoeft te wijzigen.
 May touch: `backends/drools/**`, `scripts/check-drools.sh` (pins +
 kanaallijsten, **voorstel**), kaartverplaatsing. NB: serieel met andere
 DrlTranspiler/check-drools-kaarten.
+
+## Toolchain-consequentie (herpin 2026-09-20, regelspraak-java 1e53206)
+
+De pin-bump naar 3e97f181 legde dezelfde lezer in de toolchain bloot:
+de twee beslistabel-enum-fixtures van `ExecModelDifferentialTest`
+(OR-lijst én waarde-kant) loweren daar niet meer — drie
+reden-dragende allowlist-entries en de diffvloer 6 → 4, elk met een
+terugzet-verwijzing naar déze kaart. De herpin ná deze kaart draait
+die drie entries en de vloer terug; een achtergebleven entry faalt de
+stale-check daar vanzelf.
