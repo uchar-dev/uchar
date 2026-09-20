@@ -5488,24 +5488,76 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
          …`) so both executors name the same position, and the expression arm
          (`… in translation …`) so the phase stays this backend's own. *)
       fault "Onopgelost condition reached in translation: this rule fails observably (WF-044)"
-  | Periode_conditie _ ->
-      (* the ch. 4.5 TimeWindow, given its own arm for ref's reason (see
-         [Eval.eval_cond]): the wildcard below reports the position, and this
-         construct is refused for something specific to it. The refusal, not
-         the gate, is what this backend can honestly carry — ch. 8.2 norms the
-         window in one sentence without a worked example and points at the
-         ch. 3.10 validity window, whose bounds are BOTH inclusive where this
-         node's are from-inclusive and to-exclusive unless `totInclusief`.
-         [applies] above is therefore not the reading to reuse, and grounding
-         one this backend chose itself would put the ASP leg of the
-         differential ahead of the spec instead of behind it. Wording follows
-         ref word for word up to the phase, as the whole-period reader does,
-         so a reader who sees one sentence has seen both. *)
-      fault
-        "a TimeWindow condition (ch. 4.5 Periode, the §8.4.3 van/tot window) gates a rule on the \
-         evaluation date, and no runtime clause fixes that gate: ch. 8.2 names the window in one \
-         sentence and carries no worked example, and it is NOT the ch. 3.10 validity window, whose \
-         two bounds are both inclusive. Declined in translation rather than grounded on a guess"
+  | Periode_conditie { vanaf; tot; tot_inclusief; _ } ->
+      (* ch. 3.10's evaluation-date gate, ref's arm read in this backend's
+         phase. The date is a SESSION constant, so each bound becomes one
+         ordinary comparison literal against it — no helper, no negation, and
+         nothing that has to be reified: the gate rides the rule body exactly
+         where a `Vergelijking` over the same two dates would ride it.
+
+         The three clauses this encoding gets for free are worth naming,
+         because each of them is a positive join doing the work. A LEEG own
+         attribute binds no val atom, so the body fails — "a leeg bound never
+         matches". A bound that is open contributes no literal at all. And a
+         window the date sits outside becomes a GROUND false comparison, so
+         gringo drops the rule while grounding instead of deriving a head
+         nothing may hold.
+
+         The carried bound shapes are ref's, deliberately not a superset: a
+         literal or the subject's own scalar date attribute (ch. 3.10's v0
+         mirror note). Two executors that carried different bound forms would
+         let the differential arbitrate a form only one of them reads. *)
+      let bound side e =
+        (match e with
+         | Literal _ -> ()
+         | Attribuut_ref
+             { attribuut = Some a; objecttype = Some otn; navigatie_rol = None; navigatie_pad = [];
+               set = false; _ }
+           when Ir_v0.Checks.norm otn = Ir_v0.Checks.norm subject_ot
+                && not (attr_temporal ctx ~otype:otn ~attr:a) ->
+             ()
+         | _ ->
+             fault
+               "the %s bound of a period condition is neither a date literal nor an own scalar \
+                date attribute of the subject: ch. 3.10's mirror note carries those two and defers \
+                the general date expression WF-042 admits (no corpus case)"
+               side);
+        if is_datetime_operand (Some e) then
+          fault
+            "the %s bound of a period condition is a datum-tijd: ch. 3.10 gates on the evaluation \
+             DATE, which is a civil day, and no clause says what an instant bound means there (no \
+             corpus case)"
+            side;
+        let atoms, term, scale = expr_term ctx ~subject ~subject_ot e in
+        (* a day-precision date rides scale 1 (one integer per civil day), so
+           the comparison below needs no harmonisation and no range guard: the
+           terms are five orders of magnitude below gringo's 32-bit grounding
+           limit. The assertion is what keeps that argument true. *)
+        if scale <> 1 then
+          fault "the %s bound of a period condition carries no day-precision date term" side;
+        (atoms, term)
+      in
+      let v = match vanaf with Some e -> Some (bound "vanaf" e) | None -> None in
+      let t = match tot with Some e -> Some (bound "tot" e) | None -> None in
+      if v = None && t = None then
+        fault "a period condition without any bound has no window to gate on (WF-042)";
+      (match ctx.case.as_of with
+       | None ->
+           (* "an unset evaluation date never matches" — a false body literal,
+              not a fault: ch. 3.10 gives the time-free session an ANSWER, and
+              it is the same one ref returns. *)
+           [ "#false" ]
+       | Some d ->
+           let today =
+             match Value.date_of_iso d with
+             | Value.Date z -> z
+             | _ -> fault "malformed asOfDate %S" d
+           in
+           let part sym = function
+             | None -> []
+             | Some (atoms, term) -> atoms @ [ Printf.sprintf "%d %s %s" today sym term ]
+           in
+           part ">=" v @ part (if tot_inclusief then "<=" else "<") t)
   | _ -> fault "condition kind not translated (no corpus case exercises it)"
 
 (* the ground term of a Construct (ch. 9.1): a Literal payload scaled to the
@@ -6820,6 +6872,19 @@ let translate_regel ctx (r : resolved_regel) =
           let base =
             String.concat ", " (Printf.sprintf "isa(%s,%s)" subject (str ot) :: behalve)
           in
+          (* ch. 3.10's case distinction is on the TARGET, which the condition
+             cannot see — so it is settled here, before the window is
+             translated, and through the walk ref uses (Eval.bevat_periode)
+             rather than a second one that could drift from it. *)
+          if
+            attr_temporal ctx ~otype:ot ~attr:a
+            && Option.fold ~none:false ~some:Eval.bevat_periode r.rr_voorwaarde
+          then
+            fault
+              "a period condition on the temporal target %S is ch. 3.10's CLIP, not the \
+               evaluation-date gate: the window intersects the written timeline instead of \
+               deciding whether the rule applies, and that half of the chapter is not built here"
+              a;
           let cond =
             match r.rr_voorwaarde with
             | Some c -> cond_atoms ctx ~subject ~subject_ot:ot c

@@ -2116,32 +2116,64 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
         List.exists (fun (i : World.instance) -> isa env i.otype f) (role_links world self role)
       in
       if negatie then not has_one else has_one
-  | Periode_conditie _ ->
-      (* The ch. 4.5 TimeWindow, and a NAMED refusal rather than the residual
-         sentence this arm used to carry. Since the far-side rolcheck got its
-         own arm (2026-09-20) this match has caught exactly one construct, so
-         a sentence that named none described a one-element set — a refusal
-         waiting for its name.
+  | Periode_conditie { vanaf; tot; tot_inclusief; _ } ->
+      (* ch. 3.10, the SCALAR target's evaluation-date gate — the chapter's
+         first case, in its own six clauses: vanaf inclusive, tot exclusive,
+         "tot en met" inclusive, an absent bound open, an UNSET evaluation
+         date never matching, a LEEG bound never matching. The chapter's
+         other case, the temporal target's clip, never reaches this arm:
+         [run_rule] refuses it by name before a subject is taken, because the
+         case distinction is on the rule's TARGET and a condition sees none.
 
-         Why it is refused and not evaluated, which is the part a reader
-         needs. The window IS normed as a gate: RUNTIME-SEMANTICS ch. 8.2
-         says the evaluation date is tested against it. But that clause
-         carries no worked example and calls the node "the ch. 3.10 period
-         condition", and ch. 3.10 is the VALIDITY window, whose two bounds
-         are both inclusive — this node's are from-inclusive, to-exclusive
-         unless `totInclusief`. So [applies] above is not the reading to
-         reuse; it is the reading with a known off-by-one in it. What a
-         time-free session (asOfDate null) makes of the window, and what the
-         window does to a temporal target, are unstated as well. Both Drools
-         branches DO carry the form (they lower it to "rekendatum inside
-         [vanaf, tot)"), so the corpus cannot arbitrate a reading either: the
-         square splits two-two and `corpus/rood/periodeconditie-bereikt` pins
-         that state. The cure is the period-family card, not a guess here. *)
-      Value.fault
-        "a TimeWindow condition (ch. 4.5 Periode, the §8.4.3 van/tot window) gates a rule on the \
-         evaluation date, and no runtime clause fixes that gate: ch. 8.2 names the window in one \
-         sentence and carries no worked example, and it is NOT the ch. 3.10 validity window, whose \
-         two bounds are both inclusive. Declined here rather than guessed"
+         The mirror note bounds what a bound may BE (backend maturity, not IR
+         scope): a literal or the subject's own scalar date attribute. WF-042
+         admits any date expression, so the rest is refused by name here and
+         in the ASP backend alike — one carried set for both, or the
+         differential would arbitrate a form only one of them reads.
+
+         Both bounds are evaluated, vanaf before tot (ch. 5.11), and BEFORE
+         the verdict looks at the evaluation date: the order is normative and
+         a fault in either bound belongs to it, not to whether today happens
+         to fall inside. *)
+      let bound side e =
+        (match e with
+         | Literal _ -> ()
+         | Attribuut_ref
+             { attribuut = Some a; objecttype = Some otn; navigatie_rol = None; navigatie_pad = [];
+               set = false; _ }
+           when isa env self.otype otn && not (Ir_v0.Checks.attr_temporal (objecttype env otn) a) ->
+             ()
+         | _ ->
+             Value.fault
+               "the %s bound of a period condition is neither a date literal nor an own scalar \
+                date attribute of the subject: ch. 3.10's mirror note carries those two and defers \
+                the general date expression WF-042 admits (no corpus case)"
+               side);
+        eval_expr env world self ~err e
+      in
+      let v = match vanaf with Some e -> Some (bound "vanaf" e) | None -> None in
+      let t = match tot with Some e -> Some (bound "tot" e) | None -> None in
+      if v = None && t = None then
+        Value.fault "a period condition without any bound has no window to gate on (WF-042)";
+      let day = function
+        | None -> None (* an absent bound is open *)
+        | Some Value.Empty -> Some None (* a leeg bound never matches *)
+        | Some (Value.Date z) -> Some (Some z)
+        | Some other ->
+            Value.fault "a period condition's bound is %s, which is not a date (WF-042)"
+              (Value.to_string other)
+      in
+      (match (env.as_of, day v, day t) with
+       | None, _, _ -> false (* an unset evaluation date never matches *)
+       | _, Some None, _ | _, _, Some None -> false
+       | Some d, v, t -> (
+           match Value.date_of_iso d with
+           | Value.Date today ->
+               (match v with Some (Some z) -> z <= today | _ -> true)
+               && (match t with
+                   | Some (Some z) -> if tot_inclusief then today <= z else today < z
+                   | _ -> true)
+           | _ -> Value.fault "malformed asOfDate %S" d))
   | Conditie_onopgelost _ -> Value.fault "Onopgelost condition reached in evaluation (WF-044)"
 
 (* --- day kinds as duration units (ch. 3.7/3.8) --------------------------
@@ -2330,6 +2362,23 @@ let run_pro_rata env w (self : World.instance) ~ot ~attr waarde =
         "a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count shape (a \
          gedurende condition over an own temporal characteristic); no corpus case for more"
 
+(* ch. 3.10's case distinction is on the rule's TARGET, and a condition cannot
+   see one — so the clip case is decided here, where the target is known, and
+   never inside [eval_cond]. Without this walk a period condition on a
+   temporal target would silently get the SCALAR gate: all-or-nothing on the
+   evaluation date where the chapter says the window speaks about the
+   timeline. That is the wrong axis, not a near miss. *)
+let rec bevat_periode (c : conditie) =
+  match c with
+  | Periode_conditie _ -> true
+  | Samengesteld { onderdelen; _ } -> List.exists bevat_periode onderdelen
+  | Kwantorvouw { kv_filter; kv_toets; _ } ->
+      let opt = function Some c -> bevat_periode c | None -> false in
+      opt kv_filter || opt kv_toets
+  | Vergelijking _ | Predicaat _ | Kenmerk_check _ | Rollidmaatschap _ | Verre_rollidmaatschap _
+  | Regelversie _ | Conditie_onopgelost _ ->
+      false
+
 let run_rule env world (r : resolved_regel) =
   if not (applies env r.rr_geldigheid) then (world, false)
   else
@@ -2341,6 +2390,12 @@ let run_rule env world (r : resolved_regel) =
           | Some Kenmerktoekenning -> false
           | _ -> Ir_v0.Checks.attr_temporal (objecttype env ot) attr
         in
+        if temporal_target && Option.fold ~none:false ~some:bevat_periode r.rr_voorwaarde then
+          Value.fault
+            "a period condition on the temporal target %S is ch. 3.10's CLIP, not the \
+             evaluation-date gate: the window intersects the written timeline instead of deciding \
+             whether the rule applies, and that half of the chapter is not built here"
+            attr;
         (* ch. 3.11: the only implemented temporal write is the ch. 3.7
            pro-rata target; every other temporal target refuses — never
            silently coerce a scalar into a timeline *)

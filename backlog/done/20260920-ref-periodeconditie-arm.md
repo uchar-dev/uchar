@@ -194,3 +194,72 @@ ref, clingo en Drools); 12 PASS (played 169, DRL-tekst 146, JUnit 509
 tests, vloer 239); 13 PASS (131 verdraaiingen over 27 goldens, vloer
 74; 128 replays, 25 gespeeld door de DRL-teksttak, vloer 13); 14 PASS
 (130 checks, 2 flogic-goldens).
+
+---
+
+## Fixronde 2026-09-20 (lensvondst, BLOKKEREND): de weigerreden was onwaar
+
+De lens heeft gelijk en de kaart verandert wezenlijk. `RUNTIME-SEMANTICS.md`
+**ch. 3.10** ("Period conditions and de §8.4.3 clip") normeert de scalaire
+periodeconditie VOLLEDIG, mét worked example:
+
+> The rule applies iff the evaluation date lies in the window: `vanaf`
+> inclusive, `tot` exclusive, "tot en met" inclusive; an absent bound is
+> open; an unset evaluation date never matches; a leeg bound never matches.
+> Worked example: window [2024-01-01, 2025-01-01), evaluation date
+> 2024-12-31 → applies; 2025-01-01 → does not; the "tot en met 2024-12-31"
+> form still applies on 2024-12-31.
+
+Mijn armzin las "the ch. 3.10 period condition" in ch. 8.2 als IR-SPEC
+ch. 3.10 (geldigheid). Dat is fout: regel 15 van het document zegt "This
+document's own chapters are cited as `ch. N`", en ch. 3.3 en de statustabel
+van ch. 3.12 noemen geldigheid en de periodeconditie als twee dingen naast
+elkaar. Er is ook geen grensspanning — IR-SPEC ch. 4.5 (`from` inclusief,
+`to` exclusief tenzij `toInclusive`) zegt hetzelfde als ch. 3.10. De
+"geen arbiter"-claim vervalt daarmee ook: de twee Drools-takken voeren
+ch. 3.10 niet als eigen keuze uit maar letterlijk, `totInclusief` incluis.
+
+De fix is dus **afronding, geen herformulering**: de gate wordt gebouwd.
+
+### Handberekening vóór de eerste run (2026-09-20)
+
+De golden is `corpus/golden/jutterswet-premievenster`: artikel 14 van de
+Jutterswet, zes regels op de Vondst. Eén regel zonder voorwaarde
+(`basispremie`, de controle), vier met een literale grens in elk van de
+vier spellingen, en één met de EIGEN `meldatum` van de vondst als grens —
+de tweede door ch. 3.10's mirror-note gedragen grensvorm. De vensters zijn
+precies de vensters van het worked example.
+
+| attribuut | waarde | venster |
+|---|---|---|
+| `basispremie` | 1 | geen voorwaarde (controle) |
+| `vondstpremie` | 50 | `van 2024-01-01 tot 2025-01-01` (tot exclusief) |
+| `naseizoenpremie` | 20 | `van 2024-01-01 tot en met 2024-12-31` |
+| `overgangspremie` | 30 | `vanaf 2025-01-01` (open boven) |
+| `aanlooppremie` | 10 | `tot 2024-01-01` (open onder) |
+| `bergloon` | 5 | `vanaf de meldatum van de Vondst` |
+
+Twee vondsten in elk geval: V1 met `meldatum` 2024-03-01, V2 zonder
+meldatum — de lege grens. De verwachtingen, uitgerekend vóór ref of clingo
+het document ooit zag (`—` is leeg):
+
+| geval | asOfDate | basis | vondst | naseizoen | overgang | aanloop | bergloon V1 | bergloon V2 |
+|---|---|---|---|---|---|---|---|---|
+| `case1-binnen-venster` | 2024-06-15 | 1 | 50 | 20 | — | — | 5 | — |
+| `case2-op-de-vanafgrens` | 2024-01-01 | 1 | **50** | 20 | — | — | — | — |
+| `case3-laatste-dag` | 2024-12-31 | 1 | 50 | **20** | — | — | 5 | — |
+| `case4-op-de-totgrens` | 2025-01-01 | 1 | **—** | — | 30 | — | 5 | — |
+| `case5-voor-het-venster` | 2023-06-01 | 1 | — | — | — | 10 | — | — |
+| `case6-tijdvrij` | null | 1 | — | — | — | — | — | — |
+
+De vetgedrukte cellen zijn de zes clausules, elk op zijn eigen plek:
+`vanaf` inclusief (case2, 50 ÓP de ondergrens), `tot` exclusief (case4, leeg
+ÓP de bovengrens — het worked example's "2025-01-01 → does not"), "tot en
+met" inclusief (case3, 20 op 2024-12-31 — het worked example's derde zin),
+een afwezige grens open (`overgangspremie` in case4 en `aanlooppremie` in
+case5), een ongezette evaluatiedatum matcht nooit (case6, alles leeg op
+`basispremie` na), en een lege grens matcht nooit (V2's `bergloon`, in elk
+geval leeg terwijl V1's in vier gevallen vuurt). `basispremie` is in elk
+geval 1: hij bewijst dat het venster alleen zijn eigen regel poort, en hij
+houdt de nietsdoener-poort (gate 7) eerlijk in `case6`, waar alle andere
+verwachtingen leeg zijn.
