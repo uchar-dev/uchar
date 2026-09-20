@@ -200,3 +200,53 @@ kant: met beide tellingen erbij beweegt poort 6 geen cijfer. Een
 verbreding zonder getuige is precies wat de huisregel verbiedt, dus zij
 gaat niet stilzwijgend mee — zij is hier genoteerd als eigen vraag voor
 een kaart die er een casus bij heeft.
+
+### Stap 3 — Drools, beide takken
+
+In de volgorde uit de overdracht. **(1) `Expr.FunctieKind`** krijgt de
+constante. Dat is een bestand onder `frontends/` maar geen
+emissiewijziging: de parser produceert de soort nergens en geen
+grammaticaregel schrijft hem, dus de constante verbreedt wat er GELEZEN
+kan worden en niet wat er geschreven wordt. Het record is de gedeelde
+IR-vorm die de backend meecompileert, en zonder de constante haalt geen
+enkel document met de soort de transpilers.
+
+**(2) `ExecModelTranspiler`.** De soort komt in `isAggregatieKind`, zodat
+de regel de aggregatieroute neemt, en krijgt in `vouw` een eigen tak vóór
+de attribuutvouwen: dezelfde `CountAccumulateFunction` over de
+ELEMENTvariabele, met de bron versmald tot de leden wier waarde bestaat.
+Die `!= null` is dezelfde bewaking die de som/min/max-vouwen daar al voor
+§4.12 zetten — dus de tak voegt een soort toe, geen mechanisme. De
+`count`-vlag blijft AANTAL-eigen, want die stuurt óók de rolnaamopzoeking
+(bij AANTAL is het argument een ROLnaam, bij AANTAL_GEVULDE een
+ATTRIBUUTnaam, en die twee mogen nooit tegen elkaar gematcht worden).
+
+**(3) `DrlTranspiler`.** `case AANTAL, AANTAL_GEVULDE -> "count"`, en de
+`!= null`-bewaking uit de "geen telling"-voorwaarde getild. Dat was de
+enige echte ingreep: in die tak is de bewaking geen voorzorg tegen een
+halverwege afgeleide waarde maar de VOUW ZELF.
+
+**(4) De loader.** De klasse-brede `Refusal` bleef staan en de soort
+passeert hem nu. De getuige uit kaart 1 sloeg op `AANTAL_GEVULDE` en zou
+dus voortaan niets meer meten; hij verspelt de vouw nu als `GEMIDDELDE` —
+niet als willekeurig token maar als de vouw die besluit G1 bewust NIET
+gebouwd heeft, zodat de getuige een BESLOTEN afwezigheid noemt en de dag
+dat dat besluit herzien wordt vanzelf om een nieuwe stand-in vraagt.
+
+**Mutatieproeven (elk gedraaid, gesweept en teruggedraaid, met
+jar-herbouw in dezelfde keten).**
+
+    MD1  exec: de != null-bewaking uit de gevulde-telling-tak
+         -> alle drie de goldens FAIL in de EXEC-tak (verwacht 2,
+            werkelijk 3), de DRL-tekst-tak blijft groen
+    MD2  DRL-tekst: gevuldeTelling uit de foldScope-voorwaarde
+         -> alle drie de goldens FAIL in de DRL-TEKST-tak, de exec-tak
+            blijft groen
+    MD3  exec: de soort uit isAggregatieKind
+         -> alle drie verlaten het PLAYED-kanaal met
+            "regel (waarde buiten scope)" — de EXPECTED_PLAYED-gelijkheid
+            vangt precies dat, bij naam
+
+MD1 en MD2 samen zijn het bewijs dat de twee takken werkelijk los van
+elkaar gemeten worden: elke mutatie laat de andere tak ongemoeid, dus geen
+van beide leunt op de ander.

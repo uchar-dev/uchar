@@ -414,10 +414,10 @@ public final class IrLoader {
                 // A kind this backend's IR records do not carry is a NAMED per-form Refusal, on the
                 // Kwantorvouw.kwantor precedent below: Enum.valueOf would otherwise throw an unattributed
                 // IllegalArgumentException, which gate 12 reads as an ERROR on the golden rather than as a
-                // reasoned channel, and which names no form a reader could act on. The live case is
-                // AANTAL_GEVULDE (IR-SPEC ch. 4.3, RUNTIME-SEMANTICS ch. 3.4c), on the wire and carried by ref
-                // since 2026-09-20 and not yet by either transpiler branch here; the arm is written for the
-                // CLASS rather than for that kind, because the next wire-first kind deserves the same answer.
+                // reasoned channel, and which names no form a reader could act on. The arm is written for the
+                // CLASS rather than for one kind, and it has already outlived its first occasion: AANTAL_GEVULDE
+                // (IR-SPEC ch. 4.3) reached it while it was wire-only and passes it since both transpiler
+                // branches carry the kind (2026-09-20). The next wire-first kind gets the same answer.
                 Expr.FunctieKind fk;
                 try { fk = enumOf(Expr.FunctieKind.class, text(n, "kind")); }
                 catch (IllegalArgumentException e) { fk = null; }

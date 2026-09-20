@@ -23,15 +23,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p><b>Why this matters before any such document is in the corpus.</b> The distinction is not
  * cosmetic: gate 12 groups a Refusal as a reasoned per-form channel and prints its sentence, while an
  * unattributed runtime exception is an ERROR on the golden — a red gate whose report names a Java
- * class and no wire form. The live case is {@code AANTAL_GEVULDE}, the filled-value count
- * (IR-SPEC ch. 4.3, RUNTIME-SEMANTICS ch. 3.4c): it went onto the wire and into {@code ref} on
- * 2026-09-20 and neither transpiler branch here carries it yet. That is the wire-first order working
- * as intended, and what it asks of this backend in the meantime is exactly one thing — refuse the
- * form by name, so the gap is visible instead of being a crash.
+ * class and no wire form.
  *
- * <p>The arm is written for the CLASS and not for that one kind, because the next wire-first kind
- * deserves the same answer. When a transpiler arm for the filled count lands, the kind stops reaching
- * this refusal and this witness keeps standing for whatever the wire defines next.
+ * <p>The live case used to be {@code AANTAL_GEVULDE}, the filled-value count (IR-SPEC ch. 4.3,
+ * RUNTIME-SEMANTICS ch. 3.4c), which went onto the wire before any consumer here carried it. Both
+ * transpiler branches carry it from 2026-09-20, so the kind no longer reaches this refusal —
+ * exactly what the wire-first order predicted, and the reason the arm was written for the CLASS
+ * rather than for that one kind.
+ *
+ * <p>The witness therefore re-spells the fold as {@code GEMIDDELDE}, which is not an arbitrary
+ * token: it is the average fold maintainer decision G1 of 2026-09-19 deliberately did NOT build,
+ * leaving {@code SOM ÷ AANTAL_GEVULDE} hand-spelled. So the unknown kind named here is a DECIDED
+ * absence rather than a typo, and the day that decision is revisited this witness needs a new
+ * stand-in — which is the right moment to be reminded of it.
  */
 class OnbekendeFunctieKindWitnessTest {
 
@@ -42,14 +46,14 @@ class OnbekendeFunctieKindWitnessTest {
 
     @Test void een_niet_gedragen_vouwsoort_is_een_benoemde_weigering() throws Exception {
         ObjectNode root = (ObjectNode) golden();
-        ((ObjectNode) vouw(root)).put("kind", "AANTAL_GEVULDE");
+        ((ObjectNode) vouw(root)).put("kind", "GEMIDDELDE");
 
         IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class, () -> IrLoader.load(root),
                 "een vouwsoort die dit backend niet draagt hoort een benoemde per-vorm-weigering te zijn,"
                         + " geen onbeheerde IllegalArgumentException");
         assertEquals("Functie.kind", r.form(),
                 "de weigering noemt de vorm, zodat gate 12 haar met reden in het kanaalverslag zet");
-        assertTrue(r.getMessage().contains("AANTAL_GEVULDE"),
+        assertTrue(r.getMessage().contains("GEMIDDELDE"),
                 "en zij noemt de soort die arriveerde, niet alleen de positie: " + r.getMessage());
     }
 

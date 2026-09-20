@@ -658,7 +658,24 @@ EXPECTED_CHANNEL=(
 # BOTTOM SENTENCE, so they now carry a named arm for it and the square closes on the values. The
 # golden is hand-written IR with no bron.rgs (a wire witness needs no producer route), so gate 10
 # has nothing to re-emit. EXPECTED_DRL_PLAYED moves by one as well.
-EXPECTED_PLAYED=165
+#
+# 165 -> 168 (2026-09-20, card aantal-gevulde-backends): THREE new players, and all three needed a
+# change here. `AANTAL_GEVULDE` — the filled-value count, IR-SPEC ch. 4.3 — went onto the wire and
+# into ref on 2026-09-20 with no consumer in this backend at all; both branches now lower it as the
+# count accumulate they already had, over a source narrowed to the members whose value exists, so
+# the kinds part on the SCOPE and not on the accumulate function. `jutterswet-gevuldetelling` pins
+# the filled count beside the instance count over one population (3/2, 0/0, 1/0) and adds a case
+# whose two filled members carry the SAME number, which is the only case in the zone that separates
+# counting contributors from counting distinct values; `jutterswet-gevuldepad` pins the WF-102
+# multi-step range under the one kind that can carry it, with a bergplaats reached along two boten
+# contributing once; `jutterswet-gevuldesoorten` pins the typelessness of the presence test over
+# tekst, datum, enumeratie and booleaan, the last with `onwaar` as a FILLED value. All three are
+# hand-written IR with no bron.rgs — the source language has no spelling for the operation, so the
+# kind is wire-first and gate 10 has nothing to re-emit. The one form still refused is the TEMPORAL
+# set source, which has no defined moment to fold (RUNTIME-SEMANTICS ch. 3.4c); it lives in the red
+# zone, where this backend's refusal is listed in gate 8 beside ref's and clingo's pinned fragments.
+# Both branches play all three, so EXPECTED_DRL_PLAYED moves by three as well.
+EXPECTED_PLAYED=168
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -820,7 +837,11 @@ DRL_CHANNEL=(
 # check's first corpus carrier. This branch lowers the form as an `exists`/`not` clause beside the
 # subject pattern and played it unchanged; the card's work was in ref and the ASP backend. Reason
 # block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=142
+# 142 -> 145 (2026-09-20, card aantal-gevulde-backends): the three filled-count goldens. This branch
+# needed its own change — the `!= null` source guard the sum/min/max folds carry for §4.12 is for
+# the filled count the FOLD ITSELF, so it had to be lifted out of the "not a count" condition that
+# had always excluded it. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=145
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a

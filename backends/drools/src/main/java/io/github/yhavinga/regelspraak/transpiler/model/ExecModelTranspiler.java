@@ -815,7 +815,8 @@ public final class ExecModelTranspiler {
     }
     private static boolean isAggregatieKind(Expr.FunctieKind k) {
         return k == Expr.FunctieKind.SOM || k == Expr.FunctieKind.TOTAAL || k == Expr.FunctieKind.AANTAL
-                || k == Expr.FunctieKind.MINIMUM || k == Expr.FunctieKind.MAXIMUM;
+                || k == Expr.FunctieKind.MINIMUM || k == Expr.FunctieKind.MAXIMUM
+                || k == Expr.FunctieKind.AANTAL_GEVULDE;
     }
     /** §5.8.3-.4 a LISTED concatenation fold ("de minimale/maximale/eerste/laatste van A en B …") — ≥2 listed scalar
      *  operands, no restriction — handled on the scalar path by {@link #concatenatieFold}, NOT an instance aggregation. */
@@ -908,8 +909,12 @@ public final class ExecModelTranspiler {
         // §7.1 a SOM/TOTAAL over a temporal attribute of a set is a PER-ELEMENT timeline fold (rsTijdTotaal per element,
         // then sum); MIN/MAX over a temporal attribute is ambiguous -> skip (mirror the DRL marker). ("de som van het
         // totaal van X van alle" attaches the set to the inner totaal -> the outer SOM is element-less -> markers.)
+        // A FILLED count lands in the same skip and for a reason the spec now states rather than leaves to the
+        // executors: a count has no defined MOMENT at which to ask a timeline whether it is filled
+        // (RUNTIME-SEMANTICS ch. 3.4c). Both OCaml executors refuse that form by name; refusing it here keeps the
+        // three in step instead of answering from whichever bucket the getter happens to hand over.
         if (temporeel && f.kind() != Expr.FunctieKind.SOM && f.kind() != Expr.FunctieKind.TOTAAL) return null;
-        if (!count && arg == null) return null;   // sum/min/max need an attribute to fold
+        if (!count && arg == null) return null;   // sum/min/max/filled-count need an attribute to fold
 
         // IR-SPEC ch. 4.3 / WF-102: a RANGE that is a PATH replaces the whole one-step join derivation below. It is
         // read first and returns, so a document carrying a path never falls through to the by-pair search — that
@@ -1045,6 +1050,22 @@ public final class ExecModelTranspiler {
                     resultVar, null, null, false);
 
         final String attr = arg.attribuut();
+        // IR-SPEC ch. 4.3 / RUNTIME-SEMANTICS ch. 3.4c — the FILLED-VALUE count: the same CountAccumulateFunction
+        // the instance count uses, over a source narrowed to the members whose value EXISTS. The `!= null` guard is
+        // the whole difference between the two kinds, and it is the same guard the sum/min/max folds below already
+        // place for §4.12 — so this arm adds a kind, not a mechanism.
+        // It counts the ELEMENT VARIABLE and never binds the value: over a WF-102 path the intermediates ride the
+        // accumulate source as an `exists`, so an element reached along two routes yields ONE tuple and contributes
+        // once (the flat-union reading of ch. 3.4b, pinned by jutterswet-gevuldepad's shared-bergplaats case).
+        // An EMPTY source is 0 and not leeg: a count accumulate always binds a row, which is exactly the answer
+        // ch. 1.2e demands and the reason no countVar/fallback pair is needed here as it is for the SOM.
+        if (f.kind() == Expr.FunctieKind.AANTAL_GEVULDE) {
+            PatternDSL.PatternDef gevuld =
+                    src.expr(nextId("nn"), (Predicate1) (e) -> RegelSpraakRuntime.get(e, attr) != null);
+            return new Agg(DSL.accumulate(accBron(gevuld, extra),
+                            DSL.accFunction(accFn("CountAccumulateFunction"), elemVar).as(resultVar)),
+                    resultVar, null, null, false);
+        }
         // §7.1 per-element timeline fold: a temporal element value is summed over time (rsTijdTotaal at the attribute's
         // granularity) to a scalar BEFORE the set fold, instead of the bare List<Segment> getter.
         final String tijdGran = temporeel ? arg.objecttype().granulariteitLeden().get(attr).name() : null;

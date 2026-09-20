@@ -3829,9 +3829,15 @@ public final class DrlTranspiler {
         if (temporeelArg && f.kind() != Expr.FunctieKind.SOM && f.kind() != Expr.FunctieKind.TOTAAL)
             return null;
         Objecttype elem = f.elementObjecttype();
+        // IR-SPEC ch. 4.3 / RUNTIME-SEMANTICS ch. 3.4c — the FILLED-VALUE count rides the SAME `count`
+        // accumulate as the instance count, over a source narrowed to the members whose value exists. The two
+        // kinds therefore part on the SCOPE and not on the function, which is why the flag below is a kind test
+        // rather than an `fn` test: every place that asks "is this a count?" means "does it fold the element
+        // instead of a value?", and both counts answer yes to that.
+        boolean gevuldeTelling = f.kind() == Expr.FunctieKind.AANTAL_GEVULDE;
         String fn = switch (f.kind()) {
             case SOM, TOTAAL -> "sum";
-            case AANTAL -> "count";
+            case AANTAL, AANTAL_GEVULDE -> "count";
             case MINIMUM -> "min";
             case MAXIMUM -> "max";
             default -> null;
@@ -3908,8 +3914,11 @@ public final class DrlTranspiler {
         // the null prior contribution, which crashes ("Reversing a not existing accumulated object"). A `!= null` source
         // guard makes that transition an INSERT (null -> present) rather than a reverse. (SOM guards above; extend it to
         // TOTAAL/MIN/MAX over a plain attribute. A temporal per-element fold reads a List<Segment> getter, never null.)
+        // The filled count joins that guard rather than the bare scope: for it the `!= null` is not a defensive
+        // measure against a mid-pass derivation but the FOLD ITSELF — it is what separates a member that has a
+        // value from one that does not, and dropping it turns the kind back into the instance count.
         String foldScope = filterScope;
-        if (!fn.equals("count") && !temporeelArg && arg instanceof Expr.AttribuutRef a)
+        if ((!fn.equals("count") || gevuldeTelling) && !temporeelArg && arg instanceof Expr.AttribuutRef a)
             foldScope = samen(bereik, ident(a.attribuut(), false) + " != null");
         // §5.8.3 an empty MIN/MAX is LEEG (§5.3 Tabel 37 / §5.6 Tabel 44), but a bare min()/max() accumulate binds NO
         // result row over an EMPTY source — so a downstream CONDITION compare would never run (the rule silently reads
@@ -4220,7 +4229,8 @@ public final class DrlTranspiler {
 
     private static boolean isAggregatieFunctie(Expr.FunctieKind k) {
         return k == Expr.FunctieKind.AANTAL || k == Expr.FunctieKind.SOM || k == Expr.FunctieKind.TOTAAL
-                || k == Expr.FunctieKind.MINIMUM || k == Expr.FunctieKind.MAXIMUM;
+                || k == Expr.FunctieKind.MINIMUM || k == Expr.FunctieKind.MAXIMUM
+                || k == Expr.FunctieKind.AANTAL_GEVULDE;
     }
     /** Does the comparison have an aggregation (count/sum/totaal/min/max) as either operand? — a bullet routed through
      *  {@link #aggregatieVoorwaarde} rather than the counting fold's inline-boolean expansion (which cannot host it). */
