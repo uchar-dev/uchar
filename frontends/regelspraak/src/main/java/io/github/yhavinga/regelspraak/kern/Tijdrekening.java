@@ -26,8 +26,26 @@ public final class Tijdrekening {
 
     /** As {@link #chronoUnit(Datatype)}, keyed directly on an {@link Eenheid} ({@code null}-safe). */
     public static String chronoUnit(Eenheid e) {
-        if (e == null) return null;
-        return switch (RegelSpraakModel.normaliseerTijdseenheid(e.afkorting())) {
+        return e == null ? null : chronoUnitVanSpelling(e.afkorting());
+    }
+
+    /** Whether {@code spelling} stands in the NORMATIVE calendar table (uchar's RUNTIME-SEMANTICS ch. 1.2,
+     *  thirty spellings over nine units). That table is what decides which of the two readings a duration
+     *  unit has — "a spelling outside the table is a declared day kind" — so the day-kind registration guard
+     *  must compare against exactly it and against no list of its own, or the producer admits a spelling the
+     *  IR then refuses (WF-017). Trims and lower-cases nothing: the caller passes the identity-normalised
+     *  spelling, as the registry lookup does. */
+    public static boolean isKalenderSpelling(String spelling) {
+        return chronoUnitVanSpelling(spelling) != null;
+    }
+
+    /** The table keyed directly on a SPELLING — the shared body of the two entries above. A null spelling is
+     *  no unit at all and answers null, as the interpreter's own table does: an {@code Eenheid} on this wire
+     *  may carry a null afkorting, and the plural reducer hands a null straight back through its default arm,
+     *  so without this guard the switch below would throw on a document the IR admits. */
+    private static String chronoUnitVanSpelling(String spelling) {
+        if (spelling == null) return null;
+        return switch (RegelSpraakModel.normaliseerTijdseenheid(spelling)) {
             case "jaar", "jr"             -> "YEARS";
             case "maand", "mnd"           -> "MONTHS";
             case "week", "wk"             -> "WEEKS";

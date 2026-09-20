@@ -35,6 +35,25 @@ class TijdrekeningTest {
         assertNull(Tijdrekening.chronoUnit(new Datatype.Numeriek(true, 0, null, null)), "geen eenheid -> null");
     }
 
+    @Test void isKalenderSpelling_kent_precies_de_dertig_spellingen_van_de_tabel() {
+        // The day-kind registration guard (DefinitionResolver) and WF-017 both compare against THIS, so the
+        // set has to be the normative table of RUNTIME-SEMANTICS ch. 1.2 exactly: nine units, thirty
+        // spellings — the singular, the abbreviation, the plural, and for the two sub-second units a second
+        // plural in -s. Pinned as a whole rather than sampled, because both a missing and a surplus spelling
+        // is a producer that disagrees with the wire rule.
+        List<String> tabel = List.of(
+                "jaar", "jr", "jaren", "maand", "mnd", "maanden", "kwartaal", "kw", "kwartalen",
+                "week", "wk", "weken", "dag", "dg", "dagen", "uur", "u", "uren",
+                "minuut", "min", "minuten", "seconde", "sec", "s", "seconden", "secondes",
+                "milliseconde", "ms", "milliseconden", "millisecondes");
+        assertEquals(30, tabel.size());
+        for (String s : tabel) assertTrue(Tijdrekening.isKalenderSpelling(s), s + " staat in de tabel");
+        // and nothing beside it: a day-kind spelling, a near miss, the empty spelling, none
+        for (String s : List.of("werkdag", "werkdagen", "schouwdagen", "wkn", "seconds", "kwartaaltje", ""))
+            assertFalse(Tijdrekening.isKalenderSpelling(s), s + " staat er niet in");
+        assertFalse(Tijdrekening.isKalenderSpelling(null));
+    }
+
     @Test void toets_codeert_de_zes_vergelijkingen_en_weigert_datum_ordening() {
         assertEquals(0, Tijdrekening.toets(Operator.KLEINER));
         assertEquals(1, Tijdrekening.toets(Operator.KLEINER_OF_GELIJK));
