@@ -1,0 +1,21 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "ref": "division by numeric zero",
+    "clingo": "division by numeric zero",
+    "drools": "Breuk deling door 0"
+  }
+}

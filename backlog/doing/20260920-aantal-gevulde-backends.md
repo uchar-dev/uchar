@@ -250,3 +250,37 @@ jar-herbouw in dezelfde keten).**
 MD1 en MD2 samen zijn het bewijs dat de twee takken werkelijk los van
 elkaar gemeten worden: elke mutatie laat de andere tak ongemoeid, dus geen
 van beide leunt op de ander.
+
+### Stap 4 — de vierde getuige, die de ontwerpkaart afmaakt
+
+De ontwerpschets noemde in §5 een VIERDE getuige: de bewaakte deling. Die
+stond niet in de opdracht van deze kaart, maar toen de drie andere eenmaal
+in alle vier de uitvoerders speelden was hij te meten in plaats van te
+begroten — en hij bleek zonder verdere ingreep te spelen. Hij is daarom
+alsnog gebouwd, met zijn rode tweelingbroer.
+
+`corpus/golden/jutterswet-gevuldegemiddelde` spelt het gemiddelde met de
+hand, zoals besluit G1 het laat: `SOM ÷ AANTAL_GEVULDE`, met "indien het
+aantal gewaardeerde vondsten groter is dan 0" in het voorwaardendeel.
+
+    jutter   waarderingen   gevuld   som   gemiddelde
+    J1       4, 6, leeg     2        10    5
+    J2       (geen)         0        0     leeg (de regel vuurt niet)
+    J3       leeg           0        0     leeg (de regel vuurt niet)
+
+Dit is de enige getuige waar de twee tellingen in een VOORWAARDE tegenover
+elkaar staan, en waar het verschil iets kost: `AANTAL` is 1 voor J3, dus
+een bewaking met de instantietelling laat de deling juist binnen en faalt.
+
+`corpus/rood/aantalgevulde-ongewaakte-deling` is hetzelfde document met de
+voorwaarde eraf, op J2. Alle DRIE de uitvoerders falen er, elk met een
+eigen gepind fragment (ref en clingo op de deling, de Drools-runtime in de
+consequentie). Daarmee is de ruil van besluit G1 niet meer alleen
+uitgerekend maar gepind: stil verkeerd wordt luid fout, en de ontsnapping
+die het besluit veronderstelt bestaat werkelijk.
+
+Merk op dat dit tweetal alleen bestaat omdat de telling GEEN eenheid
+afgeeft: de bron van dit gemiddelde is eenheidloos, maar MC3 laat zien dat
+een telling die de eenheid van haar bron doorgeeft de deling in clingo
+onvertaalbaar maakt. De ontwerpvraag over de eenheidsafleiders en deze
+getuige zijn dus dezelfde vraag, van twee kanten.

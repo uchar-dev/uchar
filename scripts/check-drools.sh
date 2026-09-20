@@ -675,7 +675,16 @@ EXPECTED_CHANNEL=(
 # set source, which has no defined moment to fold (RUNTIME-SEMANTICS ch. 3.4c); it lives in the red
 # zone, where this backend's refusal is listed in gate 8 beside ref's and clingo's pinned fragments.
 # Both branches play all three, so EXPECTED_DRL_PLAYED moves by three as well.
-EXPECTED_PLAYED=168
+#
+# 168 -> 169 (2026-09-20, same card): `jutterswet-gevuldegemiddelde`, and this one needed no further
+# change — it is the three rules above composed. There is NO average fold on the wire (maintainer
+# decision G1): the author writes `SOM / AANTAL_GEVULDE` and owns the division by zero, and what the
+# filled count gives back is a GUARD that is writable, since it may stand in a rule's condition where
+# the instance count reads 1 for a member with no value and would let the division through. The
+# golden pins that the guard is reached and that the division is not; its red twin
+# (corpus/rood/aantalgevulde-ongewaakte-deling) pins the fault the guard prevents in all THREE
+# executors, this backend among them. EXPECTED_DRL_PLAYED moves by one as well.
+EXPECTED_PLAYED=169
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -841,7 +850,9 @@ DRL_CHANNEL=(
 # needed its own change — the `!= null` source guard the sum/min/max folds carry for §4.12 is for
 # the filled count the FOLD ITSELF, so it had to be lifted out of the "not a count" condition that
 # had always excluded it. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=145
+# 145 -> 146 (2026-09-20, same card): jutterswet-gevuldegemiddelde, the guarded hand-spelled average.
+# This branch needed nothing beyond the filled count itself. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=146
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
