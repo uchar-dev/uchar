@@ -58,6 +58,16 @@ een JUnit-getuige onder `backends/drools/src/test/`,
 redenblokken — beschermd pad, gemandateerd voorstel), deze kaart en de
 ontwerpkaart.
 
+**Uitbreiding tijdens de uitvoering, hier genoteerd in plaats van
+stilzwijgend gedaan:** `scripts/check-rood.sh` is óók aangeraakt, met ÉÉN
+regel — de nieuwe rode casus op de Drools-uitzonderingslijst van dat
+been. Dat been eist per rode casus een gepind fragment of een reden, en
+een rode casus toevoegen zonder de regel maakt de poort rood. De
+uitbreiding volgt dus rechtstreeks uit acceptatie (d) en valt onder
+hetzelfde beschermde-padmandaat als de pinnen van poort 12. De tweede
+rode casus kreeg géén lijstregel maar een echt Drools-fragment, want die
+faalt werkelijk bij vuren.
+
 Out of scope: `spec/**` (kaart 1 normeerde ch. 4.3 en ch. 3.4c; deze
 kaart voegt er geen letter aan toe), `ref/**` (draagt de vorm al),
 `spec/verifier/**`, `frontends/**` behalve de ene enumconstante (de
