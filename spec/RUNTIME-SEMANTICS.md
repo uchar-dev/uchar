@@ -1137,9 +1137,14 @@ the totaal and for nothing else, because only they integrate; a count has no
 defined MOMENT at which to ask a timeline whether it is filled, and picking
 one would be this chapter inventing a reading rather than stating one. A
 filled count over a time-dependent attribute therefore fails observably,
-naming the attribute, and never reads a value the timeline does not have at
-an instant (`ref`: *this aggregation over the temporal attribute … of a set
-has no defined moment to fold*; worked example WV-3.4c-temporeel-faalt).
+naming the attribute AND the fold, and never reads a value the timeline does
+not have at an instant (`ref` and the ASP backend, word for word: *the
+temporal attribute … of a set has no moment at which a filled count can ask
+a timeline whether it is filled*; worked example WV-3.4c-temporeel-faalt,
+red case `aantalgevulde-temporele-setbron`). Naming the FOLD is part of the
+clause and not presentation: the ranking folds are refused at the same
+position on the same ground, so a refusal that named only the position would
+be one sentence for five constructs and would identify none of them.
 The door is closed and not locked: a later card with a real casus may give
 the filled count its own moment rule, and it would be a clause here rather
 than an executor's choice.

@@ -24,6 +24,14 @@ Row J1 is the arithmetic the wire could not get right before this kind
 existed: with `AANTAL` as the divisor it is 10 ÷ 3, a silently wrong
 answer rather than a loud one.
 
+The `vondstwaarde` column is pinned on ALL THREE jutters, not just on the
+one where it is interesting. J2 and J3 are there because the som declares
+`of 0 als die er niet zijn`, and that fallback is half of the arithmetic
+the guard exists for: it is what makes the unguarded division 0 ÷ 0
+rather than leeg ÷ 0. Pinning the numerator only where it is non-zero
+would leave the reader to take the fallback on trust and would let an
+executor that answered leeg there pass.
+
 The red twin `corpus/rood/aantalgevulde-ongewaakte-deling` is this same
 document with the condition removed. It faults in all three executors, so
 what the guard prevents is pinned as well as the guard itself — and what

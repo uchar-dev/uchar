@@ -6865,7 +6865,7 @@ let () =
   let ir = aantalgevulde_doc ~vondst_granulariteit:{|"gewicht": "DAG"|} in
   faults_with ~name:"AANTAL_GEVULDE: the temporal set source is refused by its own arm" ~ir
     ~case_text:aantalgevulde_case
-    ~needle:"a filled count over the temporal attribute";
+    ~needle:"no moment at which a filled count can ask a timeline whether it is filled";
   (* and that refusal is NOT the fall-through: a pin on that sentence would
      witness every untranslated form at once, which is what gate 8 forbids *)
   let irf = write_temp ".ir.json" ir in
@@ -6880,6 +6880,133 @@ let () =
       check
         ("AANTAL_GEVULDE temporal: the refusal is not the expr_term bottom sentence (" ^ m ^ ")")
         (not (Uchar_ref.Case.contains ~needle:"expression kind not translated" m))
+
+(* The unit deriver's NAMED arm for the two counts, pinned by its CONSEQUENCE.
+   [eff_unit] is internal, so what is measured is what the arm buys: the
+   hand-spelled average of maintainer decision G1 — there is no average fold, the
+   author writes `som / AANTAL_GEVULDE` — over a fold source that CARRIES A UNIT.
+   A cardinality has none, so the division sees two unit-free operands and
+   translates.
+
+   Why it cannot live in the corpus. jutterswet-gevuldegemiddelde pins the same
+   division in all four executors, but its folded attribute is unitless, so it
+   does not discriminate. Measured 2026-09-20: put the counts in the arm that
+   passes operand 0's unit through and the ENTIRE corpus stays green while this
+   shape stops translating, with ref still computing it — a one-answers-one-
+   refuses split under a verifier-clean document, and the write fence stays quiet
+   because it is silent as soon as one side has no unit. *)
+let gemiddelde_kg_doc =
+  {|{ "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": { "node": "Objecttype", "naam": "Jutter",
+      "attributen": { "aantal gewogen vondsten": |} ^ num0
+  ^ {|, "puntensom": |} ^ num0
+  ^ {|, "puntendeel": |} ^ num0
+  ^ {| },
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {}, "bezield": true, "meervoud": "Jutters" },
+    "Vondst": { "node": "Objecttype", "naam": "Vondst",
+      "attributen": { "gewicht": { "node": "Numeriek", "geheel": false, "decimalen": 2,
+          "teken": "ONBEPAALD", "eenheid": { "node": "Eenheid", "afkorting": "kg",
+            "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null } } },
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vondsten" } },
+  "domeinen": {}, "parameters": {},
+  "eenheidstelsels": { "Gewicht": { "node": "Eenheidstelsel", "naam": "Gewicht",
+    "eenheden": { "kg": { "node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht",
+      "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null } }, "aliassen": {} } },
+  "feittypen": { "vondstaanmelding": { "node": "Feittype", "naam": "vondstaanmelding",
+    "wederkerig": false, "rollen": [
+      { "node": "Rol", "naam": "aanmelder", "objecttypeNaam": "Jutter",
+        "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "vondst", "objecttypeNaam": "Vondst",
+        "meervoud": "vondsten", "meervoudig": true } ] } },
+  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
+  "regels": [],
+  "resolvedRegels": [
+    { "node": "ResolvedRegel", "naam": "aantal gewogen vondsten", "soort": "BEREKENING",
+      "doel": { "node": "AttribuutRef", "attribuut": "aantal gewogen vondsten",
+                "objecttype": "Jutter", "onderwerpBron": "een Jutter", "navigatieRol": null,
+                "type": |} ^ num0
+  ^ {|, "bron": "Het aantal gewogen vondsten van een Jutter",
+                "set": false, "navigatiePad": [] },
+      "waarde": { "node": "Functie", "kind": "AANTAL_GEVULDE",
+        "argumenten": [ { "node": "AttribuutRef", "attribuut": "gewicht", "objecttype": "Vondst",
+                          "onderwerpBron": "alle vondsten van de Jutter", "navigatieRol": null,
+                          "type": { "node": "Numeriek", "geheel": false, "decimalen": 2,
+                                    "teken": "ONBEPAALD", "eenheid": { "node": "Eenheid",
+                                      "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg",
+                                      "factorNaarCanoniek": 1, "noemer": null } },
+                          "bron": "het gewicht van alle vondsten van de Jutter",
+                          "set": true, "navigatiePad": [] } ],
+        "elementObjecttype": "Vondst", "leegwaarde": null, "filter": null,
+        "dimensieSelectie": null, "type": |} ^ num0
+  ^ {|,
+        "bron": "het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter",
+        "granulariteit": null,
+        "bronRol": { "node": "RolBinding", "feittype": "vondstaanmelding", "rol": "vondst" } },
+      "voorwaarde": null,
+      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } },
+    { "node": "ResolvedRegel", "naam": "puntendeel", "soort": "BEREKENING",
+      "doel": { "node": "AttribuutRef", "attribuut": "puntendeel", "objecttype": "Jutter",
+                "onderwerpBron": "een Jutter", "navigatieRol": null, "type": |} ^ num0
+  ^ {|, "bron": "Het puntendeel van een Jutter", "set": false, "navigatiePad": [] },
+      "waarde": { "node": "Binair", "op": "GEDEELD_DOOR",
+        "links": { "node": "AttribuutRef", "attribuut": "puntensom", "objecttype": "Jutter",
+                   "onderwerpBron": "de Jutter", "navigatieRol": null, "type": |} ^ num0
+  ^ {|, "bron": "de puntensom van de Jutter", "set": false, "navigatiePad": [] },
+        "rechts": { "node": "AttribuutRef", "attribuut": "aantal gewogen vondsten",
+                    "objecttype": "Jutter", "onderwerpBron": "de Jutter", "navigatieRol": null,
+                    "type": |} ^ num0
+  ^ {|, "bron": "het aantal gewogen vondsten van de Jutter",
+                    "set": false, "navigatiePad": [] },
+        "type": |} ^ num0
+  ^ {|,
+        "bron": "de puntensom van de Jutter gedeeld door het aantal gewogen vondsten van de Jutter" },
+      "voorwaarde": null,
+      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+  "regelGroepen": [], "diagnostics": []
+}
+|}
+
+let gemiddelde_kg_case =
+  {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+    { "label": "J1", "objectType": "Jutter", "attributes": { "puntensom": { "number": "10" } },
+      "roles": { "vondsten": ["V1", "V2", "V3"] }, "characteristics": [] },
+    { "label": "V1", "objectType": "Vondst", "attributes": { "gewicht": { "number": "2.50" } },
+      "roles": {}, "characteristics": [] },
+    { "label": "V2", "objectType": "Vondst", "attributes": { "gewicht": { "number": "1.25" } },
+      "roles": {}, "characteristics": [] },
+    { "label": "V3", "objectType": "Vondst", "attributes": {}, "roles": {},
+      "characteristics": [] } ], "parameters": {} },
+  "expected": [ { "kind": "attributeValue", "label": "J1", "attribute": "puntendeel",
+                  "value": { "number": "5" } } ]
+}
+|}
+
+let () =
+  let irf = write_temp ".ir.json" gemiddelde_kg_doc in
+  let casef = write_temp ".case.json" gemiddelde_kg_case in
+  let doc = Ir_v0.Loader.load_file irf in
+  let case = Uchar_ref.Case.load_file doc casef in
+  Sys.remove irf;
+  Sys.remove casef;
+  match translate doc case with
+  | (_ : string) ->
+      check "AANTAL_GEVULDE: a count derives no unit, so som / count over a kg source translates"
+        true
+  | exception Uchar_ref.Value.Fault m ->
+      check
+        ("AANTAL_GEVULDE: a count derives no unit, so som / count over a kg source translates \
+          (unexpected fault: " ^ m ^ ")")
+        false
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total

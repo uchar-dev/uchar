@@ -1553,6 +1553,26 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
         else begin
           (match kind with
           | Som | Totaal -> ()
+          | Aantal_gevulde ->
+              (* ch. 3.4c states this exclusion for the FILLED COUNT normatively,
+                 so the refusal that carries it has to be identifiable. The arm
+                 below refuses on the same ground but is invariant over every kind
+                 that reaches it — it names the position and the two carried kinds,
+                 never the construct rejected — so a red case pinning it witnesses
+                 minimum, maximum, eerste, laatste and this kind alike. Measured
+                 2026-09-20: the red document with kind MINIMUM matched the filled
+                 count's pin word for word. Hence a sentence of its own, and it says
+                 what is missing for THIS fold rather than what som and totaal have:
+                 a count asks after PRESENCE, which is a question about an instant,
+                 and a timeline answers it differently at every one.
+                 The construct is named AFTER the interpolation on purpose — the
+                 interpolation-free tail is all a pin can quote. *)
+              Value.fault
+                "the temporal attribute %S of a set has no moment at which a filled count can ask \
+                 a timeline whether it is filled (ch. 3.4c); presence is a question about an \
+                 instant, and only som and totaal define the per-element collapse that would \
+                 supply one"
+                name
           | _ ->
               Value.fault
                 "this aggregation over the temporal attribute %S of a set has no defined moment \

@@ -459,6 +459,22 @@ let rec eff_unit ctx (e : expr) : eenheid option =
   | Functie { kind = Som | Totaal | Minimum | Maximum | Eerste | Laatste; argumenten = arg :: _; _ }
     ->
       eff_unit ctx arg
+  | Functie { kind = Aantal | Aantal_gevulde; _ } ->
+      (* A CARDINALITY CARRIES NO UNIT, whatever the folded attribute measures
+         (IR-SPEC ch. 4.3; RUNTIME-SEMANTICS ch. 3.4c). Named rather than left to
+         the catch-all below, which cannot tell "proven unit-free" from "could not
+         analyse" — and here the difference is load-bearing, so a reader must not
+         have to guess which of the two this is.
+         Measured 2026-09-20 by putting these two kinds in the arm ABOVE instead:
+         the whole corpus stayed green while `puntensom / AANTAL_GEVULDE(kg
+         source)` went from a model to "a unit-carrying multiplicative operand is
+         not translated" — a form ref computes. So passing the SOURCE's unit on
+         would make the hand-spelled average of maintainer decision G1 (there is
+         no average fold; the author writes som / filled count) untranslatable
+         here, and the write fence would never have said so: it is silent as soon
+         as one side has no unit. Pinned in the backend's own suite, because no
+         corpus golden divides by a count over a UNIT-CARRYING source. *)
+      None
   | _ -> None
 
 let attr_temporal ctx ~otype ~attr = Ir_v0.Checks.attr_temporal (objecttype ctx otype) attr
@@ -2444,14 +2460,16 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          type: a set read of a time-dependent attribute folds twice, and only
          som and totaal define the first collapse. ref refuses the form by
          name; answering here from the asOfDate buckets would be this backend
-         inventing a moment the chapter does not carry. Its own sentence, not
-         the ranking folds' — the two arms refuse on the same ground but a red
-         case must be able to tell which one spoke. *)
+         inventing a moment the chapter does not carry. The sentence NAMES the
+         construct after the interpolation, word for word ref's arm, because the
+         interpolation-free tail is all a red pin can quote: the ranking folds'
+         refusal sits at the same position on the same ground and a pin must be
+         able to tell which one spoke. *)
       if attr_temporal ctx ~otype:el ~attr:a then
         fault
-          "a filled count over the temporal attribute %S of a set has no defined moment to fold \
-           (ch. 3.4c); ref refuses the form, so this arm must not answer from a bucket it picked \
-           itself"
+          "the temporal attribute %S of a set has no moment at which a filled count can ask a \
+           timeline whether it is filled (ch. 3.4c); ref refuses the form on that ground, so this \
+           arm must not answer from a bucket it picked itself"
           a;
       let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty } in
       let v = fresh ctx "F" in

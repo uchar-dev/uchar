@@ -2868,10 +2868,23 @@ let () =
         [ ot "Jutter" [] []; (naam, { o with attribuut_granulariteit = [ ("vergoeding", Some Dag) ] }) ] }
   in
   let env_t = env_of doc_t in
+  (* the needle NAMES THE FOLD. Until 2026-09-20 it read "has no defined moment
+     to fold", which is the shared fall-through of every kind that reaches this
+     position — so the check passed identically for minimum, maximum, eerste and
+     laatste, and the worked example proved nothing about the filled count. The
+     chapter's own sentence is the one pinned here now, and the red case
+     `aantalgevulde-temporele-setbron` pins the same words. *)
   expect_fault_msg "WV-3.4c-temporeel-faalt"
     (fun () ->
       Eval.eval_expr env_t w (World.get w "J1") ~err:no_err
         (gevuld "vergoeding" num2kg))
+    "no moment at which a filled count can ask a timeline whether it is filled";
+  (* the sister measurement, and it is what makes the line above a witness: the
+     SAME document under a ranking fold must NOT reach that sentence *)
+  expect_fault_msg "WV-3.4c-temporeel-rangschikking-eigen-zin"
+    (fun () ->
+      Eval.eval_expr env_t w (World.get w "J1") ~err:no_err
+        (vouw Minimum [ setbron "vergoeding" num2kg ] None None))
     "has no defined moment to fold"
 
 (* --- ch. 5.7a: what a supplied role link establishes -------------------- *)

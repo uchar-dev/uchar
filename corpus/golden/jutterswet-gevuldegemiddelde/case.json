@@ -18,8 +18,10 @@
     { "kind": "attributeValue", "label": "J1", "attribute": "vondstwaarde", "value": { "number": "10" } },
     { "kind": "attributeValue", "label": "J1", "attribute": "gemiddelde vondstwaarde", "value": { "number": "5" } },
     { "kind": "attributeValue", "label": "J2", "attribute": "aantal gewaardeerde vondsten", "value": { "number": "0" } },
+    { "kind": "attributeValue", "label": "J2", "attribute": "vondstwaarde", "value": { "number": "0" } },
     { "kind": "attributeEmpty", "label": "J2", "attribute": "gemiddelde vondstwaarde" },
     { "kind": "attributeValue", "label": "J3", "attribute": "aantal gewaardeerde vondsten", "value": { "number": "0" } },
+    { "kind": "attributeValue", "label": "J3", "attribute": "vondstwaarde", "value": { "number": "0" } },
     { "kind": "attributeEmpty", "label": "J3", "attribute": "gemiddelde vondstwaarde" },
     { "kind": "consistent" }
   ]

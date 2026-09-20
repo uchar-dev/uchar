@@ -503,3 +503,152 @@ Voor `spec/PLAN.md` is er geen scopewijziging.
 4. De OPGESOMDE `AANTAL` telt in `ref` nog steeds gevulde waarden —
    kaart 1's vondst, niet van deze kaart, kaartje
    `backlog/new/20260920-aantal-opgesomde-telling.md`.
+
+## Fixronde (2026-09-20, na de lensronde)
+
+De lens keurde af op één blokkerende vondst en gaf drie adviezen. Alle vier
+zijn uitgevoerd. Wat hieronder staat corrigeert §1 (de clingo-weigerzin),
+§4 (de poortgetallen) en de NOTE van de temporele rode casus.
+
+### 9. BLOKKEREND, gedicht: de rode ref-pin WAS een bodemzin
+
+**De vondst.** `corpus/rood/aantalgevulde-temporele-setbron` pinde voor
+`ref` de zin `of a set has no defined moment to fold (ch. 3.6: only som and
+totaal carry the per-element timeline fold)`. Die komt uit de VAL-DOOR van
+de per-element-tijdlijnvouw in `ref/lib/eval.ml` — de match draagt `Som` en
+`Totaal` en stuurt elke andere soort erheen — en is dus invariant over vijf
+soorten: hij noemt de POSITIE en de twee gedragen soorten, nooit de
+geweigerde vouw. Precies wat poort 8's eigen hek verbiedt te pinnen, en de
+poort was alleen groen omdat de zin nog niet op de lijst stond.
+
+**Gemeten, vóór de fix**, en het is de meting die het oordeel draagt: het
+IDENTIEKE rode document met soort `MINIMUM` matchte de pin woord voor
+woord. De getuige getuigde dus van vijf vormen en identificeerde er geen.
+Daarmee was ook de NOTE-bewering "The two pinned fragments are each their
+own arm's sentence, not a fall-through" aantoonbaar onwaar. clingo's arm
+discrimineerde wél — die zit binnen de `Aantal_gevulde`-tak — maar zijn
+zin leunde op het hoofdstuknummer in plaats van op de constructienaam.
+
+**De kuur, conform poort 8's eigen regel: een benoemde arm per soort.**
+`ref` krijgt een eigen arm vóór de val-door, met deze zin (letterlijk):
+
+> the temporal attribute %S of a set has no moment at which a filled count
+> can ask a timeline whether it is filled (ch. 3.4c); presence is a
+> question about an instant, and only som and totaal define the
+> per-element collapse that would supply one
+
+clingo's arm is naar dezelfde bewoording getrokken, zodat de twee
+uitvoerders dezelfde constructie in dezelfde woorden weigeren. **De
+constructie staat ACHTER de interpolatie**, en dat is geen stijl: de
+interpolatievrije staart is alles wat een pin kan citeren, dus een naam
+vóór `%S` is onpinbaar. De rode casus pint nu in beide uitvoerders:
+
+    of a set has no moment at which a filled count can ask a timeline
+    whether it is filled (ch. 3.4c)
+
+**De gedeelde val-door-zin staat nu op de bodemzinlijst** in
+`scripts/check-rood.sh`, met bron (`ref/lib/eval.ml eval_functie`), de
+interpolatievrije staart als zin, en de reden — inclusief de MINIMUM-meting
+en de aantekening dat de vier rangschikkende vouwen hem nog steeds delen en
+elk een eigen arm nodig hebben zodra een rode casus er een wil pinnen.
+**36 → 37 bodemzinnen.** Dit is de tweede aanraking van dat beschermde
+gate-script door deze kaart, met hetzelfde mandaat als de eerste (de
+Drools-uitzonderingsregel): de poort eist het om groen te kunnen zijn om de
+juiste reden.
+
+**Mutatieproef.** De benoemde `ref`-arm uitgeschakeld → de rode casus faalt
+bij naam ("ref did not observe the expected fault"), want de val-door-zin
+matcht de nieuwe pin niet meer. Teruggedraaid, poort weer groen.
+
+**Controle (5).** Poort 8 draait de lijst zelf over alle 72 fragmenten:
+geen enkele ANDERE rode casus pint de nieuw-gelijste zin — `PASS (36 red
+cases …; 72 pinned fragments cite none of the 37 listed bottom sentences)`.
+
+**Twee gevolgen buiten de May touch, hier gemeld in plaats van
+stilzwijgend gedaan.**
+
+- `ref/lib/eval.ml` en `ref/test/test_ref.ml`: de arm zelf en zijn worked
+  example. De oude needle van `WV-3.4c-temporeel-faalt` was ÓÓK de
+  val-door-zin, dus dat worked example bewees niets over de gevulde
+  telling — het slaagde identiek voor minimum, maximum, eerste en laatste.
+  Hij pint nu de eigen zin, met een zustermeting ernaast
+  (`WV-3.4c-temporeel-rangschikking-eigen-zin`) die vastlegt dat een
+  RANGSCHIKKENDE vouw op hetzelfde document die zin juist NIET bereikt.
+  Zonder dat paar is de pin geen getuige. Ref-suite 725 → 726.
+- **`spec/RUNTIME-SEMANTICS.md` ch. 3.4c, één parenthese — een BESCHERMD
+  PAD en dus een voorstel.** Die alinea CITEERDE `ref`'s oude val-door-zin
+  woordelijk, dus zij werd door deze fix onwaar: een normatief document dat
+  een zin aanhaalt die geen uitvoerder meer voor die constructie uitspreekt.
+  De parenthese draagt nu de nieuwe zin, en er staat één zin bij die de
+  eis NORMEERT in plaats van hem aan de uitvoerders te laten — dat de
+  weigering de VOUW noemt en niet alleen de positie, omdat de
+  rangschikkende vouwen op dezelfde plek op dezelfde grond weigeren. De
+  kaart verklaarde `spec/**` out of scope; dit is de enige aanraking, zij
+  volgt dwingend uit de kuur, en zij is als voorstel bedoeld.
+
+### 10. De drie adviezen
+
+**(a) Kaart 3 was verweesd — kaartje gemaakt.** De ontwerpkaart ging met
+kaart 2 naar `done/` en was de enige drager van het G9-voorstel, de
+maximal-munch-risiconotitie en het gelijktrekken van `VOUWSOORTEN` in
+`RuleChecker.java` met `set_source_exempt`. Alle drie staan nu in
+`backlog/new/20260920-aantal-gevulde-dialectzin.md`, met de expliciete eis
+dat de inertheid GEMETEN wordt over het vlakke v2.3.0-corpus en niet
+aangenomen.
+
+**(b) Het eenheidsafleidersbesluit is nu mutatiezichtbaar.** `eff_unit`
+krijgt een BENOEMDE arm `| Functie { kind = Aantal | Aantal_gevulde; _ } ->
+None` met de reden erbij. De val-door gaf hetzelfde antwoord maar scheidde
+"bewijsbaar eenheidloos" niet van "niet analyseerbaar", en juist hier is
+dat verschil dragend. Er staat nu een suitecheck op, en die pint de
+CONSEQUENTIE in plaats van de arm: `puntensom ÷ AANTAL_GEVULDE` over een
+kg-dragende bron vertaalt. Dat is precies wat de lens mat als gat — onder
+de MC3-mutatie bleef poort 6 volledig groen, want geen enkele golden deelt
+door een telling over een EENHEIDDRAGENDE bron (de vierde golden heeft een
+eenheidloze bron). Clingo-suite 456 → 457.
+
+**(c) De 0-terugval van de som is nu een artefact.** `case.json` van
+`jutterswet-gevuldegemiddelde` pinde `vondstwaarde` alleen voor J1. De twee
+regels voor J2 en J3 staan er nu bij (beide 0), want die terugval is de
+halve reden dat de ongewaakte deling `0 ÷ 0` is en niet `leeg ÷ 0` — de
+NOTE beweerde het en pinde het niet. 8 → 10 verwachtingen, alle vier de
+uitvoerders groen.
+
+### 11. Poortuitkomsten na de fixronde (elk los gedraaid)
+
+     1 check-self-contained     PASS
+     2 check-ir-schema          PASS  258 documenten, vloer 192
+     3 check-verifier           PASS  258 golden schoon; 417 negatief, vloer 350
+     4 check-case-schema        PASS  600 casusbestanden
+     5 check-oracle             PASS  ref-suite 726 (was 725), vloer 489; 564 cases
+     6 check-clingo             PASS  backendsuite 457 (was 456), vloer 83; 564 cases
+     7 check-noop               PASS  528 cases, 36 overlevers
+     8 check-rood               PASS  36 rode cases, vloer 26; 72 fragmenten citeren
+                                      geen van de 37 bodemzinnen (was 36);
+                                      Drools-been 9 gepind / 27 met reden
+     9 check-catala             PASS  201 checks; 12 goldens
+    10 check-regelspraak        PASS  327 tests; 64 rgs-goldens
+    11 check-toka-parity        PASS  29 cases, nul divergenties
+    12 check-drools             PASS  gespeeld 169 (pin), DRL-tekst 146 (pin),
+                                      JUnit 504, vloer 239
+    13 check-reftype-derivation PASS  131 twists, vloer 74; 128 replays
+    14 check-flogic             PASS  130 checks; 2 goldens
+
+Geen vloer bewoog; de twee gelijkheidspinnen van poort 12 bleven op 169 en
+146. Wat WEL groeide en per definitie mag groeien: de bodemzinlijst (36 →
+37, een strenger hek), de ref-suite (+1 worked example en zijn
+zustermeting) en de clingo-suite (+1).
+
+### 12. Het rijvoorstel, bijgewerkt
+
+De slotzin van het voorstel in §6 spreekt nu over de eigen arm. Vervang de
+zin over de twee rode casussen door:
+
+> … en twee rode casussen pinnen de twee weigeringen: de temporele
+> setbron, die geen moment heeft waarop een gevulde telling een tijdlijn
+> naar gevuldheid kan vragen — een weigering die `ref` en de ASP-backend
+> sinds de fixronde in een EIGEN, benoemde arm uitspreken, omdat de
+> gedeelde val-door van de per-element-tijdlijnvouw invariant is over vijf
+> vouwsoorten en gemeten woord voor woord ook onder `MINIMUM` matchte;
+> die val-door staat sindsdien op poort 8's bodemzinlijst (36 → 37) — en
+> de ONgewaakte deling, die in alle drie de uitvoerders luid faalt.

@@ -7,7 +7,12 @@
         "label": "J1",
         "objectType": "Jutter",
         "attributes": {},
-        "roles": { "vondsten": ["V1", "V2"] },
+        "roles": {
+          "vondsten": [
+            "V1",
+            "V2"
+          ]
+        },
         "characteristics": []
       },
       {
@@ -28,7 +33,7 @@
     "parameters": {}
   },
   "expectedFault": {
-    "ref": "of a set has no defined moment to fold (ch. 3.6: only som and totaal carry the per-element timeline fold)",
-    "clingo": "of a set has no defined moment to fold (ch. 3.4c)"
+    "ref": "of a set has no moment at which a filled count can ask a timeline whether it is filled (ch. 3.4c)",
+    "clingo": "of a set has no moment at which a filled count can ask a timeline whether it is filled (ch. 3.4c)"
   }
 }
