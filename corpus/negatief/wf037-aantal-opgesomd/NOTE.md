@@ -37,9 +37,23 @@ which `J1` carries `gewogen vangst` and leaves `gewogen bijvangst` empty:
 
 One answers, two refuse, under a well-formed document — a spec fault, and
 no differential gate could see it because no corpus document carried the
-form. There is no producer route either: the source language defines the
-count over instances and spells no operand list for it, and its typing
-document excludes the value reading, so there was nothing to mirror. The
+form. The source language has nothing to mirror here: it defines the count
+over instances, spells no operand list for it, and its typing document
+excludes the value reading.
+
+**A producer wrote it anyway, and that is what makes this rule a cut rather
+than a closed door.** The RegelSpraak frontend's grammar carries an operand
+list at the count — a widening of the one-operand source production, gone
+unregistered until this decision — and its resolver built every child as an
+argument. Measured 2026-09-20, before the fence: the sentence "Het aantal
+gewogen posten van een Jutter moet berekend worden als het aantal de gewogen
+vangst van de Jutter en de gewogen bijvangst van de Jutter" — the source
+reading of this document's own rule — emitted an `AANTAL` with two operands
+and no `elementObjecttype`, this document's shape, carrying
+`diagnostics: []`. The frontend refuses it at the node from
+the same day, with a named ERROR that stops the document reaching disk; the
+grammar keeps the widening as a registered divergence, because deleting an
+alternative re-associates sentences rather than refusing them. The
 maintainer refused the wire form rather than normalise one executor's
 reading into a second meaning under one kind (2026-09-20, route (a) of
 `backlog/done/20260920-aantal-opgesomde-telling.md`). The listed filled

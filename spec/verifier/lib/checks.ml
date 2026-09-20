@@ -4669,8 +4669,12 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
          RUNTIME-SEMANTICS ch. 3.4a; maintainer decision 2026-09-20). The
          exclusion above left the listed form of a COUNT admissible, and a
          count has none: the source language defines it over instances and
-         spells no operand list for it, so there is nothing to mirror and no
-         producer writes one. What it was, measured: verifier-clean with
+         spells no operand list for it, so there is nothing to mirror. One
+         PRODUCER wrote it anyway — measured 2026-09-20, the RegelSpraak
+         frontend's own grammar carries an operand list at this rule, a
+         widening of the one-operand source production, and three sentences
+         emitted through it unblocked. So this rule cuts a live route rather
+         than closing a door nothing used. What it was, measured: verifier-clean with
          exactly ONE executor answering — `ref` counted the FILLED operands,
          which is the reading the set-source decision of 2026-09-19 took off
          the wire under this very kind, while clingo and both Drools branches
@@ -4686,7 +4690,13 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
          clause above is what makes ≥ 2 the listed shape — so they are a
          different defect, a fold without a source, under a decision not yet
          taken. Both are verifier-clean today and `ref` answers them; that is
-         recorded as an open flank rather than silently swept in here. *)
+         recorded as an open flank rather than silently swept in here. Its
+         sharpest spelling is a single ListLiteral argument (ch. 4.8):
+         measured, `ref` answers 1 whether that list carries two elements or
+         NONE, because the arity-1 route counts the operand and not its
+         contents. The flank is a card of its own,
+         `backlog/new/20260920-aantal-zonder-bron.md`, so that closing it
+         cannot miss that spelling. *)
       @ (if f.kind = Aantal && arity >= 2 then
            [ v "WF-037" at
                (Printf.sprintf

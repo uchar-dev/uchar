@@ -45,6 +45,25 @@ well-formedness rule that is missing, not a runtime that is incomplete.
 Both classes are spec faults under `spec/PLAN.md` §6, and one arm closes
 them together.
 
+**Read the `ref` line above as LOUD, not as NAMED.** `unsupported
+instance-fold source shape` is the residual arm over fold-source
+combinations and it states the position rather than the combination
+rejected — it is one of the thirty-six bottom sentences
+`scripts/check-rood.sh` forbids a red case to pin, for exactly that reason.
+It is quoted here as the measured behaviour of this document and as nothing
+more: it witnesses that `ref` refuses, never WHAT it refused. That is also
+why this case belongs in `corpus/negatief` and could not be a red one — the
+refusal that identifies the form is the verifier's, and it is the sentence
+at the top of this note.
+
+And it had a producer route. The RegelSpraak frontend's grammar carries an
+operand list at the count, so "het aantal vondsten van de Jutter en kavels
+van de Jutter" bound `Vondst` as its element from the first operand's
+written word and emitted this shape — arity 2 WITH an element type — under a
+warning that does not stop emission. Since 2026-09-20 the frontend refuses
+it at the node with the same ERROR its two siblings get, which is the point
+of the arm being blind to `elementObjecttype` on both sides of the wire.
+
 Rood-eerst: pre-refusal verifier (binary md5
 `c7356ed0f3002e933a550b899e888a1a`) says `verifier: PASS`; with the arm,
 the single rejection above. Falsifiable, arm-exact: the shared mutant of

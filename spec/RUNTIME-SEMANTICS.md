@@ -151,8 +151,15 @@ silent list fold v0 would compute differently. **For `aantal` that
 promise is kept at BOTH spellings from 2026-09-20, and until then at
 one** (maintainer decision of that date). Where the element type is
 stamped — the producer's spelling — a multi-operand count does fault
-loudly, the reference interpreter refusing the source shape by name.
-Where it is absent nothing in the runtime distinguished the shape at
+loudly. Loudly, but not by NAME: the reference interpreter's refusal
+there is its residual arm over fold-source combinations, which states
+the position and never the combination rejected, so it is one sentence
+for every shape that reaches it and it is listed among the bottom
+sentences no red case may pin. "Faults loudly" is therefore all this
+paragraph promises, and all it is measured to keep; a named arm per
+kind is the cure the bottom-sentence fence always names, and this kind
+does not have one.
+Where the element type is absent nothing in the runtime distinguished the shape at
 all: the fold took the operand list and the interpreter counted the
 FILLED operands, silently, which is exactly the case this sentence
 forbids, and no other executor answered it. That spelling is refused on
