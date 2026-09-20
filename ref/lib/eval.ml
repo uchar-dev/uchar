@@ -1705,7 +1705,23 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
       (* a count, never empty (ch. 1.2e) *)
       match contributors () with
       | `Instances is -> Arith.agg_aantal is
-      | `Values vs -> Arith.agg_aantal (Arith.filled vs))
+      | `Values vs ->
+          (* The value arm, kept as the second line of defence and largely no
+             longer the wire's business. Two of the shapes that used to reach
+             it are fenced: the SET SOURCE by WF-096 (2026-09-19) and the
+             LISTED operand list of two or more by WF-037 (2026-09-20). Both
+             fences have the same ground — a count folds its CONTRIBUTORS,
+             and what this line computes is a count of the FILLED values,
+             which is the filled count's meaning arriving under the wrong
+             kind. The arm stays rather than faulting: a refusal here would
+             restate a wire rule in a second voice, and the house keeps one
+             boundary in one place.
+             It is not unreachable, which is why the comment says "largely".
+             A listed count of ONE operand, or of none, is no LISTED form and
+             neither decision covers it; both are well-formed today and land
+             here. That is an open flank, not dead code, and `ref/test/` pins
+             both halves under the name WV-3.4a-opgesomd. *)
+          Arith.agg_aantal (Arith.filled vs))
   | Aantal_gevulde ->
       (* ch. 3.4c: the filled-value count. It reads a VALUE per contributor
          and counts the ones that are not leeg, so [values ()] is the whole

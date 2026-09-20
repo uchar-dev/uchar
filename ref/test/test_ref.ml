@@ -2887,6 +2887,70 @@ let () =
         (vouw Minimum [ setbron "vergoeding" num2kg ] None None))
     "has no defined moment to fold"
 
+(* WV-3.4a-opgesomd: the LISTED count, and why this evaluator's arm for it
+   stays where it is.
+
+   Since 2026-09-20 WF-037 refuses an AANTAL carrying two or more operands:
+   a count folds INSTANCES (ch. 3.4a) and the source language spells no
+   operand list for it. The arm under `Aantal` that answers such a node —
+   `agg_aantal (filled vs)`, a count of the FILLED operands — is therefore
+   out of reach through a well-formed document. It STAYS, as the second line
+   of defence, and the first three lines below are what that choice means
+   made checkable: handed the refused form directly the evaluator still
+   answers, and answers what it always answered.
+
+   It is not dead code either, and that is measured rather than assumed. The
+   wire rule reads two or more, so a count with ONE operand and no element
+   type — or with none at all — stays well-formed and reaches the same arm.
+   Those two shapes are an open flank of the same class (this evaluator
+   answers them, clingo and both Drools branches refuse them) and the 2026-
+   09-20 route does not cover them, because neither is a LISTED form. The
+   last three lines pin them, so that deciding them has to move this witness
+   rather than pass underneath it.
+
+   The operands are the SUBJECT's own reads, which is the whole of the form:
+   V5 carries a gewicht and no vindplaats, V6 carries both, V7 neither. *)
+let () =
+  let num2kg : Ir_v0.Ast.datatype =
+    Numeriek
+      { geheel = false; decimalen = 2; teken = None;
+        eenheid =
+          Some { afkorting = Some "kg"; stelsel = Some "Gewicht"; canoniek = Some "kg";
+                 factor_naar_canoniek = Some 1.0; noemer = None } }
+  in
+  let doc =
+    { empty_doc with
+      objecttypen = [ ot "Vondst" [ ("gewicht", Some num2kg); ("vindplaats", Some Tekst) ] [] ] }
+  in
+  let env = env_of doc in
+  let w =
+    List.fold_left World.add_instance World.empty
+      [ inst "V5" "Vondst" [ ("gewicht", n "5.00") ];
+        inst "V6" "Vondst" [ ("gewicht", n "7.00"); ("vindplaats", Value.Text "Zuiderhoofd") ];
+        inst "V7" "Vondst" [] ]
+  in
+  let opgesomd argumenten : Ir_v0.Ast.expr =
+    Functie
+      { kind = Aantal; argumenten; element_objecttype = None; leegwaarde = None; filter = None;
+        dimensie_selectie = None; typ = Some num0; bron = None; granulariteit = None;
+        bron_rol = None; bron_pad = None }
+  in
+  let gewicht = aref "gewicht" "Vondst" num2kg in
+  let vindplaats = aref "vindplaats" "Vondst" Tekst in
+  let ev label e = Eval.eval_expr env w (World.get w label) ~err:no_err e in
+  (* the refused form: two operands, one of them leeg. The answer is the
+     count of the FILLED ones — the reading the set-source decision of
+     2026-09-19 took off the wire under this same kind, and the reason the
+     listed spelling followed it *)
+  expect_num "WV-3.4a-opgesomd-tweede-linie" (ev "V5" (opgesomd [ gewicht; vindplaats ])) "1";
+  expect_num "WV-3.4a-opgesomd-alles-gevuld" (ev "V6" (opgesomd [ gewicht; vindplaats ])) "2";
+  expect_num "WV-3.4a-opgesomd-alles-leeg" (ev "V7" (opgesomd [ gewicht; vindplaats ])) "0";
+  (* the open flank the arm is still REACHED through: the wire rule stops at
+     two, so these three documents are well-formed today *)
+  expect_num "WV-3.4a-eenoperand-gevuld" (ev "V5" (opgesomd [ gewicht ])) "1";
+  expect_num "WV-3.4a-eenoperand-leeg" (ev "V7" (opgesomd [ gewicht ])) "0";
+  expect_num "WV-3.4a-geen-operand" (ev "V5" (opgesomd [])) "0"
+
 (* --- ch. 3.10: the period condition's evaluation-date gate -------------- *)
 
 (* WV-3.10: the ch. 3.10 worked example, verbatim — window
