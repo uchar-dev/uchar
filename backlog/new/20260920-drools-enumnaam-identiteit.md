@@ -34,3 +34,15 @@ met een genormeerde divergentie?), geen techniekkeuze.
 May touch: `backends/drools/**`, `scripts/check-drools.sh`
 (**voorstel**), `spec/**` (**voorstel**), `corpus/**`,
 kaartverplaatsing. NB: serieel met andere Drools-kaarten.
+
+## Maintainersbesluit (2026-09-20): naamidentiteit
+
+De Drools-conditielezing volgt ref en clingo: één identiteitsbegrip
+voor het hele vierkant (trim + lowercase + witruimtevouw), consistent
+met het casusvergelijker-besluit van de enumlezer-kaart. De
+productiesemantiek-divergentie van regelspraak-java gaat als
+conformance-notitie mee in de eerstvolgende herpin, zoals eerdere
+divergenties. Uitvoering: acceptatiepunt (b) van deze kaart — de vier
+arms plus de geëmitteerde mvel, getuigen in beide takken met
+mutatieproef, en het bewijs-document uit (a) wordt de golden of
+suite-getuige die de splijting vóór de fix toont.
