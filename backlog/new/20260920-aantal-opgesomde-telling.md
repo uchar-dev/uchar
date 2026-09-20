@@ -103,3 +103,17 @@ May touch: `spec/IR-SPEC.md` en `spec/verifier/**` als VOORSTEL,
 Out of scope: `AANTAL_GEVULDE` zelf — die is geland en behekt.
 `frontends/**`: de brontaal kent de vorm niet, dus er is geen
 producentroute te snijden.
+
+## Maintainersbesluit (2026-09-20): route (a) — weigeren
+
+De opgesomde telling wordt van de wire geweerd: een WF-verbod op
+`AANTAL` met twee of meer argumenten, consistent met het
+setbron-besluit van 2026-09-19 (de brontaal kent geen opgesomde
+telling; §5.8.1 definieert de telling over instanties en het
+typeringendocument sluit de waardelezing uit). Kost nul bestaande
+documenten (de ene drager is al om een andere reden afgewezen); het
+vierkant sluit door afwijzing. De opgesomde gevuldtelling blijft
+uitdrukbaar zodra iemand er een bronvorm voor normeert. Uitvoering:
+rood-eerst negatieven per argumenttal-arm, de verifier-clausule, en
+ref's gevuldtelling-op-≥2-route wordt onbereikbaar — defensief laten
+staan of benoemd weigeren, meten wat er ligt.
