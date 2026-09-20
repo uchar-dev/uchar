@@ -283,13 +283,15 @@ OCaml-regelvervolg, escaped quotes én escaped BYTES genormaliseerd
 (`translate.ml` schrijft ± als `\xc2\xb1`). Dat hek betrapte meteen een
 echte val: zonder de byte-normalisatie meldde het de `dt_term`-zin ten
 onrechte als dragerloos. (2) `scripts/check-drools.sh` (**voorstel**):
-alleen de twee gelijkheidspinnen, `EXPECTED_PLAYED` 169 → **170** en
-`EXPECTED_DRL_PLAYED` 146 → **147**, elk met een redenblok. Geen
+alleen de twee gelijkheidspinnen, elk met een redenblok. Geen
 kanaallijstregel erbij of eraf — de golden komt als SPELER binnen, want
-deze backend hoefde niets: hij droeg §8.4.3 al. Let op bij het mergen:
-de parallelle kaart `drools-enumlabel-lezer` raakt hetzelfde bestand;
-mijn pinstand is gemeten op HEAD van deze branch en moet na die merge
-herrekend worden als die kaart een kanaal verschuift. (3)
+deze backend hoefde niets: hij droeg §8.4.3 al. De pinstand is na de
+rebase op `main` d2bd0fb9 de SOM met de kaart `drools-enumlabel-lezer`,
+die hetzelfde bestand raakte en beide pinnen met twee ophoogde:
+`EXPECTED_PLAYED` 169 → 171 (enumlezer) → **172** (deze kaart) en
+`EXPECTED_DRL_PLAYED` 146 → 148 (enumlezer) → **149** (deze kaart).
+Beide redenblokken staan er, in die volgorde, en er is niets herordend;
+het conflict raakte alleen deze twee regels. (3)
 `spec/RUNTIME-SEMANTICS.md` (**voorstel**): ch. 3.10 noteert dat de
 scalaire poort sinds 2026-09-20 door alle vier wordt uitgevoerd en dat de
 clip dat niet is; de ch. 5.11-rijen zeggen niet langer dat `ref` de vorm
