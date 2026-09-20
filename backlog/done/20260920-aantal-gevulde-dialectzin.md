@@ -217,3 +217,199 @@ zonder gewicht, J2 meldt niets, J3 meldt V4 zonder gewicht):
 
 en `case2-gelijke-gewichten` (V1 = 2,50, V2 = 2,50, V3 leeg): AANTAL 3,
 AANTAL_GEVULDE 2 — een telling telt bijdragers, geen onderscheiden waarden.
+
+### Stap 6 — mutatieproeven (elk gedraaid, gemeten en teruggedraaid)
+
+    MG1  AANTAL_GEVULDE uit RuleChecker.VOUWSOORTEN
+         -> de bron.rgs van de golden faalt bij naam met de WF-096-ERROR op
+            regel 22 ("setlezing buiten een vouwbron"), het document bereikt de
+            schijf niet meer en poort 10 wordt rood met 8 gevallen tests.
+            De gelijktrekking is dus geen opruimwerk maar de voorwaarde
+            waaronder de dialectzin überhaupt emitteert.
+    MG2  de WF-037-weigering op een niet-set bron uitgeschakeld
+         -> de zin "… van het gewicht van de Vondst" emitteert met
+            `diagnostics: []`, en de verifier verwerpt datzelfde document met
+            WF-037 (plus WF-083). Exact de lekvorm die AantalSetbronTest voor
+            AANTAL pinde, nu voor de nieuwe soort.
+    MG3  het parseralternatief weg, het lexertoken blijft staan
+         -> de golden faalt met "extraneous input 'het aantal gevulde waarden
+            van'": het token bestaat dan wel maar niemand consumeert het. Dat
+            is de proef dat de twee helften van de uitbreiding elkaar nodig
+            hebben en geen van beide dood gewicht is.
+
+## Result (2026-09-20)
+
+`AANTAL_GEVULDE` heeft een producentroute. Een RegelSpraak-document schrijft
+`het aantal gevulde waarden van <setlezing>`, de frontend emitteert er de
+bestaande wire-vorm voor, en `corpus/golden/jutterswet-gevuldetelling` draagt
+een `bron.rgs` die byte-identiek heremitteert naar de handgeschreven `ir.json`.
+De frontend-grens `VOUWSOORTEN` en de verifiergrens `set_source_exempt` dragen
+weer dezelfde soorten, met een getuige die ze LEEST in plaats van erover te
+beweren. Alle veertien poorten groen, elk los gedraaid.
+
+### 1. Wat er landde
+
+**De spelling.** Eén whole-phrase lexertoken en één alternatief van
+`functieAanroep` met één `primaireExpressie`-operand en geen facetgleuf. In de
+resolver: de VALUE-fold-elementafleiding, het gedeelde bereik (`bronRol`, of
+`bronPad` bij een opgelost meerstapsbereik), het gedeelde `die/dat`-filter, een
+geheel eenheidloos resultaattype, en een expliciete niets-toetsen-arm in
+`meldAggregatie` zodat besluit G8 niet stilzwijgend sneuvelt. Eén nieuwe
+weigering: WF-037, een bron die geen setlezing is, op ERROR-niveau.
+
+**De gelijktrekking.** `VOUWSOORTEN` zes → ZEVEN, en de WF-096-melding somt de
+zeven op. `VouwsoortenGrensTest` leest `value_fold_name` uit
+`spec/verifier/lib/checks.ml`, vergelijkt de armen met `VOUWSOORTEN`, en pint
+daarnaast de regel van `set_source_exempt` die op die functie keyt — een grens
+die elders wordt getrokken glipt dus niet langs de eerste toets. Een ontbrekend
+verifierbestand laat de test falen, niet overslaan.
+
+**De golden.** Eén `bron.rgs`, geschreven naar de bestaande hand-IR toe.
+De NOTE-slotalinea is herschreven: zij beweerde dat de soort in geen enkele
+frontend een producentroute had.
+
+**De inertheidsmeting** staat in `frontends/regelspraak/grammar/DIVERGENCES.md`
+§6, met de aantallen, de twee verantwoorde tekstverschillen en de expliciete
+grens van wat de meting NIET beweert.
+
+### 2. De inertheidsmeting — wat gemeten is en wat niet kon
+
+Gemeten over 800 vlakke RegelSpraak-documenten plus zes
+specificatiedocumenten. Byte-identieke emissie vóór en ná, per corpus:
+
+    64 / 64    emittergoldens van dit corpus
+    47 / 47    officiële casusdocumenten van de pariteitszone
+    176 / 176  het eigen corpus van de referentietoolchain
+    513 / 513  een operationele ruleset-verzameling
+    ---------
+    800 / 800  NUL herinterpretaties
+
+Twee tekstverschillen, beide verantwoord en geen van beide een lezing: de
+WF-096-melding somt de soorten op (zes → zeven namen), en de
+ANTLR-"expecting {…}"-verzameling in een syntaxfoutmelding noemt het nieuwe
+token. Normaliseer precies die twee en er blijft nergens een verschil over.
+
+**Wat NIET gemeten kon worden, eerlijk.** De kaart noemt "het vlakke
+v2.3.0-corpus". Dat corpus bestaat niet als één uitgepakte verzameling; wat
+bestaat zijn de vier normatieve markdowndocumenten plus het casusdocument en de
+conversienotities (zes stuks, alle zes doorzocht: nul treffers, de ene grep-hit
+is de deelreeks binnen "ingevulde" in een prozabijschrift) en de
+voorbeeldverzamelingen die de toolchain en de werkbank zelf dragen — die zijn
+alle vier meegemeten en staan hierboven. Er is dus geen corpus overgeslagen dat
+op deze machine bereikbaar was; wat ontbreekt is een canonieke uitgave die er
+niet is. Een document buiten deze 800 kan de woordgroep dragen, en de begrenzing
+daarvan staat onder Stap 4: de verschuiving is dan luid, niet stil.
+
+### 3. De melding voor de herpin
+
+**Dit is een emissieWIJZIGING van de frontend**, anders dan kaart 2's
+leesverbreding. Wat de toolchain-herpin moet overnemen:
+
+- het lexertoken `AANTAL_GEVULDE_WAARDEN_VAN` en het parseralternatief;
+- de resolverarmen (elementafleiding, resultaattype, de WF-037-weigering, de
+  niets-toetsen-arm van `meldAggregatie`);
+- `VOUWSOORTEN` zes → zeven, en de WF-096-meldingstekst die de zeven opsomt.
+
+Tellingen ná deze kaart: **65 rgs-goldens** (was 64), JUnit-suite **351** (was
+338, +13: elf nieuwe dialectfixtures en drie grensgetuigen, minus niets). Geen
+vloer opgehoogd — poort 10's vloeren staan op 173 en 38 en groeiden vanzelf
+voorbij.
+
+**De pariteitszone beweegt NIET** (poort 11: 29 casussen, nul divergenties),
+zoals voorspeld: geen enkel casusdocument daar draagt de woordgroep. Twee
+documenten uit die zone tonen los geëmitteerd wél het WF-096-tekstverschil, maar
+dat is de meldingsopsomming en geen lezing, en de poort vergelijkt IR.
+
+### 4. De pinstand — expliciet, want er loopt een parallelle kaart
+
+**Poort 12's twee gelijkheidspinnen zijn NIET bewogen en hoefden dat niet.**
+`EXPECTED_PLAYED` blijft 172 en `EXPECTED_DRL_PLAYED` blijft 149, beide gemeten
+groen. De reden is de vorm die de kaart koos: er komt geen NIEUWE golden bij —
+`jutterswet-gevuldetelling` speelde sinds kaart 2 al in alle vier de uitvoerders
+— er komt een `bron.rgs` bij op een golden die er al stond. De opdracht rekende
+op +1/+1; gemeten is +0/+0.
+
+**Deze kaart raakt `scripts/` dus in het geheel niet.** Er is geen
+beschermd-padvoorstel en geen botsing met de parallelle kaart
+(`20260919-datum-setbron-breuk`), die `scripts/check-drools.sh` wél aanraakt.
+De tweede lander hoeft hier niets voor te rebasen.
+
+### 5. Poortuitkomsten (elk los gedraaid, na `eval $(opam env)`)
+
+     1 check-self-contained     PASS
+     2 check-ir-schema          PASS  262 documenten, vloer 192
+     3 check-verifier           PASS  262 golden schoon; 420 negatief, vloer 350
+     4 check-case-schema        PASS  609 casusbestanden
+     5 check-oracle             PASS  ref-suite 755, vloer 489; 570 cases, vloer 427
+     6 check-clingo             PASS  backendsuite 461, vloer 83; 570 cases
+     7 check-noop               PASS  534 cases, 36 overlevers
+     8 check-rood               PASS  39 rode cases, vloer 26; 78 fragmenten citeren
+                                      geen van de 36 bodemzinnen
+     9 check-catala             PASS  201 checks; 12 goldens
+    10 check-regelspraak        PASS  351 tests (was 338), vloer 173;
+                                      65 rgs-goldens (was 64), vloer 38
+    11 check-toka-parity        PASS  29 casussen, nul divergenties
+    12 check-drools             PASS  gespeeld 172 (pin ONGEWIJZIGD),
+                                      DRL-tekst 149 (pin ONGEWIJZIGD), JUnit 514
+    13 check-reftype-derivation PASS  131 twists over 27 goldens, vloer 74;
+                                      128 replays, 25 DRL-tekst
+    14 check-flogic             PASS  130 checks; 2 goldens
+
+Geen enkele vloer en geen enkele pin bewogen.
+
+### 6. Gewijzigde bestaande checks (testmandaat)
+
+Additief was vrij; deze vier zijn WIJZIGINGEN en worden daarom gemeld:
+
+- `SetlezingZonderVouwTest.MELDING` en `AantalSetbronTest.MELDING` pinden de
+  WF-096-tekst woordelijk, inclusief de opsomming van toelaatbare soorten. Die
+  opsomming groeit met de gelijktrekking mee (zes → zeven namen, en "een
+  telling" werd "een instantietelling", want met twee tellingen in huis was het
+  woord dubbelzinnig geworden). De pinnen zijn meebewogen; wat zij pinnen is
+  niet verzwakt.
+- `MarkerRedenPinTest.GESANCTIONEERD`: `bouwFunctie` 2 → 3 null-markers, met de
+  reden erbij (de WF-037-ERROR staat vlak boven de derde).
+- `AantalSetbronTest`' klassencommentaar sprak van "de zes waardevouwen"; dat
+  getal is zeven geworden.
+
+### 7. Wat bewust NIET gebeurde
+
+- **Geen nieuwe golden.** De kaart vroeg een `bron.rgs` OP een golden van
+  kaart 2, met de emissie naar de bestaande hand-IR toe. Dat is de strengere
+  toets (de emitter moet de handgeschreven bytes raken, niet andersom) en het
+  is meteen de reden dat poort 12 niet beweegt.
+- **`spec/**`, `ref/**`, `backends/**` onaangeraakt.** Alle drie dragen de
+  soort al.
+- **Geen catala- en geen flogic-spelling.** Elk van die frontends draagt een
+  eigen weigeringslijst en een wire-soort die zij niet schrijven kost hun niets.
+- **`spec/CONSTRUCTS.md` en `spec/PLAN.md`** — voorstel in §8.
+
+### 8. Registervoorstel (hoofdsessie, serieel)
+
+Voor `spec/CONSTRUCTS.md` rij 1 (de aggregatierij), aan te hangen aan het blok
+dat kaart 2 voorstelde:
+
+> **De producentroute geland (2026-09-20, kaart 3; besluit G9 uitgevoerd):** de
+> soort is niet langer alleen op de wire schrijfbaar. De RegelSpraak-frontend
+> kent haar een DIALECTspelling toe — `het aantal gevulde waarden van`, een
+> whole-phrase token met één setlezing als operand en geen facetgleuf — die
+> geen naamwoord reserveert: alleen de exacte vijfwoordreeks verandert van
+> betekenis. Dat de uitbreiding op bestaande documenten inert is, is GEMETEN en
+> niet aangenomen: 800 vlakke RegelSpraak-documenten (het eigen corpus, de
+> pariteitszone, het corpus van de referentietoolchain en een operationele
+> ruleset-verzameling) emitteren byte-identiek vóór en ná, met nul
+> herinterpretaties en twee verantwoorde tekstverschillen in meldingen; de
+> woordgroep komt in geen van die 800 en in geen van de zes
+> specificatiedocumenten voor. Wat de meting niet kan uitsluiten begrenst de
+> grammatica: op een opzettelijk botsend model verschuift de lezing wél, en zij
+> verschuift naar een LUIDE WF-037-weigering in plaats van naar een ander
+> antwoord — gemeten met beide frontends naast elkaar. Bij de spelling hoort de
+> gelijktrekking van twee grenzen die één regel zijn: `VOUWSOORTEN` in de
+> frontend en `set_source_exempt` in de verifier dragen weer dezelfde ZEVEN
+> waardevouwen, en de getuige LEEST voortaan de verifierlijst in plaats van
+> haar na te vertellen — de frontend liep twee kaarten lang zes tegen zeven
+> zonder dat iets het mat, omdat geen frontend de soort kon schrijven.
+> `corpus/golden/jutterswet-gevuldetelling` draagt de `bron.rgs`; de emissie is
+> naar de handgeschreven IR toe geschreven en raakt haar byte-identiek.
+
+Voor `spec/PLAN.md` is er geen scopewijziging.

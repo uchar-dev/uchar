@@ -27,7 +27,8 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * <p><b>Why the route needs a name collision, and why that is the honest witness.</b> For a count the
  * element type is derived from the argument's WRITTEN WORD ({@code ExpressieBouwer.aantalElement}),
- * not from the argument's object type as it is for the six value folds. So a set reading only reaches
+ * not from the argument's object type as it is for the value folds (seven of them since 2026-09-20,
+ * when the filled count joined). So a set reading only reaches
  * the exemption when that word also names a type or a role — here the fact type's role to Vondst is
  * itself called "gewicht", which the repository's own namespace decision (CONSTRUCTS row 4,
  * 2026-09-10: role names and member names are separate namespaces) makes a well-formed model. Without

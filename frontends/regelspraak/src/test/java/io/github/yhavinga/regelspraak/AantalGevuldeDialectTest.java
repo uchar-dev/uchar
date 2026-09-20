@@ -190,7 +190,7 @@ class AantalGevuldeDialectTest {
     }
 
     @Test void een_ongedeclareerd_lid_blijft_de_eerlijke_marker() {
-        // The declared-names-only rule the six value folds already carry, now reached by the seventh:
+        // The declared-names-only rule the other six value folds already carry, now reached by the seventh:
         // a source naming no declared member markers with a WARNING instead of folding a getter that
         // does not exist.
         RegelSpraakModel m = resolve("""
