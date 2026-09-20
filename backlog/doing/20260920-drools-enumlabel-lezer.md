@@ -36,6 +36,34 @@ May touch: `backends/drools/**`, `scripts/check-drools.sh` (pins +
 kanaallijsten, **voorstel**), kaartverplaatsing. NB: serieel met andere
 DrlTranspiler/check-drools-kaarten.
 
+## Rood-eerst, gemeten vóór elke wijziging (2026-09-20, HEAD c4f12743)
+
+De twee goldens door de replay-API, beide takken, met de jar van deze
+HEAD:
+
+    jutterswet-keurstaat    exec: EXCLUDE transpiler SKIP: regel:
+                                  veilbaarheid naar staat — regel
+                                  (voorwaarde buiten Phase-B scope)
+                            drl : EXCLUDE drl-transpiler MARKER: regel:
+                                  veilbaarheid naar staat — TODO
+                                  voorwaarde: haar staat gelijk is aan 'gaaf'
+    jutterswet-vondstklasse exec: EXCLUDE transpiler SKIP: regel:
+                                  bestemming van drijfgoed — regel
+                                  (voorwaarde buiten Phase-B scope)
+                            drl : EXCLUDE drl-transpiler MARKER: regel:
+                                  bestemming van drijfgoed — TODO
+                                  voorwaarde: zijn klasse gelijk is aan
+                                  'drijfgoed'
+
+De WAARDE-arm apart, want de conditie-arm ketst als eerste af: hetzelfde
+document met de voorwaarde van R1 weggenomen geeft exec `regel (waarde
+buiten scope)` en DRL-tekst `TODO literal: wrakgoed`. Beide helften van
+de kaartzin kloppen dus letterlijk.
+
+Actuele stand van de pins op deze HEAD: `EXPECTED_PLAYED` 169,
+`EXPECTED_DRL_PLAYED` 146 (het kaartje schreef 165/142; er zijn
+sindsdien kaarten geland).
+
 ## Toolchain-consequentie (herpin 2026-09-20, regelspraak-java 1e53206)
 
 De pin-bump naar 3e97f181 legde dezelfde lezer in de toolchain bloot:
