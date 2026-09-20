@@ -147,7 +147,20 @@ vestigial tag — an instance fold always carries exactly one source
 argument, a listed fold at least two. For som/totaal/aantal the element
 is *load-bearing* (v0's accumulate joins it and reads only the first
 operand), so a multi-operand form of those faults loudly — never a
-silent list fold v0 would compute differently. **Ratified (maintainer
+silent list fold v0 would compute differently. **For `aantal` that
+promise is kept at BOTH spellings from 2026-09-20, and until then at
+one** (maintainer decision of that date). Where the element type is
+stamped — the producer's spelling — a multi-operand count does fault
+loudly, the reference interpreter refusing the source shape by name.
+Where it is absent nothing in the runtime distinguished the shape at
+all: the fold took the operand list and the interpreter counted the
+FILLED operands, silently, which is exactly the case this sentence
+forbids, and no other executor answered it. That spelling is refused on
+the WIRE now, by WF-037's count-arity arm (`IR-SPEC.md` ch. 4.3), so the
+promise holds at both — one at evaluation, one before anything runs.
+Below two operands the wire rule is silent by decision and the list fold
+still happens; that residue is a named open flank, stated at WF-037 and
+pinned as a worked example. **Ratified (maintainer
 decision 2026-09-04, landed 2026-09-05):** the numeric half of this fold
 is a v1 *widening*, not a mirror. v0's static typing (§4.14/§4.15)
 admits eerste/laatste over date expressions only — a concrete non-date
