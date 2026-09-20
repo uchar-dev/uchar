@@ -4654,11 +4654,48 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
          else if List.mem f.kind [ Tijdsduur; Absolute_tijdsduur ] && arity <> 2 then
            [ v "WF-037" at (Printf.sprintf "builtin arity %d, expected 2" arity) ]
          else [])
+      (* This clause is what DEFINES the listed value fold: no element type,
+         no dimension selection, two or more operands. Both counts step aside
+         from it because v0 spells a count with ONE argument, its fold source;
+         their own arity law lives in the two arms below, and removing either
+         exclusion here would state it twice, in the wrong words. *)
       @ (if
            List.mem f.kind aggregation_kinds && f.element_objecttype = None
            && f.dimensie_selectie = None && arity < 2 && f.kind <> Aantal
            && f.kind <> Aantal_gevulde
          then [ v "WF-037" at "value fold with fewer than two operands" ]
+         else [])
+      (* WF-037, the count's arity (IR-SPEC ch. 4.3, semantics
+         RUNTIME-SEMANTICS ch. 3.4a; maintainer decision 2026-09-20). The
+         exclusion above left the listed form of a COUNT admissible, and a
+         count has none: the source language defines it over instances and
+         spells no operand list for it, so there is nothing to mirror and no
+         producer writes one. What it was, measured: verifier-clean with
+         exactly ONE executor answering — `ref` counted the FILLED operands,
+         which is the reading the set-source decision of 2026-09-19 took off
+         the wire under this very kind, while clingo and both Drools branches
+         refused the node.
+
+         The arm deliberately does NOT read elementObjecttype. A count that
+         carries an element type AND an operand list is the same listed form
+         wearing a second claim; measured, it too was verifier-clean, and
+         there all THREE executors refused it.
+
+         What it does not reach, and why: a count with fewer than two operands
+         and no element type. Arity 0 and arity 1 are no listed form — the
+         clause above is what makes ≥ 2 the listed shape — so they are a
+         different defect, a fold without a source, under a decision not yet
+         taken. Both are verifier-clean today and `ref` answers them; that is
+         recorded as an open flank rather than silently swept in here. *)
+      @ (if f.kind = Aantal && arity >= 2 then
+           [ v "WF-037" at
+               (Printf.sprintf
+                  "a count folds INSTANCES and has no LISTED form, and this node carries %d \
+                   operands: the source language spells a count over a subject expression alone \
+                   (ch. 4.3), so there is no articulated operand list to admit — the only reading \
+                   an operand list leaves a count is the number of FILLED operands, and that \
+                   meaning belongs to the filled count over its set source, never to this kind"
+                  arity) ]
          else [])
       (* WF-037, the filled count's shape (IR-SPEC ch. 4.3, semantics
          RUNTIME-SEMANTICS ch. 3.4c). Two of the three arms are new of

@@ -32,4 +32,12 @@ which also means the decimals facet is pinned here by the *message* and not
 by the refusal. That same drop does clear two other cases —
 `wf091-binair-decimalen` and `wf091-fold-decimalen`, whose annotations agree
 with their derivation on wholeness and had only the decimal count to differ
-on. Remove the `Aantal` branch and only this case turns clean.
+on.
+
+The arm proof is on the RULE, not on the verdict, and since 2026-09-20 it
+has to be. This document's count carries TWO operands, so it is also the
+listed form WF-037's count-arity clause refuses; it therefore stays red
+under every WF-091 mutant. Remove the `Aantal` branch from the derivation
+and, measured over golden + rood + negatief + parity (715 documents),
+exactly one report changes anywhere: this one loses its WF-091 line and
+keeps its WF-037 line. No verdict moves, here or elsewhere.
