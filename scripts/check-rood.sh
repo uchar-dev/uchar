@@ -187,37 +187,89 @@ EOF
 n_bodem=$(grep -c '|' "$bodem")
 
 # --- the CARRIER fence: a listed sentence must still exist in its named source (2026-09-20) -----
-# Until today the list shrank by hand and nothing checked it; a carrier-less entry waited for a
-# reader's eye. Three things stand between a sentence in this list and its spelling in OCaml, and
-# all three are normalised away before a plain substring search: the WRAP (a long literal ends in a
-# backslash, and the compiler elides that plus the newline and the next line's leading blanks), the
-# escaped QUOTES, and the escaped BYTES — `translate.ml` writes ± as the two hex escapes \xc2\xb1
-# rather than as the character, so hex escapes are dropped on the source side and every non-ASCII
-# byte on BOTH sides, which makes the two spellings meet. Accepted limits, recorded rather than
-# hidden: two sentences differing only in non-ASCII characters are one sentence to this fence, and
-# a source line ending in an escaped backslash would be joined wrongly (neither file has one).
-# The normalisation SELF-TESTS in the useful direction — most listed sentences are wrapped, so a
-# broken join fails the whole list at once instead of passing vacuously — and the probe below adds
-# the other one: a sentence that must NOT be found.
-norm=$(mktemp) || exit 2
-for f in ref/lib/eval.ml backends/clingo/lib/translate.ml; do
-    LC_ALL=C awk '{ l = $0
-           if (cont) { sub(/^[ \t]*/, "", l); cont = 0 } else { out = out "\n" }
-           if (l ~ /\\$/) { sub(/\\$/, "", l); cont = 1 }
-           out = out l }
-         END { gsub(/\\x[0-9a-fA-F][0-9a-fA-F]/, "", out); gsub(/\\"/, "\"", out); print out }' "$f"
-done | LC_ALL=C tr -d '\200-\377' > "$norm"
-if grep -Fq -- 'a sentence no arm of either executor has ever spoken' "$norm"; then
-    echo 'FAIL: the carrier fence found a sentence that cannot be in either source — it is matching something other than the normalised text' >&2
+# Until this fence the list shrank by hand and nothing checked it; a carrier-less entry waited for a
+# reader's eye. Its FIRST version passed three ways it should not have (found by a reader the same
+# day, and each is now a rule): it read the source column and ignored it, so an invented file name
+# passed; it searched the CONCATENATION of both sources, so the six sentences both files carry were
+# unguarded in either; and it counted a COMMENT as a carrier, so a historical measurement quoted in
+# prose kept the fence green after the arm itself was gone. Hence: normalise and search PER FILE,
+# only the file the source column names, and only in CODE.
+#
+# Four things stand between a sentence in this list and its spelling in OCaml, and all four are
+# normalised away before a plain substring search: COMMENTS (nesting-aware, depth-tracked across
+# lines), the WRAP (a long literal ends in a backslash, and the compiler elides that plus the
+# newline and the next line's leading blanks), the escaped QUOTES, and the escaped BYTES —
+# `translate.ml` writes ± as \xc2\xb1 rather than as the character, so hex escapes go on the source
+# side and every non-ASCII byte on BOTH sides, which makes the two spellings meet.
+#
+# Accepted limits, recorded rather than hidden: two sentences differing only in non-ASCII characters
+# are one sentence to this fence; a source line ending in an escaped backslash would be joined
+# wrongly (neither file has one); and a literal containing "(*" would open a comment here (neither
+# file has one, checked).
+strip_ocaml() {
+    LC_ALL=C awk '
+      function strip(s,   i, n, c2, o) {
+        n = length(s); o = ""
+        for (i = 1; i <= n; i++) {
+          c2 = substr(s, i, 2)
+          if (c2 == "(*") { depth++; i++; continue }
+          if (c2 == "*)" && depth > 0) { depth--; i++; continue }
+          if (depth == 0) o = o substr(s, i, 1)
+        }
+        return o
+      }
+      { l = strip($0)
+        if (cont) { sub(/^[ \t]*/, "", l); cont = 0 } else { out = out "\n" }
+        if (l ~ /\\$/) { sub(/\\$/, "", l); cont = 1 }
+        out = out l }
+      END { gsub(/\\x[0-9a-fA-F][0-9a-fA-F]/, "", out); gsub(/\\"/, "\"", out); print out }' "$1" \
+    | LC_ALL=C tr -d '\200-\377'
+}
+carries() {  # <normalised file> <sentence> -> 0 when the file's CODE contains it
+    printf '%s' "$2" | LC_ALL=C tr -d '\200-\377' | grep -Ff - "$1" >/dev/null 2>&1
+}
+
+# Standing self-test of the MECHANISM, in the \u probe's style beside it: one synthetic source
+# carrying three sentences — one wrapped across lines, one written with hex escapes, one that exists
+# ONLY inside a comment — and the fence must find the first two and miss the third. It tests the
+# normaliser, never the inventory, so rewording a real sentence never touches it.
+probe_src=$(mktemp) || exit 2
+probe_norm=$(mktemp) || exit 2
+cat > "$probe_src" <<'PROBE'
+(* a probe sentence that lives only in a comment *)
+let a () =
+  fault
+    "a probe sentence that is wrapped across \
+     two source lines"
+let b () = fault "a probe sentence with an escaped \xc2\xb1 byte"
+PROBE
+strip_ocaml "$probe_src" > "$probe_norm"
+carries "$probe_norm" "a probe sentence that is wrapped across two source lines" \
+    || { echo 'FAIL: the carrier fence does not rejoin a wrapped OCaml literal — every long listed sentence would be reported carrier-less' >&2; status=1; }
+carries "$probe_norm" "a probe sentence with an escaped ± byte" \
+    || { echo 'FAIL: the carrier fence does not see through an escaped byte (\xc2\xb1) — the sentences that spell one would be reported carrier-less' >&2; status=1; }
+if carries "$probe_norm" "a probe sentence that lives only in a comment"; then
+    echo 'FAIL: the carrier fence counts a COMMENT as a carrier — a historical measurement quoted in prose would keep it green after the arm is gone' >&2
     status=1
 fi
+rm -f "$probe_src" "$probe_norm"
+
+norm=$(mktemp) || exit 2
+last=''
 while IFS='|' read -r src sentence _reason; do
     [ -z "$sentence" ] && continue
-    if ! printf '%s' "$sentence" | LC_ALL=C tr -d '\200-\377' | grep -Ff - "$norm" >/dev/null 2>&1; then
-        printf 'FAIL: the bottom-sentence list carries "%s" (%s), but no source produces it any more. A listed sentence without a carrier tells a reader a residual arm is waiting where none is: remove the entry, deliberately and with its reason in the commit.\n' \
+    file=${src%% *}
+    if [ ! -f "$file" ]; then
+        printf 'FAIL: the bottom-sentence list names the source %s, which does not exist — the entry cannot be checked at all\n' "$file" >&2
+        status=1
+        continue
+    fi
+    if [ "$file" != "$last" ]; then strip_ocaml "$file" > "$norm"; last=$file; fi
+    carries "$norm" "$sentence" || {
+        printf 'FAIL: the bottom-sentence list carries "%s" (%s), but that file produces it no longer. A listed sentence without a carrier tells a reader a residual arm is waiting where none is: remove the entry, deliberately and with its reason in the commit.\n' \
             "$sentence" "$src" >&2
         status=1
-    fi
+    }
 done < "$bodem"
 rm -f "$norm"
 
@@ -360,6 +412,8 @@ input-overprecision|NOFAULT the v0 case runner does not enforce declared attribu
 input-overprecision-param|NOFAULT the v0 case runner does not enforce declared parameter input precision — it accepts the over-precise value and runs to a model
 list-element-overprecision|EXCLUDE the v0 loader refuses the model's record datatype (StructType) before any list-element precision is reached — the record/struct form is not carried
 near-side-rolcheck-to-many|EXCLUDE the rolcheck rule (bemand met jutter) does not lower — a transpiler SKIP (voorwaarde buiten Phase-B scope); fire is never reached
+periodevenster-tellende-kwantor|EXCLUDE measured 2026-09-20: the SECOND bound of RUNTIME-SEMANTICS ch. 3.10's v0 mirror note — "refuse the condition under counting quantifiers". The boundary is read off this backend rather than chosen: one verifier-clean document per quantifier showed both branches PLAYING under ALLE and DE and refusing under GEEN, TEN_MINSTE, TEN_HOOGSTE and PRECIES, the DRL-text branch naming the very limit ("TODO periodevergelijking onder een tellende kwantor (§8.4.3)") where the exec branch reports a transpiler SKIP (voorwaarde buiten Phase-B scope). ref and clingo now refuse the same four by name with the phase in the sentence; the carried ALLE is green in all four (golden jutterswet-premievenster). Listed rather than fragment-pinned for this leg's standing reason: FAULT here means a genuine fault at fire
+periodevenster-tijdlijnkenmerk|EXCLUDE measured 2026-09-20: a period condition on a TEMPORAL target is ch. 3.10's clip, not the evaluation-date gate, and the clip is specified but built nowhere. This backend classified it correctly before either OCaml executor did — exec "periodevergelijking op tijdsafhankelijk doel — §8.4.3 clip", DRL-text "TODO periodevergelijking op een tijdsafhankelijk doel (§8.4.3)" — while the ASP backend PLAYED the scalar gate on the timeline, because its target test read the ATTRIBUTE granularity table and this target is a CHARACTERISTIC. Both OCaml executors now ask the characteristic table too, each through its own reader, and refuse by name with the phase in the sentence. Listed rather than fragment-pinned: a transpiler refusal is one phase before fire
 periodegrens-parameterdatum|EXCLUDE measured 2026-09-20: the bound shape RUNTIME-SEMANTICS ch. 3.10 defers — its v0 mirror note carries a date literal or an own scalar date attribute and leaves the general date expression WF-042 admits to a later card. All four executors refuse this parameter bound and the agreement is unanimous: ref and clingo by name (the pins run to the phase tail, "Declined at evaluation" against "Declined in translation"), the exec branch with a transpiler SKIP (voorwaarde buiten Phase-B scope) and the DRL-text branch naming the very limit — "TODO periodevergelijking-grens 'de peildatum' (§8.4.3)". Listed rather than fragment-pinned for this leg's standing reason: FAULT here means a genuine fault at fire, and a transpiler refusal is one phase before it. The window's CARRIED shapes are green in all four (golden jutterswet-premievenster); the day the general expression lands, this entry goes stale and the gate says so
 som-fallback-always-evaluated|EXCLUDE the reaching rule (vangstsom van een vangst) does not lower — a transpiler SKIP (aggregatie buiten Phase-C scope); fire is never reached, so the som's stand-in is not Drools-observable here
 struct-field-overprecision|EXCLUDE the v0 loader refuses the model's record datatype (StructType) — the record/struct form is not carried

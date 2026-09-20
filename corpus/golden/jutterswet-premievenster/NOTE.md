@@ -56,7 +56,7 @@ where the construct executes.
 The expectations were computed by hand and written into the card
 (`backlog/done/20260920-ref-periodeconditie-arm.md`) before any executor
 saw the document. All four executors replay them: `ref` and the ASP
-backend 12 expectations per case, both Drools branches `PLAYED 6`.
+backend 14 expectations per case, both Drools branches `PLAYED 6`.
 
 ## The bound shapes this document carries, and the one it does not
 

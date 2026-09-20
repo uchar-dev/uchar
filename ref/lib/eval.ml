@@ -146,6 +146,71 @@ let function_def env name : function_def =
 let kenmerk_temporal (ot : objecttype) name =
   List.exists (fun (k, _) -> norm k = norm name) ot.kenmerk_granulariteit
 
+(* ch. 3.10's case distinction is on the rule's TARGET, and a condition cannot
+   see one — so the clip case is decided here, where the target is known, and
+   never inside [eval_cond]. Without this walk a period condition on a
+   temporal target would silently get the SCALAR gate: all-or-nothing on the
+   evaluation date where the chapter says the window speaks about the
+   timeline. That is the wrong axis, not a near miss. *)
+(* HONESTY NOTE, the [guard_on_doel] precedent (card eigenaar-gastheer-object,
+   advice f). The ASP backend links this library and calls THIS function, so
+   on the clip's case distinction `ref ≡ clingo` is one piece of code with two
+   callers, not two implementations that agree — it is no differential, and
+   saying so is the point of the note. Shared deliberately all the same: a
+   second walk is a second place where the boundary of ch. 3.10's two cases
+   could be drawn, and one construct wrongly excluded there is a window
+   silently gated on the wrong axis.
+   What the sharing HID is recorded with it (reader finding 2026-09-20): the
+   agreement made the surrounding target test look shared too, and it was
+   not — each executor asked its own table, ref the characteristic one and
+   the ASP backend the attribute one only, so a temporal CHARACTERISTIC target
+   passed the test there and got the scalar gate. The fix left both target
+   tests unshared, on purpose, and gave the position a red witness
+   (`corpus/rood/periodevenster-tijdlijnkenmerk`). Share the syntax walk,
+   never the judgement it feeds. *)
+let rec bevat_periode (c : conditie) =
+  match c with
+  | Periode_conditie _ -> true
+  | Samengesteld { onderdelen; _ } -> List.exists bevat_periode onderdelen
+  | Kwantorvouw { kv_filter; kv_toets; _ } ->
+      let opt = function Some c -> bevat_periode c | None -> false in
+      opt kv_filter || opt kv_toets
+  | Vergelijking _ | Predicaat _ | Kenmerk_check _ | Rollidmaatschap _ | Verre_rollidmaatschap _
+  | Regelversie _ | Conditie_onopgelost _ ->
+      false
+
+
+(* ch. 3.10's v0 mirror note carries TWO bounds on the window and this is the
+   second: v0's backends "refuse the condition under counting quantifiers".
+   Measured 2026-09-20 on verifier-clean documents, one per quantifier, with
+   the window as the second member of a composite: the DRL-text branch names
+   this very limit ("periodevergelijking onder een tellende kwantor") under
+   GEEN, TEN_MINSTE, TEN_HOOGSTE and PRECIES, and the exec branch drops the
+   rule; both PLAY under ALLE and DE. So the boundary is not invented here,
+   it is read off the three other executors — and the two carried quantifiers
+   are exactly the two this interpreter has a corpus witness for.
+
+   What the refused position would otherwise do is a reading nothing norms:
+   under GEEN the window's verdict is COMPLEMENTED, so a time-free session —
+   where ch. 3.10 says the window never matches — would make the composite
+   TRUE and fire the rule. The chapter norms the window as a gate on the
+   RULE, not as a member a quantifier may count.
+
+   The fold node is refused by the same rule and for the same reason, without
+   a Drools measurement of its own: its quantifiers are the composite's, the
+   quantification is the same one over instances instead of parts, and the
+   safe direction of an unmeasured boundary is the refusal. *)
+let periode_onder_telkwantor (kwantor : kwantor) (parts : conditie list) =
+  match kwantor with
+  | Alle | De -> ()
+  | Geen | Ten_minste | Ten_hoogste | Precies ->
+      if List.exists bevat_periode parts then
+        Value.fault
+          "a period condition under GEEN or a counting quantifier (ten minste / ten hoogste / \
+           precies) is the position ch. 3.10's mirror note refuses: the quantifier counts or \
+           complements the window's verdict, while the chapter norms the window as a gate on the \
+           RULE. Declined at evaluation"
+
 (* WF-100 / IR-SPEC ch. 4.6 (q1), maintainer decision 2026-09-10: on a
    characteristic check the `eigenaar` is AUTHORITATIVE for the declaration.
    WF-109 / ch. 4.6 (q2), maintainer decision 2026-09-19: it is also the
@@ -1896,6 +1961,10 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
             (Option.value role.rol_naam ~default:"?")
             self.label)
   | Samengesteld { kwantor; drempel; onderdelen; _ } ->
+      (* the mirror note's second bound, checked BEFORE the short circuit
+         below: the position is refused, not the reading, so a composite that
+         would stop short of the window refuses all the same *)
+      periode_onder_telkwantor kwantor onderdelen;
       (* ch. 5.10, the composite's SHORT CIRCUIT: the members are evaluated
          left to right in WIRE order and evaluation stops at the first member
          after which the outcome stands. A member never reached produces no
@@ -1986,6 +2055,8 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
   | Kwantorvouw
       { kv_kwantor; kv_drempel; kv_element_objecttype; kv_filter; kv_toets; kv_bron_rol;
         kv_bron_pad; _ } ->
+      periode_onder_telkwantor kv_kwantor
+        (List.filter_map Fun.id [ kv_filter; kv_toets ]);
       let el = req "Kwantorvouw.elementObjecttype" kv_element_objecttype in
       let toets =
         match kv_toets with
@@ -2167,7 +2238,17 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
             Value.fault "a period condition's bound is %s, which is not a date (WF-042)"
               (Value.to_string other)
       in
-      (match (env.as_of, day v, day t) with
+      (* both [day] calls can FAULT (a bound that is not a date), and OCaml
+         fixes no evaluation order inside a tuple — so they are forced into
+         ch. 5.11's order with a let, rather than left to the compiler. Not
+         reachable today (WF-042 refuses a non-date bound ahead of any
+         executor, so the fault is a fail-fast belt), but it becomes the
+         live question the day the general date expression lands: that is
+         the first bound shape that can fault at evaluation, and then WHICH
+         bound faults first is the observable ch. 5.11 order. *)
+      let dv = day v in
+      let dt = day t in
+      (match (env.as_of, dv, dt) with
        | None, _, _ -> false (* an unset evaluation date never matches *)
        | _, Some None, _ | _, _, Some None -> false
        | Some d, v, t -> (
@@ -2366,23 +2447,6 @@ let run_pro_rata env w (self : World.instance) ~ot ~attr waarde =
         "a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count shape (a \
          gedurende condition over an own temporal characteristic); no corpus case for more"
 
-(* ch. 3.10's case distinction is on the rule's TARGET, and a condition cannot
-   see one — so the clip case is decided here, where the target is known, and
-   never inside [eval_cond]. Without this walk a period condition on a
-   temporal target would silently get the SCALAR gate: all-or-nothing on the
-   evaluation date where the chapter says the window speaks about the
-   timeline. That is the wrong axis, not a near miss. *)
-let rec bevat_periode (c : conditie) =
-  match c with
-  | Periode_conditie _ -> true
-  | Samengesteld { onderdelen; _ } -> List.exists bevat_periode onderdelen
-  | Kwantorvouw { kv_filter; kv_toets; _ } ->
-      let opt = function Some c -> bevat_periode c | None -> false in
-      opt kv_filter || opt kv_toets
-  | Vergelijking _ | Predicaat _ | Kenmerk_check _ | Rollidmaatschap _ | Verre_rollidmaatschap _
-  | Regelversie _ | Conditie_onopgelost _ ->
-      false
-
 let run_rule env world (r : resolved_regel) =
   if not (applies env r.rr_geldigheid) then (world, false)
   else
@@ -2394,7 +2458,23 @@ let run_rule env world (r : resolved_regel) =
           | Some Kenmerktoekenning -> false
           | _ -> Ir_v0.Checks.attr_temporal (objecttype env ot) attr
         in
-        if temporal_target && Option.fold ~none:false ~some:bevat_periode r.rr_voorwaarde then
+        (* ch. 3.10's case distinction asks whether the TARGET carries a
+           timeline, and a CHARACTERISTIC target carries one through
+           `kenmerkGranulariteit` — a different table from the one
+           [temporal_target] reads. That flag is keyed on the attribute side
+           alone because the pro-rata dispatch below needs it so; reusing it
+           here let the characteristic target through. Measured 2026-09-20 on
+           a verifier-clean KENMERKTOEKENNING whose target declares a JAAR
+           granularity and whose whole condition is the window: the ASP
+           backend PLAYED the scalar gate on a timeline target (present
+           inside the window, absent outside it) while both Drools branches
+           named it the §8.4.3 clip. So the two tables are asked apart. *)
+        let doel_tijdlijn =
+          match r.rr_soort with
+          | Some Kenmerktoekenning -> kenmerk_temporal (objecttype env ot) attr
+          | _ -> temporal_target
+        in
+        if doel_tijdlijn && Option.fold ~none:false ~some:bevat_periode r.rr_voorwaarde then
           Value.fault
             "a period condition on the temporal target %S is ch. 3.10's CLIP, not the \
              evaluation-date gate: the window intersects the written timeline instead of deciding \

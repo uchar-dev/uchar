@@ -1,0 +1,20 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2024-06-15",
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "ref": "is ch. 3.10's CLIP, not the evaluation-date gate: the window intersects the written timeline instead of deciding whether the rule applies, and that half of the chapter is not built. Declined at evaluation",
+    "clingo": "is ch. 3.10's CLIP, not the evaluation-date gate: the window intersects the written timeline instead of deciding whether the rule applies, and that half of the chapter is not built. Declined in translation"
+  }
+}

@@ -479,6 +479,42 @@ let rec eff_unit ctx (e : expr) : eenheid option =
 
 let attr_temporal ctx ~otype ~attr = Ir_v0.Checks.attr_temporal (objecttype ctx otype) attr
 
+(* the CHARACTERISTIC side of the same question, and this backend's own —
+   deliberately not borrowed from `ref`. A characteristic target declares its
+   timeline in `kenmerkGranulariteit`, a different table from the attribute
+   one above, and reading only the attribute table let a KENMERKTOEKENNING on
+   a temporal target pass the ch. 3.10 clip test here (measured 2026-09-20:
+   this backend PLAYED the scalar gate on a timeline while both Drools
+   branches named the clip). The condition WALK the clip test uses is shared
+   with `ref` [Eval.bevat_periode]; this half is not, because a second shared
+   helper is a second place where agreement means "one implementation" rather
+   than "two that agree". *)
+let kenmerk_temporal ctx ~otype ~kenmerk =
+  List.exists
+    (fun (k, _) -> Ir_v0.Checks.norm k = Ir_v0.Checks.norm kenmerk)
+    (objecttype ctx otype).kenmerk_granulariteit
+
+(* ch. 3.10's v0 mirror note carries TWO bounds on the window and this is the
+   second: v0's backends "refuse the condition under counting quantifiers".
+   Measured 2026-09-20, one verifier-clean document per quantifier: the
+   DRL-text branch names this very limit ("periodevergelijking onder een
+   tellende kwantor") under GEEN, TEN_MINSTE, TEN_HOOGSTE and PRECIES, the
+   exec branch drops the rule there, and both PLAY under ALLE and DE. The
+   refused reading is not a near miss — under GEEN the window's verdict is
+   COMPLEMENTED, so a time-free session, where ch. 3.10 says the window never
+   matches, would make the composite true and fire the rule. Word for word
+   ref's sentence up to the phase, as the other ch. 3.10 refusals are. *)
+let periode_onder_telkwantor (kwantor : kwantor) (parts : conditie list) =
+  match kwantor with
+  | Alle | De -> ()
+  | Geen | Ten_minste | Ten_hoogste | Precies ->
+      if List.exists Eval.bevat_periode parts then
+        fault
+          "a period condition under GEEN or a counting quantifier (ten minste / ten hoogste / \
+           precies) is the position ch. 3.10's mirror note refuses: the quantifier counts or \
+           complements the window's verdict, while the chapter norms the window as a gate on the \
+           RULE. Declined in translation"
+
 let attr_granularity ctx ~otype ~attr =
   match Ir_v0.Checks.find_ci (objecttype ctx otype).attribuut_granulariteit attr with
   | Some (Some g) -> g
@@ -5216,6 +5252,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
   | Samengesteld
       { kwantor = (Geen | Ten_minste | Ten_hoogste | Precies) as kwantor; drempel; onderdelen; _ }
     ->
+      periode_onder_telkwantor kwantor onderdelen;
       (* the counting quantifiers (ref eval_cond: hits over the member list —
          GEEN hits = 0, TEN MINSTE hits >= d, TEN HOOGSTE hits <= d, PRECIES
          hits = d; the decision-table desugar's disjunctive row is TEN_MINSTE
@@ -5316,6 +5353,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
   | Kwantorvouw
       { kv_kwantor; kv_drempel; kv_element_objecttype; kv_filter; kv_toets; kv_bron_rol;
         kv_bron_pad; _ } ->
+      periode_onder_telkwantor kv_kwantor (List.filter_map Fun.id [ kv_filter; kv_toets ]);
       (* RUNTIME-SEMANTICS ch. 3.9a: the QUANTIFIER FOLD — "⟨kwantor⟩ ⟨elementen⟩
          ⟨matrix⟩", over the five quantifiers WF-108 admits. Its contributors are
          EXACTLY the instance fold's (ch. 3.4a /
@@ -6878,10 +6916,12 @@ let translate_regel ctx (r : resolved_regel) =
              cannot see — so it is settled here, before the window is
              translated, and through the walk ref uses (Eval.bevat_periode)
              rather than a second one that could drift from it. *)
-          if
-            attr_temporal ctx ~otype:ot ~attr:a
-            && Option.fold ~none:false ~some:Eval.bevat_periode r.rr_voorwaarde
-          then
+          let doel_tijdlijn =
+            match r.rr_soort with
+            | Some Kenmerktoekenning -> kenmerk_temporal ctx ~otype:ot ~kenmerk:a
+            | _ -> attr_temporal ctx ~otype:ot ~attr:a
+          in
+          if doel_tijdlijn && Option.fold ~none:false ~some:Eval.bevat_periode r.rr_voorwaarde then
             fault
               "a period condition on the temporal target %S is ch. 3.10's CLIP, not the \
                evaluation-date gate: the window intersects the written timeline instead of \

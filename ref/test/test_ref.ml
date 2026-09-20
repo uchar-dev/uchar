@@ -2970,7 +2970,29 @@ let () =
   (* WF-042's bound-less window has no gate to compute *)
   expect_fault_msg "WV-3.10-venster-zonder-grens"
     (fun () -> gate (Some "2024-06-15") (venster ~incl:false ()))
-    "without any bound has no window to gate on (WF-042)"
+    "without any bound has no window to gate on (WF-042)";
+  (* the mirror note's SECOND bound: the window under a quantifier that counts
+     or complements its verdict. The boundary is the one measured on the other
+     three executors — ALLE and DE carried, the rest refused — and it is pinned
+     from BOTH sides here, because a refusal that quietly widened would look
+     exactly like a refusal that did not. *)
+  let samengesteld kwantor drempel : Ir_v0.Ast.conditie =
+    Samengesteld { kwantor; drempel; onderdelen = [ halfopen ]; bron = None }
+  in
+  List.iter
+    (fun (naam, kwantor, drempel) ->
+      expect_fault_msg ("WV-3.10-telkwantor-" ^ naam)
+        (fun () -> gate (Some "2024-06-15") (samengesteld kwantor drempel))
+        "under GEEN or a counting quantifier")
+    [ ("geen", Ir_v0.Ast.Geen, 0); ("tenminste", Ten_minste, 1); ("tenhoogste", Ten_hoogste, 1);
+      ("precies", Precies, 1) ];
+  check "WV-3.10-telkwantor-fasestaart"
+    (match gate (Some "2024-06-15") (samengesteld Geen 0) with
+     | (_ : bool) -> false
+     | exception Value.Fault m -> substring m "Declined at evaluation");
+  check "WV-3.10-alle-blijft-gedragen" (gate (Some "2024-06-15") (samengesteld Alle 0) = true);
+  check "WV-3.10-de-blijft-gedragen" (gate (Some "2024-06-15") (samengesteld De 0) = true);
+  check "WV-3.10-alle-poort-werkt-nog" (gate (Some "2025-01-01") (samengesteld Alle 0) = false)
 
 (* ch. 3.10's SECOND case: on a temporal target the window CLIPS the written
    timeline instead of gating the rule. That half is not built, and the
@@ -3000,7 +3022,31 @@ let () =
     "is ch. 3.10's CLIP, not the evaluation-date gate";
   expect_fault_msg "WV-3.10-tijdlijndoel-fasestaart"
     (fun () -> Eval.run_rule env w (List.hd doc.resolved_regels))
-    "Declined at evaluation"
+    "Declined at evaluation";
+  (* the CHARACTERISTIC target, which declares its timeline in a different
+     table (kenmerkGranulariteit). Reading the attribute table alone let this
+     document through as a scalar target — measured 2026-09-20 in the ASP
+     backend, which then PLAYED the gate on a timeline. Pinned here so the two
+     tables stay asked apart. *)
+  let kdoc =
+    { empty_doc with
+      objecttypen =
+        [ (let n, o = ot "Vondst" [] [ "geborgen" ] in
+           (n, { o with kenmerk_granulariteit = [ ("geborgen", Some Ir_v0.Ast.Jaar) ] })) ];
+      resolved_regels =
+        [ rr "berging van een vondst" Kenmerktoekenning
+            (Some (aref "geborgen" "Vondst" Booleaan))
+            (Some (litv "waar" Booleaan))
+            (Some
+               (Periode_conditie
+                  { vanaf = Some (litv "2024-01-01" datum); tot = None; tot_inclusief = false;
+                    bron = None })) ] }
+  in
+  let kw = World.add_instance World.empty (inst "V1" "Vondst" []) in
+  let kenv = { (env_of kdoc) with as_of = Some "2024-06-15" } in
+  expect_fault_msg "WV-3.10-tijdlijnKENMERKdoel-is-de-clip"
+    (fun () -> Eval.run_rule kenv kw (List.hd kdoc.resolved_regels))
+    "is ch. 3.10's CLIP, not the evaluation-date gate"
 
 (* --- ch. 5.7a: what a supplied role link establishes -------------------- *)
 

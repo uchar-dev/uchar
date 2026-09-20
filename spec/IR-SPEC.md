@@ -6340,9 +6340,11 @@ ch. 3.12), and it belongs to whoever measures it.
   backend `TRANSLATION FAULT: condition kind not translated (no corpus case
   exercises it)`, and BOTH Drools branches `PLAYED` with exactly the
   hand-computed values. So the form was never *refused* by the two OCaml
-  executors — both sentences are BOTTOM SENTENCES of
+  executors — both sentences were BOTTOM SENTENCES of
   `scripts/check-rood.sh`'s list, residual arms reporting their own position
-  — and the same card gave each a named arm, which is why the golden now
+  (`ref`'s left that list on 2026-09-20, when its last catch, the period
+  condition, became the ch. 3.10 gate; the ASP backend's is still a genuine
+  wildcard and still listed) — and the same card gave each a named arm, which is why the golden now
   closes the differential square (ref ≡ clingo ≡ Drools) on the far form.
   *Cost: none.* The sweep runs over golden + rood + negatief + parity —
   **690** documents on 2026-09-20 (217 + 34 + 409 + 30) — and the whole
