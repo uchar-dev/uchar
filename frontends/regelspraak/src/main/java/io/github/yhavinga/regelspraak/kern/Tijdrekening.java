@@ -59,6 +59,29 @@ public final class Tijdrekening {
         };
     }
 
+    /** The §6.10/§6.11 duration unit read as a DAY KIND: the dagsoort {@code e}'s spelling names, or null when
+     *  it names none — and null, too, whenever the spelling stands in the calendar table, WHATEVER the day-kind
+     *  registry says about it.
+     *
+     *  <p>That order is the point of this method, and it is normative: RUNTIME-SEMANTICS ch. 1.2 recognises a
+     *  duration's unit by spelling through the table and settles the remainder with "a spelling outside the
+     *  table is a declared day kind" — outside, so the table goes first. The verifier (WF-035, WF-038), the
+     *  reference interpreter and the ASP backend have always read it that way; both Drools branches asked the
+     *  registry first, at all four of their day-kind positions, until 2026-09-20. On a document that registered
+     *  a calendar spelling as a day-kind unit the executors therefore SPLIT — three read calendar arithmetic
+     *  where these two read a day-kind walk — and that document was verifier-clean at the time. Measured on
+     *  {@code jutterswet-bergingsklok} with its unit spelled {@code wk} and {@code wk} registered beside it:
+     *  {@code ref} answered 2026-03-31 / 2026-02-17 / 5 / 5 where both branches here answered the day-kind
+     *  2026-04-15 / 2026-02-01 / 3 / 3. WF-017 refuses such a document since the same day, so the wire no
+     *  longer carries the contradiction; this method is why an executor could not act on it either way.
+     *
+     *  <p>The four callers keep their own fall-through to {@link #chronoUnit}: a spelling that is neither a day
+     *  kind nor a table entry is still an honest marker/skip there. */
+    public static String dagsoortVoorEenheid(RegelSpraakModel model, Eenheid e) {
+        if (e == null || chronoUnit(e) != null) return null;
+        return model.dagsoortVoorEenheid(e.afkorting());
+    }
+
     /** §8.4.3: whether a periodevergelijking bound can be lowered — a §13.2.19 Datum-in-dagen LITERAL or the
      *  subject's OWN scalar (non-temporal, non-dimensioned) Datum-in-dagen attribute. Everything else — a
      *  parameter/navigated/computed bound, a Datum-en-tijd (the §4.2 Rekendatum is day-granular) — stays an
