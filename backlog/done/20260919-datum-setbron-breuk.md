@@ -373,20 +373,30 @@ bestaande reden verandert van tekst.
 
 *Alle veertien opnieuw gedraaid na de fixronde van 2026-09-20 — de
 fixronde raakte `translate.ml`, dus een deelverzameling zou hier niet
-volstaan. De getallen hieronder zijn die van de tweede ronde.*
+volstaan. Daarna nog een DERDE ronde op de som: de tak is herbased op
+`main` d0988729, dat intussen twee kaarten had geland (de
+dialectzin-kaart en de opgesomde-telling-kaart). Nul conflicten — de
+bestandsverzamelingen zijn volledig disjunct — en de veertien poorten
+staan op die som opnieuw groen. DRIE getallen hieronder zijn daardoor
+hoger dan wat deze kaart zelf mat, en alle drie zijn ze van `main`:
+gate 3 negatief 420 -> **423** (de drie `wf037-aantal-opgesomd*`-
+negatiefs), gate 5 ref-suite 755 -> **761**, gate 10 frontendtests
+338 -> **358** en rgs-goldens 64 -> **65** (de `bron.rgs` van
+`jutterswet-gevuldetelling`). Geen enkel getal van DEZE kaart beweegt
+door de herbasering, en dat is gemeten en niet aangenomen.*
 
 | # | poort | exit | kerngetallen |
 |---|---|---|---|
 | 1 | `check-self-contained.sh` | 0 | — |
 | 2 | `check-ir-schema.sh` | 0 | 265 bestanden valideren + round-trippen, vloer 192; 24 self-testrijen |
-| 3 | `check-verifier.sh` | 0 | 265 golden schoon; 420 negatief afgewezen, vloer 350 |
+| 3 | `check-verifier.sh` | 0 | 265 golden schoon; **423** negatief afgewezen, vloer 350 |
 | 4 | `check-case-schema.sh` | 0 | 613 casusbestanden |
-| 5 | `check-oracle.sh` | 0 | ref-suite 755 (vloer 489); 572 casussen exact (vloer 427) |
+| 5 | `check-oracle.sh` | 0 | ref-suite **761** (vloer 489); 572 casussen exact (vloer 427) |
 | 6 | `check-clingo.sh` | 0 | suite **470** checks (was 461), vloer 83; 572 casussen exact |
 | 7 | `check-noop.sh` | 0 | 536 casussen weerleggen een niets-doener; 36 overlevers |
 | 8 | `check-rood.sh` | 0 | **41** rode casussen (was 39), vloer 26; **82** gepinde fragmenten citeren geen van de 36 bodemzinnen; Drools-been 9 fault-pinned / **32** niet-gedragen met reden (was 30) |
 | 9 | `check-catala.sh` | 0 | 201 checks, vloer 201; 12 catala-goldens |
-| 10 | `check-regelspraak.sh` | 0 | 338 tests, vloer 173; 64 rgs-goldens, vloer 38 |
+| 10 | `check-regelspraak.sh` | 0 | **358** tests, vloer 173; **65** rgs-goldens, vloer 38 |
 | 11 | `check-toka-parity.sh` | 0 | ref 29/29, clingo 29/29, Drools 29 PLAYED |
 | 12 | `check-drools.sh` | 0 | played **172** = pin 172; kanaalvloer **52** niet-spelers bij naam (was 51); DRL-tak played **149** = pin 149, DRL-vloer **75** (was 74); waardedivergentie 1; no-case 2; JUnit **519** tests, vloer 239, 0 skipped |
 | 13 | `check-reftype-derivation.sh` | 0 | 131 twists over 27 goldens, vloer 74; 128 replays, 25 DRL-gespeeld, vloer 13 |
