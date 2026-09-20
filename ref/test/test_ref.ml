@@ -2887,6 +2887,121 @@ let () =
         (vouw Minimum [ setbron "vergoeding" num2kg ] None None))
     "has no defined moment to fold"
 
+(* --- ch. 3.10: the period condition's evaluation-date gate -------------- *)
+
+(* WV-3.10: the ch. 3.10 worked example, verbatim — window
+   [2024-01-01, 2025-01-01), evaluation date 2024-12-31 applies,
+   2025-01-01 does not, and the "tot en met 2024-12-31" form still applies
+   on 2024-12-31 — plus the three clauses the example does not spell out:
+   an absent bound is open, an unset evaluation date never matches, a leeg
+   bound never matches.
+
+   The corpus witness (`corpus/golden/jutterswet-premievenster`) pins the
+   same six clauses through all four executors; these run the chapter's own
+   sentences at the level the chapter states them, and they carry the two
+   refusals no corpus golden can hold: the bound shape the mirror note
+   defers (red-witnessed as well) and ch. 3.10's OTHER case, the clip on a
+   temporal target, which is decided at the rule and never in the
+   condition. *)
+let () =
+  let datum : Ir_v0.Ast.datatype = Datum_in_dagen in
+  let venster ?vanaf ?tot ~incl () : Ir_v0.Ast.conditie =
+    Periode_conditie
+      { vanaf = Option.map (fun d -> litv d datum) vanaf;
+        tot = Option.map (fun d -> litv d datum) tot;
+        tot_inclusief = incl; bron = None }
+  in
+  let doc = { empty_doc with objecttypen = [ ot "Vondst" [ ("meldatum", Some datum) ] [] ] } in
+  let w = World.add_instance World.empty (inst "V1" "Vondst" [ ("meldatum", Value.Date 19783) ]) in
+  let leeg_w = World.add_instance World.empty (inst "V2" "Vondst" []) in
+  let gate ?(world = w) ?(label = "V1") as_of c =
+    Eval.eval_cond { (env_of doc) with as_of } world (World.get world label) ~err:no_err c
+  in
+  let halfopen = venster ~vanaf:"2024-01-01" ~tot:"2025-01-01" ~incl:false () in
+  let totenmet = venster ~vanaf:"2024-01-01" ~tot:"2024-12-31" ~incl:true () in
+  (* the worked example, sentence by sentence *)
+  check "WV-3.10-voorbeeld-2024-12-31-geldt" (gate (Some "2024-12-31") halfopen = true);
+  check "WV-3.10-voorbeeld-2025-01-01-geldt-niet" (gate (Some "2025-01-01") halfopen = false);
+  check "WV-3.10-voorbeeld-totenmet-2024-12-31" (gate (Some "2024-12-31") totenmet = true);
+  (* vanaf inclusive, and the day before it *)
+  check "WV-3.10-vanaf-inclusief" (gate (Some "2024-01-01") halfopen = true);
+  check "WV-3.10-voor-vanaf" (gate (Some "2023-12-31") halfopen = false);
+  (* tot en met is exactly one day wider than tot *)
+  check "WV-3.10-totenmet-een-dag-breder" (gate (Some "2024-12-31") totenmet = true);
+  check "WV-3.10-totenmet-dag-erna" (gate (Some "2025-01-01") totenmet = false);
+  (* an absent bound is open, in both directions *)
+  check "WV-3.10-open-boven"
+    (gate (Some "2999-12-31") (venster ~vanaf:"2024-01-01" ~incl:false ()) = true);
+  check "WV-3.10-open-onder"
+    (gate (Some "1900-01-01") (venster ~tot:"2024-01-01" ~incl:false ()) = true);
+  check "WV-3.10-open-onder-op-de-grens"
+    (gate (Some "2024-01-01") (venster ~tot:"2024-01-01" ~incl:false ()) = false);
+  (* an unset evaluation date never matches — not a fault, an answer *)
+  check "WV-3.10-tijdvrij-matcht-nooit" (gate None halfopen = false);
+  check "WV-3.10-tijdvrij-ook-open-venster"
+    (gate None (venster ~vanaf:"1900-01-01" ~incl:false ()) = false);
+  (* a leeg bound never matches: the same window, one subject carrying the
+     bound attribute and one not *)
+  let eigen_grens : Ir_v0.Ast.conditie =
+    Periode_conditie
+      { vanaf = Some (aref "meldatum" "Vondst" datum); tot = None; tot_inclusief = false;
+        bron = None }
+  in
+  check "WV-3.10-eigen-grens-na" (gate (Some "2024-06-15") eigen_grens = true);
+  check "WV-3.10-eigen-grens-voor" (gate (Some "2024-01-01") eigen_grens = false);
+  check "WV-3.10-lege-grens-matcht-nooit"
+    (gate ~world:leeg_w ~label:"V2" (Some "2024-06-15") eigen_grens = false);
+  (* the bound shape ch. 3.10's mirror note defers, refused by name and with
+     the PHASE tail the ASP backend's twin sentence differs in *)
+  expect_fault_msg "WV-3.10-grens-buiten-de-mirror-note"
+    (fun () ->
+      gate (Some "2024-06-15")
+        (Periode_conditie
+           { vanaf = Some (Parameter_ref { parameter = Some "peildatum"; typ = Some datum; bron = None });
+             tot = None; tot_inclusief = false; bron = None }))
+    "neither a date literal nor an own scalar date attribute of the subject";
+  expect_fault_msg "WV-3.10-grens-fasestaart"
+    (fun () ->
+      gate (Some "2024-06-15")
+        (Periode_conditie
+           { vanaf = Some (Parameter_ref { parameter = Some "peildatum"; typ = Some datum; bron = None });
+             tot = None; tot_inclusief = false; bron = None }))
+    "Declined at evaluation";
+  (* WF-042's bound-less window has no gate to compute *)
+  expect_fault_msg "WV-3.10-venster-zonder-grens"
+    (fun () -> gate (Some "2024-06-15") (venster ~incl:false ()))
+    "without any bound has no window to gate on (WF-042)"
+
+(* ch. 3.10's SECOND case: on a temporal target the window CLIPS the written
+   timeline instead of gating the rule. That half is not built, and the
+   refusal sits at the rule — the case distinction is on the target, which a
+   condition cannot see — so it must fire before the window is ever read. *)
+let () =
+  let datum : Ir_v0.Ast.datatype = Datum_in_dagen in
+  let doc =
+    { empty_doc with
+      objecttypen =
+        [ (let n, o = ot "Vondst" [ ("vergoeding", Some num0) ] [] in
+           (n, { o with attribuut_tijdlijn_aantal = [ ("vergoeding", Some 1) ];
+                        attribuut_granulariteit = [ ("vergoeding", Some Ir_v0.Ast.Jaar) ] })) ];
+      resolved_regels =
+        [ rr "vergoeding van een vondst" Berekening
+            (Some (aref "vergoeding" "Vondst" num0))
+            (Some (litv "10" num0))
+            (Some
+               (Periode_conditie
+                  { vanaf = Some (litv "2024-01-01" datum); tot = None; tot_inclusief = false;
+                    bron = None })) ] }
+  in
+  let w = World.add_instance World.empty (inst "V1" "Vondst" []) in
+  let env = { (env_of doc) with as_of = Some "2024-06-15" } in
+  expect_fault_msg "WV-3.10-tijdlijndoel-is-de-clip"
+    (fun () -> Eval.run_rule env w (List.hd doc.resolved_regels))
+    "is ch. 3.10's CLIP, not the evaluation-date gate";
+  expect_fault_msg "WV-3.10-tijdlijndoel-fasestaart"
+    (fun () -> Eval.run_rule env w (List.hd doc.resolved_regels))
+    "Declined at evaluation"
+
 (* --- ch. 5.7a: what a supplied role link establishes -------------------- *)
 
 (* WV-5.7a: the `jutterswet-ketenband` worked example, verbatim (the

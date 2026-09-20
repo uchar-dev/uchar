@@ -5517,10 +5517,12 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
                 && not (attr_temporal ctx ~otype:otn ~attr:a) ->
              ()
          | _ ->
+             (* ref's sentence to the last word before the PHASE tail, which
+                is where the two must differ — see the note on its arm *)
              fault
                "the %s bound of a period condition is neither a date literal nor an own scalar \
                 date attribute of the subject: ch. 3.10's mirror note carries those two and defers \
-                the general date expression WF-042 admits (no corpus case)"
+                the general date expression WF-042 admits. Declined in translation"
                side);
         if is_datetime_operand (Some e) then
           fault
@@ -6883,7 +6885,8 @@ let translate_regel ctx (r : resolved_regel) =
             fault
               "a period condition on the temporal target %S is ch. 3.10's CLIP, not the \
                evaluation-date gate: the window intersects the written timeline instead of \
-               deciding whether the rule applies, and that half of the chapter is not built here"
+               deciding whether the rule applies, and that half of the chapter is not built. \
+               Declined in translation"
               a;
           let cond =
             match r.rr_voorwaarde with

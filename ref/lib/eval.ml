@@ -2144,10 +2144,14 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
            when isa env self.otype otn && not (Ir_v0.Checks.attr_temporal (objecttype env otn) a) ->
              ()
          | _ ->
+             (* the phase tail is load-bearing, the WF-044 sisters' pattern:
+                the ASP backend refuses the same bound in the same words and
+                a pin that stopped before the tail could not tell the two
+                phases apart, so a swap would pass unseen *)
              Value.fault
                "the %s bound of a period condition is neither a date literal nor an own scalar \
                 date attribute of the subject: ch. 3.10's mirror note carries those two and defers \
-                the general date expression WF-042 admits (no corpus case)"
+                the general date expression WF-042 admits. Declined at evaluation"
                side);
         eval_expr env world self ~err e
       in
@@ -2394,7 +2398,8 @@ let run_rule env world (r : resolved_regel) =
           Value.fault
             "a period condition on the temporal target %S is ch. 3.10's CLIP, not the \
              evaluation-date gate: the window intersects the written timeline instead of deciding \
-             whether the rule applies, and that half of the chapter is not built here"
+             whether the rule applies, and that half of the chapter is not built. Declined at \
+             evaluation"
             attr;
         (* ch. 3.11: the only implemented temporal write is the ch. 3.7
            pro-rata target; every other temporal target refuses — never

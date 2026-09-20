@@ -137,10 +137,12 @@ fi
 # untruth of the same kind the fence exists to catch: it tells a reader that a residual arm is
 # waiting there when none is. ONE removal so far. 2026-09-20 (card ref-periodeconditie-arm):
 # `ref/lib/eval.ml eval_cond|condition kind not implemented in this card` left, because that match
-# is exhaustive over the condition constructors and its last catch, Periode_conditie, got a named
-# arm (the ch. 4.5 TimeWindow, pinned by corpus/rood/periodeconditie-bereikt). Its clingo sister
-# `cond_atoms` is a genuine wildcard and still catches the uncarried Predicaat kinds and
-# Regelversie, so that entry STAYS.
+# is exhaustive over the condition constructors and its last catch, Periode_conditie, became the
+# ch. 3.10 evaluation-date GATE (golden `jutterswet-premievenster`, six clauses, four executors),
+# with its own named refusals for the two halves ch. 3.10 defers. Its clingo sister `cond_atoms` is
+# a genuine wildcard and still catches the uncarried Predicaat kinds and Regelversie, so that entry
+# STAYS. Since the same day the shrink has a MACHINE fence below: a listed sentence its named
+# source no longer contains fails the gate by itself.
 #
 # <source file> <function>|<bottom sentence, verbatim>|<what it delimits against instead of naming>
 bodem=$(mktemp) || exit 2
@@ -183,6 +185,41 @@ backends/clingo/lib/translate.ml translate_regel|unsupported rule target|the wil
 backends/clingo/lib/translate.ml bool_atoms|a characteristic-initialisation expression here is an own-subject boolean attribute read (no corpus case for more)|the wildcard arm over characteristic-initialisation expressions: "here is" the one carried read
 EOF
 n_bodem=$(grep -c '|' "$bodem")
+
+# --- the CARRIER fence: a listed sentence must still exist in its named source (2026-09-20) -----
+# Until today the list shrank by hand and nothing checked it; a carrier-less entry waited for a
+# reader's eye. Three things stand between a sentence in this list and its spelling in OCaml, and
+# all three are normalised away before a plain substring search: the WRAP (a long literal ends in a
+# backslash, and the compiler elides that plus the newline and the next line's leading blanks), the
+# escaped QUOTES, and the escaped BYTES — `translate.ml` writes ± as the two hex escapes \xc2\xb1
+# rather than as the character, so hex escapes are dropped on the source side and every non-ASCII
+# byte on BOTH sides, which makes the two spellings meet. Accepted limits, recorded rather than
+# hidden: two sentences differing only in non-ASCII characters are one sentence to this fence, and
+# a source line ending in an escaped backslash would be joined wrongly (neither file has one).
+# The normalisation SELF-TESTS in the useful direction — most listed sentences are wrapped, so a
+# broken join fails the whole list at once instead of passing vacuously — and the probe below adds
+# the other one: a sentence that must NOT be found.
+norm=$(mktemp) || exit 2
+for f in ref/lib/eval.ml backends/clingo/lib/translate.ml; do
+    LC_ALL=C awk '{ l = $0
+           if (cont) { sub(/^[ \t]*/, "", l); cont = 0 } else { out = out "\n" }
+           if (l ~ /\\$/) { sub(/\\$/, "", l); cont = 1 }
+           out = out l }
+         END { gsub(/\\x[0-9a-fA-F][0-9a-fA-F]/, "", out); gsub(/\\"/, "\"", out); print out }' "$f"
+done | LC_ALL=C tr -d '\200-\377' > "$norm"
+if grep -Fq -- 'a sentence no arm of either executor has ever spoken' "$norm"; then
+    echo 'FAIL: the carrier fence found a sentence that cannot be in either source — it is matching something other than the normalised text' >&2
+    status=1
+fi
+while IFS='|' read -r src sentence _reason; do
+    [ -z "$sentence" ] && continue
+    if ! printf '%s' "$sentence" | LC_ALL=C tr -d '\200-\377' | grep -Ff - "$norm" >/dev/null 2>&1; then
+        printf 'FAIL: the bottom-sentence list carries "%s" (%s), but no source produces it any more. A listed sentence without a carrier tells a reader a residual arm is waiting where none is: remove the entry, deliberately and with its reason in the commit.\n' \
+            "$sentence" "$src" >&2
+        status=1
+    fi
+done < "$bodem"
+rm -f "$norm"
 
 # The fragments are DECODED, not scraped. A pinned fragment is a JSON string and may spell any
 # character as an escape; a shell-side text scrape compares the escape and misses the match, which
@@ -323,7 +360,7 @@ input-overprecision|NOFAULT the v0 case runner does not enforce declared attribu
 input-overprecision-param|NOFAULT the v0 case runner does not enforce declared parameter input precision — it accepts the over-precise value and runs to a model
 list-element-overprecision|EXCLUDE the v0 loader refuses the model's record datatype (StructType) before any list-element precision is reached — the record/struct form is not carried
 near-side-rolcheck-to-many|EXCLUDE the rolcheck rule (bemand met jutter) does not lower — a transpiler SKIP (voorwaarde buiten Phase-B scope); fire is never reached
-periodeconditie-bereikt|NOFAULT measured 2026-09-20: this backend CARRIES the construct the two OCaml executors decline. Both transpiler branches lower the ch. 4.5 TimeWindow to "rekendatum inside [vanaf, tot)" and run to a model — PLAYED 1 in the exec-model branch and PLAYED 1 under --drl, vondstpremie 50 at an asOfDate inside the window, empty outside it and empty at a null one, with the mutation probe (50 -> 99) failing observably in both. So this red case is the rare one where the leg's NOFAULT is not a missing enforcement but a genuine disagreement: the square splits two-two, and no golden of this shape can enter the corpus until the period family is normed (RUNTIME-SEMANTICS ch. 8.2 states the gate in one sentence, carries no worked example, and names the ch. 3.10 validity window, whose bounds are both inclusive where this node's are not). The day that card lands, the two OCaml arms become semantics, this entry goes stale and the gate says so
+periodegrens-parameterdatum|EXCLUDE measured 2026-09-20: the bound shape RUNTIME-SEMANTICS ch. 3.10 defers — its v0 mirror note carries a date literal or an own scalar date attribute and leaves the general date expression WF-042 admits to a later card. All four executors refuse this parameter bound and the agreement is unanimous: ref and clingo by name (the pins run to the phase tail, "Declined at evaluation" against "Declined in translation"), the exec branch with a transpiler SKIP (voorwaarde buiten Phase-B scope) and the DRL-text branch naming the very limit — "TODO periodevergelijking-grens 'de peildatum' (§8.4.3)". Listed rather than fragment-pinned for this leg's standing reason: FAULT here means a genuine fault at fire, and a transpiler refusal is one phase before it. The window's CARRIED shapes are green in all four (golden jutterswet-premievenster); the day the general expression lands, this entry goes stale and the gate says so
 som-fallback-always-evaluated|EXCLUDE the reaching rule (vangstsom van een vangst) does not lower — a transpiler SKIP (aggregatie buiten Phase-C scope); fire is never reached, so the som's stand-in is not Drools-observable here
 struct-field-overprecision|EXCLUDE the v0 loader refuses the model's record datatype (StructType) — the record/struct form is not carried
 tijdsduur-reads-van-before-tot|NOFAULT the v0 backend enforces no van/tot ORDER on a TIJDSDUUR, so the ch. 10.6 barrier this witness plants never becomes a fault; it runs to a model — the mirror of begrensd-reads-bounds-in-order above, the same ch. 5.11 divergence. Reason category CORRECTED 2026-09-09 (card onopgelost-zijkanaal-opruiming), measured on both backends: the verdict was EXCLUDE while a Let was an Onopgelost carrier and the Rekendatum inside its body stayed a leaf to Expr.bevat, so the rule did not lower at all; with Let a real union node it lowers and fires. Both pinned legs are untouched — the case still pins expectedFault {ref, clingo}. Full account in the card and in the case's NOTE.md

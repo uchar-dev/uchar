@@ -7008,6 +7008,140 @@ let () =
           (unexpected fault: " ^ m ^ ")")
         false
 
+(* ch. 3.10 — de twee helften die GEEN corpusgolden kan dragen.
+
+   De evaluatiedatum-poort zelf staat groen in het corpus
+   (corpus/golden/jutterswet-premievenster, vier uitvoerders, zes
+   clausules). Wat hier staat zijn de twee weigeringen: de grensvorm die
+   ch. 3.10's mirror-note uitstelt — ook rood gepind — en ch. 3.10's ANDERE
+   geval, de clip op een tijdlijndoel, waar het venster de geschreven
+   tijdlijn snijdt in plaats van de regel te poorten.
+
+   Beide zinnen lopen door tot de FASE-staart ("Declined in translation"),
+   want `ref` weigert woordelijk hetzelfde tot aan die staart. Zonder haar
+   zou een faseverwisseling hier ongezien passeren — het WF-044-zusterargument,
+   toegepast op dit paar. *)
+let venster_doc ~attributen ~parameters ~regel =
+  {|{ "formaat": "regelspraak-ir-v0",
+  "objecttypen": { "Vondst": {
+    "node": "Objecttype", "naam": "Vondst",
+    "attributen": { |} ^ attributen
+  ^ {| },
+    "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+    "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+    "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
+    "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vondsten" } },
+  "domeinen": {},
+  "parameters": { |} ^ parameters
+  ^ {| },
+  "eenheidstelsels": {}, "feittypen": {}, "dimensies": {}, "tijdlijnen": [],
+  "dagsoorten": [], "dagsoortPerEenheid": {}, "regels": [],
+  "resolvedRegels": [ |} ^ regel
+  ^ {| ],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+  "regelGroepen": [], "diagnostics": []
+}
+|}
+
+let venster_case =
+  {|{ "format": "uchar-case-v0", "asOfDate": "2026-03-01",
+  "input": { "instances": [
+    { "label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {},
+      "characteristics": [] } ],
+    "parameters": { "peildatum": { "date": "2026-01-01" } } },
+  "expected": [ { "kind": "attributeValue", "label": "V1", "attribute": "vondstpremie",
+                  "value": { "number": "50" } } ]
+}
+|}
+
+let num_geheel =
+  {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null }|}
+
+let () =
+  let doel =
+    {|{ "node": "AttribuutRef", "attribuut": "vondstpremie", "objecttype": "Vondst",
+        "onderwerpBron": "een Vondst", "navigatieRol": null, "type": |} ^ num_geheel
+    ^ {|, "bron": "De vondstpremie van een Vondst", "set": false, "navigatiePad": [] }|}
+  in
+  let regel voorwaarde =
+    {|{ "node": "ResolvedRegel", "naam": "vondstpremie van een vondst", "soort": "BEREKENING",
+        "doel": |} ^ doel
+    ^ {|, "waarde": { "node": "Literal", "waarde": "50", "type": |} ^ num_geheel
+    ^ {|, "bron": "50" }, "voorwaarde": |} ^ voorwaarde
+    ^ {|, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }|}
+  in
+  let parametergrens =
+    {|{ "node": "Periode",
+        "vanaf": { "node": "ParameterRef", "parameter": "peildatum",
+                   "type": { "node": "DatumInDagen" }, "bron": "de peildatum" },
+        "tot": null, "totInclusief": false, "bron": "vanaf de peildatum" }|}
+  in
+  let ir =
+    venster_doc ~attributen:({|"vondstpremie": |} ^ num_geheel)
+      ~parameters:
+        {|"peildatum": { "node": "Parameter", "naam": "peildatum",
+            "datatype": { "node": "DatumInDagen" }, "granulariteit": null }|}
+      ~regel:(regel parametergrens)
+  in
+  faults_with ~name:"ch3.10 een parametergrens is de uitgestelde grensvorm" ~ir
+    ~case_text:venster_case
+    ~needle:"neither a date literal nor an own scalar date attribute of the subject";
+  faults_with ~name:"ch3.10 de grensweigering draagt haar fase-staart" ~ir
+    ~case_text:venster_case ~needle:"Declined in translation"
+
+let () =
+  (* het tijdlijndoel: dezelfde voorwaarde, maar het doel is tijdsafhankelijk,
+     en dan is het venster de CLIP en niet de poort. De weigering valt bij de
+     REGEL — een conditie ziet geen doel — dus vóór het venster gelezen wordt. *)
+  let doel =
+    {|{ "node": "AttribuutRef", "attribuut": "vergoeding", "objecttype": "Vondst",
+        "onderwerpBron": "een Vondst", "navigatieRol": null, "type": |} ^ num_geheel
+    ^ {|, "bron": "De vergoeding van een Vondst", "set": false, "navigatiePad": [] }|}
+  in
+  let ir =
+    {|{ "formaat": "regelspraak-ir-v0",
+  "objecttypen": { "Vondst": {
+    "node": "Objecttype", "naam": "Vondst",
+    "attributen": { "vergoeding": |} ^ num_geheel
+    ^ {| },
+    "attribuutMeervoud": {}, "attribuutDimensies": {},
+    "attribuutGranulariteit": { "vergoeding": "JAAR" },
+    "attribuutTijdlijnAantal": { "vergoeding": 1 }, "attribuutTijdlijnNaam": {},
+    "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
+    "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vondsten" } },
+  "domeinen": {}, "parameters": {},
+  "eenheidstelsels": {}, "feittypen": {}, "dimensies": {}, "tijdlijnen": [],
+  "dagsoorten": [], "dagsoortPerEenheid": {}, "regels": [],
+  "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "vergoeding van een vondst",
+      "soort": "BEREKENING", "doel": |} ^ doel
+    ^ {|, "waarde": { "node": "Literal", "waarde": "10", "type": |} ^ num_geheel
+    ^ {|, "bron": "10" },
+      "voorwaarde": { "node": "Periode",
+        "vanaf": { "node": "Literal", "waarde": "2024-01-01",
+                   "type": { "node": "DatumInDagen" }, "bron": "1 januari 2024" },
+        "tot": null, "totInclusief": false, "bron": "vanaf 1 januari 2024" },
+      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+  "regelGroepen": [], "diagnostics": []
+}
+|}
+  in
+  let case_text =
+    {|{ "format": "uchar-case-v0", "asOfDate": "2024-06-15",
+  "input": { "instances": [
+    { "label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {},
+      "characteristics": [] } ], "parameters": {} },
+  "expected": [ { "kind": "attributeEmpty", "label": "V1", "attribute": "vergoeding" } ]
+}
+|}
+  in
+  faults_with ~name:"ch3.10 een venster op een tijdlijndoel is de clip, niet de poort" ~ir
+    ~case_text ~needle:"is ch. 3.10's CLIP, not the evaluation-date gate";
+  faults_with ~name:"ch3.10 de clipweigering draagt haar fase-staart" ~ir ~case_text
+    ~needle:"Declined in translation"
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

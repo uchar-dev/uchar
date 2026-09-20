@@ -27,7 +27,16 @@
     }
   },
   "domeinen": {},
-  "parameters": {},
+  "parameters": {
+    "peildatum": {
+      "node": "Parameter",
+      "naam": "peildatum",
+      "datatype": {
+        "node": "DatumInDagen"
+      },
+      "granulariteit": null
+    }
+  },
   "eenheidstelsels": {},
   "feittypen": {},
   "dimensies": {},
@@ -78,23 +87,16 @@
       "voorwaarde": {
         "node": "Periode",
         "vanaf": {
-          "node": "Literal",
-          "waarde": "2026-01-01",
+          "node": "ParameterRef",
+          "parameter": "peildatum",
           "type": {
             "node": "DatumInDagen"
           },
-          "bron": "1 januari 2026"
+          "bron": "de peildatum"
         },
-        "tot": {
-          "node": "Literal",
-          "waarde": "2026-07-01",
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "1 juli 2026"
-        },
+        "tot": null,
         "totInclusief": false,
-        "bron": "van 1 januari 2026 tot 1 juli 2026"
+        "bron": "vanaf de peildatum"
       },
       "geldigheid": {
         "node": "Geldigheid",

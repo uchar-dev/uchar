@@ -2435,6 +2435,15 @@ form still applies on 2024-12-31. *v0 mirror note (backend maturity, not
 IR scope):* v0's backends lower only literal or own-scalar-attribute
 bounds and refuse the rest, and refuse the condition under counting
 quantifiers; the IR admits any date expression (WF-042).
+**Executed since 2026-09-20** by all four executors — the six clauses and
+this worked example are pinned case by case in
+`corpus/golden/jutterswet-premievenster`, at both wire positions (a rule's
+whole condition and a member of an `ALLE` composite), and the example runs
+verbatim in each OCaml executor's own suite. The two OCaml executors carry
+exactly the mirror note's two bound shapes and refuse the wider date
+expression BY NAME, with the phase in the sentence;
+`corpus/rood/periodegrens-parameterdatum` is that refusal's witness, and
+all four executors decline the form there.
 
 **Temporal target — the clip (v1 semantics, delta).** When the rule's
 target is time-dependent, gating all-or-nothing on the evaluation date is
@@ -2452,7 +2461,12 @@ written value {2025: 12}; days in 2024 stay whatever another version or
 producer gives them — a gap, absent other writers. **Delta (tracked,
 `CONSTRUCTS.md` rows 11/29):** v0 refuses this case outright (the
 manifest family "period-comparison clipping, §8.4.3"); v1 supplies the
-clip semantics above, and `ref/` implements them first. The analogous
+clip semantics above, and `ref/` is to implement them first. *Not built
+yet (2026-09-20):* both OCaml executors refuse a period condition on a
+temporal target by name, AT THE RULE rather than in the condition —
+the case distinction above is on the target, and a condition cannot see
+one — so the scalar gate can never be applied to a timeline by accident.
+Each executor's own suite pins that refusal. The analogous
 interaction with a rule *version's* validity window is **not** decided
 here: a validity window on a temporal write mixes the version-selection
 axis with the timeline axis, and belongs to the single-axis decision of
@@ -2535,7 +2549,9 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 | Timeline arithmetic beyond plus/min (verminderd-met, maal, division, percentage) | refused (mirrored); OPEN — per-period lifting of ch. 1.2 rules is the candidate |
 | Scalar broadcast into timeline arithmetic / unconditional temporal characteristic | refused (mirrored); OPEN — both need a time domain for unbounded segments |
 | min/max/eerste/laatste over timelines | refused (mirrored); OPEN — the two readings (per-period vs over-time) must be defined apart |
-| §8.4.3 period condition on a temporal target | **specified (delta): the clip, ch. 3.10** |
+| §8.4.3 period condition on a **scalar** target | **specified and executed, ch. 3.10** — all four executors since 2026-09-20, witness `corpus/golden/jutterswet-premievenster` (six clauses, both wire positions) |
+| §8.4.3 period condition on a temporal target | **specified (delta): the clip, ch. 3.10**; NOT executed — both OCaml executors refuse it by name at the rule, suite-pinned |
+| A period-condition bound other than a literal or an own scalar attribute | refused by name in all four executors (red case `periodegrens-parameterdatum`); the IR admits any date expression (WF-042), so this is backend maturity — OPEN |
 | Negated temporal-characteristic condition | **specified (delta) within a clipped span, ch. 3.11**; unbounded complement OPEN; the navigated case stays refused/OPEN — as a WRITE producer only; the navigated whole-period READ is the row below |
 | Version-validity window on a temporal write | OPEN — the ch. 8 axis decision |
 | Date-valued whole-period comparison | refused (mirrored) |
@@ -3764,7 +3780,7 @@ rather than by a node name it does not have.
 |------|--------------------|---------|-----------------|
 | `Binair` (all operators) | `links`, `rechts` | **visible** | `links`, then `rechts` |
 | `Vergelijking` | `links`, `rechts` | **visible** | `links`, then `rechts` |
-| `Periode` (the period condition) | `vanaf`, `tot` | **visible** | `vanaf`, then `tot`. *ref declines the form at evaluation; the order is stated, not yet exercised* |
+| `Periode` (the period condition) | `vanaf`, `tot` | **visible** | `vanaf`, then `tot`; an absent bound evaluates nothing, and BOTH bounds are read before the evaluation date decides. *Carried by both OCaml executors since 2026-09-20 (ch. 3.10); the order is stated and not yet witnessed by a case, because a window whose bounds are a literal or an own attribute has no fault position to order* |
 | `Begrensd` | `basis`, `minimum`, `maximum` | **visible** | `basis`, then `minimum`, then `maximum`; an absent bound evaluates nothing |
 | tijdsduur / absolute tijdsduur | argument 0 (`van`), argument 1 (`tot`) | **visible** | `van`, then `tot` |
 | `datum met` / `datum-tijd met` | the `argumenten` list (WF-037 leaves its arity open) | **visible** | argument order. *ref declines the form; the order is stated, not yet exercised* |
@@ -3959,7 +3975,8 @@ what reaches the rows a barrier cannot, because a closed fold body
 | `Fold` `list` before `init` | `ref/` `WV-5.11-fold-…` (pair) |
 | `MapList` element order | `ref/` `WV-5.11-maplist-…` (pair) |
 | `FilterList` element order | `ref/` `WV-5.11-filterlist-…` (pair) |
-| `Periode`, `datum met` / `datum-tijd met` | **none** — the reference interpreter declines both forms, so there is nothing to run. The order is stated for the consumer that carries them first, and lands with it |
+| `datum met` / `datum-tijd met` | **none** — the reference interpreter declines the form, so there is nothing to run. The order is stated for the consumer that carries it first, and lands with it |
+| `Periode` `vanaf` before `tot` | **none yet** — the form is carried since 2026-09-20 (ch. 3.10, golden `jutterswet-premievenster`), but the two bound shapes it carries are a literal and an own scalar attribute, and neither can fault. A witness lands with the general date expression, which is the first bound that can |
 
 ---
 

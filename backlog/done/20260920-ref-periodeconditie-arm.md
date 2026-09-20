@@ -263,3 +263,30 @@ geval leeg terwijl V1's in vier gevallen vuurt). `basispremie` is in elk
 geval 1: hij bewijst dat het venster alleen zijn eigen regel poort, en hij
 houdt de nietsdoener-poort (gate 7) eerlijk in `case6`, waar alle andere
 verwachtingen leeg zijn.
+
+### Uitbreiding van de getuige (tweede handberekening, 2026-09-20)
+
+Nadat de zes gevallen groen stonden bleek de golden één ding niet te
+dragen dat het corpus wél kende: het venster als LID van een samengestelde
+voorwaarde. Dat was de vorm waarvoor
+`corpus/golden/jutterswet-vormenkabinet` de WF-042-rij hield, en zonder
+hem zou de opvolger de kabinetsrij niet dekken. Toegevoegd, met de
+verwachtingen opnieuw eerst uitgerekend:
+
+`borgpremie` = 15 onder `ALLE [ de Vondst geborgen is ; van 2024-01-01 tot
+2025-01-01 ]`. V1 is `geborgen`, V2 niet.
+
+| geval | borgpremie V1 | borgpremie V2 |
+|---|---|---|
+| `case1-binnen-venster` | 15 | — |
+| `case2-op-de-vanafgrens` | 15 | — |
+| `case3-laatste-dag` | 15 | — |
+| `case4-op-de-totgrens` | — | — |
+| `case5-voor-het-venster` | — | — |
+| `case6-tijdvrij` | — | — |
+
+V2 is in elk geval leeg zonder dat het venster ooit gelezen wordt: `ref`
+stopt een `ALLE` bij het eerste onware lid. Dat is precies de
+instantieafhankelijkheid die het kabinet noteerde, nu als groene
+eigenschap in plaats van als weigering. Twaalf verwachtingen per geval
+werden er veertien; alle vier de uitvoerders spelen ze.

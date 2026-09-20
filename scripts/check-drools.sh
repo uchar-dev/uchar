@@ -706,7 +706,14 @@ EXPECTED_CHANNEL=(
 # it — machine-checked over every golden, keurstaat's input is the ONE enumeration value in the zone
 # that is not byte-identical to its declaration, and the literal it meets differs from it under either
 # reading — so it is a card of its own rather than a divergence pinned here.
-EXPECTED_PLAYED=171
+#
+# 171 -> 172 (2026-09-20, card ref-periodeconditie-arm): jutterswet-premievenster, the ch. 3.10
+# period condition. This backend needed NOTHING — both branches already lowered the §8.4.3 window
+# to "rekendatum inside [vanaf, tot)", literal and own-scalar-attribute bounds alike, and played
+# it exactly as the chapter reads it. What moved was the other side of the square: ref and the ASP
+# backend refused the construct until that card and now carry it, so the golden arrives as a
+# PLAYER on the day it is written. EXPECTED_DRL_PLAYED moves by one as well.
+EXPECTED_PLAYED=172
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -877,7 +884,10 @@ DRL_CHANNEL=(
 # jutterswet-vondstklasse. This branch refused both on its own wording of the SAME shared-reader limit
 # (`TODO voorwaarde`, and `TODO literal` on the write half), so the one-line repair moved the two
 # branches together and neither needed a change of its own. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=148
+# 148 -> 149 (2026-09-20, card ref-periodeconditie-arm): jutterswet-premievenster. This branch
+# carried the window already too, in its own lowering; measured PLAYED 6 beside the exec branch's
+# PLAYED 6 on the same six cases. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=149
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a

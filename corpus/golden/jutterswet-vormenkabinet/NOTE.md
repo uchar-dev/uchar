@@ -6,7 +6,9 @@ positively and verifier-clean, the well-formedness rules whose constructs
 no *executing* corpus document carries yet. After the 2026-09-19 shrink
 (the next section) that is WF-004/014/040 (the dimensioned attribute and
 its cell read), WF-016/032 (the variable-start timeline with its start
-point), WF-042 (the time window), plus the two registry rules the sections
+point), WF-042 (the time window — **eligible to leave since 2026-09-20**,
+see below: the window now executes, and `jutterswet-premievenster` is its
+successor), plus the two registry rules the sections
 near the end carry: WF-017's positive binding and WF-034 arm (s)'s identity
 half. It deliberately carries no `case*.json`, so gate 5 (the oracle) lists
 it as "NOT replayed, no case file yet". This NOTE records *why* that is a
@@ -28,7 +30,7 @@ removals from the document:
 |---|---|---|
 | `staat na schouw`, with the `kwaliteit` domain and the `staat` attribute | WF-006, WF-039 (enum-label arm), the enum slice of WF-023 | `jutterswet-keurstaat`: it declares the domain `keurklasse`, and its `stempel voor een veilbare vondst` writes the label `gaaf` into an `Enumeratie`-typed target — the same `GELIJKSTELLING`-with-enum-`Literal` shape this rule had. `jutterswet-vaarwatertoeslag-catala` carries a second one |
 | `aanwas na schouw`, with the `aanwas` attribute | WF-039 (sign arm) | `anchor/jutterswet-taxatie` (the literals `2` and `3`, each typed `NIET_NEGATIEF`), `anchor/jutterswet-aanspraaktelling` (`0.00`), `anchor/jutterswet-hardheid`, `anchor/jutterswet-vondstdossier` (`120.50`, `3`), `jutterswet-postenheffing`, `synth3-vondststaat`. Difference recorded rather than glossed: those carry the sign-restricted `Literal` as an **operand**, where this rule carried it at the write position. WF-039 reads the literal's own type wherever `walk_expr` reaches it, so it is the same node under the same clause — no corpus document outside this cabinet had it at a rule's `waarde` |
-| the counting quantifier of `peiling bij dubbele borging` — `TEN_MINSTE` with threshold 2, now `ALLE` with 0 | WF-041 | `jutterswet-wachtploeg` carries `TEN_MINSTE` with threshold 2 on the composite host, the same form this rule had. Eight further composite goldens carry the other quantors and thresholds (`paasvondst`, `rubriektabel`, `seinwacht`, `sluimerwacht`, `tweevoudkeur`, `vacuumwacht`, `vrijgavetoets`, `wachtdeling`), and `jutterswet-reddingsvloot` carries the fold host of WF-108 (e). The rule itself stays: its `Periode` member is a row that did not leave |
+| the counting quantifier of `peiling bij dubbele borging` — `TEN_MINSTE` with threshold 2, now `ALLE` with 0 | WF-041 | `jutterswet-wachtploeg` carries `TEN_MINSTE` with threshold 2 on the composite host, the same form this rule had. Eight further composite goldens carry the other quantors and thresholds (`paasvondst`, `rubriektabel`, `seinwacht`, `sluimerwacht`, `tweevoudkeur`, `vacuumwacht`, `vrijgavetoets`, `wachtdeling`), and `jutterswet-reddingsvloot` carries the fold host of WF-108 (e). The rule itself stays: its `Periode` member is a row that did not leave — *and that is no longer true as of 2026-09-20, see "The second rule no longer refuses anything" below* |
 | the two dated versions of `doorwaadbaar bij lage stand` (`#1`, `#2`) | WF-021 | `anchor/jutterswet-jutheffing` — `jutheffing naar jaartarief #1`/`#2` is the only other corpus document whose rule names group to one name under the version strip WF-021 applies, with non-overlapping windows replayed per window |
 | the whole-year qualifier on those same two rules, with the `waterstand` read and the `doorwaadbaar` characteristic | WF-043 | `jutterswet-keurploeg`, `jutterswet-ploegpremie`, `jutterswet-reddingsvloot` and `jutterswet-sleepvloot` each compare a `MAAND`-granular attribute under a whole-year qualifier (the last one negated) — the same wire shape, a `Vergelijking` whose `periode` is a `GeheelPeriode` over a non-set `AttribuutRef` — and `synth-gehelejaarkenmerk` carries the characteristic variant |
 | the two `resolvedDagsoorten` definitions | WF-031 | `jutterswet-schouwkalender` carries two pure definitions, replayed by gates 5–6 over its ordinary rule, and `jutterswet-schouwrooster` a second pair. The `dagsoorten` **declarations** and the `dagsoortPerEenheid` registry stay here — WF-017 and WF-034 (s) read the declaration table, not the definitions, and their witnesses did not leave (the two sections below; gate 3 stays green with the definitions gone) |
@@ -66,7 +68,7 @@ a single expectation can be checked:
 | Rule | Construct (WF row) | Fault the reference interpreter raises |
 |---|---|---|
 | `vakcijfer uit voorjaarsopbrengst` | dimension-cell read of the dimensioned `opbrengst` (WF-004/014/040) | `expression kind not implemented in this card` |
-| `peiling bij dubbele borging` | composite condition with a time-window (`Periode`) member (WF-042) | `a TimeWindow condition (ch. 4.5 Periode, the §8.4.3 van/tot window) gates a rule on the evaluation date, and no runtime clause fixes that gate…` (named arm since 2026-09-20) — but only on an instance that REACHES the member, see below |
+| `peiling bij dubbele borging` | composite condition with a time-window (`Periode`) member (WF-042) | **none any more** — the window became executable on 2026-09-20, see the section below |
 
 The ASP backend mirrors these same refusals by construction
 (`backends/clingo/lib/translate.ml`: everything outside the
@@ -76,20 +78,32 @@ runs to a value in `ref`: the two that did — `staat na schouw` and
 `aanwas na schouw` — are exactly the two that left for their executing
 successors.
 
-**The second rule's refusal is instance-dependent, and the shrink made it
-so.** `ref` evaluates an `ALLE` composite member by member and stops at the
-first false one, so a `Schouwveld` without both characteristics never
-reaches the `Periode` and the rule simply yields false. Measured
-2026-09-19 on the second rule in isolation: a bare instance and an
-instance carrying only `bewaakt` both give `oracle: PASS`; only an
-instance carrying **`bewaakt` and `omheind` together** faults. Under the
-`TEN_MINSTE 2` this rule carried before the shrink every instance had to
-count all three members and therefore reached it. `clingo` is unaffected —
-it translates the rule body statically and refuses the `Periode` member
-whatever the input, which is why the document still cannot be replayed by
-both executors. The FIRST rule faults on any instance at all, so this
-subtlety changes nothing about the document as a whole; it is recorded
-because the reproduction below depends on it.
+**The second rule no longer refuses anything (2026-09-20).** Its `Periode`
+member was the cabinet's WF-042 witness precisely because no executor
+carried the construct. That changed with the card
+`ref-periodeconditie-arm`: `RUNTIME-SEMANTICS.md` ch. 3.10 specifies the
+scalar target's evaluation-date gate in six clauses with a worked example,
+and `ref` and the ASP backend now both implement it. On this document the
+rule simply evaluates — `ref` reads the composite member by member and
+stops at the first false one, so a `Schouwveld` without both
+characteristics never reaches the window at all, and one carrying both
+gets the window's own verdict against the case's `asOfDate`.
+
+**So this row is eligible to leave, under the cabinet's own admission rule
+at the bottom of this NOTE**, and its executing successor exists:
+`corpus/golden/jutterswet-premievenster` carries the window in both wire
+positions — as a rule's whole condition (five rules, one per spelling) and
+as a member of an `ALLE` composite beside a characteristic check, which is
+exactly this rule's shape. Six cases, all four executors, the six ch. 3.10
+clauses pinned one by one. Moving the row is a shrink, and a shrink is its
+own card: the 2026-09-19 one above shows what it costs to do carefully
+(which declarations a staying row still needs, which WF index cells move).
+Recorded here rather than done halfway.
+
+Until that shrink the document still cannot be replayed, and the reason is
+now the FIRST rule alone: its dimension-cell read faults on any instance at
+all, in `ref` and in the ASP backend alike. `clingo` translates every rule
+body statically, so it reaches that refusal without needing a subject.
 
 A case with zero `Schouwveld` instances does not even evade the faults
 cleanly. The reference interpreter is lazy per-instance: with no subject no
@@ -232,27 +246,13 @@ runner on this `ir.json` and any case carrying one `Schouwveld` instance
 faults with `expression kind not implemented in this card` — the
 dimension-cell read of the first rule, which needs nothing of the instance.
 
-The second rule needs a reaching instance. Filtering `resolvedRegels` down
-to it (for example with `jq`) and replaying a `Schouwveld` that carries
-**both** `bewaakt` and `omheind` reproduces the TimeWindow refusal
-(`a TimeWindow condition (ch. 4.5 Periode, the §8.4.3 van/tot window)
-gates a rule on the evaluation date…`), at any `asOfDate`, a null one
-included: the refusal is the `Periode` member. An instance with one
-characteristic or none gives `oracle: PASS` instead — the `ALLE` composite
-stops at the first false member and never reads the window (see the
-instance-dependence note above). `backends/clingo` needs no such care: it
-refuses both rules on any case at all, in its own words —
-`TRANSLATION FAULT: expression kind not translated` and the same TimeWindow
-sentence, closing "Declined in translation rather than grounded on a
-guess".
-
-Both TimeWindow sentences are NAMED arms since 2026-09-20 (card
-`ref-periodeconditie-arm`); until then this position reported the residual
-`condition kind not implemented in this card`. The construct itself is
-unchanged here — it is still refused, and the reaching instance is still
-what it takes to see it. Its own red witness is
-`corpus/rood/periodeconditie-bereikt`, a document whose whole condition IS
-the window.
+The second rule no longer contributes a refusal at all. Filtering
+`resolvedRegels` down to it (for example with `jq`) and replaying a
+`Schouwveld` gives `oracle: PASS` on every instance and every `asOfDate`:
+the window is evaluated, not refused. Before 2026-09-20 an instance
+carrying **both** `bewaakt` and `omheind` faulted here with the residual
+`condition kind not implemented in this card`, and that is the measurement
+the section above replaces.
 
 All of the above re-measured 2026-09-19 on the shrunken document. The
 validity-window wrinkle this section used to record went out with the two

@@ -1,0 +1,122 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2024-01-01",
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "meldatum": {
+            "date": "2024-03-01"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "geborgen"
+        ]
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "basispremie",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vondstpremie",
+      "value": {
+        "number": "50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "naseizoenpremie",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "overgangspremie"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "aanlooppremie"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "basispremie",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "vondstpremie",
+      "value": {
+        "number": "50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "naseizoenpremie",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "overgangspremie"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "aanlooppremie"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "bergloon"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "bergloon"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "borgpremie",
+      "value": {
+        "number": "15"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "borgpremie"
+    }
+  ]
+}

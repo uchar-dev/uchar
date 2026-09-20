@@ -1,0 +1,24 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2026-03-01",
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "peildatum": {
+        "date": "2026-01-01"
+      }
+    }
+  },
+  "expectedFault": {
+    "ref": "the vanaf bound of a period condition is neither a date literal nor an own scalar date attribute of the subject: ch. 3.10's mirror note carries those two and defers the general date expression WF-042 admits. Declined at evaluation",
+    "clingo": "the vanaf bound of a period condition is neither a date literal nor an own scalar date attribute of the subject: ch. 3.10's mirror note carries those two and defers the general date expression WF-042 admits. Declined in translation"
+  }
+}

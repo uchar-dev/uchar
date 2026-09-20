@@ -1,0 +1,113 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2023-06-01",
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "meldatum": {
+            "date": "2024-03-01"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "geborgen"
+        ]
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "basispremie",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "vondstpremie"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "naseizoenpremie"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "overgangspremie"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "aanlooppremie",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "basispremie",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "vondstpremie"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "naseizoenpremie"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "overgangspremie"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "aanlooppremie",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "bergloon"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "bergloon"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "borgpremie"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "borgpremie"
+    }
+  ]
+}
