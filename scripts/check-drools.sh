@@ -230,7 +230,6 @@ EXPECTED_CHANNEL=(
   "jutterswet-havenrooster|EXCLUDE|transpiler SKIP: the day-kind predicate compiler (kern.Dagsoorten) carries no PARAMETER operand — it compiles a voorwaarde ONCE into the KieBase while parameter values arrive per case as session globals, so a parameter-bound day kind has no compiled predicate and the reaching rule is skipped (waarde buiten scope). Measured 2026-09-19 with the day-kind card: ref and the ASP backend both answer this golden, which is why it is named here rather than left to the played default"
   "jutterswet-kamerheffing-catala|EXCLUDE|loader Refusal: functionDefs"
   "jutterswet-kamerhuishouden-catala|EXCLUDE|loader Refusal: functionDefs"
-  "jutterswet-keurstaat|EXCLUDE|transpiler SKIP: regel — voorwaarde buiten Phase-B scope"
   "jutterswet-kinderdeler|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-kinderfoldheffing|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-klipwacht|EXCLUDE|transpiler SKIP: regel 'klipteken van een kustwacht' — the gedurende-CLIP as a composite MEMBER is outside the Phase-B condition scope (the exec-model branch lowers a clipped total in a rule VALUE, not inside a voorwaarde). Its ch. 5.10 content — the clip fences carrying the prefix — is a clingo-side property that gates 5+6 pin; the Drools square carries the same golden as a refusal, not a wrong answer."
@@ -249,7 +248,6 @@ EXPECTED_CHANNEL=(
   "jutterswet-vaarwaterspelling|EXCLUDE|loader Refusal: Expr:Match"
   "jutterswet-vaarwatertoeslag-catala|EXCLUDE|loader Refusal: Expr:Match"
   "jutterswet-vangstwaardering|EXCLUDE|loader Refusal: Datatype:StructType"
-  "jutterswet-vondstklasse|EXCLUDE|transpiler SKIP: regel — voorwaarde buiten Phase-B scope. The same refusal jutterswet-keurstaat carries, and for the same form: an enum-label equality in a condition. Arrived 2026-09-20 with the enumeratiewaarde emitter (card v8-enum-emitter) as the FIRST bron.rgs golden carrying an enumeration literal; its absolute pins are the ref = clingo pair gates 5 and 6 verify, not the full square. EXPECTED_PLAYED does not move — a new golden that does not play was never counted"
   "jutterswet-vondsttarief|EXCLUDE|transpiler SKIP: regel — waarde buiten scope"
   "jutterswet-vondstvenster|EXCLUDE|transpiler SKIP: regel 'eerste vondstdag van een jutter' — waarde buiten scope. The EERSTE/LAATSTE fold over a SET source (card eerste-laatste-setvouw-kloof, 2026-09-19) is carried by ref and, since that card, by the ASP backend; this backend lowers neither branch of it — the exec-model transpiler drops the rule per form, and the DRL-text branch deposits a named marker ('TODO aggregatie EERSTE'). So the golden's absolute pins are a ref = clingo pair, not the full square, and that is recorded here rather than hidden: the two-executor agreement is what gates 5 and 6 verify on it. Lifting either branch is Drools work with its own card"
   "jutterswet-vormenkabinet|NOCASE|a golden with no case file — nothing to replay"
@@ -684,7 +682,31 @@ EXPECTED_CHANNEL=(
 # golden pins that the guard is reached and that the division is not; its red twin
 # (corpus/rood/aantalgevulde-ongewaakte-deling) pins the fault the guard prevents in all THREE
 # executors, this backend among them. EXPECTED_DRL_PLAYED moves by one as well.
-EXPECTED_PLAYED=169
+#
+# 169 -> 171 (2026-09-20, card drools-enumlabel-lezer): TWO new players, jutterswet-keurstaat and
+# jutterswet-vondstklasse — the corpus's two enumeration-value documents, refused by BOTH branches for
+# as long as each has existed. ONE shared reader was the whole cause: Literalen.tekstOfEnumLabel routed
+# an Enumeratie-typed literal through enumLabel, which DEMANDS the '…' delimiters of the RegelSpraak
+# source, while the wire carries the BARE label (WF-039 crosses it byte-exactly against the declared
+# domain). It therefore answered null on every conforming document, and the five arms that guard on
+# `tekstOfEnumLabel(lit) != null` — the own-attribute, navigated and assertie condition arms plus the
+# VALUE arm in the exec branch, one condition arm in the DRL-text branch — refused every enumeration
+# EQUALITY and every enumeration WRITE. Measured red first in both branches, and the write half
+# separately on the same document with its condition removed (exec `waarde buiten scope`, DRL-text
+# `TODO literal: wrakgoed`), since the condition arm otherwise refuses first and hides it.
+# The repair unmasked one more consumer gap on keurstaat, which that refusal had been hiding: the
+# golden spells an enum INPUT in another capitalisation than its declaration ("Beschadigd" against a
+# declared "beschadigd") ON PURPOSE, and an enumeration label is a DECLARED NAME — ref compares those
+# up to Checks.norm and the ASP backend stores the normalised label. The read-back comparator compared
+# bytes and reported a divergence neither other executor has; it now compares an enumeration
+# expectation by name identity (CaseRunner.gelijkeWaarde) while Tekst keeps the exact §13.3.3.4
+# equality. Both branches play both goldens, so EXPECTED_DRL_PLAYED moves by two as well.
+# NOT built, and measured rather than hidden: the RULE-level enum comparisons in both branches are
+# still byte equality where ref and clingo use that same normalisation. Nothing in the corpus reaches
+# it — machine-checked over every golden, keurstaat's input is the ONE enumeration value in the zone
+# that is not byte-identical to its declaration, and the literal it meets differs from it under either
+# reading — so it is a card of its own rather than a divergence pinned here.
+EXPECTED_PLAYED=171
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -777,11 +799,12 @@ DRL_CHANNEL=(
   "synth3-standtarief|EXCLUDE|loader Refusal: Datatype:SumType"
   "synth3-vangstsom|EXCLUDE|loader Refusal: Datatype:ListType"
   "synth3-vondststaat|EXCLUDE|loader Refusal: Datatype:StructType"
-  # (C) DrlTranspiler MARKERs — 12, this branch's own per-form refusals, each naming the rule it
-  # could not lower. Measured against the exec sweep on 2026-09-19: NINE of the twelve are goldens
-  # the exec branch refuses too, on its own wording of the same limit (the many-to-many bean field,
-  # the unresolved verdeling, the consistency rule, the EERSTE fold over a set, and both
-  # out-of-scope conditions — jutterswet-keurstaat and jutterswet-klipwacht are shared, not split).
+  # (C) DrlTranspiler MARKERs — 11, this branch's own per-form refusals, each naming the rule it
+  # could not lower. Recounted 2026-09-20 (card drools-enumlabel-lezer) against the exec sweep, and
+  # the class header was carrying 12 over a list of 13: the v8-enum-emitter addition had not been
+  # counted. EIGHT of the eleven are goldens the exec branch refuses too, on its own wording of the
+  # same limit (the many-to-many bean field, the unresolved verdeling, the consistency rule, the
+  # EERSTE fold over a set, and the out-of-scope condition — jutterswet-klipwacht, shared, not split).
   # THREE are this branch alone, and the exec branch PLAYS all three:
   #   anchor/jutterswet-wachtersketen (exec PLAYED 2), synth2-budgetgrens-onder (exec PLAYED 1) —
   #     both an OBJECTCREATIE marker on the same unresolved back-link to Wachter. That is what is
@@ -797,10 +820,8 @@ DRL_CHANNEL=(
   "anchor/jutterswet-gemeenteberging|EXCLUDE|MARKER regel: aggregation join whose storage direction is the far side (§13.3.9)"
   "anchor/jutterswet-penninguitgifte|EXCLUDE|MARKER consistentie: unresolved consistency rule over every Penning"
   "anchor/jutterswet-wachtersketen|EXCLUDE|MARKER objectcreatie: unresolved back-link to Wachter"
-  "jutterswet-keurstaat|EXCLUDE|MARKER regel: TODO voorwaarde — an enum-label equality in a condition"
   "jutterswet-klipwacht|EXCLUDE|MARKER regel: TODO voorwaarde — the gedurende clip as a composite member"
   "jutterswet-muntketen|EXCLUDE|MARKER regel: bronPad step Boot -> Munt has no bean field — the same many-to-many middle relation"
-  "jutterswet-vondstklasse|EXCLUDE|MARKER regel: TODO voorwaarde — an enum-label equality in a condition, the same form keurstaat carries (arrived 2026-09-20, card v8-enum-emitter)"
   "jutterswet-vondstvenster|EXCLUDE|MARKER regel: TODO aggregatie EERSTE over a set source"
   "jutterswet-vouwrand|EXCLUDE|MARKER regel: TODO voorwaarde — a conjunction of comparisons"
   "synth2-budgetgrens-onder|EXCLUDE|MARKER objectcreatie: unresolved back-link to Wachter"
@@ -852,7 +873,11 @@ DRL_CHANNEL=(
 # had always excluded it. Reason block at EXPECTED_PLAYED above.
 # 145 -> 146 (2026-09-20, same card): jutterswet-gevuldegemiddelde, the guarded hand-spelled average.
 # This branch needed nothing beyond the filled count itself. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=146
+# 146 -> 148 (2026-09-20, card drools-enumlabel-lezer): jutterswet-keurstaat and
+# jutterswet-vondstklasse. This branch refused both on its own wording of the SAME shared-reader limit
+# (`TODO voorwaarde`, and `TODO literal` on the write half), so the one-line repair moved the two
+# branches together and neither needed a change of its own. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=148
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
