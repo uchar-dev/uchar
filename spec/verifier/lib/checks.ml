@@ -2764,6 +2764,22 @@ let composite_expectation ctx (e : expr) : (string * string * datatype * string 
         ( "the AANTAL aggregation", "the type a count derives",
           Numeriek { geheel = true; decimalen = 0; teken = Some Niet_negatief; eenheid = None },
           [ "sign"; "residual" ] )
+  | Functie { kind = Aantal_gevulde; _ } ->
+      (* The SAME derivation, and it needs its own arm because this engine
+         matches on the kind: the filled count answers a CARDINALITY, so
+         ch. 3.4c fixes its result to a whole, unitless number whatever unit
+         the folded attribute carries. Without this arm the kind was the one
+         aggregation whose node type nothing crossed — measured 2026-09-20 on
+         a filled count typed 'kg' with two decimals, written into an
+         equally-lying kg target: verifier PASS, while the SAME lie under
+         AANTAL is WF-091, and `ref` then played it (a unitless 1 landing in
+         a kg-declared attribute, oracle PASS). The type is derived, not
+         declared, so the annotation is the one thing here that cannot be
+         allowed to say anything. *)
+      Some
+        ( "the AANTAL_GEVULDE aggregation", "the type a filled count derives",
+          Numeriek { geheel = true; decimalen = 0; teken = Some Niet_negatief; eenheid = None },
+          [ "sign"; "residual" ] )
   | Functie { kind = (Som | Eerste | Laatste | Totaal | Minimum | Maximum) as k;
               argumenten = a0 :: rest; _ } -> (
       let name =

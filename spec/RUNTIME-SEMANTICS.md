@@ -1123,6 +1123,26 @@ from, and WF-037's "sum only" clause already excludes it.
 The result is a whole, unitless number whatever unit the folded attribute
 carries, so a filled count has no rounding question and no unit derivation.
 It is the result type the instance count has, reached by a different fold.
+That type is DERIVED and not declared, so a wire annotation saying anything
+else is ill-formed rather than believed (`IR-SPEC.md` WF-091; negatief
+`wf091-aantalgevulde-eenheid`).
+
+**One exclusion, and it is normative rather than a note: the folded
+attribute is NOT time-dependent.** "Whatever its type" is about the value
+domain — number, text, date, enumeration, boolean — and not about the
+temporal axis. A set read of a TEMPORAL attribute folds twice (ch. 3.6,
+§7.1): each member's own timeline collapses over time first, and only those
+scalars fold over the set. That first collapse is defined for the som and
+the totaal and for nothing else, because only they integrate; a count has no
+defined MOMENT at which to ask a timeline whether it is filled, and picking
+one would be this chapter inventing a reading rather than stating one. A
+filled count over a time-dependent attribute therefore fails observably,
+naming the attribute, and never reads a value the timeline does not have at
+an instant (`ref`: *this aggregation over the temporal attribute … of a set
+has no defined moment to fold*; worked example WV-3.4c-temporeel-faalt).
+The door is closed and not locked: a later card with a real casus may give
+the filled count its own moment rule, and it would be a clause here rather
+than an executor's choice.
 
 **The instance count and the filled count answer different questions, and it
 takes both to tell the two kinds of empty apart.** Over a source whose

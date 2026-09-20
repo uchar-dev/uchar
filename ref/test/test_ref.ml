@@ -2852,7 +2852,27 @@ let () =
   (* the second line of defence: a bare role source hands the fold instances *)
   expect_fault_msg "WV-3.4c-kale-rolbron-faalt"
     (fun () -> ev w "J1" (vouw Aantal_gevulde [ telbron ] None None))
-    "value aggregation over a bare role source"
+    "value aggregation over a bare role source";
+  (* ch. 3.4c's ONE exclusion, and it is on the temporal axis rather than on
+     a value type: a set read of a TIME-DEPENDENT attribute folds twice, and
+     only som and totaal define the first collapse (ch. 3.6, §7.1). A count
+     has no defined MOMENT at which to ask a timeline whether it is filled,
+     so it must fail NAMING the attribute instead of reading a value the
+     timeline does not have at an instant. Until 2026-09-20 this behaviour
+     was correct and undocumented — the chapter said "whatever its type" and
+     the exclusion lived only in a code comment, which carries no norm. *)
+  let doc_t =
+    let naam, o = ot "Vondst" [ ("vergoeding", Some num2kg) ] [] in
+    { doc with
+      objecttypen =
+        [ ot "Jutter" [] []; (naam, { o with attribuut_granulariteit = [ ("vergoeding", Some Dag) ] }) ] }
+  in
+  let env_t = env_of doc_t in
+  expect_fault_msg "WV-3.4c-temporeel-faalt"
+    (fun () ->
+      Eval.eval_expr env_t w (World.get w "J1") ~err:no_err
+        (gevuld "vergoeding" num2kg))
+    "has no defined moment to fold"
 
 (* --- ch. 5.7a: what a supplied role link establishes -------------------- *)
 

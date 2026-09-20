@@ -246,12 +246,12 @@ toevoegt. `scripts/` is dus onaangeraakt.
 - **Geen rode casus.** De rode zone eist twee weigerende uitvoerders met
   gepinde fragmenten. `ref` weigert de vorm juist niet (hij draagt hem), dus
   er is niets te pinnen dat niet onwaar zou zijn.
-- **Geen hek op het knooptype.** De soort levert per constructie een
-  eenheidloze kardinaliteit, maar de verifier eist dat niet van het
-  `type`-veld — precies zoals hij dat van `AANTAL` niet eist. Bewust
-  gespiegeld en hier genoteerd als open flank, niet als stilte. Poort 13
-  ziet hem niet zolang er geen golden is; als de goldens van kaart 2 een
-  eenheiddragend `type` op de knoop zouden zetten, is dat waar het opvalt.
+- ~~**Geen hek op het knooptype.**~~ **INGETROKKEN in de fixronde van
+  2026-09-20 — de passage die hier stond was onjuist.** Zij beweerde dat de
+  verifier het knooptype van `AANTAL` evenmin hekt, en dat is niet waar:
+  `AANTAL` HEEFT dat hek, als een arm van WF-091's afgeleide-typemotor. De
+  nieuwe soort had hem niet, omdat die motor op de KIND matcht. Het gat is
+  gemeten, gedicht en van een getuige voorzien; zie §10.
 - **`frontends/**`.** Besluit G9: de dialectzin is kaart 3.
 - **`spec/CONSTRUCTS.md` en `spec/PLAN.md`.** Voorstelrijtekst hieronder.
 
@@ -281,6 +281,17 @@ Voor `spec/CONSTRUCTS.md` rij 1 (de aggregatierij), aan te hangen:
 > bewust bij de regelschrijver (besluit G1). Zeven negatiefs; clingo en
 > beide Drools-takken weigeren de soort voorlopig BENOEMD, met getuige in
 > de eigen suite. Uitvoering in de backends: kaart 2.
+> **Fixronde dezelfde dag:** het knooptype is DERIVED en wordt gekruist —
+> WF-091's afgeleide-typemotor krijgt een twaalfde positie, want die motor
+> matcht op de KIND en dekte de nieuwe soort niet. Wat dat dichtte is
+> gemeten: een gevulde telling geannoteerd `kg` in een even liegend
+> `kg`-doel was verifier-SCHOON terwijl dezelfde leugen onder `AANTAL`
+> WF-091 gaf, en `ref` speelde hem uit (een eenheidloze 1 in een
+> kg-gedeclareerd attribuut, oracle PASS). Getuige
+> `wf091-aantalgevulde-eenheid`. En ch. 3.4c draagt sindsdien één
+> normatieve uitsluiting die eerder alleen code-commentaar was: de gevouwen
+> attribuut is niet TIJDSAFHANKELIJK — een telling heeft geen moment waarop
+> zij een tijdlijn naar gevuldheid vraagt, dus die vorm faalt luid.
 
 Voor `spec/PLAN.md` is er geen scopewijziging: de kaart voert uit wat het
 ontwerp van 2026-09-19 al vastlegde. Wel een feit dat vermelding verdient
@@ -301,6 +312,35 @@ SOM/TOTAAL-arm is de vorm om te kopiëren (zelfde bronvorm, zelfde
 `backends/clingo/test/test_clingo.ml` moeten dan van weigering naar
 vertaling; laat de tweede check (NIET de bodemzin) staan of vervang hem
 door een echte replay.
+
+*En clingo heeft DRIE eenheidsafleiders die de soort moeten kennen*
+(nagemeten 2026-09-20): `eff_unit` (rond :459), `provably_unitless`
+(:1007) en `provably_pure_pct` (:1043). Alle drie matchen op
+`Som | Totaal | Minimum | Maximum | Eerste | Laatste` en geven de eenheid
+van operand 0 door. Voor een kardinaliteit is dat precies het VERKEERDE
+antwoord, dus de soort mag daar niet bij de zes worden gezet. Gemeten
+gevolg vandaag, en het is de spiegel van `AANTAL`: die staat er evenmin
+in, dus `eff_unit` valt door naar `None` (juist — geen eenheid) en
+`provably_unitless` naar `false` (behoudend: niet-bewijsbaar-eenheidloos
+in plaats van fout). `AANTAL_GEVULDE` erft exact die positie, dus kaart 2
+hoeft er niets te REPAREREN; wat hij moet WEGEN is of hij beide tellingen
+aan `provably_unitless` toevoegt. Dat is een verbreding die meer rekenwerk
+vertaalbaar maakt, zij geldt voor `AANTAL` net zo goed, en zij hoort dus
+als eigen besluit genoteerd te worden in plaats van stilzwijgend
+meegenomen.
+
+*Poort 13 (`scripts/check-reftype-derivation.sh`) hoeft niets te leren, en
+dat is gemeten in plaats van aangenomen.* De twisttabel raakt alleen
+posities waar `eenheiddragend(type)` waar is, en een kardinaliteit is per
+constructie eenheidloos. `AANTAL` staat om diezelfde reden noch in
+`AFGELEIDE_KIND` noch in `GEEN_FUNCTIE`; `AANTAL_GEVULDE` erft die
+positie. De WF-091-indexrij noemt dat verschil nu bij naam: de
+afgeleide-typeinventaris en poort 13's uitzonderingenset zijn twee
+handmatig uitgelijnde lijsten zonder tripwire, en zij verschillen op beide
+tellingen. Wat WEL beweegt zodra kaart 2 een golden toevoegt is de TELLER:
+de BRON van de soort is een echt getypeerde attribuutlezing en wordt
+getwist zoals elke som-bron — en de telling moet daar onverschillig voor
+zijn, wat precies is wat de harnas aantoont.
 
 **Drools** moet twee dingen leren, in deze volgorde. (1)
 `AANTAL_GEVULDE` in `Expr.FunctieKind`
@@ -342,3 +382,151 @@ onveranderd geldig. Twee dingen zijn nu gemeten in plaats van verwacht:
 dragen zodra clingo hem ook kan; en de typeloosheid is per waardetype
 gepind in `ref/test/`, dus de niet-numerieke getuige hoeft alleen nog door
 het vierkant heen.
+
+## Fixronde (2026-09-20, na de lensronde)
+
+De lens keurde af op één blokkerende vondst en gaf vijf adviezen. Alle zes
+zijn uitgevoerd. Wat hieronder staat vervangt §7's eerste bullet, die
+onjuist was.
+
+### 10. BLOKKEREND, gedicht: het knooptype was ongehekt
+
+**De vondst.** `IR-SPEC.md` ch. 4.3, de WF-038-rij en
+`RUNTIME-SEMANTICS.md` ch. 3.4c zeggen alle drie dat een gevulde telling
+een geheel, eenheidloos getal oplevert. Er stond geen check tegenover. De
+afgeleide-typemotor van WF-091 (`composite_expectation` in
+`spec/verifier/lib/checks.ml`) matcht op de KIND, dus de `Aantal`-arm dekte
+de nieuwe soort niet, en die was daarmee de ENIGE aggregatie wier knooptype
+door niets werd gekruist.
+
+**Gemeten, vóór de fix** — en het is erger dan een document dat schoon is
+en dat niet hoort te zijn, want de leugen wordt UITGESPEELD. Een
+`AANTAL_GEVULDE` met knooptype `kg`, geschreven in een even liegend
+`kg`-doel zodat WF-023 tevreden is:
+
+    verifier (AANTAL_GEVULDE) : PASS
+    verifier (AANTAL, zelfde leugen) : WF-091 FAIL: unit mismatch … but the
+                                       type a count derives is no unit
+    ref op datzelfde document      : oracle: PASS (1 expectations)
+                                     — een eenheidloze 1 landt in een
+                                       kg-gedeclareerd attribuut
+
+De spiegel-claim van §7 ("precies zoals hij dat van `AANTAL` niet eist") was
+dus onwaar in beide helften: `AANTAL` heeft het hek wél, en de nieuwe soort
+miste het.
+
+**De fix.** Eén arm naast de `Aantal`-arm, met dezelfde afgeleide
+verwachting (geheel, 0 decimalen, niet-negatief, geen eenheid) en een eigen
+naamzin, zodat de melding de soort noemt die loog. Twaalf afgeleide posities
+in plaats van elf.
+
+**Rood-eerst, en mutant, in één meting.** De verifier zónder de arm is
+BYTE-IDENTIEK aan de binary die de soort landde (md5
+`d970a571d0ecbc88de4bea5b14da9fc7`); mét de arm is hij
+`cb504f858c625baf82378a77d00362bf`. De rood-eerst-toestand en de
+arm-exacte mutant zijn daarmee letterlijk dezelfde meting. Sweep over
+golden + rood + negatief + pariteit, **696 documenten**: precies één
+document beweegt, de nieuwe negatief, van PASS naar WF-091. Niets anders
+verandert een oordeel of een regel.
+
+**Tweede mutant, op de facet in plaats van op de arm.** De eenheidsfacet
+van de identiteitsmotor geneutraliseerd: **acht** afgeleide
+eenheidsgevallen worden schoon, `wf091-aantalgevulde-eenheid` als achtste.
+De WF-091-indexrij zei "all **7**" en is naar 8 bijgewerkt met de datum
+erbij — dat getal was een controleerbare claim en zij werd door deze kaart
+onwaar.
+
+**Getuige.** `corpus/negatief/wf091-aantalgevulde-eenheid`, één citatie,
+met NOTE en beide falsificatieproeven. De inventarissen die de positie
+opsommen zijn meegegroeid: ch. 4.1's positietabel (elf → twaalf rijen), de
+zin over de SIGN-uitsluiting ("ALL ELEVEN" → "ALL TWELVE"), honesty note
+(1) en (4) van de WF-091-rij, de negatief-kolom ("thirteen more" →
+"fourteen"), en de lijst waar de WF-091-inventaris en poort 13's
+twisttabel van elkaar verschillen — daar staat de nieuwe soort nu naast
+`AANTAL`, met de reden dat een kardinaliteit per constructie eenheidloos is
+en dus door geen twisttabel bereikt wordt.
+
+### 11. De vijf adviezen
+
+**(a) De temporele uitsluiting was code-commentaar, geen norm.** ch. 3.4c
+zei "whatever its type" en de WF-038-rij "its source may carry ANY type",
+terwijl `ref` elke niet-Som/Totaal-vouw over een tijdlijnattribuut luid
+weigert. Het gedrag is juist — alleen som en totaal definiëren de eerste
+inklapping van ch. 3.6/§7.1, en een telling heeft geen MOMENT waarop zij
+een tijdlijn naar gevuldheid vraagt — maar een NOTE draagt geen norm.
+Rechtgezet: ch. 3.4c draagt nu een normatieve alinea die de uitsluiting op
+de TEMPORELE as legt in plaats van op een waardetype, met "de deur dicht,
+niet op slot"; ch. 4.3 en de WF-038-rij zeggen hetzelfde in één zin; en er
+is een getuige, `WV-3.4c-temporeel-faalt`, die de weigering op haar zin
+pint. Ref-suite 708 → 709.
+
+**(b) Een bestaande flank, gemeten, met eigen kaartje.** De OPGESOMDE
+`AANTAL` (twee of meer argumenten, geen `elementObjecttype`) telt in `ref`
+nog steeds de GEVULDE waarden — precies de betekenis die het besluit van
+2026-09-19 van de wire haalde in de setbron-spelling. Zelf nagemeten op een
+handgebouwd document met twee eigen kg-lezingen waarvan er één leeg is:
+
+    verifier : PASS
+    ref      : 1     (Arith.filled vóór agg_aantal)
+    clingo   : TRANSLATION FAULT: expression kind not translated
+    Drools   : EXCLUDE, transpiler SKIP (aggregatie buiten Phase-C scope)
+
+Eén antwoordt, twee weigeren, onder een welgevormd document — de klasse die
+PLAN §6 een specfout noemt. De vorm overleeft doordat WF-037's
+≥2-clausule `Aantal` uitsluit, terwijl de brontaal (§5.8.1, typeringen
+§4.11) geen opgesomde telling kent. Corpusbreed gemeten over alle 696
+documenten: precies ÉÉN drager, `corpus/negatief/wf091-aantal-decimalen`,
+al afgewezen om een andere reden. Dit is NIET door deze kaart veroorzaakt
+en niet door deze kaart opgelost: het is een normvraag voor de maintainer,
+en zij staat met meting en drie routes in
+`backlog/new/20260920-aantal-opgesomde-telling.md`. Hier genoteerd als open
+flank naast de andere.
+
+**(c) Poort 2 ziet `corpus/negatief` niet.** De acceptatie "(a) Wire … poort
+2 groen, round-trip byte-identiek" was over het nieuwe lid dus LEEG: poort 2
+scant alleen `corpus/golden` en `corpus/rood`. Alsnog gemeten, met poort 2's
+eigen script in expliciete modus over alle acht nieuwe negatiefs:
+`8 file(s) validate and round-trip`. Genoteerd als regel: zolang geen golden
+de soort draagt, is dat de enige meting die het nieuwe enumlid tegen het
+schema houdt, en zij is handmatig. De golden van kaart 2 wordt de blijvende,
+gegate getuige.
+
+**(d)** in §9 verwerkt.
+
+**(e) Cosmetisch, hersteld.** In `wf093-aantalgevulde-wrat/ir.json` zei de
+`bron`-zin nog "het aantal gevulde waarden van HET GEWICHT van alle
+vondsten" terwijl het argument de kale wrat is. Nu: "het aantal gevulde
+waarden van de vondsten van de Jutter".
+
+### 12. Poortuitkomsten na de fixronde
+
+     1 check-self-contained     PASS
+     2 check-ir-schema          PASS  250 documenten, vloer 192
+                                      (+ expliciete modus: 8 negatiefs valideren
+                                       en round-trippen byte-identiek)
+     3 check-verifier           PASS  250 golden schoon; 416 negatief, vloer 350
+     4 check-case-schema        PASS  586 casusbestanden
+     5 check-oracle             PASS  ref-suite 709, vloer 489; 552 cases
+     6 check-clingo             PASS  backendsuite 454, vloer 83; 552 cases
+     7 check-noop               PASS  516 cases, 36 overlevers
+     8 check-rood               PASS  34 rode cases; 68 fragmenten citeren geen
+                                      van de 36 bodemzinnen
+     9 check-catala             PASS  201 checks; 12 goldens
+    10 check-regelspraak        PASS  322 tests; 63 rgs-goldens
+    11 check-toka-parity        PASS  29 cases, nul divergenties
+    12 check-drools             PASS  gespeeld 164 (pin), DRL-tekst 141 (pin),
+                                      JUnit 504, vloer 239
+    13 check-reftype-derivation PASS  129 twists, vloer 74
+    14 check-flogic             PASS  130 checks; 2 goldens
+
+### 13. Openstaande flanken na deze kaart, volledig
+
+1. De OPGESOMDE `AANTAL` telt gevulde waarden — gemeten, niet van deze
+   kaart, kaartje `backlog/new/20260920-aantal-opgesomde-telling.md`.
+2. Het MOMENT van een gevulde telling over een tijdlijnattribuut is niet
+   gedefinieerd; ch. 3.4c zegt nu normatief dat de vorm luid faalt, en dat
+   een latere kaart met een echte casus de momentregel mag leveren.
+3. clingo en beide Drools-takken dragen de soort niet; zij weigeren hem
+   benoemd. Kaart 2.
+
+Het knooptype-hek staat NIET meer op deze lijst.

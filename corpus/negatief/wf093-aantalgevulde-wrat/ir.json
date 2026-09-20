@@ -181,7 +181,7 @@
           "teken": "NIET_NEGATIEF",
           "eenheid": null
         },
-        "bron": "het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter",
+        "bron": "het aantal gevulde waarden van de vondsten van de Jutter",
         "granulariteit": null,
         "bronRol": {
           "node": "RolBinding",
