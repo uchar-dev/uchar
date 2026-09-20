@@ -1408,11 +1408,52 @@ final class ExpressieBouwer {
             // (decision G8, RUNTIME-SEMANTICS ch. 3.4c) — a getalAggregatie check here would
             // silently undo that by refusing a tekst/datum/enumeratie/booleaan source.
             case AANTAL_GEVULDE -> null;
+            // WF-037's count-arity arm (IR-SPEC ch. 4.3, maintainer decision 2026-09-20). The one arm
+            // in this switch about SHAPE rather than operand TYPES, and it sits here because this is
+            // the per-kind aggregation diagnosis and the arity is known at the node. It sits beside
+            // the filled count's arm above and never reaches it: that kind carries its own arity law
+            // (exactly ONE argument, WF-037's other new arm), so the two counts are fenced apart.
+            case AANTAL -> tellingAriteitFout(argumenten, f);
             default -> null;
         };
         if (fout != null)
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(
                     RegelSpraakModel.Severity.ERROR, fout, f.getStart().getLine()));
+    }
+
+    /** WF-037's count-arity arm (IR-SPEC ch. 4.3, maintainer decision 2026-09-20): a count folds
+     *  INSTANCES and has no LISTED form, so two or more operands are ill-formed on the wire.
+     *
+     *  <p><b>This fence closes a LEAK of this frontend's own making.</b> The source language spells no
+     *  operand list for a count — §5.8.1 ranges it over instances and the typing document (§4.11)
+     *  excludes the value reading — but {@code functieAanroep}'s {@code aantalFunc} alternative reads
+     *  {@code primaireExpressie ( COMMA primaireExpressie )* ( EN primaireExpressie )?}, a registered
+     *  divergence ({@code grammar/DIVERGENCES.md}), and {@code args} builds every child as its own
+     *  argument. Measured 2026-09-20: three sentences reached the wire unblocked — the {@code en} and
+     *  {@code comma} spellings with {@code diagnostics: []} and the element-binding spelling with a
+     *  non-blocking WARNING — all rejected by the verifier
+     *  ({@link io.github.yhavinga.regelspraak.AantalOpgesomdTest}).
+     *
+     *  <p>ERROR and not WARNING, deliberately: {@link Resolver#irModus} writes nothing when the model
+     *  carries an error, so the fail-fast is what keeps the ill-formed document off disk. That is the
+     *  level {@code AantalSetbronTest} pins for the set fence one decision earlier, and unlike there
+     *  no committed expectation asserts this shape resolves clean — measured, no rgs golden and no
+     *  other test carries a listed count.
+     *
+     *  <p>It reads the KIND and the operand COUNT and never {@code elementObjecttype}: a count that
+     *  binds an element AND carries an operand list is the same listed form with a second claim on one
+     *  node, and the wire rule draws its boundary in exactly that place. Below two operands it is
+     *  silent, which is the wire rule's boundary too: one operand is v0's own instance count and zero
+     *  is a fold without a source, a form under no decision yet. */
+    private String tellingAriteitFout(List<Expr> argumenten, FunctieAanroepContext f) {
+        if (argumenten.size() < 2) return null;
+        return "opgesomde telling: '" + bron(f).snippet() + "' noemt " + argumenten.size()
+                + " operanden — een telling vouwt de INSTANTIES waar zij over gaat en heeft geen "
+                + "opgesomde vorm; de brontaal spelt er geen (§5.8.1 telt over onderwerpexpressies, "
+                + "typeringen §4.11 sluit de waardelezing uit), dus er is geen operandenlijst om te "
+                + "lezen. De enige lezing die een lijst een telling overlaat is 'tel de gevulde "
+                + "operanden', en die betekenis draagt AANTAL_GEVULDE over een setbron — een eigen "
+                + "soort op de wire (besluit 2026-09-20) (WF-037, IR-SPEC ch. 4.3)";
     }
 
     /** §4.19 Tabel 29 (eerste paasdag van): the single operand is "een numerieke expressie zonder eenheid ... altijd een

@@ -435,3 +435,65 @@ emitted before, which is the measurement above stated as a property.
   the frontend admits the sentence, as it does for the other folds.
 - The catala and flogic frontends do not get the kind. Each carries its own
   refusal list, and a wire kind they never write costs them nothing.
+
+---
+
+## §13.4.17.47 The count's operand list — an ACCEPTING superset, fenced in the resolver
+
+Unlike the three sections above this is **not** a dialect extension and it is
+**not** inert: it is a production that accepts more than v2.3.0 spells, and it
+was found by a wire decision rather than designed. It is recorded here because
+the register is where a divergence has to be findable, whether it was chosen or
+inherited.
+
+`functieAanroep`'s `aantalFunc` alternative reads
+
+```
+HET AANTAL_WORD primaireExpressie ( COMMA primaireExpressie )* ( EN primaireExpressie )?
+```
+
+while §13.4.17.46's EBNF gives `<getalaggregatiefunctie>` one `<expressie>`
+operand and §5.8.1 ranges the count over **instances**; the typing document
+(§4.11) adds that a count takes onderwerpexpressies only, so leegwaarden do not
+apply to it. There is a listed spelling in the source language — "de eerste van
+A en B" (§5.8.3) — but it belongs to the ordering folds, and the count has
+none. The `( COMMA … )* ( EN … )?` tail is therefore this frontend's own
+widening, carried over from the neighbouring `minMaxFunc` and
+`eersteLaatsteFunc` alternatives that legitimately have it.
+
+**Two divergences live at this rule, and only one of them was registered.** The
+`primaireExpressie` operand (instead of the symmetric `expressie`) is a
+deliberate, narrowing reconstruction — a trailing `maal`/`plus` binds OUTSIDE
+the count, which §4.11 requires — and it is noted at the rule. The operand LIST
+is the widening, and until 2026-09-20 it was noted nowhere.
+
+**What it cost, measured 2026-09-20.** `ExpressieBouwer.args` builds every child
+as its own argument, so the list reached the wire as an `AANTAL` with two or
+more `argumenten`. Three sentences emitted unblocked — the `en` spelling and the
+`comma` spelling with `diagnostics: []`, the element-binding spelling ("het
+aantal vondsten van de Jutter en kavels van de Jutter") with a WARNING that does
+not stop emission — and the uchar verifier rejects all three: under WF-037 since
+that day's count-arity decision (`spec/IR-SPEC.md` ch. 4.3), the third under
+WF-034 as well. One executor answered such a document and three refused it,
+which is the class `spec/PLAN.md` §6 calls a spec fault.
+
+**The fence stands in the resolver, not in the grammar** — `ExpressieBouwer`'s
+`tellingAriteitFout`, an ERROR, so `Resolver.irModus` writes nothing and the
+ill-formed document never reaches disk. Witness:
+`AantalOpgesomdTest` (both spellings, the element-binding route, the
+off-disk property, and the two forms that must stay clean).
+
+Why not simply delete the tail:
+
+- It is a **parse** change, not a diagnostic change. `( EN primaireExpressie )?`
+  decides how a trailing conjunction binds inside a larger sentence; removing it
+  re-associates those sentences instead of refusing them, and 64 byte-identical
+  emitter goldens sit downstream of every parse.
+- Mirror-then-diverge: the widening is a fact about this grammar, and a fact
+  that is deleted stops being registered. Fenced and written down, it stays
+  readable; deleted, the next reader rediscovers it from scratch.
+- The refusal is the same either way. What differs is only whether the author
+  gets a named refusal citing the rule, or a syntax error.
+
+This is the same posture `AantalSetbronTest` records one decision earlier: when
+the wire narrows, the frontend's fence moves and its grammar does not.
