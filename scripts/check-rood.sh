@@ -132,6 +132,16 @@ fi
 # a bottom sentence reworded, moved or newly added in ref/clingo without this list moving with it
 # leaves the fence blind to exactly that sentence.
 #
+# The list SHRINKS when a sentence loses its last carrier, and that is a deliberate, dated act with
+# its reason in the commit — never a quiet delete. A listed sentence no arm can produce is an
+# untruth of the same kind the fence exists to catch: it tells a reader that a residual arm is
+# waiting there when none is. ONE removal so far. 2026-09-20 (card ref-periodeconditie-arm):
+# `ref/lib/eval.ml eval_cond|condition kind not implemented in this card` left, because that match
+# is exhaustive over the condition constructors and its last catch, Periode_conditie, got a named
+# arm (the ch. 4.5 TimeWindow, pinned by corpus/rood/periodeconditie-bereikt). Its clingo sister
+# `cond_atoms` is a genuine wildcard and still catches the uncarried Predicaat kinds and
+# Regelversie, so that entry STAYS.
+#
 # <source file> <function>|<bottom sentence, verbatim>|<what it delimits against instead of naming>
 bodem=$(mktemp) || exit 2
 cat > "$bodem" <<'EOF'
@@ -143,7 +153,6 @@ ref/lib/eval.ml eval_functie|unsupported instance-fold source shape|the residual
 ref/lib/eval.ml eval_functie|of a set has no defined moment to fold (ch. 3.6: only som and totaal carry the per-element timeline fold)|the fall-through of the per-element timeline fold, whose match carries som and totaal and sends every other kind here: it names the position and the two kinds that ARE carried, never the fold rejected, so it is one sentence for minimum, maximum, eerste, laatste and any kind added later. Listed 2026-09-20 after a reader measured it: the filled count's red case pinned this sentence, and the identical document with kind MINIMUM matched that pin word for word. The interpolation-free tail is listed because the attribute name differs per document. The cure is the one this fence always names — a named arm per kind — and the filled count now has one (ch. 3.4c: "no moment at which a filled count can ask a timeline whether it is filled"); the four ranking folds still share this sentence and will need theirs when a red case wants to pin one
 ref/lib/eval.ml eval_functie|function kind not implemented in this card|the wildcard arm over function kinds
 ref/lib/eval.ml eval_cond|predicate kind not implemented in this card|the residual Predicaat arm, after the carried predicate kinds
-ref/lib/eval.ml eval_cond|condition kind not implemented in this card|was the residual arm over condition kinds; since 2026-09-20 (card v4-verre-rol-getuige gave the far-side rolcheck its own arm) it catches exactly one form, Periode_conditie, while still naming none — a bottom sentence over a one-element set, which is a refusal waiting for its named arm and stays listed until it gets one
 ref/lib/eval.ml run_pro_rata|unsupported pro-rata condition shape (an own temporal characteristic; no corpus case for more)|the wildcard arm over pro-rata conditions: it names the one carried shape and claims no corpus case for the rest
 ref/lib/eval.ml run_pro_rata|unsupported day-count condition shape (an own temporal characteristic; no corpus case for more)|the wildcard arm over day-count conditions, the mirror of the pro-rata one above
 ref/lib/eval.ml run_pro_rata|a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count shape (a gedurende condition over an own temporal characteristic); no corpus case for more|the wildcard arm over temporal targets: "takes only" enumerates the carried shapes, the rejected target stays unnamed
@@ -314,6 +323,7 @@ input-overprecision|NOFAULT the v0 case runner does not enforce declared attribu
 input-overprecision-param|NOFAULT the v0 case runner does not enforce declared parameter input precision — it accepts the over-precise value and runs to a model
 list-element-overprecision|EXCLUDE the v0 loader refuses the model's record datatype (StructType) before any list-element precision is reached — the record/struct form is not carried
 near-side-rolcheck-to-many|EXCLUDE the rolcheck rule (bemand met jutter) does not lower — a transpiler SKIP (voorwaarde buiten Phase-B scope); fire is never reached
+periodeconditie-bereikt|NOFAULT measured 2026-09-20: this backend CARRIES the construct the two OCaml executors decline. Both transpiler branches lower the ch. 4.5 TimeWindow to "rekendatum inside [vanaf, tot)" and run to a model — PLAYED 1 in the exec-model branch and PLAYED 1 under --drl, vondstpremie 50 at an asOfDate inside the window, empty outside it and empty at a null one, with the mutation probe (50 -> 99) failing observably in both. So this red case is the rare one where the leg's NOFAULT is not a missing enforcement but a genuine disagreement: the square splits two-two, and no golden of this shape can enter the corpus until the period family is normed (RUNTIME-SEMANTICS ch. 8.2 states the gate in one sentence, carries no worked example, and names the ch. 3.10 validity window, whose bounds are both inclusive where this node's are not). The day that card lands, the two OCaml arms become semantics, this entry goes stale and the gate says so
 som-fallback-always-evaluated|EXCLUDE the reaching rule (vangstsom van een vangst) does not lower — a transpiler SKIP (aggregatie buiten Phase-C scope); fire is never reached, so the som's stand-in is not Drools-observable here
 struct-field-overprecision|EXCLUDE the v0 loader refuses the model's record datatype (StructType) — the record/struct form is not carried
 tijdsduur-reads-van-before-tot|NOFAULT the v0 backend enforces no van/tot ORDER on a TIJDSDUUR, so the ch. 10.6 barrier this witness plants never becomes a fault; it runs to a model — the mirror of begrensd-reads-bounds-in-order above, the same ch. 5.11 divergence. Reason category CORRECTED 2026-09-09 (card onopgelost-zijkanaal-opruiming), measured on both backends: the verdict was EXCLUDE while a Let was an Onopgelost carrier and the Rekendatum inside its body stayed a leaf to Expr.bevat, so the rule did not lower at all; with Let a real union node it lowers and fires. Both pinned legs are untouched — the case still pins expectedFault {ref, clingo}. Full account in the card and in the case's NOTE.md
