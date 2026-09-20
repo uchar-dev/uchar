@@ -2413,6 +2413,59 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           Printf.sprintf "%s = %s { %s : %s }" v agg g (String.concat ", " contrib_body) ],
         v,
         pow10 (attr_decimals ctx ~otype:el ~attr:a) )
+  (* the FILLED-VALUE COUNT (IR-SPEC ch. 4.3, RUNTIME-SEMANTICS ch. 3.4c):
+     the same contributor gathering as the som and the ranking folds above —
+     one source_join, one val/3 per member, the same die/dat filter — with
+     the aggregate changed from #sum / #min to #count. Nothing here is new
+     machinery: the val/3 join IS the presence test the som already uses as
+     its skip (an absent member contributes no tuple), so this kind counts
+     exactly the tuples the som adds up.
+
+     THE COUNT KEY IS THE ELEMENT VARIABLE, not the value: #count counts
+     DISTINCT tuples, so keying on [x] makes an element reached along two
+     intermediates of a bronPad contribute ONCE — the flat-union reading of
+     ch. 3.4b, which the corpus pins in jutterswet-gevuldepad's second case.
+     Keying on the value instead would collapse two members that happen to
+     carry the same number, which is a different and wrong answer.
+
+     No presence guard, and that asymmetry with the som is the semantics: an
+     empty source must derive 0 rather than leave the term underivable
+     (ch. 1.2e — a count is a cardinality), and clingo's native #count over
+     no tuples is exactly that 0. The som needs its guard because ITS empty
+     answer is leeg. Scale 1: the result is a whole, unitless cardinality
+     whatever unit the folded attribute carries. *)
+  | Functie
+      { kind = Aantal_gevulde;
+        argumenten =
+          [ Attribuut_ref { attribuut; set = true; navigatie_rol = None; navigatie_pad = []; _ } ];
+        element_objecttype = Some el; bron_rol; bron_pad; filter; _ } ->
+      let a = req "fold attribute" attribuut in
+      (* the ch. 3.4c exclusion, on the TEMPORAL axis rather than on a value
+         type: a set read of a time-dependent attribute folds twice, and only
+         som and totaal define the first collapse. ref refuses the form by
+         name; answering here from the asOfDate buckets would be this backend
+         inventing a moment the chapter does not carry. Its own sentence, not
+         the ranking folds' — the two arms refuse on the same ground but a red
+         case must be able to tell which one spoke. *)
+      if attr_temporal ctx ~otype:el ~attr:a then
+        fault
+          "a filled count over the temporal attribute %S of a set has no defined moment to fold \
+           (ch. 3.4c); ref refuses the form, so this arm must not answer from a bucket it picked \
+           itself"
+          a;
+      let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty } in
+      let v = fresh ctx "F" in
+      let g = fresh ctx "G" and x = fresh ctx "X" in
+      let fatoms =
+        match filter with
+        | None -> []
+        | Some c -> cond_atoms ctx ~subject:x ~subject_ot:el c
+      in
+      let contrib_body =
+        source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x
+        @ (Printf.sprintf "val(%s,%s,%s)" x (str a) g :: fatoms)
+      in
+      ( [ Printf.sprintf "%s = #count { %s : %s }" v x (String.concat ", " contrib_body) ], v, 1 )
   | Functie { kind = (Eerste | Laatste) as kind; argumenten = (_ :: _ :: _ as args); filter; _ }
     ->
       (* the articulated eerste/laatste fold (RUNTIME-SEMANTICS ch. 1.2e):
@@ -3646,22 +3699,6 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          #sum over an instance source, and a listed fold has none; and where it carries a \
          ch. 5.11 leegwaarde, the addition chain that would carry it must evaluate that stand-in \
          unconditionally. No corpus case pins a value for the form"
-  | Functie { kind = Aantal_gevulde; _ } ->
-      (* the filled-value count (IR-SPEC ch. 4.3, RUNTIME-SEMANTICS ch. 3.4c),
-         landed on the wire and in `ref` on 2026-09-20 and NOT translated
-         here yet: the ASP form is a #count over the same presence literal
-         the som already guards min/max with, and building it is the second
-         card's work.
-         The arm exists for its NAME, on the listed-som precedent above.
-         Without it the kind falls into the bottom sentence below, whose "no
-         corpus case exercises it" a red witness would falsify the moment one
-         is written — and the same sentence catches every other untranslated
-         form, so a pin on it witnesses none of them. Named here, the refusal
-         says which construct arrived and when it is due. *)
-      fault
-        "the filled-value count (AANTAL_GEVULDE) is not translated: this backend carries no \
-         #count over the presence of a set source's values yet, so it refuses the kind by name \
-         rather than answering"
   | _ -> fault "expression kind not translated (no corpus case exercises it)"
 
 (* gedeeld-door (§6.5, arith.div_gen) — three edges plus the value:

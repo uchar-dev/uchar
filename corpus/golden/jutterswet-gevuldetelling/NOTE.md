@@ -19,6 +19,15 @@ Read the filled-count column alone and nothing is witnessed; read it
 against the instance count and every row but the second is a different
 number, which is exactly the claim ch. 3.4c makes.
 
+`case2-gelijke-gewichten` folds a population whose two filled members
+carry the SAME number (2,50 and 2,50, beside one empty member). The
+answer is still **2**: a filled count counts CONTRIBUTORS, never distinct
+values. Both the ASP encoding and the Drools accumulate reach that answer
+through an aggregate that could just as well have been keyed on the value,
+and keyed that way this case answers 1 while the first case answers 2 and
+looks correct. It is the only case in the zone that separates the two
+readings.
+
 The source annotation carries a unit (`kg`) while the count's own type
 carries none. That asymmetry is not sloppiness but the law: the result of
 a filled count is a whole, unitless cardinality whatever the folded

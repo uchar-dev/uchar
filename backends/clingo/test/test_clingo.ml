@@ -6714,24 +6714,35 @@ let () =
     ~case_text:dk_case ~needle:"on a date other than the bound day"
 
 (* The filled-value count (AANTAL_GEVULDE, IR-SPEC ch. 4.3, RUNTIME-SEMANTICS
-   ch. 3.4c) landed on the wire and in `ref` on 2026-09-20; this backend does
-   not translate it yet — the #count over the presence literal is the next
-   card's work — and it must refuse the kind BY NAME while it waits.
+   ch. 3.4c) landed on the wire and in `ref` on 2026-09-20 and is translated
+   here from 2026-09-20 (card aantal-gevulde-backends): a #count over the
+   same val/3 presence literal the som already uses as its contributor skip.
 
-   Why the check exists at all. Without its own arm the kind falls into the
-   expr_term fall-through, whose sentence is one of the thirty-six bottom
-   sentences gate 8 forbids a red pin from citing: it describes the position
-   ("expression kind not translated") and claims no corpus case reaches it,
-   so it identifies nothing and a pin on it would witness nothing. The arm
-   moves the refusal off that bottom before any red case can be tempted to
-   pin it, and this check is what keeps the arm honest — a reworded or
-   deleted arm fails here instead of passing silently into the bottom.
+   These four checks REPLACED the two refusal checks the wire card left here
+   — the flip that card's handover note announced. The two they replaced
+   pinned that the kind was refused BY NAME rather than by the expr_term
+   fall-through, so that no red pin could cite a bottom sentence. That fence
+   has not been dropped, it has MOVED: the well-formed set shape now answers,
+   and what is still refused — the temporal set source, ch. 3.4c's one
+   exclusion — is refused by its own arm, which the last two checks hold to
+   its own sentence and off the bottom.
 
-   The document is well-formed on purpose: it is the shape the verifier
-   ADMITS, so the refusal being measured is the backend's own and not a
-   consequence of malformed input. *)
+   Two things are pinned here that no corpus case can pin alone. First, that
+   the count's tuple key is the ELEMENT variable: over a bronPad an element
+   reached along two intermediates must contribute once, and keying the
+   aggregate on the value instead would also collapse two members carrying
+   the same number. The corpus witnesses the ANSWER
+   (jutterswet-gevuldepad); this witnesses the SHAPE that produces it, which
+   is what a future rewrite would break silently. Second, the temporal
+   refusal's own sentence, which has a red pin on it
+   (corpus/rood/aantalgevulde-temporele-setbron) and would otherwise be free
+   to drift.
 
-let aantalgevulde_doc =
+   The documents are well-formed on purpose: they are the shapes the
+   verifier ADMITS, so what is measured is this backend's own behaviour and
+   not a consequence of malformed input. *)
+
+let aantalgevulde_doc ~vondst_granulariteit =
   {|{ "formaat": "regelspraak-ir-v0",
   "objecttypen": {
     "Jutter": { "node": "Objecttype", "naam": "Jutter",
@@ -6744,7 +6755,9 @@ let aantalgevulde_doc =
     "Vondst": { "node": "Objecttype", "naam": "Vondst",
       "attributen": { "gewicht": { "node": "Numeriek", "geheel": false, "decimalen": 2,
                                    "teken": "ONBEPAALD", "eenheid": null } },
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutMeervoud": {}, "attribuutDimensies": {},
+      "attribuutGranulariteit": { |} ^ vondst_granulariteit
+  ^ {| },
       "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
       "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
       "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vondsten" } },
@@ -6799,23 +6812,73 @@ let aantalgevulde_case =
 }
 |}
 
+(* the tuple key of the emitted aggregate, and the atom that binds it: read
+   "<key> = #count { <key2> : … val(<key3>,…" back out of the program text.
+   Returns (key2, key3) so the check can demand they are the same variable —
+   the difference between counting ELEMENTS and counting VALUES. *)
+let count_key_and_reader program =
+  let idx needle from =
+    let n = String.length needle and len = String.length program in
+    let rec go i = if i + n > len then None else if String.sub program i n = needle then Some i else go (i + 1) in
+    go from
+  in
+  match idx "#count { " 0 with
+  | None -> None
+  | Some i -> (
+      let start = i + String.length "#count { " in
+      match idx " : " start with
+      | None -> None
+      | Some j -> (
+          let key = String.sub program start (j - start) in
+          match idx "val(" j with
+          | None -> None
+          | Some k ->
+              let rest = k + String.length "val(" in
+              let comma = String.index_from program rest ',' in
+              Some (key, String.sub program rest (comma - rest))))
+
 let () =
-  faults_with ~name:"AANTAL_GEVULDE: refused by name, never by the bottom sentence"
-    ~ir:aantalgevulde_doc ~case_text:aantalgevulde_case
-    ~needle:"the filled-value count (AANTAL_GEVULDE) is not translated";
-  (* and the refusal is NOT the fall-through: a pin on that sentence would
-     witness every untranslated form at once, which is what gate 8 forbids *)
-  let irf = write_temp ".ir.json" aantalgevulde_doc in
+  let ir = aantalgevulde_doc ~vondst_granulariteit:"" in
+  let irf = write_temp ".ir.json" ir in
   let casef = write_temp ".case.json" aantalgevulde_case in
   let doc = Ir_v0.Loader.load_file irf in
   let case = Uchar_ref.Case.load_file doc casef in
   Sys.remove irf;
   Sys.remove casef;
   match translate doc case with
-  | (_ : string) -> check "AANTAL_GEVULDE: expected a loud fault, got a model" false
+  | exception Uchar_ref.Value.Fault m ->
+      check ("AANTAL_GEVULDE: the set form translates (unexpected fault: " ^ m ^ ")") false;
+      check "AANTAL_GEVULDE: the count is keyed on the element (no program)" false
+  | program ->
+      check "AANTAL_GEVULDE: the set form translates to a #count"
+        (Uchar_ref.Case.contains ~needle:"#count {" program);
+      (match count_key_and_reader program with
+      | Some (key, reader) ->
+          check
+            ("AANTAL_GEVULDE: the count is keyed on the element the val/3 reads (" ^ key ^ " vs "
+           ^ reader ^ ")")
+            (key = reader)
+      | None -> check "AANTAL_GEVULDE: the emitted aggregate is unreadable" false)
+
+(* ch. 3.4c's one exclusion, and the pin a red case rests on *)
+let () =
+  let ir = aantalgevulde_doc ~vondst_granulariteit:{|"gewicht": "DAG"|} in
+  faults_with ~name:"AANTAL_GEVULDE: the temporal set source is refused by its own arm" ~ir
+    ~case_text:aantalgevulde_case
+    ~needle:"a filled count over the temporal attribute";
+  (* and that refusal is NOT the fall-through: a pin on that sentence would
+     witness every untranslated form at once, which is what gate 8 forbids *)
+  let irf = write_temp ".ir.json" ir in
+  let casef = write_temp ".case.json" aantalgevulde_case in
+  let doc = Ir_v0.Loader.load_file irf in
+  let case = Uchar_ref.Case.load_file doc casef in
+  Sys.remove irf;
+  Sys.remove casef;
+  match translate doc case with
+  | (_ : string) -> check "AANTAL_GEVULDE temporal: expected a loud fault, got a model" false
   | exception Uchar_ref.Value.Fault m ->
       check
-        ("AANTAL_GEVULDE: the refusal is not the expr_term bottom sentence (" ^ m ^ ")")
+        ("AANTAL_GEVULDE temporal: the refusal is not the expr_term bottom sentence (" ^ m ^ ")")
         (not (Uchar_ref.Case.contains ~needle:"expression kind not translated" m))
 
 let () =

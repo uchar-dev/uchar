@@ -124,3 +124,79 @@ veel-op-één-middenrelatie, waarvan het veld op de boot staat. Dat is
 dezelfde deelbaarheid met een beanveld eronder, dus de vraag "telt de unie
 of tellen de koppels" wordt in alle vier de uitvoerders gesteld in plaats
 van in twee.
+
+### Stap 2 — clingo
+
+De weigerarm is weg en op de plaats van de setvouwen staat een `#count`.
+De vorm is die van de SOM/TOTAAL-arm: één `source_join`, één `val/3` per
+lid, hetzelfde die/dat-filter — alleen het aggregaat verschilt. Twee
+dingen zijn eigen en geen kopie:
+
+- **de teltsleutel is de ELEMENTvariabele**, niet de waarde. `#count` telt
+  onderscheiden tupels, dus dat is precies wat een element dat langs twee
+  tussenknopen bereikbaar is één keer laat meetellen;
+- **geen presence-guard.** De som heeft er een omdat zijn lege antwoord
+  leeg is; het lege antwoord van een telling is 0, en dat is wat clingo's
+  `#count` over nul tupels vanzelf geeft.
+
+De temporele setbron krijgt een EIGEN weigerzin met eigen hoofdstuknummer
+(ch. 3.4c), zodat de rode casus kan pinnen wélke arm sprak — de
+rangschikkende vouwen weigeren op dezelfde grond met hun eigen zin
+(ch. 3.6).
+
+De twee checks in `test_clingo.ml` zijn gekanteld en er zijn er twee
+bijgekomen (452 → 454 in kaart 1, nu 456). Wat ze pinnen is verschoven, niet
+verdwenen: de welgevormde setvorm VERTAALT nu, en wat nog geweigerd wordt
+staat met eigen zin buiten de bodemzin.
+
+**Mutatieproeven (elk gedraaid, gesweept en teruggedraaid).**
+
+    MC1  de val/3-aanwezigheidsliteral uit het contribuantenlichaam
+         -> alle vijf de casussen MISMATCH: de telling wordt de
+            instantietelling (3 waar 2 hoort)
+    MC2  de teller op de WAARDE gesleuteld in plaats van op het element
+         -> precies ÉÉN corpuscasus valt om, case2-gelijke-gewichten,
+            plus de vormcheck in de eigen suite. De andere vier blijven
+            groen — hun gevulde waarden zijn toevallig onderling
+            verschillend. Dat is de reden dat die casus bestaat, en de
+            meting is het bewijs dat hij niet spare is.
+    MC3  AANTAL_GEVULDE toegevoegd aan eff_unit (bij de zes)
+         -> het corpus beweegt NIET; de proefsteen wél. Een handgespeld
+            gemiddelde `puntensom ÷ AANTAL_GEVULDE(kg-bron)` gaat van
+            `clingo: PASS` naar `TRANSLATION FAULT: a unit-carrying
+            multiplicative operand is not translated`, terwijl `ref` hem
+            gewoon uitrekent — één-antwoordt-één-weigert onder een
+            welgevormd document
+    MC4  beide tellingen toegevoegd aan provably_unitless
+         -> poort 6 blijft groen, 456 checks en 563 casussen ongewijzigd:
+            de verbreding heeft in het hele gepoorte corpus geen getuige
+
+### Het besluit over de drie eenheidsafleiders
+
+`AANTAL_GEVULDE` gaat in GEEN van de drie, en blijft daarmee precies waar
+`AANTAL` staat. Per afleider, met de grond:
+
+**`eff_unit` — niet toevoegen, en dat is geen keuze maar een eis.** De
+functie geeft de EFFECTIEVE eenheid van een expressie; een kardinaliteit
+heeft er geen, hoe zwaar het gevouwen attribuut ook weegt. MC3 maakt dat
+meetbaar in plaats van beweerd: met de soort erbij leest de deling de
+eenheid van de BRON als de eenheid van de TELLING en weigert luid, en
+juist omdat de telling zwijgt is het handgespelde gemiddelde dat besluit
+G1 aan de regelschrijver overlaat in clingo überhaupt uitdrukbaar. De
+schrijffence merkte er niets van (`units_identical_ok` zwijgt zodra één
+kant `None` is), dus de fout zou stil zijn gebleven tot iemand de deling
+schreef.
+
+**`provably_unitless` en `provably_pure_pct` — als PAAR laten staan.** Hier
+is de val-door behoudend: "niet bewijsbaar eenheidloos" leidt tot een
+weigering, nooit tot een verkeerd antwoord. Toevoegen zou meer vertaalbaar
+maken, en het is even zeer `AANTAL`'s vraag als die van de nieuwe soort —
+twee soorten die dezelfde kardinaliteit opleveren horen hier niet uit
+elkaar te lopen. Gemeten waarom het geen kaartwerk is: over alle 703
+documenten in golden, rood, negatief en de pariteitszone staat een telling
+precies TWEE keer onder een vermenigvuldigende of delende knoop, en beide
+keren in `toka/`, waar clingo niet draait. MC4 bevestigt het van de andere
+kant: met beide tellingen erbij beweegt poort 6 geen cijfer. Een
+verbreding zonder getuige is precies wat de huisregel verbiedt, dus zij
+gaat niet stilzwijgend mee — zij is hier genoteerd als eigen vraag voor
+een kaart die er een casus bij heeft.
