@@ -257,17 +257,20 @@ vallen (en `case2` op de open-ondergrens); "tijdvrij matcht altijd" laat
 gevallen vallen. Het nieuwe krimphek is óók bewezen: één lijstzin in
 `ref/lib/eval.ml` herschreven en gate 8 faalt met naam en reden.
 
-Gates, elk los gedraaid, alle veertien groen: 1 PASS; 2 PASS (260
-documenten, vloer 192); 3 PASS (260 golden schoon, 420 negatief, vloer
-350); 4 PASS (607 casebestanden); 5 PASS (746 bewerkte voorbeelden, vloer
-489; 570 cases exact, vloer 427); 6 PASS (461 suitechecks, vloer 83; 570
-cases); 7 PASS (534 cases weerleggen de nietsdoener, 36 overlevers); 8
-PASS (37 rode cases, vloer 26; 74 fragmenten citeren geen van de 36
-bodemzinnen; Drools-been 9 fout-gepind, 28 niet-gedragen met reden); 9
-PASS (201 checks, 12 catala-goldens); 10 PASS (337 tests, 64
-rgs-goldens); 11 PASS (29/29); 12 PASS (played 170, DRL-tekst 147, JUnit
-509 tests, vloer 239); 13 PASS (131 verdraaiingen over 27 goldens, vloer
-74; 128 replays, 25 DRL-tekst); 14 PASS (130 checks, 2 flogic-goldens).
+Gates, elk los gedraaid na fixronde 2, alle veertien groen: 1 PASS; 2
+PASS (262 documenten, vloer 192); 3 PASS (262 golden schoon, 420
+negatief, vloer 350); 4 PASS (609 casebestanden); 5 PASS (755 bewerkte
+voorbeelden, vloer 489; 570 cases exact, vloer 427); 6 PASS (461
+suitechecks, vloer 83; 570 cases); 7 PASS (534 cases weerleggen de
+nietsdoener, 36 overlevers); 8 PASS (39 rode cases, vloer 26; 78
+fragmenten citeren geen van de 36 bodemzinnen; Drools-been 9 fout-gepind,
+30 niet-gedragen met reden); 9 PASS (201 checks, 12 catala-goldens); 10
+PASS (337 tests, 64 rgs-goldens); 11 PASS (29/29); 12 PASS (played 170,
+DRL-tekst 147, JUnit 509 tests, vloer 239); 13 PASS (131 verdraaiingen
+over 27 goldens, vloer 74; 128 replays, 25 DRL-tekst); 14 PASS (130
+checks, 2 flogic-goldens). De gate-12-pins bewogen NIET in fixronde 2 —
+de twee nieuwe vormen zijn in beide Drools-takken al een EXCLUDE, dus
+geen enkel golden wisselde van kanaal; nagemeten, niet aangenomen.
 
 Buiten de kaart gemeld, met mandaat. (1) `scripts/check-rood.sh`
 (**voorstel**): de bodemzin `condition kind not implemented in this card`
@@ -301,98 +304,24 @@ halve krimp is erger dan geen.
 Registervoorstel voor `spec/CONSTRUCTS.md` (niet aangeraakt; hoofdsessie
 landt). Er landt nu WEL semantiek, en de rij die deze vorm draagt is
 **rij 11** ("Timelines (granularity, variable starting points) +
-parameter vintages") samen met de §8.4.3-noemingen in de
-clip-delta-tekst. Voorgestelde toevoeging aan rij 11, achteraan:
+parameter vintages"), waar de §8.4.3-clip al als delta staat.
+Voorgestelde toevoeging aan rij 11, achteraan:
+
 *"**Landed (2026-09-20, card `ref-periodeconditie-arm`):** de §8.4.3
 periodeconditie op een SCALAIR doel — RUNTIME-SEMANTICS ch. 3.10's
 evaluatiedatum-poort — wordt uitgevoerd door alle vier de uitvoerders
 (`ref` en de ASP-backend gebouwd bij deze kaart, beide Drools-takken
 droegen hem al), met de zes clausules en het worked example gepind in
-`corpus/golden/jutterswet-premievenster` op beide wireposities en in
-`ref/test` als `WV-3.10`. Twee helften blijven tracked: de grensvorm
-buiten de v0-mirror-note (rode getuige `periodegrens-parameterdatum`,
-alle vier weigeren) en de CLIP op een temporeel doel (ch. 3.10's tweede
-geval, in beide OCaml-uitvoerders geweigerd bij de regel en suite-gepind)
-— vervolgkaart
+`corpus/golden/jutterswet-premievenster` en in `ref/test` als `WV-3.10`.
+De stand is PER WIREPOSITIE, want de mirror-note begrenst er twee: als
+hele regelvoorwaarde en als lid van een `ALLE`/`DE`-samenstelling
+uitgevoerd door alle vier; ONDER een tellende kwantor (`GEEN`,
+`TEN_MINSTE`, `TEN_HOOGSTE`, `PRECIES`) door alle vier geweigerd — de
+grens is van beide Drools-takken afgelezen, niet gekozen (rode getuige
+`periodevenster-tellende-kwantor`). Twee helften blijven tracked: de
+grensvorm buiten de v0-mirror-note (rode getuige
+`periodegrens-parameterdatum`) en de CLIP op een temporeel doel
+(ch. 3.10's tweede geval, rode getuige `periodevenster-tijdlijnkenmerk`,
+waar de doeltoets BEIDE declaratietabellen bevraagt — attribuut- én
+kenmerkgranulariteit) — vervolgkaart
 `backlog/new/20260920-tijdvenster-conditie-normeren.md`."*
-
----
-
-## Fixronde 2 (nalens, 2026-09-20): twee gaten in de as-toets en in het hek
-
-De nalens rekende de 84 verwachtingen onafhankelijk na (alle groen) en
-keurde de zes clausules, de golden, de armen en de rode getuige goed, maar
-vond twee blokkerende gaten plus een half gedragen mirror-note.
-
-**(1) Het temporele KENMERK-doel glipte door de doeltoets.** ch. 3.10
-splitst op het DOEL, en een kenmerk declareert zijn tijdlijn in
-`kenmerkGranulariteit` — een andere tabel dan `attribuutGranulariteit`.
-Beide clip-toetsen lazen alleen de attribuuttabel. Gemeten op een
-verifier-schoon document (kenmerk `geborgen`, JAAR-granulair,
-kenmerktoekenning met het venster als hele voorwaarde):
-
-| lezer | vóór de fix |
-|---|---|
-| clingo | **PLAYED de scalaire poort op een tijdlijn** — aanwezig binnen het venster, afwezig erbuiten |
-| `ref` | faalde, maar op een andere zin ("temporal writes are not implemented") — toeval, niet de splitsing |
-| Drools exec | `EXCLUDE … periodevergelijking op tijdsafhankelijk doel — §8.4.3 clip` |
-| Drools DRL-tekst | `EXCLUDE … TODO periodevergelijking op een tijdsafhankelijk doel (§8.4.3)` |
-
-Mijn eigen ch. 3.10-zin "so the scalar gate can never be applied to a
-timeline by accident" was daarmee onwaar. Beide uitvoerders vragen de
-kenmerktabel nu elk met een EIGEN lezer, en de spec-zin draagt nu zijn
-mechanisme. Rode getuige: `corpus/rood/periodevenster-tijdlijnkenmerk`.
-
-**(2) De tweede grens van de mirror-note ontbrak.** "…and refuse the
-condition under counting quantifiers" was niet gebouwd; onder `GEEN` gaven
-`ref` en clingo een lezing die nergens genormeerd is — het venster matcht
-niet in een tijdvrije sessie, `GEEN` complementeert dat naar waar, en de
-regel vuurt. De grens is GEMETEN en niet gekozen, één verifier-schoon
-document per kwantor:
-
-| kwantor | exec-model | DRL-tekst |
-|---|---|---|
-| `ALLE`, `DE` | PLAYED | PLAYED |
-| `GEEN`, `TEN_MINSTE`, `TEN_HOOGSTE`, `PRECIES` | transpiler SKIP | `TODO periodevergelijking onder een tellende kwantor (§8.4.3)` |
-
-De DRL-tak noemt de limiet dus zelf. `ref` en clingo weigeren nu diezelfde
-vier bij naam; `ALLE` en `DE` blijven gedragen en `ALLE` staat groen in de
-golden. Rode getuige: `corpus/rood/periodevenster-tellende-kwantor`. De
-kwantorVOUW rijdt mee op dezelfde weigering zonder eigen Drools-meting —
-opgeschreven, niet weggepoetst.
-
-**(3) Het machinale hek deed niet wat zijn kop beloofde.** Drie bewezen
-vals-PASS-modi, alle drie nu regel: de bronkolom werd gelezen en genegeerd
-(een verzonnen bestandsnaam passeerde), er werd gezocht in de CONCATENATIE
-van beide bronnen (voor de zes zinnen die in allebei staan was het hek
-blind — de nalens herschreef `ref`'s "unsupported temporal-read basis
-shape" en het hek zweeg), en een COMMENTAAR telde als drager. Het hek
-normaliseert en zoekt nu PER BESTAND, uitsluitend in het bestand dat de
-bronkolom noemt, en uitsluitend in CODE: commentaar gaat er nesting-bewust
-uit, daarna de regelvervolgen, de escaped quotes en de escaped bytes. Er
-staat een eigen zelftest bij, in de stijl van de `\u`-probe ernaast: één
-synthetische bron met drie zinnen — één omwikkeld, één met hex-escapes,
-één die alleen in commentaar staat — waarvan het hek de eerste twee moet
-vinden en de derde moet missen.
-
-**Mutatieproeven op de twee nieuwe wachten**, uitgevoerd en teruggedraaid.
-De clip-toets terugzetten op de attribuuttabel laat
-`periodevenster-tijdlijnkenmerk` bij naam vallen — en clingo meldt dan
-`EXPECTED FAULT DID NOT OCCUR: clingo found a model`, precies de stille
-as-verwisseling die de fix wegneemt. `GEEN` terugzetten in het gedragen
-paar laat `periodevenster-tellende-kwantor` in beide uitvoerders vallen.
-En de per-bestand-eis van het hek is bewezen op het voorbeeld van de
-nalens zelf: `ref`'s "unsupported temporal-read basis shape" herschrijven
-wordt nu betrapt, terwijl `translate.ml` de woorden nog draagt.
-
-**Klein meegenomen.** `spec/IR-SPEC.md` ch. 4.6 (t) zei dat beide zinnen
-bodemzinnen ZIJN; dat is sinds de krimp half onwaar en draagt nu een
-gedateerde bijzin. De golden-NOTE zei 12 verwachtingen per geval; het zijn
-er 14 sinds de uitbreiding. `Eval.bevat_periode` draagt een
-eerlijkheidsnotitie naar het `guard_on_doel`-precedent: op de
-clip-gevalsonderscheiding is `ref ≡ clingo` géén differentiaal, en juist
-die gedeelde wandeling hield de NIET-gedeelde doeltoets eromheen
-onzichtbaar — vandaar dat de doeltoets bewust ongedeeld blijft. En de
-latente tuple-volgorde in de dagarm is niet alleen geregistreerd maar
-vastgezet met een `let`; hij wordt pas scherp bij de grens-expressiekaart,
-en staat daar in de vervolgkaart bij.
