@@ -1,0 +1,55 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": { "vondsten": ["V1", "V2", "V3"] },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "vindplaats": { "text": "Noorderstrand" },
+          "vondstdag": { "date": "2026-05-01" },
+          "kustvak": { "enumeration": "noord" },
+          "geborgen": { "boolean": true }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "vindplaats": { "text": "Zuiderhoofd" },
+          "vondstdag": { "date": "2026-06-21" },
+          "kustvak": { "enumeration": "zuid" },
+          "geborgen": { "boolean": false }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "aantal aangemelde vondsten", "value": { "number": "3" } },
+    { "kind": "attributeValue", "label": "J1", "attribute": "aantal gevulde vindplaatsen", "value": { "number": "2" } },
+    { "kind": "attributeValue", "label": "J1", "attribute": "aantal gevulde vondstdagen", "value": { "number": "2" } },
+    { "kind": "attributeValue", "label": "J1", "attribute": "aantal gevulde kustvakken", "value": { "number": "2" } },
+    { "kind": "attributeValue", "label": "J1", "attribute": "aantal gevulde bergingsvlaggen", "value": { "number": "2" } },
+    { "kind": "consistent" }
+  ]
+}

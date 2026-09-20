@@ -83,3 +83,44 @@ twee boten bereikbaar is.
 De niet-numerieke getuige: drie vondsten, per waardesoort twee gevuld en
 één leeg, telkens 2. De booleaanse rij draagt `onwaar` als gevulde
 waarde — leeg is de afwezigheid van een waarde, `onwaar` is er een.
+
+## Voortgang
+
+### Stap 1 — rood-eerst: het corpus vóór de uitvoerders
+
+Vier zones toegevoegd, elk vóór enige uitvoerderswijziging gemeten:
+
+    corpus/golden/jutterswet-gevuldetelling    verifier PASS, ref PASS (7)
+                                               clingo: WEIGERT bij naam
+    corpus/golden/jutterswet-gevuldepad        verifier PASS, ref PASS (2+2)
+    corpus/golden/jutterswet-gevuldesoorten    verifier PASS, ref PASS (6)
+    corpus/rood/aantalgevulde-temporele-setbron
+                                               verifier PASS (de vorm is
+                                               WELGEVORMD — de weigering hoort
+                                               bij de uitvoerders, niet bij de
+                                               poort)
+                                               ref: verwachte fout gezien
+                                               clingo: MISMATCH — hij weigert
+                                               nog met kaart 1's naamzin in
+                                               plaats van met de temporele
+
+`ref` rekent alle drie de goldens meteen goed: hij draagt de vouw sinds
+kaart 1, en de handberekende getallen hierboven zijn precies wat hij
+antwoordt. Dat is de gewenste asymmetrie van deze kaart — het corpus pint
+wat `ref` al kan en dwingt de andere drie uitvoerders daarheen.
+
+De `bronPad`-golden is zo gebouwd dat de vlakke unie een ANDER getal geeft
+dan de joinkoppels: in `case2-gedeelde-bergplaats` bereiken vier boten drie
+bergplaatsen, waarvan P1 langs twee. Wie de koppels vouwt telt P1 twee keer
+en antwoordt 3; de gepinde 2 is de unie. Zonder dat verschil zou de casus
+niets onderscheiden.
+
+De gedeelde bergplaats vroeg om een ANDERE relatievorm dan de
+anker-golden `jutterswet-bootberging` gebruikt. Daar is de middenrelatie
+veel-op-veel, waardoor het beanmodel aan geen van beide kanten een veld
+afleidt en beide Drools-takken de golden bij naam weigeren. Hier lost een
+boot in ÉÉN bergplaats en delen meerdere boten er één — een
+veel-op-één-middenrelatie, waarvan het veld op de boot staat. Dat is
+dezelfde deelbaarheid met een beanveld eronder, dus de vraag "telt de unie
+of tellen de koppels" wordt in alle vier de uitvoerders gesteld in plaats
+van in twee.

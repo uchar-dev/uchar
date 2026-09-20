@@ -1,0 +1,21 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "J1", "objectType": "Jutter", "attributes": {}, "roles": { "gevoerde boot": ["B1", "B2", "B3", "B4"] }, "characteristics": [] },
+      { "label": "B1", "objectType": "Boot", "attributes": {}, "roles": { "losplaats": ["P1"] }, "characteristics": [] },
+      { "label": "B2", "objectType": "Boot", "attributes": {}, "roles": { "losplaats": ["P1"] }, "characteristics": [] },
+      { "label": "B3", "objectType": "Boot", "attributes": {}, "roles": { "losplaats": ["P2"] }, "characteristics": [] },
+      { "label": "B4", "objectType": "Boot", "attributes": {}, "roles": { "losplaats": ["P3"] }, "characteristics": [] },
+      { "label": "P1", "objectType": "Bergplaats", "attributes": { "vangstgewicht": { "number": "3.00" } }, "roles": {}, "characteristics": [] },
+      { "label": "P2", "objectType": "Bergplaats", "attributes": {}, "roles": {}, "characteristics": [] },
+      { "label": "P3", "objectType": "Bergplaats", "attributes": { "vangstgewicht": { "number": "5.00" } }, "roles": {}, "characteristics": [] }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "aantal gevulde bergplaatsen", "value": { "number": "2" } },
+    { "kind": "consistent" }
+  ]
+}
