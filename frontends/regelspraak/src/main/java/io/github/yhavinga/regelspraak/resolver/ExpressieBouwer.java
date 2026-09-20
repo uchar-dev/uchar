@@ -2483,7 +2483,15 @@ final class ExpressieBouwer {
 
     /** A comparison, with each operand offered the other's datatype as its enumeratiewaarde context. Every
      *  {@link Conditie.Vergelijking} the frontend builds goes through here, so the rule holds of comparisons
-     *  as such rather than of the handful of shapes a card happened to exercise. */
+     *  as such rather than of the handful of shapes a card happened to exercise.
+     *
+     *  <p>One caller reaches it only for operands that are already narrowed: {@link #elementVergelijking}
+     *  (the §5.6 die/dat subselectie on an aggregation operand) refuses any right-hand side that is neither
+     *  a Literal nor a ParameterRef BEFORE building the comparison, so an enumeratiewaarde marker never
+     *  arrives here and the whole predicaat is refused instead — an Onopgelost conditie or a reason-carrying
+     *  deelselectie, never a silently untyped comparison. That is the pre-existing narrowing of that
+     *  position, not a hole this rule opened: the position folds an AGGREGATED attribute, and no aggregation
+     *  ranges over an Enumeratie, so a well-typed enum comparison cannot stand there in the first place. */
     static Conditie.Vergelijking vergelijking(Conditie.Operator op, Expr links, Expr rechts,
                                               Conditie.GeheelPeriode periode, Bron bron) {
         Expr l = enumTegenContext(links, rechts == null ? null : rechts.type());

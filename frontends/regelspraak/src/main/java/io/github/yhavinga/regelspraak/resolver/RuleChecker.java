@@ -1602,9 +1602,12 @@ final class RuleChecker {
         Expr statisch = afgepeld(waardeExpr);
         // §13.3.4.2 membership runs BEFORE the Onbekend bail: an enumeratiewaarde carries no domain of its
         // own (it is the doel that supplies one), so the value's type says nothing about whether the label
-        // is declared. The label is read through the shared helper because the promotion above does NOT
-        // descend into a Let chain: a value written via the variabelendeel is still an unpromoted marker
-        // here, and this check must see through the chain exactly as it did before.
+        // is declared. The label is read through the shared helper because the promotion above reaches a
+        // Let chain only as far as the chain's own body leads it: the DIRECT chain is promoted (`Daarbij
+        // geldt: de tint is 'gaaf'` writes a fully typed Let), but a NESTED one whose body reads an outer
+        // binder past an inner Let is not — afgepeld resolves that shape through its bindings map where
+        // enumTegenContext, which walks the body, cannot. Measured: a rule reading `de tweede`, defined as
+        // `de tint`, defined as the literal, keeps the marker AND still reports an undeclared label here.
         keurEnumLabel(doelType, ExpressieBouwer.enumLabelVanWaarde(statisch), line);
         keurTeken(doelType, statisch, line);   // §3.3.1 Teken-beperking, static over a literal value
         if (doelType.isOnbekend() || waardeType.isOnbekend()) return; // not enough resolved to judge

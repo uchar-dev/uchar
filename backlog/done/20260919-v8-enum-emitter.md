@@ -109,7 +109,16 @@ erft de promotie dus gratis. (2) De andere VERGELIJKINGSZIJDE: het type
 van de zusteroperand, symmetrisch, dus de literal promoveert links zowel
 als rechts. Alle zes bouwplaatsen van een `Conditie.Vergelijking` lopen
 nu door één fabriek, zodat de regel geldt van vergelijkingen als zodanig
-en niet van de vormen die deze kaart toevallig aanraakte. De promotie
+en niet van de vormen die deze kaart toevallig aanraakte — met één
+uitzondering, die de fabriek zelf benoemt: `elementVergelijking` (de
+§5.6 die/dat-subselectie op een aggregatie-operand) weigert vóór het
+bouwen elke rechterzijde die geen Literal of ParameterRef is, dus daar
+bereikt een marker de fabriek nooit en wordt het hele predicaat
+geweigerd in plaats van stil ongetypeerd vergeleken. Dat is de
+bestaande versmalling van die positie en geen gat dat deze regel sloeg:
+zij vouwt een GEAGGREGEERD attribuut, en geen aggregatie loopt over een
+`Enumeratie`, dus een welgetypeerde enumvergelijking kan er niet staan.
+De promotie
 daalt ook af door de ch.-4.10-letketen van een variabelendeel, want die
 DENOTEERT haar waarde: zonder dat zou `Daarbij geldt: de tint is 'gaaf'`
 het onbekend-sentinel op DRIE posities dragen (Let, BinderRef, waarde)
@@ -195,12 +204,21 @@ lijsten.
 DE OORZAAK VAN DIE WEIGERING, gemeten en BUITEN SCOPE gehouden. De
 gedeelde lezer `Literalen.tekstOfEnumLabel` geeft voor een niet-Tekst
 literal `enumLabel(waarde)` terug, en die verlangt DELIMITERS: op een
-WF-039-conforme kale waarde geeft hij null. De drie arms in
-`ExecModelTranspiler` (3913, 3928, 5422) en die in `DrlTranspiler`
-(5114) bewaken zich met `tekstOfEnumLabel(lit) != null`, dus de
-Drools-backend kan geen enkele enumgelijkheid van een conforme wire
-lezen — de lezer implementeert de ch.-4.1-zin die deze kaart juist
-corrigeert. Dat is de consumentenkant en die staat in deze kaart
+WF-039-conforme kale waarde geeft hij null. VIJF plekken lezen door hem
+heen: drie vergelijkingsarms in `ExecModelTranspiler` (3913 eigen
+attribuut, 3928 genavigeerd, 5422), één in `DrlTranspiler` (5114), en —
+de plek die de SCHRIJFzijde draagt — de waarde-arm
+`ExecModelTranspiler:4185` (`String tekstLabel = … tekstOfEnumLabel(tlit)`),
+die een enumliteral als geschreven waarde in een String-constante
+omzet. De backend weigert dus niet alleen elke enumGELIJKHEID van een
+conforme wire maar ook elke enumTOEKENNING. Apart gemeten op een
+variant van deze golden zonder voorwaarde
+(`De bestemming van een Vondst moet gesteld worden op 'wrakgoed'.`):
+exec-model `transpiler SKIP: regel (waarde buiten scope)`, DRL-tekst
+`MARKER: TODO literal: wrakgoed` — de schrijfhelft van de golden zou
+dus ook zonder haar voorwaarde geweigerd zijn. De lezer implementeert
+de ch.-4.1-zin die deze kaart juist corrigeert. Dat is de consumentenkant
+en die staat in deze kaart
 uitdrukkelijk buiten scope; hij is ook niet gratis, want het repareren
 verschuift `jutterswet-keurstaat` én `jutterswet-vondstklasse` van
 EXCLUDE naar PLAYED in beide takken en dus `EXPECTED_PLAYED` 164 → 166
@@ -267,11 +285,20 @@ aankondigde:
 KAARTVOORSTEL (nieuw, voor `backlog/new/`) —
 `drools-enumlabel-lezer`: `Literalen.tekstOfEnumLabel` leest een
 enumeratiewaarde door `enumLabel`, dat delimiters verlangt, terwijl de
-wire per WF-039 het kale label draagt; daardoor weigeren beide
-Drools-takken elke enumgelijkheid (`jutterswet-keurstaat`,
-`jutterswet-vondstklasse`). De reparatie is klein — de lezer moet het
-label van een `Enumeratie`-getypeerde literal verbatim teruggeven — maar
-de gevolgen zijn kanaalgevolgen: `EXPECTED_PLAYED` 164 → 166,
+wire per WF-039 het kale label draagt. Vijf plekken lezen door die lezer
+heen, en het zijn niet alleen vergelijkingen: `ExecModelTranspiler` 3913
+(eigen attribuut), 3928 (genavigeerd) en 5422, `DrlTranspiler` 5114, en
+de WAARDE-arm `ExecModelTranspiler:4185`, die een enumliteral als
+geschreven waarde omzet. Beide Drools-takken weigeren daardoor zowel
+elke enumgelijkheid als elke enumtoekenning — apart gemeten op een
+voorwaardeloze variant: exec-model `waarde buiten scope`, DRL-tekst
+`TODO literal: wrakgoed`. De twee geraakte goldens zijn
+`jutterswet-keurstaat` en `jutterswet-vondstklasse`. De reparatie is
+klein en zit op ÉÉN plek: de lezer geeft het label van een
+`Enumeratie`-getypeerde literal verbatim terug, precies zoals de
+Tekst-arm doet, waarmee alle vijf plekken gratis meekomen — geen van de
+call sites hoeft te wijzigen. De gevolgen zijn kanaalgevolgen:
+`EXPECTED_PLAYED` 164 → 166,
 `EXPECTED_DRL_PLAYED` 141 → 143 en twee regels uit elke kanaallijst, dus
 serieel plannen tegen andere kaarten op `scripts/check-drools.sh`. Het
 levert twee goldens erbij aan het volledige vierkant.
