@@ -3843,6 +3843,16 @@ public final class DrlTranspiler {
             default -> null;
         };
         if (elem == null || fn == null) return null;
+        // The emitted sum()/min()/max() folds a BigDecimal getter, and a member that is not a number
+        // has no place in it: until 2026-09-20 this branch emitted DRL that did not COMPILE ("Unable
+        // to Analyse Expression") over a date-valued member, which reaches a report as a whole-file
+        // compile refusal naming no form at all. Asked through the reason the exec branch shares, so
+        // the two branches cannot drift into two wordings for one limit.
+        if (!fn.equals("count") && !f.argumenten().isEmpty()
+                && f.argumenten().get(0) instanceof Expr.AttribuutRef va) {
+            String vw = io.github.yhavinga.regelspraak.transpiler.kern.Vouwwaarde.weigering(f, elem, va);
+            if (vw != null) { navReden = vw; return null; }
+        }
         // IR-SPEC ch. 4.3 / WF-102: a RANGE that is a PATH replaces the one-step join entirely. Resolved BEFORE
         // scope() and instead of it, because the by-pair search that function performs is exactly the wrong
         // answer here — it binds whatever DIRECT relation happens to connect subject and element and folds that

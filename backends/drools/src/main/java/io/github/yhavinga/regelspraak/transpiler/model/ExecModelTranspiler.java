@@ -915,6 +915,13 @@ public final class ExecModelTranspiler {
         // three in step instead of answering from whichever bucket the getter happens to hand over.
         if (temporeel && f.kind() != Expr.FunctieKind.SOM && f.kind() != Expr.FunctieKind.TOTAAL) return null;
         if (!count && arg == null) return null;   // sum/min/max/filled-count need an attribute to fold
+        // The VALUE fold below accumulates in BigDecimal, and a member that is not a number has no
+        // place in it — it used to CRASH there rather than decline (a ClassCastException on the
+        // som/totaal bind, an IllegalStateException out of the min/max accumulate cast). A crash
+        // names no form and reaches the gate as an ERROR instead of as a channel with a reason, so
+        // the question is asked here, before anything lowers, through the reason BOTH branches share.
+        String vw = io.github.yhavinga.regelspraak.transpiler.kern.Vouwwaarde.weigering(f, elem, arg);
+        if (vw != null) { aggregatieReden = vw; return null; }
 
         // IR-SPEC ch. 4.3 / WF-102: a RANGE that is a PATH replaces the whole one-step join derivation below. It is
         // read first and returns, so a document carrying a path never falls through to the by-pair search — that

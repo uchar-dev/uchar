@@ -248,6 +248,7 @@ EXPECTED_CHANNEL=(
   "jutterswet-vaarwaterspelling|EXCLUDE|loader Refusal: Expr:Match"
   "jutterswet-vaarwatertoeslag-catala|EXCLUDE|loader Refusal: Expr:Match"
   "jutterswet-vangstwaardering|EXCLUDE|loader Refusal: Datatype:StructType"
+  "jutterswet-vondstbereik|EXCLUDE|transpiler SKIP: regel 'vroegste vondstdag van een jutter' — the MINIMUM/MAXIMUM fold over a DATE set source (card datum-setbron-breuk, 2026-09-20). Both branches accumulate a VALUE fold in BigDecimal, so a date-valued member has no place in it: until this card they CRASHED there (a ClassCastException on the som/totaal bind, an IllegalStateException out of the min/max accumulate cast) and they now refuse BY NAME, with the sentence saying WHICH kind of refusal it is — the ordering reading IS well defined (ch. 1.2e) and both OCaml executors carry it, so this is a gap in THIS backend and not a semantic difference. The golden's absolute pins are therefore a ref = clingo pair, exactly as its EERSTE/LAATSTE twin jutterswet-vondstvenster's are, and that is recorded here rather than hidden"
   "jutterswet-vondsttarief|EXCLUDE|transpiler SKIP: regel — waarde buiten scope"
   "jutterswet-vondstvenster|EXCLUDE|transpiler SKIP: regel 'eerste vondstdag van een jutter' — waarde buiten scope. The EERSTE/LAATSTE fold over a SET source (card eerste-laatste-setvouw-kloof, 2026-09-19) is carried by ref and, since that card, by the ASP backend; this backend lowers neither branch of it — the exec-model transpiler drops the rule per form, and the DRL-text branch deposits a named marker ('TODO aggregatie EERSTE'). So the golden's absolute pins are a ref = clingo pair, not the full square, and that is recorded here rather than hidden: the two-executor agreement is what gates 5 and 6 verify on it. Lifting either branch is Drools work with its own card"
   "jutterswet-vormenkabinet|NOCASE|a golden with no case file — nothing to replay"
@@ -806,12 +807,16 @@ DRL_CHANNEL=(
   "synth3-standtarief|EXCLUDE|loader Refusal: Datatype:SumType"
   "synth3-vangstsom|EXCLUDE|loader Refusal: Datatype:ListType"
   "synth3-vondststaat|EXCLUDE|loader Refusal: Datatype:StructType"
-  # (C) DrlTranspiler MARKERs — 11, this branch's own per-form refusals, each naming the rule it
+  # (C) DrlTranspiler MARKERs — 12, this branch's own per-form refusals, each naming the rule it
   # could not lower. Recounted 2026-09-20 (card drools-enumlabel-lezer) against the exec sweep, and
   # the class header was carrying 12 over a list of 13: the v8-enum-emitter addition had not been
-  # counted. EIGHT of the eleven are goldens the exec branch refuses too, on its own wording of the
+  # counted. It went 11 -> 12 the same day (card datum-setbron-breuk): jutterswet-vondstbereik, the
+  # MINIMUM/MAXIMUM fold over a DATE set source, which this branch used to emit as DRL text that did
+  # not compile — a whole-file refusal naming no form — and now markers by name out of the shared
+  # reason. NINE of the twelve are goldens the exec branch refuses too, on its own wording of the
   # same limit (the many-to-many bean field, the unresolved verdeling, the consistency rule, the
-  # EERSTE fold over a set, and the out-of-scope condition — jutterswet-klipwacht, shared, not split).
+  # EERSTE fold over a set, the date-valued value fold, and the out-of-scope condition —
+  # jutterswet-klipwacht, shared, not split).
   # THREE are this branch alone, and the exec branch PLAYS all three:
   #   anchor/jutterswet-wachtersketen (exec PLAYED 2), synth2-budgetgrens-onder (exec PLAYED 1) —
   #     both an OBJECTCREATIE marker on the same unresolved back-link to Wachter. That is what is
@@ -829,6 +834,7 @@ DRL_CHANNEL=(
   "anchor/jutterswet-wachtersketen|EXCLUDE|MARKER objectcreatie: unresolved back-link to Wachter"
   "jutterswet-klipwacht|EXCLUDE|MARKER regel: TODO voorwaarde — the gedurende clip as a composite member"
   "jutterswet-muntketen|EXCLUDE|MARKER regel: bronPad step Boot -> Munt has no bean field — the same many-to-many middle relation"
+  "jutterswet-vondstbereik|EXCLUDE|MARKER regel: the MINIMUM/MAXIMUM fold over a DATE set source — the shared member-type reason, word for word the exec branch's (card datum-setbron-breuk, 2026-09-20). Its EERSTE/LAATSTE twin sits one line below and is refused one arm earlier, on the fold KIND rather than on the member type"
   "jutterswet-vondstvenster|EXCLUDE|MARKER regel: TODO aggregatie EERSTE over a set source"
   "jutterswet-vouwrand|EXCLUDE|MARKER regel: TODO voorwaarde — a conjunction of comparisons"
   "synth2-budgetgrens-onder|EXCLUDE|MARKER objectcreatie: unresolved back-link to Wachter"
