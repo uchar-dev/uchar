@@ -138,12 +138,49 @@ row); **the shared reader closed 2026-09-23 (card
 lexeme whole (fixed widths, calendar) where it searched with `find()` —
 `2024-01-2026` played as 2024-01-20 on both Drools branches, and the
 day-first snippet was read too — and an unreadable date lexeme is now
-refused by name on both branches (`voorwaarde met onleesbaar
-datum-lexeem`); the frontend's source reading moved to its own reader;
-no document moved".
+refused on both branches: named at a comparison (`voorwaarde met
+onleesbaar datum-lexeem`), elsewhere under the position's own reason
+(value position, period bound, used day kind — each witnessed in
+`DatumLexeemWitnessTest`), never answered; the frontend's source reading
+moved to its own reader; no document moved".
 
-**Open:** alleen de VERGELIJKINGSpositie heeft een benoemde
-weigeringsreden. Een onleesbaar datumlexeem op een waardepositie, een
-periodegrens of in een dagsoort levert ook null en dus geen stil ander
-antwoord, maar valt terug op de generieke reden van die positie; geen
-corpusdrager, niet uitgebreid.
+**Fixronde (lens 2026-09-23).** Het open punt van de eerste ronde
+(andere posities dan de vergelijking) had geen getuige: lens-mutant MC
+(`ExecModelTranspiler`, waardepositie `return d == null ? null :
+WaardeFn.constant(d)` → `return WaardeFn.constant(d)`) liet de exec-tak
+stil "verwacht 2024-01-20, werkelijk leeg" antwoorden met alle 582 tests
+groen. Drie getuigen erbij in `DatumLexeemWitnessTest`, elk met het ISO-
+lexeem als speelcontrole en de drie misvormde lexemen als weigering, de
+reden gepind die er werkelijk uit komt:
+
+- waardepositie (GELIJKSTELLING `peildag` := literal): exec `regel
+  (waarde buiten scope): Peildag`, DRL `TODO datumliteral: <lexeem>`;
+- periodegrens (golden `jutterswet-premievenster`, eerste venster `tot`
+  → `2025-01-2026`): exec `voorwaarde met onleesbaar datum-lexeem`, DRL
+  `TODO periodevergelijking-grens (§8.4.3)`; de oude jar speelde dit
+  (`PLAYED 1`, dus als 2025-01-20);
+- gebruikte dagsoort (`zijn vondstdag is een peildag`, dagsoort
+  vergelijkt `de dag` met de literal): exec `voorwaarde buiten Phase-B
+  scope`, DRL `TODO dagsoortcontrole 'peildag'`; de oude jar speelde
+  `2024-01-2026` en `20-01-2024` als 2024-01-20 (`PLAYED 1` op een
+  casus gepind op die dag).
+
+Rood-eerst onder MC zelf, uitgevoerd: `DatumLexeemWitnessTest.
+een_misvormd_datumlexeem_op_een_waardepositie_wordt_op_beide_takken_
+geweigerd:118 the exec-model branch refuses the value '2024-01-2026'
+instead of writing leeg ==> Expected ...CaseRunner.Excluded to be
+thrown, but nothing was thrown.` (7 tests, 1 failure); herstel `cmp
+identiek`. Lens-mutant MA (`ISO_DATUM` met `(?:dd\. +)?`): nieuwe pins
+rood — `de_lezer_weigert_elke_vorm_buiten_het_hele_lexeem:80 the
+de-dato prefix before an ISO lexeme is not the lexeme ==> expected:
+<null> but was: <2024-01-31>` en frontend `het_bronsnippet_is_geen_
+wire_lexeem ✘ het dd.-voorvoegsel voor een ISO-datum is geen lexeem ==>
+expected: <null> but was: <2024-12-25>`; herstel `cmp identiek`.
+
+De weigerzin in IR-SPEC (WF-084-alinea, voorstel) is beperkt tot "at a
+comparison each branch names the unreadable date lexeme; elsewhere the
+rule is refused under its position's own reason, never answered".
+
+**Open:** geen. Een lexeemreden op de andere posities is niet
+toegevoegd; de getuigen pinnen de positiereden die er vandaag uitkomt,
+zodat een latere benoeming die pin bewust moet bijstellen.

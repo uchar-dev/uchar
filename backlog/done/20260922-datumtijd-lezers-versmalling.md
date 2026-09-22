@@ -206,11 +206,27 @@ gewoon bijgewerkt.
 form no producer writes and no verifier admits is unwitnessed
 behaviour)**: ref and clingo (which reads the literal through ref's
 reader) fault on the snippet quoting the lexeme, the shared Drools
-reader `Literalen.parseDatumTijd` yields no value and both transpiler
-branches refuse the rule as an unreadable datum-tijd lexeme; the
+reader `Literalen.parseDatumTijd` yields no value — at a comparison both
+transpiler branches name the unreadable datum-tijd lexeme, elsewhere the
+rule is refused under its position's own reason, never answered; the
 frontend reads its own source snippet with a reader in `ExpressieBouwer`
 that the backend does not build — no document moved (both-branch sweep
 byte-identical, gates 10/11 byte-identical, gate-12 pins 180/157)".
+
+**Fixronde (lens 2026-09-23).** De lens mat 191 misvormde varianten over
+alle leesposities en vond geen stil ander antwoord, maar vier
+weigerzinnen claimden te veel: alleen op de VERGELIJKINGSpositie noemt
+Drools het lexeem; elders weigert de positie onder haar eigen reden
+(exec "waarde buiten scope", DRL "TODO datum-rekenkunde"/"tijdsduur"/
+"datumliteral"). Beperkt in IR-SPEC (WF-095-alinea en -registerrij,
+WF-084-alinea; voorstel) en in de registerrijtekst hierboven; twee te
+lange IR-SPEC-regels opnieuw afgebroken. Nieuwe ref-pin
+`WF-095-weigert-dedato-prefix-voor-iso` (`dd. 2026-03-15T12:00:00`),
+rood-eerst onder lens-mutant ME (voorvoegsel in `read_iso_datetime`
+overslaan): `FAIL WF-095-weigert-dedato-prefix-voor-iso (no fault at
+all)`, `1 failure(s)`; herstel `cmp identiek`, 780 groen. Idem
+`LiteralenTest`: `dd. 2024-12-25T10:30:00.500` null. De
+positiegetuigen staan in het Result van `datum-lexeem-hele-match`.
 
 **Open:** niets voor deze kaart. `spec/RUNTIME-SEMANTICS.md` noemt de
 snippet niet (gecontroleerd).
