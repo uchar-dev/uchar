@@ -3139,8 +3139,14 @@ let ever_tuples env ~otype ~keys (i : World.instance) : string list =
           (fun v -> if v = Value.Empty then [] else tuples (v :: acc) rest)
           (carried k)
   in
+  (* an enumeration key component is a declared name, compared up to
+     [norm] exactly as [Arith.equal] compares two labels: a case input
+     spelled "Gaaf" and one spelled "gaaf" carry ONE key, as clingo's
+     normalised storage already reads them (card
+     drools-enumnaam-identiteit, maintainer decision 2026-09-20) *)
+  let key_lexeme = function Value.Enum s -> norm s | v -> Value.to_string v in
   tuples [] keys
-  |> List.map (fun vs -> String.concat "\x00" (List.map Value.to_string vs))
+  |> List.map (fun vs -> String.concat "\x00" (List.map key_lexeme vs))
   |> List.sort_uniq String.compare
 
 let run_uniciteit env world (u : resolved_uniciteit) =

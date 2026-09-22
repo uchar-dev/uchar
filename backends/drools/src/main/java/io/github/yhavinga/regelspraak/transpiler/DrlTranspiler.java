@@ -725,6 +725,10 @@ public final class DrlTranspiler {
                 // ever-uniqueness (uchar RS ch. 5.9, both forms): a temporal key joins on the
                 // EVER-value intersection — the same shared predicate the union emits
                 matchers.append(fnImport("rsOoitBotst")).append("(").append(prop).append(", $k").append(i).append(")");
+            else if (u.subject().attribuut(sleutelVeld(u.subject(), u.sleutels().get(i))) instanceof Datatype.Enumeratie)
+                // an enumeration key is a declared name: two spellings of one label are ONE key (ref, clingo)
+                matchers.append(fnImport("rsEnumNaam")).append("(").append(prop).append(") == ")
+                        .append(fnImport("rsEnumNaam")).append("($k").append(i).append(")");
             else
                 matchers.append(prop).append(" == $k").append(i);
             if (i < u.sleutels().size() - 1) { binders.append(", "); matchers.append(", "); }
@@ -784,6 +788,11 @@ public final class DrlTranspiler {
                     else if (subjectTemporeel)
                         // MIXED, the mirror: this source's plain value against the subject's timeline
                         match.append(fnImport("rsOoitBevat")).append("($k").append(i).append(", ").append(veld).append(")");
+                    else if (b.type().attribuut(sleutelVeld(b.type(), b.sleutels().get(i))) instanceof Datatype.Enumeratie
+                            || subj.type().attribuut(sleutelVeld(subj.type(), subj.sleutels().get(i))) instanceof Datatype.Enumeratie)
+                        // an enumeration key is a declared name (WF-030 keeps the kind equal across the sources)
+                        match.append(fnImport("rsEnumNaam")).append("(").append(veld).append(") == ")
+                             .append(fnImport("rsEnumNaam")).append("($k").append(i).append(")");
                     else
                         match.append(veld).append(" == $k").append(i);
                 }
@@ -889,7 +898,8 @@ public final class DrlTranspiler {
             // (§9.5 reading: a criterion is satisfied only when its comparison is "waar"; "fout" is a violation).
             Frag l = operand(acc, v.links(), subject), r = operand(acc, v.rechts(), subject);
             if (l.marker() || r.marker()) return null;
-            return "(" + l.text() + " != " + r.text() + " || (" + l.text() + " == null && " + r.text() + " == null))";
+            String[] o = vergelijkingsOperanden(l.text(), effType(v.links()), r.text(), effType(v.rechts()));
+            return "(" + o[0] + " != " + o[1] + " || (" + l.text() + " == null && " + r.text() + " == null))";
         }
         Conditie schending = negeer(assertie);
         if (schending == null) return null;
@@ -5294,8 +5304,19 @@ public final class DrlTranspiler {
      *  restates BOTH operands in their shared canonical unit by the DECLARED (exact) factorNaarCanoniek,
      *  so the comparison scales exactly (24 == 24). No conversion when units match or are absent; a
      *  composite (rate) unit keeps the single-operand ratio (its precision edge is carded). Returns
-     *  {leftOut, rightOut}. */
+     *  {leftOut, rightOut}.
+     *
+     *  <p>An ENUMERATION comparison goes through here too, and its operands are read as the declared names they
+     *  are: both wrapped in the runtime's {@code rsEnumNaam} (ref's {@code Checks.norm}, null left null), which is
+     *  the identity ref and clingo compare labels by and the one the exec-model branch applies. Wrapping the
+     *  OPERANDS rather than rewriting the operator keeps every caller's leegwaarde guard as it was. Either side
+     *  decides, because an Onbekend-typed quoted literal from the source path carries no enumeration type of its
+     *  own. The literal itself stays verbatim in {@link #literal}, which also serves the write position. */
     private String[] vergelijkingsOperanden(String l, Datatype lt, String r, Datatype rt) {
+        if (lt instanceof Datatype.Enumeratie || rt instanceof Datatype.Enumeratie) {
+            String f = fnImport("rsEnumNaam");
+            return new String[]{f + "(" + l + ")", f + "(" + r + ")"};
+        }
         io.github.yhavinga.regelspraak.model.Eenheid el = lt.eenheidOf(), er = rt.eenheidOf();
         Eenheidsconflict.eisHerschaalbaar(el, er, "een §5.1 vergelijking (DRL-tekst)");
         if (el == null || er == null || !el.convertibleNaar(er) || !el.vereistOmrekening(er))

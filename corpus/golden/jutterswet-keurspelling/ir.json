@@ -1,0 +1,451 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Vondst": {
+      "node": "Objecttype",
+      "naam": "Vondst",
+      "attributen": {
+        "staat": {
+          "node": "Enumeratie",
+          "domein": "Keurklasse",
+          "waarden": [
+            "gaaf",
+            "beschadigd",
+            "wrakhout"
+          ]
+        },
+        "herkeuring": {
+          "node": "Enumeratie",
+          "domein": "Keurklasse",
+          "waarden": [
+            "gaaf",
+            "beschadigd",
+            "wrakhout"
+          ]
+        }
+      },
+      "attribuutMeervoud": {
+        "staat": "staten"
+      },
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "veilbaar",
+        "afgekeurd",
+        "bevestigd"
+      ],
+      "kenmerkSoorten": {
+        "veilbaar": "BIJVOEGLIJK",
+        "afgekeurd": "BIJVOEGLIJK",
+        "bevestigd": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Vondsten"
+    }
+  },
+  "domeinen": {
+    "Keurklasse": {
+      "node": "Enumeratie",
+      "domein": "Keurklasse",
+      "waarden": [
+        "gaaf",
+        "beschadigd",
+        "wrakhout"
+      ]
+    }
+  },
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "veilbaarheid naar staat",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "afkeuring naar staat",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "herkeuring bevestigt de staat",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "geen wrakhout ter keuring",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "herkeuring volgt de staat",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "eenmalige staat",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "veilbaarheid naar staat",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "veilbaar",
+        "objecttype": "Vondst",
+        "onderwerpBron": "Een Vondst",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Vondst is veilbaar",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "GELIJK",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "staat",
+          "objecttype": "Vondst",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "Enumeratie",
+            "domein": "Keurklasse",
+            "waarden": [
+              "gaaf",
+              "beschadigd",
+              "wrakhout"
+            ]
+          },
+          "bron": "zijn staat",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "gaaf",
+          "type": {
+            "node": "Enumeratie",
+            "domein": "Keurklasse",
+            "waarden": [
+              "gaaf",
+              "beschadigd",
+              "wrakhout"
+            ]
+          },
+          "bron": "'gaaf'"
+        },
+        "periode": null,
+        "bron": "zijn staat gelijk is aan 'gaaf'"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "afkeuring naar staat",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "afgekeurd",
+        "objecttype": "Vondst",
+        "onderwerpBron": "Een Vondst",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Vondst is afgekeurd",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "ONGELIJK",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "staat",
+          "objecttype": "Vondst",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "Enumeratie",
+            "domein": "Keurklasse",
+            "waarden": [
+              "gaaf",
+              "beschadigd",
+              "wrakhout"
+            ]
+          },
+          "bron": "zijn staat",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "gaaf",
+          "type": {
+            "node": "Enumeratie",
+            "domein": "Keurklasse",
+            "waarden": [
+              "gaaf",
+              "beschadigd",
+              "wrakhout"
+            ]
+          },
+          "bron": "'gaaf'"
+        },
+        "periode": null,
+        "bron": "zijn staat ongelijk is aan 'gaaf'"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "herkeuring bevestigt de staat",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "bevestigd",
+        "objecttype": "Vondst",
+        "onderwerpBron": "Een Vondst",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Vondst is bevestigd",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "GELIJK",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "herkeuring",
+          "objecttype": "Vondst",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "Enumeratie",
+            "domein": "Keurklasse",
+            "waarden": [
+              "gaaf",
+              "beschadigd",
+              "wrakhout"
+            ]
+          },
+          "bron": "zijn herkeuring",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "AttribuutRef",
+          "attribuut": "staat",
+          "objecttype": "Vondst",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "Enumeratie",
+            "domein": "Keurklasse",
+            "waarden": [
+              "gaaf",
+              "beschadigd",
+              "wrakhout"
+            ]
+          },
+          "bron": "zijn staat",
+          "set": false,
+          "navigatiePad": []
+        },
+        "periode": null,
+        "bron": "zijn herkeuring gelijk is aan zijn staat"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [
+    {
+      "node": "ResolvedConsistentie",
+      "naam": "geen wrakhout ter keuring",
+      "subject": "Vondst",
+      "assertie": {
+        "node": "Vergelijking",
+        "op": "ONGELIJK",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "staat",
+          "objecttype": "Vondst",
+          "onderwerpBron": "een Vondst",
+          "navigatieRol": null,
+          "type": {
+            "node": "Enumeratie",
+            "domein": "Keurklasse",
+            "waarden": [
+              "gaaf",
+              "beschadigd",
+              "wrakhout"
+            ]
+          },
+          "bron": "De staat van een Vondst",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "wrakhout",
+          "type": {
+            "node": "Enumeratie",
+            "domein": "Keurklasse",
+            "waarden": [
+              "gaaf",
+              "beschadigd",
+              "wrakhout"
+            ]
+          },
+          "bron": "'wrakhout'"
+        },
+        "periode": null,
+        "bron": "De staat van een Vondst moet ongelijk zijn aan 'wrakhout'"
+      },
+      "bron": "De staat van een Vondst moet ongelijk zijn aan 'wrakhout'",
+      "line": 30,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedConsistentie",
+      "naam": "herkeuring volgt de staat",
+      "subject": "Vondst",
+      "assertie": {
+        "node": "Vergelijking",
+        "op": "GELIJK",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "herkeuring",
+          "objecttype": "Vondst",
+          "onderwerpBron": "een Vondst",
+          "navigatieRol": null,
+          "type": {
+            "node": "Enumeratie",
+            "domein": "Keurklasse",
+            "waarden": [
+              "gaaf",
+              "beschadigd",
+              "wrakhout"
+            ]
+          },
+          "bron": "De herkeuring van een Vondst",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "AttribuutRef",
+          "attribuut": "staat",
+          "objecttype": "Vondst",
+          "onderwerpBron": "de Vondst",
+          "navigatieRol": null,
+          "type": {
+            "node": "Enumeratie",
+            "domein": "Keurklasse",
+            "waarden": [
+              "gaaf",
+              "beschadigd",
+              "wrakhout"
+            ]
+          },
+          "bron": "de staat van de Vondst",
+          "set": false,
+          "navigatiePad": []
+        },
+        "periode": null,
+        "bron": "De herkeuring van een Vondst moet gelijk zijn aan de staat van de Vondst"
+      },
+      "bron": "De herkeuring van een Vondst moet gelijk zijn aan de staat van de Vondst",
+      "line": 34,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "uniciteiten": [
+    {
+      "node": "ResolvedUniciteit",
+      "naam": "eenmalige staat",
+      "subject": "Vondst",
+      "sleutels": [
+        "staat"
+      ],
+      "scopeVeld": null,
+      "bron": "De staten van alle Vondsten moeten uniek zijn.",
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

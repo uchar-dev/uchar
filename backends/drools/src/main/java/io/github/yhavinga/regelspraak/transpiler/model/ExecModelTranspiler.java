@@ -3542,16 +3542,17 @@ public final class ExecModelTranspiler {
             if (g == null) return null;
             String attr = la.attribuut();
             boolean gelijk = v.op() == Conditie.Operator.GELIJK;
+            java.util.function.UnaryOperator<Object> n = gelijkheidsLezing(la.type(), pr.parameter().datatype());
             if (la.navigatieRol() == null) {
                 if (subject == null || !subject.heeftLid(attr)) return null;
                 return new Gate(pattern.expr(nextId("c"), (Variable) g, (Predicate2) (s, gv) ->
-                        tekstVergelijk(RegelSpraakRuntime.get(s, attr), gv, gelijk)), List.of());
+                        tekstVergelijk(n.apply(RegelSpraakRuntime.get(s, attr)), n.apply(gv), gelijk)), List.of());
             }
             String rol = navComparisonRole(la, subject);
             if (rol == null) return null;
             return new Gate(pattern.expr(nextId("c"), (Variable) g, (Predicate2) (s, gv) -> {
                 Object rel = RegelSpraakRuntime.get(s, rol);
-                return tekstVergelijk(rel == null ? null : RegelSpraakRuntime.get(rel, attr), gv, gelijk);   // §5.5.5 null relation -> leeg
+                return tekstVergelijk(n.apply(rel == null ? null : RegelSpraakRuntime.get(rel, attr)), n.apply(gv), gelijk);   // §5.5.5 null relation -> leeg
             }), List.of());
         }
         // §8.1.1 a comparison vs a numeric Parameter-GLOBAL needs a 2-var expr (the global as a pattern variable),
@@ -3704,6 +3705,15 @@ public final class ExecModelTranspiler {
     /** §13.3.3.4 Tekst OR §13.2.14 Enumeratie — both compare by String-label equality (an enumeratiewaarde is stored as
      *  its label), so an enum-vs-global equality lowers through the same tekst-vs-global branch + {@link #tekstVergelijk}. */
     private static boolean tekstachtig(Datatype t) { return t != null && (t.isTekst() || t instanceof Datatype.Enumeratie); }
+    /** The read an equality applies to each of its operand VALUES: an enumeration label is a DECLARED NAME, so when
+     *  either side is an enumeration both are read through {@link RegelSpraakRuntime#rsEnumNaam} — the identity ref
+     *  and clingo compare by, and the one the DRL-text branch emits — while a Tekst or Booleaan keeps exact equality.
+     *  "Either side", because the RegelSpraak-source path can still hand over an Onbekend-typed quoted literal
+     *  whose only enumeration evidence is the attribute across from it. */
+    private static java.util.function.UnaryOperator<Object> gelijkheidsLezing(Datatype l, Datatype r) {
+        return l instanceof Datatype.Enumeratie || r instanceof Datatype.Enumeratie
+                ? RegelSpraakRuntime::rsEnumNaam : java.util.function.UnaryOperator.identity();
+    }
     /** A NON-NUMERIC Parameter-global (Tekst/Enumeratie String, Datum LocalDate, or Datum-en-tijd LocalDateTime) by its
      *  ident, or null. Used to assign such a global verbatim into an attribute (§13.4.6) — the numeric value-path binds
      *  globals as BigDecimal, so these need a directly-typed bind. (rekendatum is engine-internal, never a value source.) */
@@ -4049,9 +4059,10 @@ public final class ExecModelTranspiler {
             if (subject.granulariteitLeden().containsKey(la.attribuut())) return null;      // temporal -> Phase F
             if (!subject.dimensiesVan(la.attribuut()).isEmpty()) return null;                 // §3.6 gedimensioneerd -> marker
             String attr = la.attribuut();
-            String rhs = Literalen.tekstOfEnumLabel(lit);   // the SHARED reader: Tekst verbatim, enum labels unwrapped
+            java.util.function.UnaryOperator<Object> n = gelijkheidsLezing(la.type(), lit.type());
+            Object rhs = n.apply(Literalen.tekstOfEnumLabel(lit));   // the SHARED reader: Tekst verbatim, enum labels unwrapped
             boolean gelijk = v.op() == Conditie.Operator.GELIJK;
-            return s -> rhs.equals(RegelSpraakRuntime.get(s, attr)) == gelijk;   // attr may be null; rhs non-null
+            return s -> rhs.equals(n.apply(RegelSpraakRuntime.get(s, attr))) == gelijk;   // attr may be null; rhs non-null
         }
         // §5.3 the to-ONE NAVIGATED Tekst/enumeratiewaarde equality ("de woonplaats van zijn partner is gelijk aan
         // 'X'"): §5.5.5 a null relation reads LEEG (the SAME as a present relation with a null attribute), then string
@@ -4065,12 +4076,13 @@ public final class ExecModelTranspiler {
             String rol = navComparisonRole(la, subject);
             if (rol == null) return null;
             String attr = la.attribuut();
-            String rhs = Literalen.tekstOfEnumLabel(lit);
+            java.util.function.UnaryOperator<Object> n = gelijkheidsLezing(la.type(), lit.type());
+            Object rhs = n.apply(Literalen.tekstOfEnumLabel(lit));
             boolean gelijk = v.op() == Conditie.Operator.GELIJK;
             return s -> {
                 Object rel = RegelSpraakRuntime.get(s, rol);
                 Object val = rel == null ? null : RegelSpraakRuntime.get(rel, attr);   // §5.5.5 null relation -> leeg
-                return rhs.equals(val) == gelijk;   // leeg != literal -> ONGELIJK WAAR (Tabel 44); leeg == literal -> GELIJK onwaar
+                return rhs.equals(n.apply(val)) == gelijk;   // leeg != literal -> ONGELIJK WAAR (Tabel 44); leeg == literal -> GELIJK onwaar
             };
         }
         // §5.3 / typeringen Tabel 38 (GELIJK) + Tabel 44 (ONGELIJK): a NON-numeriek (Tekst / §13.2.14 enumeratiewaarde /
@@ -4091,7 +4103,8 @@ public final class ExecModelTranspiler {
             if (!subject.dimensiesVan(la.attribuut()).isEmpty() || !subject.dimensiesVan(ra.attribuut()).isEmpty()) return null;   // §3.6 gedimensioneerd -> marker
             String lAttr = la.attribuut(), rAttr = ra.attribuut();
             boolean gelijk = v.op() == Conditie.Operator.GELIJK;
-            return s -> tekstAttrGelijk(RegelSpraakRuntime.get(s, lAttr), RegelSpraakRuntime.get(s, rAttr), gelijk);
+            java.util.function.UnaryOperator<Object> n = gelijkheidsLezing(la.type(), ra.type());
+            return s -> tekstAttrGelijk(n.apply(RegelSpraakRuntime.get(s, lAttr)), n.apply(RegelSpraakRuntime.get(s, rAttr)), gelijk);
         }
         // §5.3 an own-attribute BOOLEAN equality vs a §13.2.14 boolean literal ("<attr> is gelijk aan waar|onwaar").
         // Mirrors the own Tekst/enum branch above but for a Booleaan attribute: read the literal's boolean value with
@@ -5565,9 +5578,10 @@ public final class ExecModelTranspiler {
         // assertie over a leeg operand IS a violation (Tabel 38). Own or navigated LHS.
         if ((v.op() == Conditie.Operator.GELIJK || v.op() == Conditie.Operator.ONGELIJK)
                 && v.rechts() instanceof Expr.Literal tl && Literalen.tekstOfEnumLabel(tl) != null) {
-            String rhs = Literalen.tekstOfEnumLabel(tl);
+            java.util.function.UnaryOperator<Object> n = gelijkheidsLezing(la.type(), tl.type());
+            Object rhs = n.apply(Literalen.tekstOfEnumLabel(tl));
             boolean assertGelijk = v.op() == Conditie.Operator.GELIJK;
-            return s -> rhs.equals(lRead.apply(s)) != assertGelijk;   // violation = criterion not satisfied
+            return s -> rhs.equals(n.apply(lRead.apply(s))) != assertGelijk;   // violation = criterion not satisfied
         }
         // §13.4.8 / typeringen Tabel 38 (GELIJK) + Tabel 44 (ONGELIJK): a NON-numeriek (Tekst / §13.2.14
         // enumeratiewaarde / Booleaan) equality assertie where v.rechts() is ALSO an ATTRIBUTE (attr-vs-attr, own or
@@ -5585,7 +5599,8 @@ public final class ExecModelTranspiler {
             java.util.function.Function<Object, Object> rRead = consistentieReader(ra, subject);
             if (rRead == null) return null;
             boolean assertGelijk = v.op() == Conditie.Operator.GELIJK;
-            return s -> !tekstAttrGelijk(lRead.apply(s), rRead.apply(s), assertGelijk);   // violation = criterion not satisfied
+            java.util.function.UnaryOperator<Object> n = gelijkheidsLezing(la.type(), ra.type());
+            return s -> !tekstAttrGelijk(n.apply(lRead.apply(s)), n.apply(rRead.apply(s)), assertGelijk);   // violation = criterion not satisfied
         }
 
         if (!isNumeriekOp(v.op())) return null;                              // remaining non-numeric op (EERDER/LATER datum): later
@@ -5861,9 +5876,12 @@ public final class ExecModelTranspiler {
                 // ever-uniqueness (uchar RS ch. 5.9, both forms): the shared ever-value predicate
                 src = src.expr(nextId("kj"), (Variable) keyVars.get(i),
                         (Predicate2) (o, k) -> RegelSpraakRuntime.rsOoitBotst(RegelSpraakRuntime.get(o, key), k));
-            else
+            else {
+                // an enumeration key is a declared name: two spellings of one label are ONE key (ref, clingo)
+                java.util.function.UnaryOperator<Object> n = gelijkheidsLezing(subject.attribuut(key), null);
                 src = src.expr(nextId("kj"), (Variable) keyVars.get(i),
-                        (Predicate2) (o, k) -> RegelSpraakRuntime.gelijkWaarde(RegelSpraakRuntime.get(o, key), k));
+                        (Predicate2) (o, k) -> RegelSpraakRuntime.gelijkWaarde(n.apply(RegelSpraakRuntime.get(o, key)), n.apply(k)));
+            }
         }
         if (scopeVar != null) {
             String sv = u.scopeVeld();
@@ -5953,9 +5971,13 @@ public final class ExecModelTranspiler {
                         // MIXED, the mirror: this source's plain value against the subject's timeline
                         src = src.expr(nextId("ukj"), (Variable) keyVars.get(i),
                                 (Predicate2) (e, k) -> RegelSpraakRuntime.rsOoitBevat(k, RegelSpraakRuntime.get(e, key)));
-                    else
+                    else {
+                        // WF-030 keeps a position's datatype kind equal across the sources, so either side decides
+                        java.util.function.UnaryOperator<Object> n = gelijkheidsLezing(b.type().attribuut(key),
+                                subj.type().attribuut(subj.sleutels().get(i)));
                         src = src.expr(nextId("ukj"), (Variable) keyVars.get(i),
-                                (Predicate2) (e, k) -> RegelSpraakRuntime.gelijkWaarde(RegelSpraakRuntime.get(e, key), k));
+                                (Predicate2) (e, k) -> RegelSpraakRuntime.gelijkWaarde(n.apply(RegelSpraakRuntime.get(e, key)), n.apply(k)));
+                    }
                 }
                 Variable cntVar = DSL.declarationOf(Object.class, "$c" + j + "_" + (seq++));
                 items.add(DSL.accumulate(src, DSL.accFunction(accFn("CountAccumulateFunction")).as(cntVar)));

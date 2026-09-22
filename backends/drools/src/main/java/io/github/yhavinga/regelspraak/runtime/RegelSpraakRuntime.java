@@ -124,6 +124,21 @@ public final class RegelSpraakRuntime {
         return java.util.Objects.equals(a, b);
     }
 
+    /** An enumeration value read as the DECLARED NAME it is: ref's {@code Checks.norm} through
+     *  {@link io.github.yhavinga.regelspraak.transpiler.kern.Namen#norm}, the one definition the case comparator
+     *  already reads it by. Both branches apply it to BOTH sides of every enumeration equality and of an enumeration
+     *  uniqueness-key join, because ref and clingo compare two labels up to that normalisation and a byte comparison
+     *  here split the square on a case input spelled "Gaaf" against a declared "gaaf" (maintainer decision
+     *  2026-09-20, card drools-enumnaam-identiteit). A leeg (null) value stays leeg, so every caller keeps its own
+     *  leegwaarde table unchanged. Never applied to a Tekst: §13.3.3.4 keeps text equality exact. A non-String
+     *  enumeration value cannot be written by any setter the fact model generates, so it faults instead of being
+     *  compared as something else. */
+    public static Object rsEnumNaam(Object waarde) {
+        if (waarde == null) return null;
+        if (waarde instanceof String s) return io.github.yhavinga.regelspraak.transpiler.kern.Namen.norm(s);
+        throw new IllegalStateException("enumeratiewaarde is geen String maar " + waarde.getClass().getName());
+    }
+
     /** §13.4.6 construct a new instance of a runtime objecttype reflectively (its class is unknown at
      *  transpiler-compile time) via the no-arg constructor — the model analog of the DRL {@code new <Type>()} an
      *  objectcreatie inserts. */

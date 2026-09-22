@@ -1,0 +1,38 @@
+Domein Keurklasse is van het type Enumeratie
+    'gaaf'
+    'beschadigd'
+    'wrakhout'
+
+Objecttype de Vondst (mv: Vondsten)
+    de staat (mv: staten) Keurklasse;
+    de herkeuring Keurklasse;
+    is veilbaar kenmerk (bijvoeglijk);
+    is afgekeurd kenmerk (bijvoeglijk);
+    is bevestigd kenmerk (bijvoeglijk);
+
+Regel veilbaarheid naar staat
+    geldig altijd
+        Een Vondst is veilbaar
+        indien zijn staat gelijk is aan 'gaaf'.
+
+Regel afkeuring naar staat
+    geldig altijd
+        Een Vondst is afgekeurd
+        indien zijn staat ongelijk is aan 'gaaf'.
+
+Regel herkeuring bevestigt de staat
+    geldig altijd
+        Een Vondst is bevestigd
+        indien zijn herkeuring gelijk is aan zijn staat.
+
+Regel geen wrakhout ter keuring
+    geldig altijd
+        De staat van een Vondst moet ongelijk zijn aan 'wrakhout'.
+
+Regel herkeuring volgt de staat
+    geldig altijd
+        De herkeuring van een Vondst moet gelijk zijn aan de staat van de Vondst.
+
+Regel eenmalige staat
+    geldig altijd
+        De staten van alle Vondsten moeten uniek zijn.

@@ -1,0 +1,79 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "staat": {
+            "enumeration": "Beschadigd"
+          },
+          "herkeuring": {
+            "enumeration": "beschadigd"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "staat": {
+            "enumeration": "beschadigd"
+          },
+          "herkeuring": {
+            "enumeration": "BESCHADIGD"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "veilbaar"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "afgekeurd"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "bevestigd"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V2",
+      "characteristic": "veilbaar"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V2",
+      "characteristic": "afgekeurd"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V2",
+      "characteristic": "bevestigd"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "eenmalige staat",
+      "label": "V1"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "eenmalige staat",
+      "label": "V2"
+    }
+  ]
+}

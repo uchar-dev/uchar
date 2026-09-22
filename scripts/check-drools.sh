@@ -761,7 +761,23 @@ EXPECTED_CHANNEL=(
 # flipping it, so no rule sinks for nothing (pinned in VouwfilterStratumAnalyseTest). The golden is the
 # GEEN-rewrite of jutterswet-uniestratum, model and case and all eleven expectations identical, so the
 # two files differ in the filters alone. EXPECTED_DRL_PLAYED moves by one as well.
-EXPECTED_PLAYED=177
+#
+# 177 -> 178 (2026-09-22, card drools-enumnaam-identiteit): jutterswet-keurspelling, the rule-level
+# half of the enumeration name identity that the 169 -> 171 paragraph above left as a card of its own.
+# An enumeration label is a DECLARED NAME, and ref and the ASP backend compare two labels up to
+# Checks.norm while both Drools branches compared bytes in every enumeration EQUALITY — own-attribute
+# condition GELIJK and ONGELIJK, attribute-against-attribute condition, assertie against a literal and
+# against an attribute — and in the uniqueness-key join. Measured red first on this verifier-clean
+# document (case inputs "Gaaf", "Wrakhout", "Beschadigd" against the declared lower-case labels): ref
+# and clingo PASS all four cases, both Drools branches FAIL cases 1, 2 and 4 with the same lines
+# (`kenmerk veilbaar: verwacht aanwezig, werkelijk afwezig`, the missing `eenmalige staat` pair). The
+# uniqueness half split the square the other way round too: ref's key tuple stringified an enumeration
+# byte-exactly, so ref sided with Drools on case 4 and only clingo read one key — ref's key now goes
+# through the same norm. Maintainer decision 2026-09-20: one identity for the whole square. Both
+# branches now read each enumeration operand through RegelSpraakRuntime.rsEnumNaam (Namen.norm, null
+# left null) and play all four cases; case 3 is the control in the other direction, two DIFFERENT
+# labels that must stay two labels. EXPECTED_DRL_PLAYED moves by one as well.
+EXPECTED_PLAYED=178
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -953,7 +969,11 @@ DRL_CHANNEL=(
 # 153 -> 154 (2026-09-22, fix round 3): jutterswet-uniekwantor. The stratification analysis is SHARED,
 # so this branch carried the same polarity gap and is repaired by the same context. Reason block at
 # EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=154
+# 154 -> 155 (2026-09-22, card drools-enumnaam-identiteit): jutterswet-keurspelling. This branch
+# compared the same enumerations with an mvel `==` and is repaired by wrapping both operands in the
+# same runtime call; measured diverging before it on the same three cases and PLAYED 4 after. Reason
+# block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=155
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
