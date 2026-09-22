@@ -40,9 +40,16 @@ in het zijkanaal `Loaded#rolBindingen`, net als die van de
 objectcreatie. De join is de zuster van de gebonden ontvangersrol, dus
 de rol die de bron speelt en daarmee het referentieveld op de
 ontvanger. Bij een wederkerig feittype is dat de gebonden rol zelf.
-Een binding die geen gedeclareerde rol noemt, wordt geweigerd als
-`verdeling (verbindende rol onopgelost: ...)`, in beide takken met
-dezelfde zin. Alleen een bindingloze verdeling, die WF-048 toelaat
+Een binding die geen gedeclareerde rol noemt, wordt in beide takken
+geweigerd met dezelfde reden uit `verdelingsjoin`, "verbindende rol
+onopgelost: ...". De omhulling verschilt wel: exec meldt `verdeling
+(...)`, DRL-tekst `onopgelost verdeling (...)`. Dat voorvoegsel is
+niet gelijk te trekken, want `// onopgelost` is het markerteken
+waaraan `DrlTranspiler.meet` (r. 318, `markerReden`) een weigering
+herkent; de weigering van P2 (`onopgelost uniciteit (scopebinding
+onopgelost)`) heeft dezelfde vorm. Geen gatekanaal of testpin draagt
+de zin letterlijk: de getuige pint alleen het gemeenschappelijke stuk.
+Alleen een bindingloze verdeling, die WF-048 toelaat
 zolang het paar uniek is, vraagt nog het typenpaar
 (`verbindendeRol(doel, bron)`). Rest voor B12.
 
@@ -80,7 +87,7 @@ relateert Berging en Berger via `bergingsdeelname` en
 weigerden het als `onopgelost naar_rato`, terwijl ref en clingo het
 spelen (gates 5 en 6).
 
-(b) gehaald, rood eerst. `VerdelingsrolWitnessTest`, 8 rijen via de
+(b) gehaald, rood eerst. `VerdelingsrolWitnessTest`, 9 rijen via de
 replay-API in beide takken (`BeideTakken`):
 - De afleidingsassertie: het typenpaar zwijgt, `verdelingsjoin` geeft
   `berging`.
@@ -99,6 +106,11 @@ replay-API in beide takken (`BeideTakken`):
 - Een losse rol `bewaker` wordt geweigerd als "verbindende rol
   onopgelost". De verifier geeft WF-047 FAIL, ref EVALUATION FAULT.
 - Zonder binding speelt het document op het typenpaar.
+- De wederkerig-arm (fixronde): `jutterswet-maatschap` met een
+  verdeling van `vondstwaarde` over `(maatschap, maat)` naar een nieuw
+  attribuut `maatdeel`. `maat` is haar eigen zuster, dus `verdelingsjoin`
+  geeft `maat`, en beide takken spelen J1 12 / J2 30. Verifier PASS,
+  ref PASS (9 verwachtingen).
 
 Matrix met de jar van main 788d355b tegen de jar met port, beide
 takken. Vóór de port werden de vier herhaald-paar-rijen geweigerd als
@@ -108,6 +120,17 @@ Na de port volgt elke rij de wire. De leesproef is in één keten
 uitgevoerd en teruggedraaid: stash van IrLoader en beide transpilers,
 test, pop, test. Zonder port was test-rc=1 (8 rijen: 4 failures, 3
 errors; alleen de bindingloze rij groen), met port test-rc=0 (8/8).
+De wederkerig-rij kwam in de fixronde en is apart rood-eerst getoetst,
+met een mutant in `FactModelGenerator.gebondenRolpaar`: de arm
+`if (ft.wederkerig) return new Rol[]{gebonden, gebonden};` werd
+`return null`. Kopie, mutant, test, terugzetten, test in één keten.
+Met de mutant test-rc=1, 9 rijen met 1 failure, precies deze rij:
+"a reciprocal role is its own sibling ==> expected:
+<Verdelingsjoin[rol=maat, weigering=null]> but was:
+<Verdelingsjoin[rol=null, weigering=verbindende rol onopgelost: de
+binding (maatschap, maat) noemt geen gedeclareerde rol]>". Hersteld
+test-rc=0, 9/9. De assertie op de afleiding breekt eerst, dus met de
+mutant komt de replay in de takken niet aan de beurt.
 
 (c) gelijkheid gehaald, pins bewegen. De sweep liep over alle
 goldens met casus en alle 41 rood-documenten, samen 271 documenten
@@ -120,13 +143,13 @@ herhaald paar in het corpus staat, kan wire-lezing het niet laten
 liggen. De kaart nam aan dat de pins niet zouden bewegen; die aanname
 klopt voor de gelijkheid over de rest, niet voor het herhaalde paar.
 
-(d) twaalf van de veertien groen op de takbroncode, gate 12 rood zoals
-ontworpen, en gate 1 rood op main. Wire, schema, corpus, frontends,
+(d) dertien van de veertien groen op de takbroncode, gate 12 rood
+zoals ontworpen. Wire, schema, corpus, frontends,
 toka en scripts zijn ongewijzigd.
 
 | gate | stand |
 |---|---|
-| 1 self-contained | PASS na commit dda98f66. Op main 788d355b FAIL: een P2-testcommentaar (58d32a6c, `BonenveldWitnessTest` r. 117) noemt de zone voluit; alleen het commentaar is herschreven |
+| 1 self-contained | PASS. Op de oude basis 788d355b FAIL: een P2-testcommentaar (`BonenveldWitnessTest` r. 117) noemde de zone voluit. Main droeg de fix al (7c501802), en na de rebase op 07dec7b9 heeft deze kaart er geen eigen commit voor |
 | 2 ir-schema | PASS (273 bestanden, vloer 192) |
 | 3 verifier | PASS (273 golden schoon, 431 negatief verworpen) |
 | 4 case-schema | PASS (629 cases) |
@@ -151,10 +174,18 @@ wire-lezing zoals in ref, en de sweep die verder niets veranderde.
 
 Mandaten. `spec/proposals/V1-WIREMIGRATIE.md` (de §2.2-rij en de
 P3-rij, met het doorhaalpatroon) is bijgewerkt onder het mandaat van
-de kaartopdracht van de hoofdsessie, zoals bij P1 en P2. Het
-testcommentaar in `BonenveldWitnessTest` is gewijzigd zonder mandaat
-vooraf, maar met melding hier. Het is één zin commentaar, de test
-verandert er niet door, en de wijziging is nodig voor gate 1.
+de kaartopdracht van de hoofdsessie, zoals bij P1 en P2. Bestaande
+tests zijn niet gewijzigd.
+
+Fixronde (lens: MERGEN, adviezen A1-A5). De kaart is gerebased op main
+07dec7b9. De eigen gate-1-commit verviel, omdat main hetzelfde
+commentaar al had gerepareerd en de main-versie is genomen. Het dossier
+is daarop bijgewerkt. De omhulling van de weigerzin is genuanceerd (zie
+(a)). De Authority-javadoc van IrLoader noemt de verdeling niet meer
+bij de genegeerde extensies. De wederkerig-rij is toegevoegd (zie (b)).
+Na de fixronde gedraaid: de JUnit-suite van de backend, gate 8 en gate
+13. Gate 12 niet, die wacht op het pin-diff. Het diff past na de rebase
+nog schoon (`git apply --check`).
 
 Voorgestelde registerbijwerking (`spec/CONSTRUCTS.md`, hoofdsessie).
 Rij 17 krijgt achter "the emitter produces it": "**Landed in
