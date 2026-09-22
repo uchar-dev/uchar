@@ -356,7 +356,7 @@ public final class ExecModelTranspiler {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private Rule regel(ResolvedRegel r) {
-        if (!(r.doel() instanceof Expr.AttribuutRef doel) || doel.navigatieRol() != null || doel.objecttype() == null) {
+        if (!(r.doel() instanceof Expr.AttribuutRef doel) || !ongenavigeerd(doel) || doel.objecttype() == null) {
             return skip("regel (doel geen eigen attribuut/kenmerk): " + r.naam());
         }
         Class<?> factClass = factClass(doel.objecttype());
@@ -453,7 +453,7 @@ public final class ExecModelTranspiler {
         if (kenmerkTl != null) pattern = pattern.expr(nextId("fresh"), (Predicate1) (s -> true));
         // §9.9: an anchored temporal write reads the startpunt attribute (injected at lowering, invisible to
         // eigenReads) — count it as an own read, so the write re-fires when the startpunt rule lands.
-        String startpuntAnker = doel.navigatieRol() == null
+        String startpuntAnker = ongenavigeerd(doel)
                 ? model.startpuntAnkerLid(doel.objecttype(), doel.attribuut()) : null;
         if (!klasseReactief) {
             java.util.Set<String> reads = eigenReads(r.waarde(), doel.objecttype());
@@ -1466,12 +1466,12 @@ public final class ExecModelTranspiler {
         boolean multiGlobalRhs = !(ander instanceof Expr.AttribuutRef) && !(ander instanceof Expr.Literal)
                 && !(ander instanceof Expr.ParameterRef) && aggRhsGlobalCount(subject, ander) >= 2;
         if (!(ander instanceof Expr.Literal)
-                && !(ander instanceof Expr.AttribuutRef ar && ar.navigatieRol() == null && ar.objecttype() == subject
+                && !(ander instanceof Expr.AttribuutRef ar && ongenavigeerd(ar) && ar.objecttype() == subject
                      && subject.attribuutLeden().containsKey(ar.attribuut()))
                 && !(ander instanceof Expr.ParameterRef pr && pr.parameter().granulariteit() == null
                      && (pr.parameter().datatype().isNumeriek() || pr.parameter().datatype().isPercentage()))
                 && !(ander instanceof Expr.AttribuutRef nav && nav.objecttype() != null
-                     && (nav.navigatieRol() != null || nav.objecttype() != subject) && nav.objecttype().heeftLid(nav.attribuut())
+                     && (!ongenavigeerd(nav) || nav.objecttype() != subject) && nav.objecttype().heeftLid(nav.attribuut())
                      && nav.type() != null && (nav.type().isNumeriek() || nav.type().isPercentage())
                      && !nav.objecttype().granulariteitLeden().containsKey(nav.attribuut()))
                 && !multiGlobalRhs) return null;
@@ -1492,7 +1492,7 @@ public final class ExecModelTranspiler {
         // grens at ~L1692); a LEEG global arrives as null. >1 global / a non-numeric global stays a symmetric marker.
         final BiFunction<Object, Map<String, BigDecimal>, Object> rfn;
         Global<BigDecimal> gVar = null; String gNaam = null;
-        if (ander instanceof Expr.AttribuutRef nar && (nar.navigatieRol() != null || nar.objecttype() != subject)) {
+        if (ander instanceof Expr.AttribuutRef nar && (!ongenavigeerd(nar) || nar.objecttype() != subject)) {
             java.util.function.Function<Object, Object> reader = navReader(nar, subject);
             if (reader == null) return null;   // AFWEZIG / ONOPGELOST / NAAR_VEEL -> marker (symmetric with the DRL)
             rfn = (subj, gm) -> reader.apply(subj);
@@ -1788,7 +1788,7 @@ public final class ExecModelTranspiler {
     private record GlobalVergelijking(Global<BigDecimal> global, Predicate2<Object, BigDecimal> test) {}
     private GlobalVergelijking globalBullet(Conditie deel, Objecttype elem) {
         if (!(deel instanceof Conditie.Vergelijking v) || !(v.links() instanceof Expr.AttribuutRef la)
-                || la.navigatieRol() != null || !la.type().isGetalachtig() || !isNumeriekOp(v.op())   // §4.8 numeriek OR percentage
+                || !ongenavigeerd(la) || !la.type().isGetalachtig() || !isNumeriekOp(v.op())   // §4.8 numeriek OR percentage
                 || !(v.rechts() instanceof Expr.ParameterRef pr)) return null;
         if (elem == null || !elem.heeftLid(la.attribuut())) return null;
         if (elem.granulariteitLeden().containsKey(la.attribuut())) return null;   // temporal element attr -> skip
@@ -2118,7 +2118,7 @@ public final class ExecModelTranspiler {
      *  operator" reading mirrored mvel's {@code rol!.attr} short-circuit but was spec-WRONG for ONGELIJK; the DRL
      *  voorwaarde now also reads a navigated comparison leegwaarde-faithfully (genavigeerdeVergelijkingVoorwaarde). */
     private String navComparisonRole(Expr.AttribuutRef a, Objecttype subject) {
-        if (a.objecttype() == null || a.navigatieRol() == null || !a.objecttype().heeftLid(a.attribuut())) return null;
+        if (a.objecttype() == null || ongenavigeerd(a) || !a.objecttype().heeftLid(a.attribuut())) return null;
         if (!a.navigatiePad().isEmpty()) return null;   // §13.4.1 multi-hop chain: comparisons keep the symmetric marker
         String rol = navigatieBindingen.containsKey(a) ? wireRol(a, subject)
                 : model.verbindendeRolViaNaam(subject, a.objecttype(), a.navigatieRol());
@@ -2126,6 +2126,14 @@ public final class ExecModelTranspiler {
         if (subject != null && model.naarVeelRol(subject, a.objecttype(), rol)) return null;   // NAAR_VEEL
         if (!heeftVeld("genavigeerde lezing", subject, rol, a.objecttype())) return null;   // §13.3.9 no bean field to read (name-dedup)
         return rol;
+    }
+
+    /** THE own-read shape test: the reference carries neither a written step nor a wire binding. Every arm that
+     *  reads a reference as the subject's (or the element's) own attribute asks this, never {@code navigatieRol() == null}
+     *  alone — a BOUND by-pair read has no written step either, and an own-read arm that fired on it read the
+     *  subject's same-named attribute instead of walking the binding (V1-WIREMIGRATIE P1, lens B1). */
+    private boolean ongenavigeerd(Expr.AttribuutRef a) {
+        return a.navigatieRol() == null && !navigatieBindingen.containsKey(a);
     }
 
     /** The single hop of a BOUND to-one navigation: the reached role the wire names, or null when the walk does not
@@ -2213,14 +2221,14 @@ public final class ExecModelTranspiler {
             Expr base = f.argumenten().get(0);
             RegelSpraakModel.Granulariteit baseGran = null; Datatype baseType = null; String baseGlobal = null;
             BiFunction<Object, Object, List<?>> baseReader = null;   // (subject, globalValue) -> the base List<Segment>
-            if (base instanceof Expr.AttribuutRef ba && ba.navigatieRol() == null && !ba.set() && ba.objecttype() == subject
+            if (base instanceof Expr.AttribuutRef ba && ongenavigeerd(ba) && !ba.set() && ba.objecttype() == subject
                     && subject.granulariteitLeden().containsKey(ba.attribuut())
                     && !Tijdlijnen.meerPeriodiek(subject.tijdlijnAantalLeden(), ba.attribuut())) {
                 baseGran = subject.granulariteitLeden().get(ba.attribuut());
                 baseType = effType(ba);
                 String baseAttr = ba.attribuut();
                 baseReader = (s, gv) -> (List<?>) RegelSpraakRuntime.get(s, baseAttr);
-            } else if (base instanceof Expr.AttribuutRef ba && ba.navigatieRol() != null && !ba.set()
+            } else if (base instanceof Expr.AttribuutRef ba && !ongenavigeerd(ba) && !ba.set()
                     && ba.objecttype() != null && ba.objecttype().granulariteitLeden().containsKey(ba.attribuut())
                     && !Tijdlijnen.meerPeriodiek(ba.objecttype().tijdlijnAantalLeden(), ba.attribuut())) {
                 // §7.3.2 a TO-ONE NAVIGATED base ("de X van zijn partner"): read the partner's temporal attribute root-guarded
@@ -2335,9 +2343,9 @@ public final class ExecModelTranspiler {
         }
         if (!(e instanceof Expr.AttribuutRef a) || a.set() || a.type() == null || !a.type().isNumeriek()) return null;
         Objecttype ot; java.util.function.Function<Object, Object> reader;
-        if (a.navigatieRol() == null && a.objecttype() == subject) {
+        if (ongenavigeerd(a) && a.objecttype() == subject) {
             ot = subject; String attr = a.attribuut(); reader = s -> RegelSpraakRuntime.get(s, attr);
-        } else if (a.navigatieRol() != null && a.objecttype() != null) {
+        } else if (!ongenavigeerd(a) && a.objecttype() != null) {
             java.util.function.Function<Object, Object> nav = navReader(a, subject);
             if (nav == null) return null;
             ot = a.objecttype(); reader = nav;
@@ -2510,7 +2518,7 @@ public final class ExecModelTranspiler {
      *  when the operand is temporal / navigated / not an own attribute vs a literal/own-attribute, or the op/operand is
      *  out of scope. Mirrors DrlTranspiler.statischeVergelijkingGuard. */
     private java.util.function.Predicate<Object> statischeVergelijking(Conditie.Vergelijking v, Objecttype subject) {
-        if (!(v.links() instanceof Expr.AttribuutRef la) || la.navigatieRol() != null) return null;
+        if (!(v.links() instanceof Expr.AttribuutRef la) || !ongenavigeerd(la)) return null;
         if (subject != null && subject.granulariteitLeden().containsKey(la.attribuut())) return null;   // a temporal operand is no static member
         String lattr = la.attribuut();
         if (isNumeriekOp(v.op())) {
@@ -2522,7 +2530,7 @@ public final class ExecModelTranspiler {
                 BigDecimal rhsS = scale(rhs, f[1]);
                 return s -> vergelijk(scale(num(s, lattr), f[0]), rhsS, op);
             }
-            if (v.rechts() instanceof Expr.AttribuutRef ra && ra.navigatieRol() == null) {
+            if (v.rechts() instanceof Expr.AttribuutRef ra && ongenavigeerd(ra)) {
                 if (subject != null && subject.granulariteitLeden().containsKey(ra.attribuut())) return null;
                 String rattr = ra.attribuut();
                 BigDecimal[] f = restatement(effType(la), effType(ra));
@@ -2756,7 +2764,7 @@ public final class ExecModelTranspiler {
      *  navigated partner's (null reference -> null timeline -> rsGeheelPeriode returns true). null for a to-many /
      *  unresolvable navigation. Mirrors DrlTranspiler.temporeelTijdlijnGetter. */
     private java.util.function.Function<Object, Object> temporeelTijdlijnReader(Expr.AttribuutRef a, Objecttype subject) {
-        if (a.navigatieRol() == null) {
+        if (ongenavigeerd(a)) {
             if (subject == null || !subject.heeftLid(a.attribuut())) return null;
             String attr = a.attribuut();
             return s -> RegelSpraakRuntime.get(s, attr);
@@ -2798,7 +2806,7 @@ public final class ExecModelTranspiler {
                 // grenswaarde ("… gelijk is aan de drempel van zijn partner") would skip while the DRL oracle FIRES it via
                 // partner!.attr. Lower it with the same condition-aware null-safe role reader the timeline side uses, so
                 // both back-ends agree (a null relation -> null grens -> the §8.2 check fails, matching mvel's partner!.attr).
-                if (ander instanceof Expr.AttribuutRef ar && ar.navigatieRol() != null && (ar.type().isNumeriek() || ar.type().isPercentage())) {
+                if (ander instanceof Expr.AttribuutRef ar && !ongenavigeerd(ar) && (ar.type().isNumeriek() || ar.type().isPercentage())) {
                     String rol = navComparisonRole(ar, subject);
                     if (rol != null) {
                         String gattr = ar.attribuut();
@@ -3146,14 +3154,14 @@ public final class ExecModelTranspiler {
             gran = gp.jaar() ? "JAAR" : "MAAND";
             if (kv.toets() instanceof Conditie.Vergelijking v) {
                 Expr.AttribuutRef tijd; Expr ander; boolean linksTemp;
-                if (v.links() instanceof Expr.AttribuutRef la && la.navigatieRol() == null && elementTijdlijnLid(elem, la.attribuut()))
+                if (v.links() instanceof Expr.AttribuutRef la && ongenavigeerd(la) && elementTijdlijnLid(elem, la.attribuut()))
                     { tijd = la; ander = v.rechts(); linksTemp = true; }
-                else if (v.rechts() instanceof Expr.AttribuutRef ra && ra.navigatieRol() == null && elementTijdlijnLid(elem, ra.attribuut()))
+                else if (v.rechts() instanceof Expr.AttribuutRef ra && ongenavigeerd(ra) && elementTijdlijnLid(elem, ra.attribuut()))
                     { tijd = ra; ander = v.links(); linksTemp = false; }
                 else return kvSkip(kv, "een matrixvergelijking zonder enkelperiodiek tijdlijnattribuut van het elementtype");
                 if (!(tijd.type().isNumeriek() || tijd.type().isPercentage()))
                     return kvSkip(kv, "een niet-numerieke heelperiodevergelijking in de matrix");
-                if (ander instanceof Expr.AttribuutRef ar && ar.navigatieRol() == null && elementTijdlijnLid(elem, ar.attribuut()))
+                if (ander instanceof Expr.AttribuutRef ar && ongenavigeerd(ar) && elementTijdlijnLid(elem, ar.attribuut()))
                     return kvSkip(kv, "een tijdlijn-vs-tijdlijnvergelijking in de matrix");
                 Eenheid el = eff.eenheidVan(tijd), er = eff.eenheidVan(ander);
                 boolean crossUnit = el != null && er != null && el.vereistOmrekening(er);
@@ -3172,7 +3180,7 @@ public final class ExecModelTranspiler {
                 if (crossUnit) g = g.herschaald(effType(ander), effType(tijd), "een §8.2 tijdlijngrens");
                 tlVeld = tijd.attribuut(); toetsCode = code; grensFn = g;
             } else if (kv.toets() instanceof Conditie.Predicaat p && p.operand() instanceof Expr.AttribuutRef pa
-                    && pa.navigatieRol() == null && elementTijdlijnLid(elem, pa.attribuut())
+                    && ongenavigeerd(pa) && elementTijdlijnLid(elem, pa.attribuut())
                     && (p.soort() == Conditie.Predicaatsoort.GEVULD || p.soort() == Conditie.Predicaatsoort.LEEG)) {
                 tlVeld = pa.attribuut();
                 toetsCode = p.soort() == Conditie.Predicaatsoort.GEVULD ? 6 : 8;   // §8.2 gevuld / leeg over every moment
@@ -3607,7 +3615,7 @@ public final class ExecModelTranspiler {
             String attr = la.attribuut();
             boolean gelijk = v.op() == Conditie.Operator.GELIJK;
             java.util.function.UnaryOperator<Object> n = gelijkheidsLezing(la.type(), pr.parameter().datatype());
-            if (la.navigatieRol() == null) {
+            if (ongenavigeerd(la)) {
                 if (subject == null || !subject.heeftLid(attr)) return null;
                 return new Gate(pattern.expr(nextId("c"), (Variable) g, (Predicate2) (s, gv) ->
                         tekstVergelijk(n.apply(RegelSpraakRuntime.get(s, attr)), n.apply(gv), gelijk)), List.of());
@@ -3621,7 +3629,7 @@ public final class ExecModelTranspiler {
         }
         // §8.1.1 a comparison vs a numeric Parameter-GLOBAL needs a 2-var expr (the global as a pattern variable),
         // so it stays here rather than in leafPredicate (a vs-literal comparison IS a fact-only leaf).
-        if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && la.navigatieRol() == null
+        if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && ongenavigeerd(la)
                 && v.rechts() instanceof Expr.ParameterRef pr) {
             if (subject == null || !subject.heeftLid(la.attribuut())) return null;   // not the subject's own member (feitcreatie anker-first probe)
             if (subject.granulariteitLeden().containsKey(la.attribuut())) return null;  // temporal -> Phase F
@@ -3638,7 +3646,7 @@ public final class ExecModelTranspiler {
         // §8.1.1 a to-ONE NAVIGATED numeric comparison vs a Parameter-GLOBAL — the §12 "de duur van
         // zijn partner groter is dan <de bovengrens schijf>" shape. The global is a pattern variable (2-var expr),
         // navReader reads the navigated value null-safely. Mirrors DRL `partner!.x op global`.
-        if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && la.navigatieRol() != null
+        if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && !ongenavigeerd(la)
                 && la.type().isGetalachtig() && isNumeriekOp(v.op()) && v.rechts() instanceof Expr.ParameterRef pr) {   // §4.8 numeriek OR percentage
             if (la.objecttype() == null || la.objecttype().granulariteitLeden().containsKey(la.attribuut())) return null;  // temporal -> Phase F
             if (!la.objecttype().dimensiesVan(la.attribuut()).isEmpty()) return null;                                       // §3.6 gedimensioneerd -> marker
@@ -3832,7 +3840,7 @@ public final class ExecModelTranspiler {
         // §8.1.2 LEEG/GEVULD on an own attribute -> a null / non-null constraint.
         if (c instanceof Conditie.Predicaat p
                 && (p.soort() == Conditie.Predicaatsoort.LEEG || p.soort() == Conditie.Predicaatsoort.GEVULD)
-                && p.operand() instanceof Expr.AttribuutRef pa && pa.navigatieRol() == null) {
+                && p.operand() instanceof Expr.AttribuutRef pa && ongenavigeerd(pa)) {
             if (subject == null || !subject.heeftLid(pa.attribuut())) return null;   // not the subject's own member (e.g. a feitcreatie anker-first probe of a doel condition)
             if (subject.granulariteitLeden().containsKey(pa.attribuut())) return null;  // temporal -> Phase F
             if (!subject.dimensiesVan(pa.attribuut()).isEmpty()) return null;   // §3.6 gedimensioneerd (a Map) -> marker
@@ -3846,7 +3854,7 @@ public final class ExecModelTranspiler {
         // leeg = (rol == null || rol.attr == null); gevuld = (rol != null && rol.attr != null).
         if (c instanceof Conditie.Predicaat p
                 && (p.soort() == Conditie.Predicaatsoort.LEEG || p.soort() == Conditie.Predicaatsoort.GEVULD)
-                && p.operand() instanceof Expr.AttribuutRef pa && pa.navigatieRol() != null) {
+                && p.operand() instanceof Expr.AttribuutRef pa && !ongenavigeerd(pa)) {
             if (pa.objecttype() == null || pa.objecttype().granulariteitLeden().containsKey(pa.attribuut())) return null;  // temporal -> Phase F
             if (!pa.objecttype().dimensiesVan(pa.attribuut()).isEmpty()) return null;   // §3.6 gedimensioneerd -> marker
             String rol = navComparisonRole(pa, subject);
@@ -3873,7 +3881,7 @@ public final class ExecModelTranspiler {
             int n = p.cijfers();
             boolean wanted = !p.negatie();
             String attr = pa.attribuut();
-            if (pa.navigatieRol() == null) {
+            if (ongenavigeerd(pa)) {
                 if (subject == null || !subject.heeftLid(attr)) return null;   // not the subject's own member
                 return s -> (elf ? RegelSpraakRuntime.rsElfproef(RegelSpraakRuntime.get(s, attr))
                                  : RegelSpraakRuntime.rsNumeriekMetExact(RegelSpraakRuntime.get(s, attr), n)) == wanted;
@@ -3889,7 +3897,7 @@ public final class ExecModelTranspiler {
             };
         }
         // §8.1.1 an own-attribute scalar comparison vs a numeric literal.
-        if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && la.navigatieRol() == null
+        if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && ongenavigeerd(la)
                 && v.rechts() instanceof Expr.Literal lit && lit.type().isNumeriek()) {
             if (subject == null || !subject.heeftLid(la.attribuut())) return null;   // not the subject's own member (feitcreatie anker-first probe)
             if (subject.granulariteitLeden().containsKey(la.attribuut())) return null;  // temporal -> Phase F
@@ -3907,7 +3915,7 @@ public final class ExecModelTranspiler {
         // 60"): read the navigated value null-safely (mvel's `partner!.x`), restate units, and vergelijk. navReader
         // resolves the to-one role and root-guards a null relation (-> leeg -> ordering no-match / GELIJK-both-leeg,
         // matching mvel `null op x`); a to-many / unresolvable navigation -> null (skip). Mirrors DRL `partner!.x op lit`.
-        if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && la.navigatieRol() != null
+        if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && !ongenavigeerd(la)
                 && la.type().isNumeriek() && isNumeriekOp(v.op())
                 && v.rechts() instanceof Expr.Literal lit && lit.type().isNumeriek()) {
             if (la.objecttype() == null || la.objecttype().granulariteitLeden().containsKey(la.attribuut())) return null;  // temporal -> Phase F
@@ -3932,9 +3940,9 @@ public final class ExecModelTranspiler {
         // §8.1.1 a to-ONE NAVIGATED numeric comparison vs an OWN attribute ("de duur van zijn partner groter is dan
         // zijn drempel"): the navigated LHS read null-safely (a null relation short-circuits the whole term), the own
         // RHS fact-local. Mirrors DRL `rol!.x op ownAttr`.
-        if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && la.navigatieRol() != null
+        if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && !ongenavigeerd(la)
                 && la.type().isNumeriek() && isNumeriekOp(v.op())
-                && v.rechts() instanceof Expr.AttribuutRef ra && ra.navigatieRol() == null && ra.type().isNumeriek()) {
+                && v.rechts() instanceof Expr.AttribuutRef ra && ongenavigeerd(ra) && ra.type().isNumeriek()) {
             if (la.objecttype() == null || la.objecttype().granulariteitLeden().containsKey(la.attribuut())) return null;  // temporal -> Phase F
             if (!la.objecttype().dimensiesVan(la.attribuut()).isEmpty()) return null;                                       // §3.6 -> marker
             if (subject == null || !subject.heeftLid(ra.attribuut())) return null;                                          // own RHS member
@@ -3955,9 +3963,9 @@ public final class ExecModelTranspiler {
         // both fact-local reads, unit-restated, vergelijk (mvel's null semantics — ordering no-match on a leeg
         // operand, GELIJK true only both-leeg). Mirrors DRL's `attrA op attrB`. (vs-literal handled above; a global
         // or navigated operand lives in voorwaarde / the navigated branch.)
-        if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && la.navigatieRol() == null
+        if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && ongenavigeerd(la)
                 && la.type().isNumeriek() && isNumeriekOp(v.op())
-                && v.rechts() instanceof Expr.AttribuutRef ra && ra.navigatieRol() == null && ra.type().isNumeriek()) {
+                && v.rechts() instanceof Expr.AttribuutRef ra && ongenavigeerd(ra) && ra.type().isNumeriek()) {
             if (subject == null || !subject.heeftLid(la.attribuut()) || !subject.heeftLid(ra.attribuut())) return null;
             if (subject.granulariteitLeden().containsKey(la.attribuut())
                     || subject.granulariteitLeden().containsKey(ra.attribuut())) return null;          // temporal -> Phase F
@@ -4117,7 +4125,7 @@ public final class ExecModelTranspiler {
         // beslistabel "is gelijk aan X" cell, and the §12 OR-list of them). An enumeratie compares by VALUE equality
         // on its label, so it lowers exactly like a Tekst. mvel string '==' is VALUE equality (.equals); ONGELIJK is
         // null-asymmetric (mvel reads `null != "x"` as TRUE) — mirror DrlTranspiler's `prop == "lit"`.
-        if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && la.navigatieRol() == null
+        if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && ongenavigeerd(la)
                 && v.rechts() instanceof Expr.Literal lit && Literalen.tekstOfEnumLabel(lit) != null
                 && (v.op() == Conditie.Operator.GELIJK || v.op() == Conditie.Operator.ONGELIJK)) {
             if (subject == null || !subject.heeftLid(la.attribuut())) return null;            // not the subject's own member
@@ -4133,7 +4141,7 @@ public final class ExecModelTranspiler {
         // 'X'"): §5.5.5 a null relation reads LEEG (the SAME as a present relation with a null attribute), then string
         // equality decides — GELIJK of leeg vs the literal -> onwaar, ONGELIJK of leeg vs the literal -> WAAR (Tabel 44).
         // NOT a blanket short-circuit. Mirrors the navigated numeric comparison's null-relation handling.
-        if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && la.navigatieRol() != null
+        if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && !ongenavigeerd(la)
                 && v.rechts() instanceof Expr.Literal lit && Literalen.tekstOfEnumLabel(lit) != null
                 && (v.op() == Conditie.Operator.GELIJK || v.op() == Conditie.Operator.ONGELIJK)) {
             if (la.objecttype() == null || la.objecttype().granulariteitLeden().containsKey(la.attribuut())) return null;  // temporal -> Phase F
@@ -4157,8 +4165,8 @@ public final class ExecModelTranspiler {
         // (DrlTranspiler L2958-2966: both-leeg GELIJK -> onwaar, one-leeg ONGELIJK -> WAAR). Excludes DATUM (its own
         // ordering/equality lower elsewhere) + numeriek (the arithmetic-comparison branch above). A navigated operand on
         // either side is NOT handled here (own-vs-own suffices for parity; a navigated attr-vs-attr falls through -> skip).
-        if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && la.navigatieRol() == null
-                && v.rechts() instanceof Expr.AttribuutRef ra && ra.navigatieRol() == null
+        if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && ongenavigeerd(la)
+                && v.rechts() instanceof Expr.AttribuutRef ra && ongenavigeerd(ra)
                 && (v.op() == Conditie.Operator.GELIJK || v.op() == Conditie.Operator.ONGELIJK)
                 && la.type() != null && !la.type().isNumeriek() && !la.type().isPercentage() && !la.type().isDatum()
                 && ra.type() != null && !ra.type().isNumeriek() && !ra.type().isPercentage() && !ra.type().isDatum()) {
@@ -4175,7 +4183,7 @@ public final class ExecModelTranspiler {
         // Mirrors the own Tekst/enum branch above but for a Booleaan attribute: read the literal's boolean value with
         // Literalen.waar, then compare `rhs.equals(prop) == gelijk`. A null Boolean prop reads leeg -> rhs.equals(null)
         // is false, so GELIJK -> onwaar / ONGELIJK -> WAAR (Tabel 44), matching DrlTranspiler's mvel `prop == true|false`.
-        if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && la.navigatieRol() == null
+        if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && ongenavigeerd(la)
                 && v.rechts() instanceof Expr.Literal lit && lit.type() instanceof io.github.yhavinga.regelspraak.model.Datatype.Booleaan
                 && (v.op() == Conditie.Operator.GELIJK || v.op() == Conditie.Operator.ONGELIJK)) {
             if (subject == null || !subject.heeftLid(la.attribuut())) return null;            // not the subject's own member
@@ -4190,7 +4198,7 @@ public final class ExecModelTranspiler {
         // relation reads LEEG (same as a present relation with a null Boolean attribute), then boolean equality decides —
         // GELIJK of leeg vs the literal -> onwaar, ONGELIJK of leeg vs the literal -> WAAR (Tabel 44). Mirrors the
         // navigated Tekst/enum branch above.
-        if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && la.navigatieRol() != null
+        if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && !ongenavigeerd(la)
                 && v.rechts() instanceof Expr.Literal lit && lit.type() instanceof io.github.yhavinga.regelspraak.model.Datatype.Booleaan
                 && (v.op() == Conditie.Operator.GELIJK || v.op() == Conditie.Operator.ONGELIJK)) {
             if (la.objecttype() == null || la.objecttype().granulariteitLeden().containsKey(la.attribuut())) return null;  // temporal -> Phase F
@@ -4216,7 +4224,7 @@ public final class ExecModelTranspiler {
             if (pred == null) return null;
             String attr = la.attribuut();
             boolean neg = p.negatie();   // §8.1.5 + Tabel 16 "is geen <dagsoort>": a leeg/non-dagsoort datum is WAAR
-            if (la.navigatieRol() == null) {
+            if (ongenavigeerd(la)) {
                 if (!subject.heeftLid(attr)) return null;
                 return s -> { java.time.LocalDate ld = asDag(RegelSpraakRuntime.get(s, attr)); return neg != (ld != null && pred.test(ld)); };
             }
@@ -4426,7 +4434,7 @@ public final class ExecModelTranspiler {
                 return sb.toString();
             }, g);
         }
-        if (e instanceof Expr.AttribuutRef a && a.navigatieRol() == null) {
+        if (e instanceof Expr.AttribuutRef a && ongenavigeerd(a)) {
             // §5.8 a SET operand ("de prijs van ALLE elementen", set()==true) is an instance-AGGREGATION SOURCE, not the
             // subject's own scalar attribute — reading it as RegelSpraakRuntime.get(subject, attr) would look the
             // attribute up on the WRONG fact (the subject, which need not declare it) and THROW at fire time, aborting the
@@ -4454,7 +4462,7 @@ public final class ExecModelTranspiler {
             String attr = a.attribuut();
             return new WaardeFn((s, gm) -> RegelSpraakRuntime.get(s, attr), Set.of());
         }
-        if (e instanceof Expr.AttribuutRef a && a.navigatieRol() != null && valueSubject != null) {
+        if (e instanceof Expr.AttribuutRef a && !ongenavigeerd(a) && valueSubject != null) {
             // §6.x a to-ONE NAVIGATED value read ("de X van zijn partner"). DRL renders a PLAIN getter chain
             // ($subject.getRol().getX()) — NOT null-safe — so a null relation NPEs and aborts the session (a latent
             // DRL bug, like the §6.9 DimensieCel null-Map). navReader is null-safe (-> leeg), the CORRECT side: the
@@ -4470,7 +4478,7 @@ public final class ExecModelTranspiler {
             if (reader == null) return null;
             return new WaardeFn((s, gm) -> reader.apply(s), Set.of());
         }
-        if (e instanceof Expr.DimensieCel c && c.attribuut() instanceof Expr.AttribuutRef ca && ca.navigatieRol() == null
+        if (e instanceof Expr.DimensieCel c && c.attribuut() instanceof Expr.AttribuutRef ca && ongenavigeerd(ca)
                 && c.labels().size() == 1) {
             // §3.6 a single labeled cell read of a gedimensioneerd attribuut: ((Map) map).get(label). A multi-label
             // (multi-dimension) or navigated cell stays a skip (DRL markers it). Mirrors DrlTranspiler.waarde(DimensieCel).
@@ -5092,7 +5100,7 @@ public final class ExecModelTranspiler {
             BigDecimal val = bd(lit);
             return val == null ? null : (s, g, a) -> val;
         }
-        if (e instanceof Expr.AttribuutRef ar && ar.navigatieRol() == null) {
+        if (e instanceof Expr.AttribuutRef ar && ongenavigeerd(ar)) {
             if (subject != null && subject.granulariteitLeden().containsKey(ar.attribuut())) return null;   // temporal -> Phase F
             String attr = ar.attribuut();
             return (s, g, a) -> RegelSpraakRuntime.get(s, attr);
@@ -5426,7 +5434,7 @@ public final class ExecModelTranspiler {
         if (a.objecttype() == null || a.objecttype().granulariteitLeden().containsKey(a.attribuut())) return null;   // temporal -> Phase F
         if (!a.objecttype().dimensiesVan(a.attribuut()).isEmpty()) return null;                                        // §3.6 -> marker
         String attr = a.attribuut();
-        if (a.navigatieRol() == null) {
+        if (ongenavigeerd(a)) {
             if (subject == null || !subject.heeftLid(attr)) return null;
             return s -> datumWaarde(RegelSpraakRuntime.get(s, attr));
         }
@@ -5808,7 +5816,7 @@ public final class ExecModelTranspiler {
     private Telling toOneAantalReader(Expr.Functie f, Objecttype subject) {
         String generiek = "AANTAL-assertie buiten Phase-D scope";
         if (subject == null || f.filter() != null || f.argumenten().size() != 1) return new Telling(null, generiek);
-        if (!(f.argumenten().get(0) instanceof Expr.AttribuutRef a) || a.navigatieRol() != null)
+        if (!(f.argumenten().get(0) instanceof Expr.AttribuutRef a) || !ongenavigeerd(a))
             return new Telling(null, generiek);
         Objecttype elem = f.elementObjecttype();
         if (elem == null || a.attribuut() == null) return new Telling(null, generiek);
@@ -5856,7 +5864,7 @@ public final class ExecModelTranspiler {
         if (a.objecttype() == null) return null;
         if (a.objecttype().granulariteitLeden().containsKey(a.attribuut())) return null;   // temporal -> Phase F
         if (!a.objecttype().dimensiesVan(a.attribuut()).isEmpty()) return null;               // §3.6 gedimensioneerd -> later
-        if (a.navigatieRol() == null) {
+        if (ongenavigeerd(a)) {
             if (subject == null || !subject.heeftLid(a.attribuut())) return null;
             String attr = a.attribuut();
             return s -> RegelSpraakRuntime.get(s, attr);
@@ -6997,7 +7005,7 @@ public final class ExecModelTranspiler {
     @SuppressWarnings({"unchecked", "rawtypes"})
     private List<Rule> gevuurdCompanions(ResolvedRegel r) {
         if (!model.gevuurdProducent(r.naam()) || !model.gevuurdReferenties().contains(r.naam())) return List.of();
-        if (!(r.doel() instanceof Expr.AttribuutRef doel) || doel.navigatieRol() != null || doel.objecttype() == null)
+        if (!(r.doel() instanceof Expr.AttribuutRef doel) || !ongenavigeerd(doel) || doel.objecttype() == null)
             return List.of();
         Objecttype subject = doel.objecttype();
         Class<?> factClass = factClass(subject);
@@ -7961,7 +7969,7 @@ public final class ExecModelTranspiler {
         // reactivity mask — computed once against a leeg factor and never recomputed. See letKinderen.
         for (Expr k : letKinderen(e)) eigenReads(k, subject, uit);
         if (e instanceof Expr.AttribuutRef a) {
-            if (a.navigatieRol() == null && a.objecttype() == subject && subject.attribuut(a.attribuut()) != null)
+            if (ongenavigeerd(a) && a.objecttype() == subject && subject.attribuut(a.attribuut()) != null)
                 uit.add(prop(a.attribuut()));
         } else if (e instanceof Expr.Binair b) {
             eigenReads(b.links(), subject, uit);
@@ -7990,7 +7998,7 @@ public final class ExecModelTranspiler {
     private void navRefs(Expr e, Objecttype subject, java.util.List<Expr.AttribuutRef> uit) {
         for (Expr k : letKinderen(e)) navRefs(k, subject, uit);   // ch. 4.10: see into a Let / IfThenElse
         if (e instanceof Expr.AttribuutRef a) {
-            if (a.navigatieRol() != null || (a.objecttype() != null && a.objecttype() != subject)) uit.add(a);
+            if (!ongenavigeerd(a) || (a.objecttype() != null && a.objecttype() != subject)) uit.add(a);
         } else if (e instanceof Expr.Binair b) {
             navRefs(b.links(), subject, uit);
             navRefs(b.rechts(), subject, uit);

@@ -492,10 +492,10 @@ public final class IrLoader {
                     // written whole or not at all, never null, never empty (IR-SPEC ch. 4.1a): a malformed list
                     // is refused by name rather than read as the bindingless form, which would re-derive the walk
                     if (!nb.isArray() || nb.isEmpty())
-                        throw new Refusal("AttribuutRef.navigatieBindingen",
-                                "a navigatieBindingen field is a non-empty list of RolBindings (WF-053)");
+                        throw new Refusal("AttribuutRef.navigatieBindingen", "malformed: a navigatieBindingen field is a"
+                                + " non-empty list of RolBindings, never null (IR-SPEC ch. 4.1a)");
                     List<RolBindingRef> stappen = new ArrayList<>();
-                    for (JsonNode s : nb) stappen.add(verplicht("AttribuutRef.navigatieBindingen", "RolBinding", rolBinding(s)));
+                    for (JsonNode s : nb) stappen.add(navigatieStap("AttribuutRef.navigatieBindingen", s));
                     navigatieBindingen.put(a, List.copyOf(stappen));
                 }
                 yield a;
@@ -611,12 +611,13 @@ public final class IrLoader {
                 Conditie.Kenmerk k = new Conditie.Kenmerk(text(n, "kenmerk"), text(n, "navigatie"), bool(n, "negatie"),
                         ot(text(n, "eigenaar")), geheelPeriode(n.get("periode")), bron(n));
                 if (n.has("navigatieBinding")) {
+                    // shape before meaning: a null or incomplete binding is malformed whatever the check does
+                    RolBindingRef nb = navigatieStap("Kenmerk.navigatieBinding", n.get("navigatieBinding"));
                     // ref faults on the same shape: a binding on a check that does not navigate (WF-053)
                     if (k.navigatie() == null)
                         throw new Refusal("Kenmerk.navigatieBinding",
                                 "a navigation binding on a characteristic check that does not navigate (WF-053)");
-                    navigatieBindingen.put(k, List.of(verplicht("Kenmerk.navigatieBinding", "RolBinding",
-                            rolBinding(n.get("navigatieBinding")))));
+                    navigatieBindingen.put(k, List.of(nb));
                 }
                 yield k;
             }
@@ -744,6 +745,18 @@ public final class IrLoader {
         return new ResolvedFeitCreatie(text(n, "naam"), ot(text(n, "anker")), ot(text(n, "doel")),
                 text(n, "zetVeld"), text(n, "joinVeld"), ts, conditie(n.get("voorwaarde")),
                 geldigheid(n));
+    }
+
+    /** One navigation hop off the wire, refused BY NAME when malformed — null, not a RolBinding object, or without a
+     *  string {@code feittype} / {@code rol}. The verifier and ref reject the same document at load naming the field;
+     *  read leniently it would surface only as an unresolved-navigation skip in the transpiler, far from its cause. */
+    private static RolBindingRef navigatieStap(String vorm, JsonNode s) {
+        if (s == null || !s.isObject() || !"RolBinding".equals(text(s, "node")))
+            throw new Refusal(vorm, "malformed: each navigation hop is a RolBinding object, never null");
+        for (String veld : new String[] { "feittype", "rol" })
+            if (!s.hasNonNull(veld) || !s.get(veld).isTextual())
+                throw new Refusal(vorm, "malformed RolBinding: missing required field '" + veld + "'");
+        return new RolBindingRef(s.get("feittype").asText(), s.get("rol").asText());
     }
 
     private RolBindingRef rolBinding(JsonNode n) {

@@ -1592,7 +1592,7 @@ public final class DrlTranspiler {
         // A TEMPORAL doel (a List<Segment> tijdlijn attribute) is written a timeline, not a scalar — its value lowers
         // through temporeleWaarde() below, NOT waarde() (which would register a wrong scalar accumulate for a SOM-over-
         // temporal-set and mis-count it). Detect it here so the scalar value pre-computation is skipped.
-        boolean temporeelDoel = subject != null && r.doel() instanceof Expr.AttribuutRef td && td.navigatieRol() == null
+        boolean temporeelDoel = subject != null && r.doel() instanceof Expr.AttribuutRef td && ongenavigeerd(td)
                 && td.objecttype() != null && td.objecttype().granulariteitLeden().containsKey(td.attribuut())
                 && !Tijdlijnen.meerPeriodiek(td.objecttype().tijdlijnAantalLeden(), td.attribuut());
         // ch. 4.10: the forced needs of a Let in the value ride the CONSEQUENCE as local variables, so hoisting is
@@ -1633,7 +1633,7 @@ public final class DrlTranspiler {
         // geldigheids-WINDOW would need a timeline×window clip (§8.4 leaves that periodization under-specified) — both
         // stay a marker below. Mirrored by the exec back-end.
         boolean temporeelKenmerkDoel = subject != null && r.soort() == ResolvedRegel.Soort.KENMERKTOEKENNING
-                && r.doel() instanceof Expr.AttribuutRef ka && ka.navigatieRol() == null && ka.objecttype() != null
+                && r.doel() instanceof Expr.AttribuutRef ka && ongenavigeerd(ka) && ka.objecttype() != null
                 && ka.objecttype().kenmerkGranulariteitLeden().containsKey(ka.attribuut())
                 && !Tijdlijnen.meerPeriodiek(ka.objecttype().kenmerkTijdlijnAantalLeden(), ka.attribuut());
         String kenmerkTl = null;
@@ -1676,7 +1676,7 @@ public final class DrlTranspiler {
         // the agenda-order dependence vs a berekening on the same doel — the berekening (unguarded) wins whenever
         // it applies, the initialisatie fills the rest. Property reactivity then cancels a stale activation.
         if (r.soort() == ResolvedRegel.Soort.INITIALISATIE && subject != null
-                && r.doel() instanceof Expr.AttribuutRef ia && ia.navigatieRol() == null) {
+                && r.doel() instanceof Expr.AttribuutRef ia && ongenavigeerd(ia)) {
             String leegGuard = ident(ia.attribuut(), false) + " == null";
             constraint = constraint.isEmpty() ? leegGuard : leegGuard + ", " + constraint;
         }
@@ -1696,7 +1696,7 @@ public final class DrlTranspiler {
             verzamelEigenReads(r.waarde(), subject, watch);
             // §9.9: an anchored temporal write ALSO reads the startpunt attribute (injected at lowering,
             // invisible to the IR walk) — watch it, so the write re-fires when the startpunt rule lands.
-            if (r.doel() instanceof Expr.AttribuutRef da && da.navigatieRol() == null && da.objecttype() == subject) {
+            if (r.doel() instanceof Expr.AttribuutRef da && ongenavigeerd(da) && da.objecttype() == subject) {
                 String ankerLid = model.startpuntAnkerLid(subject, da.attribuut());
                 if (ankerLid != null) watch.add(ident(ankerLid, false));
             }
@@ -1716,7 +1716,7 @@ public final class DrlTranspiler {
             rule.clausules(acc.clausules)
                 .geldigheid(r.geldigheid());   // §4.2: a time-bounded version fires only inside its window
         }
-        if (r.doel() instanceof Expr.AttribuutRef a && a.navigatieRol() == null && a.objecttype() != null
+        if (r.doel() instanceof Expr.AttribuutRef a && ongenavigeerd(a) && a.objecttype() != null
                 && a.objecttype().granulariteitLeden().containsKey(a.attribuut())
                 && !Tijdlijnen.meerPeriodiek(a.objecttype().tijdlijnAantalLeden(), a.attribuut())) {
             // §5.1.4 the doel is a SINGLE-period TEMPORAL attribute -> write a List<Segment> timeline, not a scalar.
@@ -1762,7 +1762,7 @@ public final class DrlTranspiler {
                         + (tl != null ? tl : todo(ongeankerd ? "tijdlijn met variabel startpunt zonder startpuntbepaling (§9.9)"
                                                              : "temporele toekenning", r.waarde().bron())) + " )\n    }\n");
             }
-        } else if (r.doel() instanceof Expr.AttribuutRef a && a.navigatieRol() == null && a.objecttype() != null
+        } else if (r.doel() instanceof Expr.AttribuutRef a && ongenavigeerd(a) && a.objecttype() != null
                 && a.objecttype().granulariteitLeden().containsKey(a.attribuut())
                 && Tijdlijnen.meerPeriodiek(a.objecttype().tijdlijnAantalLeden(), a.attribuut())) {
             // §13.3.6.7 a MULTI-PERIOD temporal doel ("voor elke N maanden") is a List<Segment> timeline whose WRITE
@@ -1771,7 +1771,7 @@ public final class DrlTranspiler {
             // Mirrors the exec multi-period doel skip.
             rule.dan("    modify(" + SUBJECT + ") {\n        " + setter(a.attribuut()) + "( "
                     + todo("meer-periodieke temporele toekenning (§13.3.6.7)", r.waarde().bron()) + " )\n    }\n");
-        } else if (r.doel() instanceof Expr.AttribuutRef a && a.navigatieRol() == null && a.objecttype() != null
+        } else if (r.doel() instanceof Expr.AttribuutRef a && ongenavigeerd(a) && a.objecttype() != null
                 && a.objecttype().kenmerkGranulariteitLeden().containsKey(a.attribuut())) {
             // §8.4/§13.4.5 a TEMPORAL KENMERK doel (kenmerkGranulariteit — its field is a List<Segment> TRUE-period
             // timeline, not a boolean) cannot take the scalar `setK(true)` the bare value branch below would emit
@@ -2299,6 +2299,14 @@ public final class DrlTranspiler {
             verzamelDelingen(k.dan(), poort.inTak(k.conditie(), true), uit);
             verzamelDelingen(k.anders(), poort.inTak(k.conditie(), false), uit);
         }
+    }
+
+    /** THE own-read shape test: the reference carries neither a written step nor a wire binding. Every arm that
+     *  reads a reference as the subject's (or the element's) own attribute asks this, never {@code navigatieRol() == null}
+     *  alone — a BOUND by-pair read has no written step either, and an own-read arm that fired on it read the
+     *  subject's same-named attribute instead of walking the binding (V1-WIREMIGRATIE P1, lens B1). */
+    private boolean ongenavigeerd(Expr.AttribuutRef a) {
+        return a.navigatieRol() == null && !navigatieBindingen.containsKey(a);
     }
 
     /** Sentinel from {@link #naviRol}: the reference is the subject's own attribute. */
@@ -3308,7 +3316,7 @@ public final class DrlTranspiler {
             // "onwaar" = the volBeide false (correct), so it keeps firing; a literal-RHS datum ordering (never both-empty)
             // keeps firing in both back-ends.
             if (v.links().type().isDatum()) {
-                boolean execFires = v.links() instanceof Expr.AttribuutRef la && la.navigatieRol() == null
+                boolean execFires = v.links() instanceof Expr.AttribuutRef la && ongenavigeerd(la)
                         && v.rechts() instanceof Expr.Literal dl && dl.type().isDatum();
                 if (!execFires) return null;
             }
@@ -3367,13 +3375,13 @@ public final class DrlTranspiler {
                 && f.granulariteit() == gran && f.argumenten().size() == 1 && subject != null) {
             Expr base = f.argumenten().get(0);
             RegelSpraakModel.Granulariteit baseGran = null; Datatype baseType = null; String baseExpr = null;
-            if (base instanceof Expr.AttribuutRef ba && ba.navigatieRol() == null && !ba.set() && ba.objecttype() == subject
+            if (base instanceof Expr.AttribuutRef ba && ongenavigeerd(ba) && !ba.set() && ba.objecttype() == subject
                     && subject.granulariteitLeden().containsKey(ba.attribuut())
                     && !Tijdlijnen.meerPeriodiek(subject.tijdlijnAantalLeden(), ba.attribuut())) {
                 baseGran = subject.granulariteitLeden().get(ba.attribuut());
                 baseType = effType(ba);
                 baseExpr = SUBJECT + "." + getter(ba.attribuut()) + "()";
-            } else if (base instanceof Expr.AttribuutRef ba && ba.navigatieRol() != null && !ba.set()
+            } else if (base instanceof Expr.AttribuutRef ba && !ongenavigeerd(ba) && !ba.set()
                     && ba.objecttype() != null && ba.objecttype().granulariteitLeden().containsKey(ba.attribuut())
                     && !Tijdlijnen.meerPeriodiek(ba.objecttype().tijdlijnAantalLeden(), ba.attribuut())
                     && naviResolve(ba, subject).soort() == NaviSoort.GENAVIGEERD) {
@@ -3523,9 +3531,9 @@ public final class DrlTranspiler {
         }
         if (!(e instanceof Expr.AttribuutRef a) || a.set() || a.type() == null || !a.type().isNumeriek()) return null;
         Objecttype ot; String getter;
-        if (a.navigatieRol() == null && a.objecttype() == subject) {
+        if (ongenavigeerd(a) && a.objecttype() == subject) {
             ot = subject; getter = SUBJECT + "." + getter(a.attribuut()) + "()";
-        } else if (a.navigatieRol() != null && a.objecttype() != null && naviResolve(a, subject).soort() == NaviSoort.GENAVIGEERD) {
+        } else if (!ongenavigeerd(a) && a.objecttype() != null && naviResolve(a, subject).soort() == NaviSoort.GENAVIGEERD) {
             ot = a.objecttype();
             String root = SUBJECT + "." + getter(naviResolve(a, subject).rol()) + "()";
             getter = "(" + root + " == null ? null : " + root + "." + getter(a.attribuut()) + "())";
@@ -4314,12 +4322,12 @@ public final class DrlTranspiler {
         boolean multiGlobalRhs = !(ander instanceof Expr.AttribuutRef) && !(ander instanceof Expr.Literal)
                 && !(ander instanceof Expr.ParameterRef) && aggRhsGlobalNamen(ander).size() == 2;
         if (!(ander instanceof Expr.Literal)
-                && !(ander instanceof Expr.AttribuutRef ar && ar.navigatieRol() == null && ar.objecttype() == subject
+                && !(ander instanceof Expr.AttribuutRef ar && ongenavigeerd(ar) && ar.objecttype() == subject
                      && subject.attribuutLeden().containsKey(ar.attribuut()))
                 && !(ander instanceof Expr.ParameterRef pr && pr.parameter().granulariteit() == null
                      && (pr.parameter().datatype().isNumeriek() || pr.parameter().datatype().isPercentage()))
                 && !(ander instanceof Expr.AttribuutRef nav && nav.objecttype() != null
-                     && (nav.navigatieRol() != null || nav.objecttype() != subject) && nav.objecttype().heeftLid(nav.attribuut())
+                     && (!ongenavigeerd(nav) || nav.objecttype() != subject) && nav.objecttype().heeftLid(nav.attribuut())
                      && nav.type() != null && (nav.type().isNumeriek() || nav.type().isPercentage())
                      && !isTemporeelAttribuut(nav))
                 && !multiGlobalRhs) return null;
@@ -4337,7 +4345,7 @@ public final class DrlTranspiler {
         // to-ONE navigated numeric read goes through the null-safe rsRelGetal($subject.get<Rol>(), "attr") — an absent
         // relation reads leeg, NOT a short-circuit or an NPE (waarde() would emit the un-guarded $subject.getRol().getAttr()).
         Frag n;
-        if (ander instanceof Expr.AttribuutRef nar && (nar.navigatieRol() != null || nar.objecttype() != subject)) {
+        if (ander instanceof Expr.AttribuutRef nar && (!ongenavigeerd(nar) || nar.objecttype() != subject)) {
             NaviRef nr = naviResolve(nar, subject);
             if (nr.soort() != NaviSoort.GENAVIGEERD) return aggTerug(acc, mark);   // AFWEZIG / NAAR_VEEL / ONOPGELOST -> marker
             fnImport("rsRelGetal");
@@ -4929,15 +4937,15 @@ public final class DrlTranspiler {
         String tlVeld; int toetsCode; String grens = "null";
         if (kv.toets() instanceof Conditie.Vergelijking v) {
             Expr.AttribuutRef tijd; Expr ander; boolean linksTemp;
-            if (v.links() instanceof Expr.AttribuutRef la && la.navigatieRol() == null && elementTijdlijnLid(elem, la.attribuut()))
+            if (v.links() instanceof Expr.AttribuutRef la && ongenavigeerd(la) && elementTijdlijnLid(elem, la.attribuut()))
                 { tijd = la; ander = v.rechts(); linksTemp = true; }
-            else if (v.rechts() instanceof Expr.AttribuutRef ra && ra.navigatieRol() == null && elementTijdlijnLid(elem, ra.attribuut()))
+            else if (v.rechts() instanceof Expr.AttribuutRef ra && ongenavigeerd(ra) && elementTijdlijnLid(elem, ra.attribuut()))
                 { tijd = ra; ander = v.links(); linksTemp = false; }
             else return kvTerug(acc, mark, kv,
                     "een matrixvergelijking zonder enkelperiodiek tijdlijnattribuut van het elementtype");
             if (!(tijd.type().isNumeriek() || tijd.type().isPercentage()))
                 return kvTerug(acc, mark, kv, "een niet-numerieke heelperiodevergelijking in de matrix");
-            if (ander instanceof Expr.AttribuutRef ar && ar.navigatieRol() == null && elementTijdlijnLid(elem, ar.attribuut()))
+            if (ander instanceof Expr.AttribuutRef ar && ongenavigeerd(ar) && elementTijdlijnLid(elem, ar.attribuut()))
                 return kvTerug(acc, mark, kv, "een tijdlijn-vs-tijdlijnvergelijking in de matrix");
             io.github.yhavinga.regelspraak.model.Eenheid el = eff.eenheidVan(tijd), er = eff.eenheidVan(ander);
             boolean crossUnit = el != null && er != null && el.vereistOmrekening(er);
@@ -4957,7 +4965,7 @@ public final class DrlTranspiler {
             tlVeld = tijd.attribuut(); toetsCode = code;
             grens = crossUnit ? herschaalExact(g.text(), effType(ander), effType(tijd)) : g.text();
         } else if (kv.toets() instanceof Conditie.Predicaat p && p.operand() instanceof Expr.AttribuutRef pa
-                && pa.navigatieRol() == null && elementTijdlijnLid(elem, pa.attribuut())
+                && ongenavigeerd(pa) && elementTijdlijnLid(elem, pa.attribuut())
                 && (p.soort() == Conditie.Predicaatsoort.GEVULD || p.soort() == Conditie.Predicaatsoort.LEEG)) {
             tlVeld = pa.attribuut();
             toetsCode = p.soort() == Conditie.Predicaatsoort.GEVULD ? 6 : 8;   // §8.2 gevuld / leeg over every moment
@@ -5191,7 +5199,7 @@ public final class DrlTranspiler {
      *  navigated leg, a non-navigated leaf, or a nested expression falls through to {@link #operand} unchanged — leeg-as-0
      *  is a numeric rule, and nested arithmetic re-enters here because operand's arithmetic cases lower through operandReken. */
     private Frag operandReken(Acc acc, Expr e, Objecttype subject) {
-        if (e instanceof Expr.AttribuutRef a && a.navigatieRol() != null && a.type() != null && a.type().isNumeriek()
+        if (e instanceof Expr.AttribuutRef a && !ongenavigeerd(a) && a.type() != null && a.type().isNumeriek()
                 && !isGedimensioneerd(a) && !isTemporeelAttribuut(a)) {
             NaviRef n = naviResolve(a, subject);
             if (n.soort() == NaviSoort.GENAVIGEERD) {

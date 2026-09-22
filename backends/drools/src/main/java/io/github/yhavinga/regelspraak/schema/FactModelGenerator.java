@@ -349,7 +349,8 @@ public final class FactModelGenerator {
      *
      * <p>Null when the walk does not resolve from {@code subject}: a binding naming no declared role, a hop whose
      * opposite role the type the walk stands on does not fill (ch. 2.6, extensionally), or — with a non-null
-     * {@code eindpunt} — a last hop whose filler the endpoint does not satisfy. The caller refuses such a read
+     * {@code eindpunt} — a last hop whose filler is not the endpoint or a subtype of it (filler ⊑ endpoint, the
+     * direction WF-053 and ref demand: every object the walk can reach must be one the read may address). The caller refuses such a read
      * with its own unresolved-navigation reason. It never falls back to the written name: a document whose
      * binding does not fit is refused, not read along a route the wire did not name. The same subject-fit the
      * written-chain derivation ({@code RegelSpraakModel.volgKeten}) applies, so a read the transpiler meets
@@ -377,7 +378,7 @@ public final class FactModelGenerator {
             bereikt.add(ver);
             cur = ver;
         }
-        if (eindpunt != null && !eindpunt.isEen(cur)) return null;
+        if (eindpunt != null && !cur.isEen(eindpunt)) return null;
         return new Navigatiewandeling(List.copyOf(rollen), List.copyOf(bereikt), naarVeel);
     }
 

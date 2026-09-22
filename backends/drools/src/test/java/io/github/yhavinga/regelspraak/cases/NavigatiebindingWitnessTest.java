@@ -6,12 +6,17 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import io.github.yhavinga.regelspraak.loader.IrLoader;
+import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
+import io.github.yhavinga.regelspraak.schema.FactModelGenerator;
 
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -90,10 +95,54 @@ class NavigatiebindingWitnessTest {
     @Test void een_binding_die_niet_past_valt_niet_terug_op_de_geschreven_naam() throws Exception {
         // thuisligging.ligger is reached FROM a Haven, not from the Schuit this rule reads on. The written name
         // vlaghaven would resolve; a branch that fell back to it would play. Both must refuse instead.
+        // Each branch must refuse for the NAVIGATION, in its own words for it — the rule name alone would let any
+        // refusal of this rule pass.
         ObjectNode ir = enkeleStap();
         waarde(ir).set("navigatieBindingen", bindingen("thuisligging", "ligger"));
-        BeideTakken.geweigerd(tijdelijk("nav-past-niet", ir), casus(1), "vlagprijs van een schuit",
-                "a binding that does not fit the subject is refused, never re-read by name");
+        Path p = tijdelijk("nav-past-niet", ir);
+        JsonNode c = casus(1);
+        CaseRunner.Excluded exec = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(p, c, false));
+        assertTrue(exec.getMessage().contains("vlagprijs van een schuit — regel (waarde buiten scope)"), exec.getMessage());
+        CaseRunner.Excluded drl = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(p, c, true));
+        assertTrue(drl.getMessage().contains("TODO navigatie: het kadegeld van de vlaghaven van de Schuit"), drl.getMessage());
+    }
+
+    @Test void een_gebonden_paarlezing_in_een_voorwaarde_is_geen_eigen_lezing() throws Exception {
+        // The own-read arms keyed on navigatieRol == null alone. A bound by-pair read has no written step either, so
+        // once the subject declared a same-named attribute the exec branch read Schuit.kadegeld (never filled)
+        // instead of walking vlagvoering to the Haven. RED FIRST on the port before this row: exec
+        // "attribuut vlagprijs: verwacht 40, werkelijk leeg" in three cases, DRL PLAYED 4, ref PASS, verifier PASS.
+        ObjectNode ir = lees();
+        ObjectNode schuit = (ObjectNode) ir.get("objecttypen").get("Schuit").get("attributen");
+        schuit.set("kadegeld", ir.get("objecttypen").get("Haven").get("attributen").get("kadegeld"));
+        ObjectNode links = waarde(ir).deepCopy();
+        links.putNull("navigatieRol");
+        links.putArray("navigatiePad");
+        ObjectNode v = regel(ir).putObject("voorwaarde");
+        v.put("node", "Vergelijking").put("op", "GROTER");
+        v.set("links", links);
+        ObjectNode dertig = v.putObject("rechts").put("node", "Literal").put("waarde", "30");
+        dertig.set("type", links.get("type"));
+        dertig.put("bron", "30");
+        v.putNull("periode").put("bron", "het kadegeld van de vlaghaven van de Schuit groter is dan 30");
+        BeideTakken.groen(tijdelijk("nav-paar-voorwaarde", ir), casus(1), "the bound read in the guard walks to the Haven");
+    }
+
+    @Test void het_eindpunt_mag_een_supertype_van_de_vuller_zijn_niet_een_subtype() throws Exception {
+        // WF-053 and ref: the last bound role's filler must be the endpoint or a subtype of it (filler ⊑ endpoint).
+        ObjectNode ir = lees();
+        ObjectNode typen = (ObjectNode) ir.get("objecttypen");
+        typen.set("Ligplaats", leegType(typen.get("Haven"), "Ligplaats", null));
+        typen.set("Zeehaven", leegType(typen.get("Haven"), "Zeehaven", "Haven"));
+        ((ObjectNode) typen.get("Haven")).put("supertype", "Ligplaats");
+        RegelSpraakModel m = IrLoader.loadAll(ir).model();
+        List<RegelSpraakModel.RolBindingRef> stap = List.of(new RegelSpraakModel.RolBindingRef("vlagvoering", "vlaghaven"));
+        RegelSpraakModel.Objecttype schuit = m.objecttypeOpNaam("Schuit");
+        assertNotNull(FactModelGenerator.navigatiewandeling(m, schuit, stap, m.objecttypeOpNaam("Haven")));
+        assertNotNull(FactModelGenerator.navigatiewandeling(m, schuit, stap, m.objecttypeOpNaam("Ligplaats")),
+                "a Haven is a Ligplaats, so every object the walk reaches may be addressed as one");
+        assertNull(FactModelGenerator.navigatiewandeling(m, schuit, stap, m.objecttypeOpNaam("Zeehaven")),
+                "not every Haven is a Zeehaven");
     }
 
     @Test void een_lege_bindingenlijst_wordt_bij_naam_geweigerd() throws Exception {
@@ -109,6 +158,20 @@ class NavigatiebindingWitnessTest {
         k.set("navigatieBinding", binding("vlagvoering", "vlaghaven"));
         IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class, () -> IrLoader.loadAll(ir));
         assertTrue(r.form().equals("Kenmerk.navigatieBinding"), r.getMessage());
+    }
+
+    @Test void een_misvormde_binding_wordt_bij_het_laden_benoemd() throws Exception {
+        // the verifier and ref give LOAD ERROR naming the field; before this row the Drools loader read the hop
+        // leniently and the document surfaced only as a generic unresolved-navigation skip
+        ObjectNode ir = lees();
+        ((ObjectNode) waarde(ir).get("navigatieBindingen").get(0)).remove("rol");
+        IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class, () -> IrLoader.loadAll(ir));
+        assertTrue(r.getMessage().contains("missing required field 'rol'"), r.getMessage());
+
+        ObjectNode ir2 = lees();
+        ((ObjectNode) ir2.get("resolvedRegels").get(3).get("voorwaarde")).putNull("navigatieBinding");
+        IrLoader.Refusal r2 = assertThrows(IrLoader.Refusal.class, () -> IrLoader.loadAll(ir2));
+        assertTrue(r2.getMessage().contains("malformed"), "null is malformed before it is misplaced: " + r2.getMessage());
     }
 
     // ---------------- fixtures ----------------
@@ -138,6 +201,19 @@ class NavigatiebindingWitnessTest {
             Path p = s.filter(f -> f.getFileName().toString().startsWith("case" + n + "-")).findFirst().orElseThrow();
             return JSON.readTree(Files.readString(p));
         }
+    }
+
+    /** A member-less object type shaped like {@code model}, with the given supertype. */
+    private static ObjectNode leegType(JsonNode model, String naam, String supertype) {
+        ObjectNode t = model.deepCopy();
+        t.put("naam", naam).put("meervoud", naam + "s");
+        if (supertype == null) t.remove("supertype"); else t.put("supertype", supertype);
+        for (String kaart : new String[] { "attributen", "attribuutMeervoud", "attribuutDimensies",
+                "attribuutGranulariteit", "attribuutTijdlijnAantal", "attribuutTijdlijnNaam", "kenmerkSoorten",
+                "kenmerkGranulariteit", "kenmerkTijdlijnAantal" })
+            if (t.has(kaart)) t.putObject(kaart);
+        t.putArray("kenmerken");
+        return t;
     }
 
     private static ObjectNode binding(String feittype, String rol) {
