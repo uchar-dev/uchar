@@ -2217,7 +2217,7 @@ stuk los te landen en verbeteren de v0-toestand ook als de klap nooit komt.
 | P7 | ~~**`eigenaar`-gastheerobject beslissen**~~ — **GELAND 2026-09-19** (`backlog/done/20260910-eigenaar-gastheer-object.md`) | de OBJECT-helft IS betekenis, dus het veld verdwijnt niet: B10 is bijgesteld van verwijdering naar hernoeming (zie B10, voorstel) en verhuist daarmee van M2 naar M8 | ~~B10~~ |
 | P8 | ~~**Kruis-stelsel-eenheidsdivergentie**~~ — **GELAND 2026-09-19** (`backlog/done/20260910-kruis-stelsel-eenheid-divergentie.md`) | clingo conformeert: de omrekentabel loopt op canonieke naam over de gedeclareerde stelsels; golden `jutterswet-stelselweging` draagt de vier gekruiste posities | B17 (ii) |
 | P9 | ~~**Dagsoortsemantiek**~~ — **GELAND 2026-09-19** (`backlog/done/20260910-dagsoort-semantiek.md`) | §6.10/§6.11 draaien in alle uitvoerders met drie rgs-goldens en vijf rode getuigen; de looptijdbetekenis staat (RUNTIME-SEMANTICS ch. 3.8) | B23 / V10 |
-| P10 | **Naamtabel v0→v1 geëxtraheerd en getoetst** | IR-SPEC draagt elke Engelse naam al met een `v0 name:`-regel; extraheer die tot één machineleesbare tabel en toets hem op volledigheid tegen de 80 knopen en 193 properties van het schema | B6 |
+| P10 | ~~**Naamtabel v0→v1 geëxtraheerd en getoetst**~~ — **GELAND 2026-09-22** (`backlog/done/20260922-p10-naamtabel.md`) | `spec/proposals/v1-naamtabel.json`, totaal over 82 knopen en 196 properties (schemastand 2026-09-22), getoetst door `python3 spec/proposals/v1-naamtabel-toets.py`. De aanname "elke Engelse naam al met een `v0 name:`-regel" klopte voor 20 van de 82 knopen: de rest koppelt de spec elders (10), alleen via de veld- of knooptabel (19 knopen, 110 propertyplaatsen), of niet — 7 knopen en 27 propertyplaatsen zijn gaten met een voorstel, zie de kaart | B6 |
 | P11 | **Toka-zone opruimen + geschiedenis-herschrijving** (V12 (a)) | laatste stap vóór de klap, zodat P1–P10 nog van de toka-toets profiteren | de klap |
 
 ### Fase 2 — de klap
@@ -2310,8 +2310,9 @@ kaart al is.
   beschrijft.
 - **De additieve deltas niet geïnventariseerd.** Die vallen per §1 buiten de
   opdracht en hoeven niet op de klap te wachten.
-- **De v1-naamtabel niet geëxtraheerd.** Dat is P10 en het is echt werk: IR-SPEC
-  draagt de namen wel, maar verspreid over ch. 2–4 en niet machineleesbaar.
+- ~~**De v1-naamtabel niet geëxtraheerd.** Dat is P10 en het is echt werk: IR-SPEC
+  draagt de namen wel, maar verspreid over ch. 2–4 en niet machineleesbaar.~~ —
+  **GELAND 2026-09-22** (`spec/proposals/v1-naamtabel.json`)
 - **De kosten niet in tijd geschat.** De maten hier zijn documentaantallen,
   regelaantallen en gatevloeren, want die zijn gemeten; een tijdsschatting zou
   dat niet zijn.
