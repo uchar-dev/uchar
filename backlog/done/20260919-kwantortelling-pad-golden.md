@@ -61,8 +61,8 @@ DrlTranspiler/check-drools-kaarten (de kanaallijsten bewegen mee).
   weigering, geen crash, geen fout antwoord. Achter die weigering ligt de
   veel-op-veel `berging` (de bootberging-weigering), dus alleen de loader
   optillen laat hem nog niet spelen. Route: de golden in `EXPECTED_CHANNEL`
-  én `DRL_CHANNEL` (klasse B, loader Refusals 35 → 36; de telling
-  "seventy-one of the seventy-four" → "seventy-two of the seventy-five").
+  én `DRL_CHANNEL` (klasse B, loader Refusals 35 → 36; de totaaltelling
+  in het lijstcommentaar zie de fixronde hieronder).
   Beschermd-padvoorstel. PINDELTA: nul — `EXPECTED_PLAYED` blijft 179,
   `EXPECTED_DRL_PLAYED` blijft 156.
 - (c) GEHAALD, voorstel-zone. `spec/IR-SPEC.md`: de WF-102-COUNT-bullet
@@ -85,3 +85,37 @@ ref ≡ clingo; beide Drools-takken weigeren `Kwantorvouw.bronPad` benoemd".
 Buiten deze kaart: `RUNTIME-SEMANTICS.md` ch. 3.9a / de uitvoeringstabelrij
 van de kwantorvouw noemt nog geen meerstapsgetuige (beschermd pad, niet
 aangeraakt).
+
+### Fixronde (lensronde 2026-09-22)
+
+- B1 (bereik niet gepind): `case4-bereik-en-tweede-jutter` toegevoegd,
+  handberekend in de NOTE vóór de run. J1 houdt de keten van case 1
+  (vlak 3), J2 voert B3 met V2 (gedeeld met J1), V4, V5, V6 (vlak 4), en
+  V8 (9,00) wordt door geen boot geborgen. J1 afwezig/aanwezig, J2
+  aanwezig/afwezig in één wereld, dus elke telling die niet van het
+  subject afhangt faalt; de populatietelling (7) en de lekkende telling
+  (J1: 6) draaien J1's verdicten om. Omkeerproef: elk van de vier
+  kenmerkverdicten omgedraaid geeft MISMATCH in ref én clingo.
+- B2 (commentaartelling): `DRL_CHANNEL` telt 76 regels (A 25, B 36, C 12,
+  D 1, E 2); de klasseredenen (ch. 7, loader Refusal, MARKER — de
+  havenrooster-MARKER staat in A) dragen er 73. Het commentaar zegt nu
+  "seventy-three of the seventy-six". Voorgeschiedenis: op main stond al
+  "seventy-one of the seventy-four" bij 75 regels en 72 klasseredenen, dus
+  één te laag; mijn eerste versie schoof die fout door. Niet aangeraakt en
+  hier gemeld: het A-kopje zegt "24" bij 25 regels (havenrooster staat er
+  met een MARKER-reden in).
+- A3: de specszin claimt alleen de at-least- en at-most-arm en zegt
+  expliciet dat de exactly-arm over een meerstapsbereik geen getuige heeft;
+  de WF-108-rij noemt TEN_MINSTE 4 en TEN_HOOGSTE 3, de tweede subject, en
+  dat PRECIES niet getuigd is.
+- A4: zin en NOTE noemen beide alternatieve lezingen in de termen van de
+  COUNT-bullet: de join-tuple-telling (case 1/3/4: 4 tegen 3) en de
+  telling van tellingen = tussen-instanties (case 2: 2 tegen 4).
+- A5: de reden in beide kanaallijsten is nu dezelfde regel (zoals het
+  B-kopje belooft) en noemt de veel-op-veel-grens AFGELEID, niet gemeten,
+  met de verwijzing naar bootberging en muntketen.
+- Gates na de fix: 2 273 bestanden; 3 273 schoon / 431 negatief; 4 629
+  casusbestanden; 5 775 voorbeelden, 588 casussen; 6 479 checks, 588
+  casussen; 7 552 weerleggen, 36 overlevers; 13 PASS, 0 overlevers; 12
+  played 179, DRL 156, kanaalvloer 53 / 76, JUnit 539. Pindelta nog
+  steeds 0/0.
