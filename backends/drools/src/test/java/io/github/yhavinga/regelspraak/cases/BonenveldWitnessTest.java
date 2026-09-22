@@ -5,11 +5,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import io.github.yhavinga.regelspraak.loader.IrLoader;
+import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
+import io.github.yhavinga.regelspraak.schema.FactModelGenerator;
+
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -103,6 +108,27 @@ class BonenveldWitnessTest {
         stap(ir).set("rolBinding", binding("reserveligging", "reservepost"));
         BeideTakken.rood(tijdelijk("hop-binding", ir), casus(POSTWACHT, "case"), "attribuut vakseinaantal: verwacht 2, werkelijk 0",
                 "the hop must walk the bound reserveligging relation");
+    }
+
+    @Test void een_een_op_een_hop_leest_de_ouderzijde() throws Exception {
+        // postwacht with kustligging made 1:1. Both beans now carry a field (Kustvak.post and Post.kustvak) and the
+        // case input writes both (ch. 5.7a), so the two sides answer alike here and the document plays either way;
+        // what this row pins is the CHOICE, in the one derivation both branches execute. The parent side is the
+        // side the frontend picks for an objectcreatie-placed link; the only other witness is the toka zone, which
+        // is temporary. Verifier-clean, ref PASS.
+        ObjectNode ir = lees(POSTWACHT);
+        for (JsonNode r : ir.get("feittypen").get("kustligging").get("rollen"))
+            if (r.get("naam").asText().equals("post")) ((ObjectNode) r).put("meervoudig", false).putNull("meervoud");
+        ObjectNode c = (ObjectNode) casus(POSTWACHT, "case");
+        for (JsonNode i : c.get("input").get("instances")) {
+            ObjectNode rollen = (ObjectNode) i.get("roles");
+            if (rollen.has("posten")) rollen.set("post", rollen.remove("posten"));
+        }
+        RegelSpraakModel m = IrLoader.loadAll(ir).model();
+        FactModelGenerator.Creatievelden v = FactModelGenerator.creatievelden(m, m.feitCreaties.get(0));
+        assertEquals(new FactModelGenerator.Creatiehop(m.objecttypeOpNaam("Post"), "post", true), v.hops().get(0),
+                "a 1:1 hop reads the parent's field, named after the bound role");
+        BeideTakken.groen(tijdelijk("hop-een-op-een", ir), c, "the 1:1 hop plays over the parent side");
     }
 
     // ---------------- scopeVeld: the uniqueness scope ----------------

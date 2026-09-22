@@ -180,27 +180,41 @@ class RolveldlezerWitnessTest {
         assertTrue(drlReden(ir, c).contains("feitcreatie"), drlReden(ir, c));
     }
 
-    @Test void de_feitcreatie_weigert_een_tussenstap_zonder_veld() throws Exception {
-        // The §9.4 multi-hop path reads a field per step — on the PARENT for a viaOuderVeld hop. The gemeenteberging
-        // creation walks Gemeente -> Jutter that way, over `gemeente van inschrijving`, which is a field of JUTTER:
-        // the anker's bean carries no such getter at all. The golden itself is excluded earlier (its fold refuses
-        // first), so the hop is reached only with that rule stripped and the case's roles cleared. Measured on the
-        // pre-gate jar, on a verifier-clean AND ref-clean model:
+    @Test void de_feitcreatie_weigert_een_join_zonder_veld() throws Exception {
+        // The gemeenteberging creation, reduced to that rule. Until P2 (2026-09-22) this row pinned the refusal on
+        // the HOP: the wire's viaOuderVeld put the hop's field `gemeente van inschrijving` on the anker Gemeente,
+        // whose bean carries no such getter. Measured then, on a verifier-clean AND ref-clean model:
         //     verifier: PASS   ref: oracle: PASS (1 expectations)   clingo: clingo: PASS (1 expectations)
         //     Drools exec-model : ERROR ConstraintEvaluationException
         //     Drools DRL-tekst  : EXCLUDE drl compile: Unable to Analyse Expression this == $subject.gemeenteVanInschrijving
-        // Note WHICH half of the limit this is: nothing is displaced here — the model simply derives no field for
-        // that role on that type. The shared question covers both halves, which is why one gate suffices.
+        // Since P2 the hop is derived from its binding: `ingeschreven jutter` is to-many, so the field is Jutter's
+        // own `gemeente van inschrijving`, which exists — the side ref walks. The creation now stops one position
+        // on, at the join over `aanmelding`, whose roles are both to-many, so no bean carries the join field. The
+        // hop's own gate keeps a row of its own below (de_feitcreatie_weigert_een_verdrongen_tussenstapveld).
         Path ir = feitcreatieTussenstap(), c = geval(gemeenteGevalZonderRollen());
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                 () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c))));
         assertTrue(e.getMessage().contains("feitcreatie ("), e.getMessage());
-        // Since P2 the hop is derived from its binding, not from the wire's viaOuderVeld: the field is Jutter's own
-        // `gemeente van inschrijving`, which exists, and the creation stops one position on, at the join over
-        // `aanmelding`, whose roles are both to-many — the same shared gate, with its own reason.
         assertTrue(e.getMessage().contains("het beanmodel leidt voor de rol 'aanmelder' op Vondst"
                 + " geen referentieveld naar Jutter af"), e.getMessage());
         assertTrue(drlReden(ir, c).contains("feitcreatie"), drlReden(ir, c));
+    }
+
+    @Test void de_feitcreatie_weigert_een_verdrongen_tussenstapveld() throws Exception {
+        // The hop's gate, the position the row above no longer reaches. The same reduced gemeenteberging with a
+        // declared Jutter attribute `gemeente van inschrijving`: that member displaces the hop's reference field
+        // (leden(): attribuut > kenmerk > referentie), so the creation must stop AT THE HOP, before the join.
+        // Verifier-clean and ref-clean. With the hop gate removed from both branches the suite stayed green
+        // (lens, 2026-09-22): the creation then refused only at the join, which is the row above.
+        ObjectNode m = goldenIr(GEMEENTEBERGING);
+        houdRegels(m, Set.of("berging door de kustgemeente"));
+        ((ObjectNode) m.get("objecttypen").get("Jutter").get("attributen")).set("gemeente van inschrijving", numeriek());
+        Path ir = model("feitcreatie-verdrongen-hop", m), c = geval(gemeenteGevalZonderRollen());
+        String reden = "de rol 'gemeente van inschrijving' op Jutter deelt haar naam met een gedeclareerd lid";
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c))));
+        assertTrue(e.getMessage().contains("feitcreatie (" + reden), e.getMessage());
+        assertTrue(drlReden(ir, c).contains("feitcreatie: " + reden), drlReden(ir, c));
     }
 
     @Test void de_ongestoorde_feitcreatie_speelt_nog() throws Exception {
