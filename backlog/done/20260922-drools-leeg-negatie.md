@@ -7,8 +7,10 @@ DRL-tekst spelen en geven het foute antwoord ("verwacht 40, werkelijk
 leeg"). Dat is de verboden klasse: geen weigering maar een stil
 verkeerd antwoord op een verifier-schoon document. Het gebeurt ook bij
 een ongebonden geschreven enkele stap, dus het is ouder dan en staat
-los van de P1-port. Corpusdragers: nul (alleen 23× GEVULD met
-`negatie: false`).
+los van de P1-port. Corpusdragers: nul (alleen GEVULD met
+`negatie: false`: 1× golden, 21× negatief, 2× rood — hermeten
+2026-09-23 over corpus/ en toka/, de oorspronkelijke "23×" klopte
+niet; LEEG komt nergens voor).
 
 ## Acceptatie (aangescherpt bij de claim, 2026-09-22)
 
@@ -89,9 +91,17 @@ soort; de leeg/gevuld-tests zijn kernel, driewaardige regels in
 RUNTIME-SEMANTICS ch. 1.2 ("absence … **is** leeg = waar"). ref
 (`ref/lib/eval.ml`, arm `Predicaat { soort = Leeg; … }`) leest de negatie
 als `not is_empty`, en voor GEVULD als `not (v <> Empty)`. De spec zegt
-nergens expliciet wat een genegeerde leeg/gevuld-test betekent; ch. 3.9
-zegt voor de geheel-periode-vorm alleen "Negation complements the folded
-result", en de leeg-drempel wijkt daar af (touched days).
+nergens expliciet wat een genegeerde leeg/gevuld-test betekent.
+`Predicaat.negatie` is de BINNENSTE, puntsgewijze negatie. ch. 3.9's
+"Negation complements the folded result" gaat over de eigen negatie van
+de kwalificatie (`GeheelPeriode.niet`, "niet gedurende …"), niet over dit
+veld; RUNTIME-SEMANTICS ch. 3.9 onderscheidt beide in de worked examples
+en ref zegt het bij `whole_period_kenmerk`. *(Fixronde 2026-09-23: de
+eerste versie van dit dossier koppelde die zin ten onrechte aan
+`Predicaat.negatie`.)* Wat onder de kwalificatie open blijft is de
+DREMPEL: ch. 3.9 geeft de leeg-test touched-days en elke andere test
+days(B), en welke een genegeerde leeg-test krijgt staat nergens. Onder
+days(B) zou de wissel naar gevuld exact zijn, onder touched-days niet.
 
 ### (b) Route: dragen
 
@@ -101,11 +111,12 @@ genavigeerd, kwantorvouw-toets, assertie, geheel-periode) en nergens de
 negatie. Daarom is de lowering één keer in `IrLoader.predicaat`
 geplaatst, op de draadgrens: bij `negatie: true` wordt LEEG GEVULD
 (`negatie: false`) en GEVULD LEEG. Dat dekt alle leesplekken in beide
-takken tegelijk. Met `periode ≠ null` is de wissel niet exact (andere
-drempel, negatie complementeert de vouw), dus daar staat een benoemde
-weigering: `Refusal("Predicaat.negatie", "a negated leeg/gevuld test
-under a whole-period qualifier (ch. 3.9): its complement is not the
-sister test")`.
+takken tegelijk. Met `periode ≠ null` hangt de betekenis af van een
+drempelkeuze die de norm niet maakt (en ref faalt er zelf op), dus daar
+staat een benoemde weigering: `Refusal("Predicaat.negatie", "a negated
+leeg/gevuld test under a whole-period qualifier (ch. 3.9): the threshold
+of the negated test is not normed")`. De getuige pint de sleutel én de
+reden.
 
 Getuige `LeegNegatieWitnessTest` (vier tests, beide takken via
 `BeideTakken`/`CaseRunner.speelCase`): het hele document speelt; dat
@@ -175,20 +186,32 @@ met de jar van vóór de fix (`--drl`: FAIL op elke genegeerde variant).
   UNNEGATED by both Drools branches — every site read the soort and none
   the field, since the RegelSpraak frontend never writes it on these two
   soorten — a silent inversion on a verifier-clean document, own and
-  navigated operand alike. The backend's loader now lowers it to the
-  sister soort unnegated (pointwise, not-leeg is gevuld), and refuses by
-  name (`Predicaat.negatie`) under a whole-period qualifier, where ch.
-  3.9's touched-days threshold and fold-level negation make the swap
-  inexact. Witness `LeegNegatieWitnessTest` in the backend suite; no
-  corpus golden yet, because the ASP backend translates only the
-  unnegated gevuld test in a rule condition and faults on LEEG, LEEG¬
-  and GEVULD¬."
+  navigated operand alike. `negatie` is the INNER, per-day negation
+  (the qualifier's own is `GeheelPeriode.niet`). The backend's loader
+  now lowers it to the sister soort unnegated (pointwise, not-leeg is
+  gevuld). Under a whole-period qualifier it refuses by name
+  (`Predicaat.negatie`): ch. 3.9 gives the leeg test the touched-days
+  threshold and every other test days(B), and which of the two a negated
+  leeg test takes is not normed (under days(B) the swap would be exact);
+  ref faults on every whole-period leeg/gevuld test. Witness
+  `LeegNegatieWitnessTest` in the backend suite; no corpus golden yet,
+  because the ASP backend's shared condition translation (`cond_atoms`
+  — rule condition, fold filter, quantifier-fold matrix, assertion)
+  carries only the unnegated gevuld test and faults on LEEG, LEEG¬ and
+  GEVULD¬; it reads the negated forms only inside day-kind definitions
+  (`dk_cond`)."
 - **Speczin** (RUNTIME-SEMANTICS ch. 1.2, rij leeg/gevuld, voorstel): een
-  zin plus worked example "the `negated` field complements the test:
-  `leeg(5)` negated = waar, `leeg(leeg)` negated = onwaar, so negated
-  leeg is gevuld and negated gevuld is leeg; under the ch. 3.9 qualifier
-  negation complements the folded result and is not the sister test".
-- **Vervolgkaart** (clingo-leeg-negatie): de ASP-backend geeft een
+  zin plus worked example "the predicate's `negated` field is the inner,
+  per-value negation and complements the test: `leeg(5)` negated =
+  waar, `leeg(leeg)` negated = onwaar, so negated leeg is gevuld and
+  negated gevuld is leeg. Under the ch. 3.9 whole-period qualifier this
+  inner negation is distinct from the qualifier's own `niet`, and its
+  meaning there is an OPEN point of the norm: the qualifier gives the
+  leeg test the touched-days threshold and every other test days(B), and
+  which a negated leeg test takes is not chosen — `ref` and both Drools
+  branches refuse the form by name until it is."
+- **Vervolgkaart** (clingo-leeg-negatie; door de hoofdsessie aangemaakt als
+  `backlog/new/20260923-clingo-leeg-negatie.md`): de ASP-backend geeft een
   regelconditie-arm voor LEEG (helper plus `not`) en voor de genegeerde
   vormen. Daarna verhuist het fixture naar
   `corpus/golden/jutterswet-waardemelding` (NOTE met de

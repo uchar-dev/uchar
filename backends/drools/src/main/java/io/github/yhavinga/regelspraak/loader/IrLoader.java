@@ -685,9 +685,12 @@ public final class IrLoader {
      *  (ref: {@code not is_empty} against {@code v <> Empty}). Both transpiler branches read the leeg/gevuld soort at
      *  a dozen sites and none of them reads {@code negatie} — the RegelSpraak frontend never writes it on these two
      *  soorten — so answering it once at the wire boundary covers every site, own and navigated, in both branches.
-     *  Under the ch. 3.9 whole-period qualifier the swap is NOT exact (the leeg test's threshold is the touched
-     *  days, the gevuld test's the bucket's days, and negation complements the folded result), so that form is
-     *  refused by name instead of answered as its sister. */
+     *  {@code negatie} is the INNER negation, per day; the qualifier's own "niet gedurende …" is
+     *  {@code GeheelPeriode.niet} and is untouched here. Under the ch. 3.9 whole-period qualifier the swap stays
+     *  unanswered: ch. 3.9 gives the leeg test the touched-days threshold and every other test days(B), and which
+     *  of the two a NEGATED leeg test takes is fixed nowhere — under days(B) the swap would be exact, under
+     *  touched days it would not. ref faults on every whole-period leeg/gevuld test, so this backend refuses the
+     *  negated one by name rather than pick a threshold the norm has not chosen. */
     private Conditie.Predicaat predicaat(JsonNode n) {
         Conditie.Predicaatsoort soort = enumOf(Conditie.Predicaatsoort.class, text(n, "soort"));
         boolean negatie = bool(n, "negatie");
@@ -696,7 +699,7 @@ public final class IrLoader {
         if (leegOfGevuld && negatie) {
             if (periode != null)
                 throw new Refusal("Predicaat.negatie",
-                        "a negated leeg/gevuld test under a whole-period qualifier (ch. 3.9): its complement is not the sister test");
+                        "a negated leeg/gevuld test under a whole-period qualifier (ch. 3.9): the threshold of the negated test is not normed");
             soort = soort == Conditie.Predicaatsoort.LEEG ? Conditie.Predicaatsoort.GEVULD : Conditie.Predicaatsoort.LEEG;
             negatie = false;
         }

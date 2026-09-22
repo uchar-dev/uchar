@@ -66,9 +66,11 @@ class LeegNegatieWitnessTest {
         BeideTakken.groen(tijdelijk(ir), gespiegeld(geval()), "leeg / gevuld unnegated");
     }
 
-    /** Under the ch. 3.9 whole-period qualifier the complement is NOT the other soort: the leeg test's threshold
-     *  is the touched days, every other test's the bucket's days, and negation complements the FOLDED result.
-     *  So the negated form is refused by name in both branches rather than lowered to its sister. */
+    /** Under the ch. 3.9 whole-period qualifier the norm is OPEN: {@code negatie} is the inner, per-day negation
+     *  (the qualifier's own is {@code GeheelPeriode.niet}), and ch. 3.9 gives the leeg test the touched-days
+     *  threshold and every other test days(B) without saying which a NEGATED leeg test takes — under days(B) the
+     *  sister swap would be exact, under touched days not. ref faults on every whole-period leeg/gevuld test, so
+     *  both branches refuse the negated form by name rather than choose a threshold. */
     @Test void de_negatie_onder_geheel_periode_weigert_in_beide_takken() throws Exception {
         ObjectNode ir = ir();
         ((ObjectNode) ir.get("objecttypen").get("Schuit").get("attribuutGranulariteit")).put("lengte", "MAAND");
@@ -93,6 +95,7 @@ class LeegNegatieWitnessTest {
             IrLoader.Refusal e = assertThrows(IrLoader.Refusal.class, () -> CaseRunner.speelCase(p, c, viaDrl),
                     (viaDrl ? "drl-tekst" : "exec-model") + " refuses the negated whole-period leeg test");
             assertTrue(e.getMessage().contains("Predicaat.negatie"), e.getMessage());
+            assertTrue(e.getMessage().contains("threshold of the negated test is not normed"), e.getMessage());
         }
     }
 
