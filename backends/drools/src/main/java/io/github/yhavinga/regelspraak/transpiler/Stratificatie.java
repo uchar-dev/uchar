@@ -174,20 +174,22 @@ public final class Stratificatie {
         // consumer fire in the transient window before its producer ran. Both children are evaluated with the
         // ELEMENT as subject (RUNTIME-SEMANTICS ch. 3.9a), so the recursion hands down the element type, never the
         // rule's own subject: attributing an element kenmerk to the rule subject would key the read to the wrong type.
-        // NAMED FLANK, measured rather than assumed (2026-09-22). The verifier reads everything under a
-        // quantifier fold's MATRIX conservatively NEGATIVELY (dep_cond: "the quantifier is a fold with
-        // conjunction, so a member that fails decides the verdict the way a negated read does"). This
-        // walk only PASSES THE CONTEXT THROUGH, so an outer negation now reaches the fold where it did
-        // not before, but a positive read inside one still counts as positive. Mirroring the verifier
-        // here is a THIRD behaviour change beyond the two this round repairs, and it is not free:
-        // counted over the 730 documents of the four zones, 13 characteristic reads sit under a
-        // quantifier fold in a voorwaarde and 12 of them are spelled positively, so the mirror would
-        // sink those consumers a band and move gate-12 channels. It belongs to the quantifier fold's
-        // own card with its own measurement, not to this one; recorded here so it is a decision
-        // someone took rather than a difference nobody saw.
+        // The quantifier fold reads everything under its FILTER and its MATRIX conservatively
+        // NEGATIVELY — the verifier's dep_cond passes ~neg:true to both, unconditionally, because the
+        // quantifier is a fold with conjunction: a member that FAILS decides the verdict the way a
+        // negated read does, and GEEN is the negation outright (RUNTIME-SEMANTICS ch. 6.1, ch. 3.9a).
+        // The context above is therefore not passed through but REPLACED: once negative,
+        // conservatively negative, and this node is negative by construction.
+        //
+        // Parked on 2026-09-22 on the worry that mirroring it would move gate-12 channels — 13 of the
+        // four zones' 730 documents carry a characteristic read under a quantifier fold in a
+        // voorwaarde, 12 of them spelled positively. That worry was WRONG, and measured so rather than
+        // argued away: with the mirror in place the full gate 12 stays green on exactly 177 PLAYED,
+        // 154 DRL-text and its name-pinned channel lists unmoved. The only thing those 12 reads buy by
+        // sinking is depth, and depth only ever delays.
         if (c instanceof Conditie.Kwantorvouw kv) {
-            verzamelReads(kv.filter(), kv.elementObjecttype(), neg, uit);
-            verzamelReads(kv.toets(), kv.elementObjecttype(), neg, uit);
+            verzamelReads(kv.filter(), kv.elementObjecttype(), true, uit);
+            verzamelReads(kv.toets(), kv.elementObjecttype(), true, uit);
         }
         // A condition's EXPRESSION operands carry conditions of their own — an aggregation's die/dat
         // filter (IR-SPEC ch. 4.3) and, since 2026-09-20, a §5.7 union's per-selection filters (WF-110) —
@@ -200,12 +202,21 @@ public final class Stratificatie {
         // aanwezig`, on a verifier-clean document. The gap was NOT the union's: the ORDINARY
         // single-source fold with the same filter diverged identically and had done so since the filter
         // landed. One walk closes both.
+        // THE CONTEXT STOPS AT THE EXPRESSION BOUNDARY, and that is the verifier's shape rather than a
+        // simplification: its walk over expressions (dep_expr) carries no negation parameter at all,
+        // and each of the three CONDITIONS it reaches through one — a fold's filter, a union
+        // selection's filter, an if-then-else's guard — restarts at ~neg:false. The reason is what the
+        // compound actually negates: "aan GEEN van de volgende voorwaarden voldoen: het aantal X die
+        // gemerkt zijn is groter dan 0" negates the COUNT, not the membership test inside it, so
+        // `gemerkt` is read POSITIVELY there. Carrying the context across would be the mirror image of
+        // the gap repaired on 2026-09-22 — a band too deep, and a false negative CYCLE through the
+        // cycle-local fallback.
         if (c instanceof Conditie.Vergelijking v) {
-            readsInExpr(v.links(), subject, neg, uit); readsInExpr(v.rechts(), subject, neg, uit);
+            readsInExpr(v.links(), subject, uit); readsInExpr(v.rechts(), subject, uit);
         }
-        if (c instanceof Conditie.Predicaat p) readsInExpr(p.operand(), subject, neg, uit);
+        if (c instanceof Conditie.Predicaat p) readsInExpr(p.operand(), subject, uit);
         if (c instanceof Conditie.Periode pe) {
-            readsInExpr(pe.vanaf(), subject, neg, uit); readsInExpr(pe.tot(), subject, neg, uit);
+            readsInExpr(pe.vanaf(), subject, uit); readsInExpr(pe.tot(), subject, uit);
         }
     }
 
@@ -214,16 +225,21 @@ public final class Stratificatie {
      *  RUNTIME-SEMANTICS ch. 3.4a for the fold, ch. 3.4d for the union), exactly as the quantifier fold's
      *  recursion above hands down its element type.
      *
+     *  <p>It takes NO negation context, and that is the verifier's shape: {@code dep_expr} has no such
+     *  parameter either, and every condition reached through an expression restarts at
+     *  {@code ~neg:false}. A compound quantifier negates the EXPRESSION it encloses, not the tests
+     *  inside that expression's own sub-conditions.
+     *
      *  <p>EXHAUSTIVE over the sealed union, no {@code default} — the reason {@code Expr.bevat} is written
      *  the same way: a missing arm here under-reports ("this rule reads no kenmerk"), and an
      *  under-reported read is a rule that fires one stratum too early, which is the defect this method
      *  exists to prevent. */
-    private static void readsInExpr(Expr e, Objecttype subject, boolean neg, List<Read> uit) {
+    private static void readsInExpr(Expr e, Objecttype subject, List<Read> uit) {
         if (e == null) return;
         switch (e) {
             case Expr.Functie f -> {
-                for (Expr a : f.argumenten()) readsInExpr(a, subject, neg, uit);
-                readsInExpr(f.leegwaarde(), subject, neg, uit);
+                for (Expr a : f.argumenten()) readsInExpr(a, subject, uit);
+                readsInExpr(f.leegwaarde(), subject, uit);
                 // the filter is read AT THE CONTRIBUTOR when the fold names one, and otherwise at the
                 // ENCLOSING subject — the verifier's rule verbatim (`fsubject = elementObjecttype else
                 // subject`). Handing null down instead means the name-wide producer match, which
@@ -233,31 +249,27 @@ public final class Stratificatie {
                 // normative. A false edge is not only a wrong band — it can close a false CYCLE and trip
                 // the cycle-local fallback.
                 verzamelReads(f.filter(), f.elementObjecttype() != null ? f.elementObjecttype() : subject,
-                        neg, uit);
+                        false, uit);
             }
             case Expr.InstanceSetUnion u -> {
                 for (Expr.InstanceSetUnion.Tak t : u.takken())
-                    verzamelReads(t.filter(), t.elementType() != null ? t.elementType() : subject, neg, uit);
+                    verzamelReads(t.filter(), t.elementType() != null ? t.elementType() : subject, false, uit);
             }
-            case Expr.Binair b -> {
-                readsInExpr(b.links(), subject, neg, uit); readsInExpr(b.rechts(), subject, neg, uit);
-            }
-            case Expr.Afgerond a -> readsInExpr(a.basis(), subject, neg, uit);
+            case Expr.Binair b -> { readsInExpr(b.links(), subject, uit); readsInExpr(b.rechts(), subject, uit); }
+            case Expr.Afgerond a -> readsInExpr(a.basis(), subject, uit);
             case Expr.Begrensd b -> {
-                readsInExpr(b.basis(), subject, neg, uit); readsInExpr(b.minimum(), subject, neg, uit);
-                readsInExpr(b.maximum(), subject, neg, uit);
+                readsInExpr(b.basis(), subject, uit); readsInExpr(b.minimum(), subject, uit);
+                readsInExpr(b.maximum(), subject, uit);
             }
             case Expr.TekstReeks t -> {
                 for (Expr.TekstReeks.Deel d : t.delen())
-                    if (d instanceof Expr.TekstReeks.Ingevoegd i) readsInExpr(i.expr(), subject, neg, uit);
+                    if (d instanceof Expr.TekstReeks.Ingevoegd i) readsInExpr(i.expr(), subject, uit);
             }
-            case Expr.DimensieCel c -> readsInExpr(c.attribuut(), subject, neg, uit);
-            case Expr.Let l -> {
-                readsInExpr(l.value(), subject, neg, uit); readsInExpr(l.body(), subject, neg, uit);
-            }
+            case Expr.DimensieCel c -> readsInExpr(c.attribuut(), subject, uit);
+            case Expr.Let l -> { readsInExpr(l.value(), subject, uit); readsInExpr(l.body(), subject, uit); }
             case Expr.IfThenElse k -> {
-                verzamelReads(k.conditie(), subject, neg, uit);
-                readsInExpr(k.dan(), subject, neg, uit); readsInExpr(k.anders(), subject, neg, uit);
+                verzamelReads(k.conditie(), subject, false, uit);
+                readsInExpr(k.dan(), subject, uit); readsInExpr(k.anders(), subject, uit);
             }
             case Expr.Literal ignored -> { }
             case Expr.AttribuutRef ignored -> { }

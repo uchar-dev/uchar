@@ -43,11 +43,63 @@ class VouwfilterStratumAnalyseTest {
      *  flipping it, so a positive read under one of them stays positive and the consumer stays in band 0.
      *  Without this row the fix could have been "treat every compound as negative", which is sound but
      *  sinks rules that have no reason to sink — and a band that only ever deepens is a band nobody
-     *  notices is wrong. */
+     *  notices is wrong. DE is here too: it is the one compound quantifier the fold node refuses
+     *  (WF-108 (a)) but {@code Samengesteld} admits, so leaving it out would leave an arm unpinned. */
     @Test void een_kenmerk_onder_ALLE_blijft_positief() throws Exception {
         assertEquals(0, salience(doc(filter("ALLE")), "consument"),
                 "ALLE geeft de polariteit door; een positieve lezing blijft positief");
         assertEquals(0, salience(doc(filter("TEN_MINSTE")), "consument"), "TEN_MINSTE geeft door");
+        assertEquals(0, salience(doc(filter("DE")), "consument"), "DE geeft door");
+    }
+
+    /** Two properties of the CONTEXT itself, both unpinned until now.
+     *
+     *  <p><b>Nesting composes.</b> A conjunctive compound inside a negation-like one keeps the
+     *  negation: the polarity is a property of the PATH, not of the innermost node.
+     *
+     *  <p><b>Double negation does NOT cancel.</b> {@code neg || k.negatie()} is deliberate — ch. 6.1's
+     *  "once negative, conservatively negative" — so an already-negated {@code Kenmerk} inside a GEEN
+     *  stays negative instead of flipping back to positive. A boolean XOR here would read "niet
+     *  gemerkt onder GEEN" as a positive read and let the consumer fire in the transient window. */
+    @Test void de_context_stapelt_en_dubbele_negatie_klapt_niet_terug() throws Exception {
+        assertEquals(-1, salience(doc(genest("GEEN", "ALLE", false)), "consument"),
+                "een ALLE binnen een GEEN houdt de negatie: de polariteit hangt aan het PAD");
+        assertEquals(0, salience(doc(genest("ALLE", "TEN_MINSTE", false)), "consument"),
+                "twee doorgeefkwantoren laten een positieve lezing positief");
+        assertEquals(-1, salience(doc(genest("GEEN", "ALLE", true)), "consument"),
+                "dubbele negatie klapt NIET terug (ch. 6.1: eenmaal negatief, behoudend negatief)");
+        assertEquals(-1, salience(doc(kenmerkCheck(true)), "consument"),
+                "de controle: een kaal genegeerd kenmerk is gewoon negatief");
+    }
+
+    /** <b>The context does not cross an EXPRESSION boundary.</b> The verifier's walk over expressions
+     *  ({@code dep_expr}) carries no negation context at all, and the three CONDITIONS it reaches
+     *  through one — a fold's filter, a union selection's filter, an if-then-else's guard — each
+     *  restart at {@code ~neg:false}. So "aan GEEN van de volgende voorwaarden voldoen: het aantal X
+     *  die gemerkt zijn is groter dan 0" reads {@code gemerkt} POSITIVELY: the compound negates the
+     *  COUNT, not the membership test inside it. Carrying the context across that boundary is the
+     *  mirror image of the gap fixed on 2026-09-22 — an extra band, and a false negative CYCLE
+     *  through the cycle-local fallback. */
+    @Test void de_negatiecontext_steekt_geen_expressiegrens_over() throws Exception {
+        assertEquals(0, salience(genesteldDoc("GEEN"), "consument"),
+                "de GEEN negeert de TELLING, niet de lidmaatschapstest in haar filter");
+        assertEquals(0, salience(genesteldDoc("TEN_HOOGSTE"), "consument"), "idem voor TEN_HOOGSTE");
+        assertEquals(0, salience(genesteldDoc("PRECIES"), "consument"), "idem voor PRECIES");
+    }
+
+    /** <b>The quantifier fold's matrix is read conservatively NEGATIVELY</b> — RUNTIME-SEMANTICS
+     *  ch. 6.1 and the verifier's {@code dep_cond}, which passes {@code ~neg:true} to BOTH the filter
+     *  and the matrix unconditionally: the quantifier is a fold with conjunction, so a member that
+     *  FAILS decides the verdict the way a negated read does, and GEEN is the negation outright.
+     *  Parked on 2026-09-22 on a channel-shift worry that a measurement then refuted, so it is
+     *  mirrored here and pinned rather than left as a silent difference from the norm. */
+    @Test void de_matrix_van_een_kwantorvouw_leest_behoudend_negatief() throws Exception {
+        assertEquals(-1, salience(kwantorvouwDoc("ALLE", true), "consument"),
+                "een POSITIEF kenmerk onder de matrix is toch een negatieve rand (ch. 6.1)");
+        assertEquals(-1, salience(kwantorvouwDoc("TEN_MINSTE", true), "consument"),
+                "de lezing hangt aan de VOUW, niet aan de kwantor erboven");
+        assertEquals(-1, salience(kwantorvouwDoc("ALLE", false), "consument"),
+                "en in het FILTER van de vouw geldt hetzelfde");
     }
 
     /** <b>The surrounding subject.</b> A fold whose {@code elementObjecttype} is absent handed the filter
@@ -77,12 +129,25 @@ class VouwfilterStratumAnalyseTest {
             "{\"node\":\"Numeriek\",\"geheel\":true,\"decimalen\":0,\"teken\":\"NIET_NEGATIEF\",\"eenheid\":null}";
     private static final String BOOL = "{\"node\":\"Booleaan\"}";
 
+    private static String kenmerkCheck(boolean negatie) {
+        return ("{\"node\":\"Kenmerk\",\"kenmerk\":\"gemerkt\",\"navigatie\":null,\"negatie\":%s,"
+                + "\"eigenaar\":null,\"periode\":null,\"bron\":\"gemerkt zijn\"}").formatted(negatie);
+    }
+
+    private static String samengesteld(String kwantor, String... delen) {
+        return ("{\"node\":\"Samengesteld\",\"kwantor\":\"%s\",\"drempel\":1,\"onderdelen\":[%s],"
+                + "\"bron\":\"de samengestelde deelselectie\"}")
+                .formatted(kwantor, String.join(",", delen));
+    }
+
     /** A positive {@code gemerkt} check wrapped in a compound under {@code kwantor}. */
     private static String filter(String kwantor) {
-        return ("{\"node\":\"Samengesteld\",\"kwantor\":\"%s\",\"drempel\":1,\"onderdelen\":["
-                + "{\"node\":\"Kenmerk\",\"kenmerk\":\"gemerkt\",\"navigatie\":null,\"negatie\":false,"
-                + "\"eigenaar\":null,\"periode\":null,\"bron\":\"gemerkt zijn\"}],"
-                + "\"bron\":\"de samengestelde deelselectie\"}").formatted(kwantor);
+        return samengesteld(kwantor, kenmerkCheck(false));
+    }
+
+    /** {@code buiten} wrapping {@code binnen} wrapping one {@code gemerkt} check. */
+    private static String genest(String buiten, String binnen, boolean negatie) {
+        return samengesteld(buiten, samengesteld(binnen, kenmerkCheck(negatie)));
     }
 
     private static String telling(String elementType, String filter, String bronRol) {
@@ -149,6 +214,42 @@ class VouwfilterStratumAnalyseTest {
         return model(
                 kenmerkRegel("consument", "druk", "Jutter",
                         groterDanNul(telling("\"Vondst\"", filter, bronRol))),
+                kenmerkRegel("producent", "gemerkt", "Vondst",
+                        "{\"node\":\"Kenmerk\",\"kenmerk\":\"kaal\",\"navigatie\":null,\"negatie\":false,"
+                                + "\"eigenaar\":null,\"periode\":null,\"bron\":\"kaal zijn\"}"));
+    }
+
+    /** A consumer whose voorwaarde is {@code kwantor}(⟨the COUNT whose filter checks gemerkt⟩ > 0) —
+     *  so the compound's negation, if it were carried, would have to cross the fold-filter boundary to
+     *  reach the characteristic. */
+    private static String genesteldDoc(String kwantor) {
+        String bronRol = ",\"bronRol\":{\"node\":\"RolBinding\",\"feittype\":\"vondstaanmelding\","
+                + "\"rol\":\"vondst\"}";
+        String binnen = groterDanNul(telling("\"Vondst\"", kenmerkCheck(false), bronRol));
+        return model(
+                kenmerkRegel("consument", "druk", "Jutter", samengesteld(kwantor, binnen)),
+                kenmerkRegel("producent", "gemerkt", "Vondst",
+                        "{\"node\":\"Kenmerk\",\"kenmerk\":\"kaal\",\"navigatie\":null,\"negatie\":false,"
+                                + "\"eigenaar\":null,\"periode\":null,\"bron\":\"kaal zijn\"}"));
+    }
+
+    /** A consumer whose voorwaarde IS a quantifier fold over Vondst, carrying one POSITIVE gemerkt
+     *  check in its matrix ({@code inToets}) or in its filter. */
+    private static String kwantorvouwDoc(String kwantor, boolean inToets) {
+        String check = kenmerkCheck(false);
+        String altijd = "{\"node\":\"Rollidmaatschap\",\"rol\":\"vondst\",\"anderTeFiller\":null,"
+                + "\"negatie\":false,\"bron\":\"een vondst zijn\"}";
+        String drempel = switch (kwantor) {
+            case "TEN_MINSTE", "TEN_HOOGSTE", "PRECIES" -> "\"drempel\":1,";
+            default -> "";
+        };
+        String vouw = ("{\"node\":\"Kwantorvouw\",\"kwantor\":\"%s\",%s\"elementObjecttype\":\"Vondst\","
+                + "\"filter\":%s,\"toets\":%s,\"bron\":\"alle vondsten … \","
+                + "\"bronRol\":{\"node\":\"RolBinding\",\"feittype\":\"vondstaanmelding\","
+                + "\"rol\":\"vondst\"}}")
+                .formatted(kwantor, drempel, inToets ? "null" : check, inToets ? check : altijd);
+        return model(
+                kenmerkRegel("consument", "druk", "Jutter", vouw),
                 kenmerkRegel("producent", "gemerkt", "Vondst",
                         "{\"node\":\"Kenmerk\",\"kenmerk\":\"kaal\",\"navigatie\":null,\"negatie\":false,"
                                 + "\"eigenaar\":null,\"periode\":null,\"bron\":\"kaal zijn\"}"));

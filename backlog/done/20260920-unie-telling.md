@@ -313,13 +313,13 @@ staart-in-plaats-van-herschrijving: de kop blijft waar over de operandenlijst.
                                       (ref 29, clingo 29, Drools 29 PLAYED)
     12 check-drools             PASS  gespeeld 177 (pin 177), kanaalvloer 52;
                                       DRL-tekst 154 (pin 154), vloer 75;
-                                      JUnit 532, vloer 239
+                                      JUnit 535, vloer 239
     13 check-reftype-derivation PASS  131 twists over 27 goldens, vloer 74;
                                       128 replays, 25 DRL-tekst, vloer 13
     14 check-flogic             PASS  130 checks, vloer 81; 2 goldens, vloer 1
 
-(Eindstand na fixronde 1, de naronde en fixronde 3; elk als losse aanroep na
-`eval $(opam env)`.)
+(Eindstand na fixronde 1, de naronde en de fixrondes 3 en 4; elk als losse
+aanroep na `eval $(opam env)`.)
 
 Geen enkele VLOER aangeraakt. Twee GELIJKHEIDSpins wel, en dat is een
 beschermd-padvoorstel: `EXPECTED_PLAYED` 172 → **177** en
@@ -725,14 +725,82 @@ anchor-corpus is niet aangeraakt.
 bedoelde melding was. Nu: precies één ERROR, precies één WARNING, en die
 WARNING draagt het fragment `'die/dat'-subselectie op een aggregatie-operand`.
 
-### Wat deze ronde NIET meenam, gemeten en benoemd
+### Wat deze ronde parkeerde — en wat fixronde 4 daarvan terugdraaide
 
-De verifier leest alles onder de MATRIX van een kwantorvouw behoudend
-NEGATIEF; deze wandeling geeft de context daar alleen dóór. De spiegeling is
-een DERDE gedragswijziging en niet gratis: geteld over de 730 documenten van
-de vier zones zitten er **13** kenmerklezingen onder een kwantorvouw in een
-voorwaarde, waarvan **12 positief gespeld**, dus de spiegeling zou die
-consumenten een band laten zakken en gate-12-kanalen verschuiven. Dat hoort
-bij de eigen kaart van de kwantorvouw, met een eigen meting. Vastgelegd in de
-code bij de arm, zodat het een besluit is en geen verschil dat niemand zag.
+Deze ronde liet de kwantorvouw-matrix ongemoeid met als grond dat spiegelen
+gate-12-kanalen zou verschuiven. **Die grond was onwaar**, en fixronde 4 heeft
+hem vervangen door de meting die hem weerlegt. De telling zelf klopte (13
+kenmerklezingen onder een kwantorvouw in een voorwaarde over 730 documenten,
+waarvan 12 positief gespeld); de gevolgtrekking niet. Zie fixronde 4.
 
+## Fixronde 4 (2026-09-22) — de wandeling spiegelt de verifier nu exact
+
+De gerichte controle op ronde 3 vond twee blokkades, beide in de negatiecontext
+die die ronde had aangelegd. Allebei rood-eerst gereproduceerd met bandtests
+vóór enige reparatie.
+
+### F1 — de context stak een EXPRESSIEgrens over. BLOKKEREND.
+
+Ronde 3 gaf `neg` mee aan een `Vergelijking` en van daaruit aan functie-,
+unietak- en IfThenElse-filters. **De verifier doet dat niet.** Haar wandeling
+over expressies (`dep_expr`) heeft helemaal GEEN negatieparameter, en elk van
+de drie condities die zij via een expressie bereikt herstart expliciet op
+`~neg:false` (`checks.ml` 7616, 7634, 7672). De grond is wat de samengestelde
+werkelijk negeert: "aan GEEN van de volgende voorwaarden voldoen: het aantal X
+die gemerkt zijn is groter dan 0" negeert de TELLING, niet de lidmaatschapstest
+in haar filter — daar is `gemerkt` POSITIEF gelezen.
+
+**Rood-eerst.** `Samengesteld(GEEN, [Vergelijking(Functie(filter=Kenmerk(pos)), 0)])`
+gaf salience **−1** waar **0** normatief is; idem voor TEN_HOOGSTE en PRECIES.
+Dat is het spiegelbeeld van het gat van ronde 3 — een band te diep, en een
+valse negatieve cyclus via de cyclus-lokale terugval.
+
+**Fix.** `readsInExpr` draagt helemaal geen negatiecontext meer — exact de vorm
+van `dep_expr` — en de drie filtergrenzen herstarten op `false`. De N1-fix van
+ronde 3 blijft onaangetast voor het DIRECTE pad (`Samengesteld(GEEN, [Kenmerk])`,
+geen filtergrens ertussen) en voor `jutterswet-uniekwantor`, waar de GEEN
+BINNEN het takfilter zit en dus ná de herstart.
+
+### F2 — de parkeergrond van de kwantorvouw-flank was onwaar. BLOKKEREND.
+
+Ronde 3 parkeerde de verifier-conforme lezing van de kwantorvouw met de claim
+dat spiegelen gate-12-kanalen zou verschuiven. De TELLING eronder klopte en is
+onafhankelijk gereproduceerd; de GEVOLGTREKKING niet. Zelf nagemeten met de
+spiegeling aan — beide kwantorvouw-aanroepen op behoudend `true`, zoals
+`checks.ml` het doet — draait de volle poort 12 groen op exact:
+
+    gespeeld 177 (pin 177), kanaalvloer 52 namen
+    DRL-tekst 154 (pin 154), vloer 75 namen
+    JUnit 535
+
+Geen kanaal beweegt, geen naamgepinde lijst beweegt. De spiegeling is dus
+geïmplementeerd: alles onder het FILTER en de MATRIX van een kwantorvouw wordt
+behoudend negatief gelezen, onvoorwaardelijk, omdat de kwantor een vouw met
+conjunctie is — een lid dat FAALT beslist zoals een genegeerde lezing dat doet,
+en GEEN is de negatie zelf (`RUNTIME-SEMANTICS.md` ch. 6.1, ch. 3.9a). De
+context erboven wordt daar niet doorgegeven maar VERVANGEN. Wat die 12
+positieve lezingen door het zakken kopen is uitsluitend diepte, en diepte stelt
+alleen uit. Geen golden nodig: er beweegt geen kanaal, dus er is niets voor een
+corpusgetuige om te bewaken wat de bandtest niet al pint.
+
+De onware claim is uit de code én uit dit dossier verwijderd en vervangen door
+de meting die het besluit nu wél draagt.
+
+### F3 — de bandtests dekken nu ook de samengestelde paden
+
+`VouwfilterStratumAnalyseTest` telt zes rijen en pint naast de enkelvoudige
+kwantoren:
+
+- de expressiegrens, drie kwantoren lang (GEEN/TEN_HOOGSTE/PRECIES ⇒ band 0);
+- de kwantorvouw-matrix én haar filter (positief kenmerk ⇒ band −1), onder ALLE
+  en onder TEN_MINSTE, zodat zichtbaar is dat de lezing aan de VOUW hangt en
+  niet aan de kwantor erboven;
+- het DE-geval bij de doorgeefkwantoren — de ene kwantor die `Samengesteld` wél
+  kent en de vouwknoop niet (WF-108 (a));
+- een GENEST pad: `ALLE` binnen `GEEN` houdt de negatie (de polariteit hangt aan
+  het PAD, niet aan de binnenste knoop), en twee doorgeefkwantoren laten een
+  positieve lezing positief;
+- DUBBELE NEGATIE die niet terugklapt: een al-genegeerd `Kenmerk` binnen een
+  GEEN blijft negatief. `neg || k.negatie()` was goed maar ongepind, en een XOR
+  daar zou "niet gemerkt onder GEEN" als positieve lezing lezen en de consument
+  in het overgangsvenster laten vuren.
