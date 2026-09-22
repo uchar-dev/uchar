@@ -611,9 +611,7 @@ public final class IrLoader {
         return switch (node) {
             case "Vergelijking" -> new Conditie.Vergelijking(enumOf(Conditie.Operator.class, text(n, "op")),
                     expr(n.get("links")), expr(n.get("rechts")), geheelPeriode(n.get("periode")), bron(n));
-            case "Predicaat" -> new Conditie.Predicaat(enumOf(Conditie.Predicaatsoort.class, text(n, "soort")),
-                    expr(n.get("operand")), text(n, "dagsoort"), bool(n, "negatie"), intOf(n, "cijfers"),
-                    geheelPeriode(n.get("periode")), bron(n));
+            case "Predicaat" -> predicaat(n);
             case "Kenmerk" -> {
                 Conditie.Kenmerk k = new Conditie.Kenmerk(text(n, "kenmerk"), text(n, "navigatie"), bool(n, "negatie"),
                         ot(text(n, "eigenaar")), geheelPeriode(n.get("periode")), bron(n));
@@ -681,6 +679,29 @@ public final class IrLoader {
             case "Onopgelost" -> new Conditie.Onopgelost(bron(n), null);   // frontend-internal field, absent from the wire
             default -> throw new Refusal("Conditie:" + node, "unknown condition node");
         };
+    }
+
+    /** A negated leeg/gevuld test is lowered HERE to its sister soort, unnegated: pointwise "niet leeg" IS "gevuld"
+     *  (ref: {@code not is_empty} against {@code v <> Empty}). Both transpiler branches read the leeg/gevuld soort at
+     *  a dozen sites and none of them reads {@code negatie} — the RegelSpraak frontend never writes it on these two
+     *  soorten — so answering it once at the wire boundary covers every site, own and navigated, in both branches.
+     *  Under the ch. 3.9 whole-period qualifier the swap is NOT exact (the leeg test's threshold is the touched
+     *  days, the gevuld test's the bucket's days, and negation complements the folded result), so that form is
+     *  refused by name instead of answered as its sister. */
+    private Conditie.Predicaat predicaat(JsonNode n) {
+        Conditie.Predicaatsoort soort = enumOf(Conditie.Predicaatsoort.class, text(n, "soort"));
+        boolean negatie = bool(n, "negatie");
+        Conditie.GeheelPeriode periode = geheelPeriode(n.get("periode"));
+        boolean leegOfGevuld = soort == Conditie.Predicaatsoort.LEEG || soort == Conditie.Predicaatsoort.GEVULD;
+        if (leegOfGevuld && negatie) {
+            if (periode != null)
+                throw new Refusal("Predicaat.negatie",
+                        "a negated leeg/gevuld test under a whole-period qualifier (ch. 3.9): its complement is not the sister test");
+            soort = soort == Conditie.Predicaatsoort.LEEG ? Conditie.Predicaatsoort.GEVULD : Conditie.Predicaatsoort.LEEG;
+            negatie = false;
+        }
+        return new Conditie.Predicaat(soort, expr(n.get("operand")), text(n, "dagsoort"), negatie, intOf(n, "cijfers"),
+                periode, bron(n));
     }
 
     private Conditie.GeheelPeriode geheelPeriode(JsonNode n) {

@@ -1,0 +1,66 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "W1",
+        "objectType": "Werf",
+        "attributes": { "tarief": { "number": "312" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W2",
+        "objectType": "Werf",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S1",
+        "objectType": "Schuit",
+        "attributes": { "lengte": { "number": "8" } },
+        "roles": { "werf": ["W1"] },
+        "characteristics": []
+      },
+      {
+        "label": "S2",
+        "objectType": "Schuit",
+        "attributes": {},
+        "roles": { "werf": ["W1"] },
+        "characteristics": []
+      },
+      {
+        "label": "S3",
+        "objectType": "Schuit",
+        "attributes": { "lengte": { "number": "5" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S4",
+        "objectType": "Schuit",
+        "attributes": {},
+        "roles": { "werf": ["W2"] },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "S1", "attribute": "meldpremie", "value": { "number": "40" } },
+    { "kind": "characteristicAbsent", "label": "S1", "characteristic": "ongemeten" },
+    { "kind": "attributeValue", "label": "S1", "attribute": "werfpremie", "value": { "number": "25" } },
+    { "kind": "attributeEmpty", "label": "S2", "attribute": "meldpremie" },
+    { "kind": "characteristicPresent", "label": "S2", "characteristic": "ongemeten" },
+    { "kind": "attributeValue", "label": "S2", "attribute": "werfpremie", "value": { "number": "25" } },
+    { "kind": "attributeValue", "label": "S3", "attribute": "meldpremie", "value": { "number": "40" } },
+    { "kind": "characteristicAbsent", "label": "S3", "characteristic": "ongemeten" },
+    { "kind": "attributeEmpty", "label": "S3", "attribute": "werfpremie" },
+    { "kind": "attributeEmpty", "label": "S4", "attribute": "meldpremie" },
+    { "kind": "characteristicPresent", "label": "S4", "characteristic": "ongemeten" },
+    { "kind": "attributeEmpty", "label": "S4", "attribute": "werfpremie" },
+    { "kind": "consistent" }
+  ]
+}

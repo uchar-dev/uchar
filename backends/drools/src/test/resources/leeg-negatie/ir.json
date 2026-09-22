@@ -1,0 +1,324 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Werf": {
+      "node": "Objecttype",
+      "naam": "Werf",
+      "attributen": {
+        "tarief": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Werven"
+    },
+    "Schuit": {
+      "node": "Objecttype",
+      "naam": "Schuit",
+      "attributen": {
+        "lengte": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "meldpremie": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "werfpremie": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "ongemeten"
+      ],
+      "kenmerkSoorten": {
+        "ongemeten": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Schuiten"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {
+    "ligplaats": {
+      "node": "Feittype",
+      "naam": "ligplaats",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "werf",
+          "objecttypeNaam": "Werf",
+          "meervoud": null,
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "schuit",
+          "objecttypeNaam": "Schuit",
+          "meervoud": "schuiten",
+          "meervoudig": true
+        }
+      ]
+    }
+  },
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "meldpremie van een schuit",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "ongemeten schuit",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "werfpremie van een schuit",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "meldpremie van een schuit",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "meldpremie",
+        "objecttype": "Schuit",
+        "onderwerpBron": "een Schuit",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "De meldpremie van een Schuit",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "40",
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "40"
+      },
+      "voorwaarde": {
+        "node": "Predicaat",
+        "soort": "LEEG",
+        "operand": {
+          "node": "AttribuutRef",
+          "attribuut": "lengte",
+          "objecttype": "Schuit",
+          "onderwerpBron": "de Schuit",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de lengte van de Schuit",
+          "set": false,
+          "navigatiePad": []
+        },
+        "dagsoort": null,
+        "negatie": true,
+        "cijfers": 0,
+        "periode": null,
+        "bron": "de lengte van de Schuit niet leeg is"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "ongemeten schuit",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "ongemeten",
+        "objecttype": "Schuit",
+        "onderwerpBron": "Een Schuit",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Schuit is ongemeten",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "Predicaat",
+        "soort": "GEVULD",
+        "operand": {
+          "node": "AttribuutRef",
+          "attribuut": "lengte",
+          "objecttype": "Schuit",
+          "onderwerpBron": "de Schuit",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de lengte van de Schuit",
+          "set": false,
+          "navigatiePad": []
+        },
+        "dagsoort": null,
+        "negatie": true,
+        "cijfers": 0,
+        "periode": null,
+        "bron": "de lengte van de Schuit niet gevuld is"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "werfpremie van een schuit",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "werfpremie",
+        "objecttype": "Schuit",
+        "onderwerpBron": "een Schuit",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "De werfpremie van een Schuit",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "25",
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "25"
+      },
+      "voorwaarde": {
+        "node": "Predicaat",
+        "soort": "LEEG",
+        "operand": {
+          "node": "AttribuutRef",
+          "attribuut": "tarief",
+          "objecttype": "Werf",
+          "onderwerpBron": "de Schuit",
+          "navigatieRol": "werf",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "het tarief van de werf van de Schuit",
+          "set": false,
+          "navigatiePad": [],
+          "navigatieBindingen": [
+            {
+              "node": "RolBinding",
+              "feittype": "ligplaats",
+              "rol": "werf"
+            }
+          ]
+        },
+        "dagsoort": null,
+        "negatie": true,
+        "cijfers": 0,
+        "periode": null,
+        "bron": "het tarief van de werf van de Schuit niet leeg is"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}
