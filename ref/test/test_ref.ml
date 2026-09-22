@@ -4132,6 +4132,9 @@ let () =
   refuses_snippet "WF-095-weigert-snippet-zonder-fractie" "15-03-2026 12:00:00";
   refuses_snippet "WF-095-weigert-snippet-dedato-prefix" "dd. 15-03-2026 12:00:00.000";
   refuses_snippet "WF-095-weigert-snippet-smalle-velden" "5-3-2026 12:00:00";
+  (* the de-dato prefix is not a spelling of its own either: in front of the
+     ISO lexeme it is refused like the snippet it came from *)
+  refuses_snippet "WF-095-weigert-dedato-prefix-voor-iso" "dd. 2026-03-15T12:00:00";
   (* the fraction is WHOLE MILLISECONDS, never a positional fraction *)
   dt_ms "WF-095-fractie-is-milliseconden" "2026-03-15T12:00:00.500" (noon + 500);
   dt_ms "WF-095-fractie-001" "2026-03-15T12:00:00.001" (noon + 1);

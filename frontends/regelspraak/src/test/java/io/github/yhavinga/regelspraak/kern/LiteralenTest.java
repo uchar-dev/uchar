@@ -40,6 +40,8 @@ class LiteralenTest {
         assertNull(Literalen.parseDatum("dd. 8-9-2024"), "enkelcijferige dag/maand");
         assertNull(Literalen.parseDatumTijd("dd. 25-12-2024 10:30:00.500"), "datumtijd-snippet met voorvoegsel");
         assertNull(Literalen.parseDatumTijd("25-12-2024 10:30:00.500"), "datumtijd-snippet zonder voorvoegsel");
+        assertNull(Literalen.parseDatum("dd. 2024-12-25"), "het dd.-voorvoegsel voor een ISO-datum is geen lexeem");
+        assertNull(Literalen.parseDatumTijd("dd. 2024-12-25T10:30:00.500"), "idem voor een ISO-datumtijd");
     }
 
     @Test void datum_matcht_het_hele_lexeem() {
