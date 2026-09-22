@@ -2887,6 +2887,131 @@ let () =
         (vouw Minimum [ setbron "vergoeding" num2kg ] None None))
     "has no defined moment to fold"
 
+(* WV-3.4d: the INSTANCE-SET UNION — the §5.7 concatenation of subject
+   expressions as the source of an instance count (ch. 3.4d, wire form and
+   well-formedness IR-SPEC ch. 4.3 / WF-110, maintainer decision 2026-09-20).
+
+   What these lines pin is the OPERATION: the members are the union of the
+   selections' contributors, DEDUPLICATED ON INSTANCE IDENTITY, so an
+   instance two selections both select contributes once. Every check below
+   is chosen so that the sum of the parts is a DIFFERENT number from the
+   union — otherwise the witness would pass under an implementation that
+   simply added the selections' counts. *)
+let () =
+  let rol naam otn mv meervoudig : Ir_v0.Ast.rol =
+    { rol_naam = Some naam; rol_objecttype_naam = Some otn; rol_meervoud = Some mv;
+      rol_meervoudig = meervoudig }
+  in
+  let ft naam rollen = (naam, { Ir_v0.Ast.ft_naam = Some naam; wederkerig = false; rollen }) in
+  let doc =
+    {
+      empty_doc with
+      objecttypen =
+        [ ot "Jutter" [ ("aantal strandvondsten", Some num0) ] [];
+          ot "Vondst" [] [ "gemerkt"; "gekeurd" ] ];
+      feittypen =
+        [ ft "vondstaanmelding"
+            [ rol "aanmelder" "Jutter" "aanmelders" false;
+              rol "aangemelde vondst" "Vondst" "aangemelde vondsten" true ];
+          ft "vondstberging"
+            [ rol "berger" "Jutter" "bergers" false;
+              rol "geborgen vondst" "Vondst" "geborgen vondsten" true ] ];
+    }
+  in
+  let rb f r : Ir_v0.Ast.rol_binding = { rb_feittype = f; rb_rol = r } in
+  let tak ?filter ft r : Ir_v0.Ast.instance_set_branch =
+    { isb_element_type = Some "Vondst"; isb_source_role = Some (rb ft r);
+      isb_filter = filter; isb_bron = None }
+  in
+  let kenmerk k : Ir_v0.Ast.conditie =
+    Kenmerk_check { kenmerk = Some k; navigatie = None; navigatie_binding = None; negatie = false;
+                    eigenaar = None; periode = None; bron = None }
+  in
+  let unie takken : Ir_v0.Ast.expr = Instance_set_union { branches = takken; bron = None } in
+  let tel takken : Ir_v0.Ast.expr =
+    Functie
+      { kind = Aantal; argumenten = [ unie takken ]; element_objecttype = None; leegwaarde = None;
+        filter = None; dimensie_selectie = None; typ = Some num0; bron = None;
+        granulariteit = None; bron_rol = None; bron_pad = None }
+  in
+  let over_relaties =
+    tel [ tak "vondstaanmelding" "aangemelde vondst"; tak "vondstberging" "geborgen vondst" ]
+  in
+  let over_kenmerken =
+    tel
+      [ tak ~filter:(kenmerk "gemerkt") "vondstaanmelding" "aangemelde vondst";
+        tak ~filter:(kenmerk "gekeurd") "vondstaanmelding" "aangemelde vondst" ]
+  in
+  let gefilterd_naast_kaal =
+    tel
+      [ tak ~filter:(kenmerk "gemerkt") "vondstaanmelding" "aangemelde vondst";
+        tak "vondstaanmelding" "aangemelde vondst" ]
+  in
+  let env = env_of doc in
+  let links l = List.fold_left (fun m (k, v) -> World.SMap.add k v m) World.SMap.empty l in
+  let jutter label l = { (inst label "Jutter" []) with World.links = links l } in
+  let vondst label kenmerken = { (inst label "Vondst" []) with World.chars = kenmerken } in
+  let wereld insts = List.fold_left World.add_instance World.empty insts in
+  let ev w label e = Eval.eval_expr env w (World.get w label) ~err:no_err e in
+  (* selections over DIFFERENT relations — the shared element is what makes
+     this a dedup witness and not an addition witness *)
+  let w1 =
+    wereld
+      [ jutter "J1" [ ("aangemelde vondst", [ "V1"; "V2"; "V3" ]);
+                      ("geborgen vondst", [ "V3"; "V4" ]) ];
+        jutter "J2" [ ("aangemelde vondst", [ "V5" ]); ("geborgen vondst", [ "V5" ]) ];
+        jutter "J3" [ ("geborgen vondst", [ "V6" ]) ];
+        jutter "J4" [];
+        vondst "V1" []; vondst "V2" []; vondst "V3" []; vondst "V4" [];
+        vondst "V5" []; vondst "V6" [] ]
+  in
+  (* {V1,V2,V3} ∪ {V3,V4} = 4, where the sum of the parts is 5 *)
+  expect_num "WV-3.4d-gedeeld-element" (ev w1 "J1" over_relaties) "4";
+  (* both selections are {V5}: 1, where the sum of the parts is 2 *)
+  expect_num "WV-3.4d-volledig-gedeeld" (ev w1 "J2" over_relaties) "1";
+  (* one empty selection contributes nothing rather than emptying the union *)
+  expect_num "WV-3.4d-lege-tak" (ev w1 "J3" over_relaties) "1";
+  (* the empty union is 0, never leeg (ch. 1.2e) *)
+  expect_num "WV-3.4d-lege-unie" (ev w1 "J4" over_relaties) "0";
+  (* selections over ONE relation, narrowed by their own filters per
+     contributor: V3 satisfies both and counts once *)
+  let w2 =
+    wereld
+      [ jutter "J1" [ ("aangemelde vondst", [ "V1"; "V2"; "V3" ]) ];
+        jutter "J2" [ ("aangemelde vondst", [ "V7" ]) ];
+        vondst "V1" [ "gemerkt" ]; vondst "V2" [ "gekeurd" ];
+        vondst "V3" [ "gemerkt"; "gekeurd" ]; vondst "V7" [] ]
+  in
+  (* {V1,V3} ∪ {V2,V3} = 3, where the sum of the parts is 4 *)
+  expect_num "WV-3.4d-overlappende-filters" (ev w2 "J1" over_kenmerken) "3";
+  expect_num "WV-3.4d-filters-sluiten-alles-uit" (ev w2 "J2" over_kenmerken) "0";
+  (* the toolchain leaves an unfiltered selection beside a filtered one
+     unlowered — a property of its OR-filter mechanism, not of the operation.
+     uchar carries it: the union absorbs the filtered selection. *)
+  expect_num "WV-3.4d-kale-tak-naast-gefilterde" (ev w2 "J1" gefilterd_naast_kaal) "3";
+  expect_num "WV-3.4d-kale-tak-draagt-alleen" (ev w2 "J2" gefilterd_naast_kaal) "1";
+  (* two selections describing the SAME thing count that selection once *)
+  expect_num "WV-3.4d-dubbele-tak"
+    (ev w1 "J1"
+       (tel [ tak "vondstaanmelding" "aangemelde vondst";
+              tak "vondstaanmelding" "aangemelde vondst" ]))
+    "3";
+  (* the node is not a value: standing where one is read it faults by name,
+     never silently. WF-110 (a) is what keeps this out of reach on the wire;
+     the arm is the second line of defence, on the house pattern. *)
+  expect_fault_msg "WV-3.4d-unie-als-waarde-faalt"
+    (fun () -> ev w1 "J1" (unie [ tak "vondstaanmelding" "aangemelde vondst" ]))
+    "an instance-set union stands where a value is read";
+  (* a selection without its relation faults NAMING the population, never
+     derives one from the type pair (WF-110 (e)'s ground, in the evaluator) *)
+  expect_fault_msg "WV-3.4d-tak-zonder-bronrol-faalt"
+    (fun () ->
+      ev w1 "J1"
+        (tel [ tak "vondstaanmelding" "aangemelde vondst";
+               { isb_element_type = Some "Vondst"; isb_source_role = None; isb_filter = None;
+                 isb_bron = None } ]))
+    "carries no sourceRole"
+
 (* WV-3.4a-opgesomd: the LISTED count, and why this evaluator's arm for it
    stays where it is.
 
