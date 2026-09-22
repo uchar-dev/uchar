@@ -1767,9 +1767,20 @@ public final class DrlTranspiler {
             // (mvel property reactivity is per subject TYPE). Add a far-side JOIN per distinct navigation so the
             // spiegel re-fires when the navigated fact lands (the order-fragility fix). The getter-chain read stays.
             navReactiviteitClausules(rule, r.waarde(), subject);
+            // A value node with NO type is ill-formed input — WF-034's type prologue refuses it at every
+            // read, and the one node that carries no type by CONSTRUCTION (the §5.7 union) is refused by
+            // WF-110 (a). Such a node cannot be restated into the target's unit, and reading its type to
+            // decide crashed bare rather than refusing. It arrives as a MARKER from waarde() above, so the
+            // two are asserted together: a marker is not restated, and a typeless value that is somehow NOT
+            // a marker becomes one here, by name, instead of NPEing on the unit read.
+            if (r.waarde().type() == null && !valueStr.marker())
+                valueStr = Frag.todo("typeloze regelwaarde: een waardeknoop zonder statisch type kan niet in de"
+                        + " eenheid van het doel worden herschreven (WF-034 / WF-110)", r.waarde().bron());
             // restate the value in the target's unit (§4); §6.1.2 forbids AUTO-rounding —
-            // if the result has too many decimals the author must add an explicit afronding.
-            if (r.waarde().type().isNumeriek())
+            // if the result has too many decimals the author must add an explicit afronding. The null
+            // guard is not a fallback: the arm above has already turned a typeless value into a NAMED
+            // marker, so reaching here with no type means "already refused, by name, one line up".
+            if (r.waarde().type() != null && r.waarde().type().isNumeriek())
                 valueStr = omrekenWaarde(valueStr, effType(r.waarde()), effType(a));
             // §6.1.2 write boundary: collapse any remaining exact Breuk to its decimal value BEFORE the setter, so a
             // Breuk never reaches a BigDecimal field (mvel strict-mode resolves setX(BigDecimal), never setX(Object))
@@ -2534,6 +2545,18 @@ public final class DrlTranspiler {
 
     // ---------------- value expression ("then" side: getters) ----------------
     private Frag waarde(Acc acc, Expr e, Objecttype subject) {
+        // IR-SPEC ch. 4.3 / WF-110 (a): the §5.7 instance-set union denotes INSTANCES, so it is admissible as
+        // the single argument of a count and at no other position — a count consumes it in accumulate() and
+        // never reaches here. A union that DOES reach here stands where a VALUE is written, which is
+        // ill-formed input; it is named here rather than left to the generic "expressie" fall-through, for
+        // the reason the fall-through itself cannot serve: that sentence describes the POSITION and
+        // identifies no construct, and this branch additionally CRASHED on it — the node is the only
+        // loadable expression with a null type(), and the §4 unit restate reads that type unguarded
+        // (measured 2026-09-22 on corpus/negatief/wf110-unie-als-regelwaarde: an ERROR where ref, clingo and
+        // the exec-model branch all refuse by name).
+        if (e instanceof Expr.InstanceSetUnion u)
+            return Frag.todo("instantie-unie op een waardeplek: zij duidt de INSTANTIES van een §5.7-concatenatie"
+                    + " aan en alleen een instantietelling verbruikt ze (WF-110 (a))", u.bron());
         if (e instanceof Expr.Literal lit)      return literal(lit);
         if (e instanceof Expr.TekstReeks tr)    return tekstReeks(acc, tr, x -> waarde(acc, x, subject));
         if (e instanceof Expr.ParameterRef p)   // §13.3.6 a TEMPORAL parameter is a List<Segment> global — only a

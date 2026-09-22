@@ -728,7 +728,28 @@ EXPECTED_CHANNEL=(
 # through filterSource/scope: a DSL.or over two patterns binding one variable matches once per
 # satisfied branch, and two accumulates added together double-count the shared element.
 # EXPECTED_DRL_PLAYED moves by two as well.
-EXPECTED_PLAYED=174
+#
+# 174 -> 175 (2026-09-22, fix round of the same card): jutterswet-unievoorwaarde, the union COUNT in a
+# `voorwaarde`. WF-110 (a) restricts the UNION NODE to one position; the count over it is an ordinary
+# whole number and stands wherever any other count stands, which the clause was readable as forbidding.
+# The form is producer-reachable and all four executors already carried it — no arm was needed in either
+# branch — so what the golden buys is that reading the clause one notch too wide costs a failing gate
+# instead of silently removing a legal form. Its J2 also makes it a DEDUP witness: the union is 2 and
+# misses the threshold where the sum of the parts is 4 and would have met it, so deduplication decides a
+# CHARACTERISTIC here rather than a number. EXPECTED_DRL_PLAYED moves by one as well.
+#
+# 175 -> 176 (2026-09-22, naronde of the same card): jutterswet-uniestratum, the ORDER witness. A
+# negated read of a DERIVED characteristic inside a fold filter — or inside a §5.7 union selection's
+# filter — is a stratification edge, and Stratificatie.verzamelReads descended into nested CONDITIONS
+# only, never into a condition's EXPRESSION operands. Measured before the repair, with the consumer
+# written above its producer: ref and the ASP backend left the consumer unfired, BOTH Drools branches
+# fired it in the transient window and a monotone characteristic grant is never taken back
+# (`verwacht afwezig, werkelijk aanwezig`) — two answers, two executors each, on a verifier-clean
+# document. The gap was NOT the union's: the ordinary single-source fold with the same filter diverged
+# identically and had since that filter landed, so one walk closes both and the suite pins both halves
+# (VouwfilterStratumWitnessTest). Hand-written golden, no bron.rgs: the frontend refuses "die niet
+# gemerkt zijn" by name, so the form lives on the wire alone. EXPECTED_DRL_PLAYED moves by one as well.
+EXPECTED_PLAYED=176
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -911,7 +932,13 @@ DRL_CHANNEL=(
 # branch got its own arm — the same disjunctive single pattern, written as DRL text — and plays both
 # goldens on the same absolute numbers as the exec branch, ref and clingo. Reason block at
 # EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=151
+# 151 -> 152 (2026-09-22, fix round of the same card): jutterswet-unievoorwaarde. This branch needed
+# nothing of its own — the union count in a condition rides the same accumulate. Reason block at
+# EXPECTED_PLAYED above.
+# 152 -> 153 (2026-09-22, naronde of the same card): jutterswet-uniestratum. The stratification
+# analysis is SHARED, so this branch carried the same gap and is repaired by the same walk; measured
+# diverging before it and PLAYED after. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=153
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a

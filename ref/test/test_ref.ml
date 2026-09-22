@@ -3002,6 +3002,21 @@ let () =
   expect_fault_msg "WV-3.4d-unie-als-waarde-faalt"
     (fun () -> ev w1 "J1" (unie [ tak "vondstaanmelding" "aangemelde vondst" ]))
     "an instance-set union stands where a value is read";
+  (* the SECOND LINE for clause (d): one population for the whole union. The
+     wire refuses the shape, so this arm is out of reach through a well-formed
+     document — and without it this evaluator ANSWERED it (measured 2026-09-22
+     on `wf110-unie-ongelijke-elementtypes`: a silent 3, while both Drools
+     branches refused by name). ch. 4.3 says the rule refuses instead of
+     picking an answer by side effect; an executor that answers anyway makes
+     that sentence untrue exactly where it matters. *)
+  expect_fault_msg "WV-3.4d-twee-populaties-faalt"
+    (fun () ->
+      ev w1 "J1"
+        (tel [ tak "vondstaanmelding" "aangemelde vondst";
+               { isb_element_type = Some "Kavel";
+                 isb_source_role = Some (rb "vondstberging" "geborgen vondst");
+                 isb_filter = None; isb_bron = None } ]))
+    "ranges over TWO populations";
   (* a selection without its relation faults NAMING the population, never
      derives one from the type pair (WF-110 (e)'s ground, in the evaluator) *)
   expect_fault_msg "WV-3.4d-tak-zonder-bronrol-faalt"

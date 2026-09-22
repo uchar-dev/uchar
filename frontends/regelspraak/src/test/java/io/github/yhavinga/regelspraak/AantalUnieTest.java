@@ -261,6 +261,40 @@ class AantalUnieTest {
                 "een enkele selectie is geen unie — die vorm heeft haar eigen spelling (WF-110 (b))");
     }
 
+    /** WF-110 (a) restricts the UNION NODE to one position; the COUNT over it is an ordinary whole
+     *  number and stands wherever any other count stands — a `voorwaarde` included. The clause was
+     *  readable as forbidding that, so it is pinned here and by the golden
+     *  `jutterswet-unievoorwaarde` rather than left to a reading. */
+    static final String IN_VOORWAARDE = """
+
+        Regel ruim voorzien
+            geldig altijd
+                Een Jutter is ruim voorzien indien het aantal aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter groter is dan 2.
+        """;
+
+    @Test
+    void de_unie_telling_staat_ook_in_een_voorwaarde() {
+        RegelSpraakModel m = schoon(IN_VOORWAARDE);
+        var v = assertInstanceOf(io.github.yhavinga.regelspraak.ir.Conditie.Vergelijking.class,
+                m.resolvedRegels.get(0).voorwaarde());
+        Expr.Functie tel = assertInstanceOf(Expr.Functie.class, v.links());
+        assertEquals(Expr.FunctieKind.AANTAL, tel.kind());
+        assertEquals(2, assertInstanceOf(Expr.InstanceSetUnion.class, tel.argumenten().get(0)).takken().size());
+    }
+
+    /** A refused concatenation used to raise a "die/dat wordt nog niet omgezet" WARNING even when no
+     *  operand wrote a subselectie at all — a diagnosis about something the sentence does not carry.
+     *  The guard asks the question only where there is one; a sentence WITH an unresolvable
+     *  subselectie keeps both its ERROR and its WARNING, which is the other half of the same pin. */
+    @Test
+    void een_geweigerde_unie_zonder_deelselectie_krijgt_geen_deelselectie_waarschuwing() {
+        List<Diagnostic> ds = Resolver.resolve(MODEL + ONGELIJKE_ELEMENTTYPES).diagnostics;
+        assertEquals(1, ds.size(), () -> "verwacht alleen de benoemde ERROR, kreeg: " + ds);
+        assertEquals(Severity.ERROR, ds.get(0).severity());
+        List<Diagnostic> metDie = Resolver.resolve(MODEL + ONOPLOSBARE_DEELSELECTIE).diagnostics;
+        assertEquals(2, metDie.size(), () -> "een echte deelselectie hoort haar WARNING te houden: " + metDie);
+    }
+
     @Test
     void een_geweigerde_unie_bereikt_de_wire_niet() {
         RegelSpraakModel m = Resolver.resolve(MODEL + ONGELIJKE_ELEMENTTYPES);

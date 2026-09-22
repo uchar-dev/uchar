@@ -43,6 +43,21 @@ De ariteit is ÉÉN. Dat is niet cosmetisch: het is precies wat deze vorm op de
 wire onderscheidbaar houdt van de opgesomde WAARDEtelling die WF-037 sinds
 2026-09-20 weigert, en waarom die weigering letterlijk kon blijven staan.
 
+## Het tweede geval: hetzelfde relatiefeit tweemaal aangeleverd
+
+Het caseformaat laat een rollenlijst met een herhaald doel toe (geen
+`uniqueItems` op de array), en dat is een GELDIGE case: een relatiefeit is een
+feit, geen teller. `case2-dubbel-feit.json` pint dat alle vier de uitvoerders
+het zo lezen. `J1` krijgt `aangemelde vondsten: [V1, V1, V2]` en `geborgen
+vondsten: [V2, V2]` — de selecties zijn {V1, V2} en {V2}, de unie is
+{V1, V2} en het antwoord **2**, niet 5. `J2` krijgt `[V3, V3]` en telt **1**,
+niet 2.
+
+Het onderscheidt zich van `WV-3.4d-dubbele-tak` in `ref/test/`: die herhaalt
+de SELECTIE, deze herhaalt het FEIT. De eerste is een vraag over de unie, de
+tweede over de invoerlezing, en pas samen dekken zij "een instantie telt één
+keer" aan beide kanten.
+
 ## Rood-eerst
 
 Gemeten op de frontend van vóór deze kaart (5b42e5b9): deze `bron.rgs` werd

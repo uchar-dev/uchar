@@ -1285,6 +1285,12 @@ selection once: the dedup rule doing its job, not a defect. The verifier
 does not refuse it, because refusing it would mean comparing conditions
 structurally to forbid a document that already answers correctly.
 
+**Where a union count stands.** WF-110 (a) restricts the UNION node to one
+position — the count's single argument. The COUNT over it is an ordinary whole,
+unitless number and stands wherever any other count stands: as a rule value, in
+a `voorwaarde`, on either side of a comparison. Worked example below
+(`jutterswet-unievoorwaarde`).
+
 **One population.** Every selection of one union names the same element type
 (WF-110 (d)), so "instance identity" needs no reading across a subtype
 lattice here: the members are instances of one declared population. That is
@@ -1312,6 +1318,15 @@ aangemelde vondsten, `V1` is gemerkt, `V2` is gekeurd and `V3` is BOTH: the
 selections are {V1, V3} and {V2, V3}, the union is {V1, V2, V3} and the
 count is **3** where the sum of the parts is 4. `J2` meldt one vondst that
 is neither: both selections are empty and the count is **0**.
+
+*The union count in a `voorwaarde`.* "Een Jutter is ruim voorzien indien het
+aantal aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter
+groter is dan 2." `J1` meldt `V1`, `V2`, `V3` aan en bergt `V3` en `V4`: the
+union is 4, so the characteristic HOLDS. `J2` meldt `V5` en `V6` aan en bergt
+dezelfde twee: the union is **2** and the characteristic does NOT hold — where
+the sum of the parts is 4 and would have made it hold, which is what makes this
+row a dedup witness and not only a position witness. `J3` reaches one element
+(1) and `J4` none (0); neither holds.
 
 *A filtered selection beside an UNFILTERED one.* Over `J1`'s three
 aangemelde vondsten, "die gemerkt zijn" selects {V1, V3} and the bare

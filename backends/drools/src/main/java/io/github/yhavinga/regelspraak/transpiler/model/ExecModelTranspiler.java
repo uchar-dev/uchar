@@ -4274,6 +4274,17 @@ public final class ExecModelTranspiler {
     /** Scalar value: Literal | own-attr read | Parameter-global read | a {@code +} of those (rsNul leegwaarde).
      *  null -> skip. The global read pulls its value from the consequence-bound map (see {@link #regel}). */
     private WaardeFn scalarWaarde(Objecttype valueSubject, Expr e) {
+        // IR-SPEC ch. 4.3 / WF-110 (a): the §5.7 instance-set union denotes INSTANCES and is admissible as the
+        // single argument of a count alone — a count consumes it in aggregatie() and never reaches here. One
+        // that DOES reach here stands where a VALUE is written, which is ill-formed input. Named through
+        // navReden rather than left to the generic "waarde buiten scope", for the reason the DRL-text branch
+        // was given the same arm on 2026-09-22: the two branches must say ONE thing about one limit, and a
+        // producer reading the gate report should not have to know which branch answered.
+        if (e instanceof Expr.InstanceSetUnion) {
+            navReden = "instantie-unie op een waardeplek: zij duidt de INSTANTIES van een §5.7-concatenatie aan"
+                    + " en alleen een instantietelling verbruikt ze (WF-110 (a))";
+            return null;
+        }
         // IR-SPEC ch. 4.10: the Let cluster — all three union nodes.
         if (isLetKnoop(e)) return letWaarde(valueSubject, e);
         if (e instanceof Expr.Literal lit && lit.type().isNumeriek()) {

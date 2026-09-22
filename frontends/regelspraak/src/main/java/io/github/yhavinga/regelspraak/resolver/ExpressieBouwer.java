@@ -1175,14 +1175,25 @@ final class ExpressieBouwer {
         // NOT the §5.7 route any more, and dead for every concatenation that RESOLVES (2026-09-20,
         // card unie-telling). A resolving concatenation becomes an InstanceSetUnion in bouwFunctie,
         // which runs BEFORE this method, so what still reaches this branch is a concatenation
-        // bouwInstantieUnie REFUSED — and there its Onopgelost only raises a second, softer
-        // diagnosis beside the ERROR that already refused the sentence. Left standing rather than
-        // deleted: removing it changes the marker-reason census MarkerRedenPinTest pins and costs
-        // the `verbruikt` bookkeeping its consumption of the operands' subselecties, which then
-        // report themselves as silently dropped — three diagnoses where the ERROR had said it once.
-        // The OR-filter form it builds is deliberately not a second spelling of the union
-        // (IR-SPEC ch. 4.3); what it can still reach never reaches disk.
+        // bouwInstantieUnie REFUSED. The OR-filter form it builds is deliberately not a second
+        // spelling of the union (IR-SPEC ch. 4.3); what it can still reach never reaches disk.
+        //
+        // The branch is not DELETED, and that was measured rather than assumed (fixronde
+        // 2026-09-22): removing it shifts the marker-reason census MarkerRedenPinTest pins (3 -> 2)
+        // and costs the `verbruikt` bookkeeping its consumption of the operands' subselecties,
+        // which then report themselves as silently dropped — three diagnoses where the ERROR had
+        // said it once. What DID move is the noise: it used to raise a "die/dat wordt nog niet
+        // omgezet" WARNING on a refused concatenation that carried no die/dat at all. The guard
+        // below asks the question only when an operand really writes one, so the WARNING is now
+        // true wherever it fires and silent where it has nothing to report; a sentence WITH an
+        // unresolvable subselectie keeps both its ERROR and its WARNING (measured, both probes).
         if (f instanceof AantalFuncContext) {
+            // No operand writes a subselectie at all: there is nothing to OR and nothing to report, so
+            // this branch has no business producing a marker whose only effect is a WARNING about a
+            // die/dat the sentence does not carry. Null is "no filter", which is exactly true here.
+            boolean heeftDie = false;
+            for (ParseTree op : operanden) if (vindDie(op) != null) heeftDie = true;
+            if (!heeftDie) return null;
             java.util.List<Conditie> delen = new ArrayList<>();
             // account for EVERY operand's subselectie before the first one can bail out: the marker below
             // refuses the whole union, so the later operands' subselecties are refused with it and must
@@ -1566,16 +1577,20 @@ final class ExpressieBouwer {
      *  refuses the operand LIST and says the source language spells none; since 2026-09-20 that is
      *  true of the list and false of the SENTENCE — §5.7 spells a concatenation of subject
      *  expressions and typeringen §4.11 admits it under this very operator — so the head would
-     *  mislead on its own. The concatenation has a wire form of its own (an InstanceSetUnion under
+     *  mislead on its own. The tail therefore OPENS by naming the apparent contradiction ("wat de
+     *  kop over de LIJST zegt is waar; over de ZIN niet"), because a reader who meets "spelt er
+     *  geen" and "spelt wél" in one sentence with nothing between them reads a bug, not a
+     *  distinction. The concatenation has a wire form of its own (an InstanceSetUnion under
      *  the count, WF-110), and this tail says why that route did not open here: because the operands
      *  are not subject expressions at all, or because {@link #bouwInstantieUnie} refused them for a
      *  reason of its own. */
     private String unieStaart(FunctieAanroepContext f) {
         if (!(f instanceof AantalFuncContext)) return "";
-        String staart = ". De brontaal spelt wél een CONCATENATIE van ONDERWERPexpressies (§5.7, "
-                + "typeringen §4.11), en die telt instanties in plaats van waarden: zij bereikt de wire "
-                + "sinds 2026-09-20 als één InstanceSetUnion onder de telling (WF-110). Die route opent "
-                + "hier niet — ";
+        String staart = ". Wat de kop over de LIJST zegt is waar; over de ZIN niet — de brontaal spelt "
+                + "wél een CONCATENATIE van ONDERWERPexpressies (§5.7, typeringen §4.11), en die telt "
+                + "instanties in plaats van waarden, dus zij is geen operandenlijst maar een lijst "
+                + "SELECTIES: zij bereikt de wire sinds 2026-09-20 als één InstanceSetUnion onder de "
+                + "telling (WF-110). Die route opent hier niet — ";
         return staart + (unieWeigering != null ? unieWeigering
                 : "niet elke operand is een rolselectie; een concatenatie onder 'het aantal' bestaat "
                         + "uit ONDERWERPexpressies en uit niets anders (typeringen §4.11)");

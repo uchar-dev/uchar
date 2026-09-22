@@ -1938,6 +1938,28 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       if List.length branches < 2 then
         fault "an instance-set union carries at least TWO selections, found %d (WF-110)"
           (List.length branches);
+      (* the SECOND LINE for WF-110 (d): one population for the whole union.
+         Out of reach through a well-formed document, and here for the reason
+         ch. 4.3 gives for the rule itself — it refuses instead of picking an
+         answer by side effect. Measured 2026-09-22: without this arm the
+         backend ANSWERED a union over two populations (a silent 3 on
+         `wf110-unie-ongelijke-elementtypes`, matching ref and diverging from
+         both Drools branches, which refuse it by name). *)
+      (match branches with
+      | [] -> ()
+      | first :: rest ->
+          let el0 = Option.value first.isb_element_type ~default:"?" in
+          List.iter
+            (fun (b : instance_set_branch) ->
+              let el = Option.value b.isb_element_type ~default:"?" in
+              if norm el <> norm el0 then
+                fault
+                  "an instance-set union ranges over TWO populations (%S and %S): a count answers a \
+                   cardinality over ONE declared type, and whether two selections can then share an \
+                   instance is a question about the subtype lattice that deduplication would have to \
+                   answer (WF-110 (d))"
+                  el0 el)
+            rest);
       ctx.fresh <- ctx.fresh + 1;
       let p = Printf.sprintf "unie%d" ctx.fresh in
       let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in

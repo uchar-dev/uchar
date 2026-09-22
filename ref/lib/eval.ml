@@ -1709,6 +1709,30 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
         if filter <> None then
           Value.fault "a filter beside an instance-set union has no form: every selection \
                        carries its own (WF-110)";
+        (* the SECOND LINE for WF-110 (d): one population for the whole union.
+           The wire refuses the shape and so does the frontend, so this arm is
+           out of reach through a well-formed document — but without it this
+           evaluator ANSWERED a union over two populations (measured
+           2026-09-22 on `wf110-unie-ongelijke-elementtypes`: a silent 3,
+           where both Drools branches refuse by name). ch. 4.3 says the rule
+           refuses instead of picking an answer by side effect, and an
+           executor that answers anyway makes that sentence untrue where it
+           matters most — on a document that reached it without the wire. *)
+        (match branches with
+        | [] -> ()
+        | first :: rest ->
+            let el0 = req "instance-set branch element type" first.isb_element_type in
+            List.iter
+              (fun (b : instance_set_branch) ->
+                let el = req "instance-set branch element type" b.isb_element_type in
+                if norm el <> norm el0 then
+                  Value.fault
+                    "an instance-set union ranges over TWO populations (%S and %S): a count answers a \
+                     cardinality over ONE declared type, and whether two selections can then share an \
+                     instance is a question about the subtype lattice that deduplication would have to \
+                     answer (WF-110 (d))"
+                    el0 el)
+              rest);
         let seen = Hashtbl.create 16 in
         `Instances
           (filter_in_order

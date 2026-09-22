@@ -160,6 +160,66 @@ public final class Stratificatie {
             verzamelReads(kv.filter(), kv.elementObjecttype(), uit);
             verzamelReads(kv.toets(), kv.elementObjecttype(), uit);
         }
+        // A condition's EXPRESSION operands carry conditions of their own — an aggregation's die/dat
+        // filter (IR-SPEC ch. 4.3) and, since 2026-09-20, a §5.7 union's per-selection filters (WF-110) —
+        // and a NEGATED kenmerk read inside one has to sink this rule's stratum exactly as a top-level one
+        // does. Until 2026-09-22 this walk descended into nested CONDITIONS only, so every such read was
+        // invisible: measured on a two-rule document (a rule deriving `gemerkt` on the element, a rule
+        // granting the subject a monotone kenmerk when the count of NOT-gemerkt elements exceeds zero),
+        // ref and the ASP backend saw the edge and left the consumer unfired while BOTH Drools branches
+        // fired it in the transient window and never took the grant back — `verwacht afwezig, werkelijk
+        // aanwezig`, on a verifier-clean document. The gap was NOT the union's: the ORDINARY
+        // single-source fold with the same filter diverged identically and had done so since the filter
+        // landed. One walk closes both.
+        if (c instanceof Conditie.Vergelijking v) { readsInExpr(v.links(), uit); readsInExpr(v.rechts(), uit); }
+        if (c instanceof Conditie.Predicaat p) readsInExpr(p.operand(), uit);
+        if (c instanceof Conditie.Periode pe) { readsInExpr(pe.vanaf(), uit); readsInExpr(pe.tot(), uit); }
+    }
+
+    /** The kenmerk reads a condition's EXPRESSION operand hides — a fold filter, a union selection's
+     *  filter — each attributed to the type it is READ AT (the contributor, never the rule's subject:
+     *  RUNTIME-SEMANTICS ch. 3.4a for the fold, ch. 3.4d for the union), exactly as the quantifier fold's
+     *  recursion above hands down its element type.
+     *
+     *  <p>EXHAUSTIVE over the sealed union, no {@code default} — the reason {@code Expr.bevat} is written
+     *  the same way: a missing arm here under-reports ("this rule reads no kenmerk"), and an
+     *  under-reported read is a rule that fires one stratum too early, which is the defect this method
+     *  exists to prevent. */
+    private static void readsInExpr(Expr e, List<Read> uit) {
+        if (e == null) return;
+        switch (e) {
+            case Expr.Functie f -> {
+                for (Expr a : f.argumenten()) readsInExpr(a, uit);
+                readsInExpr(f.leegwaarde(), uit);
+                verzamelReads(f.filter(), f.elementObjecttype(), uit);
+            }
+            case Expr.InstanceSetUnion u -> {
+                for (Expr.InstanceSetUnion.Tak t : u.takken())
+                    verzamelReads(t.filter(), t.elementType(), uit);
+            }
+            case Expr.Binair b -> { readsInExpr(b.links(), uit); readsInExpr(b.rechts(), uit); }
+            case Expr.Afgerond a -> readsInExpr(a.basis(), uit);
+            case Expr.Begrensd b -> {
+                readsInExpr(b.basis(), uit); readsInExpr(b.minimum(), uit); readsInExpr(b.maximum(), uit);
+            }
+            case Expr.TekstReeks t -> {
+                for (Expr.TekstReeks.Deel d : t.delen())
+                    if (d instanceof Expr.TekstReeks.Ingevoegd i) readsInExpr(i.expr(), uit);
+            }
+            case Expr.DimensieCel c -> readsInExpr(c.attribuut(), uit);
+            case Expr.Let l -> { readsInExpr(l.value(), uit); readsInExpr(l.body(), uit); }
+            case Expr.IfThenElse k -> {
+                verzamelReads(k.conditie(), null, uit);
+                readsInExpr(k.dan(), uit); readsInExpr(k.anders(), uit);
+            }
+            case Expr.Literal ignored -> { }
+            case Expr.AttribuutRef ignored -> { }
+            case Expr.ParameterRef ignored -> { }
+            case Expr.VariabeleRef ignored -> { }
+            case Expr.BinderRef ignored -> { }
+            case Expr.Constante ignored -> { }
+            case Expr.Onopgelost ignored -> { }
+        }
     }
 
     private static String key(Objecttype ot, String kenmerk) {

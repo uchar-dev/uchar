@@ -1,0 +1,168 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "aangemelde vondsten": [
+            "V1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "aangemelde vondsten": [
+            "V4"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "aangemelde vondsten": [
+            "V5",
+            "V6"
+          ],
+          "geborgen vondsten": [
+            "V6",
+            "V7"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "10"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V4",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V5",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "10"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V6",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "2"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V7",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "9"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "ongemerkt aantal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "ongemerkt aantal",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "ongemerkt aantal",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "alarmerend"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J2",
+      "characteristic": "alarmerend"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J3",
+      "characteristic": "alarmerend"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "gemerkt"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V4",
+      "characteristic": "gemerkt"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V5",
+      "characteristic": "gemerkt"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V6",
+      "characteristic": "gemerkt"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V7",
+      "characteristic": "gemerkt"
+    }
+  ]
+}

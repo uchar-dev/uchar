@@ -1,0 +1,18 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+	is ruim voorzien kenmerk (bijvoeglijk);
+
+Objecttype de Vondst (mv: Vondsten)
+
+Feittype vondstaanmelding
+	de aanmelder Jutter
+	de aangemelde vondst (mv: aangemelde vondsten) Vondst
+Eén aanmelder meldt meerdere aangemelde vondsten
+
+Feittype vondstberging
+	de berger Jutter
+	de geborgen vondst (mv: geborgen vondsten) Vondst
+Eén berger bergt meerdere geborgen vondsten
+
+Regel ruim voorzien bij meer dan twee stukken
+	geldig altijd
+		Een Jutter is ruim voorzien indien het aantal aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter groter is dan 2.

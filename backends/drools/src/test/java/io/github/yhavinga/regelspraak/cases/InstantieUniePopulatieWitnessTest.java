@@ -37,6 +37,24 @@ class InstantieUniePopulatieWitnessTest {
                 "een unie over twee populaties hoort een benoemde weigering te zijn");
     }
 
+    /** IR-SPEC ch. 4.3 / WF-110 (a) — the union standing where a VALUE is written.
+     *
+     *  <p>Rood-eerst, measured 2026-09-22 on {@code corpus/negatief/wf110-unie-als-regelwaarde}: ref answered an
+     *  EVALUATION FAULT and the ASP backend a TRANSLATION FAULT, both citing WF-110; the exec-model branch
+     *  skipped with the GENERIC {@code regel (waarde buiten scope)}, which names no construct; and the DRL-TEXT
+     *  branch CRASHED — {@code NullPointerException} on {@code r.waarde().type().isNumeriek()}, because the
+     *  union is the only loadable expression node whose {@code type()} is null by construction and the §4 unit
+     *  restate read it unguarded. A crash names no form and reaches the gate as an ERROR instead of as a
+     *  channel with a reason. This row is the fence for both halves: both branches refuse, and both name the
+     *  rule in the SAME words. */
+    @Test void de_unie_op_een_waardeplek_wordt_in_beide_takken_benoemd_geweigerd(@TempDir Path dir)
+            throws Exception {
+        Path ir = dir.resolve("ir.json");
+        Files.writeString(ir, KALE_UNIE_DOC);
+        BeideTakken.geweigerd(ir, JSON.readTree(GEVAL), "WF-110 (a)",
+                "een unie op een waardeplek hoort een benoemde weigering te zijn, nooit een crash");
+    }
+
     private static final String HEEL =
             "{\"node\":\"Numeriek\",\"geheel\":true,\"decimalen\":0,\"teken\":\"NIET_NEGATIEF\",\"eenheid\":null}";
 
@@ -91,6 +109,13 @@ class InstantieUniePopulatieWitnessTest {
             + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
             + "\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
             + "\"regelGroepen\":[],\"diagnostics\":[]}");
+
+    /** The same model, with the union standing as the rule's WHOLE value — no count above it. */
+    private static final String KALE_UNIE_DOC = DOC.replace(
+            "\"waarde\":{\"node\":\"Functie\",\"kind\":\"AANTAL\",\"argumenten\":[", "\"waarde\":")
+            .replace("],\"elementObjecttype\":null,\"leegwaarde\":null,\"filter\":null,"
+                    + "\"dimensieSelectie\":null,\"type\":" + HEEL + ",\"bron\":\"het aantal …\","
+                    + "\"granulariteit\":null}", "");
 
     private static final String GEVAL = """
             { "format": "uchar-case-v0", "asOfDate": null,

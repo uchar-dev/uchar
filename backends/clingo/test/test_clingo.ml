@@ -7359,6 +7359,21 @@ let () =
   faults_with ~name:"WF-110 een unie met één tak"
     ~ir:(unie_doc ~takken:tak_aangemeld)
     ~case_text:unie_case ~needle:"carries at least TWO selections";
+  (* the SECOND LINE for clause (d): one population for the whole union. Out of
+     reach through a well-formed document, and here for the reason ch. 4.3 gives
+     for the rule itself — it refuses instead of picking an answer by side
+     effect. Measured 2026-09-22: without the arm this backend ANSWERED a union
+     over two populations (a silent 3, matching ref and diverging from both
+     Drools branches, which refuse it by name). *)
+  faults_with ~name:"WF-110 een unie over twee populaties"
+    ~ir:
+      (unie_doc
+         ~takken:
+           (tak_aangemeld
+          ^ {|, { "node": "InstanceSetBranch", "elementType": "Kavel",
+     "sourceRole": { "node": "RolBinding", "feittype": "vondstberging", "rol": "geborgen vondst" },
+     "filter": null, "bron": "duinkavels van de Jutter" }|}))
+    ~case_text:unie_case ~needle:"ranges over TWO populations";
   (* clause (e) in the translator: no type-pair fallback for a selection *)
   faults_with ~name:"WF-110 een tak zonder bronrol"
     ~ir:

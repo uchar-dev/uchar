@@ -6388,18 +6388,32 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                     answer. Measured on the v0 toolchain, which refuses the
                     same shape on a mechanism ground of its own (one accumulate
                     has one source pattern); uchar refuses it on this one. *)
-                 (match (branches, b.isb_element_type) with
-                  | first :: _, Some el
-                    when i > 0
-                         && (match first.isb_element_type with
-                            | Some f0 -> norm f0 <> norm el
-                            | None -> false) ->
-                      [ v "WF-110" (bat ^ "/elementType")
-                          (Printf.sprintf
-                             "the selections of an instance-set union range over ONE population: \
-                              selection 0 names '%s' and this one names '%s' (ch. 4.3)"
-                             (Option.value first.isb_element_type ~default:"?")
-                             el) ]
+                 (* The reference is the first selection that NAMES a population, not
+                    selection 0: a selection with no elementType is the neighbouring arm's
+                    (it has its own witness) and must not also silence this one. Keyed on
+                    the INDEX of that reference, so the reference selection never compares
+                    against itself and the arms stay one-witness-per-defect. *)
+                 (let reference =
+                    List.find_index
+                      (fun (b : instance_set_branch) -> b.isb_element_type <> None)
+                      branches
+                  in
+                  match (reference, b.isb_element_type) with
+                  | Some ri, Some el when i > ri ->
+                      let r0 = List.nth branches ri in
+                      if
+                        match r0.isb_element_type with
+                        | Some f0 -> norm f0 <> norm el
+                        | None -> false
+                      then
+                        [ v "WF-110" (bat ^ "/elementType")
+                            (Printf.sprintf
+                               "the selections of an instance-set union range over ONE population: \
+                                selection %d names '%s' and this one names '%s' (ch. 4.3)"
+                               ri
+                               (Option.value r0.isb_element_type ~default:"?")
+                               el) ]
+                      else []
                   | _ -> [])
                  (* (e) every selection names its population and its relation.
                     There is deliberately no bindingless fallback: WF-048
