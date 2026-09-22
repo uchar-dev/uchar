@@ -80,10 +80,20 @@ Afleiding tegen wire over alle vier zones: golden wijkt af in
 `to-one-second-filler` (dezelfde vorm als gemeenteberging), toka nergens,
 negatief in de bonenveld-getuigen zelf (WF-034, WF-028, WF-054, WF-109).
 De twee goldens weigeren in beide takken al eerder (de aggregatiejoin),
-dus spelen ze niet mee. Opvallend in erflijn: de wire-`joinVeld`
-`opvolger` wijst over de zelfgetypeerde 1:1 `opvolging` de verkeerde
-richting op (doel.opvolger == anker); de afleiding geeft `voorganger`,
-zoals ref loopt. WF-034 arm B staat daar af (gelijke kardinaliteit).
+dus spelen ze niet mee. Opvallend in erflijn: daar volgen
+alle drie de bonenvelden de omgekeerde conventie, namelijk dat het veld
+heet naar de EIGEN rol van de drager en niet naar de rol van de
+overkant. `zetVeld` is `erfvolger` (de doelrol; de afleiding geeft
+`erflater`), het hopveld is `erfvolger` (afleiding `erflater`), en
+`joinVeld` `opvolger` wijst over de zelfgetypeerde 1:1 `opvolging` de
+verkeerde kant op (doel.opvolger == anker; de afleiding geeft
+`voorganger`, zoals ref loopt). Dezelfde vorm staat in
+`negatief/wf109-gastheer-ambigu-zelfgetypeerd`. Gedrag verandert er niet
+door, want `erflijn` is N:N en weigert eerder. Maar het is een
+producentenpunt: bij een zelfgetypeerd paar spelt de wire (handgeschreven
+anchor, frontend-emissie op dezelfde vorm) de bonenvelden met de eigen
+rol. WF-034 arm B staat daar af (gelijke kardinaliteit), dus niets vangt
+het.
 
 (b) gehaald, rood eerst. `BonenveldWitnessTest`, 13 rijen via de
 replay-API in beide takken. Per positie een bonentwist die niets meer
@@ -100,9 +110,15 @@ geweigerd. Matrix per rij, jar van main 58ae7a4c tegen jar met port, elk
 in beide takken, plus ref: vóór de port volgde elke bonentwist het
 getwiste veld (waardefout, of voor zijde en type een weigering op een
 veld dat de boon niet draagt) en speelde elke bindingtwist het
-ongetwiste antwoord; na de port geeft elke rij in beide takken exact het
-antwoord van ref (bonentwist: ref PASS, bindingtwist: dezelfde
-MISMATCH-cellen). Uitgevoerd en teruggedraaid in één keten (stash van de
+ongetwiste antwoord. Na de port geeft elke twistrij in beide takken
+exact het antwoord van ref (bonentwist: ref PASS, bindingtwist: dezelfde
+MISMATCH-cellen). Twee rijen zijn geen ref-vergelijking.
+`zonder_bonenvelden_speelt_het_document_gelijk` projecteert de wire zoals
+die ná B7/B8 wordt. ref LAADT dat document niet (IR LOAD ERROR: het
+schema eist `zetVeld`) en de verifier ook niet; zolang het schema de
+velden eist, toont de rij alleen dat beide takken zonder die velden
+spelen. De rijen die weigeren (alleen bonen, onoplosbare scopebinding)
+weigeren waar ref faalt (EVALUATION FAULT), met een eigen reden. Uitgevoerd en teruggedraaid in één keten (stash van de
 drie hoofdbestanden, test, pop, test): zonder port test-rc=1, 13/13 rood
 (10 failures, 3 errors); met port test-rc=0, 13/13 groen.
 
@@ -168,3 +184,41 @@ reads the written `scopeVeld`." Rij 20 en rij 22, en de knooprijen
 `ResolvedFeitCreatie` en `ResolvedUniciteit`, krijgen elk: "executed by
 both Drools branches off the bindings since 2026-09-22 (P2)". PLAN.md:
 geen scopewijziging.
+
+Fixronde (lens, na rebase op main 317b20a2; de rebase raakte alleen
+frontends/regelspraak, backlog en spec/CONSTRUCTS.md). B1: na de conversie
+had de hop-weigerpoort geen getuige meer. Een mutant zonder de poort in
+beide takken liet de suite groen. Nieuwe rij
+`RolveldlezerWitnessTest.de_feitcreatie_weigert_een_verdrongen_tussenstapveld`:
+gemeenteberging met alleen de creatieregel, plus een Jutter-attribuut
+`gemeente van inschrijving` dat het hopveld verdringt (verifier PASS, ref
+PASS). De rij pint de hop-reden "de rol 'gemeente van inschrijving' op Jutter deelt
+haar naam met een gedeclareerd lid" in exec en DRL-tekst. Mutantproef,
+zelf nagedraaid: zonder beide hop-poorten test-rc=1 (de exec-assertie
+ziet de join-reden 'aanmelder'); zonder alleen de DRL-poort test-rc=1
+(DRL-marker met de join-reden); hersteld test-rc=0. De geconverteerde rij
+heet nu `de_feitcreatie_weigert_een_join_zonder_veld`, en haar commentaar
+beschrijft de oude hop-weigering en de verschuiving. A4:
+`BonenveldWitnessTest.een_een_op_een_hop_leest_de_ouderzijde`, postwacht met
+`kustligging` 1:1 gemaakt (verifier PASS, ref PASS). De rij pint in de
+gedeelde afleiding de hop (Post, `post`, ouderzijde), en beide takken
+spelen. Omdat de case-invoer bij 1:1 beide velden schrijft, antwoorden
+de twee zijden hier gelijk. Wat de keuze pint, is de afleidingsassertie;
+beide takken voeren die ene functie uit. A2 en A3 staan hierboven verwerkt:
+de ref-vergelijkingszin is precies geformuleerd, en de erflijn-alinea
+noemt alle drie de velden en het negatief-document. A5: de bindingloze
+scopeterugval (rest voor B8) heeft geen eigen twistrij. Dat is aanvaardbaar:
+`anchor/jutterswet-kustregister` case1 en case4 dekken het gedrag van
+precies die uniciteit in beide takken (gate 12), de terugval is dezelfde
+lezing als die van ref, en het pad verdwijnt bij B8, wanneer `scopeRol`
+verplicht wordt. A6: `spec/proposals/V1-WIREMIGRATIE.md` (§2.2-rij en
+P2-rij, doorhaalpatroon) is bijgewerkt onder het mandaat van de
+kaartopdracht van de hoofdsessie, zoals bij P1. De testconversie (commit
+"Twee getuigen volgen de binding") gebeurde onder een apart mandaat van
+de hoofdsessie. Gates na de fixronde: 8, 11 en 12 opnieuw, en 10 en 13
+ook, omdat de rebase de frontend raakte waarvan de Drools-build de
+recordtypen deelt. Alle vijf PASS: gate 8 als voorheen, gate 10 380 tests
+en 70 goldens, gate 11 29 PLAYED, gate 12 179/156 met vloeren 53/76 en
+JUnit 564, gate 13 128 replays. Gates 1-7, 9 en 14 lezen niets van wat
+rebase of fixronde veranderde (corpus, spec-zones, ref, clingo,
+verifier, catala en flogic ongewijzigd) en zijn niet herhaald.
