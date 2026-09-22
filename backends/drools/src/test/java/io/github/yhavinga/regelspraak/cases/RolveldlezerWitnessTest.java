@@ -195,7 +195,10 @@ class RolveldlezerWitnessTest {
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                 () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c))));
         assertTrue(e.getMessage().contains("feitcreatie ("), e.getMessage());
-        assertTrue(e.getMessage().contains("het beanmodel leidt voor de rol 'gemeente van inschrijving' op Gemeente"
+        // Since P2 the hop is derived from its binding, not from the wire's viaOuderVeld: the field is Jutter's own
+        // `gemeente van inschrijving`, which exists, and the creation stops one position on, at the join over
+        // `aanmelding`, whose roles are both to-many — the same shared gate, with its own reason.
+        assertTrue(e.getMessage().contains("het beanmodel leidt voor de rol 'aanmelder' op Vondst"
                 + " geen referentieveld naar Jutter af"), e.getMessage());
         assertTrue(drlReden(ir, c).contains("feitcreatie"), drlReden(ir, c));
     }

@@ -225,10 +225,12 @@ class HerhaaldTypepaarWitnessTest {
         // field) and the Schuit reads the kadegeld of its winterhaven (the near side). A creation that wrote
         // a field only one reader reaches would still satisfy one of the two.
         // MUTATION FLANK: a creation that set the role of ANOTHER feittype over the same pair moves both
-        // readings at once, and the flank names it.
+        // readings at once, and the flank names it. Until P2 (2026-09-22) the flank twisted zetVeld; since then
+        // the written field is derived from the creation's binding, so the flank twists the BINDING — a zetVeld
+        // twist alone now changes nothing, which BonenveldWitnessTest pins.
         BeideTakken.groen(ir(DUBBELVERBINDING), JSON.readTree(golden("case1-binnen-venster.json")),
                 "both readings of the created link agree with ref and clingo");
-        String verdict = BeideTakken.rood(zetVeldVerlegd("keurhaven"), JSON.readTree(golden("case1-binnen-venster.json")),
+        String verdict = BeideTakken.rood(creatieVerlegd("keurberging", "keurhaven", "keurschuit"), JSON.readTree(golden("case1-binnen-venster.json")),
                 "wintertal", "writing the sister feittype's field must be observable");
         assertTrue(verdict.contains("ligprijs"), "and the Schuit-side reading moves with it: " + verdict);
     }
@@ -355,13 +357,15 @@ class HerhaaldTypepaarWitnessTest {
         return tijdelijk("dv-creatie", ir);
     }
 
-    /** The golden with the creation's zetVeld moved to the role of ANOTHER feittype over the same pair — the
-     *  mutation the both-sides row must catch. */
-    private static Path zetVeldVerlegd(String veld) throws Exception {
+    /** The golden with the creation bound to ANOTHER feittype over the same pair — the mutation the both-sides
+     *  row must catch. Since P2 the written field follows from that binding; twisting {@code zetVeld} alone
+     *  changes nothing (BonenveldWitnessTest). */
+    private static Path creatieVerlegd(String feittype, String ankerRol, String doelRol) throws Exception {
         ObjectNode ir = lees(DUBBELVERBINDING);
         for (JsonNode f : ir.get("feitCreaties"))
-            if ("winterberging door de haven".equals(f.get("naam").asText())) ((ObjectNode) f).put("zetVeld", veld);
-        return tijdelijk("dv-zetveld-verlegd", ir);
+            if ("winterberging door de haven".equals(f.get("naam").asText()))
+                ((ObjectNode) f).put("feittype", feittype).put("ankerRol", ankerRol).put("doelRol", doelRol);
+        return tijdelijk("dv-creatie-verlegd", ir);
     }
 
     /** The counts-only model with winterberging's Haven role RENAMED to `thuishaven`, so two feittypen reach
