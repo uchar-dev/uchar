@@ -74,33 +74,23 @@ operand is false), so silence, not a fault.
 
 ## Why the wire is hand-written (no `bron.rgs`)
 
-The RegelSpraak emitter cannot yet write this document. For a `DatumTijd`
-literal it writes the day-first source snippet into `waarde` **and** into
-`bron` (measured 2026-09-06: `15-03-2026 12:00:00.000` in both), so unlike
-a day-precision date — ISO in `waarde`, the snippet in `bron` — the
-datetime literal has no canonical/source split on the wire at all. The
-emitter side is its own card (it needs a re-pin of the emitter goldens).
-Until then this golden is hand-written wire, the pattern the Catala and
-`jutterswet-getijdenpaar` goldens already follow, and it carries the
-CANONICAL lexeme deliberately: that is the form the wire's own rule
-(WF-095) names first and the one a consumer reads.
+When this golden was written the RegelSpraak emitter could not produce
+it: for a `DatumTijd` literal it wrote the day-first source snippet into
+`waarde` as well as `bron` (measured 2026-09-06), so the golden was
+hand-written wire, the pattern the Catala and `jutterswet-getijdenpaar`
+goldens already follow, carrying the canonical lexeme on purpose.
 
-Both lexemes are admitted by WF-095 and by every reader, and they name the
-same instant: `15-03-2026 12:00:00.000` in this document's literal replays
-identically (measured). The canonical one is written here because the wire
-rule exists to make the canonical form the one a new producer targets.
+Since 2026-09-22 (card `p5-datumtijd-lexeem`) the emitter writes the ISO
+lexeme into `waarde` and keeps the snippet in `bron`, and WF-095 admits
+the ISO lexeme alone. This golden stays hand-written for one reason that
+is not the lexeme: its references read `haar meldstip` (an `Aanmelding` is
+feminine, a lens decision of the card that wrote it), and the RegelSpraak
+grammar has no `haar`, so the frontend cannot emit these `bron` strings.
+The emitter's own `DatumTijd` route is held by `jutterswet-sluitstip`
+instead, which is a `bron.rgs` golden.
 
-**What that leaves uncovered, said plainly.** WF-095 admits TWO grammars
-and the corpus witnesses only ONE. Counted over the four zones: seven
-`DatumTijd` literals exist anywhere — this golden's two, both canonical,
-and the five its negatiefs carry, all five ill-formed by construction. The
-second admitted grammar, the day-first source snippet, has **no wire
-witness at all**: not in `corpus/golden`, not in `corpus/negatief`. It is
-pinned in `ref/test` (both spellings read to the same millisecond, the
-de-dato prefix included) and in the Drools witness suite, and it is what
-this repository's own emitter writes today — so the grammar is exercised
-and the WIRE is not. That is a gap in the corpus, not in the readers, and
-the natural place to close it is the emitter-canonicalisation card: once
-the emitter writes the canonical lexeme into `waarde` and keeps the snippet
-in `bron`, a re-pinned emitter golden carries the snippet on the wire as a
-by-product, which is a better witness than one hand-broken for the purpose.
+The snippet `15-03-2026 12:00:00.000` in this document's `bron` is no
+longer a wire lexeme: written into `waarde` it is refused by WF-095
+(`corpus/negatief/wf095-bronsnippet`). The executors' readers still read
+it as the same instant as the canonical one (measured 2026-09-06), which
+is tolerance behind the fence and not a second spelling.

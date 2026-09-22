@@ -1,0 +1,219 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Vondst": {
+      "node": "Objecttype",
+      "naam": "Vondst",
+      "attributen": {
+        "afgiftestip": {
+          "node": "DatumTijd"
+        },
+        "sluitstip": {
+          "node": "DatumTijd"
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "tijdig",
+        "verlaat"
+      ],
+      "kenmerkSoorten": {
+        "tijdig": "BIJVOEGLIJK",
+        "verlaat": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": false,
+      "meervoud": "Vondsten"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "Sluitstip",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "Kenmerktoekenning tijdig",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "Kenmerktoekenning verlaat",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "Sluitstip",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "sluitstip",
+        "objecttype": "Vondst",
+        "onderwerpBron": "een Vondst",
+        "navigatieRol": null,
+        "type": {
+          "node": "DatumTijd"
+        },
+        "bron": "De sluitstip van een Vondst",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "2026-07-01T08:30:00.000",
+        "type": {
+          "node": "DatumTijd"
+        },
+        "bron": "dd. 1-7-2026 08:30:00.000"
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "Kenmerktoekenning tijdig",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "tijdig",
+        "objecttype": "Vondst",
+        "onderwerpBron": "Een Vondst",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Vondst is tijdig",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "EERDER",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "afgiftestip",
+          "objecttype": "Vondst",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "DatumTijd"
+          },
+          "bron": "zijn afgiftestip",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "2026-07-01T08:30:00.000",
+          "type": {
+            "node": "DatumTijd"
+          },
+          "bron": "01-07-2026 08:30:00.000"
+        },
+        "periode": null,
+        "bron": "zijn afgiftestip eerder is dan 01-07-2026 08:30:00.000"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "Kenmerktoekenning verlaat",
+      "soort": "KENMERKTOEKENNING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "verlaat",
+        "objecttype": "Vondst",
+        "onderwerpBron": "Een Vondst",
+        "navigatieRol": null,
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "Een Vondst is verlaat",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Literal",
+        "waarde": "waar",
+        "type": {
+          "node": "Booleaan"
+        },
+        "bron": "waar"
+      },
+      "voorwaarde": {
+        "node": "Vergelijking",
+        "op": "LATER",
+        "links": {
+          "node": "AttribuutRef",
+          "attribuut": "afgiftestip",
+          "objecttype": "Vondst",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "DatumTijd"
+          },
+          "bron": "zijn afgiftestip",
+          "set": false,
+          "navigatiePad": []
+        },
+        "rechts": {
+          "node": "Literal",
+          "waarde": "2026-07-01T08:30:00.000",
+          "type": {
+            "node": "DatumTijd"
+          },
+          "bron": "1-07-2026 08:30:00.000"
+        },
+        "periode": null,
+        "bron": "zijn afgiftestip later is dan 1-07-2026 08:30:00.000"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

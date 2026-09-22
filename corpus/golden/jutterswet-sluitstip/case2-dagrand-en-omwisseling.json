@@ -1,0 +1,98 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V5",
+        "objectType": "Vondst",
+        "attributes": {
+          "afgiftestip": {
+            "dateTime": "2026-06-30T23:59:59.999"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V6",
+        "objectType": "Vondst",
+        "attributes": {
+          "afgiftestip": {
+            "dateTime": "2026-07-02T00:00:00.000"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V7",
+        "objectType": "Vondst",
+        "attributes": {
+          "afgiftestip": {
+            "dateTime": "2026-01-07T08:30:00.000"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V5",
+      "attribute": "sluitstip",
+      "value": {
+        "dateTime": "2026-07-01T08:30:00.000"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V5",
+      "characteristic": "tijdig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V5",
+      "characteristic": "verlaat"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V6",
+      "attribute": "sluitstip",
+      "value": {
+        "dateTime": "2026-07-01T08:30:00.000"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V6",
+      "characteristic": "tijdig"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V6",
+      "characteristic": "verlaat"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V7",
+      "attribute": "sluitstip",
+      "value": {
+        "dateTime": "2026-07-01T08:30:00.000"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V7",
+      "characteristic": "tijdig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V7",
+      "characteristic": "verlaat"
+    }
+  ]
+}

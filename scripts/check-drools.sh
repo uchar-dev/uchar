@@ -777,7 +777,13 @@ EXPECTED_CHANNEL=(
 # branches now read each enumeration operand through RegelSpraakRuntime.rsEnumNaam (Namen.norm, null
 # left null) and play all four cases; case 3 is the control in the other direction, two DIFFERENT
 # labels that must stay two labels. EXPECTED_DRL_PLAYED moves by one as well.
-EXPECTED_PLAYED=178
+#
+# 178 -> 179 (2026-09-22, card p5-datumtijd-lexeem): jutterswet-sluitstip, the first bron.rgs golden
+# with a DatumTijd literal. The emitter now writes the ISO lexeme into waarde and keeps the day-first
+# snippet in bron (WF-095 narrowed to the one spelling), and the golden carries three source spellings
+# of one instant — the dd. prefix with one-digit day and month, two-digit, and mixed — in a write and
+# in both orderings. Nothing in the backend changed: the reader has always read the ISO form.
+EXPECTED_PLAYED=179
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -973,7 +979,10 @@ DRL_CHANNEL=(
 # compared the same enumerations with an mvel `==` and is repaired by wrapping both operands in the
 # same runtime call; measured diverging before it on the same three cases and PLAYED 4 after. Reason
 # block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=155
+# 155 -> 156 (2026-09-22, card p5-datumtijd-lexeem): jutterswet-sluitstip. This branch reads the ISO
+# datum-tijd lexeme through the same shared reader and needed nothing of its own. Reason block at
+# EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=156
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a

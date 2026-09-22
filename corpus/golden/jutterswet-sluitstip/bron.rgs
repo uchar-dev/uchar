@@ -1,0 +1,19 @@
+Objecttype de Vondst (mv: Vondsten)
+    de afgiftestip Datum en tijd in millisecondes;
+    de sluitstip Datum en tijd in millisecondes;
+    is tijdig kenmerk (bijvoeglijk);
+    is verlaat kenmerk (bijvoeglijk);
+
+Regel Sluitstip
+    geldig altijd
+        De sluitstip van een Vondst moet gesteld worden op dd. 1-7-2026 08:30:00.000.
+
+Regel Kenmerktoekenning tijdig
+    geldig altijd
+        Een Vondst is tijdig
+        indien zijn afgiftestip eerder is dan 01-07-2026 08:30:00.000.
+
+Regel Kenmerktoekenning verlaat
+    geldig altijd
+        Een Vondst is verlaat
+        indien zijn afgiftestip later is dan 1-07-2026 08:30:00.000.

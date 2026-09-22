@@ -1,0 +1,123 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "afgiftestip": {
+            "dateTime": "2026-07-01T08:29:59.999"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "afgiftestip": {
+            "dateTime": "2026-07-01T08:30:00.001"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "afgiftestip": {
+            "dateTime": "2026-07-01T08:30:00.000"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V4",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "sluitstip",
+      "value": {
+        "dateTime": "2026-07-01T08:30:00.000"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "tijdig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "verlaat"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "sluitstip",
+      "value": {
+        "dateTime": "2026-07-01T08:30:00.000"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V2",
+      "characteristic": "tijdig"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V2",
+      "characteristic": "verlaat"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "sluitstip",
+      "value": {
+        "dateTime": "2026-07-01T08:30:00.000"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V3",
+      "characteristic": "tijdig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V3",
+      "characteristic": "verlaat"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V4",
+      "attribute": "sluitstip",
+      "value": {
+        "dateTime": "2026-07-01T08:30:00.000"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V4",
+      "characteristic": "tijdig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V4",
+      "characteristic": "verlaat"
+    }
+  ]
+}
