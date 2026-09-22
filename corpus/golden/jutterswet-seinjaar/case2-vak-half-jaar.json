@@ -1,0 +1,96 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2024-06-15",
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Kustvak",
+        "attributes": {},
+        "roles": {
+          "posten": [
+            "P1"
+          ]
+        },
+        "characteristics": [],
+        "characteristicTimelines": {
+          "gehesen": [
+            {
+              "from": "2024-01-01",
+              "to": "2024-07-01"
+            }
+          ]
+        }
+      },
+      {
+        "label": "P1",
+        "objectType": "Post",
+        "attributes": {},
+        "roles": {
+          "kustvak": [
+            "V1"
+          ],
+          "seinen": [
+            "S1",
+            "S2"
+          ]
+        },
+        "characteristics": [
+          "gehesen"
+        ]
+      },
+      {
+        "label": "S1",
+        "objectType": "Sein",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "Gehesen": [
+            {
+              "from": "2024-01-01",
+              "to": "2025-01-01"
+            }
+          ]
+        }
+      },
+      {
+        "label": "S2",
+        "objectType": "Sein",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "Gehesen": [
+            {
+              "from": "2024-01-01",
+              "to": "2024-07-01"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "seinaantal",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vakseinaantal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

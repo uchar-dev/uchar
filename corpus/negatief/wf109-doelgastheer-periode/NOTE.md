@@ -52,3 +52,25 @@ and a recipe that claimed three clean exits would be false:
 
 So the qualifier and the host are entangled here rather than independent, and
 the document has exactly one clean neighbour. Measured 2026-09-20, all three.
+
+**Re-weighed 2026-09-23 (card `drl-periode-zink`): the fence stays.** The card
+could either wire the DRL-text branch's whole-period lowering to the pattern it
+sits in, which would make this document play in both bean-model branches, or
+refuse the doel attempt of a qualified guard. Measured on the routes that reach
+that attempt, rewiring gave the doel reading on every one of them, and on the
+verifier-clean ones that is the wrong object: the guard is about the anker. The
+fence also lives in `ref` and the ASP backend (`guard_on_doel` refuses a doel
+host under a qualifier), so lifting it takes all four executors. Both Drools
+branches now refuse the doel attempt of a qualified guard by name, and on this
+document they answer
+
+    exec      : EXCLUDE transpiler SKIP: … (voorwaarde niet naar anker of doel te
+                lowereren — gehele-periodekwalificatie: alleen de anker is gebonden
+                (WF-109): het sein gedurende het gehele jaar gehesen is)
+    drl-tekst : EXCLUDE drl-transpiler MARKER: … TODO voorwaarde niet naar anker of
+                doel te lowereren — gehele-periodekwalificatie: alleen de anker is
+                gebonden (WF-109) — regel inert i.p.v. over-creatie
+
+instead of the doel reading (exec) and the package-wide compile error (drl-tekst).
+The fence falls only when the §8.2 family norms a qualified doel host and all four
+executors carry it.
