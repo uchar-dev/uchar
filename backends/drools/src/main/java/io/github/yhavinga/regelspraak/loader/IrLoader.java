@@ -57,8 +57,8 @@ import java.util.Map;
  * extension that is a record field (a feitcreatie's {@code feittype/ankerRol/doelRol/joinRol}, a
  * uniciteit's {@code scopeRol}, a tussenstap's {@code rolBinding}) it is reconstructed faithfully; where
  * the extension is purely emitter-derived and NOT a record field (an AttribuutRef's
- * {@code navigatieBindingen}, a Functie's {@code bronRol}, a Kenmerk's {@code navigatieBinding}, a
- * verdeling's {@code verbindendeRol}) it is ignored — the transpiler re-derives it from the model. The
+ * {@code navigatieBindingen}, a Functie's {@code bronRol}, a Kenmerk's {@code navigatieBinding}) it is
+ * ignored — the transpiler re-derives it from the model. The
  * additive {@code bronAnnotaties} provenance field is carried through.
  *
  * <p>FOUR extensions escape that dichotomy. The navigation bindings (an AttribuutRef's

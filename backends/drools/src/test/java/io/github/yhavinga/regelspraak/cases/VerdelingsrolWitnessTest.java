@@ -35,6 +35,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * the twist. The toezicht twist is verifier-clean too, and ref faults on it (no fixpoint), where both branches
  * refuse it by the storage direction. The source-role and dangling twists fail the verifier on WF-047; ref reads
  * an empty recipient set on the first and faults on the second.
+ *
+ * <p>The reciprocal row (added in the fix round) was red-first against a mutant that dropped
+ * {@code gebondenRolpaar}'s wederkerig arm to null: the derivation assertion failed with the dangling-binding
+ * refusal, and passed again once the arm was restored.
  */
 class VerdelingsrolWitnessTest {
 
@@ -42,6 +46,7 @@ class VerdelingsrolWitnessTest {
     private static final Path CORPUS = Path.of("..", "..", "corpus", "golden");
     private static final Path TOEZICHT = CORPUS.resolve("anchor").resolve("jutterswet-bergingstoezicht");
     private static final Path BERGING = CORPUS.resolve("jutterswet-berging");
+    private static final Path MAATSCHAP = CORPUS.resolve("anchor").resolve("jutterswet-maatschap");
 
     // ---------------- the repeated pair: only the binding answers ----------------
 
@@ -80,6 +85,23 @@ class VerdelingsrolWitnessTest {
                 "rol 'bewaakte berging' op Berger geen referentieveld", "the join follows the bound relation");
     }
 
+    @Test void een_wederkerige_binding_joint_op_de_gebonden_rol_zelf() throws Exception {
+        // maatschap is wederkerig: its one role 'maat' is its own sibling, so the join field is 'maat' itself.
+        // A verdeling of vondstwaarde over the maat, added to jutterswet-maatschap: J1 and J2 are each other's
+        // maat, so each receives the other's whole vondstwaarde; J3 has none. Verifier PASS, ref PASS.
+        ObjectNode ir = maatschapMetVerdeling();
+        IrLoader.Loaded l = IrLoader.loadAll(ir);
+        var v = l.model().verdelingen.get(0);
+        assertEquals(new FactModelGenerator.Verdelingsjoin("maat", null),
+                FactModelGenerator.verdelingsjoin(l.model(), v, l.rolBindingen().get(v)),
+                "a reciprocal role is its own sibling");
+        ObjectNode c = (ObjectNode) JSON.readTree(Files.readString(MAATSCHAP.resolve("case1.json")));
+        ArrayNode verwacht = (ArrayNode) c.get("expected");
+        verwacht.insert(verwacht.size() - 1, maatdeel("J1", "12"));
+        verwacht.insert(verwacht.size() - 1, maatdeel("J2", "30"));
+        BeideTakken.groen(tijdelijk("maatschap", ir), c, "the reciprocal binding joins on the maat field");
+    }
+
     // ---------------- a unique pair: the twist is read, not overruled ----------------
 
     @Test void een_binding_op_de_bronrol_wordt_niet_overschreven_door_het_typenpaar() throws Exception {
@@ -104,6 +126,27 @@ class VerdelingsrolWitnessTest {
     }
 
     // ---------------- fixtures ----------------
+
+    private static ObjectNode maatschapMetVerdeling() throws Exception {
+        ObjectNode ir = lees(MAATSCHAP);
+        ObjectNode attrs = (ObjectNode) ir.get("objecttypen").get("Jutter").get("attributen");
+        attrs.set("maatdeel", attrs.get("maatwaarde").deepCopy());
+        ObjectNode v = ir.putArray("verdelingen").addObject();
+        v.put("node", "ResolvedVerdeling").put("naam", "verdeel de vondstwaarde over de maat")
+                .put("bronType", "Jutter").put("bronAttribuut", "vondstwaarde")
+                .put("doelType", "Jutter").put("doelAttribuut", "maatdeel").put("methode", "GELIJKE_DELEN")
+                .putNull("ratoAttribuut").putNull("maximumAttribuut").putNull("afrondingDecimalen")
+                .putNull("restantAttribuut").putNull("groepeerAttribuut").put("afnemend", false).putNull("voorwaarde");
+        v.putObject("geldigheid").put("node", "Geldigheid").putNull("vanaf").putNull("tot");
+        v.set("verbindendeRol", binding("maatschap", "maat"));
+        return ir;
+    }
+
+    private static ObjectNode maatdeel(String label, String waarde) {
+        ObjectNode e = JSON.createObjectNode().put("kind", "attributeValue").put("label", label).put("attribute", "maatdeel");
+        e.putObject("value").put("number", waarde);
+        return e;
+    }
 
     /** bergingstoezicht with a third Berging-Berger relation, whose to-one side sits on Berger. */
     private static ObjectNode reserve() throws Exception {
