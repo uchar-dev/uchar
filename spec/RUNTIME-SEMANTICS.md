@@ -833,7 +833,8 @@ express such a source, so the producer refuses it rather than dropping
 the start point: the RegelSpraak frontend refuses it at emission, by
 name, and writes nothing (witness: its suite's `VastStartpuntTest`,
 which also pins the lossless omission byte for byte). Worked example:
-"voor elk jaar startend op dag 15 van maand 10" declares the periods 15 October – 15 October; emitted without the
+"voor elk jaar startend op dag 15 van maand 10" declares the periods
+15 October – 15 October; emitted without the
 start point, the reference interpreter refuses a case input over that
 period as off-grid and accepts one over 1 January – 1 January, so the
 omission is not neutral — the source is refused instead. **OPEN:** a v1
