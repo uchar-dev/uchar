@@ -1914,6 +1914,80 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           v,
           pow10 (attr_decimals ctx ~otype:ot ~attr:a) )
       end
+  (* the INSTANCE-SET UNION (IR-SPEC ch. 4.3 / WF-110, semantics
+     RUNTIME-SEMANTICS ch. 3.4d): the §5.7 concatenation of subject
+     expressions under a count. Each selection contributes its own
+     source_join plus its own die/dat filter, and the selections meet in a
+     HELPER predicate — one rule per selection, the same shape the counting
+     quantifier's `kvc` and the ranking folds' `extp` take.
+
+     THE HELPER IS WHAT DEDUPLICATES, and that is the whole reason for it: an
+     atom either holds or it does not, so an instance two selections both
+     select derives `unie(S,X)` once and `#count` over that predicate counts
+     it once. A disjunction inside one aggregate's condition has no such
+     property — the condition would have to be one conjunction — and two
+     aggregates added together would count the shared element twice, which is
+     the sum of the parts this operation is defined against. *)
+  | Functie
+      { kind = Aantal; argumenten = [ Instance_set_union { branches; _ } ];
+        element_objecttype = None; bron_rol = None; bron_pad = None; filter = None; _ } ->
+      let env =
+        { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
+          as_of = None; locals = Eval.SMap.empty }
+      in
+      if List.length branches < 2 then
+        fault "an instance-set union carries at least TWO selections, found %d (WF-110)"
+          (List.length branches);
+      ctx.fresh <- ctx.fresh + 1;
+      let p = Printf.sprintf "unie%d" ctx.fresh in
+      let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
+      List.iter
+        (fun (b : instance_set_branch) ->
+          let el =
+            match b.isb_element_type with
+            | Some el -> el
+            | None ->
+                fault
+                  "an instance-set selection carries no elementType: a selection ranges over a \
+                   declared population (WF-110)"
+          in
+          let rb =
+            match b.isb_source_role with
+            | Some rb -> rb
+            | None ->
+                fault
+                  "an instance-set selection over %S carries no sourceRole: a union names each \
+                   selection's relation and never derives one (WF-110)"
+                  el
+          in
+          let bx = fresh ctx "XU" in
+          let join =
+            source_join ctx env ~subject ~subject_ot ~el ~bron_rol:(Some rb) ~bron_pad:None ~x:bx
+          in
+          let fatoms =
+            match b.isb_filter with
+            | None -> []
+            | Some c -> cond_atoms ctx ~subject:bx ~subject_ot:el c
+          in
+          emit ctx "%s(%s,%s) :- %s." p subject bx
+            (String.concat ", " ((base :: join) @ fatoms)))
+        branches;
+      let v = fresh ctx "C" in
+      let x = Printf.sprintf "X%s" v in
+      ( [ Printf.sprintf "%s = #count { %s : %s(%s,%s) }" v x p subject x ], v, 1 )
+  (* the two shapes WF-110 refuses that still reach a TRANSLATOR arm, named
+     rather than left to the bottom sentence below (which describes the
+     position and identifies no construct). Both are ill-formed input: the
+     first is clause (c), the second clause (a). *)
+  | Functie { kind = Aantal; argumenten = [ Instance_set_union _ ]; _ } ->
+      fault
+        "a count over an instance-set union names a source of its own: the selections carry the \
+         population, the relation and the subselection, one set each, so elementObjecttype, \
+         bronRol, bronPad and filter are absent on this node (WF-110)"
+  | Instance_set_union _ ->
+      fault
+        "an instance-set union stands where a value term is wanted: it denotes the INSTANCES of a \
+         §5.7 concatenation, and only an instance count consumes them (WF-110)"
   | Functie { kind = Aantal; argumenten = [ Attribuut_ref { attribuut; typ = Some (Datatype_onbekend _); navigatie_rol; navigatie_pad = []; _ } ]; element_objecttype = Some el; bron_rol; bron_pad; filter; _ }
     when (match navigatie_rol with
          | None -> true

@@ -7240,6 +7240,135 @@ let () =
   faults_with ~name:"ch3.10 de clipweigering draagt haar fase-staart" ~ir ~case_text
     ~needle:"Declined in translation"
 
+(* WF-110 / ch. 3.4d — the INSTANCE-SET UNION, the §5.7 concatenation of
+   subject expressions under a count. Three things no corpus golden can
+   exercise on its own: the HELPER-PREDICATE shape the translation hangs the
+   deduplication on, and the two ill-formed spellings that still reach a
+   translator arm and must be named there rather than fall to the bottom
+   sentence. *)
+let unie_body ~waarde =
+  Printf.sprintf
+    {|{ "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Jutter": { "node": "Objecttype", "naam": "Jutter",
+      "attributen": { "aantal strandvondsten": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "NIET_NEGATIEF", "eenheid": null } },
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
+      "bezield": true, "meervoud": "Jutters" },
+    "Vondst": { "node": "Objecttype", "naam": "Vondst", "attributen": {},
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
+      "bezield": false, "meervoud": "Vondsten" } },
+  "domeinen": {}, "parameters": {}, "eenheidstelsels": {},
+  "feittypen": {
+    "vondstaanmelding": { "node": "Feittype", "naam": "vondstaanmelding", "wederkerig": false,
+      "rollen": [ { "node": "Rol", "naam": "aanmelder", "objecttypeNaam": "Jutter", "meervoud": null, "meervoudig": false },
+                  { "node": "Rol", "naam": "aangemelde vondst", "objecttypeNaam": "Vondst", "meervoud": "aangemelde vondsten", "meervoudig": true } ] },
+    "vondstberging": { "node": "Feittype", "naam": "vondstberging", "wederkerig": false,
+      "rollen": [ { "node": "Rol", "naam": "berger", "objecttypeNaam": "Jutter", "meervoud": null, "meervoudig": false },
+                  { "node": "Rol", "naam": "geborgen vondst", "objecttypeNaam": "Vondst", "meervoud": "geborgen vondsten", "meervoudig": true } ] } },
+  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
+  "regels": [ { "node": "Regel", "naam": "aantal strandvondsten", "soort": "regel" } ],
+  "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "aantal strandvondsten", "soort": "BEREKENING",
+    "doel": { "node": "AttribuutRef", "attribuut": "aantal strandvondsten", "objecttype": "Jutter",
+      "onderwerpBron": "een Jutter", "navigatieRol": null,
+      "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "NIET_NEGATIEF", "eenheid": null },
+      "bron": "Het aantal strandvondsten van een Jutter", "set": false, "navigatiePad": [] },
+    "waarde": %s,
+    "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+  "regelGroepen": [], "diagnostics": [] }
+|}
+    waarde
+
+(* the union node, and the count that consumes it *)
+let unie_van takken =
+  Printf.sprintf {|{ "node": "InstanceSetUnion", "branches": [ %s ], "bron": "de unie" }|} takken
+
+let telling_over unie =
+  Printf.sprintf
+    {|{ "node": "Functie", "kind": "AANTAL", "argumenten": [ %s ],
+      "elementObjecttype": null, "leegwaarde": null, "filter": null, "dimensieSelectie": null,
+      "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "NIET_NEGATIEF", "eenheid": null },
+      "bron": "het aantal ...", "granulariteit": null }|}
+    unie
+
+let unie_doc ~takken = unie_body ~waarde:(telling_over (unie_van takken))
+
+let tak_aangemeld =
+  {|{ "node": "InstanceSetBranch", "elementType": "Vondst",
+     "sourceRole": { "node": "RolBinding", "feittype": "vondstaanmelding", "rol": "aangemelde vondst" },
+     "filter": null, "bron": "aangemelde vondsten van de Jutter" }|}
+
+let tak_geborgen =
+  {|{ "node": "InstanceSetBranch", "elementType": "Vondst",
+     "sourceRole": { "node": "RolBinding", "feittype": "vondstberging", "rol": "geborgen vondst" },
+     "filter": null, "bron": "geborgen vondsten van de Jutter" }|}
+
+let unie_case =
+  {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+    { "label": "J1", "objectType": "Jutter", "attributes": {},
+      "roles": { "aangemelde vondsten": ["V1","V2","V3"], "geborgen vondsten": ["V3","V4"] },
+      "characteristics": [] },
+    { "label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": [] },
+    { "label": "V2", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": [] },
+    { "label": "V3", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": [] },
+    { "label": "V4", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [ { "kind": "attributeValue", "label": "J1", "attribute": "aantal strandvondsten", "value": { "number": "4" } } ]
+}
+|}
+
+let () =
+  let ir = unie_doc ~takken:(tak_aangemeld ^ ", " ^ tak_geborgen) in
+  (* the union count answers 4 over {V1,V2,V3} ∪ {V3,V4}: V3 is in both
+     selections and contributes once, so the sum of the parts (5) is a
+     different number and the check discriminates *)
+  ref_matches ~name:"WF-110 de unie telt het gedeelde element eenmaal" ~ir ~case_text:unie_case;
+  clingo_matches ~name:"WF-110 clingo telt de unie gelijk aan ref" ~ir ~case_text:unie_case;
+  (* the DEDUP MECHANISM itself, pinned in the emitted text: one helper
+     predicate, one rule per selection, and the count over that predicate.
+     An atom either holds or it does not, which is what makes the shared
+     element contribute once; a disjunction inside one aggregate condition
+     or two aggregates added together would not have that property. *)
+  translates_carrying ~name:"WF-110 de takken landen in één hulppredicaat" ~ir
+    ~case_text:unie_case ~needle:"unie";
+  translates_carrying ~name:"WF-110 de telling loopt over het hulppredicaat" ~ir
+    ~case_text:unie_case ~needle:"= #count { X";
+  (* clause (c): a count that names a source of its own beside the union.
+     Ill-formed input (WF-110), named here rather than left to the bottom
+     sentence, which describes the position and identifies no construct. *)
+  faults_with ~name:"WF-110 een eigen bron naast de unie"
+    ~ir:
+      (vervang ir ~waar:{|"elementObjecttype": null|} ~door:{|"elementObjecttype": "Vondst"|})
+    ~case_text:unie_case ~needle:"a count over an instance-set union names a source of its own";
+  (* clause (a): the union standing where a VALUE is written — here as the
+     whole rule value. It reaches [expr_term] as an ordinary term, where the
+     union's own arm names it; the arm exists so this position never reports
+     the fall-through sentence, which describes the position and identifies
+     no construct. *)
+  faults_with ~name:"WF-110 de unie op een waardeplek"
+    ~ir:(unie_body ~waarde:(unie_van (tak_aangemeld ^ ", " ^ tak_geborgen)))
+    ~case_text:unie_case ~needle:"an instance-set union stands where a value term is wanted";
+  (* clause (b) in the translator: a one-selection union is refused by name,
+     so the backend cannot answer a shape the wire does not admit *)
+  faults_with ~name:"WF-110 een unie met één tak"
+    ~ir:(unie_doc ~takken:tak_aangemeld)
+    ~case_text:unie_case ~needle:"carries at least TWO selections";
+  (* clause (e) in the translator: no type-pair fallback for a selection *)
+  faults_with ~name:"WF-110 een tak zonder bronrol"
+    ~ir:
+      (unie_doc
+         ~takken:
+           (tak_aangemeld
+          ^ {|, { "node": "InstanceSetBranch", "elementType": "Vondst", "sourceRole": null,
+     "filter": null, "bron": "geborgen vondsten van de Jutter" }|}))
+    ~case_text:unie_case ~needle:"carries no sourceRole"
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
