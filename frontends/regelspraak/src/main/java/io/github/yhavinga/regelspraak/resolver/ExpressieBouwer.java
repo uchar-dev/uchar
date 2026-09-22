@@ -1346,6 +1346,21 @@ final class ExpressieBouwer {
             String woord = geschrevenElementWoord(op);
             RegelSpraakModel.RolBindingRef rb =
                     huidigSubject == null || woord == null ? null : model.elementRolBinding(huidigSubject, woord);
+            // The written name did not bind. That is not yet a refusal: elementRolBinding answers the
+            // BY-NAME question and answers it narrowly on purpose — only a declared singular or a
+            // declared (mv:) plural binds, never a guessed one — and the §13.3.9.1 cardinality sentence
+            // ("Eén vinder meldt meerdere vondsten") writes a plural the model does NOT register as the
+            // role's declared one. Measured 2026-09-22: it sets `meervoudig` and drops the spelling, and
+            // registering it instead would both move a golden's bytes and destroy the WF-034 witness
+            // `jutterswet-kaveltelling`, whose whole point is that such a plural does not bind.
+            //
+            // So fall back to the TYPE PAIR — the unique fact-type role reaching the element from the
+            // subject — which is exactly the derivation the ONE-selection count has always leaned on
+            // (WF-048's model, and what every executor runs for a bindingless fold). WF-110 (e) is
+            // unmoved by this: it forbids the WIRE from omitting the relation, so that a consumer never
+            // derives one; how the PRODUCER arrives at the relation it writes is the producer's own
+            // business, and it writes the result out explicitly either way.
+            if (rb == null && huidigSubject != null) rb = model.verbindendeRolBinding(huidigSubject, el);
             if (rb == null) {
                 unieWeigering = "de relatie van selectie " + (i + 1) + " ('" + woord + "') is niet"
                         + " eenduidig af te leiden; elke selectie van een unie noemt haar eigen relatie,"

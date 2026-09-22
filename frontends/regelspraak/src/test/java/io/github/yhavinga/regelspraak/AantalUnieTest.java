@@ -130,6 +130,81 @@ class AantalUnieTest {
                 Het aantal strandvondsten van een Jutter moet berekend worden als het aantal aangemelde vondsten van de Jutter.
         """;
 
+    /** A SECOND model, and the only difference that matters: the element role declares NO {@code (mv:)}
+     *  plural, the §13.3.9.1 cardinality sentence writes one ("meerdere vondsten"), and the selections
+     *  navigate through the SUBJECT'S OWN role name ("van de vinder") rather than through the object
+     *  type. That is the shape the toolchain's own concatenation fixtures spell, and it is where the
+     *  by-name binding runs out: measured 2026-09-22, the model registers the cardinality sentence's
+     *  plural as MULTIPLICITY and drops the spelling, so {@code elementRolBinding} — which binds only a
+     *  declared singular or a declared plural, never a guessed one — finds nothing.
+     *
+     *  <p>Registering that plural instead was measured and rejected: it would move a golden's bytes and
+     *  destroy {@code jutterswet-kaveltelling}, the WF-034 witness whose whole point is that such a
+     *  plural does NOT bind and the type pair carries the fold. So the union derives the relation from
+     *  the TYPE PAIR — what the one-selection count has always leaned on — and writes it out
+     *  explicitly. WF-110 (e) is unmoved: it forbids the WIRE from omitting the relation, not the
+     *  producer from deriving the one it writes. */
+    static final String KARDINALITEITSMODEL = """
+        Objecttype de Jutter (mv: Jutters) (bezield)
+            het aantal strandvondsten Numeriek (niet-negatief geheel getal);
+
+        Objecttype de Vondst (mv: Vondsten)
+            is gemerkt kenmerk (bijvoeglijk);
+            is gekeurd kenmerk (bijvoeglijk);
+
+        Feittype vondstmelding
+            de vinder Jutter
+            de vondst Vondst
+        Eén vinder meldt meerdere vondsten
+
+        Regel aantal strandvondsten
+            geldig altijd
+                Het aantal strandvondsten van een Jutter moet berekend worden als het aantal vondsten van de vinder die gemerkt zijn en vondsten van de vinder die gekeurd zijn.
+        """;
+
+    @Test
+    void het_kardinaliteitsmeervoud_met_eigen_rolnaam_bindt_via_het_typenpaar() {
+        RegelSpraakModel m = Resolver.resolve(KARDINALITEITSMODEL);
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        Expr.Functie f = assertInstanceOf(Expr.Functie.class, m.resolvedRegels.get(0).waarde());
+        assertEquals(1, f.argumenten().size(), "de unie is ÉÉN argument");
+        Expr.InstanceSetUnion u = assertInstanceOf(Expr.InstanceSetUnion.class, f.argumenten().get(0));
+        assertEquals(2, u.takken().size());
+        // the derived relation is written out per selection — the wire never omits it (WF-110 (e))
+        for (Expr.InstanceSetUnion.Tak t : u.takken()) {
+            assertNotNull(t.bronRol(), "elke selectie noemt haar relatie op de wire");
+            assertEquals("vondstmelding", t.bronRol().feittype());
+            assertEquals("vondst", t.bronRol().rol(), "de wire noemt de GEDECLAREERDE enkelvoudsrol");
+            assertEquals("Vondst", t.elementType().naam);
+        }
+        assertEquals("gemerkt", assertInstanceOf(io.github.yhavinga.regelspraak.ir.Conditie.Kenmerk.class,
+                u.takken().get(0).filter()).kenmerk());
+        assertEquals("gekeurd", assertInstanceOf(io.github.yhavinga.regelspraak.ir.Conditie.Kenmerk.class,
+                u.takken().get(1).filter()).kenmerk());
+    }
+
+    /** The narrowing the fallback must NOT have loosened: a by-NAME binding still refuses a guessed
+     *  plural. Here two fact types relate Jutter to Vondst, so the type pair is ambiguous and there is
+     *  nothing to fall back to — the selection is refused by name, exactly as before. Without this row
+     *  the fix could have been "accept the best-effort plural", which would bind a spelling the model
+     *  never defined. */
+    @Test
+    void een_dubbelzinnig_typenpaar_valt_nog_steeds_op_de_benoemde_weigering() {
+        List<Diagnostic> ds = Resolver.resolve(KARDINALITEITSMODEL.replace(
+                "Regel aantal strandvondsten",
+                """
+                Feittype vondstberging
+                    de berger Jutter
+                    de geborgen vondst Vondst
+                Eén berger bergt meerdere geborgen vondsten
+
+                Regel aantal strandvondsten""")).errors();
+        assertEquals(1, ds.size(), () -> "verwacht één fout, kreeg: " + ds);
+        assertTrue(ds.get(0).message().contains("niet eenduidig af te leiden"),
+                () -> "de melding noemt de grond niet: " + ds.get(0).message());
+        assertTrue(ds.get(0).message().contains("WF-110 (e)"), () -> ds.get(0).message());
+    }
+
     private static RegelSpraakModel schoon(String regels) {
         RegelSpraakModel m = Resolver.resolve(MODEL + regels);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
