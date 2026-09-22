@@ -6114,10 +6114,14 @@ public final class ExecModelTranspiler {
      *  Mirrors DrlTranspiler.verdeling. Returns the rules, or an empty list (recording an honest skip) for an
      *  unresolvable join / non-numeric target/weight / non-orderable ordering key / a §9.7.5 onverdeelde-rest
      *  modifier (the rest rule is a source-modify that forms a share↔rest cycle DRL breaks via property-reactive
-     *  {@code modify}; the reflective model's opaque lambdas are class-reactive, so it lands as a focused follow-up). */
+     *  {@code modify}; the reflective model's opaque lambdas are class-reactive, so it lands as a focused follow-up).
+     *  The join is {@link FactModelGenerator#verdelingsjoin}'s: the wire's recipient binding decides it, the type
+     *  pair only where the verdeling carries none (V1-WIREMIGRATIE P3). */
     private List<Rule> verdeling(ResolvedVerdeling v) {
         Objecttype bron = v.bronType(), doel = v.doelType();
-        String join = bron != null && doel != null ? model.verbindendeRol(doel, bron) : null;
+        FactModelGenerator.Verdelingsjoin vj = FactModelGenerator.verdelingsjoin(model, v, rolBindingen.get(v));
+        if (vj.weigering() != null) return skipList("verdeling (" + vj.weigering() + "): " + v.naam());
+        String join = vj.rol();
         ResolvedVerdeling.Methode methode = v.methode();
         Datatype doelType = doel != null && v.doelAttribuut() != null ? doel.attribuut(v.doelAttribuut()) : null;
         boolean doelOk = doelType != null && doelType.isGetalachtig();

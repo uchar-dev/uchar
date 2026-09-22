@@ -1117,10 +1117,19 @@ public final class DrlTranspiler {
      *  SUMS each recipient's weight attribute and gives each total·weight/sum. Both fold the recipients in
      *  one accumulate. The group/ordering/remainder schemes (COMPLEX) are multi-pass allocations with no
      *  single-rule form — and an unresolvable join or a weight that is not a real recipient field — stay an
-     *  explicit no-op marker. */
+     *  explicit no-op marker. The join is {@link FactModelGenerator#verdelingsjoin}'s: the wire's recipient
+     *  binding decides it, the type pair only where the verdeling carries none (V1-WIREMIGRATIE P3). */
     private void verdeling(io.github.yhavinga.regelspraak.ir.ResolvedVerdeling v) {
         Objecttype bron = v.bronType(), doel = v.doelType();
-        String join = bron != null && doel != null ? model.verbindendeRol(doel, bron) : null;
+        FactModelGenerator.Verdelingsjoin vj = FactModelGenerator.verdelingsjoin(model, v, rolBindingen.get(v));
+        if (vj.weigering() != null) {
+            out.append(new Regel(v.naam())
+                .clausule("// onopgelost verdeling (" + commentVeilig(vj.weigering()) + "): " + commentVeilig(v.naam()))
+                .clausule("eval(true)")
+                .render());
+            return;
+        }
+        String join = vj.rol();
         var methode = v.methode();
         // The share is numeric (a division/fold of the verdeelplafond), so the recipient attribute must be
         // getalachtig — else the modify would assign a BigDecimal to a Tekst/Datum setter, uncompilable DRL that

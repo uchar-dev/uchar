@@ -61,12 +61,14 @@ import java.util.Map;
  * verdeling's {@code verbindendeRol}) it is ignored — the transpiler re-derives it from the model. The
  * additive {@code bronAnnotaties} provenance field is carried through.
  *
- * <p>THREE extensions escape that dichotomy. The navigation bindings (an AttribuutRef's
+ * <p>FOUR extensions escape that dichotomy. The navigation bindings (an AttribuutRef's
  * {@code navigatieBindingen}, a Kenmerk's {@code navigatieBinding}) are read into
  * {@link Loaded#navigatieBindingen()} and DECIDE a bound navigation in both transpiler branches
  * (V1-WIREMIGRATIE P1): the written {@code navigatieRol}/{@code navigatiePad} they would otherwise be
- * re-derived from are v0 fields migration step B11 removes. The other two, below,
- * are read because the model cannot always re-derive them.
+ * re-derived from are v0 fields migration step B11 removes. A verdeling's {@code verbindendeRol} is read into
+ * {@link Loaded#rolBindingen()} and DECIDES the recipient join in both branches (V1-WIREMIGRATIE P3): the
+ * type-pair derivation it replaces is ambiguous on a repeated pair, and migration step B12 retires it. The
+ * other two, below, are read because the model cannot always re-derive them.
  *
  * <p>Those two: both because the model cannot ALWAYS re-derive them: an
  * OBJECTCREATIE's {@code verbindendeRol} (IR-SPEC ch. 3.3, which RUNTIME-SEMANTICS ch. 5.5 makes AUTHORITATIVE)
@@ -126,7 +128,7 @@ public final class IrLoader {
      *  extensions belong to a VENDORED slice the toolchain consumes at a pin, so they cannot grow a field here.
      *  A consumer that needs them reads them from here (see {@link #loadAll}).
      *
-     *  @param rolBindingen the symbolic (feittype, rol) binding per loaded IR NODE, by IDENTITY. Two node kinds
+     *  @param rolBindingen the symbolic (feittype, rol) binding per loaded IR NODE, by IDENTITY. Three node kinds
      *         carry one:
      *         <ul>
      *           <li>a {@link ResolvedObjectCreatie} — IR-SPEC ch. 3.3 {@code verbindendeRol}, naming the role the
@@ -137,8 +139,13 @@ public final class IrLoader {
      *           <li>an {@link Expr.Functie} aggregation — {@code bronRol}, naming the role the aggregated ELEMENT
      *               plays. Same self-typed gap: "de som van de rang van alle opvolgers van de Wachter" joins two
      *               Wachters, which no by-pair search can disambiguate.</li>
+     *           <li>a {@link ResolvedVerdeling} — IR-SPEC ch. 3.2 {@code verbindendeRol}, naming the role the
+     *               RECIPIENT plays. It decides the recipient join in both transpiler branches
+     *               (V1-WIREMIGRATIE P3), as {@code run_verdeling} lets it decide in ref; only a bindingless
+     *               verdeling, which WF-048 admits while the type pair is unique, is still derived from the
+     *               pair.</li>
      *         </ul>
-     *         In both cases the SIBLING role — the one the anchor (subject) plays — is the bean field on the other
+     *         In every case the SIBLING role — the one the anchor (subject) plays — is the bean field on the other
      *         end. Absent for a node whose wire record carries no binding; the by-pair derivation then stands.
      *  @param lets an INDEX of the {@link Expr.Let} nodes in the document, in parse order — not a channel: the Lets
      *         themselves sit in the expression trees as ordinary union nodes, and every consumer lowers and walks
@@ -707,12 +714,17 @@ public final class IrLoader {
     }
 
     private ResolvedVerdeling verdeling(JsonNode n) {
-        return new ResolvedVerdeling(text(n, "naam"), ot(text(n, "bronType")), text(n, "bronAttribuut"),
+        ResolvedVerdeling v = new ResolvedVerdeling(text(n, "naam"), ot(text(n, "bronType")), text(n, "bronAttribuut"),
                 ot(text(n, "doelType")), text(n, "doelAttribuut"),
                 enumOf(ResolvedVerdeling.Methode.class, text(n, "methode")), text(n, "ratoAttribuut"),
                 text(n, "maximumAttribuut"), integerOf(n, "afrondingDecimalen"), text(n, "restantAttribuut"),
                 text(n, "groepeerAttribuut"), bool(n, "afnemend"), conditie(n.get("voorwaarde")),
                 geldigheid(n));
+        // IR-SPEC ch. 3.2: the recipient role binding decides the join (P3). Not a field of the vendored
+        // record, so it rides beside the model like the objectcreatie's; see Loaded#rolBindingen.
+        RolBindingRef vr = rolBinding(n.get("verbindendeRol"));
+        if (vr != null) rolBindingen.put(v, vr);
+        return v;
     }
 
     private ResolvedConsistentie consistentie(JsonNode n) {

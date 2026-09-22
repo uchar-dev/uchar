@@ -443,6 +443,37 @@ public final class FactModelGenerator {
         return paar == null ? null : paar[0].naam();
     }
 
+    /** What {@link #verdelingsjoin} decided: the join ROLE, or the REASON there is none. Both null means the
+     *  bindingless type-pair derivation found no unique relation, and the caller's own "onopgelost" refusal
+     *  stands as before. */
+    public record Verdelingsjoin(String rol, String weigering) {}
+
+    /**
+     * THE recipient join of a §9.7 verdeling — the one derivation both transpiler branches decide it by
+     * (V1-WIREMIGRATIE P3). The wire's {@code verbindendeRol} binds the role the RECIPIENT plays (IR-SPEC
+     * ch. 3.2), so the join field on the recipient is its sibling, the role the source plays; for a wederkerig
+     * fact type that is the bound role itself. Until P3 both branches ignored the binding and asked the type
+     * pair ({@code verbindendeRol(doel, bron)}), which answers null on a REPEATED pair — two fact types over
+     * the same two types — and so refused a verdeling ref plays ({@code anchor/jutterswet-bergingstoezicht}).
+     *
+     * <p>A bindingless verdeling, which WF-048 admits while the pair is unique and ref derives the same way,
+     * still asks the pair; migration step B12 makes the binding required and retires that arm. A binding
+     * that names no declared role is refused by name, where ref faults. No cross-check against the pair:
+     * ref lets the binding decide, WF-047 is the fence on its fillers, and on a repeated pair the pair has no
+     * answer to check against.
+     */
+    public static Verdelingsjoin verdelingsjoin(RegelSpraakModel model, io.github.yhavinga.regelspraak.ir.ResolvedVerdeling v,
+            RegelSpraakModel.RolBindingRef rb) {
+        Objecttype bron = v.bronType(), doel = v.doelType();
+        if (bron == null || doel == null) return new Verdelingsjoin(null, null);
+        if (rb == null) return new Verdelingsjoin(model.verbindendeRol(doel, bron), null);
+        Rol[] paar = gebondenRolpaar(model, rb);
+        if (paar == null)
+            return new Verdelingsjoin(null, "verbindende rol onopgelost: de binding (" + rb.feittype() + ", "
+                    + rb.rol() + ") noemt geen gedeclareerde rol");
+        return new Verdelingsjoin(paar[1].naam(), null);
+    }
+
     /**
      * §13.3.9.2 — the scalar to-one SELF-PAIR role a wederkerig feittype implies on {@code ot} (the role name,
      * hence the bean field name), or null when the model implies none.
