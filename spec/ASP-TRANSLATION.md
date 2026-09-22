@@ -664,10 +664,11 @@ and this backend); declared factors and stelsel never enter.
     compare BACKWARDS (measured 2026-09-06: `1775968976896 < 1773576000000`
     derives). The pair keeps `D` and `MS` each inside 2^31 by construction,
     so this arm adds no fence at all. The WIRE lexeme is the canonical
-    ISO form alone since 2026-09-22 (WF-095, IR-SPEC ch. 4.1); that the
-    shared reader still also reads the day-first source snippet is
-    tolerance behind the verifier's fence, as IR-SPEC states there, not a
-    second spelling a conforming document can carry.
+    ISO form alone since 2026-09-22 (WF-095, IR-SPEC ch. 4.1), and since
+    2026-09-23 the shared reader reads that form alone too: a day-first
+    source snippet in `waarde` faults at translation time, quoting the
+    lexeme (`malformed datum-tijd lexeme "…": not the canonical ISO
+    form …`), before any program is grounded.
   - **Fences**: the sub-day paths carry a `viol/2` range guard so the
     bounded ms sum/difference stays inside 2^31 (a sub-day span beyond ~23
     civil days faults loudly — ref, on 63-bit ints, reaches further; the
