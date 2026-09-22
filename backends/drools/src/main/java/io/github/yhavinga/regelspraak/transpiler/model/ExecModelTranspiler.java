@@ -2976,7 +2976,7 @@ public final class ExecModelTranspiler {
      *  operands is named by its operands; one that does not falls back to its class. A COMPOSITE matrix does not
      *  reach here: {@link #matrixVertaling} refuses it on the bullet that actually declined, and that bullet is
      *  named through this method with the composite path in front of it. */
-    private static String matrixAs(Conditie c) {
+    private String matrixAs(Conditie c) {
         if (c instanceof Conditie.Vergelijking v)
             return "een vergelijking van " + operandAs(v.links()) + " met " + operandAs(v.rechts());
         if (c instanceof Conditie.Predicaat p)
@@ -2985,10 +2985,10 @@ public final class ExecModelTranspiler {
     }
 
     /** One operand of {@link #matrixAs}, named the way the leaf translation distinguishes them. */
-    private static String operandAs(Expr e) {
+    private String operandAs(Expr e) {
         if (e == null) return "een ontbrekend operand";
         if (e instanceof Expr.AttribuutRef a)
-            return (a.navigatieRol() == null ? "het eigen attribuut '" : "het genavigeerde attribuut '")
+            return (ongenavigeerd(a) ? "het eigen attribuut '" : "het genavigeerde attribuut '")
                     + a.attribuut() + "'";
         if (e instanceof Expr.ParameterRef p) return "de parameter '" + p.parameter().naam() + "'";
         if (e instanceof Expr.Literal l) return "de literal '" + l.waarde() + "'";

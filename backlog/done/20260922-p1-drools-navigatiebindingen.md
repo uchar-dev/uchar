@@ -125,13 +125,22 @@ vlagvoering.vlaghaven. verifier PASS, ref PASS, DRL PLAYED 4, exec FAIL
 `ongenavigeerd(a)` (geen geschreven stap EN geen binding) per tak. Het
 vervangt de 15 (DRL) en 30 (exec) losse `== null`-guards, en ook de
 `!= null`-armen, zodat de gebonden lezing de genavigeerde arm krijgt.
-Eén diagnostische zin in een statische methode blijft op
-`navigatieRol` (alleen tekst). Na de fix speelt de probe in beide
+De laatste plek die nog alleen op `navigatieRol` afmat, de meldtekst
+van `operandAs` bij een matrixweigering, gebruikt sinds de slotronde
+ook `ongenavigeerd` (de methode is daarvoor niet-statisch gemaakt).
+Er blijft geen uitzondering over. Na de fix speelt de probe in beide
 takken. A3: het eindpunt wordt nu getoetst als vuller ⊑ eindpunt, de
 richting van WF-053 en ref. Gemeten: van 55 gebonden verwijzingen over
 de vier zones wijkt de vuller alleen af in twee negatief-documenten
 (`wf053-chain-near-side-mismatch`, `wf053-dangling-navigation-binding`),
-dus op golden, rood en toka is dit gedragsneutraal. A4: een misvormde
+dus op golden, rood en toka is dit gedragsneutraal. De getuige toont
+dat een supertype-eindpunt in de WANDELING wordt geaccepteerd. De
+keten speelt end-to-end. Enkele stap en paar met een
+supertype-eindpunt weigeren nog stroomafwaarts op het beanveld: een
+eerlijke weigering, geen fout antwoord. Rest voor B11:
+`heeftReferentieVeld` en `naarVeelRol` toetsen daar op het eindpunt
+(`a.objecttype()`) in plaats van op het door de wandeling bereikte
+type, en de weigerreden legt de schuld daardoor bij het beanmodel. A4: een misvormde
 hop (null, geen RolBinding, `feittype` of `rol` ontbreekt of is geen
 tekst) en een lege of null-lijst weigert de loader bij naam, vóór de
 niet-navigerend-toets. A5: de rij voor de niet-passende binding pint
