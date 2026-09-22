@@ -94,6 +94,25 @@ backend voor bestaan.
 - (d) Alle veertien gates groen; gate-12-pins herberekend als een golden van
   kanaal wisselt.
 
+### Aangescherpt bij de claim (2026-09-23, basis main 0f386245)
+
+- (a) Hermeten op de huidige stand (na P1/P2/P3, leeg-negatie, lezerszone). Per
+  route een document, vijf uitkomsten, verifier-schoon of niet. De nalens-vier
+  worden gezocht in de families die de doel-poging bereiken: kenmerk (eigen en
+  geërfd, met en zonder gastheer), vergelijking over een doel-getypeerd attribuut
+  (met en zonder navigatierol), en naamnorm-verschillen tussen verifier en tak.
+- (b) De keuze valt op de meting: werkt een herbedrading (een tijdelijke proef
+  met `$subject` → patroonvariabele in de doel-poging) op de verifier-schone
+  routes de JUISTE lezing uit, dan fix + golden; leest zij daar het verkeerde
+  object, dan weigering in BEIDE takken met één gedeelde zin, een golden die
+  gate 12 bij naam telt als ref en clingo hem dragen, en een eigen
+  JUnit-getuige met rood-eerst.
+- (c) Het hek valt alleen als alle vier de uitvoerders de vorm dragen; `ref/`
+  en `backends/clingo/` vallen buiten dit May-touch, dus blijft het anders
+  staan met expliciete motivering.
+- (d) Veertien gates los groen; mutatieproeven (weigering terug per tak ⇒
+  getuige + gate 12 rood ⇒ herstel, cmp) uitgevoerd en vastgelegd.
+
 May touch: `backends/drools/**` (de bedrading of de weigering), `corpus/**`,
 `spec/IR-SPEC.md` en `spec/RUNTIME-SEMANTICS.md` (**voorstel**, alleen als het
 hek valt), `scripts/check-drools.sh` (**voorstel**, alleen de pins).
