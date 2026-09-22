@@ -730,10 +730,19 @@ public final class DrlTranspiler {
             out.append(onopgelosteSleutelvorm(u.naam(), u.geldigheid()));
             return;
         }
+        // the scope field comes from scopeRol, never from the wire's scopeVeld (V1-WIREMIGRATIE P2, gone at B8)
+        String scopeVeld = FactModelGenerator.scopeVeld(model, u);
+        if (scopeVeld == null && (u.scopeRol() != null || u.scopeVeld() != null)) {
+            out.append(new Regel(u.naam())
+                .clausule("// onopgelost uniciteit (scopebinding onopgelost): " + commentVeilig(u.naam()))
+                .clausule("eval(true)")
+                .render());
+            return;
+        }
         StringBuilder binders = new StringBuilder();   // op de subject: "$k0 : p != null, …"
         StringBuilder matchers = new StringBuilder();  // in de accumulate: "p == $k0, …"
-        if (u.scopeVeld() != null) {                   // parent-scoped: count only within the subject's scope
-            String sv = ident(u.scopeVeld(), false);
+        if (scopeVeld != null) {                       // parent-scoped: count only within the subject's scope
+            String sv = ident(scopeVeld, false);
             binders.append("$scope : ").append(sv).append(" != null, ");
             matchers.append(sv).append(" == $scope, ");
         }
@@ -1483,7 +1492,10 @@ public final class DrlTranspiler {
         // all four were present and let a null one fall through to the emission, where ident(null) / setter(null) /
         // anker.naam threw a NullPointerException that named no construct and took the WHOLE transpile down with
         // it: one construct, two answers — a per-form reason there, an unattributed crash here.
-        if (anker == null || doel == null || fc.zetVeld() == null || fc.joinVeld() == null) {
+        // The bean fields come from the role bindings, never from the wire's zetVeld/joinVeld/tussenstappen
+        // (V1-WIREMIGRATIE P2): those go at B7, and ref executes the bindings alone.
+        FactModelGenerator.Creatievelden velden = FactModelGenerator.creatievelden(model, fc);
+        if (anker == null || doel == null || velden == null) {
             out.append(new Regel(naam)
                 .clausule("// onopgelost feitcreatie (onopgelost): " + commentVeilig(naam))
                 .clausule("eval(true)")
@@ -1498,15 +1510,14 @@ public final class DrlTranspiler {
         // role, the displacing member, nor the limit. The exec branch refuses the same three by name.
         Objecttype vorigeType = anker;
         String reden = null;
-        for (io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie.Tussenstap stap : fc.tussenstappen()) {
-            if (stap.type() == null || stap.veld() == null) break;
+        for (FactModelGenerator.Creatiehop stap : velden.hops()) {
             Objecttype drager = stap.viaOuderVeld() ? vorigeType : stap.type();
             Objecttype hopDoel = stap.viaOuderVeld() ? stap.type() : vorigeType;
             if (!navVeld("feitcreatie", drager, stap.veld(), hopDoel)) { reden = navReden; break; }
             vorigeType = stap.type();
         }
-        if (reden == null && !navVeld("feitcreatie", doel, fc.joinVeld(), vorigeType)) reden = navReden;
-        if (reden == null && !navVeld("feitcreatie", doel, fc.zetVeld(), anker)) reden = navReden;
+        if (reden == null && !navVeld("feitcreatie", doel, velden.joinVeld(), vorigeType)) reden = navReden;
+        if (reden == null && !navVeld("feitcreatie", doel, velden.zetVeld(), anker)) reden = navReden;
         if (reden != null) {
             out.append(new Regel(naam)
                 .clausule("// onopgelost feitcreatie (opslagrichting): " + commentVeilig(naam))
@@ -1561,7 +1572,7 @@ public final class DrlTranspiler {
         // parent's forward reference (this == $prev.veld). $prev is the anker for the first step.
         String vorige = SUBJECT;
         int t = 0;
-        for (io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie.Tussenstap stap : fc.tussenstappen()) {
+        for (FactModelGenerator.Creatiehop stap : velden.hops()) {
             String var = "$t" + t++;
             rule.clausule(var + " : " + ident(stap.type().naam, true) + "( "
                     + (stap.viaOuderVeld() ? "this == " + vorige + "." + ident(stap.veld(), false)
@@ -1578,10 +1589,10 @@ public final class DrlTranspiler {
         // and the creation both lowerable in this branch). A same-valued rewrite writes nothing and the chain
         // terminates — the same argument the scalar Objects.equals guard below carries, on the same seam.
         rule.clausule("$doel : " + ident(doel.naam, true) + "( "
-                + ident(fc.joinVeld(), false) + " == " + vorige
+                + ident(velden.joinVeld(), false) + " == " + vorige
                 + (!doelExtra.isEmpty() ? ", " + doelExtra : "") + " )")
-            .dan("    if (!java.util.Objects.equals($doel." + ident(fc.zetVeld(), false) + ", " + SUBJECT + ")) {\n"
-                + "    modify($doel) {\n        " + setter(fc.zetVeld()) + "( " + SUBJECT + " )\n    }\n"
+            .dan("    if (!java.util.Objects.equals($doel." + ident(velden.zetVeld(), false) + ", " + SUBJECT + ")) {\n"
+                + "    modify($doel) {\n        " + setter(velden.zetVeld()) + "( " + SUBJECT + " )\n    }\n"
                 + "    }\n");
         out.append(rule.render());
     }

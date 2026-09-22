@@ -382,6 +382,67 @@ public final class FactModelGenerator {
         return new Navigatiewandeling(List.copyOf(rollen), List.copyOf(bereikt), naarVeel);
     }
 
+    /** One §9.4 creation hop as the bean model stores it: the type the hop reaches, the reference field, and
+     *  whether that field sits on the PARENT (the type the hop starts from, joined {@code this == $prev.veld}) or
+     *  on the reached CHILD (joined {@code veld == $prev}). */
+    public record Creatiehop(Objecttype type, String veld, boolean viaOuderVeld) {}
+
+    /** The bean fields a §13.4.7 creation executes on, derived from its symbolic form: the field it WRITES on the
+     *  doel, the field the doel JOINS on, and the hops in between. */
+    public record Creatievelden(String zetVeld, String joinVeld, List<Creatiehop> hops) {}
+
+    /**
+     * THE bean fields of a fact creation, derived from its role bindings (IR-SPEC ch. 3.4: "derivable from the role
+     * bindings by the backend's own role→field mapping") — the one derivation both transpiler branches decide a
+     * creation by (V1-WIREMIGRATIE P2). Until then both read the wire's {@code zetVeld}/{@code joinVeld}/
+     * {@code tussenstappen[].veld/viaOuderVeld/type}, the v0 fields migration step B7 removes.
+     *
+     * <p>The mapping is {@link #leden}'s own: a bean carries a reference field named after the role the OTHER end
+     * plays. The write lands on the doel, pointing at the anker, so it is {@code ankerRol}. The join and each hop
+     * bind the role the REACHED object plays, so the field on the reached object is the sibling role and the field
+     * on the starting object is the bound role itself. Which of the two a hop reads follows the storage direction
+     * (§13.3.9): the bound role to-one puts the field on the parent, else a to-one sibling puts it on the child.
+     * At 1:1 both beans carry a field and case input writes both (RUNTIME-SEMANTICS ch. 5.7a); the parent side is
+     * taken, the side the frontend picks for an objectcreatie-placed link. Where both roles are to-many there is
+     * no field at all and the child side is handed back, so the caller's {@link #heeftReferentieVeld} gate refuses
+     * it with its usual reason. The join is read on the doel only, as before.
+     *
+     * <p>Null when the symbolic form is absent or does not resolve — a bean-field-only record, which WF-028
+     * rejects and ref faults on, or a binding naming no declared role; the caller refuses the creation as
+     * unresolved. No cross-check against the wire's bean fields: ref decides all three positions on the bindings
+     * alone, and a check here would give fields that B7 deletes a veto over what ref plays.
+     */
+    public static Creatievelden creatievelden(RegelSpraakModel model,
+            io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie fc) {
+        if (fc.feittype() == null || fc.ankerRol() == null || fc.joinRol() == null) return null;
+        Rol[] gemaakt = gebondenRolpaar(model, new RegelSpraakModel.RolBindingRef(fc.feittype(), fc.ankerRol()));
+        Rol[] join = gebondenRolpaar(model, fc.joinRol());
+        if (gemaakt == null || join == null) return null;
+        List<Creatiehop> hops = new ArrayList<>();
+        for (var stap : fc.tussenstappen()) {
+            Rol[] paar = gebondenRolpaar(model, stap.rolBinding());
+            if (paar == null) return null;
+            Objecttype bereikt = model.objecttypeOpNaam(paar[0].objecttypeNaam());
+            if (bereikt == null) return null;
+            hops.add(!paar[0].meervoudig() ? new Creatiehop(bereikt, paar[0].naam(), true)
+                                           : new Creatiehop(bereikt, paar[1].naam(), false));
+        }
+        return new Creatievelden(gemaakt[0].naam(), join[1].naam(), List.copyOf(hops));
+    }
+
+    /**
+     * THE scope field of a parent-scoped uniqueness (ch. 5.9), derived from {@code scopeRol} — the role the scope
+     * parent plays, hence the reference field on the subject (V1-WIREMIGRATIE P2; migration step B8 removes the
+     * wire's {@code scopeVeld}). Null when the uniqueness is unscoped, or when a binding names no declared role
+     * (the caller refuses). A BINDINGLESS scoped uniqueness, which WF-054 admits and ref reads by the written name,
+     * keeps the written {@code scopeVeld}.
+     */
+    public static String scopeVeld(RegelSpraakModel model, io.github.yhavinga.regelspraak.ir.ResolvedUniciteit u) {
+        if (u.scopeRol() == null) return u.scopeVeld();
+        Rol[] paar = gebondenRolpaar(model, u.scopeRol());
+        return paar == null ? null : paar[0].naam();
+    }
+
     /**
      * §13.3.9.2 — the scalar to-one SELF-PAIR role a wederkerig feittype implies on {@code ot} (the role name,
      * hence the bean field name), or null when the model implies none.

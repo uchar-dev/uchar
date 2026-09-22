@@ -5918,6 +5918,10 @@ public final class ExecModelTranspiler {
                     TE_VEEL_TEMPORELE_SLEUTELS + ": " + u.naam());
         Class<?> incClass = inconsistentieClass();
         if (incClass == null) return skip("uniciteit (geen Inconsistentie-fact): " + u.naam());
+        // the scope field comes from scopeRol, never from the wire's scopeVeld (V1-WIREMIGRATIE P2, gone at B8)
+        final String sv = FactModelGenerator.scopeVeld(model, u);
+        if (sv == null && (u.scopeRol() != null || u.scopeVeld() != null))
+            return skip("uniciteit (scopebinding onopgelost): " + u.naam());
 
         seq = 0;
         String naam = u.naam();
@@ -5934,8 +5938,7 @@ public final class ExecModelTranspiler {
             keyVars.add(kVar);
         }
         Variable scopeVar = null;
-        if (u.scopeVeld() != null) {
-            String sv = u.scopeVeld();
+        if (sv != null) {
             scopeVar = DSL.declarationOf(Object.class, "$scope_" + (seq++));
             subjPat = subjPat.bind(scopeVar, (Function1) s -> RegelSpraakRuntime.get(s, sv))
                     .expr(nextId("snn"), (Predicate1) s -> RegelSpraakRuntime.get(s, sv) != null);
@@ -5957,7 +5960,6 @@ public final class ExecModelTranspiler {
             }
         }
         if (scopeVar != null) {
-            String sv = u.scopeVeld();
             src = src.expr(nextId("sj"), (Variable) scopeVar,
                     (Predicate2) (o, sc) -> RegelSpraakRuntime.gelijkWaarde(RegelSpraakRuntime.get(o, sv), sc));
         }
@@ -6707,7 +6709,10 @@ public final class ExecModelTranspiler {
     @SuppressWarnings({"unchecked", "rawtypes"})
     private Rule feitCreatie(io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie fc) {
         Objecttype anker = fc.anker(), doel = fc.doel();
-        if (anker == null || doel == null || fc.zetVeld() == null || fc.joinVeld() == null)
+        // The bean fields come from the role bindings, never from the wire's zetVeld/joinVeld/tussenstappen
+        // (V1-WIREMIGRATIE P2): those go at B7, and ref executes the bindings alone.
+        FactModelGenerator.Creatievelden velden = FactModelGenerator.creatievelden(model, fc);
+        if (anker == null || doel == null || velden == null)
             return skip("feitcreatie (onopgelost): " + fc.naam());
         Class<?> ankerClass = factClass(anker), doelClass = factClass(doel);
         if (ankerClass == null || doelClass == null) return skip("feitcreatie (geen fact-class): " + fc.naam());
@@ -6768,7 +6773,7 @@ public final class ExecModelTranspiler {
         items.addAll(ankerExtra);
         Variable vorige = sVar;
         Objecttype vorigeType = anker;
-        for (io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie.Tussenstap stap : fc.tussenstappen()) {
+        for (FactModelGenerator.Creatiehop stap : velden.hops()) {
             Class<?> stapClass = factClass(stap.type());
             if (stapClass == null) return skip("feitcreatie (geen fact-class tussenstap): " + fc.naam());
             String veld = stap.veld();
@@ -6788,7 +6793,7 @@ public final class ExecModelTranspiler {
             vorigeType = stap.type();
         }
 
-        String joinVeld = fc.joinVeld(), zetVeld = fc.zetVeld();
+        String joinVeld = velden.joinVeld(), zetVeld = velden.zetVeld();
         if (!heeftReferentieVeld(doel, joinVeld, vorigeType))
             return skip("feitcreatie (" + geenReferentieveldReden(doel, joinVeld, vorigeType) + "): " + fc.naam());
         if (!heeftReferentieVeld(doel, zetVeld, anker))
