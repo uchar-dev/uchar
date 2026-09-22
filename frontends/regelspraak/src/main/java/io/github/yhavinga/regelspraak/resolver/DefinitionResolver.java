@@ -583,9 +583,11 @@ public final class DefinitionResolver {
     }
 
     /** Records a fixed startpunt the v0 wire cannot carry in {@link RegelSpraakModel#vasteStartpunten}; at
-     *  most one of the four is present. The calendar start point — day 1 of the month, of months 1, 4, 7 and
-     *  10, of month 1 — describes exactly the grid the executors lay an anchorless tijdlijn on (RUNTIME-
-     *  SEMANTICS ch. 3.2), so it is left off the wire without loss and is not recorded. A date form is never
+     *  most one of the four is present. Three start points add nothing to the anchorless tijdlijn and are
+     *  left off the wire without loss, unrecorded: day 1 of the month and day 1 of month 1 coincide with the
+     *  month and year buckets of RUNTIME-SEMANTICS ch. 3.2; day 1 of months 1, 4, 7 and 10 is the calendar
+     *  quarter, which the anchorless "voor elk kwartaal" already means (ch. 3.2 defines no quarter bucket,
+     *  so there is no grid to disagree with). A date form is never
      *  the calendar default: the week has no calendar grid at all, and a multi-period grid is laid FROM the
      *  date. Any spelling other than the literal "1" counts as off-calendar, which errs on the loud side. */
     private void vastStartpunt(VastStartpuntDatumContext datum, VastStartpuntMaandContext maand,

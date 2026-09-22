@@ -52,8 +52,10 @@ public final class RegelSpraakModel {
     /** §13.3.6.3–.7 the FIXED startpunten that deviate from the calendar period, in source order. The model
      *  resolves them (granularity and count are right), but the v0 wire has no field for the start point
      *  and every executor lays an anchorless tijdlijn on the calendar grid — so the emission boundary
-     *  refuses a model that carries one ({@code IrEmitter.wireWeigeringen}). A start point that coincides
-     *  with the calendar period is not recorded: omitting it loses nothing. Not emitted itself. */
+     *  refuses a model that carries one ({@code IrEmitter.wireWeigeringen}). Three start points are not
+     *  recorded, because omitting them loses nothing: day 1 of the month and of month 1 (they coincide with the month and year
+     *  buckets) and day 1 of months 1, 4, 7 and 10 (the calendar quarter the anchorless quarter tijdlijn
+     *  already means; no quarter bucket exists). Not emitted itself. */
     public final List<VastStartpunt> vasteStartpunten = new ArrayList<>();
     /** One off-calendar fixed start point: the production's section, the source clause, its line. */
     public record VastStartpunt(String sectie, String bron, int line) {}

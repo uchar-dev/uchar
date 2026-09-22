@@ -36,9 +36,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * only the wire cannot carry the start point. The refusal therefore sits at the emission boundary —
  * {@code Resolver --ir} and {@link IrEmitter#emit} — and {@link Resolver#resolve} stays error-free.
  *
- * <p><b>The lossless omission.</b> A start point that coincides with the calendar period (day 1 of
- * the month; day 1 of months 1, 4, 7 and 10; day 1 of month 1) describes exactly the grid the
- * executors use, so leaving it off is not a loss. That omission is pinned byte for byte below.
+ * <p><b>The lossless omission.</b> Day 1 of the month and day 1 of month 1 coincide with the month
+ * and year buckets the executors use; day 1 of months 1, 4, 7 and 10 is the calendar quarter, which
+ * the anchorless quarter timeline already means (no quarter bucket exists to disagree with). Leaving
+ * these three off is not a loss. That omission is pinned byte for byte below.
  */
 class VastStartpuntTest {
 
@@ -117,6 +118,13 @@ class VastStartpuntTest {
                 "startend op dag 1 van maand 2, 5, 8 en 11");
     }
 
+    @Test void kwartaalgroep_die_pas_op_een_later_element_afwijkt_wordt_geweigerd() throws Exception {
+        // not a valid source-language group, but the grammar admits it; the whole group is compared,
+        // so a deviation after the first element is caught too
+        weigert(attribuut("voor elk kwartaal startend op dag 1 van maand 1, 5, 8 en 11"), "§13.3.6.5",
+                "startend op dag 1 van maand 1, 5, 8 en 11");
+    }
+
     @Test void kwartaal_op_een_andere_dag_dan_1_wordt_geweigerd() throws Exception {
         weigert(attribuut("voor elk kwartaal startend op dag 10 van maand 1, 4, 7 en 10"), "§13.3.6.5",
                 "startend op dag 10 van maand 1, 4, 7 en 10");
@@ -125,6 +133,9 @@ class VastStartpuntTest {
     @Test void jaar_startend_buiten_1_januari_wordt_geweigerd() throws Exception {
         weigert(attribuut("voor elk jaar startend op dag 15 van maand 10"), "§13.3.6.6",
                 "startend op dag 15 van maand 10");
+        // the DAY dimension on its own: month 1 is the calendar month, only the day deviates
+        weigert(attribuut("voor elk jaar startend op dag 15 van maand 1"), "§13.3.6.6",
+                "startend op dag 15 van maand 1");
     }
 
     // ---------------- the other attachment positions ----------------
