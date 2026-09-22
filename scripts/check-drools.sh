@@ -230,6 +230,7 @@ EXPECTED_CHANNEL=(
   "jutterswet-havenrooster|EXCLUDE|transpiler SKIP: the day-kind predicate compiler (kern.Dagsoorten) carries no PARAMETER operand — it compiles a voorwaarde ONCE into the KieBase while parameter values arrive per case as session globals, so a parameter-bound day kind has no compiled predicate and the reaching rule is skipped (waarde buiten scope). Measured 2026-09-19 with the day-kind card: ref and the ASP backend both answer this golden, which is why it is named here rather than left to the played default"
   "jutterswet-kamerheffing-catala|EXCLUDE|loader Refusal: functionDefs"
   "jutterswet-kamerhuishouden-catala|EXCLUDE|loader Refusal: functionDefs"
+  "jutterswet-ketenkwantor|EXCLUDE|loader Refusal: Kwantorvouw.bronPad — the multi-step range of a COUNTING quantifier (WF-108 (c)); the accumulate source carries one join role. Measured 2026-09-22 (card kwantortelling-pad-golden) in both branches, same sentence. Lifting the loader alone would not make it play: the golden's middle relation 'berging' is many-to-many, which is the bootberging refusal one layer deeper (the shared element the golden exists for needs a to-many reverse role on the last step). Its flat-count pins are a ref = clingo pair"
   "jutterswet-kinderdeler|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-kinderfoldheffing|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-klipwacht|EXCLUDE|transpiler SKIP: regel 'klipteken van een kustwacht' — the gedurende-CLIP as a composite MEMBER is outside the Phase-B condition scope (the exec-model branch lowers a clipped total in a rule VALUE, not inside a voorwaarde). Its ch. 5.10 content — the clip fences carrying the prefix — is a clingo-side property that gates 5+6 pin; the Drools square carries the same golden as a refusal, not a wrong answer."
@@ -796,7 +797,7 @@ EXPECTED_PLAYED=179
 #   FAIL     printed — the golden loads, lowers and fires without faulting, and answers a WRONG VALUE
 #   ERROR    printed — the golden faults AT FIRE; a defect of this branch, not a semantic difference
 #   NOCASE   the sweep's own token, never printed by the branch: no case file, so no run at all
-# Why the reasons are grouped rather than written one by one: seventy-one of the seventy-four
+# Why the reasons are grouped rather than written one by one: seventy-two of the seventy-five
 # entries carry one of three class reasons, and a per-golden retelling of the same sentence would be
 # noise around the only thing that is compared, which is the CHANNEL. Each class is explained in the
 # comment that opens it; each golden still stands there BY NAME, which is what the stale guard needs.
@@ -836,7 +837,7 @@ DRL_CHANNEL=(
   "jutterswet-wrakrecht|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-wrakrecht-flogic|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "synth3-nestkorting|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  # (B) loader Refusals — 35, and SHARED with the exec branch: both branches read the wire through
+  # (B) loader Refusals — 36, and SHARED with the exec branch: both branches read the wire through
   # the same IrLoader, so a v1 node neither carries refuses identically in both. Every one of these
   # names an EXPECTED_CHANNEL entry above with the same reason; they are repeated here because this
   # list must be readable on its own, and because the day the loader grows one of these forms BOTH
@@ -851,6 +852,7 @@ DRL_CHANNEL=(
   "jutterswet-dossierspelling|EXCLUDE|loader Refusal: Datatype:StructType"
   "jutterswet-kamerheffing-catala|EXCLUDE|loader Refusal: functionDefs"
   "jutterswet-kamerhuishouden-catala|EXCLUDE|loader Refusal: functionDefs"
+  "jutterswet-ketenkwantor|EXCLUDE|loader Refusal: Kwantorvouw.bronPad — the multi-step quantifier range; behind it the many-to-many 'berging' of bootberging (reason in EXPECTED_CHANNEL)"
   "jutterswet-kinderdeler|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-kinderfoldheffing|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-kinderkap|EXCLUDE|loader Refusal: Datatype:ListType"
