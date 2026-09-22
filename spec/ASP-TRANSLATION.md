@@ -656,15 +656,18 @@ and this backend); declared factors and stelsel never enter.
     representation).
   - **the datum-tijd LITERAL** (2026-09-06, WF-095). A `Literal` typed
     `DatumTijd` lowers to the GROUND pair `(⟨⟩, D, MS)` — no atoms — its
-    lexeme read by ref's shared datum-tijd reader (one grammar for both
-    admitted spellings, IR-SPEC ch. 4.1) and split by the same
+    lexeme read by ref's shared datum-tijd reader and split by the same
     `split_datetime` a case value takes. It is never an absolute ms
     integer, and the measurement is why: `2026-03-15T12:00:00.000` is
     1 773 576 000 000 ms, which gringo grounds as **−245 493 248** —
     it wraps at 32 bits, silently — and two instants 27.7 days apart then
     compare BACKWARDS (measured 2026-09-06: `1775968976896 < 1773576000000`
     derives). The pair keeps `D` and `MS` each inside 2^31 by construction,
-    so this arm adds no fence at all.
+    so this arm adds no fence at all. The WIRE lexeme is the canonical
+    ISO form alone since 2026-09-22 (WF-095, IR-SPEC ch. 4.1); that the
+    shared reader still also reads the day-first source snippet is
+    tolerance behind the verifier's fence, as IR-SPEC states there, not a
+    second spelling a conforming document can carry.
   - **Fences**: the sub-day paths carry a `viol/2` range guard so the
     bounded ms sum/difference stays inside 2^31 (a sub-day span beyond ~23
     civil days faults loudly — ref, on 63-bit ints, reaches further; the

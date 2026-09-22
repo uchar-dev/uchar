@@ -24,7 +24,9 @@ emits the same lexeme `2026-07-01T08:30:00.000`:
 The `dd. ` prefix and the one-digit day and month belong to the source
 token (§13.2.19/.21) and never to the lexeme. The day comes first in the
 source, so `1-7-2026` is the first of July; a reader that took it
-month-first would put the threshold on 7 January, which case V7 separates.
+month-first would put the threshold on 7 January. Gate 10's byte
+comparison would catch such a misreading in the emitter first; among the
+cases V7 is the threshold witness, sitting exactly on the misread instant.
 
 ## The hand calculation
 
@@ -60,7 +62,9 @@ V3 pins that both orderings are strict; V4 that an empty operand makes
 both comparisons false (ch. 1.2d) while the unconditional write still
 lands. V7 sits exactly on the instant a month-first reading of the source
 would give, so under that misreading it would be neither earlier nor
-later and `tijdig` would go absent.
+later and `tijdig` would go absent. It is not the only case that
+separates the two readings — under the misread threshold V1, V3 and V5
+move too — but it is the one that lands on it exactly.
 
 Case 1 carries V1–V4, case 2 carries V5–V7.
 

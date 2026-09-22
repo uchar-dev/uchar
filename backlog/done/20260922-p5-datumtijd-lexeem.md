@@ -43,8 +43,12 @@ gedraaid.
 snippetvorm NIET: elk pint al één eigen spellingsfout tegen de canonieke
 vorm (zone-suffix, spatie voor `T`, fractie `.1`, ontbrekende seconden,
 omringende tekst) en werd ook door de oude tweespellingsarm geweigerd.
-Gescand over corpus, toka, frontends, backends en ref: nul
-snippetdragers. Herschrijven had dus niets te doen; wat ontbrak was een
+Gescand over de corpuszones en `toka/`: nul WIRE-documenten met de
+snippet in `waarde`. De bekende, bedoelde uitzondering zijn de
+lezertolerantie-getuigen in de testsuites (`ref/test/test_ref.ml`,
+`DatumTijdLexeemWitnessTest`, `CaseWireDatumTijdWitnessTest`,
+`LiteralenTest`), die de snippet dragen omdat de lezers hem achter het
+hek nog lezen. Herschrijven had dus niets te doen; wat ontbrak was een
 getuige die onder de oude arm verifier-schoon was. Die is er nu:
 `wf095-bronsnippet` (`15-03-2026 12:00:00.000` in `waarde`) — rood-eerst
 gezien (`verifier: PASS`, rc 0, onder de oude arm). De NOTE's van
