@@ -237,8 +237,8 @@ gemeten in plaats van uit één alinea afgelezen:
 
 | Symbolische uitbreiding | Drools-loader | Gevolg voor de migratie |
 |---|---|---|
-| `AttribuutRef.navigatieBindingen` | **genegeerd**, her-afgeleid uit `navigatieRol`/`navigatiePad` | port vóór B11 (P1) |
-| `Kenmerk.navigatieBinding` | **genegeerd**, her-afgeleid | port vóór B11 (P1) |
+| `AttribuutRef.navigatieBindingen` | ~~**genegeerd**, her-afgeleid uit `navigatieRol`/`navigatiePad`~~ — **gelezen sinds 2026-09-22** (P1): zijkanaal `Loaded#navigatieBindingen`, **beslissend** in beide Drools-takken; alleen een bindingloze verwijzing wordt nog uit de geschreven stap afgeleid | ~~port vóór B11 (P1)~~ geland; de vormpredikaten (eigen/genavigeerd, keten/enkele stap) lezen nog de v0-velden — rest voor B11 |
+| `Kenmerk.navigatieBinding` | ~~**genegeerd**, her-afgeleid~~ — **gelezen sinds 2026-09-22** (P1), beslissend in beide takken | ~~port vóór B11 (P1)~~ geland |
 | `ResolvedVerdeling.verbindendeRol` | **genegeerd**, her-afgeleid uit het typenpaar | port vóór B12 (P3) |
 | `Functie.bronRol` (vouw) | **gelezen** — zijkanaal, laatst geraadpleegde arm; beslissend voor het zelfgetypeerde én het herhaalde paar (sinds 2026-09-19 in beide Drools-takken) | geen port nodig |
 | `ResolvedObjectCreatie.verbindendeRol` | **gelezen** — en ch. 5.5 maakt hem GEZAGHEBBEND | geen port nodig |
@@ -2225,7 +2225,7 @@ stuk los te landen en verbeteren de v0-toestand ook als de klap nooit komt.
 
 | # | Kaart | Waarom vóór de klap | Blokkeert |
 |---|---|---|---|
-| P1 | **`backends/drools` leest `navigatieBindingen`** | de loader negeert ze vandaag en leidt navigatie her-af uit `navigatieRol`/`navigatiePad`; die velden verdwijnen bij B11 | B11 |
+| P1 | ~~**`backends/drools` leest `navigatieBindingen`**~~ — **GELAND 2026-09-22** (`backlog/done/20260922-p1-drools-navigatiebindingen.md`) | beide takken beslissen een gebonden navigatie op de wire (`FactModelGenerator.navigatiewandeling`), zonder terugval op de geschreven naam; de corpussweep speelt per golden identiek (179/156), de twistgetuige `NavigatiebindingWitnessTest` pint de leesrichting. Rest voor B11: de vormpredikaten op `navigatieRol`/`navigatiePad` (eigen versus genavigeerd, keten versus enkele stap — `navigatiePad` van lengte 1 staat in vier goldens en één rood document) | B11 |
 | P2 | **`backends/drools` leidt bonenvelden af uit de rolbindingen** — feitcreatie (`zetVeld`/`joinVeld`/`Tussenstap.*`) en uniciteitsscope (`scopeVeld`) | de backend *voert die velden uit*; ze weghalen is zonder deze port een amputatie | B7, B8 |
 | P3 | **`backends/drools` leest `verbindendeRol` op de VERDELING** | de enige nog her-afgeleide binding van de drie; de vouw-`bronRol` en de objectcreatie-`verbindendeRol` worden al gelezen (§2.2), dus deze kaart is een derde van wat hij leek | B12 |
 | P4 | ~~**Enumeratie-emissie gerepareerd** (V8 (a))~~ — **GELAND 2026-09-20** (`backlog/done/20260919-v8-enum-emitter.md`) | de emitter stript én typeert tegen de positie; eerste `bron.rgs`-golden `jutterswet-vondstklasse`; de consumentenkant (Drools-lezer) heeft een eigen kaart | B22b |

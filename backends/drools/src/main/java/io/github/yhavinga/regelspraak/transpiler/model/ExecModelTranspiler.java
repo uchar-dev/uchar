@@ -122,6 +122,10 @@ public final class ExecModelTranspiler {
      *  sharper one — a path is the one extension the model cannot RE-DERIVE, so dropping it folds a coincidental
      *  direct relation instead. Keyed by IDENTITY. Empty by default (every fold then carries the one-step range). */
     private Map<Object, List<RegelSpraakModel.RolBindingRef>> bronPaden = new java.util.IdentityHashMap<>();
+    /** IR-SPEC ch. 4.1a: the navigation bindings per AttribuutRef / Kenmerk node ({@code IrLoader.Loaded.navigatieBindingen}),
+     *  by IDENTITY. Where a node carries one it decides the walk ({@link FactModelGenerator#navigatiewandeling}); only a
+     *  bindingless node is resolved from its written navigatieRol/navigatiePad. */
+    private Map<Object, List<RegelSpraakModel.RolBindingRef>> navigatieBindingen = new java.util.IdentityHashMap<>();
     /** RUNTIME-SEMANTICS ch. 2.10: the §4 EFFECTIVE-unit derivation — declarations plus the ch. 2.6 join rules.
      *  Every unit restatement below takes its datatypes from here; a bare {@code e.type()} at a restatement site
      *  reads the wire's REPETITION of a declaration instead of the declaration, which is what made this backend
@@ -192,6 +196,14 @@ public final class ExecModelTranspiler {
     public static ExecModelTranspiler build(RegelSpraakModel m, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
             Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen, List<Expr.Let> lets,
             Map<Object, List<RegelSpraakModel.RolBindingRef>> bronPaden) {
+        return build(m, beanLoader, defaults, rolBindingen, lets, bronPaden, java.util.Map.of());
+    }
+    /** As above, plus the ch. 4.1a navigation bindings ({@code IrLoader.Loaded.navigatieBindingen}) — the arity the
+     *  replay API builds with. */
+    public static ExecModelTranspiler build(RegelSpraakModel m, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
+            Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen, List<Expr.Let> lets,
+            Map<Object, List<RegelSpraakModel.RolBindingRef>> bronPaden,
+            Map<Object, List<RegelSpraakModel.RolBindingRef>> navigatieBindingen) {
         ExecModelTranspiler t = new ExecModelTranspiler(m, beanLoader);
         t.prioritizedDefaults = defaults == null ? List.of() : defaults;
         if (rolBindingen != null && !rolBindingen.isEmpty()) {
@@ -203,6 +215,10 @@ public final class ExecModelTranspiler {
         if (bronPaden != null && !bronPaden.isEmpty()) {
             t.bronPaden = new java.util.IdentityHashMap<>();   // identity, for rolBindingen's reason
             t.bronPaden.putAll(bronPaden);
+        }
+        if (navigatieBindingen != null && !navigatieBindingen.isEmpty()) {
+            t.navigatieBindingen = new java.util.IdentityHashMap<>();   // identity, for rolBindingen's reason
+            t.navigatieBindingen.putAll(navigatieBindingen);
         }
         t.eff = new io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid(
                 lets == null ? List.of() : lets);
@@ -1823,10 +1839,12 @@ public final class ExecModelTranspiler {
             // to the to-one role's kenmerk timeline, read root-guarded (a null reference -> leeg). Mirrors DRL.
             segCls = segmentClass();
             if (segCls == null) return null;
-            Objecttype doel = model.rolDoeltypeNaarSubject(subject, kn.navigatie());
+            KenmerkHop hop = kenmerkHop(kn, subject);
+            if (hop == null) return null;   // the bound hop does not fit this subject
+            Objecttype doel = hop.doel();
             if (doel == null || kn.negatie() || !doel.kenmerkGranulariteitLeden().containsKey(kn.kenmerk())
                     || Tijdlijnen.meerPeriodiek(doel.kenmerkTijdlijnAantalLeden(), kn.kenmerk())) return null;   // negated / to-many / non-temporal -> skip
-            navRol = kn.navigatie();
+            navRol = hop.rol();
             kenmerk = kn.kenmerk();
         } else if (f.filter() instanceof Conditie.Vergelijking vc) {
             // §7.1 EUR71 "gedurende de tijd dat <temporeel attr> <op> <scalar>": clip the value timeline to the
@@ -1962,9 +1980,12 @@ public final class ExecModelTranspiler {
     private java.util.function.Function<Object, Object> navReader(Expr.AttribuutRef a, Objecttype subject) {
         if (a.objecttype() == null || !a.objecttype().heeftLid(a.attribuut())) return null;   // AFWEZIG
         if (!a.navigatiePad().isEmpty()) return null;   // §13.4.1 multi-hop chain: ONLY navKetenReader (value path) lowers it
-        String rol = null;
-        if (a.navigatieRol() != null) rol = model.verbindendeRolViaNaam(subject, a.objecttype(), a.navigatieRol());
         final String attr = a.attribuut();
+        String rol = null;
+        if (navigatieBindingen.containsKey(a)) {
+            rol = wireRol(a, subject);
+            if (rol == null) return null;   // ONOPGELOST: the bound walk does not fit this subject
+        } else if (a.navigatieRol() != null) rol = model.verbindendeRolViaNaam(subject, a.objecttype(), a.navigatieRol());
         if (rol == null) {
             if (a.objecttype() == subject) return typedGetter(factClass(subject), attr);   // EIGEN
             rol = subject != null ? model.verbindendeRol(subject, a.objecttype()) : null;
@@ -1987,15 +2008,15 @@ public final class ExecModelTranspiler {
      *  {@code ketenWaardePad}) — the condition side keeps the symmetric marker both back-ends emit. */
     private java.util.function.Function<Object, Object> navKetenReader(Expr.AttribuutRef a, Objecttype subject) {
         if (a.objecttype() == null || !a.objecttype().heeftLid(a.attribuut())) return null;   // AFWEZIG
-        List<Objecttype> bereikt = model.volgKeten(subject, a.navigatiePad());
-        if (bereikt == null || bereikt.get(bereikt.size() - 1) != a.objecttype()) return null;   // ONOPGELOST / to-many
+        FactModelGenerator.Navigatiewandeling w = keten(a, subject);
+        if (w == null) return null;   // ONOPGELOST / to-many
         List<java.util.function.Function<Object, Object>> hops = new ArrayList<>();
         Objecttype cur = subject;
-        for (int i = 0; i < a.navigatiePad().size(); i++) {
+        for (int i = 0; i < w.rollen().size(); i++) {
             // EVERY hop, not just the first: a chain is only readable where each of its links has a field.
-            if (!heeftVeld("genavigeerde lezing", cur, a.navigatiePad().get(i), bereikt.get(i))) return null;   // §13.3.9 name-dedup
-            hops.add(typedGetter(factClass(cur), a.navigatiePad().get(i)));
-            cur = bereikt.get(i);
+            if (!heeftVeld("genavigeerde lezing", cur, w.rollen().get(i), w.bereikt().get(i))) return null;   // §13.3.9 name-dedup
+            hops.add(typedGetter(factClass(cur), w.rollen().get(i)));
+            cur = w.bereikt().get(i);
         }
         java.util.function.Function<Object, Object> attrGet = typedGetter(factClass(a.objecttype()), a.attribuut());
         return s -> {
@@ -2036,23 +2057,28 @@ public final class ExecModelTranspiler {
             java.util.function.Function<Object, Object> reachFar; String key; Objecttype far = a.objecttype();
             if (!a.navigatiePad().isEmpty()) {
                 // §13.4.1 multi-hop chain: walk the declared role hops to the fact declaring the read attribute.
-                List<Objecttype> bereikt = model.volgKeten(subject, a.navigatiePad());
-                if (bereikt == null || bereikt.get(bereikt.size() - 1) != a.objecttype()) continue;
+                FactModelGenerator.Navigatiewandeling w = keten(a, subject);
+                if (w == null) continue;
                 List<java.util.function.Function<Object, Object>> hops = new ArrayList<>();
                 Objecttype cur = subject;
-                for (int i = 0; i < a.navigatiePad().size(); i++) {
-                    if (!heeftVeld("genavigeerde lezing", cur, a.navigatiePad().get(i), bereikt.get(i))) return null;   // §13.3.9 name-dedup
-                    hops.add(typedGetter(factClass(cur), a.navigatiePad().get(i)));
-                    cur = bereikt.get(i);
+                for (int i = 0; i < w.rollen().size(); i++) {
+                    if (!heeftVeld("genavigeerde lezing", cur, w.rollen().get(i), w.bereikt().get(i))) return null;   // §13.3.9 name-dedup
+                    hops.add(typedGetter(factClass(cur), w.rollen().get(i)));
+                    cur = w.bereikt().get(i);
                 }
                 reachFar = s -> { Object o = s; for (var h : hops) { o = h.apply(o); if (o == null) return null; } return o; };
-                key = far.naam + "|" + String.join(".", a.navigatiePad());
+                key = far.naam + "|" + String.join(".", w.rollen());
             } else {
                 // single-hop to-one: resolve the connecting role exactly as navReader does (named, self-anaphora, or
                 // the unique connecting role); a to-many / unresolvable navigation is left to its own lowering.
-                String rol = a.navigatieRol() != null ? model.verbindendeRolViaNaam(subject, far, a.navigatieRol()) : null;
-                if (rol == null && far == subject) continue;   // EIGEN read (own-attr) — the eigenReads watch covers it
-                if (rol == null) rol = model.verbindendeRol(subject, far);
+                String rol;
+                if (navigatieBindingen.containsKey(a)) {
+                    rol = wireRol(a, subject);
+                } else {
+                    rol = a.navigatieRol() != null ? model.verbindendeRolViaNaam(subject, far, a.navigatieRol()) : null;
+                    if (rol == null && far == subject) continue;   // EIGEN read (own-attr) — the eigenReads watch covers it
+                    if (rol == null) rol = model.verbindendeRol(subject, far);
+                }
                 if (rol == null) continue;                     // ONOPGELOST
                 if (model.naarVeelRol(subject, far, rol)) continue;   // NAAR_VEEL -> aggregate path, not a scalar join
                 if (!heeftVeld("genavigeerde lezing", subject, rol, far)) return null;   // §13.3.9 no bean field to join on (name-dedup)
@@ -2094,11 +2120,47 @@ public final class ExecModelTranspiler {
     private String navComparisonRole(Expr.AttribuutRef a, Objecttype subject) {
         if (a.objecttype() == null || a.navigatieRol() == null || !a.objecttype().heeftLid(a.attribuut())) return null;
         if (!a.navigatiePad().isEmpty()) return null;   // §13.4.1 multi-hop chain: comparisons keep the symmetric marker
-        String rol = model.verbindendeRolViaNaam(subject, a.objecttype(), a.navigatieRol());
+        String rol = navigatieBindingen.containsKey(a) ? wireRol(a, subject)
+                : model.verbindendeRolViaNaam(subject, a.objecttype(), a.navigatieRol());
         if (rol == null) return null;
         if (subject != null && model.naarVeelRol(subject, a.objecttype(), rol)) return null;   // NAAR_VEEL
         if (!heeftVeld("genavigeerde lezing", subject, rol, a.objecttype())) return null;   // §13.3.9 no bean field to read (name-dedup)
         return rol;
+    }
+
+    /** The single hop of a BOUND to-one navigation: the reached role the wire names, or null when the walk does not
+     *  fit {@code subject} or is not one hop. The single-hop readers above decide on it instead of the written name. */
+    private String wireRol(Expr.AttribuutRef a, Objecttype subject) {
+        FactModelGenerator.Navigatiewandeling w =
+                FactModelGenerator.navigatiewandeling(model, subject, navigatieBindingen.get(a), a.objecttype());
+        return w == null || w.rollen().size() != 1 ? null : w.rollen().get(0);
+    }
+
+    /** The §13.4.1 chain walk of a pad-carrying AttribuutRef: the wire's bindings where the node carries them,
+     *  else the written navigatiePad re-validated from {@code subject}. Null when unresolved or any hop is to-many —
+     *  the two cases the chain readers refuse alike. */
+    private FactModelGenerator.Navigatiewandeling keten(Expr.AttribuutRef a, Objecttype subject) {
+        if (navigatieBindingen.containsKey(a)) {
+            FactModelGenerator.Navigatiewandeling w =
+                    FactModelGenerator.navigatiewandeling(model, subject, navigatieBindingen.get(a), a.objecttype());
+            return w == null || w.naarVeel() ? null : w;
+        }
+        List<Objecttype> bereikt = model.volgKeten(subject, a.navigatiePad());
+        if (bereikt == null || bereikt.get(bereikt.size() - 1) != a.objecttype()) return null;
+        return new FactModelGenerator.Navigatiewandeling(a.navigatiePad(), bereikt, false);
+    }
+
+    /** The one hop of a navigated kenmerk check: the reached role (the bean field on the subject) and the type it
+     *  reaches. From the wire's {@code navigatieBinding} where the check carries one — null when that hop does not
+     *  fit {@code subject} — else the written role, as before the port. */
+    private record KenmerkHop(String rol, Objecttype doel) {}
+    private KenmerkHop kenmerkHop(Conditie.Kenmerk k, Objecttype subject) {
+        if (navigatieBindingen.containsKey(k)) {
+            FactModelGenerator.Navigatiewandeling w =
+                    FactModelGenerator.navigatiewandeling(model, subject, navigatieBindingen.get(k), null);
+            return w == null || w.rollen().size() != 1 ? null : new KenmerkHop(w.rollen().get(0), w.bereikt().get(0));
+        }
+        return new KenmerkHop(k.navigatie(), subject == null ? null : model.rolDoeltypeNaarSubject(subject, k.navigatie()));
     }
 
     /** The fact {@code Segment} class (a runtime objecttype) reflectively, or null when absent — needed by the
@@ -2646,7 +2708,9 @@ public final class ExecModelTranspiler {
      *  negated / to-many / non-temporal navigated kenmerk. Mirrors DrlTranspiler.navigatieKenmerkTijdreeks. */
     private java.util.function.Function<Object, List<?>> navigatieKenmerkTijdreeks(Conditie.Kenmerk k, Objecttype subject) {
         if (k.navigatie() == null || k.negatie() || subject == null) return null;
-        Objecttype doel = model.rolDoeltypeNaarSubject(subject, k.navigatie());
+        KenmerkHop hop = kenmerkHop(k, subject);
+        if (hop == null) return null;   // the bound hop does not fit this subject
+        Objecttype doel = hop.doel();
         if (doel == null || !doel.kenmerkGranulariteitLeden().containsKey(k.kenmerk())
                 || Tijdlijnen.meerPeriodiek(doel.kenmerkTijdlijnAantalLeden(), k.kenmerk())) return null;
         // §13.3.9: the hop is a two-step read like navReader's, on the timeline arm and with its own resolution —
@@ -2655,8 +2719,8 @@ public final class ExecModelTranspiler {
         // jaar bedrijvig is"): ref and clingo both PASS with toeslag leeg, while this branch died at first fire
         // (ERROR ConstraintEvaluationException — the kenmerk getter read off a BigDecimal) and the DRL branch sank
         // the package on "Unable to Analyse Expression rsGeheelPeriode(($subject.getWerf() == null ? …".
-        if (!heeftVeld("genavigeerde kenmerktijdreeks", subject, k.navigatie(), doel)) return null;
-        String rol = k.navigatie(), kenmerk = k.kenmerk();
+        if (!heeftVeld("genavigeerde kenmerktijdreeks", subject, hop.rol(), doel)) return null;
+        String rol = hop.rol(), kenmerk = k.kenmerk();
         return s -> { Object rel = RegelSpraakRuntime.get(s, rol); return rel == null ? null : (List<?>) RegelSpraakRuntime.get(rel, kenmerk); };
     }
 
@@ -3751,14 +3815,15 @@ public final class ExecModelTranspiler {
             // WF-109: the host is satisfied EXTENSIONALLY (subject ⊑ host), not by name identity — a
             // supertype host is this pattern's too. Shared with the DRL-text branch so the two cannot drift.
             if (!Gastheer.hostOp(k, subject)) return null;   // a feitcreatie doel-kenmerk hosts elsewhere
-            Objecttype kHouder = k.navigatie() == null ? subject
-                    : (subject != null ? model.rolDoeltypeNaarSubject(subject, k.navigatie()) : null);
+            KenmerkHop hop = k.navigatie() == null ? null : kenmerkHop(k, subject);
+            if (k.navigatie() != null && hop == null) return null;   // the bound hop does not fit this subject
+            Objecttype kHouder = k.navigatie() == null ? subject : hop.doel();
             if (kHouder != null && kHouder.kenmerkGranulariteitLeden().containsKey(k.kenmerk())) return null;  // temporal -> Phase F
             String kenmerk = k.kenmerk();
             boolean wanted = !k.negatie();
             if (k.navigatie() == null)
                 return s -> Boolean.TRUE.equals(RegelSpraakRuntime.get(s, kenmerk)) == wanted;
-            String nav = k.navigatie();
+            String nav = hop.rol();
             return s -> {
                 Object rel = RegelSpraakRuntime.get(s, nav);
                 return rel != null && Boolean.TRUE.equals(RegelSpraakRuntime.get(rel, kenmerk)) == wanted;

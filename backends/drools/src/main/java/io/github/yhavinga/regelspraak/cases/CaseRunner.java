@@ -260,7 +260,7 @@ public final class CaseRunner {
         try {
             if (viaDrl) return drlTak(model, loaded, cl);
             ExecModelTranspiler et = ExecModelTranspiler.build(model, cl, loaded.prioritizedDefaults(),
-                    loaded.rolBindingen(), loaded.lets(), loaded.bronPaden());
+                    loaded.rolBindingen(), loaded.lets(), loaded.bronPaden(), loaded.navigatieBindingen());
             // every construct must LOWER — a marker means the exec KieBase silently omits it,
             // so the case's expectations could not be produced; that golden is not carried.
             for (Dekking d : et.dekking())
@@ -296,7 +296,7 @@ public final class CaseRunner {
         // from, so on a repeated or self-typed pair the wire's bronRol is the only route there is. Withheld,
         // this branch markered exactly the folds its sister played.
         DrlTranspiler t = DrlTranspiler.build(model, loaded.lets(), loaded.prioritizedDefaults(),
-                loaded.bronPaden(), loaded.rolBindingen());
+                loaded.bronPaden(), loaded.rolBindingen(), loaded.navigatieBindingen());
         for (Dekking d : t.dekking())
             if (!d.lowered()) throw new Excluded("drl-transpiler " + d.verdict() + ": " + d.sleutel()
                     + (d.reden().isEmpty() ? "" : " — " + d.reden()));

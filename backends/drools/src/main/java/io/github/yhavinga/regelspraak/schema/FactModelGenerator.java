@@ -336,6 +336,51 @@ public final class FactModelGenerator {
                 + " overzijde, dus dat veld bestaat niet (§13.3.9 opslagrichting)");
     }
 
+    /** The walk a navigated read's wire bindings name: per hop the reached role (hence the bean field on the type
+     *  the walk stands on) and the type that role's filler declares; {@code naarVeel} when any hop reaches a
+     *  to-many role. */
+    public record Navigatiewandeling(List<String> rollen, List<Objecttype> bereikt, boolean naarVeel) {}
+
+    /**
+     * THE navigation walk of an {@code AttribuutRef.navigatieBindingen} / {@code Kenmerk.navigatieBinding}
+     * (IR-SPEC ch. 4.1a), resolved from {@code subject} — the one derivation both transpiler branches decide a
+     * bound navigation by (V1-WIREMIGRATIE P1). Until then both branches ignored the bindings and re-derived the
+     * walk from the written {@code navigatieRol}/{@code navigatiePad}, the v0 fields migration step B11 removes.
+     *
+     * <p>Null when the walk does not resolve from {@code subject}: a binding naming no declared role, a hop whose
+     * opposite role the type the walk stands on does not fill (ch. 2.6, extensionally), or — with a non-null
+     * {@code eindpunt} — a last hop whose filler the endpoint does not satisfy. The caller refuses such a read
+     * with its own unresolved-navigation reason. It never falls back to the written name: a document whose
+     * binding does not fit is refused, not read along a route the wire did not name. The same subject-fit the
+     * written-chain derivation ({@code RegelSpraakModel.volgKeten}) applies, so a read the transpiler meets
+     * under another subject than the one it was bound to is refused exactly as before.
+     *
+     * <p>No cross-check against the written step: WF-053 already demands that every written step denote its
+     * hop's bound role (gate 3), the written fields disappear at B11, and a cross-check here would turn a
+     * binding that decides into one that merely vetoes.
+     */
+    public static Navigatiewandeling navigatiewandeling(RegelSpraakModel model, Objecttype subject,
+            List<RegelSpraakModel.RolBindingRef> bindingen, Objecttype eindpunt) {
+        if (bindingen == null || bindingen.isEmpty()) return null;
+        List<String> rollen = new ArrayList<>();
+        List<Objecttype> bereikt = new ArrayList<>();
+        boolean naarVeel = false;
+        Objecttype cur = subject;
+        for (RegelSpraakModel.RolBindingRef rb : bindingen) {
+            Rol[] paar = gebondenRolpaar(model, rb);
+            if (paar == null || cur == null) return null;
+            Objecttype bijna = model.objecttypeOpNaam(paar[1].objecttypeNaam());
+            Objecttype ver = model.objecttypeOpNaam(paar[0].objecttypeNaam());
+            if (bijna == null || ver == null || !cur.isEen(bijna)) return null;
+            naarVeel |= paar[0].meervoudig();
+            rollen.add(paar[0].naam());
+            bereikt.add(ver);
+            cur = ver;
+        }
+        if (eindpunt != null && !eindpunt.isEen(cur)) return null;
+        return new Navigatiewandeling(List.copyOf(rollen), List.copyOf(bereikt), naarVeel);
+    }
+
     /**
      * §13.3.9.2 — the scalar to-one SELF-PAIR role a wederkerig feittype implies on {@code ot} (the role name,
      * hence the bean field name), or null when the model implies none.

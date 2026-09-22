@@ -61,7 +61,14 @@ import java.util.Map;
  * verdeling's {@code verbindendeRol}) it is ignored — the transpiler re-derives it from the model. The
  * additive {@code bronAnnotaties} provenance field is carried through.
  *
- * <p>TWO extensions escape that dichotomy, both because the model cannot ALWAYS re-derive them: an
+ * <p>THREE extensions escape that dichotomy. The navigation bindings (an AttribuutRef's
+ * {@code navigatieBindingen}, a Kenmerk's {@code navigatieBinding}) are read into
+ * {@link Loaded#navigatieBindingen()} and DECIDE a bound navigation in both transpiler branches
+ * (V1-WIREMIGRATIE P1): the written {@code navigatieRol}/{@code navigatiePad} they would otherwise be
+ * re-derived from are v0 fields migration step B11 removes. The other two, below,
+ * are read because the model cannot always re-derive them.
+ *
+ * <p>Those two: both because the model cannot ALWAYS re-derive them: an
  * OBJECTCREATIE's {@code verbindendeRol} (IR-SPEC ch. 3.3, which RUNTIME-SEMANTICS ch. 5.5 makes AUTHORITATIVE)
  * and an aggregation {@link Expr.Functie}'s {@code bronRol}. On a SELF-TYPED role pair — two same-typed sibling
  * roles of one fact type — the by-pair search is ambiguous by construction and the symbolic binding is the only
@@ -107,6 +114,9 @@ public final class IrLoader {
     /** ch. 4.3 / WF-102: the fold-source RANGE as a path, per {@link Expr.Functie} node — see
      *  {@link Loaded#bronPaden()}. Identity-keyed for {@link #rolBindingen}'s reason. */
     private final Map<Object, List<RolBindingRef>> bronPaden = new java.util.IdentityHashMap<>();
+    /** IR-SPEC ch. 4.1a: the navigation bindings per AttribuutRef / Kenmerk node — see
+     *  {@link Loaded#navigatieBindingen()}. Identity-keyed for {@link #rolBindingen}'s reason. */
+    private final Map<Object, List<RolBindingRef>> navigatieBindingen = new java.util.IdentityHashMap<>();
 
     private IrLoader() {}
 
@@ -141,10 +151,17 @@ public final class IrLoader {
      *         every other extension this loader carries, a path is not re-derivable. The type PAIR answers for the
      *         endpoints only, and a path's intermediate types are its own claim; a consumer that dropped this list
      *         would silently fold whatever direct relation happens to connect subject and element. Empty for a
-     *         document whose folds all carry the one-step range. */
+     *         document whose folds all carry the one-step range.
+     *  @param navigatieBindingen the IR-SPEC ch. 4.1a navigation walk per navigated {@link Expr.AttribuutRef}
+     *         ({@code navigatieBindingen}, one binding per hop, subject-outward) and per navigated
+     *         {@link Conditie.Kenmerk} ({@code navigatieBinding}, a one-hop list), by IDENTITY, verbatim off the
+     *         wire. Where a node carries one it decides the walk in both transpiler branches; a node without one
+     *         is the bindingless form WF-053 also admits, and only there is the walk derived from the written
+     *         step. */
     public record Loaded(RegelSpraakModel model, List<PrioritizedDefaults> prioritizedDefaults,
                          Map<Object, RolBindingRef> rolBindingen, List<Expr.Let> lets,
-                         Map<Object, List<RolBindingRef>> bronPaden) {}
+                         Map<Object, List<RolBindingRef>> bronPaden,
+                         Map<Object, List<RolBindingRef>> navigatieBindingen) {}
 
     /** Parse a {@code regelspraak-ir-v0} tree into a resolved model, or throw {@link Refusal} for a form
      *  the v0 backend does not carry. The prioritized-defaults extension (if any) is parsed but not returned —
@@ -160,7 +177,7 @@ public final class IrLoader {
     public static Loaded loadAll(JsonNode root) {
         IrLoader l = new IrLoader();
         RegelSpraakModel model = l.model(root);
-        return new Loaded(model, l.prioritizedDefaults, l.rolBindingen, l.lets, l.bronPaden);
+        return new Loaded(model, l.prioritizedDefaults, l.rolBindingen, l.lets, l.bronPaden, l.navigatieBindingen);
     }
 
     private RegelSpraakModel model(JsonNode root) {
@@ -466,9 +483,23 @@ public final class IrLoader {
             case "Afgerond" -> new Expr.Afgerond(expr(n.get("basis")),
                     enumOf(Expr.AfrondModus.class, text(n, "modus")), intOf(n, "decimalen"), bron(n));
             case "Begrensd" -> new Expr.Begrensd(expr(n.get("basis")), expr(n.get("minimum")), expr(n.get("maximum")), bron(n));
-            case "AttribuutRef" -> new Expr.AttribuutRef(text(n, "attribuut"), ot(text(n, "objecttype")),
-                    text(n, "onderwerpBron"), text(n, "navigatieRol"), datatype(n.get("type")), bron(n),
-                    bool(n, "set"), stringList(n.get("navigatiePad")));
+            case "AttribuutRef" -> {
+                Expr.AttribuutRef a = new Expr.AttribuutRef(text(n, "attribuut"), ot(text(n, "objecttype")),
+                        text(n, "onderwerpBron"), text(n, "navigatieRol"), datatype(n.get("type")), bron(n),
+                        bool(n, "set"), stringList(n.get("navigatiePad")));
+                JsonNode nb = n.get("navigatieBindingen");
+                if (nb != null) {
+                    // written whole or not at all, never null, never empty (IR-SPEC ch. 4.1a): a malformed list
+                    // is refused by name rather than read as the bindingless form, which would re-derive the walk
+                    if (!nb.isArray() || nb.isEmpty())
+                        throw new Refusal("AttribuutRef.navigatieBindingen",
+                                "a navigatieBindingen field is a non-empty list of RolBindings (WF-053)");
+                    List<RolBindingRef> stappen = new ArrayList<>();
+                    for (JsonNode s : nb) stappen.add(verplicht("AttribuutRef.navigatieBindingen", "RolBinding", rolBinding(s)));
+                    navigatieBindingen.put(a, List.copyOf(stappen));
+                }
+                yield a;
+            }
             case "DimensieCel" -> new Expr.DimensieCel((Expr.AttribuutRef) expr(n.get("attribuut")),
                     stringList(n.get("labels")), bron(n));
             case "ParameterRef" -> new Expr.ParameterRef(param(text(n, "parameter")), bron(n));
@@ -576,8 +607,19 @@ public final class IrLoader {
             case "Predicaat" -> new Conditie.Predicaat(enumOf(Conditie.Predicaatsoort.class, text(n, "soort")),
                     expr(n.get("operand")), text(n, "dagsoort"), bool(n, "negatie"), intOf(n, "cijfers"),
                     geheelPeriode(n.get("periode")), bron(n));
-            case "Kenmerk" -> new Conditie.Kenmerk(text(n, "kenmerk"), text(n, "navigatie"), bool(n, "negatie"),
-                    ot(text(n, "eigenaar")), geheelPeriode(n.get("periode")), bron(n));
+            case "Kenmerk" -> {
+                Conditie.Kenmerk k = new Conditie.Kenmerk(text(n, "kenmerk"), text(n, "navigatie"), bool(n, "negatie"),
+                        ot(text(n, "eigenaar")), geheelPeriode(n.get("periode")), bron(n));
+                if (n.has("navigatieBinding")) {
+                    // ref faults on the same shape: a binding on a check that does not navigate (WF-053)
+                    if (k.navigatie() == null)
+                        throw new Refusal("Kenmerk.navigatieBinding",
+                                "a navigation binding on a characteristic check that does not navigate (WF-053)");
+                    navigatieBindingen.put(k, List.of(verplicht("Kenmerk.navigatieBinding", "RolBinding",
+                            rolBinding(n.get("navigatieBinding")))));
+                }
+                yield k;
+            }
             case "Rollidmaatschap" -> new Conditie.Rollidmaatschap(text(n, "rol"), ot(text(n, "anderTeFiller")),
                     bron(n), bool(n, "negatie"));
             case "VerreRollidmaatschap" -> new Conditie.VerreRollidmaatschap(ot(text(n, "filler")),
