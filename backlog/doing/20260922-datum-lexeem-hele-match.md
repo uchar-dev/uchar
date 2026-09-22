@@ -36,3 +36,24 @@ kaart sluit inhoudelijk aan bij `20260922-datumtijd-lezers-versmalling`
 May touch: `frontends/regelspraak/**`, `backends/drools/**` (de
 gedeelde lezer), kaartverplaatsing. NB: serieel met andere
 Drools-kaarten.
+
+## Acceptatie, aangescherpt bij de claim (2026-09-23)
+
+Samen opgepakt met `20260922-datumtijd-lezers-versmalling` (zelfde
+lezerszone, besluit hoofdsessie; normkeuze daar: VERSMALLEN).
+
+- (a) `Literalen.parseDatum` matcht het HELE lexeem (`matches()`, nooit
+  `find()`), het huispatroon van `parseDatumTijd`; een misvormde waarde
+  (o.a. `2024-01-2026`, `123-01-2026`) geeft null en geen ander antwoord.
+- (b) Rood-eerst getuigen aan de lezerkant: de unit-lezer, en BEIDE
+  Drools-takken via de replay-API (exec-model en DRL-tekst) op een model
+  met een misvormd datumlexeem — vóór de fix gemeten gedrag letterlijk in
+  het Result, erna een benoemde weigering (geen stil gespeeld antwoord).
+  De frontend-aanroepers voor zover ze nog door de lezer lopen: hun
+  bestaande heel-lexeem-getuigen blijven groen.
+- (c) Mutatieproef: `find()` terug ⇒ minstens één getuige valt ⇒
+  herstel, `cmp` in één keten.
+- (d) Corpussweep: geen emissie of replay beweegt (gates 10/11
+  byte-identiek; gate-12-pins 180/157 onaangeroerd; beide Drools-takken
+  vóór/na identiek).
+- (e) Alle veertien gates groen, elk los gedraaid.
