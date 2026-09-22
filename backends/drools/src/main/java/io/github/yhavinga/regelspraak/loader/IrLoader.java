@@ -493,6 +493,28 @@ public final class IrLoader {
                     verplicht("IfThenElse", "then", expr(n.get("then"))),
                     verplicht("IfThenElse", "else", expr(n.get("else"))),
                     verplicht("IfThenElse", "type", datatype(n.get("type"))), bron(n));
+            // IR-SPEC ch. 4.3 / WF-110: the §5.7 concatenation of subject expressions as the source of an
+            // instance count. Read VERBATIM, one selection per branch, for the reason bronPad is: every
+            // selection names its own population and its own relation, and a backend that re-derived either
+            // from the type pair would give the selections one and the same range — they all share one pair
+            // by WF-110 (d) — and count a restatement of one of them. The two required fields are refused
+            // BY NAME here, on the verplicht() pattern, so a document that reaches this executor without
+            // passing the verifier fails naming the shape it violates.
+            case "InstanceSetUnion" -> {
+                List<Expr.InstanceSetUnion.Tak> takken = new ArrayList<>();
+                forEach(n.get("branches"), b -> {
+                    RegelSpraakModel.Objecttype el = verplicht("InstanceSetBranch", "elementType",
+                            ot(text(b, "elementType")));
+                    RolBindingRef rb = verplicht("InstanceSetBranch", "sourceRole", rolBinding(b.get("sourceRole")));
+                    takken.add(new Expr.InstanceSetUnion.Tak(el, rb, conditie(b.get("filter")), bron(b)));
+                });
+                if (takken.size() < 2)
+                    throw new Refusal("InstanceSetUnion.branches",
+                            "an instance-set union carries at least TWO selections, found " + takken.size()
+                                    + " — a single selection IS the ordinary instance count and has a spelling"
+                                    + " of its own (WF-110 (b))");
+                yield new Expr.InstanceSetUnion(List.copyOf(takken), bron(n));
+            }
             default -> throw new Refusal("Expr:" + node, "unknown expression node");
         };
     }

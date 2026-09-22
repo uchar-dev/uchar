@@ -413,6 +413,14 @@ public final class EffectieveEenheid {
             case Expr.VariabeleRef ignored -> List.of();
             case Expr.Constante ignored    -> List.of();
             case Expr.Onopgelost ignored   -> List.of();
+            // the §5.7 instance-set union (WF-110): its own fields are SYMBOLIC — a type name and a
+            // role binding — so the only child expressions are the selections' filter operands, and
+            // each is read against its own selection's element, exactly as a Functie's filter is
+            case Expr.InstanceSetUnion u -> {
+                java.util.List<Expr> uit = new java.util.ArrayList<>();
+                for (Expr.InstanceSetUnion.Tak t : u.takken()) uit.addAll(conditieOperanden(t.filter()));
+                yield uit;
+            }
             case Expr.Let ignored        -> throw clusterknoop();
             case Expr.BinderRef ignored  -> throw clusterknoop();
             case Expr.IfThenElse ignored -> throw clusterknoop();

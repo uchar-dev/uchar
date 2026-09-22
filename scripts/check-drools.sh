@@ -714,7 +714,21 @@ EXPECTED_CHANNEL=(
 # it exactly as the chapter reads it. What moved was the other side of the square: ref and the ASP
 # backend refused the construct until that card and now carry it, so the golden arrives as a
 # PLAYER on the day it is written. EXPECTED_DRL_PLAYED moves by one as well.
-EXPECTED_PLAYED=172
+#
+# 172 -> 174 (2026-09-20, card unie-telling): jutterswet-vondstunie and jutterswet-keurunie, the
+# §5.7 CONCATENATION of subject expressions under a count (IR-SPEC ch. 4.3 / WF-110, semantics
+# RUNTIME-SEMANTICS ch. 3.4d). Both goldens are new and both PLAY on the day they are written, so
+# the count moves by two. What this backend needed is one arm per branch and nothing else: the
+# union lowers to ONE accumulate over ONE element pattern whose constraint is the DISJUNCTION of
+# the selections, each selection its own join AND its own die/dat filter. That single pattern IS
+# the deduplication — a pattern matches an element once whatever makes it match, so an instance two
+# selections both select contributes one tuple and the count answers the union rather than the sum
+# of the parts (4 and not 5 on vondstunie's J1, 1 and not 2 on its J2). Neither obvious alternative
+# has that property, which is why the selections are lowered to composable predicates rather than
+# through filterSource/scope: a DSL.or over two patterns binding one variable matches once per
+# satisfied branch, and two accumulates added together double-count the shared element.
+# EXPECTED_DRL_PLAYED moves by two as well.
+EXPECTED_PLAYED=174
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -893,7 +907,11 @@ DRL_CHANNEL=(
 # 148 -> 149 (2026-09-20, card ref-periodeconditie-arm): jutterswet-premievenster. This branch
 # carried the window already too, in its own lowering; measured PLAYED 6 beside the exec branch's
 # PLAYED 6 on the same six cases. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=149
+# 149 -> 151 (2026-09-20, card unie-telling): jutterswet-vondstunie and jutterswet-keurunie. This
+# branch got its own arm — the same disjunctive single pattern, written as DRL text — and plays both
+# goldens on the same absolute numbers as the exec branch, ref and clingo. Reason block at
+# EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=151
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a

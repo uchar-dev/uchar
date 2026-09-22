@@ -896,6 +896,12 @@ public final class ExecModelTranspiler {
     @SuppressWarnings({"unchecked", "rawtypes"})
     private Agg aggregatie(Expr.Functie f, Objecttype subject, Variable subjectVar, boolean leegCount) {
         aggregatieReden = null;                      // a stale reason must never be attached to another skip
+        // §5.7 / IR-SPEC ch. 4.3 / WF-110: the count over an INSTANCE-SET UNION. Read first and
+        // returning, because a union is a whole source of its own: every derivation below reads
+        // elementObjecttype and the one-step bronRol, which this node deliberately does not carry.
+        if (f.kind() == Expr.FunctieKind.AANTAL && f.argumenten().size() == 1
+                && f.argumenten().get(0) instanceof Expr.InstanceSetUnion unie)
+            return unieTelling(unie, subject, subjectVar);
         Objecttype elem = f.elementObjecttype();
         if (elem == null) return null;
         Class<?> elemClass = factClass(elem);
@@ -1025,6 +1031,104 @@ public final class ExecModelTranspiler {
                 voorwaarts ? (Predicate2) (e, subj) -> RegelSpraakRuntime.get(subj, fwdVeld) == e
                            : (Predicate2) (e, subj) -> RegelSpraakRuntime.get(e, backref) == subj);
         return vouw(f, elem, arg, count, temporeel, leegCount, elemVar, src, List.of());
+    }
+
+    /** §5.7 / IR-SPEC ch. 4.3 / WF-110 — the instance count over a UNION of selections, semantics
+     *  RUNTIME-SEMANTICS ch. 3.4d. One accumulate over ONE source pattern whose constraint is the
+     *  DISJUNCTION of the selections, each selection being its own join AND its own die/dat filter.
+     *
+     *  <p><b>One pattern is what deduplicates, and it is the whole design.</b> A source pattern
+     *  matches an element once whatever makes it match, so an instance two selections both select
+     *  contributes ONE tuple and the count answers |A ∪ B| — the operation ch. 3.4d defines, against
+     *  the sum of the parts. Neither obvious alternative has that property: {@code DSL.or} over two
+     *  patterns binding the same variable produces one match PER satisfied branch, and two
+     *  accumulates added together count the shared element twice. That is why every selection is
+     *  lowered to a composable {@link Predicate2}/{@link Predicate1} pair here rather than through
+     *  {@link #filterSource}, which ANDs its constraint onto the pattern and cannot be OR-ed.
+     *
+     *  <p>null -> skip, with {@link #aggregatieReden} naming the form, never a silently wrong count. */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private Agg unieTelling(Expr.InstanceSetUnion u, Objecttype subject, Variable subjectVar) {
+        if (subject == null || u.takken().isEmpty()) return null;
+        Objecttype elem = u.takken().get(0).elementType();
+        for (Expr.InstanceSetUnion.Tak t : u.takken())
+            if (t.elementType() != elem) {          // WF-110 (d), re-asked here: one accumulate has one pattern class
+                aggregatieReden = "instantie-unie over twee populaties ('" + (elem == null ? "?" : elem.naam)
+                        + "' en '" + (t.elementType() == null ? "?" : t.elementType().naam) + "'): één"
+                        + " telling antwoordt een aantal over ÉÉN gedeclareerd type (WF-110 (d))";
+                return null;
+            }
+        Class<?> elemClass = elem == null ? null : factClass(elem);
+        if (elemClass == null) return null;
+        List<Predicate2<Object, Object>> selecties = new ArrayList<>();
+        for (Expr.InstanceSetUnion.Tak t : u.takken()) {
+            Predicate2<Object, Object> join = unieJoin(t.bronRol(), subject, elem);
+            if (join == null) return null;          // aggregatieReden set by unieJoin
+            Predicate1<Object> filter = null;
+            if (t.filter() != null) {
+                filter = t.filter() instanceof Conditie.Samengesteld sg ? leafCompound(sg, elem)
+                        : leafPredicate(t.filter(), elem);
+                if (filter == null) {
+                    aggregatieReden = "de deelselectie van een instantie-unie-selectie over '" + elem.naam
+                            + "' is geen feit-only predicaat; een weggelaten filter zou te veel tellen en"
+                            + " de unie zou dat opslokken (§13.4.2)";
+                    return null;
+                }
+            }
+            final Predicate1<Object> f = filter;
+            final Predicate2<Object, Object> j = join;
+            selecties.add((e, subj) -> j.test(e, subj) && (f == null || f.test(e)));
+        }
+        final List<Predicate2<Object, Object>> takken = List.copyOf(selecties);
+        Variable elemVar = DSL.declarationOf(elemClass, "$e_" + (seq++));
+        PatternDSL.PatternDef src = PatternDSL.pattern(elemVar).expr(nextId("unie"), (Variable) subjectVar,
+                (Predicate2) (e, subj) -> {
+                    for (Predicate2<Object, Object> p : takken) if (p.test(e, subj)) return true;
+                    return false;
+                });
+        Variable resultVar = DSL.declarationOf(Object.class, "$acc_" + (seq++));
+        return new Agg(DSL.accumulate(accBron(src, List.of()),
+                        DSL.accFunction(accFn("CountAccumulateFunction"), elemVar).as(resultVar)),
+                resultVar, null, null, false);
+    }
+
+    /** The join of ONE union selection: does {@code e} stand in the selection's relation to
+     *  {@code subj}? Derived from the wire binding ALONE — never from the type pair — which is
+     *  WF-110 (e)'s ground read as code: every selection of one union shares one pair, so a by-pair
+     *  search would give them all the same range and the union would restate one of them. The
+     *  §13.3.9 storage-direction question and its two refusals are the fold's, asked here at the new
+     *  position through the SAME shared derivations, so both branches keep one wording per limit. */
+    private Predicate2<Object, Object> unieJoin(RegelSpraakModel.RolBindingRef binding, Objecttype subject,
+            Objecttype elem) {
+        FactModelGenerator.Bereikjoin bj = FactModelGenerator.bereikjoin(model, binding);
+        String backref = bj.rol();
+        if (backref == null) {
+            aggregatieReden = bj.weigering() != null ? bj.weigering()
+                    : "de relatie van een instantie-unie-selectie is niet af te leiden uit haar binding (WF-110 (e))";
+            return null;
+        }
+        RegelSpraakModel.Rol[] paar = FactModelGenerator.gebondenRolpaar(model, binding);
+        String elemRol = paar != null ? paar[0].naam() : null;
+        if (elemRol == null) return null;
+        boolean voorwaarts = !model.naarVeelRol(subject, elem, elemRol);
+        if (voorwaarts && model.naarVeelRol(elem, subject, backref)) {
+            aggregatieReden = "instantie-unie over de enkelvoudige elementrol '" + elemRol + "' wiens zusterrol '"
+                    + backref + "' meervoudig is: dat feittype heeft ÉÉN beanveld en dat draagt noodzakelijk"
+                    + " BEIDE richtingen (§13.3.9 opslagrichting)";
+            return null;
+        }
+        Objecttype joinDrager = voorwaarts ? subject : elem, joinDoel = voorwaarts ? elem : subject;
+        String joinRol = voorwaarts ? elemRol : backref;
+        if (!heeftReferentieVeld(joinDrager, joinRol, joinDoel)) {
+            aggregatieReden = "de join van een instantie-unie-selectie heeft geen beanveld — "
+                    + io.github.yhavinga.regelspraak.schema.FactModelGenerator
+                        .geenJoinveldReden(model, joinDrager, joinRol, joinDoel)
+                    + " (§13.3.9 opslagrichting)";
+            return null;
+        }
+        final String veld = voorwaarts ? elemRol : backref;
+        return voorwaarts ? (e, subj) -> RegelSpraakRuntime.get(subj, veld) == e
+                          : (e, subj) -> RegelSpraakRuntime.get(e, veld) == subj;
     }
 
     /** <b>Every count carries the ELEMENT VARIABLE</b>, which is not decoration. A source-LESS count is legal

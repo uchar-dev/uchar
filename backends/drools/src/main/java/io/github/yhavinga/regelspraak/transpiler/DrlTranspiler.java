@@ -3803,6 +3803,12 @@ public final class DrlTranspiler {
      * here; navigation joins fill it. Returns null for aggregations not yet mappable.
      */
     private Frag accumulate(Acc acc, Expr.Functie f, Objecttype subject, boolean leegCount) {
+        // §5.7 / IR-SPEC ch. 4.3 / WF-110 the count over an INSTANCE-SET UNION. Read first and
+        // returning: the union is a source of its own and carries neither elementObjecttype nor the
+        // one-step bronRol every derivation below reads.
+        if (f.kind() == Expr.FunctieKind.AANTAL && f.argumenten().size() == 1
+                && f.argumenten().get(0) instanceof Expr.InstanceSetUnion unie)
+            return unieAccumulate(acc, unie, subject);
         // §4.11/§5.8.1 telling over a concatenation of expressies ("het aantal X, Y en Z"): the
         // count is the UNION of the per-operand sets. When the resolver could OR the per-operand
         // kenmerk filters (f.filter() is the disjunction), this lowers to ONE accumulate whose
@@ -3951,6 +3957,65 @@ public final class DrlTranspiler {
         if (f.kind() == Expr.FunctieKind.MINIMUM || f.kind() == Expr.FunctieKind.MAXIMUM)
             return Frag.ok(fnImport("toBd") + "(" + var + ")");
         return Frag.ok(var);
+    }
+
+    /** §5.7 / IR-SPEC ch. 4.3 / WF-110 — the instance count over a UNION of selections, semantics
+     *  RUNTIME-SEMANTICS ch. 3.4d. ONE accumulate over ONE element pattern whose constraint is the
+     *  DISJUNCTION of the selections, each selection being its own join AND its own die/dat filter:
+     *
+     *  <pre>accumulate( $e1 : Vondst( (aanmelder == $subject &amp;&amp; gemerkt == true) || (berger == $subject) )
+     *              ; $acc1 : count($e1) )</pre>
+     *
+     *  <p><b>One pattern is what deduplicates.</b> A pattern matches an element once whatever makes
+     *  it match, so an instance two selections both select contributes ONE tuple and the count
+     *  answers |A ∪ B| — the operation ch. 3.4d defines, against the sum of the parts. Two
+     *  accumulates added together would count the shared element twice, and a DRL `or` between
+     *  patterns binding the same variable produces one match per satisfied branch. Same shape, same
+     *  argument and same numbers as the exec-model branch's {@code unieTelling}.
+     *
+     *  <p>null -> marker, with {@link #navReden} naming the form, never a silently wrong count. */
+    private Frag unieAccumulate(Acc acc, Expr.InstanceSetUnion u, Objecttype subject) {
+        if (u.takken().isEmpty()) return null;
+        Objecttype elem = u.takken().get(0).elementType();
+        for (Expr.InstanceSetUnion.Tak t : u.takken())
+            if (t.elementType() != elem) {          // WF-110 (d), re-asked: one pattern has one class
+                navReden = "instantie-unie over twee populaties ('" + (elem == null ? "?" : elem.naam)
+                        + "' en '" + (t.elementType() == null ? "?" : t.elementType().naam) + "'): één"
+                        + " telling antwoordt een aantal over ÉÉN gedeclareerd type (WF-110 (d))";
+                return null;
+            }
+        if (elem == null) return null;
+        java.util.List<String> delen = new ArrayList<>();
+        for (Expr.InstanceSetUnion.Tak t : u.takken()) {
+            String join = unieScope(elem, subject, t.bronRol());
+            if (join == null) return null;          // navReden set by unieScope
+            if (t.filter() == null) { delen.add("(" + join + ")"); continue; }
+            Frag fc = conditie(acc, t.filter(), elem);
+            if (fc.marker()) return null;
+            delen.add("(" + join + " && " + fc.text() + ")");
+        }
+        int n = ++acc.n;
+        String ev = "$e" + n, var = "$acc" + n;
+        acc.clausules.add("accumulate( " + ev + " : " + ident(elem.naam, true)
+                + "( " + String.join(" || ", delen) + " ) ; " + var + " : count(" + ev + ") )");
+        return Frag.ok(var);
+    }
+
+    /** The join constraint of ONE union selection, read ON THE ELEMENT — derived from the wire
+     *  binding ALONE and never from the type pair, which is WF-110 (e)'s ground as code: every
+     *  selection of one union shares one pair, so a by-pair search would give them all the same
+     *  range and the union would restate one of them. The §13.3.9 bean-field question is asked
+     *  through the shared derivations, so both branches keep one wording per limit. */
+    private String unieScope(Objecttype elem, Objecttype subject, RegelSpraakModel.RolBindingRef binding) {
+        FactModelGenerator.Bereikjoin bj = FactModelGenerator.bereikjoin(model, binding);
+        String rol = bj.rol();
+        if (rol == null) {
+            navReden = bj.weigering() != null ? bj.weigering()
+                    : "de relatie van een instantie-unie-selectie is niet af te leiden uit haar binding (WF-110 (e))";
+            return null;
+        }
+        if (!navVeld("instantie-unie-join", elem, rol, subject)) return null;
+        return ident(rol, false) + " == " + SUBJECT;
     }
 
     /** Join non-empty constraint texts into a DRL pattern's constraint list. Empty in, empty out — a pattern
