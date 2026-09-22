@@ -93,10 +93,12 @@ gedeclareerd lid de schuld gaf. `CaseRunner.naamdelingsPoort` noemt nu
 de werkelijke oorzaak: twee gelijknamige rollen om één veld. De
 redentekst in `scripts/check-rood.sh` (regel 399) beschrijft nog de
 oude weigerplek ("the transpiler SKIPs … waarde buiten scope").
-Voorstel aan de maintainer: vervang die door "the case-input arm
-refuses the ambiguous role key `ligger` (two same-named roles contend
-for one bean field) — a load refusal like ref's and clingo's". De
-gate toetst alleen het categoriewoord en blijft dus groen.
+Voorstel aan de maintainer: vervang die door "EXCLUDE: the case-input
+arm refuses at the role key `ligger` on the bean-field limit — two
+same-named roles contend for one field on Schuit. Same phase as ref's
+and clingo's load fault, different reason: they refuse the ambiguity
+itself, this backend a field it cannot carry". De gate toetst alleen
+het categoriewoord en blijft dus groen.
 
 Voorgestelde registerbijwerking (spec/CONSTRUCTS.md, hoofdsessie).
 Rij 4: in "Measured authority relation (2026-09-19, v1-inventory)"
@@ -112,3 +114,29 @@ byte-identical in both branches (179/156); witness
 still read `navigatieRol`/`navigatiePad`." Rij `AttribuutRef` en rij
 `Kenmerk` krijgen elk: "executed by both Drools branches off the
 binding since 2026-09-22 (P1)". PLAN.md: geen scopewijziging.
+
+Fixronde (lens, na rebase op main 3573d18a). B1: de eigen-lezingsarmen
+beslisten op `navigatieRol() == null` alleen, en een gebonden lezing
+op paar voldoet daar ook aan. Bij een gelijknamig subjectattribuut las
+de exec-tak dat attribuut. Nagebouwde probe: dubbelverbinding plus
+`Schuit.kadegeld` en de voorwaarde `kadegeld@Haven > 30` gebonden aan
+vlagvoering.vlaghaven. verifier PASS, ref PASS, DRL PLAYED 4, exec FAIL
+"attribuut vlagprijs: verwacht 40, werkelijk leeg". Fix: één predicaat
+`ongenavigeerd(a)` (geen geschreven stap EN geen binding) per tak. Het
+vervangt de 15 (DRL) en 30 (exec) losse `== null`-guards, en ook de
+`!= null`-armen, zodat de gebonden lezing de genavigeerde arm krijgt.
+Eén diagnostische zin in een statische methode blijft op
+`navigatieRol` (alleen tekst). Na de fix speelt de probe in beide
+takken. A3: het eindpunt wordt nu getoetst als vuller ⊑ eindpunt, de
+richting van WF-053 en ref. Gemeten: van 55 gebonden verwijzingen over
+de vier zones wijkt de vuller alleen af in twee negatief-documenten
+(`wf053-chain-near-side-mismatch`, `wf053-dangling-navigation-binding`),
+dus op golden, rood en toka is dit gedragsneutraal. A4: een misvormde
+hop (null, geen RolBinding, `feittype` of `rol` ontbreekt of is geen
+tekst) en een lege of null-lijst weigert de loader bij naam, vóór de
+niet-navigerend-toets. A5: de rij voor de niet-passende binding pint
+per tak de reden ("regel (waarde buiten scope)" en "TODO navigatie:
+…"). A2: het voorstel voor check-rood.sh is hierboven herschreven.
+Getuige nu 10 rijen. Zonder de fix, met de getuige: test-rc=1, 3 rood
+(B1, A3, A4). Met de fix: 10/10. Sweep over 232 goldens byte-identiek
+met een jar van main 3573d18a (exec 179, DRL 156).
