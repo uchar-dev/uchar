@@ -804,3 +804,24 @@ kwantoren:
   GEEN blijft negatief. `neg || k.negatie()` was goed maar ongepind, en een XOR
   daar zou "niet gemerkt onder GEEN" als positieve lezing lezen en de consument
   in het overgangsvenster laten vuren.
+
+### 11. Herpin (acceptatie (d)) — voltooid 2026-09-22
+
+De toolchain staat op pin `215bd742` (commit `1262afc`, gepusht):
+`make uchar-conformance` 70 bestanden byte-identiek + 68 emitter-goldens;
+`make test` 553 gevonden, 0 gefaald (één gepinde assumption-abort);
+`mvn -o -B test` 980/0/0. De drie concatenatietests zijn conformance-
+getuigen gebleven: test 1 slaagt ONGEWIJZIGD op de nieuwe lowering
+(de eigen `DrlTranspiler` kent de `InstanceSetUnion` nu: één accumulate
+over één elementpatroon, disjunctieve constraint van join-en-filterparen,
+kale tak gedragen); test 2 en 3 kantelden gemotiveerd naar de nieuwe
+norm (dragen resp. benoemd weigeren — NL-commentaar in de tests noemt de
+grond). Afrondingsronde op de uchar-kant (commit `215bd742`): de
+kardinaliteitszin registreert haar meervoud bewust niet als rolspelling
+(gemeten; registreren zou de WF-034-getuige `jutterswet-kaveltelling`
+slopen), dus de unie-afleiding viel terug op `verbindendeRolBinding`
+(het typenpaar) met expliciete uitschrijving op de wire — WF-110 (e)
+onveranderd; twee getuigen in `AantalUnieTest` (gate 10: 372 tests).
+De derde toolchain-fixture declareert sindsdien het onregelmatige
+meervoud `bemanningsleden` — een bestaande frontend-grens, gemeten los
+van deze kaart (ook een enkelvoudige telling strandt erop).
