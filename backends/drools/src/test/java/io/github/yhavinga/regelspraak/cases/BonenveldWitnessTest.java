@@ -114,8 +114,8 @@ class BonenveldWitnessTest {
         // postwacht with kustligging made 1:1. Both beans now carry a field (Kustvak.post and Post.kustvak) and the
         // case input writes both (ch. 5.7a), so the two sides answer alike here and the document plays either way;
         // what this row pins is the CHOICE, in the one derivation both branches execute. The parent side is the
-        // side the frontend picks for an objectcreatie-placed link; the only other witness is the toka zone, which
-        // is temporary. Verifier-clean, ref PASS.
+        // side the frontend picks for an objectcreatie-placed link; the only other witness sits in the temporary
+        // parity zone. Verifier-clean, ref PASS.
         ObjectNode ir = lees(POSTWACHT);
         for (JsonNode r : ir.get("feittypen").get("kustligging").get("rollen"))
             if (r.get("naam").asText().equals("post")) ((ObjectNode) r).put("meervoudig", false).putNull("meervoud");
