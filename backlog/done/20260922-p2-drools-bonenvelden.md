@@ -111,28 +111,43 @@ takken, volledige stdout per document: vóór en na byte-identiek (`diff`
 leeg). Exec 179, DRL-tekst 156; gate 12 meldt 179/156, vloeren 53/76,
 dus de pins bewegen niet.
 
-(d) NIET gehaald zoals gecommit. Twee bestaande getuigen pinnen de oude
-lezing, en daardoor faalt de JUnit-stap in gates 8, 11 en 12:
+(d) gehaald. Twee bestaande getuigen pinden de oude lezing, en daardoor
+faalde eerst de JUnit-stap in gates 8, 11 en 12:
 `HerhaaldTypepaarWitnessTest.de_aangemaakte_koppeling_wordt_aan_beide_kanten_gelezen`
-(de mutatieflank twist `zetVeld` en verwacht dat het antwoord meegaat,
-precies de omgekeerde van de nieuwe rij) en
+(de mutatieflank twistte `zetVeld` en verwachtte dat het antwoord
+meeging) en
 `RolveldlezerWitnessTest.de_feitcreatie_weigert_een_tussenstap_zonder_veld`
-(pint de weigerreden van de hop op de wire-ouderzijde van
-gemeenteberging; na de port ligt de hop aan de kindzijde, waar Jutter het
-veld draagt, en weigert de creatie één positie verder, op de join over de
-N:N-relatie `aanmelding`: "het beanmodel leidt voor de rol 'aanmelder' op
-Vondst geen referentieveld naar Jutter af"). Een conversie van beide
-(flank twist de binding naar keurberging; de rij pint de nieuwe
-weigerreden) is gemeten maar NIET gecommit, omdat bestaande tests
-wijzigen toestemming vraagt. Met die conversie zijn alle veertien gates
-groen: 1 PASS, 2 PASS (273 bestanden), 3 PASS (273 golden schoon, 431
-negatief verworpen), 4 PASS (629 cases), 5 PASS (775 voorbeelden, 588
-cases), 6 PASS (479 checks, 588 cases), 7 PASS (552 cases, 36
-overlevers), 8 PASS (41 rood; Drools-been 9 met pin, 32 met reden), 9
-PASS (201 checks, 12 goldens), 10 PASS (374 tests, 70 goldens), 11 PASS
-(29 toka-cases in ref, clingo en Drools), 12 PASS (179/156, JUnit 562),
-13 PASS (131 twists, 128 replays), 14 PASS (130 checks). Wire, schema,
-corpus, frontends, toka en scripts zijn niet gewijzigd.
+(pinde de weigerreden van de hop aan de wire-ouderkant van
+gemeenteberging). Met mandaat van de hoofdsessie zijn beide omgezet
+(eigen commit): de flank twist nu de binding naar keurberging, en de rij
+pint de nieuwe weigerreden. Na de port ligt het hopveld aan de kindkant,
+waar Jutter het draagt, en weigert de creatie één positie verder, op de
+join over de N:N-relatie `aanmelding` ("het beanmodel leidt voor de rol
+'aanmelder' op Vondst geen referentieveld naar Jutter af"). Beide rijen
+leggen die verschuiving in hun commentaar uit. Eindstand, alle veertien
+groen. Gates 8, 11 en 12 zijn na de conversie opnieuw gedraaid; de
+overige elf draaiden groen op dezelfde broncode, en de conversie raakt
+alleen testcode van `backends/drools`, die geen van die elf gates
+uitvoert.
+
+| gate | stand |
+|---|---|
+| 1 self-contained | PASS |
+| 2 ir-schema | PASS (273 bestanden, vloer 192) |
+| 3 verifier | PASS (273 golden schoon, 431 negatief verworpen) |
+| 4 case-schema | PASS (629 cases) |
+| 5 oracle | PASS (775 voorbeelden, 588 cases) |
+| 6 clingo | PASS (479 checks, 588 cases) |
+| 7 noop | PASS (552 cases, 36 overlevers) |
+| 8 rood | PASS (41 rood; Drools-been 9 met pin, 32 met reden) |
+| 9 catala | PASS (201 checks, 12 goldens) |
+| 10 regelspraak | PASS (374 tests, 70 goldens) |
+| 11 toka-parity | PASS (29 cases, Drools 29 PLAYED) |
+| 12 drools | PASS (179/156, vloeren 53/76, JUnit 562) |
+| 13 reftype-derivation | PASS (131 twists, 128 replays) |
+| 14 flogic | PASS (130 checks) |
+
+Wire, schema, corpus, frontends, toka en scripts zijn niet gewijzigd.
 
 Voorgestelde registerbijwerking (spec/CONSTRUCTS.md, hoofdsessie). Rij
 4, "Measured authority relation": "the Drools loader's v0 bean fields are
