@@ -802,7 +802,7 @@ EXPECTED_PLAYED=179
 # noise around the only thing that is compared, which is the CHANNEL. Each class is explained in the
 # comment that opens it; each golden still stands there BY NAME, which is what the stale guard needs.
 DRL_CHANNEL=(
-  # (A) ch. 7 prioritizedDefaults — 24, and since the objectcreatie repair below the ONLY remaining
+  # (A) ch. 7 prioritizedDefaults — 25, and since the objectcreatie repair below the ONLY remaining
   # reason of size for this count sitting 23 below the exec one: the exec branch grew a spec-ch.-7
   # defaults lowering at the defaults-service card (2026-08-29) that the production toolchain does
   # not have, and DrlTranspiler never did. Every golden here refuses on that one sentence.
