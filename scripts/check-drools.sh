@@ -213,7 +213,6 @@ known_reason() { local n="$1"; for e in "${EXCLUDE_KNOWN[@]}"; do [ "${e%%|*}" =
 EXPECTED_CHANNEL=(
   "anchor/jutterswet-aanmeldquotum|EXCLUDE|loader Refusal: Expr:TemporalRead — the v0 backend has no temporal-read lowering"
   "anchor/jutterswet-aanspraaktelling|EXCLUDE|loader Refusal: functionDefs — no function section in the v0 backend"
-  "anchor/jutterswet-bergingstoezicht|EXCLUDE|transpiler SKIP: verdeling (onopgelost naar_rato) — since the rolvelden card (2026-09-18) the repeated-pair reference field exists, so the refusal moved one layer deeper"
   "anchor/jutterswet-beschikkingsom|EXCLUDE|loader Refusal: Datatype:SumType"
   "anchor/jutterswet-bootberging|EXCLUDE|transpiler SKIP: the WF-102 path itself is CARRIED since 2026-09-18 (card drools-bronpad) and this golden's refusal moved one layer deeper, exactly as bergingstoezicht's did. Its middle relation 'berging' declares BOTH roles to-many, so §13.3.9 — which stores a relation in one scalar reference field, on whichever end is the ONE side — derives no field at either end and the hop Boot -> Vondst has nothing to read. That is the erflijn shape, and lifting it is a bean-model change (a collection-valued representation for many-to-many) with channel consequences of its own, which the card that built the walk put out of scope"
   "anchor/jutterswet-erflijn|EXCLUDE|transpiler SKIP: aggregation join with BOTH sides plural — neither side stores a bean field (§13.3.9)"
@@ -784,7 +783,13 @@ EXPECTED_CHANNEL=(
 # snippet in bron (WF-095 narrowed to the one spelling), and the golden carries three source spellings
 # of one instant — the dd. prefix with one-digit day and month, two-digit, and mixed — in a write and
 # in both orderings. Nothing in the backend changed: the reader has always read the ISO form.
-EXPECTED_PLAYED=179
+# 179 -> 180 (2026-09-22, card p3-drools-verbindenderol-verdeling): anchor/jutterswet-bergingstoezicht.
+# Its verdeling runs over a REPEATED type pair (bergingsdeelname and bergingstoezicht both relate Berging
+# and Berger), where the type-pair derivation both branches used for the recipient join answers nothing,
+# so both refused it as an unresolved naar_rato. They now read the wire's verbindendeRol, as ref does
+# (FactModelGenerator.verdelingsjoin), and play it; measured over every golden and rood document in both
+# branches, no other document changed a byte of its runner output.
+EXPECTED_PLAYED=180
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -897,7 +902,6 @@ DRL_CHANNEL=(
   #     What remains is the LOUD half, refused by name before anything fires: a different code path
   #     (the rolNaarSubject == null route), and its own card.
   #   jutterswet-vouwrand (exec PLAYED 1) — a TODO voorwaarde on a conjunction of comparisons.
-  "anchor/jutterswet-bergingstoezicht|EXCLUDE|MARKER verdeling: unresolved naar_rato (opbrengst over bergingsaandeel)"
   "anchor/jutterswet-bootberging|EXCLUDE|MARKER regel: bronPad step Boot -> Vondst has no bean field — the middle relation is many-to-many (§13.3.9)"
   "anchor/jutterswet-erflijn|EXCLUDE|MARKER regel: aggregation join with both sides plural — neither end stores a bean field (§13.3.9)"
   "anchor/jutterswet-gemeenteberging|EXCLUDE|MARKER regel: aggregation join whose storage direction is the far side (§13.3.9)"
@@ -984,7 +988,9 @@ DRL_CHANNEL=(
 # 155 -> 156 (2026-09-22, card p5-datumtijd-lexeem): jutterswet-sluitstip. This branch reads the ISO
 # datum-tijd lexeme through the same shared reader and needed nothing of its own. Reason block at
 # EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=156
+# 156 -> 157 (2026-09-22, card p3-drools-verbindenderol-verdeling): anchor/jutterswet-bergingstoezicht.
+# The recipient join is the same shared derivation in this branch. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=157
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
