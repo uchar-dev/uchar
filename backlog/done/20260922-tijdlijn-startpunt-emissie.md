@@ -115,12 +115,17 @@ het kalenderstartpunt.**
 - Route 1 valt af: de wire heeft geen veld; er valt niets te vullen.
 - Route 3 in het algemeen valt af: de meting hierboven laat zien dat de
   uitvoerders een ander rooster hanteren dan de auteur declareerde.
-- Route 3 geldt wél voor het startpunt dat SAMENVALT met de
-  kalenderperiode: dag 1 van de maand (§13.3.6.4), dag 1 van maand
-  1, 4, 7 en 10 (§13.3.6.5), dag 1 van maand 1 (§13.3.6.6). De
-  brontaal zegt dat een tijdlijn zonder startpunt de kalenderperioden
-  volgt, en dat is precies het rooster van RUNTIME-SEMANTICS ch. 3.2;
-  weglaten verliest daar niets. Dat is ook de vorm van de enige
+- Route 3 geldt wél voor drie startpunten die niets toevoegen aan de
+  tijdlijn zonder startpunt. Dag 1 van de maand (§13.3.6.4) en dag 1 van
+  maand 1 (§13.3.6.6) vallen samen met de maand- en jaarbuckets van
+  RUNTIME-SEMANTICS ch. 3.2. Dag 1 van maand 1, 4, 7 en 10 (§13.3.6.5)
+  is het kalenderkwartaal. Dat valt NIET samen met een rooster, want
+  ch. 3.2 definieert geen kwartaalbucket (`ref/lib/timeline.ml` faalt
+  daar met "bucketing is defined for month and year only"). Het is wel
+  precies wat het ankerloze "voor elk kwartaal" al betekent, dus er is
+  geen rooster om mee te botsen en weglaten verliest niets. (Gesplitst in
+  de fixronde; de eerste versie beweerde voor alle drie hetzelfde
+  rooster.) Dat is ook de vorm van de enige
   corpusgebruiker, `corpus/golden/jutterswet-penningjaar` (gate 10 houdt
   zijn emissie byte-identiek).
 - De datumvorm (§13.3.6.3) is nooit het kalenderstartpunt: een week heeft
@@ -253,6 +258,58 @@ hersteld: DefinitionResolver.java
 Elk herstel is met `cmp` tegen de fixkopie bevestigd (de regels
 "hersteld: …" worden alleen bij `cmp`-succes geprint).
 
+### Fixronde (lens: eerst fixen)
+
+Branch gerebased op main 7c501802. Er waren twee overlevende mutanten.
+
+**M4** (blokkerend): de jaarcheck versmald tot alleen de maand
+(`!"1".equals(jaar.NUMBER(1).getText())`) bleef 11/11 groen, omdat beide
+jaargetuigen al een maand ≠ 1 hadden. Er is een nieuwe getuige bij
+`jaar_startend_buiten_1_januari_wordt_geweigerd`: "voor elk jaar startend
+op dag 15 van maand 1". Onder M4:
+
+```
+=== M4: jaarcheck alleen op de maand
+build-rc=0
+testbuild-rc=0
+│     ├─ jaar_startend_buiten_1_januari_wordt_geweigerd() ✘ --ir moet weigeren (exit 1), kreeg 0:
+[        12 tests found           ]
+[        11 tests successful      ]
+[         1 tests failed          ]
+hersteld: DefinitionResolver.java
+```
+
+**M6** (advies): de kwartaalgroep toetste alleen element 0 en bleef
+groen, omdat de getuige "2, 5, 8 en 11" al op het eerste element
+afweek. Er is een nieuwe test
+`kwartaalgroep_die_pas_op_een_later_element_afwijkt_wordt_geweigerd`
+met "dag 1 van maand 1, 5, 8 en 11". Dat is geen geldige brontaal, maar
+de grammatica laat het toe. Onder M6:
+
+```
+=== M6: kwartaalgroep alleen element 0
+build-rc=0
+testbuild-rc=0
+│     ├─ kwartaalgroep_die_pas_op_een_later_element_afwijkt_wordt_geweigerd() ✘ --ir moet weigeren (exit 1), kreeg 0:
+[        12 tests found           ]
+[        11 tests successful      ]
+[         1 tests failed          ]
+hersteld: DefinitionResolver.java
+=== na herstel
+[        12 tests found           ]
+[        12 tests successful      ]
+[         0 tests failed          ]
+```
+
+De kwartaalgrond is gesplitst in ch. 3.2 en in de commentaren van
+`DefinitionResolver`, `RegelSpraakModel` en `VastStartpuntTest`. Maand en
+jaar vallen samen met het rooster. Het kalenderkwartaal is wat de
+ankerloze kwartaaltijdlijn al betekent: er bestaat geen kwartaalbucket.
+Verder heeft `IR-SPEC.md` ch. 2.8 een kruisverwijzing gekregen, en is de
+regel van 117 tekens in ch. 3.2 op ~72 tekens gewrapt. Een
+`ref/test`-getuige voor de segmentweigering valt buiten de may-touch en
+is bewust niet gemaakt.
+
 ## Result
 
 **Route 2 (weigeren) voor het afwijkende vaste startpunt, route 3
@@ -267,36 +324,28 @@ definitie, niet alleen de weekvorm.
 
 - (a) Gehaald: meting over wire, spec en uitvoerders en de routekeuze staan
   hierboven, met de letterlijke uitvoer.
-- (b) Gehaald: `VastStartpuntTest` (11 tests), tien rood tegen de oude
-  code, daarna groen. De weigering zit op de emissiegrens
+- (b) Gehaald: `VastStartpuntTest` (12 tests na de fixronde), tien rood
+  tegen de oude code, daarna groen. De twee getuigen uit de fixronde zijn
+  rood gezien onder hun eigen mutant (M4, M6). De weigering zit op de emissiegrens
   (`Resolver --ir` en `IrEmitter.emit`), niet in de resolver, omdat de
   modelzijde klopt en de TOKA-suite die modelzijde eist (gate 11 blijft
   groen zonder `toka/` te raken). Er emitteert geen vast startpunt meer
   stil: het afwijkende wordt benoemd geweigerd, het kalenderstartpunt
   byte-voor-byte gepind.
-- (c) Gehaald: M1, M2 en M3 hierboven, elk met herstel en `cmp`.
-- (d) **Niet volledig gehaald: gate 1 is rood, en was dat al op de
-  basis.** Dertien van de veertien gates zijn groen; gate 1 faalt op een
-  regel die niet van deze kaart is:
-
-  ```
-  backends/drools/src/test/java/io/github/yhavinga/regelspraak/cases/BonenveldWitnessTest.java:117:        // side the frontend picks for an objectcreatie-placed link; the only other witness is the toka zone, which
-  FAIL: TOKA material in artifact zone 'backends' (rights policy, corpus/README.md; the sole exception is the isolated toka/ zone)
-  ```
-
-  Op een schone checkout van 788d355b in een tijdelijke worktree geeft
-  gate 1 dezelfde fout (rc=1). De regel komt uit commit 58d32a6c ("De
-  hop-weigerpoort krijgt weer een getuige") op main. Het bestand ligt
-  buiten deze kaart (backends/drools-broncode, waar P3 parallel werkt),
-  dus hier niet gerepareerd. De lus van gate 1 veegt alle zones zonder
-  vroeg te stoppen; dit is de enige treffer, dus de wijzigingen van deze
-  kaart zijn schoon. Dit had bij het begin gemeten moeten worden
-  (WAY-OF-WORKING §4.1); dat gebeurde pas bij de gateronde.
+- (c) Gehaald: M1, M2, M3 en uit de fixronde M4 en M6, elk met herstel en
+  `cmp`.
+- (d) Gehaald na de rebase op main 7c501802: alle veertien gates groen.
+  Op de oude basis 788d355b faalde gate 1 op een commentaarregel in
+  `backends/drools/src/test/java/io/github/yhavinga/regelspraak/cases/BonenveldWitnessTest.java:117`
+  ("FAIL: TOKA material in artifact zone 'backends'"). Die regel was niet
+  van deze kaart en main heeft hem in 7c501802 gerepareerd. Dat gate 1 al
+  rood was, had bij het begin gemeten moeten worden (WAY-OF-WORKING
+  §4.1); het bleek pas bij de gateronde.
 
 Gate-uitslagen, elk als losse aanroep na `eval $(opam env)`:
 
 ```
- 1 check-self-contained   rc=1  FAIL: TOKA material in artifact zone 'backends' (bestaand op 788d355b, zie boven)
+ 1 check-self-contained   PASS (na rebase op 7c501802; op 788d355b: FAIL TOKA material in 'backends', zie (d))
  2 check-ir-schema        PASS (schema valid; 24 pattern self-test row(s); 273 file(s) validate and round-trip, floor 192)
  3 check-verifier         PASS (273 golden clean; 431 negatief rejected for their declared rule, floor 350)
  4 check-case-schema      PASS (schema valid; 629 case file(s) validate)
@@ -305,7 +354,7 @@ Gate-uitslagen, elk als losse aanroep na `eval $(opam env)`:
  7 check-noop             PASS (552 cases refute a do-nothing executor; 36 pinned survivors pin defeasible standing)
  8 check-rood             PASS (41 red cases fault observably in ref and clingo, floor 26; 82 pinned fragments cite none of the 36 listed bottom sentences); Drools leg PASS (9 fault-pinned, 32 not-carried with reason)
  9 check-catala           PASS — frontend suite green (201 checks, floor 201); 12 catala golden(s) regenerate byte-identically (floor 12)
-10 check-regelspraak      PASS — JUnit suite green (391 tests, floor 173); 70 rgs golden(s) re-emit byte-identically (floor 38)
+10 check-regelspraak      PASS — JUnit suite green (392 tests, floor 173); 70 rgs golden(s) re-emit byte-identically (floor 38)   [na fixronde + rebase]
 11 check-toka-parity      PASS — 45 .rgs re-emitted byte-identical, floor 45; TOKA suite 27 tests, floor 27; ref 29 / clingo 29 / Drools 29 PLAYED
 12 check-drools           PASS — played matches the pinned 179; DRL-text branch played 156 (pin 156); JUnit 564 tests, floor 239
 13 check-reftype-derivation PASS (131 unit annotations twisted over 27 goldens, floor 74; 128 executor replays reproduce the untouched outcome, 25 of them PLAYED by the DRL-text branch, floor 13; 0 pinned survivors)
@@ -317,16 +366,21 @@ Geen nieuwe golden, dus `scripts/check-drools.sh` is niet aangeraakt
 producent heeft geen `ir.json` om in `negatief/` of `rood/` te leggen; de
 getuigen horen in de frontendsuite (gate 10).
 
-**Voorstel voor een beschermd pad** (commit 60bc9659, alleen
-`spec/RUNTIME-SEMANTICS.md`): ch. 3.2 krijgt een alinea **Fixed starting
-points** (de wire heeft geen veld; het kalenderstartpunt valt verliesvrij
-weg; elk ander zou het rooster verschuiven, dus weigert de producent;
+**Voorstellen voor beschermde paden** (commits 9954dd51 en 0a6b4109).
+(1) `spec/RUNTIME-SEMANTICS.md`: ch. 3.2 krijgt een alinea **Fixed starting
+points** (de wire heeft geen veld; drie startpunten vallen verliesvrij
+weg: maand en jaar omdat ze met het rooster samenvallen, het
+kalenderkwartaal omdat het is wat de ankerloze kwartaaltijdlijn al
+betekent; elk ander zou het rooster verschuiven, dus weigert de producent;
 een worked example met de `ref`-meting; OPEN: een v1-wirekaart draagt
 het, met het verankerde rooster en een constant anker, of houdt de
 weigering). De ch. 3.12-tabel krijgt een rij "Fixed start point off the
 calendar grid". Er staat bewust geen MUST in: een producentplicht is op
 de wire niet te zien en dus niet door de verifier te controleren. De
-getuige is `VastStartpuntTest`. `spec/IR-SPEC.md` is niet gewijzigd.
+getuige is `VastStartpuntTest`. (2) `spec/IR-SPEC.md` ch. 2.8: het
+worked example noemt `penningjaar` "fixed start". Het krijgt de
+verheldering dat dit alleen `variableStart: false` betekent, dat de wire
+geen vast startpunt draagt, en een verwijzing naar de ch.-3.2-alinea.
 
 **Voorgestelde registerrij voor `spec/CONSTRUCTS.md`** (serieel door de
 hoofdsessie). Het gaat om §2.4 Model layer, de `Tijdlijn`-rij, waarvan de
@@ -343,8 +397,10 @@ laatste kolom nu `—` is. Voorgestelde tekst voor die kolom:
 > calendar grid is refused by name at the emission boundary
 > (`Resolver --ir` writes nothing, `IrEmitter.emit` throws; the model
 > still resolves, as the toka suite requires), and the calendar start
-> point (day 1 of the month / of months 1-4-7-10 / of month 1) is
-> omitted losslessly, pinned byte for byte. Witness
+> point is omitted losslessly, pinned byte for byte: day 1 of the month
+> and of month 1 coincide with the month and year buckets, day 1 of
+> months 1-4-7-10 is the calendar quarter the anchorless quarter
+> timeline already means (no quarter bucket exists). Witness
 > `frontends/regelspraak` `VastStartpuntTest` (gate 10);
 > `RUNTIME-SEMANTICS.md` ch. 3.2/3.12. OPEN: a v1 wire card carries the
 > fixed start point (anchored buckets with a constant anchor) or keeps
@@ -354,10 +410,14 @@ In de `Geldigheid`-rij (§2.3) noemt de producentenalinea deze kaart als
 eigen kaart; die verwijzing kan bij de landing "(landed 2026-09-22)"
 krijgen.
 
-**Open:** (1) gate 1 is rood op main (zie (d)); dat hoort bij een eigen
-reparatie in `backends/drools`, buiten deze kaart. (2) De wirebeslissing
-zelf — het vaste startpunt dragen of blijvend weigeren — staat OPEN in
-ch. 3.2/3.12 en vraagt een wirekaart. (3) De datumvorm op een
+Gates 2–9 en 11–14 zijn gedraaid vóór de fixronde, op 788d355b. Na de
+rebase zijn alleen gate 1 en gate 10 opnieuw gedraaid: main bracht
+alleen een commentaarwijziging mee (7c501802, 2+/2−), en de fixronde
+raakt alleen frontendgetuigen en -commentaar (gate 10) en spectekst (geen
+gate).
+
+**Open:** (1) De wirebeslissing zelf, het vaste startpunt dragen of
+blijvend weigeren, staat OPEN in ch. 3.2/3.12 en vraagt een wirekaart. (2) De datumvorm op een
 kalendergrens (bijv. "elke 3 maanden startend op 1-1-2026") wordt
 geweigerd hoewel hij misschien verliesvrij is; bewust, zodat de
 producent niet zelf roosters gelijkstelt. Een wirekaart heft dat vanzelf
