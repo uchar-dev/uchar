@@ -1553,6 +1553,11 @@ public final class DrlTranspiler {
                 ankerC = opAnker.inline();
                 ankerExtra = opAnker.extra();
                 acc = ankerAcc;                                // only the successful attempt's clauses host
+            } else if (!Gastheer.doelpogingToegestaan(fc.voorwaarde())) {
+                // The whole-period lowering below reads `$subject`, which in the $doel pattern is the ANKER — so a
+                // doel attempt here sank the package at compile or read the anker from the doel's pattern. Under
+                // the qualifier the doel is not a bound object anyway (WF-109), so refuse by name before trying.
+                noFire = "eval( false ) /* TODO " + Gastheer.DOELPOGING_GEHEELPERIODE + " — regel inert i.p.v. over-creatie */";
             } else {
                 Acc doelAcc = new Acc();                       // the failed anker attempt is simply abandoned
                 Frag opDoel = conditieInline(doelAcc, fc.voorwaarde(), doel, true);

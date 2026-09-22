@@ -6734,6 +6734,13 @@ public final class ExecModelTranspiler {
             if (g != null) {
                 ankerPat = g.pattern();
                 ankerExtra.addAll(g.extra());
+            } else if (!Gastheer.doelpogingToegestaan(fc.voorwaarde())) {
+                // Under a whole-period qualifier the doel is not a bound object (WF-109), so the doel reading this
+                // branch used to give — the sister branch sank at compile on the same guard — is refused by name.
+                io.github.yhavinga.regelspraak.ir.Bron gb = fc.voorwaarde().bron();
+                String snip = gb == null ? null : gb.snippet();
+                return skip("feitcreatie (" + Gastheer.DOELPOGING_GEHEELPERIODE
+                        + (snip == null || snip.isBlank() ? "" : ": " + snip) + "): " + fc.naam());
             } else {
                 doelGuard = leafPredicate(fc.voorwaarde(), doel);   // a fact-only predicate on the doel
                 if (doelGuard == null) inert = true;                // lowerable to NEITHER -> never-fire, never over-create

@@ -30,4 +30,27 @@ public final class Gastheer {
         if (host == null) return true;
         return subject != null && subject.keten().contains(host);
     }
+
+    /** The reason both branches give when a creation guard carrying a whole-period qualifier declines on the anker. */
+    public static final String DOELPOGING_GEHEELPERIODE =
+            "voorwaarde niet naar anker of doel te lowereren — gehele-periodekwalificatie: alleen de anker is gebonden (WF-109)";
+
+    /** Whether a §13.4.7 creation guard may be tried on the DOEL at all. Not when it carries a §8.2 whole-period
+     *  qualifier anywhere: WF-109's third scope fence binds only the anker there, so a doel lowering answers a
+     *  question the document did not ask. Measured 2026-09-23 on verifier-clean documents that reach the doel
+     *  attempt: the exec branch read the doel where ref and clingo read the anker, and the DRL-text branch — whose
+     *  whole-period lowering is wired to {@code $subject}, the anker inside the {@code $doel} pattern — either sank
+     *  the whole package at compile or read the anker from the doel's pattern. */
+    public static boolean doelpogingToegestaan(Conditie c) {
+        return !draagtGeheelPeriode(c);
+    }
+
+    private static boolean draagtGeheelPeriode(Conditie c) {
+        if (c instanceof Conditie.Vergelijking v) return v.periode() != null;
+        if (c instanceof Conditie.Predicaat p) return p.periode() != null;
+        if (c instanceof Conditie.Kenmerk k) return k.periode() != null;
+        if (c instanceof Conditie.Samengesteld s) return s.onderdelen().stream().anyMatch(Gastheer::draagtGeheelPeriode);
+        if (c instanceof Conditie.Kwantorvouw kv) return draagtGeheelPeriode(kv.filter()) || draagtGeheelPeriode(kv.toets());
+        return false;
+    }
 }
