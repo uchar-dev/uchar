@@ -107,14 +107,20 @@ let iso_of_date z =
 
 (* --- datum-tijd lexemes (WF-095, IR-SPEC ch. 4.1) ---------------------- *)
 
-(* Two lexemes name a millisecond-precision instant, and every reader in the
-   house admits exactly these two: the canonical ISO form
+(* One lexeme names a millisecond-precision instant, and every reader in the
+   house admits exactly this one: the canonical ISO form
    yyyy-mm-ddThh:mm:ss[.fff] — fixed field widths, 'T' as the separator (never
    a space), the seconds field always written, no zone suffix and no offset,
    a fraction that is optional but exactly three digits, read as whole
-   milliseconds — and the RegelSpraak source snippet
-   [dd. ]d-m-yyyy hh:mm:ss[.SSS], day-first, which a v0 emitter still writes
-   into `waarde`. One instant, two spellings.
+   milliseconds.
+
+   The RegelSpraak source snippet [dd. ]d-m-yyyy hh:mm:ss[.SSS] is refused
+   like any other form. It was a second admitted spelling while the v0
+   emitter wrote it into `waarde`; since 2026-09-22 the emitter writes the ISO
+   lexeme there and keeps the snippet in `bron`, and WF-095 admits the ISO
+   form alone. A reader that still read the snippet would answer documents no
+   producer writes and the verifier rejects, so it was narrowed with them
+   (2026-09-23).
 
    Anything else is refused WITH THE POSITION at which the grammar diverges.
    That is the whole point: a reader that guesses — dropping a zone suffix,
@@ -122,7 +128,7 @@ let iso_of_date z =
    as one millisecond where a sibling reads a hundred — answers an instant
    the producer never wrote, and no diagnostic anywhere says so.
 
-   The CASE wire carries the canonical form ONLY: the `dateTime` pattern of
+   The CASE wire carries the same form: the `dateTime` pattern of
    uchar-case-v0 is exactly [read_iso_datetime], so the case loader reuses
    this reader rather than holding a second, laxer opinion. *)
 
@@ -130,7 +136,7 @@ exception Dt_bad of string
 
 let ms_per_day = 86_400_000
 
-let read_datetime_form ~iso s : (int, string) result =
+let read_iso_datetime s : (int, string) result =
   let n = String.length s in
   let pos = ref 0 in
   let bad msg = raise (Dt_bad msg) in
@@ -145,43 +151,13 @@ let read_datetime_form ~iso s : (int, string) result =
     pos := !pos + k;
     v
   in
-  (* one or two digits — the snippet's variable-width day and month, so this
-     reader is never stricter than the producer that feeds it *)
-  let flex w =
-    if not (digit !pos) then want w;
-    let st = !pos in
-    while !pos < n && !pos - st < 2 && digit !pos do incr pos done;
-    int_of_string (String.sub s st (!pos - st))
-  in
-  let spaces () =
-    if not (!pos < n && s.[!pos] = ' ') then want "a space";
-    while !pos < n && s.[!pos] = ' ' do incr pos done
-  in
   try
-    let y, m, d =
-      if iso then begin
-        let y = fixed 4 "four year digits" in
-        ch '-';
-        let m = fixed 2 "two month digits" in
-        ch '-';
-        let d = fixed 2 "two day digits" in
-        ch 'T';
-        (y, m, d)
-      end
-      else begin
-        if n >= 3 && String.sub s 0 3 = "dd." then begin
-          pos := 3;
-          spaces ()
-        end;
-        let d = flex "one or two day digits" in
-        ch '-';
-        let m = flex "one or two month digits" in
-        ch '-';
-        let y = fixed 4 "four year digits" in
-        spaces ();
-        (y, m, d)
-      end
-    in
+    let y = fixed 4 "four year digits" in
+    ch '-';
+    let m = fixed 2 "two month digits" in
+    ch '-';
+    let d = fixed 2 "two day digits" in
+    ch 'T';
     let hh = fixed 2 "two hour digits" in
     ch ':';
     let mi = fixed 2 "two minute digits" in
@@ -203,21 +179,14 @@ let read_datetime_form ~iso s : (int, string) result =
     Ok ((days_from_civil ~y ~m ~d * ms_per_day) + ((((hh * 60) + mi) * 60) + ss) * 1000 + frac)
   with Dt_bad msg -> Error msg
 
-let read_iso_datetime s = read_datetime_form ~iso:true s
-let read_snippet_datetime s = read_datetime_form ~iso:false s
-
 let datetime_of_lexeme s =
   match read_iso_datetime s with
   | Ok ms -> Date_time ms
-  | Error iso_why -> (
-      match read_snippet_datetime s with
-      | Ok ms -> Date_time ms
-      | Error snippet_why ->
-          fault
-            "malformed datum-tijd lexeme %S: not the canonical ISO form \
-             yyyy-mm-ddThh:mm:ss[.fff] (%s), and not the source snippet form \
-             [dd. ]d-m-yyyy hh:mm:ss[.SSS] (%s)"
-            s iso_why snippet_why)
+  | Error why ->
+      fault
+        "malformed datum-tijd lexeme %S: not the canonical ISO form \
+         yyyy-mm-ddThh:mm:ss[.fff] (%s)"
+        s why
 
 (* --- number lexemes ---------------------------------------------------- *)
 

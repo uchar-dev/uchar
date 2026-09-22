@@ -762,10 +762,10 @@ let literal_value (waarde : string option) (typ : datatype option) =
   | Some (Enumeratie _) -> Value.Enum lex
   | Some Datum_in_dagen -> Value.date_of_iso lex
   (* WF-095 (ch. 4.1): a datum-tijd literal reads into the SAME millisecond
-     layer the case wire reads its `dateTime` into, through the same two
-     admitted spellings — the canonical ISO lexeme and the day-first source
-     snippet. An unreadable lexeme faults with the position, never silently
-     becoming some other instant. *)
+     layer the case wire reads its `dateTime` into, through the same single
+     admitted spelling — the canonical ISO lexeme; the day-first source
+     snippet is refused like any other form. An unreadable lexeme faults
+     with the position, never silently becoming some other instant. *)
   | Some Datum_tijd -> Value.datetime_of_lexeme lex
   | Some _ -> Value.fault "literal of this datatype not implemented: %S" lex
 

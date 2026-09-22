@@ -4110,18 +4110,32 @@ let () =
      derivation) *)
   let noon = (20527 * 86_400_000) + 43_200_000 in
   check "WF-095-anchor-is-1773576000000" (noon = 1_773_576_000_000);
-  (* ONE instant, TWO spellings — every reader in the house admits both *)
+  (* ONE instant, ONE spelling: the canonical ISO lexeme, with or without
+     its fraction *)
   dt_ms "WF-095-canoniek-met-fractie" "2026-03-15T12:00:00.000" noon;
   dt_ms "WF-095-canoniek-zonder-fractie" "2026-03-15T12:00:00" noon;
-  dt_ms "WF-095-snippet" "15-03-2026 12:00:00.000" noon;
-  dt_ms "WF-095-snippet-zonder-fractie" "15-03-2026 12:00:00" noon;
-  dt_ms "WF-095-snippet-dedato-prefix" "dd. 15-03-2026 12:00:00.000" noon;
-  dt_ms "WF-095-snippet-smalle-velden" "5-3-2026 12:00:00"
-    ((20517 * 86_400_000) + 43_200_000);
+  (* The day-first source snippet is REFUSED, by name. Until 2026-09-23
+     these four were dt_ms pins that the reader answered noon (and
+     2026-03-05 noon for the narrow fields): the snippet was a second
+     admitted spelling while the RegelSpraak emitter still wrote it into
+     `waarde`. The emitter writes ISO since card p5-datumtijd-lexeem and
+     WF-095 admits ISO alone, so a snippet in `waarde` has no producer and no
+     verifier-clean document; reading it anyway would answer a document
+     nobody may write (card datumtijd-lezers-versmalling). The refusal
+     quotes the lexeme and names the one form it expected. *)
+  let refuses_snippet name lex =
+    expect_fault_msg name
+      (fun () -> Value.datetime_of_lexeme lex)
+      (Printf.sprintf "malformed datum-tijd lexeme %S: not the canonical ISO form" lex)
+  in
+  refuses_snippet "WF-095-weigert-snippet" "15-03-2026 12:00:00.000";
+  refuses_snippet "WF-095-weigert-snippet-zonder-fractie" "15-03-2026 12:00:00";
+  refuses_snippet "WF-095-weigert-snippet-dedato-prefix" "dd. 15-03-2026 12:00:00.000";
+  refuses_snippet "WF-095-weigert-snippet-smalle-velden" "5-3-2026 12:00:00";
   (* the fraction is WHOLE MILLISECONDS, never a positional fraction *)
   dt_ms "WF-095-fractie-is-milliseconden" "2026-03-15T12:00:00.500" (noon + 500);
   dt_ms "WF-095-fractie-001" "2026-03-15T12:00:00.001" (noon + 1);
-  (* and everything outside the two spellings is refused, per field class *)
+  (* and everything else outside the one spelling is refused, per field class *)
   let refuses name lex = expect_fault name (fun () -> Value.datetime_of_lexeme lex) in
   refuses "WF-095-weigert-zone" "2026-03-15T12:00:00Z";
   refuses "WF-095-weigert-offset" "2026-03-15T12:00:00+01:00";
@@ -4141,9 +4155,10 @@ let () =
     (19782 * 86_400_000);
   refuses "WF-095-weigert-uur-24" "2026-03-15T24:00:00";
   refuses "WF-095-weigert-minuut-60" "2026-03-15T12:60:00";
-  (* the CASE wire is narrower than the literal wire: uchar-case-v0 carries
-     the canonical spelling only (its schema pattern), so the shared case
-     reader takes that arm alone — the snippet is a LITERAL form *)
+  (* the CASE wire and the literal wire carry the same single spelling since
+     2026-09-23; the case loader calls the ISO reader directly (its schema
+     pattern is exactly that form), the literal reader goes through
+     [datetime_of_lexeme] — both refuse the snippet *)
   check "WF-095-casewire-neemt-canoniek"
     (Value.read_iso_datetime "2026-03-15T12:00:00.000" = Ok noon);
   check "WF-095-casewire-weigert-snippet"

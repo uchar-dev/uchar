@@ -2759,7 +2759,24 @@ let () =
   in
   faults_with ~name:"onleesbaar datum-tijd-literal-lexeem in de vertaling" ~ir:stuk_ir
     ~case_text:(lit_case "2026-03-15T06:00:00.000" true)
-    ~needle:"malformed datum-tijd lexeme"
+    ~needle:"malformed datum-tijd lexeme";
+  (* 6. the day-first source snippet in `waarde`. This backend has no lexeme
+     reader of its own: it reads the literal through ref's
+     [Value.datetime_of_lexeme], so until 2026-09-23 it read the snippet as
+     the same instant as the ISO lexeme and translated the rule. WF-095
+     admits ISO alone and the emitter writes ISO since card
+     p5-datumtijd-lexeem; the snippet is now refused here, quoted, before
+     any program is grounded (card datumtijd-lezers-versmalling). *)
+  let snippet_ir =
+    dt_doc ~attributen:{|"aanvangstip": { "node": "DatumTijd" }|} ~kenmerken:{|"tijdig"|}
+      ~kenmerk_soorten:{|"tijdig": "BIJVOEGLIJK"|}
+      ~regels:
+        (dt_regel ~op:"EERDER" ~links:(dt_attr "aanvangstip")
+           ~rechts:(dt_lit "15-03-2026 12:00:00.000"))
+  in
+  faults_with ~name:"dag-eerst-bronsnippet als datum-tijd-literal in de vertaling" ~ir:snippet_ir
+    ~case_text:(lit_case "2026-03-15T06:00:00.000" true)
+    ~needle:"malformed datum-tijd lexeme \"15-03-2026 12:00:00.000\": not the canonical ISO form"
 
 (* THE STATIC DELIVERY OF A TIME-DEPENDENT CHARACTERISTIC (maintainer decision
    2026-09-09). The case format has two deliveries for a characteristic and
