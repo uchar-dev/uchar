@@ -116,6 +116,15 @@ type expr =
              list is carried AS LOADED, empty included, so the arity is a
              violation the rule reports and never a load failure *)
     }
+  | Instance_set_union of {
+      (* extension: the §5.7 concatenation of subject expressions, the
+         source of an instance count (WF-110). It carries no datatype: it
+         denotes instances and not a value. Like bron_pad above, the
+         branches are loaded AS WRITTEN — a one-branch or field-less union
+         is a violation the rule names, never a load failure. *)
+      branches : instance_set_branch list;
+      bron : string option;
+    }
   | Afgerond of {
       basis : expr option;
       modus : afrond_modus;
@@ -240,6 +249,17 @@ type expr =
 and fold_fn =
   | Fn_lambda of { parameters : (string * datatype) list; body : expr; bron : string option }
   | Fn_name of string
+
+(* One selection of an InstanceSetUnion (WF-110): a population, the
+   one-step relation it ranges over, and the die/dat subselection that
+   narrows it PER CONTRIBUTOR. The two required fields are carried as
+   option so a missing one is a citable violation, not a load failure. *)
+and instance_set_branch = {
+  isb_element_type : string option;
+  isb_source_role : rol_binding option;
+  isb_filter : conditie option;
+  isb_bron : string option;
+}
 
 and tekst_deel =
   | Letterlijk of { tekst : string option }

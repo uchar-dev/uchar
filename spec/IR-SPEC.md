@@ -3749,7 +3749,7 @@ embedded expressions) — sugar verdict (row 31), mirrored; empty coerces to
 | Field | Meaning |
 |---|---|
 | `kind` | sum, total, count, minimum, maximum, first, last, **filled count** (the last a uchar dialect kind, `CONSTRUCTS.md` row 1 — see "The filled count" below) |
-| `arguments` | one set-valued operand (instance fold), or ≥ 2 listed operands (value fold / §5.8.1 union count) |
+| `arguments` | one set-valued operand (instance fold), one `InstanceSetUnion` (the §5.7 concatenation, count only — see "The instance-set union" below), or ≥ 2 listed operands (value fold). **The listed form is the VALUE folds' alone since 2026-09-20**: under `AANTAL` and `AANTAL_GEVULDE` it is refused by WF-037, so the §5.7 concatenation reaches the count through the union node and never through this list |
 | `elementType` | the instance type ranged over (instance folds) — the POPULATION, extensionally (ch. 2.2): the contributors are the instances the source relation reaches whose type is ⊑ `elementType`, so one it reaches that this type does not cover is not folded. Since WF-047's "agree" became ⊑-compatibility the source role's filler may be a strict SUPERTYPE of it, and reach and population are then genuinely different sets; witness `golden/jutterswet-munttelling` |
 | `filter` | Condition? — the die/dat-subselection, evaluated PER CONTRIBUTOR (the element is the condition's subject; a leeg operand fails it, ch. 1.2d; an all-excluding filter leaves an empty source — the sum fallback fires, a count reads 0). **Landed (2026-08-19):** executes in both executors (`jutterswet-strandgoed`, an emitter golden; `RUNTIME-SEMANTICS.md` ch. 3.4a). The reference interpreter carries the full condition set; the ASP backend's corpus-exercised fragment faults loudly on the rest — the standing executor asymmetry, differential-gated over the corpus. The SAME field also carries the §7.1 gedurende timeline clip (on the temporal total, where the element type is the subject itself) — a timeline operation, never an instance subselection. **Landed (2026-08-19, WF-055):** the clip executes in both executors (`jutterswet-getijdenwacht`; `RUNTIME-SEMANTICS.md` ch. 3.6): intersect the full value timeline with the condition's true-periods (an own temporal characteristic, or a per-segment comparison against a scalar bound), then total whole units per clipped segment — floor, never pro-rata; a gap in the condition clips away; a fully clipped-away or absent timeline totals 0, never leeg. The negated clip (the complement) and the Gelijk/Ongelijk comparison clip execute in the reference interpreter only — the ASP side faults loudly on both. A negated characteristic subselection never reaches the wire executable (v0 marks it Onopgelost) |
 | `emptyFallback` | expression? — **sum only**: the §5.8.2 "of … als die er niet zijn" clause |
@@ -4715,6 +4715,131 @@ equally-lying `kg` target was verifier-CLEAN while the identical lie under
 kg-declared attribute with the oracle reporting PASS. No unit travels through
 the node, and the consumer clause of `RUNTIME-SEMANTICS.md` ch. 2.10 leaves
 it alone precisely because the operation, not the annotation, fixes it.
+
+**The instance-set union — the §5.7 concatenation of subject expressions
+(WF-110).** *(Maintainer decision 2026-09-20.)* The source language lets a
+count range over a CONCATENATION: "het aantal ⟨rolselectie⟩ en
+⟨rolselectie⟩" joins the instance sets the selections yield into one new set
+(§5.7), and the typing document says of the count operator that it admits a
+concatenation of expressions, unbounded in number, and takes subject
+expressions only (§4.11). That is a different reading from the multi-operand
+VALUE count WF-037 refused the day before, and the refusal is unmoved: this
+form counts INSTANCES, so what the operand list would have to carry is not a
+list of values but a list of SELECTIONS. The wire therefore gets a node for
+the selection list instead of a licence for the operand list, and the two
+forms are distinguishable at a glance — a count whose `arguments` hold two or
+more expressions is WF-037's refusal, byte for byte; a count whose ONE
+argument is an `InstanceSetUnion` is this form.
+
+*The wire form.*
+
+| Field of `InstanceSetUnion` | Meaning |
+|---|---|
+| `branches` | list of `InstanceSetBranch`, **two or more** — the selections, in written order |
+| `bron` | provenance of the written concatenation |
+
+| Field of `InstanceSetBranch` | Meaning |
+|---|---|
+| `elementType` | the population this selection ranges over, read exactly as ch. 3.4a reads an instance fold's — and the SAME for every selection of one union (WF-110 (d)) |
+| `sourceRole` | RoleBinding, **required**: the one-step relation this selection walks from the count's subject. No bindingless fallback and no `sourcePath` (below) |
+| `filter` | Condition? — this selection's own die/dat subselection, evaluated PER CONTRIBUTOR with the element as its subject, exactly as a fold's `filter` is |
+| `bron` | provenance of the written selection |
+
+The node carries **no `type`**. It denotes instances and not a value, so
+there is no annotation to believe and none for the ch. 2.10 consumer clause
+or the gate-13 twist harness to reach; WF-034's type prologue exempts it by
+node kind, exactly as it exempts a `Lambda`. The count above it derives its
+own whole, unitless cardinality as it always has.
+
+*Its position is ONE position.* The union is admissible as the SINGLE
+argument of an `AANTAL` aggregation and nowhere else — not as a rule value,
+not as an operand of a composite node, not inside a condition, not under any
+other kind. That is the shape of rule WF-096 draws for the set reading, for
+the same reason: the one node that consumes a collection is the node the
+collection belongs to, and everywhere else a collection stands where a value
+is read. The count that carries it names **no source of its own** —
+`elementType`, `sourceRole`, `sourcePath` and `filter` on that node are
+absent, because the selections carry all four, one set each, and a source
+beside the union would be a second claim on one node (the setbron ground of
+2026-09-19).
+
+*Deduplication on instance identity is the operation, not a detail.* The
+members are the union of the selections' contributors, and an instance that
+two selections both select contributes ONCE — so the count is `|A ∪ B|` and
+never `|A| + |B|`. Semantics, with worked absolutes:
+`RUNTIME-SEMANTICS.md` ch. 3.4d.
+
+*One population per union, and the boundary is drawn on a ground of our
+own.* Every selection names the same `elementType` (WF-110 (d)). The v0
+toolchain refuses the same written shape and its own test says why: one
+Drools accumulate has ONE source pattern, so selections over different
+element types cannot be unioned without silently dropping the foreign set.
+That is a property of a code generator, and it is not the reason here.
+`elementType` is the POPULATION everywhere else in the IR (ch. 2.2), a count
+answers a cardinality over one declared type, and with a population per
+selection the membership test differs per member — whether two selections
+could then share an instance is a question about the subtype lattice
+(ch. 2.6, where a role filler is an upper bound and `Munt ⊑ Vondst`), which
+deduplication on identity would have to answer. This clause does not answer
+it and refuses the shape instead of picking an answer by side effect. The
+door is closed and not locked: a later card with a real casus may norm the
+multi-population union, as a clause here carrying its own dedup statement
+across the lattice.
+
+*Where uchar DIVERGES from the toolchain, deliberately: the selection with
+no subselection.* The toolchain also leaves unlowered a concatenation one of
+whose operands carries no resolvable characteristic filter — a bare
+selection beside a filtered one — and that too is a property of its
+mechanism, which lowers the concatenation by OR-ing the operands' filter
+terms and has no term to OR for an unfiltered operand. Our wire form carries
+the selections themselves, so `filter: null` is the ordinary case rather
+than an unrepresentable one, and all four executors carry it (witness
+`jutterswet-vondstunie`, its third rule). Refusing it would have been
+importing a code generator's limit as a normative rule.
+
+*How the OR-filter spelling relates to this one — it is not a second
+spelling of it.* A single-source count narrowed by a composite OR condition
+("het aantal aangemelde vondsten van de Jutter die gemerkt of gekeurd zijn")
+is an ORDINARY count with an ordinary `filter`; it was expressible before
+this decision, every executor already carried it, and nothing here changes
+it. It happens to have the same EXTENSION as the union of two selections
+over one range, which is a fact about those two sentences and not a wire
+identity: the sentences differ, the nodes differ, and a producer emits the
+node its sentence spells. So the maintainer's second option — "voor dezelfde
+bronrange, één telling met een OR-filter" — is not normed as a union form.
+The RegelSpraak frontend emits the union for every §5.7 concatenation,
+including the equal-range case, so one written form keeps one wire form. The
+price of the choice is a node; what it buys is the general case, since two
+selections over DIFFERENT relations ("aangemelde vondsten van de Jutter en
+geborgen vondsten van de Jutter") have no OR-filter spelling at all, and it
+is exactly there that deduplication stops being automatic and becomes an
+operation each executor must get right.
+
+*No `sourcePath` at a selection, and that is a boundary rather than an
+omission.* A multi-step range under a COUNT is where WF-096 and WF-102 meet
+(ch. 3.4b, consequence 2): a path is admissible only on the set source, and
+a set source is not admissible under a count, so neither spelling of a
+counting fold over a union of intermediates survives. Admitting a
+`sourcePath` at a selection would settle that question by side effect — the
+union becoming the back door through which a refused single-source shape
+returns — and one card draws one boundary. A selection therefore carries a
+one-step `sourceRole`, required, and the multi-step question stays exactly
+where 2026-09-19 and 2026-09-11 left it. Named open flank, not a closed one.
+
+- **WF-110** An `InstanceSetUnion` (ch. 4.3): **(a)** is admissible ONLY as
+  the single argument of an `AANTAL` aggregation — at every other position
+  the document is ill-formed (`wf110-unie-als-regelwaarde`,
+  `wf110-unie-onder-een-builtin`); **(b)** carries at least TWO selections,
+  since one selection IS the ordinary count and already has a spelling
+  (`wf110-unie-een-tak`); **(c)** the count carrying it names no source of
+  its own — no `elementType`, `sourceRole`, `sourcePath` or `filter` on that
+  node (`wf110-unie-naast-vouwbron`); **(d)** every selection names the SAME
+  `elementType`, and it is declared (`wf110-unie-ongelijke-elementtypes`;
+  an undeclared one is WF-034 at the new position); **(e)** every selection
+  names its `elementType` and its `sourceRole`
+  (`wf110-unie-tak-zonder-elementtype`, `wf110-unie-tak-zonder-bronrol`),
+  and that binding resolves under WF-047 at the new position, as WF-102 (d)
+  applies it per step. Semantics: `RUNTIME-SEMANTICS.md` ch. 3.4d.
 
 **The fold source's RANGE is a PATH (WF-102).** *(Maintainer decision
 2026-09-11.)* A set source describes its range with ONE relation:
@@ -7664,6 +7789,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-107 | every NAMED form carries a present, non-blank name (ch. 3.1) — the ch. 3 versioned rule forms and the ch. 6.1 defaults groups, the same list WF-020 reads. Presence and uniqueness are two properties and take two numbers: WF-020 compares names, and until this rule it compared only the names that were there, filtering the nulls out before the comparison. **What the name IS**, so no reader has to decide: the form's identity — ch. 8 groups a form's versions by it, the ch. 5.1 dependency graph keys its channel node on it, and a regelversie channel test (`RUNTIME-SEMANTICS.md` ch. 5.6) names a rule by it. **Measured before the rule (2026-09-12)** on a nameless `ResolvedRegel`: verifier PASS, the reference interpreter and the ASP backend evaluating it without noticing, the Drools exec-model branch playing it, and the DRL-text branch throwing a `NullPointerException` out of the rule-name escaper, which calls a string method on the name it is handed — one verifier-clean document, four consumers, three answers and one crash. On a defaults group it is wider still: that array was in no name list at all, so a nameless group, a duplicate group name and a group colliding with a rule all three passed. **Blank counts as absent** because WF-020 compares over collapsed whitespace, so two blank names are one name and every blank form collides with every other. **The wire type stays nullable** and the schema is deliberately not the enforcement layer — a nameless form has to remain a well-formed document, or the rule would have no witness (the WF-106 situation, and the reason that rule has none). Cost: none — counted the day it landed, **1107** named forms over the four zones (626 documents: golden 184, rood 26, negatief 386, parity 30), every one of them carrying a non-blank name already except this rule's own three witnesses, so no producer moves and the rule closes a door nothing used. **Boundary, drawn per array rather than inferred** (all measured 2026-09-12 over the four zones): FOUR other top-level arrays put a name on this wire and each is outside for its own reason — `resolvedDagsoorten`, whose name is which day kind is being defined and lives in the day-kind namespace, so its presence is **WF-031**'s clause (added the same day, beside that rule's own dead-definition test); `tijdlijnen`, already covered, since WF-015 keys the declaration on the name and a nameless timeline takes every reference down with it, the document falling on **WF-003** (measured: `WF-003 FAIL … reference to undeclared timeline 'penningjaar'`); `regelGroepen`, a label nothing reads, WF-033 resolving a group's MEMBERS by name, so a nameless group is inert rather than ambiguous and refusing it would be a rule without a failure; and `regels`, the parse-stage shell index no check or executor reads, which one frontend emits empty by design. `dagsoorten` is a list of bare strings and a `null` entry there is admitted too — recorded as OPEN rather than closed, since it is the day-kind namespace again and no producer writes one | gate 3 | every golden — the rule's positive witness is the whole corpus, which is what makes it a promotion of existing practice rather than a new demand; named most sharply by `anchor/jutterswet-uitsluiting`, whose rule and defaults group are two named forms with two names | `wf107-naamloze-regel` (absent, on a rule) + `wf107-blanco-regelnaam` (present and blank — a presence-only check admits it, so it falls independently) + `wf107-naamloze-defaultsgroep` (the array no name rule reached) |
 | WF-108 | the QUANTIFIER FOLD states a quantification something can satisfy (ch. 4.5). Five arms: (a) `quantifier` ∈ {all, none, at-least, at-most, exactly} — `the` is a definite description of ONE member and is refused BY NAME because a reader that fell through to the universal would answer the opposite of what the sentence wrote. **The three counting quantifiers were this node's named extension point until 2026-09-16 and are admitted since** (`Compound`'s vocabulary over instances instead of parts, with `Compound`'s `threshold` under `Compound`'s rule); (b) `elementType` present (its RESOLUTION is WF-034's, reported under that number at this position); (c) the RANGE is one meaning with two spellings — `sourcePath` not beside `sourceRole`, at least two steps, a connected walk from the quantifier's subject, landing ⊑-compatibly on `elementType` — WF-102's discipline under this node's own number, new on purpose because WF-102 is scoped to a fold's ARGUMENT, a position this node does not have, and a negatief directory must be able to declare the rule it violates; (d) `test` present, since a quantifier with no matrix states a range and asks nothing of it; (e) `threshold` present EXACTLY under the three counting quantifiers — absent there names no number to compare the count with, present under all/none records a quantification the `quantifier` field contradicts. The range MACHINERY is shared, not copied — `wf047_binding`, `wf048_derivable` and `resolve_binding` are the fold's helpers called from here, on the WF-097 shared-helper discipline — so an unresolvable binding still reports **WF-047** exactly as a fold's does, and the threshold's VALUE reports **WF-041** for the same reason; only the shape questions this node introduces carry this number | gate 3 | `jutterswet-ploegpremie` (the §8.2 form over seven hand-computed cells, ALLE and GEEN in one document: the five the production toolchain pins, plus the two that separate an ABSENT member timeline from a partially covered one — the second of which is the cell where the vacuous reading changes sign under GEEN) + `jutterswet-reddingsvloot` (the counting arms: all three quantifiers over one §8.2 matrix, each pinned at its threshold from both sides, plus the empty set, the empty SELECTION beside a filled range, and two vloten in one case for the range) | `wf108-kwantorvouw-kwantor-de` (the bare definite) + `wf108-kwantorvouw-drempel-ontbreekt` (a counting quantifier with no threshold) + `wf108-kwantorvouw-drempel-op-alle` (a threshold beside ALLE) + `wf108-kwantorvouw-zonder-toets` (no matrix) + `wf108-kwantorvouw-bereik-dubbel` (bronPad beside bronRol) + `wf108-kwantorvouw-zonder-elementtype` (unnamed population) |
 | WF-109 | a characteristic check's explicit `eigenaar` is its GASTHEER and designates EXACTLY ONE object bound at the check's own position (ch. 4.6 (q2), maintainer decision 2026-09-19): exactly one binding SATISFIES it (`T ⊑ O`, every object it can hold is one) and no second binding OVERLAPS it (the declared type graph holds a type below both, so some object could be either). It is the OBJECT half of the field, which WF-100 settled the DECLARATION half of and recorded as open in as many words. A position binds ONE object, the enclosing form's subject — except the `voorwaarde` of a ch. 3.4 fact creation, which binds TWO (the anker it iterates and the doel its join chain reaches) and is the only such position in the language. Satisfaction is extensional (ch. 2.2, `T ⊑ O`), so an absent owner and an owner naming the subject's own type or a supertype of it are one reading, and no document that predates the rule moves. **Three flanks, all FAIL.** ZERO designated — the ordinary rule with a foreign owner, and the fact-creation guard naming a THIRD type — is a check about no object; until this rule it was an EXECUTOR refusal in `ref` and the ASP backend while both Drools branches dropped or markered the form, so the smaller answer was the only answer and the differential never closed. PARTIAL — an owner naming a strict SUBTYPE of the bound object, which holds for some of its objects and faults for the rest — is a run-dependent verdict and stays out; whether such an owner should instead read FALSE for the objects it does not cover is a question nobody has answered, and refusing it leaves that open. TWO designated — two satisfying, or one satisfying beside a second merely OVERLAPPING — is a type string that reaches both objects and settles nothing: the SELF-TYPED anker/doel pair, every common supertype of the two, and every subtype edge BETWEEN them. That last shape is why the count is over overlap and not over `⊑`: measured 2026-09-19, with `Sein ⊑ Kustvak` a concrete `Sein` fills an anker declared `Kustvak`, so an owner naming `Sein` reached both objects at run time while a `⊑` count saw one — and schema, verifier, `ref` and the ASP backend all passed that document. No precedence is invented for any of the three, because the producer has no route to them either (on `doel == anker` the frontend leaves the guard an unresolved marker). **Scope of the DOEL, with its reason — three fences:** the second bound object is admitted only where the check IS the whole `voorwaarde`, does NOT navigate, and carries NO whole-period qualifier. Measured 2026-09-19: the bean model's exec-model branch lowers a doel-side guard through a fact-only leaf predicate and carries no composite there, so admitting a nested doel host would split the executors instead of closing them; a navigated owner names the host while the characteristic lives on the type the hop reaches, a shape the producer never emits and no witness measures; and under a ch. 3.9 whole-period qualifier BOTH bean-model branches run the fold arm BEFORE the host test, so the field decides nothing there — one branch reached the doel by its own route and the other lowered the fold onto the ANKER and sank the package at compile. All three are refused under this number with the anker as the only bound object, and all three are cheap to revisit — a witness in all four executors is the price, and the third fence falls with the §8.2 family's own decision. The SUBJECT-LESS day-kind condition binds no object, so the cross does not run there and WF-031 refuses the document anyway. **What the rule buys:** the producer's own emission shape becomes replayable. Measured 2026-09-19 on `jutterswet-seinhijsing` before the implementation — verifier PASS, `ref` EVALUATION FAULT and the ASP backend TRANSLATION FAULT (both quoting the superseded hosting refusal), both Drools branches PLAYED with `vakseinaantal` 1 — and after it, all four answer 1, with the anker carrying the same characteristic so that the anker reading (2) and the intermediate-step reading (0) are each positively excluded. **Cost: none.** Counted the day the rule was written, before its own witnesses existed: 260 characteristic checks in 646 documents (golden 213, negatief 399, rood 34), 10 with an explicit owner — eight naming the subject's own type, one naming an UNDECLARED type that WF-034 (q) owns and this rule steps aside for, and exactly ONE naming a declared type the subject is not, which is the negatief witness WF-100 already rejects. The parity zone adds 9 owner-free checks over 30 documents. No document in any zone goes from clean to rejected; the rule adds a second citation to one already-rejected document and moves no other verdict anywhere. The EXTENSIONAL reading is the executors' too, and had to be made so: both Drools branches asked satisfaction by NAME IDENTITY until this rule landed, which refused a legal supertype owner in both of them while the other three executors carried it | gate 3 | `jutterswet-seinhijsing` (the producer's shape with one intermediate step: the anker AND the intermediate type declare and carry the same characteristic, so 1 is the doel reading and neither the anker's 2 nor the intermediate's 0) + `jutterswet-mastsein` (the same law over TWO intermediate steps, where the guard still reaches past both to the doel: 2, not the anker's 3, the first step's 0 or the second's 3) + `jutterswet-keurhouder` (the owner naming the subject's own type — the reading the rule leaves untouched) + `jutterswet-bakensein` (the owner naming a SUPERTYPE of the doel: hand-written IR, because the frontend tags a guard with the doel's own type and never with an ancestor) | `wf109-gastheer-buiten-bereik` (an ordinary rule whose owner DECLARES the characteristic, so WF-100 is satisfied and this rule is the only one speaking) + `wf109-gastheer-derde-type` (a fact-creation guard hosted on the intermediate step's type: two patterns, a name for neither) + `wf109-gastheer-ambigu-zelfgetypeerd` (anker and doel the same type, the degenerate string) + `wf109-doelgastheer-samengesteld` (the doel host nested in a composite) + `wf109-doelgastheer-genavigeerd` (the doel host on a navigating check) + `wf109-doelgastheer-periode` (the doel host under a whole-period qualifier) + `wf109-subtype-overlap` (the anker's declared type can itself be the host type) + `wf109-gastheer-ambigu-supertype` (one type above both bound objects) + `wf109-gastheer-deelpopulatie` (a host only some of the bound object's population is) |
+| WF-110 | the INSTANCE-SET UNION — the §5.7 concatenation of subject expressions as the source of an instance count (ch. 4.3, maintainer decision 2026-09-20). Five arms: **(a)** an `InstanceSetUnion` is admissible ONLY as the SINGLE argument of an `AANTAL` aggregation, because it denotes INSTANCES and the one node that folds instances is the instance count (ch. 1.2e, ch. 3.4a) — the shape of rule WF-096 draws for the set reading, drawn for the other collection; **(b)** it carries at least TWO selections, one selection being the ordinary single-source count, which has a spelling already (`elementObjecttype` beside `bronRol`) — one meaning, one spelling, the discipline WF-102 (b) draws for the one-step range; **(c)** the count carrying it names NO source of its own, since the selections carry the population, the relation and the subselection one set each, and a source beside them is a second claim on one node (the setbron ground of 2026-09-19); **(d)** every selection names the SAME `elementType` — a count answers a cardinality over one DECLARED population (ch. 2.2), and with a population per selection whether two selections can share an instance becomes a question about the subtype lattice (ch. 2.6) that deduplication on identity would have to answer and this rule does not; the v0 toolchain refuses the same written shape for a MECHANISM reason of its own (one accumulate has one source pattern), so the boundary agrees and the ground does not; **(e)** every selection names its `elementType` and its `sourceRole`, with deliberately NO bindingless fallback — WF-048 derives a relation from a TYPE PAIR and clause (d) gives every selection of one union the same pair, so a derived range would make the selections indistinguishable and the union a restatement of one of them. The binding resolves under WF-047 at the new position, as WF-102 (d) applies it per step. **Deduplication on instance identity is the operation**: the members are the union of the selections' contributors and an instance two selections both select counts ONCE, so the answer is |A ∪ B| and never |A| + |B| (`RUNTIME-SEMANTICS.md` ch. 3.4d). **The node carries no `type`** — it denotes instances, not a value — and WF-034's type prologue exempts it by node kind exactly as it exempts a `Lambda`; without that exemption every union would carry a co-firing `value node without a static type`. **What it does NOT reopen:** a selection carries a one-step `sourceRole` and no `sourcePath`, so the multi-step range under a count stays where WF-096 and WF-102 met it (ch. 3.4b, consequence 2) — a named open flank rather than a side effect. **Cost, counted 2026-09-20 over the four zones:** the node is new to the wire, so not one of the 718 documents predating this card can carry it; swept with the pre-card binary against this one, the ONLY outputs that differ are the seven `wf110-*` witnesses, which the pre-card loader cannot read at all — zero verdict changes and zero report-line changes everywhere else | gate 3 | `jutterswet-vondstunie` (two selections over DIFFERENT relations with a shared element — the dedup witness no OR-filter can spell) + `jutterswet-keurunie` (two selections over ONE relation with overlapping characteristic filters, and a filtered selection beside an unfiltered one) | `wf110-unie-als-regelwaarde` + `wf110-unie-onder-een-builtin` (a), `wf110-unie-een-tak` (b), `wf110-unie-naast-vouwbron` (c), `wf110-unie-ongelijke-elementtypes` (d), `wf110-unie-tak-zonder-elementtype` + `wf110-unie-tak-zonder-bronrol` (e) |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

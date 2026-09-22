@@ -1766,6 +1766,82 @@
       },
       "description": "Extension node (IR-SPEC Method; wire node Let, EMITTER-PRODUCED since the let-lowering card, 2026-09-01): the value-level binding (spec/proposals/PHASE5C-TUTORIAL.md §6, question 2 = A; spec/RUNTIME-SEMANTICS.md ch. 10.6). The RegelSpraak frontend lowers a \u00a713.4.2.10 variabelendeel ('Daarbij geldt: ...') to one Let per declared variable that the rule's RESULT part reads, nested in declaration order (\u00a711.1 rule 1, first-declared outermost); a variable read only in the voorwaarde is substituted at its use site instead, because no expr node can span the separate 'voorwaarde' and 'waarde' wire fields of a resolved rule. 'binder' is visible only in 'body', never in its own 'value' — WF-076; it joins the WF-064 binder regime. The node 'type' equals the 'body' type — WF-076. Call-by-need (maintainer decision O3, 2026-09-01): the 'value' is evaluated in the enclosing scope at the FIRST read of the binder and reused for every further read; a read whose 'value' evaluates leeg makes the WHOLE Let leeg (the leeg-barrier, at the read place), so a body binder is never leeg — which is what carries the WF-069 widening (IfThenElse becomes admissible inside Let bodies) and the WF-077 condition-operand discipline; a binder the body never reads is never evaluated at all (no leeg, no fault, no channel fact) and the body's outcome is the Let's. 'type', 'binder', 'value' and 'body' are required and non-null."
     },
+    "InstanceSetBranch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "elementType",
+        "sourceRole",
+        "filter",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "InstanceSetBranch"
+        },
+        "elementType": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sourceRole": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RolBinding"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "filter": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/conditie"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "description": "Extension node (IR-SPEC Method; wire node InstanceSetBranch): one selection of an InstanceSetUnion — an element type, the one-step relation the selection ranges over, and an optional die/dat subselection evaluated PER CONTRIBUTOR. 'elementType' and 'sourceRole' are carried nullable so a missing one is a WF-110 violation the verifier REPORTS with its rule, never a load failure. There is deliberately no path spelling here: the multi-step range under a count is WF-096/WF-102's meeting point and this node does not reopen it."
+    },
+    "InstanceSetUnion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "branches",
+        "bron"
+      ],
+      "properties": {
+        "node": {
+          "const": "InstanceSetUnion"
+        },
+        "branches": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/InstanceSetBranch"
+          }
+        },
+        "bron": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "description": "Extension node (IR-SPEC Method; wire node InstanceSetUnion, EMITTER-PRODUCED): the §5.7 concatenation of subject expressions as a set of INSTANCES — the source of an instance count (CONSTRUCTS row 1; spec/IR-SPEC.md ch. 4.3, semantics spec/RUNTIME-SEMANTICS.md ch. 3.4d). It carries no 'type': it denotes instances, not a value, so there is no annotation to twist and none to believe. Admissible ONLY as the single argument of an AANTAL aggregation, with at least two branches, and the count carrying it names no source of its own — WF-110. The members are the UNION of the branches' contributors, deduplicated on instance identity."
+    },
     "FunctionDef": {
       "type": "object",
       "additionalProperties": false,
@@ -1888,6 +1964,9 @@
         },
         {
           "$ref": "#/$defs/Let"
+        },
+        {
+          "$ref": "#/$defs/InstanceSetUnion"
         }
       ]
     },

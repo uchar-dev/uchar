@@ -257,7 +257,9 @@ let ir_typ (e : I.expr) : I.datatype option =
   | List_literal { typ; _ } | If_then_else { typ; _ } | Let { typ; _ }
   | Invoke { typ; _ } | Fold { typ; _ } | Map_list { typ; _ }
   | Filter_list { typ; _ } | List_length { typ; _ } -> typ
-  | Lambda _ -> None
+  (* neither a Lambda nor an instance-set union is a value: they carry no
+     wire type at all *)
+  | Lambda _ | Instance_set_union _ -> None
 
 (* --- literals ----------------------------------------------------------- *)
 
@@ -2249,6 +2251,13 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
     | Map_list { list; functie; _ } -> fence_expr list; fence_fn functie
     | Filter_list { list; condition; _ } -> fence_expr list; fence_cond condition
     | List_length { list; _ } -> fence_expr list
+    (* the §5.7 instance-set union (IR-SPEC ch. 4.3, WF-110) reaches a body
+       only through a count this frontend does not build; the arm is named
+       rather than left to a leaf so that its arrival is a loud refusal *)
+    | Instance_set_union _ ->
+        refuse
+          "instance-set union: the §5.7 concatenation counts object INSTANCES, which this \
+           frontend's value fragment has no term for"
   and fence_fn = function Fn_lambda { body; _ } -> fence_expr body | Fn_name _ -> ()
   and fence_cond (c : I.conditie) : unit =
     match c with

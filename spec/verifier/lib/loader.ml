@@ -369,6 +369,19 @@ let rec expr path j : expr =
             ext_field path kvs "bronPad" (fun p j ->
                 List.mapi (fun i x -> rol_binding (p / string_of_int i) x) (list_ p j));
         }
+  | "InstanceSetUnion" ->
+      check_keys path kvs [ "node"; "branches"; "bron" ];
+      Instance_set_union
+        {
+          (* loaded verbatim, one branch and none included: WF-110 owns the
+             branch count and the branch fields, so a defective union is a
+             citable violation and not a load failure with no rule to name *)
+          branches =
+            List.mapi
+              (fun i x -> instance_set_branch (path / "branches" / string_of_int i) x)
+              (list_ (path / "branches") (f "branches"));
+          bron = bron ();
+        }
   | "Afgerond" ->
       check_keys path kvs [ "node"; "basis"; "modus"; "decimalen"; "type"; "bron" ];
       Afgerond
@@ -597,6 +610,19 @@ let rec expr path j : expr =
       check_keys path kvs [ "node"; "type"; "bron" ];
       Expr_onopgelost { typ = typ (); bron = bron () }
   | k -> fail (path / "node") ("unknown expr node \"" ^ k ^ "\"")
+
+(* One branch of an InstanceSetUnion (WF-110). *)
+and instance_set_branch path j : instance_set_branch =
+  let kvs = obj path j in
+  let f name = field path kvs name in
+  expect_node path kvs "InstanceSetBranch";
+  check_keys path kvs [ "node"; "elementType"; "sourceRole"; "filter"; "bron" ];
+  {
+    isb_element_type = str_opt (path / "elementType") (f "elementType");
+    isb_source_role = opt (path / "sourceRole") rol_binding (f "sourceRole");
+    isb_filter = opt (path / "filter") conditie (f "filter");
+    isb_bron = str_opt (path / "bron") (f "bron");
+  }
 
 (* Lambda / FunctionDef parameters: each carries a name and a datatype (both
    required, non-null — a typed binding). *)

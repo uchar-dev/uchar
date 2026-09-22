@@ -804,8 +804,10 @@ let expr_typ : expr -> datatype option = function
   | List_length { typ; _ } ->
       typ
   (* a Lambda is never a value (WF-069, position-restricted): it carries no
-     wire [typ] and never reaches a slot where its static type is read *)
-  | Lambda _ -> None
+     wire [typ] and never reaches a slot where its static type is read.
+     Neither is an instance-set union (WF-110): it denotes INSTANCES, and
+     the node that consumes it derives the count's own whole type *)
+  | Lambda _ | Instance_set_union _ -> None
 
 (* the ch. 1.2d empty-equality asymmetry routes on the declared operand
    kind — two empty runtime values cannot reveal it (Arith.compare_op) *)
@@ -1364,6 +1366,14 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       | Value.Empty -> Value.Empty
       | Value.Lijst xs -> Value.Num (Q.of_int (List.length xs), Value.Unitless)
       | v -> Value.fault "list-length operand is %s, not a list value" (Value.to_string v))
+  | Instance_set_union _ ->
+      (* WF-110 admits this node at ONE position — the single argument of an
+         instance count — and the count reads it through its own contributor
+         arm, never through this one. Reaching here means a union stood
+         where a VALUE was wanted; it denotes instances and has none. *)
+      Value.fault
+        "an instance-set union stands where a value is read: it denotes the INSTANCES of a \
+         §5.7 concatenation, and only an instance count consumes them (WF-110)"
 
 (* apply a fold-family [function] operand (IR-SPEC ch. 4.8) — an inline
    lambda or a named FunctionDef — to already-evaluated arguments. Bodies are
@@ -1688,6 +1698,45 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
           Value.fault "a filter on a listed-operand fold has no v0 form (the subselection \
                        ranges over instances)";
         `Values (map_in_order (eval_expr env world self ~err) args)
+    | None, [ Instance_set_union { branches; _ } ] ->
+        (* the §5.7 concatenation (WF-110, RUNTIME-SEMANTICS ch. 3.4d): each
+           branch contributes its own reach ∩ population, narrowed by its own
+           filter at the contributor, and the MEMBERS are the union of those —
+           deduplicated on instance identity, so an instance two branches both
+           select counts ONCE. Dedup is by instance LABEL, keeping first-reach
+           order, exactly as the flat union of a multi-step range does
+           (ch. 3.4b); without it the answer would be the sum of the parts. *)
+        if filter <> None then
+          Value.fault "a filter beside an instance-set union has no form: every selection \
+                       carries its own (WF-110)";
+        let seen = Hashtbl.create 16 in
+        `Instances
+          (filter_in_order
+             (fun (i : World.instance) ->
+               if Hashtbl.mem seen i.label then false
+               else (
+                 Hashtbl.add seen i.label ();
+                 true))
+             (List.concat_map
+                (fun (b : instance_set_branch) ->
+                  let el = req "instance-set branch element type" b.isb_element_type in
+                  let binding =
+                    match b.isb_source_role with
+                    | Some rb -> rb
+                    | None ->
+                        Value.fault
+                          "an instance-set branch over %S carries no sourceRole: a union names \
+                           each selection's relation, it never derives one (WF-110)"
+                          el
+                  in
+                  let bkeep (i : World.instance) =
+                    match b.isb_filter with
+                    | None -> true
+                    | Some c -> eval_cond env world i ~err c
+                  in
+                  filter_in_order bkeep
+                    (fold_members ~binding env world self ~element:el))
+                branches))
     | None, args ->
         if filter <> None then
           Value.fault "a filter on a listed-operand fold has no v0 form (the subselection \
@@ -3219,6 +3268,8 @@ let vintage_read_params (doc : document) : string list =
     | Map_list { list; functie; _ } -> expr list; fold_fn functie
     | Filter_list { list; condition; _ } -> expr list; cond condition
     | List_length { list; _ } -> expr list
+    | Instance_set_union { branches; _ } ->
+        List.iter (fun (b : instance_set_branch) -> copt b.isb_filter) branches
   and fn_body name =
     match List.find_opt (fun (d : function_def) -> norm d.fd_naam = norm name) doc.function_defs with
     | Some d -> expr d.fd_body

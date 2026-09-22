@@ -2081,8 +2081,9 @@ let typ_of_expr = function
   | List_literal { typ; _ } | If_then_else { typ; _ } | Let { typ; _ }
   | Invoke { typ; _ } | Fold { typ; _ } | Map_list { typ; _ }
   | Filter_list { typ; _ } | List_length { typ; _ } -> typ
-  (* a Lambda is never a value: it carries no type *)
-  | Lambda _ -> None
+  (* a Lambda is never a value: it carries no type; nor is an instance-set
+     union, which denotes instances and carries no annotation at all *)
+  | Lambda _ | Instance_set_union _ -> None
 
 (* An AttribuutRef's serialized [typ] can lie about the attribute's actual
    datatype (a numeric attribute forced to typ=Booleaan passes typ_of_expr but
@@ -3074,6 +3075,15 @@ let dagsoort_scan at (c0 : conditie) : violation list * string list =
     | Fold { list; functie; init; _ } -> ex list; ex init; fold_fn functie
     | Map_list { list; functie; _ } -> ex list; fold_fn functie
     | Let { value; body; _ } -> ex value; ex body
+    | Instance_set_union { branches; _ } ->
+        (* a union ranges over INSTANCES, which a day kind — a function of
+           the bare day (ch. 5.4) — may not reach at all; naming the
+           population is what makes the refusal readable *)
+        List.iter
+          (fun (b : instance_set_branch) ->
+            impure "instance population" (Option.value b.isb_element_type ~default:"?");
+            match b.isb_filter with Some c -> co c | None -> ())
+          branches
   and fold_fn = function Fn_lambda { body; _ } -> ex body | Fn_name _ -> ()
   and co (c : conditie) =
     let opt = function Some e -> ex e | None -> () in
@@ -4348,6 +4358,14 @@ let rec mentions_binder b (e : expr) : bool =
   | Map_list { list; functie; _ } -> mentions_binder b list || mentions_binder_fold_fn b functie
   | Let { value; binder; body; _ } ->
       mentions_binder b value || (if same binder then false else mentions_binder b body)
+  | Instance_set_union { branches; _ } ->
+      (* the union's own fields are symbolic (a type name, a role binding);
+         only a branch filter carries expressions, and it is read against
+         the contributor exactly as a fold's filter is *)
+      List.exists
+        (fun (br : instance_set_branch) ->
+          match br.isb_filter with Some c -> mentions_binder_cond b c | None -> false)
+        branches
 
 and mentions_binder_fold_fn b = function
   | Fn_lambda { parameters; body = lbody; _ } ->
@@ -4463,7 +4481,13 @@ let wf097_clip_qualifications at (c : conditie) : violation list =
   in
   walk c
 
-let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : violation list =
+let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) at (e : expr) :
+    violation list =
+  (* [union_ok] is WF-110 (a) carried DOWN one level: the instance-set union
+     is admissible at exactly one position, and only the parent knows the
+     position. It is an optional argument with a false default, so it reaches
+     the node the count hands over and no descendant of it — a union nested
+     inside a branch filter is at a wrong position again, and says so. *)
   let sub p = at ^ "/" ^ p in
   let typ_checks =
     match typ_of_expr e with
@@ -4480,9 +4504,12 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
            Onbekend sentinel — refused symmetrically (WF-034). A Lambda is
            never a value: it is structurally typeless (special-cased by node
            kind, not by the [typ_of_expr] None result) and stays admissible
-           here — its own position discipline is WF-069 below. *)
+           here — its own position discipline is WF-069 below. The
+           instance-set union (WF-110) is typeless on the same ground and
+           by the same mechanism: it denotes INSTANCES, so it carries no
+           [type] key at all, and its position discipline is WF-110 (a). *)
         match e with
-        | Lambda _ -> []
+        | Lambda _ | Instance_set_union _ -> []
         | _ -> [ v "WF-034" (sub "type") "value node without a static type" ])
   in
   typ_checks
@@ -4697,6 +4724,32 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
          contents. The flank is a card of its own,
          `backlog/new/20260920-aantal-zonder-bron.md`, so that closing it
          cannot miss that spelling. *)
+      (* WF-110 (c), the count's own source beside a union (ch. 4.3,
+         maintainer decision 2026-09-20). The union's selections carry the
+         population and the relation, one per selection, so a source on the
+         COUNT is a second claim on one node — the ground the setbron
+         decision of 2026-09-19 drew, applied at the node that consumes the
+         union. Reported here, at the node it is about, which is also what
+         keeps the union argument itself from being reported a second time
+         for standing in the right position under a wrong node. *)
+      @ (match f.argumenten with
+         | [ Instance_set_union _ ] when f.kind = Aantal ->
+             let named =
+               (if f.element_objecttype <> None then [ "elementObjecttype" ] else [])
+               @ (if f.bron_rol <> None then [ "bronRol" ] else [])
+               @ (if f.bron_pad <> None then [ "bronPad" ] else [])
+               @ if f.filter <> None then [ "filter" ] else []
+             in
+             if named = [] then []
+             else
+               [ v "WF-110" at
+                   (Printf.sprintf
+                      "a count over an instance-set union names no source of its own, and this \
+                       node carries %s: the union's selections carry the population, the \
+                       relation and the subselection, one set per selection, so a source here \
+                       is a second claim on one node (ch. 4.3)"
+                      (String.concat " + " named)) ]
+         | _ -> [])
       @ (if f.kind = Aantal && arity >= 2 then
            [ v "WF-037" at
                (Printf.sprintf
@@ -5224,7 +5277,15 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
                                   ~bindings:navigatie_bindingen ~navigatie_rol ~navigatie_pad
                                   ~endpoint:(Some otn))
                       | _ -> [])
-               | _ -> walk_expr ctx ~binders ~subject p a)
+               | _ ->
+                   (* the union's admissible position (WF-110 (a)): the SINGLE
+                      argument of a count. Keyed on the kind and the arity and
+                      NOT on elementObjecttype, so a count that carries a source
+                      of its own beside the union is reported once — by clause
+                      (c), which is what is wrong with it — instead of twice. *)
+                   walk_expr ctx ~binders ~subject
+                     ~union_ok:(f.kind = Aantal && List.length f.argumenten = 1)
+                     p a)
              f.argumenten))
       (* WF-055: the gedurende clip — a filter on the temporal total is a
          timeline operation; its condition is an own temporal
@@ -6287,7 +6348,94 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) at (e : expr) : viola
         | Some d ->
             [ v "WF-070" (sub "type") ("length is " ^ datatype_kind d ^ ", must be a whole number") ]
         | None -> [ v "WF-070" (sub "type") "length carries no type" ])
-      @ walk_expr ctx ~binders ~subject ~body (sub "list") list)
+      @ walk_expr ctx ~binders ~subject ~body (sub "list") list
+  | Instance_set_union { branches; _ } ->
+      (* WF-110, the §5.7 concatenation of subject expressions (ch. 4.3,
+         semantics RUNTIME-SEMANTICS ch. 3.4d; maintainer decision
+         2026-09-20). Clause (c) — the count names no source of its own —
+         is a claim about the COUNT and lives in the Functie arm above. *)
+      if not union_ok then
+        [ v "WF-110" at
+            "an instance-set union stands where nothing consumes it: the union of subject \
+             expressions denotes a set of INSTANCES, and the one node that folds instances is \
+             the instance count — so this node is admissible as the SINGLE argument of an \
+             AANTAL aggregation and at no other position (ch. 4.3)" ]
+      else
+        (* (b) two or more selections. ONE selection is the ordinary
+           single-source count, which already has a spelling of its own
+           (elementObjecttype beside bronRol); admitting it here would give
+           one meaning two spellings — the discipline WF-102 (b) draws for
+           the one-step range and WF-087 for the nullary keuzetype. *)
+        (match branches with
+         | [] | [ _ ] ->
+             [ v "WF-110" at
+                 (Printf.sprintf
+                    "an instance-set union carries at least TWO selections and this one carries \
+                     %d: a single selection IS the ordinary instance count, spelled with the \
+                     fold's own elementObjecttype and bronRol, so one meaning keeps one \
+                     spelling (ch. 4.3)"
+                    (List.length branches)) ]
+         | _ -> [])
+        @ List.concat
+            (List.mapi
+               (fun i (b : instance_set_branch) ->
+                 let bat = sub ("branches/" ^ string_of_int i) in
+                 (* (d) one population for the whole union. A count answers a
+                    cardinality over ONE declared type; with a population per
+                    branch the membership test differs per member, and whether
+                    two branches can then share an instance is a question about
+                    the subtype lattice (ch. 2.6) that this rule does not
+                    answer. Measured on the v0 toolchain, which refuses the
+                    same shape on a mechanism ground of its own (one accumulate
+                    has one source pattern); uchar refuses it on this one. *)
+                 (match (branches, b.isb_element_type) with
+                  | first :: _, Some el
+                    when i > 0
+                         && (match first.isb_element_type with
+                            | Some f0 -> norm f0 <> norm el
+                            | None -> false) ->
+                      [ v "WF-110" (bat ^ "/elementType")
+                          (Printf.sprintf
+                             "the selections of an instance-set union range over ONE population: \
+                              selection 0 names '%s' and this one names '%s' (ch. 4.3)"
+                             (Option.value first.isb_element_type ~default:"?")
+                             el) ]
+                  | _ -> [])
+                 (* (e) every selection names its population and its relation.
+                    There is deliberately no bindingless fallback: WF-048
+                    derives a relation from a TYPE PAIR, clause (d) gives every
+                    selection of one union the SAME type pair, so a derived
+                    range would make the selections indistinguishable and the
+                    union a restatement of one of them. *)
+                 @ (match b.isb_element_type with
+                   | None ->
+                       [ v "WF-110" (bat ^ "/elementType")
+                           "an instance-set union's selection MUST name the population it \
+                            ranges over (ch. 4.3)" ]
+                   | Some el when objecttype ctx el = None ->
+                       [ v "WF-034" (bat ^ "/elementType")
+                           ("instance-set selection element type '" ^ el ^ "' is not declared") ]
+                   | Some _ -> [])
+                 @ (match b.isb_source_role with
+                   | None ->
+                       [ v "WF-110" (bat ^ "/sourceRole")
+                           "an instance-set union's selection MUST name the relation it ranges \
+                            over: there is no bindingless fallback here, because every selection \
+                            of one union shares one type pair (clause (d)) and a derived range \
+                            would make them indistinguishable (ch. 4.3)" ]
+                   | Some rb ->
+                       (* WF-047 at a new position rather than under a new
+                          rule — the discipline WF-102 (d) applies per step *)
+                       wf047_binding ctx (bat ^ "/sourceRole") rb
+                         ~bound_filler:b.isb_element_type ~other_filler:subject)
+                 (* every selection's filter evaluates PER CONTRIBUTOR, so the
+                    selection's own element type is its subject — ch. 3.4a's
+                    fold-filter discipline, once per selection *)
+                 @
+                 match b.isb_filter with
+                 | Some c -> walk_cond ctx ~binders ~subject:b.isb_element_type (bat ^ "/filter") c
+                 | None -> [])
+               branches))
 
 (* WF-070: the fold-family [list] operand must be list-typed. *)
 and fold_source_check _ctx at list =
@@ -7452,6 +7600,26 @@ let rec dep_expr ctx ~subject acc (e : expr) =
          that characteristic's writer *)
       let fsubject = match element_objecttype with Some el -> Some el | None -> subject in
       (match filter with Some c -> dep_cond ctx ~subject:fsubject ~neg:false acc c | None -> acc)
+  | Instance_set_union { branches; _ } ->
+      (* every branch is a fold source of its own and draws a fold source's
+         edges: the population it ranges over, the relation it walks, and
+         its filter's reads AT THE CONTRIBUTOR (ch. 6.1) — so a union whose
+         branch filters a derived characteristic still sits above that
+         characteristic's writer, once per branch *)
+      List.fold_left
+        (fun acc (b : instance_set_branch) ->
+          let acc =
+            match b.isb_element_type with Some el -> (n_pop el, Dep_pos) :: acc | None -> acc
+          in
+          let acc =
+            match b.isb_source_role with
+            | Some (rb : rol_binding) -> (n_rel rb.rb_feittype, Dep_pos) :: acc
+            | None -> acc
+          in
+          match b.isb_filter with
+          | Some c -> dep_cond ctx ~subject:b.isb_element_type ~neg:false acc c
+          | None -> acc)
+        acc branches
   | Afgerond { basis; _ } -> dep_opt ctx ~subject acc basis
   | Begrensd { basis; minimum; maximum; _ } ->
       dep_opt ctx ~subject (dep_opt ctx ~subject (dep_opt ctx ~subject acc basis) minimum) maximum
@@ -9628,6 +9796,10 @@ let rec invoked_expr acc (e : expr) : string list =
   | Literal _ | Attribuut_ref _ | Parameter_ref _ | Variabele_ref _ | Constante _
   | Expr_onopgelost _ | Binder_ref _ ->
       acc
+  (* a union's branch fields are symbolic and its filter is a condition, which
+     this walk over EXPRESSIONS does not enter — the same boundary the fold's
+     own filter has here *)
+  | Instance_set_union _ -> acc
 
 and invoked_opt acc = function Some e -> invoked_expr acc e | None -> acc
 

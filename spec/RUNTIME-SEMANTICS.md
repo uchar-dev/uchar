@@ -1243,6 +1243,83 @@ word ELEMENTS waited for; under `AANTAL` the shape has no wire form at all
 (WF-096 and WF-102 meet at that node), and the filled count is the operation
 that can carry it.
 
+### 3.4d The instance-set union — the §5.7 concatenation
+
+*(Maintainer decision 2026-09-20. Wire form and well-formedness:
+`IR-SPEC.md` ch. 4.3, "The instance-set union", WF-110.)*
+
+A count may range over a CONCATENATION of subject expressions — "het aantal
+aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter" — and
+the source language's own words for what that means are that the sets the
+selections yield are joined into ONE NEW SET (§5.7); its typing document
+adds that the count operator admits such a concatenation, unbounded in
+number, and takes subject expressions only (§4.11). On the wire the
+selections are an `InstanceSetUnion` under the count, one
+`InstanceSetBranch` each.
+
+**The members.** Each selection has its own contributors, computed exactly
+as ch. 3.4a computes a fold's: the reach — the instances its `sourceRole`
+links the count's SUBJECT to — intersected with the population its
+`elementType` names extensionally, narrowed further by its own `filter`,
+which evaluates PER CONTRIBUTOR with the element as the condition's subject.
+The union's members are the union of those sets.
+
+**Deduplication is on INSTANCE IDENTITY, and it is the whole operation.** An
+instance that satisfies two selections is one instance and contributes ONCE,
+so the count is |A ∪ B| and never |A| + |B|. This is ch. 3.4b's rule for the
+flat union of a multi-step range, stated across selections instead of across
+intermediate steps, and for the same reason: a set has no multiplicities.
+The three consequences carry over unchanged — a selection that reaches
+nothing simply contributes nothing (it never produces an empty inner result
+for the count to absorb), the count counts ELEMENTS, and the empty-source
+rules of ch. 1.2 apply to the UNION and never to a selection.
+
+**Empty.** A union none of whose selections contributes anything counts
+**0**, never leeg — the ch. 1.2e count row, which belongs to every count and
+not to any particular source shape. A count carries no `emptyFallback` and
+has no empty to fall back from.
+
+**Two selections describing the same thing.** A union whose selections name
+the same relation and the same filter is well-formed and counts that
+selection once: the dedup rule doing its job, not a defect. The verifier
+does not refuse it, because refusing it would mean comparing conditions
+structurally to forbid a document that already answers correctly.
+
+**One population.** Every selection of one union names the same element type
+(WF-110 (d)), so "instance identity" needs no reading across a subtype
+lattice here: the members are instances of one declared population. That is
+a wire restriction and not a semantic simplification — see `IR-SPEC.md` for
+why the multi-population union is a separate question.
+
+**Worked examples (absolute; `ref/` tests verbatim, WV-3.4d-\*; golden
+`jutterswet-vondstunie` and `jutterswet-keurunie`, replayed by gates 5, 6
+and 12).** The Jutterswet model: a Jutter `meldt` aangemelde vondsten
+(`vondstaanmelding`) and `bergt` geborgen vondsten (`vondstberging`); a
+Vondst carries the characteristics `gemerkt` and `gekeurd`.
+
+*Two selections over DIFFERENT relations — the dedup witness.* `J1` meldt
+`V1`, `V2` and `V3` aan, and bergt `V3` and `V4`. The selections are
+{V1, V2, V3} and {V3, V4}; `V3` sits in both and counts once, so the union
+is {V1, V2, V3, V4} and the count is **4** — the sum of the parts is 5, so
+the answer discriminates. `J2` meldt `V5` aan and bergt `V5` as well: both
+selections are {V5}, the union is {V5} and the count is **1**, not 2.
+`J3` meldt nothing and bergt `V6`: one empty selection, so the count is
+**1** — an empty selection contributes nothing rather than emptying the
+union. `J4` meldt nothing and bergt nothing: **0**, never leeg.
+
+*Two selections over ONE relation with overlapping filters.* Over `J1`'s
+aangemelde vondsten, `V1` is gemerkt, `V2` is gekeurd and `V3` is BOTH: the
+selections are {V1, V3} and {V2, V3}, the union is {V1, V2, V3} and the
+count is **3** where the sum of the parts is 4. `J2` meldt one vondst that
+is neither: both selections are empty and the count is **0**.
+
+*A filtered selection beside an UNFILTERED one.* Over `J1`'s three
+aangemelde vondsten, "die gemerkt zijn" selects {V1, V3} and the bare
+selection selects all three: the union is the bare selection's set and the
+count is **3**. The form is carried rather than refused, deliberately — see
+`IR-SPEC.md`, where the v0 toolchain's marker for it is shown to be a
+property of its lowering mechanism and not of the operation.
+
 ### 3.5 Temporal summation — the contributor-skipping rule (§5.8.2)
 
 The temporal sum over N timeline contributors (the operands of a temporal
