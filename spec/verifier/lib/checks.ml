@@ -242,23 +242,21 @@ let lexeme_iso_date s =
       m >= 1 && m <= 12 && d >= 1 && d <= days_in_month y m
   | _ -> false
 
-(* WF-095: the executors' shared datum-tijd literal lexeme grammar (IR-SPEC
-   ch. 4.1). TWO spellings name one instant and every reader in the house
-   admits exactly these two — the canonical ISO form
-   yyyy-mm-ddThh:mm:ss[.fff] (fixed field widths, 'T' as the separator and
-   never a space, the seconds field always written, no zone suffix and no
-   offset, a fraction that is optional but exactly three digits, read as
-   whole milliseconds) and the RegelSpraak source snippet
-   [dd. ]d-m-yyyy hh:mm:ss[.SSS] (day-first, the token's variable-width day
-   and month), which a v0 emitter still writes into `waarde`.
+(* WF-095: the datum-tijd literal lexeme (IR-SPEC ch. 4.1) is ONE spelling,
+   the canonical ISO form yyyy-mm-ddThh:mm:ss[.fff] — fixed field widths, 'T'
+   as the separator and never a space, the seconds field always written, no
+   zone suffix and no offset, a fraction that is optional but exactly three
+   digits, read as whole milliseconds, the date half calendar-valid.
 
-   Anything else is ill-formed on the wire. Outside these two the readers of
-   a datum-tijd lexeme stop agreeing — the same three digits ".1" read as
-   ONE millisecond, as a HUNDRED, and refused; a missing seconds field taken
-   by one reader and refused by another — and until this rule the wire had
-   no fence of its own at all: a literal reading `rommel 2024-01-31
-   12:00:00Z x` was schema-valid and verifier-clean (measured 2026-09-06).
-   Mirror of the ref/Drools datum-tijd readers, which now refuse identically. *)
+   Outside it the readers of a datum-tijd lexeme stop agreeing — the same
+   three digits ".1" read as ONE millisecond, as a HUNDRED, and refused; a
+   missing seconds field taken by one reader and refused by another — and
+   until this rule a literal reading `rommel 2024-01-31 12:00:00Z x` was
+   schema-valid and verifier-clean (measured 2026-09-06). The day-first
+   RegelSpraak source snippet was admitted as a second spelling only while
+   the emitter still wrote it into `waarde`; since the emitter writes ISO
+   there (card p5-datumtijd-lexeem, 2026-09-22) the snippet belongs in `bron`
+   alone, as WF-084 already has it for a day-precision date. *)
 let lexeme_datum_tijd s =
   let n = String.length s in
   let digit i = i < n && s.[i] >= '0' && s.[i] <= '9' in
@@ -267,7 +265,6 @@ let lexeme_datum_tijd s =
     go 0
   in
   let int_at i k = int_of_string (String.sub s i k) in
-  let rec skip_spaces i = if i < n && s.[i] = ' ' then skip_spaces (i + 1) else i in
   (* hh:mm:ss[.fff], ending EXACTLY at the end of the lexeme: the anchor is
      what keeps a zone suffix, an offset and trailing text out *)
   let time_ok i =
@@ -280,36 +277,9 @@ let lexeme_datum_tijd s =
     && int_at (i + 6) 2 <= 59
   in
   let date_ok ~y ~m ~d = m >= 1 && m <= 12 && d >= 1 && d <= days_in_month y m in
-  let iso =
-    n >= 19 && digits_at 0 4 && s.[4] = '-' && digits_at 5 2 && s.[7] = '-' && digits_at 8 2
-    && s.[10] = 'T' && time_ok 11
-    && date_ok ~y:(int_at 0 4) ~m:(int_at 5 2) ~d:(int_at 8 2)
-  in
-  let snippet () =
-    (* the optional de-dato prefix "dd." takes at least one space after it;
-       "dd." alone is not the lexeme (i0 = n then fails every digit test) *)
-    let i0 =
-      if n >= 4 && String.sub s 0 3 = "dd." && s.[3] = ' ' then skip_spaces 3
-      else if n >= 3 && String.sub s 0 3 = "dd." then n
-      else 0
-    in
-    let width i = if digits_at i 2 then 2 else if digits_at i 1 then 1 else 0 in
-    let dw = width i0 in
-    dw > 0
-    && i0 + dw < n
-    && s.[i0 + dw] = '-'
-    &&
-    let i1 = i0 + dw + 1 in
-    let mw = width i1 in
-    mw > 0 && i1 + mw < n && s.[i1 + mw] = '-'
-    &&
-    let i2 = i1 + mw + 1 in
-    digits_at i2 4 && i2 + 4 < n && s.[i2 + 4] = ' '
-    &&
-    let i3 = skip_spaces (i2 + 4) in
-    time_ok i3 && date_ok ~y:(int_at i2 4) ~m:(int_at i1 mw) ~d:(int_at i0 dw)
-  in
-  iso || snippet ()
+  n >= 19 && digits_at 0 4 && s.[4] = '-' && digits_at 5 2 && s.[7] = '-' && digits_at 8 2
+  && s.[10] = 'T' && time_ok 11
+  && date_ok ~y:(int_at 0 4) ~m:(int_at 5 2) ~d:(int_at 8 2)
 
 (* --- document context --------------------------------------------------- *)
 
@@ -4556,10 +4526,10 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       | Some Datum_tijd, Some w when not (lexeme_datum_tijd w) ->
           [ v "WF-095" at
               ("datum-tijd literal lexeme '" ^ w
-               ^ "' is neither the canonical ISO form yyyy-mm-ddThh:mm:ss[.fff] nor the source \
-                  snippet form [dd. ]d-m-yyyy hh:mm:ss[.SSS] (fixed field widths, 'T' never a \
-                  space, the seconds field written, no zone or offset, a fraction of exactly \
-                  three digits — ch. 4.1)") ]
+               ^ "' is not the canonical ISO form yyyy-mm-ddThh:mm:ss[.fff] (fixed field \
+                  widths, 'T' never a space, the seconds field written, no zone or offset, a \
+                  fraction of exactly three digits; the day-first source snippet belongs in \
+                  `bron` — ch. 4.1)") ]
       | Some (Enumeratie { waarden; _ }), Some w when not (mem_ci (some_names waarden) w) ->
           [ v "WF-039" at ("enumeration label '" ^ w ^ "' is not in the declared domain") ]
       | Some (Numeriek { teken = Some t; _ }), Some w -> (

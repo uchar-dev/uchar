@@ -2,7 +2,7 @@
 
 The Gelijkstelling assigns the datum-tijd literal
 `"rommel 2026-03-15T12:00:00 x"`. The lexeme **is** the value, not a
-substring inside it: both admitted spellings are matched whole.
+substring inside it: the canonical spelling is matched whole.
 
 This is the measurement that made the case for a numbered rule. Before
 WF-095 a document whose datum-tijd literal read like this was

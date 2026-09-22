@@ -5,11 +5,11 @@ The Gelijkstelling assigns the datum-tijd literal
 the `T` separator.
 
 It is not the source snippet either — that form is day-first
-(`15-03-2026 12:00:00`), and the year's field position is exactly what
-tells the two admitted spellings apart. A lexeme that is ISO-ordered with
-a snippet separator is neither, so it is refused rather than guessed at:
-the literal reader used to take the space for a `T` and answer an instant
-the producer had not written.
+(`15-03-2026 12:00:00.000`) and is refused on the wire in its own right
+since 2026-09-22 (`wf095-bronsnippet`). A lexeme that is ISO-ordered with
+a snippet separator was refused even while the rule still admitted the
+snippet, rather than guessed at: the literal reader used to take the
+space for a `T` and answer an instant the producer had not written.
 
 Minimal own-authored document (Jutterswet vocabulary); the well-formed
 counterpart is the canonical-lexeme literal in
