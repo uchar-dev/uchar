@@ -18,10 +18,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The datum-tijd literal LEXEME (IR-SPEC ch. 4.1), pinned on BOTH transpiler branches: the canonical ISO
- * form {@code yyyy-mm-ddThh:mm:ss[.SSS]} and the RegelSpraak source snippet {@code dd-m-yyyy hh:mm:ss[.SSS]}
- * denote the same instant, so they must produce the same fired outcome. The IR is a WIRE, not a dump of one
- * frontend: a conforming producer writing the canonical lexeme may not be answered differently from one
- * writing the snippet.
+ * form {@code yyyy-mm-ddThh:mm:ss[.SSS]} is the one lexeme, and it plays; the RegelSpraak source snippet
+ * {@code dd-m-yyyy hh:mm:ss[.SSS]} is refused by name, like every other form.
+ *
+ * <p><b>Narrowed 2026-09-23 (card {@code datumtijd-lezers-versmalling}).</b> Until then this witness pinned
+ * the snippet as a SECOND lexeme that had to fire identically to the canonical one, because the RegelSpraak
+ * emitter wrote the snippet into {@code waarde}. Since card {@code p5-datumtijd-lexeem} the emitter writes
+ * ISO there and WF-095 admits ISO alone, so a snippet in {@code waarde} has no producer and no verifier-clean
+ * document. The pins that said "the snippet plays" now say "the snippet is refused on both branches, and the
+ * refusal names the lexeme"; the canonical pins are unchanged.
  *
  * <p><b>Why this lived in the suite and not in the corpus — and what changed.</b> Measured 2026-09-05, no
  * golden could carry a datum-tijd literal at all: {@code ref}'s {@code literal_value} had no
@@ -32,9 +37,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <b>That is history since 2026-09-06:</b> {@code ref} carries the literal and the ASP translation carries
  * both the datum-tijd ordering and the literal, and {@code corpus/golden/jutterswet-meldstip} IS the golden
  * this paragraph said could not exist — replayed by gates 5, 6 and 12 against hand-computed values. What
- * this witness keeps is what the golden still cannot say: the golden carries ONE lexeme (the canonical
- * one), while the pins below hold BOTH spellings against each other on BOTH Drools branches, and hold the
- * refusals a corpus golden may not contain.
+ * this witness keeps is what the golden still cannot say: the pins below hold the canonical lexeme on
+ * BOTH Drools branches at sub-day and millisecond resolution, and hold the refusals a corpus golden may not
+ * contain — the snippet among them.
  *
  * <p><b>Red before the fix</b> (measured through the backend CLI on these exact models):
  * <ul>
@@ -77,24 +82,36 @@ class DatumTijdLexeemWitnessTest {
                 "the canonical ISO datum-tijd lexeme must fire like any other literal");
     }
 
-    @Test void het_bronsnippet_speelt_identiek_op_de_exec_model_tak() throws Exception {
-        assertNull(speel(model(SNIPPET_MIDDAG), SUBDAG_CASE),
-                "the snippet lexeme denotes the same instant and must fire identically");
-    }
-
     @Test void de_millisecondevelden_tellen_mee_op_de_exec_model_tak() throws Exception {
         assertNull(speel(model(ISO_HALVE), MS_CASE), "the .SSS group is milliseconds, and it decides here");
-        assertNull(speel(model(SNIPPET_HALVE), MS_CASE), "the snippet's .SSS group reads the same way");
     }
 
     // ---------------- the DRL-text branch (gate 13's second leg) ----------------
 
-    @Test void beide_lexemen_spelen_identiek_op_de_drl_teksttak() throws Exception {
+    @Test void het_canonieke_lexeem_speelt_op_de_drl_teksttak() throws Exception {
         assertEquals("PLAYED", drlStatus(model(ISO_MIDDAG), SUBDAG_CASE),
                 "the DRL-text branch used to answer the canonical lexeme against midnight");
-        assertEquals("PLAYED", drlStatus(model(SNIPPET_MIDDAG), SUBDAG_CASE));
         assertEquals("PLAYED", drlStatus(model(ISO_HALVE), MS_CASE));
-        assertEquals("PLAYED", drlStatus(model(SNIPPET_HALVE), MS_CASE));
+    }
+
+    // ---------------- the source snippet is refused, on both branches ----------------
+
+    /** Until 2026-09-23 both snippet lexemes PLAYED on both branches (the old pins
+     *  {@code het_bronsnippet_speelt_identiek_op_de_exec_model_tak} and the snippet half of the DRL pin).
+     *  Now each branch refuses the rule and names the unreadable lexeme, exactly as it does for the
+     *  zone-suffixed form below. */
+    @Test void het_bronsnippet_wordt_op_beide_takken_luid_geweigerd() throws Exception {
+        for (String[] paar : new String[][] {{SNIPPET_MIDDAG, SUBDAG_CASE}, {SNIPPET_HALVE, MS_CASE}}) {
+            String snippet = model(paar[0]);
+            CaseRunner.Excluded ex = assertThrows(CaseRunner.Excluded.class, () -> speel(snippet, paar[1]),
+                    "the exec-model branch refuses the rule for snippet " + paar[0]);
+            assertTrue(ex.getMessage().contains("datum-tijd-lexeem"),
+                    "and names the unreadable lexeme: " + ex.getMessage());
+            CaseRunner.Result r = drl(snippet, paar[1]);
+            assertEquals("EXCLUDE", r.status(), "the DRL-text branch refuses snippet " + paar[0]);
+            assertTrue(r.reason().contains("datum-tijd-lexeem"),
+                    "in the same words as the other branch: " + r.reason());
+        }
     }
 
     // ---------------- neither branch may degrade an unreadable lexeme ----------------
@@ -126,12 +143,12 @@ class DatumTijdLexeemWitnessTest {
      * conforming producer might write believing it was understood; a reader that answers one of them is a
      * reader that guesses. Refusing is never inert here — both branches drop the construct LOUDLY (the
      * end-to-end pin below), which is the whole point: the alternative is a wrong instant, silently.
+     * The source snippet has its own pin below.
      */
     @Test void de_lezer_weigert_elke_vorm_buiten_het_lexeem() {
         assertNull(Literalen.parseDatumTijd("2024-01-31T12:00:00Z"), "no zone suffix — a Z is not dropped");
         assertNull(Literalen.parseDatumTijd("2024-01-31T12:00:00+01:00"), "no offset — an offset is not dropped");
-        assertNull(Literalen.parseDatumTijd("2024-01-31 12:00:00"),
-                "a space is not the canonical separator, and 2024-01-31 is not the day-first snippet either");
+        assertNull(Literalen.parseDatumTijd("2024-01-31 12:00:00"), "a space is not the canonical separator");
         assertNull(Literalen.parseDatumTijd("2024-01-31 12:00:00.000"), "idem, with the fraction written");
         assertNull(Literalen.parseDatumTijd("2024-1-31T09:00:00"), "fixed widths: a one-digit month is not the lexeme");
         assertNull(Literalen.parseDatumTijd("2024-01-31T9:00:00"), "fixed widths: a one-digit hour is not the lexeme");
@@ -145,20 +162,23 @@ class DatumTijdLexeemWitnessTest {
         assertNull(Literalen.parseDatumTijd("2024-02-30T12:00:00"), "a real day of a real month (the calendar still decides)");
     }
 
-    /** What the reader must keep READING — the two lexemes this card is about, plus the two source-token
-     *  shapes the frontend itself can emit into {@code waarde}: the §13.2.19 {@code dd. } de-dato prefix and
-     *  the token's variable-width day/month ({@code DIGIT+}). The anchoring above may not make the reader
-     *  stricter than the producer that feeds it, or the fix would re-open the very gap it closes. */
-    @Test void de_lezer_leest_beide_lexemen_en_het_millisecondeveld() {
+    /** What the reader must keep READING: the canonical lexeme, with and without its fraction. */
+    @Test void de_lezer_leest_het_canonieke_lexeem_en_het_millisecondeveld() {
         assertEquals(LocalDateTime.of(2024, 1, 31, 12, 0, 0), Literalen.parseDatumTijd(ISO_MIDDAG));
-        assertEquals(LocalDateTime.of(2024, 1, 31, 12, 0, 0), Literalen.parseDatumTijd(SNIPPET_MIDDAG));
         assertEquals(LocalDateTime.of(2024, 1, 31, 12, 0, 0, 500_000_000), Literalen.parseDatumTijd(ISO_HALVE),
                 ".500 is five hundred milliseconds, scaled to nanoOfSecond");
-        assertEquals(LocalDateTime.of(2024, 1, 31, 12, 0, 0, 500_000_000), Literalen.parseDatumTijd(SNIPPET_HALVE));
-        assertEquals(LocalDateTime.of(2024, 12, 25, 10, 30, 0, 500_000_000),
-                Literalen.parseDatumTijd("dd. 25-12-2024 10:30:00.500"), "the de-dato prefix stays readable");
-        assertEquals(LocalDateTime.of(2025, 3, 1, 9, 0, 0),
-                Literalen.parseDatumTijd("1-3-2025 09:00:00"), "the source token writes day/month as DIGIT+");
+    }
+
+    /** The four source-snippet shapes this reader used to READ (pinned here until 2026-09-23 as "the reader
+     *  may not be stricter than the producer that feeds it"): the plain snippet, with its fraction, with the
+     *  §13.2.19 {@code dd. } de-dato prefix, and with the token's variable-width day/month. No producer feeds
+     *  them to this reader any more — the frontend reads its own source with a reader of its own and writes
+     *  ISO into {@code waarde} — so each is now no value, which both branches report as an unreadable lexeme. */
+    @Test void de_lezer_weigert_het_bronsnippet() {
+        assertNull(Literalen.parseDatumTijd(SNIPPET_MIDDAG), "the day-first snippet is not the wire lexeme");
+        assertNull(Literalen.parseDatumTijd(SNIPPET_HALVE), "nor with its fraction");
+        assertNull(Literalen.parseDatumTijd("dd. 25-12-2024 10:30:00.500"), "nor with the de-dato prefix");
+        assertNull(Literalen.parseDatumTijd("1-3-2025 09:00:00"), "nor with one-digit day and month");
     }
 
     /** End-to-end, per branch, for a form that PLAYED before the fix: the zone-suffixed lexeme. It is not the

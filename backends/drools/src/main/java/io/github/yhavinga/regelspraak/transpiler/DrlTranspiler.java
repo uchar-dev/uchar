@@ -4523,10 +4523,12 @@ public final class DrlTranspiler {
             Frag lo = operand(acc, v.links(), subject), ro = operand(acc, v.rechts(), subject);
             if (lo.marker() || ro.marker()) {
                 // The label is the manifest reason a reader sees. A bare "voorwaarde" cannot distinguish a
-                // construct this back-end does not carry from an UNREADABLE datum-tijd lexeme (IR-SPEC ch. 4.1) —
-                // a document defect the producer can fix. Name that one, in the exec branch's words.
+                // construct this back-end does not carry from an UNREADABLE date or datum-tijd lexeme (IR-SPEC ch. 4.1) —
+                // a document defect the producer can fix. Name those, in the exec branch's words.
                 boolean lexeem = Literalen.onleesbaarDatumTijdLexeem(v.links()) || Literalen.onleesbaarDatumTijdLexeem(v.rechts());
-                return LoweredConditie.marker(lexeem ? "voorwaarde met onleesbaar datum-tijd-lexeem" : "voorwaarde", v.bron());
+                boolean datumLexeem = Literalen.onleesbaarDatumLexeem(v.links()) || Literalen.onleesbaarDatumLexeem(v.rechts());
+                return LoweredConditie.marker(lexeem ? "voorwaarde met onleesbaar datum-tijd-lexeem"
+                        : datumLexeem ? "voorwaarde met onleesbaar datum-lexeem" : "voorwaarde", v.bron());
             }
             // §5.5.5 a comparison with a TO-ONE navigated operand: mvel's `!.` (from operand()) short-circuits the whole
             // constraint to a non-match on a null relation — spec-correct for ordering/GELIJK (a leeg operand is onwaar)
@@ -5321,7 +5323,7 @@ public final class DrlTranspiler {
         String label = Literalen.tekstOfEnumLabel(lit);
         if (label != null) return Frag.ok(drlString(label));
         if (t instanceof Datatype.Booleaan) return Frag.ok(Literalen.waar(lit.waarde()) ? "true" : "false");
-        if (t.isDatum()) { // "dd. d-m-yyyy [hh:mm:ss.mmm]" — the shared readers parse; the components splice as
+        if (t.isDatum()) { // the ISO lexeme (WF-084/WF-095) — the shared readers parse; the components splice as
             // DECIMAL ints (a raw "08"/"09" would be an invalid octal literal in mvel/Java, §13.2.19).
             if (t instanceof Datatype.DatumTijd) {
                 java.time.LocalDateTime dt = Literalen.parseDatumTijd(lit.waarde());

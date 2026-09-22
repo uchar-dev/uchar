@@ -14,6 +14,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -51,10 +52,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * expectation is read or touched. The reads go through {@link CaseRunner#invoerBeans}, the input layer
  * before any rule fires, so what the reader made of a value is the assertion itself.
  *
- * <p>The LITERAL reader ({@code Literalen.parseDatumTijd}) is a different reader with a different
- * grammar and its own witness ({@code DatumTijdLexeemWitnessTest}); the only thing asserted about it
- * here is the asymmetry in the last case — the two grammars are not the same one, and nothing else
- * records that.
+ * <p>The LITERAL reader ({@code Literalen.parseDatumTijd}) is a different reader with its own witness
+ * ({@code DatumTijdLexeemWitnessTest}). Until 2026-09-23 its grammar was WIDER than this one — it also
+ * read the day-first source snippet — and the last case here pinned that asymmetry. Since card
+ * {@code datumtijd-lezers-versmalling} both readers refuse the snippet, and the last case pins that
+ * agreement on the one string that used to split them.
  */
 class CaseWireDatumTijdWitnessTest {
 
@@ -68,7 +70,7 @@ class CaseWireDatumTijdWitnessTest {
     /** The calendar branch names the calendar instead — the fields were right. */
     private static final String KALENDER = "the calendar is not";
 
-    /** The RegelSpraak source snippet for 2026-03-15 12:00 — a valid LITERAL lexeme (WF-095), not a case value. */
+    /** The RegelSpraak source snippet for 2026-03-15 12:00 — neither a literal lexeme (WF-095) nor a case value. */
     private static final String BRONSNIPPET = "15-03-2026 12:00:00.000";
 
     // ---------------- the eight field classes: the pattern refuses, and names the form ----------------
@@ -153,16 +155,15 @@ class CaseWireDatumTijdWitnessTest {
                 "three digits are milliseconds: .001 is ONE millisecond, the width the readers split on");
     }
 
-    // ---------------- the asymmetry: one string, valid on one wire and not on the other ----------------
+    // ---------------- one string, refused on both wires ----------------
 
-    @Test void het_bronsnippet_is_wel_een_literal_lexeem_en_geen_casewaarde() throws Exception {
-        // WF-095 admits TWO spellings for a datum-tijd LITERAL (the canonical one and the day-first
-        // source snippet the repository's own emitter still writes); the CASE wire admits ONE. The two
-        // grammars are asserted against each other in one case, so making them equal cannot pass unseen
-        // in either direction: widening the case reader breaks the second half, narrowing the literal
-        // reader breaks the first.
-        assertEquals(LocalDateTime.of(2026, 3, 15, 12, 0, 0), Literalen.parseDatumTijd(BRONSNIPPET),
-                "the day-first snippet is a valid literal lexeme");
+    @Test void het_bronsnippet_is_geen_literal_lexeem_en_geen_casewaarde() throws Exception {
+        // Until 2026-09-23 this case pinned an ASYMMETRY: the literal reader read the snippet as noon on
+        // 15 March (WF-095 then admitted two spellings, because the emitter wrote the snippet into
+        // `waarde`) while the case reader refused it. The emitter writes ISO since p5-datumtijd-lexeem
+        // and WF-095 admits ISO alone, so the literal reader narrowed too. Both halves are asserted in
+        // one case, so widening EITHER reader back to the snippet fails here.
+        assertNull(Literalen.parseDatumTijd(BRONSNIPPET), "the day-first snippet is not a literal lexeme");
         weigertOpVorm(BRONSNIPPET, "and the same string is not a valid case value");
     }
 

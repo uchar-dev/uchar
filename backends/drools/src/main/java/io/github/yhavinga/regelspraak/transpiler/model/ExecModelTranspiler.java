@@ -7238,8 +7238,9 @@ public final class ExecModelTranspiler {
      *  scope for it sent one earlier session hunting a millisecond bug that did not exist. The DRL branch labels
      *  the same cause in the same words, so a producer reads one diagnosis from either branch. */
     private static String voorwaardeSkipReden(Conditie c) {
-        return Conditie.bevatOperand(c, Literalen::onleesbaarDatumTijdLexeem)
-                ? "voorwaarde met onleesbaar datum-tijd-lexeem" : "voorwaarde buiten Phase-B scope";
+        if (Conditie.bevatOperand(c, Literalen::onleesbaarDatumTijdLexeem)) return "voorwaarde met onleesbaar datum-tijd-lexeem";
+        if (Conditie.bevatOperand(c, Literalen::onleesbaarDatumLexeem)) return "voorwaarde met onleesbaar datum-lexeem";
+        return "voorwaarde buiten Phase-B scope";
     }
 
     private Rule skip(String reason) { overgeslagen.add(reason); return null; }
