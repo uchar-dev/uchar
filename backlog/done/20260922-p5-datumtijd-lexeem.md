@@ -87,10 +87,15 @@ checks, 580 casussen); 7 PASS (544 + 36 overlevers); 8 PASS (41 rood);
 9 PASS (201 checks, 12 goldens); 10 PASS (374 tests, 69 rgs-goldens);
 11 PASS (29/29/29); 12 PASS (played 178, DRL 155, JUnit 535); 13 PASS
 (131 twists, 0 overlevers); 14 PASS (130 checks). Geen versieklap,
-v0-schema ongewijzigd.
+v0-schema ongewijzigd. Na de rebase op main 7fcaafbc (samen met
+`jutterswet-keurspelling`): 2 PASS (272); 3 PASS (272/431); 4 PASS
+(625); 5 PASS (775 / 584); 6 PASS (479 / 584); 7 PASS (548 + 36); 8
+PASS (41); 9 PASS (201 / 12); 10 PASS (374 / 70); 11 PASS (29); 12 PASS
+(played 179, DRL 156, JUnit 539); 13 PASS (131); 14 PASS (130).
 
 **Beschermd pad, voorstel:** `scripts/check-drools.sh`
-`EXPECTED_PLAYED` 177 → 178 en `EXPECTED_DRL_PLAYED` 154 → 155, beide
+`EXPECTED_PLAYED` 178 → 179 en `EXPECTED_DRL_PLAYED` 155 → 156 (na de
+rebase; keurspelling bracht ze van 177/154 op 178/155), beide
 +1 voor `jutterswet-sluitstip` (speelt in beide takken zonder
 backendwijziging), met redenregels. Gate-2/3-tellingen +1 golden, gate
 3 +1 negatief, gate 10 rgs-goldens 68 → 69 (alleen vloeren, geen
@@ -113,4 +118,4 @@ admits the canonical ISO form alone — no document moved (the snippet had
 zero carriers), new negatief `wf095-bronsnippet` (the one witness the
 old arm admitted), emitter golden `jutterswet-sluitstip` (the first
 `bron.rgs` golden with a `DatumTijd` literal, full square, gate-12 pins
-178/155); the readers still read the snippet behind the fence".
+179/156 together with `jutterswet-keurspelling`); the readers still read the snippet behind the fence".
