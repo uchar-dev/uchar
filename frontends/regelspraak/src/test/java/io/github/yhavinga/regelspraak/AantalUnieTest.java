@@ -293,6 +293,15 @@ class AantalUnieTest {
         assertEquals(Severity.ERROR, ds.get(0).severity());
         List<Diagnostic> metDie = Resolver.resolve(MODEL + ONOPLOSBARE_DEELSELECTIE).diagnostics;
         assertEquals(2, metDie.size(), () -> "een echte deelselectie hoort haar WARNING te houden: " + metDie);
+        // the COUNT alone would pass on any second diagnosis whatever, so pin which one it is: the
+        // surviving non-error must be the die/dat WARNING and nothing else
+        List<Diagnostic> waarschuwingen = metDie.stream()
+                .filter(d -> d.severity() == Severity.WARNING).toList();
+        assertEquals(1, waarschuwingen.size(), () -> "verwacht precies één WARNING: " + metDie);
+        assertTrue(waarschuwingen.get(0).message().contains("'die/dat'-subselectie op een aggregatie-operand"),
+                () -> "de overblijvende WARNING is niet de deelselectie-melding: " + waarschuwingen.get(0));
+        assertEquals(1, metDie.stream().filter(d -> d.severity() == Severity.ERROR).count(),
+                () -> "verwacht precies één ERROR: " + metDie);
     }
 
     @Test

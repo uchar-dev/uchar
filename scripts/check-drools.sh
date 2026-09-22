@@ -749,7 +749,19 @@ EXPECTED_CHANNEL=(
 # identically and had since that filter landed, so one walk closes both and the suite pins both halves
 # (VouwfilterStratumWitnessTest). Hand-written golden, no bron.rgs: the frontend refuses "die niet
 # gemerkt zijn" by name, so the form lives on the wire alone. EXPECTED_DRL_PLAYED moves by one as well.
-EXPECTED_PLAYED=176
+#
+# 176 -> 177 (2026-09-22, fix round 3): jutterswet-uniekwantor, the same order law along a different
+# SPELLING of the negation. A compound with GEEN / TEN_HOOGSTE / PRECIES is negation-like
+# (RUNTIME-SEMANTICS ch. 6.1, and the verifier's dep_cond implements it in those words), and the walk
+# that found the fold-filter reads read polarity out of Kenmerk.negatie() alone — so "aan GEEN van de
+# volgende voorwaarden voldoen: gemerkt zijn" produced a POSITIVE read and left the consumer in band 0.
+# Measured on this document before the repair: ref and the ASP backend PASS with 11 expectations, both
+# Drools branches `verwacht afwezig, werkelijk aanwezig`. The walk now carries a conservative negation
+# context exactly as the verifier passes it; ALLE / DE / TEN_MINSTE pass it THROUGH rather than
+# flipping it, so no rule sinks for nothing (pinned in VouwfilterStratumAnalyseTest). The golden is the
+# GEEN-rewrite of jutterswet-uniestratum, model and case and all eleven expectations identical, so the
+# two files differ in the filters alone. EXPECTED_DRL_PLAYED moves by one as well.
+EXPECTED_PLAYED=177
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -938,7 +950,10 @@ DRL_CHANNEL=(
 # 152 -> 153 (2026-09-22, naronde of the same card): jutterswet-uniestratum. The stratification
 # analysis is SHARED, so this branch carried the same gap and is repaired by the same walk; measured
 # diverging before it and PLAYED after. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=153
+# 153 -> 154 (2026-09-22, fix round 3): jutterswet-uniekwantor. The stratification analysis is SHARED,
+# so this branch carried the same polarity gap and is repaired by the same context. Reason block at
+# EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=154
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a

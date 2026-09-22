@@ -293,16 +293,16 @@ staart-in-plaats-van-herschrijving: de kop blijft waar over de operandenlijst.
 ### 8. Poorten, alle veertien, elk als losse aanroep
 
      1 check-self-contained     PASS
-     2 check-ir-schema          PASS  269 documenten valideren en round-trippen,
+     2 check-ir-schema          PASS  270 documenten valideren en round-trippen,
                                       vloer 192; 24 patroon-zelftestrijen
-     3 check-verifier           PASS  269 golden schoon; 430 negatief afgewezen
+     3 check-verifier           PASS  270 golden schoon; 430 negatief afgewezen
                                       op hun eigen WF, vloer 350
-     4 check-case-schema        PASS  618 casusbestanden
-     5 check-oracle             PASS  ref-suite 773, vloer 489; 577 cases exact,
+     4 check-case-schema        PASS  619 casusbestanden
+     5 check-oracle             PASS  ref-suite 773, vloer 489; 578 cases exact,
                                       vloer 427
-     6 check-clingo             PASS  backendsuite 479, vloer 83; 577 cases
+     6 check-clingo             PASS  backendsuite 479, vloer 83; 578 cases
                                       ref = clingo
-     7 check-noop               PASS  541 cases weerleggen een niets-doener;
+     7 check-noop               PASS  542 cases weerleggen een niets-doener;
                                       36 gepinde overlevers
      8 check-rood               PASS  41 rode cases, vloer 26; 82 fragmenten
                                       citeren geen van de 36 bodemzinnen
@@ -311,23 +311,23 @@ staart-in-plaats-van-herschrijving: de kop blijft waar over de operandenlijst.
                                       BYTE-IDENTIEK, vloer 38
     11 check-toka-parity        PASS  29 cases, vloer 29; nul divergenties
                                       (ref 29, clingo 29, Drools 29 PLAYED)
-    12 check-drools             PASS  gespeeld 176 (pin 176), kanaalvloer 52;
-                                      DRL-tekst 153 (pin 153), vloer 75;
-                                      JUnit 529, vloer 239
+    12 check-drools             PASS  gespeeld 177 (pin 177), kanaalvloer 52;
+                                      DRL-tekst 154 (pin 154), vloer 75;
+                                      JUnit 532, vloer 239
     13 check-reftype-derivation PASS  131 twists over 27 goldens, vloer 74;
                                       128 replays, 25 DRL-tekst, vloer 13
     14 check-flogic             PASS  130 checks, vloer 81; 2 goldens, vloer 1
 
-(Eindstand na fixronde 1 en de naronde; elk als losse aanroep na
+(Eindstand na fixronde 1, de naronde en fixronde 3; elk als losse aanroep na
 `eval $(opam env)`.)
 
 Geen enkele VLOER aangeraakt. Twee GELIJKHEIDSpins wel, en dat is een
-beschermd-padvoorstel: `EXPECTED_PLAYED` 172 → **176** en
-`EXPECTED_DRL_PLAYED` 149 → **153** in `scripts/check-drools.sh`, elk met een
-redenblok per stap bij de pin. De handberekende som: VIER nieuwe goldens spelen
+beschermd-padvoorstel: `EXPECTED_PLAYED` 172 → **177** en
+`EXPECTED_DRL_PLAYED` 149 → **154** in `scripts/check-drools.sh`, elk met een
+redenblok per stap bij de pin. De handberekende som: VIJF nieuwe goldens spelen
 in BEIDE takken (`jutterswet-vondstunie`, `jutterswet-keurunie`, uit fixronde 1
-`jutterswet-unievoorwaarde` en uit de naronde `jutterswet-uniestratum`), dus
-172 + 4 en 149 + 4.
+`jutterswet-unievoorwaarde`, uit de naronde `jutterswet-uniestratum` en uit
+fixronde 3 `jutterswet-uniekwantor`), dus 172 + 5 en 149 + 5.
 
 ### 9. Gewijzigde bestanden
 
@@ -425,7 +425,7 @@ daarop." Voorgesteld wordt die ene zin te VERVANGEN door:
 > vóór deze kaart tegen de eindstand, over golden + rood + negatief +
 > pariteit — de enige documenten waarvan de uitvoer verschilt zijn de negen die
 > deze kaart maakte, en de oude binary kan die niet eens laden. `EXPECTED_PLAYED`
-> gaat van 172 naar 176 en `EXPECTED_DRL_PLAYED` van 149 naar 153. Het
+> gaat van 172 naar 177 en `EXPECTED_DRL_PLAYED` van 149 naar 154. Het
 > meerstapsbereik onder een telling blijft waar WF-096 en WF-102 het lieten: een
 > selectie draagt een eenstaps `bronRol` en geen `bronPad`, benoemd als open
 > flank in plaats van als bijwerking beslecht. **Clausule (a) gaat over de
@@ -456,7 +456,23 @@ daarop." Voorgesteld wordt die ene zin te VERVANGEN door:
 > De GEWONE eenbronsvouw divergeerde identiek en deed dat al sinds haar filter
 > landde, dus één wandeling sluit beide, en beide helften zijn gepind
 > (`jutterswet-uniestratum` onder de poorten, `VouwfilterStratumWitnessTest`
-> in de suite). De toolchain-herpin (acceptatie (d)) volgt hierna.
+> in de suite). **Die wandeling had zelf nog twee gaten**, door een derde lens
+> gevonden en met eigen probes gereproduceerd: zij las de polariteit
+> uitsluitend uit `Kenmerk.negatie()` — zodat een kenmerk onder een
+> NEGATIE-ACHTIGE kwantor (GEEN, TEN_HOOGSTE, PRECIES; ch. 6.1, en de
+> verifier voert het zo uit) positief las en de consument in band 0 bleef —
+> en zij liet het omliggende ONDERWERP vallen, zodat een vouwfilter zonder
+> elementtype op de naam-BREDE producentmatch uitkwam en een gelijknamig
+> kenmerk op een ONVERWANT objecttype een valse rand vormde (gemeten stratum
+> −2 waar −1 normatief is; een valse rand kan bovendien een valse cyclus
+> sluiten). De wandeling draagt nu een conservatieve negatiecontext én het
+> omliggende subject mee, met dezelfde regel als de verifier
+> (`elementObjecttype` anders het subject); ALLE, DE en TEN_MINSTE geven de
+> context dóór in plaats van hem om te zetten, zodat geen regel voor niets
+> zakt. Gepind in `VouwfilterStratumAnalyseTest` (de banden zelf, beide
+> richtingen) en in de golden `jutterswet-uniekwantor` (dezelfde orde langs de
+> GEEN-spelling, elf identieke verwachtingen). De toolchain-herpin (acceptatie
+> (d)) volgt hierna.
 
 ## Fixronde 1 (2026-09-22)
 
@@ -632,4 +648,91 @@ geborgen telt **2**, `J2` met `[V3, V3]` telt **1**. Het is bewust iets anders
 dan `WV-3.4d-dubbele-tak`, die de SELECTIE herhaalt: die getuige gaat over de
 unie, deze over de invoerlezing, en pas samen dekken zij "een instantie telt
 één keer" aan beide kanten.
+
+## Fixronde 3 (2026-09-22) — de derde lens, op de wandeling zelf
+
+De gerichte nalens bevestigde de fixronde en de naronde (pins, handberekeningen,
+benoemde armen met hun citaten, de zeven negatiefs, de sealed switch) en vond
+twee blokkades IN de nieuwe stratificatie-wandeling. Beide zijn rood-eerst
+gereproduceerd met eigen probes vóór enige reparatie.
+
+### N1 — de polariteit ging verloren onder een samengestelde kwantor
+
+Een samengestelde met GEEN, TEN_HOOGSTE of PRECIES is NEGATIE-ACHTIG:
+`RUNTIME-SEMANTICS.md` ch. 6.1 zegt het en de verifier voert het uit
+(`dep_cond`, "negation-like: conservative"). De wandeling las de polariteit
+uitsluitend uit `Kenmerk.negatie()` en liep een samengestelde binnen zonder
+context, dus dezelfde zin in de andere spelling werd een POSITIEVE lezing.
+
+**Rood-eerst.** Een GEEN-herschrijving van `jutterswet-uniestratum` — elk
+`Kenmerk(gemerkt, negatie=true)` vervangen door
+`Samengesteld(GEEN, [Kenmerk(gemerkt, negatie=false)])`, model en case
+ongemoeid — is verifier-schoon en meet:
+
+    ref     11 verwachtingen PASS
+    clingo  11 verwachtingen PASS
+    Drools exec-model   FAIL  J1: verwacht afwezig, werkelijk aanwezig
+    Drools DRL-tekst    FAIL  idem
+
+Op bandniveau gemeten: de consument kreeg salience **0** waar **−1**
+normatief is.
+
+**Fix.** `verzamelReads` en `readsInExpr` dragen een conservatieve
+negatiecontext mee, precies zoals de verifier hem doorgeeft: eenmaal negatief,
+behoudend negatief — een tweede negatie heft de eerste niet op. GEEN,
+TEN_HOOGSTE en PRECIES zetten hem aan; ALLE, DE en TEN_MINSTE geven hem dóór.
+Die tweede helft is opzettelijk gepind: "behandel elke samengestelde als
+negatief" is óók veilig maar laat regels zakken die daar geen reden voor
+hebben, en een band die alleen maar dieper wordt valt niemand op.
+
+**Getuigen, allebei.** De golden `jutterswet-uniekwantor` — de
+GEEN-herschrijving zelf, handgeschreven omdat de frontend geen van beide
+negatiespellingen oplost en de zin bij naam weigert — bewaakt hem blijvend via
+de poorten 5, 6 en 12; `VouwfilterStratumAnalyseTest` pint de BANDEN zelf, in
+beide richtingen (GEEN/TEN_HOOGSTE/PRECIES op −1, ALLE/TEN_MINSTE op 0).
+Pins daarom 176 → **177** en 153 → **154**.
+
+### N2 — de wandeling verloor het omliggende onderwerp
+
+`readsInExpr` had geen subjectparameter; een functiefilter gebruikte
+rechtstreeks `f.elementObjecttype()` en een geneste conditie kreeg expliciet
+`null`. Maar `null` betekent in deze analyse de naam-BREDE producentmatch, een
+terugval die `Stratificatie` uitsluitend voor een ONOPGELOSTE GENAVIGEERDE
+lezing reserveert. De verifier bewaart het omliggende subject en valt alleen
+op het elementtype terug wanneer dat er IS (`fsubject = elementObjecttype else
+subject`).
+
+**Rood-eerst.** Een document met een filterdragende telling zonder
+`elementObjecttype` in een vergelijking, naast een GELIJKNAMIG kenmerk dat op
+een ONVERWANT objecttype één band diep geproduceerd wordt: de consument kreeg
+stratum **−2** waar **−1** normatief is — de homoniem op het andere type is
+helemaal geen rand. Een valse rand is niet alleen een verkeerd getal: zij kan
+een valse CYCLUS sluiten en de cyclus-lokale terugval activeren.
+
+**Fix.** `readsInExpr` draagt het huidige subject door alle expressiekinderen,
+en een functiefilter (en een unietakfilter) leest op `elementObjecttype` als
+die er is en anders op het omliggende subject — de regel van de verifier,
+letterlijk. `IfThenElse`'s guard krijgt het subject in plaats van `null`.
+
+**Getuige.** `VouwfilterStratumAnalyseTest.een_vouwfilter_zonder_elementtype_leest_op_het_omliggende_onderwerp`
+pint −1 voor de consument én −1 voor de echte ketenstap op het eigen type, dus
+de reparatie kan de rand die er wél hoort te zijn niet zijn kwijtgeraakt. Het
+anchor-corpus is niet aangeraakt.
+
+### N3 — de WARNING-getuige pint nu ook wát er overblijft
+
+`AantalUnieTest` telde twee diagnostieken en liet in het midden of de tweede de
+bedoelde melding was. Nu: precies één ERROR, precies één WARNING, en die
+WARNING draagt het fragment `'die/dat'-subselectie op een aggregatie-operand`.
+
+### Wat deze ronde NIET meenam, gemeten en benoemd
+
+De verifier leest alles onder de MATRIX van een kwantorvouw behoudend
+NEGATIEF; deze wandeling geeft de context daar alleen dóór. De spiegeling is
+een DERDE gedragswijziging en niet gratis: geteld over de 730 documenten van
+de vier zones zitten er **13** kenmerklezingen onder een kwantorvouw in een
+voorwaarde, waarvan **12 positief gespeld**, dus de spiegeling zou die
+consumenten een band laten zakken en gate-12-kanalen verschuiven. Dat hoort
+bij de eigen kaart van de kwantorvouw, met een eigen meting. Vastgelegd in de
+code bij de arm, zodat het een besluit is en geen verschil dat niemand zag.
 
