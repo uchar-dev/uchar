@@ -3,7 +3,12 @@
 
 Aanroep, vanuit de repowortel:
 
-    python3 spec/proposals/v1-naamtabel-toets.py [--tabel PAD]
+    python3 spec/proposals/v1-naamtabel-toets.py [--tabel PAD] [--wortel MAP]
+
+--tabel wijst een andere tabel aan (voor mutatieproeven op een kopie);
+--wortel is de repowortel waartegen schema en IR-SPEC gelezen worden.
+Schema- en spec-pad liggen in deze toets vast; de tabel moet ze gelijk
+noemen, zodat hij zich niet tegen een andere bron kan laten toetsen.
 
 rc 0: de tabel spec/proposals/v1-naamtabel.json is totaal en consistent.
 rc 1: minstens een bevinding; elke bevinding staat op stderr met de naam erbij.
@@ -27,10 +32,32 @@ Wat de toets eist, en waarom:
    in `spec_zonder_v0`.
 5. Bewijs is letterlijk. `bewijs` en `kop` komen woordelijk (witruimte
    genormaliseerd) in IR-SPEC voor en noemen de namen die hun herkomstklasse
-   belooft; elke v1-naam komt als woord in IR-SPEC voor.
-6. Botsingen zijn verklaard: twee v0-namen op een doelnaam (per knoop, per
-   property, en binnen een knoop) staan in `botsingen`; die lijst faalt als
-   ze verouderd is, in beide richtingen.
+   belooft: een v1-propertynaam als identifier binnen een backtick-span van
+   bewijs of kop, een v1-knoopnaam op woordgrens; elke v1-naam komt als woord
+   in IR-SPEC voor. `sectie` moet de sectie zijn waarin het bewijs staat.
+   Een `identiteit` op een Nederlands geklasseerde naam faalt, tenzij de rij
+   `onzeker` draagt; een `voorstel` buiten een gat mag alleen met `onzeker`.
+6. Botsingen en onzekere doelen zijn verklaard: twee v0-namen op een doelnaam (per knoop, per
+   property, en binnen een knoop) staan in `botsingen`, en elk doel met
+   `onzeker: true` staat in de lijst `onzeker`; beide lijsten falen als ze
+   verouderd zijn, in beide richtingen.
+
+Bekende grenzen — wat de toets NIET waarmaakt, zodat de hernoeming (M8) er
+niet meer vertrouwen in legt dan dit:
+
+- Een `uitlijning` is een oordeel van de bouwer. De toets ziet dat het bewijs
+  de v1-naam citeert, niet dat het geciteerde tabelveld semantisch het v0-veld
+  is. Een verwisseling tussen twee velden die in hetzelfde fragment staan
+  (bv. `from`/`to` in een tabelrij) laat hem groen.
+- Rijen met `onzeker: true` zijn niet mechanisch uit te voeren: hun doel is
+  wat de spec letterlijk zegt of wat de bouwer las, en de `noot` zegt waarom
+  dat twijfelachtig is. Een hernoemer MOET ze overslaan of laten beslissen.
+- `klasse` (nl / en / neutraal) is een ongetoetste keuze van de bouwer. B6
+  legde zijn eigen klassering per naam niet vast, dus de aantallen zijn met
+  B6 alleen in totaal (80/193) vergelijkbaar, niet per taal.
+- Een property met een doel zonder `knopen` geldt voor alle plaatsen. Krijgt
+  het schema een nieuwe knoop met die property, dan erft die plaats stil
+  hetzelfde doel; alleen rijen met `knopen` merken een nieuwe plaats op.
 """
 import argparse
 import collections
@@ -41,6 +68,7 @@ import sys
 
 HERKOMST = {"v0name", "vermelding", "uitlijning", "identiteit", "vervalt", "gat"}
 KLASSE = {"nl", "en", "neutraal"}
+BRONNEN = {"schema": "spec/schema/regelspraak-ir-v0.schema.json", "spec": "spec/IR-SPEC.md"}
 
 bevindingen = []
 
@@ -99,6 +127,41 @@ def schema_namen(schema):
 
 def norm(t):
     return re.sub(r"\s+", " ", t)
+
+
+def norm_met_regels(spec):
+    """norm(spec) plus het bronregelnummer van elk teken daarvan."""
+    uit, regels = [], []
+    regel, in_wit = 1, False
+    for ch in spec:
+        if ch.isspace():
+            if not in_wit:
+                uit.append(" ")
+                regels.append(regel)
+            in_wit = True
+        else:
+            uit.append(ch)
+            regels.append(regel)
+            in_wit = False
+        if ch == "\n":
+            regel += 1
+    return "".join(uit), regels
+
+
+def secties(spec):
+    """Per bronregel de sectie (`2`, `2.2`, `4.3a`) waarin hij staat."""
+    uit, huidig = [], ""
+    for l in spec.split("\n"):
+        m = re.match(r"^##+ (\d+(?:\.\d+[a-z]?)?)\.? ", l)
+        if m:
+            huidig = m.group(1)
+        uit.append(huidig)
+    return uit
+
+
+def backtick_tokens(tekst):
+    return {t for span in re.findall(r"`([^`]+)`", tekst or "")
+            for t in re.findall(r"[A-Za-z][A-Za-z0-9]*", span)}
 
 
 def v0_name_regels(spec):
@@ -176,9 +239,13 @@ def main():
 
     global tabel
     tabel = json.loads(lees(os.path.join(args.wortel, args.tabel)))
-    schema = json.loads(lees(os.path.join(args.wortel, tabel["bronnen"]["schema"])))
-    spec = lees(os.path.join(args.wortel, tabel["bronnen"]["spec"]))
-    spec_n = norm(spec)
+    if tabel.get("bronnen") != BRONNEN:
+        fout("`bronnen` in de tabel is %r; de toets leest vast %r" % (tabel.get("bronnen"), BRONNEN))
+    schema = json.loads(lees(os.path.join(args.wortel, BRONNEN["schema"])))
+    spec = lees(os.path.join(args.wortel, BRONNEN["spec"]))
+    spec_n, spec_regel = norm_met_regels(spec)
+    assert spec_n == norm(spec)
+    sectie_van = secties(spec)
     spec_woorden = set(re.findall(r"[A-Za-z][A-Za-z0-9]*", spec))
 
     s_knopen, s_plaatsen = schema_namen(schema)
@@ -197,7 +264,7 @@ def main():
                 fout("%s `%s`: heeft een rij maar bestaat niet in het schema" % (soort, naam))
 
     # 2. rijvorm, bewijs en de verdeling van plaatsen
-    def toets_groep(soort, v0, g):
+    def toets_groep(soort, v0, g, klasse):
         h = g.get("herkomst")
         v1 = g.get("v1")
         wie = "%s `%s`" % (soort, v0) + (" op %s" % ",".join(g["knopen"]) if "knopen" in g else "")
@@ -214,6 +281,28 @@ def main():
             fout("%s: een gat draagt een `voorstel`" % wie)
         if h == "identiteit" and v1 != v0:
             fout("%s: identiteit maar v1 is `%s`" % (wie, v1))
+        onzeker = g.get("onzeker", False)
+        if onzeker not in (True, False):
+            fout("%s: `onzeker` is true of afwezig" % wie)
+        if onzeker and not g.get("noot"):
+            fout("%s: `onzeker` eist een `noot` met de reden" % wie)
+        if h == "identiteit" and klasse == "nl" and not onzeker:
+            fout("%s: identiteit op een Nederlands geklasseerde naam" % wie)
+        if h != "gat" and g.get("voorstel") and not onzeker:
+            fout("%s: een `voorstel` buiten een gat mag alleen met `onzeker`" % wie)
+        if "sectie" in g:
+            if g.get("bewijs") is None:
+                fout("%s: `sectie` zonder `bewijs` is ongetoetst" % wie)
+            else:
+                frag = norm(g["bewijs"])
+                gevonden = set()
+                start = spec_n.find(frag)
+                while start >= 0:
+                    gevonden.add(sectie_van[spec_regel[start] - 1])
+                    start = spec_n.find(frag, start + 1)
+                if gevonden and g["sectie"] not in gevonden:
+                    fout("%s: `sectie` %s, maar het bewijs staat in %s" % (
+                        wie, g["sectie"], ", ".join(sorted(gevonden))))
         for veld in ("bewijs", "kop"):
             frag = g.get(veld)
             if frag is not None and norm(frag) not in spec_n:
@@ -238,11 +327,15 @@ def main():
             fout("%s: herkomst v0name maar het bewijs is geen `v0 name:`-regel" % wie)
         if isinstance(v1, str):
             laatste = v1.split(".")[-1]
-            if h in ("vermelding", "uitlijning", "v0name"):
-                if laatste not in (bewijs or "") and laatste not in (kop or ""):
-                    fout("%s: bewijs en kop noemen de v1-naam `%s` niet" % (wie, laatste))
-            if h == "identiteit" and bewijs is not None and v1 not in bewijs:
-                fout("%s: het bewijs noemt de naam niet" % wie)
+            samen = (bewijs or "") + " " + (kop or "")
+            if h in ("vermelding", "uitlijning", "v0name", "identiteit") and (bewijs or kop):
+                if soort == "property":
+                    genoemd_v1 = laatste in backtick_tokens(samen)
+                else:
+                    genoemd_v1 = re.search(r"(?<![A-Za-z0-9])%s(?![A-Za-z0-9])" % re.escape(laatste), samen)
+                if not genoemd_v1:
+                    fout("%s: bewijs en kop noemen de v1-naam `%s` niet%s" % (
+                        wie, laatste, " als identifier in backticks" if soort == "property" else " op woordgrens"))
             for deel in v1.split("."):
                 if deel not in spec_woorden:
                     fout("%s: v1-naam `%s` komt in IR-SPEC niet voor" % (wie, deel))
@@ -255,7 +348,7 @@ def main():
         for g in rij["doel"]:
             if "knopen" in g:
                 fout("knoop `%s`: een knooprij verdeelt geen plaatsen" % rij["v0"])
-            toets_groep("knoop", rij["v0"], g)
+            toets_groep("knoop", rij["v0"], g, rij.get("klasse"))
 
     for rij in tabel["properties"]:
         v0 = rij["v0"]
@@ -266,7 +359,7 @@ def main():
             fout("property `%s`: geen doel" % v0)
             continue
         for g in gs:
-            toets_groep("property", v0, g)
+            toets_groep("property", v0, g, rij.get("klasse"))
         if v0 not in s_plaatsen:
             continue
         if len(gs) > 1 or "knopen" in gs[0]:
@@ -356,12 +449,29 @@ def main():
             if k not in berekend[soort]:
                 fout("`botsingen` (%s) `%s`: geen botsing meer (verouderd)" % (soort, k))
 
+    # onzeker: de markering is verklaard, zodat hij niet stil wegvalt
+    berekend_o = sorted("%s@%s" % (r["v0"], "/".join(g["knopen"]) if "knopen" in g else "*")
+                        for s_ in ("knopen", "properties") for r in tabel[s_]
+                        for g in r["doel"] if g.get("onzeker"))
+    verklaard_o = sorted(tabel.get("onzeker", []))
+    for k in berekend_o:
+        if k not in verklaard_o:
+            fout("onzeker doel `%s` staat niet in de lijst `onzeker`" % k)
+    for k in verklaard_o:
+        if k not in berekend_o:
+            fout("`onzeker` `%s`: het doel draagt de markering niet (meer)" % k)
+
     # rapport
     def tel(rijen):
         klassen = collections.Counter(r["klasse"] for r in rijen)
         herk = collections.Counter(g["herkomst"] for r in rijen for g in r["doel"])
         return klassen, herk
 
+    plaatsen = collections.Counter()
+    for r in tabel["properties"]:
+        for g in r["doel"]:
+            plaatsen[g["herkomst"]] += len(g.get("knopen", s_plaatsen.get(r["v0"], [])))
+    onzeker_n = sum(1 for s_ in ("knopen", "properties") for r in tabel[s_] for g in r["doel"] if g.get("onzeker"))
     kk, kh = tel(tabel["knopen"])
     pk, ph = tel(tabel["properties"])
     print("schema: %d knoopdiscriminanten, %d propertynamen" % (len(s_knopen), len(s_plaatsen)))
@@ -369,6 +479,8 @@ def main():
         len(tabel["knopen"]), dict(sorted(kk.items())), dict(sorted(kh.items()))))
     print("properties: %d rijen; klasse %s; doelgroepen per herkomst %s" % (
         len(tabel["properties"]), dict(sorted(pk.items())), dict(sorted(ph.items()))))
+    print("propertyplaatsen per herkomst %s; onzeker gemarkeerde doelgroepen: %d" % (
+        dict(sorted(plaatsen.items())), onzeker_n))
     print("v0 name-regels in IR-SPEC: %d; spec-knoopnamen ch. 2-4: %d" % (len(gelezen), len(sk)))
     print("botsingen: %d knoop, %d property, %d binnen een knoop" % tuple(
         len(berekend[s]) for s in ("knopen", "properties", "binnen_knoop")))

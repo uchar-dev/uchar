@@ -523,6 +523,21 @@ each node lists its v0 name"), en IR-SPEC draagt de doelnamen al: elke knoop in
 ch. 2–4 staat onder zijn Engelse naam met een `v0 name:`-regel eronder. **De
 tabel hoeft dus niet bedacht te worden, hij hoeft alleen geëxtraheerd.**
 
+> **CORRECTIE (2026-09-22, kaart `p10-naamtabel`).** De extractie weerlegt de
+> alinea hierboven gedeeltelijk. Op de schemastand van 2026-09-22 (82 knopen,
+> 196 properties; de 80/193 hierboven is de stand van `245f7152`) staan 22
+> knopen op een `v0 name:`-regel, waarvan 20 met een v1-identifier
+> (`ResolvedDagsoort` en `ResolvedStartpunt` hebben een prozakop). Ch. 4 heeft
+> **geen enkele** `v0 name:`-regel: 19 knopen en 145 propertyplaatsen zijn
+> alleen door uitlijning op de veldtabellen gekoppeld, een oordeel van de
+> bouwer en geen spec-tekst. 7 knopen en 31 propertyplaatsen hebben in IR-SPEC
+> geen v1-naam, en 5 doelen zijn als onzeker gemarkeerd (spec-inconsistentie
+> of twijfelachtige koppeling). "Volledig mechanisch" geldt dus pas nadat die
+> gaten en twijfels als spec-werk beslist zijn. Tabel en toets:
+> `spec/proposals/v1-naamtabel.json`, `python3
+> spec/proposals/v1-naamtabel-toets.py`; het rapport staat in
+> `backlog/done/20260922-p10-naamtabel.md`.
+
 Eén architectonisch feit maakt dit goedkoper dan het lijkt: `backends/drools`
 compileert de recordtypen van de frontend mee (`build-helper` voegt
 `frontends/regelspraak` model/ir/kern toe als bronmap, met de expliciete reden
@@ -2217,7 +2232,7 @@ stuk los te landen en verbeteren de v0-toestand ook als de klap nooit komt.
 | P7 | ~~**`eigenaar`-gastheerobject beslissen**~~ — **GELAND 2026-09-19** (`backlog/done/20260910-eigenaar-gastheer-object.md`) | de OBJECT-helft IS betekenis, dus het veld verdwijnt niet: B10 is bijgesteld van verwijdering naar hernoeming (zie B10, voorstel) en verhuist daarmee van M2 naar M8 | ~~B10~~ |
 | P8 | ~~**Kruis-stelsel-eenheidsdivergentie**~~ — **GELAND 2026-09-19** (`backlog/done/20260910-kruis-stelsel-eenheid-divergentie.md`) | clingo conformeert: de omrekentabel loopt op canonieke naam over de gedeclareerde stelsels; golden `jutterswet-stelselweging` draagt de vier gekruiste posities | B17 (ii) |
 | P9 | ~~**Dagsoortsemantiek**~~ — **GELAND 2026-09-19** (`backlog/done/20260910-dagsoort-semantiek.md`) | §6.10/§6.11 draaien in alle uitvoerders met drie rgs-goldens en vijf rode getuigen; de looptijdbetekenis staat (RUNTIME-SEMANTICS ch. 3.8) | B23 / V10 |
-| P10 | ~~**Naamtabel v0→v1 geëxtraheerd en getoetst**~~ — **GELAND 2026-09-22** (`backlog/done/20260922-p10-naamtabel.md`) | `spec/proposals/v1-naamtabel.json`, totaal over 82 knopen en 196 properties (schemastand 2026-09-22), getoetst door `python3 spec/proposals/v1-naamtabel-toets.py`. De aanname "elke Engelse naam al met een `v0 name:`-regel" klopte voor 20 van de 82 knopen: de rest koppelt de spec elders (10), alleen via de veld- of knooptabel (19 knopen, 110 propertyplaatsen), of niet — 7 knopen en 27 propertyplaatsen zijn gaten met een voorstel, zie de kaart | B6 |
+| P10 | ~~**Naamtabel v0→v1 geëxtraheerd en getoetst**~~ — **GELAND 2026-09-22** (`backlog/done/20260922-p10-naamtabel.md`) | `spec/proposals/v1-naamtabel.json`, totaal over 82 knopen en 196 properties (schemastand 2026-09-22), getoetst door `python3 spec/proposals/v1-naamtabel-toets.py`. De aanname "elke Engelse naam al met een `v0 name:`-regel" klopte voor 20 van de 82 knopen (22 staan op zo'n regel, 2 daarvan zonder v1-identifier). Knopen verder: 10 elders door de spec gekoppeld, 19 alleen via de knooptabel (uitlijning), 25 identiteit, 2 vervallen, 7 gaten met voorstel. Van de 456 propertyplaatsen: 145 uitlijning, 84 vermelding of `v0 name:`, 184 identiteit, 12 vervallen, 31 gaten; 5 doelen gemarkeerd onzeker — zie de kaart en de correctie bij B6 | B6 |
 | P11 | **Toka-zone opruimen + geschiedenis-herschrijving** (V12 (a)) | laatste stap vóór de klap, zodat P1–P10 nog van de toka-toets profiteren | de klap |
 
 ### Fase 2 — de klap
