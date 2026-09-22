@@ -192,3 +192,37 @@ toegevoegd (de golden bewaakt de ref-wijziging via gates 5/6).
 Temporele enumsleutels bleven buiten beeld: de ever-uniciteit
 (`rsOoitBotst`/`rsOoitBevat`) leest alleen getallen, dus een temporele
 enumsleutel is daar al geen gedragen vorm.
+
+## Fixronde (2026-09-22, na de lens)
+
+Rebase op main 8eed3fe9, schoon.
+
+A7. De ch.-5.6-zin staat als voorstel in `spec/RUNTIME-SEMANTICS.md`
+(beschermd pad, landt met mandaat bij de merge), met worked example
+keurspelling case 4. Het uitvoerbare voorbeeld is additief toegevoegd
+aan `ref/test/test_ref.ml` (`WV-5.6-enum-sleutel`, twee checks: twee
+spellingen botsen, twee labels niet); gate 5's suite gaat van 773 naar
+775. Mutatie: `key_lexeme` terug naar `Value.to_string` maakt
+`WV-5.6-enum-sleutel-twee-spellingen-botsen` rood; teruggedraaid.
+
+A9. De subjectkant van de exec-unie-sleuteljoin leest het typebewijs
+nu via `gedeclareerdAttribuut`, gelijk aan de bronkant en aan de
+DRL-tak (`sleutelVeld`). Zonder getuige, en dat is gemeten, niet
+overgeslagen: `Objecttype.attribuut` matcht al hoofdletterongevoelig,
+en de lezing kiest normalisatie zodra EEN van beide kanten een
+enumeratie is, terwijl de bronkant de gedeclareerde naam al gebruikte.
+Er bestaat dus geen document waarop de oude en de nieuwe vorm
+verschillend antwoorden; de wijziging is een gelijktrekking, geen
+reparatie.
+
+A8. Bekende grens. De drie in-memory documenten van
+`EnumNaamIdentiteitWitnessTest` (genavigeerd+parameter, unie,
+tekstflank; de vierde rij speelt de corpusgolden) zijn alleen in de
+twee Drools-takken machinaal geborgd; wat ref en clingo over de
+drie niet-corpusdocumenten zeggen (ref speelt ze met exact de
+verwachtingen van de rij, clingo weigert genavigeerd/parameter en unie
+bij vertaling en speelt de tekstflank) is eenmalig gemeten op
+2026-09-22 en wordt door geen gate herhaald. Het risico aan de
+ref-kant is klein: de unie deelt `ever_tuples` met de enkele
+uniciteit, die via de golden (gates 5/6) en `WV-5.6-enum-sleutel`
+bewaakt wordt.

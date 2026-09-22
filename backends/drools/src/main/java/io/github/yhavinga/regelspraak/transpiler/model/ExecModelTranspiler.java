@@ -5974,7 +5974,7 @@ public final class ExecModelTranspiler {
                     else {
                         // WF-030 keeps a position's datatype kind equal across the sources, so either side decides
                         java.util.function.UnaryOperator<Object> n = gelijkheidsLezing(b.type().attribuut(key),
-                                subj.type().attribuut(subj.sleutels().get(i)));
+                                subj.type().attribuut(gedeclareerdAttribuut(subj.type(), subj.sleutels().get(i))));
                         src = src.expr(nextId("ukj"), (Variable) keyVars.get(i),
                                 (Predicate2) (e, k) -> RegelSpraakRuntime.gelijkWaarde(n.apply(RegelSpraakRuntime.get(e, key)), n.apply(k)));
                     }

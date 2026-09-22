@@ -3126,9 +3126,18 @@ computation degrades locally (ch. 1.2's error-empty rules) and the error
 surfaces beside the result. Operational clauses, mirrored:
 
 - Producers: violated consistency assertions, uniqueness violations
-  (a duplicate non-empty key), the allocation degrades of ch. 4.3/4.4,
-  division by empty (dividend filled), a negative radicand, an empty
-  variable-start anchor (ch. 3.2).
+  (a duplicate non-empty key; two keys are the same key under the
+  ch. 1.2d value equality, component by component — an enumeration
+  component therefore up to the ci label identity of WF-008, so two
+  spellings of one declared label collide), the allocation degrades of
+  ch. 4.3/4.4, division by empty (dividend filled), a negative
+  radicand, an empty variable-start anchor (ch. 3.2).
+  Worked example (golden `jutterswet-keurspelling` case 4, verbatim in
+  gates 5–6, and `WV-5.6-enum-sleutel` in `ref/test/`): under
+  "De staten van alle Vondsten moeten uniek zijn." over the domain
+  {`gaaf`, `beschadigd`, `wrakhout`}, V1 with staat `Beschadigd` and V2
+  with staat `beschadigd` are **both marked** under "eenmalige staat";
+  `Beschadigd` beside `gaaf` marks neither.
 - Inserts are **idempotent** (one error fact per rule × subject, however
   often re-evaluated) and **validity-gated**: a version whose window
   excludes the evaluation date raises nothing (the version simply does

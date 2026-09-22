@@ -4943,6 +4943,37 @@ let () =
   expect_num "WV-IR2.2-c-kenmerkeigenaar-op-voorouder" (owner_run [ "gemeld" ]) "7";
   expect_leeg "WV-IR2.2-c-kenmerkeigenaar-onvervuld" (owner_run [])
 
+(* WV-5.6-enum-sleutel: RUNTIME-SEMANTICS ch. 5.6, a uniqueness key is compared
+   under the ch. 1.2d value equality, so an ENUMERATION component collides up
+   to the ci label identity — "Beschadigd" and "beschadigd" are one key. The
+   verbatim form of golden jutterswet-keurspelling case 4 (V1 and V2 both
+   marked); two different labels stay two keys. Card-sanctioned test touch
+   (20260920-drools-enumnaam-identiteit), additive. *)
+let () =
+  let keurklasse : Ir_v0.Ast.datatype =
+    Enumeratie
+      { domein = Some "Keurklasse"; waarden = [ Some "gaaf"; Some "beschadigd"; Some "wrakhout" ] }
+  in
+  let doc =
+    { empty_doc with
+      domeinen = [ ("Keurklasse", Some keurklasse) ];
+      objecttypen = [ ot "Vondst" [ ("staat", Some keurklasse) ] [] ];
+      uniciteiten =
+        [ { uni_naam = Some "eenmalige staat"; uni_subject = Some "Vondst";
+            sleutels = [ Some "staat" ]; scope_veld = None; uni_bron = None;
+            uni_geldigheid = None; scope_rol = None } ] }
+  in
+  let run a b =
+    let w =
+      World.add_instance
+        (World.add_instance World.empty (inst "V1" "Vondst" [ ("staat", Value.Enum a) ]))
+        (inst "V2" "Vondst" [ ("staat", Value.Enum b) ])
+    in
+    List.length (Eval.evaluate (env_of doc) w).World.channel
+  in
+  check "WV-5.6-enum-sleutel-twee-spellingen-botsen" (run "Beschadigd" "beschadigd" = 2);
+  check "WV-5.6-enum-sleutel-verschillende-labels-niet" (run "Beschadigd" "gaaf" = 0)
+
 (* --- ch. 3.9 / 3.9a: the whole-period COMPARISON and the QUANTIFIER FOLD --
    The five pinned rows of the §8.2 form
      "… indien de <attribuut> van ALLE <leden> van de <onderwerp>
