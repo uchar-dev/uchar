@@ -817,6 +817,28 @@ anchor that is *leeg at evaluation time* yields the empty timeline for
 every anchored producer, and the anchor rule's own §6.8 error surfaces on
 the §9.5 channel (v0 mirror: a companion rule raises it).
 
+**Fixed starting points** (§13.3.6.3–.7). The source language lets a
+timeline declare a fixed start point: a date for a week or multi-period
+grid, or a day (and months) for a month, quarter or year grid. The wire
+has **no field for it**: `Tijdlijn` carries name, `variableStart`,
+granularity and count, and the start-point determination (`IR-SPEC.md`
+ch. 3.8) is the variable anchor only. Every timeline without an anchor
+sits on the calendar grid above, so a start point that coincides with the
+calendar period — day 1 of the month; day 1 of months 1, 4, 7 and 10;
+day 1 of month 1 — is omitted without loss, and every other one would
+change the grid. No wire document can express such a source, so the
+producer refuses it rather than dropping the start point: the RegelSpraak
+frontend refuses it at emission, by name, and writes nothing (witness: its suite's
+`VastStartpuntTest`, which also pins the lossless omission byte for
+byte). Worked example: "voor elk jaar startend op dag 15 van maand 10"
+declares the periods 15 October – 15 October; emitted without the
+start point, the reference interpreter refuses a case input over that
+period as off-grid and accepts one over 1 January – 1 January, so the
+omission is not neutral — the source is refused instead. **OPEN:** a v1
+wire card either carries the fixed start point (the anchored bucket
+formula above serves it, with the anchor a constant) or keeps the
+refusal.
+
 ### 3.3 Reading a timeline — and the point-read gap
 
 `read(tl, d)` (ch. 3.1) is the primitive every operation below is built
@@ -2671,6 +2693,7 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 |---|---|
 | Multi-period grids (`count` ≥ 2): all reads and writes | refused (mirrored); OPEN — specify producers or restrict `count` = 1 |
 | Bucketing by day/week/quarter | absent (mirrored); OPEN with the grid decision |
+| Fixed start point off the calendar grid (§13.3.6.3–.7) | no wire field; the RegelSpraak frontend refuses the source at emission by name (ch. 3.2); the calendar start point is omitted without loss; OPEN — a v1 wire card carries it or keeps the refusal |
 | Point-in-time read (the "op dat tijdstip" node) | **landed (v1 extension)**: `read(tl, d)` is `IR-SPEC.md` ch. 4.3a (`TemporalRead`, WF-049; ch. 3.3, row 11), anchor-witnessed and replayed by both executors |
 | Timeline arithmetic beyond plus/min (verminderd-met, maal, division, percentage) | refused (mirrored); OPEN — per-period lifting of ch. 1.2 rules is the candidate |
 | Scalar broadcast into timeline arithmetic / unconditional temporal characteristic | refused (mirrored); OPEN — both need a time domain for unbounded segments |
