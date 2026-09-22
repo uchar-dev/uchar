@@ -822,16 +822,18 @@ timeline declare a fixed start point: a date for a week or multi-period
 grid, or a day (and months) for a month, quarter or year grid. The wire
 has **no field for it**: `Tijdlijn` carries name, `variableStart`,
 granularity and count, and the start-point determination (`IR-SPEC.md`
-ch. 3.8) is the variable anchor only. Every timeline without an anchor
-sits on the calendar grid above, so a start point that coincides with the
-calendar period — day 1 of the month; day 1 of months 1, 4, 7 and 10;
-day 1 of month 1 — is omitted without loss, and every other one would
-change the grid. No wire document can express such a source, so the
-producer refuses it rather than dropping the start point: the RegelSpraak
-frontend refuses it at emission, by name, and writes nothing (witness: its suite's
-`VastStartpuntTest`, which also pins the lossless omission byte for
-byte). Worked example: "voor elk jaar startend op dag 15 van maand 10"
-declares the periods 15 October – 15 October; emitted without the
+ch. 3.8) is the variable anchor only. Three start points add nothing to
+the timeline written without one, so they are omitted without loss: day 1
+of the month and day 1 of month 1 coincide with the month and year
+buckets above; day 1 of months 1, 4, 7 and 10 is the calendar quarter,
+which is what the anchorless quarter timeline already means — no quarter
+bucket is defined (above), so there is no grid for it to disagree with.
+Every other start point would change the grid. No wire document can
+express such a source, so the producer refuses it rather than dropping
+the start point: the RegelSpraak frontend refuses it at emission, by
+name, and writes nothing (witness: its suite's `VastStartpuntTest`,
+which also pins the lossless omission byte for byte). Worked example:
+"voor elk jaar startend op dag 15 van maand 10" declares the periods 15 October – 15 October; emitted without the
 start point, the reference interpreter refuses a case input over that
 period as off-grid and accepts one over 1 January – 1 January, so the
 omission is not neutral — the source is refused instead. **OPEN:** a v1

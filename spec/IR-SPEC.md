@@ -1679,7 +1679,11 @@ Worked example (facet adoption, becomes a `ref/` test): declaration
 "timeline `het penningjaar`, granularity year, count 1, fixed start" +
 attribute declared against timeline `penningjaar` → the attribute's facet
 is `{granularity: year, count: 1, timelineName: "penningjaar"}` (article
-stripped, adoption total per WF-005).
+stripped, adoption total per WF-005). "Fixed start" here means only
+`variableStart: false`: the wire carries no fixed start point, and a
+fixed-start timeline sits on the calendar grid (`RUNTIME-SEMANTICS.md`
+ch. 3.2, "Fixed starting points", for which start points that is and
+why a producer refuses the rest).
 
 ### 2.9 DayKind
 
