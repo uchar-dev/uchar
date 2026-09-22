@@ -247,7 +247,7 @@ class AantalUnieTest {
         assertTrue(msg.contains("WF-037"), () -> "de melding citeert de ariteitsregel niet: " + msg);
         // and the tail corrects what the head would mislead about on its own: the source language
         // DOES spell a concatenation, it just is not this sentence's
-        assertTrue(msg.contains("geen van de operanden is een rolselectie"),
+        assertTrue(msg.contains("niet elke operand is een rolselectie"),
                 () -> "de melding zegt niet waarom de unie-route hier niet opent: " + msg);
     }
 

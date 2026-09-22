@@ -1171,6 +1171,17 @@ final class ExpressieBouwer {
         // a different element) leaves the whole union Onopgelost -> a marker, never a wrong count.
         // (A min/max value-fold reaches here too with >1 operand, but its die is on a sub-operand
         // navigation, not the element — so it is excluded; only AANTAL unions.)
+        //
+        // NOT the §5.7 route any more, and dead for every concatenation that RESOLVES (2026-09-20,
+        // card unie-telling). A resolving concatenation becomes an InstanceSetUnion in bouwFunctie,
+        // which runs BEFORE this method, so what still reaches this branch is a concatenation
+        // bouwInstantieUnie REFUSED — and there its Onopgelost only raises a second, softer
+        // diagnosis beside the ERROR that already refused the sentence. Left standing rather than
+        // deleted: removing it changes the marker-reason census MarkerRedenPinTest pins and costs
+        // the `verbruikt` bookkeeping its consumption of the operands' subselecties, which then
+        // report themselves as silently dropped — three diagnoses where the ERROR had said it once.
+        // The OR-filter form it builds is deliberately not a second spelling of the union
+        // (IR-SPEC ch. 4.3); what it can still reach never reaches disk.
         if (f instanceof AantalFuncContext) {
             java.util.List<Conditie> delen = new ArrayList<>();
             // account for EVERY operand's subselectie before the first one can bail out: the marker below
@@ -1566,8 +1577,8 @@ final class ExpressieBouwer {
                 + "sinds 2026-09-20 als één InstanceSetUnion onder de telling (WF-110). Die route opent "
                 + "hier niet — ";
         return staart + (unieWeigering != null ? unieWeigering
-                : "geen van de operanden is een rolselectie; een concatenatie onder 'het aantal' bestaat "
-                        + "uit onderwerpexpressies (typeringen §4.11)");
+                : "niet elke operand is een rolselectie; een concatenatie onder 'het aantal' bestaat "
+                        + "uit ONDERWERPexpressies en uit niets anders (typeringen §4.11)");
     }
 
     /** §4.19 Tabel 29 (eerste paasdag van): the single operand is "een numerieke expressie zonder eenheid ... altijd een
