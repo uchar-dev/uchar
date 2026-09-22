@@ -1250,8 +1250,8 @@ that can carry it.
 
 A count may range over a CONCATENATION of subject expressions — "het aantal
 aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter" — and
-the source language's own words for what that means are that the sets the
-selections yield are joined into ONE NEW SET (§5.7); its typing document
+the source language defines that as joining the instance sets the selections
+yield into ONE NEW SET (§5.7); its typing document
 adds that the count operator admits such a concatenation, unbounded in
 number, and takes subject expressions only (§4.11). On the wire the
 selections are an `InstanceSetUnion` under the count, one

@@ -596,6 +596,9 @@ final class RuleChecker {
             case Expr.IfThenElse k -> {
                 keurSetlezing(k.dan(), false); keurSetlezing(k.anders(), false); keurSetlezing(k.conditie());
             }
+            // the §5.7 union's own fields are symbolic (a type, a role binding), so the only place a
+            // setlezing could hide is a selection's filter — reached like every other conditie
+            case Expr.InstanceSetUnion u -> u.takken().forEach(t -> keurSetlezing(t.filter()));
             case Expr.Literal ignored -> { }
             case Expr.ParameterRef ignored -> { }
             case Expr.VariabeleRef ignored -> { }

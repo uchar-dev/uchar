@@ -933,11 +933,13 @@ functieAanroep
     // never an arithmetic one (whereas §5.8.2 lets a sum's operand BE arithmetic). So ONLY aantal
     // takes a higher-precedence primaireExpressie: a trailing 'maal'/'plus' binds OUTSIDE the
     // count. Deliberate divergence from the symmetric EBNF — see docs/grammar-divergences.md.
-    // The operand LIST is a SECOND divergence and a widening, not a narrowing: the source language
-    // has no listed spelling for a count (that belongs to the ordering folds, §5.8.3), so this
-    // alternative accepts more than v2.3.0 spells. Registered 2026-09-20 in DIVERGENCES.md
-    // '§13.4.17.47'; the refusal is ExpressieBouwer.tellingAriteitFout (WF-037), an ERROR, because
-    // deleting the tail would re-associate trailing conjunctions rather than refuse them.
+    // The operand LIST is a SECOND divergence, and since 2026-09-20 only HALF of it is one. §5.7
+    // spells a CONCATENATION of onderwerpexpressies and typeringen §4.11 admits it under this very
+    // operator, so a list of ROLSELECTIES is the source language's own form: ExpressieBouwer
+    // .bouwInstantieUnie lowers it to one InstanceSetUnion (uchar WF-110), the count's single
+    // argument. A list of WAARDElezingen has no such form and stays the widening, refused by
+    // ExpressieBouwer.tellingAriteitFout (WF-037), an ERROR — deleting the tail would re-associate
+    // trailing conjunctions rather than refuse them. Both halves in DIVERGENCES.md '§13.4.17.47'.
     | HET AANTAL_WORD primaireExpressie ( COMMA primaireExpressie )* ( EN primaireExpressie )?    # aantalFunc
     // uchar DIALECT EXTENSION (grammar/DIVERGENCES.md §6, decision G9 2026-09-19): the FILLED-value
     // count, which the source language spells nowhere. Exactly ONE operand and no facet slot — no

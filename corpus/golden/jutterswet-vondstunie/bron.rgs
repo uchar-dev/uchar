@@ -1,0 +1,18 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+	het aantal strandvondsten Numeriek (niet-negatief geheel getal);
+
+Objecttype de Vondst (mv: Vondsten)
+
+Feittype vondstaanmelding
+	de aanmelder Jutter
+	de aangemelde vondst (mv: aangemelde vondsten) Vondst
+Eén aanmelder meldt meerdere aangemelde vondsten
+
+Feittype vondstberging
+	de berger Jutter
+	de geborgen vondst (mv: geborgen vondsten) Vondst
+Eén berger bergt meerdere geborgen vondsten
+
+Regel aantal strandvondsten van een jutter
+	geldig altijd
+		Het aantal strandvondsten van een Jutter moet berekend worden als het aantal aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter.

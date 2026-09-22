@@ -1,0 +1,20 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+	het aantal keurstukken Numeriek (niet-negatief geheel getal);
+	het aantal gemelde stukken Numeriek (niet-negatief geheel getal);
+
+Objecttype de Vondst (mv: Vondsten)
+	is gemerkt kenmerk (bijvoeglijk);
+	is gekeurd kenmerk (bijvoeglijk);
+
+Feittype vondstaanmelding
+	de aanmelder Jutter
+	de aangemelde vondst (mv: aangemelde vondsten) Vondst
+Eén aanmelder meldt meerdere aangemelde vondsten
+
+Regel aantal keurstukken van een jutter
+	geldig altijd
+		Het aantal keurstukken van een Jutter moet berekend worden als het aantal aangemelde vondsten van de Jutter die gemerkt zijn en aangemelde vondsten van de Jutter die gekeurd zijn.
+
+Regel aantal gemelde stukken van een jutter
+	geldig altijd
+		Het aantal gemelde stukken van een Jutter moet berekend worden als het aantal aangemelde vondsten van de Jutter die gemerkt zijn en aangemelde vondsten van de Jutter.

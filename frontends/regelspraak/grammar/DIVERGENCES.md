@@ -497,3 +497,63 @@ Why not simply delete the tail:
 
 This is the same posture `AantalSetbronTest` records one decision earlier: when
 the wire narrows, the frontend's fence moves and its grammar does not.
+
+### Half of it stopped being a divergence (2026-09-20, the unie-telling card)
+
+**The tail is a widening of the EBNF and it always was. What was wrong was the
+reading of what it widened INTO.** §13.4.17.46 gives the count one `<expressie>`
+operand, and the register above concluded from that — and from §5.8.1 ranging
+the count over instances — that a count has no articulated operand list at all.
+That is true of an operand list of VALUES and false of the sentence: §5.7 spells
+a **concatenation of subject expressions** — the instance sets the selections
+yield, joined into one new set — and the typing document's own §4.11 says of the
+count operator that a concatenation of expressions may be used with it,
+unbounded in number, subject expressions only.
+The previous card cited §4.11 for the half that excludes the value reading and
+did not read the half that admits the concatenation.
+
+So the grammar's `( COMMA primaireExpressie )* ( EN primaireExpressie )?` is now
+**two things at once**, and the resolver is where they part:
+
+- operands that are **rolselecties** ("aangemelde vondsten van de Jutter die
+  gemerkt zijn") are the §5.7 concatenation. `ExpressieBouwer.bouwInstantieUnie`
+  builds ONE `Expr.InstanceSetUnion` from them — a selection per operand, each
+  with its own population, its own one-step relation and its own die/dat
+  subselection — and the count carries it as its SINGLE argument. The wire form
+  is `InstanceSetUnion` (uchar `IR-SPEC.md` ch. 4.3, WF-110). At this half the
+  production is no longer a divergence: it spells what the source language
+  spells.
+- operands that are **waardelezingen** ("de gewogen vangst van de Jutter") stay
+  the widening, and `tellingAriteitFout` keeps refusing them word for word.
+
+The refusal's message gained a TAIL rather than a rewrite, because its head
+would now mislead on its own: it says the source language spells no listed form,
+which is true of the list and false of the sentence. The tail names the §5.7
+route and says why it did not open here — the operands are not rolselecties, or
+`bouwInstantieUnie` refused them for a reason of its own. Three such
+reasons, each an ERROR that keeps the document off disk:
+
+- **two populations** ("het aantal aangemelde vondsten van de Jutter en
+  duinkavels van de Jutter"): one count answers a cardinality over ONE declared
+  type (WF-110 (d)). The v0 toolchain refuses the same sentence on a mechanism
+  ground of its own — one Drools accumulate has one source pattern — so the
+  boundary agrees and the reason does not.
+- **an underivable relation** for a selection (WF-110 (e)): a union names each
+  selection's relation, never derives one, because every selection of one union
+  shares one type pair.
+- **a die/dat that is not a characteristic of the element**: a dropped filter
+  would count too many AND the union would absorb the error, since an unfiltered
+  selection is a superset of every filtered one over the same relation.
+
+Where uchar deliberately carries what the toolchain markers: a **selection
+without a subselection beside a filtered one**. Its marker there is the same
+mechanism fact — it lowers a concatenation by OR-ing the operands' filter terms
+and has no term to OR for an unfiltered operand — and our wire carries the
+selections themselves, so `filter: null` is the ordinary case.
+
+Witness: `AantalUnieTest` (the two-relation union, the two-characteristic union,
+the unfiltered selection, the comma spelling, the wire shape, the three named
+refusals, and the two counter-proofs). Measured red-first on the pre-card
+frontend (5b42e5b9): both of this card's golden sources — `jutterswet-vondstunie`
+and `jutterswet-keurunie` — were refused with the WF-037 arity ERROR and wrote
+nothing.

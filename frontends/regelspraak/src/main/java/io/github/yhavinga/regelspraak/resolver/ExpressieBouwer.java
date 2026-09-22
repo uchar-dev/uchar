@@ -496,6 +496,16 @@ final class ExpressieBouwer {
             Expr ref = naamRef(bron.snippet(), false, bron);
             if (!(ref instanceof Expr.Onopgelost)) return ref;
         }
+        // §5.7 the CONCATENATION of subject expressions under a count (IR-SPEC ch. 4.3, WF-110;
+        // maintainer decision 2026-09-20). Tried BEFORE meldAggregatie, because a concatenation that
+        // resolves is not the listed WAARDE-telling that arm refuses: it counts INSTANCES and reaches
+        // the wire as an InstanceSetUnion — ONE argument — so WF-037's arity arm never sees it.
+        if (f instanceof AantalFuncContext && argumenten.size() >= 2) {
+            Expr unie = bouwInstantieUnie(f);
+            if (unie != null)
+                return new Expr.Functie(Expr.FunctieKind.AANTAL, java.util.List.of(unie), null, null,
+                        null, functieType(Expr.FunctieKind.AANTAL, argumenten), bron);
+        }
         meldAggregatie(kind, argumenten, f);
         Datatype type = f instanceof TijdsduurFuncContext t ? tijdsduurType(t) : functieType(kind, argumenten);
         Expr leegwaarde = leegwaardeVan(f);
@@ -1267,6 +1277,90 @@ final class ExpressieBouwer {
         return null;
     }
 
+    /** Why the §5.7 union route did not open for the count being built — appended to
+     *  {@link #tellingAriteitFout}'s refusal, so one sentence says both what the wire refuses (an
+     *  operand list under a count) and why the form that WOULD have carried this sentence does not
+     *  apply. Set by {@link #bouwInstantieUnie} on every null return and read immediately after, the
+     *  {@code aggregatieReden} contract the Drools backend uses on the same kind of question. */
+    private String unieWeigering;
+
+    /** §5.7/§4.11 build the CONCATENATION of subject expressions under "het aantal" as an
+     *  {@link Expr.InstanceSetUnion} — one selection per operand, each with its own population, its
+     *  own one-step relation and its own die/dat subselection. Null when the route does not open,
+     *  with {@link #unieWeigering} carrying the reason unless the operands are not subject
+     *  expressions at all (there the arity refusal already says everything, in the words it has said
+     *  since 2026-09-20).
+     *
+     *  <p>What it does NOT build: a union over two POPULATIONS (WF-110 (d)), a selection whose
+     *  relation is not uniquely derivable (WF-110 (e) — a union names each selection's relation and
+     *  never derives one from the type pair, because every selection here shares one pair), and a
+     *  selection whose "die/dat" does not resolve to a characteristic of the element. That last one
+     *  is a refusal rather than a dropped filter: a silently unfiltered selection counts the wrong
+     *  number, and the union ABSORBS it (an unfiltered selection is a superset of every filtered
+     *  one over the same relation), so the error would be invisible in the answer. */
+    private Expr bouwInstantieUnie(FunctieAanroepContext f) {
+        unieWeigering = null;
+        java.util.List<ParseTree> operanden = new ArrayList<>();
+        for (int i = 0; i < f.getChildCount(); i++) {
+            ParseTree ch = f.getChild(i);
+            if (ch instanceof ExpressieContext || ch instanceof PrimaireExpressieContext) operanden.add(ch);
+        }
+        if (operanden.size() < 2) return null;
+        Objecttype gedeeld = null;
+        java.util.List<Expr.InstanceSetUnion.Tak> takken = new ArrayList<>();
+        java.util.List<PredicaatContext> gezien = new ArrayList<>();
+        for (int i = 0; i < operanden.size(); i++) {
+            ParseTree op = operanden.get(i);
+            Objecttype el = operandElement(op);
+            if (el == null) return null;          // a VALUE operand: the arity refusal owns this sentence
+            if (gedeeld == null) gedeeld = el;
+            else if (gedeeld != el) {
+                unieWeigering = "de selecties tellen over verschillende populaties ('" + gedeeld.naam
+                        + "' en '" + el.naam + "'); één telling antwoordt een aantal over ÉÉN gedeclareerd"
+                        + " type, en of twee selecties dan een instantie kunnen delen is een vraag over de"
+                        + " subtypelattice die de deduplicatie zou moeten beantwoorden (WF-110 (d))";
+                return null;
+            }
+            String woord = geschrevenElementWoord(op);
+            RegelSpraakModel.RolBindingRef rb =
+                    huidigSubject == null || woord == null ? null : model.elementRolBinding(huidigSubject, woord);
+            if (rb == null) {
+                unieWeigering = "de relatie van selectie " + (i + 1) + " ('" + woord + "') is niet"
+                        + " eenduidig af te leiden; elke selectie van een unie noemt haar eigen relatie,"
+                        + " want ze delen alle één typenpaar en een afgeleide reikwijdte zou ze"
+                        + " ononderscheidbaar maken (WF-110 (e))";
+                return null;
+            }
+            PredicaatContext p = vindDie(op);
+            Conditie filter = null;
+            if (p != null) {
+                filter = elementKenmerkFilter(p, el);
+                if (filter == null) {
+                    unieWeigering = "de 'die/dat'-subselectie van selectie " + (i + 1) + " ('" + src(p)
+                            + "') lost niet op naar een kenmerk van '" + el.naam + "'; een stilzwijgend"
+                            + " weggelaten filter zou een te groot aantal tellen en de unie zou dat"
+                            + " opslokken (§5.6)";
+                    return null;
+                }
+                gezien.add(p);
+            }
+            takken.add(new Expr.InstanceSetUnion.Tak(el, rb, filter, bron((ParserRuleContext) op)));
+        }
+        verbruikt.addAll(gezien);   // only once the whole union stands: a refused union hands its die back
+        return new Expr.InstanceSetUnion(java.util.List.copyOf(takken), bron(f));
+    }
+
+    /** The written element word of a count operand ("aangemelde vondsten" in "aangemelde vondsten van
+     *  de Jutter") — the name {@link RegelSpraakModel#elementRolBinding} resolves the selection's
+     *  relation from, and the same word {@link #operandElement} resolves its population from. */
+    private String geschrevenElementWoord(ParseTree op) {
+        if (op instanceof PrimaireExpressieContext pe && pe.attribuutVanOnderwerp() != null
+                && pe.attribuutVanOnderwerp().attribuutMetLidwoord() != null
+                && pe.attribuutVanOnderwerp().attribuutMetLidwoord().kaleNaam() != null)
+            return src(pe.attribuutVanOnderwerp().attribuutMetLidwoord().kaleNaam());
+        return null;
+    }
+
     /** The first "die/dat &lt;predicaat&gt;" subselectie anywhere in an operand subtree. */
     private PredicaatContext vindDie(ParseTree t) {
         if (t instanceof OnderwerpKetenContext k && k.predicaat() != null) return k.predicaat();
@@ -1453,7 +1547,27 @@ final class ExpressieBouwer {
                 + "typeringen §4.11 sluit de waardelezing uit), dus er is geen operandenlijst om te "
                 + "lezen. De enige lezing die een lijst een telling overlaat is 'tel de gevulde "
                 + "operanden', en die betekenis draagt AANTAL_GEVULDE over een setbron — een eigen "
-                + "soort op de wire (besluit 2026-09-20) (WF-037, IR-SPEC ch. 4.3)";
+                + "soort op de wire (besluit 2026-09-20) (WF-037, IR-SPEC ch. 4.3)"
+                + unieStaart(f);
+    }
+
+    /** The §5.7 half of the refusal above, appended so ONE diagnostic says both halves. The head
+     *  refuses the operand LIST and says the source language spells none; since 2026-09-20 that is
+     *  true of the list and false of the SENTENCE — §5.7 spells a concatenation of subject
+     *  expressions and typeringen §4.11 admits it under this very operator — so the head would
+     *  mislead on its own. The concatenation has a wire form of its own (an InstanceSetUnion under
+     *  the count, WF-110), and this tail says why that route did not open here: because the operands
+     *  are not subject expressions at all, or because {@link #bouwInstantieUnie} refused them for a
+     *  reason of its own. */
+    private String unieStaart(FunctieAanroepContext f) {
+        if (!(f instanceof AantalFuncContext)) return "";
+        String staart = ". De brontaal spelt wél een CONCATENATIE van ONDERWERPexpressies (§5.7, "
+                + "typeringen §4.11), en die telt instanties in plaats van waarden: zij bereikt de wire "
+                + "sinds 2026-09-20 als één InstanceSetUnion onder de telling (WF-110). Die route opent "
+                + "hier niet — ";
+        return staart + (unieWeigering != null ? unieWeigering
+                : "geen van de operanden is een rolselectie; een concatenatie onder 'het aantal' bestaat "
+                        + "uit onderwerpexpressies (typeringen §4.11)");
     }
 
     /** §4.19 Tabel 29 (eerste paasdag van): the single operand is "een numerieke expressie zonder eenheid ... altijd een
