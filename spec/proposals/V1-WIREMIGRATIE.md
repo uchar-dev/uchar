@@ -1237,8 +1237,10 @@ still writes it into `waarde` and `bron` (canonicalisation is its own card)".
 Gemeten: de RegelSpraak-emitter schrijft inderdaad de snippet
 (`ExpressieBouwer`, de dedato-tak met tijdcomponent), terwijl diezelfde methode
 één regel eronder voor een kale datum wél de ISO-vorm schrijft.
-**Corpusdragers van de snippetvorm: vijf, alle vijf in `corpus/negatief/wf095-*`
-— en die zijn er om afgewezen te worden.** De enige golden met een
+**Corpusdragers van de snippetvorm: nul — correctie bij de landing (2026-09-22,
+kaart `20260922-p5-datumtijd-lexeem`): de vijf `wf095-*`-negatiefs pinnen elk een
+ándere spellingsfout en werden door de oude arm al afgewezen; de snippet-getuige
+die de oude arm toeliet is bij de kaart toegevoegd (`wf095-bronsnippet`).** De enige golden met een
 `DatumTijd`-literal (`jutterswet-meldstip`) draagt de canonieke vorm en is
 handgeschreven. De emitterkant heeft dus **nul goldengetuigen**.
 → Versmallen kost één emitterregel, één WF-095-arm, vijf negatief-getuigen
@@ -2227,7 +2229,7 @@ stuk los te landen en verbeteren de v0-toestand ook als de klap nooit komt.
 | P2 | **`backends/drools` leidt bonenvelden af uit de rolbindingen** — feitcreatie (`zetVeld`/`joinVeld`/`Tussenstap.*`) en uniciteitsscope (`scopeVeld`) | de backend *voert die velden uit*; ze weghalen is zonder deze port een amputatie | B7, B8 |
 | P3 | **`backends/drools` leest `verbindendeRol` op de VERDELING** | de enige nog her-afgeleide binding van de drie; de vouw-`bronRol` en de objectcreatie-`verbindendeRol` worden al gelezen (§2.2), dus deze kaart is een derde van wat hij leek | B12 |
 | P4 | ~~**Enumeratie-emissie gerepareerd** (V8 (a))~~ — **GELAND 2026-09-20** (`backlog/done/20260919-v8-enum-emitter.md`) | de emitter stript én typeert tegen de positie; eerste `bron.rgs`-golden `jutterswet-vondstklasse`; de consumentenkant (Drools-lezer) heeft een eigen kaart | B22b |
-| P5 | **DatumTijd-lexeem gecanonicaliseerd** (WF-095 versmalt tot canoniek ISO) | één emitterregel, vijf negatief-getuigen, nul goldenregeneratie — de goedkoopste stap op de lijst | B22a |
+| P5 | ~~**DatumTijd-lexeem gecanonicaliseerd** (WF-095 versmalt tot canoniek ISO)~~ — **GELAND 2026-09-22** (`backlog/done/20260922-p5-datumtijd-lexeem.md`) | de meting "vijf snippet-negatiefs" bleek onwaar — nul snippetdragers, de vijf pinnen elk een ándere fout; nieuw negatief `wf095-bronsnippet`, emitter-golden `jutterswet-sluitstip` | B22a |
 | P6 | ~~**Getuige voor de verre rollidmaatschap** (V4 (b))~~ — **GELAND 2026-09-20** (`backlog/done/20260919-v4-verre-rol-getuige.md`) | de getuige staat: golden `jutterswet-postbezetting` (klasse-onderscheidend), negatief `wf034-verre-rolcheck-verkeerde-zijde`, WF-034 (t), alle vier de uitvoerders dragen de vorm | B9 |
 | P7 | ~~**`eigenaar`-gastheerobject beslissen**~~ — **GELAND 2026-09-19** (`backlog/done/20260910-eigenaar-gastheer-object.md`) | de OBJECT-helft IS betekenis, dus het veld verdwijnt niet: B10 is bijgesteld van verwijdering naar hernoeming (zie B10, voorstel) en verhuist daarmee van M2 naar M8 | ~~B10~~ |
 | P8 | ~~**Kruis-stelsel-eenheidsdivergentie**~~ — **GELAND 2026-09-19** (`backlog/done/20260910-kruis-stelsel-eenheid-divergentie.md`) | clingo conformeert: de omrekentabel loopt op canonieke naam over de gedeclareerde stelsels; golden `jutterswet-stelselweging` draagt de vier gekruiste posities | B17 (ii) |
