@@ -629,8 +629,13 @@ public final class CaseRunner {
      *  wederkerig twin of this limit is refused in {@link #build} for the whole model. */
     private void naamdelingsPoort(Objecttype drager, String rol, Objecttype doel, String geschreven) {
         if (FactModelGenerator.heeftReferentieVeld(model, drager, rol, doel)) return;
+        // The displacing name is not always a declared member: two same-named roles toward different types
+        // (corpus/rood/ambiguous-case-role-key) contend for one field too, and blaming a member there names a
+        // cause the document does not have.
+        String oorzaak = drager.heeftLid(rol) ? "which shares its name with a declared member"
+                : "whose field a same-named role toward another type already holds";
         throw new Excluded("role '" + geschreven + "' resolves to the to-one role '" + rol + "' on " + drager.naam
-                + ", which shares its name with a declared member — the bean cannot carry the reference field "
+                + ", " + oorzaak + " — the bean cannot carry the reference field "
                 + "(name-sharing bean limit: attribute > characteristic > reference)");
     }
 
