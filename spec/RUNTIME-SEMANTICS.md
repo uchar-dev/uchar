@@ -93,7 +93,7 @@ recorded as such.
 | non-numeric equality (text/enum/boolean, §5 Tabel 38) | any empty operand → false | leeg =ₜ leeg → onwaar |
 | date equality (v0's Tabel-38 guard on the date shape) | any empty operand → false — in particular **both** empty, never the numeric two-empties-equal cell | leeg =ᴰ leeg → onwaar; leeg =ᴰ 2026-06-21 → onwaar |
 | **inequality — every datatype (§5.6 Tabel 44)** | true iff **exactly one** empty, else value inequality — uniform over numeric, percentage, text, enum, boolean, date, and the ch. 9/11 constructor and record values | leeg ≠ 5 → waar; 5 ≠ 3 → waar; leeg ≠ leeg → onwaar; leeg ≠ₜ "a" → waar; leeg ≠ᴰ 2026-06-21 → waar; leeg ≠ᴰ leeg → onwaar |
-| leeg / gevuld predicates | absence — including a failed to-one navigation — **is** leeg = waar | "de leeftijd van zijn partner is leeg" is waar for a partnerless person |
+| leeg / gevuld predicates | absence — including a failed to-one navigation — **is** leeg = waar; the `negated` field is the inner, per-value negation and complements the test — negated leeg is gevuld, negated gevuld is leeg (the qualifier's own negation is `GeheelPeriode.niet`, ch. 3.9; which threshold a negated leeg test takes under that qualifier — touched-days or days(B) — is an OPEN norm point, and ref and both Drools branches refuse the form by name until it is chosen) | "de leeftijd van zijn partner is leeg" is waar for a partnerless person; `leeg(5)` negated = waar, `leeg(leeg)` negated = onwaar (WV-1.2-neg) |
 
 Note the deliberate asymmetry, now confined to **equality**: numeric
 equality treats two empties as equal; non-numeric equality (text, enum,

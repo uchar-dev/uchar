@@ -908,6 +908,40 @@ let () =
   check "WV-6.4-e-writer-first" (run [ writer; reader ] = false);
   check "WV-6.4-e-reader-first" (run [ reader; writer ] = false)
 
+(* WV-1.2-neg: the predicate's negated field is the inner, per-value
+   negation and complements the leeg/gevuld test — negated leeg is
+   gevuld, negated gevuld is leeg (ch. 1.2, row leeg/gevuld) *)
+let () =
+  let pred soort negatie : Ir_v0.Ast.conditie =
+    Predicaat
+      {
+        soort;
+        operand = Some (aref "a" "Ding" num0);
+        dagsoort = None;
+        negatie;
+        cijfers = 0;
+        periode = None;
+        bron = None;
+      }
+  in
+  let run soort negatie attrs =
+    let reader =
+      rr "markeer" Kenmerktoekenning
+        (Some (aref "gemarkeerd" "Ding" Booleaan))
+        (Some (litv "waar" Booleaan))
+        (Some (pred soort negatie))
+    in
+    let doc =
+      { empty_doc with objecttypen = [ ot "Ding" [ ("a", Some num0) ] [ "gemarkeerd" ] ]; resolved_regels = [ reader ] }
+    in
+    let final = Eval.evaluate (env_of doc) (World.add_instance World.empty (inst "x" "Ding" attrs)) in
+    World.has_char (World.get final "x") "gemarkeerd"
+  in
+  check "WV-1.2-neg-leeg-op-5" (run Leeg true [ ("a", n "5") ] = true);
+  check "WV-1.2-neg-leeg-op-leeg" (run Leeg true [] = false);
+  check "WV-1.2-neg-gevuld-op-5" (run Gevuld true [ ("a", n "5") ] = false);
+  check "WV-1.2-neg-gevuld-op-leeg" (run Gevuld true [] = true)
+
 (* WV-6.4-c: a dependency cycle reaching ref/ is a fault (the verifier
    rejects it as WF-045; ref/ fails fast rather than diverging) *)
 let () =
