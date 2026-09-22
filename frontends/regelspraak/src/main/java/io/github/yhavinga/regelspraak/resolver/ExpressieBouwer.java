@@ -441,8 +441,17 @@ final class ExpressieBouwer {
             // snippet ("31-01-2024"), which both executors read as ISO and so silently misparse as
             // year 31. The shared reader already holds the parsed date; bron keeps the full source
             // snippet. Mirror of the numeric-literal fix above (bare lexeme in waarde, snippet in bron).
-            String iso = Literalen.parseDatum(bron.snippet()).toString();
-            return new Expr.Literal(iso, new Datatype.DatumInDagen(), bron);
+            // A calendar-impossible token (30 February) is refused exactly as the datum-tijd branch
+            // above refuses it: an ERROR stops emission, so the snippet never reaches a wire.
+            java.time.LocalDate d = Literalen.parseDatum(bron.snippet());
+            if (d == null) {
+                RegelSpraakModel.Diagnostic fout = new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                        "datum-literal '" + bron.snippet() + "' is geen geldige datum (§13.2.19)",
+                        p.getStart().getLine());
+                if (!model.diagnostics.contains(fout)) model.diagnostics.add(fout);
+                return new Expr.Literal(bron.snippet(), new Datatype.DatumInDagen(), bron);
+            }
+            return new Expr.Literal(d.toString(), new Datatype.DatumInDagen(), bron);
         }
         if (p.ENUM_LITERAL() != null)   return enumWaarde(p, p.ENUM_LITERAL().getText());
         if (p.rekenConstante() != null) {

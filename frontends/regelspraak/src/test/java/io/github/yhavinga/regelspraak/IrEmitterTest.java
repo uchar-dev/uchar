@@ -328,6 +328,43 @@ class IrEmitterTest {
                 () -> "de fout noemt het lexeme niet: " + m.errors());
     }
 
+    @Test void datum_literal_buiten_de_kalender_is_een_fout() {
+        // The bare-date sister of the test above: the DATE token admits 30-02-2026 too, and the
+        // shared reader answers null. That null once reached .toString() unguarded, so the
+        // frontend died on a NullPointerException instead of naming the lexeme.
+        RegelSpraakModel m = Resolver.resolve("""
+            Objecttype de Aanmelding
+                de meldatum Datum in dagen;
+                is tijdig kenmerk (bijvoeglijk);
+            Regel tijdig
+                geldig altijd
+                    Een Aanmelding is tijdig
+                    indien zijn meldatum eerder is dan 30-02-2026.
+            """);
+        assertEquals(1, m.errors().size(), () -> "verwacht precies een fout, kreeg: " + m.errors());
+        assertTrue(m.errors().toString().contains("datum-literal '30-02-2026'"),
+                () -> "de fout noemt het lexeme niet: " + m.errors());
+    }
+
+    @Test void versiegeldigheid_met_tijdcomponent_is_een_fout() {
+        // The validity window is day-granular (Geldigheid holds LocalDates), so a bound written
+        // with a time of day has no carrier. It used to be read by a find() that stopped after
+        // the date and emitted "vanaf": "2026-01-01" with the 10:00 silently gone.
+        for (String grens : new String[] {"vanaf 01-01-2026 10:00:00.000", "t/m 31-12-2026 23:59:59.999",
+                                          "vanaf 2025 t/m 31-12-2026 10:00:00.000"}) {
+            RegelSpraakModel m = Resolver.resolve("""
+                Objecttype de Vondst
+                    de waarde Numeriek (geheel getal);
+                Regel waarde
+                    geldig %s
+                        De waarde van een Vondst moet gesteld worden op 1.
+                """.formatted(grens));
+            assertEquals(1, m.errors().size(), () -> grens + ": verwacht precies een fout, kreeg: " + m.errors());
+            assertTrue(m.errors().toString().contains("draagt een tijdcomponent"),
+                    () -> grens + ": de fout noemt de tijdcomponent niet: " + m.errors());
+        }
+    }
+
     /** A Tekst-attribuut plus one rule that assigns {@code lexeem} to it — the smallest model that
      *  puts a text literal on the wire. The lexeme is inserted RAW, so a test can hand it a source
      *  form the grammar rejects and assert on the diagnostics. */

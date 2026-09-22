@@ -835,6 +835,14 @@ final class RuleChecker {
     /** Resolve a validity bound, or report an ERROR and return null when it is neither a
      *  valid calendar date (dd-mm-jjjj) nor a four-digit year (§13.2.24). */
     private LocalDate grensOfMeld(DatumOfJaarContext d, boolean onder, int line) {
+        // The DATE token admits a time of day, but Geldigheid holds LocalDates: there is no
+        // carrier for it, and reading only the date part used to drop the time silently.
+        if (d != null && d.DATE() != null && d.DATE().getText().contains(":")) {
+            model.diagnostics.add(new Diagnostic(Severity.ERROR,
+                    "versiegeldigheidsgrens '" + src(d) + "' draagt een tijdcomponent; de geldigheid "
+                            + "is datumgranulair (verwacht een datum dd-mm-jjjj of een jaartal van vier cijfers)", line));
+            return null;
+        }
         LocalDate b = grens(d, onder);
         if (b == null)
             model.diagnostics.add(new Diagnostic(Severity.ERROR,
