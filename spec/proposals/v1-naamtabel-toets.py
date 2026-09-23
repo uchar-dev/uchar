@@ -17,8 +17,9 @@ rc 2: een bron ontbreekt of is onleesbaar.
 Wat de toets eist, en waarom:
 
 1. Totaliteit tegen het schema. Elke knoopdiscriminant (`node`-const/enum)
-   en elke propertynaam die het v0-schema ergens declareert, heeft precies
-   een rij; elke rij bestaat in het schema. De telmethode is die van de
+   en elke propertynaam die het schema ergens declareert (sinds M1
+   `uchar-ir-v1`), heeft precies een rij; elke rij bestaat in het schema,
+   behalve een gelande (7). De telmethode is die van de
    B6-meting (80/193 op 245f7152), zodat de aantallen vergelijkbaar blijven.
 2. Elke plaats een doel. Een propertyrij met meer doelgroepen verdeelt de
    knopen waarin de naam voorkomt; die verdeling moet exact zijn, anders
@@ -41,6 +42,15 @@ Wat de toets eist, en waarom:
    property, en binnen een knoop) staan in `botsingen`, en elk doel met
    `onzeker: true` staat in de lijst `onzeker`; beide lijsten falen als ze
    verouderd zijn, in beide richtingen.
+7. Gelande namen zijn geschiedenis, geen gat. Een M-stap die een v0-naam van
+   de wire haalt, laat zijn rij staan met `geland: "M<n>"` — op de rij als
+   de naam overal verdween, op een doelgroep met `knopen` als hij alleen op
+   die plaatsen verdween. Voor zo'n rij of groep eist de toets het
+   omgekeerde van 1 en 2: de naam (of de plaats) staat NIET meer in het
+   schema. Vorm en bewijs worden gewoon getoetst, zodat de geschiedenis
+   letterlijk blijft kloppen met IR-SPEC; botsingen tellen alleen levende
+   namen, want een hernoeming raakt een gelande naam niet meer. De nieuwe
+   namen die een M-stap schrijft, krijgen hun eigen rij (meestal identiteit).
 
 Bekende grenzen — wat de toets NIET waarmaakt, zodat de hernoeming (M8) er
 niet meer vertrouwen in legt dan dit:
@@ -67,8 +77,9 @@ import re
 import sys
 
 HERKOMST = {"v0name", "vermelding", "uitlijning", "identiteit", "vervalt", "gat"}
+GELAND = re.compile(r"M[1-8]")
 KLASSE = {"nl", "en", "neutraal"}
-BRONNEN = {"schema": "spec/schema/regelspraak-ir-v0.schema.json", "spec": "spec/IR-SPEC.md"}
+BRONNEN = {"schema": "spec/schema/uchar-ir-v1.schema.json", "spec": "spec/IR-SPEC.md"}
 
 bevindingen = []
 
@@ -250,17 +261,32 @@ def main():
 
     s_knopen, s_plaatsen = schema_namen(schema)
 
-    # 1. totaliteit
+    # 7. de vorm van `geland`, op rij en op groep
+    for soort in ("knopen", "properties"):
+        for r in tabel[soort]:
+            for w in [r.get("geland")] + [g.get("geland") for g in r.get("doel", [])]:
+                if w is not None and not (isinstance(w, str) and GELAND.fullmatch(w)):
+                    fout("%s `%s`: `geland` is %r, verwacht een M-stap (M1..M8)" % (soort, r["v0"], w))
+            if r.get("geland") and any(g.get("geland") for g in r.get("doel", [])):
+                fout("%s `%s`: `geland` staat op de rij en op een groep; kies een van de twee" % (soort, r["v0"]))
+            for g in r.get("doel", []):
+                if g.get("geland") and "knopen" not in g:
+                    fout("%s `%s`: een gelande groep noemt zijn `knopen`" % (soort, r["v0"]))
+
+    # 1. totaliteit (een gelande rij omgekeerd: hij staat niet meer in het schema)
     for soort, rijen, schemaset in (("knoop", tabel["knopen"], s_knopen),
                                     ("property", tabel["properties"], set(s_plaatsen))):
         teller = collections.Counter(r["v0"] for r in rijen)
+        geland_ = {r["v0"]: r["geland"] for r in rijen if r.get("geland")}
         for naam in sorted(schemaset):
             if teller[naam] == 0:
                 fout("%s `%s`: staat in het schema maar heeft geen rij in de tabel" % (soort, naam))
+            elif naam in geland_:
+                fout("%s `%s`: geland bij %s, maar staat nog in het schema" % (soort, naam, geland_[naam]))
         for naam, n in sorted(teller.items()):
             if n > 1:
                 fout("%s `%s`: heeft %d rijen, moet er precies een hebben" % (soort, naam, n))
-            if naam not in schemaset:
+            if naam not in schemaset and naam not in geland_:
                 fout("%s `%s`: heeft een rij maar bestaat niet in het schema" % (soort, naam))
 
     # 2. rijvorm, bewijs en de verdeling van plaatsen
@@ -367,6 +393,12 @@ def main():
             for g in gs:
                 if "knopen" not in g:
                     fout("property `%s`: meer doelgroepen, maar een groep noemt geen `knopen`" % v0)
+                elif g.get("geland"):
+                    for plek in g["knopen"]:
+                        if plek in s_plaatsen[v0]:
+                            fout("property `%s`: plaats %s geland bij %s, maar draagt de property nog"
+                                 % (v0, plek, g["geland"]))
+                    continue
                 gezien.update(g.get("knopen", []))
             for plek in sorted(s_plaatsen[v0]):
                 if gezien[plek] == 0:
@@ -415,19 +447,22 @@ def main():
         if naam in doelnamen:
             fout("`spec_zonder_v0` `%s`: is ook het doel van een knooprij" % naam)
 
-    # 5. botsingen
+    # 5. botsingen, over levende namen: een gelande naam staat niet meer op de wire
+    def levend(r, g):
+        return not r.get("geland") and not g.get("geland")
+
     def botsing(rijen):
         m = collections.defaultdict(set)
         for r in rijen:
-            for _, v1 in doelen(r):
-                if v1:
+            for g, v1 in doelen(r):
+                if v1 and levend(r, g):
                     m[v1].add(r["v0"])
         return {k: sorted(v) for k, v in sorted(m.items()) if len(v) > 1}
 
     binnen = collections.defaultdict(lambda: collections.defaultdict(set))
     for r in tabel["properties"]:
         for g in r["doel"]:
-            if not g.get("v1"):
+            if not g.get("v1") or not levend(r, g):
                 continue
             for plek in g.get("knopen", sorted(s_plaatsen.get(r["v0"], []))):
                 binnen[plek][g["v1"]].add(r["v0"])
@@ -484,6 +519,10 @@ def main():
     print("v0 name-regels in IR-SPEC: %d; spec-knoopnamen ch. 2-4: %d" % (len(gelezen), len(sk)))
     print("botsingen: %d knoop, %d property, %d binnen een knoop" % tuple(
         len(berekend[s]) for s in ("knopen", "properties", "binnen_knoop")))
+    gelande = collections.Counter(
+        w for s_ in ("knopen", "properties") for r in tabel[s_]
+        for w in [r.get("geland")] + [g.get("geland") for g in r["doel"]] if w)
+    print("geland (rijen en groepen per M-stap): %s" % dict(sorted(gelande.items())))
     if bevindingen:
         for b in bevindingen:
             print("FAIL %s" % b, file=sys.stderr)
