@@ -7816,6 +7816,68 @@ let both_answer ~name ~ir ~case_text =
   ref_matches ~name ~ir ~case_text;
   clingo_matches ~name ~ir ~case_text
 
+(* FIXRONDE 4, lens point 4: the recorded deviations of the parameter guard
+   (backends/clingo/README.md, the entries tagged [L1], [S1], [S2], [V1],
+   [V2]), one frame each, named after its entry. A frame pins the deviation as
+   it stands and goes red when it disappears — the gate-7 survivor pattern: a
+   deviation that is gone takes its frame and its README entry with it. *)
+let pinned name entry = Printf.sprintf "README [%s]: %s" entry name
+
+(* loud: ref plays the case's rows; clingo refuses, in translation or UNSAT,
+   with [needle] *)
+let pinned_loud ~entry ~name ~ir ~case_text ~needle =
+  let name = pinned name entry in
+  ref_matches ~name ~ir ~case_text;
+  let doc, case = load_pair ~ir ~case_text in
+  let label = name ^ ": clingo refuses where ref plays" in
+  match translate doc case with
+  | exception Uchar_ref.Value.Fault m ->
+      check (label ^ " (translation fault: " ^ m ^ ")") (Uchar_ref.Case.contains ~needle m)
+  | program -> (
+      match Solve.run_clingo program with
+      | _, Unix.WEXITED 20 ->
+          let ws = Solve.diagnose program in
+          check (label ^ " (" ^ String.concat "; " ws ^ ")") (List.exists (fun w -> Uchar_ref.Case.contains ~needle w) ws)
+      | _, _ -> check (label ^ " (clingo no longer refuses: the deviation is gone)") false)
+
+(* silent: ref faults in its words; clingo answers, and exactly the case's
+   rows — they are the answer the deviation gives *)
+let pinned_silent ~entry ~name ~ir ~case_text ~param =
+  let name = pinned name entry in
+  let doc, case = load_pair ~ir ~case_text in
+  (match ref_report doc case with
+  | _ -> check (name ^ ": ref faults (it evaluated)") false
+  | exception Uchar_ref.Value.Fault m ->
+      check (name ^ ": ref faults (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle:(pf_reason param) m));
+  let label = name ^ ": clingo answers where ref faults" in
+  match translate doc case with
+  | exception Uchar_ref.Value.Fault m -> check (label ^ " (translation fault: " ^ m ^ ": the deviation is gone)") false
+  | program -> (
+      match Solve.run_clingo program with
+      | out, Unix.WEXITED (10 | 30) -> (
+          match Model.check doc case (Model.model_of_outf2 (Yojson.Safe.from_string out)) with
+          | [] -> check label true
+          | ms -> check (label ^ " (other rows: " ^ String.concat "; " ms ^ ")") false)
+      | _, Unix.WEXITED 20 ->
+          check (label ^ " (" ^ String.concat "; " (Solve.diagnose program) ^ ": the deviation is gone)") false
+      | _, _ -> check (label ^ " (clingo did not run)") false)
+
+(* a value: ref plays the case's rows; clingo answers with exactly the
+   mismatches [answers] *)
+let pinned_value ~entry ~name ~ir ~case_text ~answers =
+  let name = pinned name entry in
+  ref_matches ~name ~ir ~case_text;
+  let doc, case = load_pair ~ir ~case_text in
+  let label = name ^ ": clingo answers otherwise" in
+  match translate doc case with
+  | exception Uchar_ref.Value.Fault m -> check (label ^ " (translation fault: " ^ m ^ ")") false
+  | program -> (
+      match Solve.run_clingo program with
+      | out, Unix.WEXITED (10 | 30) ->
+          let ms = Model.check doc case (Model.model_of_outf2 (Yojson.Safe.from_string out)) in
+          check (label ^ " (" ^ String.concat "; " ms ^ ")") (ms = answers)
+      | _, _ -> check (label ^ " (clingo did not answer)") false)
+
 (* FIXRONDE (lens, 2026-09-23). Four more positions and three refusals.
 
    The ASSERTION and the FOLD FILTER are positions the register text claims
@@ -8767,7 +8829,16 @@ let () =
       check ("horizon fence: an unbound parameter in the die/dat filter: ref faults (" ^ m ^ ")")
         (Uchar_ref.Case.contains ~needle m));
   faults_with ~name:"horizon fence: an unbound parameter in the die/dat filter, in translation" ~ir
-    ~case_text:unbound ~needle
+    ~case_text:unbound ~needle;
+  (* the fence reads its parameter in translation, also where the rule's
+     condition fails and ref never reads it *)
+  let behind =
+    replace_first ~needle:{|"voorwaarde":null|}
+      ~by:(Printf.sprintf {|"voorwaarde":%s|} (pf_cmp "GROTER" (pf_l ~typ:pf_n0 "1") (pf_l ~typ:pf_n0 "2")))
+      ir
+  in
+  pinned_loud ~entry:"L1" ~name:"the horizon fence behind a condition that fails (hf-cond)" ~ir:behind
+    ~case_text:(case_text "" [ pf_leeg ~attr:"keurlast" (); pf_cons ]) ~needle
 
 (* the translator has no date reader of its own (card clingo-parameter-
    failfast, the dead-arm sweep): a malformed date literal in a term position
@@ -9165,6 +9236,9 @@ let () =
   in
   both_answer ~name:"Let, lazy: the Match arm read k before p (lz-m3)" ~ir:m3
     ~case_text:(pf_case ~params:(q "1") ~instances:[ j1 (Some "Hoog") ] leeg);
+  pinned_value ~entry:"V1" ~name:"a Match under plus, its taken arm does not read k, p bound (lz-m3-bound-laag)"
+    ~ir:m3 ~case_text:(pf_case ~params:(pf_bind "p" "10" :: q "1") ~instances:[ j1 (Some "Laag") ] [ pf_is "10"; pf_cons ])
+    ~answers:[ "J1.heffing is underived (leeg), expected 1000" ];
   unbound_fires ~name:"Let: the Match arm left k unread before p (control)" ~ir:m3 ~param:"p"
     ~case_text:(pf_case ~params:(q "1") ~instances:[ j1 (Some "Laag") ] leeg)
     ~silent:"heffing leeg";
@@ -9184,11 +9258,12 @@ let () =
   in
   both_answer ~name:"Let, lazy: each path reads k in one of two branches before p (lz-d)" ~ir:d
     ~case_text:(pf_case ~params:(q "5") ~instances:[ j1 None ] leeg);
-  (* lz-v: the value of bel reads k in one arm; bel is read before p. Its
-     control (q = -5, where ref faults) is not pinned: this lowering keeps
-     bel's value behind k's need even on the arm that does not read k — with
-     p bound that is a missing write — and the guard can only follow the
-     lowering there *)
+  (* lz-v: the value of bel reads k in one arm; bel is read first. Until
+     FIXRONDE 4 (lens point 3) this lowering kept bel's value behind k's need
+     on the arm that does not read k: with p bound a missing write (ref 10,00,
+     clingo leeg, also on main), with p unbound a guard the barrier of bel
+     silenced. The value arm of the branch hoist now moves the branch out of
+     bel's value, because bel is the first thing the body evaluates *)
   let v =
     doc
       (pf_let "k" restpost
@@ -9196,6 +9271,35 @@ let () =
   in
   both_answer ~name:"Let, lazy: a value read before p reads k in its taken arm (lz-v)" ~ir:v
     ~case_text:(pf_case ~params:(q "5") ~instances:[ j1 None ] leeg);
+  both_answer ~name:"Let: bel's value takes the arm that does not read k, p bound (lz-v-bound)" ~ir:v
+    ~case_text:(pf_case ~params:(pf_bind "p" "10" :: q "-5") ~instances:[ j1 None ] [ pf_is "10"; pf_cons ]);
+  unbound_fires ~name:"Let: bel's value takes the arm that does not read k, p read (lz-v-ctl)" ~ir:v ~param:"p"
+    ~case_text:(pf_case ~params:(q "-5") ~instances:[ j1 None ] leeg)
+    ~silent:"heffing leeg: bel's value kept k's need on the arm that does not read k";
+  both_answer ~name:"Let, lazy: bel's value reads k, whose need is leeg, p bound (lz-v-hoog, control)" ~ir:v
+    ~case_text:(pf_case ~params:(pf_bind "p" "10" :: q "5") ~instances:[ j1 None ] leeg);
+  (* what the value arm does not reach, pinned (README [S1], [S2], [V1],
+     [V2]): a body that evaluates anything before bel (a literal here), a
+     Match in place of the branch, and the branch hoist's own order — it reads
+     the condition before the operand beside the branch *)
+  let lv =
+    doc
+      (pf_let "k" restpost
+         (pf_let "bel" (pf_ite q_gt_0 k (pf_l "0"))
+            (pf_bin "PLUS" (pf_bin "PLUS" (pf_l "1.00") (pf_b "bel")) p)))
+  in
+  pinned_silent ~entry:"S1" ~name:"a literal before bel, and bel's value kept k's need (lz-lv-ctl)" ~ir:lv
+    ~param:"p" ~case_text:(pf_case ~params:(q "-5") ~instances:[ j1 None ] leeg);
+  pinned_value ~entry:"V2" ~name:"a literal before bel, and bel's value kept k's need, p bound (lz-lv-bound)"
+    ~ir:lv ~case_text:(pf_case ~params:(pf_bind "p" "10" :: q "-5") ~instances:[ j1 None ] [ pf_is "11"; pf_cons ])
+    ~answers:[ "J1.heffing is underived (leeg), expected 1100" ];
+  let hoist =
+    doc
+      (pf_let "n" restpost
+         (pf_let "k" (pf_a "extra") (pf_bin "PLUS" p (pf_ite (pf_cmp "GROTER" (pf_b "n") (pf_l "0")) k (pf_l "0")))))
+  in
+  pinned_silent ~entry:"S2" ~name:"the branch hoist reads n before p, and n's need is leeg (hoist-ctl)" ~ir:hoist
+    ~param:"p" ~case_text:(pf_case ~instances:[ j1 ~extra:"1" None ] leeg);
   (* lz-s2: the inner Let's need (extra) is leeg, so it ends before reading k
      and p is reached; with extra filled it reads k, whose need ends the Let *)
   let s2 =
@@ -9738,10 +9842,10 @@ let () =
         "type": %s, "bron": "de som", "granulariteit": null, "bronRol": %s }|}
       attr el pf_n0 attr el filter pf_n0 rol
   in
-  let creatie ?(toekenningen = []) naam nieuw subject rol =
+  let creatie ?(toekenningen = []) ?(voorwaarde = "null") naam nieuw subject rol =
     Printf.sprintf
       {|{ "node": "ResolvedObjectCreatie", "naam": "%s", "nieuwType": "%s", "subject": "%s",
-          "toekenningen": [ %s ], "voorwaarde": null,
+          "toekenningen": [ %s ], "voorwaarde": %s,
           "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null }, "verbindendeRol": %s }|}
       naam nieuw subject
       (String.concat ", "
@@ -9749,7 +9853,7 @@ let () =
             (fun (a, w) ->
               Printf.sprintf {|{ "node": "Toekenning", "attribuut": "%s", "waarde": %s, "kenmerk": false }|} a w)
             toekenningen))
-      rol
+      voorwaarde rol
   in
   (* c0 a schuit of [a] for each Werf, c1 a werf for each Haven (left out with
      [~werf:false]), c2 a schuit of [b] for each Droogdok *)
@@ -9823,7 +9927,48 @@ let () =
     ~name:"stratum: the Let value without the werf creation, ref's 8 settles the matrix (stratum-vraag-8-3dd-zonder-werfcreatie, control)"
     ~ir:(vraag_doc (creaties ~werf:false "8" "3")) ~param:"p" ~case_text:(pf_case ~instances:h1 [ pf_cons ]);
   both_answer ~name:"stratum: the Let value with p bound (stratum-vraag-8-w-3dd-gebonden, control)"
-    ~ir:(vraag_doc (creaties "8" "3")) ~case_text:(pf_case ~params:bound ~instances:h1 [ pf_cons ])
+    ~ir:(vraag_doc (creaties "8" "3")) ~case_text:(pf_case ~params:bound ~instances:h1 [ pf_cons ]);
+  (* README [N1], [N2], [N3]: the named refusal as the maintainer decision
+     makes it, pinned. Two creations of 8 and 3 for each Werf, each with a
+     condition that holds: ref runs them in document order and plays, [3, 8]
+     reads p. And two quantifier folds over the same created schuiten whose
+     matrices read k in opposite orders: every allowed order reads p, but no
+     single read does in every order, so the refusal is named where ref's
+     words were due *)
+  let geldt = pf_cmp "GELIJK" (lit "0") (lit "0") in
+  let per_werf ?voorwaarde vs =
+    List.mapi
+      (fun i v ->
+        creatie ~toekenningen:[ ("lengte", lit v) ] ?voorwaarde (Printf.sprintf "maak schuit %d" i) "Schuit" "Werf"
+          schuiten)
+      vs
+  in
+  let w1 = [ inst "W1" "Werf" "" "" ] in
+  named_refusal ~by:"the quantifier fold" ~ref_plays:true
+    ~name:(pinned "a quantifier fold over created 8 then 3, each creation behind a condition that holds (cr-8-3-cond)" "N1")
+    ~ir:(keur_doc (per_werf ~voorwaarde:geldt [ "8"; "3" ]) minst) ~param:"p"
+    ~case_text:(pf_case ~instances:w1 [ pf_is ~label:"W1" ~attr:"keur" "99"; pf_cons ]);
+  named_refusal ~by:{|the Let "k"|} ~ref_plays:true
+    ~name:(pinned "a Let barrier per member over created 8 then 3, behind a condition that holds (pm-cr-8-3-cond)" "N2")
+    ~ir:(pm_doc (per_werf ~voorwaarde:geldt [ "8"; "3" ])) ~param:"p"
+    ~case_text:(pf_case ~instances:w1 [ pf_leeg ~label:"W1" ~attr:"bonus" (); pf_cons ]);
+  let disj =
+    doc (per_werf [ "8"; "3" ])
+      (pf_regel ~ot:"Haven" ~doel:"bonus" ~typ:pf_n0
+         (let_ "k" p
+            (pf_bin ~typ:pf_n0 "PLUS"
+               (som ~el:"Werf" ~attr:"keur" ~rol:werven
+                  (kv ~drempel:1 "TEN_MINSTE" (pf_comp ~drempel:1 "TEN_MINSTE" [ gt lengte (lit "5"); gt lengte k ])))
+               (som ~el:"Werf" ~attr:"keur" ~rol:werven
+                  (kv ~drempel:1 "TEN_MINSTE"
+                     (pf_comp ~drempel:1 "TEN_MINSTE" [ pf_cmp "KLEINER" lengte (lit "5"); gt lengte k ]))))))
+  in
+  let h1w1 = [ inst "H1" "Haven" "" {|"werven": [ "W1" ]|}; inst "W1" "Werf" {|"keur": { "number": "4" }|} "" ] in
+  named_refusal ~by:{|the Let "k"|} ~ref_plays:false
+    ~name:(pinned "two quantifier folds read k in opposite orders, so every order reads p (disj-8-3)" "N3")
+    ~ir:disj ~param:"p" ~case_text:(pf_case ~instances:h1w1 [ pf_cons ]);
+  both_answer ~name:"two quantifier folds read k in opposite orders, p bound (disj-8-3-gebonden, control)" ~ir:disj
+    ~case_text:(pf_case ~params:bound ~instances:h1w1 [ pf_cons ])
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total

@@ -2161,6 +2161,16 @@ let rec reads_binder b (e : expr) : bool =
   | Begrensd { basis; minimum; maximum; _ } -> opt basis || opt minimum || opt maximum
   | _ -> Ir_v0.Checks.mentions_binder b e
 
+(* is the first node ref evaluates in [e] a read of the binder [b]? ref
+   evaluates a Binair's left operand first and the basis of Afgerond and
+   Begrensd first (ch. 5.11); every other shape answers no *)
+let rec reads_first b (e : expr) : bool =
+  match e with
+  | Binder_ref { naam; _ } -> norm naam = norm b
+  | Binair { links = Some l; _ } -> reads_first b l
+  | Afgerond { basis = Some x; _ } | Begrensd { basis = Some x; _ } -> reads_first b x
+  | _ -> false
+
 (* ch. 10.6 meets ch. 10.2, as a REWRITE rather than a guard. When the need
    lives in exactly ONE arm and the condition does not force it, call-by-need
    evaluates the value only where that arm is taken — so the `Let` BELONGS
@@ -2316,7 +2326,26 @@ let rec hoist_branch binder (e : expr) : expr option =
      the right answer. *)
   | Let { binder = b2; value = v2; body = lbody; typ; bron }
     when norm b2 <> norm binder && Ir_v0.Checks.mentions_binder binder v2 -> (
-      match let_into_arm (Let { typ; binder = b2; value = v2; body = lbody; bron }) with
+      let moved =
+        match let_into_arm (Let { typ; binder = b2; value = v2; body = lbody; bron }) with
+        | Some _ as m -> m
+        | None -> (
+            (* THE VALUE ARM: the branch that reads the outer binder in one
+               arm stands in [v2] itself. Call-by-need runs [v2] at the first
+               read of [b2], so where [lbody] reads [b2] before anything else,
+               the branch's condition runs exactly where [lbody] starts and the
+               branch can stand over the nested Let: `Let b2 = (als c dan T
+               anders E) in B` becomes `als c dan (Let b2 = T in B) anders
+               (Let b2 = E in B)`. Otherwise the outer need stayed on [v2] on
+               the arm that does not read it, and [b2] went leeg there where
+               ref's value is not (measured: ref 10,00, clingo leeg) *)
+            match hoist_branch binder v2 with
+            | Some (If_then_else { condition; then_; else_; bron = ite_bron; _ }) when reads_first b2 lbody ->
+                let at v = Let { typ; binder = b2; value = v; body = lbody; bron } in
+                Some (If_then_else { typ; condition; then_ = at then_; else_ = at else_; bron = ite_bron })
+            | Some _ | None -> None)
+      in
+      match moved with
       | Some (If_then_else { condition; then_; else_; _ } as moved)
         when (not (Ir_v0.Checks.mentions_binder_cond binder condition))
              && reads then_ <> reads else_ ->
