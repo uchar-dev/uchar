@@ -304,13 +304,16 @@ vegen alleen `corpus/golden`, dus de pins bewogen niet.
 ### Beschermd pad en may-touch-verbreding
 
 - **Voorstel** `scripts/check-rood.sh`, verbreed volgens de aanwijzing
-  van de maintainer ("het Drools-been van check-rood"). Het gaat om
-  twee commentaarblokken, geen logica. De kop van het been zegt nu dat
-  FAULT één stap vóór fire reikt: de rode run leest de case binnen
-  dezelfde vangst als fire, dus een harde weigering bij het lezen (een
-  lexeem dat geen dag noemt) is ook FAULT. Daarbij staat hoe "a genuine
-  fault at fire" in de redenregels gelezen moet worden. Het commentaar
-  in de lus is gelijkgetrokken. De redenregels zelf zijn onaangeroerd.
+  van de maintainer ("het Drools-been van check-rood"). **Vervangen,
+  historisch:** dit beschrijft het commentaar uit de eerste ronde, dat
+  een scheiding naar fase beschreef. De lens vond die in fixronde 2
+  onjuist. Het huidige commentaar (fixronde 2 en 4) deelt in naar
+  uitzonderingstype en legt de pinregel vast; zie die secties. Destijds
+  stond er: twee commentaarblokken, geen logica. De kop zei dat FAULT
+  één stap vóór fire reikt, want de rode run leest de case binnen
+  dezelfde vangst als fire, zodat een harde weigering bij het lezen ook
+  FAULT is. Daarbij stond hoe "a genuine fault at fire" in de
+  redenregels gelezen moest worden.
 - Geen bestaand corpusdocument of test gewijzigd.
 - Fixronde 1, onder mandaat van de hoofdsessie: **voorstel**
   `spec/schema/uchar-case-v0.schema.json` (twee beschrijvingen,
@@ -319,6 +322,9 @@ vegen alleen `corpus/golden`, dus de pins bewogen niet.
 - Fixronde 2: dezelfde drie bestanden opnieuw, alleen tekst
   (`662d75a1` voorstel, `52c642cc` javadoc, `3789e7ce` voorstel), plus
   de NOTE van dit document (`a0db6321`, `2c62ff9e`).
+- Fixronde 4: dezelfde drie bestanden nog eens, alleen tekst
+  (`450e90fe` voorstel, `8d800461` javadoc, `4a830f4e` voorstel); zie
+  de sectie Fixronde 4.
 
 ### Registertekst (hoofdsessie)
 
