@@ -29,12 +29,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * soorten (RegelSpraak has no "is niet leeg"), which is why the loader passed the field through and no lowering
  * ever read it.
  *
- * <p><b>Why the fixture is here and not in {@code corpus/golden}</b>: the ASP backend translates the gevuld test
- * alone in a rule condition, unnegated, and faults on the other three forms ({@code condition kind not
- * translated}), so a golden carrying them would turn gate 6 red. When that backend carries them the fixture
- * moves to the corpus and gates 5, 6 and 12 take over what this class pins.
+ * <p><b>The fixture is a corpus golden</b>, {@code corpus/golden/jutterswet-waardemelding}, read from there. It
+ * lived in this suite's resources until the ASP backend carried the three forms it faulted on ({@code condition
+ * kind not translated}; card clingo-leeg-negatie, 2026-09-23). Gates 5, 6 and 12 now replay the document itself;
+ * this class keeps what the golden cannot say: the unbound step, the mirrored unnegated twin, and the refusal.
  *
- * <p><b>Hand computation</b> ({@code leeg-negatie/case.json}): W1 has tarief 312, W2 none. S1 (lengte 8, werf W1),
+ * <p><b>Hand computation</b> ({@code jutterswet-waardemelding/case.json}): W1 has tarief 312, W2 none. S1 (lengte 8, werf W1),
  * S2 (no lengte, werf W1), S3 (lengte 5, no werf), S4 (no lengte, werf W2). meldpremie = 40 iff lengte is niet
  * leeg: S1, S3 get 40, S2, S4 leeg. ongemeten iff lengte is niet gevuld: S2, S4. werfpremie = 25 iff the
  * tarief of the werf is niet leeg, an absent werf reading as leeg (ch. 1.2): S1, S2 get 25, S3, S4 leeg.
@@ -42,7 +42,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class LeegNegatieWitnessTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
-    private static final Path FIXTURE = Path.of("src", "test", "resources", "leeg-negatie");
+    // cwd under surefire is the module dir (backends/drools); the corpus is two levels up.
+    private static final Path FIXTURE = Path.of("..", "..", "corpus", "golden", "jutterswet-waardemelding");
 
     @Test void de_negatie_speelt_in_beide_takken() throws Exception {
         BeideTakken.groen(FIXTURE.resolve("ir.json"), geval(),
