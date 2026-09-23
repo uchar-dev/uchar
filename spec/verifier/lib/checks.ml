@@ -4451,6 +4451,82 @@ let wf097_clip_qualifications at (c : conditie) : violation list =
   in
   walk c
 
+(* WF-111 — the time window's BOUND SHAPE (IR-SPEC ch. 4.6, maintainer
+   decision 2026-09-23). The two shapes are the pair the v0 backends carry
+   and all four executors execute (golden `jutterswet-premievenster`); the
+   general date expression WF-042's typing admits is an OPEN wire decision,
+   so it is refused here instead of by each executor at its own phase.
+   "Own" is extensional, as everywhere (ch. 2.2): an attribute declared on a
+   type the subject satisfies. The day-precision clause is the same pair read
+   at its datatype — both OCaml executors decline an instant bound, and
+   ch. 3.10 speaks of civil days only. The declared datatype decides for an
+   attribute and the annotation for a literal, which carries no other. *)
+let wf111_bound ctx ~subject at side (e : expr) =
+  let refuse what =
+    [ v "WF-111" at
+        (Printf.sprintf
+           "the %s bound of a time window is %s — a bound is a date literal or an own scalar date \
+            attribute of the subject; the general date expression is an OPEN wire decision"
+           side what) ]
+  in
+  let instant =
+    [ v "WF-111" at
+        (Printf.sprintf
+           "the %s bound of a time window is a datum-tijd: the window is a range of civil days and \
+            no clause reads an instant bound"
+           side) ]
+  in
+  match e with
+  | Literal { typ = Some Datum_tijd; _ } -> instant
+  | Literal _ -> []
+  | Attribuut_ref
+      { attribuut = Some a; objecttype = Some otn; navigatie_rol = None; navigatie_pad = [];
+        set = false; navigatie_bindingen = None | Some []; _ } -> (
+      match subject with
+      | None -> refuse ("the attribute '" ^ a ^ "' at a position with no subject to own it")
+      | Some st when not (is_sub ctx ~sub:st ~super:otn) ->
+          refuse
+            (Printf.sprintf "the attribute '%s' of '%s', which the subject '%s' does not satisfy" a
+               otn st)
+      | Some _ -> (
+          match objecttype ctx otn with
+          | Some ot when attr_temporal ot a ->
+              refuse ("the time-dependent attribute '" ^ a ^ "'")
+          | Some ot when attr_of ot a = Some (Some Datum_tijd) -> instant
+          | _ -> []))
+  | Attribuut_ref { attribuut; _ } ->
+      refuse
+        ("a navigated or set read of '" ^ Option.value attribuut ~default:"?" ^ "'")
+  | Parameter_ref { parameter; _ } ->
+      refuse ("the parameter '" ^ Option.value parameter ~default:"?" ^ "'")
+  | _ -> refuse "a computed date expression"
+
+(* WF-112 — the time window's POSITION (maintainer decision 2026-09-23): never
+   under GEEN or a counting quantifier. The walk is deep — a window inside an
+   ALLE member of a GEEN composite is still counted or complemented by the
+   outer one — and it enters a fold's filter and test, where the same
+   quantifiers range over instances. It stops at nothing else, because no
+   other condition node holds a condition. *)
+let rec cond_has_window (c : conditie) =
+  match c with
+  | Periode_conditie _ -> true
+  | Samengesteld { onderdelen; _ } -> List.exists cond_has_window onderdelen
+  | Kwantorvouw { kv_filter; kv_toets; _ } ->
+      List.exists cond_has_window (List.filter_map Fun.id [ kv_filter; kv_toets ])
+  | Vergelijking _ | Predicaat _ | Kenmerk_check _ | Rollidmaatschap _ | Verre_rollidmaatschap _
+  | Regelversie _ | Conditie_onopgelost _ ->
+      false
+
+let wf112_position at (kwantor : kwantor) (parts : conditie list) =
+  match kwantor with
+  | Alle | De -> []
+  | Geen | Ten_minste | Ten_hoogste | Precies ->
+      if List.exists cond_has_window parts then
+        [ v "WF-112" at
+            "a time window under GEEN or a counting quantifier: the window gates the RULE, and no \
+             reading is specified for a verdict that is counted or complemented" ]
+      else []
+
 let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) at (e : expr) :
     violation list =
   (* [union_ok] is WF-110 (a) carried DOWN one level: the instance-set union
@@ -6995,6 +7071,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
                  | Some d when not (is_date d) ->
                      [ v "WF-042" (sub n) ("window bound is " ^ datatype_kind d ^ ", must be a date") ]
                  | _ -> [])
+                @ wf111_bound ctx ~subject (sub n) n e
                 @ walk_expr ctx ~binders ~subject (sub n) e
             | None -> [])
           [ ("vanaf", vanaf); ("tot", tot) ]
@@ -7003,6 +7080,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
        | Ten_minste | Ten_hoogste | Precies when drempel < 1 ->
            [ v "WF-041" at (Printf.sprintf "counting quantifier with threshold %d < 1" drempel) ]
        | _ -> [])
+      @ wf112_position at kwantor onderdelen
       @ List.concat
           (List.mapi
              (fun i c -> walk_cond ctx ~binders ~subject (Printf.sprintf "%s/onderdelen/%d" at i) c)
@@ -7033,6 +7111,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
            [ v "WF-108" (sub "kwantor")
                "quantifier fold with kwantor DE: the bare definite is a description of ONE \
                 member, not a quantification over the set — a fold over it has no reading" ])
+      @ wf112_position at k.kv_kwantor (List.filter_map Fun.id [ k.kv_filter; k.kv_toets ])
       (* (e) the threshold: present EXACTLY under a counting quantifier. A
          counting fold without one names no number to compare the count with;
          one under ALLE/GEEN records a quantification the kwantor field

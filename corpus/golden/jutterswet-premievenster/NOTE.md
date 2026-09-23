@@ -60,12 +60,16 @@ backend 14 expectations per case, both Drools branches `PLAYED 6`.
 
 ## The bound shapes this document carries, and the one it does not
 
-ch. 3.10's v0 mirror note bounds what a window bound may BE — a date
-literal or the subject's own scalar date attribute — while WF-042 admits
-any date expression. Both bound shapes are carried here (four literal
-windows, one own-attribute window). The deferred general expression is
-refused by name in both OCaml executors and witnessed red, in
-`corpus/rood/periodegrens-parameterdatum`.
+WF-111 (maintainer decision 2026-09-23; before that ch. 3.10's v0 mirror
+note) bounds what a window bound may BE: a date literal or the subject's
+own scalar date attribute. Both shapes are carried here (four literal
+windows, one own-attribute window), which makes this document WF-111's
+passing golden. The general date expression is an OPEN wire decision and
+ill-formed until it is taken; its failing witness is
+`corpus/negatief/wf111-periodegrens-parameterdatum`, which was the red case
+`periodegrens-parameterdatum` until that day. The same holds for the
+window's POSITION: `borgpremie`'s `ALLE` member is WF-112's passing golden,
+and the window under `GEEN` is `corpus/negatief/wf112-periodevenster-tellende-kwantor`.
 
 The chapter's SECOND case — a period condition on a TEMPORAL target,
 where the window clips the written timeline instead of gating the rule —

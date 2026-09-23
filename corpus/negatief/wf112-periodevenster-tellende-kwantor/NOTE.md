@@ -1,57 +1,51 @@
-# periodevenster-tellende-kwantor
+# wf112-periodevenster-tellende-kwantor
 
-The **second** bound `RUNTIME-SEMANTICS.md` ch. 3.10's v0 mirror note puts
-on the period condition:
+Violates WF-112 (`spec/IR-SPEC.md` ch. 4.6): a time window never sits
+under `GEEN` or a counting quantifier. Here the window is the second
+member of a `GEEN` composite.
 
-> v0's backends lower only literal or own-scalar-attribute bounds and
-> refuse the rest, **and refuse the condition under counting quantifiers**.
+Expected verifier report:
 
-The window here is the second member of a `GEEN` composite. What the
-refused position would otherwise do is not a near miss but a reading
-nothing norms: the quantifier COMPLEMENTS the window's verdict, so a
-time-free session — where ch. 3.10 says the window never matches — makes
-the composite **true** and fires the rule. The chapter norms the window as
-a gate on the RULE; a quantifier that counts or complements its verdict is
-using it as something else. This case carries `asOfDate: null` for exactly
-that reason: it is the input on which the unnormed reading is loudest.
+    WF-112 FAIL /resolvedRegels/0/voorwaarde: a time window under GEEN or
+    a counting quantifier: …
 
-## Where the boundary comes from — measured, not invented
+## Why the position is ill-formed
 
-One verifier-clean document per quantifier, 2026-09-20, the window always
-the second composite member:
+`RUNTIME-SEMANTICS.md` ch. 3.10 defines the window as a gate on the RULE:
+the rule applies when the evaluation date lies inside the window. A
+quantifier that counts or complements the window's verdict uses it as
+something else. Under `GEEN` a time-free session makes this loudest. There
+the window never matches, so the complement makes the composite true and
+the rule fires. No spec text defines what that complement means, so the
+position is refused instead of left for each executor to read.
 
-| quantifier | Drools exec-model | Drools DRL-tekst |
-|---|---|---|
-| `ALLE` | PLAYED | PLAYED |
-| `DE` | PLAYED | PLAYED |
-| `GEEN` | transpiler SKIP | MARKER: periodevergelijking onder een tellende kwantor (§8.4.3) |
-| `TEN_MINSTE` | transpiler SKIP | the same marker |
-| `TEN_HOOGSTE` | transpiler SKIP | the same marker |
-| `PRECIES` | transpiler SKIP | the same marker |
+## Where the rule comes from
 
-So the carried pair is `ALLE` and `DE` — and `ALLE` is exactly what the
-green witness `corpus/golden/jutterswet-premievenster` plays through all
-four executors. The refused four are refused because the DRL-text branch
-names this very limit, not because the two OCaml executors chose a line of
-their own: the no-superset rule this card applies to the bound shape,
-applied to the position.
+Until 2026-09-23 this same document was the red witness
+`corpus/rood/periodevenster-tellende-kwantor`. It was verifier-clean then,
+and all four executors refused it. The limit was measured on the Drools
+branches, not chosen: both play the window under `ALLE` and `DE` and
+refuse it under `GEEN`, `TEN_MINSTE`, `TEN_HOOGSTE` and `PRECIES`. The
+maintainer decision of 2026-09-23 made that limit the norm. The carried
+`ALLE` member is green in all four executors, in `borgpremie` of
+`corpus/golden/jutterswet-premievenster`.
 
-The quantifier FOLD (ch. 3.9a, `Kwantorvouw`) is refused by the same rule
-and the same sentence, without a Drools measurement of its own: its
-quantifiers are the composite's, the quantification is the same one over
-instances instead of parts, and the safe direction of an unmeasured
-boundary is the refusal. Recorded rather than glossed.
+## The quantifier fold, measured the same day
 
-## Four executors, and the pins carry their phase
+The rule also covers the fold (`Kwantorvouw`, ch. 3.9a), with the window in
+its `filter` or `toets`. Earlier this was an assumption. It was measured on
+2026-09-23 using `jutterswet-schouwploeg`, with the toets of *bevoegd*
+replaced by the bare window and, separately, by `ALLE [gediplomeerd;
+window]`. Each shape was tried under all five quantifiers:
 
-    verifier            PASS
-    ref                 EVALUATION FAULT: a period condition under GEEN or a
-                        counting quantifier … Declined at evaluation
-    clingo              TRANSLATION FAULT: the same sentence … Declined in
-                        translation
-    Drools exec-model   EXCLUDE transpiler SKIP: voorwaarde buiten Phase-B scope
-    Drools DRL-tekst    EXCLUDE drl-transpiler MARKER: TODO
-                        periodevergelijking onder een tellende kwantor (§8.4.3)
+| quantifier | ref / clingo | Drools exec-model | Drools DRL-text |
+|---|---|---|---|
+| `ALLE` | play | SKIP (matrix carries no `Periode`) | PLAYED |
+| `GEEN`, `TEN_MINSTE`, `TEN_HOOGSTE`, `PRECIES` | refuse by name | SKIP | lowered and answered |
 
-The day a card norms the position, this directory stops being red and the
-gate's exclusion list goes stale with it.
+The DRL-text branch does not refuse the fold. Under `GEEN` in a time-free
+session it answered *bevoegd* present, which is the complement reading this
+rule refuses. So the fold needs the rule for its own sake: without it, one
+executor gives an unspecified answer. WF-112 covers the fold with the same
+arm. The verifier walks into the fold's `filter` and `toets` exactly as it
+walks into a composite's members.
