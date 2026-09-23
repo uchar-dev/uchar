@@ -75,15 +75,15 @@ spec bug.
     q > 0 dan k anders 0) in ((1,00 plus bel) plus p)` with q = -5,
     restpost leeg and p unbound answers leeg where ref faults at p.
     Where bel is the first thing the body evaluates, the branch moves
-    out of bel's value and the guard is exact. ([S2], the branch hoist
-    reading the branch's condition before the operand beside it, is
-    gone since fixronde 5: that operand's read has a second guard
-    without the arm's atoms.) [S3] The intermediate pass
-    within one stratum (the ch. 6.1 residual of order-dependent
-    transients, in fail-fast form). ref runs the forms of a stratum
-    pass by pass until nothing changes, so a form that reads what a
-    later form of the same stratum writes sees it leeg in the first
-    pass. Where a short circuit depends on that value, ref reads the
+    out of bel's value and the guard is exact. ([S2], retired
+    2026-09-23: the branch hoist put the operand beside the branch
+    behind the branch's condition; that operand's read now has a second
+    guard without the arm's atoms.) [S3] The intermediate pass within
+    one stratum (the ch. 6.1 residual of order-dependent transients, in
+    fail-fast form). ref runs the forms of a stratum pass by pass until
+    nothing changes, so a form that reads what a later form of the same
+    stratum writes sees it leeg in the first pass. Where a short
+    circuit depends on that value, ref reads the
     parameter in that pass and faults, while the fixpoint never reads
     it, and clingo answers the fixpoint: `heffing = 5,00 indien TEN
     MINSTE 1 [a > 0, p > 0]`, written before `a = inkomen`, with

@@ -351,7 +351,7 @@ type ctx = {
   mutable named : (string * (string * string * string)) list;
   (* the Let lowering's branch hoist moves the operands beside a branch into
      both arms, behind the branch's condition, while ref evaluates them before
-     it ([hoist_branch]; README [S2] until fixronde 5). [hoisted]: per branch
+     it ([hoist_branch]; README [S2] until 2026-09-23). [hoisted]: per branch
      node the hoist built, by identity, those operands. [before_arm]: the arms
      of such nodes being translated, innermost first, each with its node's
      operands and the place of the arm's own atoms in [rule_guard] (start,
@@ -2286,7 +2286,7 @@ let rec reads_first b (e : expr) : bool =
    parameter guard it is not: a sibling read before the branch waits for the
    condition, and a condition that reads a binder whose need is leeg decides
    no arm, so `p plus (als n > 0 dan k anders 0)` with n leeg and p unbound
-   answered where ref faults at p (README [S2] until fixronde 5). So every
+   answered where ref faults at p (README [S2] until 2026-09-23). So every
    branch node the hoist builds keeps the operands ref evaluates before its
    condition ([ctx.hoisted]): the siblings before the reading operand, at
    every level, and those an inner hoist kept. A parameter read in one of
