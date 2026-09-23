@@ -46,40 +46,45 @@ GEEN, TEN_HOOGSTE en PRECIES en voor de matrix onder GEEN, TEN_HOOGSTE en
 PRECIES. Speczin en verifier-arm zijn voorstellen voor de maintainer. Er
 zijn dertien negatiefs, alle rood-eerst en elk met een NOTE, en één
 nieuwe golden. ref heeft een invariantnotitie en twee suitegetuigen. De
-gate-12-pins staan als voorstel in de branch. Alle veertien gates zijn
-groen op `66070ff4`. Commits, na de tweede rebase in fixronde 3, op main
-`ad9bac27`:
-- `0bd5b962` claim
-- `14d28346` spec + arm + drie negatiefs (**voorstel**)
-- `84e3f310` ref-notitie + WV-6.4-f/g
-- `e6b1dd34` IR-SPEC 5.5, Drools-flank (**voorstel**)
-- `e8e34548` vierde negatief, kwantormatrix (**voorstel**)
-- `3490ed10` Result
+gate-12-pins staan als voorstel in de branch. Na de laatste rebase, op de
+vouwtoets-landing (main `47c7c45b`), zijn dat 184 en 163. Commits op die
+basis:
+- `e0baa6e3` claim
+- `2dcf6f22` spec + arm + drie negatiefs (**voorstel**)
+- `9c2a4ee8` ref-notitie + WV-6.4-f/g
+- `80245b31` IR-SPEC 5.5, Drools-flank (**voorstel**)
+- `53a3d054` vierde negatief, kwantormatrix (**voorstel**)
+- `ad9aad6d` Result
 - fixronde 2:
-  - `55542e6b` hygiëne
-  - `1fd971dc` Drools-flank in twee vormen (**voorstel**)
-  - `90b56ad0` de kwantorvouw (**voorstel**; golden en vier negatiefs)
-  - `f0f7d2c8` RS 6.4-reikwijdte (**voorstel**)
-  - `6cc86145` clingo-overdracht
-  - `e2d329d6` Result
-  - `63907e35` citaat zonder jargon (**voorstel**)
-  - `d1f03d73` gate-12-pins (**voorstel**)
-  - `906cf3b4` Result
+  - `56977465` hygiëne
+  - `f6d36339` Drools-flank in twee vormen (**voorstel**)
+  - `811864c6` de kwantorvouw (**voorstel**; golden en vier negatiefs)
+  - `5ff9a86a` RS 6.4-reikwijdte (**voorstel**)
+  - `d301b374` clingo-overdracht
+  - `0703e4a9` Result
+  - `7a3e65d2` citaat zonder jargon (**voorstel**)
+  - `3b81678c` gate-12-pins (**voorstel**; bij de laatste rebase het
+    conflict opgelost naar 184/163)
+  - `70eaa033` Result
 - fixronde 3:
-  - `0b511d4b` vijf negatiefs voor de ongepinde kwantorclausules
+  - `03401b5a` vijf negatiefs voor de ongepinde kwantorclausules
     (**voorstel**)
-  - `82af55dc` gedateerde tellingen na de eerste rebase (**voorstel**)
-  - `9c226e4d` de kwantordekking begrensd, de groeiende waarde als
+  - `148a91f9` gedateerde tellingen na de eerste rebase (**voorstel**)
+  - `49ef4b85` de kwantordekking begrensd, de groeiende waarde als
     restpunt (**voorstel**)
-  - `9a3bfa4d` de ALLE-codering van clingo: IR-SPEC 5.5 en de overdracht
+  - `79ae4469` de ALLE-codering van clingo: IR-SPEC 5.5 en de overdracht
     (**voorstel**)
-  - `356a2214` RS 6.4: het kwantorbesluit buiten een cyclus (**voorstel**)
-  - `9c6ecc1b` RS 6.1: de bindingloze vouw (**voorstel**)
-  - `d55e668e` RS 6.3: de negatieve delen van de vouw (**voorstel**)
-  - `857c60ec` golden-NOTE: waarom geen case wederzijds leidt
-  - `749a3edc` Result
-  - `66070ff4` tellingen na de tweede rebase (**voorstel**)
-  - de slotcommit: dit Result met de gates op `66070ff4`
+  - `e7f2754b` RS 6.4: het kwantorbesluit buiten een cyclus (**voorstel**)
+  - `5ee54fc7` RS 6.1: de bindingloze vouw (**voorstel**)
+  - `0c8ff865` RS 6.3: de negatieve delen van de vouw (**voorstel**)
+  - `c52d4dc1` golden-NOTE: waarom geen case wederzijds leidt
+  - `9a67dbf2` Result
+  - `e0d7a16b` tellingen na de tweede rebase (**voorstel**)
+  - `8ea5196c` Result
+- laatste stap vóór de merge:
+  - `885646e8` tellingen na de rebase op de vouwtoets-landing
+    (**voorstel**)
+  - de slotcommit: dit Result
 
 ### Aangescherpte acceptatie, zoals uitgevoerd
 
@@ -92,7 +97,9 @@ Clingo niet aangeraakt; de versmalling staat hieronder als overdracht.
 (f) Veertien gates, met getallen. In fixronde 1 waren ze alle groen. In
 fixronde 2 waren er eerst dertien groen, met gate 12 rood op de
 gelijkheidspin; na de pinwijziging in de branch waren alle veertien
-groen. In fixronde 3 zijn alle veertien groen op `66070ff4`.
+groen. In fixronde 3 waren alle veertien groen op de toenmalige tip, met
+basis `ad9bac27`; na de laatste rebase is dat commit `e0d7a16b`. Na de laatste rebase, op `885646e8`, zijn de gates 1, 2, 3,
+5, 6, 7, 12 en 13 opnieuw gedraaid, alle groen.
 
 ### De norm
 
@@ -419,8 +426,8 @@ kwantorvouw-recursieve-creatie}` and
 `wf046-kwantorvouw-{alle-bereik, geen-vergelijking, geen-matrix,
 bindingloos-bereik, tenhoogste-bereik, precies-bereik, tenhoogste-matrix,
 precies-matrix, onder-geen}`, one per clause. Corpus cost zero, counted
-on the 754 documents the card did not add: none of the 31 leeg/gevuld
-tests reads a written node, and none of the 78 read positions that
+on the 755 documents the card did not add: none of the 31 leeg/gevuld
+tests reads a written node, and none of the 82 read positions that
 change kind has a writer. Recorded open: the other
 absence-true conditions (RUNTIME-SEMANTICS ch. 6.1) and the Drools flank
 (IR-SPEC ch. 5.5): both branches act on a transient leeg when an own-operand
@@ -639,7 +646,7 @@ commentaar bij WV-6.4-e is gecorrigeerd, alleen commentaar, onder
 mandaat. (c) De alinea in IR-SPEC is afgebroken, en de lange regel in RS
 ook.
 
-### Gates na fixronde 2 (elk los, na `eval $(opam env)`, op `6cc86145`)
+### Gates na fixronde 2 (elk los, na `eval $(opam env)`, op `d301b374`)
 
 1 self-contained PASS · 2 ir-schema PASS (279, vloer 192) · 3 verifier
 PASS (279 golden+rood schoon; 448 negatief, was 444, vloer 350) · 4
@@ -658,7 +665,7 @@ PASS (130; 2 goldens).
 Gate 12 met het pinvoorstel, eerst gedraaid als ongetrackte kopie in
 /tmp (alleen de `cd`-regel en de twee pins gewijzigd): `check-drools:
 PASS`, `played 183`, `DRL-text branch played 162 (… pin 162)`, `JUnit
-620 tests`. Daarna vastgelegd in de branch (`d1f03d73`) en gate 12 daar
+620 tests`. Daarna vastgelegd in de branch (`3b81678c`) en gate 12 daar
 opnieuw gedraaid: `check-drools: PASS`, played 183 = pin, DRL-tekst
 162 = pin, JUnit 620, kanaalvloer 53, value-divergence 1, 6 min 30 s.
 
@@ -679,19 +686,25 @@ omdat de parallelle ref-kaart (caselaag) landde met wijzigingen in
 rood document meer. Daarom is een tweede keer gerebased, ook zonder
 conflicten, en is alles opnieuw gemeten. De ref-suite telt nu 931 (die van
 main plus mijn vier), het nieuwe rode document `inputdatum-kalender` is
-verifier-schoon, en de tellingen hieronder gelden op `ad9bac27`. Geteld
-op de 754 documenten die deze kaart niet toevoegde:
+verifier-schoon. Daarna landde de vouwtoets-kaart met de golden
+`jutterswet-wachtvenster`, en is een derde keer gerebased, op
+`47c7c45b`. Het enige conflict zat in de gate-12-pins; het is opgelost
+door beide redenblokken te houden en de pins op 184 en 163 te zetten. De
+wachtvenster-golden is verifier-schoon onder de arm, en ref geeft PASS op
+zijn drie cases. De tellingen hieronder gelden op `47c7c45b`. Geteld op
+de 755 documenten die deze kaart niet toevoegde:
 - 31 leeg/gevuld-tests in 29 documenten (GEVULD negatie:false 25, LEEG¬
   3, GEVULD¬ 2, LEEG 1). Geen daarvan leest een geschreven knoop.
 - Leesposten die van soort veranderen, zonder één echte kant: main →
-  leeg-arm 20 posten in 17 documenten; leeg-arm → tip 58 posten in 17
-  documenten (51 strict → neg, 7 neg → pos); main → tip 78 posten in 34
+  leeg-arm 20 posten in 17 documenten; leeg-arm → tip 62 posten in 18
+  documenten (54 strict → neg, 8 neg → pos); main → tip 82 posten in 35
   documenten. Het echte kant-geval uit de vorige telling zat in een
   eigen negatief en telt nu niet mee.
-- Oordelen main → tip over de 754: identiek (golden 235, rood 48,
+- Oordelen main → tip over de 755: identiek (golden 236, rood 48,
   negatief 441, toka 30).
-- ref-sweep main (`ad9bac27`, opnieuw gebouwd) → tip over de 643
-  bestaande golden- en rood-cases: `cmp` identiek.
+- ref-sweep main (OCaml-executors ongewijzigd sinds `ad9bac27`, opnieuw
+  gebouwd) → tip over de 652 bestaande golden- en rood-cases: `cmp`
+  identiek.
 De tellingen in IR-SPEC 5.2 en de WF-indexrij zijn bijgewerkt.
 
 ### Punt 1: vijf ongepinde kwantorclausules (blokkerend)
@@ -707,7 +720,7 @@ creatievoorwaarde, en elk voor één clausule:
 | `wf046-kwantorvouw-precies-matrix` | matrix onder PRECIES (de lens-case A/A1/Y, B/B1/B2/X) | merk(W1) = 1 / 0, stil | Ki |
 | `wf046-kwantorvouw-onder-geen` | een TEN_MINSTE-vouw onder een propositionele GEEN | keten / UNSAT | Kh |
 
-Rood eerst: gate 3 met de arm van vóór het kwantorbesluit (`e8e34548`)
+Rood eerst: gate 3 met de arm van vóór het kwantorbesluit (`53a3d054`)
 laat alle negen kwantorgetuigen door, exit 1. Mutanten op de huidige arm,
 elk teruggezet met `cmp` identiek; bij elke mutant faalt gate 3 op precies
 de eigen getuige:
@@ -775,10 +788,11 @@ relatie van WF-048. RS 6.3 noemt de negatieve delen van de vouw. De
 onjuiste zin in RS 6.4 over "the first, second and fourth" is in de
 getuigencommit herschreven.
 
-### Gates na fixronde 3 (elk los, na `eval $(opam env)`, op `66070ff4`)
+### Gates na fixronde 3 (elk los, na `eval $(opam env)`)
 
 Eerst gedraaid op de tip met basis `a1b9daf0`, met alle veertien groen.
-Na de tweede rebase opnieuw, op `66070ff4` (basis `ad9bac27`):
+Na de tweede rebase opnieuw, op de tip van toen met basis `ad9bac27`. De
+inhoud daarvan is na de laatste rebase commit `e0d7a16b`.
 - 1 self-contained PASS
 - 2 ir-schema PASS (284, vloer 192)
 - 3 verifier PASS (284 golden+rood schoon; 454 negatief, vloer 350)
@@ -795,6 +809,29 @@ Na de tweede rebase opnieuw, op `66070ff4` (basis `ad9bac27`):
 - 13 reftype-derivation PASS (131 twists over 27 goldens; 128 replays,
   25 DRL)
 - 14 flogic PASS (130; 2 goldens)
+
+### Gates na de laatste rebase (elk los, op `885646e8`, basis `47c7c45b`)
+
+Op verzoek van de hoofdsessie gedraaid: de gates 1, 2, 3, 5, 6, 7, 12 en 13.
+- 1 self-contained PASS
+- 2 ir-schema PASS (285, vloer 192)
+- 3 verifier PASS (285 golden+rood schoon; 454 negatief, vloer 350)
+- 5 oracle PASS (ref-suite 931; 608 cases)
+- 6 clingo PASS (suite 523; 608 cases)
+- 7 noop PASS (571; 37 survivors)
+- 12 drools PASS (played 184 = pin; DRL-tekst 163 = pin; JUnit 653;
+  kanaalvloer 53; value-divergence 1)
+- 13 reftype-derivation PASS (131 twists over 27 goldens; 128 replays,
+  25 DRL)
+
+De gates 4, 8, 9, 10, 11 en 14 zijn na deze rebase niet opnieuw gedraaid.
+Hun laatste run was groen, op de tip van toen met basis `ad9bac27`, na de
+laatste rebase commit `e0d7a16b`. Main
+raakte sindsdien alleen de Drools-backend, de golden
+`jutterswet-wachtvenster`, een negatief-NOTE, gate 12 en tekst. De
+hoofdsessie meldde 649 case-files en 601 replays op main; ik meet 652
+golden- en rood-case-files zonder mijn golden, 604 golden-replays zonder
+mijn golden en 608 met de vier cases van `jutterswet-opvolgerquorum`.
 
 ## Open punten (stand na fixronde 3)
 
@@ -867,7 +904,7 @@ Na de tweede rebase opnieuw, op `66070ff4` (basis `ad9bac27`):
    WV-6.4-f-vorm plus de genavigeerde variant in de
    value-divergence-lijst van gate 12.
 8. **Gate-12-pins, beschermd-pad-voorstel in de branch** (commit
-   `d1f03d73`, op aanwijzing van de hoofdsessie). In
+   `3b81678c`, op aanwijzing van de hoofdsessie). In
    `scripts/check-drools.sh` zijn uitsluitend `EXPECTED_PLAYED` 182 →
    183 en `EXPECTED_DRL_PLAYED` 161 → 162 gewijzigd, elk met een
    redenblok in de huisstijl (golden `jutterswet-opvolgerquorum`, vier
@@ -877,7 +914,10 @@ Na de tweede rebase opnieuw, op `66070ff4` (basis `ad9bac27`):
    tests, floor 239`, 6 min 30 s. **Pinsom-notitie voor de
    hoofdsessie:** de parallelle Drools-kaart voegt ook een spelende
    golden toe. Wie als tweede landt, rebaset en zet beide pins één
-   verder; voorspeld eindtotaal 184/163.
+   verder; voorspeld eindtotaal 184/163. **Gebeurd:** vouwtoets landde
+   eerst (183/162 door `jutterswet-wachtvenster`); bij de rebase staan
+   de pins nu op 184 en 163, en het redenblok noemt de som. Gate 12:
+   played 184 = pin, DRL-tekst 163 = pin, JUnit 653.
 9. **Mijn lezing van "BEREIK", benoemd.** Het bereik omvat de `filter`
    (de bereikvelden van IR-SPEC 4.5). Wie het filter onder ALLE monotoon
    wil, verandert één regel in de Kwantorvouw-tak. Geen corpusdocument
