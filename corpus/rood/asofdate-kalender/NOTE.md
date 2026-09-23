@@ -7,11 +7,15 @@ by name while they read the case, before anything is evaluated.
 ## The shape
 
 `ir.json` is `golden/jutterswet-vensterheffing` byte for byte: two
-versions of one levy, `vensterheffing in 2026` valid from 2026-01-01 to
-2026-12-31 and `overgangsheffing tot en met 2025` valid up to
-2025-12-31. The case is that golden's input (M1, meldwaarde 100) with
-another evaluation date. The document was taken over whole because its
-answer depends on the date: the date decides which version applies.
+independently dated rules, with distinct names, that write distinct
+attributes. `vensterheffing in 2026` writes vensterheffing and is valid
+from 2026-01-01 to 2026-12-31; `overgangsheffing tot en met 2025` writes
+overgangsheffing and is valid up to 2025-12-31. What the document
+exercises is the validity WINDOW, not version selection: for each rule
+on its own, the evaluation date decides whether the window admits it.
+The case is that golden's input (M1, meldwaarde 100) with another
+evaluation date. The document was taken over whole because its answer
+depends on that date.
 
 ## Why 2026-02-30
 
@@ -61,9 +65,10 @@ are all admitted. This case takes `2026-02-30`, for three reasons.
 Until 2026-09-23 the shared case reader kept `asOfDate` as an opaque
 string, and the validity gate compared it with the window bounds as
 strings. By hand: "2026-02-30" is not below "2026-01-01" and not above
-"2026-12-31", so the 2026 version applies and vensterheffing = 100 + 25
-= **125**. "2026-02-30" is above "2025-12-31", so the transition version
-does not apply and overgangsheffing stays **leeg**.
+"2026-12-31", so the window of `vensterheffing in 2026` admits it and
+vensterheffing = 100 + 25 = **125**. "2026-02-30" is above
+"2025-12-31", so the window of `overgangsheffing tot en met 2025`
+excludes it and overgangsheffing stays **leeg**.
 
 Measured on this document with runners built from before the change:
 `ref` reported `EXPECTED FAULT DID NOT OCCUR: evaluation succeeded`, and
