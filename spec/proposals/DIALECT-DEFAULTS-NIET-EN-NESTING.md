@@ -189,32 +189,65 @@ The proposed decisions, one line each (full text in §10):
   cases (the anchor's four, the two corners of §2.3, the input case of
   M9) pass in ref, clingo and the exec branch.
 
-### 2.3 The anchor's two corners
+### 2.3 The anchor's corners
 
-The anchor's tree (`corpus/golden/anchor/ww-herleving-inkomen/NOTE.md:81-93`)
-gives each nested default only its own condition: herleving `omstandigheid
-vervallen`, blokkade `nieuw recht ontstaan EN nieuw maandloon >
-inkomensgrens`. RUNTIME-SEMANTICS ch. 7.9 evaluates a default's exception
-groups first, whatever the default's own justification
-(`RUNTIME-SEMANTICS.md:4937-4940`, `:4951-4955`). Two inputs the four cases
-do not reach:
+*Updated 2026-09-23 at the landing of card
+`anker-ww-herleving-dragervoorwaarde` (branch commits 560859e0, a7e24b5c):
+the anchor carries the repair of §8.1. The first measurement (probes A and
+B, on 8dd05e25) stands; the sixteen-combination enumeration of that card,
+and its measurements, extend it.*
 
-| Probe | Input | Statute reading | ref, clingo, exec |
-|---|---|---|---|
-| A | not werkloos; maandinkomen 1800 (below the 2100 grens); omstandigheid vervallen | no right: nothing ended, nothing revives | **present** — herleving decides waar outside einde |
-| B | werkloos; maandinkomen 1800; nieuw recht ontstaan, nieuw maandloon 2300 | right stands: it never ended, and lid 2 only blocks a revival | **absent** — blokkade decides onwaar outside herleving |
+Before the repair, the anchor's tree
+(`corpus/golden/anchor/ww-herleving-inkomen/NOTE.md:81-93` at 8dd05e25) gave
+each nested default only its own condition: einde `maandinkomen >
+inkomensgrens`, herleving `omstandigheid vervallen`, blokkade `nieuw recht
+ontstaan EN nieuw maandloon > inkomensgrens`. RUNTIME-SEMANTICS ch. 7.9
+evaluates a default's exception groups first, whatever the default's own
+justification (`RUNTIME-SEMANTICS.md:4937-4940`, `:4951-4955`). Write W =
+`werkloos`, T = `maandinkomen > inkomensgrens`, V = `omstandigheid
+vervallen` and N = `nieuw recht ontstaan` ∧ `nieuw maandloon >
+inkomensgrens`. [I] Enumerated over the sixteen combinations of W, T, V
+and N under ch. 7.9, the unconjoined tree answers against the statute
+reading on exactly four, and the four existing cases reach none of them:
 
-[M] All three executors agree (`MISMATCH` against the statute reading in
-ref and clingo, `FAIL` in the exec branch): the executors are right about
-the IR, the IR is not right about art. 21. [M] With the carriers'
-conditions written into the nested justifications (herleving: `maandinkomen
-> inkomensgrens EN omstandigheid vervallen`; blokkade: those two plus its
-own two) all six inputs pass in all three executors, and the four existing
-cases keep their expected values. [I] Art. 21 lid 1 itself restates its
-carrier ("op grond van artikel 20, eerste lid, onderdeel a of c, is
-geëindigd"), lid 2 does not ("Het recht herleeft niet indien"): statute
-drafting mixes both styles, so a model has to decide per exception what
-the text presupposes. §5.4 turns this into decision 4.
+| Probe | Input | Statute reading | Unconjoined tree (ref, clingo, exec) | Landed case |
+|---|---|---|---|---|
+| A | ¬W ¬T V ¬N — not werkloos; maandinkomen 1800 (below the 2100 grens); omstandigheid vervallen | no right: nothing arose, nothing ended, nothing revives | **present** — herleving decides waar outside einde | `case6-niet-werkloos-wel-vervallen` |
+| B | W ¬T ¬V N — werkloos; maandinkomen 1800; nieuw recht ontstaan, nieuw maandloon 2300 | right stands: it never ended, and lid 2 only blocks a revival | **absent** — blokkade decides onwaar outside herleving | `case5-geen-eindiging-wel-nieuw-recht` |
+| C | ¬W T V ¬N — case1 without werkloos: maandinkomen 2500, omstandigheid vervallen | no right: without werkloosheid no right arose (art. 15), so none ended and none revives | **present** — herleving decides waar outside the grant | `case8-niet-werkloos-boven-grens-vervallen` |
+| D | W ¬T V N — probe B plus omstandigheid vervallen | right stands, as in B | **absent** — blokkade decides onwaar outside einde | `case9-geen-eindiging-wel-vervallen-en-nieuw-recht` |
+
+[M] On each of the four, all three executors give the unconjoined answer
+(`MISMATCH` against the statute reading in ref and clingo, `FAIL` in the
+exec branch): the executors are right about the IR, the IR was not right
+about art. 15 and 21.
+
+[M] Two repairs were measured. The one this section first proposed — the
+carriers' conditions without W (einde `T`, herleving `T ∧ V`, blokkade
+`T ∧ V ∧ N`) — passes A, B and D but still answers **present** on C in all
+three executors: herleving decides waar for a werknemer in whom no right
+ever arose. [I] C is the only one of the sixteen combinations on which it
+differs from the landed repair. [M] The landed repair conjoins at every
+nested level, the carrier's (itself conjoined) justification first, as one
+flat `ALLE`: einde `ALLE[W, T]`, herleving `ALLE[W, T, V]`, blokkade
+`ALLE[W, T, V, nieuw recht ontstaan, nieuw maandloon > inkomensgrens]`. It
+passes all nine cases of §8.1 in ref, clingo and the exec branch, the four
+existing ones with their expected values unchanged. [I] Without the target
+characteristic in the input it gives `recht op uitkering` ⇔ W ∧ (¬T ∨ (V
+∧ ¬N)).
+
+[I] Art. 21 lid 1 itself restates its carrier ("op grond van artikel 20,
+eerste lid, onderdeel a of c, is geëindigd"), lid 2 does not ("Het recht
+herleeft niet indien"), and art. 20 lid 1 presupposes an existing right
+("Het recht op uitkering eindigt"): statute drafting mixes both styles, so
+a model has to decide per exception what the text presupposes. §5.4 turns
+this into decision 4 for the dialect. For the anchor's wire the
+maintainer's card settled it: levels 2 to 4 each conjoin with their
+carrier, the first nested level (einde, on the grant's `werkloos`)
+included. C's statute reading rests on reading `werkloos` as the ground of
+art. 15 at the moment the right arose — the reading case4 already relied on
+(werkloos together with an income above the grens) and that the anchor's
+NOTE now states.
 
 ## 3. The research question: why no "niet &lt;kenmerk&gt;"?
 
@@ -966,30 +999,66 @@ witnesses are frontend fixtures (JUnit, beside
 
 ### 8.1 G1 — repair of `anchor/ww-herleving-inkomen` (protected path)
 
-A proposal branch the maintainer merges:
+*Landed 2026-09-23 as a proposal branch the maintainer merges (card
+`anker-ww-herleving-dragervoorwaarde`, commits 560859e0, a7e24b5c). This
+section records the landed form; where it differs from the version first
+proposed here, the first version is named.*
 
-- herleving's justification becomes `ALLE[maandinkomen > inkomensgrens,
-  omstandigheid vervallen]`; blokkade's becomes `ALLE[maandinkomen >
+- Every nested default's justification is one flat `ALLE` (one
+  `Samengesteld`, no nested `ALLE`): its carrier's conjuncts first, in the
+  carrier's order, then its own. einde `ALLE[werkloos, maandinkomen >
+  inkomensgrens]`; herleving `ALLE[werkloos, maandinkomen > inkomensgrens,
+  omstandigheid vervallen]`; blokkade `ALLE[werkloos, maandinkomen >
   inkomensgrens, omstandigheid vervallen, nieuw recht ontstaan, nieuw
-  maandloon > inkomensgrens]`;
-- `recht op uitkering` becomes `BEZITTELIJK` in `kenmerkSoorten`, so the
-  twin can write `heeft (geen) recht op uitkering` (a presentation field;
-  [M12] the verifier and the three executors pass with it);
-- three new cases, expected values from the statute reading:
-  `case5-herleving-zonder-einde` (probe A: **absent**, plus
-  `inkomensgrens = 2100.00`), `case6-blokkade-zonder-einde` (probe B:
-  **present**), `case7-invoer-blijft` (M9: an input `recht op uitkering`
-  under the einde decision stays **present**) — the last one is the first
-  case to pin ch. 7.1's "not a retraction" on a characteristic; the
-  2026-08-21 card left that corner without a case;
-- [M] no-op check: probe A without the `inkomensgrens` expectation
-  survives a no-op run; with it, none of the three survives, so
-  `scripts/check-noop.sh` needs no new entry;
-- the NOTE gains the corners, the self-contained reading of ch. 7.9 and
-  the input case.
+  maandloon > inkomensgrens]`. The tree keeps its four levels in
+  `Default.excepties`; outside these three justifications `ir.json` is
+  structurally unchanged. *First proposed:* herleving and blokkade without
+  `werkloos`, einde unchanged — that version answers probe C of §2.3
+  against the statute.
+- Nine cases, five of them new, expected values from the statute reading
+  (hand computations in the anchor's NOTE; `inkomensgrens` 2100.00 in all):
 
-[M] The repaired tree passes the four existing cases, both corners and
-the input case in ref, clingo and the Drools exec branch.
+| Case | Input | `recht op uitkering` | Decided by |
+|---|---|---|---|
+| `case1-herleving` … `case4-einde` | unchanged | unchanged | herleving, grant, blokkade, einde |
+| `case5-geen-eindiging-wel-nieuw-recht` | probe B (case2 plus the nieuw recht) | present | grant (art. 15) |
+| `case6-niet-werkloos-wel-vervallen` | probe A | absent | nothing |
+| `case7-invoer-staat-tegen-blokkade` | case3's facts plus `recht op uitkering` in the input | present | blokkade decides onwaar; the input stands |
+| `case8-niet-werkloos-boven-grens-vervallen` | probe C (case1 without werkloos) | absent | nothing |
+| `case9-geen-eindiging-wel-vervallen-en-nieuw-recht` | probe D (case5 plus omstandigheid vervallen) | present | grant (art. 15) |
+
+  The four corner cases also pin `inkomensgrens`, `verstreken periode` and
+  `nieuwe maxdatum`. case7 is the first case to pin ch. 7.1's "not a
+  retraction" on a characteristic (the 2026-08-21 card left that corner
+  without a case) and pins only the characteristic and `consistent`.
+  *First proposed:* three cases — `case5-herleving-zonder-einde` (probe
+  A), `case6-blokkade-zonder-einde` (probe B) and `case7-invoer-blijft`
+  on case4's facts; probes C and D were not yet known.
+- [M] No-op check: case5, case6, case8 and case9 refute a no-op run
+  through their computed attributes. case7 survives it by construction —
+  the standing is what it tests — and stands with its reason in the
+  survivor list of `scripts/check-noop.sh` (gate 7: 563 refuting, 37
+  survivors; red without the entry). *First proposed:* no new entry, which
+  held for a case4-based input case that also pinned `inkomensgrens`.
+- `recht op uitkering` stays `BIJVOEGLIJK`. *First proposed:*
+  `BEZITTELIJK`, so the twin can write `heeft (geen) recht op uitkering`
+  ([M12] the verifier and the three executors pass with it); the card did
+  not include it, so if G2 needs it, G2 proposes it as a change to this
+  anchor.
+- The NOTE gains the self-contained reading of ch. 7.9, the four corners
+  of §2.3 with what the unconjoined tree answers on each, the reading of
+  `werkloos` on which probe C rests, and all nine hand computations.
+
+[M] The repaired tree passes all nine cases in ref, clingo and the Drools
+exec branch (`PLAYED 9`); the DRL-text branch keeps refusing the golden on
+its defaults sentence, and gate 12's pins (played 182, DRL 161) do not
+move. Gate 13 does not probe this golden: its only unit, `dag`, declares no
+canonical and no factor, so there is nothing to twist.
+
+*Consequence for G2 (§8.2 predates the landing and is not updated here):*
+the twin's wire must carry the same flat `ALLE` per nested default, carrier
+conjuncts first and `werkloos` included at einde, and its cases are these
+nine, not seven.
 
 ### 8.2 G2 — the RegelSpraak twin (required by the card)
 

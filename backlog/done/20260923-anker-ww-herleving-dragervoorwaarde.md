@@ -234,16 +234,24 @@ golden, zelfde kanalen.
    een onjuiste premisse uit: gate 13 blijft groen, maar raakt deze kaart
    niet. Dekking vergt converteerbare eenheden in het model; dat valt buiten
    deze kaart.
-2. De tweelingkaart dialect-uitzondering-op-uitzondering noemt "zeven cases";
-   het worden er negen. Voor byte-identiteit na canonicalisatie moet de
-   tweeling dezelfde vorm uitzenden: een plat `ALLE`, dragerconjuncten
-   voorop, en `werkloos` ook in de uitzondering op de basis (einde), wat haar
-   besluit 4d ("ook aan de wortel") oplevert. De kaarttekst bijwerken is werk
-   voor de hoofdsessie.
-3. Het voorstel `DIALECT-DEFAULTS-NIET-EN-NESTING.md` §2.3 en §8.1 beschrijft
-   een andere reparatie (zonder `werkloos`, andere casenamen, "check-noop.sh
-   needs no new entry"). Deze kaart vervangt dat; het voorstel is niet
-   aangeraakt.
+2. **Voor de tweelingkaart dialect-uitzondering-op-uitzondering:** de
+   RegelSpraak-tweeling moet dezelfde platte `ALLE`-vorm uitzenden als het
+   anker — per geneste default één `Samengesteld` met kwantor `ALLE`, de
+   dragerconjuncten voorop in de volgorde van de drager, `werkloos` ook in de
+   uitzondering op de basis (einde) — en draagt negen cases, niet de "zeven
+   cases" van haar kaarttekst. Haar besluit 4d ("ook aan de wortel") levert
+   die vorm op. De kaarttekst bijwerken is werk voor de hoofdsessie.
+3. In het voorstel `DIALECT-DEFAULTS-NIET-EN-NESTING.md` zijn §2.3 en §8.1
+   in fixronde 1 bijgewerkt (zie hieronder). Buiten die twee secties
+   beschrijven nog vijf plaatsen de oude reparatie; zij zijn op aanwijzing
+   van de hoofdsessie niet aangeraakt: §1 punt 6 ("on two inputs", r. 79),
+   §2.2 M12 ("seven cases … the two corners of §2.3", r. 188–189; een
+   gedateerde meting), §5.4 ("decide wrongly on two inputs; written with it,
+   all six inputs pass", r. 758–759), §8.2 (de brontekst van de tweeling
+   zonder `werkloos` in einde, herleving en blokkade, r. 1098–1120; "passes
+   all seven cases", r. 1144; "the seven of G1", r. 1151) en §8.4 ("plays
+   7/7", r. 1225; een gedateerde meting). §8.1 eindigt nu met de zin dat
+   §8.2 van vóór de landing is en wat dat voor G2 betekent.
 4. §8.1 van dat voorstel zette `recht op uitkering` ook op `BEZITTELIJK`, voor
    "heeft (geen) recht op uitkering" in de tweeling. Dat staat niet in deze
    kaart en is niet gedaan; heeft de tweeling het nodig, dan is het een
@@ -254,3 +262,19 @@ golden, zelfde kanalen.
    grens). De maintainer bevestigt of verwerpt haar; verwerpt hij haar, dan
    vervalt case8 en is het `werkloos`-conjunct een ontwerpkeuze zonder
    getuige.
+
+**Fixronde 1 (hoofdsessie, 2026-09-23).** Verbreding van de may-touch-set,
+op voorstelmandaat: `spec/proposals/DIALECT-DEFAULTS-NIET-EN-NESTING.md`,
+alleen §2.3 en §8.1. §2.3 heet nu "The anchor's corners" en draagt de
+opsomming over de zestien combinaties: de ongeconjungeerde boom wijkt op
+vier af (probes A–D = case6, case5, case8, case9). Die opsomming is als
+[I] gemerkt; dat de drie uitvoerders op elk van de vier het ongeconjungeerde
+antwoord geven, is [M]. De sectie meldt ook de twee gemeten reparaties
+(zonder `werkloos` faalt alleen C; de gelande slaagt op alle negen) en de
+lezing van `werkloos` waarop C rust. §8.1 legt de gelande vorm vast: het
+platte `ALLE` per geneste default met de dragerconjuncten voorop,
+`werkloos` ook in einde, negen cases met namen, verwachting en beslisser,
+case7 in de overleverslijst van gate 7, `recht op uitkering` blijft
+`BIJVOEGLIJK`. Waar het afwijkt van de eerste versie, noemt het die. De
+sectie sluit af met het gevolg voor G2: dezelfde platte vorm, negen cases.
+Anker, NOTE en `check-noop.sh` zijn niet aangeraakt. Gate 1 opnieuw: PASS.
