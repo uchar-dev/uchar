@@ -9899,7 +9899,8 @@ let wf105 ctx =
    nor blank, and an integer line >= 0. That the line is an integer is the
    loader's: it reads [line] as one or refuses the document; a negative one
    is refused here, because 0 is already the value for "no source position"
-   (a hand-built document) and a line below it names nothing. ERROR and INFO
+   (a hand-built document, or a frontend warning without a token) and a line
+   below it names nothing. ERROR and INFO
    are refused here BY NAME — the loader admits both so that a document
    carrying one fails on this rule and says why, not on a load error: an
    ERROR means the producer refused to write the document, and INFO is
@@ -10055,7 +10056,7 @@ let wf113 ctx =
         [ v "WF-113" (at ^ "/line")
             (Printf.sprintf
                "diagnostic with line %d: a line is a source position, and 0 is the value for \
-                none (a hand-built document)"
+                none (a hand-built document, or a producer warning without a token)"
                d.diag_line) ])
     diags
   @ List.concat_map

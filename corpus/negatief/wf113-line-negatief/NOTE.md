@@ -1,6 +1,6 @@
 Violates WF-113 (a) (`spec/IR-SPEC.md` ch. 2): a `WARNING` whose `line` is -1.
 
-    WF-113 FAIL /diagnostics/0/line: diagnostic with line -1: a line is a source position, and 0 is the value for none (a hand-built document)
+    WF-113 FAIL /diagnostics/0/line: diagnostic with line -1: a line is a source position, and 0 is the value for none (a hand-built document, or a producer warning without a token)
 
 A minimal hand-broken variant of `corpus/golden/jutterswet-vondstverjaring/ir.json`:
 the golden unchanged, plus one entry with severity `WARNING`, the

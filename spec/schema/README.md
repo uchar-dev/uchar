@@ -139,8 +139,9 @@ Three admissions are deliberate and leave the refusal to the verifier:
 datatype-less attribute stays a loadable document that the verifier refuses
 (WF-059); `TimelineFacet.count` admits any integer, because `count ≥ 1` is
 WF-005, a verifier check with its own negatief witness; and `Diagnostic.line`
-admits any integer, because `line ≥ 0` (0 = no source position, a hand-built
-document) is WF-113 (a), likewise with its own witness.
+admits any integer, because `line ≥ 0` (0 = the producer reports no source
+position: a hand-built document, or a frontend warning without a token) is
+WF-113 (a), likewise with its own witness.
 
 **Extension fields** (the decided wire-entry discipline, `../IR-SPEC.md`
 § Method): a v1 construct enters the wire additively, as an *optional*
