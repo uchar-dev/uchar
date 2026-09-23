@@ -1,0 +1,62 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "wrakkental": {
+            "number": "0"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "wrakkental": {
+            "number": "12"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "wrakkenloon",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "wrakkenbonus"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "wrakkenloon",
+      "value": {
+        "number": "180"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J2",
+      "attribute": "wrakkenbonus"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

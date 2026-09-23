@@ -1,0 +1,13 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het wrakkental Numeriek (niet-negatief geheel getal);
+    het wrakkenloon Numeriek (geheel getal);
+    de wrakkenbonus Numeriek (geheel getal);
+
+Regel wrakkenloon van een jutter
+    geldig altijd
+        Het wrakkenloon van een Jutter moet berekend worden als het wrakkental van de Jutter maal 15.
+
+Beslistabel Wrakkenbonus
+    geldig altijd
+| | de wrakkenbonus van een Jutter moet gesteld worden op | indien zijn wrakkental groter is dan |
+|---|---|---|
