@@ -254,18 +254,15 @@ class DatumTijdLexeemWitnessTest {
      *  attribute against a datum-tijd literal in {@code lexeem} — the only thing that varies here. */
     private static String model(String lexeem) {
         return """
-                { "formaat": "regelspraak-ir-v0",
-                  "objecttypen": { "Vondst": { "node": "Objecttype", "naam": "Vondst",
-                    "attributen": { "vondstmoment": { "node": "DatumTijd" } },
-                    "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-                    "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-                    "kenmerken": [ "verjaard" ], "kenmerkSoorten": { "verjaard": "BIJVOEGLIJK" },
-                    "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
-                    "bezield": false, "meervoud": "Vondsten" } },
-                  "domeinen": {}, "parameters": {}, "eenheidstelsels": {}, "feittypen": {}, "dimensies": {},
-                  "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
-                  "regels": [ { "node": "Regel", "naam": "Kenmerktoekenning verjaard", "soort": "regel" } ],
-                  "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "Kenmerktoekenning verjaard",
+                { "format": "uchar-ir-v1",
+                  "model": { "objectTypes": [ { "node": "ObjectType", "name": "Vondst", "animate": false,
+                    "plural": "Vondsten",
+                    "attributes": [ { "node": "Attribute", "name": "vondstmoment",
+                                      "datatype": { "node": "DatumTijd" } } ],
+                    "characteristics": [ { "node": "Characteristic", "name": "verjaard", "kind": "BIJVOEGLIJK" } ] } ],
+                  "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
+                  "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {} },
+                  "rules": { "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "Kenmerktoekenning verjaard",
                     "soort": "KENMERKTOEKENNING",
                     "doel": { "node": "AttribuutRef", "attribuut": "verjaard", "objecttype": "Vondst",
                       "onderwerpBron": "Een Vondst", "navigatieRol": null, "type": { "node": "Booleaan" },
@@ -281,7 +278,8 @@ class DatumTijdLexeemWitnessTest {
                     "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
                   "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
                   "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-                  "regelGroepen": [], "diagnostics": [] }
+                  "regelGroepen": [] },
+                  "diagnostics": [] }
                 """.formatted(lexeem);
     }
 }

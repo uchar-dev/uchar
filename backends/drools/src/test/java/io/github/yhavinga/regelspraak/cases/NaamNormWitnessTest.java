@@ -123,8 +123,9 @@ class NaamNormWitnessTest {
         for (String spelling : java.util.List.of(
                 "VONDSTNUMMER", "Vondstnummer", "vondstNummer", "VOndstnummer", "vondstnummeR")) {
             Path ir = bewerk(STRANDREGISTER, o -> {
-                ((ObjectNode) o.get("uniciteiten").get(0)).set("sleutels", JSON.createArrayNode().add(spelling));
-                ((com.fasterxml.jackson.databind.node.ArrayNode) o.get("uniciteiten")).remove(1);
+                ((ObjectNode) IrPad.rulesLijst(o, "uniciteiten").get(0))
+                        .set("sleutels", JSON.createArrayNode().add(spelling));
+                IrPad.rulesLijst(o, "uniciteiten").remove(1);
             });
             assertEquals(Set.of("eenmalig nummer @ S1", "eenmalig nummer @ S2"),
                     vlaggen(ir, tweeTijdlijnen()),
@@ -135,7 +136,7 @@ class NaamNormWitnessTest {
     @Test void een_kastvariant_van_een_uniesleutel_vindt_dezelfde_botsing() throws Exception {
         // the union's own key site resolves through the same contract. ref on this model: PASS (2
         // expectations) — both Strandvondsten flagged within the one source; clingo agrees.
-        Path ir = bewerk(NUMMERREGISTER, o -> ((ObjectNode) o.get("uniciteitUnies").get(0)
+        Path ir = bewerk(NUMMERREGISTER, o -> ((ObjectNode) IrPad.rulesLijst(o, "uniciteitUnies").get(0)
                 .get("bronnen").get(0)).set("sleutels", JSON.createArrayNode().add("vondstNummer")));
         assertEquals(Set.of("eenmalig vondstnummer @ S1", "eenmalig vondstnummer @ S2"),
                 vlaggen(ir, tweeTijdlijnen()),
@@ -147,7 +148,7 @@ class NaamNormWitnessTest {
     @Test void de_drl_tweeling_noemt_het_gedeclareerde_veld() throws Exception {
         // the text route emits a PROPERTY NAME, so the same resolution has to happen there: ident() of the
         // written key would render "vondstNummer", a field the fact class does not carry.
-        Path ir = bewerk(STRANDREGISTER, o -> ((ObjectNode) o.get("uniciteiten").get(0))
+        Path ir = bewerk(STRANDREGISTER, o -> ((ObjectNode) IrPad.rulesLijst(o, "uniciteiten").get(0))
                 .set("sleutels", JSON.createArrayNode().add("vondstNummer")));
         String drl = drl(ir);
         assertTrue(drl.contains("rsOoitBotst(vondstnummer, $k0)"), drl);
@@ -169,9 +170,9 @@ class NaamNormWitnessTest {
         // most one temporal key component (…)"; the exec model faults on the "eenmalig vondstnummer
         // (Strandvondst 1)" rule. Both source rules of the twin must carry the sentinel.
         Path ir = bewerk(NUMMERREGISTER, o -> {
-            for (JsonNode b : o.get("uniciteitUnies").get(0).get("bronnen"))
+            for (JsonNode b : IrPad.rulesLijst(o, "uniciteitUnies").get(0).get("bronnen"))
                 ((ObjectNode) b).set("sleutels", JSON.createArrayNode().add("vondstnummer").add("volgnummer"));
-            ((com.fasterxml.jackson.databind.node.ArrayNode) o.get("uniciteitUnies")).remove(1);
+            IrPad.rulesLijst(o, "uniciteitUnies").remove(1);
         });
         String drl = drl(ir);
         assertEquals(2, tel(drl, ONOPGELOSTE_SLEUTELVORM), "one refusal per source: " + drl);
@@ -184,8 +185,7 @@ class NaamNormWitnessTest {
     private static Path diakriet() throws Exception {
         return bewerk(STRANDREGISTER, o -> {
             hernoemAttribuut(o, "coördinaat");
-            ((ObjectNode) o.get("objecttypen").get("Strandvondst")).set("attribuutGranulariteit",
-                    JSON.createObjectNode().put("COÖRDINAAT", "JAAR").put("kavelnummer", "JAAR"));
+            granulariteitOnder(o, "coördinaat", "COÖRDINAAT");
             enkeleUniciteit(o, JSON.createArrayNode().add("coördinaat"));
         });
     }
@@ -194,8 +194,7 @@ class NaamNormWitnessTest {
     private static Path newline() throws Exception {
         return bewerk(STRANDREGISTER, o -> {
             hernoemAttribuut(o, "vondst nummer");
-            ((ObjectNode) o.get("objecttypen").get("Strandvondst")).set("attribuutGranulariteit",
-                    JSON.createObjectNode().put("vondst\nnummer", "JAAR").put("kavelnummer", "JAAR"));
+            granulariteitOnder(o, "vondst nummer", "vondst\nnummer");
             enkeleUniciteit(o, JSON.createArrayNode().add("vondst nummer"));
         });
     }
@@ -204,25 +203,32 @@ class NaamNormWitnessTest {
     private static Path ariteit() throws Exception {
         return bewerk(STRANDREGISTER, o -> {
             hernoemAttribuut(o, "coördinaat");
-            ((ObjectNode) o.get("objecttypen").get("Strandvondst")).set("attribuutGranulariteit",
-                    JSON.createObjectNode().put("COÖRDINAAT", "JAAR").put("kavelnummer", "JAAR"));
+            granulariteitOnder(o, "coördinaat", "COÖRDINAAT");
             enkeleUniciteit(o, JSON.createArrayNode().add("coördinaat").add("kavelnummer"));
         });
     }
 
     /** Rename Strandvondst's {@code vondstnummer} declaration, keeping the declared order. */
     private static void hernoemAttribuut(ObjectNode ir, String nieuw) {
-        ObjectNode ot = (ObjectNode) ir.get("objecttypen").get("Strandvondst");
-        ObjectNode attributen = (ObjectNode) ot.get("attributen");
-        ObjectNode vervangen = JSON.createObjectNode();
-        vervangen.set(nieuw, attributen.get("vondstnummer"));
-        vervangen.set("kavelnummer", attributen.get("kavelnummer"));
-        ot.set("attributen", vervangen);
+        IrPad.attribute(IrPad.objectType(ir, "Strandvondst"), "vondstnummer").put("name", nieuw);
+    }
+
+    /** The granulariteit keyed under another spelling of the declared member, which stays scalar. Until M1 that
+     *  was a granularity entry for {@code spelling} with no member of that name, and the measurements quoted in
+     *  the tests above were taken on that form. Since M1 a facet hangs on its member, so {@code spelling} is
+     *  declared as a second attribute carrying the JAAR facet: the facet names the key sites look up are the
+     *  same as before ({@code spelling} and kavelnummer), and the declared member stays FIRST, so the bean's one
+     *  property for the identifier both spellings share is still the scalar one (the first derivation wins). */
+    private static void granulariteitOnder(ObjectNode ir, String gedeclareerd, String spelling) {
+        ObjectNode ot = IrPad.objectType(ir, "Strandvondst");
+        ObjectNode lid = IrPad.attribute(ot, gedeclareerd);
+        lid.remove("timeline");
+        IrPad.timeline(IrPad.addAttribute(ot, spelling, lid.get("datatype").deepCopy()), "JAAR");
     }
 
     /** Keep only the first uniciteit (the scoped second one plays no part here) and give it {@code sleutels}. */
     private static void enkeleUniciteit(ObjectNode ir, JsonNode sleutels) {
-        var lijst = (com.fasterxml.jackson.databind.node.ArrayNode) ir.get("uniciteiten");
+        var lijst = IrPad.rulesLijst(ir, "uniciteiten");
         while (lijst.size() > 1) lijst.remove(1);
         ((ObjectNode) lijst.get(0)).set("sleutels", sleutels);
     }

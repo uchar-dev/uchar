@@ -119,18 +119,16 @@ class VensterAssertieWitnessTest {
     /** The golden's document with its control rule only and one consistency rule asserting {@code assertie}. */
     private Path document(String assertie) throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(PREMIEVENSTER.resolve("ir.json")));
-        for (String veld : new String[] { "regels", "resolvedRegels" }) {
-            ArrayNode uit = JSON.createArrayNode();
-            for (JsonNode r : doc.withArray(veld))
-                if ("basispremie van een vondst".equals(r.path("naam").asText())) uit.add(r);
-            doc.set(veld, uit);
-        }
+        ArrayNode uit = JSON.createArrayNode();
+        for (JsonNode r : IrPad.rulesLijst(doc, "resolvedRegels"))
+            if ("basispremie van een vondst".equals(r.path("naam").asText())) uit.add(r);
+        IrPad.rules(doc).set("resolvedRegels", uit);
         ArrayNode cons = JSON.createArrayNode();
         cons.add(JSON.readTree("{ \"node\": \"ResolvedConsistentie\", \"naam\": \"" + REGEL + "\","
                 + " \"subject\": \"Vondst\", \"assertie\": " + assertie + ","
                 + " \"bron\": \"Een Vondst moet voldoen aan de volgende voorwaarden\", \"line\": 1,"
                 + " \"geldigheid\": { \"node\": \"Geldigheid\", \"vanaf\": null, \"tot\": null } }"));
-        doc.set("consistenties", cons);
+        IrPad.rules(doc).set("consistenties", cons);
         Path p = tmp.resolve("vensterassertie-" + (n++) + ".json");
         Files.writeString(p, doc.toPrettyString());
         return p;

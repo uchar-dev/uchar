@@ -240,7 +240,7 @@ class TakgelijkheidWitnessTest {
      *  and clingo-clean. */
     private static Path aggregatieJoinOnafgeleid() throws Exception {
         ObjectNode ir = goldenIr(VONDSTTELLING);
-        for (JsonNode r : ir.get("feittypen").get("vondstaanmelding").get("rollen"))
+        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "vondstaanmelding").get("rollen"))
             if ("aanmelder".equals(r.get("naam").asText())) {
                 ((ObjectNode) r).put("meervoudig", true);
                 ((ObjectNode) r).put("meervoud", "aanmelders");
@@ -252,7 +252,7 @@ class TakgelijkheidWitnessTest {
      *  join reads. Verifier-clean, ref-clean and clingo-clean. */
     private static Path aggregatieJoinVerdrongen() throws Exception {
         ObjectNode ir = goldenIr(VONDSTTELLING);
-        ((ObjectNode) ir.get("objecttypen").get("Vondst").get("attributen")).set("aanmelder", numeriek());
+        IrPad.addAttribute(IrPad.objectType(ir, "Vondst"), "aanmelder", numeriek());
         return model("aggregatiejoin-verdrongen", ir);
     }
 
@@ -276,7 +276,7 @@ class TakgelijkheidWitnessTest {
     /** jutterswet-postwacht with one of the feitcreatie's five wire-nullable positions set to null. */
     private static Path feitcreatieZonder(String positie) throws Exception {
         ObjectNode ir = goldenIr(POSTWACHT);
-        ((ObjectNode) ir.get("feitCreaties").get(0)).putNull(positie);
+        ((ObjectNode) IrPad.rulesLijst(ir, "feitCreaties").get(0)).putNull(positie);
         return model("feitcreatie-zonder-" + positie, ir);
     }
 
@@ -284,9 +284,9 @@ class TakgelijkheidWitnessTest {
      *  is their wire position. Verifier-clean. */
     private static Path tweeNaamlozeCreaties() throws Exception {
         ObjectNode ir = goldenIr(POSTWACHT);
-        ObjectNode fc = (ObjectNode) ir.get("feitCreaties").get(0);
+        ObjectNode fc = (ObjectNode) IrPad.rulesLijst(ir, "feitCreaties").get(0);
         fc.putNull("naam");
-        ((com.fasterxml.jackson.databind.node.ArrayNode) ir.get("feitCreaties")).add(fc.deepCopy());
+        IrPad.rulesLijst(ir, "feitCreaties").add(fc.deepCopy());
         return model("feitcreatie-twee-naamloos", ir);
     }
 

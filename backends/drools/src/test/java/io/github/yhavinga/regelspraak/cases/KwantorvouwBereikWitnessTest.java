@@ -65,7 +65,7 @@ class KwantorvouwBereikWitnessTest {
         // THE GUARD AGAINST WIDENING THE FIX INTO A GUESS. Strip the range off the wire and two feittypen are
         // left with nothing to choose between; neither branch may pick a winner.
         ObjectNode ir = herhaaldPaar();
-        for (JsonNode r : ir.get("resolvedRegels")) stripBronRol(r);
+        for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels")) stripBronRol(r);
         Path p = tijdelijk("kwantorvouw-geen-binding", ir);
         JsonNode c = JSON.readTree(Files.readString(zaken().get(1)));
         for (boolean viaDrl : new boolean[] { false, true }) {
@@ -113,7 +113,7 @@ class KwantorvouwBereikWitnessTest {
      *  fill it, so the world the cases describe is unchanged. */
     private static ObjectNode herhaaldPaar() throws Exception {
         ObjectNode ir = lees();
-        ObjectNode ft = ((ObjectNode) ir.get("feittypen")).putObject("schaduwindeling");
+        ObjectNode ft = IrPad.modelLijst(ir, "factTypes").addObject();
         ft.put("node", "Feittype").put("naam", "schaduwindeling").put("wederkerig", false);
         ft.putArray("rollen")
           .add(rol("schaduwploeg", "Keurploeg", null, false))

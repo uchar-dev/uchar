@@ -187,22 +187,23 @@ class LetMeldplekWitnessTest {
 
     /** A one-objecttype document over {@code Jutter} with "uit van een jutter" as its only rule. */
     private static String model(String waarde) {
-        return ("{\"formaat\":\"regelspraak-ir-v0\","
-                + "\"objecttypen\":{\"Jutter\":{\"node\":\"Objecttype\",\"naam\":\"Jutter\","
-                + "\"attributen\":{\"inkomen\":%s,\"restpost\":%s,\"saldo\":%s,\"uit\":%s},"
-                + "\"attribuutMeervoud\":{},\"attribuutDimensies\":{},\"attribuutGranulariteit\":{},"
-                + "\"attribuutTijdlijnAantal\":{},\"attribuutTijdlijnNaam\":{},\"kenmerken\":[],\"kenmerkSoorten\":{},"
-                + "\"kenmerkGranulariteit\":{},\"kenmerkTijdlijnAantal\":{},\"bezield\":true,\"meervoud\":\"Jutters\"}},"
-                + "\"domeinen\":{},\"parameters\":{},\"eenheidstelsels\":{},\"feittypen\":{},\"dimensies\":{},"
-                + "\"tijdlijnen\":[],\"dagsoorten\":[],\"dagsoortPerEenheid\":{},"
-                + "\"regels\":[{\"node\":\"Regel\",\"naam\":\"%s\",\"soort\":\"regel\"}],"
-                + "\"resolvedRegels\":[{\"node\":\"ResolvedRegel\",\"naam\":\"%s\",\"soort\":\"BEREKENING\","
+        return ("{\"format\":\"uchar-ir-v1\","
+                + "\"model\":{\"objectTypes\":[{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,"
+                + "\"plural\":\"Jutters\",\"attributes\":["
+                + "{\"node\":\"Attribute\",\"name\":\"inkomen\",\"datatype\":%s},"
+                + "{\"node\":\"Attribute\",\"name\":\"restpost\",\"datatype\":%s},"
+                + "{\"node\":\"Attribute\",\"name\":\"saldo\",\"datatype\":%s},"
+                + "{\"node\":\"Attribute\",\"name\":\"uit\",\"datatype\":%s}],"
+                + "\"characteristics\":[]}],"
+                + "\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],"
+                + "\"timelines\":[],\"dayKinds\":[],\"dagsoortPerEenheid\":{}},"
+                + "\"rules\":{\"resolvedRegels\":[{\"node\":\"ResolvedRegel\",\"naam\":\"%s\",\"soort\":\"BEREKENING\","
                 + "\"doel\":%s,\"waarde\":%s,\"voorwaarde\":null,"
                 + "\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}],"
                 + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
                 + "\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
-                + "\"regelGroepen\":[],\"diagnostics\":[]}")
-                .formatted(pos(2), pos(2), num(2), num(4), NAAM, NAAM, attr("uit", num(4)), waarde);
+                + "\"regelGroepen\":[]},\"diagnostics\":[]}")
+                .formatted(pos(2), pos(2), num(2), num(4), NAAM, attr("uit", num(4)), waarde);
     }
 
     // ---------------- the models (each ref-replayed, and clingo-replayed, before its values were pinned) ----------------

@@ -93,15 +93,13 @@ class OverervingWeigeringWitnessTest {
         // was a refusal in all three executors; it is lowered now, and this is the Drools half of the
         // witness (ref's is WV-7.10-f, and no corpus golden carries the swap).
         ObjectNode ir = goldenIr(WRAKBASIS);
-        ObjectNode regel = (ObjectNode) ((ArrayNode) ir.get("resolvedRegels")).get(0);
+        ObjectNode regel = (ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0);
         regel.put("naam", "uitkering van een strandrecht (kaal)");
         ((ObjectNode) regel.get("doel")).put("objecttype", "Strandrecht");
         ((ObjectNode) regel.get("waarde").get("links")).put("objecttype", "Strandrecht");
-        ((ObjectNode) ir.get("regels").get(1)).put("naam", "uitkering van een strandrecht (kaal)");
-        ObjectNode pd = (ObjectNode) ((ArrayNode) ir.get("prioritizedDefaults")).get(0);
+        ObjectNode pd = (ObjectNode) IrPad.rulesLijst(ir, "prioritizedDefaults").get(0);
         pd.put("naam", "uitkering van een wrakrecht").put("onderwerp", "Wrakrecht");
         ((ObjectNode) pd.get("defaults").get(1).get("consequentie")).put("objecttype", "Wrakrecht");
-        ((ObjectNode) ir.get("regels").get(0)).put("naam", "uitkering van een wrakrecht");
 
         assertNull(CaseRunner.speelCase(model("overerving-regel-4", ir), geval(
                 "{ \"format\": \"uchar-case-v0\", \"asOfDate\": null, \"input\": { \"instances\": ["
@@ -139,7 +137,7 @@ class OverervingWeigeringWitnessTest {
         // EQUALS, with no order between them. It reaches the gate report through the MANIFEST (a
         // per-form transpiler SKIP), never as an unclassified fire-time ERROR.
         ObjectNode ir = goldenIr(KETEN);
-        ArrayNode pds = (ArrayNode) ir.get("prioritizedDefaults");
+        ArrayNode pds = IrPad.rulesLijst(ir, "prioritizedDefaults");
         ObjectNode eersteGroep = (ObjectNode) pds.get(0);              // Strandrecht.uitkering
         eersteGroep.put("ongeordend", true);
         ObjectNode tweede = eersteGroep.deepCopy();
@@ -161,7 +159,7 @@ class OverervingWeigeringWitnessTest {
         // The two messages must stay apart: one is a lowering the wire cannot carry, the other is a
         // reading nobody has written.
         ObjectNode ir = goldenIr(KETEN);
-        ArrayNode pds = (ArrayNode) ir.get("prioritizedDefaults");
+        ArrayNode pds = IrPad.rulesLijst(ir, "prioritizedDefaults");
         ObjectNode wrak = (ObjectNode) pds.get(1);                     // Wrakrecht.uitkering
         wrak.put("ongeordend", true);
         ObjectNode tweede = wrak.deepCopy();
@@ -183,7 +181,7 @@ class OverervingWeigeringWitnessTest {
         // executors, and an ACTIVE windowed rule answered from the inherited base instead of its own
         // value. Versioned rules are a live corpus form, so this is not a hypothetical.
         ObjectNode ir = goldenIr(WRAKBASIS);
-        ObjectNode geldigheid = (ObjectNode) ir.get("resolvedRegels").get(0).get("geldigheid");
+        ObjectNode geldigheid = (ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0).get("geldigheid");
         geldigheid.put("vanaf", "2020-01-01");
 
         Path irPad = model("overerving-venster", ir);
@@ -212,8 +210,7 @@ class OverervingWeigeringWitnessTest {
         // answer 71; this test is the facet half, on a shape no golden can hold (a temporal READ into a
         // scalar target is Phase F in this backend and faults in ref).
         ObjectNode ir = goldenIr(KETEN);
-        ((ObjectNode) ir.get("objecttypen").get("Strandrecht")
-                .get("attribuutGranulariteit")).put("grondslag", "JAAR");
+        IrPad.timeline(IrPad.attribute(IrPad.objectType(ir, "Strandrecht"), "grondslag"), "JAAR");
         RegelSpraakModel m = IrLoader.loadAll(JSON.readTree(Files.readString(model("keten-temporeel", ir)))).model();
         Objecttype wrak = m.objecttypeOpNaam("Wrakrecht");
         assertEquals(RegelSpraakModel.Granulariteit.JAAR, wrak.granulariteitVan("grondslag"));
@@ -230,8 +227,8 @@ class OverervingWeigeringWitnessTest {
         // reason only, the loader, and the accessor half passed all along. Recorded that way rather than
         // as a repair, because a refusal that was never load-bearing is worth knowing about.
         ObjectNode ir = goldenIr(KETEN);
-        ((ObjectNode) ir.get("objecttypen").get("Strandrecht").get("attribuutDimensies"))
-                .set("grondslag", JSON.createArrayNode().add("seizoen"));
+        IrPad.attribute(IrPad.objectType(ir, "Strandrecht"), "grondslag")
+                .set("dimensions", JSON.createArrayNode().add("seizoen"));
         RegelSpraakModel m = IrLoader.loadAll(JSON.readTree(Files.readString(model("keten-dimensie", ir)))).model();
         Objecttype wrak = m.objecttypeOpNaam("Wrakrecht");
         assertEquals(List.of("seizoen"), wrak.dimensiesVan("grondslag"));
@@ -270,17 +267,23 @@ class OverervingWeigeringWitnessTest {
     }
 
     @Test void de_gedegenereerde_variabele_tijdlijn_is_het_gat_dat_werkelijk_stil_was() throws Exception {
-        // Site (a)'s degenerate twin, and the reason the narrowed guard reaches FURTHER than the broad
-        // one it replaces. A tijdlijn declaration may carry `granulariteit: null` (schema-legal), and
-        // WF-005 then compares None with None, so the attribute needs NO granularity facet — which is
-        // exactly what the withdrawn refusal tested for. Measured (probe p1cv): verifier PASS, and on
+        // Site (a)'s degenerate twin, and the reason the narrowed guard reached FURTHER than the broad
+        // one it replaced. In v0 a tijdlijn declaration could carry `granulariteit: null` (schema-legal),
+        // and WF-005 then compared None with None, so the attribute needed NO granularity entry — which is
+        // exactly what the withdrawn refusal tested for. Measured then (probe p1cv): verifier PASS, and on
         // the merge base PLAYED 4. Silently: the bucketing was skipped and nothing said so.
+        //
+        // Since M1 the shape cannot be written: a member rides a named tijdlijn only through a
+        // TimelineFacet, and the schema requires its granularity, so this is the one fixture here that is
+        // NOT verifier-clean — no gate lets it reach an executor. What the test pins now is that the
+        // loader refuses the grid-less facet by name instead of letting the member in as temporal with a
+        // null grid, which would reopen the silent gap by another door.
         ObjectNode ir = goldenIr(KETEN);
         benoemdeTijdlijn(ir, /*variabelStartpunt=*/true, /*granulariteit=*/null);
         startpuntOp(ir, "Kustgemeente");
         IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class,
                 () -> IrLoader.loadAll(JSON.readTree(Files.readString(model("keten-nulgranulariteit", ir)))));
-        assertTrue(r.getMessage().contains("riding a NAMED tijdlijn with a VARIABEL STARTPUNT"), r.getMessage());
+        assertEquals("TimelineFacet.granularity", r.form(), r.getMessage());
     }
 
     @Test void een_geerfde_tijdlijn_met_VAST_startpunt_laadt_gewoon() throws Exception {
@@ -330,7 +333,7 @@ class OverervingWeigeringWitnessTest {
         // null parent would otherwise reach the chain walk and answer "no such member" for every inherited
         // name — a wrong diagnosis of a real defect.
         ObjectNode ir = goldenIr(KETEN);
-        ((ObjectNode) ir.get("objecttypen").get("Wrakrecht")).put("supertype", "Bestaatniet");
+        IrPad.objectType(ir, "Wrakrecht").put("supertype", "Bestaatniet");
         IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class,
                 () -> IrLoader.loadAll(JSON.readTree(Files.readString(model("supertype-onbekend", ir)))));
         assertTrue(r.getMessage().contains("supertype 'Bestaatniet' is not declared"), r.getMessage());
@@ -341,7 +344,7 @@ class OverervingWeigeringWitnessTest {
         // and this loader would hang rather than report — which is why it is a refusal here and not a
         // comment saying the verifier has it covered.
         ObjectNode ir = goldenIr(KETEN);
-        ((ObjectNode) ir.get("objecttypen").get("Strandrecht")).put("supertype", "Wrakrecht");
+        IrPad.objectType(ir, "Strandrecht").put("supertype", "Wrakrecht");
         IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class,
                 () -> IrLoader.loadAll(JSON.readTree(Files.readString(model("supertype-cyclus", ir)))));
         assertTrue(r.getMessage().contains("supertype cycle at"), r.getMessage());
@@ -355,35 +358,38 @@ class OverervingWeigeringWitnessTest {
 
     /** Declare tijdlijn `boekjaar` and hang a new SUPERTYPE attribute `peilwaarde` on it, with the
      *  granularity facet WF-005 demands (the declaration's own, or none when the declaration carries
-     *  none). This is the whole §13.3.6.9 shape, verifier-clean by construction rather than by luck. */
+     *  none). This is the whole §13.3.6.9 shape, verifier-clean by construction rather than by luck —
+     *  except the "none" case since M1: a TimelineFacet requires a granularity, so the name-only facet
+     *  written for it is one the schema refuses, and only the loader still reads it. */
     private static void benoemdeTijdlijn(ObjectNode ir, boolean variabelStartpunt, String granulariteit) {
         ObjectNode tl = JSON.createObjectNode().put("node", "Tijdlijn").put("naam", "boekjaar")
                 .put("variabelStartpunt", variabelStartpunt);
         if (granulariteit == null) tl.putNull("granulariteit"); else tl.put("granulariteit", granulariteit);
         tl.put("aantal", 1);
-        ((ArrayNode) ir.get("tijdlijnen")).add(tl);
-        ObjectNode st = (ObjectNode) ir.get("objecttypen").get("Strandrecht");
-        ((ObjectNode) st.get("attributen")).set("peilwaarde", getal());
-        ((ObjectNode) st.get("attribuutTijdlijnNaam")).put("peilwaarde", "boekjaar");
+        IrPad.modelLijst(ir, "timelines").add(tl);
+        ObjectNode peilwaarde = IrPad.addAttribute(IrPad.objectType(ir, "Strandrecht"), "peilwaarde", getal());
         if (granulariteit != null)                                    // WF-005: adoption must be total
-            ((ObjectNode) st.get("attribuutGranulariteit")).put("peilwaarde", granulariteit);
+            IrPad.timeline(peilwaarde, granulariteit).put("timelineName", "boekjaar");
+        else
+            peilwaarde.putObject("timeline").put("node", "TimelineFacet").put("count", 1)
+                    .put("timelineName", "boekjaar");
     }
 
     /** The tijdlijn declaration alone, variable-start — for site (b), where no attribute rides it. */
     private static void variabeleTijdlijnDeclaratie(ObjectNode ir) {
-        ((ArrayNode) ir.get("tijdlijnen")).add(JSON.createObjectNode().put("node", "Tijdlijn")
+        IrPad.modelLijst(ir, "timelines").add(JSON.createObjectNode().put("node", "Tijdlijn")
                 .put("naam", "boekjaar").put("variabelStartpunt", true)
                 .put("granulariteit", "JAAR").put("aantal", 1));
     }
 
     /** The synthetic anchor member a startpuntbepaling names — WF-032 requires it to be declared. */
     private static void ankerAttribuut(ObjectNode ir, String objecttype) {
-        ((ObjectNode) ir.get("objecttypen").get(objecttype).get("attributen")).set("meetdatum",
+        IrPad.addAttribute(IrPad.objectType(ir, objecttype), "meetdatum",
                 JSON.createObjectNode().put("node", "DatumInDagen"));
     }
 
     private static void startpuntOp(ObjectNode ir, String objecttype) {
-        ((ArrayNode) ir.get("resolvedStartpunten")).add(JSON.createObjectNode()
+        IrPad.rulesLijst(ir, "resolvedStartpunten").add(JSON.createObjectNode()
                 .put("node", "ResolvedStartpunt").put("tijdlijn", "boekjaar")
                 .put("objecttype", objecttype).put("lid", "meetdatum"));
     }

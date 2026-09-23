@@ -196,12 +196,10 @@ class DrlCreatieTakWitnessTest {
      *  behind it. What is left is a document whose only user of the displaced field is the creation. */
     private static Path gelijknamigLid() throws Exception {
         var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(REKENKAMER)));
-        ((com.fasterxml.jackson.databind.node.ObjectNode) ir.get("objecttypen").get("Jutter").get("attributen"))
-                .set("rekenkamer", JSON.readTree("""
+        IrPad.addAttribute(IrPad.objectType(ir, "Jutter"), "rekenkamer", JSON.readTree("""
                         { "node": "Numeriek", "geheel": true, "decimalen": 0,
                           "teken": "ONBEPAALD", "eenheid": null }"""));
-        for (String sectie : new String[] { "regels", "resolvedRegels" })
-            ir.set(sectie, zonder(ir.get(sectie), "heffing van een jutter"));
+        IrPad.rules(ir).set("resolvedRegels", zonder(IrPad.rulesLijst(ir, "resolvedRegels"), "heffing van een jutter"));
         return schrijf(ir, "gelijknamig-lid");
     }
 
@@ -210,12 +208,10 @@ class DrlCreatieTakWitnessTest {
      *  creations — one to-many, one 1:1 — and the three folds that read them back. */
     private static Path penningVorm() throws Exception {
         var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(PENNING)));
-        for (JsonNode c : ir.get("consistenties")) {
-            String naam = c.path("naam").asText();
-            for (String sectie : new String[] { "regels", "resolvedRegels" })
-                ir.set(sectie, zonder(ir.get(sectie), naam));
-        }
-        ir.set("consistenties", JSON.createArrayNode());
+        var rules = IrPad.rules(ir);
+        for (JsonNode c : IrPad.rulesLijst(ir, "consistenties"))
+            rules.set("resolvedRegels", zonder(rules.get("resolvedRegels"), c.path("naam").asText()));
+        rules.set("consistenties", JSON.createArrayNode());
         return schrijf(ir, "penning-vorm");
     }
 

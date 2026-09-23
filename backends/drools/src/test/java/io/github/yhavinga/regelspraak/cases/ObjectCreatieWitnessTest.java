@@ -582,7 +582,7 @@ class ObjectCreatieWitnessTest {
      *  links) on a model this backend can otherwise replay whole. */
     private static Path zonderToekenningen() throws Exception {
         var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(REKENKAMER)));
-        ((com.fasterxml.jackson.databind.node.ObjectNode) ir.get("objectCreaties").get(0))
+        ((com.fasterxml.jackson.databind.node.ObjectNode) IrPad.rulesLijst(ir, "objectCreaties").get(0))
                 .set("toekenningen", JSON.createArrayNode());
         return schrijf(ir, "zonder-toekenningen");
     }
@@ -592,7 +592,7 @@ class ObjectCreatieWitnessTest {
      *  moved, or touched. */
     private static Path kenmerkWaarde(String waardeJson, String naam) throws Exception {
         var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(OVERZEE)));
-        for (JsonNode t : ir.get("objectCreaties").get(0).get("toekenningen"))
+        for (JsonNode t : IrPad.rulesLijst(ir, "objectCreaties").get(0).get("toekenningen"))
             if (t.get("kenmerk").asBoolean())
                 ((com.fasterxml.jackson.databind.node.ObjectNode) t).set("waarde", JSON.readTree(waardeJson));
         return schrijf(ir, naam);
@@ -622,28 +622,26 @@ class ObjectCreatieWitnessTest {
      *  (`opdrachtgever`), role 1 the created side (`rekenkamer`). */
     private static com.fasterxml.jackson.databind.node.ObjectNode metCardinaliteit(boolean subjectVeel, boolean gemunteVeel) throws Exception {
         var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(REKENKAMER)));
-        JsonNode rollen = ir.get("feittypen").get("taxatieopdracht").get("rollen");
+        JsonNode rollen = IrPad.declaratie(ir, "factTypes", "taxatieopdracht").get("rollen");
         ((com.fasterxml.jackson.databind.node.ObjectNode) rollen.get(0)).put("meervoudig", subjectVeel);
         ((com.fasterxml.jackson.databind.node.ObjectNode) rollen.get(1)).put("meervoudig", gemunteVeel);
         return ir;
     }
 
-    /** Drops "heffing van een jutter" — the rule that reads THROUGH the created-side role — from both the
-     *  raw and the resolved rule list. Its scalar read is only well-formed while that role is to-one. */
+    /** Drops "heffing van een jutter" — the rule that reads THROUGH the created-side role — from the resolved
+     *  rule list. Its scalar read is only well-formed while that role is to-one. */
     private static com.fasterxml.jackson.databind.node.ObjectNode zonderNavigerendeRegel(com.fasterxml.jackson.databind.node.ObjectNode ir) {
-        for (String sleutel : List.of("regels", "resolvedRegels")) {
-            var behouden = JSON.createArrayNode();
-            for (JsonNode r : ir.get(sleutel))
-                if (!"heffing van een jutter".equals(r.path("naam").asText())) behouden.add(r);
-            ir.set(sleutel, behouden);
-        }
+        var behouden = JSON.createArrayNode();
+        for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels"))
+            if (!"heffing van een jutter".equals(r.path("naam").asText())) behouden.add(r);
+        IrPad.rules(ir).set("resolvedRegels", behouden);
         return ir;
     }
 
     /** The rekenkamer model with a §4.2 validity window ON the creation: it exists from 2030 onward. */
     private static Path vanaf2030() throws Exception {
         var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(REKENKAMER)));
-        ((com.fasterxml.jackson.databind.node.ObjectNode) ir.get("objectCreaties").get(0))
+        ((com.fasterxml.jackson.databind.node.ObjectNode) IrPad.rulesLijst(ir, "objectCreaties").get(0))
                 .set("geldigheid", JSON.readTree("""
                         { "node": "Geldigheid", "vanaf": "2030-01-01", "tot": null }"""));
         return schrijf(ir, "vanaf-2030");
@@ -666,7 +664,7 @@ class ObjectCreatieWitnessTest {
     /** The rekenkamer model with a §8.1.1 comparison guarding the creation. */
     private static Path metVoorwaarde() throws Exception {
         var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(REKENKAMER)));
-        ((com.fasterxml.jackson.databind.node.ObjectNode) ir.get("objectCreaties").get(0))
+        ((com.fasterxml.jackson.databind.node.ObjectNode) IrPad.rulesLijst(ir, "objectCreaties").get(0))
                 .set("voorwaarde", JSON.readTree("""
                         { "node": "Vergelijking", "op": "GROTER",
                           "links": { "node": "AttribuutRef", "attribuut": "grondslag", "objecttype": "Jutter",
@@ -710,8 +708,7 @@ class ObjectCreatieWitnessTest {
      *  §9.5 construct and the model lowers whole. */
     private static Path zonderHouderscontrole() throws Exception {
         var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(PENNING)));
-        ir.set("consistenties", zonder(ir.get("consistenties"), "houderscontrole"));
-        ir.set("regels", zonder(ir.get("regels"), "houderscontrole"));
+        IrPad.rules(ir).set("consistenties", zonder(IrPad.rulesLijst(ir, "consistenties"), "houderscontrole"));
         return schrijf(ir, "zonder-houderscontrole");
     }
 
@@ -719,7 +716,7 @@ class ObjectCreatieWitnessTest {
      *  directions own a bean field, so a directional presence count IS expressible. */
     private static Path dossierAantalAssertie() throws Exception {
         var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(PENNING)));
-        for (JsonNode c : ir.get("consistenties")) {
+        for (JsonNode c : IrPad.rulesLijst(ir, "consistenties")) {
             if (!"houderscontrole".equals(c.path("naam").asText())) continue;
             var k = (com.fasterxml.jackson.databind.node.ObjectNode) c;
             k.put("subject", "Jutter");

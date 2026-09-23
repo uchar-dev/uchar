@@ -150,7 +150,7 @@ class DagsoortOpzoekvolgordeWitnessTest {
     private static ObjectNode splijtdocument() throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(CORPUS.resolve(BERGINGSKLOK).resolve("ir.json")));
         herdoop(ir, "wk");
-        ((ObjectNode) ir.get("dagsoortPerEenheid")).put("wk", "springtijdag");
+        ((ObjectNode) IrPad.model(ir).get("dagsoortPerEenheid")).put("wk", "springtijdag");
         return ir;
     }
 

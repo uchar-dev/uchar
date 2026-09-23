@@ -143,10 +143,8 @@ class WederkerigZelfpaarWitnessTest {
         // authored on an in-memory copy of the golden's ir, the corpus itself untouched.
         com.fasterxml.jackson.databind.node.ObjectNode ir = (com.fasterxml.jackson.databind.node.ObjectNode)
                 JSON.readTree(Files.readString(CORPUS.resolve("anchor/jutterswet-maatschap").resolve("ir.json")));
-        com.fasterxml.jackson.databind.node.ObjectNode jutter =
-                (com.fasterxml.jackson.databind.node.ObjectNode) ir.get("objecttypen").get("Jutter");
-        ((com.fasterxml.jackson.databind.node.ArrayNode) jutter.get("kenmerken")).add("maat");
-        ((com.fasterxml.jackson.databind.node.ObjectNode) jutter.get("kenmerkSoorten")).put("maat", "BIJVOEGLIJK");
+        ((com.fasterxml.jackson.databind.node.ArrayNode) IrPad.objectType(ir, "Jutter").get("characteristics"))
+                .addObject().put("node", "Characteristic").put("name", "maat").put("kind", "BIJVOEGLIJK");
         Path tmp = Files.createTempFile("naamdeling-maat", ".json");
         try {
             Files.writeString(tmp, ir.toString());
@@ -174,12 +172,11 @@ class WederkerigZelfpaarWitnessTest {
         // fire-time ERROR. Authored on an in-memory ir copy, the corpus untouched.
         com.fasterxml.jackson.databind.node.ObjectNode ir = (com.fasterxml.jackson.databind.node.ObjectNode)
                 JSON.readTree(Files.readString(CORPUS.resolve("anchor/jutterswet-maatschap").resolve("ir.json")));
-        com.fasterxml.jackson.databind.node.ObjectNode ft2 = ((com.fasterxml.jackson.databind.node.ObjectNode)
-                ir.get("feittypen").get("maatschap")).deepCopy();
+        com.fasterxml.jackson.databind.node.ObjectNode ft2 = IrPad.declaratie(ir, "factTypes", "maatschap").deepCopy();
         ft2.put("naam", "maatschap2");
         ((com.fasterxml.jackson.databind.node.ObjectNode) ft2.get("rollen").get(0)).put("naam", "tweedemaat");
         ((com.fasterxml.jackson.databind.node.ObjectNode) ft2.get("rollen").get(0)).put("meervoud", "tweedematen");
-        ((com.fasterxml.jackson.databind.node.ObjectNode) ir.get("feittypen")).set("maatschap2", ft2);
+        IrPad.modelLijst(ir, "factTypes").add(ft2);
         Path tmp = Files.createTempFile("ambigu-zelfpaar", ".json");
         try {
             Files.writeString(tmp, ir.toString());

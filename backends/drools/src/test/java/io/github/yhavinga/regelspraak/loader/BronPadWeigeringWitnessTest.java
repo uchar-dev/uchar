@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import io.github.yhavinga.regelspraak.cases.IrPad;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel.RolBindingRef;
 
 import org.junit.jupiter.api.Test;
@@ -94,7 +95,7 @@ class BronPadWeigeringWitnessTest {
     /** Without the field the very same document loads, and carries no path at all. */
     @Test void zonder_het_veld_laadt_hetzelfde_document_zonder_pad() throws Exception {
         ObjectNode root = (ObjectNode) anker();
-        for (JsonNode regel : root.get("resolvedRegels"))
+        for (JsonNode regel : IrPad.rulesLijst(root, "resolvedRegels"))
             ((ObjectNode) regel.get("waarde")).remove("bronPad");
         IrLoader.Loaded l = IrLoader.loadAll(root);
         assertNotNull(l.model(), "zonder bronPad is er niets onbereikbaars aan dit document");
@@ -111,7 +112,7 @@ class BronPadWeigeringWitnessTest {
 
     /** The one fold of the emitted witness that carries the field. */
     private static JsonNode vouw(JsonNode root) {
-        return root.get("resolvedRegels").get(0).get("waarde");
+        return IrPad.rulesLijst(root, "resolvedRegels").get(0).get("waarde");
     }
 
     private static JsonNode anker() throws Exception {

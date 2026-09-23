@@ -139,9 +139,10 @@ class VensterVouwWitnessTest {
     @Test void het_venster_in_het_filter_van_een_heelperiodevouw() throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(PLOEGPREMIE.resolve("ir.json")));
         for (String ot : new String[] { "Berger", "Bergingsploeg" })
-            ((ObjectNode) doc.get("objecttypen").get(ot).get("attributen")).set("aanstelling", JSON.readTree(DATUM));
+            IrPad.addAttribute(IrPad.objectType(doc, ot), "aanstelling", JSON.readTree(DATUM));
         houdRegel(doc, "premiegerechtigd bij dagvergoeding");
-        ((ObjectNode) doc.withArray("resolvedRegels").get(0).get("voorwaarde")).set("filter", JSON.readTree(venster("""
+        ((ObjectNode) IrPad.rulesLijst(doc, "resolvedRegels").get(0).get("voorwaarde"))
+                .set("filter", JSON.readTree(venster("""
                 { "node": "AttribuutRef", "attribuut": "aanstelling", "objecttype": "Berger",
                   "onderwerpBron": "alle bergers van de Bergingsploeg", "navigatieRol": null,
                   "type": { "node": "DatumInDagen" }, "bron": "de aanstelling van de berger",
@@ -292,9 +293,9 @@ class VensterVouwWitnessTest {
     private Path document(String kwantor, Integer drempel, String filter, String toets) throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(SCHOUWPLOEG.resolve("ir.json")));
         for (String ot : new String[] { "Strandwacht", "Schouwploeg" })
-            ((ObjectNode) doc.get("objecttypen").get(ot).get("attributen")).set("aanstelling", JSON.readTree(DATUM));
+            IrPad.addAttribute(IrPad.objectType(doc, ot), "aanstelling", JSON.readTree(DATUM));
         houdRegel(doc, "bevoegd bij diploma");
-        ObjectNode kv = (ObjectNode) doc.withArray("resolvedRegels").get(0).get("voorwaarde");
+        ObjectNode kv = (ObjectNode) IrPad.rulesLijst(doc, "resolvedRegels").get(0).get("voorwaarde");
         kv.put("kwantor", kwantor);
         if (drempel == null) kv.remove("drempel"); else kv.put("drempel", drempel);
         kv.set("filter", filter == null ? JSON.nullNode() : JSON.readTree(filter));
@@ -305,20 +306,19 @@ class VensterVouwWitnessTest {
     }
 
     private static void houdRegel(ObjectNode doc, String naam) {
-        for (String veld : new String[] { "regels", "resolvedRegels" }) {
-            ArrayNode uit = JSON.createArrayNode();
-            for (JsonNode r : doc.withArray(veld)) if (naam.equals(r.path("naam").asText())) uit.add(r);
-            doc.set(veld, uit);
-        }
+        ArrayNode uit = JSON.createArrayNode();
+        for (JsonNode r : IrPad.rulesLijst(doc, "resolvedRegels")) if (naam.equals(r.path("naam").asText())) uit.add(r);
+        IrPad.rules(doc).set("resolvedRegels", uit);
     }
 
     /** The golden's document with ONE rule, "wachttal van een schouwploeg", whose count carries {@code filter}. */
     private Path aggregatieDocument(String filter) throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(SCHOUWPLOEG.resolve("ir.json")));
         for (String ot : new String[] { "Strandwacht", "Schouwploeg" })
-            ((ObjectNode) doc.get("objecttypen").get(ot).get("attributen")).set("aanstelling", JSON.readTree(DATUM));
+            IrPad.addAttribute(IrPad.objectType(doc, ot), "aanstelling", JSON.readTree(DATUM));
         houdRegel(doc, "wachttal van een schouwploeg");
-        ((ObjectNode) doc.withArray("resolvedRegels").get(0).get("waarde")).set("filter", JSON.readTree(filter));
+        ((ObjectNode) IrPad.rulesLijst(doc, "resolvedRegels").get(0).get("waarde"))
+                .set("filter", JSON.readTree(filter));
         Path p = tmp.resolve("venstervouw-" + (n++) + ".json");
         Files.writeString(p, doc.toPrettyString());
         return p;
@@ -328,10 +328,10 @@ class VensterVouwWitnessTest {
      *  ploeg's wachten carrying {@code filter} is greater than 0". */
     private Path voorwaardeTellingDocument(String filter) throws Exception {
         ObjectNode telDoc = (ObjectNode) JSON.readTree(Files.readString(aggregatieDocument(filter)));
-        JsonNode telling = telDoc.withArray("resolvedRegels").get(0).get("waarde");
+        JsonNode telling = IrPad.rulesLijst(telDoc, "resolvedRegels").get(0).get("waarde");
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(SCHOUWPLOEG.resolve("ir.json")));
         for (String ot : new String[] { "Strandwacht", "Schouwploeg" })
-            ((ObjectNode) doc.get("objecttypen").get(ot).get("attributen")).set("aanstelling", JSON.readTree(DATUM));
+            IrPad.addAttribute(IrPad.objectType(doc, ot), "aanstelling", JSON.readTree(DATUM));
         houdRegel(doc, "bevoegd bij diploma");
         ObjectNode vergelijking = JSON.createObjectNode();
         vergelijking.put("node", "Vergelijking").put("op", "GROTER").set("links", telling);
@@ -339,7 +339,7 @@ class VensterVouwWitnessTest {
                 { "node": "Literal", "waarde": "0", "type": { "node": "Numeriek", "geheel": true, "decimalen": 0,
                   "teken": "ONBEPAALD", "eenheid": null }, "bron": "0" }"""));
         vergelijking.putNull("periode").put("bron", "het aantal wachten die vanaf hun aanstelling dienen groter is dan 0");
-        ((ObjectNode) doc.withArray("resolvedRegels").get(0)).set("voorwaarde", vergelijking);
+        ((ObjectNode) IrPad.rulesLijst(doc, "resolvedRegels").get(0)).set("voorwaarde", vergelijking);
         Path p = tmp.resolve("venstervouw-" + (n++) + ".json");
         Files.writeString(p, doc.toPrettyString());
         return p;
@@ -364,7 +364,7 @@ class VensterVouwWitnessTest {
     /** {@code ir} with the numeric parameter {@code keurgrens} declared. */
     private Path metKeurgrens(Path ir) throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(ir));
-        ((ObjectNode) doc.get("parameters")).set("keurgrens", JSON.readTree("""
+        IrPad.modelLijst(doc, "parameters").add(JSON.readTree("""
                 { "node": "Parameter", "naam": "keurgrens",
                   "datatype": { "node": "Numeriek", "geheel": true, "decimalen": 0,
                                 "teken": "NIET_NEGATIEF", "eenheid": null },

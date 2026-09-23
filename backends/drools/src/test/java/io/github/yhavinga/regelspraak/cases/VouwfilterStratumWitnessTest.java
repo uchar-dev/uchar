@@ -52,601 +52,569 @@ class VouwfilterStratumWitnessTest {
 
     private static final String UNIE = """
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {},
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "alarm"
-      ],
-      "kenmerkSoorten": {
-        "alarm": "BIJVOEGLIJK"
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "alarm",
+            "kind": "BIJVOEGLIJK"
+          }
+        ]
       },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    },
-    "Vondst": {
-      "node": "Objecttype",
-      "naam": "Vondst",
-      "attributen": {
-        "gewicht": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "gemerkt"
-      ],
-      "kenmerkSoorten": {
-        "gemerkt": "BIJVOEGLIJK"
-      },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Vondsten"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {
-    "vondstaanmelding": {
-      "node": "Feittype",
-      "naam": "vondstaanmelding",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "aanmelder",
-          "objecttypeNaam": "Jutter",
-          "meervoud": null,
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "aangemelde vondst",
-          "objecttypeNaam": "Vondst",
-          "meervoud": "aangemelde vondsten",
-          "meervoudig": true
-        }
-      ]
-    },
-    "vondstberging": {
-      "node": "Feittype",
-      "naam": "vondstberging",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "berger",
-          "objecttypeNaam": "Jutter",
-          "meervoud": null,
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "geborgen vondst",
-          "objecttypeNaam": "Vondst",
-          "meervoud": "geborgen vondsten",
-          "meervoudig": true
-        }
-      ]
-    }
-  },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "alarm bij ongemerkte vondsten",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "gemerkt bij gewicht",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "alarm bij ongemerkte vondsten",
-      "soort": "KENMERKTOEKENNING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "alarm",
-        "objecttype": "Jutter",
-        "onderwerpBron": "Een Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "Een Jutter is alarm",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "waar",
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "waar"
-      },
-      "voorwaarde": {
-        "node": "Vergelijking",
-        "op": "GROTER",
-        "links": {
-          "node": "Functie",
-          "kind": "AANTAL",
-          "argumenten": [
-            {
-              "node": "InstanceSetUnion",
-              "branches": [
-                {
-                  "node": "InstanceSetBranch",
-                  "elementType": "Vondst",
-                  "sourceRole": {
-                    "node": "RolBinding",
-                    "feittype": "vondstaanmelding",
-                    "rol": "aangemelde vondst"
-                  },
-                  "filter": {
-                    "node": "Kenmerk",
-                    "kenmerk": "gemerkt",
-                    "navigatie": null,
-                    "negatie": true,
-                    "eigenaar": null,
-                    "periode": null,
-                    "bron": "niet gemerkt zijn"
-                  },
-                  "bron": "aangemelde vondsten van de Jutter die niet gemerkt zijn"
-                },
-                {
-                  "node": "InstanceSetBranch",
-                  "elementType": "Vondst",
-                  "sourceRole": {
-                    "node": "RolBinding",
-                    "feittype": "vondstberging",
-                    "rol": "geborgen vondst"
-                  },
-                  "filter": {
-                    "node": "Kenmerk",
-                    "kenmerk": "gemerkt",
-                    "navigatie": null,
-                    "negatie": true,
-                    "eigenaar": null,
-                    "periode": null,
-                    "bron": "niet gemerkt zijn"
-                  },
-                  "bron": "geborgen vondsten van de Jutter die niet gemerkt zijn"
-                }
-              ],
-              "bron": "de unie van ongemerkte vondsten"
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
             }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "het aantal ongemerkte vondsten",
-          "granulariteit": null
-        },
-        "rechts": {
-          "node": "Literal",
-          "waarde": "0",
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "0"
-        },
-        "periode": null,
-        "bron": "het aantal ongemerkte vondsten groter is dan 0"
-      },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "gemerkt",
+            "kind": "BIJVOEGLIJK"
+          }
+        ]
       }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "gemerkt bij gewicht",
-      "soort": "KENMERKTOEKENNING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "gemerkt",
-        "objecttype": "Vondst",
-        "onderwerpBron": "Een Vondst",
-        "navigatieRol": null,
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "Een Vondst is gemerkt",
-        "set": false,
-        "navigatiePad": []
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "vondstaanmelding",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "aanmelder",
+            "objecttypeNaam": "Jutter",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "aangemelde vondst",
+            "objecttypeNaam": "Vondst",
+            "meervoud": "aangemelde vondsten",
+            "meervoudig": true
+          }
+        ]
       },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "waar",
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "waar"
-      },
-      "voorwaarde": {
-        "node": "Vergelijking",
-        "op": "GROTER",
-        "links": {
+      {
+        "node": "Feittype",
+        "naam": "vondstberging",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "berger",
+            "objecttypeNaam": "Jutter",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "geborgen vondst",
+            "objecttypeNaam": "Vondst",
+            "meervoud": "geborgen vondsten",
+            "meervoudig": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "alarm bij ongemerkte vondsten",
+        "soort": "KENMERKTOEKENNING",
+        "doel": {
           "node": "AttribuutRef",
-          "attribuut": "gewicht",
-          "objecttype": "Vondst",
-          "onderwerpBron": "de Vondst",
+          "attribuut": "alarm",
+          "objecttype": "Jutter",
+          "onderwerpBron": "Een Jutter",
           "navigatieRol": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Booleaan"
           },
-          "bron": "het gewicht van de Vondst",
+          "bron": "Een Jutter is alarm",
           "set": false,
           "navigatiePad": []
         },
-        "rechts": {
+        "waarde": {
           "node": "Literal",
-          "waarde": "5",
+          "waarde": "waar",
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Booleaan"
           },
-          "bron": "5"
+          "bron": "waar"
         },
-        "periode": null,
-        "bron": "het gewicht van de Vondst groter is dan 5"
+        "voorwaarde": {
+          "node": "Vergelijking",
+          "op": "GROTER",
+          "links": {
+            "node": "Functie",
+            "kind": "AANTAL",
+            "argumenten": [
+              {
+                "node": "InstanceSetUnion",
+                "branches": [
+                  {
+                    "node": "InstanceSetBranch",
+                    "elementType": "Vondst",
+                    "sourceRole": {
+                      "node": "RolBinding",
+                      "feittype": "vondstaanmelding",
+                      "rol": "aangemelde vondst"
+                    },
+                    "filter": {
+                      "node": "Kenmerk",
+                      "kenmerk": "gemerkt",
+                      "navigatie": null,
+                      "negatie": true,
+                      "eigenaar": null,
+                      "periode": null,
+                      "bron": "niet gemerkt zijn"
+                    },
+                    "bron": "aangemelde vondsten van de Jutter die niet gemerkt zijn"
+                  },
+                  {
+                    "node": "InstanceSetBranch",
+                    "elementType": "Vondst",
+                    "sourceRole": {
+                      "node": "RolBinding",
+                      "feittype": "vondstberging",
+                      "rol": "geborgen vondst"
+                    },
+                    "filter": {
+                      "node": "Kenmerk",
+                      "kenmerk": "gemerkt",
+                      "navigatie": null,
+                      "negatie": true,
+                      "eigenaar": null,
+                      "periode": null,
+                      "bron": "niet gemerkt zijn"
+                    },
+                    "bron": "geborgen vondsten van de Jutter die niet gemerkt zijn"
+                  }
+                ],
+                "bron": "de unie van ongemerkte vondsten"
+              }
+            ],
+            "elementObjecttype": null,
+            "leegwaarde": null,
+            "filter": null,
+            "dimensieSelectie": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            },
+            "bron": "het aantal ongemerkte vondsten",
+            "granulariteit": null
+          },
+          "rechts": {
+            "node": "Literal",
+            "waarde": "0",
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "0"
+          },
+          "periode": null,
+          "bron": "het aantal ongemerkte vondsten groter is dan 0"
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+      {
+        "node": "ResolvedRegel",
+        "naam": "gemerkt bij gewicht",
+        "soort": "KENMERKTOEKENNING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "gemerkt",
+          "objecttype": "Vondst",
+          "onderwerpBron": "Een Vondst",
+          "navigatieRol": null,
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "Een Vondst is gemerkt",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Literal",
+          "waarde": "waar",
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "waar"
+        },
+        "voorwaarde": {
+          "node": "Vergelijking",
+          "op": "GROTER",
+          "links": {
+            "node": "AttribuutRef",
+            "attribuut": "gewicht",
+            "objecttype": "Vondst",
+            "onderwerpBron": "de Vondst",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "het gewicht van de Vondst",
+            "set": false,
+            "navigatiePad": []
+          },
+          "rechts": {
+            "node": "Literal",
+            "waarde": "5",
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "5"
+          },
+          "periode": null,
+          "bron": "het gewicht van de Vondst groter is dan 5"
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }
 """;
 
     private static final String GEWONE_VOUW = """
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {},
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "alarm"
-      ],
-      "kenmerkSoorten": {
-        "alarm": "BIJVOEGLIJK"
-      },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    },
-    "Vondst": {
-      "node": "Objecttype",
-      "naam": "Vondst",
-      "attributen": {
-        "gewicht": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "gemerkt"
-      ],
-      "kenmerkSoorten": {
-        "gemerkt": "BIJVOEGLIJK"
-      },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Vondsten"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {
-    "vondstaanmelding": {
-      "node": "Feittype",
-      "naam": "vondstaanmelding",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "aanmelder",
-          "objecttypeNaam": "Jutter",
-          "meervoud": null,
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "aangemelde vondst",
-          "objecttypeNaam": "Vondst",
-          "meervoud": "aangemelde vondsten",
-          "meervoudig": true
-        }
-      ]
-    },
-    "vondstberging": {
-      "node": "Feittype",
-      "naam": "vondstberging",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "berger",
-          "objecttypeNaam": "Jutter",
-          "meervoud": null,
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "geborgen vondst",
-          "objecttypeNaam": "Vondst",
-          "meervoud": "geborgen vondsten",
-          "meervoudig": true
-        }
-      ]
-    }
-  },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "alarm bij ongemerkte vondsten",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "gemerkt bij gewicht",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "alarm bij ongemerkte vondsten",
-      "soort": "KENMERKTOEKENNING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "alarm",
-        "objecttype": "Jutter",
-        "onderwerpBron": "Een Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "Een Jutter is alarm",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "waar",
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "waar"
-      },
-      "voorwaarde": {
-        "node": "Vergelijking",
-        "op": "GROTER",
-        "links": {
-          "node": "Functie",
-          "kind": "AANTAL",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "aangemelde vondsten",
-              "objecttype": "Jutter",
-              "onderwerpBron": "de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "aangemelde vondsten van de Jutter",
-              "set": false,
-              "navigatiePad": []
-            }
-          ],
-          "elementObjecttype": "Vondst",
-          "leegwaarde": null,
-          "filter": {
-            "node": "Kenmerk",
-            "kenmerk": "gemerkt",
-            "navigatie": null,
-            "negatie": true,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "niet gemerkt zijn"
-          },
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "het aantal ongemerkte aangemelde vondsten",
-          "granulariteit": null,
-          "bronRol": {
-            "node": "RolBinding",
-            "feittype": "vondstaanmelding",
-            "rol": "aangemelde vondst"
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "alarm",
+            "kind": "BIJVOEGLIJK"
           }
-        },
-        "rechts": {
-          "node": "Literal",
-          "waarde": "0",
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "0"
-        },
-        "periode": null,
-        "bron": "het aantal ongemerkte vondsten groter is dan 0"
+        ]
       },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "gemerkt",
+            "kind": "BIJVOEGLIJK"
+          }
+        ]
       }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "gemerkt bij gewicht",
-      "soort": "KENMERKTOEKENNING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "gemerkt",
-        "objecttype": "Vondst",
-        "onderwerpBron": "Een Vondst",
-        "navigatieRol": null,
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "Een Vondst is gemerkt",
-        "set": false,
-        "navigatiePad": []
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "vondstaanmelding",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "aanmelder",
+            "objecttypeNaam": "Jutter",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "aangemelde vondst",
+            "objecttypeNaam": "Vondst",
+            "meervoud": "aangemelde vondsten",
+            "meervoudig": true
+          }
+        ]
       },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "waar",
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "waar"
-      },
-      "voorwaarde": {
-        "node": "Vergelijking",
-        "op": "GROTER",
-        "links": {
+      {
+        "node": "Feittype",
+        "naam": "vondstberging",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "berger",
+            "objecttypeNaam": "Jutter",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "geborgen vondst",
+            "objecttypeNaam": "Vondst",
+            "meervoud": "geborgen vondsten",
+            "meervoudig": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "alarm bij ongemerkte vondsten",
+        "soort": "KENMERKTOEKENNING",
+        "doel": {
           "node": "AttribuutRef",
-          "attribuut": "gewicht",
-          "objecttype": "Vondst",
-          "onderwerpBron": "de Vondst",
+          "attribuut": "alarm",
+          "objecttype": "Jutter",
+          "onderwerpBron": "Een Jutter",
           "navigatieRol": null,
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Booleaan"
           },
-          "bron": "het gewicht van de Vondst",
+          "bron": "Een Jutter is alarm",
           "set": false,
           "navigatiePad": []
         },
-        "rechts": {
+        "waarde": {
           "node": "Literal",
-          "waarde": "5",
+          "waarde": "waar",
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+            "node": "Booleaan"
           },
-          "bron": "5"
+          "bron": "waar"
         },
-        "periode": null,
-        "bron": "het gewicht van de Vondst groter is dan 5"
+        "voorwaarde": {
+          "node": "Vergelijking",
+          "op": "GROTER",
+          "links": {
+            "node": "Functie",
+            "kind": "AANTAL",
+            "argumenten": [
+              {
+                "node": "AttribuutRef",
+                "attribuut": "aangemelde vondsten",
+                "objecttype": "Jutter",
+                "onderwerpBron": "de Jutter",
+                "navigatieRol": null,
+                "type": {
+                  "node": "Onbekend",
+                  "reden": "niet opgelost"
+                },
+                "bron": "aangemelde vondsten van de Jutter",
+                "set": false,
+                "navigatiePad": []
+              }
+            ],
+            "elementObjecttype": "Vondst",
+            "leegwaarde": null,
+            "filter": {
+              "node": "Kenmerk",
+              "kenmerk": "gemerkt",
+              "navigatie": null,
+              "negatie": true,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "niet gemerkt zijn"
+            },
+            "dimensieSelectie": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            },
+            "bron": "het aantal ongemerkte aangemelde vondsten",
+            "granulariteit": null,
+            "bronRol": {
+              "node": "RolBinding",
+              "feittype": "vondstaanmelding",
+              "rol": "aangemelde vondst"
+            }
+          },
+          "rechts": {
+            "node": "Literal",
+            "waarde": "0",
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "0"
+          },
+          "periode": null,
+          "bron": "het aantal ongemerkte vondsten groter is dan 0"
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+      {
+        "node": "ResolvedRegel",
+        "naam": "gemerkt bij gewicht",
+        "soort": "KENMERKTOEKENNING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "gemerkt",
+          "objecttype": "Vondst",
+          "onderwerpBron": "Een Vondst",
+          "navigatieRol": null,
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "Een Vondst is gemerkt",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Literal",
+          "waarde": "waar",
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "waar"
+        },
+        "voorwaarde": {
+          "node": "Vergelijking",
+          "op": "GROTER",
+          "links": {
+            "node": "AttribuutRef",
+            "attribuut": "gewicht",
+            "objecttype": "Vondst",
+            "onderwerpBron": "de Vondst",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "het gewicht van de Vondst",
+            "set": false,
+            "navigatiePad": []
+          },
+          "rechts": {
+            "node": "Literal",
+            "waarde": "5",
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "5"
+          },
+          "periode": null,
+          "bron": "het gewicht van de Vondst groter is dan 5"
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }
 """;

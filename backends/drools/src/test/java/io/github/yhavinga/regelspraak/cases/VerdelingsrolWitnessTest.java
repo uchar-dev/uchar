@@ -129,9 +129,9 @@ class VerdelingsrolWitnessTest {
 
     private static ObjectNode maatschapMetVerdeling() throws Exception {
         ObjectNode ir = lees(MAATSCHAP);
-        ObjectNode attrs = (ObjectNode) ir.get("objecttypen").get("Jutter").get("attributen");
-        attrs.set("maatdeel", attrs.get("maatwaarde").deepCopy());
-        ObjectNode v = ir.putArray("verdelingen").addObject();
+        ObjectNode jutter = IrPad.objectType(ir, "Jutter");
+        IrPad.addAttribute(jutter, "maatdeel", IrPad.attribute(jutter, "maatwaarde").get("datatype").deepCopy());
+        ObjectNode v = IrPad.rules(ir).putArray("verdelingen").addObject();
         v.put("node", "ResolvedVerdeling").put("naam", "verdeel de vondstwaarde over de maat")
                 .put("bronType", "Jutter").put("bronAttribuut", "vondstwaarde")
                 .put("doelType", "Jutter").put("doelAttribuut", "maatdeel").put("methode", "GELIJKE_DELEN")
@@ -157,7 +157,7 @@ class VerdelingsrolWitnessTest {
                 .putNull("meervoud").put("meervoudig", false);
         rollen.addObject().put("node", "Rol").put("naam", "reserveberger").put("objecttypeNaam", "Berger")
                 .put("meervoud", "reservebergers").put("meervoudig", true);
-        ((ObjectNode) ir.get("feittypen")).set("reservedeelname", ft);
+        IrPad.modelLijst(ir, "factTypes").add(ft);
         return ir;
     }
 
@@ -170,7 +170,7 @@ class VerdelingsrolWitnessTest {
     }
 
     private static ObjectNode verdeling(ObjectNode ir) {
-        return (ObjectNode) ir.get("verdelingen").get(0);
+        return (ObjectNode) IrPad.rulesLijst(ir, "verdelingen").get(0);
     }
 
     private static ObjectNode binding(String feittype, String rol) {

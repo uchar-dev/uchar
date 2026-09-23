@@ -3,6 +3,7 @@ package io.github.yhavinga.regelspraak.loader;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github.yhavinga.regelspraak.cases.IrPad;
 
 import org.junit.jupiter.api.Test;
 
@@ -65,7 +66,7 @@ class OnbekendeFunctieKindWitnessTest {
 
     /** The count of {@code jutterswet-vondsttelling}, the fold this witness re-spells. */
     private static JsonNode vouw(JsonNode root) {
-        return root.get("resolvedRegels").get(0).get("waarde");
+        return IrPad.rulesLijst(root, "resolvedRegels").get(0).get("waarde");
     }
 
     private static JsonNode golden() throws Exception {
