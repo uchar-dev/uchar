@@ -606,7 +606,6 @@ let empty_doc : Ir_v0.Ast.document =
     tijdlijnen = [];
     dagsoorten = [];
     dagsoort_per_eenheid = [];
-    regels = [];
     resolved_regels = [];
     resolved_dagsoorten = [];
     object_creaties = [];

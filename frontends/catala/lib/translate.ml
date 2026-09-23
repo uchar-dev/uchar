@@ -2465,7 +2465,7 @@ let file_to_document (input : string) : I.document =
   { objecttypen = List.rev !objecttypen;
     domeinen; parameters = []; eenheidstelsels = []; feittypen = !feittypen;
     dimensies = []; tijdlijnen = []; dagsoorten = []; dagsoort_per_eenheid = [];
-    regels = []; resolved_regels = !regels; resolved_dagsoorten = [];
+    resolved_regels = !regels; resolved_dagsoorten = [];
     object_creaties = !creaties; verdelingen = []; consistenties = !cons;
     uniciteiten = []; uniciteit_unies = []; feit_creaties = [];
     resolved_startpunten = []; regel_groepen = []; diagnostics = [];

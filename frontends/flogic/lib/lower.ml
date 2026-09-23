@@ -934,7 +934,7 @@ let document (stmts : stmt list) : A.document =
   in
   { A.objecttypen; domeinen = []; parameters = []; eenheidstelsels = []; feittypen;
     dimensies = []; tijdlijnen = []; dagsoorten = []; dagsoort_per_eenheid = [];
-    regels = []; resolved_regels = !resolved; resolved_dagsoorten = []; object_creaties = [];
+    resolved_regels = !resolved; resolved_dagsoorten = []; object_creaties = [];
     verdelingen = []; consistenties = []; uniciteiten = []; uniciteit_unies = [];
     feit_creaties = []; resolved_startpunten = []; regel_groepen = []; diagnostics = [];
     prioritized_defaults = !groups; function_defs = [] }
