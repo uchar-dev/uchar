@@ -40,9 +40,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *   niet-een-datum  verifier PASS   interpreter/ASP: a boundary like any   here: bare parse exception
  * </pre>
  *
- * <p>The first row is the divergence: one document, two answers. The other three readers of a validity
- * window hold the bound as an OPAQUE STRING and order it lexicographically (the verifier says so in as many
- * words beside its overlap check: "ISO dates compare lexicographically"), so a signed year sorts before
+ * <p>The first row is the divergence: one document, two answers. Until 2026-09-23 the other three readers
+ * of a validity window held the bound as an OPAQUE STRING and ordered it lexicographically (since card
+ * ref-geldigheid-datumlezing only the verifier still does), so a signed year sorted before
  * every four-digit one and the version applies; this reader turns the same lexeme into year 12026 and the
  * version never applies. Row two is the quiet half of the same defect: there the two readings happen to
  * AGREE, so the malformed bound leaves no trace at all. Rows three and four are the opposite asymmetry —

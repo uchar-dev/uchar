@@ -835,9 +835,9 @@ public final class IrLoader {
             java.util.regex.Pattern.compile("\\d{4}-\\d{2}-\\d{2}");
 
     /** The calendar day a validity bound names — or a loud refusal naming the FORM, never a guess.
-     *  <p>The three other readers of this wire hold a bound as an OPAQUE STRING and order it
-     *  lexicographically (the verifier states the assumption in as many words beside its overlap check:
-     *  "ISO dates compare lexicographically"). That ordering is only sound INSIDE this lexeme, and nothing
+     *  <p>Until 2026-09-23 the three other readers of this wire held a bound as an OPAQUE STRING and
+     *  ordered it lexicographically; since card ref-geldigheid-datumlezing only the verifier still does
+     *  (sound under WF-101), and ref and the ASP backend read the bounds through their strict date reader. That ordering is only sound INSIDE this lexeme, and nothing
      *  enforced it: measured 2026-09-11 on a hand-edited copy of a two-version golden, the verifier reported
      *  PASS on {@code +012026-01-01}, {@code -0500-01-01}, {@code 2026-02-30} and {@code niet-een-datum}
      *  alike. On {@code +012026-01-01} the interpreter and the ASP backend then applied the version (the
