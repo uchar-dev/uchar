@@ -5965,6 +5965,13 @@ let () =
     ~door:{|{ "objectType": "Vondst",|} {|input.instances[0]: missing field "label"|};
   vorm "caselader-vorm-label-geen-tekst" ~sub:{|"label": "V1", "objectType"|}
     ~door:{|"label": 7, "objectType"|} "input.instances[0].label: expected a string, got 7";
+  (* an empty label: the schema asks minLength 1, and every later position of
+     the instance is written after its label, so an empty one used to load and
+     send those positions to the root ("objectType: …", ".vondstdag.date: …") *)
+  weigert_tekst "caselader-vorm-label-leeg"
+    (met_instantie
+       {|{ "label": "", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": [] }|})
+    {|input.instances[0].label: expected a non-empty string, got ""|};
   vorm "caselader-vorm-objecttype-geen-tekst" ~sub:{|"objectType": "Vondst"|}
     ~door:{|"objectType": 1|} "V1.objectType: expected a string, got 1";
   List.iter

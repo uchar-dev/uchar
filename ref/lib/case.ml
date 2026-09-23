@@ -401,6 +401,10 @@ let resolve_role doc ~otype ~key =
 let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
   let kvs = obj ~at j in
   let label = str_field ~at kvs "label" in
+  (* the schema asks minLength 1, and every later position of this instance
+     is written after its label: an empty one used to load and send those
+     positions to the root ("objectType: …", ".vondstdag.date: …") *)
+  if label = "" then fail "%s: expected a non-empty string, got \"\"" (child at "label");
   (* "::" is the minted-instance namespace (Eval.run_object_creatie's
      deterministic labels); a case label there could silently suppress
      a creation — refused at load, never read wrong *)
