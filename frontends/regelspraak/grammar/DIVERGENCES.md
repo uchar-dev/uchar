@@ -155,9 +155,9 @@ group, each over a base outside the group. Two placements that were
 verifier-clean before are refused since — an `Uitzondering op` directly after
 a group whose members do not include its base, and an `Uitzonderingen
 ongeordend` block directly after a group — because at that position the rules
-behind the block would fall outside the group in silence. No source in the
-repository carries a `Regelgroep` at all, so nothing in the corpus moves.
-Witness: `RegelgroepUitzonderingTest`.
+behind the block would fall outside the group in silence. No `.rgs` source in
+the repository — golden, rood or parity zone — carries a `Regelgroep` at all,
+so nothing in the corpus moves. Witness: `RegelgroepUitzonderingTest`.
 
 ### Emission (v0-mirror invariant)
 
