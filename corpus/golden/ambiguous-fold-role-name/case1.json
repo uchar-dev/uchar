@@ -7,8 +7,7 @@
     ],
     "parameters": {}
   },
-  "expectedFault": {
-    "ref": "ambiguous role name \"vriend\" from \"Jutter\"",
-    "clingo": "ambiguous role name \"vriend\" from \"Jutter\""
-  }
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "aantal vrienden", "value": { "number": "0" } }
+  ]
 }
