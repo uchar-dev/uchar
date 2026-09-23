@@ -18,6 +18,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -323,6 +324,22 @@ class OverervingWeigeringWitnessTest {
                 () -> IrLoader.loadAll(JSON.readTree(Files.readString(model("supertype-onbekend", ir)))));
         assertTrue(e.getMessage().contains("supertype 'Bestaatniet' is not declared"), e.getMessage());
         assertTrue(e.plek().endsWith("/supertype"), e.getMessage());
+    }
+
+    @Test void een_supertype_bindt_onder_de_naamidentiteit_van_de_verifier() throws Exception {
+        // The other side of the WF-103 guard above. WF-103 resolves the reference under the verifier's name
+        // identity (checks.ml norm: runs of spaces and tabs collapsed, the ends trimmed, A-Z folded), and
+        // verifier, ref and clingo all play each spelling below. Looked up exactly and then case-insensitively,
+        // the two spellings with a space were reported undeclared (measured 2026-09-23): a hard error on a
+        // document the three other executors play.
+        for (String spelling : List.of("Strandrecht ", " strandrecht", "STRANDRECHT")) {
+            ObjectNode ir = goldenIr(KETEN);
+            IrPad.objectType(ir, "Wrakrecht").put("supertype", spelling);
+            Path irPad = model("supertype-spelling", ir);
+            RegelSpraakModel m = IrLoader.load(JSON.readTree(Files.readString(irPad)));
+            assertSame(m.objecttypen.get("Strandrecht"), m.objecttypen.get("Wrakrecht").supertype, spelling);
+            assertNull(CaseRunner.speelCase(irPad, geval(KETEN, "case1-basis.json")), spelling);
+        }
     }
 
     @Test void een_supertypecyclus_weigert_bij_het_laden() throws Exception {

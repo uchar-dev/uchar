@@ -467,7 +467,10 @@ public final class IrLoader {
     private void bindSupertypes() {
         supertypeNaam.forEach((ot, naam) -> {
             if (naam == null) return;
-            Objecttype ouder = m.objecttypeOpNaam(naam);
+            // under WF-103's name identity, the one WF-001 declared the names under: the model's own lookup
+            // folds case only, and would call "Jutter " undeclared where the verifier, ref and clingo bind it
+            String gedeclareerd = botsing(m.objecttypen.keySet(), naam);
+            Objecttype ouder = gedeclareerd == null ? null : m.objecttypen.get(gedeclareerd);
             if (ouder == null)
                 throw new Documentfout(supertypePad.get(ot), "supertype '" + naam + "' is not declared (WF-103)");
             ot.supertype = ouder;
