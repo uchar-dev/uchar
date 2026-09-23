@@ -61,6 +61,11 @@ final class RuleChecker {
      *  {@link #beslistabellen}. A table has no rule form of its own — its rows are the rules — so a reader that
      *  asks which rules a table stands for asks here. */
     private final Map<BeslistabelContext, List<String>> rijRegels = new java.util.IdentityHashMap<>();
+    /** The rules whose target {@link #keurRegeldoelen} refused. The defaults lowering skips their families: its
+     *  own checks would judge a target the author did not write (a navigation swallowed into a name) and add a
+     *  second, misleading refusal beside the true one. */
+    private final java.util.Set<ResolvedRegel> geweigerdeDoelen =
+            java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
 
     /** The main parse's token stream, kept so the §Bron statuutannotaties on the HIDDEN channel
      *  (the {@code // Bron: …} comments) can be gathered directly above each rule. Null when the
@@ -316,9 +321,11 @@ final class RuleChecker {
                                 + "attribuut van zijn eigen universele onderwerp; schrijf de regel op het objecttype dat "
                                 + "het attribuut draagt ('De <attribuut> van een <Objecttype> …')"
                         : "'" + a.attribuut() + "' is geen gedeclareerd attribuut van " + a.objecttype().naam;
-            if (fout != null)
+            if (fout != null) {
+                geweigerdeDoelen.add(r);
                 model.diagnostics.add(new Diagnostic(Severity.ERROR, "regeldoel '" + geschreven + "': " + fout
                         + " (WF-022, IR-SPEC ch. 3.1)", line));
+            }
         }
     }
 
@@ -456,6 +463,7 @@ final class RuleChecker {
             }
             if (basis.size() > 1) { multiVersieFout("basisregel", basisNaam, line); continue; }
             ResolvedRegel basisRegel = basis.get(0);
+            if (geweigerdeDoelen.contains(basisRegel)) continue;   // its target is refused already, and by name
             DefaultsDoel doel = doelVan(basisRegel);
             if (doel == null || basisRegel.soort() == ResolvedRegel.Soort.INITIALISATIE) {
                 model.diagnostics.add(new Diagnostic(Severity.ERROR,
@@ -476,6 +484,7 @@ final class RuleChecker {
                     fout = true; break;
                 }
                 if (ex.size() > 1) { multiVersieFout("uitzondering", exNaam, u.getStart().getLine()); fout = true; break; }
+                if (geweigerdeDoelen.contains(ex.get(0))) { fout = true; break; }   // refused already, by name
                 DefaultsDoel exDoel = doelVan(ex.get(0));
                 if (exDoel == null || ex.get(0).soort() == ResolvedRegel.Soort.INITIALISATIE) {
                     model.diagnostics.add(new Diagnostic(Severity.ERROR,
@@ -539,6 +548,7 @@ final class RuleChecker {
                     fout = true; break;
                 }
                 if (rr.size() > 1) { multiVersieFout("groepslid", naam, line); fout = true; break; }
+                if (geweigerdeDoelen.contains(rr.get(0))) { fout = true; break; }   // refused already, by name
                 DefaultsDoel d = doelVan(rr.get(0));
                 if (d == null || rr.get(0).soort() == ResolvedRegel.Soort.INITIALISATIE) {
                     model.diagnostics.add(new Diagnostic(Severity.ERROR,

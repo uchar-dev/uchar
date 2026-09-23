@@ -92,6 +92,60 @@ class RegeldoelTest {
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
     }
 
+    // -------------------------------------------------------------------- a refused target in an extension block
+
+    /** Only the target refusals, and nothing of the lowering's: the lift checks judge a target the target fence
+     *  already refused, and before this fix added "is geen kenmerktoekenning of gelijkstelling (bv. een
+     *  initialisatie)" (a characteristic on a navigated subject) or "schrijft een ander doel" (an attribute
+     *  target, an unordered member) — messages about a form the author did not write. */
+    private static void alleenRegeldoelFouten(String src, int verwacht) {
+        RegelSpraakModel m = Resolver.resolve(src);
+        List<Diagnostic> fouten = m.errors();
+        assertEquals(verwacht, fouten.size(), () -> "verwachtte " + verwacht + " fout(en), kreeg: " + fouten);
+        assertTrue(fouten.stream().allMatch(d -> d.message().startsWith("regeldoel ")),
+                () -> "alleen de regeldoelweigering hoort te spreken: " + fouten);
+    }
+
+    @Test void een_geweigerd_kenmerkdoel_in_een_uitzonderingsfamilie_spreekt_alleen() {
+        alleenRegeldoelFouten(MODEL + """
+
+            Regel markering
+                geldig altijd
+                    Het strandvak van een Jutter is gemarkeerd.
+
+            Uitzondering op markering: noodmarkering
+                geldig altijd
+                    Het strandvak van een Jutter is gemarkeerd.
+            """, 2);
+    }
+
+    @Test void een_geweigerd_attribuutdoel_in_een_uitzondering_spreekt_alleen() {
+        alleenRegeldoelFouten(MODEL + """
+
+            Regel premie
+                geldig altijd
+                    De premie van een Jutter moet gesteld worden op 10.
+
+            Uitzondering op premie: vakpremie
+                geldig altijd
+                    De vakpremie van het strandvak van een Jutter moet gesteld worden op 20.
+            """, 1);
+    }
+
+    @Test void een_geweigerd_doel_in_een_ongeordend_blok_spreekt_alleen() {
+        alleenRegeldoelFouten(MODEL + """
+
+            Uitzonderingen ongeordend:
+            Regel premie een
+                geldig altijd
+                    De premie van een Jutter moet gesteld worden op 10.
+
+            Regel premie twee
+                geldig altijd
+                    De vakpremie van het strandvak van een Jutter moet gesteld worden op 20.
+            """, 1);
+    }
+
     @Test void een_periodebullet_als_laatste_in_een_deelselectie_weigert() {
         String src = MODEL + """
 

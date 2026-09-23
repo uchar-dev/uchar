@@ -650,7 +650,11 @@ subject is a navigation, which resolves to no object type at all. Since fix
 round 2 (2026-09-23) each is an ERROR naming the form
 (`RuleChecker.keurRegeldoelen`). An undeclared characteristic on a resolved
 subject is not fenced here: that is the ground of the dialect card for negated
-decisions ("is niet X"). No source in any zone writes the refused forms.
+decisions ("is niet X"). No source in any zone writes the refused forms. A
+refused target inside an extension block speaks alone: the defaults lowering
+skips its family, whose checks would otherwise judge a target the author did
+not write and add a second refusal ("is geen kenmerktoekenning of
+gelijkstelling", "schrijft een ander doel") beside the true one (fix round 3).
 Witness: `RegeldoelTest`.
 
 ---
