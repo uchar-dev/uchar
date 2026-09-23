@@ -41,9 +41,14 @@ import java.util.Map;
  * members as {@code Attribute}/{@code Characteristic} nodes, a domain as a {@code Domain}
  * wrapper), and every other node keeps the Dutch v0 field names EXACTLY as the Java records
  * name them until its own migration step. No filtering: it is the uchar-programme mirror
- * artifact (mirror first, diverge later), warts included. Key order is the {@code properties}
- * order of the schema ({@code spec/schema/uchar-ir-v1.schema.json}), so a re-emission is
- * byte-identical to a migrated document.
+ * artifact (mirror first, diverge later), warts included. For the M1 containers and nodes (the
+ * root, {@code model}, {@code rules}, {@code ObjectType}, {@code Attribute}, {@code Characteristic},
+ * {@code TimelineFacet}, {@code Domain}) the key order is the {@code properties} order of the schema
+ * ({@code spec/schema/uchar-ir-v1.schema.json}), so a re-emission is byte-identical to a migrated
+ * document. A node carried over from v0 keeps the order this emitter has always written it in, which
+ * is not always the schema's — {@code PrioritizedDefaults} writes {@code defaults} before
+ * {@code ongeordend} (golden {@code jutterswet-wachtgeld}, pinned by gate 10) — until its own M step,
+ * as {@code spec/schema/README.md} records.
  *
  * <p>Completeness is compiler-enforced where it can be: the {@link Datatype}, {@link Expr}
  * and {@link Conditie} sealed hierarchies are walked with EXHAUSTIVE switches (no default
@@ -59,7 +64,7 @@ import java.util.Map;
  */
 public final class IrEmitter {
 
-    /** What the model carries that the v0 wire has no field for, as ERROR diagnostics — today only the
+    /** What the model carries that the wire has no field for, as ERROR diagnostics — today only the
      *  off-calendar fixed startpunt (§13.3.6.3–.7, {@link RegelSpraakModel#vasteStartpunten}). The model
      *  resolves it correctly; dropping it here would lay the tijdlijn on the calendar grid the author did
      *  not declare. {@code Resolver --ir} adds these to the diagnostics so it writes nothing, and
@@ -67,7 +72,7 @@ public final class IrEmitter {
     public static List<Diagnostic> wireWeigeringen(RegelSpraakModel m) {
         return m.vasteStartpunten.stream().map(v -> new Diagnostic(RegelSpraakModel.Severity.ERROR,
                 "tijdlijn: het vaste startpunt '" + v.bron() + "' (" + v.sectie() + ") wijkt af van de "
-                        + "kalenderperiode en de v0-wire heeft er geen veld voor — de zin wordt geweigerd in "
+                        + "kalenderperiode en de wire heeft er geen veld voor — de zin wordt geweigerd in "
                         + "plaats van het startpunt stil te laten vallen", v.line())).toList();
     }
 
@@ -75,7 +80,7 @@ public final class IrEmitter {
     public static String emit(RegelSpraakModel m) {
         List<Diagnostic> weigeringen = wireWeigeringen(m);
         if (!weigeringen.isEmpty())
-            throw new IllegalStateException("de v0-wire kan dit model niet dragen: " + weigeringen);
+            throw new IllegalStateException("de wire kan dit model niet dragen: " + weigeringen);
         // WF-113 (a): an ERROR means the producer refused the document, so a model that carries one has no
         // document to write; checked here and not only in irModus, so no emission route bypasses it
         List<Diagnostic> nietWire = m.diagnostics.stream()

@@ -1089,7 +1089,7 @@ public final class IrLoader {
                 tot == null ? null : datumVanIrWire(tot, plek + ".tot"));
     }
 
-    /* The regelspraak-ir-v0 validity-bound lexeme, matched WHOLE: four-two-two digit fields, digits only, no
+    /* The uchar-ir-v1 validity-bound lexeme, matched WHOLE: four-two-two digit fields, digits only, no
      * sign and no extended year. It is WF-084's date-literal grammar (IR-SPEC ch. 4.1) applied to the other
      * date position on this wire — where, unlike the case wire, the schema carried no pattern at all. */
     private static final java.util.regex.Pattern IR_DATUM =
@@ -1113,7 +1113,7 @@ public final class IrLoader {
     private static java.time.LocalDate datumVanIrWire(String lexeem, String veld) {
         if (!IR_DATUM.matcher(lexeem).matches())
             throw new IllegalArgumentException("malformed validity date '" + lexeem + "' on '" + veld
-                    + "': the regelspraak-ir-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only,"
+                    + "': the uchar-ir-v1 lexeme is yyyy-mm-dd — fixed field widths, digits only,"
                     + " no sign and no extended year");
         try { return java.time.LocalDate.parse(lexeem); }
         catch (java.time.format.DateTimeParseException e) {

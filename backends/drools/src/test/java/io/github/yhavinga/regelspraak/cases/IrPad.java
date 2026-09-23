@@ -43,8 +43,13 @@ public final class IrPad {
         return a;
     }
 
-    /** Sets (or replaces) a member's timeline facet, the M1 form of a v0 granularity entry. */
+    /** Sets a member's timeline facet, the M1 form of a v0 granularity entry. A member that already carries one
+     *  fails LOUDLY: replacing it would silently drop its count and timeline name, and the twist would test a
+     *  document other than the one its witness describes. */
     public static ObjectNode timeline(JsonNode member, String granularity) {
+        if (member.has("timeline"))
+            throw new AssertionError("member '" + member.path("name").asText() + "' already carries a timeline facet: "
+                    + member.get("timeline"));
         ObjectNode t = ((ObjectNode) member).putObject("timeline");
         t.put("node", "TimelineFacet").put("granularity", granularity).put("count", 1);
         return t;
