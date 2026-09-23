@@ -768,28 +768,6 @@ let use_ro ctx (ro : range_order) =
   end;
   p
 
-(* THE PASS BEFORE A CREATION, for a short circuit (fixronde 6 of card
-   clingo-parameter-failfast; the Let barrier's is [emit_barriers]). ref runs a
-   pass's rules before its creations, so in the pass before a creation the
-   member it adds is not in any range yet, and a short circuit it settles at
-   the fixpoint can still be open there: the read behind it is reached in that
-   pass and not at the fixpoint. That pass is the degenerate order in which
-   the member is absent, and the refusal is named (decision of the main
-   session, 2026-09-23). It follows the reads ch. 6.3 counts positive (the
-   verifier's dep_cond): only through them can a rule share a stratum with the
-   creation, so only through them does ref have such a pass. So a TEN_MINSTE
-   fold's range, filter and matrix, an ALLE fold's matrix, and the members of
-   an ALLE, DE or TEN_MINSTE composite; every other part reads as at the
-   fixpoint. The short circuits it adds reads behind are a TEN_MINSTE
-   composite's prefix and a TEN_MINSTE fold's open prefix: an ALLE prefix is
-   settled earlier there, not later. *)
-let rec pre_sensitive (c : conditie) =
-  match c with
-  | Kwantorvouw { kv_kwantor = Ten_minste; _ } -> true
-  | Kwantorvouw { kv_kwantor = Alle; kv_toets = Some t; _ } -> pre_sensitive t
-  | Samengesteld { kwantor = Alle | De | Ten_minste; onderdelen; _ } -> List.exists pre_sensitive onderdelen
-  | _ -> false
-
 (* [f] translates [node]; its handle for the pass before a creation, which
    [node]'s own translation registers ([register_pre]) *)
 let with_pre ctx (node : conditie) f =
@@ -907,7 +885,9 @@ let unbound_param_order_reason name what =
    that does not read it, and the guard follows the lowering ([reach_at],
    README [S1]); and the guard is read at the fixpoint, so a read ref reaches
    only in a pass before a rule of the same stratum wrote what the read's
-   short circuit depends on fires nothing (README [S3]). *)
+   short circuit depends on fires nothing (README [S3]), nor does one ref
+   reaches only in the pass before a creation through a condition that holds
+   on absence, in an ALLE prefix or a taken arm (README [S4]). *)
 let unbound_param_guard ctx ~witness ~guard name =
   if param_unbound ctx name then begin
     let body = guard () in
@@ -1398,6 +1378,130 @@ let expr_reaches ctx (hit : expr -> bool) (e : expr) : bool =
         false
   in
   x e
+
+(* THE PASS BEFORE A CREATION, for a short circuit (fixronde 6 of card
+   clingo-parameter-failfast; the Let barrier's is [emit_barriers]). ref runs a
+   pass's rules before its creations, so in the pass before a creation the
+   member it adds is not in any range yet, and a short circuit it settles at
+   the fixpoint can still be open there: the read behind it is reached in that
+   pass and not at the fixpoint. That pass is the degenerate order in which
+   the member is absent, and the refusal is named (decision of the main
+   session, 2026-09-23). It follows the reads ch. 6.3 counts positive (the
+   verifier's dep_cond): only through them can a rule share a stratum with the
+   creation, so only through them does ref have such a pass. So a TEN_MINSTE
+   fold's range, filter and matrix, an ALLE fold's matrix, the members of an
+   ALLE, DE or TEN_MINSTE composite, and a comparison, a navigated
+   characteristic or a role check that reads through a role
+   ([leaf_reads_role], read there with the case's own links, [pre_clone]);
+   every other part reads as at the fixpoint. The short circuits it adds
+   reads behind are a TEN_MINSTE composite's prefix and a TEN_MINSTE fold's
+   open prefix: an ALLE prefix of monotone members is settled earlier there,
+   not later, and one whose member holds on absence (a count against zero,
+   ch. 6.1) is read at the fixpoint, README [S4]. *)
+let leaf_reads_role ctx (c : conditie) =
+  let ranging (e : expr) =
+    match e with
+    | Attribuut_ref { navigatie_rol = Some _; _ } | Instance_set_union _ -> true
+    | Attribuut_ref { navigatie_pad; navigatie_bindingen; _ } ->
+        List.exists Option.is_some navigatie_pad
+        || (match navigatie_bindingen with Some (_ :: _) -> true | _ -> false)
+    | Functie { element_objecttype; bron_rol; bron_pad; _ } ->
+        element_objecttype <> None || bron_rol <> None || bron_pad <> None
+    | _ -> false
+  in
+  let opt = function Some e -> expr_reaches ctx ranging e | None -> false in
+  match c with
+  | Vergelijking { links; rechts; _ } -> opt links || opt rechts
+  | Periode_conditie { vanaf; tot; _ } -> opt vanaf || opt tot
+  | Kenmerk_check { navigatie = Some _; _ } | Rollidmaatschap _ | Verre_rollidmaatschap _ -> true
+  | _ -> false
+
+let rec pre_sensitive ctx (c : conditie) =
+  match c with
+  | Kwantorvouw { kv_kwantor = Ten_minste; _ } -> true
+  | Kwantorvouw { kv_kwantor = Alle; kv_toets = Some t; _ } -> pre_sensitive ctx t
+  | Samengesteld { kwantor = Alle | De | Ten_minste; onderdelen; _ } ->
+      List.exists (pre_sensitive ctx) onderdelen
+  | Kwantorvouw _ | Samengesteld _ -> false
+  | _ -> leaf_reads_role ctx c
+
+(* [f] on every predicate name in [s]: a lowercase identifier followed by an
+   opening parenthesis, outside a quoted string *)
+let map_predicates f s =
+  let n = String.length s and b = Buffer.create (String.length s) in
+  let is_id c = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c = '_' in
+  let rec go i quoted =
+    if i < n then begin
+      let c = s.[i] in
+      if quoted then begin
+        Buffer.add_char b c;
+        if c = '\\' && i + 1 < n then begin
+          Buffer.add_char b s.[i + 1];
+          go (i + 2) true
+        end
+        else go (i + 1) (c <> '"')
+      end
+      else if c = '"' then begin
+        Buffer.add_char b c;
+        go (i + 1) true
+      end
+      else if c >= 'a' && c <= 'z' && (i = 0 || not (is_id s.[i - 1])) then begin
+        let j = ref i in
+        while !j < n && is_id s.[!j] do incr j done;
+        let id = String.sub s i (!j - i) in
+        Buffer.add_string b (if !j < n && s.[!j] = '(' then f id else id);
+        go !j false
+      end
+      else begin
+        Buffer.add_char b c;
+        go (i + 1) false
+      end
+    end
+  in
+  go 0 false;
+  Buffer.contents b
+
+(* a leaf's truth in the pass before a creation ([leaf_reads_role]): the rules
+   its translation wrote, [segment], written again under names of their own,
+   with every role atom read from the case's own links (inputrol/3), so that a
+   member a creation adds is in no range; its guards and the model's own
+   predicates are not written again. Returns its atoms under those names *)
+let pre_clone ctx segment atoms =
+  let model =
+    [ "val"; "heeft"; "rol"; "isa"; "is_a"; "param"; "viol"; "inconsistent"; "tl"; "param_tl"; "ktl";
+      "inputval"; "inputtl"; "inputrol" ]
+  in
+  let is_id c = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c = '_' in
+  let head l =
+    let l = String.trim l in
+    let l = if String.starts_with ~prefix:"#defined " l then String.sub l 9 (String.length l - 9) else l in
+    let n = String.length l in
+    let j = ref 0 in
+    while !j < n && is_id l.[!j] do incr j done;
+    if !j = 0 || not (l.[0] >= 'a' && l.[0] <= 'z') then None else Some (String.sub l 0 !j)
+  in
+  let lines = String.split_on_char '\n' segment in
+  let own =
+    List.filter (fun h -> not (List.mem h model)) (List.sort_uniq compare (List.filter_map head lines))
+  in
+  ctx.fresh <- ctx.fresh + 1;
+  let suffix = Printf.sprintf "_pre%d" ctx.fresh in
+  let rename id = if id = "rol" then "inputrol" else if List.mem id own then id ^ suffix else id in
+  List.iter
+    (fun l ->
+      match head l with
+      | Some h when List.mem h own ->
+          let l = map_predicates rename l in
+          let l =
+            if String.starts_with ~prefix:"#defined " (String.trim l) then
+              "#defined " ^ h ^ suffix ^ String.sub (String.trim l) (9 + String.length h)
+                (String.length (String.trim l) - 9 - String.length h)
+            else l
+          in
+          emit ctx "%s" l
+      | _ -> ())
+    lines;
+  List.map (map_predicates rename) atoms
 
 (* a demand atom "dmdN(S)" with its predicate suffixed: "dmdN_o(S)" *)
 let demand_form atom suffix =
@@ -6163,6 +6267,16 @@ and dk_date_plus ctx ~subject ~subject_ot ~kind ~minus ~datetime date_e dur_e =
   (match ms with None -> [ atom ] | Some _ -> bd @ [ atom ]), v, ms
 
 and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
+  if doc_dynamic ctx.doc && leaf_reads_role ctx c then begin
+    let start = Buffer.length ctx.buf in
+    let atoms = cond_atoms_raw ctx ~subject ~subject_ot c in
+    let segment = Buffer.sub ctx.buf start (Buffer.length ctx.buf - start) in
+    register_pre ctx c (lazy (Some (pre_clone ctx segment atoms)));
+    atoms
+  end
+  else cond_atoms_raw ctx ~subject ~subject_ot c
+
+and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
   match c with
   (* ch. 3.9's value test over a timeline, executed here since 2026-09-16
      (the fold itself is [whole_period_fails]). Every other Vergelijking arm
@@ -6882,7 +6996,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
          ([pre_sensitive], [emit_kv_reach]) *)
       let pre_ext =
         ro.ro_dynamic && kv_kwantor = Ten_minste
-        && (Option.fold ~none:false ~some:pre_sensitive kv_filter || pre_sensitive toets)
+        && (Option.fold ~none:false ~some:(pre_sensitive ctx) kv_filter || pre_sensitive ctx toets)
       in
       let pre () = if pre_ext then Some (fun () -> (Lazy.force !fpre, Lazy.force !mpre)) else None in
       let reached () =

@@ -10393,6 +10393,105 @@ let () =
   both_answer ~name:"the same rule with the case's own schuit (r6-strat-sc-case, control)" ~ir:(doc ~voorwaarde:strat [])
     ~case_text:(pf_case ~instances:[ w1 {|"schuiten": [ "S1" ]|}; s1 ] rows)
 
+(* FIXRONDE 6: a member of the prefix that reads through a role is read in the
+   pass before a creation with the case's own links only ([pre_clone] in the
+   translator). r6-agg-comp: keur = 99 indien TEN MINSTE 1 [het aantal
+   schuiten > 0, p > 0], one schuit of 8 created for each Werf. r6-nav: keur
+   = 99 indien TEN MINSTE 1 [het bedrag van zijn rapport > 1, p > 0], a
+   rapport with bedrag 5 created for each Werf. With the case's own schuit or
+   rapport, alone or beside the created one, no pass reads p.
+
+   README [S4]: a condition that holds on absence (ch. 6.1: a count against
+   zero, read positively) with a creation as writer stays silent. In an ALLE
+   prefix, ALLE [het aantal schuiten = 0, p > 0], the member is true in the
+   pass before the creation and false at the fixpoint; in a taken arm, Let n =
+   het aantal schuiten in (als n > 0 dan 99 anders p), that pass takes the
+   other arm. ref faults in that pass, clingo answers the fixpoint *)
+let () =
+  let n0 = pf_n0 in
+  let lit v = pf_l ~typ:n0 v in
+  let werf = pf_ot ~naam:"Werf" ~meervoud:"Werven" [ ("keur", n0) ]
+  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" [ ("lengte", n0) ]
+  and rapport = pf_ot ~naam:"Rapport" ~meervoud:"Rapporten" [ ("bedrag", n0) ] in
+  let feittypen =
+    {|{ "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
+      { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] },
+      { "node": "Feittype", "naam": "keuring", "wederkerig": false, "rollen": [
+      { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "rapport", "objecttypeNaam": "Rapport", "meervoud": null, "meervoudig": false } ] }|}
+  in
+  let nn = {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "NIET_NEGATIEF", "eenheid": null }|} in
+  let aantal =
+    Printf.sprintf
+      {|{ "node": "Functie", "kind": "AANTAL",
+        "argumenten": [ { "node": "AttribuutRef", "attribuut": "schuiten", "objecttype": "Werf",
+          "onderwerpBron": "zijn", "navigatieRol": null, "type": { "node": "Onbekend", "reden": "niet opgelost" },
+          "bron": "schuiten", "set": false, "navigatiePad": [] } ],
+        "elementObjecttype": "Schuit", "leegwaarde": null, "filter": null, "dimensieSelectie": null,
+        "type": %s, "bron": "het aantal schuiten", "granulariteit": null }|}
+      nn
+  in
+  let bedrag =
+    Printf.sprintf
+      {|{ "node": "AttribuutRef", "attribuut": "bedrag", "objecttype": "Rapport", "onderwerpBron": "zijn rapport",
+        "navigatieRol": "rapport", "type": %s, "bron": "het bedrag van zijn rapport", "set": false,
+        "navigatiePad": [], "navigatieBindingen": [ { "node": "RolBinding", "feittype": "keuring", "rol": "rapport" } ] }|}
+      n0
+  in
+  let p_gt_0 = pf_cmp "GROTER" (pf_p ~typ:n0 "p") (lit "0") in
+  let maak ~naam ~nieuw ~attr ~waarde rol =
+    Printf.sprintf
+      {|{ "node": "ResolvedObjectCreatie", "naam": "%s", "nieuwType": "%s", "subject": "Werf",
+          "toekenningen": [ { "node": "Toekenning", "attribuut": "%s", "waarde": %s, "kenmerk": false } ],
+          "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null },
+          "verbindendeRol": { "node": "RolBinding", "feittype": "%s", "rol": "%s" } }|}
+      naam nieuw attr (lit waarde) (fst rol) (snd rol)
+  in
+  let acht = maak ~naam:"maak schuit" ~nieuw:"Schuit" ~attr:"lengte" ~waarde:"8" ("ligplaats", "schuit")
+  and vijf = maak ~naam:"maak rapport" ~nieuw:"Rapport" ~attr:"bedrag" ~waarde:"5" ("keuring", "rapport") in
+  let doc ?(creaties = []) ?voorwaarde waarde =
+    pf_doc ~objecttypen:[ werf; schuit; rapport ] ~feittypen ~parameters:[ pf_decl ~typ:n0 "p" ]
+      ~regels:[ pf_regel ~ot:"Werf" ~doel:"keur" ~typ:n0 ?voorwaarde waarde ] ~creaties ()
+  in
+  let w1 roles = Printf.sprintf {|{ "label": "W1", "objectType": "Werf", "attributes": {}, "roles": { %s }, "characteristics": [] }|} roles in
+  let s1 = {|{ "label": "S1", "objectType": "Schuit", "attributes": { "lengte": { "number": "8" } }, "roles": {}, "characteristics": [] }|}
+  and r1 = {|{ "label": "R1", "objectType": "Rapport", "attributes": { "bedrag": { "number": "5" } }, "roles": {}, "characteristics": [] }|} in
+  let met_schuit = [ w1 {|"schuiten": [ "S1" ]|}; s1 ] and met_rapport = [ w1 {|"rapport": [ "R1" ]|}; r1 ] in
+  let rows v = [ (match v with Some v -> pf_is ~label:"W1" ~attr:"keur" v | None -> pf_leeg ~label:"W1" ~attr:"keur" ()); pf_cons ] in
+  let tm1 lid = pf_comp ~drempel:1 "TEN_MINSTE" [ lid; p_gt_0 ] in
+  let agg = tm1 (pf_cmp "GROTER" aantal (lit "0")) and nav = tm1 (pf_cmp "GROTER" bedrag (lit "1")) in
+  named_refusal ~by:"the composite condition" ~ref_plays:false
+    ~name:"the pass before a creation counts no schuit, so p is read (r6-agg-comp)"
+    ~ir:(doc ~creaties:[ acht ] ~voorwaarde:agg (lit "99")) ~param:"p"
+    ~case_text:(pf_case ~instances:[ w1 "" ] (rows (Some "99")));
+  both_answer ~name:"the count with the case's own schuit (r6-agg-comp-case, control)" ~ir:(doc ~voorwaarde:agg (lit "99"))
+    ~case_text:(pf_case ~instances:met_schuit (rows (Some "99")));
+  both_answer ~name:"the count with the case's own schuit beside the created one (r6-agg-both, control)"
+    ~ir:(doc ~creaties:[ acht ] ~voorwaarde:agg (lit "99")) ~case_text:(pf_case ~instances:met_schuit (rows (Some "99")));
+  named_refusal ~by:"the composite condition" ~ref_plays:false
+    ~name:"the pass before a creation has no rapport to navigate to, so p is read (r6-nav)"
+    ~ir:(doc ~creaties:[ vijf ] ~voorwaarde:nav (lit "99")) ~param:"p"
+    ~case_text:(pf_case ~instances:[ w1 "" ] (rows (Some "99")));
+  both_answer ~name:"the navigation to the case's own rapport (r6-nav-case, control)" ~ir:(doc ~voorwaarde:nav (lit "99"))
+    ~case_text:(pf_case ~instances:met_rapport (rows (Some "99")));
+  let nul = pf_comp "ALLE" [ pf_cmp "GELIJK" aantal (lit "0"); p_gt_0 ] in
+  pinned_silent ~entry:"S4" ~name:"a count against zero in an ALLE prefix holds in the pass before a creation (r6-alle-nul)"
+    ~ir:(doc ~creaties:[ acht ] ~voorwaarde:nul (lit "99")) ~param:"p"
+    ~case_text:(pf_case ~instances:[ w1 "" ] (rows None));
+  both_answer ~name:"the count against zero with the case's own schuit (r6-alle-nul-case, control)"
+    ~ir:(doc ~voorwaarde:nul (lit "99")) ~case_text:(pf_case ~instances:met_schuit (rows None));
+  let n = Printf.sprintf {|{ "node": "BinderRef", "name": "n", "type": %s, "bron": "de n" }|} nn in
+  let tak = pf_let "n" aantal (pf_ite (pf_cmp "GROTER" n (lit "0")) (lit "99") (pf_p ~typ:n0 "p")) in
+  let tak =
+    (* pf_let and pf_ite write the two-decimal type; this rule is whole *)
+    replace ~tok:pf_n2 ~by:n0 tak
+  in
+  pinned_silent ~entry:"S4" ~name:"a count in a taken arm's condition is zero in the pass before a creation (r6-agg-ite)"
+    ~ir:(doc ~creaties:[ acht ] tak) ~param:"p" ~case_text:(pf_case ~instances:[ w1 "" ] (rows (Some "99")));
+  both_answer ~name:"the count in the arm's condition with the case's own schuit (r6-agg-ite-case, control)"
+    ~ir:(doc tak) ~case_text:(pf_case ~instances:met_schuit (rows (Some "99")))
+
 (* FIXRONDE 6, README [L2]'s other half: the read's own member is there in the
    pass before a creation, as the Let barrier takes the guard's own member. A
    member a creation adds is there before the members added to its own
