@@ -37,8 +37,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * same facet as no entry at all and a raster starts at 2. The presence test therefore refused a document that says out
  * loud what every other document says by default.
  *
- * <p>It stayed invisible because the RegelSpraak frontend writes the entry only for a count other than 1
- * ({@code DefinitionResolver}), so no frontend-produced document carries it at 1. Measured over the corpus on the
+ * <p>It stayed invisible because under v0 the RegelSpraak frontend wrote the entry only for a count other than 1
+ * ({@code DefinitionResolver}), so no frontend-produced document carried it at 1. Measured over the corpus on the
  * PRE-FIX jar — an explicit 1 injected on one temporal member at a time, both branches, against each branch's own
  * untouched status line: 32 of 46 member positions flipped out of the played channel, over 12 of the 17 goldens with
  * temporal members and case files, while the verifier, {@code ref} and clingo stayed unchanged on the very same
@@ -46,6 +46,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>Every model below is SYNTHETIC, built in memory from a golden's {@code ir.json} off the wire; the corpus files are
  * read and never written. Each test names the position it gates and the PRE-FIX measurement it reverses.
+ *
+ * <p><b>Since M1 (2026-09-23) the explicit 1 is the corpus's own.</b> Every {@code TimelineFacet} writes its count and
+ * the IR loader keeps it, 1 included, as the OCaml loader does, so each temporal member of a loaded golden reaches the
+ * predicate with an explicit entry. The five replays below therefore replay the golden as written ({@link #metAantal}
+ * with 1 restates its count and asserts the facet is there), and a regression to the presence test fails them, which
+ * it did not while the loader dropped the 1: then the tables held no entry and the replays were hollow. Measured on
+ * this change with the presence test put back: 7 of the 8 tests fail; the count-2 flank passes under both.
  *
  * <p>The tests that replay ({@link #beideTakkenSpelen}) cannot go quietly true — a probe document that stopped
  * carrying its construct would change the played status or the case count. The §8.2 test compares OUTPUTS instead,
@@ -69,9 +76,9 @@ class MeerPeriodiekePoortWitnessTest {
     /** A §7.1 "het totaal van" over a temporal attribute, no clip. One case, both branches PLAYED. */
     private static final String TEMPOTOTAAL = "jutterswet-tempototaal";
     /** A §8.2 whole-period comparison over the MAAND-granular {@code keurvergoeding}, quantified over a navigated
-     *  set. Its facet's count 1 never reaches the model's count table (the loader keeps a count only when it is not
-     *  1), so the §8.2 test below writes the explicit 1 into the loaded table itself — the entry is the probe's,
-     *  not the corpus's. */
+     *  set. Its facet writes count 1 and the loader keeps it, so the §8.2 test below compares the loaded table WITH
+     *  that entry against the same table with the entry removed — the removal is the probe's; an absent entry is
+     *  what the v0 wire wrote. */
     private static final String KEURPLOEG = "jutterswet-keurploeg";
 
     // ---------------- the predicate itself ----------------
@@ -159,15 +166,14 @@ class MeerPeriodiekePoortWitnessTest {
         // the table at all). The SET gates (isTemporeelSetAttribuut/isTemporeelSet82) are reached by no corpus
         // document: every §8.2 operand in golden carries set:false (re-measured 2026-09-19).
         // Verdict compared byte for byte on the DRL text and construct for construct on both coverage manifests.
-        // Since M1 every facet writes its count, and the loader keeps a count in the model's table only when it is
-        // not 1: no wire document can land the explicit 1 there any more. The probe writes it into the loaded table,
-        // where the v0 wire used to land it, and asserts the table had no entry of its own — otherwise both sides
-        // would be the same document.
+        // Since M1 every facet writes its count and the loader keeps it, 1 included: the loaded table carries the
+        // explicit 1 of the wire, and the probe REMOVES it for the other side — the absent entry the v0 wire wrote.
+        // It asserts the entry was the wire's 1; otherwise both sides would be the same document.
         Path keurploeg = ir(KEURPLOEG);
-        java.util.function.Consumer<RegelSpraakModel> zonder = m -> { };
-        java.util.function.Consumer<RegelSpraakModel> met = m -> assertEquals(null,
-                m.objecttypen.get("Keurmeester").attribuutTijdlijnAantal.put("keurvergoeding", 1),
-                "de geladen teltabel draagt zelf geen sleutel voor keurvergoeding");
+        java.util.function.Consumer<RegelSpraakModel> zonder = m -> assertEquals(1,
+                m.objecttypen.get("Keurmeester").attribuutTijdlijnAantal.remove("keurvergoeding"),
+                "de geladen teltabel draagt de 1 van de wire voor keurvergoeding");
+        java.util.function.Consumer<RegelSpraakModel> met = m -> { };
         String drl = drlTekst(keurploeg, zonder);
         // The guard that keeps this witness from emptying silently: it pins that the document under probe still
         // EMITS the construct being gated. This test once stood on jutterswet-vormenkabinet and went trivially true
@@ -254,7 +260,8 @@ class MeerPeriodiekePoortWitnessTest {
     }
 
     /** The golden's ir.json with ONE member's period count written explicitly on its timeline facet; {@code leden}
-     *  names the member list, {@code attributes} or {@code characteristics}. */
+     *  names the member list, {@code attributes} or {@code characteristics}. Since M1 a facet always carries its
+     *  count, so for 1 this restates what the golden writes; the guard that the facet is there stays. */
     private static Path metAantal(String golden, String objecttype, String leden, String lid, int aantal) throws Exception {
         ObjectNode d = (ObjectNode) JSON.readTree(Files.readString(ir(golden)));
         ObjectNode ot = IrPad.objectType(d, objecttype);

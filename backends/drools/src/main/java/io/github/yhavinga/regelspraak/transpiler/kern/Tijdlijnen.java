@@ -14,26 +14,26 @@ import java.util.Map;
  * adoption substitutes 1 for an absent entry. An explicit {@code 1} is therefore the SAME facet as no entry at all, and
  * a raster starts at 2.
  *
- * <p>The RegelSpraak frontend writes the entry only for a count other than 1 ({@code DefinitionResolver}), so no
- * frontend-produced document ever carried it at 1 and the presence test never fired wrongly on this repository's own
+ * <p>Under v0 the RegelSpraak frontend wrote the entry only for a count other than 1 ({@code DefinitionResolver}), so
+ * no frontend-produced document carried it at 1 and the presence test never fired wrongly on this repository's own
  * emitter. Every OTHER producer of the wire — a hand-built document, another frontend — walked into a silent
  * over-rejection: measured 2026-09-11 over the corpus, an explicit {@code 1} on a temporal member flipped 32 of 46
  * member positions (12 of the 17 goldens with temporal members and case files) out of the played channel, in BOTH
- * branches, while the verifier, {@code ref} and clingo all stayed unchanged on the same documents.
+ * branches, while the verifier, {@code ref} and clingo all stayed unchanged on the same documents. Since M1
+ * (2026-09-23) every {@code TimelineFacet} carries its count and the IR loader keeps it, 1 included, so an explicit 1
+ * is the ordinary entry this predicate meets on every temporal member.
  *
  * <p>An explicit count BELOW 1 is WF-005's business, not this predicate's: the verifier rejects it, so it reaches no
  * transpiler through any gate, and it reads here as single-period rather than as a raster.
  *
- * <p>A JSON <em>null</em> is a different, REACHABLE case, and the change of behaviour is real rather than theoretical.
- * The schema types these values {@code ["integer","null"]} and WF-005 fires only on a present count below 1 — it does
- * not see an absent one — so a null-valued entry is verifier-CLEAN. The loader reads it as 0, which this predicate
- * reads as single-period where the presence test read it as a raster. Measured 2026-09-11 on
- * {@code corpus/golden/synth-gehelejaarkenmerk} with {@code kenmerkTijdlijnAantal {"bedrijvig": null}}: verifier PASS,
- * {@code ref} and clingo PASS, both Drools branches EXCLUDE before this predicate and PLAYED 4 after. The new outcome
- * is the default-1 reading the verifier itself applies (WF-005's named-timeline adoption substitutes 1 for an absent
- * count), so the three executors now agree where they did not. Whether the LOADER should refuse an explicit null
- * fail-fast instead is a separate, open question: that would be a new refusal on a verifier-clean class of documents,
- * and therefore a maintainer decision rather than something to add in passing.
+ * <p>A JSON <em>null</em> count was reachable under v0: the schema typed the side-map values
+ * {@code ["integer","null"]} and WF-005 fires only on a present count below 1, so a null-valued entry was
+ * verifier-clean, and the loader read it as 0 — single-period here, where the presence test read it as a raster.
+ * Measured 2026-09-11 on {@code corpus/golden/synth-gehelejaarkenmerk} with
+ * {@code kenmerkTijdlijnAantal {"bedrijvig": null}}: verifier PASS, {@code ref} and clingo PASS, both Drools branches
+ * EXCLUDE before this predicate and PLAYED 4 after. Since M1 the count is a required integer on every
+ * {@code TimelineFacet}: the schema and the loaders refuse a null or absent count (this backend's as a document
+ * defect, {@code IrLoader.Documentfout}), so the case no longer reaches this predicate.
  */
 public final class Tijdlijnen {
     private Tijdlijnen() {}

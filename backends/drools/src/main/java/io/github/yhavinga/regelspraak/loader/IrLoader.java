@@ -527,9 +527,13 @@ public final class IrLoader {
 
     // --- declaration side --------------------------------------------------
 
-    /** IR-SPEC ch. 2.2: the member nodes back into the model's member-keyed side-maps, in the model's own
-     *  conventions — a count is kept only above 1 (absent = single-period, as the frontend records it), and an
-     *  untagged characteristic arrives tagged ZELFSTANDIG, which is what the frontend records for it. */
+    /** IR-SPEC ch. 2.2: the member nodes back into the model's member-keyed side-maps. Every facet's count is
+     *  kept, 1 included, as the OCaml loader keeps it. The frontend's model records a count only when it is not 1,
+     *  and the one reader of these tables, {@code Tijdlijnen.meerPeriodiek}, takes an absent entry and an explicit
+     *  1 for the same single-period facet, so keeping the 1 moves no outcome; what it adds is that a regression to
+     *  a presence test fails on every temporal golden instead of on none ({@code MeerPeriodiekePoortWitnessTest}).
+     *  A characteristic's kind is required on the wire since M1; the emitter writes ZELFSTANDIG for an untagged
+     *  one (ch. 2.2: untagged = nominal). */
     private Objecttype objecttype(String pad, JsonNode n) {
         velden(n, pad, "ObjectType", List.of("node", "name", "animate", "attributes", "characteristics"),
                 List.of("supertype", "plural"));
@@ -557,8 +561,7 @@ public final class IrLoader {
                 velden(tl, tp, "TimelineFacet", List.of("node", "granularity", "count"), List.of("timelineName"));
                 ot.attribuutGranulariteit.put(lid,
                         enumOf(Granulariteit.class, tekst(tl, tp, "granularity"), tp + "/granularity"));
-                int telling = telling(tl, tp);
-                if (telling != 1) ot.attribuutTijdlijnAantal.put(lid, telling);
+                ot.attribuutTijdlijnAantal.put(lid, telling(tl, tp));
                 String tijdlijnNaam = optTekst(tl, tp, "timelineName");
                 if (tijdlijnNaam != null) ot.attribuutTijdlijnNaam.put(lid, tijdlijnNaam);
             }
@@ -577,8 +580,7 @@ public final class IrLoader {
                 velden(tl, tp, "TimelineFacet", List.of("node", "granularity", "count"), List.of());
                 ot.kenmerkGranulariteit.put(lid,
                         enumOf(Granulariteit.class, tekst(tl, tp, "granularity"), tp + "/granularity"));
-                int telling = telling(tl, tp);
-                if (telling != 1) ot.kenmerkTijdlijnAantal.put(lid, telling);
+                ot.kenmerkTijdlijnAantal.put(lid, telling(tl, tp));
             }
         });
         return ot;
