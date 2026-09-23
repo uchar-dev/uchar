@@ -232,6 +232,26 @@ let ms_of_lexeme s = match Value.datetime_of_lexeme s with Value.Date_time t -> 
 
 (* --- document lookups --------------------------------------------------- *)
 
+(* ch. 3.9a / 5.7a: the order in which ref reads the members of one fold's
+   range, as far as this program can state it; its predicates are written once,
+   when a guard first needs them ([use_ro]) *)
+type range_order = {
+  ro_id : int;
+  ro_parent : string; (* the ASP variables of the fold's subject and member *)
+  ro_member : string;
+  ro_parent_ot : string;
+  ro_join : unit -> string list; (* the range join over those two variables *)
+  ro_facts : (string * string * int) list Lazy.t; (* the case's own links, in ref's order *)
+  ro_one_step : bool;
+  ro_dynamic : bool; (* a creation or fact creation may add a member at run time *)
+  ro_created : int option; (* the creations ref runs in document order, when it does *)
+  mutable ro_emitted : bool;
+}
+
+(* a part of a fold that runs per member — its die/dat filter, or a quantifier
+   fold's matrix — as translated for one member variable *)
+type part = { pt_id : int; pt_order : range_order; pt_parent : string; pt_member : string }
+
 (* ch. 10.6 for the unbound-parameter guard ([reach_at]): one record per Let
    the rule level translates *)
 type let_info = {
@@ -242,11 +262,14 @@ type let_info = {
   li_subject : string;
   li_ot : string;
   li_order : (expr * (int * bool)) list Lazy.t; (* [let_order] of the body *)
+  li_nparts : int; (* how many per-member parts enclose the Let *)
   mutable li_va : string list; (* the need's atoms, once the value is translated *)
   mutable li_entry : (string list * string * int) option; (* its [binders] entry *)
   mutable li_demand : string option; (* the demand atom, when the value has one *)
   mutable li_reads : (expr * site) list; (* every read of the binder, latest first *)
-  mutable li_asks : int list; (* the places guards asked about *)
+  mutable li_asks : (int * part list * string) list;
+      (* the places guards asked about, with the parts inside the body that
+         enclose them and the barrier predicate that answers *)
 }
 
 (* where a node is translated: what [reach_at] needs of the context *)
@@ -257,6 +280,7 @@ and site = {
   si_needs : let_info list;
   si_value_of : let_info option;
   si_outer : expr -> string list;
+  si_parts : part list; (* innermost first *)
 }
 
 type ctx = {
@@ -316,6 +340,14 @@ type ctx = {
      read of the binder with that read's reach; the value's guards wait for
      it. Binder (normalised) to (predicate, the Let's subject variable). *)
   mutable demands : (string * (string * string)) list;
+  (* the per-member parts enclosing the current node, innermost first, and the
+     serial their ids and range orders share *)
+  mutable parts : part list;
+  mutable part_serial : int;
+  (* a guard atom whose truth depends on an order the spec does not norm: the
+     atom (reached in every normed order) maps to the one reached in ref's
+     order as far as known, the one reached there alone, and what to name *)
+  mutable named : (string * (string * string * string)) list;
 }
 
 (* S ⊑ T, for the OCaml-side scans over case instances. The ASP side does
@@ -686,6 +718,15 @@ let param_unbound ctx name =
 let unbound_param_reason name =
   Printf.sprintf "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)" name
 
+(* the refusal where ref's read hangs on the order of members a creation adds
+   (maintainer decision 2026-09-23): named, never in ref's words, because
+   another order the spec allows would not read the parameter *)
+let unbound_param_order_reason name fold =
+  Printf.sprintf
+    "parameter %S is unbound in this case, and whether %s reads it depends on the order of the \
+     members a creation adds, which is not normed (ch. 3.9a/5.7a)"
+    name fold
+
 (* The fail-fast is to fire where evaluation READS the parameter: ch. 5.11
    says an operand that is never reached raises no fault, and ref reaches a
    read only down the taken branch, under a holding condition, inside a
@@ -702,9 +743,33 @@ let unbound_param_reason name =
    part and the Let lowering ([emit_barriers]); the day-kind table and the
    horizon fence read in translation and refuse there, reached or not. *)
 let unbound_param_guard ctx ~witness ~guard name =
-  if param_unbound ctx name then
-    emit ctx "viol(%s,%s) :- %s." (quote (unbound_param_reason name)) witness
-      (String.concat ", " (guard ()))
+  if param_unbound ctx name then begin
+    let body = guard () in
+    emit ctx "viol(%s,%s) :- %s." (quote (unbound_param_reason name)) witness (String.concat ", " body);
+    (* the named twin, where the read hangs on an order the spec does not norm
+       ([ctx.named]): read in ref's order as far as known, but not in every
+       normed one. One rule per such atom, split on the first that is not
+       read in every order, so the twins never overlap the guard or each other *)
+    let dep = List.sort_uniq compare (List.filter (fun a -> List.mem_assoc a ctx.named) body) in
+    List.iteri
+      (fun j a ->
+        let _, _, fold = List.assoc a ctx.named in
+        let pos b =
+          let rec go k = function [] -> None | x :: r -> if x = b then Some k else go (k + 1) r in
+          go 0 dep
+        in
+        let body' =
+          List.map
+            (fun b ->
+              match (List.assoc_opt b ctx.named, pos b) with
+              | Some (o, q, _), Some k -> if k < j then b else if k = j then q else o
+              | _ -> b)
+            body
+        in
+        emit ctx "viol(%s,%s) :- %s." (quote (unbound_param_order_reason name fold)) witness
+          (String.concat ", " body'))
+      dep
+  end
 
 (* ch. 5.11's evaluation order, as ref walks an expression: [visit] sees every
    node as it COMPLETES, a composite after its operands. A per-member part —
@@ -816,14 +881,36 @@ let read_place li node =
 
 let site ctx ~subject ~subject_ot =
   { si_subject = subject; si_ot = subject_ot; si_guard = ctx.rule_guard; si_needs = ctx.let_needs;
-    si_value_of = ctx.value_of; si_outer = ctx.param_reach }
+    si_value_of = ctx.value_of; si_outer = ctx.param_reach; si_parts = ctx.parts }
 
-(* the barrier atom of [li] for a node at place [i]: "a read of the binder came
-   before, on the path taken, and found the need leeg". Registers the place,
-   so [emit_barriers] writes its rule. *)
-let barred li i =
-  if not (List.mem i li.li_asks) then li.li_asks <- i :: li.li_asks;
-  Printf.sprintf "not lbb%d(%s,%d)" li.li_id li.li_subject i
+(* the per-member parts of site [s] inside [li]'s body, outermost first *)
+let rel_parts li (s : site) =
+  let rec take n l = if n <= 0 then [] else match l with x :: r -> x :: take (n - 1) r | [] -> [] in
+  List.rev (take (List.length s.si_parts - li.li_nparts) s.si_parts)
+
+(* the barrier atom of [li] for a node at place [i] of site [s]: "a read of the
+   binder came before, on the path taken, and found the need leeg". Inside a
+   per-member part "before" also compares members ([emit_barriers]), so the atom
+   carries the member of every part between the Let and the node. Registers the
+   ask, so [emit_barriers] writes its rules. *)
+let barred li (s : site) i =
+  let parts = rel_parts li s in
+  let ids = List.map (fun p -> p.pt_id) parts in
+  let name =
+    match List.find_opt (fun (j, ps, _) -> j = i && List.map (fun p -> p.pt_id) ps = ids) li.li_asks with
+    | Some (_, _, n) -> n
+    | None ->
+        let n =
+          if parts = [] then Printf.sprintf "lbb%d" li.li_id
+          else Printf.sprintf "lbg%d_%d" li.li_id (List.length li.li_asks)
+        in
+        li.li_asks <- (i, parts, n) :: li.li_asks;
+        n
+  in
+  if parts = [] then Printf.sprintf "not %s(%s,%d)" name li.li_subject i
+  else
+    Printf.sprintf "not %s(%s)" name
+      (String.concat "," (li.li_subject :: List.map (fun p -> p.pt_member) parts))
 
 (* the reach of [node] at site [s]: the subject, the enclosing [rule_guard]
    (condition, composite prefix, taken arm or match pattern) and the extra
@@ -849,7 +936,7 @@ let reach_at ctx ?(skip : let_info option) ?cut (s : site) (node : expr) : strin
       (fun li ->
         if li.li_depth < covered || li.li_depth <= cut_depth || Option.fold ~none:false ~some:(( == ) li) skip
         then None
-        else Option.map (barred li) (let_place li node))
+        else Option.map (barred li s) (let_place li node))
       (List.rev s.si_needs)
   in
   let atoms =
@@ -872,46 +959,147 @@ let rule_reach ?(skip : let_info option) ctx ~subject ~subject_ot =
   fun (node : expr) -> reach_at ctx ?skip s node
 
 (* the places in [li]'s body where the read at [node] (site [s]) of a binder
-   happens, each with the atoms that say it does. A read inside the value of a
-   Let nested in [li] happens where that value runs: at every read of that
-   Let's binder — the first one runs it, and a later one is reached only after
-   the first — so its places are those of the reads of that binder, joined to
-   its own reach within the value. *)
+   happens, each with the atoms that say it does and the per-member parts it
+   stands in. A read inside the value of a Let nested in [li] happens where that
+   value runs: at every read of that Let's binder — the first one runs it, and a
+   later one is reached only after the first — so its places and parts are those
+   of the reads of that binder, joined to its own reach within the value. *)
 let rec read_places ctx li ~(skip : let_info) (node, (s : site)) =
   match read_place li node with
-  | Some i -> [ (i, reach_at ctx ~skip ~cut:li s node) ]
+  | Some i -> [ (i, reach_at ctx ~skip ~cut:li s node, rel_parts li s) ]
   | None -> (
       match s.si_value_of with
       | Some m when List.memq li m.li_outer ->
           let within = reach_at ctx ~skip ~cut:li s node in
           List.concat_map
-            (fun r -> List.map (fun (i, a) -> (i, a @ within)) (read_places ctx li ~skip:m r))
+            (fun r -> List.map (fun (i, a, ps) -> (i, a @ within, ps)) (read_places ctx li ~skip:m r))
             (List.rev m.li_reads)
       | _ -> [])
 
+(* the predicates of a range order, written once:
+   - roN_m(P,X): X is in the range of subject P;
+   - roN_o(P,X,I): the case's own links, in ref's order (ch. 5.7a: a list the
+     case writes in its written order, a materialised one by ascending label;
+     a multi-step range as its flat union, first reach first);
+   - roN_n(P,X,Y): X comes before Y in every order the spec allows — the
+     case's links among themselves. A link a creation or a fact creation adds
+     has no normed place, and in a multi-step range a fact creation can move a
+     case member forward through the union, so there the case order holds only
+     without fact creations;
+   - roN_r(P,X,Y): X comes before Y in ref's order, as far as it is known here.
+     Besides roN_n: in a one-step range ref appends every run-time link after
+     the case's own, and when every creation is unconditional, initialises
+     from literals only, is not recursive and no fact creation exists, ref runs
+     them in one pass in document order, so the links one subject gets follow
+     the creation index. Nothing else is claimed: a claim that did not hold
+     would stop a guard where ref faults.
+   Returns the prefix. *)
+let use_ro ctx (ro : range_order) =
+  let p = Printf.sprintf "ro%d" ro.ro_id in
+  if not ro.ro_emitted then begin
+    ro.ro_emitted <- true;
+    emit ctx "%s_m(%s,%s) :- %s." p ro.ro_parent ro.ro_member
+      (String.concat ", " (Printf.sprintf "isa(%s,%s)" ro.ro_parent (str ro.ro_parent_ot) :: ro.ro_join ()));
+    emit ctx "#defined %s_o/3." p;
+    List.iter (fun (a, b, i) -> emit ctx "%s_o(%s,%s,%d)." p (str_raw a) (str_raw b) i) (Lazy.force ro.ro_facts);
+    emit ctx "%s_q(P,X) :- %s_o(P,X,_)." p p;
+    if ro.ro_one_step || not (ro.ro_dynamic && ctx.doc.feit_creaties <> []) then
+      emit ctx "%s_n(P,X,Y) :- %s_o(P,X,I), %s_o(P,Y,J), I < J." p p p
+    else emit ctx "#defined %s_n/3." p;
+    emit ctx "%s_r(P,X,Y) :- %s_n(P,X,Y)." p p;
+    if ro.ro_one_step && ro.ro_dynamic then begin
+      emit ctx "%s_r(P,X,Y) :- %s_q(P,X), %s_m(P,Y), not %s_q(P,Y)." p p p p;
+      match ro.ro_created with
+      | Some n ->
+          for i = 0 to n - 1 do
+            for j = i + 1 to n - 1 do
+              emit ctx "%s_r(P,oc%d(P),oc%d(P)) :- %s_m(P,oc%d(P)), %s_m(P,oc%d(P))." p i j p i p j
+            done
+          done
+      | None -> ()
+    end
+  end;
+  p
+
 (* ch. 10.6's barrier, for the guards that asked ([barred]): per Let, its need,
-   the places its binder is read with their reach, and per asked place "an
-   earlier read found the need leeg". A per-member part is ordered as one
-   member runs it, so a read that only a later member reaches counts as if it
-   came before a parameter the first member reads: there the guard stays
-   silent where ref faults. Lets are taken shallow first, because a barrier
-   rule asks only about Lets nested deeper, so every place is asked before its
-   Let is written. Only guards ask, so a case that binds its parameters
-   writes none of this. *)
+   the places its binder is read with their reach, and per ask "an earlier read
+   found the need leeg". Outside a per-member part "earlier" is the place in
+   ref's evaluation order. Inside one the members come first: every part runs
+   member by member, so a read by a member ref reads earlier ends the Let for
+   all later members, wherever in the part the read stands, and only a read by
+   the same member compares places — level by level through nested parts
+   ([roN_r] of each). A member whose order the program does not know is not
+   counted as earlier, so such a barrier cannot silence a guard ref reaches.
+   Lets are taken shallow first, because a barrier rule asks only about Lets
+   nested deeper, so every place is asked before its Let is written. Only
+   guards ask, so a case that binds its parameters writes none of this. *)
 let emit_barriers ctx =
   List.iter
     (fun li ->
       if li.li_asks <> [] then begin
-        let base = Printf.sprintf "isa(%s,%s)" li.li_subject (str li.li_ot) in
-        emit ctx "#defined lbr%d/2." li.li_id;
-        emit ctx "lbn%d(%s) :- %s." li.li_id li.li_subject (String.concat ", " (base :: li.li_va));
+        let sv = li.li_subject in
+        let base = Printf.sprintf "isa(%s,%s)" sv (str li.li_ot) in
+        let not_n = Printf.sprintf "not lbn%d(%s)" li.li_id sv in
+        emit ctx "#defined lbr%d/3." li.li_id;
+        emit ctx "lbn%d(%s) :- %s." li.li_id sv (String.concat ", " (base :: li.li_va));
+        let reads = List.concat_map (read_places ctx li ~skip:li) (List.rev li.li_reads) in
         List.iter
-          (fun (i, atoms) ->
-            emit ctx "lbr%d(%s,%d) :- %s." li.li_id li.li_subject i (String.concat ", " atoms))
-          (List.concat_map (read_places ctx li ~skip:li) (List.rev li.li_reads));
+          (fun (i, atoms, parts) ->
+            let top = match parts with q :: _ -> q.pt_id | [] -> 0 in
+            emit ctx "lbr%d(%s,%d,%d) :- %s." li.li_id sv i top (String.concat ", " atoms))
+          reads;
         List.iter
-          (fun i ->
-            emit ctx "lbb%d(S,%d) :- lbr%d(S,I), I < %d, not lbn%d(S)." li.li_id i li.li_id i li.li_id)
+          (fun (i, gparts, name) ->
+            match gparts with
+            | [] -> emit ctx "%s(S,%d) :- lbr%d(S,I,_), I < %d, not lbn%d(S)." name i li.li_id i li.li_id
+            | q1 :: _ ->
+                let bg = List.mapi (fun j _ -> Printf.sprintf "BG%d" (j + 1)) gparts in
+                let head = Printf.sprintf "%s(%s)" name (String.concat "," (sv :: bg)) in
+                let parent_of vars k = if k = 0 then sv else List.nth vars (k - 1) in
+                (* the guard's members from level [k] (0-based) down: they only
+                   make the head safe, the guard's own body says who is read *)
+                let dom k =
+                  List.concat
+                    (List.mapi
+                       (fun j (q : part) ->
+                         if j >= k then
+                           [ Printf.sprintf "%s_m(%s,%s)" (use_ro ctx q.pt_order) (parent_of bg j) (List.nth bg j) ]
+                         else [])
+                       gparts)
+                in
+                if q1.pt_parent <> sv then
+                  fault "a per-member part directly in a Let's body ranges over the subject %s, not the Let's %s"
+                    q1.pt_parent sv;
+                emit ctx "%s :- %s." head
+                  (String.concat ", "
+                     ([ Printf.sprintf "lbr%d(%s,I,T)" li.li_id sv; Printf.sprintf "T != %d" q1.pt_id;
+                        Printf.sprintf "I < %d" i; not_n ]
+                     @ dom 0));
+                List.iter
+                  (fun (ir, atoms, rparts) ->
+                    match rparts with
+                    | p1 :: _ when p1.pt_id = q1.pt_id ->
+                        let xs = List.map (fun (q : part) -> q.pt_member) rparts in
+                        let rec common a b =
+                          match (a, b) with
+                          | (x : part) :: a', (y : part) :: b' when x.pt_id = y.pt_id -> 1 + common a' b'
+                          | _ -> 0
+                        in
+                        let c = common rparts gparts in
+                        let eqs k = List.init k (fun j -> Printf.sprintf "%s = %s" (List.nth bg j) (List.nth xs j)) in
+                        for lvl = 0 to c - 1 do
+                          let pk = List.nth rparts lvl in
+                          emit ctx "%s :- %s." head
+                            (String.concat ", "
+                               (atoms @ eqs lvl
+                               @ [ Printf.sprintf "%s_r(%s,%s,%s)" (use_ro ctx pk.pt_order) (parent_of xs lvl)
+                                     (List.nth xs lvl) (List.nth bg lvl) ]
+                               @ dom (lvl + 1) @ [ not_n ]))
+                        done;
+                        if ir < i then
+                          emit ctx "%s :- %s." head (String.concat ", " (atoms @ eqs c @ dom c @ [ not_n ]))
+                    | _ -> ())
+                  reads)
           (List.rev li.li_asks)
       end)
     (List.stable_sort (fun a b -> compare a.li_depth b.li_depth) (List.rev ctx.lets))
@@ -1014,8 +1202,12 @@ let note_binder_read ctx ~subject ~subject_ot (node : expr) naam =
           match li.li_demand with
           | None -> ()
           | Some d ->
+              (* reached in ref's order as far as known ([ctx.named]): the demand
+                 may then be derived where ref does not read the binder, which
+                 is loud, never where it does *)
+              let ref_order a = match List.assoc_opt a ctx.named with Some (o, _, _) -> o | None -> a in
               emit ctx "%s :- %s." d
-                (String.concat ", " (rule_reach ~skip:li ctx ~subject ~subject_ot node))))
+                (String.concat ", " (List.map ref_order (rule_reach ~skip:li ctx ~subject ~subject_ot node)))))
 
 (* the canonical role name: the plural for a to-many role, the singular
    otherwise — the same convention the case facts use *)
@@ -1090,14 +1282,54 @@ let source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x =
    shared fail-fast fired for every instance of the element type, members of
    no range among them, and the enclosing [rule_guard] — which speaks of the
    subject, not of [x] — had nothing to bind it. [join] is a thunk: it is
-   recomputed only when a parameter is in fact unbound. *)
-let with_member_reach ctx ~subject ~subject_ot ~join f =
-  let saved = ctx.param_reach in
+   recomputed only when a parameter is in fact unbound. [part] marks a part
+   that runs member by member, for the Let barriers inside it. *)
+let with_member_reach ctx ~subject ~subject_ot ~join ?part f =
+  let saved = ctx.param_reach and saved_p = ctx.parts in
   ctx.param_reach <-
     (fun name -> (Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: join ()) @ saved name);
+  (match part with Some pt -> ctx.parts <- pt :: ctx.parts | None -> ());
   let r = f () in
   ctx.param_reach <- saved;
+  ctx.parts <- saved_p;
   r
+
+(* the range order of a fold over [el] from [subject] ([use_ro]), and a part
+   of it for member variable [x] *)
+let range_order ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x ~join =
+  ctx.part_serial <- ctx.part_serial + 1;
+  let doc = ctx.doc in
+  let literal = function Some (Literal _) | None -> true | Some _ -> false in
+  { ro_id = ctx.part_serial; ro_parent = subject; ro_member = x; ro_parent_ot = subject_ot; ro_join = join;
+    ro_facts =
+      lazy
+        (Eval.SMap.fold
+           (fun _ (i : Uchar_ref.World.instance) acc ->
+             if isa ctx i.otype subject_ot then
+               List.mapi
+                 (fun k (mi : Uchar_ref.World.instance) -> (i.label, mi.label, k))
+                 (Eval.fold_members ?binding:bron_rol ?path:bron_pad env ctx.case.world i ~element:el)
+               @ acc
+             else acc)
+           ctx.case.world.instances []);
+    ro_one_step = bron_pad = None;
+    ro_dynamic = doc.object_creaties <> [] || doc.feit_creaties <> [];
+    ro_created =
+      (if
+         doc.feit_creaties = []
+         && (not (has_recursive_creation doc))
+         && List.for_all
+              (fun (oc : resolved_object_creatie) ->
+                oc.oc_voorwaarde = None
+                && List.for_all (fun (t : toekenning) -> literal t.toe_waarde) oc.toekenningen)
+              doc.object_creaties
+       then Some (List.length doc.object_creaties)
+       else None);
+    ro_emitted = false }
+
+let new_part ctx (ro : range_order) =
+  ctx.part_serial <- ctx.part_serial + 1;
+  { pt_id = ctx.part_serial; pt_order = ro; pt_parent = ro.ro_parent; pt_member = ro.ro_member }
 
 let lexeme_decimals lex =
   match String.index_opt lex '.' with
@@ -2153,8 +2385,8 @@ let bind_let ctx ~subject ~subject_ot ~binder ~value ~body translate_value =
   let li =
     { li_id = ctx.let_serial; li_binder = norm binder; li_depth = List.length ctx.let_needs;
       li_outer = ctx.let_needs; li_subject = subject; li_ot = subject_ot;
-      li_order = lazy (let_order body); li_va = []; li_entry = None; li_demand = None; li_reads = [];
-      li_asks = [] }
+      li_order = lazy (let_order body); li_nparts = List.length ctx.parts; li_va = []; li_entry = None;
+      li_demand = None; li_reads = []; li_asks = [] }
   in
   ctx.lets <- li :: ctx.lets;
   let demand = demand_for ctx ~subject value in
@@ -2292,45 +2524,38 @@ let emit_value_days ctx ~p ~attr ~sat =
    contributors, and at-most over few enough, read nothing at all. The fold's
    verdict never needs this (the triggers never change a truth value); what it
    changes is which matrix reads happen, and therefore where a parameter the
-   case does not bind faults. [reach](S,X) says that member X of S is read.
+   case does not bind faults.
 
-   The order is ref's: [order] carries, per subject in the case, its members
-   as ref's own fold walk lists them — a list the case writes in its written
-   order, a materialised one by ascending label (ch. 5.7a). The count before
-   X is taken over contributors only, so the filter keeps that order exactly.
-   A member without an order fact entered the range at run time, through a
-   creation, and ref appends such links after the case's own: before a
-   case-supplied member of a one-step range there are only case-supplied
-   ones, which is exact. Among themselves created links follow ref's creation
-   order, which this program does not have, so a created member counts every
-   other contributor as read before it, and a multi-step range — where a
-   created intermediate link can put its members between the case's —
-   counts every created contributor as read before a case-supplied one. Both
-   take the largest prefix any creation order can give, so the guard fires
-   only where every order reaches the member: never where ref plays, but it
-   can stay silent there where one creation order reaches it and another
-   does not. Stratified by construction: the helpers read the matrix and the
-   range, and only the guard reads them. *)
+   The members before X are counted over contributors only, so the filter
+   keeps the order exactly, and the outcome is open or settled by the trigger
+   table over them. Two prefixes, from the range order ([use_ro]):
+   - [reach](S,X): every contributor that may come before X in SOME order the
+     spec allows — all but those the case order puts after it. Open there,
+     X is read in every allowed order, so ref reads it: the guard fires in
+     ref's words.
+   - [reach]_o(S,X), only where a creation or a fact creation can add a
+     member: the contributors that come before X in ref's order as far as it
+     is known. Open there and not above, whether X is read depends on where the
+     added members stand, which the spec does not norm ([reach]_q); the guard
+     fires in a sentence that names that, never in ref's. Settled there, ref
+     does not read X. That prefix is the smallest ref can have — also in an
+     earlier pass, before a creation filled the range — so it cannot silence a
+     read ref makes; N is the final contributor count, the largest.
+   Stratified by construction: the helpers read the matrix and the range, and
+   only the guards read them. *)
 let emit_kv_reach ctx ~reach ~subject ~subject_ot ~x ~join ~fatoms ~atoms ~kwantor ~drempel
-    ~multi_step ~order =
-  let m = reach ^ "_m" and h = reach ^ "_h" and o = reach ^ "_o" in
-  let q = reach ^ "_q" and n = reach ^ "_n" and b = reach ^ "_b" in
+    ~(ro : range_order) =
+  let rp = use_ro ctx ro in
+  let m = reach ^ "_m" and h = reach ^ "_h" and n = reach ^ "_n" and b = reach ^ "_b" in
   let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
   emit ctx "%s(%s,%s) :- %s." m subject x (String.concat ", " ((base :: join) @ fatoms));
   emit ctx "%s(%s,%s) :- %s." h subject x
     (String.concat ", " (Printf.sprintf "%s(%s,%s)" m subject x :: atoms));
-  List.iter (fun (s, e, i) -> emit ctx "%s(%s,%s,%d)." o (str_raw s) (str_raw e) i) order;
-  emit ctx "%s(S,X) :- %s(S,X,_)." q o;
   emit ctx "%s(S,N) :- isa(S,%s), N = #count{ X : %s(S,X) }." n (str subject_ot) m;
-  let created p = if multi_step then Printf.sprintf "; Y : %s(S,Y), not %s(S,Y)" p q else "" in
-  emit ctx
-    "%s(S,X,K,H) :- %s(S,X), %s(S,X,I), K = #count{ Y : %s(S,Y), %s(S,Y,J), J < I%s }, H = \
-     #count{ Y : %s(S,Y), %s(S,Y,J), J < I%s }."
-    b m o m o (created m) h o (created h);
-  emit ctx
-    "%s(S,X,K,H) :- %s(S,X), not %s(S,X), K = #count{ Y : %s(S,Y), Y != X }, H = #count{ Y : \
-     %s(S,Y), Y != X }."
-    b m q m h;
+  let prefix name before =
+    emit ctx "%s(S,X,K,H) :- %s(S,X), K = #count{ Y : %s(S,Y), %s }, H = #count{ Y : %s(S,Y), %s }."
+      name m m before h before
+  in
   let still_open =
     match kwantor with
     | Alle | De -> "H == K"
@@ -2339,7 +2564,14 @@ let emit_kv_reach ctx ~reach ~subject ~subject_ot ~x ~join ~fatoms ~atoms ~kwant
     | Ten_hoogste -> Printf.sprintf "H <= %d, H + N - K > %d" drempel drempel
     | Precies -> Printf.sprintf "H <= %d, H + N - K >= %d" drempel drempel
   in
-  emit ctx "%s(S,X) :- %s(S,X,K,H), %s(S,N), %s." reach b n still_open
+  prefix b (Printf.sprintf "Y != X, not %s_n(S,X,Y)" rp);
+  emit ctx "%s(S,X) :- %s(S,X,K,H), %s(S,N), %s." reach b n still_open;
+  if ro.ro_dynamic then begin
+    let c = reach ^ "_c" in
+    prefix c (Printf.sprintf "%s_r(S,Y,X)" rp);
+    emit ctx "%s_o(S,X) :- %s(S,X,K,H), %s(S,N), %s." reach c n still_open;
+    emit ctx "%s_q(S,X) :- %s_o(S,X), not %s(S,X)." reach reach reach
+  end
 
 (* a chain of Lets over a Match in a closed body, as [body_branches] pushes it
    into the arms: [Some (lets, scrutinee, arms)], the Lets outermost first, when
@@ -2647,8 +2879,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         match filter with
         | None -> []
         | Some c ->
-            with_member_reach ctx ~subject ~subject_ot
-              ~join:(fun () -> source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad:None ~x)
+            let join () = source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad:None ~x in
+            with_member_reach ctx ~subject ~subject_ot ~join
+              ~part:(new_part ctx (range_order ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad:None ~x ~join))
               (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el c)
       in
       let join = source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad:None ~x in
@@ -2765,8 +2998,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         match filter with
         | None -> []
         | Some c ->
-            with_member_reach ctx ~subject ~subject_ot ~join:(fun () -> join) (fun () ->
-                cond_atoms ctx ~subject:x ~subject_ot:el c)
+            let join () = join in
+            with_member_reach ctx ~subject ~subject_ot ~join
+              ~part:(new_part ctx (range_order ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x ~join))
+              (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el c)
       in
       let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       let contrib_body, sum_shape =
@@ -3192,8 +3427,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         match filter with
         | None -> []
         | Some c ->
-            with_member_reach ctx ~subject ~subject_ot
-              ~join:(fun () -> source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x)
+            let join () = source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x in
+            with_member_reach ctx ~subject ~subject_ot ~join
+              ~part:(new_part ctx (range_order ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x ~join))
               (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el c)
       in
       let contrib_body =
@@ -3258,8 +3494,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         match filter with
         | None -> []
         | Some c ->
-            with_member_reach ctx ~subject ~subject_ot
-              ~join:(fun () -> source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x)
+            let join () = source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x in
+            with_member_reach ctx ~subject ~subject_ot ~join
+              ~part:(new_part ctx (range_order ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x ~join))
               (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el c)
       in
       let contrib_body =
@@ -6121,7 +6358,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
       [ Printf.sprintf "%s_h%d(%s,%s)" p n subject h; compare ]
   | Kwantorvouw
       { kv_kwantor; kv_drempel; kv_element_objecttype; kv_filter; kv_toets; kv_bron_rol;
-        kv_bron_pad; _ } ->
+        kv_bron_pad; kv_bron; _ } ->
       periode_onder_telkwantor kv_kwantor (List.filter_map Fun.id [ kv_filter; kv_toets ]);
       (* RUNTIME-SEMANTICS ch. 3.9a: the QUANTIFIER FOLD — "⟨kwantor⟩ ⟨elementen⟩
          ⟨matrix⟩", over the five quantifiers WF-108 admits. Its contributors are
@@ -6186,7 +6423,13 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
         source_join ctx env ~subject ~subject_ot ~el ~bron_rol:kv_bron_rol ~bron_pad:kv_bron_pad
           ~x
       in
-      let member f = with_member_reach ctx ~subject ~subject_ot ~join:(fun () -> join) f in
+      let ro =
+        range_order ctx env ~subject ~subject_ot ~el ~bron_rol:kv_bron_rol ~bron_pad:kv_bron_pad ~x
+          ~join:(fun () -> join)
+      in
+      let member f =
+        with_member_reach ctx ~subject ~subject_ot ~join:(fun () -> join) ~part:(new_part ctx ro) f
+      in
       let fatoms =
         match kv_filter with
         | None -> []
@@ -6195,38 +6438,45 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
       (* the filter is read for every member in range, the matrix only while
          the fold's outcome is still open ([emit_kv_reach]). The guard in the
          matrix waits for that; the helpers exist only once such a guard asks,
-         so a case that binds its parameters translates as before *)
-      let reach = ref None in
+         so a case that binds its parameters translates as before. Where a
+         creation can add a member, the order the guard depends on is not
+         normed, and the guard has a named twin ([unbound_param_guard]) *)
+      let reach = ref None and matrix = ref None in
       let reached () =
         match !reach with
         | Some r -> r
         | None ->
             let r = fresh ctx "kvr" in
             reach := Some r;
+            (* asked only after the matrix was translated — by a Let barrier's
+               read, whose reach is built at the end: the helpers are written now *)
+            (match !matrix with
+            | Some atoms ->
+                emit_kv_reach ctx ~reach:r ~subject ~subject_ot ~x ~join ~fatoms ~atoms
+                  ~kwantor:kv_kwantor ~drempel ~ro
+            | None -> ());
+            (if ro.ro_dynamic then
+               let at suffix = Printf.sprintf "%s%s(%s,%s)" r suffix subject x in
+               let fold =
+                 match kv_bron with
+                 | Some b -> Printf.sprintf "the quantifier fold %S" b
+                 | None -> Printf.sprintf "the quantifier fold over %s" el
+               in
+               ctx.named <- (at "", (at "_o", at "_q", fold)) :: ctx.named);
             r
       in
       let atoms =
         with_member_reach ctx ~subject ~subject_ot
           ~join:(fun () -> join @ [ Printf.sprintf "%s(%s,%s)" (reached ()) subject x ])
+          ~part:(new_part ctx ro)
           (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el toets)
       in
+      matrix := Some atoms;
       (match !reach with
       | None -> ()
       | Some r ->
-          let order =
-            Eval.SMap.fold
-              (fun _ (i : Uchar_ref.World.instance) acc ->
-                if isa ctx i.otype subject_ot then
-                  List.mapi
-                    (fun k (mi : Uchar_ref.World.instance) -> (i.label, mi.label, k))
-                    (Eval.fold_members ?binding:kv_bron_rol ?path:kv_bron_pad env ctx.case.world i
-                       ~element:el)
-                  @ acc
-                else acc)
-              ctx.case.world.instances []
-          in
-          emit_kv_reach ctx ~reach:r ~subject ~subject_ot ~x ~join ~fatoms ~atoms
-            ~kwantor:kv_kwantor ~drempel ~multi_step:(kv_bron_pad <> None) ~order);
+          emit_kv_reach ctx ~reach:r ~subject ~subject_ot ~x ~join ~fatoms ~atoms ~kwantor:kv_kwantor
+            ~drempel ~ro);
       (match kv_kwantor with
       | Ten_minste | Ten_hoogste | Precies ->
           (* the COUNTING quantifiers (ch. 3.9a): the verdict is a number,
@@ -9539,7 +9789,7 @@ let translate (doc : document) (case : Case.t) : string =
   let ctx =
     { doc; case; buf = Buffer.create 4096; fresh = 0; rule_guard = []; write_scale = 1;
       rule_name = "?"; binders = []; param_reach = (fun _ -> []); let_needs = []; value_of = None;
-      lets = []; let_serial = 0; demands = [] }
+      lets = []; let_serial = 0; demands = []; parts = []; part_serial = 0; named = [] }
   in
   (* ch. 8.4: the shared session-start Parameterset coverage check —
      data-plane validation (like the shared case loader), run before a

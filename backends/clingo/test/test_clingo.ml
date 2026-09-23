@@ -9396,6 +9396,252 @@ let () =
   unbound_fires ~name:"closed body: the arm's branch that reads k is taken (cl-3, control)" ~ir:cl3 ~param:"p"
     ~case_text:(pf_case ~instances:[ j1 [ Some "5.00" ] ] leeg) ~silent:"totaal leeg"
 
+(* FIXRONDE 3, point 2: a Let barrier in a part that runs member by member is
+   exact. The part ran "as one member", so a read by a LATER member counted as
+   before a parameter an earlier member reads (silent), and a read by an
+   EARLIER member counted as after one a later member reads (loud). Now
+   members come first — the barrier of member i ends the Let for all later
+   members, wherever in the part it stands — and places only within a member,
+   level by level through nested parts. Werf W1, schuiten S1 (3) and S2 (8),
+   restpost leeg: in pm-over-1 S1's filter reads k and the barrier ends the Let
+   before S2's filter reads p; in pm-silent-8 S1's filter reads p before S2's
+   reads k. pm-nest puts the same in a quantifier fold over each schuit's
+   ladingen inside the set fold's filter. *)
+let () =
+  let werf =
+    pf_ot ~naam:"Werf" ~meervoud:"Werven" (Printf.sprintf {|"bonus": %s, "restpost": %s|} pf_n0 pf_n0)
+  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" (Printf.sprintf {|"lengte": %s|} pf_n0)
+  and lading = pf_ot ~naam:"Lading" ~meervoud:"Ladingen" (Printf.sprintf {|"gewicht": %s|} pf_n0) in
+  let feittypen =
+    {|{ "ligplaats": { "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
+      { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] },
+      "lading": { "node": "Feittype", "naam": "lading", "wederkerig": false, "rollen": [
+      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "lading", "objecttypeNaam": "Lading", "meervoud": "ladingen", "meervoudig": true } ] } }|}
+  in
+  let lengte = pf_a ~ot:"Schuit" ~typ:pf_n0 "lengte" and gewicht = pf_a ~ot:"Lading" ~typ:pf_n0 "gewicht" in
+  let p = pf_p ~typ:pf_n0 "p" and vijf = pf_l ~typ:pf_n0 "5" and nul = pf_l ~typ:pf_n0 "0" in
+  let k = Printf.sprintf {|{ "node": "BinderRef", "name": "k", "type": %s, "bron": "de k" }|} pf_n0 in
+  let gt l r = pf_cmp "GROTER" l r in
+  let som filter =
+    Printf.sprintf
+      {|{ "node": "Functie", "kind": "SOM",
+        "argumenten": [ { "node": "AttribuutRef", "attribuut": "lengte", "objecttype": "Schuit",
+          "onderwerpBron": "alle schuiten", "navigatieRol": null, "type": %s,
+          "bron": "de lengte van alle schuiten", "set": true, "navigatiePad": [] } ],
+        "elementObjecttype": "Schuit", "leegwaarde": null, "filter": %s, "dimensieSelectie": null,
+        "type": %s, "bron": "de som", "granulariteit": null,
+        "bronRol": { "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" } }|}
+      pf_n0 filter pf_n0
+  in
+  let doc filter =
+    pf_doc ~objecttypen:[ werf; schuit; lading ] ~feittypen ~parameters:[ pf_decl ~typ:pf_n0 "p" ]
+      ~regels:
+        [ pf_regel ~ot:"Werf" ~doel:"bonus" ~typ:pf_n0
+            (Printf.sprintf
+               {|{ "node": "Let", "type": %s, "binder": "k", "value": %s, "body": %s, "bron": "let k" }|}
+               pf_n0 (pf_a ~ot:"Werf" ~typ:pf_n0 "restpost") (som filter)) ]
+      ()
+  in
+  let inst label ot attrs roles =
+    Printf.sprintf
+      {|{ "label": "%s", "objectType": "%s", "attributes": { %s }, "roles": { %s }, "characteristics": [] }|}
+      label ot attrs roles
+  in
+  let number a v = Printf.sprintf {|"%s": { "number": "%s" }|} a v in
+  let werven ?(restpost = "") order =
+    inst "W1" "Werf" restpost
+      (Printf.sprintf {|"schuiten": [ %s ]|} (String.concat ", " (List.map (Printf.sprintf {|"%s"|}) order)))
+    :: [ inst "S1" "Schuit" (number "lengte" "3") ""; inst "S2" "Schuit" (number "lengte" "8") "" ]
+  in
+  let bonus_leeg = [ pf_leeg ~label:"W1" ~attr:"bonus" (); pf_cons ] in
+  let over1 = doc (pf_comp "GEEN" [ pf_comp "ALLE" [ gt lengte vijf; gt lengte p ]; gt k nul ]) in
+  both_answer ~name:"Let, lazy: S1's filter reads k, which ends the Let before S2's reads p (pm-over-1)"
+    ~ir:over1 ~case_text:(pf_case ~instances:(werven [ "S1"; "S2" ]) bonus_leeg);
+  unbound_fires ~name:"Let: S1's filter reads a filled k, S2's then reads p (pm-over-1, control)" ~ir:over1
+    ~param:"p" ~case_text:(pf_case ~instances:(werven ~restpost:(number "restpost" "1") [ "S1"; "S2" ]) bonus_leeg)
+    ~silent:"bonus leeg";
+  let silent8 = doc (pf_comp ~drempel:1 "TEN_MINSTE" [ pf_comp "ALLE" [ gt lengte vijf; gt k nul ]; gt lengte p ]) in
+  unbound_fires ~name:"Let: S1's filter reads p before S2's reads k (pm-silent-8)" ~ir:silent8 ~param:"p"
+    ~case_text:(pf_case ~instances:(werven [ "S1"; "S2" ]) bonus_leeg)
+    ~silent:"bonus leeg: S2's read of k counted as before S1's read of p";
+  both_answer ~name:"Let, lazy: S2's filter reads k before S1's would read p (pm-silent-8, control)"
+    ~ir:silent8 ~case_text:(pf_case ~instances:(werven [ "S2"; "S1" ]) bonus_leeg);
+  let nest =
+    doc
+      (Printf.sprintf
+         {|{ "node": "Kwantorvouw", "kwantor": "ALLE", "elementObjecttype": "Lading", "filter": null,
+             "toets": %s, "bron": "de ladingen",
+             "bronRol": { "node": "RolBinding", "feittype": "lading", "rol": "lading" } }|}
+         (pf_comp ~drempel:1 "TEN_MINSTE" [ pf_comp "ALLE" [ gt gewicht vijf; gt k nul ]; gt gewicht p ]))
+  in
+  let geladen g1 g2 =
+    [ inst "W1" "Werf" "" {|"schuiten": [ "S1", "S2" ]|};
+      inst "S1" "Schuit" (number "lengte" "4") {|"ladingen": [ "L1" ]|};
+      inst "S2" "Schuit" (number "lengte" "6") {|"ladingen": [ "L2" ]|};
+      inst "L1" "Lading" (number "gewicht" g1) ""; inst "L2" "Lading" (number "gewicht" g2) "" ]
+  in
+  both_answer ~name:"Let, lazy: nested, S1's lading reads k before S2's would read p (pm-nest-a, control)"
+    ~ir:nest ~case_text:(pf_case ~instances:(geladen "8" "3") bonus_leeg);
+  unbound_fires ~name:"Let: nested, S1's lading reads p before S2's reads k (pm-nest-b)" ~ir:nest ~param:"p"
+    ~case_text:(pf_case ~instances:(geladen "3" "8") bonus_leeg)
+    ~silent:"bonus leeg: S2's lading's read of k counted as before S1's read of p";
+  (* the matrix reads only k and p follows the fold: the matrix's reach is
+     first asked by the barrier rules, at the end of the translation, and its
+     helpers were then never written, so the read never counted and the guard
+     on p fired where the barrier had ended the Let *)
+  let late =
+    pf_doc ~objecttypen:[ werf; schuit; lading ] ~feittypen ~parameters:[ pf_decl ~typ:pf_n0 "p" ]
+      ~regels:
+        [ pf_regel ~ot:"Werf" ~doel:"bonus" ~typ:pf_n0
+            (Printf.sprintf
+               {|{ "node": "Let", "type": %s, "binder": "k", "value": %s, "body": %s, "bron": "let k" }|}
+               pf_n0 (pf_a ~ot:"Werf" ~typ:pf_n0 "restpost")
+               (pf_bin ~typ:pf_n0 "PLUS"
+                  (som
+                     (Printf.sprintf
+                        {|{ "node": "Kwantorvouw", "kwantor": "ALLE", "elementObjecttype": "Lading", "filter": null,
+                            "toets": %s, "bron": "de ladingen",
+                            "bronRol": { "node": "RolBinding", "feittype": "lading", "rol": "lading" } }|}
+                        (gt k nul)))
+                  p)) ]
+      ()
+  in
+  both_answer ~name:"Let, lazy: k read in a nested matrix ends the Let before p (late matrix reach)" ~ir:late
+    ~case_text:(pf_case ~instances:(geladen "8" "3") bonus_leeg)
+
+(* FIXRONDE 3, point 4 (maintainer decision 2026-09-23): members a creation
+   adds to a quantifier fold's range have no normed order (ch. 3.9a/5.7a). Where
+   that order decides whether the matrix reads the unbound parameter, clingo
+   refuses in a sentence that names it, never in ref's words; where every
+   allowed order reads it, the guard fires in ref's words; where ref's own order
+   (case links first, then the creations in document order) does not, both
+   play. W1 without schuiten in the case unless stated; each creation mints one
+   schuit for every werf; matrix TEN MINSTE 1 [lengte > 5, lengte > p], or ALLE
+   [lengte > 5, lengte > p] for mx. ms-2/ms-4 range over a haven's werven'
+   schuiten: S1 (3) at W1, S2 (8) at W2, and one created schuit of 8 per werf. *)
+let order_named ~name ~ir ~case_text ~param =
+  let doc, case = load_pair ~ir ~case_text in
+  (match ref_report doc case with
+  | _ -> check (name ^ ": ref faults (it evaluated)") false
+  | exception Uchar_ref.Value.Fault m ->
+      check (name ^ ": ref faults (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle:(pf_reason param) m));
+  let named =
+    Printf.sprintf "parameter %S is unbound in this case, and whether the quantifier fold" param
+  and not_normed = "depends on the order of the members a creation adds, which is not normed (ch. 3.9a/5.7a)" in
+  let label = name ^ ": clingo refuses in the named sentence" in
+  match translate doc case with
+  | exception Uchar_ref.Value.Fault m -> check (label ^ " (translation fault: " ^ m ^ ")") false
+  | program -> (
+      match Solve.run_clingo program with
+      | _, Unix.WEXITED 20 ->
+          let ws = Solve.diagnose program in
+          check
+            (label ^ " (" ^ String.concat "; " ws ^ ")")
+            (List.exists
+               (fun w -> Uchar_ref.Case.contains ~needle:named w && Uchar_ref.Case.contains ~needle:not_normed w)
+               ws
+            && not (List.exists (fun w -> Uchar_ref.Case.contains ~needle:(pf_reason param) w) ws))
+      | out, Unix.WEXITED (10 | 30) ->
+          let answered =
+            match Model.check doc case (Model.model_of_outf2 (Yojson.Safe.from_string out)) with
+            | [] -> "clingo answered the case's rows"
+            | ms -> "clingo answered: " ^ String.concat "; " ms
+          in
+          check (label ^ " (" ^ answered ^ ")") false
+      | _, _ -> check (label ^ " (clingo did not run)") false)
+
+let () =
+  let werf = pf_ot ~naam:"Werf" ~meervoud:"Werven" (Printf.sprintf {|"keur": %s|} pf_n0)
+  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" (Printf.sprintf {|"lengte": %s|} pf_n0)
+  and haven = pf_ot ~naam:"Haven" ~meervoud:"Havens" (Printf.sprintf {|"keur": %s|} pf_n0) in
+  let ligplaats =
+    {|"ligplaats": { "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
+      { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] }|}
+  and havenwerf =
+    {|"havenwerf": { "node": "Feittype", "naam": "havenwerf", "wederkerig": false, "rollen": [
+      { "node": "Rol", "naam": "haven", "objecttypeNaam": "Haven", "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": "werven", "meervoudig": true } ] }|}
+  in
+  let lengte = pf_a ~ot:"Schuit" ~typ:pf_n0 "lengte" and p = pf_p ~typ:pf_n0 "p" in
+  let gt l r = pf_cmp "GROTER" l r and vijf = pf_l ~typ:pf_n0 "5" in
+  let schuiten = {|{ "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" }|} in
+  let kv ?drempel ?pad kwantor toets =
+    Printf.sprintf
+      {|{ "node": "Kwantorvouw", "kwantor": "%s"%s, "elementObjecttype": "Schuit", "filter": null,
+        "toets": %s, "bron": "de schuiten", %s }|}
+      kwantor
+      (match drempel with Some d -> Printf.sprintf {|, "drempel": %d|} d | None -> "")
+      toets
+      (match pad with
+      | Some () ->
+          Printf.sprintf
+            {|"bronPad": [ { "node": "RolBinding", "feittype": "havenwerf", "rol": "werf" }, %s ]|} schuiten
+      | None -> Printf.sprintf {|"bronRol": %s|} schuiten)
+  in
+  let creatie i v =
+    Printf.sprintf
+      {|{ "node": "ResolvedObjectCreatie", "naam": "maak schuit %d", "nieuwType": "Schuit", "subject": "Werf",
+          "toekenningen": [ { "node": "Toekenning", "attribuut": "lengte", "waarde": %s, "kenmerk": false } ],
+          "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null },
+          "verbindendeRol": %s }|}
+      i (pf_l ~typ:pf_n0 v) schuiten
+  in
+  let doc ?(ot = "Werf") ?(feittypen = "{ " ^ ligplaats ^ " }") ~creaties voorwaarde =
+    pf_doc ~objecttypen:[ haven; werf; schuit ] ~feittypen ~parameters:[ pf_decl ~typ:pf_n0 "p" ]
+      ~regels:[ pf_regel ~ot ~doel:"keur" ~typ:pf_n0 ~voorwaarde (pf_l ~typ:pf_n0 "99") ]
+      ~creaties:(List.mapi creatie creaties) ()
+  in
+  let inst label ot attrs roles =
+    Printf.sprintf
+      {|{ "label": "%s", "objectType": "%s", "attributes": { %s }, "roles": { %s }, "characteristics": [] }|}
+      label ot attrs roles
+  in
+  let lengte_is v = Printf.sprintf {|"lengte": { "number": "%s" }|} v in
+  let w1 ?(case = []) () =
+    inst "W1" "Werf" ""
+      (if case = [] then ""
+       else
+         Printf.sprintf {|"schuiten": [ %s ]|} (String.concat ", " (List.map (fun (l, _) -> Printf.sprintf {|"%s"|} l) case)))
+    :: List.map (fun (l, v) -> inst l "Schuit" (lengte_is v) "") case
+  in
+  let keur ?(label = "W1") v =
+    [ (match v with Some v -> pf_is ~label ~attr:"keur" v | None -> pf_leeg ~label ~attr:"keur" ()); pf_cons ]
+  in
+  let of_ = pf_comp ~drempel:1 "TEN_MINSTE" [ gt lengte vijf; gt lengte p ] in
+  let minst = kv ~drempel:1 "TEN_MINSTE" of_ in
+  order_named ~name:"created members: 3 then 8, the first read reads p (cr-3-8)"
+    ~ir:(doc ~creaties:[ "3"; "8" ] minst) ~param:"p" ~case_text:(pf_case ~instances:(w1 ()) (keur (Some "99")));
+  both_answer ~name:"created members: 8 then 3, ref's order stops at 8 (cr-8-3)"
+    ~ir:(doc ~creaties:[ "8"; "3" ] minst) ~case_text:(pf_case ~instances:(w1 ()) (keur (Some "99")));
+  both_answer ~name:"created members: the case's 8 before a created 3 (cr-case8-new3)"
+    ~ir:(doc ~creaties:[ "3" ] minst) ~case_text:(pf_case ~instances:(w1 ~case:[ ("S1", "8") ] ()) (keur (Some "99")));
+  unbound_fires ~name:"created members: one created 3 is read in every order (control)"
+    ~ir:(doc ~creaties:[ "3" ] minst) ~param:"p" ~case_text:(pf_case ~instances:(w1 ()) (keur None))
+    ~silent:"keur leeg";
+  let alle = kv "ALLE" (pf_comp "ALLE" [ gt lengte vijf; gt lengte p ]) in
+  order_named ~name:"created members: ALLE over 8 then 3 reads p at 8 (mx-alle_new8-new3)"
+    ~ir:(doc ~creaties:[ "8"; "3" ] alle) ~param:"p" ~case_text:(pf_case ~instances:(w1 ()) (keur None));
+  let ms kwantor ?drempel creaties =
+    doc ~ot:"Haven" ~feittypen:("{ " ^ ligplaats ^ ", " ^ havenwerf ^ " }") ~creaties
+      (kv ?drempel ~pad:() kwantor of_)
+  in
+  let haven_case =
+    [ inst "H1" "Haven" "" {|"werven": [ "W1", "W2" ]|};
+      inst "W1" "Werf" "" {|"schuiten": [ "S1" ]|}; inst "W2" "Werf" "" {|"schuiten": [ "S2" ]|};
+      inst "S1" "Schuit" (lengte_is "3") ""; inst "S2" "Schuit" (lengte_is "8") "" ]
+  in
+  order_named ~name:"created members: GEEN over two steps, S1 first in ref's order (ms-2)"
+    ~ir:(ms "GEEN" [ "8" ]) ~param:"p" ~case_text:(pf_case ~instances:haven_case (keur ~label:"H1" None));
+  order_named ~name:"created members: at-least 1 over two steps, S1 first in ref's order (ms-4)"
+    ~ir:(ms ~drempel:1 "TEN_MINSTE" [ "8" ]) ~param:"p"
+    ~case_text:(pf_case ~instances:haven_case (keur ~label:"H1" (Some "99")));
+  unbound_fires ~name:"created members: the same two steps without a creation (ms-2, control)"
+    ~ir:(ms "GEEN" []) ~param:"p" ~case_text:(pf_case ~instances:haven_case (keur ~label:"H1" None))
+    ~silent:"keur leeg"
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
