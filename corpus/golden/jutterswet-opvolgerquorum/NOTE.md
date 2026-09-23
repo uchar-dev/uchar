@@ -63,5 +63,11 @@ TEN_MINSTE, and the matrix read negatively under ALLE (each measured
 and the ASP backend agree on all four cases, and the ASP program has exactly
 one stable model in each. Both Drools branches play all four.
 
+No case lets two Wachters lead each other. On such an input the ASP
+backend's encoding of the ALLE fold, a double negation, has a second,
+self-supporting model beside the least fixpoint (`IR-SPEC.md` ch. 5.5,
+recorded flank). A case like that would pin a backend defect rather than
+the rule this golden is about.
+
 No `bron.rgs`: the document is hand-written IR, and the rules illustrate the
 form; no Jutterswet article renders them.
