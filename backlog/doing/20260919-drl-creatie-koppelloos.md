@@ -70,3 +70,62 @@ codegebied, zelfde weigerklasse — hier oppakken):
   `RegelSpraakRuntime` werpt zelf), dus dit is een keuze, geen
   onmogelijkheid; bouw de fail-fast of leg normatief vast waarom de
   takken hier verschillen.
+
+## Hertriage (2026-09-23, bij oppakken, basis main 8784d5e8)
+
+Uitkomst (i): alle drie de flanken staan nog. P2 dekte ze niet: P2
+ging over de §13.4.7-FEITcreatie (`creatievelden`, `scopeVeld`), niet
+over de §13.4.6-OBJECTcreatie. Exec leest de `verbindendeRol` van de
+objectcreatie al sinds `drools-zelfgetypeerd-creatiepaar` (2026-08-30);
+`DrlTranspiler.objectCreatie` leidt de terugkoppeling nog steeds alleen
+af met `model.verbindendeRol(nieuw, subject)` en raakt
+`rolBindingen.get(oc)` niet aan. Gemeten met de jar van main, per
+proef verifier / ref / clingo / exec / DRL-tekst:
+
+- (1) Koppelloze insert. `anchor/jutterswet-wachtersketen`
+  (zelfgetypeerd): PASS / PASS 2+3 / PASS 2+3 / PLAYED 2 / EXCLUDE
+  "MARKER: objectcreatie: werf de opvolger — onopgelost terugkoppeling
+  naar Wachter". Proef herhaald paar (rekenkamer + tweede feittype
+  `reservetaxatie` Jutter–Rekenkamer): PASS / PASS 2 / PASS 2 / PLAYED 1
+  / EXCLUDE idem "naar Jutter". De gegenereerde DRL draagt in beide
+  gevallen `// onopgelost terugkoppeling naar …` gevolgd door
+  `insert($new);` en een CreationMarker-garde: de transpiler emitteert
+  een koppelloze creatie, alleen de scan in `meet()` weigert haar.
+- (2a) Naamdeling rol/lid. Voorwaarts (Numeriek `rekenkamer` op
+  Jutter): PASS / PASS / PASS / EXCLUDE "transpiler SKIP: … deelt haar
+  naam met een gedeclareerd lid" / PLAYED 1 — de DRL schrijft alleen
+  de terugverwijzing en zwijgt. Terugwaarts (Numeriek `opdrachtgever` op
+  Rekenkamer, nieuwe meting): PASS / PASS / PASS / EXCLUDE idem / EXCLUDE
+  "drl compile: … Unable to Analyse Expression" — een weigering van het
+  hele pakket die geen vorm noemt.
+- (2b) Niet-booleaanse kenmerkwaarde (literal 5 op overzee): WF-027
+  FAIL / EVALUATION FAULT "… is not boolean: 5 (WF-027)" / TRANSLATION
+  FAULT / ERROR "… niet booleaans: 5 (WF-027)" / PLAYED 1 — de DRL
+  gardeert met `Objects.equals(v, true)` en laat stil ongezet.
+
+Gevolg voor gate 12: flank (1) dichten laat de twee goldens die
+DRL_CHANNEL als "MARKER objectcreatie: unresolved back-link to
+Wachter" pint in de DRL-tak spelen (verwacht 157 → 159). Dat is de kern
+van de kaart zelf, geen bijwerking; het pin-diff op `scripts/` is
+beschermd en gaat als voorstel in het Result.
+
+## Acceptatie (herformuleerd op de gemeten stand)
+
+- (a) Rood-eerst, beide takken via de replay-API: het herhaalde paar en
+  het zelfgetypeerde paar spelen in de DRL-tak zoals in exec (waarden
+  van ref); de naamdeling weigert in beide takken bij naam, aan beide
+  zijden; de niet-booleaanse kenmerkwaarde faalt in beide takken luid
+  met WF-027. Plus een tekstassertie dat de gegenereerde DRL nergens
+  een `insert` zonder koppeling draagt.
+- (b) `DrlTranspiler.objectCreatie` volgt exec: binding eerst
+  (`FactModelGenerator.gebondenRolpaar`), typenpaar alleen zonder
+  binding; beide uiteinden door `heeftReferentieVeld`; een creatie
+  zonder schrijfbaar uiteinde weigert per construct met de reden van
+  exec, nooit een koppelloze insert; de kenmerkwaarde werpt bij een
+  niet-booleaanse waarde. Mutatieproef per flank, uitgevoerd.
+- (c) Corpussweep beide takken vóór/na: exec byte-identiek; DRL-tekst
+  alleen de twee genoemde goldens EXCLUDE → PLAYED. Pin-diff voor
+  `scripts/check-drools.sh` als voorstel. Overige dertien gates groen.
+- De bestaande rij `DrlCreatieTakWitnessTest.een_gelijknamig_lid_…`
+  pint de divergentie die (2a) opheft en verwijst zelf naar deze kaart;
+  zij wordt omgezet naar een tweetakkenweigering (gemeld mandaat).
