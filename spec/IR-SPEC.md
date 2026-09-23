@@ -34,16 +34,18 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
   doubles as the Phase 0–4 roadmap.
 - **Wire entry of v1 constructs (decided 2026-08-16).** A v1 construct
   enters the wire as an **additive, optional extension** of
-  `regelspraak-ir-v0`: the schema admits it as an optional field or node
+  the wire format (`regelspraak-ir-v0` until M1, `uchar-ir-v1` since): the schema admits it as an optional field or node
   (never `required`, never null — written whole or not at all), the
   loaders accept it, and the pinned v0 emitter does not produce it until
   a pin bump lands it there. Every
   extension field is marked as such at its definition and tracked in the
   `CONSTRUCTS.md` delta column like any deviation; hand-written anchor
   cases (`corpus/golden/anchor/`) are its golden witnesses until the
-  emitter follows via a pin bump. The `regelspraak-ir-v1` format bump is
-  reserved for the non-additive cleanup — renames, and dropping the v0
-  fields the extensions supersede (`zetVeld`/`joinVeld` and kin). Current
+  emitter follows via a pin bump. The format bump to `uchar-ir-v1`
+  (decision V1 (b)) carries the non-additive cleanup — renames, and dropping the v0
+  fields the extensions supersede (`zetVeld`/`joinVeld` and kin) — in the
+  steps M1–M8 of `spec/proposals/V1-WIREMIGRATIE.md` §7; M1, the container,
+  landed on 2026-09-23. Current
   extension fields: `verbindendeRol` (ch. 3.2; and on object creation,
   ch. 3.3 — the back-link role), `bronRol` and `bronPad` (ch. 4.3 —
   the fold source's range, one relation or a path of them), the
@@ -2801,7 +2803,8 @@ EMPTY halves the fifth wave passed over, `subject: null` and
 settled the same way: over the 510 documents predating that card not one
 verdict moves and exactly one report does (negatief zone 303 → 315, four zones
 510 → 522), and its fix round of 2026-09-06 — which made the eight side-table
-keys byte-exact, see ch. 4.6 (p) — adds one more witness and moves nothing
+keys byte-exact, see ch. 4.6 (p), a clause M1 removed together with the side
+tables — adds one more witness and moves nothing
 else over all 523 (negatief zone 316, four zones 523). That
 is again the list of channels closed **here**, not a claim that no deferral
 can be self-served. *Measured, still open* — the residual positions of this
@@ -2818,8 +2821,9 @@ in containers and is its walk to make, not this rule's. (The unresolved
 are declared non-normative presentation, ch. 3, with the measurement that
 forced the point recorded there. **`Eenheidstelsel.naam` left it on
 2026-09-06**: it was one instance of a CLASS — a keyed declaration's redundant
-self-name — and WF-094 (ch. 2.1) now closes that class byte-exactly over all
-five map-shaped declaration tables at once, with a witness per table. Two
+self-name — and WF-094 (ch. 2.1) closed that class byte-exactly over all
+five map-shaped declaration tables at once, with a witness per table, until M1
+removed the map keys and with them the class (WF-094 is history since then). Two
 things this entry had wrong while it stood here, both corrected there: the
 fifth table is `parameters`, not `tijdlijnen` — a list, whose name IS its
 identity and has no key to disagree with — and `parameters` is precisely the
@@ -2833,9 +2837,10 @@ a decision recorded in (s) rather than a residue recorded here. **The EMPTY
 half of the self-name class left it on 2026-09-10**: a keyed declaration whose
 `naam` is `null` rather than disagreeing with its key, the (n)/(o) split one
 table over, closed by WF-094 clause (d) (ch. 2.1) on all five tables with a
-witness each. It never stood here for want of a witness — a null one is one
-edit from any golden, as WF-094's five recapitalisations are — but because it
-splits the executors the other way round from (n)/(o), two passing silently and
+witness each until M1, since when the null form cannot be written (ch. 2.1). It
+never stood here for want of a witness — a null one was one edit from any
+golden, as WF-094's five recapitalisations were — but because it
+split the executors the other way round from (n)/(o), two passing silently and
 correctly while the bean-model executor crashed in the identifier contract, and
 that shape needed a decision of its own. It got one; what the clause did NOT
 also do is settle the two maps inside a unit system, which are recorded there,
@@ -5443,10 +5448,10 @@ ch. 3.12), and it belongs to whoever measures it.
   `anchor/jutterswet-gemeenteberging` joins over one, and a rule that picked a
   side there would make two anchor goldens ill-formed for a choice no model
   makes. Third, the name MUST be the role's **declared spelling, byte for
-  byte**: this is one of the two places the ch. 2.1 case-insensitive *matching*
-  is not enough (the other is (p) below, on a different ground — there the key
-  IS a member's carried identity; here it is a name that must survive as a
-  property), because the name becomes a Java property reached by getter and that
+  byte**: this is one of the places the ch. 2.1 case-insensitive *matching*
+  is not enough (until M1 there was a second, (p) below, on a different ground —
+  there the side-table key WAS a member's carried identity; here it is a name
+  that must survive as a property), because the name becomes a Java property reached by getter and that
   lookup is case-sensitive (a first-letter difference is harmless — the
   identifier mapping lower-cases the initial — an internal capital is not).
   Only the declared name binds; the plural is presentation, as WF-047 already
@@ -5591,12 +5596,13 @@ ch. 3.12), and it belongs to whoever measures it.
   does NOT close:* whether the named type DECLARES the characteristic. That is
   a semantics question — which owner is authoritative — and it was answered on
   2026-09-10 in the field's favour; it is (q1) below. *Identity here is
-  and stays case-insensitive*, unlike (p) above: this is ordinary name
-  RESOLUTION — a name pointing at a declaration, not a declaration's identity
-  written out — and every reader resolves it that way (the verifier's
-  case-insensitive lookup, the ASP translator, and the Drools loader's
-  exact-then-case-insensitive object-type lookup). The verbatim rule of (p) is
-  scoped to the eight denormalised keys and to nothing else.
+  and stays case-insensitive*, unlike (p) above while it stood: this is
+  ordinary name RESOLUTION — a name pointing at a declaration, not a
+  declaration's identity written out — and every reader resolves it that way
+  (the verifier's case-insensitive lookup, the ASP translator, and the Drools
+  loader's exact-then-case-insensitive object-type lookup). The verbatim rule
+  of (p) was scoped to the eight denormalised keys and to nothing else, and it
+  left with them at M1.
   (q1) A NON-navigated characteristic check's explicit **`eigenaar`** MUST name
   a type that DECLARES the named characteristic (**WF-100**, maintainer
   decision 2026-09-10). This is the second half of (q) and it is a semantic
@@ -5884,13 +5890,15 @@ ch. 3.12), and it belongs to whoever measures it.
   Whether the unit's `afkorting` is a unit that system declares is WF-009's
   question and stays open. `Eenheidstelsel.naam` no longer does: it left the
   open list on 2026-09-06 as one instance of the self-name class, which WF-094
-  (ch. 2.1) closes byte-exactly over all five map-shaped declaration tables —
-  and note that the two rules run in opposite directions on the same table for
-  exactly the reason (p) and (q) part company. A unit's `stelsel` POINTS at a
-  system and resolves case-insensitively; the system's own `naam` IS that
-  system's identity written beside its key and is carried verbatim.
+  (ch. 2.1) closed byte-exactly over all five map-shaped declaration tables
+  until M1 removed the map keys — and until then the two rules ran in opposite
+  directions on the same table for exactly the reason (p) and (q) part
+  company. A unit's `stelsel` POINTS at a system and resolves
+  case-insensitively; the system's own `naam` is that system's identity,
+  written once on its node since M1 (beside its map key until then), and is
+  carried verbatim.
   *Identity here is and stays case-insensitive*, as in (q) and unlike
-  (p): this too is name resolution rather than a carried identity, and
+  (p) while it stood: this too is name resolution rather than a carried identity, and
   `corpus/negatief/wf091-attribuutref-eenheid-kast` pins the boundary
   deliberately — that document carries `stelsel: "GEWICHT"` against a declared
   `Gewicht` as its witness that name RESOLUTION is case-insensitive while copy
