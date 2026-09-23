@@ -97,7 +97,7 @@ class HeelperiodeDoelpogingWitnessTest {
 
     // ---------------- 2. the verifier-clean route that answered from the wrong object ----------------
 
-    @Test void de_naamnorm_route_weigert_in_beide_takken() throws Exception {
+    @Test void de_naamnorm_route_speelt_op_de_anker_in_beide_takken() throws Exception {
         // Guard "gedurende het gehele jaar Gehesen", no host: under the verifier's key the check is the ANKER's
         // `gehesen` (names compare case-insensitively, as in every reader). The anker attempt of both branches looks
         // the time-dependent characteristic up by exact spelling and declines; the doel declares `Gehesen` itself,
@@ -108,6 +108,10 @@ class HeelperiodeDoelpogingWitnessTest {
         //     clingo   : clingo: PASS — 0
         //     exec     : FAIL vakseinaantal: verwacht 0, werkelijk 1 — the DOEL reading, silently
         //     drl-tekst: PLAYED — 0, by accident: `$subject.getGehesen()` inside the $doel pattern read the anker
+        // Card drl-periode-zink then refused the doel attempt in both branches (this test asserted that refusal).
+        // Card drools-temporele-naamnorm (2026-09-23) routes the temporal lookups through Namen.norm, so the ANKER
+        // attempt finds `gehesen` and lowers, and the doel attempt is never reached: both branches answer 0, ref's
+        // answer. The refusal itself stays pinned by tests 1 and 3.
         ObjectNode ir = basis();
         ((ObjectNode) objecttype(ir, "Kustvak").get("kenmerkGranulariteit")).put("gehesen", "JAAR");
         ObjectNode sein = objecttype(ir, "Sein");
@@ -116,11 +120,11 @@ class HeelperiodeDoelpogingWitnessTest {
         sein.putObject("kenmerkGranulariteit").put("Gehesen", "JAAR");
         ObjectNode k = (ObjectNode) ir.get("feitCreaties").get(0).get("voorwaarde");
         k.put("kenmerk", "Gehesen").putNull("eigenaar");
-        BeideTakken.geweigerd(schrijf(ir),
+        BeideTakken.groen(schrijf(ir),
                 geval("\"characteristics\": [], \"characteristicTimelines\": { \"gehesen\": " + HALF + " }, \"attributes\": {}",
                         "", "\"characteristicTimelines\": { \"Gehesen\": " + JAAR + " }",
                         "\"characteristicTimelines\": { \"Gehesen\": " + HALF + " }", "0"),
-                REDEN, "een gekwalificeerde guard wordt niet stil op het doel gelezen");
+                "een gekwalificeerde guard wordt op de anker gelezen, niet op het doel");
     }
 
     // ---------------- 3. the fenced witness no longer sinks the package ----------------

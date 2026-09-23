@@ -39,9 +39,11 @@ public final class Tijdlijnen {
     private Tijdlijnen() {}
 
     /** Whether {@code lid} is declared a MULTI-PERIOD raster in {@code tijdlijnAantal} — two periods or more. An absent
-     *  entry and an explicit 1 are the same single-period facet (see the class note). */
+     *  entry and an explicit 1 are the same single-period facet (see the class note). {@code lid} is the WRITTEN name,
+     *  resolved by the same name contract as the temporality test beside it, or a mis-capitalised raster would pass
+     *  that test and then read here as single-period. */
     public static boolean meerPeriodiek(Map<String, Integer> tijdlijnAantal, String lid) {
-        Integer aantal = tijdlijnAantal.get(lid);
+        Integer aantal = Namen.opNaam(tijdlijnAantal, lid);
         return aantal != null && aantal > 1;
     }
 }

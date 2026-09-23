@@ -123,6 +123,17 @@ public final class Namen {
         return perNaam.containsKey(gedeclareerdeNaam(perNaam.keySet(), naam));
     }
 
+    /** {@link #bevatNaam}'s reading twin: the value {@code perNaam} holds for the declaration that IS
+     *  {@code naam} under {@link #norm}, null when none does. The temporal facet maps (granularity, period
+     *  count) are keyed by DECLARED name while every rule and case names a member as WRITTEN, so a lookup
+     *  that decides "temporal" by norm and then reads the granularity or the period count by exact spelling
+     *  would split one member into a timeline without a grain, or a multi-period timeline read as a single
+     *  one. Both questions therefore go through this one contract (card drools-temporele-naamnorm). */
+    public static <V> V opNaam(java.util.Map<String, V> perNaam, String naam) {
+        if (perNaam == null || naam == null) return null;
+        return perNaam.get(gedeclareerdeNaam(perNaam.keySet(), naam));
+    }
+
     /** The DECLARED spelling of a WRITTEN name: the member of {@code gedeclareerd} that IS this name under
      *  {@link #norm}, or {@code naam} unchanged when nothing declares it. The naming contract above turns a
      *  DECLARED name into a bean member, so every name that reaches {@link #ident}, {@link #getter} or the

@@ -26,6 +26,7 @@ import static io.github.yhavinga.regelspraak.transpiler.kern.Namen.escapeRegelNa
 import static io.github.yhavinga.regelspraak.transpiler.kern.Namen.gedeclareerdeNaam;
 import static io.github.yhavinga.regelspraak.transpiler.kern.Namen.getter;
 import static io.github.yhavinga.regelspraak.transpiler.kern.Namen.ident;
+import static io.github.yhavinga.regelspraak.transpiler.kern.Namen.opNaam;
 import static io.github.yhavinga.regelspraak.transpiler.kern.Namen.setter;
 
 import java.util.ArrayList;
@@ -1714,15 +1715,15 @@ public final class DrlTranspiler {
         // through temporeleWaarde() below, NOT waarde() (which would register a wrong scalar accumulate for a SOM-over-
         // temporal-set and mis-count it). Detect it here so the scalar value pre-computation is skipped.
         boolean temporeelDoel = subject != null && r.doel() instanceof Expr.AttribuutRef td && ongenavigeerd(td)
-                && td.objecttype() != null && td.objecttype().granulariteitLeden().containsKey(td.attribuut())
+                && td.objecttype() != null && bevatNaam(td.objecttype().granulariteitLeden(), td.attribuut())
                 && !Tijdlijnen.meerPeriodiek(td.objecttype().tijdlijnAantalLeden(), td.attribuut());
         // ch. 4.10: the forced needs of a Let in the value ride the CONSEQUENCE as local variables, so hoisting is
         // opened exactly where a SCALAR setter consumes that value. The two branches below that ignore the scalar
         // value — a temporal attribute doel (single- or multi-period) and a temporal kenmerk write — would orphan
         // the prelude, so they open none and a Let there stays an honest marker.
         if (subject != null && !temporeelDoel && r.doel() instanceof Expr.AttribuutRef sd && sd.objecttype() != null
-                && !sd.objecttype().granulariteitLeden().containsKey(sd.attribuut())
-                && !sd.objecttype().kenmerkGranulariteitLeden().containsKey(sd.attribuut()))
+                && !bevatNaam(sd.objecttype().granulariteitLeden(), sd.attribuut())
+                && !bevatNaam(sd.objecttype().kenmerkGranulariteitLeden(), sd.attribuut()))
             acc.letVoorspel = new ArrayList<>();
         // Translate the value first: any aggregation registers an accumulate pattern
         // for the "when" and yields the bound result variable used here in the "then".
@@ -1741,7 +1742,7 @@ public final class DrlTranspiler {
             // ch. 2.10: the doel is a REFERENCE position — the §4 restate target is the DECLARED attribute
             // datatype, never the doel node's repetition of it.
             temporeelTl = temporeelOngeankerd ? null
-                    : temporeleWaarde(acc, r.waarde(), subject, td.objecttype().granulariteitLeden().get(td.attribuut()), effType(td), anker0);
+                    : temporeleWaarde(acc, r.waarde(), subject, opNaam(td.objecttype().granulariteitLeden(), td.attribuut()), effType(td), anker0);
         }
         // §8.4/§13.4.5 a TEMPORAL KENMERK doel (kenmerkGranulariteit — a List<Segment> TRUE-period timeline, not a
         // boolean) is written the timeline of its voorwaarde's TRUE-periods: "Een object is duur gedurende de tijd dat
@@ -1755,7 +1756,7 @@ public final class DrlTranspiler {
         // stay a marker below. Mirrored by the exec back-end.
         boolean temporeelKenmerkDoel = subject != null && r.soort() == ResolvedRegel.Soort.KENMERKTOEKENNING
                 && r.doel() instanceof Expr.AttribuutRef ka && ongenavigeerd(ka) && ka.objecttype() != null
-                && ka.objecttype().kenmerkGranulariteitLeden().containsKey(ka.attribuut())
+                && bevatNaam(ka.objecttype().kenmerkGranulariteitLeden(), ka.attribuut())
                 && !Tijdlijnen.meerPeriodiek(ka.objecttype().kenmerkTijdlijnAantalLeden(), ka.attribuut());
         String kenmerkTl = null;
         if (temporeelKenmerkDoel && r.voorwaarde() != null && r.geldigheid().altijd())
@@ -1784,8 +1785,8 @@ public final class DrlTranspiler {
         // voorwaarde (rule inert, never a silently mis-gated timeline). Mirrored by the exec back-end.
         boolean periodeOpTijdlijnDoel = r.voorwaarde() != null && Conditie.bevatPeriode(r.voorwaarde())
                 && r.doel() instanceof Expr.AttribuutRef da && da.objecttype() != null
-                && (da.objecttype().granulariteitLeden().containsKey(da.attribuut())
-                    || da.objecttype().kenmerkGranulariteitLeden().containsKey(da.attribuut()));
+                && (bevatNaam(da.objecttype().granulariteitLeden(), da.attribuut())
+                    || bevatNaam(da.objecttype().kenmerkGranulariteitLeden(), da.attribuut()));
         LoweredConditie lc = subject != null && r.voorwaarde() != null && !kenmerkTlGelowerd
                 ? (periodeOpTijdlijnDoel
                     ? LoweredConditie.marker("periodevergelijking op een tijdsafhankelijk doel (§8.4.3)", r.voorwaarde().bron())
@@ -1838,7 +1839,7 @@ public final class DrlTranspiler {
                 .geldigheid(r.geldigheid());   // §4.2: a time-bounded version fires only inside its window
         }
         if (r.doel() instanceof Expr.AttribuutRef a && ongenavigeerd(a) && a.objecttype() != null
-                && a.objecttype().granulariteitLeden().containsKey(a.attribuut())
+                && bevatNaam(a.objecttype().granulariteitLeden(), a.attribuut())
                 && !Tijdlijnen.meerPeriodiek(a.objecttype().tijdlijnAantalLeden(), a.attribuut())) {
             // §5.1.4 the doel is a SINGLE-period TEMPORAL attribute -> write a List<Segment> timeline, not a scalar.
             // A timeline-producing RHS we cannot lower stays an honest /* TODO */ marker (never a scalar setter on a
@@ -1884,7 +1885,7 @@ public final class DrlTranspiler {
                                                              : "temporele toekenning", r.waarde().bron())) + " )\n    }\n");
             }
         } else if (r.doel() instanceof Expr.AttribuutRef a && ongenavigeerd(a) && a.objecttype() != null
-                && a.objecttype().granulariteitLeden().containsKey(a.attribuut())
+                && bevatNaam(a.objecttype().granulariteitLeden(), a.attribuut())
                 && Tijdlijnen.meerPeriodiek(a.objecttype().tijdlijnAantalLeden(), a.attribuut())) {
             // §13.3.6.7 a MULTI-PERIOD temporal doel ("voor elke N maanden") is a List<Segment> timeline whose WRITE
             // producer semantics are under-specified. MARKER it honestly — never fall through to a SCALAR setter on a
@@ -1893,7 +1894,7 @@ public final class DrlTranspiler {
             rule.dan("    modify(" + SUBJECT + ") {\n        " + setter(a.attribuut()) + "( "
                     + todo("meer-periodieke temporele toekenning (§13.3.6.7)", r.waarde().bron()) + " )\n    }\n");
         } else if (r.doel() instanceof Expr.AttribuutRef a && ongenavigeerd(a) && a.objecttype() != null
-                && a.objecttype().kenmerkGranulariteitLeden().containsKey(a.attribuut())) {
+                && bevatNaam(a.objecttype().kenmerkGranulariteitLeden(), a.attribuut())) {
             // §8.4/§13.4.5 a TEMPORAL KENMERK doel (kenmerkGranulariteit — its field is a List<Segment> TRUE-period
             // timeline, not a boolean) cannot take the scalar `setK(true)` the bare value branch below would emit
             // (a boolean into a List field does not compile). The DECIDABLE case writes the voorwaarde's TRUE-period
@@ -2096,7 +2097,7 @@ public final class DrlTranspiler {
      *  the @watch set matches exactly the fields the write timeline reads. */
     private void verzamelKenmerkReads(Conditie c, Objecttype subject, java.util.Set<String> uit) {
         if (c instanceof Conditie.Kenmerk k && k.navigatie() == null && subject != null
-                && subject.kenmerkGranulariteitLeden().containsKey(k.kenmerk()))
+                && bevatNaam(subject.kenmerkGranulariteitLeden(), k.kenmerk()))
             uit.add(ident(k.kenmerk(), false));
         else if (c instanceof Conditie.Samengesteld s)
             for (Conditie o : s.onderdelen()) verzamelKenmerkReads(o, subject, uit);
@@ -2574,7 +2575,7 @@ public final class DrlTranspiler {
      *  (§8.2 line 3437), so the predicate markers here rather than silently dropping the period check. Detects an own
      *  OR a to-one navigated temporal read alike ({@code a.objecttype()} is the type that DECLARES the attribute). */
     private static boolean isTemporeelAttribuut(Expr.AttribuutRef a) {
-        return a.objecttype() != null && a.objecttype().granulariteitLeden().containsKey(a.attribuut());
+        return a.objecttype() != null && bevatNaam(a.objecttype().granulariteitLeden(), a.attribuut());
     }
 
     /** The getter chain for an attribute read relative to the subject — the EIGEN own-attribute, a single
@@ -3285,7 +3286,7 @@ public final class DrlTranspiler {
         // it as the subject's own single timeline would silently drop the set, so bail to the marker (the
         // accumulate path then markers it too; a distinct element type is caught there). No per-element fold yet.
         if (a.set()) return null;
-        RegelSpraakModel.Granulariteit g = a.objecttype().granulariteitLeden().get(a.attribuut());
+        RegelSpraakModel.Granulariteit g = opNaam(a.objecttype().granulariteitLeden(), a.attribuut());
         if (g == null) return null;   // not a temporal attribute -> fall through to the instance-accumulate / marker
         // rsTijdTotaal scales each segment value into a BigDecimal; over a non-numeric declaration the emitted
         // text did not COMPILE and took the whole file down unnamed. A per-form marker through the reason the
@@ -3316,7 +3317,7 @@ public final class DrlTranspiler {
         // marker above; any OTHER non-null filter we do not lower is markered rather than silently dropped.
         String guard = null;   // §8.4 a static (non-temporal) compound member gates the WHOLE totaal
         if (f.filter() instanceof Conditie.Kenmerk k && k.navigatie() == null
-                && subject != null && subject.kenmerkGranulariteitLeden().containsKey(k.kenmerk())) {
+                && subject != null && bevatNaam(subject.kenmerkGranulariteitLeden(), k.kenmerk())) {
             waardeTijdreeks = kenmerkTijdKnip(waardeTijdreeks, k);
         } else if (f.filter() instanceof Conditie.Kenmerk kn && kn.navigatie() != null && subject != null) {
             // §7.1 a NAVIGATED temporal kenmerk ("gedurende de tijd dat zijn partner een recht op korting heeft"): clip
@@ -3502,18 +3503,18 @@ public final class DrlTranspiler {
             Expr base = f.argumenten().get(0);
             RegelSpraakModel.Granulariteit baseGran = null; Datatype baseType = null; String baseExpr = null;
             if (base instanceof Expr.AttribuutRef ba && ongenavigeerd(ba) && !ba.set() && ba.objecttype() == subject
-                    && subject.granulariteitLeden().containsKey(ba.attribuut())
+                    && bevatNaam(subject.granulariteitLeden(), ba.attribuut())
                     && !Tijdlijnen.meerPeriodiek(subject.tijdlijnAantalLeden(), ba.attribuut())) {
-                baseGran = subject.granulariteitLeden().get(ba.attribuut());
+                baseGran = opNaam(subject.granulariteitLeden(), ba.attribuut());
                 baseType = effType(ba);
                 baseExpr = SUBJECT + "." + getter(ba.attribuut()) + "()";
             } else if (base instanceof Expr.AttribuutRef ba && !ongenavigeerd(ba) && !ba.set()
-                    && ba.objecttype() != null && ba.objecttype().granulariteitLeden().containsKey(ba.attribuut())
+                    && ba.objecttype() != null && bevatNaam(ba.objecttype().granulariteitLeden(), ba.attribuut())
                     && !Tijdlijnen.meerPeriodiek(ba.objecttype().tijdlijnAantalLeden(), ba.attribuut())
                     && naviResolve(ba, subject).soort() == NaviSoort.GENAVIGEERD) {
                 // §7.3.2 a TO-ONE NAVIGATED base ("de X van zijn partner"): read the partner's temporal attribute,
                 // root-guarded (a null reference -> leeg). The gedurende condition stays over the SUBJECT. Mirrors exec navReader.
-                baseGran = ba.objecttype().granulariteitLeden().get(ba.attribuut());
+                baseGran = opNaam(ba.objecttype().granulariteitLeden(), ba.attribuut());
                 baseType = effType(ba);
                 String root = SUBJECT + "." + getter(naviResolve(ba, subject).rol()) + "()";
                 baseExpr = "(" + root + " == null ? null : " + root + "." + getter(ba.attribuut()) + "())";
@@ -3588,7 +3589,7 @@ public final class DrlTranspiler {
     private String tijdreeksSomAlleSet(Acc acc, Expr w, Objecttype subject, RegelSpraakModel.Granulariteit gran, Datatype doelType) {
         if (!(w instanceof Expr.Functie f) || f.kind() != Expr.FunctieKind.SOM || f.argumenten().size() != 1) return null;
         if (!(f.argumenten().get(0) instanceof Expr.AttribuutRef a) || !a.set() || a.objecttype() == null) return null;
-        RegelSpraakModel.Granulariteit eg = a.objecttype().granulariteitLeden().get(a.attribuut());
+        RegelSpraakModel.Granulariteit eg = opNaam(a.objecttype().granulariteitLeden(), a.attribuut());
         if (eg == null) return null;                                   // non-temporal element -> the scalar accumulate path
         if (Tijdlijnen.meerPeriodiek(a.objecttype().tijdlijnAantalLeden(), a.attribuut())) return null;   // multi-period element -> out of scope
         if (eg != gran) return null;                                   // §5.1.4 the element tijdlijn must match the doel's (no set-fold gran promotion yet)
@@ -3667,7 +3668,7 @@ public final class DrlTranspiler {
         // §5.1.4.2 mixed granularity: the operand timeline must be COARSER-OR-EQUAL to the doel's (DAG<WEEK<MAAND<
         // KWARTAAL<JAAR via ordinal), so ALL its knips fit the (finer-or-equal) doel timeline; the merged-knip union
         // then evaluates per actual period. An operand FINER than the doel cannot be represented -> marker.
-        RegelSpraakModel.Granulariteit og = ot.granulariteitLeden().get(a.attribuut());
+        RegelSpraakModel.Granulariteit og = opNaam(ot.granulariteitLeden(), a.attribuut());
         if (og == null || og.ordinal() < gran.ordinal()) return null;
         if (Tijdlijnen.meerPeriodiek(ot.tijdlijnAantalLeden(), a.attribuut())) return null;   // multi-period -> out of scope
         return schaalTijd(getter, effType(a), unitTarget);   // §4.1 restate into the sum unit (null -> incompatible -> marker)
@@ -3779,7 +3780,7 @@ public final class DrlTranspiler {
      *  kenmerk. */
     private String temporeelKenmerkTijdreeks(Conditie.Kenmerk k, Objecttype subject) {
         if (k.navigatie() != null || k.negatie() || subject == null
-                || !subject.kenmerkGranulariteitLeden().containsKey(k.kenmerk())
+                || !bevatNaam(subject.kenmerkGranulariteitLeden(), k.kenmerk())
                 || Tijdlijnen.meerPeriodiek(subject.kenmerkTijdlijnAantalLeden(), k.kenmerk())) return null;
         return SUBJECT + "." + getter(k.kenmerk()) + "()";
     }
@@ -3792,7 +3793,7 @@ public final class DrlTranspiler {
         KenmerkHop hop = kenmerkHop(k, subject);
         if (hop == null) return null;   // the bound hop does not fit this subject
         Objecttype doel = hop.doel();
-        if (doel == null || !doel.kenmerkGranulariteitLeden().containsKey(k.kenmerk())
+        if (doel == null || !bevatNaam(doel.kenmerkGranulariteitLeden(), k.kenmerk())
                 || Tijdlijnen.meerPeriodiek(doel.kenmerkTijdlijnAantalLeden(), k.kenmerk())) return null;
         // §13.3.9: the two-step hop on the timeline arm reads the same reference field naviResolve gates on the
         // scalar arm. Measured 2026-09-11 on a verifier-clean, ref-clean model where a declared member displaces the
@@ -3948,7 +3949,7 @@ public final class DrlTranspiler {
     /** Whether {@code a} is a temporal (tijdlijn) attribute of its (set-element) objecttype — the set analogue of
      *  {@link #isTemporeelAttribuut}, which requires objecttype==subject and so rejects a to-many set element. */
     private boolean isTemporeelSetAttribuut(Expr.AttribuutRef a) {
-        return a.objecttype() != null && a.objecttype().granulariteitLeden().containsKey(a.attribuut())
+        return a.objecttype() != null && bevatNaam(a.objecttype().granulariteitLeden(), a.attribuut())
                 && !Tijdlijnen.meerPeriodiek(a.objecttype().tijdlijnAantalLeden(), a.attribuut());   // multi-period -> out of scope
     }
 
@@ -3987,7 +3988,7 @@ public final class DrlTranspiler {
     private String samengesteldeTijdKnip(Conditie.Samengesteld s, String waarde, Objecttype subject) {
         for (Conditie c : s.onderdelen())
             if (!(c instanceof Conditie.Kenmerk k) || k.navigatie() != null
-                    || !subject.kenmerkGranulariteitLeden().containsKey(k.kenmerk())) return null;
+                    || !bevatNaam(subject.kenmerkGranulariteitLeden(), k.kenmerk())) return null;
         if (s.kwantor() == Conditie.Kwantor.ALLE) {
             String expr = waarde;
             for (Conditie c : s.onderdelen()) expr = kenmerkTijdKnip(expr, (Conditie.Kenmerk) c);
@@ -4054,7 +4055,7 @@ public final class DrlTranspiler {
         // X van alle" phrasing attaches the set to the INNER totaal, leaving the outer SOM element-less -> elem == null
         // markers it; the inner totaal is then a single-object operand, not this set fold.)
         boolean temporeelArg = !f.argumenten().isEmpty() && f.argumenten().get(0) instanceof Expr.AttribuutRef ta0
-                && ta0.objecttype() != null && ta0.objecttype().granulariteitLeden().containsKey(ta0.attribuut());
+                && ta0.objecttype() != null && bevatNaam(ta0.objecttype().granulariteitLeden(), ta0.attribuut());
         if (temporeelArg && f.kind() != Expr.FunctieKind.SOM && f.kind() != Expr.FunctieKind.TOTAAL)
             return null;
         Objecttype elem = f.elementObjecttype();
@@ -4125,7 +4126,7 @@ public final class DrlTranspiler {
             String getr = ev + "." + getter(a.attribuut()) + "()";
             if (!temporeelArg) return getr;
             fnImport("rsTijdTotaal");
-            return "rsTijdTotaal(" + getr + ", \"" + a.objecttype().granulariteitLeden().get(a.attribuut()).name() + "\")";
+            return "rsTijdTotaal(" + getr + ", \"" + opNaam(a.objecttype().granulariteitLeden(), a.attribuut()).name() + "\")";
         };
 
         // §4.10/§5.8.2 sommatie ("som van"): an empty sum (no non-empty contributors) is a
@@ -4720,7 +4721,7 @@ public final class DrlTranspiler {
                 return LoweredConditie.marker("navigatiebinding van kenmerk '" + k.kenmerk() + "' past niet op "
                         + (subject == null ? "het onderwerp" : subject.naam), c.bron());
             Objecttype kHouder = k.navigatie() == null ? subject : hop.doel();
-            if (kHouder != null && kHouder.kenmerkGranulariteitLeden().containsKey(k.kenmerk()))
+            if (kHouder != null && bevatNaam(kHouder.kenmerkGranulariteitLeden(), k.kenmerk()))
                 return LoweredConditie.marker("tijdsafhankelijk kenmerk in scalaire voorwaarde (§8.2)", c.bron());
             String prop = ident(k.kenmerk(), false) + " == " + (k.negatie() ? "false" : "true");
             if (k.navigatie() == null) return LoweredConditie.van(prop);
@@ -5022,7 +5023,7 @@ public final class DrlTranspiler {
      *  {@link #isTemporeelAttribuut}, which asks the question of the rule's own subject. Multi-period
      *  (§13.3.6.7) is excluded, as everywhere under §8.2. */
     private static boolean elementTijdlijnLid(Objecttype elem, String lid) {
-        return elem.granulariteitLeden().containsKey(lid)
+        return bevatNaam(elem.granulariteitLeden(), lid)
                 && !Tijdlijnen.meerPeriodiek(elem.tijdlijnAantalLeden(), lid);
     }
 
@@ -5098,7 +5099,7 @@ public final class DrlTranspiler {
             tlVeld = pa.attribuut();
             toetsCode = p.soort() == Conditie.Predicaatsoort.GEVULD ? 6 : 8;   // §8.2 gevuld / leeg over every moment
         } else if (kv.toets() instanceof Conditie.Kenmerk k && k.navigatie() == null && !k.negatie()
-                && k.kenmerk() != null && elem.kenmerkGranulariteitLeden().containsKey(k.kenmerk())
+                && k.kenmerk() != null && bevatNaam(elem.kenmerkGranulariteitLeden(), k.kenmerk())
                 && !Tijdlijnen.meerPeriodiek(elem.kenmerkTijdlijnAantalLeden(), k.kenmerk())) {
             tlVeld = k.kenmerk(); toetsCode = 7;                                // §8.2 the kenmerk's TRUE-period timeline
         } else {
