@@ -118,7 +118,8 @@ class RegelgroepUitzonderingTest {
                 () -> "de melding noemt de basis als groepslid niet: " + t);
         assertTrue(t.contains("WF-033"), () -> "de melding noemt het gevolg niet: " + t);
         assertTrue(t.contains("§9.10") && t.contains("§4"), () -> "de melding verwijst niet naar §9.10 en §4: " + t);
-        assertTrue(t.contains("vóór de kop 'Regelgroep berging'"), () -> "de melding wijst de uitweg niet: " + t);
+        assertTrue(t.contains("vóór de eerste regelgroepkop van het document ('Regelgroep berging')"),
+                () -> "de melding wijst de uitweg niet: " + t);
         // A refused block stays un-lifted, as every other refusal of the defaults pass leaves it.
         assertTrue(m.prioritizedDefaults.isEmpty(), () -> "een geweigerd blok hoort ongelift te blijven: " + m.prioritizedDefaults);
     }
@@ -163,6 +164,42 @@ class RegelgroepUitzonderingTest {
         assertTrue(d.message().contains("regelgroep 'premie'") && d.message().contains("§9.10"),
                 () -> "de melding noemt de groep of §9.10 niet: " + d);
         assertTrue(m.prioritizedDefaults.isEmpty(), () -> "een geweigerd blok hoort ongelift te blijven: " + m.prioritizedDefaults);
+    }
+
+    @Test void bij_twee_groepen_leidt_de_uitweg_buiten_elke_groep() {
+        // Base in group 'a', the block behind group 'b', the two groups back to back. The advice used to name
+        // the header of 'b' — and a block and base moved there land behind a's last member, refused again.
+        String groepA = "Regelgroep a\n" + BASIS + """
+            Regel tweede lid
+                geldig altijd
+                    De bergingspremie van een Jutter moet berekend worden als 5.
+
+            """;
+        String groepB = "Regelgroep b\n" + """
+            Regel lid van b
+                geldig altijd
+                    Het wachtgeld van een Jutter moet gesteld worden op 30.
+
+            """;
+        String src = MODEL + groepA + groepB + UITZONDERING;
+        Diagnostic d = enigeFout(Resolver.resolve(src));
+        assertTrue(d.message().contains("vóór de eerste regelgroepkop van het document ('Regelgroep a')"), d.message());
+        assertFalse(d.message().contains("'Regelgroep b'"), d.message());
+        // and the advice, followed, gives a clean document
+        String gevolgd = MODEL + BASIS + UITZONDERING
+                + groepA.replace(BASIS, "") + groepB;
+        RegelSpraakModel m = Resolver.resolve(gevolgd);
+        assertTrue(m.errors().isEmpty(), () -> "de uitweg zelf wordt geweigerd: " + m.errors());
+    }
+
+    @Test void een_groepskop_zonder_leden_geeft_alleen_de_syntaxfout() {
+        // A header directly followed by a block is a syntax error (a group needs a member); the placement arm
+        // has no last member to speak of there, and used to add a message about one.
+        String src = MODEL + BASIS + "Regelgroep berging\n" + UITZONDERING;
+        RegelSpraakModel m = Resolver.resolve(src);
+        assertTrue(m.errors().stream().anyMatch(e -> e.message().startsWith("syntaxfout")), () -> "" + m.errors());
+        assertTrue(m.diagnostics.stream().noneMatch(e -> e.message().contains("direct na het laatste lid")),
+                () -> "een groep zonder leden heeft geen laatste lid: " + m.diagnostics);
     }
 
     // -------------------------------------------------------------------- a decision table in the group

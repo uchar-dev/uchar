@@ -241,25 +241,26 @@ final class RuleChecker {
             }
         java.util.Set<ParserRuleContext> geweigerd =
                 java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        // The way out names the FIRST group header: nothing before it is in any group's scope, whereas "before
+        // the header of the group at hand" can itself sit behind another group's last member.
+        String eersteGroep = doc.regelGroep().isEmpty() ? null : src(doc.regelGroep().get(0).kaleNaam());
         ParseTree vorige = null;
         for (ParseTree kind : doc.children == null ? List.<ParseTree>of() : doc.children) {
             if (kind instanceof ParserRuleContext blok && !(kind instanceof DefinitieContext)
                     && !(kind instanceof RegelGroepContext) && !(kind instanceof RegelContext)
                     && !(kind instanceof BeslistabelContext)) {
                 List<String> redenen = new ArrayList<>();
-                String groep = null;
-                if (vorige instanceof RegelGroepContext g) {
-                    groep = src(g.kaleNaam());
-                    redenen.add("het staat direct na het laatste lid van regelgroep '" + groep + "', waar de groep "
-                            + "stil eindigt, zodat het blok en elke regel erna buiten de groep zouden vallen");
-                }
+                // A header with no member is already a syntax error, and has no last member to stand behind.
+                if (vorige instanceof RegelGroepContext g && !g.groepLid().isEmpty())
+                    redenen.add("het staat direct na het laatste lid van regelgroep '" + src(g.kaleNaam())
+                            + "', waar de groep stil eindigt, zodat het blok en elke regel erna buiten de groep "
+                            + "zouden vallen");
                 if (kind instanceof UitzonderingRegelContext u) {
                     String basis = src(u.uitzonderingBasisNaam());
                     Lidmaatschap l = groepVanLid.get(basis);
                     // Only where the lift would happen: a base that resolves to no rule gets the ordinary "no base
                     // rule" refusal of the lowering, which is the true one there.
                     if (l != null && !resolvedVan(basis).isEmpty()) {
-                        if (groep == null) groep = l.groep();
                         redenen.add("zijn basisregel '" + basis + "' is "
                                 + (l.tabel() == null ? "lid" : "een rij van beslistabel '" + l.tabel() + "', lid")
                                 + " van regelgroep '" + l.groep() + "', en het liften naar een defaults-groep zou dat "
@@ -275,7 +276,8 @@ final class RuleChecker {
                             + "markeren (§9.10) en omvat alleen regels en beslistabellen; een defaults-blok "
                             + "(dialect §4) hoort er niet in. Plaats het blok"
                             + (kind instanceof UitzonderingRegelContext ? " en zijn basisregel" : "")
-                            + " buiten de groep, bijvoorbeeld vóór de kop 'Regelgroep " + groep + "'",
+                            + " buiten elke regelgroep: vóór de eerste regelgroepkop van het document ('Regelgroep "
+                            + eersteGroep + "'), of achter een definitie die de groep afsluit",
                             blok.getStart().getLine()));
                 }
             }

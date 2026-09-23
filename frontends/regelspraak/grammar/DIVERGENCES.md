@@ -231,7 +231,13 @@ block's own head, citing §9.10 and this section, with two arms:
 
 A block for which both hold gets one diagnostic naming both reasons, and a
 refused block stays un-lifted together with its whole base family, as the
-other refusals leave it. What stays clean, and is pinned as clean: a block
+other refusals leave it. The way out the message names is one that holds
+wherever the author follows it: before the document's FIRST group header,
+which no group's scope reaches, or behind a definition that ends the group.
+"Before the header of this group" was named until fix round 2 and did not
+hold — with two groups back to back it lands behind the other group's last
+member. A header without any member is a syntax error of its own and draws
+no placement message. What stays clean, and is pinned as clean: a block
 before the group's header, and a block behind a definition that ends the
 group, each over a base outside the group. Two placements that were
 verifier-clean before are refused since — an `Uitzondering op` directly after
