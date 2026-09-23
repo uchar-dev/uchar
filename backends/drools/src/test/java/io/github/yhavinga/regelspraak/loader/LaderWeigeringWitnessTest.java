@@ -30,7 +30,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code dayKinds} or {@code characteristics}, {@code animate: "true"}, {@code objectTypes: {}}, a count of
  * {@code "2"} or {@code 2.0}, a characteristic declared twice, two object types whose names differ only in case,
  * an Enumeratie domain that kept its v0 self-name — each PLAYED, or loaded with part of the document ignored. The
- * OCaml loader refuses every one of them with a JSON pointer; this loader now does the same, in the same notation.
+ * OCaml loader refuses every one of them with a JSON pointer; this loader now does the same, and names an absent
+ * field as the OCaml loader does, at the object that lacks it, with the field in the detail.
  *
  * <p>Each refusal is an {@link IrLoader.Documentfout}, a hard error, and never an {@link IrLoader.Refusal}: a
  * Refusal is the differential gate's auto-excluded channel ("form not carried"), and a malformed document filed
@@ -72,7 +73,7 @@ class LaderWeigeringWitnessTest {
         ObjectNode ir = golden(BAKENMEESTER);
         String attr = lidPad(ir, "Bakenmeester", "attributes", "onderhoudstarief");
         IrPad.attribute(IrPad.objectType(ir, "Bakenmeester"), "onderhoudstarief").remove("node");
-        weigert(ir, attr + "/node");
+        ontbreekt(ir, attr, "node");
     }
 
     @Test void een_v0_zijkaart_naast_de_ledenknopen_weigert() throws Exception {
@@ -137,18 +138,25 @@ class LaderWeigeringWitnessTest {
     }
 
     @Test void een_ontbrekend_verplicht_veld_weigert() throws Exception {
+        // named as the OCaml loader names it: at the object that lacks the field, the root being ""
         ObjectNode ir = golden(BAKENMEESTER);
         ir.remove("diagnostics");
-        weigert(ir, "/diagnostics");
+        IrLoader.Documentfout e = ontbreekt(ir, "", "diagnostics");
+        assertTrue(e.getMessage().contains(" at <root>: "), e.getMessage());
 
         ir = golden(BAKENMEESTER);
         IrPad.model(ir).remove("dayKinds");
-        weigert(ir, "/model/dayKinds");
+        ontbreekt(ir, "/model", "dayKinds");
 
         ir = golden(BAKENMEESTER);
         String ot = objectTypePad(ir, "Bakenmeester");
         IrPad.objectType(ir, "Bakenmeester").remove("characteristics");
-        weigert(ir, ot + "/characteristics");
+        ontbreekt(ir, ot, "characteristics");
+    }
+
+    @Test void een_document_dat_geen_object_is_weigert_op_de_root() throws Exception {
+        IrLoader.Documentfout e = weigert(JSON.createArrayNode(), "");
+        assertTrue(e.getMessage().contains(" at <root>: expected an object"), e.getMessage());
     }
 
     @Test void een_veld_van_het_verkeerde_json_type_weigert() throws Exception {
@@ -214,9 +222,7 @@ class LaderWeigeringWitnessTest {
                 JSON.createObjectNode().put("node", "Numeriek").put("geheel", true).put("decimalen", 0)
                         .put("teken", "NIET_NEGATIEF").putNull("eenheid"));
         peilwaarde.putObject("timeline").put("node", "TimelineFacet").put("count", 1).put("timelineName", "boekjaar");
-        IrLoader.Documentfout e = weigert(ir, lidPad(ir, "Strandrecht", "attributes", "peilwaarde")
-                + "/timeline/granularity");
-        assertTrue(e.getMessage().contains("required field is absent"), e.getMessage());
+        ontbreekt(ir, lidPad(ir, "Strandrecht", "attributes", "peilwaarde") + "/timeline", "granularity");
     }
 
     @Test void een_tijdlijnfacet_zonder_telling_weigert() throws Exception {
@@ -225,7 +231,7 @@ class LaderWeigeringWitnessTest {
         String kenmerk = lidPad(ir, "Bakenmeester", "characteristics", "dienstdoend");
         ((ObjectNode) IrPad.characteristic(IrPad.objectType(ir, "Bakenmeester"), "dienstdoend").get("timeline"))
                 .remove("count");
-        weigert(ir, kenmerk + "/timeline/count");
+        ontbreekt(ir, kenmerk + "/timeline", "count");
     }
 
     @Test void een_tijdlijnnaam_op_een_kenmerkfacet_weigert() throws Exception {
@@ -244,7 +250,7 @@ class LaderWeigeringWitnessTest {
         ObjectNode ir = golden(BAKENMEESTER);
         String kenmerk = lidPad(ir, "Bakenmeester", "characteristics", "dienstdoend");
         IrPad.characteristic(IrPad.objectType(ir, "Bakenmeester"), "dienstdoend").remove("kind");
-        weigert(ir, kenmerk + "/kind");
+        ontbreekt(ir, kenmerk, "kind");
 
         // the v0 spelling of the value stays until M8, and its lower-case twin is no member
         ir = golden(BAKENMEESTER);
@@ -367,6 +373,14 @@ class LaderWeigeringWitnessTest {
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir),
                 "verwacht een documentfout op " + plek);
         assertEquals(plek, e.plek(), e.getMessage());
+        return e;
+    }
+
+    /** {@link #weigert} for an absent field: the defect sits at the object {@code ouder}, and the detail names the
+     *  field. */
+    private static IrLoader.Documentfout ontbreekt(JsonNode ir, String ouder, String veld) {
+        IrLoader.Documentfout e = weigert(ir, ouder);
+        assertTrue(e.getMessage().contains("missing field '" + veld + "'"), e.getMessage());
         return e;
     }
 

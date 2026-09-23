@@ -99,13 +99,16 @@ public final class IrLoader {
     /** A document that is not a well-formed {@code uchar-ir-v1} document, named by the position it sits at. A hard
      *  error and never a {@link Refusal}: a Refusal files the document under the differential gate's auto-excluded
      *  channel as a form this backend does not carry, which is a green gate over a document nobody read (the reason
-     *  {@link #datumVanIrWire} gives for its own fence). {@code plek} is a JSON pointer into the document, in the
-     *  OCaml loader's notation, for the container and the M1 nodes; the v0 nodes inside them are read without a
-     *  path, and there it names the node kind and the field. */
+     *  {@link #datumVanIrWire} gives for its own fence). {@code plek} is a JSON pointer into the document for the
+     *  container and the M1 nodes, the root being {@code ""}. An absent field is named at the object that lacks it,
+     *  with the field in the detail, as the OCaml loader names it; every other defect at the value itself, an
+     *  unknown field included, which the OCaml loader names at its parent. The v0 nodes inside them are read
+     *  without a path, and there it names the node kind and the field. */
     public static final class Documentfout extends IllegalArgumentException {
         private final String plek;
         public Documentfout(String plek, String detail) {
-            super("malformed uchar-ir-v1 document at '" + plek + "': " + detail);
+            super("malformed uchar-ir-v1 document at " + (plek.isEmpty() ? "<root>" : "'" + plek + "'") + ": "
+                    + detail);
             this.plek = plek;
         }
         public String plek() { return plek; }
@@ -212,7 +215,7 @@ public final class IrLoader {
     }
 
     private RegelSpraakModel model(JsonNode root) {
-        if (root == null || !root.isObject()) throw new Documentfout("/", "expected an object, got " + kort(root));
+        if (root == null || !root.isObject()) throw new Documentfout("", "expected an object, got " + kort(root));
         String format = text(root, "format");
         if (!"uchar-ir-v1".equals(format))
             throw new Refusal("format", String.valueOf(format));
@@ -287,12 +290,12 @@ public final class IrLoader {
      *  Read leniently, each of these was a document part ignored or a null taken for an absent field. */
     private static void velden(JsonNode n, String pad, String knoop, List<String> verplicht, List<String> optioneel) {
         if (n == null || !n.isObject())
-            throw new Documentfout(pad.isEmpty() ? "/" : pad, "expected a JSON object"
+            throw new Documentfout(pad, "expected a JSON object"
                     + (knoop == null ? "" : " (" + knoop + ")") + ", got " + kort(n));
         if (knoop != null) {
             JsonNode soort = n.get("node");
             if (soort == null)
-                throw new Documentfout(pad + "/node", "required field is absent (the discriminator \"" + knoop + "\")");
+                throw new Documentfout(pad, "missing field 'node' (the discriminator \"" + knoop + "\")");
             if (!soort.isTextual() || !knoop.equals(soort.asText()))
                 throw new Documentfout(pad + "/node", "expected \"" + knoop + "\", got " + kort(soort));
         }
@@ -301,15 +304,21 @@ public final class IrLoader {
                 throw new Documentfout(pad + "/" + k, "unknown field" + (knoop == null ? "" : " on " + knoop));
         });
         for (String k : verplicht)
-            if (!n.has(k)) throw new Documentfout(pad + "/" + k, "required field is absent");
+            if (!n.has(k)) throw ontbreekt(pad, k);
         for (String k : optioneel)
             if (n.has(k) && n.get(k).isNull())
                 throw new Documentfout(pad + "/" + k, "an optional field is written whole or not at all, and null is neither");
     }
 
+    /** An absent field, named at the object {@code pad} that lacks it, as the OCaml loader's {@code field} names it:
+     *  a pointer to the field itself would point at nothing in the document. */
+    private static Documentfout ontbreekt(String pad, String veld) {
+        return new Documentfout(pad, "missing field '" + veld + "'");
+    }
+
     private static JsonNode sectie(JsonNode ouder, String pad, String naam) {
         JsonNode n = ouder.get(naam);
-        if (n == null) throw new Documentfout(pad + "/" + naam, "required field is absent");
+        if (n == null) throw ontbreekt(pad, naam);
         if (!n.isObject()) throw new Documentfout(pad + "/" + naam, "expected an object, got " + kort(n));
         return n;
     }
@@ -319,7 +328,7 @@ public final class IrLoader {
     private static void lijst(JsonNode ouder, String pad, String veld, java.util.function.BiConsumer<String, JsonNode> f) {
         JsonNode a = ouder.get(veld);
         String p = pad + "/" + veld;
-        if (a == null) throw new Documentfout(p, "required field is absent");
+        if (a == null) throw ontbreekt(pad, veld);
         if (!a.isArray()) throw new Documentfout(p, "expected an array, got " + kort(a));
         for (int i = 0; i < a.size(); i++) f.accept(p + "/" + i, a.get(i));
     }
@@ -328,15 +337,15 @@ public final class IrLoader {
      *  that once stood in for it is gone), and a repeated name would silently replace the declaration before it. */
     private static String naam(JsonNode n, String pad, String veld) {
         JsonNode v = n.get(veld);
-        if (v == null || !v.isTextual())
-            throw new Documentfout(pad + "/" + veld, "a declaration without a name: expected a string, got "
-                    + (v == null ? "no field" : kort(v)));
+        if (v == null) throw new Documentfout(pad, "a declaration without a name: missing field '" + veld + "'");
+        if (!v.isTextual())
+            throw new Documentfout(pad + "/" + veld, "a declaration without a name: expected a string, got " + kort(v));
         return v.asText();
     }
 
     private static String tekst(JsonNode n, String pad, String veld) {
         JsonNode v = n.get(veld);
-        if (v == null) throw new Documentfout(pad + "/" + veld, "required field is absent");
+        if (v == null) throw ontbreekt(pad, veld);
         if (!v.isTextual()) throw new Documentfout(pad + "/" + veld, "expected a string, got " + kort(v));
         return v.asText();
     }
@@ -348,14 +357,15 @@ public final class IrLoader {
 
     private static boolean waarheid(JsonNode n, String pad, String veld) {
         JsonNode v = n.get(veld);
-        if (v == null) throw new Documentfout(pad + "/" + veld, "required field is absent");
+        if (v == null) throw ontbreekt(pad, veld);
         if (!v.isBoolean()) throw new Documentfout(pad + "/" + veld, "expected a boolean, got " + kort(v));
         return v.booleanValue();
     }
 
     private static List<String> tekstLijst(JsonNode n, String pad, String veld) {
         JsonNode a = n.get(veld);
-        if (a == null || !a.isArray()) throw new Documentfout(pad + "/" + veld, "expected an array, got " + kort(a));
+        if (a == null) throw ontbreekt(pad, veld);
+        if (!a.isArray()) throw new Documentfout(pad + "/" + veld, "expected an array, got " + kort(a));
         List<String> uit = new ArrayList<>();
         for (int i = 0; i < a.size(); i++) {
             if (!a.get(i).isTextual())
@@ -372,7 +382,7 @@ public final class IrLoader {
     private static int geheel(JsonNode n, String pad, String veld, String vorm) {
         JsonNode c = n.get(veld);
         String p = pad + "/" + veld;
-        if (c == null) throw new Documentfout(p, "required field is absent");
+        if (c == null) throw ontbreekt(pad, veld);
         if (!c.isIntegralNumber()) throw new Documentfout(p, "expected an integer, got " + kort(c));
         if (!c.canConvertToInt())
             throw new Refusal(vorm, c + " at '" + p + "' is outside this backend's integer range ["
