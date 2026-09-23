@@ -1862,7 +1862,64 @@ final class RuleChecker {
                 model.diagnostics.add(new Diagnostic(Severity.ERROR,
                         "een periodevergelijking (§8.4.3) vereist datum-expressies als grenzen, niet "
                                 + grens.type().naam() + ": '" + grens.bron() + "'", p.getStart().getLine()));
+        for (String fout : new String[]{periodeGrensFout(van, "vanaf"), periodeGrensFout(tot, "tot")})
+            if (fout != null) model.diagnostics.add(new Diagnostic(Severity.ERROR, fout, p.getStart().getLine()));
         return new Conditie.Periode(van, tot, p.TOT_EN_MET() != null, bron(p));
+    }
+
+    /** WF-111 (maintainer decision 2026-09-23), producer side: a window bound is a date literal or an own
+     *  scalar date attribute of the subject, both of day precision. §13.4.15.68 admits any date expression and
+     *  this method is where the frontend narrows it to the wire's two shapes; before it, every other bound
+     *  reached disk silently and the verifier refused the document. ERROR, so {@link Resolver#irModus} writes
+     *  nothing.
+     *
+     *  <p>"Own" is compared by IDENTITY with the subject, not by the ⊑ the rule's text allows, and on purpose:
+     *  this frontend writes an own read — an inherited attribute included — with the subject as its object type,
+     *  and emits a read naming any other type, a supertype of the subject included, as a navigation (by-pair
+     *  bindings) or as an off-subject read without one. The verifier refuses both (WF-111 as navigated, or
+     *  WF-053), so identity is what gives its verdict on this frontend's output. A marker bound is left to the
+     *  marker sweep, and a non-date bound to the WF-042 message above. Null when the bound is admissible. */
+    private String periodeGrensFout(Expr grens, String kant) {
+        if (grens == null || grens instanceof Expr.Onopgelost) return null;
+        if (grens.type() != null && !grens.type().isOnbekend() && !grens.type().isDatum()) return null;
+        Objecttype subject = bouwer.subject();
+        String reden;
+        if (grens instanceof Expr.Literal) {
+            if (!(grens.type() instanceof Datatype.DatumTijd)) return null;
+            reden = "een datum-tijd, en een venster is een reeks kalenderdagen: geen clausule leest een tijdstip "
+                    + "als grens";
+        } else if (grens instanceof Expr.AttribuutRef a) {
+            if (a.navigatieRol() != null || !a.navigatiePad().isEmpty() || a.set())
+                reden = "een genavigeerde of verzamelende lezing van '" + a.attribuut() + "'";
+            else if (subject == null)
+                reden = "het attribuut '" + a.attribuut() + "' op een plaats zonder onderwerp dat het bezit";
+            else if (a.objecttype() != subject && a.objecttype() != null && subject.isEen(a.objecttype()))
+                reden = "het attribuut '" + a.attribuut() + "' van '" + a.objecttype().naam + "', een supertype van "
+                        + "het onderwerp '" + subject.naam + "': deze frontend leest die naam als een ander exemplaar, "
+                        + "langs een feittype bereikt, en een venstergrens navigeert nooit. Lees de datum van het "
+                        + "onderwerp zelf ('zijn " + a.attribuut() + "' of met de naam " + subject.naam + ")";
+            else if (a.objecttype() != subject && a.objecttype() != null && a.objecttype().isEen(subject))
+                reden = "het attribuut '" + a.attribuut() + "' van '" + a.objecttype().naam + "', een subtype van het "
+                        + "onderwerp '" + subject.naam + "': niet elk onderwerp is een " + a.objecttype().naam;
+            else if (a.objecttype() != subject)
+                reden = "een lezing van '" + a.attribuut() + "' op '"
+                        + (a.objecttype() == null ? "?" : a.objecttype().naam) + "', een ander objecttype dan het "
+                        + "onderwerp '" + subject.naam + "': een navigatie, en een venstergrens navigeert nooit";
+            else if (subject.granulariteitVan(a.attribuut()) != null)
+                reden = "het tijdsafhankelijke attribuut '" + a.attribuut() + "'";
+            else if (a.type() instanceof Datatype.DatumTijd)
+                reden = "het datum-tijd-attribuut '" + a.attribuut() + "', en een venster is een reeks kalenderdagen: "
+                        + "geen clausule leest een tijdstip als grens";
+            else return null;
+        } else if (grens instanceof Expr.ParameterRef pr) {
+            reden = "de parameter '" + pr.parameter().naam() + "'";
+        } else {
+            reden = "een berekende datumexpressie";
+        }
+        return "periodevergelijking (§8.4.3): de " + kant + "-grens '" + grens.bron() + "' is " + reden
+                + " — een venstergrens is een datumliteraal of een eigen, niet-tijdsafhankelijk "
+                + "datum-in-dagen-attribuut van het onderwerp; de algemene datumexpressie die §13.4.15.68 toelaat "
+                + "is een open wirebeslissing (WF-111, IR-SPEC ch. 4.6)";
     }
 
     private Conditie bouwSamengesteld(VoorwaardeKwantificatieContext k,

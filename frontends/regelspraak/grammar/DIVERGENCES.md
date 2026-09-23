@@ -529,6 +529,40 @@ emitted before, which is the measurement above stated as a property.
 
 ---
 
+## §8.4.3 A time window's bounds — narrowed to the wire's two shapes
+
+Not a dialect extension and not inert: a narrowing of what v2.3.0 spells.
+§13.4.15.68 gives a periodevergelijking ("vanaf …", "van … tot …", "tot en met
+…") any date expression as a bound, and the frontend used to build every one of
+them into a window. WF-111 (`spec/IR-SPEC.md` ch. 4.6, maintainer decision
+2026-09-23) admits two shapes on the wire — a date literal, or an own scalar
+date attribute of the subject — both of day precision; the general date
+expression is an OPEN wire decision (`spec/RUNTIME-SEMANTICS.md` ch. 3.12).
+Measured before the fence (2026-09-23): a parameter, a navigated read, a
+datum-tijd attribute, a computed date ("zijn peildatum plus 1 dg"), a
+time-dependent attribute, a datum-tijd literal and an attribute of another
+object type each reached disk with `diagnostics: []`, and the verifier refused
+every one. `RuleChecker.periodeGrensFout` refuses them now with an ERROR that
+names the shape, so the document never reaches disk. No source in any zone
+writes a window with such a bound, so nothing moves.
+
+**"Own" is written on the subject, and compared by identity.** WF-111's text
+admits an attribute "on an object type the subject satisfies" (`S ⊑ O`). This
+frontend writes an own read — an inherited attribute included — with the
+subject as its object type: "zijn peildatum" in a rule on a subtype is an
+`AttribuutRef` on that subtype. A read that names any other type, a supertype of
+the subject included ("de peildatum van de Jutter" in a rule on a subtype of
+Jutter), goes out as a navigation — with by-pair bindings when a fact type
+relates the two types, which the verifier refuses as navigated (WF-111), or
+without any, which it refuses under WF-053 as an off-subject read no fact type
+carries. So the fence compares by identity, as the Drools gate
+`Tijdrekening.periodeGrensLowerbaar` does; with `⊑` it would pass the
+supertype-named read on to a verifier that refuses it. The message for that
+case says how to read the subject's own date instead. Witness:
+`PeriodegrensTest`.
+
+---
+
 ## §13.4.17.47 The count's operand list — an ACCEPTING superset, fenced in the resolver
 
 Unlike the three sections above this is **not** a dialect extension and it is
