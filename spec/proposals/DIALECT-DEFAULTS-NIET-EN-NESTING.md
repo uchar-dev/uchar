@@ -205,7 +205,7 @@ points 2 and 4 otherwise than first proposed here:
 ### 2.3 The anchor's corners
 
 *Updated 2026-09-23 at the landing of card
-`anker-ww-herleving-dragervoorwaarde` (branch commits a853cb80, a81872ac):
+`anker-ww-herleving-dragervoorwaarde` (branch commits 40849db2, 78a0b801):
 the anchor carries the repair of §8.1. The first measurement (probes A and
 B, on 8dd05e25) stands; the sixteen-combination enumeration of that card,
 and its measurements, extend it.*
@@ -1075,8 +1075,8 @@ witnesses are frontend fixtures (JUnit, beside
 ### 8.1 G1 — repair of `anchor/ww-herleving-inkomen` (protected path)
 
 *Landed 2026-09-23 as a proposal branch the maintainer merges (card
-`anker-ww-herleving-dragervoorwaarde`, commits a853cb80 and a81872ac, the
-bezittelijk kind in 00096a8d, case10 in 079a3d1f). This section records the
+`anker-ww-herleving-dragervoorwaarde`, commits 40849db2 and 78a0b801, the
+bezittelijk kind in 48800a13, case10 in 22730193). This section records the
 landed form; where it differs from the version first proposed here, the
 first version is named.*
 
@@ -1127,7 +1127,7 @@ first version is named.*
   held for a case4-based input case that also pinned `inkomensgrens`.
 - `recht op uitkering` is `BEZITTELIJK` in `kenmerkSoorten`, as first
   proposed here: the card left it out, and its fix round 2 (commit
-  00096a8d) added it at the maintainer's request, so the twin can write
+  48800a13) added it at the maintainer's request, so the twin can write
   `heeft (geen) recht op uitkering` and land byte-identically on the
   anchor. [M] The kind steers only that source spelling. With
   `BIJVOEGLIJK` and with `BEZITTELIJK` the verifier passes, all ten cases
