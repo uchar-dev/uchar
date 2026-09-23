@@ -2283,7 +2283,7 @@ welke families samen landen:
 
 | Landing | Draagt | Deltas | Waarom samen |
 |---|---|---|---|
-| L1 | M1 | B1–B5, plus V3 (de geneste root) | de container; loopt (`backlog/doing/20260923-m1-schema-en-container.md`, kaart op main `82c1f088`) |
+| L1 | M1 | B1–B5, plus V3 (de geneste root) | **GELAND 2026-09-24** (`32185b7b`, `backlog/done/20260923-m1-schema-en-container.md`): de container; 747 documenten mechanisch met `spec/proposals/v1-migratie/m1.py`, 21 getuigen verwijderd-met-reden, WF-113 |
 | L2 | M2 + M3 | B7, B8, B9, B11, B12, B13, B16 | beide herschrijven `AttribuutRef` (B11 de navigatievelden, B13 de `type`-annotatie), en beide zijn na P1–P3 en gate 13 vooral verwijderen-met-getuige: ~30 + 72 negatiefs in één stempelronde; V15 (gate 13 herzien) hoort erbij |
 | L3 | M4 | B14, B15, B17 (i), B18 | het typesysteem alleen: de landing die het meest waarschijnlijk waarden van gates 5/6/12 beweegt, en die wil je los zien |
 | L4 | M5 + M6 | B19, B20, B21, B27, B28, B22 a/b/c, B23, B24, B25 | B21 (de `Functie`-splitsing) is al een expressieknoop in de regellaagkaart; de regel- en expressieknopen worden door dezelfde lezers en vertalers in één beweging herschreven, en B22 (getypeerde literalen) heeft L3's typen nodig |

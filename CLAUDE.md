@@ -119,7 +119,8 @@ green. Current gates:
 2. `scripts/check-ir-schema.sh` — the schema file is metaschema-valid;
    every `corpus/golden/**/ir.json` and `corpus/rood/**/ir.json`
    validates against
-   `spec/schema/regelspraak-ir-v0.schema.json` and round-trips
+   `spec/schema/uchar-ir-v1.schema.json` (since L1 of the v1 wire
+   migration, 2026-09-24; `regelspraak-ir-v0` until then) and round-trips
    byte-identically; an unpopulated corpus is reported explicitly, never
    silently green.
 3. `scripts/check-verifier.sh` — the OCaml verifier (`spec/verifier/`)
@@ -201,7 +202,12 @@ green. Current gates:
     takeover, brought here in original form) compile + pass against it with a
     non-zero test count; every toolchain-pinned `toka/**/ir.json` re-emits
     through uchar's own frontend byte-identically (frontend ≡ toolchain on
-    the ©-Belastingdienst casus the public corpus may never carry); an empty
+    the ©-Belastingdienst casus the public corpus may never carry — since L1
+    of the v1 wire migration, 2026-09-24, a REGRESSION form: the zone
+    migrates with every landing, the casus dump is re-emitted by the
+    frontend and the slices go through the landing's migration script, so
+    the comparison proves frontend ≡ the recorded state, `toka/README.md`
+    lists each landing under its deliberate divergences); an empty
     fixture set, zero tests, or a stale holdout is a failure, never silently
     green. The reason-carrying holdout list (`toka-23`, the §4.1 datum+datum
     casus-quirk; `toka-45`, dimensionally inconsistent as written — surfaced

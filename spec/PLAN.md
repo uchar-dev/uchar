@@ -725,6 +725,13 @@ fourteen gates green, and is followed by a toolchain re-pin. The `toka/`
 zone stays through the whole migration — decision 10's precondition is
 amended in timing only: gate 11 becomes a per-landing regression gate,
 and P11 (zone removal plus history rewrite) executes at the public flip.
+**L1 landed (2026-09-24, `32185b7b`, card `backlog/done/20260923-m1-schema-en-container.md`):**
+`uchar-ir-v1` with the nested root `{format, model, rules, diagnostics}`,
+the six registries as lists, `ObjectType` with member nodes, the `Domain`
+wrapper, the `regels` stubs gone, `diagnostics` kept under WF-113; 21
+negatief witnesses removed with reason, one rewritten; all fourteen gates
+green on the landing (gate 12 pins 185/164 with the WF-113 golden
+`jutterswet-kaletabel`).
 
 ## 10. Rough effort
 
