@@ -91,6 +91,32 @@ stays honest about where it no longer proves toolchain agreement.
   writes `regelspraak-ir-v0`, so for the container this dump has stopped being a
   toolchain dump: what gate 11's comparison proves is "frontend == the recorded
   state".
+- **2026-09-24 — the zone is in the L2 shape of `uchar-ir-v1`.** Executed by the
+  L2 card (`20260923-l2-referentielaag.md` in `backlog/`). The reference layer
+  moved and nothing else: a reference to a declared thing now carries its
+  symbolic form only. Gone from the wire are the `type` annotation of the five
+  reference nodes (`AttribuutRef`, `ParameterRef`, `DimensieCel`, `BinderRef`,
+  `VariabeleRef`), the written navigation beside an attribute reference's
+  binding (`onderwerpBron`, `navigatieRol`, `navigatiePad`, `set`), a
+  characteristic check's `navigatie`, the bean fields of a fact creation
+  (`zetVeld`, `joinVeld`, and a step's `type`, `veld` and `viaOuderVeld`) and of
+  a scoped uniqueness (`scopeVeld`), and the `Onbekend` datatype; the two role
+  checks became one `RoleMembership` node. In `casus/ir.json` that removed 69
+  reference types; 2 counts whose range every reader used to derive now carry it
+  (`bronRol`, from the type pair), and their sources name the bound role by its
+  declared name (the written spelling stays in `bron`); 1 role check became a
+  `RoleMembership`; and 3 written navigations became own readings without a
+  binding — two zero-hop self-references and one count source naming its own
+  subject. No navigation binding was added. One
+  derived position the frontend cannot type (`/rules/resolvedRegels/16/waarde`,
+  a date minus a month count) carries `"type": null`, its one L2 spelling, where
+  it carried an `Onbekend`. The 22 `cases/` slices that carry a reference layer
+  were migrated mechanically (`spec/proposals/v1-migratie/m2.py`), the other 7
+  are byte-identical; `casus/ir.json` was migrated the same way and then
+  re-emitted by uchar's frontend, which reproduced the migrated file byte for
+  byte (45 fragments, holdouts unchanged). The original toolchain still writes
+  the v0 reference layer, so for these nodes too the comparison proves
+  "frontend == the recorded state".
 - The precedent runs the other way: `toka-45` (decision 16Y, 2026-08-29) is held
   **out** of the re-emission rather than re-pinned, because uchar's unit typing
   rejects the fragment as written. Divergence by holdout and divergence by
