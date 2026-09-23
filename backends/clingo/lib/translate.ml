@@ -1628,7 +1628,7 @@ let role_canonical (r : rol) =
    so where the filler is the element type or below, which is every
    document written before the chain existed, the atom is satisfied by
    every instance the role yields and the encoding is unchanged.
-   Every fold body goes through here, the row-1 count wart included, so
+   Every fold body goes through here, the count source included, so
    there is one place the population is decided. *)
 let source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x =
   let scope = [ Printf.sprintf "isa(%s,%s)" x (str el) ] in
@@ -2106,10 +2106,10 @@ let units_identical_ok ~what (l : eenheid option) (r : eenheid option) =
 
 (* PROVABLY unit-free: distinguishes a genuinely unitless expression from one
    eff_unit merely cannot analyse (a Let, a field/dimension access, a division,
-   an Onbekend-typed declaration), mirroring eff_unit's resolved forms but
+   a declaration that resolves nowhere), mirroring eff_unit's resolved forms but
    proving the ABSENCE of a unit rather than reading one. A declaration counts
    as proven unit-free only when its datatype is explicitly Numeriek/Percentage
-   with eenheid null — an Onbekend or non-numeric declaration is NOT proven
+   with eenheid null — an unresolved or non-numeric declaration is NOT proven
    (its unit is unknown, possibly a composite the frontend could not name). *)
 let rec provably_unitless ctx (e : expr) : bool =
   match e with
@@ -2144,7 +2144,7 @@ let is_pure_pct (u : eenheid) : bool =
 (* PROVABLY pure-%: the effective unit is decidably the singleton %-unit.
    Mirrors provably_unitless's resolved leaf and unit-preserving forms but
    PROVES the unit is % rather than absent — an unanalysable node (a Let, a
-   field access, a division, an Onbekend-typed declaration) is NOT proven and
+   field access, a division, a declaration that resolves nowhere) is NOT proven and
    the caller keeps faulting loudly. The multiplicative/additive arms are
    deliberately omitted: % + % stays %, but % × % is %² (no ÷100 bridge), and
    no corpus operand is a composite. *)

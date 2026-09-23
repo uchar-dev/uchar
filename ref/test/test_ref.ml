@@ -760,7 +760,7 @@ let () =
   check "WV-5.5-charinit-const-waar" (mint (litv "waar" Booleaan) (Value.Bool false) = true);
   check "WV-5.5-charinit-const-onwaar" (mint (litv "onwaar" Booleaan) (Value.Bool true) = false);
   (* a value that evaluates to a non-boolean faults fast (the runtime
-     bounded-write guard the verifier's v0 unknown-sentinel defers to) *)
+     bounded-write guard behind the verifier's static boolean-type check) *)
   expect_fault "WV-5.5-charinit-nonbool-fault" (fun () ->
       ignore (mint (litv "5" num0) (Value.Bool true)))
 
@@ -3157,9 +3157,9 @@ let () =
    evaluator now refuses it by name.
 
    Every shape that reaches the value arm under `Aantal` is fenced on the
-   wire: the listed operand list of two or more by WF-037 (2026-09-20), the
-   count of ONE operand or none without an element type by WF-037
-   (2026-09-23), and the set source by WF-096 (2026-09-19). Until 2026-09-23
+   wire: the listed operand list of two or more by WF-037 (2026-09-20) and
+   the count of ONE operand or none without an element type by WF-037
+   (2026-09-23); a ranged single source counts instances since L2. Until 2026-09-23
    the arm answered — the count of the FILLED operands, 1 on one filled own
    read, 0 on none — and these six lines pinned that answer, the last three
    as the open flank a well-formed document still reached. The flank is

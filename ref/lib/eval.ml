@@ -1652,10 +1652,11 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
       | `Instances is -> Arith.agg_aantal is
       | `Values vs ->
           (* The second line of defence, and a refusal since 2026-09-23. Every
-             shape that hands a count VALUES is fenced on the wire: the set
-             source by WF-096 (2026-09-19), the listed operand list of two or
-             more by WF-037 (2026-09-20), and the count of one operand or none
-             without an element type by WF-037 (2026-09-23). No well-formed
+             shape that hands a count VALUES is fenced on the wire: the listed
+             operand list of two or more by WF-037 (2026-09-20), and the count
+             of one operand or none without an element type by WF-037
+             (2026-09-23); since L2 a count's single ranged source counts
+             instances (D8 (ii)) and never reaches this arm. No well-formed
              document reaches this line any more. Until that last date it
              answered — the number of FILLED values, the filled count's
              meaning under the wrong kind, and 1 on a single list literal
@@ -1665,9 +1666,9 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
              answering it silently, so it refuses by name. *)
           Value.fault
             "a count folds INSTANCES and this node hands it %d value(s) instead — an operand \
-             list, a count without an element type, or a set source, all refused on the wire \
-             (WF-037, WF-096): counting them would count the operands, or their filled ones, \
-             and never a population (ch. 3.4a)"
+             list or a count without an element type, both refused on the wire (WF-037): \
+             counting them would count the operands, or their filled ones, and never a \
+             population (ch. 3.4a)"
             (List.length vs))
   | Aantal_gevulde ->
       (* ch. 3.4c: the filled-value count. It reads a VALUE per contributor
