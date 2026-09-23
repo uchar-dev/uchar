@@ -17,6 +17,7 @@ import io.github.yhavinga.regelspraak.transpiler.kern.Gastheer;
 import io.github.yhavinga.regelspraak.kern.Literalen;
 import io.github.yhavinga.regelspraak.transpiler.kern.Operatoren;
 import io.github.yhavinga.regelspraak.transpiler.kern.Tijdlijnen;
+import io.github.yhavinga.regelspraak.transpiler.kern.Vensterpositie;
 import io.github.yhavinga.regelspraak.kern.Tijdrekening;
 
 import static io.github.yhavinga.regelspraak.transpiler.kern.Namen.bevatNaam;
@@ -4786,13 +4787,14 @@ public final class DrlTranspiler {
             return new LoweredConditie("", List.of(verreRolClausule(vr)), false);
         }
         if (c instanceof Conditie.Samengesteld s) {
-            // §8.4.3 a periodevergelijking-bullet under a COUNTING quantifier (geen/ten minste/ten hoogste/
-            // precies): the exec back-end's counting fold is fact-only (it cannot bind the rekendatum global),
-            // so marker here too — symmetric, never a DRL-fires/exec-skips divergence. ALLE/DE conjunctions
-            // (the spec's own §8.4.3 example) lower normally below.
+            // §8.4.3 a window under GEEN or a counting quantifier (ten minste/ten hoogste/precies), at any depth:
+            // WF-112's composite arm, since 2026-09-23 — the quantifier would complement or count the window's
+            // verdict and no reading of that is specified. Refused by name, in the sentence both branches share
+            // (kern.Vensterpositie), because not every document goes through the verifier. ALLE/DE conjunctions (the
+            // spec's own §8.4.3 example) lower normally below.
             if (s.kwantor() != Conditie.Kwantor.ALLE && s.kwantor() != Conditie.Kwantor.DE
                     && s.onderdelen().stream().anyMatch(Conditie::bevatPeriode))
-                return LoweredConditie.marker("periodevergelijking onder een tellende kwantor (§8.4.3)", s.bron());
+                return LoweredConditie.marker(Vensterpositie.weigering(s), s.bron());
             // §13.4.14.4 a SINGLE aggregation bullet under GEEN / "ten minste 1": the quantifier reduces to a plain
             // boolean transform of the one leaf (GEEN = NOT the leaf; ten minste 1 = the leaf), so route it through the
             // aggregation lowering with a boolean-NEGATION flag for GEEN. Negating the rsAggVergelijk RESULT (not the
@@ -4941,6 +4943,13 @@ public final class DrlTranspiler {
      *  and the package died on a parser error instead of refusing by name (measured 2026-09-16). So the guard
      *  is BOTH channels: a marker, or any clause appended since {@code mark}. */
     private LoweredConditie kwantorvouw(Acc acc, Conditie.Kwantorvouw kv, Objecttype subject) {
+        // WF-112 before anything else. This arm writes a window in the filter or the matrix into the element
+        // pattern whatever the quantifier, so under GEEN or a counting one it answered the counted or
+        // complemented verdict no reading specifies — measured 2026-09-23 under all four, and under GEEN in a
+        // time-free session the rule fired for every subject. The verifier refuses such a document; this branch
+        // refuses it too, because not every document goes through the verifier.
+        String vensterWeigering = Vensterpositie.weigering(kv);
+        if (vensterWeigering != null) return kvMarker(kv, vensterWeigering);
         // Both routes below answer with a SEPARATE when-clause (a `not` witness pattern, a count accumulate, the
         // §8.2 collectList+eval) and an EMPTY inline — which is faithful only where the compound AND-s its parts.
         // Under a fold that ORs or negates them the clause would assert unconditionally what the fold means to
