@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * A {@code Regelgroep}'s members on the wire are RULE names (IR-SPEC ch. 3.9, WF-033: every member resolves to a
  * rule form). A decision table is no rule form — it desugars to one rule per row — so a group that holds one lists
- * the rules of its rows. Measured on the frontend before this fix (cffa028c): the table's own name went out as
+ * the rules of its rows. Measured on the frontend before this fix (8a902609): the table's own name went out as
  * the member, silently, and the verifier refused every such document ({@code WF-033 FAIL /regelGroepen/0: group
  * member 'Bergingspremie' does not resolve to a rule form}), with or without anything else in it.
  */

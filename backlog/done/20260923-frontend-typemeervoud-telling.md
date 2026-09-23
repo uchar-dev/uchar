@@ -177,7 +177,7 @@ Gemeten per spelling, vóór (build na de eerste kaart) en na:
     mutant T2 (opgeloste-operandwacht weg):    1 failed (de parameter "vondsten" kreeg de typezin)
     mutant T3 (uitweg zonder rol):             6 failed (de zes spellingen)
     elke mutant teruggezet met cp, cmp gelijk (md5 fd075975d5508f716a077957cce4c814,
-    vóór de woordverfijning van commit cc4f5c29)
+    vóór de woordverfijning van commit df508d07)
 
 ### 6. Gates, elk als losse aanroep na `eval $(opam env)`
 
@@ -196,7 +196,7 @@ Gemeten per spelling, vóór (build na de eerste kaart) en na:
     13 check-reftype-derivation PASS  131 twists over 27 goldens, 128 replays, 25 DRL-tekst
     14 check-flogic             PASS  130 checks, 2 goldens
 
-Gates 1, 10 en 11 opnieuw na de woordverfijning (cc4f5c29): PASS, 431 / 70
+Gates 1, 10 en 11 opnieuw na de woordverfijning (df508d07): PASS, 431 / 70
 / 45. Geen vloer of pin aangeraakt.
 
 ### 7. Herpin
@@ -251,7 +251,7 @@ Aansluitend op het blok "**Follow-up (2026-09-23, card
 
 Opdracht van de hoofdsessie na de drie kaarten, als verbreding van
 may-touch binnen `frontends/regelspraak` (geen kaartje; eigen commit
-`8a4a8809`). Vastgelegd bij deze kaart omdat zij er het dichtst bij ligt:
+`66de32a2`). Vastgelegd bij deze kaart omdat zij er het dichtst bij ligt:
 ook hier trekt de frontend een hek op dat een wireregel van 2026-09-23
 spiegelt. Aanleiding: de Drools-vouwtoets-kaart zag dat
 `Tijdrekening.periodeGrensLowerbaar` het objecttype van een venstergrens
@@ -259,7 +259,7 @@ op identiteit vergelijkt, waar WF-111 `S ⊑ O` toelaat. Die helper staat
 in `frontends/regelspraak` (pakket `kern`) maar wordt alleen door de
 twee Drools-takken aangeroepen.
 
-### De meting (build vóór de fence, `028f4b19`; model met `Klipjutter is een Jutter`)
+### De meting (build vóór de fence, `4bc5134f`; model met `Klipjutter is een Jutter`)
 
     grens (subject: bound)                                   frontend            verifier
     Klipjutter: vanaf zijn peildatum (geërfd)                schoon, op Klipjutter  PASS
@@ -311,7 +311,7 @@ vorm plus de tot-grens, en zeven schone vormen.
     mutant M4 (tijdsafhankelijkheid uit):         1 failed
     elke mutant teruggezet met cp, cmp gelijk (md5 b304844d2b62d7692fea1d54529d0ca1)
 
-### Gates op `8a4a8809`, elk als losse aanroep
+### Gates op `66de32a2`, elk als losse aanroep
 
 Alle veertien PASS; de getallen zijn die van de derde kaart, behalve gate
 10: 448 JUnit (431 + 17), 70 rgs-goldens byte-identiek. Gate 11: 45 .rgs
@@ -408,6 +408,6 @@ volgt het besluit; tot dan laat zij door wat de verifier doorlaat.
 **Voor de herpin (hoofdsessie).** In regelspraak-java verwacht
 `RuleCheckTest.periodevergelijking_met_parametergrens_blijft_eerlijke_marker`
 dat "vanaf de PEILDATUM" (een parametergrens) zonder fouten resolvet. Sinds
-de WF-111-fence van deze branch (`8a4a8809`) is een parametergrens een
+de WF-111-fence van deze branch (`66de32a2`) is een parametergrens een
 ERROR. Die test kantelt dus bij de herpin, naar dezelfde weigering die de
 verifier al gaf.

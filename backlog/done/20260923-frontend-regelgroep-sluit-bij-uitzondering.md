@@ -232,7 +232,7 @@ Aan het eind van de IR-deltakolom, na "… witnessed by
 
 ### Fixronde 1 (2026-09-23, hoofdsessie)
 
-Open punt 2 gesloten in `1f3ae38d`: alleen commentaar en registertekst.
+Open punt 2 gesloten in `cd37c5a9`: alleen commentaar en registertekst.
 De 24 commentaren in de grammatica en de hoofdbronnen (`grammar/*.g4`,
 `resolver/`, `ir/`, `model/`) die naar `docs/grammar-divergences.md`
 wezen, wijzen nu naar `grammar/DIVERGENCES.md`. Dat pad is relatief aan
