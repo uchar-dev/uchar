@@ -281,9 +281,9 @@ class OverervingWeigeringWitnessTest {
         ObjectNode ir = goldenIr(KETEN);
         benoemdeTijdlijn(ir, /*variabelStartpunt=*/true, /*granulariteit=*/null);
         startpuntOp(ir, "Kustgemeente");
-        IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class,
+        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
                 () -> IrLoader.loadAll(JSON.readTree(Files.readString(model("keten-nulgranulariteit", ir)))));
-        assertEquals("TimelineFacet.granularity", r.form(), r.getMessage());
+        assertTrue(e.plek().endsWith("/timeline/granularity"), e.getMessage());
     }
 
     @Test void een_geerfde_tijdlijn_met_VAST_startpunt_laadt_gewoon() throws Exception {
@@ -331,12 +331,14 @@ class OverervingWeigeringWitnessTest {
     @Test void een_onbekend_supertype_weigert_bij_het_laden() throws Exception {
         // WF-103's shape. The verifier rejects it at the document; the loader is the last line, because a
         // null parent would otherwise reach the chain walk and answer "no such member" for every inherited
-        // name — a wrong diagnosis of a real defect.
+        // name — a wrong diagnosis of a real defect. A defect of the document, so a hard error at the
+        // position of the reference, never the gate's auto-excluded channel (2026-09-23).
         ObjectNode ir = goldenIr(KETEN);
         IrPad.objectType(ir, "Wrakrecht").put("supertype", "Bestaatniet");
-        IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class,
+        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
                 () -> IrLoader.loadAll(JSON.readTree(Files.readString(model("supertype-onbekend", ir)))));
-        assertTrue(r.getMessage().contains("supertype 'Bestaatniet' is not declared"), r.getMessage());
+        assertTrue(e.getMessage().contains("supertype 'Bestaatniet' is not declared"), e.getMessage());
+        assertTrue(e.plek().endsWith("/supertype"), e.getMessage());
     }
 
     @Test void een_supertypecyclus_weigert_bij_het_laden() throws Exception {
@@ -345,9 +347,9 @@ class OverervingWeigeringWitnessTest {
         // comment saying the verifier has it covered.
         ObjectNode ir = goldenIr(KETEN);
         IrPad.objectType(ir, "Strandrecht").put("supertype", "Wrakrecht");
-        IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class,
+        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
                 () -> IrLoader.loadAll(JSON.readTree(Files.readString(model("supertype-cyclus", ir)))));
-        assertTrue(r.getMessage().contains("supertype cycle at"), r.getMessage());
+        assertTrue(e.getMessage().contains("supertype cycle at"), e.getMessage());
     }
 
     // ---------------- helpers ----------------

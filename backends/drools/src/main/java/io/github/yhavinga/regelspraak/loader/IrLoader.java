@@ -48,12 +48,15 @@ import java.util.Map;
  * fires the IR — never the RegelSpraak source.
  *
  * <p><b>Refusal discipline.</b> Every wire form the v0 Drools backend does not carry is a LOUD, per-form
- * {@link Refusal} — never a silent skip. That covers a {@code format} other than {@code uchar-ir-v1}, an
- * unknown section of the root, the model or the rules (the model's {@code functionDefs} extension among them),
- * and an unknown {@code node}
+ * {@link Refusal} — never a silent skip. That covers a {@code format} other than {@code uchar-ir-v1}, the
+ * model's {@code functionDefs} extension, and an unknown {@code node}
  * discriminator inside the {@link Expr} / {@link Conditie} / {@link Datatype} sealed hierarchies
  * (a struct/list literal, a MapList/Invoke, …). The differential gate turns a Refusal into a
- * reason-carrying exclusion.
+ * reason-carrying exclusion. A document that is not well-formed is no form at all: the container, the
+ * declaration lists and the M1 nodes ({@code ObjectType}, {@code Attribute}, {@code Characteristic},
+ * {@code TimelineFacet}, {@code Domain}) are read as strictly as the OCaml loader reads them — exact keys, the
+ * node discriminator, the JSON types, WF-001/WF-002 name identity — and a defect there is a {@link Documentfout}
+ * naming its JSON position, a hard error.
  *
  * <p><b>Authority.</b> The v0 BEAN fields are authoritative: where the emitter also writes a symbolic
  * extension that is a record field (a feitcreatie's {@code feittype/ankerRol/doelRol/joinRol}, a
@@ -93,20 +96,37 @@ public final class IrLoader {
         public String form() { return form; }
     }
 
-    private static final java.util.Set<String> ROOT = java.util.Set.of("format", "model", "rules", "diagnostics");
-    private static final java.util.Set<String> MODEL = java.util.Set.of(
+    /** A document that is not a well-formed {@code uchar-ir-v1} document, named by the position it sits at. A hard
+     *  error and never a {@link Refusal}: a Refusal files the document under the differential gate's auto-excluded
+     *  channel as a form this backend does not carry, which is a green gate over a document nobody read (the reason
+     *  {@link #datumVanIrWire} gives for its own fence). {@code plek} is a JSON pointer into the document, in the
+     *  OCaml loader's notation, for the container and the M1 nodes; the v0 nodes inside them are read without a
+     *  path, and there it names the node kind and the field. */
+    public static final class Documentfout extends IllegalArgumentException {
+        private final String plek;
+        public Documentfout(String plek, String detail) {
+            super("malformed uchar-ir-v1 document at '" + plek + "': " + detail);
+            this.plek = plek;
+        }
+        public String plek() { return plek; }
+    }
+
+    private static final List<String> ROOT = List.of("format", "model", "rules", "diagnostics");
+    private static final List<String> MODEL = List.of(
             "objectTypes", "factTypes", "parameters", "domains", "unitSystems", "dimensions", "timelines",
             "dayKinds", "dagsoortPerEenheid");
-    private static final java.util.Set<String> RULES = java.util.Set.of(
+    private static final List<String> RULES = List.of(
             "resolvedRegels", "resolvedDagsoorten", "objectCreaties", "verdelingen", "consistenties",
-            "uniciteiten", "uniciteitUnies", "feitCreaties", "resolvedStartpunten", "regelGroepen",
-            "prioritizedDefaults");
+            "uniciteiten", "uniciteitUnies", "feitCreaties", "resolvedStartpunten", "regelGroepen");
 
     private final RegelSpraakModel m = new RegelSpraakModel();
     /** IR-SPEC ch. 2.2: the declared supertype NAME per object type, held until every declaration is
      *  read — the wire reference is order-free, so a forward reference is legitimate. An IDENTITY map
      *  because two object types may carry the same declaration content. */
     private final Map<Objecttype, String> supertypeNaam = new java.util.IdentityHashMap<>();
+    /** The JSON position of each {@link #supertypeNaam} entry, so a reference that does not resolve is reported
+     *  where it was written. */
+    private final Map<Objecttype, String> supertypePad = new java.util.IdentityHashMap<>();
     /** §6.1 (Phase 4) the prioritized-defaults extension list, parsed into the shared ir records — a top-level
      *  core-layer section the {@link RegelSpraakModel} does not itself carry (the model is the v0 resolved shape),
      *  so it rides beside the model via {@link Loaded}. An empty list is a legitimate flat program (accepted). */
@@ -192,88 +212,209 @@ public final class IrLoader {
     }
 
     private RegelSpraakModel model(JsonNode root) {
+        if (root == null || !root.isObject()) throw new Documentfout("/", "expected an object, got " + kort(root));
         String format = text(root, "format");
         if (!"uchar-ir-v1".equals(format))
             throw new Refusal("format", String.valueOf(format));
-        bekendeSecties(root, ROOT, "root");
-        JsonNode model = sectie(root, "model");
-        JsonNode rules = sectie(root, "rules");
-        bekendeSecties(model, MODEL, "model");
-        bekendeSecties(rules, RULES, "rules");
+        velden(root, "", null, ROOT, List.of());
+        JsonNode model = sectie(root, "", "model");
+        JsonNode rules = sectie(root, "", "rules");
+        velden(model, "/model", null, MODEL, List.of("functionDefs"));
+        // an extension the schema admits and this backend does not carry: a form, so a Refusal, not a defect
+        if (model.has("functionDefs")) throw new Refusal("functionDefs", "unknown model section");
+        velden(rules, "/rules", null, RULES, List.of("prioritizedDefaults"));
 
         // declarations first: the resolved lists reference them by name. Read in the v0 table order, so the
         // model fills exactly as it did from the v0 maps. The v0 `regels` stubs left the wire at M1 (delta B3);
         // no consumer here read them.
-        forEach(model.get("objectTypes"), n -> { Objecttype ot = objecttype(n); eenmaal(m.objecttypen, ot.naam, ot); });
+        lijst(model, "/model", "objectTypes", (p, n) -> {
+            Objecttype ot = objecttype(p, n);
+            eenmaal(m.objecttypen, p + "/name", ot.naam, ot);
+        });
         bindSupertypes();
-        forEach(model.get("domains"), n -> { String naam = naam(n, "name"); eenmaal(m.domeinen, naam, domain(naam, n)); });
-        forEach(model.get("parameters"), n -> { Parameter p = parameter(n); eenmaal(m.parameters, p.naam(), p); });
-        forEach(model.get("unitSystems"), n -> { Eenheidstelsel es = eenheidstelsel(n); eenmaal(m.eenheidstelsels, es.naam, es); });
-        forEach(model.get("factTypes"), n -> { Feittype ft = feittype(n); eenmaal(m.feittypen, ft.naam, ft); });
-        forEach(model.get("dimensions"), n -> { Dimensie d = dimensie(n); eenmaal(m.dimensies, d.naam(), d); });
-        forEach(model.get("timelines"), n -> m.tijdlijnen.add(tijdlijn(n)));
-        forEach(model.get("dayKinds"), n -> m.dagsoorten.add(n.asText()));
-        forEachField(model.get("dagsoortPerEenheid"), (k, v) -> m.dagsoortPerEenheid.put(k, v.asText()));
+        lijst(model, "/model", "domains", (p, n) -> {
+            velden(n, p, "Domain", List.of("node", "name", "datatype"), List.of());
+            String naam = naam(n, p, "name");
+            eenmaal(m.domeinen, p + "/name", naam, domain(p, naam, n));
+        });
+        lijst(model, "/model", "parameters", (p, n) -> {
+            Parameter par = parameter(p, n);
+            eenmaal(m.parameters, p + "/naam", par.naam(), par);
+        });
+        lijst(model, "/model", "unitSystems", (p, n) -> {
+            Eenheidstelsel es = eenheidstelsel(p, n);
+            eenmaal(m.eenheidstelsels, p + "/naam", es.naam, es);
+        });
+        lijst(model, "/model", "factTypes", (p, n) -> {
+            Feittype ft = feittype(p, n);
+            eenmaal(m.feittypen, p + "/naam", ft.naam, ft);
+        });
+        lijst(model, "/model", "dimensions", (p, n) -> {
+            Dimensie d = dimensie(p, n);
+            eenmaal(m.dimensies, p + "/naam", d.naam(), d);
+        });
+        lijst(model, "/model", "timelines", (p, n) -> m.tijdlijnen.add(tijdlijn(n)));
+        lijst(model, "/model", "dayKinds", (p, n) -> m.dagsoorten.add(n.asText()));
+        forEachField(sectie(model, "/model", "dagsoortPerEenheid"), (k, v) -> m.dagsoortPerEenheid.put(k, v.asText()));
 
-        forEach(rules.get("resolvedRegels"), n -> m.resolvedRegels.add(resolvedRegel(n)));
-        forEach(rules.get("resolvedDagsoorten"), n -> m.resolvedDagsoorten.add(
+        lijst(rules, "/rules", "resolvedRegels", (p, n) -> m.resolvedRegels.add(resolvedRegel(n)));
+        lijst(rules, "/rules", "resolvedDagsoorten", (p, n) -> m.resolvedDagsoorten.add(
                 new ResolvedDagsoort(text(n, "naam"), conditie(n.get("voorwaarde")), geldigheid(n))));
-        forEach(rules.get("objectCreaties"), n -> m.objectCreaties.add(objectCreatie(n)));
-        forEach(rules.get("verdelingen"), n -> m.verdelingen.add(verdeling(n)));
-        forEach(rules.get("consistenties"), n -> m.consistenties.add(consistentie(n)));
-        forEach(rules.get("uniciteiten"), n -> m.uniciteiten.add(uniciteit(n)));
-        forEach(rules.get("uniciteitUnies"), n -> m.uniciteitUnies.add(uniciteitUnie(n)));
-        forEach(rules.get("feitCreaties"), n -> m.feitCreaties.add(feitCreatie(n)));
-        forEach(rules.get("resolvedStartpunten"), n -> m.resolvedStartpunten.add(
+        lijst(rules, "/rules", "objectCreaties", (p, n) -> m.objectCreaties.add(objectCreatie(n)));
+        lijst(rules, "/rules", "verdelingen", (p, n) -> m.verdelingen.add(verdeling(n)));
+        lijst(rules, "/rules", "consistenties", (p, n) -> m.consistenties.add(consistentie(n)));
+        lijst(rules, "/rules", "uniciteiten", (p, n) -> m.uniciteiten.add(uniciteit(n)));
+        lijst(rules, "/rules", "uniciteitUnies", (p, n) -> m.uniciteitUnies.add(uniciteitUnie(n)));
+        lijst(rules, "/rules", "feitCreaties", (p, n) -> m.feitCreaties.add(feitCreatie(n)));
+        lijst(rules, "/rules", "resolvedStartpunten", (p, n) -> m.resolvedStartpunten.add(
                 new ResolvedStartpunt(text(n, "tijdlijn"), text(n, "objecttype"), text(n, "lid"))));
         weigerGeerfdAnker();   // the §9.9 family: asked here, where BOTH the tijdlijnen and the determinations are read
-        forEach(rules.get("regelGroepen"), n -> m.regelGroepen.add(new ResolvedRegelGroep(
+        lijst(rules, "/rules", "regelGroepen", (p, n) -> m.regelGroepen.add(new ResolvedRegelGroep(
                 text(n, "naam"), bool(n, "recursief"), stringList(n.get("leden")), bron(n), intOf(n, "line"))));
-        forEach(root.get("diagnostics"), n -> m.diagnostics.add(new Diagnostic(
-                enumOf(Severity.class, text(n, "severity")), text(n, "message"), intOf(n, "line"))));
+        lijst(root, "", "diagnostics", (p, n) -> m.diagnostics.add(new Diagnostic(
+                enumOf(Severity.class, text(n, "severity"), p + "/severity"), text(n, "message"), intOf(n, "line"))));
         // §6.1 (Phase 4) the prioritized-defaults extension, parsed AFTER the declarations so a default's
         // condition/value resolves its objecttype/parameter references against the fully-built model. A malformed
         // defaults bundle (an unknown inner node, a missing target) raises a loud Refusal from these parsers.
-        forEach(rules.get("prioritizedDefaults"), n -> prioritizedDefaults.add(prioritizedDefaults(n)));
+        if (rules.has("prioritizedDefaults"))
+            lijst(rules, "/rules", "prioritizedDefaults", (p, n) -> prioritizedDefaults.add(prioritizedDefaults(n)));
         return m;
     }
 
-    private static void bekendeSecties(JsonNode n, java.util.Set<String> bekend, String waar) {
+    /** The key set of a container object or an M1 node, checked as the OCaml loader's {@code check_keys} checks it:
+     *  the node discriminator when {@code knoop} names one, no key outside the node's own, every required key
+     *  present, and an optional key written whole or not at all — present and null is neither (IR-SPEC § Method).
+     *  Read leniently, each of these was a document part ignored or a null taken for an absent field. */
+    private static void velden(JsonNode n, String pad, String knoop, List<String> verplicht, List<String> optioneel) {
+        if (n == null || !n.isObject())
+            throw new Documentfout(pad.isEmpty() ? "/" : pad, "expected a JSON object"
+                    + (knoop == null ? "" : " (" + knoop + ")") + ", got " + kort(n));
+        if (knoop != null) {
+            JsonNode soort = n.get("node");
+            if (soort == null)
+                throw new Documentfout(pad + "/node", "required field is absent (the discriminator \"" + knoop + "\")");
+            if (!soort.isTextual() || !knoop.equals(soort.asText()))
+                throw new Documentfout(pad + "/node", "expected \"" + knoop + "\", got " + kort(soort));
+        }
         n.fieldNames().forEachRemaining(k -> {
-            if (!bekend.contains(k)) throw new Refusal(k, "unknown " + waar + " section");
+            if (!verplicht.contains(k) && !optioneel.contains(k))
+                throw new Documentfout(pad + "/" + k, "unknown field" + (knoop == null ? "" : " on " + knoop));
         });
+        for (String k : verplicht)
+            if (!n.has(k)) throw new Documentfout(pad + "/" + k, "required field is absent");
+        for (String k : optioneel)
+            if (n.has(k) && n.get(k).isNull())
+                throw new Documentfout(pad + "/" + k, "an optional field is written whole or not at all, and null is neither");
     }
 
-    private static JsonNode sectie(JsonNode root, String naam) {
-        JsonNode n = root.get(naam);
-        if (n == null || !n.isObject()) throw new Refusal(naam, "the " + naam + " object is absent");
+    private static JsonNode sectie(JsonNode ouder, String pad, String naam) {
+        JsonNode n = ouder.get(naam);
+        if (n == null) throw new Documentfout(pad + "/" + naam, "required field is absent");
+        if (!n.isObject()) throw new Documentfout(pad + "/" + naam, "expected an object, got " + kort(n));
         return n;
+    }
+
+    /** A list the schema requires: an array, each entry read with its own position. The lenient reading took a
+     *  non-array for an empty list, so {@code objectTypes: {}} loaded as a document without object types. */
+    private static void lijst(JsonNode ouder, String pad, String veld, java.util.function.BiConsumer<String, JsonNode> f) {
+        JsonNode a = ouder.get(veld);
+        String p = pad + "/" + veld;
+        if (a == null) throw new Documentfout(p, "required field is absent");
+        if (!a.isArray()) throw new Documentfout(p, "expected an array, got " + kort(a));
+        for (int i = 0; i < a.size(); i++) f.accept(p + "/" + i, a.get(i));
     }
 
     /** The list form writes each name once, on its node, so a nameless entry has no name at all (the v0 map key
      *  that once stood in for it is gone), and a repeated name would silently replace the declaration before it. */
-    private static String naam(JsonNode n, String veld) {
-        String naam = text(n, veld);
-        if (naam == null) throw new Refusal(text(n, "node") + "." + veld, "a declaration without a name");
-        return naam;
+    private static String naam(JsonNode n, String pad, String veld) {
+        JsonNode v = n.get(veld);
+        if (v == null || !v.isTextual())
+            throw new Documentfout(pad + "/" + veld, "a declaration without a name: expected a string, got "
+                    + (v == null ? "no field" : kort(v)));
+        return v.asText();
     }
 
-    /** A field the member nodes always carry: its absence would enter the model as a null (a temporal member
-     *  without a grid, a characteristic without a kind) where the v0 side-maps had no way to say that. */
-    private static String verplicht(JsonNode n, String veld) {
-        String v = text(n, veld);
-        if (v == null) throw new Refusal(text(n, "node") + "." + veld, "a required field is absent");
-        return v;
+    private static String tekst(JsonNode n, String pad, String veld) {
+        JsonNode v = n.get(veld);
+        if (v == null) throw new Documentfout(pad + "/" + veld, "required field is absent");
+        if (!v.isTextual()) throw new Documentfout(pad + "/" + veld, "expected a string, got " + kort(v));
+        return v.asText();
     }
 
-    private static int telling(JsonNode facet) {
-        if (!facet.hasNonNull("count")) throw new Refusal("TimelineFacet.count", "a required field is absent");
-        return facet.get("count").asInt();
+    /** An optional string field: absent is null; present, it is a string ({@link #velden} has refused a null). */
+    private static String optTekst(JsonNode n, String pad, String veld) {
+        return n.has(veld) ? tekst(n, pad, veld) : null;
     }
 
-    private static <V> void eenmaal(Map<String, V> tabel, String naam, V waarde) {
-        if (tabel.putIfAbsent(naam, waarde) != null)
-            throw new Refusal("declaration", "the name '" + naam + "' is declared twice");
+    private static boolean waarheid(JsonNode n, String pad, String veld) {
+        JsonNode v = n.get(veld);
+        if (v == null) throw new Documentfout(pad + "/" + veld, "required field is absent");
+        if (!v.isBoolean()) throw new Documentfout(pad + "/" + veld, "expected a boolean, got " + kort(v));
+        return v.booleanValue();
+    }
+
+    private static List<String> tekstLijst(JsonNode n, String pad, String veld) {
+        JsonNode a = n.get(veld);
+        if (a == null || !a.isArray()) throw new Documentfout(pad + "/" + veld, "expected an array, got " + kort(a));
+        List<String> uit = new ArrayList<>();
+        for (int i = 0; i < a.size(); i++) {
+            if (!a.get(i).isTextual())
+                throw new Documentfout(pad + "/" + veld + "/" + i, "expected a string, got " + kort(a.get(i)));
+            uit.add(a.get(i).asText());
+        }
+        return uit;
+    }
+
+    /** The period count, an integer as the OCaml loader's {@code int_} reads it: {@code "2"} and {@code 2.0} both
+     *  read as 2 under {@code asInt}, a raster the document did not write as a count. */
+    private static int telling(JsonNode facet, String pad) {
+        JsonNode c = facet.get("count");
+        if (c == null) throw new Documentfout(pad + "/count", "required field is absent");
+        if (!c.isIntegralNumber() || !c.canConvertToInt())
+            throw new Documentfout(pad + "/count", "expected an integer, got " + kort(c));
+        return c.intValue();
+    }
+
+    /** WF-001: a namespace holds a name once, under the verifier's name identity ({@link #naamSleutel}). The
+     *  model's tables are keyed on the exact string and look a name up case-insensitively after an exact miss, so
+     *  two spellings of one name would both enter and a lookup would pick one of them. */
+    private static <V> void eenmaal(Map<String, V> tabel, String pad, String naam, V waarde) {
+        String eerder = botsing(tabel.keySet(), naam);
+        if (eerder != null) throw new Documentfout(pad, dubbel(naam, eerder, "WF-001"));
+        tabel.put(naam, waarde);
+    }
+
+    /** The declared name {@code naam} collides with under {@link #naamSleutel}, or null. */
+    private static String botsing(java.util.Collection<String> namen, String naam) {
+        String sleutel = naamSleutel(naam);
+        for (String n : namen) if (naamSleutel(n).equals(sleutel)) return n;
+        return null;
+    }
+
+    private static String dubbel(String naam, String eerder, String regel) {
+        return naam.equals(eerder)
+                ? "the name '" + naam + "' is declared twice (" + regel + ")"
+                : "the name '" + naam + "' collides with the earlier '" + eerder + "' (" + regel
+                        + " compares names case-insensitively)";
+    }
+
+    /** The verifier's name identity ({@code norm} in {@code spec/verifier/lib/checks.ml}): ASCII letters folded to
+     *  lower case, runs of spaces and tabs collapsed, the ends trimmed. Mirrored exactly, so this loader refuses the
+     *  collisions WF-001/WF-002 refuse and no others. */
+    private static String naamSleutel(String naam) {
+        StringBuilder sb = new StringBuilder();
+        for (String deel : naam.split("[ \t]+")) {
+            if (deel.isEmpty()) continue;
+            if (sb.length() > 0) sb.append(' ');
+            for (char c : deel.toCharArray()) sb.append(c >= 'A' && c <= 'Z' ? (char) (c + ('a' - 'A')) : c);
+        }
+        return sb.toString();
+    }
+
+    /** A JSON value as a message quotes it, cut short: the value is evidence, not the document. */
+    private static String kort(JsonNode n) {
+        String s = String.valueOf(n);
+        return s.length() > 60 ? s.substring(0, 60) + "…" : s;
     }
 
     // --- prioritized-defaults extension (ch. 7) ----------------------------
@@ -327,13 +468,15 @@ public final class IrLoader {
         supertypeNaam.forEach((ot, naam) -> {
             if (naam == null) return;
             Objecttype ouder = m.objecttypeOpNaam(naam);
-            if (ouder == null) throw new Refusal("Objecttype.supertype", "supertype '" + naam + "' is not declared");
+            if (ouder == null)
+                throw new Documentfout(supertypePad.get(ot), "supertype '" + naam + "' is not declared (WF-103)");
             ot.supertype = ouder;
         });
         for (Objecttype ot : m.objecttypen.values()) {
             java.util.Set<Objecttype> gezien = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
             for (Objecttype t = ot; t != null; t = t.supertype)
-                if (!gezien.add(t)) throw new Refusal("Objecttype.supertype", "supertype cycle at '" + ot.naam + "'");
+                if (!gezien.add(t))
+                    throw new Documentfout(supertypePad.get(ot), "supertype cycle at '" + ot.naam + "' (WF-104)");
         }
     }
 
@@ -387,54 +530,89 @@ public final class IrLoader {
     /** IR-SPEC ch. 2.2: the member nodes back into the model's member-keyed side-maps, in the model's own
      *  conventions — a count is kept only above 1 (absent = single-period, as the frontend records it), and an
      *  untagged characteristic arrives tagged ZELFSTANDIG, which is what the frontend records for it. */
-    private Objecttype objecttype(JsonNode n) {
-        Objecttype ot = new Objecttype(naam(n, "name"));
-        ot.bezield = bool(n, "animate");
-        ot.meervoud = text(n, "plural");
-        supertypeNaam.put(ot, text(n, "supertype"));   // resolved after every declaration is read
-        forEach(n.get("attributes"), a -> {
-            String lid = naam(a, "name");
-            if (ot.attributen.containsKey(lid))
-                throw new Refusal("Attribute.name", "attribute '" + lid + "' of '" + ot.naam + "' is declared twice");
-            ot.attributen.put(lid, datatype(a.get("datatype")));
-            if (text(a, "plural") != null) ot.attribuutMeervoud.put(lid, text(a, "plural"));
-            if (a.has("dimensions")) ot.attribuutDimensies.put(lid, stringList(a.get("dimensions")));
-            JsonNode tl = a.get("timeline");
-            if (tl != null && !tl.isNull()) {
-                ot.attribuutGranulariteit.put(lid, enumOf(Granulariteit.class, verplicht(tl, "granularity")));
-                if (telling(tl) != 1) ot.attribuutTijdlijnAantal.put(lid, telling(tl));
-                if (text(tl, "timelineName") != null) ot.attribuutTijdlijnNaam.put(lid, text(tl, "timelineName"));
+    private Objecttype objecttype(String pad, JsonNode n) {
+        velden(n, pad, "ObjectType", List.of("node", "name", "animate", "attributes", "characteristics"),
+                List.of("supertype", "plural"));
+        Objecttype ot = new Objecttype(naam(n, pad, "name"));
+        ot.bezield = waarheid(n, pad, "animate");
+        ot.meervoud = optTekst(n, pad, "plural");
+        supertypeNaam.put(ot, optTekst(n, pad, "supertype"));   // resolved after every declaration is read
+        supertypePad.put(ot, pad + "/supertype");
+        lijst(n, pad, "attributes", (ap, a) -> {
+            velden(a, ap, "Attribute", List.of("node", "name", "datatype"), List.of("plural", "dimensions", "timeline"));
+            String lid = naam(a, ap, "name");
+            String eerder = botsing(ot.attributen.keySet(), lid);
+            if (eerder != null) throw new Documentfout(ap + "/name", dubbel(lid, eerder, "WF-002"));
+            // null is admitted here and refused by the verifier under WF-059, which names it
+            JsonNode dt = a.get("datatype");
+            if (!dt.isNull() && !dt.isObject())
+                throw new Documentfout(ap + "/datatype", "expected a datatype object or null, got " + kort(dt));
+            ot.attributen.put(lid, datatype(dt));
+            String meervoud = optTekst(a, ap, "plural");
+            if (meervoud != null) ot.attribuutMeervoud.put(lid, meervoud);
+            if (a.has("dimensions")) ot.attribuutDimensies.put(lid, tekstLijst(a, ap, "dimensions"));
+            if (a.has("timeline")) {
+                String tp = ap + "/timeline";
+                JsonNode tl = a.get("timeline");
+                velden(tl, tp, "TimelineFacet", List.of("node", "granularity", "count"), List.of("timelineName"));
+                ot.attribuutGranulariteit.put(lid,
+                        enumOf(Granulariteit.class, tekst(tl, tp, "granularity"), tp + "/granularity"));
+                int telling = telling(tl, tp);
+                if (telling != 1) ot.attribuutTijdlijnAantal.put(lid, telling);
+                String tijdlijnNaam = optTekst(tl, tp, "timelineName");
+                if (tijdlijnNaam != null) ot.attribuutTijdlijnNaam.put(lid, tijdlijnNaam);
             }
         });
-        forEach(n.get("characteristics"), c -> {
-            String lid = naam(c, "name");
+        lijst(n, pad, "characteristics", (cp, c) -> {
+            velden(c, cp, "Characteristic", List.of("node", "name", "kind"), List.of("timeline"));
+            String lid = naam(c, cp, "name");
+            // WF-002: read leniently, a second declaration's kind replaced the first one's and its timeline did not
+            String eerder = botsing(ot.kenmerken, lid);
+            if (eerder != null) throw new Documentfout(cp + "/name", dubbel(lid, eerder, "WF-002"));
             ot.kenmerken.add(lid);
-            ot.kenmerkSoorten.put(lid, enumOf(KenmerkSoort.class, verplicht(c, "kind")));
-            JsonNode tl = c.get("timeline");
-            if (tl != null && !tl.isNull()) {
-                ot.kenmerkGranulariteit.put(lid, enumOf(Granulariteit.class, verplicht(tl, "granularity")));
-                if (telling(tl) != 1) ot.kenmerkTijdlijnAantal.put(lid, telling(tl));
+            ot.kenmerkSoorten.put(lid, enumOf(KenmerkSoort.class, tekst(c, cp, "kind"), cp + "/kind"));
+            if (c.has("timeline")) {
+                String tp = cp + "/timeline";
+                JsonNode tl = c.get("timeline");
+                velden(tl, tp, "TimelineFacet", List.of("node", "granularity", "count"), List.of());
+                ot.kenmerkGranulariteit.put(lid,
+                        enumOf(Granulariteit.class, tekst(tl, tp, "granularity"), tp + "/granularity"));
+                int telling = telling(tl, tp);
+                if (telling != 1) ot.kenmerkTijdlijnAantal.put(lid, telling);
             }
         });
         return ot;
     }
 
-    /** IR-SPEC ch. 2.3: the wrapper carries the name, and an Enumeratie at this declaration position carries no
-     *  self-name — the model's Enumeratie record takes the wrapper's. */
-    private Datatype domain(String naam, JsonNode n) {
+    /** IR-SPEC ch. 2.3: the wrapper carries the name, and a datatype at this declaration position carries no
+     *  self-name — the model's Enumeratie record takes the wrapper's. A self-name left beside it is a second
+     *  spelling of one name (delta B2), refused as an unknown field, on the two datatypes this backend does not
+     *  carry as well: there the document is malformed before its form is refused. */
+    private Datatype domain(String pad, String naam, JsonNode n) {
+        String dp = pad + "/datatype";
         JsonNode dt = n.get("datatype");
-        if (dt == null || !dt.isObject()) throw new Refusal("Domain.datatype", "domain '" + naam + "' has no datatype");
-        if ("Enumeratie".equals(text(dt, "node"))) return new Datatype.Enumeratie(naam, stringList(dt.get("waarden")));
+        if (!dt.isObject()) throw new Documentfout(dp, "expected a datatype object, got " + kort(dt));
+        switch (String.valueOf(text(dt, "node"))) {
+            case "Enumeratie" -> {
+                velden(dt, dp, "Enumeratie", List.of("node", "waarden"), List.of());
+                if (!dt.get("waarden").isArray())
+                    throw new Documentfout(dp + "/waarden", "expected an array, got " + kort(dt.get("waarden")));
+                return new Datatype.Enumeratie(naam, stringList(dt.get("waarden")));
+            }
+            case "SumType" -> velden(dt, dp, "SumType", List.of("node", "constructors"), List.of());
+            case "StructType" -> velden(dt, dp, "StructType", List.of("node", "fields"), List.of());
+            default -> { }
+        }
         return datatype(dt);
     }
 
-    private Parameter parameter(JsonNode n) {
-        return new Parameter(naam(n, "naam"), datatype(n.get("datatype")),
-                enumOf(Granulariteit.class, text(n, "granulariteit")));
+    private Parameter parameter(String pad, JsonNode n) {
+        return new Parameter(naam(n, pad, "naam"), datatype(n.get("datatype")),
+                enumOf(Granulariteit.class, n, "granulariteit"));
     }
 
-    private Eenheidstelsel eenheidstelsel(JsonNode n) {
-        Eenheidstelsel es = new Eenheidstelsel(naam(n, "naam"));
+    private Eenheidstelsel eenheidstelsel(String pad, JsonNode n) {
+        Eenheidstelsel es = new Eenheidstelsel(naam(n, pad, "naam"));
         forEachField(n.get("eenheden"), (k, v) -> es.eenheden.put(k, eenheid(v)));
         forEachField(n.get("aliassen"), (k, v) -> es.aliassen.put(k, eenheid(v)));
         return es;
@@ -446,22 +624,22 @@ public final class IrLoader {
                 decimal(n, "factorNaarCanoniek"), eenheid(n.get("noemer")));
     }
 
-    private Feittype feittype(JsonNode n) {
-        Feittype ft = new Feittype(naam(n, "naam"));
+    private Feittype feittype(String pad, JsonNode n) {
+        Feittype ft = new Feittype(naam(n, pad, "naam"));
         ft.wederkerig = bool(n, "wederkerig");
         forEach(n.get("rollen"), r -> ft.rollen.add(new RegelSpraakModel.Rol(
                 text(r, "naam"), text(r, "objecttypeNaam"), text(r, "meervoud"), bool(r, "meervoudig"))));
         return ft;
     }
 
-    private Dimensie dimensie(JsonNode n) {
-        return new Dimensie(naam(n, "naam"), text(n, "naamMeervoud"),
+    private Dimensie dimensie(String pad, JsonNode n) {
+        return new Dimensie(naam(n, pad, "naam"), text(n, "naamMeervoud"),
                 text(n, "voorzetsel"), stringList(n.get("waarden")));
     }
 
     private Tijdlijn tijdlijn(JsonNode n) {
         return new Tijdlijn(text(n, "naam"), bool(n, "variabelStartpunt"),
-                enumOf(Granulariteit.class, text(n, "granulariteit")), intOf(n, "aantal"));
+                enumOf(Granulariteit.class, n, "granulariteit"), intOf(n, "aantal"));
     }
 
     // --- Datatype ----------------------------------------------------------
@@ -471,7 +649,7 @@ public final class IrLoader {
         String node = text(n, "node");
         return switch (node) {
             case "Numeriek" -> new Datatype.Numeriek(bool(n, "geheel"), intOf(n, "decimalen"),
-                    enumOf(Datatype.Teken.class, text(n, "teken")), eenheid(n.get("eenheid")));
+                    enumOf(Datatype.Teken.class, n, "teken"), eenheid(n.get("eenheid")));
             case "Percentage" -> new Datatype.Percentage(bool(n, "geheel"), intOf(n, "decimalen"),
                     n.get("eenheid") == null || n.get("eenheid").isNull() ? Datatype.Percentage.PROCENT : eenheid(n.get("eenheid")));
             case "Tekst" -> new Datatype.Tekst();
@@ -496,7 +674,7 @@ public final class IrLoader {
                 forEach(n.get("delen"), d -> delen.add(tekstReeksDeel(d)));
                 yield new Expr.TekstReeks(delen, bron(n));
             }
-            case "Binair" -> new Expr.Binair(enumOf(Expr.BinOp.class, text(n, "op")),
+            case "Binair" -> new Expr.Binair(enumOf(Expr.BinOp.class, n, "op"),
                     expr(n.get("links")), expr(n.get("rechts")), datatype(n.get("type")), bron(n));
             case "Functie" -> {
                 List<Expr> args = new ArrayList<>();
@@ -509,7 +687,7 @@ public final class IrLoader {
                 // (IR-SPEC ch. 4.3) reached it while it was wire-only and passes it since both transpiler
                 // branches carry the kind (2026-09-20). The next wire-first kind gets the same answer.
                 Expr.FunctieKind fk;
-                try { fk = enumOf(Expr.FunctieKind.class, text(n, "kind")); }
+                try { fk = enumOf(Expr.FunctieKind.class, n, "kind"); }
                 catch (IllegalArgumentException e) { fk = null; }
                 if (fk == null && text(n, "kind") != null)
                     throw new Refusal("Functie.kind", "'" + text(n, "kind") + "' is an aggregation or builtin kind"
@@ -518,7 +696,7 @@ public final class IrLoader {
                 Expr.Functie f = new Expr.Functie(fk, args,
                         ot(text(n, "elementObjecttype")), expr(n.get("leegwaarde")), conditie(n.get("filter")),
                         dimensieSelectie(n.get("dimensieSelectie")), datatype(n.get("type")), bron(n),
-                        enumOf(Granulariteit.class, text(n, "granulariteit")));
+                        enumOf(Granulariteit.class, n, "granulariteit"));
                 // IR-SPEC ch. 4.3 / WF-102: a MULTI-STEP fold-source range. Read VERBATIM — the full ordered list
                 // of RolBinding steps, nothing derived from the presentation strings and nothing re-derived from
                 // the endpoint type PAIR. That is the whole point of the field: a by-pair search binds a
@@ -554,7 +732,7 @@ public final class IrLoader {
                 yield f;
             }
             case "Afgerond" -> new Expr.Afgerond(expr(n.get("basis")),
-                    enumOf(Expr.AfrondModus.class, text(n, "modus")), intOf(n, "decimalen"), bron(n));
+                    enumOf(Expr.AfrondModus.class, n, "modus"), intOf(n, "decimalen"), bron(n));
             case "Begrensd" -> new Expr.Begrensd(expr(n.get("basis")), expr(n.get("minimum")), expr(n.get("maximum")), bron(n));
             case "AttribuutRef" -> {
                 Expr.AttribuutRef a = new Expr.AttribuutRef(text(n, "attribuut"), ot(text(n, "objecttype")),
@@ -675,7 +853,7 @@ public final class IrLoader {
         if (n == null || n.isNull()) return null;
         String node = text(n, "node");
         return switch (node) {
-            case "Vergelijking" -> new Conditie.Vergelijking(enumOf(Conditie.Operator.class, text(n, "op")),
+            case "Vergelijking" -> new Conditie.Vergelijking(enumOf(Conditie.Operator.class, n, "op"),
                     expr(n.get("links")), expr(n.get("rechts")), geheelPeriode(n.get("periode")), bron(n));
             case "Predicaat" -> predicaat(n);
             case "Kenmerk" -> {
@@ -700,7 +878,7 @@ public final class IrLoader {
             case "Samengesteld" -> {
                 List<Conditie> delen = new ArrayList<>();
                 forEach(n.get("onderdelen"), o -> delen.add(conditie(o)));
-                yield new Conditie.Samengesteld(enumOf(Conditie.Kwantor.class, text(n, "kwantor")),
+                yield new Conditie.Samengesteld(enumOf(Conditie.Kwantor.class, n, "kwantor"),
                         intOf(n, "drempel"), delen, bron(n));
             }
             // IR-SPEC ch. 4.5 / WF-108 the QUANTIFIER FOLD. Unlike Samengesteld — whose kwantor ranges over the
@@ -722,7 +900,7 @@ public final class IrLoader {
                 // it as a forall is the misreading this node exists to prevent. An unknown token never reaches
                 // Enum.valueOf's unattributed IllegalArgumentException either: it lands in the same named Refusal.
                 Conditie.Kwantor kw;
-                try { kw = enumOf(Conditie.Kwantor.class, text(n, "kwantor")); }
+                try { kw = enumOf(Conditie.Kwantor.class, n, "kwantor"); }
                 catch (IllegalArgumentException e) { kw = null; }
                 if (kw == null || kw == Conditie.Kwantor.DE)
                     throw new Refusal("Kwantorvouw.kwantor", "'" + text(n, "kwantor") + "' is not a quantifier over"
@@ -762,7 +940,7 @@ public final class IrLoader {
      *  ref faults on it and the ASP backend refuses it in ref's words, so no executor pins what an answer should
      *  be; both branches used to play it. It is refused here too, under its own key, until ref executes the fold. */
     private Conditie.Predicaat predicaat(JsonNode n) {
-        Conditie.Predicaatsoort soort = enumOf(Conditie.Predicaatsoort.class, text(n, "soort"));
+        Conditie.Predicaatsoort soort = enumOf(Conditie.Predicaatsoort.class, n, "soort");
         boolean negatie = bool(n, "negatie");
         Conditie.GeheelPeriode periode = geheelPeriode(n.get("periode"));
         boolean leegOfGevuld = soort == Conditie.Predicaatsoort.LEEG || soort == Conditie.Predicaatsoort.GEVULD;
@@ -789,7 +967,7 @@ public final class IrLoader {
 
     private ResolvedRegel resolvedRegel(JsonNode n) {
         List<String> bronAnnotaties = n.has("bronAnnotaties") ? stringList(n.get("bronAnnotaties")) : List.of();
-        ResolvedRegel r = new ResolvedRegel(text(n, "naam"), enumOf(ResolvedRegel.Soort.class, text(n, "soort")),
+        ResolvedRegel r = new ResolvedRegel(text(n, "naam"), enumOf(ResolvedRegel.Soort.class, n, "soort"),
                 expr(n.get("doel")), expr(n.get("waarde")), conditie(n.get("voorwaarde")),
                 geldigheid(n), bronAnnotaties);
         // WF-022's value clause: a characteristic attribution writes the boolean constant true. Neither branch
@@ -828,7 +1006,7 @@ public final class IrLoader {
     private ResolvedVerdeling verdeling(JsonNode n) {
         ResolvedVerdeling v = new ResolvedVerdeling(text(n, "naam"), ot(text(n, "bronType")), text(n, "bronAttribuut"),
                 ot(text(n, "doelType")), text(n, "doelAttribuut"),
-                enumOf(ResolvedVerdeling.Methode.class, text(n, "methode")), text(n, "ratoAttribuut"),
+                enumOf(ResolvedVerdeling.Methode.class, n, "methode"), text(n, "ratoAttribuut"),
                 text(n, "maximumAttribuut"), integerOf(n, "afrondingDecimalen"), text(n, "restantAttribuut"),
                 text(n, "groepeerAttribuut"), bool(n, "afnemend"), conditie(n.get("voorwaarde")),
                 geldigheid(n));
@@ -983,8 +1161,20 @@ public final class IrLoader {
         return uit;
     }
 
-    private static <E extends Enum<E>> E enumOf(Class<E> type, String naam) {
-        return naam == null ? null : Enum.valueOf(type, naam);
+    /** The member a wire value names — or a hard error naming the place, the value and the members, never the
+     *  JDK's "No enum constant" sentence, which names a Java class and no place in the document. Absent is null. */
+    private static <E extends Enum<E>> E enumOf(Class<E> type, String waarde, String plek) {
+        if (waarde == null) return null;
+        for (E e : type.getEnumConstants()) if (e.name().equals(waarde)) return e;
+        throw new Documentfout(plek, "'" + waarde + "' is not one of "
+                + java.util.Arrays.stream(type.getEnumConstants()).map(Enum::name).toList());
+    }
+
+    /** {@link #enumOf(Class, String, String)} on a v0 node, which this loader reads without a JSON position: the
+     *  place is the node kind and the field. */
+    private static <E extends Enum<E>> E enumOf(Class<E> type, JsonNode n, String veld) {
+        String soort = text(n, "node");
+        return enumOf(type, text(n, veld), (soort == null ? "?" : soort) + "." + veld);
     }
 
     private static void forEach(JsonNode array, java.util.function.Consumer<JsonNode> f) {
