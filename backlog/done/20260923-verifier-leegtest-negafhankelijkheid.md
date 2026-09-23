@@ -46,8 +46,8 @@ GEEN, TEN_HOOGSTE en PRECIES, en voor de matrix onder GEEN, TEN_HOOGSTE en
 PRECIES. Speczin en verifier-arm zijn voorstellen voor de maintainer. Acht
 negatiefs zijn rood-eerst en hebben elk een NOTE; daarnaast is er één
 nieuwe golden. ref heeft een invariantnotitie en twee suitegetuigen.
-Dertien gates zijn groen; gate 12 faalt alleen op de gelijkheidspin
-(played 183 tegen 182), en met het pinvoorstel hieronder is hij groen.
+Alle veertien gates zijn groen: gate 12 met de pinwijziging die nu als
+beschermd-pad-voorstel in de branch staat (played 183, DRL-tekst 162).
 Commits, na de rebase op main `3a140fe4`:
 - `8b8bfc1e` claim
 - `8822165d` spec + arm + drie negatiefs (**voorstel**)
@@ -61,10 +61,12 @@ Commits, na de rebase op main `3a140fe4`:
 - `c6135f97` punt 3: RS 6.4-reikwijdte (**voorstel**)
 - `fccdcab8` punt 4: clingo-overdracht
 - `745da8b5` Result na fixronde 2
-- de laatste commit: in de Engelse weergave van het kwantorbesluit in
-  IR-SPEC staat "the review round" voor "de lens" en "the branch tip"
-  voor "de tip", zodat het citaat zonder projectjargon leest; het
-  Nederlandse citaat hieronder is letterlijk
+- `4bb74675` IR-SPEC 5.2: in de Engelse weergave van het kwantorbesluit
+  staat "the review round" voor "de lens" en "the branch tip" voor "de
+  tip", zodat het citaat zonder projectjargon leest; het Nederlandse
+  citaat hieronder is letterlijk
+- `fae93152` gate 12: de pins +1/+1 (**voorstel**, beschermd pad)
+- de slotcommit: dit Result met de gate-12-uitslag in de branch
 
 ### Aangescherpte acceptatie, zoals uitgevoerd
 
@@ -74,9 +76,10 @@ arm dekt, gemeten met een eigen negatief; de rest gemeten en als open
 punt benoemd. (c) Corpusmeting over golden, rood, negatief en toka: nul
 bewegingen, in beide rondes. (d) ref: notitie en getuige, geen codewijziging in ref. (e)
 Clingo niet aangeraakt; de versmalling staat hieronder als overdracht.
-(f) Veertien gates, met getallen. In fixronde 1 waren ze alle groen. Na
-fixronde 2 zijn er dertien groen en is gate 12 rood op de gelijkheidspin;
-met het pinvoorstel is hij groen.
+(f) Veertien gates, met getallen. In fixronde 1 waren ze alle groen. In
+fixronde 2 waren er eerst dertien groen, met gate 12 rood op de
+gelijkheidspin. Na de pinwijziging in de branch zijn alle veertien
+groen.
 
 ### De norm
 
@@ -365,6 +368,8 @@ Fixronde 2 hieronder.
   ch. 6.4 (de voorbeelden en de reikwijdte).
 - `spec/verifier/lib/checks.ml`: de leeg-arm, de Kwantorvouw-tak, de
   WF-046-rapportzin en de commentaren.
+- `scripts/check-drools.sh`: alleen de twee gelijkheidspins, met
+  redenblokken (open punt 8).
 
 De maintainer merget.
 
@@ -424,8 +429,9 @@ fixronde 2 het commentaar bij WV-6.4-e ("stratum-strict edge"), alleen
 commentaar, onder mandaat van de hoofdsessie. IR-SPEC ch. 5.5 valt onder
 `spec/IR-SPEC.md`. Verder zijn geen bestaande tests of corpusdocumenten
 gewijzigd, en clingo, Drools, frontends, rood, scripts en schema zijn
-niet aangeraakt. Het pinvoorstel voor gate 12 is gemeten met een
-ongetrackte kopie van het script in /tmp, niet in de worktree.
+niet aangeraakt, op één uitzondering na: in `scripts/check-drools.sh`
+staan de twee gelijkheidspins als beschermd-pad-voorstel, op
+aanwijzing van de hoofdsessie (open punt 8).
 
 ## Fixronde 2 (2026-09-23)
 
@@ -546,11 +552,11 @@ negatiefs van deze kaart. Verifier-oordelen main → nieuw: alleen de
 toevoegingen (golden schoon, acht negatiefs WF-046). ref-sweep over de
 638 bestaande golden- en rood-cases: `cmp` identiek aan main.
 
-**Pinvoorstel voor `scripts/check-drools.sh`** (niet aangeraakt; zone van
-een parallelle Drools-kaart). De golden speelt in beide takken, dus
-`EXPECTED_PLAYED` 182 → 183 en `EXPECTED_DRL_PLAYED` 161 → 162, met een
-redenregel ("jutterswet-opvolgerquorum, kwantorvouw-stratificatie,
-2026-09-23"). Er is geen kanaallijstregel nodig, want de golden speelt.
+**Pinvoorstel voor `scripts/check-drools.sh`.** De golden speelt in beide
+takken, dus `EXPECTED_PLAYED` 182 → 183 en `EXPECTED_DRL_PLAYED` 161 →
+162. Er is geen kanaallijstregel nodig, want de golden speelt. Op
+aanwijzing van de hoofdsessie staat de wijziging nu als
+beschermd-pad-voorstel in de branch (open punt 8).
 
 **Wat buiten blijft.** ≠ met één lege operand, numerieke = met twee lege,
 AANTAL = 0, AANTAL_GEVULDE = 0, propositionele GEEN en coalescerende
@@ -623,10 +629,12 @@ without the list noticing (a new golden plays: raise the number; …)` ·
 DRL; de golden draagt geen eenheden, dus geen pinwijziging) · 14 flogic
 PASS (130; 2 goldens).
 
-Gate 12 met het pinvoorstel, gedraaid als ongetrackte kopie in /tmp
-(alleen de `cd`-regel en de twee pins gewijzigd): `check-drools: PASS`,
-`played 183`, `DRL-text branch played 162 (… pin 162)`, `JUnit 620
-tests`. Het getrackte script is ongewijzigd.
+Gate 12 met het pinvoorstel, eerst gedraaid als ongetrackte kopie in
+/tmp (alleen de `cd`-regel en de twee pins gewijzigd): `check-drools:
+PASS`, `played 183`, `DRL-text branch played 162 (… pin 162)`, `JUnit
+620 tests`. Daarna vastgelegd in de branch (`fae93152`) en gate 12 daar
+opnieuw gedraaid: `check-drools: PASS`, played 183 = pin, DRL-tekst
+162 = pin, JUnit 620, kanaalvloer 53, value-divergence 1, 6 min 30 s.
 
 ## Open punten (stand na fixronde 2)
 
@@ -692,11 +700,18 @@ tests`. Het getrackte script is ongewijzigd.
    schrijvers van de operand voor vorm (i), en een golden met de
    WV-6.4-f-vorm plus de genavigeerde variant in de
    value-divergence-lijst van gate 12.
-8. **Gate-12-pins, voorstel** (`scripts/check-drools.sh`, niet
-   aangeraakt): `EXPECTED_PLAYED` 182 → 183 en `EXPECTED_DRL_PLAYED`
-   161 → 162, voor `jutterswet-opvolgerquorum`. Zonder die wijziging is
-   gate 12 rood op de gelijkheidspin; met die wijziging groen (gemeten,
-   zie Fixronde 2).
+8. **Gate-12-pins, beschermd-pad-voorstel in de branch** (commit
+   `fae93152`, op aanwijzing van de hoofdsessie). In
+   `scripts/check-drools.sh` zijn uitsluitend `EXPECTED_PLAYED` 182 →
+   183 en `EXPECTED_DRL_PLAYED` 161 → 162 gewijzigd, elk met een
+   redenblok in de huisstijl (golden `jutterswet-opvolgerquorum`, vier
+   cases, beide takken PLAYED 4, 2026-09-23, deze kaart). Gate 12 in de
+   branch: `check-drools: PASS`, `played 183`, `played matches the
+   pinned 183`, `DRL-text branch played 162 (… pin 162)`, `JUnit 620
+   tests, floor 239`, 6 min 30 s. **Pinsom-notitie voor de
+   hoofdsessie:** de parallelle Drools-kaart voegt ook een spelende
+   golden toe. Wie als tweede landt, rebaset en zet beide pins één
+   verder; voorspeld eindtotaal 184/163.
 9. **Mijn lezing van "BEREIK" en van "s6", benoemd.** (a) Het bereik
    omvat de `filter` (de bereikvelden van IR-SPEC 4.5). Wie het filter
    onder ALLE monotoon wil, verandert één regel in de Kwantorvouw-tak.
