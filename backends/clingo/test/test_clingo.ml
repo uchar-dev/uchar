@@ -10299,6 +10299,36 @@ let () =
   both_answer ~name:"the same two folds over the case's 3 before 8 (nr-case-3-8, control)" ~ir:(doc [])
     ~case_text:(pf_case ~instances:(w1 [ "3"; "8" ]) rows)
 
+(* FIXRONDE 5, lens point 5: README [L1]'s other half. The day-kind table,
+   like the horizon fence, reads its parameter at translation, also where the
+   rule's condition fails and ref never builds the table: "de dag later is
+   dan de grensdatum" with grensdatum unbound, under the condition 1 > 2 *)
+let () =
+  let ir =
+    dk_doc
+      ~voorwaarde:
+        (Printf.sprintf
+           {|{ "node": "Vergelijking", "op": "LATER",
+               "links": %s,
+               "rechts": { "node": "ParameterRef", "parameter": "grensdatum",
+                           "type": { "node": "DatumInDagen" }, "bron": "de grensdatum" },
+               "periode": null, "bron": "de dag later is dan de grensdatum" }|}
+           de_dag)
+      ~parameters:
+        {|"grensdatum": { "node": "Parameter", "naam": "grensdatum",
+            "datatype": { "node": "DatumInDagen" }, "granulariteit": null }|}
+      ~waarde:(stap ()) ()
+    |> replace_first ~needle:{|"voorwaarde": null,|}
+         ~by:(Printf.sprintf {|"voorwaarde": %s,|} (pf_cmp "GROTER" (pf_l ~typ:pf_n0 "1") (pf_l ~typ:pf_n0 "2")))
+  in
+  let case_text =
+    replace_first ~needle:{|"expected": [ { "kind": "consistent" } ]|}
+      ~by:{|"expected": [ { "kind": "attributeEmpty", "label": "B1", "attribute": "uitkomst" }, { "kind": "consistent" } ]|}
+      dk_case
+  in
+  pinned_loud ~entry:"L1" ~name:"the day-kind table behind a condition that fails (dk-cond)" ~ir ~case_text
+    ~needle:(pf_reason "grensdatum")
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
