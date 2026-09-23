@@ -45,17 +45,21 @@ alle veertien gates groen.
 ### (a) Inventaris op de huidige stand (basis f2638a49)
 
 Gehercount: 72 `containsKey`-plekken (22 kenmerk, 50 attribuut) en
-daarnaast 16 exacte LEZINGEN `granulariteitLeden().get(naam)` die de kaart
-niet noemde, plus `Tijdlijnen.meerPeriodiek` (het periodeaantal, exact via
+daarnaast 17 exacte `granulariteitLeden().get(naam)`-aanroepen die de kaart
+niet noemde — 16 echte LEZINGEN van de granulariteit en één aanwezigheidsvraag
+in vermomming (ExecModelTranspiler r. 368, `get(…) != null`; de lens telde
+17 en had gelijk, hier eerst als 16 lezingen geteld), dus 73
+aanwezigheidsvragen en 16 lezingen, plus `Tijdlijnen.meerPeriodiek` (het periodeaantal, exact via
 `tijdlijnAantal.get`). Per bestand: ExecModelTranspiler 55, DrlTranspiler 33
 (waarvan 4 al via `bevatNaam`, de uniciteitssleutels), CaseRunner 5,
 EffectieveEenheid 1, StaandeDoelen 1 (al `bevatNaam`).
 
 Door de norm (één contract, geen dubbele normalisatie: `gedeclareerdeNaam`
 doet eerst de exacte treffer, pas daarna `norm`):
-- alle 72 aanwezigheidsvragen → `Namen.bevatNaam` (bestond al, het
+- 72 aanwezigheidsvragen → `Namen.bevatNaam` (bestond al, het
   huispatroon van de sleutelconventie- en enumnaamkaarten);
-- alle 16 lezingen → de nieuwe tweeling `Namen.opNaam(map, naam)`
+- de 16 lezingen en de `get(…) != null`-vraag → de nieuwe tweeling
+  `Namen.opNaam(map, naam)`
   (`map.get(gedeclareerdeNaam(map.keySet(), naam))`); zonder die tweeling
   zou een lid dat onder de norm temporeel is een granulariteit null lezen;
 - `Tijdlijnen.meerPeriodiek` → `Namen.opNaam`; anders slaagt de temporele
@@ -182,15 +186,14 @@ Drools backend", in de verleden tijd gezet met de kanaalwissel erbij;
 
 ### Registerzinnen voor `spec/CONSTRUCTS.md`
 
-Rij 29, achter "…pinned by name in gate 12) and
-`HeelperiodeDoelpogingWitnessTest`.":
+Rij 29, VERVANGING (anders spreekt de rij zichzelf tegen). Oude substring,
+exact zoals op main c15ca860:
 
-> Since card `drools-temporele-naamnorm` (2026-09-23) the golden plays
-> 2 / 0 / 2 in both Drools branches: its guard's `Gehesen` names the
-> anker's declared `gehesen` under the name identity, the anker attempt
-> lowers it, and the doel attempt is never reached (`EXPECTED_PLAYED`
-> 181 → 182, `EXPECTED_DRL_PLAYED` 160 → 161). The refusal of the doel
-> attempt stands, pinned by `HeelperiodeDoelpogingWitnessTest`.
+> Witness: `corpus/golden/jutterswet-seinjaar` (ref = clingo 2 / 0 / 2; both Drools branches refuse, pinned by name in gate 12) and `HeelperiodeDoelpogingWitnessTest`.
+
+Nieuwe tekst:
+
+> Witness: `HeelperiodeDoelpogingWitnessTest`. The case-variant route stopped reaching the doel attempt with card `drools-temporele-naamnorm` (2026-09-23): both Drools branches now look temporal names up under the name identity, so the guard's `Gehesen` finds the anker's declared `gehesen`, the anker attempt lowers it, and `corpus/golden/jutterswet-seinjaar` plays 2 / 0 / 2 in the full square (`EXPECTED_PLAYED` 181 → 182, `EXPECTED_DRL_PLAYED` 160 → 161). The refusal of the doel attempt stands and is pinned by that test's displaced-role route and the WF-109 witness.
 
 Rij 27, achter de enumnaam-landing ("De regelkant van dezelfde
 identiteit is gedicht …"), als volgende zin:
@@ -198,10 +201,11 @@ identiteit is gedicht …"), als volgende zin:
 > The temporal facets follow the same identity (2026-09-23, card
 > `drools-temporele-naamnorm`): both Drools branches ask whether a member
 > is time-dependent, and read its granularity and period count, by the
-> declared name under `Namen.norm` instead of by exact spelling (72
-> presence tests, 16 reads, the period-count predicate), and the case
-> runner matches the rule of an `inconsistent` pin as ref does, by norm
-> after the verifier's version strip. Witness: golden
+> declared name under `Namen.norm` instead of by exact spelling (73
+> presence tests, 16 reads, the period-count predicate); the case runner
+> names the setter of a timeline input from the declaration, and matches
+> the rule of an `inconsistent` pin as ref does, by norm after the
+> verifier's version strip. Witness: golden
 > `jutterswet-seinjaar` and `TemporeleNaamnormWitnessTest`. Not covered:
 > the §9.9 variable-startpunt lookups, which the frontend model reads by
 > exact spelling and which ref does not carry.
@@ -213,9 +217,65 @@ een aparte rij voor naamidentiteit verkiest, is de tweede zin los te plaatsen.)
 
 - §9.9-startpunt-lookups exact in het frontendmodel (zie (a)); pas zinvol
   zodra ref de familie draagt.
-- Het schrijven van een temporele casusinvoer met afwijkende spelling
-  gebruikt de geschreven naam voor de setter (`Namen.setter(e.getKey())`);
-  bij een alleen-eerste-letter- of hoofdletterwoordverschil is die gelijk,
-  bij een verschil midden in een woord ("vondstNummer") niet. Naar
-  verwachting faalt dat luid op de reflectieve aanroep, niet stil — niet
-  gemeten; buiten deze kaart.
+- (Opgelost in de slotronde, A5: de setter van tijdlijninvoer.) De
+  SCALAIRE casusinvoer (`attributes` zonder tijdlijn, `characteristics`)
+  roept de setter nog op de geschreven naam aan; niet gemeten, niet
+  aangeraakt — buiten de temporele familie van deze kaart.
+- Lensvondst A2, bestond al en is door deze kaart alleen bereikbaar
+  geworden: een attribuut `Gehesen` naast een kenmerk `gehesen` op één type
+  is verifier-schoon en ref speelt het, maar Drools faalt luid op de
+  botsing van de bean-getters (één naamruimte voor attribuut en kenmerk).
+  Kaart: `20260923-drools-beannaamruimte-botsing` (maakt de hoofdsessie
+  aan).
+
+## Slotronde (2026-09-23, na de lens)
+
+A1 — getuige voor de granulariteitsLEZING. Lens-mutant A2 (`opNaam` weer
+exact, periodeaantal genormeerd) liet JUnit 617 groen. Nieuwe rij
+`een_temporele_attribuutverwijzing_in_hoofdletters_speelt`: golden
+`jutterswet-tempovouw` in het geheugen, elke regelverwijzing naar het
+MAAND-temporele `bewaartarief` als `BEWAARTARIEF`; ref en clingo `PASS (3
+expectations)`, beide takken spelen 48 / 0. Onder precies de A2-mutant
+(`perNaam.get(naam)` in `opNaam`; `meerPeriodiek` via
+`gedeclareerdeNaam`), 7 tests:
+
+    Tests run: 7, Failures: 0, Errors: 2
+    …een_temporele_attribuutverwijzing_in_hoofdletters_speelt:72 » NullPointer Cannot invoke
+      "io.github.yhavinga.regelspraak.model.RegelSpraakModel$Granulariteit.name()" because the
+      return value of "io.github.yhavinga.regelspraak.transpiler.kern.Namen.opNaam(java.util.Map,
+      String)" is null
+    …attribuuttijdlijninvoer_met_afwijkende_spelling_speelt:113 » NullPointer Cannot invoke
+      "io.github.yhavinga.regelspraak.model.RegelSpraakModel$Granulariteit.ordinal()" because
+      "gran" is null
+
+(de tweede rij raakt de `opNaam`-lezing in CaseRunner r. 479). Hersteld,
+`cmp` gelijk.
+
+A5 — setter van tijdlijninvoer. Gemeten op de eerste fixcommit: casussen
+met `characteristicTimelines: {"geHesen": …}` (seinjaar, heel en half
+jaar) en `attributes: {"bewaarTarief": {timeline…}}` (tempovouw): ref en
+clingo `PASS (3 expectations)`, beide takken `ERROR RuntimeException: kon
+setter setGeHesen(List) niet aanroepen op Kustvak` resp. `…
+setBewaarTarief(List) niet aanroepen op Vondst`. Fix: twee regels in
+CaseRunner, `Namen.setter(Namen.gedeclareerdeNaam(<facetmap>.keySet(),
+key))` voor de attribuut- en de kenmerktijdlijn. Twee rijen
+(`kenmerktijdlijninvoer_…`, `attribuuttijdlijninvoer_…`) spelen 2 / 0 en
+48 / 0 in beide takken. Mutant (beide setters terug op `e.getKey()`):
+
+    Tests run: 7, Failures: 0, Errors: 2
+    …attribuuttijdlijninvoer_met_afwijkende_spelling_speelt » RuntimeException: kon setter
+      setBewaarTarief(List) niet aanroepen op Vondst
+    …kenmerktijdlijninvoer_met_afwijkende_spelling_speelt » RuntimeException: kon setter
+      setGeHesen(List) niet aanroepen op Kustvak
+
+Hersteld, `cmp` gelijk.
+
+A4 — de kop van klasse (C) in het scriptvoorstel staat nu chronologisch,
+oudste hertelling eerst; inhoud ongewijzigd.
+
+A3 — rij-29-zin herschreven als vervanging (zie boven).
+
+Gates na de slotronde, los na `eval $(opam env)`: backend-JUnit 620
+tests, 0 failures, 0 skipped; gate 12 PASS, played 182 = pin, DRL 161 =
+pin, JUnit 620. De overige twaalf gates zijn niet opnieuw gedraaid: deze
+ronde raakte alleen `backends/drools/**` en `scripts/check-drools.sh`.
