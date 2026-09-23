@@ -1,25 +1,15 @@
-Violates WF-091 (`spec/IR-SPEC.md` ch. 4.1) on the `AttributeReference`
-arm, unit facet, one-sided: the declaration HAS a unit and the reference
-has none. `Jutter.gewicht` is declared in `kg`; the reference that reads it
-is typed as a bare number. The target `kopie` is declared unitless and the
-value's type is unitless too, so WF-023's unit clause is satisfied.
+Violates WF-023 (`spec/IR-SPEC.md` ch. 3.1) on the unit clause, the other
+one-sided direction: the rule `kopie := gewicht` writes `Jutter.gewicht`,
+declared in `kg`, into `Jutter.kopie`, declared unitless.
 
-    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: unit mismatch: attribute
-    reference 'gewicht' is typed no unit, but the declaration it reads
-    from is 'kg' of system 'Gewicht' (factor 1 to 'kg')
+    WF-023 FAIL /rules/resolvedRegels/0: assignment across incompatible units
 
-Why it has to exist beside the convertible case: one-sidedness is its own
-arm of the facet, as it is for WF-089 and WF-090's domains, and it is the
-half a weakening that only compares two PRESENT units would let through.
-A dropped unit is what turns a quantity into a bare number downstream —
-the annotation stops saying which quantity was read.
-
-Falsifiable, facet-exact and arm-exact: make the unit facet compare only
-the case where both sides carry a unit and this case degrades to `residual
-structure mismatch` together with `wf091-attribuutref-eenheid-erbij` —
-still WF-091, still red, because the residual facet is the backstop that
-sees every difference — while the convertible case keeps its own `unit
-mismatch`. What the one-sided arms pin is the DIAGNOSIS, not the refusal.
-Disable the `Attribuut_ref` arm and it turns clean together with the other
-`wf091-attribuutref-*` cases, while the binder, parameter, fold-source and
-write-target cases stay red.
+**Rewritten at L2 (2026-09-24), stamp: herschreven op WF-023 (D17).** Until
+L2 this document was `wf091-attribuutref-eenheid-ontbreekt`, a witness of
+WF-091 on the reference-type arm: the reference's own serialized `type`
+disagreed with the declaration it reads. L2 took that annotation off the
+five reference classes (B13, IR-SPEC ch. 4.1), so the reference's type IS
+its declaration's and the lie cannot be written. The migration
+(`spec/proposals/v1-migratie/m2.py`) removed the annotation and nothing
+else; measured on that translation, the verifier refuses it on WF-023, the
+rule this directory now names. `expect.txt` pins the arm (U1).

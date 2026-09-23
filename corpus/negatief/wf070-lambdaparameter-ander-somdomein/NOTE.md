@@ -1,24 +1,18 @@
-Violates WF-089 (`spec/IR-SPEC.md` ch. 2.4) through a `ListType`: the
-`aanspraken` attribute of `Jutter` is declared `list of beschikking`, and
-the `AttribuutRef` that feeds the `MapList` is typed `list of oordeel` —
-the element domain drifts, the list wrapper hides it. The lambda parameter
-and the binder inside agree with the reference (`oordeel`), and the match
-arms cover `oordeel`, so every structural check along the way passes.
+Violates WF-070 (`spec/IR-SPEC.md` ch. 4.8): a `MapList` maps over a read of
+`Jutter.aanspraken`, declared as a list of the sum domain `beschikking`,
+with a lambda whose parameter `a` is declared `oordeel`. The parameter of a
+map's function is the source list's element type.
 
-    WF-089 FAIL /rules/resolvedRegels/0/waarde/list/list/type: attribute reference
-    'aanspraken' is typed with keuzetype domain 'oordeel', but the
-    declaration it reads from names domain 'beschikking'
+    WF-070 FAIL /rules/resolvedRegels/0/waarde/list/function: lambda parameter
+    'a' is sumtype 'oordeel', expected sumtype 'beschikking'
 
-Why it has to exist, and why it is the sharpest of the set: WF-070 crosses
-the lambda parameter against the source's SERIALIZED element type, which
-is the drifted one, so the whole chain is internally consistent and only
-the anchor to the declaration is missing. Before the rule the document was
-verifier-clean; ref faulted (`match has no arm for constructor
-"Toegekend"`) — but clingo returned a WRONG ANSWER, `som = 0` where 35.00
-was expected: no arm matched, the map produced nothing, and the fold
-returned its init. Not a fault, not a leeg — the differential split into a
-value. Drools auto-excluded the `ListType` datatype.
-
-Falsifiable: make `keuzetype_domain` return `None` for a `List_type`
-(drop the element look-through) and this case passes while every other
-wf089 case stays red — the look-through is its own falsifiable line.
+**Rewritten at L2 (2026-09-24), stamp: herschreven op WF-070 (D17).** Until
+L2 this document was `wf089-attribuutref-lijst-sum`, a witness of WF-089 on
+the reference-type arm: the reference feeding the `MapList` was typed `list
+of oordeel` while `Jutter.aanspraken` is declared `list of beschikking`, and
+the lambda parameter followed the annotation. L2 took that annotation off
+the five reference classes (B13, IR-SPEC ch. 4.1), so the read's type IS its
+declaration's and the lie cannot be written. The migration
+(`spec/proposals/v1-migratie/m2.py`) removed the annotation and nothing
+else; measured on that translation, the verifier refuses it on WF-070, the
+rule this directory now names. `expect.txt` pins the arm (U1).

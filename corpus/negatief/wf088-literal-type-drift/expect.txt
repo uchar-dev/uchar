@@ -1,0 +1,1 @@
+enumeration use site disagrees with the declaration of domain 'keurstatus' (the same values, in declaration order, required)

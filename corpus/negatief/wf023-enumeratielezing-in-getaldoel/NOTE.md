@@ -1,25 +1,17 @@
-Violates WF-089 (`spec/IR-SPEC.md` ch. 2.4) on its one-sided arm: an
-`AttribuutRef` reading the enumeration attribute `vaarwater` (domain
-`Vaarwater`) carries a plain `Numeriek` `type` — no keuzetype domain at
-all — and its value is assigned to the numeric attribute `tarief`. The
-rule fires whenever EITHER side names a keuzetype domain; here only the
-declaration does.
+Violates WF-023 (`spec/IR-SPEC.md` ch. 3.1) on the family clause: the rule
+writes a read of `Berging.vaarwater`, declared as an enumeration of the
+domain `Vaarwater`, into the numeric attribute `tarief` — the mirror of
+`wf023-defaults-soort` and `wf023-objectcreatie-soort`.
 
-    WF-089 FAIL /rules/resolvedRegels/0/waarde/type: attribute reference
-    'vaarwater' is typed number, naming no keuzetype domain, but the
-    declaration it reads from names domain 'Vaarwater'
+    WF-023 FAIL /rules/resolvedRegels/0: a enumeration value is assigned to a
+    number target
 
-Why it has to exist: this is the soort-lie of an `AttribuutRef` in an
-ordinary value position, and no rule crossed it before — WF-023 compares
-the rule target's type with the value's SERIALIZED type (number against
-number, clean), WF-027's cross lives only in the object-creation
-initialisation, WF-078 covers binders. The measured split is the widest of
-the set: ref wrote the label into the numeric target (`tarief = Wad`),
-clingo faulted the translation (`unscalable datatype`), and Drools crashed
-at fire (`ClassCastException: Cannot cast java.lang.String to
-java.math.BigDecimal`) — three executors, three behaviours, one
-verifier-clean document.
-
-Falsifiable: make the two one-sided branches of `wf089_domain_identity`
-(`Some _, None` and `None, Some _`) return `[]` and this case passes while
-the two-sided cases stay red.
+**Rewritten at L2 (2026-09-24), stamp: herschreven op WF-023 (D17).** Until
+L2 this document was `wf089-attribuutref-geen-domein`, a witness of WF-089
+on the reference-type arm: the reference's own serialized `type` disagreed
+with the declaration it reads. L2 took that annotation off the five
+reference classes (B13, IR-SPEC ch. 4.1), so the reference's type IS its
+declaration's and the lie cannot be written. The migration
+(`spec/proposals/v1-migratie/m2.py`) removed the annotation and nothing
+else; measured on that translation, the verifier refuses it on WF-023, the
+rule this directory now names. `expect.txt` pins the arm (U1).

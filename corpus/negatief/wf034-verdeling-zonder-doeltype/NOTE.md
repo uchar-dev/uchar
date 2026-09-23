@@ -33,7 +33,7 @@ clean after the clause. A null takes with it everything else keyed on the
 type — WF-025's ordering-key datatype, WF-050's defaults overlap, the
 dependency graph's read and write edges, and the name-resolution arm beside it,
 which has no scope to resolve in without it. An *undeclared* type is another
-rule's business: WF-047 on the bound form, WF-048 on the bindingless one.
+rule's business: WF-047, against the recipient role the allocation carries.
 
 *Measured breadth of the shape itself:* three pre-existing allocation negatiefs
 (`wf020-crossform-collision`, `wf024-complex`, `wf025-max-without-ratio`) are

@@ -1,23 +1,20 @@
-Violates WF-091 (`spec/IR-SPEC.md` ch. 4.1) on the `BinderRef` arm, unit
-facet. A `Let` binds `b` to `het gewicht van de Jutter` — a `Numeriek`
-attribute declared in `kg` — and the body reads `b` with a serialized
-`type` in `t` (the same canonical `kg`, factor 1000). The `Let` node type
-repeats the body type, so WF-076 is satisfied.
+Violates WF-076 (`spec/IR-SPEC.md` ch. 4.10): a `Let` binds `b` to a read of
+`Jutter.gewicht`, declared in `kg`, and its body reads `b`. The body's type
+is therefore the binder's — `kg` — while the `Let` node is typed `t` (the
+same canonical unit, factor 1000). A `Let`'s type equals its body's type,
+facet for facet.
 
-    WF-091 FAIL /rules/resolvedRegels/0/waarde/body/type: unit mismatch: binder
-    reference 'b' is typed 't' of system 'Gewicht' (factor 1000 to 'kg'),
-    but the declaration it reads from is 'kg' of system 'Gewicht'
-    (factor 1 to 'kg')
+    WF-076 FAIL /rules/resolvedRegels/0/waarde/type: the let type (number(2
+    decimals, t)) differs from its body type (number(2 decimals, kg)) — the
+    let type must equal the body type
 
-Why it has to exist beside `wf091-attribuutref-eenheid-converteerbaar`:
-the binder arm is the one arm whose soort facet is WF-078's, and WF-078
-crossed the soort ALONE — its own comment and the ch. 4.7 prose named
-decimals and units as deliberately uncrossed. This case is that sentence's
-successor made falsifiable: number equals number, so WF-078 is silent, and
-the unit facet has to carry the refusal under WF-091.
-
-Falsifiable, arm-exact: drop the `~soort` argument and this case is
-unchanged (its facet is not soort); disable the `Binder_ref` arm's
-`use_site_identity` call and this case turns clean together with
-`wf078-binderref-type-lie`, `wf089-binderref-sum` and `wf090-binderref`,
-while every other arm stays red.
+**Rewritten at L2 (2026-09-24), stamp: herschreven op WF-076 (D17).** Until
+L2 this document was `wf091-binderref-eenheid`, a witness of WF-091 on the
+reference-type arm: the binder reference's own `type` was `t` where its
+binder reads a `kg` attribute, and the `Let` node type repeated the
+annotation. L2 took that annotation off the five reference classes (B13,
+IR-SPEC ch. 4.1), so the read's type IS its declaration's and the lie cannot
+be written. The migration (`spec/proposals/v1-migratie/m2.py`) removed the
+annotation and nothing else; measured on that translation, the verifier
+refuses it on WF-076, the rule this directory now names. `expect.txt` pins
+the arm (U1).

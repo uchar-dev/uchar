@@ -1,23 +1,19 @@
-Violates WF-090 (`spec/IR-SPEC.md` ch. 2.4) on the READ side, the
-`BinderRef` position: inside the `MapList` lambda the parameter `d` is
-declared with the struct domain `dossier` (faithfully, against the
-list-typed source it maps), while the `BinderRef` reading it is typed
-`logboek` and the body reads `.bedrag`. WF-078 crosses a `BinderRef`
-against its binder in **soort** only — struct against struct — so the lie
-passed.
+Violates WF-074 (`spec/IR-SPEC.md` ch. 4.9) inside a lambda: the `MapList`
+lambda declares its parameter `d` with the struct domain `dossier`
+(faithfully, against the list it maps), and its body reads the field
+`bedrag` of `d`. `bedrag` is a field of `logboek`; a binder read is typed by
+its binder's declaration.
 
-    WF-090 FAIL /rules/resolvedRegels/1/waarde/list/function/body/base/type:
-    binder reference 'd' is typed with struct domain 'logboek', but the
-    declaration it reads from names struct domain 'dossier'
+    WF-074 FAIL /rules/resolvedRegels/1/waarde/list/function/body: 'bedrag' is
+    not a declared field of struct 'dossier'
 
-Why it has to exist beside the attribute cases: the binder environment is
-its own declaration source (a match arm's payload, a lambda or function
-parameter, a `Let` value, a filter element), and no attribute is misread
-here. Verifier-clean before; ref faulted (`field "bedrag" is not present
-on the record value`) and clingo folded a **wrong answer**,
-`J1.totaalwaarde = [0]` where 12.50 was expected.
-
-Falsifiable, arm-exact: call `wf089_domain_identity` instead of
-`use_site_identity` in the `Binder_ref` arm of `walk_expr` and this case
-alone turns clean; the attribute, parameter, dimension-cell, fold-source,
-aggregation and write cases stay red.
+**Rewritten at L2 (2026-09-24), stamp: herschreven op WF-074 (D17).** Until
+L2 this document was `wf090-binderref`, a witness of WF-090 on the
+reference-type arm: the binder reference's own `type` named `logboek` while
+its binder, the lambda parameter `d`, is declared `dossier`, and the field
+access followed the annotation. L2 took that annotation off the five
+reference classes (B13, IR-SPEC ch. 4.1), so the read's type IS its
+declaration's and the lie cannot be written. The migration
+(`spec/proposals/v1-migratie/m2.py`) removed the annotation and nothing
+else; measured on that translation, the verifier refuses it on WF-074, the
+rule this directory now names. `expect.txt` pins the arm (U1).

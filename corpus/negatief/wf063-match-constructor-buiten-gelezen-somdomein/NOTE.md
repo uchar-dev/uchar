@@ -1,24 +1,22 @@
-Violates WF-089 (`spec/IR-SPEC.md` ch. 2.4): the sum-type twin of
-`wf089-attribuutref-enum`. The `Match` scrutinee reads `beschikking` of
-`Jutter`, declared with the sum domain `beschikking` (`Toegekend(bedrag)`,
-`Afgewezen`, `Aangehouden`), but its `type` names the second declared sum
-domain `oordeel` (`Goedgekeurd(bedrag)`, `Verworpen`, `Uitgesteld`) and
-the arms cover `oordeel` exactly.
+Violates WF-063 (`spec/IR-SPEC.md` ch. 4.7), the sum-type twin of
+`wf063-match-arm-buiten-gelezen-domein`: the `Match` reads
+`Jutter.beschikking`, declared with the sum domain `beschikking`
+(`Toegekend(bedrag)`, `Afgewezen`, `Aangehouden`), and its arms are the
+constructors `Goedgekeurd`, `Verworpen` and `Uitgesteld` of the domain
+`oordeel`.
 
-    WF-089 FAIL /rules/resolvedRegels/0/waarde/scrutinee/type: attribute reference
-    'beschikking' is typed with keuzetype domain 'oordeel', but the
-    declaration it reads from names domain 'beschikking'
+    WF-063 FAIL /rules/resolvedRegels/0/waarde: arm 'Goedgekeurd' is not a
+    declared constructor of the sum type
+    WF-063 FAIL /rules/resolvedRegels/0/waarde: arm 'Verworpen' is not a
+    declared constructor of the sum type
 
-Why it has to exist beside the enumeration case: the sum side is
-pre-existent rather than new — WF-061 pins a `SumType` use site against
-its declaration only at attribute and parameter DATATYPES, never at an
-expression `type`, and WF-063 reads the domain the scrutinee names. So the
-document was verifier-clean; ref faulted (`match has no arm for
-constructor "Toegekend"`), clingo left `uitkering` underived where 1275.50
-was expected, and Drools auto-excluded the `SumType` datatype.
-
-Falsifiable through the same `Attribuut_ref` arm as the enumeration case;
-`keuzetype_domain` reads the `SumType`'s `domain` where the enumeration
-case reads the `Enumeratie`'s `domein`, so a mutant that drops the
-`Sum_type` line of that helper passes this case and keeps the enumeration
-one red.
+**Rewritten at L2 (2026-09-24), stamp: herschreven op WF-063 (D17).** Until
+L2 this document was `wf089-attribuutref-sum`, a witness of WF-089 on the
+reference-type arm: the reference's own serialized `type` named another
+domain than the declaration it reads, and the match arms followed the
+annotation. L2 took that annotation off the five reference classes (B13,
+IR-SPEC ch. 4.1): the scrutinee's type IS its declaration's, so what remains
+is a match whose arms do not cover the domain it actually reads. The
+migration (`spec/proposals/v1-migratie/m2.py`) removed the annotation and
+nothing else; measured on that translation, the verifier refuses it on
+WF-063, the rule this directory now names. `expect.txt` pins the arm (U1).

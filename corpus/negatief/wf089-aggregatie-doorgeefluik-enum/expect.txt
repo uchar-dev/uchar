@@ -1,0 +1,1 @@
+the EERSTE aggregation is typed with keuzetype domain 'Vaarwater', but operand 0 names domain 'Kust'

@@ -39,3 +39,10 @@ WF-089 line disappears here and on
 `wf089-aggregatie-doorgeefluik-enum` (and the WF-090 line on
 `wf090-doorgeefluik`), while neither of the two enumeration cases turns
 clean, both being ordering folds over an equality-only contributor.
+
+**Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the
+migration's translation (`spec/proposals/v1-migratie/m2.py`): the operand
+references lost their own `type` (B13), and the aggregation's annotation, a
+derived position, keeps its (V5 (a)); operand 0 is now typed by the
+attribute it reads. The rule still fires on the same arm, and `expect.txt`
+pins it (U1).

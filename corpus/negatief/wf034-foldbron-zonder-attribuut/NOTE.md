@@ -65,11 +65,16 @@ ROOT, which crosses the aggregation's own type against the type derived from
 operand 0 and needs no resolved declaration to do it. Measured with the arm
 removed:
 
-    WF-091 FAIL /rules/resolvedRegels/1/waarde/type: unit mismatch: the SOM
-    aggregation is typed 'kg' of system 'Gewicht' (factor 1 to 'kg'), but the
-    type derived from its first operand is 't' of system 'Gewicht' (factor
-    1000 to 'kg')
+    WF-034 FAIL /rules/resolvedRegels/1/waarde/argumenten/0: attribute
+    reference on 'Vondst' without an attribute name: it resolves against no
+    declaration
 
 What still defers on `resolved_attr_datatype` yielding `None` is the family's
 REFERENCE half — WF-089/WF-090 and WF-091's reference arms — which is what
 that paragraph should be read as saying.
+
+**Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the
+migration's translation (`spec/proposals/v1-migratie/m2.py`): the fold
+source lost its own `type` (B13), and with it the WF-091 line its unit lie
+drew beside this one; the source still names no attribute. The rule still
+fires on the same arm, and `expect.txt` pins it (U1).

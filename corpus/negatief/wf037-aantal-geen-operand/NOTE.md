@@ -18,7 +18,7 @@ The document. A `Jutter` with two weighed posts of her own (`gewogen
 vangst`, `gewogen bijvangst`, kg with two decimals) and a count-typed
 target, `aantal gewogen posten` (whole, non-negative, unitless). The
 `AANTAL` carries an empty argument list and no `elementObjecttype`. Every
-other clause holds: no facet, no set reading, no sentinel, the node type
+other clause holds: no facet, the node type
 is the count's own derived type; the verifier reports one fault.
 
 Why the form left the wire. It was verifier-clean and exactly ONE executor

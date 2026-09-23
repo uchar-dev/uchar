@@ -1,0 +1,1 @@
+equality across families: enumeration vs sumtype

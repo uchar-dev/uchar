@@ -14,6 +14,7 @@ element type — the ONLY defect is that its first step begins one type too far
 out. This is the wire form of the very degradation the card exists to close
 (the anchor that is not the subject), so it is the arm whose absence would
 leave the field able to express the silent misbinding it was introduced to
-replace. There is deliberately no bindingless fallback to soften it: WF-048
-derives a relation from a type PAIR, and a path's intermediate types are its
+replace. There is deliberately no bindingless fallback to soften it: a type-pair
+derivation (WF-048, retired with the bindingless forms at L2) names a relation
+from a type PAIR, and a path's intermediate types are its
 own claim, not a consequence of its endpoints.

@@ -1,0 +1,1 @@
+hop 0 reaches the to-many role 'post' in a scalar slot

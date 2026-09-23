@@ -10,12 +10,9 @@ value `Verspoeld` that no declaration has. The verifier reports:
 
     WF-088 FAIL /model/functionDefs/0/parameters/melding
     WF-088 FAIL /model/functionDefs/0/result
-    WF-088 FAIL /model/functionDefs/0/body/type
 
-which is both halves of the rule at once — the model layer's `FunctionDef`
-arm (parameter and result) and the expression layer's type prologue (the
-body's `BinderRef` type) — and every one of them reached through
-`enum_use_site`'s recursion into **sum-type payloads**.
+the model layer's `FunctionDef` arm (parameter and result), both reached
+through `enum_use_site`'s recursion into **sum-type payloads**.
 
 Why this case has to exist. Nothing else on the wire catches a drifted
 enumeration in this position: WF-061 pins a `SumType` use site against
@@ -47,3 +44,11 @@ the card `20260901-use-site-declaratie-identiteit`: for the enumeration
 it cannot arise, because WF-060 (sum payload), WF-071 (struct field) and
 WF-065 (list element) refuse a nested `Enumeratie` in every declaration
 position before it could drift; the use-site half is WF-089 (ch. 2.4).
+
+**Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the
+migration's translation (`spec/proposals/v1-migratie/m2.py`). Until L2 a
+third line came from the expression layer: the body is a `BinderRef`, whose
+own `type` repeated the drifted copy. A binder read carries no type since L2
+(B13) — its binder's declaration, here the parameter, is its type — so that
+line left with the annotation, and the two declaration lines carry the
+witness. The WF-060 line beside them is unchanged.

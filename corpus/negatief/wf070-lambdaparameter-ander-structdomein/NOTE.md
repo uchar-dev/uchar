@@ -1,21 +1,18 @@
-Violates WF-090 (`spec/IR-SPEC.md` ch. 2.4) on the READ side through a
-`ListType` element: the `MapList` source reads `Jutter.dossiers`, declared
-`list of dossier`, but its `type` is `list of logboek`; the map's lambda
-parameter and the `BinderRef` in its body agree with that claim, so the
-document is internally consistent everywhere except at the declaration
-boundary, and WF-078's soort cross (struct against struct) sees nothing.
+Violates WF-070 (`spec/IR-SPEC.md` ch. 4.8), the struct side of
+`wf070-lambdaparameter-ander-somdomein`: a `MapList` maps over a read of
+`Jutter.dossiers`, declared as a list of the struct domain `dossier`, with a
+lambda whose parameter `d` is declared `logboek`.
 
-    WF-090 FAIL /rules/resolvedRegels/1/waarde/list/list/type: attribute
-    reference 'dossiers' is typed with struct domain 'logboek', but the
-    declaration it reads from names struct domain 'dossier'
+    WF-070 FAIL /rules/resolvedRegels/1/waarde/list/function: lambda parameter
+    'd' is struct 'logboek', expected struct 'dossier'
 
-Why it has to exist beside `wf090-attribuutref`: it is what pins the
-look-through, and it carries the worst executor outcome of the set. Ref
-faulted at the field read, but clingo produced a **wrong answer** —
-`J1.totaalwaarde = [0]` where 12.50 was expected — the struct twin of the
-list-element flank `wf089-attribuutref-lijst-sum` records for sum types.
-A scalar case cannot pin the `List_type` line of `struct_domain`.
-
-Falsifiable, arm-exact: drop the `List_type` recursion from
-`struct_domain` and this case alone turns clean — every other WF-090 case
-crosses a scalar struct type and stays red.
+**Rewritten at L2 (2026-09-24), stamp: herschreven op WF-070 (D17).** Until
+L2 this document was `wf090-attribuutref-lijst`, a witness of WF-090 on the
+reference-type arm: the reference feeding the `MapList` was typed `list of
+logboek` while `Jutter.dossiers` is declared `list of dossier`, and the
+lambda parameter followed the annotation. L2 took that annotation off the
+five reference classes (B13, IR-SPEC ch. 4.1), so the read's type IS its
+declaration's and the lie cannot be written. The migration
+(`spec/proposals/v1-migratie/m2.py`) removed the annotation and nothing
+else; measured on that translation, the verifier refuses it on WF-070, the
+rule this directory now names. `expect.txt` pins the arm (U1).

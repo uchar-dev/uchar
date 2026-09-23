@@ -1,24 +1,20 @@
-Violates WF-089 (`spec/IR-SPEC.md` ch. 2.4): a `DimensieCel` read of the
-dimensioned enumeration attribute `vaarwater` (dimension `seizoen`, cell
-`voorjaar`) carries a `type` naming the domain `Kust`; the inner
-`AttribuutRef` is faithful (`Vaarwater`), and so is the attribute's
-declaration. A cell of a dimensioned attribute carries that attribute's
-datatype, so the cell read's own `type` is a use site of the same
-declaration.
+Violates WF-063 (`spec/IR-SPEC.md` ch. 4.7): the `Match` reads the cell
+`voorjaar` of the dimensioned enumeration attribute `vaarwater` (dimension
+`seizoen`, domain `Vaarwater`), and its arms are the values of the domain
+`Kust`. A cell read is typed by the dimensioned attribute it reads.
 
-    WF-089 FAIL /rules/resolvedRegels/0/waarde/scrutinee/type: dimension-cell read
-    of 'vaarwater' is typed with keuzetype domain 'Kust', but the
-    declaration it reads from names domain 'Vaarwater'
+    WF-063 FAIL /rules/resolvedRegels/0/waarde: arm 'Noord' is not a declared
+    enumeration value of the enumeration domain
+    WF-063 FAIL /rules/resolvedRegels/0/waarde: arm 'Zuid' is not a declared
+    enumeration value of the enumeration domain
 
-Why it has to exist: the `Dimensie_cel` arm checked the labels (WF-040)
-and walked the inner reference, but never the cell's own `type` — the
-one position among the reference shapes that reads a declaration without
-any structural cross at all. It is a verifier-only flank: the case format
-carries no dimension-cell input (the `jutterswet-vormenkabinet` golden has
-no case file for the same reason), so no executor witness is possible and
-the rule is the only fence.
-
-Falsifiable: disable the `wf089_domain_identity` call in the
-`Dimensie_cel` arm and this case passes — the inner reference is faithful,
-so the `Attribuut_ref` arm has nothing to say — while every other wf089
-case stays red.
+**Rewritten at L2 (2026-09-24), stamp: herschreven op WF-063 (D17).** Until
+L2 this document was `wf089-dimensiecel-enum`, a witness of WF-089 on the
+reference-type arm: the dimension-cell read's own serialized `type` named
+another domain than the declaration it reads, and the match arms followed
+the annotation. L2 took that annotation off the five reference classes (B13,
+IR-SPEC ch. 4.1): the scrutinee's type IS its declaration's, so what remains
+is a match whose arms do not cover the domain it actually reads. The
+migration (`spec/proposals/v1-migratie/m2.py`) removed the annotation and
+nothing else; measured on that translation, the verifier refuses it on
+WF-063, the rule this directory now names. `expect.txt` pins the arm (U1).

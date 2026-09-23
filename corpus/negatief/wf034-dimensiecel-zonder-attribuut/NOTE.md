@@ -31,10 +31,8 @@ its label/dimension cross hangs off the same match and travels with them.
 Spelled out on the first: `corpus/negatief/wf091-dimensiecel-eenheid`
 is refused for a unit lie on the cell's own type —
 
-    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: unit mismatch: dimension-cell
-    read of 'kern' is typed 't' of system 'Gewicht' (factor 1000 to 'kg'),
-    but the declaration it reads from is 'kg' of system 'Gewicht' (factor 1
-    to 'kg')
+    WF-034 FAIL /rules/resolvedRegels/0/waarde: dimension-cell read without an
+    attribute reference: it resolves against no declaration
 
 — and emptying that document's `attribuut` field turns the refusal off
 entirely: `verifier: PASS`. A document could therefore buy its way out of the
@@ -73,3 +71,8 @@ Falsifiable, clause-exact: remove the `attribuut = None` arm from
 `walk_expr`'s `Dimensie_cel` case and this case alone turns clean — measured
 over all four zones, with the non-reference sibling and every other document
 keeping its verdict.
+
+**Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the
+migration's translation (`spec/proposals/v1-migratie/m2.py`): the cell read
+lost its own `type` (B13); its attribute position is still empty. The rule
+still fires on the same arm, and `expect.txt` pins it (U1).

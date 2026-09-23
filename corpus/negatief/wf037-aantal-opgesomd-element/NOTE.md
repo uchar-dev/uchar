@@ -24,9 +24,9 @@ gave).
 
 The document. `wf037-aantal-opgesomd` with `Vondst` and the
 `vondstaanmelding` fact type restored and `elementObjecttype` set to
-`Vondst`. There is no `bronRol`: the element type is reachable from the
-subject through exactly one fact type, so WF-047 and WF-048 are silent and
-the verifier reports one fault.
+`Vondst`. There is no `bronRol`: a listed count carries no range (the schema
+demands one of a single-argument fold only), so WF-047 is silent and the
+verifier reports one fault.
 
 Executors, measured on this document before the arm landed:
 

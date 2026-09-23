@@ -10,14 +10,15 @@ allocation's `bronType` names the object type it distributes **from**, as
 nullable on the v0 wire, and a null in either resolves against nothing.
 
 An *undeclared* type is already caught — WF-047 crosses it against the
-connecting role's fillers on the bound form, WF-048 against the derivable fact
-type on the bindingless one, both **rules** measured loud (the executors are
+fillers of the recipient role the allocation carries (required since L2; the
+derivation for a bindingless allocation, WF-048, left the wire with it),
+measured loud (the executors are
 not: with `bronType` pointed at an undeclared name `ref` does not fault at all,
 it merely leaves every share *leeg* where 300/200/300 and a 400 remainder are
 pinned, while the ASP backend refuses to translate — so on that shape too the
 verifier, not the differential square, is what catches it). A **null** slips
-past both,
-because both read `Some t`, and it takes with it everything else keyed on the
+past it,
+because it reads `Some t`, and it takes with it everything else keyed on the
 type: WF-025's ordering-key datatype, WF-050's defaults overlap, the
 dependency graph's read and write edges, and this card's own name resolution,
 which has no scope to resolve in without it.

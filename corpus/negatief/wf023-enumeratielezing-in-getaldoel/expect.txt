@@ -1,0 +1,1 @@
+a enumeration value is assigned to a number target

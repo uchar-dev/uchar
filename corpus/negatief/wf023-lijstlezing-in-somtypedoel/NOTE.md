@@ -1,22 +1,19 @@
-Violates WF-091 (`spec/IR-SPEC.md` ch. 4.1) on the `AttributeReference`
-arm, RESIDUAL-STRUCTURE facet: `Jutter.aanspraken` is declared as a list
-of the sum type `oordeel` and the reference that reads it is typed as the
-ELEMENT — the same sum type, one `ListType` layer short. Both inline copies
-repeat the domain declaration faithfully, so WF-061 has nothing to say.
+Violates WF-023 (`spec/IR-SPEC.md` ch. 3.1) on the family clause: the rule
+writes a read of `Jutter.aanspraken`, declared as a list of the sum type
+`oordeel`, into a target declared as the element sum type itself — one
+`ListType` layer short. The form is the one
+`wf023-schrijf-lijst-geen-domein-waarde` already pins; D17 rewrites this
+witness on the rule its translation falls on all the same.
 
-    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: residual structure
-    mismatch: attribute reference 'aanspraken' is typed sumtype 'oordeel'
-    [Goedgekeurd of number(fractional, 2 decimals, NIET_NEGATIEF, no
-    unit), Verworpen, Uitgesteld], but the declaration it reads from is
-    list of sumtype 'oordeel' [Goedgekeurd of number(fractional, 2
-    decimals, NIET_NEGATIEF, no unit), Verworpen, Uitgesteld]
+    WF-023 FAIL /rules/resolvedRegels/0: a list value is assigned to a sumtype
+    target
 
-Why it has to exist: it is the exact hole the facet order leaves open by
-design. The soort facet stands aside wherever either side names a domain —
-that discrepancy is WF-089/WF-090's, one namespace, one variant — and the
-domain facet looks THROUGH a `ListType` element, so a list and its element
-name the same keuzetype and both earlier facets fall silent. Without a
-residual facet the engine would be a sieve with a list-shaped hole.
-
-Falsifiable: drop the residual facet from the engine and this case alone
-turns clean; the six named facets stay red on their own cases.
+**Rewritten at L2 (2026-09-24), stamp: herschreven op WF-023 (D17).** Until
+L2 this document was `wf091-attribuutref-reststructuur`, a witness of WF-091
+on the reference-type arm: the reference's own serialized `type` disagreed
+with the declaration it reads. L2 took that annotation off the five
+reference classes (B13, IR-SPEC ch. 4.1), so the reference's type IS its
+declaration's and the lie cannot be written. The migration
+(`spec/proposals/v1-migratie/m2.py`) removed the annotation and nothing
+else; measured on that translation, the verifier refuses it on WF-023, the
+rule this directory now names. `expect.txt` pins the arm (U1).

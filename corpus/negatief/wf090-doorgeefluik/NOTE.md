@@ -36,3 +36,10 @@ clean under that mutant, since a struct contributor under an `EERSTE`
 violates the new clause on the same operand. The falsification signal is
 the rule cited: under the mutant it is rejected for WF-038 and no longer
 for the WF-090 its directory declares.
+
+**Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the
+migration's translation (`spec/proposals/v1-migratie/m2.py`): the operand
+references lost their own `type` (B13), and the aggregation's annotation, a
+derived position, keeps its (V5 (a)); operand 0 is now typed by the
+attribute it reads. The rule still fires on the same arm, and `expect.txt`
+pins it (U1).

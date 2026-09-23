@@ -1,0 +1,1 @@
+decimals mismatch: the AANTAL aggregation is typed 2 decimals, but the type a count derives is 0 decimals

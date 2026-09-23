@@ -22,3 +22,10 @@ verifier-clean.
 
 Falsifiable: drop `wholeness` from the facet list and this case turns clean
 while the unit, decimals and soort cases on the same arm stay red.
+
+**Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the
+migration's translation (`spec/proposals/v1-migratie/m2.py`): the operand
+references lost their own `type` (B13), and the composite's annotation, a
+derived position, keeps its (V5 (a)), so the cross now runs against the type
+the operands' declarations derive. The rule still fires on the same arm, and
+`expect.txt` pins it (U1).

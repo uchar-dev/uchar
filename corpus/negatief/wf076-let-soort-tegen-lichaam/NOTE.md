@@ -1,20 +1,18 @@
-Violates WF-078 (`spec/IR-SPEC.md` ch. 4.7): a `BinderRef`'s serialized
-`type` lies about the soort of the binder it resolves to. The `Let`
-binds `b` to `de basis van de Jutter`, a `Numeriek` attribute, so `b`'s
-declared datatype is `Numeriek`; the body then reads `b` with a serialized
-`type {Tekst}`.
+Violates WF-076 (`spec/IR-SPEC.md` ch. 4.10): a `Let` binds `b` to a read of
+`Jutter.basis`, a `Numeriek` attribute, and its body reads `b`, so the body
+is a number; the `Let` node is typed `Tekst`.
 
-Pins the leaf-ref cross-check the card carries. WF-035 reads the same
-serialized `type` but exempts additive (`PLUS`/`MIN`) operands — the escape
-the adversarial hunt found: a soort-lie on a binder in an additive position
-is verifier-clean, ref computes on (annotation ignored), and clingo faults
-the translation, splitting the differential square with no corpus witness.
-WF-078 crosses the `BinderRef.type` against the resolved binder datatype
-(the same cross WF-023/WF-027 perform for a resolved `AttribuutRef`), so the
-lie is refused before any executor sees it — regardless of the operator
-position. Soort only: decimals and units stay uncrossed, exactly as the
-`AttribuutRef` cross-check leaves them.
+    WF-076 FAIL /rules/resolvedRegels/0/waarde/type: the let type (text)
+    differs from its body type (number(0 decimals)) — the let type must equal
+    the body type
 
-Old verifier: `PASS` (the binder resolves for WF-064; the lie rides through).
-New verifier: `WF-078 FAIL … binder reference 'b' is typed text, but its
-binder is number`.
+**Rewritten at L2 (2026-09-24), stamp: herschreven op WF-076 (D17).** Until
+L2 this document was `wf078-binderref-type-lie`, a witness of WF-078 on the
+reference-type arm: the binder reference's own `type` said `Tekst` where its
+binder reads a `Numeriek` attribute (WF-078, the soort facet on a binder
+reference), and the `Let` node type repeated the annotation. L2 took that
+annotation off the five reference classes (B13, IR-SPEC ch. 4.1), so the
+read's type IS its declaration's and the lie cannot be written. The
+migration (`spec/proposals/v1-migratie/m2.py`) removed the annotation and
+nothing else; measured on that translation, the verifier refuses it on
+WF-076, the rule this directory now names. `expect.txt` pins the arm (U1).

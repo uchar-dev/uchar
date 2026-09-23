@@ -53,3 +53,10 @@ report line, and the rebuilt binary's md5 equals the pre-arm one. (2)
 Neuter the engine's UNIT facet: eight derived unit cases turn clean, this
 one among them (seven before it existed) — the count honesty note (1) of
 the WF-091 index row carries.
+
+**Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the
+migration's translation (`spec/proposals/v1-migratie/m2.py`): the operand
+references lost their own `type` (B13), and the composite's annotation, a
+derived position, keeps its (V5 (a)), so the cross now runs against the type
+the operands' declarations derive. The rule still fires on the same arm, and
+`expect.txt` pins it (U1).

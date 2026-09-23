@@ -1,17 +1,19 @@
-# wf031-dagsoort-leest-rolstaat
+Violates WF-031 (`spec/IR-SPEC.md` ch. 3.7): a day-kind condition reads role
+membership — the `RoleMembership` check that the subject fills the role
+`wachtjutter` of the fact type `wachtindeling`. Role membership is derived
+fact-base state and falls outside WF-031's closed admission list (dates,
+date components, eerste paasdag, literals, parameters and other day kinds).
 
-Een dagsoort-voorwaarde die rollidmaatschap leest (Rollidmaatschap op
-`wachtjutter`): rol-lidmaatschap is afgeleide feitbasis-toestand en valt
-buiten de gesloten WF-031-toelatingslijst (datums, datumcomponenten,
-eerste paasdag, literalen, parameters, andere dagsoorten). Getuige van de
-lensvangst 2026-08-29: het proza beloofde de gesloten lijst, de check
-vlagde alleen attribuut- en kenmerk-reads — Rollidmaatschap,
-Verre_rollidmaatschap en Regelversie glipten erdoor.
+    WF-031 FAIL /rules/resolvedDagsoorten/0/voorwaarde: day-kind condition
+    reads role membership 'wachtjutter' — a day-kind voorwaarde references
+    only dates, date-components, eerste-paasdag, literals, parameters and
+    other day kinds, never derived object state (an attribute or
+    characteristic read)
 
-Sinds golf 6 van WF-034 (2026-09-05) draagt het rapport van dit document er
-één incidentele WF-034-regel bij: de lege-helft-arm van `anderTeFiller`
-(ch. 4.6 (o)) klaagt dat de nabije rolcheck geen vuller draagt. Waarachtig en
-onvermijdelijk — juist omdát WF-031 de rolstaatlezing in een dagsoortconditie
-verbiedt, is er geen subject om de vuller uit af te leiden. Het oordeel is
-onveranderd: dit document blijft WF-031's getuige, voor de regel die zijn
-directorynaam declareert.
+**Rewritten at L2 (2026-09-24), stamp: herschreven (i).** L2 merged the two
+role-check nodes into `RoleMembership {factType, role, negated}` (B9, D11),
+which names its fact type instead of deriving it from the subject. A
+day-kind condition has no subject, so the migration had nothing to derive
+from and refused the document; it was written by hand with the fact type
+named. The WF-034 line the old node drew for its missing filler type has no
+successor: the node names its relation, and the declarations resolve.

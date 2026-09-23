@@ -35,10 +35,9 @@ spelling (measured with the verifier of the day before this card):
 `corpus/negatief/wf091-dimensiecel-eenheid` is refused for a unit lie on the
 cell's own type —
 
-    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: unit mismatch: dimension-cell
-    read of 'kern' is typed 't' of system 'Gewicht' (factor 1000 to 'kg'),
-    but the declaration it reads from is 'kg' of system 'Gewicht' (factor 1
-    to 'kg')
+    WF-034 FAIL /rules/resolvedRegels/0/waarde/attribuut: dimension-cell read
+    whose attribute position is not an attribute reference: it resolves
+    against no declaration
 
 — and replacing that document's `attribuut` with a literal turns the refusal
 off: `verifier: PASS`. WF-040's label/dimension cross goes with it.
@@ -67,3 +66,9 @@ Falsifiable, clause-exact: remove the non-reference arm from `walk_expr`'s
 `Dimensie_cel` case and this case alone turns clean — measured over all four
 zones, with the empty-field sibling and every other document keeping its
 verdict.
+
+**Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the
+migration's translation (`spec/proposals/v1-migratie/m2.py`): the cell read
+lost its own `type` (B13); its attribute position still holds a literal
+instead of an attribute reference. The rule still fires on the same arm, and
+`expect.txt` pins it (U1).

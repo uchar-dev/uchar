@@ -27,7 +27,7 @@ consumer in the IR reads a VALUE, and there is no value here to read: a
 selection names a population and a relation, not an attribute. The one node
 that folds instances rather than values is the instance count (ch. 1.2e,
 ch. 3.4a), so the union's admissible position is its single argument. That
-is the same shape of rule WF-096 draws for the set reading — one node
+is the same shape of rule WF-096 drew for the set reading until L2 — one node
 consumes a collection, and the collection is ill-formed anywhere else.
 
 ## Rood-eerst, gemeten op dit document

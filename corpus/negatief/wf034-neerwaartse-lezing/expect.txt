@@ -1,0 +1,1 @@
+'bergingsdiepte' is not a declared attribute of 'Strandrecht'

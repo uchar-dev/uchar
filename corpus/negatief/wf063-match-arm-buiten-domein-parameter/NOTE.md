@@ -1,23 +1,19 @@
-Violates WF-089 (`spec/IR-SPEC.md` ch. 2.4): a `ParameterRef` used as a
-`Match` scrutinee carries a `type` naming the enumeration domain `Kust`
-while the parameter it reads, `standaardvaarwater`, is declared with the
-domain `Vaarwater`.
+Violates WF-063 (`spec/IR-SPEC.md` ch. 4.7): the `Match` reads the parameter
+`standaardvaarwater`, declared with the enumeration domain `Vaarwater`, and
+its arms are the values of the domain `Kust`.
 
-    WF-089 FAIL /rules/resolvedRegels/0/waarde/scrutinee/type: parameter reference
-    'standaardvaarwater' is typed with keuzetype domain 'Kust', but the
-    declaration it reads from names domain 'Vaarwater'
+    WF-063 FAIL /rules/resolvedRegels/0/waarde: arm 'Noord' is not a declared
+    enumeration value of the enumeration domain
+    WF-063 FAIL /rules/resolvedRegels/0/waarde: arm 'Zuid' is not a declared
+    enumeration value of the enumeration domain
 
-The parameter is the second declaration source the rule names, with its
-own code arm: the `Parameter_ref` walk previously checked only that the
-parameter exists (WF-034). WF-018/WF-088 pin the parameter's own datatype
-against the domain it names, WF-063 the arms against the scrutinee's named
-domain — none of them reaches across. Before the rule: `verifier: PASS`;
-ref faulted (`match has no arm for enumeration value "Wad"`); clingo
-refused the translation on its pre-existing `symbolic_term` fence (an
-enumeration-typed parameter as a scrutinee has no carrier, S19), so this
-flank was ref-only — a fault, never a wrong answer, but on a document the
-verifier had accepted.
-
-Falsifiable: disable the `wf089_domain_identity` call in the
-`Parameter_ref` arm and this case passes while the attribute, binder and
-cell cases stay red.
+**Rewritten at L2 (2026-09-24), stamp: herschreven op WF-063 (D17).** Until
+L2 this document was `wf089-parameterref-enum`, a witness of WF-089 on the
+reference-type arm: the parameter reference's own serialized `type` named
+another domain than the declaration it reads, and the match arms followed
+the annotation. L2 took that annotation off the five reference classes (B13,
+IR-SPEC ch. 4.1): the scrutinee's type IS its declaration's, so what remains
+is a match whose arms do not cover the domain it actually reads. The
+migration (`spec/proposals/v1-migratie/m2.py`) removed the annotation and
+nothing else; measured on that translation, the verifier refuses it on
+WF-063, the rule this directory now names. `expect.txt` pins the arm (U1).

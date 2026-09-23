@@ -1,0 +1,1 @@
+does not fill the role 'wachtjutter' of fact type 'wachtindeling'

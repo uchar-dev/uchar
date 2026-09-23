@@ -1,0 +1,1 @@
+hop 0 over 'kustligging': the near side fills 'Post', but the walk stands at 'Wachter'

@@ -16,3 +16,13 @@ and the mutant survived gate 3. This document is what needs the term in
 walk_expr's type prologue.
 
 A minimal hand-built document.
+
+    WF-088 FAIL /rules/consistenties/0/assertie/rechts/type: enumeration use
+    site disagrees with the declaration of domain 'keurstatus' (the same
+    values, in declaration order, required)
+
+**Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the
+migration's translation (`spec/proposals/v1-migratie/m2.py`): the references
+lost their own `type` (B13); the drift sits on a `Literal`'s `type`, which
+stays (V9 (a)). The rule still fires on the same arm, and `expect.txt` pins
+it (U1).

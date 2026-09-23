@@ -1,0 +1,1 @@
+is not a declared enumeration value of the enumeration domain

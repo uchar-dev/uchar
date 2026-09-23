@@ -9,7 +9,8 @@ the fold asks for an order the element type does not have.
     MINIMUM ordering fold is enumeration, must be a number or a date
 
 Why it has to exist: the set-source form spells its contributors as one
-`set` argument whose type is the element attribute's datatype, so the
+argument — the set source of a fold that carries a range — whose type is
+the element attribute's datatype, so the
 whole defect sits in a single operand and nothing else in the document
 is a lie — no drifted domain, no unresolved name. WF-089 makes such a
 fold's domain honest; it never asks whether the kind is admissible, and

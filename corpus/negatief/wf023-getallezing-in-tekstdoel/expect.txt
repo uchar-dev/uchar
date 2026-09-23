@@ -1,0 +1,1 @@
+a number value is assigned to a text target

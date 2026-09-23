@@ -24,10 +24,6 @@ the source reads `Vondst.gewicht`, declared in `kg`, and is typed in `t`
 (same canonical unit, factor 1000 — the convertible class no compatibility
 cross reaches). With `objecttype` filled that lie is refused arm-exact:
 
-    WF-091 FAIL /rules/resolvedRegels/1/waarde/argumenten/0/type: unit mismatch:
-    fold-source attribute reference 'gewicht' is typed 't' of system
-    'Gewicht' (factor 1000 to 'kg'), but the declaration it reads from is
-    'kg' of system 'Gewicht' (factor 1 to 'kg')
 
 With the field emptied it was verifier-clean — and **every executor plays
 it**. Measured on this document against
@@ -65,12 +61,17 @@ the fold ROOT, which crosses the aggregation's own type against the type
 derived from operand 0 and needs no resolved declaration to do it. Measured
 with the arm removed:
 
-    WF-091 FAIL /rules/resolvedRegels/1/waarde/type: unit mismatch: the SOM
-    aggregation is typed 'kg' of system 'Gewicht' (factor 1 to 'kg'), but the
-    type derived from its first operand is 't' of system 'Gewicht' (factor
-    1000 to 'kg')
+    WF-034 FAIL /rules/resolvedRegels/1/waarde/argumenten/0: attribute
+    reference 'gewicht' without an object type: it resolves against no
+    declaration
 
 So "the whole identity family" above must be read as the arms that need a
 RESOLVED declaration — WF-089/WF-090 and WF-091's reference arms, which do
 defer — and the executor measurements quoted above are the state of that
 earlier wave, not of this document today.
+
+**Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the
+migration's translation (`spec/proposals/v1-migratie/m2.py`): the fold
+source lost its own `type` (B13), and with it the WF-091 line its unit lie
+drew beside this one; the source still names no object type. The rule still
+fires on the same arm, and `expect.txt` pins it (U1).

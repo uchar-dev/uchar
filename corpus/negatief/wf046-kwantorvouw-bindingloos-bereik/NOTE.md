@@ -1,9 +1,9 @@
 # wf046-kwantorvouw-bindingloos-bereik
 
 Violates **WF-046** (`spec/IR-SPEC.md` ch. 4.6 and 5.2,
-`RUNTIME-SEMANTICS.md` ch. 6.3), through the range of a BINDINGLESS
-quantifier fold: no `bronRol`, no `bronPad`, so the range is the one
-connecting relation WF-048 demands.
+`RUNTIME-SEMANTICS.md` ch. 6.3), through the range of a quantifier fold
+written without a binding: no `bronRol`, no `bronPad`, so the range was the
+one connecting relation the type pair derived.
 
 The recursive creation "richt een post in" (group "estafette") mints a Post
 for a Wachter while "de rang van de Wachter is kleiner dan 5 en alle posten
@@ -27,3 +27,12 @@ no stable model. No corpus document carries a bindingless quantifier fold.
 
 Minimal own-authored document on the shape of
 `corpus/golden/anchor/jutterswet-wachtersketen`, with a second type Post.
+
+**Migrated at L2 (2026-09-24), stamp: herschreven (m).** Since L2 the range
+of a quantifier fold is written (B12, D7): the loader refuses a quantifier
+fold without `bronRol` or `bronPad`, and the migration
+(`spec/proposals/v1-migratie/m2.py`) derived the one role,
+`bemanning`/`post`. The document still fails on WF-046, now through the
+bound range under ALLE — the arm `wf046-kwantorvouw-alle-bereik` pins on
+another model; the directory name and the paragraphs above record the form
+it was written for, which the wire can no longer carry.

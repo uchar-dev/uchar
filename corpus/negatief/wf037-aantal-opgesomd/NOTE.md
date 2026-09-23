@@ -18,8 +18,7 @@ vangst` and `gewogen bijvangst`, both kg with two decimals — and a
 count-typed target, `aantal gewogen posten` (whole, non-negative,
 unitless). The `AANTAL` reads both posts as ordinary own-attribute reads.
 Every other clause holds: the node type is the count's own derived type
-(WF-091 is silent), no facet is present, no set reading and no sentinel is
-involved, and the verifier reports one fault.
+(WF-091 is silent), no facet is present, and the verifier reports one fault.
 
 Why the form left the wire. It was verifier-clean and exactly ONE executor
 answered it. `ref` counted the FILLED operands — precisely the meaning the

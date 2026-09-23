@@ -4,11 +4,11 @@ Violates **WF-083 (c)** (`spec/IR-SPEC.md` ch. 4.3) at the position WF-102
 created: the fold source's `objecttype` names an INTERMEDIATE type of the
 range instead of the fold's anchor.
 
-    WF-083 FAIL /rules/resolvedRegels/0/waarde/argumenten/0: fold-source objecttype
-    'Boot' is not the fold's anchor 'Vondst' (the set source reads each member
-    of the elementObjecttype): the executors resolve 'gewicht' against the
-    anchor, never against this annotation, so the two spellings name different
-    declarations
+    WF-083 FAIL /rules/resolvedRegels/0/waarde/argumenten/0: fold-source
+    objecttype 'Boot' is not the fold's anchor 'Vondst' (a set source reads
+    each member of the elementObjecttype): the executors resolve 'gewicht'
+    against the anchor, never against this field, so the two spellings name
+    different declarations
 
 Before the path there were two kinds of type in this position — the element
 type and the fold subject — and (c) crossed against whichever the shape
@@ -25,3 +25,10 @@ WF-034 reports the unresolvable member at the same pointer. That is the shape
 of the defect rather than a second one — an anchor lie at a type the fold
 really walks is exactly an attribute read against the wrong declaration — and
 gate 3 keys on the directory's own rule, which fires first.
+
+**Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the
+migration's translation (`spec/proposals/v1-migratie/m2.py`): the set source
+lost its own `type` and set reading (B11, B13); it is the set source because
+the fold carries a range (D8 (i)), so its anchor is the element type, and
+its `objecttype` still names the intermediate type of the path. The rule
+still fires on the same arm, and `expect.txt` pins it (U1).

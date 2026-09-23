@@ -1,0 +1,1 @@
+decimals mismatch: the PLUS composite is typed 2 decimals, but the type derived from its operands is 4 decimals

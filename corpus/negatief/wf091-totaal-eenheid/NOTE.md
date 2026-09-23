@@ -25,8 +25,9 @@ frontend applies it — but, since the *set-fold "totaal van"* card, not
 unconditionally. The frontend strips on every reading **except** the
 non-temporal set one, tested by one predicate
 (`ExpressieBouwer.setLezing`: exactly one operand, an attribute reference
-carrying `set`, over an attribute its object type declares no granularity
-for), because that reading is an alias of the sum and integrates over
+read as the set source, over an attribute its object type declares no
+granularity for; since L2 the set source is the argument of a fold that
+carries a range, D8), because that reading is an alias of the sum and integrates over
 nothing. The ASP translator's `eff_unit` and the Drools backend's
 `EffectieveEenheid` strip in neither reading: both hand the first operand's
 unit through whole. The verifier follows the source that states a `TOTAAL`
@@ -37,7 +38,7 @@ produce. The two executor-side derivations state no integration rule at all
 and are a consumer-side question, not a well-formedness one.
 
 This document reaches the strip on the arity half of that predicate: it
-totals **two** operands, both `set: false`, so no reading of it is the set
+totals **two** operands, both ordinary reads without a range, so no reading of it is the set
 alias. *Measured 2026-09-04:* 15 `TOTAAL` nodes over the four zones — 9
 golden, 6 negatief, none in rood or the parity zone — of which only three
 carry a rate unit at all (the two in `jutterswet-tempototaal`, one per
@@ -56,3 +57,10 @@ fold turns red. The strip is therefore pinned on both sides by one negatief
 and one golden; the **granularity** half of the guard is not pinned here at
 all — no `TOTAAL` in any zone reads a temporal attribute as a set, so
 dropping that half leaves gate 3 green, and ch. 4.1 says so.
+
+**Migrated at L2 (2026-09-24), stamp: herschreven (m).** The document is the
+migration's translation (`spec/proposals/v1-migratie/m2.py`): the operand
+references lost their own `type` (B13), and the composite's annotation, a
+derived position, keeps its (V5 (a)), so the cross now runs against the type
+the operands' declarations derive. The rule still fires on the same arm, and
+`expect.txt` pins it (U1).

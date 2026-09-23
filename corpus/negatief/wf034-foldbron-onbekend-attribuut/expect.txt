@@ -1,0 +1,1 @@
+'bestaatniet' is not a declared attribute of 'Jutter': a value fold's source reads an attribute of each contributor
