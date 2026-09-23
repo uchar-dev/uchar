@@ -1,524 +1,504 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Loodspost": {
-      "node": "Objecttype",
-      "naam": "Loodspost",
-      "attributen": {
-        "loodstal": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "bekwaam",
-        "onbekwaam",
-        "merendeels",
-        "gangbaar"
-      ],
-      "kenmerkSoorten": {
-        "bekwaam": "BIJVOEGLIJK",
-        "onbekwaam": "BIJVOEGLIJK",
-        "merendeels": "BIJVOEGLIJK",
-        "gangbaar": "BIJVOEGLIJK"
-      },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Loodsposten"
-    },
-    "Loods": {
-      "node": "Objecttype",
-      "naam": "Loods",
-      "attributen": {
-        "ervaring": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Loodsen"
-    }
-  },
-  "domeinen": {},
-  "parameters": {
-    "keurgrens": {
-      "node": "Parameter",
-      "naam": "keurgrens",
-      "datatype": {
-        "node": "Numeriek",
-        "geheel": true,
-        "decimalen": 0,
-        "teken": "NIET_NEGATIEF",
-        "eenheid": null
-      },
-      "granulariteit": null
-    }
-  },
-  "eenheidstelsels": {},
-  "feittypen": {
-    "loodsindeling": {
-      "node": "Feittype",
-      "naam": "loodsindeling",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "post",
-          "objecttypeNaam": "Loodspost",
-          "meervoud": null,
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "loods",
-          "objecttypeNaam": "Loods",
-          "meervoud": "loodsen",
-          "meervoudig": true
-        }
-      ]
-    }
-  },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "bekwaam bij keurgrens",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "onbekwaam bij keurgrens",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "merendeels bij keurgrens",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "gangbaar bij keurgrens",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "loodstal van een loodspost",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "bekwaam bij keurgrens",
-      "soort": "KENMERKTOEKENNING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "bekwaam",
-        "objecttype": "Loodspost",
-        "onderwerpBron": "Een Loodspost",
-        "navigatieRol": null,
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "Een Loodspost is bekwaam",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "waar",
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "waar"
-      },
-      "voorwaarde": {
-        "node": "Kwantorvouw",
-        "kwantor": "ALLE",
-        "elementObjecttype": "Loods",
-        "filter": null,
-        "toets": {
-          "node": "Vergelijking",
-          "op": "GROTER",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "ervaring",
-            "objecttype": "Loods",
-            "onderwerpBron": "alle loodsen van de Loodspost",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de ervaring van alle loodsen van de Loodspost",
-            "set": false,
-            "navigatiePad": []
-          },
-          "rechts": {
-            "node": "ParameterRef",
-            "parameter": "keurgrens",
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "de keurgrens"
-          },
-          "periode": null,
-          "bron": "de ervaring van alle loodsen van de Loodspost groter is dan de keurgrens"
-        },
-        "bron": "de ervaring van alle loodsen van de Loodspost groter is dan de keurgrens",
-        "bronRol": {
-          "node": "RolBinding",
-          "feittype": "loodsindeling",
-          "rol": "loods"
-        }
-      },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "onbekwaam bij keurgrens",
-      "soort": "KENMERKTOEKENNING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "onbekwaam",
-        "objecttype": "Loodspost",
-        "onderwerpBron": "Een Loodspost",
-        "navigatieRol": null,
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "Een Loodspost is onbekwaam",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "waar",
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "waar"
-      },
-      "voorwaarde": {
-        "node": "Kwantorvouw",
-        "kwantor": "GEEN",
-        "elementObjecttype": "Loods",
-        "filter": null,
-        "toets": {
-          "node": "Vergelijking",
-          "op": "GROTER",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "ervaring",
-            "objecttype": "Loods",
-            "onderwerpBron": "geen van de loodsen van de Loodspost",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de ervaring van geen van de loodsen van de Loodspost",
-            "set": false,
-            "navigatiePad": []
-          },
-          "rechts": {
-            "node": "ParameterRef",
-            "parameter": "keurgrens",
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "de keurgrens"
-          },
-          "periode": null,
-          "bron": "de ervaring van geen van de loodsen van de Loodspost groter is dan de keurgrens"
-        },
-        "bron": "de ervaring van geen van de loodsen van de Loodspost groter is dan de keurgrens",
-        "bronRol": {
-          "node": "RolBinding",
-          "feittype": "loodsindeling",
-          "rol": "loods"
-        }
-      },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "merendeels bij keurgrens",
-      "soort": "KENMERKTOEKENNING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "merendeels",
-        "objecttype": "Loodspost",
-        "onderwerpBron": "Een Loodspost",
-        "navigatieRol": null,
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "Een Loodspost is merendeels bekwaam",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "waar",
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "waar"
-      },
-      "voorwaarde": {
-        "node": "Kwantorvouw",
-        "kwantor": "TEN_MINSTE",
-        "drempel": 2,
-        "elementObjecttype": "Loods",
-        "filter": null,
-        "toets": {
-          "node": "Vergelijking",
-          "op": "GROTER",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "ervaring",
-            "objecttype": "Loods",
-            "onderwerpBron": "ten minste 2 van de loodsen van de Loodspost",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de ervaring van ten minste 2 van de loodsen van de Loodspost",
-            "set": false,
-            "navigatiePad": []
-          },
-          "rechts": {
-            "node": "ParameterRef",
-            "parameter": "keurgrens",
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "de keurgrens"
-          },
-          "periode": null,
-          "bron": "de ervaring van ten minste 2 van de loodsen van de Loodspost groter is dan de keurgrens"
-        },
-        "bron": "de ervaring van ten minste 2 van de loodsen van de Loodspost groter is dan de keurgrens",
-        "bronRol": {
-          "node": "RolBinding",
-          "feittype": "loodsindeling",
-          "rol": "loods"
-        }
-      },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "gangbaar bij keurgrens",
-      "soort": "KENMERKTOEKENNING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "gangbaar",
-        "objecttype": "Loodspost",
-        "onderwerpBron": "Een Loodspost",
-        "navigatieRol": null,
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "Een Loodspost is gangbaar",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "waar",
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "waar"
-      },
-      "voorwaarde": {
-        "node": "Kwantorvouw",
-        "kwantor": "ALLE",
-        "elementObjecttype": "Loods",
-        "filter": null,
-        "toets": {
-          "node": "Vergelijking",
-          "op": "KLEINER",
-          "links": {
-            "node": "ParameterRef",
-            "parameter": "keurgrens",
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "de keurgrens"
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "ervaring",
-            "objecttype": "Loods",
-            "onderwerpBron": "alle loodsen van de Loodspost",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de ervaring van alle loodsen van de Loodspost",
-            "set": false,
-            "navigatiePad": []
-          },
-          "periode": null,
-          "bron": "de keurgrens kleiner is dan de ervaring van alle loodsen van de Loodspost"
-        },
-        "bron": "de keurgrens kleiner is dan de ervaring van alle loodsen van de Loodspost",
-        "bronRol": {
-          "node": "RolBinding",
-          "feittype": "loodsindeling",
-          "rol": "loods"
-        }
-      },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "loodstal van een loodspost",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "loodstal",
-        "objecttype": "Loodspost",
-        "onderwerpBron": "een Loodspost",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "Het loodstal van een Loodspost",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "AANTAL",
-        "argumenten": [
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Loodspost",
+        "animate": false,
+        "plural": "Loodsposten",
+        "attributes": [
           {
-            "node": "AttribuutRef",
-            "attribuut": "loodsen",
-            "objecttype": "Loodspost",
-            "onderwerpBron": "de Loodspost",
-            "navigatieRol": null,
-            "type": {
-              "node": "Onbekend",
-              "reden": "niet opgelost"
-            },
-            "bron": "loodsen van de Loodspost",
-            "set": false,
-            "navigatiePad": []
+            "node": "Attribute",
+            "name": "loodstal",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
           }
         ],
-        "elementObjecttype": "Loods",
-        "leegwaarde": null,
-        "filter": null,
-        "dimensieSelectie": null,
-        "type": {
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "bekwaam",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "onbekwaam",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "merendeels",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "gangbaar",
+            "kind": "BIJVOEGLIJK"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Loods",
+        "animate": true,
+        "plural": "Loodsen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "ervaring",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "loodsindeling",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "post",
+            "objecttypeNaam": "Loodspost",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "loods",
+            "objecttypeNaam": "Loods",
+            "meervoud": "loodsen",
+            "meervoudig": true
+          }
+        ]
+      }
+    ],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "naam": "keurgrens",
+        "datatype": {
           "node": "Numeriek",
           "geheel": true,
           "decimalen": 0,
           "teken": "NIET_NEGATIEF",
           "eenheid": null
         },
-        "bron": "het aantal loodsen van de Loodspost",
-        "granulariteit": null,
-        "bronRol": {
-          "node": "RolBinding",
-          "feittype": "loodsindeling",
-          "rol": "loods"
+        "granulariteit": null
+      }
+    ],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "bekwaam bij keurgrens",
+        "soort": "KENMERKTOEKENNING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "bekwaam",
+          "objecttype": "Loodspost",
+          "onderwerpBron": "Een Loodspost",
+          "navigatieRol": null,
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "Een Loodspost is bekwaam",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Literal",
+          "waarde": "waar",
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "waar"
+        },
+        "voorwaarde": {
+          "node": "Kwantorvouw",
+          "kwantor": "ALLE",
+          "elementObjecttype": "Loods",
+          "filter": null,
+          "toets": {
+            "node": "Vergelijking",
+            "op": "GROTER",
+            "links": {
+              "node": "AttribuutRef",
+              "attribuut": "ervaring",
+              "objecttype": "Loods",
+              "onderwerpBron": "alle loodsen van de Loodspost",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "de ervaring van alle loodsen van de Loodspost",
+              "set": false,
+              "navigatiePad": []
+            },
+            "rechts": {
+              "node": "ParameterRef",
+              "parameter": "keurgrens",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              },
+              "bron": "de keurgrens"
+            },
+            "periode": null,
+            "bron": "de ervaring van alle loodsen van de Loodspost groter is dan de keurgrens"
+          },
+          "bron": "de ervaring van alle loodsen van de Loodspost groter is dan de keurgrens",
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "loodsindeling",
+            "rol": "loods"
+          }
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
         }
       },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+      {
+        "node": "ResolvedRegel",
+        "naam": "onbekwaam bij keurgrens",
+        "soort": "KENMERKTOEKENNING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "onbekwaam",
+          "objecttype": "Loodspost",
+          "onderwerpBron": "Een Loodspost",
+          "navigatieRol": null,
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "Een Loodspost is onbekwaam",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Literal",
+          "waarde": "waar",
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "waar"
+        },
+        "voorwaarde": {
+          "node": "Kwantorvouw",
+          "kwantor": "GEEN",
+          "elementObjecttype": "Loods",
+          "filter": null,
+          "toets": {
+            "node": "Vergelijking",
+            "op": "GROTER",
+            "links": {
+              "node": "AttribuutRef",
+              "attribuut": "ervaring",
+              "objecttype": "Loods",
+              "onderwerpBron": "geen van de loodsen van de Loodspost",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "de ervaring van geen van de loodsen van de Loodspost",
+              "set": false,
+              "navigatiePad": []
+            },
+            "rechts": {
+              "node": "ParameterRef",
+              "parameter": "keurgrens",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              },
+              "bron": "de keurgrens"
+            },
+            "periode": null,
+            "bron": "de ervaring van geen van de loodsen van de Loodspost groter is dan de keurgrens"
+          },
+          "bron": "de ervaring van geen van de loodsen van de Loodspost groter is dan de keurgrens",
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "loodsindeling",
+            "rol": "loods"
+          }
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "merendeels bij keurgrens",
+        "soort": "KENMERKTOEKENNING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "merendeels",
+          "objecttype": "Loodspost",
+          "onderwerpBron": "Een Loodspost",
+          "navigatieRol": null,
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "Een Loodspost is merendeels bekwaam",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Literal",
+          "waarde": "waar",
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "waar"
+        },
+        "voorwaarde": {
+          "node": "Kwantorvouw",
+          "kwantor": "TEN_MINSTE",
+          "drempel": 2,
+          "elementObjecttype": "Loods",
+          "filter": null,
+          "toets": {
+            "node": "Vergelijking",
+            "op": "GROTER",
+            "links": {
+              "node": "AttribuutRef",
+              "attribuut": "ervaring",
+              "objecttype": "Loods",
+              "onderwerpBron": "ten minste 2 van de loodsen van de Loodspost",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "de ervaring van ten minste 2 van de loodsen van de Loodspost",
+              "set": false,
+              "navigatiePad": []
+            },
+            "rechts": {
+              "node": "ParameterRef",
+              "parameter": "keurgrens",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              },
+              "bron": "de keurgrens"
+            },
+            "periode": null,
+            "bron": "de ervaring van ten minste 2 van de loodsen van de Loodspost groter is dan de keurgrens"
+          },
+          "bron": "de ervaring van ten minste 2 van de loodsen van de Loodspost groter is dan de keurgrens",
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "loodsindeling",
+            "rol": "loods"
+          }
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "gangbaar bij keurgrens",
+        "soort": "KENMERKTOEKENNING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "gangbaar",
+          "objecttype": "Loodspost",
+          "onderwerpBron": "Een Loodspost",
+          "navigatieRol": null,
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "Een Loodspost is gangbaar",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Literal",
+          "waarde": "waar",
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "waar"
+        },
+        "voorwaarde": {
+          "node": "Kwantorvouw",
+          "kwantor": "ALLE",
+          "elementObjecttype": "Loods",
+          "filter": null,
+          "toets": {
+            "node": "Vergelijking",
+            "op": "KLEINER",
+            "links": {
+              "node": "ParameterRef",
+              "parameter": "keurgrens",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              },
+              "bron": "de keurgrens"
+            },
+            "rechts": {
+              "node": "AttribuutRef",
+              "attribuut": "ervaring",
+              "objecttype": "Loods",
+              "onderwerpBron": "alle loodsen van de Loodspost",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "de ervaring van alle loodsen van de Loodspost",
+              "set": false,
+              "navigatiePad": []
+            },
+            "periode": null,
+            "bron": "de keurgrens kleiner is dan de ervaring van alle loodsen van de Loodspost"
+          },
+          "bron": "de keurgrens kleiner is dan de ervaring van alle loodsen van de Loodspost",
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "loodsindeling",
+            "rol": "loods"
+          }
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "loodstal van een loodspost",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "loodstal",
+          "objecttype": "Loodspost",
+          "onderwerpBron": "een Loodspost",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "Het loodstal van een Loodspost",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Functie",
+          "kind": "AANTAL",
+          "argumenten": [
+            {
+              "node": "AttribuutRef",
+              "attribuut": "loodsen",
+              "objecttype": "Loodspost",
+              "onderwerpBron": "de Loodspost",
+              "navigatieRol": null,
+              "type": {
+                "node": "Onbekend",
+                "reden": "niet opgelost"
+              },
+              "bron": "loodsen van de Loodspost",
+              "set": false,
+              "navigatiePad": []
+            }
+          ],
+          "elementObjecttype": "Loods",
+          "leegwaarde": null,
+          "filter": null,
+          "dimensieSelectie": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "het aantal loodsen van de Loodspost",
+          "granulariteit": null,
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "loodsindeling",
+            "rol": "loods"
+          }
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

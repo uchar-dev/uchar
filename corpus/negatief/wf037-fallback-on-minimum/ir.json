@@ -1,116 +1,124 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "aantal aangemelde vondsten": {
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "aantal aangemelde vondsten",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "penninggerechtigd",
+            "kind": "BIJVOEGLIJK"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "naam": "vondstdrempel",
+        "datatype": {
           "node": "Numeriek",
           "geheel": true,
           "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
+          "teken": "ONBEPAALD",
           "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "penninggerechtigd"
-      ],
-      "kenmerkSoorten": {
-        "penninggerechtigd": "BIJVOEGLIJK"
-      },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    }
-  },
-  "domeinen": {},
-  "parameters": {
-    "vondstdrempel": {
-      "node": "Parameter",
-      "naam": "vondstdrempel",
-      "datatype": {
-        "node": "Numeriek",
-        "geheel": true,
-        "decimalen": 0,
-        "teken": "ONBEPAALD",
-        "eenheid": null
-      },
-      "granulariteit": null
-    }
-  },
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "Kenmerktoekenning jutter penninggerechtigd",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "Kenmerktoekenning jutter penninggerechtigd",
-      "soort": "KENMERKTOEKENNING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "penninggerechtigd",
-        "objecttype": "Jutter",
-        "onderwerpBron": "Een Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Booleaan"
         },
-        "bron": "Een Jutter is penninggerechtigd",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "waar",
-        "type": {
-          "node": "Booleaan"
+        "granulariteit": null
+      }
+    ],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "Kenmerktoekenning jutter penninggerechtigd",
+        "soort": "KENMERKTOEKENNING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "penninggerechtigd",
+          "objecttype": "Jutter",
+          "onderwerpBron": "Een Jutter",
+          "navigatieRol": null,
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "Een Jutter is penninggerechtigd",
+          "set": false,
+          "navigatiePad": []
         },
-        "bron": "waar"
-      },
-      "voorwaarde": {
-        "node": "Vergelijking",
-        "op": "GROTER_OF_GELIJK",
-        "links": {
-          "node": "Functie",
-          "kind": "MINIMUM",
-          "argumenten": [
-            {
-              "node": "AttribuutRef",
-              "attribuut": "aantal aangemelde vondsten",
-              "objecttype": "Jutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
+        "waarde": {
+          "node": "Literal",
+          "waarde": "waar",
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "waar"
+        },
+        "voorwaarde": {
+          "node": "Vergelijking",
+          "op": "GROTER_OF_GELIJK",
+          "links": {
+            "node": "Functie",
+            "kind": "MINIMUM",
+            "argumenten": [
+              {
+                "node": "AttribuutRef",
+                "attribuut": "aantal aangemelde vondsten",
+                "objecttype": "Jutter",
+                "onderwerpBron": "zijn",
+                "navigatieRol": null,
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                },
+                "bron": "zijn aantal aangemelde vondsten",
+                "set": false,
+                "navigatiePad": []
               },
-              "bron": "zijn aantal aangemelde vondsten",
-              "set": false,
-              "navigatiePad": []
-            },
-            {
-              "node": "ParameterRef",
-              "parameter": "vondstdrempel",
+              {
+                "node": "ParameterRef",
+                "parameter": "vondstdrempel",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "de vondstdrempel"
+              }
+            ],
+            "elementObjecttype": null,
+            "leegwaarde": {
+              "node": "Literal",
+              "waarde": "0",
               "type": {
                 "node": "Numeriek",
                 "geheel": true,
@@ -118,13 +126,10 @@
                 "teken": "ONBEPAALD",
                 "eenheid": null
               },
-              "bron": "de vondstdrempel"
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": {
-            "node": "Literal",
-            "waarde": "0",
+              "bron": "0"
+            },
+            "filter": null,
+            "dimensieSelectie": null,
             "type": {
               "node": "Numeriek",
               "geheel": true,
@@ -132,50 +137,40 @@
               "teken": "ONBEPAALD",
               "eenheid": null
             },
-            "bron": "0"
+            "bron": "het minimum van",
+            "granulariteit": null
           },
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+          "rechts": {
+            "node": "ParameterRef",
+            "parameter": "vondstdrempel",
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "de vondstdrempel"
           },
-          "bron": "het minimum van",
-          "granulariteit": null
+          "periode": null,
+          "bron": "zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel"
         },
-        "rechts": {
-          "node": "ParameterRef",
-          "parameter": "vondstdrempel",
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de vondstdrempel"
-        },
-        "periode": null,
-        "bron": "zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel"
-      },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

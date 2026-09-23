@@ -1,350 +1,347 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Bergingsploeg": {
-      "node": "Objecttype",
-      "naam": "Bergingsploeg",
-      "attributen": {
-        "meldingsdatum": {
-          "node": "DatumInDagen"
-        },
-        "opleverdatum": {
-          "node": "DatumInDagen"
-        },
-        "bergingsbestek": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "springtijdagen",
-            "stelsel": null,
-            "canoniek": "springtijdagen",
-            "factorNaarCanoniek": 1,
-            "noemer": null
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Bergingsploeg",
+        "animate": true,
+        "plural": "Bergingsploegen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "meldingsdatum",
+            "datatype": {
+              "node": "DatumInDagen"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "opleverdatum",
+            "datatype": {
+              "node": "DatumInDagen"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bergingsbestek",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "springtijdagen",
+                "stelsel": null,
+                "canoniek": "springtijdagen",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "uiterste bergingsdatum",
+            "datatype": {
+              "node": "DatumInDagen"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vroegste meldingsdatum",
+            "datatype": {
+              "node": "DatumInDagen"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bergingsspanne",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "springtijdagen",
+                "stelsel": null,
+                "canoniek": "springtijdagen",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bergingsafstand",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "springtijdagen",
+                "stelsel": null,
+                "canoniek": "springtijdagen",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            }
           }
-        },
-        "uiterste bergingsdatum": {
-          "node": "DatumInDagen"
-        },
-        "vroegste meldingsdatum": {
-          "node": "DatumInDagen"
-        },
-        "bergingsspanne": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "springtijdagen",
-            "stelsel": null,
-            "canoniek": "springtijdagen",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        },
-        "bergingsafstand": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "springtijdagen",
-            "stelsel": null,
-            "canoniek": "springtijdagen",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Bergingsploegen"
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [
+      "springtijdag"
+    ],
+    "dagsoortPerEenheid": {
+      "springtijdag": "springtijdag",
+      "springtijdagen": "springtijdag"
     }
   },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [
-    "springtijdag"
-  ],
-  "dagsoortPerEenheid": {
-    "springtijdag": "springtijdag",
-    "springtijdagen": "springtijdag"
-  },
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "Dagsoortdefinitie springtijdag",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "uiterste bergingsdatum van een bergingsploeg",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "vroegste meldingsdatum van een bergingsploeg",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "bergingsspanne van een bergingsploeg",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "bergingsafstand van een bergingsploeg",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "uiterste bergingsdatum van een bergingsploeg",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "uiterste bergingsdatum",
-        "objecttype": "Bergingsploeg",
-        "onderwerpBron": "een Bergingsploeg",
-        "navigatieRol": null,
-        "type": {
-          "node": "DatumInDagen"
-        },
-        "bron": "De uiterste bergingsdatum van een Bergingsploeg",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Binair",
-        "op": "PLUS",
-        "links": {
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "uiterste bergingsdatum van een bergingsploeg",
+        "soort": "BEREKENING",
+        "doel": {
           "node": "AttribuutRef",
-          "attribuut": "meldingsdatum",
+          "attribuut": "uiterste bergingsdatum",
           "objecttype": "Bergingsploeg",
-          "onderwerpBron": "zijn",
+          "onderwerpBron": "een Bergingsploeg",
           "navigatieRol": null,
           "type": {
             "node": "DatumInDagen"
           },
-          "bron": "zijn meldingsdatum",
+          "bron": "De uiterste bergingsdatum van een Bergingsploeg",
           "set": false,
           "navigatiePad": []
         },
-        "rechts": {
-          "node": "AttribuutRef",
-          "attribuut": "bergingsbestek",
-          "objecttype": "Bergingsploeg",
-          "onderwerpBron": "zijn",
-          "navigatieRol": null,
+        "waarde": {
+          "node": "Binair",
+          "op": "PLUS",
+          "links": {
+            "node": "AttribuutRef",
+            "attribuut": "meldingsdatum",
+            "objecttype": "Bergingsploeg",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "DatumInDagen"
+            },
+            "bron": "zijn meldingsdatum",
+            "set": false,
+            "navigatiePad": []
+          },
+          "rechts": {
+            "node": "AttribuutRef",
+            "attribuut": "bergingsbestek",
+            "objecttype": "Bergingsploeg",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "springtijdagen",
+                "stelsel": null,
+                "canoniek": "springtijdagen",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            },
+            "bron": "zijn bergingsbestek",
+            "set": false,
+            "navigatiePad": []
+          },
           "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "springtijdagen",
-              "stelsel": null,
-              "canoniek": "springtijdagen",
-              "factorNaarCanoniek": 1,
-              "noemer": null
+            "node": "DatumInDagen"
+          },
+          "bron": "zijn meldingsdatum plus zijn bergingsbestek"
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ],
+    "resolvedDagsoorten": [
+      {
+        "node": "ResolvedDagsoort",
+        "naam": "springtijdag",
+        "voorwaarde": {
+          "node": "Samengesteld",
+          "kwantor": "ALLE",
+          "drempel": 0,
+          "onderdelen": [
+            {
+              "node": "Vergelijking",
+              "op": "GELIJK",
+              "links": {
+                "node": "Functie",
+                "kind": "JAAR_UIT",
+                "argumenten": [
+                  {
+                    "node": "Constante",
+                    "naam": "de dag",
+                    "type": {
+                      "node": "DatumInDagen"
+                    },
+                    "bron": "de dag"
+                  }
+                ],
+                "elementObjecttype": null,
+                "leegwaarde": null,
+                "filter": null,
+                "dimensieSelectie": null,
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "x",
+                "granulariteit": null
+              },
+              "rechts": {
+                "node": "Literal",
+                "waarde": "2026",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "2026"
+              },
+              "periode": null,
+              "bron": "x"
+            },
+            {
+              "node": "Vergelijking",
+              "op": "GELIJK",
+              "links": {
+                "node": "Functie",
+                "kind": "MAAND_UIT",
+                "argumenten": [
+                  {
+                    "node": "Constante",
+                    "naam": "de dag",
+                    "type": {
+                      "node": "DatumInDagen"
+                    },
+                    "bron": "de dag"
+                  }
+                ],
+                "elementObjecttype": null,
+                "leegwaarde": null,
+                "filter": null,
+                "dimensieSelectie": null,
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "x",
+                "granulariteit": null
+              },
+              "rechts": {
+                "node": "Literal",
+                "waarde": "12",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "12"
+              },
+              "periode": null,
+              "bron": "x"
+            },
+            {
+              "node": "Vergelijking",
+              "op": "GELIJK",
+              "links": {
+                "node": "Functie",
+                "kind": "DAG_UIT",
+                "argumenten": [
+                  {
+                    "node": "Constante",
+                    "naam": "de dag",
+                    "type": {
+                      "node": "DatumInDagen"
+                    },
+                    "bron": "de dag"
+                  }
+                ],
+                "elementObjecttype": null,
+                "leegwaarde": null,
+                "filter": null,
+                "dimensieSelectie": null,
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "x",
+                "granulariteit": null
+              },
+              "rechts": {
+                "node": "Literal",
+                "waarde": "1",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "1"
+              },
+              "periode": null,
+              "bron": "x"
             }
-          },
-          "bron": "zijn bergingsbestek",
-          "set": false,
-          "navigatiePad": []
+          ],
+          "bron": "x"
         },
-        "type": {
-          "node": "DatumInDagen"
-        },
-        "bron": "zijn meldingsdatum plus zijn bergingsbestek"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [
-    {
-      "node": "ResolvedDagsoort",
-      "naam": "springtijdag",
-      "voorwaarde": {
-        "node": "Samengesteld",
-        "kwantor": "ALLE",
-        "drempel": 0,
-        "onderdelen": [
-          {
-            "node": "Vergelijking",
-            "op": "GELIJK",
-            "links": {
-              "node": "Functie",
-              "kind": "JAAR_UIT",
-              "argumenten": [
-                {
-                  "node": "Constante",
-                  "naam": "de dag",
-                  "type": {
-                    "node": "DatumInDagen"
-                  },
-                  "bron": "de dag"
-                }
-              ],
-              "elementObjecttype": null,
-              "leegwaarde": null,
-              "filter": null,
-              "dimensieSelectie": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "x",
-              "granulariteit": null
-            },
-            "rechts": {
-              "node": "Literal",
-              "waarde": "2026",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "2026"
-            },
-            "periode": null,
-            "bron": "x"
-          },
-          {
-            "node": "Vergelijking",
-            "op": "GELIJK",
-            "links": {
-              "node": "Functie",
-              "kind": "MAAND_UIT",
-              "argumenten": [
-                {
-                  "node": "Constante",
-                  "naam": "de dag",
-                  "type": {
-                    "node": "DatumInDagen"
-                  },
-                  "bron": "de dag"
-                }
-              ],
-              "elementObjecttype": null,
-              "leegwaarde": null,
-              "filter": null,
-              "dimensieSelectie": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "x",
-              "granulariteit": null
-            },
-            "rechts": {
-              "node": "Literal",
-              "waarde": "12",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "12"
-            },
-            "periode": null,
-            "bron": "x"
-          },
-          {
-            "node": "Vergelijking",
-            "op": "GELIJK",
-            "links": {
-              "node": "Functie",
-              "kind": "DAG_UIT",
-              "argumenten": [
-                {
-                  "node": "Constante",
-                  "naam": "de dag",
-                  "type": {
-                    "node": "DatumInDagen"
-                  },
-                  "bron": "de dag"
-                }
-              ],
-              "elementObjecttype": null,
-              "leegwaarde": null,
-              "filter": null,
-              "dimensieSelectie": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "x",
-              "granulariteit": null
-            },
-            "rechts": {
-              "node": "Literal",
-              "waarde": "1",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "1"
-            },
-            "periode": null,
-            "bron": "x"
-          }
-        ],
-        "bron": "x"
-      },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    }
-  ],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

@@ -1,129 +1,124 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Vondst": {
-      "node": "Objecttype",
-      "naam": "Vondst",
-      "attributen": {
-        "vondstnummer": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "POSITIEF",
-          "eenheid": null
-        },
-        "vondstdag": {
-          "node": "DatumTijd"
-        },
-        "aanmelddatum": {
-          "node": "DatumInDagen"
-        }
-      },
-      "attribuutMeervoud": {
-        "vondstnummer": "vondstnummers"
-      },
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Vondsten"
-    }
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vondstnummer",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "POSITIEF",
+              "eenheid": null
+            },
+            "plural": "vondstnummers"
+          },
+          {
+            "node": "Attribute",
+            "name": "vondstdag",
+            "datatype": {
+              "node": "DatumTijd"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aanmelddatum",
+            "datatype": {
+              "node": "DatumInDagen"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
   },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "eenmalig vondstnummer",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "aanmelding niet voor de vondstdag",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [
-    {
-      "node": "ResolvedConsistentie",
-      "naam": "aanmelding niet voor de vondstdag",
-      "subject": "Vondst",
-      "assertie": {
-        "node": "Vergelijking",
-        "op": "LATER_OF_GELIJK",
-        "links": {
-          "node": "AttribuutRef",
-          "attribuut": "aanmelddatum",
-          "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
+  "rules": {
+    "resolvedRegels": [],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [
+      {
+        "node": "ResolvedConsistentie",
+        "naam": "aanmelding niet voor de vondstdag",
+        "subject": "Vondst",
+        "assertie": {
+          "node": "Vergelijking",
+          "op": "LATER_OF_GELIJK",
+          "links": {
+            "node": "AttribuutRef",
+            "attribuut": "aanmelddatum",
+            "objecttype": "Vondst",
+            "onderwerpBron": "een Vondst",
+            "navigatieRol": null,
+            "type": {
+              "node": "DatumInDagen"
+            },
+            "bron": "De aanmelddatum van een Vondst",
+            "set": false,
+            "navigatiePad": []
           },
-          "bron": "De aanmelddatum van een Vondst",
-          "set": false,
-          "navigatiePad": []
-        },
-        "rechts": {
-          "node": "AttribuutRef",
-          "attribuut": "vondstdag",
-          "objecttype": "Vondst",
-          "onderwerpBron": "de Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumTijd"
+          "rechts": {
+            "node": "AttribuutRef",
+            "attribuut": "vondstdag",
+            "objecttype": "Vondst",
+            "onderwerpBron": "de Vondst",
+            "navigatieRol": null,
+            "type": {
+              "node": "DatumTijd"
+            },
+            "bron": "de vondstdag van de Vondst",
+            "set": false,
+            "navigatiePad": []
           },
-          "bron": "de vondstdag van de Vondst",
-          "set": false,
-          "navigatiePad": []
+          "periode": null,
+          "bron": "De aanmelddatum van een Vondst moet later of gelijk zijn aan de vondstdag van de Vondst"
         },
-        "periode": null,
-        "bron": "De aanmelddatum van een Vondst moet later of gelijk zijn aan de vondstdag van de Vondst"
-      },
-      "bron": "De aanmelddatum van een Vondst moet later of gelijk zijn aan de vondstdag van de Vondst",
-      "line": 12,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        "bron": "De aanmelddatum van een Vondst moet later of gelijk zijn aan de vondstdag van de Vondst",
+        "line": 12,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "uniciteiten": [
-    {
-      "node": "ResolvedUniciteit",
-      "naam": "eenmalig vondstnummer",
-      "subject": "Vondst",
-      "sleutels": [
-        "vondstnummer"
-      ],
-      "scopeVeld": null,
-      "bron": "De vondstnummers van alle Vondsten moeten uniek zijn.",
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+    ],
+    "uniciteiten": [
+      {
+        "node": "ResolvedUniciteit",
+        "naam": "eenmalig vondstnummer",
+        "subject": "Vondst",
+        "sleutels": [
+          "vondstnummer"
+        ],
+        "scopeVeld": null,
+        "bron": "De vondstnummers van alle Vondsten moeten uniek zijn.",
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

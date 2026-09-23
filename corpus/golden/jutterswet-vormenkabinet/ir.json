@@ -1,147 +1,135 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Schouwveld": {
-      "node": "Objecttype",
-      "naam": "Schouwveld",
-      "attributen": {
-        "opbrengst": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "vakcijfer": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "meetdatum": {
-          "node": "DatumInDagen"
-        },
-        "peiling": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "waterstand": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {
-        "opbrengst": [
-          "seizoen"
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Schouwveld",
+        "animate": false,
+        "plural": "Schouwvelden",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "opbrengst",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "dimensions": [
+              "seizoen"
+            ]
+          },
+          {
+            "node": "Attribute",
+            "name": "vakcijfer",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "meetdatum",
+            "datatype": {
+              "node": "DatumInDagen"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "peiling",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "waterstand",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "JAAR",
+              "count": 1,
+              "timelineName": "boekjaar"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "bewaakt",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "omheind",
+            "kind": "BIJVOEGLIJK"
+          }
         ]
-      },
-      "attribuutGranulariteit": {
-        "waterstand": "JAAR"
-      },
-      "attribuutTijdlijnAantal": {
-        "waterstand": 1
-      },
-      "attribuutTijdlijnNaam": {
-        "waterstand": "boekjaar"
-      },
-      "kenmerken": [
-        "bewaakt",
-        "omheind"
-      ],
-      "kenmerkSoorten": {
-        "bewaakt": "BIJVOEGLIJK",
-        "omheind": "BIJVOEGLIJK"
-      },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Schouwvelden"
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [
+      {
+        "node": "Dimensie",
+        "naam": "seizoen",
+        "naamMeervoud": "seizoenen",
+        "voorzetsel": "in",
+        "waarden": [
+          "voorjaar",
+          "najaar"
+        ]
+      }
+    ],
+    "timelines": [
+      {
+        "node": "Tijdlijn",
+        "naam": "boekjaar",
+        "variabelStartpunt": true,
+        "granulariteit": "JAAR",
+        "aantal": 1
+      }
+    ],
+    "dayKinds": [
+      "schouwdag",
+      "stormvloeddag"
+    ],
+    "dagsoortPerEenheid": {
+      "schouwdag": "SchouwDag",
+      "schouwdagen": "  schouwdag  ",
+      "stormvloeddag": "stormvloeddag",
+      "stormvloeddagen": "stormvloeddag"
     }
   },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {
-    "seizoen": {
-      "node": "Dimensie",
-      "naam": "seizoen",
-      "naamMeervoud": "seizoenen",
-      "voorzetsel": "in",
-      "waarden": [
-        "voorjaar",
-        "najaar"
-      ]
-    }
-  },
-  "tijdlijnen": [
-    {
-      "node": "Tijdlijn",
-      "naam": "boekjaar",
-      "variabelStartpunt": true,
-      "granulariteit": "JAAR",
-      "aantal": 1
-    }
-  ],
-  "dagsoorten": [
-    "schouwdag",
-    "stormvloeddag"
-  ],
-  "dagsoortPerEenheid": {
-    "schouwdag": "SchouwDag",
-    "schouwdagen": "  schouwdag  ",
-    "stormvloeddag": "stormvloeddag",
-    "stormvloeddagen": "stormvloeddag"
-  },
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "vakcijfer uit voorjaarsopbrengst",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "peiling bij dubbele borging",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "vakcijfer uit voorjaarsopbrengst",
-      "soort": "GELIJKSTELLING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "vakcijfer",
-        "objecttype": "Schouwveld",
-        "onderwerpBron": "een Schouwveld",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "Het vakcijfer van een Schouwveld",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "DimensieCel",
-        "attribuut": {
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "vakcijfer uit voorjaarsopbrengst",
+        "soort": "GELIJKSTELLING",
+        "doel": {
           "node": "AttribuutRef",
-          "attribuut": "opbrengst",
+          "attribuut": "vakcijfer",
           "objecttype": "Schouwveld",
-          "onderwerpBron": "de opbrengst",
+          "onderwerpBron": "een Schouwveld",
           "navigatieRol": null,
           "type": {
             "node": "Numeriek",
@@ -150,124 +138,144 @@
             "teken": "ONBEPAALD",
             "eenheid": null
           },
-          "bron": "de opbrengst in het voorjaar",
+          "bron": "Het vakcijfer van een Schouwveld",
           "set": false,
           "navigatiePad": []
         },
-        "labels": [
-          "voorjaar"
-        ],
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "de opbrengst in het voorjaar"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "peiling bij dubbele borging",
-      "soort": "GELIJKSTELLING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "peiling",
-        "objecttype": "Schouwveld",
-        "onderwerpBron": "een Schouwveld",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "De peiling van een Schouwveld",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "1",
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "1"
-      },
-      "voorwaarde": {
-        "node": "Samengesteld",
-        "kwantor": "ALLE",
-        "drempel": 0,
-        "onderdelen": [
-          {
-            "node": "Kenmerk",
-            "kenmerk": "bewaakt",
-            "navigatie": null,
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "het Schouwveld bewaakt is"
-          },
-          {
-            "node": "Kenmerk",
-            "kenmerk": "omheind",
-            "navigatie": null,
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "het Schouwveld omheind is"
-          },
-          {
-            "node": "Periode",
-            "vanaf": {
-              "node": "Literal",
-              "waarde": "2026-01-01",
-              "type": {
-                "node": "DatumInDagen"
-              },
-              "bron": "2026-01-01"
+        "waarde": {
+          "node": "DimensieCel",
+          "attribuut": {
+            "node": "AttribuutRef",
+            "attribuut": "opbrengst",
+            "objecttype": "Schouwveld",
+            "onderwerpBron": "de opbrengst",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
             },
-            "tot": null,
-            "totInclusief": false,
-            "bron": "vanaf 1 januari 2026"
-          }
-        ],
-        "bron": "bewaakt, omheind, en vanaf 1 januari 2026"
+            "bron": "de opbrengst in het voorjaar",
+            "set": false,
+            "navigatiePad": []
+          },
+          "labels": [
+            "voorjaar"
+          ],
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de opbrengst in het voorjaar"
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+      {
+        "node": "ResolvedRegel",
+        "naam": "peiling bij dubbele borging",
+        "soort": "GELIJKSTELLING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "peiling",
+          "objecttype": "Schouwveld",
+          "onderwerpBron": "een Schouwveld",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "De peiling van een Schouwveld",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Literal",
+          "waarde": "1",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "1"
+        },
+        "voorwaarde": {
+          "node": "Samengesteld",
+          "kwantor": "ALLE",
+          "drempel": 0,
+          "onderdelen": [
+            {
+              "node": "Kenmerk",
+              "kenmerk": "bewaakt",
+              "navigatie": null,
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "het Schouwveld bewaakt is"
+            },
+            {
+              "node": "Kenmerk",
+              "kenmerk": "omheind",
+              "navigatie": null,
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "het Schouwveld omheind is"
+            },
+            {
+              "node": "Periode",
+              "vanaf": {
+                "node": "Literal",
+                "waarde": "2026-01-01",
+                "type": {
+                  "node": "DatumInDagen"
+                },
+                "bron": "2026-01-01"
+              },
+              "tot": null,
+              "totInclusief": false,
+              "bron": "vanaf 1 januari 2026"
+            }
+          ],
+          "bron": "bewaakt, omheind, en vanaf 1 januari 2026"
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [
-    {
-      "node": "ResolvedStartpunt",
-      "tijdlijn": "boekjaar",
-      "objecttype": "Schouwveld",
-      "lid": "meetdatum"
-    }
-  ],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [
+      {
+        "node": "ResolvedStartpunt",
+        "tijdlijn": "boekjaar",
+        "objecttype": "Schouwveld",
+        "lid": "meetdatum"
+      }
+    ],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

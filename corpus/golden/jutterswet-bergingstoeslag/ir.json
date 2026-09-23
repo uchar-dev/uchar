@@ -1,162 +1,143 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "bergingsgrondslag": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "aantal geborgen wrakken": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "bergingstoeslag": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bergingsforfait": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "bergingstoeslag van een jutter",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "bergingsforfait van een jutter",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
-  "diagnostics": [],
-  "prioritizedDefaults": [
-    {
-      "node": "PrioritizedDefaults",
-      "naam": "bergingstoeslag van een jutter",
-      "onderwerp": "Jutter",
-      "kenmerk": null,
-      "attribuut": "bergingstoeslag",
-      "defaults": [
-        {
-          "node": "Default",
-          "besluit": null,
-          "voorwaarde": {
-            "node": "Vergelijking",
-            "op": "GROTER_OF_GELIJK",
-            "links": {
-              "node": "AttribuutRef",
-              "attribuut": "aantal geborgen wrakken",
-              "objecttype": "Jutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
-              "bron": "zijn aantal geborgen wrakken",
-              "set": false,
-              "navigatiePad": []
-            },
-            "rechts": {
-              "node": "Literal",
-              "waarde": "2",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "2"
-            },
-            "periode": null,
-            "bron": "zijn aantal geborgen wrakken groter of gelijk is aan 2"
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "bergingsgrondslag",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
           },
-          "consequentie": {
-            "node": "Let",
-            "type": {
+          {
+            "node": "Attribute",
+            "name": "aantal geborgen wrakken",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bergingstoeslag",
+            "datatype": {
               "node": "Numeriek",
               "geheel": false,
               "decimalen": 2,
               "teken": "ONBEPAALD",
               "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bergingsforfait",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "naam": "bergingstoeslag van een jutter",
+        "onderwerp": "Jutter",
+        "kenmerk": null,
+        "attribuut": "bergingstoeslag",
+        "defaults": [
+          {
+            "node": "Default",
+            "besluit": null,
+            "voorwaarde": {
+              "node": "Vergelijking",
+              "op": "GROTER_OF_GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "aantal geborgen wrakken",
+                "objecttype": "Jutter",
+                "onderwerpBron": "zijn",
+                "navigatieRol": null,
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                },
+                "bron": "zijn aantal geborgen wrakken",
+                "set": false,
+                "navigatiePad": []
+              },
+              "rechts": {
+                "node": "Literal",
+                "waarde": "2",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "2"
+              },
+              "periode": null,
+              "bron": "zijn aantal geborgen wrakken groter of gelijk is aan 2"
             },
-            "binder": "bergingsgrond",
-            "value": {
-              "node": "AttribuutRef",
-              "attribuut": "bergingsgrondslag",
-              "objecttype": "Jutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
+            "consequentie": {
+              "node": "Let",
               "type": {
                 "node": "Numeriek",
                 "geheel": false,
                 "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
+                "teken": "ONBEPAALD",
                 "eenheid": null
               },
-              "bron": "zijn bergingsgrondslag",
-              "set": false,
-              "navigatiePad": []
-            },
-            "body": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "BinderRef",
-                "name": "bergingsgrond",
+              "binder": "bergingsgrond",
+              "value": {
+                "node": "AttribuutRef",
+                "attribuut": "bergingsgrondslag",
+                "objecttype": "Jutter",
+                "onderwerpBron": "zijn",
+                "navigatieRol": null,
                 "type": {
                   "node": "Numeriek",
                   "geheel": false,
@@ -164,11 +145,37 @@
                   "teken": "NIET_NEGATIEF",
                   "eenheid": null
                 },
-                "bron": "bergingsgrond"
+                "bron": "zijn bergingsgrondslag",
+                "set": false,
+                "navigatiePad": []
               },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "100.00",
+              "body": {
+                "node": "Binair",
+                "op": "PLUS",
+                "links": {
+                  "node": "BinderRef",
+                  "name": "bergingsgrond",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  },
+                  "bron": "bergingsgrond"
+                },
+                "rechts": {
+                  "node": "Literal",
+                  "waarde": "100.00",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "100.00"
+                },
                 "type": {
                   "node": "Numeriek",
                   "geheel": false,
@@ -176,100 +183,25 @@
                   "teken": "ONBEPAALD",
                   "eenheid": null
                 },
-                "bron": "100.00"
+                "bron": "de bergingsgrond plus 100,00"
               },
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de bergingsgrond plus 100,00"
+              "bron": "de bergingsgrond is zijn bergingsgrondslag"
             },
-            "bron": "de bergingsgrond is zijn bergingsgrondslag"
+            "bron": "de bergingsgrond plus 100,00, indien hij ten minste twee wrakken heeft geborgen"
           },
-          "bron": "de bergingsgrond plus 100,00, indien hij ten minste twee wrakken heeft geborgen"
-        },
-        {
-          "node": "Default",
-          "besluit": null,
-          "voorwaarde": {
-            "node": "Samengesteld",
-            "kwantor": "ALLE",
-            "drempel": 0,
-            "onderdelen": [],
-            "bron": "altijd"
-          },
-          "consequentie": {
-            "node": "Literal",
-            "waarde": "0.00",
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+          {
+            "node": "Default",
+            "besluit": null,
+            "voorwaarde": {
+              "node": "Samengesteld",
+              "kwantor": "ALLE",
+              "drempel": 0,
+              "onderdelen": [],
+              "bron": "altijd"
             },
-            "bron": "0.00"
-          },
-          "bron": "0,00 (het bodembedrag)"
-        }
-      ],
-      "bron": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "PrioritizedDefaults",
-      "naam": "bergingsforfait van een jutter",
-      "onderwerp": "Jutter",
-      "kenmerk": null,
-      "attribuut": "bergingsforfait",
-      "defaults": [
-        {
-          "node": "Default",
-          "besluit": null,
-          "voorwaarde": {
-            "node": "Samengesteld",
-            "kwantor": "ALLE",
-            "drempel": 0,
-            "onderdelen": [],
-            "bron": "altijd"
-          },
-          "consequentie": {
-            "node": "Let",
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "binder": "bergingsgrond",
-            "value": {
-              "node": "AttribuutRef",
-              "attribuut": "bergingsgrondslag",
-              "objecttype": "Jutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
-              "bron": "zijn bergingsgrondslag",
-              "set": false,
-              "navigatiePad": []
-            },
-            "body": {
+            "consequentie": {
               "node": "Literal",
-              "waarde": "42.00",
+              "waarde": "0.00",
               "type": {
                 "node": "Numeriek",
                 "geheel": false,
@@ -277,43 +209,111 @@
                 "teken": "ONBEPAALD",
                 "eenheid": null
               },
-              "bron": "42,00"
+              "bron": "0.00"
             },
-            "bron": "de bergingsgrond is zijn bergingsgrondslag"
-          },
-          "bron": "42,00 (het forfait, ongeacht de bergingsgrond)"
-        },
-        {
-          "node": "Default",
-          "besluit": null,
-          "voorwaarde": {
-            "node": "Samengesteld",
-            "kwantor": "ALLE",
-            "drempel": 0,
-            "onderdelen": [],
-            "bron": "altijd"
-          },
-          "consequentie": {
-            "node": "Literal",
-            "waarde": "0.00",
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "0.00"
-          },
-          "bron": "0,00 (het bodembedrag)"
+            "bron": "0,00 (het bodembedrag)"
+          }
+        ],
+        "bron": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
         }
-      ],
-      "bron": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "naam": "bergingsforfait van een jutter",
+        "onderwerp": "Jutter",
+        "kenmerk": null,
+        "attribuut": "bergingsforfait",
+        "defaults": [
+          {
+            "node": "Default",
+            "besluit": null,
+            "voorwaarde": {
+              "node": "Samengesteld",
+              "kwantor": "ALLE",
+              "drempel": 0,
+              "onderdelen": [],
+              "bron": "altijd"
+            },
+            "consequentie": {
+              "node": "Let",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "binder": "bergingsgrond",
+              "value": {
+                "node": "AttribuutRef",
+                "attribuut": "bergingsgrondslag",
+                "objecttype": "Jutter",
+                "onderwerpBron": "zijn",
+                "navigatieRol": null,
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                },
+                "bron": "zijn bergingsgrondslag",
+                "set": false,
+                "navigatiePad": []
+              },
+              "body": {
+                "node": "Literal",
+                "waarde": "42.00",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "42,00"
+              },
+              "bron": "de bergingsgrond is zijn bergingsgrondslag"
+            },
+            "bron": "42,00 (het forfait, ongeacht de bergingsgrond)"
+          },
+          {
+            "node": "Default",
+            "besluit": null,
+            "voorwaarde": {
+              "node": "Samengesteld",
+              "kwantor": "ALLE",
+              "drempel": 0,
+              "onderdelen": [],
+              "bron": "altijd"
+            },
+            "consequentie": {
+              "node": "Literal",
+              "waarde": "0.00",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "0.00"
+            },
+            "bron": "0,00 (het bodembedrag)"
+          }
+        ],
+        "bron": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ]
+    ]
+  },
+  "diagnostics": []
 }

@@ -1,154 +1,151 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Berging": {
-      "node": "Objecttype",
-      "naam": "Berging",
-      "attributen": {
-        "opbrengst": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Berging",
+        "animate": false,
+        "plural": "Bergingen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "opbrengst",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
       },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Bergingen"
-    },
-    "Berger": {
-      "node": "Objecttype",
-      "naam": "Berger",
-      "attributen": {
-        "geborgen gewicht": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bergingsaandeel": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "toezichtopbrengst": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
+      {
+        "node": "ObjectType",
+        "name": "Berger",
+        "animate": true,
+        "plural": "Bergers",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "geborgen gewicht",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bergingsaandeel",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "toezichtopbrengst",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "bergingsdeelname",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "berging",
+            "objecttypeNaam": "Berging",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "berger",
+            "objecttypeNaam": "Berger",
+            "meervoud": "bergers",
+            "meervoudig": true
+          }
+        ]
       },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Bergers"
-    }
+      {
+        "node": "Feittype",
+        "naam": "bergingstoezicht",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "toezichthouder",
+            "objecttypeNaam": "Berger",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "bewaakte berging",
+            "objecttypeNaam": "Berging",
+            "meervoud": "bewaakte bergingen",
+            "meervoudig": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
   },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {
-    "bergingsdeelname": {
-      "node": "Feittype",
-      "naam": "bergingsdeelname",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "berging",
-          "objecttypeNaam": "Berging",
-          "meervoud": null,
-          "meervoudig": false
+  "rules": {
+    "resolvedRegels": [],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [
+      {
+        "node": "ResolvedFeitCreatie",
+        "naam": "leg toezicht vast",
+        "anker": "Berger",
+        "doel": "Berging",
+        "zetVeld": "toezichthouder",
+        "joinVeld": "berger",
+        "tussenstappen": [],
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
         },
-        {
-          "node": "Rol",
-          "naam": "berger",
-          "objecttypeNaam": "Berger",
-          "meervoud": "bergers",
-          "meervoudig": true
-        }
-      ]
-    },
-    "bergingstoezicht": {
-      "node": "Feittype",
-      "naam": "bergingstoezicht",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "toezichthouder",
-          "objecttypeNaam": "Berger",
-          "meervoud": null,
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "bewaakte berging",
-          "objecttypeNaam": "Berging",
-          "meervoud": "bewaakte bergingen",
-          "meervoudig": true
-        }
-      ]
-    }
+        "feittype": "bergingstoezicht",
+        "ankerRol": "toezichthouder"
+      }
+    ],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
   },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "leg toezicht vast",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [
-    {
-      "node": "ResolvedFeitCreatie",
-      "naam": "leg toezicht vast",
-      "anker": "Berger",
-      "doel": "Berging",
-      "zetVeld": "toezichthouder",
-      "joinVeld": "berger",
-      "tussenstappen": [],
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      },
-      "feittype": "bergingstoezicht",
-      "ankerRol": "toezichthouder"
-    }
-  ],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
   "diagnostics": []
 }

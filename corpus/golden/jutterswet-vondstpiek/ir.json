@@ -1,252 +1,240 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "zwaarste": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "lichtste": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    },
-    "Vondst": {
-      "node": "Objecttype",
-      "naam": "Vondst",
-      "attributen": {
-        "gewicht": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Vondsten"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {
-    "berging": {
-      "node": "Feittype",
-      "naam": "berging",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "bergende jutter",
-          "objecttypeNaam": "Jutter",
-          "meervoud": null,
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "vondst",
-          "objecttypeNaam": "Vondst",
-          "meervoud": "vondsten",
-          "meervoudig": true
-        }
-      ]
-    }
-  },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "zwaarste van een jutter",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "lichtste van een jutter",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "zwaarste van een jutter",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "zwaarste",
-        "objecttype": "Jutter",
-        "onderwerpBron": "een Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "Het zwaarste van een Jutter",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "MAXIMUM",
-        "argumenten": [
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
           {
-            "node": "AttribuutRef",
-            "attribuut": "gewicht",
-            "objecttype": "Vondst",
-            "onderwerpBron": "alle vondsten van de Jutter",
-            "navigatieRol": null,
-            "type": {
+            "node": "Attribute",
+            "name": "zwaarste",
+            "datatype": {
               "node": "Numeriek",
               "geheel": false,
               "decimalen": 2,
               "teken": "ONBEPAALD",
               "eenheid": null
-            },
-            "bron": "het gewicht van alle vondsten van de Jutter",
-            "set": true,
-            "navigatiePad": []
-          }
-        ],
-        "elementObjecttype": "Vondst",
-        "leegwaarde": null,
-        "filter": null,
-        "dimensieSelectie": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "het maximum van het gewicht van alle vondsten van de Jutter",
-        "granulariteit": null,
-        "bronRol": {
-          "node": "RolBinding",
-          "feittype": "berging",
-          "rol": "vondst"
-        }
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "lichtste van een jutter",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "lichtste",
-        "objecttype": "Jutter",
-        "onderwerpBron": "een Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "Het lichtste van een Jutter",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "MINIMUM",
-        "argumenten": [
+            }
+          },
           {
-            "node": "AttribuutRef",
-            "attribuut": "gewicht",
-            "objecttype": "Vondst",
-            "onderwerpBron": "alle vondsten van de Jutter",
-            "navigatieRol": null,
-            "type": {
+            "node": "Attribute",
+            "name": "lichtste",
+            "datatype": {
               "node": "Numeriek",
               "geheel": false,
               "decimalen": 2,
               "teken": "ONBEPAALD",
               "eenheid": null
-            },
-            "bron": "het gewicht van alle vondsten van de Jutter",
-            "set": true,
-            "navigatiePad": []
+            }
           }
         ],
-        "elementObjecttype": "Vondst",
-        "leegwaarde": null,
-        "filter": null,
-        "dimensieSelectie": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "berging",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "bergende jutter",
+            "objecttypeNaam": "Jutter",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "vondst",
+            "objecttypeNaam": "Vondst",
+            "meervoud": "vondsten",
+            "meervoudig": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "zwaarste van een jutter",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "zwaarste",
+          "objecttype": "Jutter",
+          "onderwerpBron": "een Jutter",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "Het zwaarste van een Jutter",
+          "set": false,
+          "navigatiePad": []
         },
-        "bron": "het minimum van het gewicht van alle vondsten van de Jutter",
-        "granulariteit": null,
-        "bronRol": {
-          "node": "RolBinding",
-          "feittype": "berging",
-          "rol": "vondst"
+        "waarde": {
+          "node": "Functie",
+          "kind": "MAXIMUM",
+          "argumenten": [
+            {
+              "node": "AttribuutRef",
+              "attribuut": "gewicht",
+              "objecttype": "Vondst",
+              "onderwerpBron": "alle vondsten van de Jutter",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "het gewicht van alle vondsten van de Jutter",
+              "set": true,
+              "navigatiePad": []
+            }
+          ],
+          "elementObjecttype": "Vondst",
+          "leegwaarde": null,
+          "filter": null,
+          "dimensieSelectie": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "het maximum van het gewicht van alle vondsten van de Jutter",
+          "granulariteit": null,
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "berging",
+            "rol": "vondst"
+          }
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
         }
       },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+      {
+        "node": "ResolvedRegel",
+        "naam": "lichtste van een jutter",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "lichtste",
+          "objecttype": "Jutter",
+          "onderwerpBron": "een Jutter",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "Het lichtste van een Jutter",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Functie",
+          "kind": "MINIMUM",
+          "argumenten": [
+            {
+              "node": "AttribuutRef",
+              "attribuut": "gewicht",
+              "objecttype": "Vondst",
+              "onderwerpBron": "alle vondsten van de Jutter",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "het gewicht van alle vondsten van de Jutter",
+              "set": true,
+              "navigatiePad": []
+            }
+          ],
+          "elementObjecttype": "Vondst",
+          "leegwaarde": null,
+          "filter": null,
+          "dimensieSelectie": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "het minimum van het gewicht van alle vondsten van de Jutter",
+          "granulariteit": null,
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "berging",
+            "rol": "vondst"
+          }
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

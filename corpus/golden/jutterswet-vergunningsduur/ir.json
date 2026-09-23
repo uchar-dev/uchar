@@ -1,147 +1,97 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Bergingsvergunning": {
-      "node": "Objecttype",
-      "naam": "Bergingsvergunning",
-      "attributen": {
-        "basisduur": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "maand",
-            "stelsel": "Termijn",
-            "canoniek": "maand",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        },
-        "looptijd": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "maand",
-            "stelsel": "Termijn",
-            "canoniek": "maand",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Bergingsvergunningen"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {
-    "Termijn": {
-      "node": "Eenheidstelsel",
-      "naam": "Termijn",
-      "eenheden": {
-        "maand": {
-          "node": "Eenheid",
-          "afkorting": "maand",
-          "stelsel": "Termijn",
-          "canoniek": "maand",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        },
-        "jaar": {
-          "node": "Eenheid",
-          "afkorting": "jaar",
-          "stelsel": "Termijn",
-          "canoniek": "maand",
-          "factorNaarCanoniek": 12,
-          "noemer": null
-        }
-      },
-      "aliassen": {}
-    }
-  },
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "looptijd van een bergingsvergunning",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "looptijd van een bergingsvergunning",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "looptijd",
-        "objecttype": "Bergingsvergunning",
-        "onderwerpBron": "een Bergingsvergunning",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "maand",
-            "stelsel": "Termijn",
-            "canoniek": "maand",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        },
-        "bron": "De looptijd van een Bergingsvergunning",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Binair",
-        "op": "PLUS",
-        "links": {
-          "node": "Literal",
-          "waarde": "2",
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "jaar",
-              "stelsel": "Termijn",
-              "canoniek": "maand",
-              "factorNaarCanoniek": 12,
-              "noemer": null
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Bergingsvergunning",
+        "animate": false,
+        "plural": "Bergingsvergunningen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "basisduur",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "maand",
+                "stelsel": "Termijn",
+                "canoniek": "maand",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
             }
           },
-          "bron": "2 jaar"
+          {
+            "node": "Attribute",
+            "name": "looptijd",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "maand",
+                "stelsel": "Termijn",
+                "canoniek": "maand",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "Eenheidstelsel",
+        "naam": "Termijn",
+        "eenheden": {
+          "maand": {
+            "node": "Eenheid",
+            "afkorting": "maand",
+            "stelsel": "Termijn",
+            "canoniek": "maand",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          },
+          "jaar": {
+            "node": "Eenheid",
+            "afkorting": "jaar",
+            "stelsel": "Termijn",
+            "canoniek": "maand",
+            "factorNaarCanoniek": 12,
+            "noemer": null
+          }
         },
-        "rechts": {
+        "aliassen": {}
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "looptijd van een bergingsvergunning",
+        "soort": "BEREKENING",
+        "doel": {
           "node": "AttribuutRef",
-          "attribuut": "basisduur",
+          "attribuut": "looptijd",
           "objecttype": "Bergingsvergunning",
-          "onderwerpBron": "de Bergingsvergunning",
+          "onderwerpBron": "een Bergingsvergunning",
           "navigatieRol": null,
           "type": {
             "node": "Numeriek",
@@ -157,42 +107,89 @@
               "noemer": null
             }
           },
-          "bron": "de basisduur van de Bergingsvergunning",
+          "bron": "De looptijd van een Bergingsvergunning",
           "set": false,
           "navigatiePad": []
         },
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "jaar",
-            "stelsel": "Termijn",
-            "canoniek": "maand",
-            "factorNaarCanoniek": 12,
-            "noemer": null
-          }
+        "waarde": {
+          "node": "Binair",
+          "op": "PLUS",
+          "links": {
+            "node": "Literal",
+            "waarde": "2",
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "jaar",
+                "stelsel": "Termijn",
+                "canoniek": "maand",
+                "factorNaarCanoniek": 12,
+                "noemer": null
+              }
+            },
+            "bron": "2 jaar"
+          },
+          "rechts": {
+            "node": "AttribuutRef",
+            "attribuut": "basisduur",
+            "objecttype": "Bergingsvergunning",
+            "onderwerpBron": "de Bergingsvergunning",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "maand",
+                "stelsel": "Termijn",
+                "canoniek": "maand",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            },
+            "bron": "de basisduur van de Bergingsvergunning",
+            "set": false,
+            "navigatiePad": []
+          },
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": {
+              "node": "Eenheid",
+              "afkorting": "jaar",
+              "stelsel": "Termijn",
+              "canoniek": "maand",
+              "factorNaarCanoniek": 12,
+              "noemer": null
+            }
+          },
+          "bron": "2 jaar plus de basisduur van de Bergingsvergunning"
         },
-        "bron": "2 jaar plus de basisduur van de Bergingsvergunning"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

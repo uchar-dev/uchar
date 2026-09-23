@@ -1,141 +1,138 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "wachtvergoeding per maand": {
-          "node": "DatumInDagen"
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {
-        "wachtvergoeding per maand": "MAAND"
-      },
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "wachtplichtig"
-      ],
-      "kenmerkSoorten": {
-        "wachtplichtig": "BIJVOEGLIJK"
-      },
-      "kenmerkGranulariteit": {
-        "wachtplichtig": "MAAND"
-      },
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    },
-    "Klipjutter": {
-      "node": "Objecttype",
-      "naam": "Klipjutter",
-      "supertype": "Jutter",
-      "attributen": {
-        "wachtsom": {
-          "node": "DatumInDagen"
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Klipjutters"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "wachtsom van een klipjutter",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "wachtsom van een klipjutter",
-      "soort": "GELIJKSTELLING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "wachtsom",
-        "objecttype": "Klipjutter",
-        "onderwerpBron": "een Klipjutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "DatumInDagen"
-        },
-        "bron": "De wachtsom van een Klipjutter",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "TOTAAL",
-        "argumenten": [
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
           {
-            "node": "AttribuutRef",
-            "attribuut": "wachtvergoeding per maand",
-            "objecttype": "Klipjutter",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
+            "node": "Attribute",
+            "name": "wachtvergoeding per maand",
+            "datatype": {
               "node": "DatumInDagen"
             },
-            "bron": "zijn wachtvergoeding per maand",
-            "set": false,
-            "navigatiePad": []
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "MAAND",
+              "count": 1
+            }
           }
         ],
-        "elementObjecttype": "Klipjutter",
-        "leegwaarde": null,
-        "filter": {
-          "node": "Kenmerk",
-          "kenmerk": "wachtplichtig",
-          "navigatie": null,
-          "negatie": false,
-          "eigenaar": null,
-          "periode": null,
-          "bron": "gedurende de tijd dat hij wachtplichtig is"
-        },
-        "dimensieSelectie": null,
-        "type": {
-          "node": "DatumInDagen"
-        },
-        "bron": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij wachtplichtig is",
-        "granulariteit": null
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "wachtplichtig",
+            "kind": "BIJVOEGLIJK",
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "MAAND",
+              "count": 1
+            }
+          }
+        ]
       },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+      {
+        "node": "ObjectType",
+        "name": "Klipjutter",
+        "supertype": "Jutter",
+        "animate": true,
+        "plural": "Klipjutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "wachtsom",
+            "datatype": {
+              "node": "DatumInDagen"
+            }
+          }
+        ],
+        "characteristics": []
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "wachtsom van een klipjutter",
+        "soort": "GELIJKSTELLING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "wachtsom",
+          "objecttype": "Klipjutter",
+          "onderwerpBron": "een Klipjutter",
+          "navigatieRol": null,
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "De wachtsom van een Klipjutter",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Functie",
+          "kind": "TOTAAL",
+          "argumenten": [
+            {
+              "node": "AttribuutRef",
+              "attribuut": "wachtvergoeding per maand",
+              "objecttype": "Klipjutter",
+              "onderwerpBron": "zijn",
+              "navigatieRol": null,
+              "type": {
+                "node": "DatumInDagen"
+              },
+              "bron": "zijn wachtvergoeding per maand",
+              "set": false,
+              "navigatiePad": []
+            }
+          ],
+          "elementObjecttype": "Klipjutter",
+          "leegwaarde": null,
+          "filter": {
+            "node": "Kenmerk",
+            "kenmerk": "wachtplichtig",
+            "navigatie": null,
+            "negatie": false,
+            "eigenaar": null,
+            "periode": null,
+            "bron": "gedurende de tijd dat hij wachtplichtig is"
+          },
+          "dimensieSelectie": null,
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij wachtplichtig is",
+          "granulariteit": null
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

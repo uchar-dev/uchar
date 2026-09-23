@@ -1,184 +1,177 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Strandrecht": {
-      "node": "Objecttype",
-      "naam": "Strandrecht",
-      "attributen": {
-        "grondslag": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "uitkering": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        }
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Strandrecht",
+        "animate": false,
+        "plural": "Strandrechten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "grondslag",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "uitkering",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "betwist",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "geborgen",
+            "kind": "BIJVOEGLIJK"
+          }
+        ]
       },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "betwist",
-        "geborgen"
-      ],
-      "kenmerkSoorten": {
-        "betwist": "BIJVOEGLIJK",
-        "geborgen": "BIJVOEGLIJK"
-      },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Strandrechten"
-    },
-    "Wrakrecht": {
-      "node": "Objecttype",
-      "naam": "Wrakrecht",
-      "supertype": "Strandrecht",
-      "attributen": {
-        "bergingsdiepte": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Wrakrechten"
-    }
+      {
+        "node": "ObjectType",
+        "name": "Wrakrecht",
+        "supertype": "Strandrecht",
+        "animate": false,
+        "plural": "Wrakrechten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "bergingsdiepte",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
   },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "uitkering bij betwisting",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "uitkering bij berging",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
-  "diagnostics": [],
-  "prioritizedDefaults": [
-    {
-      "node": "PrioritizedDefaults",
-      "naam": "uitkering bij betwisting",
-      "onderwerp": "Strandrecht",
-      "kenmerk": null,
-      "attribuut": "uitkering",
-      "ongeordend": true,
-      "defaults": [
-        {
-          "node": "Default",
-          "besluit": null,
-          "voorwaarde": {
-            "node": "Kenmerk",
-            "kenmerk": "betwist",
-            "navigatie": null,
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "het Strandrecht betwist is"
-          },
-          "consequentie": {
-            "node": "Literal",
-            "waarde": "99.00",
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+  "rules": {
+    "resolvedRegels": [],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "naam": "uitkering bij betwisting",
+        "onderwerp": "Strandrecht",
+        "kenmerk": null,
+        "attribuut": "uitkering",
+        "ongeordend": true,
+        "defaults": [
+          {
+            "node": "Default",
+            "besluit": null,
+            "voorwaarde": {
+              "node": "Kenmerk",
+              "kenmerk": "betwist",
+              "navigatie": null,
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "het Strandrecht betwist is"
             },
-            "bron": "99.00"
-          },
-          "bron": "99,00 indien het Strandrecht betwist is"
-        }
-      ],
-      "bron": "99,00 indien het Strandrecht betwist is",
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "PrioritizedDefaults",
-      "naam": "uitkering bij betwisting",
-      "onderwerp": "Strandrecht",
-      "kenmerk": null,
-      "attribuut": "uitkering",
-      "ongeordend": true,
-      "defaults": [
-        {
-          "node": "Default",
-          "besluit": null,
-          "voorwaarde": {
-            "node": "Kenmerk",
-            "kenmerk": "geborgen",
-            "navigatie": null,
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "het Strandrecht geborgen is"
-          },
-          "consequentie": {
-            "node": "Literal",
-            "waarde": "44.00",
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+            "consequentie": {
+              "node": "Literal",
+              "waarde": "99.00",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "99.00"
             },
-            "bron": "44.00"
-          },
-          "bron": "44,00 indien het Strandrecht geborgen is"
+            "bron": "99,00 indien het Strandrecht betwist is"
+          }
+        ],
+        "bron": "99,00 indien het Strandrecht betwist is",
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
         }
-      ],
-      "bron": "44,00 indien het Strandrecht geborgen is",
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "naam": "uitkering bij betwisting",
+        "onderwerp": "Strandrecht",
+        "kenmerk": null,
+        "attribuut": "uitkering",
+        "ongeordend": true,
+        "defaults": [
+          {
+            "node": "Default",
+            "besluit": null,
+            "voorwaarde": {
+              "node": "Kenmerk",
+              "kenmerk": "geborgen",
+              "navigatie": null,
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "het Strandrecht geborgen is"
+            },
+            "consequentie": {
+              "node": "Literal",
+              "waarde": "44.00",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "44.00"
+            },
+            "bron": "44,00 indien het Strandrecht geborgen is"
+          }
+        ],
+        "bron": "44,00 indien het Strandrecht geborgen is",
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ]
+    ]
+  },
+  "diagnostics": []
 }

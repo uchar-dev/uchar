@@ -1,86 +1,105 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "heffing": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "grondX"
-      ],
-      "kenmerkSoorten": {
-        "grondX": "BIJVOEGLIJK"
-      },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    }
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "heffing",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "grondX",
+            "kind": "BIJVOEGLIJK"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
   },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [],
-  "resolvedRegels": [],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
-  "diagnostics": [],
-  "prioritizedDefaults": [
-    {
-      "node": "PrioritizedDefaults",
-      "naam": "heffing van een jutter",
-      "onderwerp": "Jutter",
-      "kenmerk": null,
-      "attribuut": "heffing",
-      "defaults": [
-        {
-          "node": "Default",
-          "besluit": null,
-          "voorwaarde": null,
-          "bron": "groep-default",
-          "excepties": {
-            "ongeordend": true,
-            "leden": [
-              {
-                "node": "ExceptionGroup",
-                "defaults": [
-                  {
-                    "node": "Default",
-                    "besluit": null,
-                    "voorwaarde": {
-                      "node": "Predicaat",
-                      "soort": "GEVULD",
-                      "operand": {
-                        "node": "AttribuutRef",
-                        "attribuut": "heffing",
-                        "objecttype": "Jutter",
-                        "onderwerpBron": "zijn heffing",
-                        "navigatieRol": null,
+  "rules": {
+    "resolvedRegels": [],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "naam": "heffing van een jutter",
+        "onderwerp": "Jutter",
+        "kenmerk": null,
+        "attribuut": "heffing",
+        "defaults": [
+          {
+            "node": "Default",
+            "besluit": null,
+            "voorwaarde": null,
+            "bron": "groep-default",
+            "excepties": {
+              "ongeordend": true,
+              "leden": [
+                {
+                  "node": "ExceptionGroup",
+                  "defaults": [
+                    {
+                      "node": "Default",
+                      "besluit": null,
+                      "voorwaarde": {
+                        "node": "Predicaat",
+                        "soort": "GEVULD",
+                        "operand": {
+                          "node": "AttribuutRef",
+                          "attribuut": "heffing",
+                          "objecttype": "Jutter",
+                          "onderwerpBron": "zijn heffing",
+                          "navigatieRol": null,
+                          "type": {
+                            "node": "Numeriek",
+                            "geheel": false,
+                            "decimalen": 2,
+                            "teken": "ONBEPAALD",
+                            "eenheid": null
+                          },
+                          "bron": "zijn heffing",
+                          "set": false,
+                          "navigatiePad": []
+                        },
+                        "dagsoort": null,
+                        "negatie": false,
+                        "cijfers": 0,
+                        "periode": null,
+                        "bron": "zijn heffing is gevuld"
+                      },
+                      "consequentie": {
+                        "node": "Literal",
+                        "waarde": "10.00",
                         "type": {
                           "node": "Numeriek",
                           "geheel": false,
@@ -88,43 +107,25 @@
                           "teken": "ONBEPAALD",
                           "eenheid": null
                         },
-                        "bron": "zijn heffing",
-                        "set": false,
-                        "navigatiePad": []
+                        "bron": "10.00"
                       },
-                      "dagsoort": null,
-                      "negatie": false,
-                      "cijfers": 0,
-                      "periode": null,
-                      "bron": "zijn heffing is gevuld"
-                    },
-                    "consequentie": {
-                      "node": "Literal",
-                      "waarde": "10.00",
-                      "type": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
-                      },
-                      "bron": "10.00"
-                    },
-                    "bron": "sub-default die het eigen doel leest (zelf-cyclus)"
-                  }
-                ],
-                "bron": "lid dat het root-doel leest"
-              }
-            ]
+                      "bron": "sub-default die het eigen doel leest (zelf-cyclus)"
+                    }
+                  ],
+                  "bron": "lid dat het root-doel leest"
+                }
+              ]
+            }
           }
+        ],
+        "bron": "art. n",
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
         }
-      ],
-      "bron": "art. n",
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
       }
-    }
-  ]
+    ]
+  },
+  "diagnostics": []
 }

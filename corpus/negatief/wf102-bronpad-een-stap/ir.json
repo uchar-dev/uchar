@@ -1,341 +1,17 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "laagste vondstgewicht": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "kg",
-            "stelsel": "Gewicht",
-            "canoniek": "kg",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        },
-        "totaal vondstgewicht": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "kg",
-            "stelsel": "Gewicht",
-            "canoniek": "kg",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        },
-        "laagste kistgewicht": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "kg",
-            "stelsel": "Gewicht",
-            "canoniek": "kg",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    },
-    "Boot": {
-      "node": "Objecttype",
-      "naam": "Boot",
-      "attributen": {},
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Boten"
-    },
-    "Vondst": {
-      "node": "Objecttype",
-      "naam": "Vondst",
-      "attributen": {
-        "gewicht": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "kg",
-            "stelsel": "Gewicht",
-            "canoniek": "kg",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Vondsten"
-    },
-    "Kist": {
-      "node": "Objecttype",
-      "naam": "Kist",
-      "attributen": {
-        "inhoudsgewicht": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "kg",
-            "stelsel": "Gewicht",
-            "canoniek": "kg",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Kisten"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {
-    "Gewicht": {
-      "node": "Eenheidstelsel",
-      "naam": "Gewicht",
-      "eenheden": {
-        "kg": {
-          "node": "Eenheid",
-          "afkorting": "kg",
-          "stelsel": "Gewicht",
-          "canoniek": "kg",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        },
-        "t": {
-          "node": "Eenheid",
-          "afkorting": "t",
-          "stelsel": "Gewicht",
-          "canoniek": "kg",
-          "factorNaarCanoniek": 1000,
-          "noemer": null
-        }
-      },
-      "aliassen": {
-        "kilogram": {
-          "node": "Eenheid",
-          "afkorting": "kg",
-          "stelsel": "Gewicht",
-          "canoniek": "kg",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        },
-        "kilogrammen": {
-          "node": "Eenheid",
-          "afkorting": "kg",
-          "stelsel": "Gewicht",
-          "canoniek": "kg",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        },
-        "ton": {
-          "node": "Eenheid",
-          "afkorting": "t",
-          "stelsel": "Gewicht",
-          "canoniek": "kg",
-          "factorNaarCanoniek": 1000,
-          "noemer": null
-        },
-        "tonnen": {
-          "node": "Eenheid",
-          "afkorting": "t",
-          "stelsel": "Gewicht",
-          "canoniek": "kg",
-          "factorNaarCanoniek": 1000,
-          "noemer": null
-        }
-      }
-    }
-  },
-  "feittypen": {
-    "bemanning": {
-      "node": "Feittype",
-      "naam": "bemanning",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "schipper",
-          "objecttypeNaam": "Jutter",
-          "meervoud": "schippers",
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "gevoerde boot",
-          "objecttypeNaam": "Boot",
-          "meervoud": "gevoerde boten",
-          "meervoudig": true
-        }
-      ]
-    },
-    "berging": {
-      "node": "Feittype",
-      "naam": "berging",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "bergende boot",
-          "objecttypeNaam": "Boot",
-          "meervoud": "bergende boten",
-          "meervoudig": true
-        },
-        {
-          "node": "Rol",
-          "naam": "geborgen vondst",
-          "objecttypeNaam": "Vondst",
-          "meervoud": "geborgen vondsten",
-          "meervoudig": true
-        }
-      ]
-    },
-    "inpakking": {
-      "node": "Feittype",
-      "naam": "inpakking",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "verpakte vondst",
-          "objecttypeNaam": "Vondst",
-          "meervoud": "verpakte vondsten",
-          "meervoudig": true
-        },
-        {
-          "node": "Rol",
-          "naam": "ingepakte kist",
-          "objecttypeNaam": "Kist",
-          "meervoud": "ingepakte kisten",
-          "meervoudig": true
-        }
-      ]
-    },
-    "vondstaanmelding": {
-      "node": "Feittype",
-      "naam": "vondstaanmelding",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "aanmelder",
-          "objecttypeNaam": "Jutter",
-          "meervoud": "aanmelders",
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "aangemelde vondst",
-          "objecttypeNaam": "Vondst",
-          "meervoud": "aangemelde vondsten",
-          "meervoudig": true
-        }
-      ]
-    }
-  },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "laagste vondstgewicht van een jutter",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "laagste vondstgewicht van een jutter",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "laagste vondstgewicht",
-        "objecttype": "Jutter",
-        "onderwerpBron": "een Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "kg",
-            "stelsel": "Gewicht",
-            "canoniek": "kg",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        },
-        "bron": "Het laagste vondstgewicht van een Jutter",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "MINIMUM",
-        "argumenten": [
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
           {
-            "node": "AttribuutRef",
-            "attribuut": "gewicht",
-            "objecttype": "Vondst",
-            "onderwerpBron": "alle geborgen vondsten van alle gevoerde boten van de Jutter",
-            "navigatieRol": null,
-            "type": {
+            "node": "Attribute",
+            "name": "laagste vondstgewicht",
+            "datatype": {
               "node": "Numeriek",
               "geheel": false,
               "decimalen": 2,
@@ -348,56 +24,365 @@
                 "factorNaarCanoniek": 1,
                 "noemer": null
               }
-            },
-            "bron": "het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter",
-            "set": true,
-            "navigatiePad": []
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "totaal vondstgewicht",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "kg",
+                "stelsel": "Gewicht",
+                "canoniek": "kg",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "laagste kistgewicht",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "kg",
+                "stelsel": "Gewicht",
+                "canoniek": "kg",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            }
           }
         ],
-        "elementObjecttype": "Vondst",
-        "leegwaarde": null,
-        "filter": null,
-        "dimensieSelectie": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Boot",
+        "animate": false,
+        "plural": "Boten",
+        "attributes": [],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "kg",
+                "stelsel": "Gewicht",
+                "canoniek": "kg",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Kist",
+        "animate": false,
+        "plural": "Kisten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "inhoudsgewicht",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "kg",
+                "stelsel": "Gewicht",
+                "canoniek": "kg",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "bemanning",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "schipper",
+            "objecttypeNaam": "Jutter",
+            "meervoud": "schippers",
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "gevoerde boot",
+            "objecttypeNaam": "Boot",
+            "meervoud": "gevoerde boten",
+            "meervoudig": true
+          }
+        ]
+      },
+      {
+        "node": "Feittype",
+        "naam": "berging",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "bergende boot",
+            "objecttypeNaam": "Boot",
+            "meervoud": "bergende boten",
+            "meervoudig": true
+          },
+          {
+            "node": "Rol",
+            "naam": "geborgen vondst",
+            "objecttypeNaam": "Vondst",
+            "meervoud": "geborgen vondsten",
+            "meervoudig": true
+          }
+        ]
+      },
+      {
+        "node": "Feittype",
+        "naam": "inpakking",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "verpakte vondst",
+            "objecttypeNaam": "Vondst",
+            "meervoud": "verpakte vondsten",
+            "meervoudig": true
+          },
+          {
+            "node": "Rol",
+            "naam": "ingepakte kist",
+            "objecttypeNaam": "Kist",
+            "meervoud": "ingepakte kisten",
+            "meervoudig": true
+          }
+        ]
+      },
+      {
+        "node": "Feittype",
+        "naam": "vondstaanmelding",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "aanmelder",
+            "objecttypeNaam": "Jutter",
+            "meervoud": "aanmelders",
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "aangemelde vondst",
+            "objecttypeNaam": "Vondst",
+            "meervoud": "aangemelde vondsten",
+            "meervoudig": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "Eenheidstelsel",
+        "naam": "Gewicht",
+        "eenheden": {
+          "kg": {
             "node": "Eenheid",
             "afkorting": "kg",
             "stelsel": "Gewicht",
             "canoniek": "kg",
             "factorNaarCanoniek": 1,
             "noemer": null
+          },
+          "t": {
+            "node": "Eenheid",
+            "afkorting": "t",
+            "stelsel": "Gewicht",
+            "canoniek": "kg",
+            "factorNaarCanoniek": 1000,
+            "noemer": null
           }
         },
-        "bron": "de minimale waarde van het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter",
-        "granulariteit": null,
-        "bronPad": [
-          {
-            "node": "RolBinding",
-            "feittype": "vondstaanmelding",
-            "rol": "aangemelde vondst"
+        "aliassen": {
+          "kilogram": {
+            "node": "Eenheid",
+            "afkorting": "kg",
+            "stelsel": "Gewicht",
+            "canoniek": "kg",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          },
+          "kilogrammen": {
+            "node": "Eenheid",
+            "afkorting": "kg",
+            "stelsel": "Gewicht",
+            "canoniek": "kg",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          },
+          "ton": {
+            "node": "Eenheid",
+            "afkorting": "t",
+            "stelsel": "Gewicht",
+            "canoniek": "kg",
+            "factorNaarCanoniek": 1000,
+            "noemer": null
+          },
+          "tonnen": {
+            "node": "Eenheid",
+            "afkorting": "t",
+            "stelsel": "Gewicht",
+            "canoniek": "kg",
+            "factorNaarCanoniek": 1000,
+            "noemer": null
           }
-        ]
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "laagste vondstgewicht van een jutter",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "laagste vondstgewicht",
+          "objecttype": "Jutter",
+          "onderwerpBron": "een Jutter",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": {
+              "node": "Eenheid",
+              "afkorting": "kg",
+              "stelsel": "Gewicht",
+              "canoniek": "kg",
+              "factorNaarCanoniek": 1,
+              "noemer": null
+            }
+          },
+          "bron": "Het laagste vondstgewicht van een Jutter",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Functie",
+          "kind": "MINIMUM",
+          "argumenten": [
+            {
+              "node": "AttribuutRef",
+              "attribuut": "gewicht",
+              "objecttype": "Vondst",
+              "onderwerpBron": "alle geborgen vondsten van alle gevoerde boten van de Jutter",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": {
+                  "node": "Eenheid",
+                  "afkorting": "kg",
+                  "stelsel": "Gewicht",
+                  "canoniek": "kg",
+                  "factorNaarCanoniek": 1,
+                  "noemer": null
+                }
+              },
+              "bron": "het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter",
+              "set": true,
+              "navigatiePad": []
+            }
+          ],
+          "elementObjecttype": "Vondst",
+          "leegwaarde": null,
+          "filter": null,
+          "dimensieSelectie": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": {
+              "node": "Eenheid",
+              "afkorting": "kg",
+              "stelsel": "Gewicht",
+              "canoniek": "kg",
+              "factorNaarCanoniek": 1,
+              "noemer": null
+            }
+          },
+          "bron": "de minimale waarde van het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter",
+          "granulariteit": null,
+          "bronPad": [
+            {
+              "node": "RolBinding",
+              "feittype": "vondstaanmelding",
+              "rol": "aangemelde vondst"
+            }
+          ]
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

@@ -1,82 +1,86 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Strandvondst": {
-      "node": "Objecttype",
-      "naam": "Strandvondst",
-      "attributen": {
-        "vondstnummer": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "kavelnummer": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {
-        "vondstnummer": "JAAR",
-        "kavelnummer": "JAAR"
-      },
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Strandvondsten"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "dubbel temporeel enkelvoudig",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [
-    {
-      "node": "ResolvedUniciteit",
-      "naam": "dubbel temporeel enkelvoudig",
-      "subject": "Strandvondst",
-      "sleutels": [
-        "vondstnummer",
-        "kavelnummer"
-      ],
-      "scopeVeld": null,
-      "bron": "De vondstnummers en kavelnummers van alle Strandvondsten moeten uniek zijn.",
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Strandvondst",
+        "animate": false,
+        "plural": "Strandvondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vondstnummer",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "JAAR",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "kavelnummer",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "JAAR",
+              "count": 1
+            }
+          }
+        ],
+        "characteristics": []
       }
-    }
-  ],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [
+      {
+        "node": "ResolvedUniciteit",
+        "naam": "dubbel temporeel enkelvoudig",
+        "subject": "Strandvondst",
+        "sleutels": [
+          "vondstnummer",
+          "kavelnummer"
+        ],
+        "scopeVeld": null,
+        "bron": "De vondstnummers en kavelnummers van alle Strandvondsten moeten uniek zijn.",
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

@@ -1,135 +1,128 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Strandveiling": {
-      "node": "Objecttype",
-      "naam": "Strandveiling",
-      "attributen": {
-        "veilingopbrengst": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "veilingrestant": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Strandveiling",
+        "animate": false,
+        "plural": "Strandveilingen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "veilingopbrengst",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "veilingrestant",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
       },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Strandveilingen"
-    },
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "veilingdeel": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {
-    "veilingdeelname": {
-      "node": "Feittype",
-      "naam": "veilingdeelname",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "strandveiling",
-          "objecttypeNaam": "Strandveiling",
-          "meervoud": null,
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "veilingjutter",
-          "objecttypeNaam": "Jutter",
-          "meervoud": "veilingjutters",
-          "meervoudig": true
-        }
-      ]
-    }
-  },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "verdeel de veilingopbrengst van een strandveiling",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [
-    {
-      "node": "ResolvedVerdeling",
-      "naam": "verdeel de veilingopbrengst van een strandveiling",
-      "bronType": "Strandveiling",
-      "bronAttribuut": "veilingopbrengst",
-      "doelType": "Jutter",
-      "doelAttribuut": "veilingdeel",
-      "methode": "GELIJKE_DELEN",
-      "ratoAttribuut": null,
-      "maximumAttribuut": null,
-      "afrondingDecimalen": 0,
-      "restantAttribuut": "veilingrestant",
-      "groepeerAttribuut": null,
-      "afnemend": false,
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      },
-      "verbindendeRol": {
-        "node": "RolBinding",
-        "feittype": "veilingdeelname",
-        "rol": "veilingjutter"
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "veilingdeel",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
       }
-    }
-  ],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "veilingdeelname",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "strandveiling",
+            "objecttypeNaam": "Strandveiling",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "veilingjutter",
+            "objecttypeNaam": "Jutter",
+            "meervoud": "veilingjutters",
+            "meervoudig": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [
+      {
+        "node": "ResolvedVerdeling",
+        "naam": "verdeel de veilingopbrengst van een strandveiling",
+        "bronType": "Strandveiling",
+        "bronAttribuut": "veilingopbrengst",
+        "doelType": "Jutter",
+        "doelAttribuut": "veilingdeel",
+        "methode": "GELIJKE_DELEN",
+        "ratoAttribuut": null,
+        "maximumAttribuut": null,
+        "afrondingDecimalen": 0,
+        "restantAttribuut": "veilingrestant",
+        "groepeerAttribuut": null,
+        "afnemend": false,
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        },
+        "verbindendeRol": {
+          "node": "RolBinding",
+          "feittype": "veilingdeelname",
+          "rol": "veilingjutter"
+        }
+      }
+    ],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

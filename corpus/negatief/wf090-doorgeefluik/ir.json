@@ -1,236 +1,65 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Berging": {
-      "node": "Objecttype",
-      "naam": "Berging",
-      "attributen": {
-        "samenvatting": {
-          "node": "StructType",
-          "domain": "logboek",
-          "fields": [
-            {
-              "name": "bedrag",
-              "datatype": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              }
-            },
-            {
-              "name": "aantal",
-              "datatype": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              }
-            }
-          ]
-        },
-        "tarief": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": null
-    },
-    "Schuit": {
-      "node": "Objecttype",
-      "naam": "Schuit",
-      "attributen": {
-        "kern": {
-          "node": "StructType",
-          "domain": "dossier",
-          "fields": [
-            {
-              "name": "waarde",
-              "datatype": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              }
-            },
-            {
-              "name": "telling",
-              "datatype": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              }
-            }
-          ]
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": null
-    }
-  },
-  "domeinen": {
-    "dossier": {
-      "node": "StructType",
-      "domain": "dossier",
-      "fields": [
-        {
-          "name": "waarde",
-          "datatype": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          }
-        },
-        {
-          "name": "telling",
-          "datatype": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          }
-        }
-      ]
-    },
-    "logboek": {
-      "node": "StructType",
-      "domain": "logboek",
-      "fields": [
-        {
-          "name": "bedrag",
-          "datatype": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          }
-        },
-        {
-          "name": "aantal",
-          "datatype": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          }
-        }
-      ]
-    }
-  },
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {
-    "ligplaats": {
-      "node": "Feittype",
-      "naam": "ligplaats",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "berging",
-          "objecttypeNaam": "Berging",
-          "meervoud": null,
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "schuit",
-          "objecttypeNaam": "Schuit",
-          "meervoud": "schuiten",
-          "meervoudig": true
-        }
-      ]
-    }
-  },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "samenvatting van een berging",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "samenvatting",
-        "objecttype": "Berging",
-        "onderwerpBron": null,
-        "navigatieRol": null,
-        "type": {
-          "node": "StructType",
-          "domain": "logboek",
-          "fields": [
-            {
-              "name": "bedrag",
-              "datatype": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              }
-            },
-            {
-              "name": "aantal",
-              "datatype": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              }
-            }
-          ]
-        },
-        "bron": null,
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "EERSTE",
-        "argumenten": [
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Berging",
+        "animate": false,
+        "attributes": [
           {
-            "node": "AttribuutRef",
-            "attribuut": "kern",
-            "objecttype": "Schuit",
-            "onderwerpBron": "de kern van alle schuiten van de Berging",
-            "navigatieRol": null,
-            "type": {
+            "node": "Attribute",
+            "name": "samenvatting",
+            "datatype": {
+              "node": "StructType",
+              "domain": "logboek",
+              "fields": [
+                {
+                  "name": "bedrag",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                },
+                {
+                  "name": "aantal",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "tarief",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Schuit",
+        "animate": false,
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "kern",
+            "datatype": {
               "node": "StructType",
               "domain": "dossier",
               "fields": [
@@ -255,19 +84,71 @@
                   }
                 }
               ]
-            },
-            "bron": "de kern van alle schuiten van de Berging",
-            "set": true,
-            "navigatiePad": []
+            }
           }
         ],
-        "elementObjecttype": "Schuit",
-        "leegwaarde": null,
-        "filter": null,
-        "dimensieSelectie": null,
-        "type": {
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "ligplaats",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "berging",
+            "objecttypeNaam": "Berging",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "schuit",
+            "objecttypeNaam": "Schuit",
+            "meervoud": "schuiten",
+            "meervoudig": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "dossier",
+        "datatype": {
           "node": "StructType",
-          "domain": "logboek",
+          "fields": [
+            {
+              "name": "waarde",
+              "datatype": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              }
+            },
+            {
+              "name": "telling",
+              "datatype": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              }
+            }
+          ]
+        }
+      },
+      {
+        "node": "Domain",
+        "name": "logboek",
+        "datatype": {
+          "node": "StructType",
           "fields": [
             {
               "name": "bedrag",
@@ -290,53 +171,22 @@
               }
             }
           ]
-        },
-        "bron": "de eerste kern van alle schuiten van de Berging",
-        "granulariteit": null,
-        "bronRol": {
-          "node": "RolBinding",
-          "feittype": "ligplaats",
-          "rol": "schuit"
         }
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
       }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "tarief van een berging",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "tarief",
-        "objecttype": "Berging",
-        "onderwerpBron": null,
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "bron": null,
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "FieldAccess",
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "base": {
+    ],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "samenvatting van een berging",
+        "soort": "BEREKENING",
+        "doel": {
           "node": "AttribuutRef",
           "attribuut": "samenvatting",
           "objecttype": "Berging",
@@ -372,25 +222,178 @@
           "set": false,
           "navigatiePad": []
         },
-        "field": "bedrag",
-        "bron": null
+        "waarde": {
+          "node": "Functie",
+          "kind": "EERSTE",
+          "argumenten": [
+            {
+              "node": "AttribuutRef",
+              "attribuut": "kern",
+              "objecttype": "Schuit",
+              "onderwerpBron": "de kern van alle schuiten van de Berging",
+              "navigatieRol": null,
+              "type": {
+                "node": "StructType",
+                "domain": "dossier",
+                "fields": [
+                  {
+                    "name": "waarde",
+                    "datatype": {
+                      "node": "Numeriek",
+                      "geheel": false,
+                      "decimalen": 2,
+                      "teken": "NIET_NEGATIEF",
+                      "eenheid": null
+                    }
+                  },
+                  {
+                    "name": "telling",
+                    "datatype": {
+                      "node": "Numeriek",
+                      "geheel": true,
+                      "decimalen": 0,
+                      "teken": "NIET_NEGATIEF",
+                      "eenheid": null
+                    }
+                  }
+                ]
+              },
+              "bron": "de kern van alle schuiten van de Berging",
+              "set": true,
+              "navigatiePad": []
+            }
+          ],
+          "elementObjecttype": "Schuit",
+          "leegwaarde": null,
+          "filter": null,
+          "dimensieSelectie": null,
+          "type": {
+            "node": "StructType",
+            "domain": "logboek",
+            "fields": [
+              {
+                "name": "bedrag",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                }
+              },
+              {
+                "name": "aantal",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                }
+              }
+            ]
+          },
+          "bron": "de eerste kern van alle schuiten van de Berging",
+          "granulariteit": null,
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "ligplaats",
+            "rol": "schuit"
+          }
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+      {
+        "node": "ResolvedRegel",
+        "naam": "tarief van een berging",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "tarief",
+          "objecttype": "Berging",
+          "onderwerpBron": null,
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": null,
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "FieldAccess",
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "base": {
+            "node": "AttribuutRef",
+            "attribuut": "samenvatting",
+            "objecttype": "Berging",
+            "onderwerpBron": null,
+            "navigatieRol": null,
+            "type": {
+              "node": "StructType",
+              "domain": "logboek",
+              "fields": [
+                {
+                  "name": "bedrag",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                },
+                {
+                  "name": "aantal",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                }
+              ]
+            },
+            "bron": null,
+            "set": false,
+            "navigatiePad": []
+          },
+          "field": "bedrag",
+          "bron": null
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

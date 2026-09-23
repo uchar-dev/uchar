@@ -1,48 +1,54 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {},
-  "domeinen": {
-    "lijst": {
-      "node": "SumType",
-      "domain": "lijst",
-      "constructors": [
-        {
-          "name": "Leeg",
-          "payload": null
-        },
-        {
-          "name": "Punt",
-          "payload": {
-            "node": "SumType",
-            "domain": "lijst",
-            "constructors": [
-              {
-                "name": "Leeg",
-                "payload": null
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "lijst",
+        "datatype": {
+          "node": "SumType",
+          "constructors": [
+            {
+              "name": "Leeg",
+              "payload": null
+            },
+            {
+              "name": "Punt",
+              "payload": {
+                "node": "SumType",
+                "domain": "lijst",
+                "constructors": [
+                  {
+                    "name": "Leeg",
+                    "payload": null
+                  }
+                ]
               }
-            ]
-          }
+            }
+          ]
         }
-      ]
-    }
+      }
+    ],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
   },
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [],
-  "resolvedRegels": [],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+  "rules": {
+    "resolvedRegels": [],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

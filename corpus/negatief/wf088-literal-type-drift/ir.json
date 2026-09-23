@@ -1,106 +1,108 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Vondst": {
-      "node": "Objecttype",
-      "naam": "Vondst",
-      "attributen": {
-        "keurstatus": {
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "keurstatus",
+            "datatype": {
+              "node": "Enumeratie",
+              "domein": "keurstatus",
+              "waarden": [
+                "Gaaf",
+                "Beschadigd"
+              ]
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "keurstatus",
+        "datatype": {
           "node": "Enumeratie",
-          "domein": "keurstatus",
           "waarden": [
             "Gaaf",
             "Beschadigd"
           ]
         }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Vondsten"
-    }
+      }
+    ],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
   },
-  "domeinen": {
-    "keurstatus": {
-      "node": "Enumeratie",
-      "domein": "keurstatus",
-      "waarden": [
-        "Gaaf",
-        "Beschadigd"
-      ]
-    }
-  },
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [],
-  "resolvedRegels": [],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [
-    {
-      "node": "ResolvedConsistentie",
-      "naam": "Keurcontrole",
-      "subject": "Vondst",
-      "assertie": {
-        "node": "Vergelijking",
-        "op": "GELIJK",
-        "links": {
-          "node": "AttribuutRef",
-          "attribuut": "keurstatus",
-          "objecttype": "Vondst",
-          "onderwerpBron": null,
-          "navigatieRol": null,
-          "type": {
-            "node": "Enumeratie",
-            "domein": "keurstatus",
-            "waarden": [
-              "Gaaf",
-              "Beschadigd"
-            ]
+  "rules": {
+    "resolvedRegels": [],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [
+      {
+        "node": "ResolvedConsistentie",
+        "naam": "Keurcontrole",
+        "subject": "Vondst",
+        "assertie": {
+          "node": "Vergelijking",
+          "op": "GELIJK",
+          "links": {
+            "node": "AttribuutRef",
+            "attribuut": "keurstatus",
+            "objecttype": "Vondst",
+            "onderwerpBron": null,
+            "navigatieRol": null,
+            "type": {
+              "node": "Enumeratie",
+              "domein": "keurstatus",
+              "waarden": [
+                "Gaaf",
+                "Beschadigd"
+              ]
+            },
+            "bron": null,
+            "set": false,
+            "navigatiePad": []
           },
-          "bron": null,
-          "set": false,
-          "navigatiePad": []
-        },
-        "rechts": {
-          "node": "Literal",
-          "waarde": "Verweerd",
-          "type": {
-            "node": "Enumeratie",
-            "domein": "keurstatus",
-            "waarden": [
-              "Gaaf",
-              "Beschadigd",
-              "Verweerd"
-            ]
+          "rechts": {
+            "node": "Literal",
+            "waarde": "Verweerd",
+            "type": {
+              "node": "Enumeratie",
+              "domein": "keurstatus",
+              "waarden": [
+                "Gaaf",
+                "Beschadigd",
+                "Verweerd"
+              ]
+            },
+            "bron": null
           },
+          "periode": null,
           "bron": null
         },
-        "periode": null,
-        "bron": null
-      },
-      "bron": null,
-      "line": 1,
-      "geldigheid": null
-    }
-  ],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+        "bron": null,
+        "line": 1,
+        "geldigheid": null
+      }
+    ],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

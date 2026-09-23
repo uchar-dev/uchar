@@ -1,142 +1,139 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Centpot": {
-      "node": "Objecttype",
-      "naam": "Centpot",
-      "attributen": {
-        "centopbrengst": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "centrest": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Centpot",
+        "animate": false,
+        "plural": "Centpotten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "centopbrengst",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "centrest",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
       },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Centpotten"
-    },
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "centgewicht": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "centdeel": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {
-    "centdeelname": {
-      "node": "Feittype",
-      "naam": "centdeelname",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "centpot",
-          "objecttypeNaam": "Centpot",
-          "meervoud": null,
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "centjutter",
-          "objecttypeNaam": "Jutter",
-          "meervoud": "centjutters",
-          "meervoudig": true
-        }
-      ]
-    }
-  },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "verdeel de centopbrengst van een centpot",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [
-    {
-      "node": "ResolvedVerdeling",
-      "naam": "verdeel de centopbrengst van een centpot",
-      "bronType": "Centpot",
-      "bronAttribuut": "centopbrengst",
-      "doelType": "Jutter",
-      "doelAttribuut": "centdeel",
-      "methode": "NAAR_RATO",
-      "ratoAttribuut": "centgewicht",
-      "maximumAttribuut": null,
-      "afrondingDecimalen": 0,
-      "restantAttribuut": "centrest",
-      "groepeerAttribuut": null,
-      "afnemend": false,
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      },
-      "verbindendeRol": {
-        "node": "RolBinding",
-        "feittype": "centdeelname",
-        "rol": "centjutter"
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "centgewicht",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "centdeel",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
       }
-    }
-  ],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "centdeelname",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "centpot",
+            "objecttypeNaam": "Centpot",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "centjutter",
+            "objecttypeNaam": "Jutter",
+            "meervoud": "centjutters",
+            "meervoudig": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [
+      {
+        "node": "ResolvedVerdeling",
+        "naam": "verdeel de centopbrengst van een centpot",
+        "bronType": "Centpot",
+        "bronAttribuut": "centopbrengst",
+        "doelType": "Jutter",
+        "doelAttribuut": "centdeel",
+        "methode": "NAAR_RATO",
+        "ratoAttribuut": "centgewicht",
+        "maximumAttribuut": null,
+        "afrondingDecimalen": 0,
+        "restantAttribuut": "centrest",
+        "groepeerAttribuut": null,
+        "afnemend": false,
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        },
+        "verbindendeRol": {
+          "node": "RolBinding",
+          "feittype": "centdeelname",
+          "rol": "centjutter"
+        }
+      }
+    ],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

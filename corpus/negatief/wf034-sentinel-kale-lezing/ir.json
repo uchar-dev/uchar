@@ -1,16 +1,62 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "drempelgewicht": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "drempelgewicht",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "kg",
+                "stelsel": "Gewicht",
+                "canoniek": "kg",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "maatgevend gewicht",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "kg",
+                "stelsel": "Gewicht",
+                "canoniek": "kg",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "Eenheidstelsel",
+        "naam": "Gewicht",
+        "eenheden": {
+          "kg": {
             "node": "Eenheid",
             "afkorting": "kg",
             "stelsel": "Gewicht",
@@ -19,12 +65,16 @@
             "noemer": null
           }
         },
-        "maatgevend gewicht": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {
+        "aliassen": {
+          "kilogram": {
+            "node": "Eenheid",
+            "afkorting": "kg",
+            "stelsel": "Gewicht",
+            "canoniek": "kg",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          },
+          "kilogrammen": {
             "node": "Eenheid",
             "afkorting": "kg",
             "stelsel": "Gewicht",
@@ -32,128 +82,75 @@
             "factorNaarCanoniek": 1,
             "noemer": null
           }
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {
-    "Gewicht": {
-      "node": "Eenheidstelsel",
-      "naam": "Gewicht",
-      "eenheden": {
-        "kg": {
-          "node": "Eenheid",
-          "afkorting": "kg",
-          "stelsel": "Gewicht",
-          "canoniek": "kg",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        }
-      },
-      "aliassen": {
-        "kilogram": {
-          "node": "Eenheid",
-          "afkorting": "kg",
-          "stelsel": "Gewicht",
-          "canoniek": "kg",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        },
-        "kilogrammen": {
-          "node": "Eenheid",
-          "afkorting": "kg",
-          "stelsel": "Gewicht",
-          "canoniek": "kg",
-          "factorNaarCanoniek": 1,
-          "noemer": null
         }
       }
-    }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
   },
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "maatgevend gewicht",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "maatgevend gewicht",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "maatgevend gewicht",
-        "objecttype": "Jutter",
-        "onderwerpBron": "een Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "kg",
-            "stelsel": "Gewicht",
-            "canoniek": "kg",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "maatgevend gewicht",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "maatgevend gewicht",
+          "objecttype": "Jutter",
+          "onderwerpBron": "een Jutter",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": {
+              "node": "Eenheid",
+              "afkorting": "kg",
+              "stelsel": "Gewicht",
+              "canoniek": "kg",
+              "factorNaarCanoniek": 1,
+              "noemer": null
+            }
+          },
+          "bron": "Het maatgevend gewicht van een Jutter",
+          "set": false,
+          "navigatiePad": []
         },
-        "bron": "Het maatgevend gewicht van een Jutter",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "AttribuutRef",
-        "attribuut": "drempelgewicht",
-        "objecttype": "Jutter",
-        "onderwerpBron": "de Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Onbekend",
-          "reden": "niet opgelost"
+        "waarde": {
+          "node": "AttribuutRef",
+          "attribuut": "drempelgewicht",
+          "objecttype": "Jutter",
+          "onderwerpBron": "de Jutter",
+          "navigatieRol": null,
+          "type": {
+            "node": "Onbekend",
+            "reden": "niet opgelost"
+          },
+          "bron": "het drempelgewicht van de Jutter",
+          "set": false,
+          "navigatiePad": []
         },
-        "bron": "het drempelgewicht van de Jutter",
-        "set": false,
-        "navigatiePad": []
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

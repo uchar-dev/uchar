@@ -1,233 +1,77 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "lettotaal": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    }
-  },
-  "domeinen": {},
-  "parameters": {
-    "grondslag": {
-      "node": "Parameter",
-      "naam": "grondslag",
-      "datatype": {
-        "node": "Numeriek",
-        "geheel": false,
-        "decimalen": 2,
-        "teken": "NIET_NEGATIEF",
-        "eenheid": null
-      },
-      "granulariteit": null
-    },
-    "kindertallen": {
-      "node": "Parameter",
-      "naam": "kindertallen",
-      "datatype": {
-        "node": "ListType",
-        "element": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        }
-      },
-      "granulariteit": null
-    }
-  },
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "lettotaal van een jutter",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "lettotaal van een jutter",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "lettotaal",
-        "objecttype": "Jutter",
-        "onderwerpBron": "Het lettotaal van een Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "Het lettotaal van een Jutter",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Fold",
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "list": {
-          "node": "ParameterRef",
-          "parameter": "kindertallen",
-          "type": {
-            "node": "ListType",
-            "element": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            }
-          },
-          "bron": "de kindertallen"
-        },
-        "function": {
-          "node": "Lambda",
-          "parameters": [
-            {
-              "name": "acc",
-              "datatype": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              }
-            },
-            {
-              "name": "x",
-              "datatype": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              }
-            }
-          ],
-          "body": {
-            "node": "Binair",
-            "op": "PLUS",
-            "links": {
-              "node": "BinderRef",
-              "name": "acc",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de opgetelde bijdrage"
-            },
-            "rechts": {
-              "node": "Let",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "binder": "bijdrage",
-              "value": {
-                "node": "Binair",
-                "op": "MAAL",
-                "links": {
-                  "node": "ParameterRef",
-                  "parameter": "grondslag",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  },
-                  "bron": "de grondslag"
-                },
-                "rechts": {
-                  "node": "BinderRef",
-                  "name": "x",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  },
-                  "bron": "het kindertal"
-                },
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "de grondslag maal het kindertal"
-              },
-              "body": {
-                "node": "BinderRef",
-                "name": "bijdrage",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "de bijdrage"
-              },
-              "bron": "bijdrage is de grondslag maal het kindertal"
-            },
-            "type": {
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "lettotaal",
+            "datatype": {
               "node": "Numeriek",
               "geheel": false,
               "decimalen": 2,
               "teken": "ONBEPAALD",
               "eenheid": null
-            },
-            "bron": "de opgetelde bijdrage plus de bijdrage"
-          },
-          "bron": "de kinddelen opgeteld"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "naam": "grondslag",
+        "datatype": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
         },
-        "init": {
-          "node": "Literal",
-          "waarde": "0.00",
+        "granulariteit": null
+      },
+      {
+        "node": "Parameter",
+        "naam": "kindertallen",
+        "datatype": {
+          "node": "ListType",
+          "element": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          }
+        },
+        "granulariteit": null
+      }
+    ],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "lettotaal van een jutter",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "lettotaal",
+          "objecttype": "Jutter",
+          "onderwerpBron": "Het lettotaal van een Jutter",
+          "navigatieRol": null,
           "type": {
             "node": "Numeriek",
             "geheel": false,
@@ -235,26 +79,175 @@
             "teken": "ONBEPAALD",
             "eenheid": null
           },
-          "bron": "0.00"
+          "bron": "Het lettotaal van een Jutter",
+          "set": false,
+          "navigatiePad": []
         },
-        "bron": "de kindertallen gevouwen tot het lettotaal"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        "waarde": {
+          "node": "Fold",
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "list": {
+            "node": "ParameterRef",
+            "parameter": "kindertallen",
+            "type": {
+              "node": "ListType",
+              "element": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              }
+            },
+            "bron": "de kindertallen"
+          },
+          "function": {
+            "node": "Lambda",
+            "parameters": [
+              {
+                "name": "acc",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                }
+              },
+              {
+                "name": "x",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                }
+              }
+            ],
+            "body": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "BinderRef",
+                "name": "acc",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "de opgetelde bijdrage"
+              },
+              "rechts": {
+                "node": "Let",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "binder": "bijdrage",
+                "value": {
+                  "node": "Binair",
+                  "op": "MAAL",
+                  "links": {
+                    "node": "ParameterRef",
+                    "parameter": "grondslag",
+                    "type": {
+                      "node": "Numeriek",
+                      "geheel": false,
+                      "decimalen": 2,
+                      "teken": "NIET_NEGATIEF",
+                      "eenheid": null
+                    },
+                    "bron": "de grondslag"
+                  },
+                  "rechts": {
+                    "node": "BinderRef",
+                    "name": "x",
+                    "type": {
+                      "node": "Numeriek",
+                      "geheel": true,
+                      "decimalen": 0,
+                      "teken": "NIET_NEGATIEF",
+                      "eenheid": null
+                    },
+                    "bron": "het kindertal"
+                  },
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "de grondslag maal het kindertal"
+                },
+                "body": {
+                  "node": "BinderRef",
+                  "name": "bijdrage",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "de bijdrage"
+                },
+                "bron": "bijdrage is de grondslag maal het kindertal"
+              },
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "de opgetelde bijdrage plus de bijdrage"
+            },
+            "bron": "de kinddelen opgeteld"
+          },
+          "init": {
+            "node": "Literal",
+            "waarde": "0.00",
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "0.00"
+          },
+          "bron": "de kindertallen gevouwen tot het lettotaal"
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

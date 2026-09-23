@@ -1,203 +1,199 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Baken": {
-      "node": "Objecttype",
-      "naam": "Baken",
-      "attributen": {
-        "peildatum": {
-          "node": "DatumInDagen"
-        },
-        "termijn": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "nevelsdagen",
-            "stelsel": null,
-            "canoniek": "nevelsdagen",
-            "factorNaarCanoniek": 1,
-            "noemer": null
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Baken",
+        "animate": true,
+        "plural": "Bakens",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "peildatum",
+            "datatype": {
+              "node": "DatumInDagen"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "termijn",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "nevelsdagen",
+                "stelsel": null,
+                "canoniek": "nevelsdagen",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vervaldatum",
+            "datatype": {
+              "node": "DatumInDagen"
+            }
           }
-        },
-        "vervaldatum": {
-          "node": "DatumInDagen"
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Bakens"
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [
+      "nevelsdag"
+    ],
+    "dagsoortPerEenheid": {
+      "nevelsdag": "nevelsdag",
+      "nevelsdagen": "nevelsdag"
     }
   },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [
-    "nevelsdag"
-  ],
-  "dagsoortPerEenheid": {
-    "nevelsdag": "nevelsdag",
-    "nevelsdagen": "nevelsdag"
-  },
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "Dagsoortdefinitie nevelsdag",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "vervaldatum van een baken",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "vervaldatum van een baken",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "vervaldatum",
-        "objecttype": "Baken",
-        "onderwerpBron": "een Baken",
-        "navigatieRol": null,
-        "type": {
-          "node": "DatumInDagen"
-        },
-        "bron": "De vervaldatum van een Baken",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Binair",
-        "op": "PLUS",
-        "links": {
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "vervaldatum van een baken",
+        "soort": "BEREKENING",
+        "doel": {
           "node": "AttribuutRef",
-          "attribuut": "peildatum",
+          "attribuut": "vervaldatum",
           "objecttype": "Baken",
-          "onderwerpBron": "zijn",
+          "onderwerpBron": "een Baken",
           "navigatieRol": null,
           "type": {
             "node": "DatumInDagen"
           },
-          "bron": "zijn peildatum",
+          "bron": "De vervaldatum van een Baken",
           "set": false,
           "navigatiePad": []
         },
-        "rechts": {
-          "node": "AttribuutRef",
-          "attribuut": "termijn",
-          "objecttype": "Baken",
-          "onderwerpBron": "zijn",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "nevelsdagen",
-              "stelsel": null,
-              "canoniek": "nevelsdagen",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
+        "waarde": {
+          "node": "Binair",
+          "op": "PLUS",
+          "links": {
+            "node": "AttribuutRef",
+            "attribuut": "peildatum",
+            "objecttype": "Baken",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "DatumInDagen"
+            },
+            "bron": "zijn peildatum",
+            "set": false,
+            "navigatiePad": []
           },
-          "bron": "zijn termijn",
-          "set": false,
-          "navigatiePad": []
+          "rechts": {
+            "node": "AttribuutRef",
+            "attribuut": "termijn",
+            "objecttype": "Baken",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "nevelsdagen",
+                "stelsel": null,
+                "canoniek": "nevelsdagen",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            },
+            "bron": "zijn termijn",
+            "set": false,
+            "navigatiePad": []
+          },
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "zijn peildatum plus zijn termijn"
         },
-        "type": {
-          "node": "DatumInDagen"
-        },
-        "bron": "zijn peildatum plus zijn termijn"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [
-    {
-      "node": "ResolvedDagsoort",
-      "naam": "nevelsdag",
-      "voorwaarde": {
-        "node": "Vergelijking",
-        "op": "GELIJK",
-        "links": {
-          "node": "Functie",
-          "kind": "MAAND_UIT",
-          "argumenten": [
-            {
-              "node": "Constante",
-              "naam": "de dag",
-              "type": {
-                "node": "DatumInDagen"
-              },
-              "bron": "de dag"
-            }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
+    ],
+    "resolvedDagsoorten": [
+      {
+        "node": "ResolvedDagsoort",
+        "naam": "nevelsdag",
+        "voorwaarde": {
+          "node": "Vergelijking",
+          "op": "GELIJK",
+          "links": {
+            "node": "Functie",
+            "kind": "MAAND_UIT",
+            "argumenten": [
+              {
+                "node": "Constante",
+                "naam": "de dag",
+                "type": {
+                  "node": "DatumInDagen"
+                },
+                "bron": "de dag"
+              }
+            ],
+            "elementObjecttype": null,
+            "leegwaarde": null,
+            "filter": null,
+            "dimensieSelectie": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            },
+            "bron": "de maand uit de dag",
+            "granulariteit": null
           },
-          "bron": "de maand uit de dag",
-          "granulariteit": null
-        },
-        "rechts": {
-          "node": "Literal",
-          "waarde": "13",
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+          "rechts": {
+            "node": "Literal",
+            "waarde": "13",
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "13"
           },
-          "bron": "13"
+          "periode": null,
+          "bron": "de maand uit de dag gelijk is aan 13"
         },
-        "periode": null,
-        "bron": "de maand uit de dag gelijk is aan 13"
-      },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

@@ -1,61 +1,83 @@
 {
-  "functionDefs": [
-    {
-      "node": "FunctionDef",
-      "name": "Meldstand",
-      "parameters": [
-        {
-          "name": "melding",
-          "datatype": {
-            "node": "SumType",
-            "domain": "bergingsmelding",
-            "constructors": [
-              {
-                "name": "Gemeld",
-                "payload": {
-                  "node": "Enumeratie",
-                  "domein": "bergingsstatus",
-                  "waarden": [
-                    "Geborgen",
-                    "Vermist",
-                    "Verspoeld"
-                  ]
-                }
-              },
-              {
-                "name": "Ingetrokken",
-                "payload": null
-              }
-            ]
-          }
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "bergingsstatus",
+        "datatype": {
+          "node": "Enumeratie",
+          "waarden": [
+            "Geborgen",
+            "Vermist"
+          ]
         }
-      ],
-      "result": {
-        "node": "SumType",
-        "domain": "bergingsmelding",
-        "constructors": [
+      },
+      {
+        "node": "Domain",
+        "name": "bergingsmelding",
+        "datatype": {
+          "node": "SumType",
+          "constructors": [
+            {
+              "name": "Gemeld",
+              "payload": {
+                "node": "Enumeratie",
+                "domein": "bergingsstatus",
+                "waarden": [
+                  "Geborgen",
+                  "Vermist"
+                ]
+              }
+            },
+            {
+              "name": "Ingetrokken",
+              "payload": null
+            }
+          ]
+        }
+      }
+    ],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {},
+    "functionDefs": [
+      {
+        "node": "FunctionDef",
+        "name": "Meldstand",
+        "parameters": [
           {
-            "name": "Gemeld",
-            "payload": {
-              "node": "Enumeratie",
-              "domein": "bergingsstatus",
-              "waarden": [
-                "Geborgen",
-                "Vermist",
-                "Verspoeld"
+            "name": "melding",
+            "datatype": {
+              "node": "SumType",
+              "domain": "bergingsmelding",
+              "constructors": [
+                {
+                  "name": "Gemeld",
+                  "payload": {
+                    "node": "Enumeratie",
+                    "domein": "bergingsstatus",
+                    "waarden": [
+                      "Geborgen",
+                      "Vermist",
+                      "Verspoeld"
+                    ]
+                  }
+                },
+                {
+                  "name": "Ingetrokken",
+                  "payload": null
+                }
               ]
             }
-          },
-          {
-            "name": "Ingetrokken",
-            "payload": null
           }
-        ]
-      },
-      "body": {
-        "node": "BinderRef",
-        "name": "melding",
-        "type": {
+        ],
+        "result": {
           "node": "SumType",
           "domain": "bergingsmelding",
           "constructors": [
@@ -77,61 +99,48 @@
             }
           ]
         },
-        "bron": "melding"
-      },
-      "bron": "Meldstand"
-    }
-  ],
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {},
-  "domeinen": {
-    "bergingsstatus": {
-      "node": "Enumeratie",
-      "domein": "bergingsstatus",
-      "waarden": [
-        "Geborgen",
-        "Vermist"
-      ]
-    },
-    "bergingsmelding": {
-      "node": "SumType",
-      "domain": "bergingsmelding",
-      "constructors": [
-        {
-          "name": "Gemeld",
-          "payload": {
-            "node": "Enumeratie",
-            "domein": "bergingsstatus",
-            "waarden": [
-              "Geborgen",
-              "Vermist"
+        "body": {
+          "node": "BinderRef",
+          "name": "melding",
+          "type": {
+            "node": "SumType",
+            "domain": "bergingsmelding",
+            "constructors": [
+              {
+                "name": "Gemeld",
+                "payload": {
+                  "node": "Enumeratie",
+                  "domein": "bergingsstatus",
+                  "waarden": [
+                    "Geborgen",
+                    "Vermist",
+                    "Verspoeld"
+                  ]
+                }
+              },
+              {
+                "name": "Ingetrokken",
+                "payload": null
+              }
             ]
-          }
+          },
+          "bron": "melding"
         },
-        {
-          "name": "Ingetrokken",
-          "payload": null
-        }
-      ]
-    }
+        "bron": "Meldstand"
+      }
+    ]
   },
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "dagsoortPerEenheid": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "regels": [],
-  "resolvedRegels": [],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+  "rules": {
+    "resolvedRegels": [],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

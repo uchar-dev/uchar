@@ -1,214 +1,215 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Keurstuk": {
-      "node": "Objecttype",
-      "naam": "Keurstuk",
-      "attributen": {
-        "zegels": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "zegelafschrift": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "oordeel": {
-          "node": "Tekst"
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "gemerkt",
-        "gewogen"
-      ],
-      "kenmerkSoorten": {
-        "gemerkt": "BIJVOEGLIJK",
-        "gewogen": "BIJVOEGLIJK"
-      },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Keurstukken"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "oordeel bij tweevoudige keur",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "afschrift van de zegels",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "oordeel bij tweevoudige keur",
-      "soort": "GELIJKSTELLING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "oordeel",
-        "objecttype": "Keurstuk",
-        "onderwerpBron": "een Keurstuk",
-        "navigatieRol": null,
-        "type": {
-          "node": "Tekst"
-        },
-        "bron": "Het oordeel van een Keurstuk",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "tweevoudig",
-        "type": {
-          "node": "Tekst"
-        },
-        "bron": "'tweevoudig'"
-      },
-      "voorwaarde": {
-        "node": "Samengesteld",
-        "kwantor": "PRECIES",
-        "drempel": 2,
-        "onderdelen": [
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Keurstuk",
+        "animate": false,
+        "plural": "Keurstukken",
+        "attributes": [
           {
-            "node": "Kenmerk",
-            "kenmerk": "gemerkt",
-            "navigatie": null,
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "het Keurstuk gemerkt is"
+            "node": "Attribute",
+            "name": "zegels",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
           },
           {
-            "node": "Kenmerk",
-            "kenmerk": "gewogen",
-            "navigatie": null,
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "het Keurstuk gewogen is"
+            "node": "Attribute",
+            "name": "zegelafschrift",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
           },
           {
-            "node": "Vergelijking",
-            "op": "GROTER_OF_GELIJK",
-            "links": {
-              "node": "AttribuutRef",
-              "attribuut": "zegels",
-              "objecttype": "Keurstuk",
-              "onderwerpBron": "de zegels",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de zegels van het Keurstuk",
-              "set": false,
-              "navigatiePad": []
-            },
-            "rechts": {
-              "node": "Literal",
-              "waarde": "2",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "2"
-            },
-            "periode": null,
-            "bron": "zijn zegels groter of gelijk zijn aan 2"
+            "node": "Attribute",
+            "name": "oordeel",
+            "datatype": {
+              "node": "Tekst"
+            }
           }
         ],
-        "bron": "precies twee van: gemerkt, gewogen, zegels vanaf 2"
-      },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "gemerkt",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "gewogen",
+            "kind": "BIJVOEGLIJK"
+          }
+        ]
       }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "afschrift van de zegels",
-      "soort": "GELIJKSTELLING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "zegelafschrift",
-        "objecttype": "Keurstuk",
-        "onderwerpBron": "een Keurstuk",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "oordeel bij tweevoudige keur",
+        "soort": "GELIJKSTELLING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "oordeel",
+          "objecttype": "Keurstuk",
+          "onderwerpBron": "een Keurstuk",
+          "navigatieRol": null,
+          "type": {
+            "node": "Tekst"
+          },
+          "bron": "Het oordeel van een Keurstuk",
+          "set": false,
+          "navigatiePad": []
         },
-        "bron": "Het zegelafschrift van een Keurstuk",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "AttribuutRef",
-        "attribuut": "zegels",
-        "objecttype": "Keurstuk",
-        "onderwerpBron": "de zegels",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
+        "waarde": {
+          "node": "Literal",
+          "waarde": "tweevoudig",
+          "type": {
+            "node": "Tekst"
+          },
+          "bron": "'tweevoudig'"
         },
-        "bron": "de zegels van het Keurstuk",
-        "set": false,
-        "navigatiePad": []
+        "voorwaarde": {
+          "node": "Samengesteld",
+          "kwantor": "PRECIES",
+          "drempel": 2,
+          "onderdelen": [
+            {
+              "node": "Kenmerk",
+              "kenmerk": "gemerkt",
+              "navigatie": null,
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "het Keurstuk gemerkt is"
+            },
+            {
+              "node": "Kenmerk",
+              "kenmerk": "gewogen",
+              "navigatie": null,
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "het Keurstuk gewogen is"
+            },
+            {
+              "node": "Vergelijking",
+              "op": "GROTER_OF_GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "zegels",
+                "objecttype": "Keurstuk",
+                "onderwerpBron": "de zegels",
+                "navigatieRol": null,
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "de zegels van het Keurstuk",
+                "set": false,
+                "navigatiePad": []
+              },
+              "rechts": {
+                "node": "Literal",
+                "waarde": "2",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "2"
+              },
+              "periode": null,
+              "bron": "zijn zegels groter of gelijk zijn aan 2"
+            }
+          ],
+          "bron": "precies twee van: gemerkt, gewogen, zegels vanaf 2"
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+      {
+        "node": "ResolvedRegel",
+        "naam": "afschrift van de zegels",
+        "soort": "GELIJKSTELLING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "zegelafschrift",
+          "objecttype": "Keurstuk",
+          "onderwerpBron": "een Keurstuk",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "Het zegelafschrift van een Keurstuk",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "AttribuutRef",
+          "attribuut": "zegels",
+          "objecttype": "Keurstuk",
+          "onderwerpBron": "de zegels",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de zegels van het Keurstuk",
+          "set": false,
+          "navigatiePad": []
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

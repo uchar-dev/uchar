@@ -1,540 +1,247 @@
 {
-  "functionDefs": [
-    {
-      "node": "FunctionDef",
-      "name": "Vangstheffing",
-      "parameters": [
-        {
-          "name": "vangst",
-          "datatype": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          }
-        },
-        {
-          "name": "kinderen",
-          "datatype": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          }
-        }
-      ],
-      "result": {
-        "node": "Numeriek",
-        "geheel": false,
-        "decimalen": 2,
-        "teken": "ONBEPAALD",
-        "eenheid": null
-      },
-      "body": {
-        "node": "IfThenElse",
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "condition": {
-          "node": "Vergelijking",
-          "op": "GROTER_OF_GELIJK",
-          "links": {
-            "node": "BinderRef",
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vangstheffing",
+        "animate": true,
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vangst",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
             "name": "kinderen",
-            "type": {
+            "datatype": {
               "node": "Numeriek",
               "geheel": true,
               "decimalen": 0,
               "teken": "ONBEPAALD",
               "eenheid": null
-            },
-            "bron": "kinderen"
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "2",
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "2"
-          },
-          "periode": null,
-          "bron": null
-        },
-        "then": {
-          "node": "Afgerond",
-          "basis": {
-            "node": "Binair",
-            "op": "MAAL",
-            "links": {
-              "node": "BinderRef",
-              "name": "vangst",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "vangst"
-            },
-            "rechts": {
-              "node": "Literal",
-              "waarde": "0.1500",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 4,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "0.1500"
-            },
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": null
-          },
-          "modus": "REKENKUNDIG",
-          "decimalen": 2,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": null
-        },
-        "else": {
-          "node": "Afgerond",
-          "basis": {
-            "node": "Binair",
-            "op": "MAAL",
-            "links": {
-              "node": "BinderRef",
-              "name": "vangst",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "vangst"
-            },
-            "rechts": {
-              "node": "Literal",
-              "waarde": "0.2000",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 4,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "0.2000"
-            },
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": null
-          },
-          "modus": "REKENKUNDIG",
-          "decimalen": 2,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": null
-        },
-        "bron": null
-      },
-      "bron": "Vangstheffing"
-    },
-    {
-      "node": "FunctionDef",
-      "name": "JutterAandeel aftrek",
-      "parameters": [
-        {
-          "name": "jutter",
-          "datatype": {
-            "node": "StructType",
-            "domain": "Jutter",
-            "fields": [
-              {
-                "name": "vangst",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                }
-              },
-              {
-                "name": "kinderen",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                }
-              }
-            ]
-          }
-        }
-      ],
-      "result": {
-        "node": "Numeriek",
-        "geheel": false,
-        "decimalen": 2,
-        "teken": "ONBEPAALD",
-        "eenheid": null
-      },
-      "body": {
-        "node": "Invoke",
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "function": "Vangstheffing",
-        "arguments": [
-          {
-            "node": "FieldAccess",
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "base": {
-              "node": "BinderRef",
-              "name": "jutter",
-              "type": {
-                "node": "StructType",
-                "domain": "Jutter",
-                "fields": [
-                  {
-                    "name": "vangst",
-                    "datatype": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    }
-                  },
-                  {
-                    "name": "kinderen",
-                    "datatype": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    }
-                  }
-                ]
-              },
-              "bron": "jutter"
-            },
-            "field": "vangst",
-            "bron": null
+            }
           },
           {
-            "node": "FieldAccess",
-            "type": {
+            "node": "Attribute",
+            "name": "bedrag",
+            "datatype": {
               "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
+              "geheel": false,
+              "decimalen": 2,
               "teken": "ONBEPAALD",
               "eenheid": null
-            },
-            "base": {
-              "node": "BinderRef",
-              "name": "jutter",
-              "type": {
-                "node": "StructType",
-                "domain": "Jutter",
-                "fields": [
-                  {
-                    "name": "vangst",
-                    "datatype": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    }
-                  },
-                  {
-                    "name": "kinderen",
-                    "datatype": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    }
-                  }
-                ]
-              },
-              "bron": "jutter"
-            },
-            "field": "kinderen",
-            "bron": null
+            }
           }
         ],
-        "bron": "Vangstheffing"
+        "characteristics": []
       },
-      "bron": "JutterAandeel aftrek"
-    },
-    {
-      "node": "FunctionDef",
-      "name": "JutterAandeel kamerbedrag",
-      "parameters": [
-        {
-          "name": "jutter",
-          "datatype": {
-            "node": "StructType",
-            "domain": "Jutter",
-            "fields": [
-              {
-                "name": "vangst",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+      {
+        "node": "ObjectType",
+        "name": "JutterAandeel",
+        "animate": true,
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "jutter",
+            "datatype": {
+              "node": "StructType",
+              "domain": "Jutter",
+              "fields": [
+                {
+                  "name": "vangst",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  }
+                },
+                {
+                  "name": "kinderen",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  }
                 }
-              },
-              {
-                "name": "kinderen",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                }
-              }
-            ]
-          }
-        }
-      ],
-      "result": {
-        "node": "Numeriek",
-        "geheel": false,
-        "decimalen": 2,
-        "teken": "ONBEPAALD",
-        "eenheid": null
-      },
-      "body": {
-        "node": "Afgerond",
-        "basis": {
-          "node": "Binair",
-          "op": "MAAL",
-          "links": {
-            "node": "Literal",
-            "waarde": "1000.00",
-            "type": {
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "kamerbedrag",
+            "datatype": {
               "node": "Numeriek",
               "geheel": false,
               "decimalen": 2,
               "teken": "ONBEPAALD",
               "eenheid": null
-            },
-            "bron": "1000.00"
+            }
           },
-          "rechts": {
-            "node": "Binair",
-            "op": "PLUS",
-            "links": {
-              "node": "Literal",
-              "waarde": "1.0000",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 4,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "1.0000"
-            },
-            "rechts": {
-              "node": "Binair",
-              "op": "GEDEELD_DOOR",
-              "links": {
-                "node": "FieldAccess",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "base": {
-                  "node": "BinderRef",
-                  "name": "jutter",
-                  "type": {
-                    "node": "StructType",
-                    "domain": "Jutter",
-                    "fields": [
-                      {
-                        "name": "vangst",
-                        "datatype": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
-                        }
-                      },
-                      {
-                        "name": "kinderen",
-                        "datatype": {
-                          "node": "Numeriek",
-                          "geheel": true,
-                          "decimalen": 0,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
-                        }
-                      }
-                    ]
-                  },
-                  "bron": "jutter"
-                },
-                "field": "kinderen",
-                "bron": null
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "4.0000",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 4,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "4.0000"
-              },
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 4,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": null
-            },
-            "type": {
+          {
+            "node": "Attribute",
+            "name": "aftrek",
+            "datatype": {
               "node": "Numeriek",
               "geheel": false,
-              "decimalen": 4,
+              "decimalen": 2,
               "teken": "ONBEPAALD",
               "eenheid": null
-            },
-            "bron": null
-          },
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": null
-        },
-        "modus": "REKENKUNDIG",
-        "decimalen": 2,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": null
+            }
+          }
+        ],
+        "characteristics": []
       },
-      "bron": "JutterAandeel kamerbedrag"
-    }
-  ],
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Vangstheffing": {
-      "node": "Objecttype",
-      "naam": "Vangstheffing",
-      "attributen": {
-        "vangst": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "kinderen": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bedrag": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
+      {
+        "node": "ObjectType",
+        "name": "Kamerheffing",
+        "animate": true,
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "jutters",
+            "datatype": {
+              "node": "ListType",
+              "element": {
+                "node": "StructType",
+                "domain": "Jutter",
+                "fields": [
+                  {
+                    "name": "vangst",
+                    "datatype": {
+                      "node": "Numeriek",
+                      "geheel": false,
+                      "decimalen": 2,
+                      "teken": "ONBEPAALD",
+                      "eenheid": null
+                    }
+                  },
+                  {
+                    "name": "kinderen",
+                    "datatype": {
+                      "node": "Numeriek",
+                      "geheel": true,
+                      "decimalen": 0,
+                      "teken": "ONBEPAALD",
+                      "eenheid": null
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "totale_aftrek basis",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "totale_aftrek begrensd",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "heffing basis",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "heffing na_aftrek",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "JutterAandeel_heffing",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "heffing_houder",
+            "objecttypeNaam": "JutterAandeel",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "heffing",
+            "objecttypeNaam": "Vangstheffing",
+            "meervoud": null,
+            "meervoudig": false
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "Optional",
+        "datatype": {
+          "node": "SumType",
+          "constructors": [
+            {
+              "name": "Absent",
+              "payload": null
+            },
+            {
+              "name": "Present",
+              "payload": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              }
+            }
+          ]
         }
       },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": null
-    },
-    "JutterAandeel": {
-      "node": "Objecttype",
-      "naam": "JutterAandeel",
-      "attributen": {
-        "jutter": {
+      {
+        "node": "Domain",
+        "name": "Jutter",
+        "datatype": {
           "node": "StructType",
-          "domain": "Jutter",
           "fields": [
             {
               "name": "vangst",
@@ -557,1783 +264,62 @@
               }
             }
           ]
-        },
-        "kamerbedrag": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "aftrek": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
         }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": null
-    },
-    "Kamerheffing": {
-      "node": "Objecttype",
-      "naam": "Kamerheffing",
-      "attributen": {
-        "jutters": {
-          "node": "ListType",
-          "element": {
-            "node": "StructType",
-            "domain": "Jutter",
-            "fields": [
-              {
-                "name": "vangst",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                }
-              },
-              {
-                "name": "kinderen",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                }
-              }
-            ]
-          }
-        },
-        "totale_aftrek basis": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "totale_aftrek begrensd": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "heffing basis": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "heffing na_aftrek": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": null
-    }
-  },
-  "domeinen": {
-    "Optional": {
-      "node": "SumType",
-      "domain": "Optional",
-      "constructors": [
-        {
-          "name": "Absent",
-          "payload": null
-        },
-        {
-          "name": "Present",
-          "payload": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          }
-        }
-      ]
-    },
-    "Jutter": {
-      "node": "StructType",
-      "domain": "Jutter",
-      "fields": [
-        {
-          "name": "vangst",
-          "datatype": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          }
-        },
-        {
-          "name": "kinderen",
-          "datatype": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          }
-        }
-      ]
-    }
-  },
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {
-    "JutterAandeel_heffing": {
-      "node": "Feittype",
-      "naam": "JutterAandeel_heffing",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "heffing_houder",
-          "objecttypeNaam": "JutterAandeel",
-          "meervoud": null,
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "heffing",
-          "objecttypeNaam": "Vangstheffing",
-          "meervoud": null,
-          "meervoudig": false
-        }
-      ]
-    }
-  },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "berekening kamerbedrag",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "kamerbedrag",
-        "objecttype": "JutterAandeel",
-        "onderwerpBron": "de kamerbedrag",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "de kamerbedrag",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Afgerond",
-        "basis": {
-          "node": "Binair",
-          "op": "MAAL",
-          "links": {
-            "node": "Literal",
-            "waarde": "1000.00",
-            "type": {
+      }
+    ],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {},
+    "functionDefs": [
+      {
+        "node": "FunctionDef",
+        "name": "Vangstheffing",
+        "parameters": [
+          {
+            "name": "vangst",
+            "datatype": {
               "node": "Numeriek",
               "geheel": false,
               "decimalen": 2,
               "teken": "ONBEPAALD",
               "eenheid": null
-            },
-            "bron": "1000.00"
-          },
-          "rechts": {
-            "node": "Binair",
-            "op": "PLUS",
-            "links": {
-              "node": "Literal",
-              "waarde": "1.0000",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 4,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "1.0000"
-            },
-            "rechts": {
-              "node": "Binair",
-              "op": "GEDEELD_DOOR",
-              "links": {
-                "node": "FieldAccess",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "base": {
-                  "node": "AttribuutRef",
-                  "attribuut": "jutter",
-                  "objecttype": "JutterAandeel",
-                  "onderwerpBron": "de jutter",
-                  "navigatieRol": null,
-                  "type": {
-                    "node": "StructType",
-                    "domain": "Jutter",
-                    "fields": [
-                      {
-                        "name": "vangst",
-                        "datatype": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
-                        }
-                      },
-                      {
-                        "name": "kinderen",
-                        "datatype": {
-                          "node": "Numeriek",
-                          "geheel": true,
-                          "decimalen": 0,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
-                        }
-                      }
-                    ]
-                  },
-                  "bron": "de jutter",
-                  "set": false,
-                  "navigatiePad": []
-                },
-                "field": "kinderen",
-                "bron": null
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "4.0000",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 4,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "4.0000"
-              },
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 4,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": null
-            },
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 4,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": null
-          },
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": null
-        },
-        "modus": "REKENKUNDIG",
-        "decimalen": 2,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": null
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "berekening aftrek",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "aftrek",
-        "objecttype": "JutterAandeel",
-        "onderwerpBron": "de aftrek",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "de aftrek",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "AttribuutRef",
-        "attribuut": "bedrag",
-        "objecttype": "Vangstheffing",
-        "onderwerpBron": "de bedrag van de heffing",
-        "navigatieRol": "heffing",
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "de bedrag van de heffing",
-        "set": false,
-        "navigatiePad": [],
-        "navigatieBindingen": [
-          {
-            "node": "RolBinding",
-            "feittype": "JutterAandeel_heffing",
-            "rol": "heffing"
-          }
-        ]
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "berekening totale_aftrek basis",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "totale_aftrek basis",
-        "objecttype": "Kamerheffing",
-        "onderwerpBron": "de totale_aftrek basis",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "de totale_aftrek basis",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Match",
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "scrutinee": {
-          "node": "Fold",
-          "type": {
-            "node": "SumType",
-            "domain": "Optional",
-            "constructors": [
-              {
-                "name": "Absent",
-                "payload": null
-              },
-              {
-                "name": "Present",
-                "payload": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                }
-              }
-            ]
-          },
-          "list": {
-            "node": "MapList",
-            "type": {
-              "node": "ListType",
-              "element": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              }
-            },
-            "list": {
-              "node": "AttribuutRef",
-              "attribuut": "jutters",
-              "objecttype": "Kamerheffing",
-              "onderwerpBron": "de jutters",
-              "navigatieRol": null,
-              "type": {
-                "node": "ListType",
-                "element": {
-                  "node": "StructType",
-                  "domain": "Jutter",
-                  "fields": [
-                    {
-                      "name": "vangst",
-                      "datatype": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
-                      }
-                    },
-                    {
-                      "name": "kinderen",
-                      "datatype": {
-                        "node": "Numeriek",
-                        "geheel": true,
-                        "decimalen": 0,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
-                      }
-                    }
-                  ]
-                }
-              },
-              "bron": "de jutters",
-              "set": false,
-              "navigatiePad": []
-            },
-            "function": {
-              "node": "Lambda",
-              "parameters": [
-                {
-                  "name": "jutter",
-                  "datatype": {
-                    "node": "StructType",
-                    "domain": "Jutter",
-                    "fields": [
-                      {
-                        "name": "vangst",
-                        "datatype": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
-                        }
-                      },
-                      {
-                        "name": "kinderen",
-                        "datatype": {
-                          "node": "Numeriek",
-                          "geheel": true,
-                          "decimalen": 0,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
-                        }
-                      }
-                    ]
-                  }
-                }
-              ],
-              "body": {
-                "node": "Invoke",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "function": "JutterAandeel aftrek",
-                "arguments": [
-                  {
-                    "node": "BinderRef",
-                    "name": "jutter",
-                    "type": {
-                      "node": "StructType",
-                      "domain": "Jutter",
-                      "fields": [
-                        {
-                          "name": "vangst",
-                          "datatype": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
-                          }
-                        },
-                        {
-                          "name": "kinderen",
-                          "datatype": {
-                            "node": "Numeriek",
-                            "geheel": true,
-                            "decimalen": 0,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
-                          }
-                        }
-                      ]
-                    },
-                    "bron": "jutter"
-                  }
-                ],
-                "bron": "JutterAandeel aftrek"
-              },
-              "bron": "jutter"
-            },
-            "bron": null
-          },
-          "function": {
-            "node": "Lambda",
-            "parameters": [
-              {
-                "name": "geaccumuleerde optie",
-                "datatype": {
-                  "node": "SumType",
-                  "domain": "Optional",
-                  "constructors": [
-                    {
-                      "name": "Absent",
-                      "payload": null
-                    },
-                    {
-                      "name": "Present",
-                      "payload": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
-                      }
-                    }
-                  ]
-                }
-              },
-              {
-                "name": "sum2",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                }
-              }
-            ],
-            "body": {
-              "node": "Match",
-              "type": {
-                "node": "SumType",
-                "domain": "Optional",
-                "constructors": [
-                  {
-                    "name": "Absent",
-                    "payload": null
-                  },
-                  {
-                    "name": "Present",
-                    "payload": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    }
-                  }
-                ]
-              },
-              "scrutinee": {
-                "node": "BinderRef",
-                "name": "geaccumuleerde optie",
-                "type": {
-                  "node": "SumType",
-                  "domain": "Optional",
-                  "constructors": [
-                    {
-                      "name": "Absent",
-                      "payload": null
-                    },
-                    {
-                      "name": "Present",
-                      "payload": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
-                      }
-                    }
-                  ]
-                },
-                "bron": "geaccumuleerde optie"
-              },
-              "arms": [
-                {
-                  "constructor": "Absent",
-                  "binder": null,
-                  "body": {
-                    "node": "Construct",
-                    "type": {
-                      "node": "SumType",
-                      "domain": "Optional",
-                      "constructors": [
-                        {
-                          "name": "Absent",
-                          "payload": null
-                        },
-                        {
-                          "name": "Present",
-                          "payload": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
-                          }
-                        }
-                      ]
-                    },
-                    "constructor": "Present",
-                    "argument": {
-                      "node": "BinderRef",
-                      "name": "sum2",
-                      "type": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
-                      },
-                      "bron": "sum2"
-                    },
-                    "bron": "Present"
-                  }
-                },
-                {
-                  "constructor": "Present",
-                  "binder": "sum1",
-                  "body": {
-                    "node": "Construct",
-                    "type": {
-                      "node": "SumType",
-                      "domain": "Optional",
-                      "constructors": [
-                        {
-                          "name": "Absent",
-                          "payload": null
-                        },
-                        {
-                          "name": "Present",
-                          "payload": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
-                          }
-                        }
-                      ]
-                    },
-                    "constructor": "Present",
-                    "argument": {
-                      "node": "Binair",
-                      "op": "PLUS",
-                      "links": {
-                        "node": "BinderRef",
-                        "name": "sum1",
-                        "type": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
-                        },
-                        "bron": "sum1"
-                      },
-                      "rechts": {
-                        "node": "BinderRef",
-                        "name": "sum2",
-                        "type": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
-                        },
-                        "bron": "sum2"
-                      },
-                      "type": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
-                      },
-                      "bron": null
-                    },
-                    "bron": "Present"
-                  }
-                }
-              ],
-              "bron": "de volgende vouwstap"
-            },
-            "bron": "de vouwstap"
-          },
-          "init": {
-            "node": "Construct",
-            "type": {
-              "node": "SumType",
-              "domain": "Optional",
-              "constructors": [
-                {
-                  "name": "Absent",
-                  "payload": null
-                },
-                {
-                  "name": "Present",
-                  "payload": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  }
-                }
-              ]
-            },
-            "constructor": "Absent",
-            "argument": null,
-            "bron": "Absent"
-          },
-          "bron": "gevouwen tot een optionele waarde"
-        },
-        "arms": [
-          {
-            "constructor": "Absent",
-            "binder": null,
-            "body": {
-              "node": "Literal",
-              "waarde": "0.00",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "0.00"
             }
           },
           {
-            "constructor": "Present",
-            "binder": "x",
-            "body": {
-              "node": "BinderRef",
-              "name": "x",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "x"
-            }
-          }
-        ],
-        "bron": "de gevouwen waarde uitgepakt"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "berekening totale_aftrek begrensd",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "totale_aftrek begrensd",
-        "objecttype": "Kamerheffing",
-        "onderwerpBron": "de totale_aftrek begrensd",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "de totale_aftrek begrensd",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Let",
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "binder": "cap",
-        "value": {
-          "node": "Literal",
-          "waarde": "500.00",
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "500.00"
-        },
-        "body": {
-          "node": "Let",
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "binder": "raw",
-          "value": {
-            "node": "AttribuutRef",
-            "attribuut": "totale_aftrek basis",
-            "objecttype": "Kamerheffing",
-            "onderwerpBron": "de totale_aftrek basis",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de totale_aftrek basis",
-            "set": false,
-            "navigatiePad": []
-          },
-          "body": {
-            "node": "IfThenElse",
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "condition": {
-              "node": "Vergelijking",
-              "op": "GROTER",
-              "links": {
-                "node": "BinderRef",
-                "name": "raw",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "raw"
-              },
-              "rechts": {
-                "node": "BinderRef",
-                "name": "cap",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "cap"
-              },
-              "periode": null,
-              "bron": null
-            },
-            "then": {
-              "node": "BinderRef",
-              "name": "cap",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "cap"
-            },
-            "else": {
-              "node": "BinderRef",
-              "name": "raw",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "raw"
-            },
-            "bron": null
-          },
-          "bron": "raw"
-        },
-        "bron": "cap"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "berekening heffing basis",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "heffing basis",
-        "objecttype": "Kamerheffing",
-        "onderwerpBron": "de heffing basis",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "de heffing basis",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Match",
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "scrutinee": {
-          "node": "Fold",
-          "type": {
-            "node": "SumType",
-            "domain": "Optional",
-            "constructors": [
-              {
-                "name": "Absent",
-                "payload": null
-              },
-              {
-                "name": "Present",
-                "payload": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                }
-              }
-            ]
-          },
-          "list": {
-            "node": "MapList",
-            "type": {
-              "node": "ListType",
-              "element": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              }
-            },
-            "list": {
-              "node": "AttribuutRef",
-              "attribuut": "jutters",
-              "objecttype": "Kamerheffing",
-              "onderwerpBron": "de jutters",
-              "navigatieRol": null,
-              "type": {
-                "node": "ListType",
-                "element": {
-                  "node": "StructType",
-                  "domain": "Jutter",
-                  "fields": [
-                    {
-                      "name": "vangst",
-                      "datatype": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
-                      }
-                    },
-                    {
-                      "name": "kinderen",
-                      "datatype": {
-                        "node": "Numeriek",
-                        "geheel": true,
-                        "decimalen": 0,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
-                      }
-                    }
-                  ]
-                }
-              },
-              "bron": "de jutters",
-              "set": false,
-              "navigatiePad": []
-            },
-            "function": {
-              "node": "Lambda",
-              "parameters": [
-                {
-                  "name": "jutter",
-                  "datatype": {
-                    "node": "StructType",
-                    "domain": "Jutter",
-                    "fields": [
-                      {
-                        "name": "vangst",
-                        "datatype": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
-                        }
-                      },
-                      {
-                        "name": "kinderen",
-                        "datatype": {
-                          "node": "Numeriek",
-                          "geheel": true,
-                          "decimalen": 0,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
-                        }
-                      }
-                    ]
-                  }
-                }
-              ],
-              "body": {
-                "node": "Invoke",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "function": "JutterAandeel kamerbedrag",
-                "arguments": [
-                  {
-                    "node": "BinderRef",
-                    "name": "jutter",
-                    "type": {
-                      "node": "StructType",
-                      "domain": "Jutter",
-                      "fields": [
-                        {
-                          "name": "vangst",
-                          "datatype": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
-                          }
-                        },
-                        {
-                          "name": "kinderen",
-                          "datatype": {
-                            "node": "Numeriek",
-                            "geheel": true,
-                            "decimalen": 0,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
-                          }
-                        }
-                      ]
-                    },
-                    "bron": "jutter"
-                  }
-                ],
-                "bron": "JutterAandeel kamerbedrag"
-              },
-              "bron": "jutter"
-            },
-            "bron": null
-          },
-          "function": {
-            "node": "Lambda",
-            "parameters": [
-              {
-                "name": "geaccumuleerde optie",
-                "datatype": {
-                  "node": "SumType",
-                  "domain": "Optional",
-                  "constructors": [
-                    {
-                      "name": "Absent",
-                      "payload": null
-                    },
-                    {
-                      "name": "Present",
-                      "payload": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
-                      }
-                    }
-                  ]
-                }
-              },
-              {
-                "name": "sum2",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                }
-              }
-            ],
-            "body": {
-              "node": "Match",
-              "type": {
-                "node": "SumType",
-                "domain": "Optional",
-                "constructors": [
-                  {
-                    "name": "Absent",
-                    "payload": null
-                  },
-                  {
-                    "name": "Present",
-                    "payload": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    }
-                  }
-                ]
-              },
-              "scrutinee": {
-                "node": "BinderRef",
-                "name": "geaccumuleerde optie",
-                "type": {
-                  "node": "SumType",
-                  "domain": "Optional",
-                  "constructors": [
-                    {
-                      "name": "Absent",
-                      "payload": null
-                    },
-                    {
-                      "name": "Present",
-                      "payload": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
-                      }
-                    }
-                  ]
-                },
-                "bron": "geaccumuleerde optie"
-              },
-              "arms": [
-                {
-                  "constructor": "Absent",
-                  "binder": null,
-                  "body": {
-                    "node": "Construct",
-                    "type": {
-                      "node": "SumType",
-                      "domain": "Optional",
-                      "constructors": [
-                        {
-                          "name": "Absent",
-                          "payload": null
-                        },
-                        {
-                          "name": "Present",
-                          "payload": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
-                          }
-                        }
-                      ]
-                    },
-                    "constructor": "Present",
-                    "argument": {
-                      "node": "BinderRef",
-                      "name": "sum2",
-                      "type": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
-                      },
-                      "bron": "sum2"
-                    },
-                    "bron": "Present"
-                  }
-                },
-                {
-                  "constructor": "Present",
-                  "binder": "sum1",
-                  "body": {
-                    "node": "Construct",
-                    "type": {
-                      "node": "SumType",
-                      "domain": "Optional",
-                      "constructors": [
-                        {
-                          "name": "Absent",
-                          "payload": null
-                        },
-                        {
-                          "name": "Present",
-                          "payload": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
-                          }
-                        }
-                      ]
-                    },
-                    "constructor": "Present",
-                    "argument": {
-                      "node": "Binair",
-                      "op": "PLUS",
-                      "links": {
-                        "node": "BinderRef",
-                        "name": "sum1",
-                        "type": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
-                        },
-                        "bron": "sum1"
-                      },
-                      "rechts": {
-                        "node": "BinderRef",
-                        "name": "sum2",
-                        "type": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
-                        },
-                        "bron": "sum2"
-                      },
-                      "type": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
-                      },
-                      "bron": null
-                    },
-                    "bron": "Present"
-                  }
-                }
-              ],
-              "bron": "de volgende vouwstap"
-            },
-            "bron": "de vouwstap"
-          },
-          "init": {
-            "node": "Construct",
-            "type": {
-              "node": "SumType",
-              "domain": "Optional",
-              "constructors": [
-                {
-                  "name": "Absent",
-                  "payload": null
-                },
-                {
-                  "name": "Present",
-                  "payload": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  }
-                }
-              ]
-            },
-            "constructor": "Absent",
-            "argument": null,
-            "bron": "Absent"
-          },
-          "bron": "gevouwen tot een optionele waarde"
-        },
-        "arms": [
-          {
-            "constructor": "Absent",
-            "binder": null,
-            "body": {
-              "node": "Literal",
-              "waarde": "0.00",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "0.00"
-            }
-          },
-          {
-            "constructor": "Present",
-            "binder": "x",
-            "body": {
-              "node": "BinderRef",
-              "name": "x",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "x"
-            }
-          }
-        ],
-        "bron": "de gevouwen waarde uitgepakt"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "berekening heffing na_aftrek",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "heffing na_aftrek",
-        "objecttype": "Kamerheffing",
-        "onderwerpBron": "de heffing na_aftrek",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "de heffing na_aftrek",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Let",
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "binder": "basis",
-        "value": {
-          "node": "AttribuutRef",
-          "attribuut": "heffing basis",
-          "objecttype": "Kamerheffing",
-          "onderwerpBron": "de heffing basis",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de heffing basis",
-          "set": false,
-          "navigatiePad": []
-        },
-        "body": {
-          "node": "Let",
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "binder": "afgetrokken",
-          "value": {
-            "node": "AttribuutRef",
-            "attribuut": "totale_aftrek begrensd",
-            "objecttype": "Kamerheffing",
-            "onderwerpBron": "de totale_aftrek begrensd",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de totale_aftrek begrensd",
-            "set": false,
-            "navigatiePad": []
-          },
-          "body": {
-            "node": "IfThenElse",
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "condition": {
-              "node": "Vergelijking",
-              "op": "GROTER",
-              "links": {
-                "node": "BinderRef",
-                "name": "afgetrokken",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "afgetrokken"
-              },
-              "rechts": {
-                "node": "BinderRef",
-                "name": "basis",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "basis"
-              },
-              "periode": null,
-              "bron": null
-            },
-            "then": {
-              "node": "Literal",
-              "waarde": "0.00",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "0.00"
-            },
-            "else": {
-              "node": "Binair",
-              "op": "VERMINDERD_MET",
-              "links": {
-                "node": "BinderRef",
-                "name": "basis",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "basis"
-              },
-              "rechts": {
-                "node": "BinderRef",
-                "name": "afgetrokken",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "afgetrokken"
-              },
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": null
-            },
-            "bron": null
-          },
-          "bron": "afgetrokken"
-        },
-        "bron": "basis"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [
-    {
-      "node": "ResolvedObjectCreatie",
-      "naam": "richt heffing op",
-      "nieuwType": "Vangstheffing",
-      "subject": "JutterAandeel",
-      "toekenningen": [
-        {
-          "node": "Toekenning",
-          "attribuut": "vangst",
-          "waarde": {
-            "node": "FieldAccess",
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "base": {
-              "node": "AttribuutRef",
-              "attribuut": "jutter",
-              "objecttype": "JutterAandeel",
-              "onderwerpBron": "de jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "StructType",
-                "domain": "Jutter",
-                "fields": [
-                  {
-                    "name": "vangst",
-                    "datatype": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    }
-                  },
-                  {
-                    "name": "kinderen",
-                    "datatype": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    }
-                  }
-                ]
-              },
-              "bron": "de jutter",
-              "set": false,
-              "navigatiePad": []
-            },
-            "field": "vangst",
-            "bron": null
-          },
-          "kenmerk": false
-        },
-        {
-          "node": "Toekenning",
-          "attribuut": "kinderen",
-          "waarde": {
-            "node": "FieldAccess",
-            "type": {
+            "name": "kinderen",
+            "datatype": {
               "node": "Numeriek",
               "geheel": true,
               "decimalen": 0,
               "teken": "ONBEPAALD",
               "eenheid": null
-            },
-            "base": {
-              "node": "AttribuutRef",
-              "attribuut": "jutter",
-              "objecttype": "JutterAandeel",
-              "onderwerpBron": "de jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "StructType",
-                "domain": "Jutter",
-                "fields": [
-                  {
-                    "name": "vangst",
-                    "datatype": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    }
-                  },
-                  {
-                    "name": "kinderen",
-                    "datatype": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    }
-                  }
-                ]
-              },
-              "bron": "de jutter",
-              "set": false,
-              "navigatiePad": []
-            },
-            "field": "kinderen",
-            "bron": null
+            }
+          }
+        ],
+        "result": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "body": {
+          "node": "IfThenElse",
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
           },
-          "kenmerk": false
-        }
-      ],
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      },
-      "verbindendeRol": {
-        "node": "RolBinding",
-        "feittype": "JutterAandeel_heffing",
-        "rol": "heffing"
-      }
-    }
-  ],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
-  "diagnostics": [],
-  "prioritizedDefaults": [
-    {
-      "node": "PrioritizedDefaults",
-      "naam": "bedrag",
-      "onderwerp": "Vangstheffing",
-      "kenmerk": null,
-      "attribuut": "bedrag",
-      "defaults": [
-        {
-          "node": "Default",
-          "besluit": null,
-          "voorwaarde": {
+          "condition": {
             "node": "Vergelijking",
             "op": "GROTER_OF_GELIJK",
             "links": {
-              "node": "AttribuutRef",
-              "attribuut": "kinderen",
-              "objecttype": "Vangstheffing",
-              "onderwerpBron": "de kinderen",
-              "navigatieRol": null,
+              "node": "BinderRef",
+              "name": "kinderen",
               "type": {
                 "node": "Numeriek",
                 "geheel": true,
@@ -2341,9 +327,7 @@
                 "teken": "ONBEPAALD",
                 "eenheid": null
               },
-              "bron": "de kinderen",
-              "set": false,
-              "navigatiePad": []
+              "bron": "kinderen"
             },
             "rechts": {
               "node": "Literal",
@@ -2360,17 +344,14 @@
             "periode": null,
             "bron": null
           },
-          "consequentie": {
+          "then": {
             "node": "Afgerond",
             "basis": {
               "node": "Binair",
               "op": "MAAL",
               "links": {
-                "node": "AttribuutRef",
-                "attribuut": "vangst",
-                "objecttype": "Vangstheffing",
-                "onderwerpBron": "de vangst",
-                "navigatieRol": null,
+                "node": "BinderRef",
+                "name": "vangst",
                 "type": {
                   "node": "Numeriek",
                   "geheel": false,
@@ -2378,9 +359,7 @@
                   "teken": "ONBEPAALD",
                   "eenheid": null
                 },
-                "bron": "de vangst",
-                "set": false,
-                "navigatiePad": []
+                "bron": "vangst"
               },
               "rechts": {
                 "node": "Literal",
@@ -2414,29 +393,14 @@
             },
             "bron": null
           },
-          "bron": "bedrag"
-        },
-        {
-          "node": "Default",
-          "besluit": null,
-          "voorwaarde": {
-            "node": "Samengesteld",
-            "kwantor": "ALLE",
-            "drempel": 0,
-            "onderdelen": [],
-            "bron": "altijd"
-          },
-          "consequentie": {
+          "else": {
             "node": "Afgerond",
             "basis": {
               "node": "Binair",
               "op": "MAAL",
               "links": {
-                "node": "AttribuutRef",
-                "attribuut": "vangst",
-                "objecttype": "Vangstheffing",
-                "onderwerpBron": "de vangst",
-                "navigatieRol": null,
+                "node": "BinderRef",
+                "name": "vangst",
                 "type": {
                   "node": "Numeriek",
                   "geheel": false,
@@ -2444,9 +408,7 @@
                   "teken": "ONBEPAALD",
                   "eenheid": null
                 },
-                "bron": "de vangst",
-                "set": false,
-                "navigatiePad": []
+                "bron": "vangst"
               },
               "rechts": {
                 "node": "Literal",
@@ -2480,15 +442,2079 @@
             },
             "bron": null
           },
-          "bron": "bedrag"
-        }
-      ],
-      "bron": "bedrag",
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+          "bron": null
+        },
+        "bron": "Vangstheffing"
+      },
+      {
+        "node": "FunctionDef",
+        "name": "JutterAandeel aftrek",
+        "parameters": [
+          {
+            "name": "jutter",
+            "datatype": {
+              "node": "StructType",
+              "domain": "Jutter",
+              "fields": [
+                {
+                  "name": "vangst",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  }
+                },
+                {
+                  "name": "kinderen",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "result": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "body": {
+          "node": "Invoke",
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "function": "Vangstheffing",
+          "arguments": [
+            {
+              "node": "FieldAccess",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "base": {
+                "node": "BinderRef",
+                "name": "jutter",
+                "type": {
+                  "node": "StructType",
+                  "domain": "Jutter",
+                  "fields": [
+                    {
+                      "name": "vangst",
+                      "datatype": {
+                        "node": "Numeriek",
+                        "geheel": false,
+                        "decimalen": 2,
+                        "teken": "ONBEPAALD",
+                        "eenheid": null
+                      }
+                    },
+                    {
+                      "name": "kinderen",
+                      "datatype": {
+                        "node": "Numeriek",
+                        "geheel": true,
+                        "decimalen": 0,
+                        "teken": "ONBEPAALD",
+                        "eenheid": null
+                      }
+                    }
+                  ]
+                },
+                "bron": "jutter"
+              },
+              "field": "vangst",
+              "bron": null
+            },
+            {
+              "node": "FieldAccess",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "base": {
+                "node": "BinderRef",
+                "name": "jutter",
+                "type": {
+                  "node": "StructType",
+                  "domain": "Jutter",
+                  "fields": [
+                    {
+                      "name": "vangst",
+                      "datatype": {
+                        "node": "Numeriek",
+                        "geheel": false,
+                        "decimalen": 2,
+                        "teken": "ONBEPAALD",
+                        "eenheid": null
+                      }
+                    },
+                    {
+                      "name": "kinderen",
+                      "datatype": {
+                        "node": "Numeriek",
+                        "geheel": true,
+                        "decimalen": 0,
+                        "teken": "ONBEPAALD",
+                        "eenheid": null
+                      }
+                    }
+                  ]
+                },
+                "bron": "jutter"
+              },
+              "field": "kinderen",
+              "bron": null
+            }
+          ],
+          "bron": "Vangstheffing"
+        },
+        "bron": "JutterAandeel aftrek"
+      },
+      {
+        "node": "FunctionDef",
+        "name": "JutterAandeel kamerbedrag",
+        "parameters": [
+          {
+            "name": "jutter",
+            "datatype": {
+              "node": "StructType",
+              "domain": "Jutter",
+              "fields": [
+                {
+                  "name": "vangst",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  }
+                },
+                {
+                  "name": "kinderen",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "result": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "body": {
+          "node": "Afgerond",
+          "basis": {
+            "node": "Binair",
+            "op": "MAAL",
+            "links": {
+              "node": "Literal",
+              "waarde": "1000.00",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "1000.00"
+            },
+            "rechts": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "Literal",
+                "waarde": "1.0000",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 4,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "1.0000"
+              },
+              "rechts": {
+                "node": "Binair",
+                "op": "GEDEELD_DOOR",
+                "links": {
+                  "node": "FieldAccess",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "base": {
+                    "node": "BinderRef",
+                    "name": "jutter",
+                    "type": {
+                      "node": "StructType",
+                      "domain": "Jutter",
+                      "fields": [
+                        {
+                          "name": "vangst",
+                          "datatype": {
+                            "node": "Numeriek",
+                            "geheel": false,
+                            "decimalen": 2,
+                            "teken": "ONBEPAALD",
+                            "eenheid": null
+                          }
+                        },
+                        {
+                          "name": "kinderen",
+                          "datatype": {
+                            "node": "Numeriek",
+                            "geheel": true,
+                            "decimalen": 0,
+                            "teken": "ONBEPAALD",
+                            "eenheid": null
+                          }
+                        }
+                      ]
+                    },
+                    "bron": "jutter"
+                  },
+                  "field": "kinderen",
+                  "bron": null
+                },
+                "rechts": {
+                  "node": "Literal",
+                  "waarde": "4.0000",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 4,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "4.0000"
+                },
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 4,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": null
+              },
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 4,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": null
+            },
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": null
+          },
+          "modus": "REKENKUNDIG",
+          "decimalen": 2,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": null
+        },
+        "bron": "JutterAandeel kamerbedrag"
       }
-    }
-  ]
+    ]
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "berekening kamerbedrag",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "kamerbedrag",
+          "objecttype": "JutterAandeel",
+          "onderwerpBron": "de kamerbedrag",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de kamerbedrag",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Afgerond",
+          "basis": {
+            "node": "Binair",
+            "op": "MAAL",
+            "links": {
+              "node": "Literal",
+              "waarde": "1000.00",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "1000.00"
+            },
+            "rechts": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "Literal",
+                "waarde": "1.0000",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 4,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "1.0000"
+              },
+              "rechts": {
+                "node": "Binair",
+                "op": "GEDEELD_DOOR",
+                "links": {
+                  "node": "FieldAccess",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "base": {
+                    "node": "AttribuutRef",
+                    "attribuut": "jutter",
+                    "objecttype": "JutterAandeel",
+                    "onderwerpBron": "de jutter",
+                    "navigatieRol": null,
+                    "type": {
+                      "node": "StructType",
+                      "domain": "Jutter",
+                      "fields": [
+                        {
+                          "name": "vangst",
+                          "datatype": {
+                            "node": "Numeriek",
+                            "geheel": false,
+                            "decimalen": 2,
+                            "teken": "ONBEPAALD",
+                            "eenheid": null
+                          }
+                        },
+                        {
+                          "name": "kinderen",
+                          "datatype": {
+                            "node": "Numeriek",
+                            "geheel": true,
+                            "decimalen": 0,
+                            "teken": "ONBEPAALD",
+                            "eenheid": null
+                          }
+                        }
+                      ]
+                    },
+                    "bron": "de jutter",
+                    "set": false,
+                    "navigatiePad": []
+                  },
+                  "field": "kinderen",
+                  "bron": null
+                },
+                "rechts": {
+                  "node": "Literal",
+                  "waarde": "4.0000",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 4,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "4.0000"
+                },
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 4,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": null
+              },
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 4,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": null
+            },
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": null
+          },
+          "modus": "REKENKUNDIG",
+          "decimalen": 2,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": null
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "berekening aftrek",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "aftrek",
+          "objecttype": "JutterAandeel",
+          "onderwerpBron": "de aftrek",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de aftrek",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "AttribuutRef",
+          "attribuut": "bedrag",
+          "objecttype": "Vangstheffing",
+          "onderwerpBron": "de bedrag van de heffing",
+          "navigatieRol": "heffing",
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de bedrag van de heffing",
+          "set": false,
+          "navigatiePad": [],
+          "navigatieBindingen": [
+            {
+              "node": "RolBinding",
+              "feittype": "JutterAandeel_heffing",
+              "rol": "heffing"
+            }
+          ]
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "berekening totale_aftrek basis",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "totale_aftrek basis",
+          "objecttype": "Kamerheffing",
+          "onderwerpBron": "de totale_aftrek basis",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de totale_aftrek basis",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Match",
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "scrutinee": {
+            "node": "Fold",
+            "type": {
+              "node": "SumType",
+              "domain": "Optional",
+              "constructors": [
+                {
+                  "name": "Absent",
+                  "payload": null
+                },
+                {
+                  "name": "Present",
+                  "payload": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  }
+                }
+              ]
+            },
+            "list": {
+              "node": "MapList",
+              "type": {
+                "node": "ListType",
+                "element": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                }
+              },
+              "list": {
+                "node": "AttribuutRef",
+                "attribuut": "jutters",
+                "objecttype": "Kamerheffing",
+                "onderwerpBron": "de jutters",
+                "navigatieRol": null,
+                "type": {
+                  "node": "ListType",
+                  "element": {
+                    "node": "StructType",
+                    "domain": "Jutter",
+                    "fields": [
+                      {
+                        "name": "vangst",
+                        "datatype": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "ONBEPAALD",
+                          "eenheid": null
+                        }
+                      },
+                      {
+                        "name": "kinderen",
+                        "datatype": {
+                          "node": "Numeriek",
+                          "geheel": true,
+                          "decimalen": 0,
+                          "teken": "ONBEPAALD",
+                          "eenheid": null
+                        }
+                      }
+                    ]
+                  }
+                },
+                "bron": "de jutters",
+                "set": false,
+                "navigatiePad": []
+              },
+              "function": {
+                "node": "Lambda",
+                "parameters": [
+                  {
+                    "name": "jutter",
+                    "datatype": {
+                      "node": "StructType",
+                      "domain": "Jutter",
+                      "fields": [
+                        {
+                          "name": "vangst",
+                          "datatype": {
+                            "node": "Numeriek",
+                            "geheel": false,
+                            "decimalen": 2,
+                            "teken": "ONBEPAALD",
+                            "eenheid": null
+                          }
+                        },
+                        {
+                          "name": "kinderen",
+                          "datatype": {
+                            "node": "Numeriek",
+                            "geheel": true,
+                            "decimalen": 0,
+                            "teken": "ONBEPAALD",
+                            "eenheid": null
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "body": {
+                  "node": "Invoke",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "function": "JutterAandeel aftrek",
+                  "arguments": [
+                    {
+                      "node": "BinderRef",
+                      "name": "jutter",
+                      "type": {
+                        "node": "StructType",
+                        "domain": "Jutter",
+                        "fields": [
+                          {
+                            "name": "vangst",
+                            "datatype": {
+                              "node": "Numeriek",
+                              "geheel": false,
+                              "decimalen": 2,
+                              "teken": "ONBEPAALD",
+                              "eenheid": null
+                            }
+                          },
+                          {
+                            "name": "kinderen",
+                            "datatype": {
+                              "node": "Numeriek",
+                              "geheel": true,
+                              "decimalen": 0,
+                              "teken": "ONBEPAALD",
+                              "eenheid": null
+                            }
+                          }
+                        ]
+                      },
+                      "bron": "jutter"
+                    }
+                  ],
+                  "bron": "JutterAandeel aftrek"
+                },
+                "bron": "jutter"
+              },
+              "bron": null
+            },
+            "function": {
+              "node": "Lambda",
+              "parameters": [
+                {
+                  "name": "geaccumuleerde optie",
+                  "datatype": {
+                    "node": "SumType",
+                    "domain": "Optional",
+                    "constructors": [
+                      {
+                        "name": "Absent",
+                        "payload": null
+                      },
+                      {
+                        "name": "Present",
+                        "payload": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "ONBEPAALD",
+                          "eenheid": null
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "name": "sum2",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  }
+                }
+              ],
+              "body": {
+                "node": "Match",
+                "type": {
+                  "node": "SumType",
+                  "domain": "Optional",
+                  "constructors": [
+                    {
+                      "name": "Absent",
+                      "payload": null
+                    },
+                    {
+                      "name": "Present",
+                      "payload": {
+                        "node": "Numeriek",
+                        "geheel": false,
+                        "decimalen": 2,
+                        "teken": "ONBEPAALD",
+                        "eenheid": null
+                      }
+                    }
+                  ]
+                },
+                "scrutinee": {
+                  "node": "BinderRef",
+                  "name": "geaccumuleerde optie",
+                  "type": {
+                    "node": "SumType",
+                    "domain": "Optional",
+                    "constructors": [
+                      {
+                        "name": "Absent",
+                        "payload": null
+                      },
+                      {
+                        "name": "Present",
+                        "payload": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "ONBEPAALD",
+                          "eenheid": null
+                        }
+                      }
+                    ]
+                  },
+                  "bron": "geaccumuleerde optie"
+                },
+                "arms": [
+                  {
+                    "constructor": "Absent",
+                    "binder": null,
+                    "body": {
+                      "node": "Construct",
+                      "type": {
+                        "node": "SumType",
+                        "domain": "Optional",
+                        "constructors": [
+                          {
+                            "name": "Absent",
+                            "payload": null
+                          },
+                          {
+                            "name": "Present",
+                            "payload": {
+                              "node": "Numeriek",
+                              "geheel": false,
+                              "decimalen": 2,
+                              "teken": "ONBEPAALD",
+                              "eenheid": null
+                            }
+                          }
+                        ]
+                      },
+                      "constructor": "Present",
+                      "argument": {
+                        "node": "BinderRef",
+                        "name": "sum2",
+                        "type": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "ONBEPAALD",
+                          "eenheid": null
+                        },
+                        "bron": "sum2"
+                      },
+                      "bron": "Present"
+                    }
+                  },
+                  {
+                    "constructor": "Present",
+                    "binder": "sum1",
+                    "body": {
+                      "node": "Construct",
+                      "type": {
+                        "node": "SumType",
+                        "domain": "Optional",
+                        "constructors": [
+                          {
+                            "name": "Absent",
+                            "payload": null
+                          },
+                          {
+                            "name": "Present",
+                            "payload": {
+                              "node": "Numeriek",
+                              "geheel": false,
+                              "decimalen": 2,
+                              "teken": "ONBEPAALD",
+                              "eenheid": null
+                            }
+                          }
+                        ]
+                      },
+                      "constructor": "Present",
+                      "argument": {
+                        "node": "Binair",
+                        "op": "PLUS",
+                        "links": {
+                          "node": "BinderRef",
+                          "name": "sum1",
+                          "type": {
+                            "node": "Numeriek",
+                            "geheel": false,
+                            "decimalen": 2,
+                            "teken": "ONBEPAALD",
+                            "eenheid": null
+                          },
+                          "bron": "sum1"
+                        },
+                        "rechts": {
+                          "node": "BinderRef",
+                          "name": "sum2",
+                          "type": {
+                            "node": "Numeriek",
+                            "geheel": false,
+                            "decimalen": 2,
+                            "teken": "ONBEPAALD",
+                            "eenheid": null
+                          },
+                          "bron": "sum2"
+                        },
+                        "type": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "ONBEPAALD",
+                          "eenheid": null
+                        },
+                        "bron": null
+                      },
+                      "bron": "Present"
+                    }
+                  }
+                ],
+                "bron": "de volgende vouwstap"
+              },
+              "bron": "de vouwstap"
+            },
+            "init": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "Optional",
+                "constructors": [
+                  {
+                    "name": "Absent",
+                    "payload": null
+                  },
+                  {
+                    "name": "Present",
+                    "payload": {
+                      "node": "Numeriek",
+                      "geheel": false,
+                      "decimalen": 2,
+                      "teken": "ONBEPAALD",
+                      "eenheid": null
+                    }
+                  }
+                ]
+              },
+              "constructor": "Absent",
+              "argument": null,
+              "bron": "Absent"
+            },
+            "bron": "gevouwen tot een optionele waarde"
+          },
+          "arms": [
+            {
+              "constructor": "Absent",
+              "binder": null,
+              "body": {
+                "node": "Literal",
+                "waarde": "0.00",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "0.00"
+              }
+            },
+            {
+              "constructor": "Present",
+              "binder": "x",
+              "body": {
+                "node": "BinderRef",
+                "name": "x",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "x"
+              }
+            }
+          ],
+          "bron": "de gevouwen waarde uitgepakt"
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "berekening totale_aftrek begrensd",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "totale_aftrek begrensd",
+          "objecttype": "Kamerheffing",
+          "onderwerpBron": "de totale_aftrek begrensd",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de totale_aftrek begrensd",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Let",
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "binder": "cap",
+          "value": {
+            "node": "Literal",
+            "waarde": "500.00",
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "500.00"
+          },
+          "body": {
+            "node": "Let",
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "binder": "raw",
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "totale_aftrek basis",
+              "objecttype": "Kamerheffing",
+              "onderwerpBron": "de totale_aftrek basis",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "de totale_aftrek basis",
+              "set": false,
+              "navigatiePad": []
+            },
+            "body": {
+              "node": "IfThenElse",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "condition": {
+                "node": "Vergelijking",
+                "op": "GROTER",
+                "links": {
+                  "node": "BinderRef",
+                  "name": "raw",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "raw"
+                },
+                "rechts": {
+                  "node": "BinderRef",
+                  "name": "cap",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "cap"
+                },
+                "periode": null,
+                "bron": null
+              },
+              "then": {
+                "node": "BinderRef",
+                "name": "cap",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "cap"
+              },
+              "else": {
+                "node": "BinderRef",
+                "name": "raw",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "raw"
+              },
+              "bron": null
+            },
+            "bron": "raw"
+          },
+          "bron": "cap"
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "berekening heffing basis",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "heffing basis",
+          "objecttype": "Kamerheffing",
+          "onderwerpBron": "de heffing basis",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de heffing basis",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Match",
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "scrutinee": {
+            "node": "Fold",
+            "type": {
+              "node": "SumType",
+              "domain": "Optional",
+              "constructors": [
+                {
+                  "name": "Absent",
+                  "payload": null
+                },
+                {
+                  "name": "Present",
+                  "payload": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  }
+                }
+              ]
+            },
+            "list": {
+              "node": "MapList",
+              "type": {
+                "node": "ListType",
+                "element": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                }
+              },
+              "list": {
+                "node": "AttribuutRef",
+                "attribuut": "jutters",
+                "objecttype": "Kamerheffing",
+                "onderwerpBron": "de jutters",
+                "navigatieRol": null,
+                "type": {
+                  "node": "ListType",
+                  "element": {
+                    "node": "StructType",
+                    "domain": "Jutter",
+                    "fields": [
+                      {
+                        "name": "vangst",
+                        "datatype": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "ONBEPAALD",
+                          "eenheid": null
+                        }
+                      },
+                      {
+                        "name": "kinderen",
+                        "datatype": {
+                          "node": "Numeriek",
+                          "geheel": true,
+                          "decimalen": 0,
+                          "teken": "ONBEPAALD",
+                          "eenheid": null
+                        }
+                      }
+                    ]
+                  }
+                },
+                "bron": "de jutters",
+                "set": false,
+                "navigatiePad": []
+              },
+              "function": {
+                "node": "Lambda",
+                "parameters": [
+                  {
+                    "name": "jutter",
+                    "datatype": {
+                      "node": "StructType",
+                      "domain": "Jutter",
+                      "fields": [
+                        {
+                          "name": "vangst",
+                          "datatype": {
+                            "node": "Numeriek",
+                            "geheel": false,
+                            "decimalen": 2,
+                            "teken": "ONBEPAALD",
+                            "eenheid": null
+                          }
+                        },
+                        {
+                          "name": "kinderen",
+                          "datatype": {
+                            "node": "Numeriek",
+                            "geheel": true,
+                            "decimalen": 0,
+                            "teken": "ONBEPAALD",
+                            "eenheid": null
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "body": {
+                  "node": "Invoke",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "function": "JutterAandeel kamerbedrag",
+                  "arguments": [
+                    {
+                      "node": "BinderRef",
+                      "name": "jutter",
+                      "type": {
+                        "node": "StructType",
+                        "domain": "Jutter",
+                        "fields": [
+                          {
+                            "name": "vangst",
+                            "datatype": {
+                              "node": "Numeriek",
+                              "geheel": false,
+                              "decimalen": 2,
+                              "teken": "ONBEPAALD",
+                              "eenheid": null
+                            }
+                          },
+                          {
+                            "name": "kinderen",
+                            "datatype": {
+                              "node": "Numeriek",
+                              "geheel": true,
+                              "decimalen": 0,
+                              "teken": "ONBEPAALD",
+                              "eenheid": null
+                            }
+                          }
+                        ]
+                      },
+                      "bron": "jutter"
+                    }
+                  ],
+                  "bron": "JutterAandeel kamerbedrag"
+                },
+                "bron": "jutter"
+              },
+              "bron": null
+            },
+            "function": {
+              "node": "Lambda",
+              "parameters": [
+                {
+                  "name": "geaccumuleerde optie",
+                  "datatype": {
+                    "node": "SumType",
+                    "domain": "Optional",
+                    "constructors": [
+                      {
+                        "name": "Absent",
+                        "payload": null
+                      },
+                      {
+                        "name": "Present",
+                        "payload": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "ONBEPAALD",
+                          "eenheid": null
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "name": "sum2",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  }
+                }
+              ],
+              "body": {
+                "node": "Match",
+                "type": {
+                  "node": "SumType",
+                  "domain": "Optional",
+                  "constructors": [
+                    {
+                      "name": "Absent",
+                      "payload": null
+                    },
+                    {
+                      "name": "Present",
+                      "payload": {
+                        "node": "Numeriek",
+                        "geheel": false,
+                        "decimalen": 2,
+                        "teken": "ONBEPAALD",
+                        "eenheid": null
+                      }
+                    }
+                  ]
+                },
+                "scrutinee": {
+                  "node": "BinderRef",
+                  "name": "geaccumuleerde optie",
+                  "type": {
+                    "node": "SumType",
+                    "domain": "Optional",
+                    "constructors": [
+                      {
+                        "name": "Absent",
+                        "payload": null
+                      },
+                      {
+                        "name": "Present",
+                        "payload": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "ONBEPAALD",
+                          "eenheid": null
+                        }
+                      }
+                    ]
+                  },
+                  "bron": "geaccumuleerde optie"
+                },
+                "arms": [
+                  {
+                    "constructor": "Absent",
+                    "binder": null,
+                    "body": {
+                      "node": "Construct",
+                      "type": {
+                        "node": "SumType",
+                        "domain": "Optional",
+                        "constructors": [
+                          {
+                            "name": "Absent",
+                            "payload": null
+                          },
+                          {
+                            "name": "Present",
+                            "payload": {
+                              "node": "Numeriek",
+                              "geheel": false,
+                              "decimalen": 2,
+                              "teken": "ONBEPAALD",
+                              "eenheid": null
+                            }
+                          }
+                        ]
+                      },
+                      "constructor": "Present",
+                      "argument": {
+                        "node": "BinderRef",
+                        "name": "sum2",
+                        "type": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "ONBEPAALD",
+                          "eenheid": null
+                        },
+                        "bron": "sum2"
+                      },
+                      "bron": "Present"
+                    }
+                  },
+                  {
+                    "constructor": "Present",
+                    "binder": "sum1",
+                    "body": {
+                      "node": "Construct",
+                      "type": {
+                        "node": "SumType",
+                        "domain": "Optional",
+                        "constructors": [
+                          {
+                            "name": "Absent",
+                            "payload": null
+                          },
+                          {
+                            "name": "Present",
+                            "payload": {
+                              "node": "Numeriek",
+                              "geheel": false,
+                              "decimalen": 2,
+                              "teken": "ONBEPAALD",
+                              "eenheid": null
+                            }
+                          }
+                        ]
+                      },
+                      "constructor": "Present",
+                      "argument": {
+                        "node": "Binair",
+                        "op": "PLUS",
+                        "links": {
+                          "node": "BinderRef",
+                          "name": "sum1",
+                          "type": {
+                            "node": "Numeriek",
+                            "geheel": false,
+                            "decimalen": 2,
+                            "teken": "ONBEPAALD",
+                            "eenheid": null
+                          },
+                          "bron": "sum1"
+                        },
+                        "rechts": {
+                          "node": "BinderRef",
+                          "name": "sum2",
+                          "type": {
+                            "node": "Numeriek",
+                            "geheel": false,
+                            "decimalen": 2,
+                            "teken": "ONBEPAALD",
+                            "eenheid": null
+                          },
+                          "bron": "sum2"
+                        },
+                        "type": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "ONBEPAALD",
+                          "eenheid": null
+                        },
+                        "bron": null
+                      },
+                      "bron": "Present"
+                    }
+                  }
+                ],
+                "bron": "de volgende vouwstap"
+              },
+              "bron": "de vouwstap"
+            },
+            "init": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "Optional",
+                "constructors": [
+                  {
+                    "name": "Absent",
+                    "payload": null
+                  },
+                  {
+                    "name": "Present",
+                    "payload": {
+                      "node": "Numeriek",
+                      "geheel": false,
+                      "decimalen": 2,
+                      "teken": "ONBEPAALD",
+                      "eenheid": null
+                    }
+                  }
+                ]
+              },
+              "constructor": "Absent",
+              "argument": null,
+              "bron": "Absent"
+            },
+            "bron": "gevouwen tot een optionele waarde"
+          },
+          "arms": [
+            {
+              "constructor": "Absent",
+              "binder": null,
+              "body": {
+                "node": "Literal",
+                "waarde": "0.00",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "0.00"
+              }
+            },
+            {
+              "constructor": "Present",
+              "binder": "x",
+              "body": {
+                "node": "BinderRef",
+                "name": "x",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "x"
+              }
+            }
+          ],
+          "bron": "de gevouwen waarde uitgepakt"
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "berekening heffing na_aftrek",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "heffing na_aftrek",
+          "objecttype": "Kamerheffing",
+          "onderwerpBron": "de heffing na_aftrek",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de heffing na_aftrek",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Let",
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "binder": "basis",
+          "value": {
+            "node": "AttribuutRef",
+            "attribuut": "heffing basis",
+            "objecttype": "Kamerheffing",
+            "onderwerpBron": "de heffing basis",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "de heffing basis",
+            "set": false,
+            "navigatiePad": []
+          },
+          "body": {
+            "node": "Let",
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "binder": "afgetrokken",
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "totale_aftrek begrensd",
+              "objecttype": "Kamerheffing",
+              "onderwerpBron": "de totale_aftrek begrensd",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "de totale_aftrek begrensd",
+              "set": false,
+              "navigatiePad": []
+            },
+            "body": {
+              "node": "IfThenElse",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "condition": {
+                "node": "Vergelijking",
+                "op": "GROTER",
+                "links": {
+                  "node": "BinderRef",
+                  "name": "afgetrokken",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "afgetrokken"
+                },
+                "rechts": {
+                  "node": "BinderRef",
+                  "name": "basis",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "basis"
+                },
+                "periode": null,
+                "bron": null
+              },
+              "then": {
+                "node": "Literal",
+                "waarde": "0.00",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "0.00"
+              },
+              "else": {
+                "node": "Binair",
+                "op": "VERMINDERD_MET",
+                "links": {
+                  "node": "BinderRef",
+                  "name": "basis",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "basis"
+                },
+                "rechts": {
+                  "node": "BinderRef",
+                  "name": "afgetrokken",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "afgetrokken"
+                },
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": null
+              },
+              "bron": null
+            },
+            "bron": "afgetrokken"
+          },
+          "bron": "basis"
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [
+      {
+        "node": "ResolvedObjectCreatie",
+        "naam": "richt heffing op",
+        "nieuwType": "Vangstheffing",
+        "subject": "JutterAandeel",
+        "toekenningen": [
+          {
+            "node": "Toekenning",
+            "attribuut": "vangst",
+            "waarde": {
+              "node": "FieldAccess",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "base": {
+                "node": "AttribuutRef",
+                "attribuut": "jutter",
+                "objecttype": "JutterAandeel",
+                "onderwerpBron": "de jutter",
+                "navigatieRol": null,
+                "type": {
+                  "node": "StructType",
+                  "domain": "Jutter",
+                  "fields": [
+                    {
+                      "name": "vangst",
+                      "datatype": {
+                        "node": "Numeriek",
+                        "geheel": false,
+                        "decimalen": 2,
+                        "teken": "ONBEPAALD",
+                        "eenheid": null
+                      }
+                    },
+                    {
+                      "name": "kinderen",
+                      "datatype": {
+                        "node": "Numeriek",
+                        "geheel": true,
+                        "decimalen": 0,
+                        "teken": "ONBEPAALD",
+                        "eenheid": null
+                      }
+                    }
+                  ]
+                },
+                "bron": "de jutter",
+                "set": false,
+                "navigatiePad": []
+              },
+              "field": "vangst",
+              "bron": null
+            },
+            "kenmerk": false
+          },
+          {
+            "node": "Toekenning",
+            "attribuut": "kinderen",
+            "waarde": {
+              "node": "FieldAccess",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "base": {
+                "node": "AttribuutRef",
+                "attribuut": "jutter",
+                "objecttype": "JutterAandeel",
+                "onderwerpBron": "de jutter",
+                "navigatieRol": null,
+                "type": {
+                  "node": "StructType",
+                  "domain": "Jutter",
+                  "fields": [
+                    {
+                      "name": "vangst",
+                      "datatype": {
+                        "node": "Numeriek",
+                        "geheel": false,
+                        "decimalen": 2,
+                        "teken": "ONBEPAALD",
+                        "eenheid": null
+                      }
+                    },
+                    {
+                      "name": "kinderen",
+                      "datatype": {
+                        "node": "Numeriek",
+                        "geheel": true,
+                        "decimalen": 0,
+                        "teken": "ONBEPAALD",
+                        "eenheid": null
+                      }
+                    }
+                  ]
+                },
+                "bron": "de jutter",
+                "set": false,
+                "navigatiePad": []
+              },
+              "field": "kinderen",
+              "bron": null
+            },
+            "kenmerk": false
+          }
+        ],
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        },
+        "verbindendeRol": {
+          "node": "RolBinding",
+          "feittype": "JutterAandeel_heffing",
+          "rol": "heffing"
+        }
+      }
+    ],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "naam": "bedrag",
+        "onderwerp": "Vangstheffing",
+        "kenmerk": null,
+        "attribuut": "bedrag",
+        "defaults": [
+          {
+            "node": "Default",
+            "besluit": null,
+            "voorwaarde": {
+              "node": "Vergelijking",
+              "op": "GROTER_OF_GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "kinderen",
+                "objecttype": "Vangstheffing",
+                "onderwerpBron": "de kinderen",
+                "navigatieRol": null,
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "de kinderen",
+                "set": false,
+                "navigatiePad": []
+              },
+              "rechts": {
+                "node": "Literal",
+                "waarde": "2",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "2"
+              },
+              "periode": null,
+              "bron": null
+            },
+            "consequentie": {
+              "node": "Afgerond",
+              "basis": {
+                "node": "Binair",
+                "op": "MAAL",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "vangst",
+                  "objecttype": "Vangstheffing",
+                  "onderwerpBron": "de vangst",
+                  "navigatieRol": null,
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "de vangst",
+                  "set": false,
+                  "navigatiePad": []
+                },
+                "rechts": {
+                  "node": "Literal",
+                  "waarde": "0.1500",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 4,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "0.1500"
+                },
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": null
+              },
+              "modus": "REKENKUNDIG",
+              "decimalen": 2,
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": null
+            },
+            "bron": "bedrag"
+          },
+          {
+            "node": "Default",
+            "besluit": null,
+            "voorwaarde": {
+              "node": "Samengesteld",
+              "kwantor": "ALLE",
+              "drempel": 0,
+              "onderdelen": [],
+              "bron": "altijd"
+            },
+            "consequentie": {
+              "node": "Afgerond",
+              "basis": {
+                "node": "Binair",
+                "op": "MAAL",
+                "links": {
+                  "node": "AttribuutRef",
+                  "attribuut": "vangst",
+                  "objecttype": "Vangstheffing",
+                  "onderwerpBron": "de vangst",
+                  "navigatieRol": null,
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "de vangst",
+                  "set": false,
+                  "navigatiePad": []
+                },
+                "rechts": {
+                  "node": "Literal",
+                  "waarde": "0.2000",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 4,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "0.2000"
+                },
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": null
+              },
+              "modus": "REKENKUNDIG",
+              "decimalen": 2,
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": null
+            },
+            "bron": "bedrag"
+          }
+        ],
+        "bron": "bedrag",
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ]
+  },
+  "diagnostics": []
 }

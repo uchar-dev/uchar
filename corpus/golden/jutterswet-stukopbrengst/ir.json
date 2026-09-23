@@ -1,16 +1,99 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Vondst": {
-      "node": "Objecttype",
-      "naam": "Vondst",
-      "attributen": {
-        "basisbedrag": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "basisbedrag",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "EUR",
+                "stelsel": "Munt",
+                "canoniek": "EUR",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "stuktal",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "stukprijs",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "EUR",
+                "stelsel": "Munt",
+                "canoniek": "EUR",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "opbrengst",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "EUR",
+                "stelsel": "Munt",
+                "canoniek": "EUR",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "Eenheidstelsel",
+        "naam": "Munt",
+        "eenheden": {
+          "EUR": {
+            "node": "Eenheid",
+            "afkorting": "EUR",
+            "stelsel": "Munt",
+            "canoniek": "EUR",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          },
+          "\u20ac": {
             "node": "Eenheid",
             "afkorting": "EUR",
             "stelsel": "Munt",
@@ -19,19 +102,16 @@
             "noemer": null
           }
         },
-        "stuktal": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "stukprijs": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
+        "aliassen": {
+          "euro": {
+            "node": "Eenheid",
+            "afkorting": "EUR",
+            "stelsel": "Munt",
+            "canoniek": "EUR",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          },
+          "euros": {
             "node": "Eenheid",
             "afkorting": "EUR",
             "stelsel": "Munt",
@@ -39,128 +119,25 @@
             "factorNaarCanoniek": 1,
             "noemer": null
           }
-        },
-        "opbrengst": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Vondsten"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {
-    "Munt": {
-      "node": "Eenheidstelsel",
-      "naam": "Munt",
-      "eenheden": {
-        "EUR": {
-          "node": "Eenheid",
-          "afkorting": "EUR",
-          "stelsel": "Munt",
-          "canoniek": "EUR",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        },
-        "\u20ac": {
-          "node": "Eenheid",
-          "afkorting": "EUR",
-          "stelsel": "Munt",
-          "canoniek": "EUR",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        }
-      },
-      "aliassen": {
-        "euro": {
-          "node": "Eenheid",
-          "afkorting": "EUR",
-          "stelsel": "Munt",
-          "canoniek": "EUR",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        },
-        "euros": {
-          "node": "Eenheid",
-          "afkorting": "EUR",
-          "stelsel": "Munt",
-          "canoniek": "EUR",
-          "factorNaarCanoniek": 1,
-          "noemer": null
         }
       }
-    }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
   },
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "opbrengst van een vondst",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "opbrengst van een vondst",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "opbrengst",
-        "objecttype": "Vondst",
-        "onderwerpBron": "een Vondst",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        },
-        "bron": "De opbrengst van een Vondst",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Binair",
-        "op": "PLUS",
-        "links": {
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "opbrengst van een vondst",
+        "soort": "BEREKENING",
+        "doel": {
           "node": "AttribuutRef",
-          "attribuut": "basisbedrag",
+          "attribuut": "opbrengst",
           "objecttype": "Vondst",
-          "onderwerpBron": "de Vondst",
+          "onderwerpBron": "een Vondst",
           "navigatieRol": null,
           "type": {
             "node": "Numeriek",
@@ -176,33 +153,16 @@
               "noemer": null
             }
           },
-          "bron": "het basisbedrag van de Vondst",
+          "bron": "De opbrengst van een Vondst",
           "set": false,
           "navigatiePad": []
         },
-        "rechts": {
+        "waarde": {
           "node": "Binair",
-          "op": "MAAL",
+          "op": "PLUS",
           "links": {
             "node": "AttribuutRef",
-            "attribuut": "stuktal",
-            "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "het stuktal van de Vondst",
-            "set": false,
-            "navigatiePad": []
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "stukprijs",
+            "attribuut": "basisbedrag",
             "objecttype": "Vondst",
             "onderwerpBron": "de Vondst",
             "navigatieRol": null,
@@ -220,9 +180,69 @@
                 "noemer": null
               }
             },
-            "bron": "de stukprijs van de Vondst",
+            "bron": "het basisbedrag van de Vondst",
             "set": false,
             "navigatiePad": []
+          },
+          "rechts": {
+            "node": "Binair",
+            "op": "MAAL",
+            "links": {
+              "node": "AttribuutRef",
+              "attribuut": "stuktal",
+              "objecttype": "Vondst",
+              "onderwerpBron": "de Vondst",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "het stuktal van de Vondst",
+              "set": false,
+              "navigatiePad": []
+            },
+            "rechts": {
+              "node": "AttribuutRef",
+              "attribuut": "stukprijs",
+              "objecttype": "Vondst",
+              "onderwerpBron": "de Vondst",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": {
+                  "node": "Eenheid",
+                  "afkorting": "EUR",
+                  "stelsel": "Munt",
+                  "canoniek": "EUR",
+                  "factorNaarCanoniek": 1,
+                  "noemer": null
+                }
+              },
+              "bron": "de stukprijs van de Vondst",
+              "set": false,
+              "navigatiePad": []
+            },
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "EUR",
+                "stelsel": "Munt",
+                "canoniek": "EUR",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            },
+            "bron": "het stuktal van de Vondst maal de stukprijs van de Vondst"
           },
           "type": {
             "node": "Numeriek",
@@ -238,40 +258,25 @@
               "noemer": null
             }
           },
-          "bron": "het stuktal van de Vondst maal de stukprijs van de Vondst"
+          "bron": "het basisbedrag van de Vondst plus het stuktal van de Vondst maal de stukprijs van de Vondst"
         },
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        },
-        "bron": "het basisbedrag van de Vondst plus het stuktal van de Vondst maal de stukprijs van de Vondst"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

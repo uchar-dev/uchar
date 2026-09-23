@@ -1,149 +1,150 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Strandbuit": {
-      "node": "Objecttype",
-      "naam": "Strandbuit",
-      "attributen": {
-        "buitopbrengst": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "buitrest": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Strandbuit",
+        "animate": false,
+        "plural": "Strandbuiten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "buitopbrengst",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "buitrest",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
       },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Strandbuiten"
-    },
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "aandeelgewicht": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "buitplafond": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "buitdeel": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {
-    "buitdeelname": {
-      "node": "Feittype",
-      "naam": "buitdeelname",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "strandbuit",
-          "objecttypeNaam": "Strandbuit",
-          "meervoud": null,
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "buitjutter",
-          "objecttypeNaam": "Jutter",
-          "meervoud": "buitjutters",
-          "meervoudig": true
-        }
-      ]
-    }
-  },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "verdeel de buitopbrengst van een strandbuit",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [
-    {
-      "node": "ResolvedVerdeling",
-      "naam": "verdeel de buitopbrengst van een strandbuit",
-      "bronType": "Strandbuit",
-      "bronAttribuut": "buitopbrengst",
-      "doelType": "Jutter",
-      "doelAttribuut": "buitdeel",
-      "methode": "NAAR_RATO",
-      "ratoAttribuut": "aandeelgewicht",
-      "maximumAttribuut": "buitplafond",
-      "afrondingDecimalen": null,
-      "restantAttribuut": "buitrest",
-      "groepeerAttribuut": null,
-      "afnemend": false,
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      },
-      "verbindendeRol": {
-        "node": "RolBinding",
-        "feittype": "buitdeelname",
-        "rol": "buitjutter"
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "aandeelgewicht",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "buitplafond",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "buitdeel",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
       }
-    }
-  ],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "buitdeelname",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "strandbuit",
+            "objecttypeNaam": "Strandbuit",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "buitjutter",
+            "objecttypeNaam": "Jutter",
+            "meervoud": "buitjutters",
+            "meervoudig": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [
+      {
+        "node": "ResolvedVerdeling",
+        "naam": "verdeel de buitopbrengst van een strandbuit",
+        "bronType": "Strandbuit",
+        "bronAttribuut": "buitopbrengst",
+        "doelType": "Jutter",
+        "doelAttribuut": "buitdeel",
+        "methode": "NAAR_RATO",
+        "ratoAttribuut": "aandeelgewicht",
+        "maximumAttribuut": "buitplafond",
+        "afrondingDecimalen": null,
+        "restantAttribuut": "buitrest",
+        "groepeerAttribuut": null,
+        "afnemend": false,
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        },
+        "verbindendeRol": {
+          "node": "RolBinding",
+          "feittype": "buitdeelname",
+          "rol": "buitjutter"
+        }
+      }
+    ],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

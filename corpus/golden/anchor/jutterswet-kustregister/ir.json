@@ -1,343 +1,328 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Strandvondst": {
-      "node": "Objecttype",
-      "naam": "Strandvondst",
-      "attributen": {
-        "vondstnummer": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Strandvondsten"
-    },
-    "Wrakvondst": {
-      "node": "Objecttype",
-      "naam": "Wrakvondst",
-      "attributen": {
-        "vondstnummer": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Wrakvondsten"
-    },
-    "Kavel": {
-      "node": "Objecttype",
-      "naam": "Kavel",
-      "attributen": {
-        "etiket": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "sectiecode": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Kavels"
-    },
-    "Baken": {
-      "node": "Objecttype",
-      "naam": "Baken",
-      "attributen": {
-        "landcode": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "zeecode": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Bakens"
-    },
-    "Gemeente": {
-      "node": "Objecttype",
-      "naam": "Gemeente",
-      "attributen": {
-        "kavelaantal": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Gemeenten"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {
-    "kavelindeling": {
-      "node": "Feittype",
-      "naam": "kavelindeling",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "kavel",
-          "objecttypeNaam": "Kavel",
-          "meervoud": "kavels",
-          "meervoudig": true
-        },
-        {
-          "node": "Rol",
-          "naam": "gemeente",
-          "objecttypeNaam": "Gemeente",
-          "meervoud": null,
-          "meervoudig": false
-        }
-      ]
-    }
-  },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "kavelaantal van een gemeente",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "kavelaantal van een gemeente",
-      "soort": "GELIJKSTELLING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "kavelaantal",
-        "objecttype": "Gemeente",
-        "onderwerpBron": "een Gemeente",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "Het kavelaantal van een Gemeente",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "AANTAL",
-        "argumenten": [
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Strandvondst",
+        "animate": false,
+        "plural": "Strandvondsten",
+        "attributes": [
           {
-            "node": "AttribuutRef",
-            "attribuut": "kavels",
-            "objecttype": "Gemeente",
-            "onderwerpBron": "de Gemeente",
-            "navigatieRol": null,
-            "type": {
-              "node": "Onbekend",
-              "reden": "role-count source"
-            },
-            "bron": "alle kavels van de Gemeente",
-            "set": false,
-            "navigatiePad": []
+            "node": "Attribute",
+            "name": "vondstnummer",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
           }
         ],
-        "elementObjecttype": "Kavel",
-        "leegwaarde": null,
-        "filter": null,
-        "dimensieSelectie": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Wrakvondst",
+        "animate": false,
+        "plural": "Wrakvondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vondstnummer",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Kavel",
+        "animate": false,
+        "plural": "Kavels",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "etiket",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "sectiecode",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Baken",
+        "animate": false,
+        "plural": "Bakens",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "landcode",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "zeecode",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Gemeente",
+        "animate": false,
+        "plural": "Gemeenten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "kavelaantal",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "kavelindeling",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "kavel",
+            "objecttypeNaam": "Kavel",
+            "meervoud": "kavels",
+            "meervoudig": true
+          },
+          {
+            "node": "Rol",
+            "naam": "gemeente",
+            "objecttypeNaam": "Gemeente",
+            "meervoud": null,
+            "meervoudig": false
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "kavelaantal van een gemeente",
+        "soort": "GELIJKSTELLING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "kavelaantal",
+          "objecttype": "Gemeente",
+          "onderwerpBron": "een Gemeente",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "Het kavelaantal van een Gemeente",
+          "set": false,
+          "navigatiePad": []
         },
-        "bron": "het aantal kavels van de Gemeente",
-        "granulariteit": null,
-        "bronRol": {
+        "waarde": {
+          "node": "Functie",
+          "kind": "AANTAL",
+          "argumenten": [
+            {
+              "node": "AttribuutRef",
+              "attribuut": "kavels",
+              "objecttype": "Gemeente",
+              "onderwerpBron": "de Gemeente",
+              "navigatieRol": null,
+              "type": {
+                "node": "Onbekend",
+                "reden": "role-count source"
+              },
+              "bron": "alle kavels van de Gemeente",
+              "set": false,
+              "navigatiePad": []
+            }
+          ],
+          "elementObjecttype": "Kavel",
+          "leegwaarde": null,
+          "filter": null,
+          "dimensieSelectie": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "het aantal kavels van de Gemeente",
+          "granulariteit": null,
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "kavelindeling",
+            "rol": "kavel"
+          }
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [
+      {
+        "node": "ResolvedUniciteit",
+        "naam": "eenmalig kaveletiket",
+        "subject": "Kavel",
+        "sleutels": [
+          "etiket"
+        ],
+        "scopeVeld": "gemeente",
+        "bron": "De etiket van alle Kavel van de gemeente moeten uniek zijn.",
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        },
+        "scopeRol": {
           "node": "RolBinding",
           "feittype": "kavelindeling",
-          "rol": "kavel"
+          "rol": "gemeente"
         }
       },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+      {
+        "node": "ResolvedUniciteit",
+        "naam": "eenmalige sectiecode",
+        "subject": "Kavel",
+        "sleutels": [
+          "sectiecode"
+        ],
+        "scopeVeld": "gemeente",
+        "bron": "De sectiecode van alle Kavel van de gemeente moeten uniek zijn.",
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [
-    {
-      "node": "ResolvedUniciteit",
-      "naam": "eenmalig kaveletiket",
-      "subject": "Kavel",
-      "sleutels": [
-        "etiket"
-      ],
-      "scopeVeld": "gemeente",
-      "bron": "De etiket van alle Kavel van de gemeente moeten uniek zijn.",
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+    ],
+    "uniciteitUnies": [
+      {
+        "node": "ResolvedUniciteitUnie",
+        "naam": "eenmalig vondstnummer",
+        "bronnen": [
+          {
+            "node": "Bron",
+            "type": "Strandvondst",
+            "sleutels": [
+              "vondstnummer"
+            ]
+          },
+          {
+            "node": "Bron",
+            "type": "Wrakvondst",
+            "sleutels": [
+              "vondstnummer"
+            ]
+          }
+        ],
+        "bron": "Strandvondst verenigd met Wrakvondst moeten uniek zijn.",
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       },
-      "scopeRol": {
-        "node": "RolBinding",
-        "feittype": "kavelindeling",
-        "rol": "gemeente"
-      }
-    },
-    {
-      "node": "ResolvedUniciteit",
-      "naam": "eenmalige sectiecode",
-      "subject": "Kavel",
-      "sleutels": [
-        "sectiecode"
-      ],
-      "scopeVeld": "gemeente",
-      "bron": "De sectiecode van alle Kavel van de gemeente moeten uniek zijn.",
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    }
-  ],
-  "uniciteitUnies": [
-    {
-      "node": "ResolvedUniciteitUnie",
-      "naam": "eenmalig vondstnummer",
-      "bronnen": [
-        {
-          "node": "Bron",
-          "type": "Strandvondst",
-          "sleutels": [
-            "vondstnummer"
-          ]
-        },
-        {
-          "node": "Bron",
-          "type": "Wrakvondst",
-          "sleutels": [
-            "vondstnummer"
-          ]
+      {
+        "node": "ResolvedUniciteitUnie",
+        "naam": "eenmalige bakencode",
+        "bronnen": [
+          {
+            "node": "Bron",
+            "type": "Baken",
+            "sleutels": [
+              "landcode"
+            ]
+          },
+          {
+            "node": "Bron",
+            "type": "Baken",
+            "sleutels": [
+              "zeecode"
+            ]
+          }
+        ],
+        "bron": "Baken verenigd met Baken moeten uniek zijn.",
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
         }
-      ],
-      "bron": "Strandvondst verenigd met Wrakvondst moeten uniek zijn.",
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
       }
-    },
-    {
-      "node": "ResolvedUniciteitUnie",
-      "naam": "eenmalige bakencode",
-      "bronnen": [
-        {
-          "node": "Bron",
-          "type": "Baken",
-          "sleutels": [
-            "landcode"
-          ]
-        },
-        {
-          "node": "Bron",
-          "type": "Baken",
-          "sleutels": [
-            "zeecode"
-          ]
-        }
-      ],
-      "bron": "Baken verenigd met Baken moeten uniek zijn.",
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    }
-  ],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

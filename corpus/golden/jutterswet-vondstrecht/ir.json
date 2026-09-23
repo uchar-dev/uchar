@@ -1,16 +1,88 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Vondst": {
-      "node": "Objecttype",
-      "naam": "Vondst",
-      "attributen": {
-        "grondrecht": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "grondrecht",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "EUR",
+                "stelsel": "Munt",
+                "canoniek": "EUR",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "meerprijs",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "EUR",
+                "stelsel": "Munt",
+                "canoniek": "EUR",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vondstrecht",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "EUR",
+                "stelsel": "Munt",
+                "canoniek": "EUR",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "Eenheidstelsel",
+        "naam": "Munt",
+        "eenheden": {
+          "EUR": {
+            "node": "Eenheid",
+            "afkorting": "EUR",
+            "stelsel": "Munt",
+            "canoniek": "EUR",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          },
+          "\u20ac": {
             "node": "Eenheid",
             "afkorting": "EUR",
             "stelsel": "Munt",
@@ -19,12 +91,16 @@
             "noemer": null
           }
         },
-        "meerprijs": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
+        "aliassen": {
+          "euro": {
+            "node": "Eenheid",
+            "afkorting": "EUR",
+            "stelsel": "Munt",
+            "canoniek": "EUR",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          },
+          "euros": {
             "node": "Eenheid",
             "afkorting": "EUR",
             "stelsel": "Munt",
@@ -32,142 +108,25 @@
             "factorNaarCanoniek": 1,
             "noemer": null
           }
-        },
-        "vondstrecht": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Vondsten"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {
-    "Munt": {
-      "node": "Eenheidstelsel",
-      "naam": "Munt",
-      "eenheden": {
-        "EUR": {
-          "node": "Eenheid",
-          "afkorting": "EUR",
-          "stelsel": "Munt",
-          "canoniek": "EUR",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        },
-        "\u20ac": {
-          "node": "Eenheid",
-          "afkorting": "EUR",
-          "stelsel": "Munt",
-          "canoniek": "EUR",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        }
-      },
-      "aliassen": {
-        "euro": {
-          "node": "Eenheid",
-          "afkorting": "EUR",
-          "stelsel": "Munt",
-          "canoniek": "EUR",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        },
-        "euros": {
-          "node": "Eenheid",
-          "afkorting": "EUR",
-          "stelsel": "Munt",
-          "canoniek": "EUR",
-          "factorNaarCanoniek": 1,
-          "noemer": null
         }
       }
-    }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
   },
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "vondstrecht van een vondst",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "vondstrecht van een vondst",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "vondstrecht",
-        "objecttype": "Vondst",
-        "onderwerpBron": "een Vondst",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        },
-        "bron": "Het vondstrecht van een Vondst",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Let",
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        },
-        "binder": "toeslag",
-        "value": {
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "vondstrecht van een vondst",
+        "soort": "BEREKENING",
+        "doel": {
           "node": "AttribuutRef",
-          "attribuut": "meerprijs",
+          "attribuut": "vondstrecht",
           "objecttype": "Vondst",
-          "onderwerpBron": "de Vondst",
+          "onderwerpBron": "een Vondst",
           "navigatieRol": null,
           "type": {
             "node": "Numeriek",
@@ -183,16 +142,30 @@
               "noemer": null
             }
           },
-          "bron": "de meerprijs van de Vondst",
+          "bron": "Het vondstrecht van een Vondst",
           "set": false,
           "navigatiePad": []
         },
-        "body": {
-          "node": "Binair",
-          "op": "PLUS",
-          "links": {
+        "waarde": {
+          "node": "Let",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": {
+              "node": "Eenheid",
+              "afkorting": "EUR",
+              "stelsel": "Munt",
+              "canoniek": "EUR",
+              "factorNaarCanoniek": 1,
+              "noemer": null
+            }
+          },
+          "binder": "toeslag",
+          "value": {
             "node": "AttribuutRef",
-            "attribuut": "grondrecht",
+            "attribuut": "meerprijs",
             "objecttype": "Vondst",
             "onderwerpBron": "de Vondst",
             "navigatieRol": null,
@@ -210,13 +183,56 @@
                 "noemer": null
               }
             },
-            "bron": "het grondrecht van de Vondst",
+            "bron": "de meerprijs van de Vondst",
             "set": false,
             "navigatiePad": []
           },
-          "rechts": {
-            "node": "BinderRef",
-            "name": "toeslag",
+          "body": {
+            "node": "Binair",
+            "op": "PLUS",
+            "links": {
+              "node": "AttribuutRef",
+              "attribuut": "grondrecht",
+              "objecttype": "Vondst",
+              "onderwerpBron": "de Vondst",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": {
+                  "node": "Eenheid",
+                  "afkorting": "EUR",
+                  "stelsel": "Munt",
+                  "canoniek": "EUR",
+                  "factorNaarCanoniek": 1,
+                  "noemer": null
+                }
+              },
+              "bron": "het grondrecht van de Vondst",
+              "set": false,
+              "navigatiePad": []
+            },
+            "rechts": {
+              "node": "BinderRef",
+              "name": "toeslag",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": {
+                  "node": "Eenheid",
+                  "afkorting": "EUR",
+                  "stelsel": "Munt",
+                  "canoniek": "EUR",
+                  "factorNaarCanoniek": 1,
+                  "noemer": null
+                }
+              },
+              "bron": "de toeslag"
+            },
             "type": {
               "node": "Numeriek",
               "geheel": true,
@@ -231,42 +247,27 @@
                 "noemer": null
               }
             },
-            "bron": "de toeslag"
+            "bron": "het grondrecht van de Vondst plus de toeslag"
           },
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "EUR",
-              "stelsel": "Munt",
-              "canoniek": "EUR",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "het grondrecht van de Vondst plus de toeslag"
+          "bron": "de toeslag is de meerprijs van de Vondst."
         },
-        "bron": "de toeslag is de meerprijs van de Vondst."
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

@@ -1,195 +1,179 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Strandrecht": {
-      "node": "Objecttype",
-      "naam": "Strandrecht",
-      "attributen": {
-        "grondslag": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Strandrechten"
-    },
-    "Wrakrecht": {
-      "node": "Objecttype",
-      "naam": "Wrakrecht",
-      "supertype": "Strandrecht",
-      "attributen": {
-        "bergingsvergoeding": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Wrakrechten"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {
-    "wrakboeking": {
-      "node": "Feittype",
-      "naam": "wrakboeking",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "boeker",
-          "objecttypeNaam": "Wrakrecht",
-          "meervoud": null,
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "geboekt strandrecht",
-          "objecttypeNaam": "Strandrecht",
-          "meervoud": null,
-          "meervoudig": false
-        }
-      ]
-    }
-  },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "bereken de bergingsvergoeding van een wrakrecht",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "boek een strandrecht bij elk wrakrecht",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "bereken de bergingsvergoeding van een wrakrecht",
-      "soort": "GELIJKSTELLING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "bergingsvergoeding",
-        "objecttype": "Wrakrecht",
-        "onderwerpBron": "een Wrakrecht",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "bron": "de bergingsvergoeding van een Wrakrecht",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "AttribuutRef",
-        "attribuut": "grondslag",
-        "objecttype": "Wrakrecht",
-        "onderwerpBron": "zijn",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "bron": "zijn grondslag",
-        "set": false,
-        "navigatiePad": []
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [
-    {
-      "node": "ResolvedObjectCreatie",
-      "naam": "boek een strandrecht bij elk wrakrecht",
-      "nieuwType": "Strandrecht",
-      "subject": "Wrakrecht",
-      "toekenningen": [
-        {
-          "node": "Toekenning",
-          "attribuut": "grondslag",
-          "waarde": {
-            "node": "AttribuutRef",
-            "attribuut": "bergingsvergoeding",
-            "objecttype": "Wrakrecht",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Strandrecht",
+        "animate": false,
+        "plural": "Strandrechten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "grondslag",
+            "datatype": {
               "node": "Numeriek",
               "geheel": false,
               "decimalen": 2,
               "teken": "NIET_NEGATIEF",
               "eenheid": null
-            },
-            "bron": "zijn bergingsvergoeding",
-            "set": false,
-            "navigatiePad": []
-          },
-          "kenmerk": false
-        }
-      ],
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+            }
+          }
+        ],
+        "characteristics": []
       },
-      "verbindendeRol": {
-        "node": "RolBinding",
-        "feittype": "wrakboeking",
-        "rol": "geboekt strandrecht"
+      {
+        "node": "ObjectType",
+        "name": "Wrakrecht",
+        "supertype": "Strandrecht",
+        "animate": false,
+        "plural": "Wrakrechten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "bergingsvergoeding",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
       }
-    }
-  ],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "wrakboeking",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "boeker",
+            "objecttypeNaam": "Wrakrecht",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "geboekt strandrecht",
+            "objecttypeNaam": "Strandrecht",
+            "meervoud": null,
+            "meervoudig": false
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "bereken de bergingsvergoeding van een wrakrecht",
+        "soort": "GELIJKSTELLING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "bergingsvergoeding",
+          "objecttype": "Wrakrecht",
+          "onderwerpBron": "een Wrakrecht",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "de bergingsvergoeding van een Wrakrecht",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "AttribuutRef",
+          "attribuut": "grondslag",
+          "objecttype": "Wrakrecht",
+          "onderwerpBron": "zijn",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "zijn grondslag",
+          "set": false,
+          "navigatiePad": []
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [
+      {
+        "node": "ResolvedObjectCreatie",
+        "naam": "boek een strandrecht bij elk wrakrecht",
+        "nieuwType": "Strandrecht",
+        "subject": "Wrakrecht",
+        "toekenningen": [
+          {
+            "node": "Toekenning",
+            "attribuut": "grondslag",
+            "waarde": {
+              "node": "AttribuutRef",
+              "attribuut": "bergingsvergoeding",
+              "objecttype": "Wrakrecht",
+              "onderwerpBron": "zijn",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              },
+              "bron": "zijn bergingsvergoeding",
+              "set": false,
+              "navigatiePad": []
+            },
+            "kenmerk": false
+          }
+        ],
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        },
+        "verbindendeRol": {
+          "node": "RolBinding",
+          "feittype": "wrakboeking",
+          "rol": "geboekt strandrecht"
+        }
+      }
+    ],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

@@ -1,292 +1,67 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "bewaarlast": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": {
-              "node": "Eenheid",
-              "afkorting": "mnd",
-              "stelsel": "Bewaartijd",
-              "canoniek": "mnd",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          }
-        },
-        "bewaarsom": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": {
-              "node": "Eenheid",
-              "afkorting": "mnd",
-              "stelsel": "Bewaartijd",
-              "canoniek": "mnd",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          }
-        },
-        "bewaarvergoeding per maand": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": {
-              "node": "Eenheid",
-              "afkorting": "mnd",
-              "stelsel": "Bewaartijd",
-              "canoniek": "mnd",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          }
-        },
-        "bewaargeld": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {
-        "bewaarvergoeding per maand": "MAAND"
-      },
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    },
-    "Vondst": {
-      "node": "Objecttype",
-      "naam": "Vondst",
-      "attributen": {
-        "bewaartarief": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": {
-              "node": "Eenheid",
-              "afkorting": "mnd",
-              "stelsel": "Bewaartijd",
-              "canoniek": "mnd",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          }
-        }
-      },
-      "attribuutMeervoud": {
-        "bewaartarief": "bewaartarieven"
-      },
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Vondsten"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {
-    "Munt": {
-      "node": "Eenheidstelsel",
-      "naam": "Munt",
-      "eenheden": {
-        "EUR": {
-          "node": "Eenheid",
-          "afkorting": "EUR",
-          "stelsel": "Munt",
-          "canoniek": "EUR",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        },
-        "€": {
-          "node": "Eenheid",
-          "afkorting": "EUR",
-          "stelsel": "Munt",
-          "canoniek": "EUR",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        }
-      },
-      "aliassen": {
-        "euro": {
-          "node": "Eenheid",
-          "afkorting": "EUR",
-          "stelsel": "Munt",
-          "canoniek": "EUR",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        },
-        "euros": {
-          "node": "Eenheid",
-          "afkorting": "EUR",
-          "stelsel": "Munt",
-          "canoniek": "EUR",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        }
-      }
-    },
-    "Bewaartijd": {
-      "node": "Eenheidstelsel",
-      "naam": "Bewaartijd",
-      "eenheden": {
-        "mnd": {
-          "node": "Eenheid",
-          "afkorting": "mnd",
-          "stelsel": "Bewaartijd",
-          "canoniek": "mnd",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        }
-      },
-      "aliassen": {
-        "maand": {
-          "node": "Eenheid",
-          "afkorting": "mnd",
-          "stelsel": "Bewaartijd",
-          "canoniek": "mnd",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        }
-      }
-    }
-  },
-  "feittypen": {
-    "bewaring": {
-      "node": "Feittype",
-      "naam": "bewaring",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "bewarende jutter",
-          "objecttypeNaam": "Jutter",
-          "meervoud": null,
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "vondst",
-          "objecttypeNaam": "Vondst",
-          "meervoud": "vondsten",
-          "meervoudig": true
-        }
-      ]
-    }
-  },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "bewaarlast van een jutter",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "bewaarlast van een jutter",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "bewaarlast",
-        "objecttype": "Jutter",
-        "onderwerpBron": "een Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "EUR",
-            "stelsel": "Munt",
-            "canoniek": "EUR",
-            "factorNaarCanoniek": 1,
-            "noemer": {
-              "node": "Eenheid",
-              "afkorting": "mnd",
-              "stelsel": "Bewaartijd",
-              "canoniek": "mnd",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          }
-        },
-        "bron": "De bewaarlast van een Jutter",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "TOTAAL",
-        "argumenten": [
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
           {
-            "node": "AttribuutRef",
-            "attribuut": "bewaartarief",
-            "objecttype": "Vondst",
-            "onderwerpBron": "de bewarende jutter",
-            "navigatieRol": "bewarende jutter",
-            "type": {
+            "node": "Attribute",
+            "name": "bewaarlast",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "EUR",
+                "stelsel": "Munt",
+                "canoniek": "EUR",
+                "factorNaarCanoniek": 1,
+                "noemer": {
+                  "node": "Eenheid",
+                  "afkorting": "mnd",
+                  "stelsel": "Bewaartijd",
+                  "canoniek": "mnd",
+                  "factorNaarCanoniek": 1,
+                  "noemer": null
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bewaarsom",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "EUR",
+                "stelsel": "Munt",
+                "canoniek": "EUR",
+                "factorNaarCanoniek": 1,
+                "noemer": {
+                  "node": "Eenheid",
+                  "afkorting": "mnd",
+                  "stelsel": "Bewaartijd",
+                  "canoniek": "mnd",
+                  "factorNaarCanoniek": 1,
+                  "noemer": null
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bewaarvergoeding per maand",
+            "datatype": {
               "node": "Numeriek",
               "geheel": true,
               "decimalen": 0,
@@ -307,55 +82,283 @@
                 }
               }
             },
-            "bron": "het bewaartarief van de bewarende jutter",
-            "set": true,
-            "navigatiePad": []
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "MAAND",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bewaargeld",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "EUR",
+                "stelsel": "Munt",
+                "canoniek": "EUR",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            }
           }
         ],
-        "elementObjecttype": "Vondst",
-        "leegwaarde": null,
-        "filter": null,
-        "dimensieSelectie": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "bewaartarief",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "EUR",
+                "stelsel": "Munt",
+                "canoniek": "EUR",
+                "factorNaarCanoniek": 1,
+                "noemer": {
+                  "node": "Eenheid",
+                  "afkorting": "mnd",
+                  "stelsel": "Bewaartijd",
+                  "canoniek": "mnd",
+                  "factorNaarCanoniek": 1,
+                  "noemer": null
+                }
+              }
+            },
+            "plural": "bewaartarieven"
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "bewaring",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "bewarende jutter",
+            "objecttypeNaam": "Jutter",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "vondst",
+            "objecttypeNaam": "Vondst",
+            "meervoud": "vondsten",
+            "meervoudig": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "Eenheidstelsel",
+        "naam": "Munt",
+        "eenheden": {
+          "EUR": {
             "node": "Eenheid",
             "afkorting": "EUR",
             "stelsel": "Munt",
             "canoniek": "EUR",
             "factorNaarCanoniek": 1,
-            "noemer": {
-              "node": "Eenheid",
-              "afkorting": "mnd",
-              "stelsel": "Bewaartijd",
-              "canoniek": "mnd",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
+            "noemer": null
+          },
+          "\u20ac": {
+            "node": "Eenheid",
+            "afkorting": "EUR",
+            "stelsel": "Munt",
+            "canoniek": "EUR",
+            "factorNaarCanoniek": 1,
+            "noemer": null
           }
         },
-        "bron": "het totaal van het bewaartarief van alle vondsten van de Jutter",
-        "granulariteit": null
+        "aliassen": {
+          "euro": {
+            "node": "Eenheid",
+            "afkorting": "EUR",
+            "stelsel": "Munt",
+            "canoniek": "EUR",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          },
+          "euros": {
+            "node": "Eenheid",
+            "afkorting": "EUR",
+            "stelsel": "Munt",
+            "canoniek": "EUR",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        }
       },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+      {
+        "node": "Eenheidstelsel",
+        "naam": "Bewaartijd",
+        "eenheden": {
+          "mnd": {
+            "node": "Eenheid",
+            "afkorting": "mnd",
+            "stelsel": "Bewaartijd",
+            "canoniek": "mnd",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        },
+        "aliassen": {
+          "maand": {
+            "node": "Eenheid",
+            "afkorting": "mnd",
+            "stelsel": "Bewaartijd",
+            "canoniek": "mnd",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "bewaarlast van een jutter",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "bewaarlast",
+          "objecttype": "Jutter",
+          "onderwerpBron": "een Jutter",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": {
+              "node": "Eenheid",
+              "afkorting": "EUR",
+              "stelsel": "Munt",
+              "canoniek": "EUR",
+              "factorNaarCanoniek": 1,
+              "noemer": {
+                "node": "Eenheid",
+                "afkorting": "mnd",
+                "stelsel": "Bewaartijd",
+                "canoniek": "mnd",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            }
+          },
+          "bron": "De bewaarlast van een Jutter",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Functie",
+          "kind": "TOTAAL",
+          "argumenten": [
+            {
+              "node": "AttribuutRef",
+              "attribuut": "bewaartarief",
+              "objecttype": "Vondst",
+              "onderwerpBron": "de bewarende jutter",
+              "navigatieRol": "bewarende jutter",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": {
+                  "node": "Eenheid",
+                  "afkorting": "EUR",
+                  "stelsel": "Munt",
+                  "canoniek": "EUR",
+                  "factorNaarCanoniek": 1,
+                  "noemer": {
+                    "node": "Eenheid",
+                    "afkorting": "mnd",
+                    "stelsel": "Bewaartijd",
+                    "canoniek": "mnd",
+                    "factorNaarCanoniek": 1,
+                    "noemer": null
+                  }
+                }
+              },
+              "bron": "het bewaartarief van de bewarende jutter",
+              "set": true,
+              "navigatiePad": []
+            }
+          ],
+          "elementObjecttype": "Vondst",
+          "leegwaarde": null,
+          "filter": null,
+          "dimensieSelectie": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": {
+              "node": "Eenheid",
+              "afkorting": "EUR",
+              "stelsel": "Munt",
+              "canoniek": "EUR",
+              "factorNaarCanoniek": 1,
+              "noemer": {
+                "node": "Eenheid",
+                "afkorting": "mnd",
+                "stelsel": "Bewaartijd",
+                "canoniek": "mnd",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            }
+          },
+          "bron": "het totaal van het bewaartarief van alle vondsten van de Jutter",
+          "granulariteit": null
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

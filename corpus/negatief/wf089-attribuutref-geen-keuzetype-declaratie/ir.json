@@ -1,193 +1,205 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Berging": {
-      "node": "Objecttype",
-      "naam": "Berging",
-      "attributen": {
-        "vaarwater": {
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Berging",
+        "animate": false,
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vaarwater",
+            "datatype": {
+              "node": "Enumeratie",
+              "domein": "Vaarwater",
+              "waarden": [
+                "Wad",
+                "Zeegat",
+                "Ruimzee"
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "tarief",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "toeslag",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "Vaarwater",
+        "datatype": {
           "node": "Enumeratie",
-          "domein": "Vaarwater",
           "waarden": [
             "Wad",
             "Zeegat",
             "Ruimzee"
           ]
-        },
-        "tarief": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "toeslag": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
         }
       },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": null
-    }
+      {
+        "node": "Domain",
+        "name": "Kust",
+        "datatype": {
+          "node": "Enumeratie",
+          "waarden": [
+            "Noord",
+            "Zuid",
+            "West"
+          ]
+        }
+      }
+    ],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
   },
-  "domeinen": {
-    "Vaarwater": {
-      "node": "Enumeratie",
-      "domein": "Vaarwater",
-      "waarden": [
-        "Wad",
-        "Zeegat",
-        "Ruimzee"
-      ]
-    },
-    "Kust": {
-      "node": "Enumeratie",
-      "domein": "Kust",
-      "waarden": [
-        "Noord",
-        "Zuid",
-        "West"
-      ]
-    }
-  },
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "toeslag",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "toeslag",
-        "objecttype": "Berging",
-        "onderwerpBron": "de toeslag",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "de toeslag",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Match",
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "scrutinee": {
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "toeslag",
+        "soort": "BEREKENING",
+        "doel": {
           "node": "AttribuutRef",
-          "attribuut": "tarief",
+          "attribuut": "toeslag",
           "objecttype": "Berging",
-          "onderwerpBron": "de tarief",
+          "onderwerpBron": "de toeslag",
           "navigatieRol": null,
           "type": {
-            "node": "Enumeratie",
-            "domein": "Kust",
-            "waarden": [
-              "Noord",
-              "Zuid",
-              "West"
-            ]
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
           },
-          "bron": "de tarief",
+          "bron": "de toeslag",
           "set": false,
           "navigatiePad": []
         },
-        "arms": [
-          {
-            "constructor": "Noord",
-            "binder": null,
-            "body": {
-              "node": "Literal",
-              "waarde": "3",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "3"
-            }
+        "waarde": {
+          "node": "Match",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
           },
-          {
-            "constructor": "Zuid",
-            "binder": null,
-            "body": {
-              "node": "Literal",
-              "waarde": "7",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "7"
-            }
+          "scrutinee": {
+            "node": "AttribuutRef",
+            "attribuut": "tarief",
+            "objecttype": "Berging",
+            "onderwerpBron": "de tarief",
+            "navigatieRol": null,
+            "type": {
+              "node": "Enumeratie",
+              "domein": "Kust",
+              "waarden": [
+                "Noord",
+                "Zuid",
+                "West"
+              ]
+            },
+            "bron": "de tarief",
+            "set": false,
+            "navigatiePad": []
           },
-          {
-            "constructor": "West",
-            "binder": null,
-            "body": {
-              "node": "Literal",
-              "waarde": "12",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "12"
+          "arms": [
+            {
+              "constructor": "Noord",
+              "binder": null,
+              "body": {
+                "node": "Literal",
+                "waarde": "3",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "3"
+              }
+            },
+            {
+              "constructor": "Zuid",
+              "binder": null,
+              "body": {
+                "node": "Literal",
+                "waarde": "7",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "7"
+              }
+            },
+            {
+              "constructor": "West",
+              "binder": null,
+              "body": {
+                "node": "Literal",
+                "waarde": "12",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "12"
+              }
             }
-          }
-        ],
-        "bron": "match"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+          ],
+          "bron": "match"
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

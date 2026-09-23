@@ -1,274 +1,154 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "grondslag": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "aftrek": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "heffing": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    },
-    "Rekenkamer": {
-      "node": "Objecttype",
-      "naam": "Rekenkamer",
-      "attributen": {
-        "grondslag": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "aftrek": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "heffing": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Rekenkamers"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {
-    "taxatieopdracht": {
-      "node": "Feittype",
-      "naam": "taxatieopdracht",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "opdrachtgever",
-          "objecttypeNaam": "Jutter",
-          "meervoud": null,
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "rekenkamer",
-          "objecttypeNaam": "Rekenkamer",
-          "meervoud": null,
-          "meervoudig": false
-        }
-      ]
-    }
-  },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "heffing van een rekenkamer",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "richt de rekenkamer op",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "heffing van een jutter",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "heffing van een rekenkamer",
-      "soort": "GELIJKSTELLING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "heffing",
-        "objecttype": "Rekenkamer",
-        "onderwerpBron": "een Rekenkamer",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "De heffing van een Rekenkamer",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Binair",
-        "op": "VERMINDERD_MET",
-        "links": {
-          "node": "AttribuutRef",
-          "attribuut": "grondslag",
-          "objecttype": "Rekenkamer",
-          "onderwerpBron": "de Rekenkamer",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "de grondslag van de Rekenkamer",
-          "set": false,
-          "navigatiePad": []
-        },
-        "rechts": {
-          "node": "AttribuutRef",
-          "attribuut": "aftrek",
-          "objecttype": "Rekenkamer",
-          "onderwerpBron": "de Rekenkamer",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "de aftrek van de Rekenkamer",
-          "set": false,
-          "navigatiePad": []
-        },
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "de grondslag van de Rekenkamer verminderd met de aftrek van de Rekenkamer"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "heffing van een jutter",
-      "soort": "GELIJKSTELLING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "heffing",
-        "objecttype": "Jutter",
-        "onderwerpBron": "een Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "De heffing van een Jutter",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "AttribuutRef",
-        "attribuut": "heffing",
-        "objecttype": "Rekenkamer",
-        "onderwerpBron": "haar rekenkamer",
-        "navigatieRol": "rekenkamer",
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "de heffing van haar rekenkamer",
-        "set": false,
-        "navigatiePad": [],
-        "navigatieBindingen": [
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
           {
-            "node": "RolBinding",
-            "feittype": "taxatieopdracht",
-            "rol": "rekenkamer"
+            "node": "Attribute",
+            "name": "grondslag",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aftrek",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "heffing",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Rekenkamer",
+        "animate": false,
+        "plural": "Rekenkamers",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "grondslag",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aftrek",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "heffing",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "taxatieopdracht",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "opdrachtgever",
+            "objecttypeNaam": "Jutter",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "rekenkamer",
+            "objecttypeNaam": "Rekenkamer",
+            "meervoud": null,
+            "meervoudig": false
           }
         ]
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [
-    {
-      "node": "ResolvedObjectCreatie",
-      "naam": "richt de rekenkamer op",
-      "nieuwType": "Rekenkamer",
-      "subject": "Jutter",
-      "toekenningen": [
-        {
-          "node": "Toekenning",
-          "attribuut": "grondslag",
-          "waarde": {
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "heffing van een rekenkamer",
+        "soort": "GELIJKSTELLING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "heffing",
+          "objecttype": "Rekenkamer",
+          "onderwerpBron": "een Rekenkamer",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "De heffing van een Rekenkamer",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Binair",
+          "op": "VERMINDERD_MET",
+          "links": {
             "node": "AttribuutRef",
             "attribuut": "grondslag",
-            "objecttype": "Jutter",
-            "onderwerpBron": "de Jutter",
+            "objecttype": "Rekenkamer",
+            "onderwerpBron": "de Rekenkamer",
             "navigatieRol": null,
             "type": {
               "node": "Numeriek",
@@ -277,20 +157,15 @@
               "teken": "NIET_NEGATIEF",
               "eenheid": null
             },
-            "bron": "de grondslag van de Jutter",
+            "bron": "de grondslag van de Rekenkamer",
             "set": false,
             "navigatiePad": []
           },
-          "kenmerk": false
-        },
-        {
-          "node": "Toekenning",
-          "attribuut": "aftrek",
-          "waarde": {
+          "rechts": {
             "node": "AttribuutRef",
             "attribuut": "aftrek",
-            "objecttype": "Jutter",
-            "onderwerpBron": "de Jutter",
+            "objecttype": "Rekenkamer",
+            "onderwerpBron": "de Rekenkamer",
             "navigatieRol": null,
             "type": {
               "node": "Numeriek",
@@ -299,32 +174,152 @@
               "teken": "NIET_NEGATIEF",
               "eenheid": null
             },
-            "bron": "de aftrek van de Jutter",
+            "bron": "de aftrek van de Rekenkamer",
             "set": false,
             "navigatiePad": []
           },
-          "kenmerk": false
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de grondslag van de Rekenkamer verminderd met de aftrek van de Rekenkamer"
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
         }
-      ],
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
       },
-      "verbindendeRol": {
-        "node": "RolBinding",
-        "feittype": "taxatieopdracht",
-        "rol": "rekenkamer"
+      {
+        "node": "ResolvedRegel",
+        "naam": "heffing van een jutter",
+        "soort": "GELIJKSTELLING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "heffing",
+          "objecttype": "Jutter",
+          "onderwerpBron": "een Jutter",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "De heffing van een Jutter",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "AttribuutRef",
+          "attribuut": "heffing",
+          "objecttype": "Rekenkamer",
+          "onderwerpBron": "haar rekenkamer",
+          "navigatieRol": "rekenkamer",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de heffing van haar rekenkamer",
+          "set": false,
+          "navigatiePad": [],
+          "navigatieBindingen": [
+            {
+              "node": "RolBinding",
+              "feittype": "taxatieopdracht",
+              "rol": "rekenkamer"
+            }
+          ]
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [
+      {
+        "node": "ResolvedObjectCreatie",
+        "naam": "richt de rekenkamer op",
+        "nieuwType": "Rekenkamer",
+        "subject": "Jutter",
+        "toekenningen": [
+          {
+            "node": "Toekenning",
+            "attribuut": "grondslag",
+            "waarde": {
+              "node": "AttribuutRef",
+              "attribuut": "grondslag",
+              "objecttype": "Jutter",
+              "onderwerpBron": "de Jutter",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              },
+              "bron": "de grondslag van de Jutter",
+              "set": false,
+              "navigatiePad": []
+            },
+            "kenmerk": false
+          },
+          {
+            "node": "Toekenning",
+            "attribuut": "aftrek",
+            "waarde": {
+              "node": "AttribuutRef",
+              "attribuut": "aftrek",
+              "objecttype": "Jutter",
+              "onderwerpBron": "de Jutter",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              },
+              "bron": "de aftrek van de Jutter",
+              "set": false,
+              "navigatiePad": []
+            },
+            "kenmerk": false
+          }
+        ],
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        },
+        "verbindendeRol": {
+          "node": "RolBinding",
+          "feittype": "taxatieopdracht",
+          "rol": "rekenkamer"
+        }
+      }
+    ],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

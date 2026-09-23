@@ -1,135 +1,108 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "grondslag": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "opslag": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "heffing": {
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "grondslag",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "opslag",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "heffing",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "naam": "drempel",
+        "datatype": {
           "node": "Numeriek",
           "geheel": false,
           "decimalen": 2,
           "teken": "ONBEPAALD",
           "eenheid": null
-        }
+        },
+        "granulariteit": null
       },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    }
+      {
+        "node": "Parameter",
+        "naam": "basisheffing",
+        "datatype": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "granulariteit": null
+      }
+    ],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
   },
-  "domeinen": {},
-  "parameters": {
-    "drempel": {
-      "node": "Parameter",
-      "naam": "drempel",
-      "datatype": {
-        "node": "Numeriek",
-        "geheel": false,
-        "decimalen": 2,
-        "teken": "ONBEPAALD",
-        "eenheid": null
-      },
-      "granulariteit": null
-    },
-    "basisheffing": {
-      "node": "Parameter",
-      "naam": "basisheffing",
-      "datatype": {
-        "node": "Numeriek",
-        "geheel": false,
-        "decimalen": 2,
-        "teken": "ONBEPAALD",
-        "eenheid": null
-      },
-      "granulariteit": null
-    }
-  },
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "heffing van een jutter",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "heffing van een jutter",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "heffing",
-        "objecttype": "Jutter",
-        "onderwerpBron": "De heffing van een Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "De heffing van een Jutter",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Let",
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "binder": "g",
-        "value": {
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "heffing van een jutter",
+        "soort": "BEREKENING",
+        "doel": {
           "node": "AttribuutRef",
-          "attribuut": "grondslag",
+          "attribuut": "heffing",
           "objecttype": "Jutter",
-          "onderwerpBron": "zijn",
+          "onderwerpBron": "De heffing van een Jutter",
           "navigatieRol": null,
           "type": {
             "node": "Numeriek",
             "geheel": false,
             "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
+            "teken": "ONBEPAALD",
             "eenheid": null
           },
-          "bron": "zijn grondslag",
+          "bron": "De heffing van een Jutter",
           "set": false,
           "navigatiePad": []
         },
-        "body": {
+        "waarde": {
           "node": "Let",
           "type": {
             "node": "Numeriek",
@@ -138,10 +111,10 @@
             "teken": "ONBEPAALD",
             "eenheid": null
           },
-          "binder": "o",
+          "binder": "g",
           "value": {
             "node": "AttribuutRef",
-            "attribuut": "opslag",
+            "attribuut": "grondslag",
             "objecttype": "Jutter",
             "onderwerpBron": "zijn",
             "navigatieRol": null,
@@ -152,12 +125,12 @@
               "teken": "NIET_NEGATIEF",
               "eenheid": null
             },
-            "bron": "zijn opslag",
+            "bron": "zijn grondslag",
             "set": false,
             "navigatiePad": []
           },
           "body": {
-            "node": "IfThenElse",
+            "node": "Let",
             "type": {
               "node": "Numeriek",
               "geheel": false,
@@ -165,39 +138,26 @@
               "teken": "ONBEPAALD",
               "eenheid": null
             },
-            "condition": {
-              "node": "Vergelijking",
-              "op": "GROTER",
-              "links": {
-                "node": "BinderRef",
-                "name": "g",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                },
-                "bron": "de grondslag"
+            "binder": "o",
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "opslag",
+              "objecttype": "Jutter",
+              "onderwerpBron": "zijn",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
               },
-              "rechts": {
-                "node": "ParameterRef",
-                "parameter": "drempel",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "de drempel"
-              },
-              "periode": null,
-              "bron": "de grondslag groter dan de drempel"
+              "bron": "zijn opslag",
+              "set": false,
+              "navigatiePad": []
             },
-            "then": {
-              "node": "ParameterRef",
-              "parameter": "basisheffing",
+            "body": {
+              "node": "IfThenElse",
               "type": {
                 "node": "Numeriek",
                 "geheel": false,
@@ -205,12 +165,37 @@
                 "teken": "ONBEPAALD",
                 "eenheid": null
               },
-              "bron": "de basisheffing"
-            },
-            "else": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
+              "condition": {
+                "node": "Vergelijking",
+                "op": "GROTER",
+                "links": {
+                  "node": "BinderRef",
+                  "name": "g",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  },
+                  "bron": "de grondslag"
+                },
+                "rechts": {
+                  "node": "ParameterRef",
+                  "parameter": "drempel",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "de drempel"
+                },
+                "periode": null,
+                "bron": "de grondslag groter dan de drempel"
+              },
+              "then": {
                 "node": "ParameterRef",
                 "parameter": "basisheffing",
                 "type": {
@@ -222,49 +207,65 @@
                 },
                 "bron": "de basisheffing"
               },
-              "rechts": {
-                "node": "BinderRef",
-                "name": "o",
+              "else": {
+                "node": "Binair",
+                "op": "PLUS",
+                "links": {
+                  "node": "ParameterRef",
+                  "parameter": "basisheffing",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "de basisheffing"
+                },
+                "rechts": {
+                  "node": "BinderRef",
+                  "name": "o",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  },
+                  "bron": "de opslag"
+                },
                 "type": {
                   "node": "Numeriek",
                   "geheel": false,
                   "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
+                  "teken": "ONBEPAALD",
                   "eenheid": null
                 },
-                "bron": "de opslag"
+                "bron": "de basisheffing plus de opslag"
               },
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de basisheffing plus de opslag"
+              "bron": "de basisheffing, boven de drempel zonder opslag en daaronder met opslag"
             },
-            "bron": "de basisheffing, boven de drempel zonder opslag en daaronder met opslag"
+            "bron": "de opslag is zijn opslag"
           },
-          "bron": "de opslag is zijn opslag"
+          "bron": "de grondslag is zijn grondslag"
         },
-        "bron": "de grondslag is zijn grondslag"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

@@ -1,226 +1,219 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "basisbedrag": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "kandidaatbedrag": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "waardering": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "basisbedrag",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "kandidaatbedrag",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "waardering",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "erkend",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "kandidaat",
+            "kind": "BIJVOEGLIJK"
+          }
+        ]
       },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "erkend",
-        "kandidaat"
-      ],
-      "kenmerkSoorten": {
-        "erkend": "BIJVOEGLIJK",
-        "kandidaat": "BIJVOEGLIJK"
-      },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    },
-    "Strandvondst": {
-      "node": "Objecttype",
-      "naam": "Strandvondst",
-      "attributen": {},
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Strandvondsten"
-    }
+      {
+        "node": "ObjectType",
+        "name": "Strandvondst",
+        "animate": false,
+        "plural": "Strandvondsten",
+        "attributes": [],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
   },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "waardering van een vondst",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "maak jutter aan",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [
-    {
-      "node": "ResolvedObjectCreatie",
-      "naam": "maak jutter aan",
-      "nieuwType": "Jutter",
-      "subject": "Strandvondst",
-      "toekenningen": [
-        {
-          "node": "Toekenning",
-          "attribuut": "waardering",
-          "waarde": {
-            "node": "Literal",
-            "waarde": "10",
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+  "rules": {
+    "resolvedRegels": [],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [
+      {
+        "node": "ResolvedObjectCreatie",
+        "naam": "maak jutter aan",
+        "nieuwType": "Jutter",
+        "subject": "Strandvondst",
+        "toekenningen": [
+          {
+            "node": "Toekenning",
+            "attribuut": "waardering",
+            "waarde": {
+              "node": "Literal",
+              "waarde": "10",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "10"
             },
-            "bron": "10"
-          },
-          "kenmerk": false
+            "kenmerk": false
+          }
+        ],
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
         }
-      ],
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
       }
-    }
-  ],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
-  "diagnostics": [],
-  "prioritizedDefaults": [
-    {
-      "node": "PrioritizedDefaults",
-      "naam": "waardering van een vondst",
-      "onderwerp": "Jutter",
-      "kenmerk": null,
-      "attribuut": "waardering",
-      "defaults": [
-        {
-          "node": "Default",
-          "besluit": null,
-          "voorwaarde": {
-            "node": "Kenmerk",
-            "kenmerk": "erkend",
-            "navigatie": null,
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "hij erkend is"
-          },
-          "consequentie": {
-            "node": "AttribuutRef",
-            "attribuut": "basisbedrag",
-            "objecttype": "Jutter",
-            "onderwerpBron": "zijn basisbedrag",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+    ],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "naam": "waardering van een vondst",
+        "onderwerp": "Jutter",
+        "kenmerk": null,
+        "attribuut": "waardering",
+        "defaults": [
+          {
+            "node": "Default",
+            "besluit": null,
+            "voorwaarde": {
+              "node": "Kenmerk",
+              "kenmerk": "erkend",
+              "navigatie": null,
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "hij erkend is"
             },
-            "bron": "zijn basisbedrag",
-            "set": false,
-            "navigatiePad": []
-          },
-          "bron": "voor een erkend jutter: het basisbedrag"
-        },
-        {
-          "node": "Default",
-          "besluit": null,
-          "voorwaarde": {
-            "node": "Kenmerk",
-            "kenmerk": "kandidaat",
-            "navigatie": null,
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "hij kandidaat is"
-          },
-          "consequentie": {
-            "node": "AttribuutRef",
-            "attribuut": "kandidaatbedrag",
-            "objecttype": "Jutter",
-            "onderwerpBron": "zijn kandidaatbedrag",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+            "consequentie": {
+              "node": "AttribuutRef",
+              "attribuut": "basisbedrag",
+              "objecttype": "Jutter",
+              "onderwerpBron": "zijn basisbedrag",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "zijn basisbedrag",
+              "set": false,
+              "navigatiePad": []
             },
-            "bron": "zijn kandidaatbedrag",
-            "set": false,
-            "navigatiePad": []
+            "bron": "voor een erkend jutter: het basisbedrag"
           },
-          "bron": "voor een kandidaat: het kandidaatbedrag"
-        },
-        {
-          "node": "Default",
-          "besluit": null,
-          "voorwaarde": null,
-          "consequentie": {
-            "node": "Literal",
-            "waarde": "25",
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+          {
+            "node": "Default",
+            "besluit": null,
+            "voorwaarde": {
+              "node": "Kenmerk",
+              "kenmerk": "kandidaat",
+              "navigatie": null,
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "hij kandidaat is"
             },
-            "bron": "25"
+            "consequentie": {
+              "node": "AttribuutRef",
+              "attribuut": "kandidaatbedrag",
+              "objecttype": "Jutter",
+              "onderwerpBron": "zijn kandidaatbedrag",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "zijn kandidaatbedrag",
+              "set": false,
+              "navigatiePad": []
+            },
+            "bron": "voor een kandidaat: het kandidaatbedrag"
           },
-          "initialisatie": true,
-          "bron": "anders: 25, tenzij al gevuld"
+          {
+            "node": "Default",
+            "besluit": null,
+            "voorwaarde": null,
+            "consequentie": {
+              "node": "Literal",
+              "waarde": "25",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "25"
+            },
+            "initialisatie": true,
+            "bron": "anders: 25, tenzij al gevuld"
+          }
+        ],
+        "bron": "waardering: basisbedrag voor erkenden, kandidaatbedrag voor kandidaten, anders 25",
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
         }
-      ],
-      "bron": "waardering: basisbedrag voor erkenden, kandidaatbedrag voor kandidaten, anders 25",
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
       }
-    }
-  ]
+    ]
+  },
+  "diagnostics": []
 }

@@ -1,157 +1,200 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "vergoeding": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    }
-  },
-  "domeinen": {},
-  "parameters": {
-    "staffelbedragen": {
-      "node": "Parameter",
-      "naam": "staffelbedragen",
-      "datatype": {
-        "node": "ListType",
-        "element": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        }
-      },
-      "granulariteit": null
-    },
-    "plafond": {
-      "node": "Parameter",
-      "naam": "plafond",
-      "datatype": {
-        "node": "Numeriek",
-        "geheel": false,
-        "decimalen": 2,
-        "teken": "ONBEPAALD",
-        "eenheid": null
-      },
-      "granulariteit": null
-    }
-  },
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "vergoeding van een jutter",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "vergoeding van een jutter",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "vergoeding",
-        "objecttype": "Jutter",
-        "onderwerpBron": "De vergoeding van een Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "De vergoeding van een Jutter",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Fold",
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "list": {
-          "node": "ParameterRef",
-          "parameter": "staffelbedragen",
-          "type": {
-            "node": "ListType",
-            "element": {
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vergoeding",
+            "datatype": {
               "node": "Numeriek",
               "geheel": false,
               "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
+              "teken": "ONBEPAALD",
               "eenheid": null
             }
-          },
-          "bron": "de staffelbedragen"
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "naam": "staffelbedragen",
+        "datatype": {
+          "node": "ListType",
+          "element": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          }
         },
-        "function": {
-          "node": "Lambda",
-          "parameters": [
-            {
-              "name": "acc",
-              "datatype": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              }
-            },
-            {
-              "name": "x",
-              "datatype": {
+        "granulariteit": null
+      },
+      {
+        "node": "Parameter",
+        "naam": "plafond",
+        "datatype": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "granulariteit": null
+      }
+    ],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "vergoeding van een jutter",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "vergoeding",
+          "objecttype": "Jutter",
+          "onderwerpBron": "De vergoeding van een Jutter",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "De vergoeding van een Jutter",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Fold",
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "list": {
+            "node": "ParameterRef",
+            "parameter": "staffelbedragen",
+            "type": {
+              "node": "ListType",
+              "element": {
                 "node": "Numeriek",
                 "geheel": false,
                 "decimalen": 2,
                 "teken": "NIET_NEGATIEF",
                 "eenheid": null
               }
-            }
-          ],
-          "body": {
-            "node": "IfThenElse",
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
             },
-            "condition": {
-              "node": "Vergelijking",
-              "op": "KLEINER_OF_GELIJK",
-              "links": {
+            "bron": "de staffelbedragen"
+          },
+          "function": {
+            "node": "Lambda",
+            "parameters": [
+              {
+                "name": "acc",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                }
+              },
+              {
+                "name": "x",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                }
+              }
+            ],
+            "body": {
+              "node": "IfThenElse",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "condition": {
+                "node": "Vergelijking",
+                "op": "KLEINER_OF_GELIJK",
+                "links": {
+                  "node": "Binair",
+                  "op": "PLUS",
+                  "links": {
+                    "node": "BinderRef",
+                    "name": "acc",
+                    "type": {
+                      "node": "Numeriek",
+                      "geheel": false,
+                      "decimalen": 2,
+                      "teken": "ONBEPAALD",
+                      "eenheid": null
+                    },
+                    "bron": "de opgetelde vergoeding"
+                  },
+                  "rechts": {
+                    "node": "BinderRef",
+                    "name": "x",
+                    "type": {
+                      "node": "Numeriek",
+                      "geheel": false,
+                      "decimalen": 2,
+                      "teken": "NIET_NEGATIEF",
+                      "eenheid": null
+                    },
+                    "bron": "het staffelbedrag"
+                  },
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "de opgetelde vergoeding plus het staffelbedrag"
+                },
+                "rechts": {
+                  "node": "ParameterRef",
+                  "parameter": "plafond",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "het plafond"
+                },
+                "periode": null,
+                "bron": "de opgetelde vergoeding plus het staffelbedrag kleiner dan of gelijk aan het plafond"
+              },
+              "then": {
                 "node": "Binair",
                 "op": "PLUS",
                 "links": {
@@ -187,25 +230,7 @@
                 },
                 "bron": "de opgetelde vergoeding plus het staffelbedrag"
               },
-              "rechts": {
-                "node": "ParameterRef",
-                "parameter": "plafond",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "het plafond"
-              },
-              "periode": null,
-              "bron": "de opgetelde vergoeding plus het staffelbedrag kleiner dan of gelijk aan het plafond"
-            },
-            "then": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
+              "else": {
                 "node": "BinderRef",
                 "name": "acc",
                 "type": {
@@ -217,73 +242,41 @@
                 },
                 "bron": "de opgetelde vergoeding"
               },
-              "rechts": {
-                "node": "BinderRef",
-                "name": "x",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                },
-                "bron": "het staffelbedrag"
-              },
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de opgetelde vergoeding plus het staffelbedrag"
+              "bron": "de opgetelde vergoeding met het staffelbedrag erbij zolang het plafond niet wordt overschreden"
             },
-            "else": {
-              "node": "BinderRef",
-              "name": "acc",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de opgetelde vergoeding"
+            "bron": "de staffel opgeteld tot het plafond"
+          },
+          "init": {
+            "node": "Literal",
+            "waarde": "0.00",
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
             },
-            "bron": "de opgetelde vergoeding met het staffelbedrag erbij zolang het plafond niet wordt overschreden"
+            "bron": "0.00"
           },
-          "bron": "de staffel opgeteld tot het plafond"
+          "bron": "de staffelbedragen gevouwen tot het plafond"
         },
-        "init": {
-          "node": "Literal",
-          "waarde": "0.00",
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "0.00"
-        },
-        "bron": "de staffelbedragen gevouwen tot het plafond"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

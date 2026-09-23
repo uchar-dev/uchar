@@ -1,116 +1,117 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Vondst": {
-      "node": "Objecttype",
-      "naam": "Vondst",
-      "attributen": {
-        "aangiftedatum": {
-          "node": "DatumInDagen"
-        },
-        "tweededatum": {
-          "node": "DatumInDagen"
-        },
-        "toetsdatum": {
-          "node": "DatumInDagen"
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Vondsten"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "Berekening toetsdatum",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "Berekening toetsdatum",
-      "soort": "GELIJKSTELLING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "toetsdatum",
-        "objecttype": "Vondst",
-        "onderwerpBron": "een Vondst",
-        "navigatieRol": null,
-        "type": {
-          "node": "DatumInDagen"
-        },
-        "bron": "De toetsdatum van een Vondst",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Binair",
-        "op": "PLUS",
-        "links": {
-          "node": "AttribuutRef",
-          "attribuut": "aangiftedatum",
-          "objecttype": "Vondst",
-          "onderwerpBron": "zijn",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "aangiftedatum",
+            "datatype": {
+              "node": "DatumInDagen"
+            }
           },
-          "bron": "zijn aangiftedatum",
-          "set": false,
-          "navigatiePad": []
-        },
-        "rechts": {
-          "node": "AttribuutRef",
-          "attribuut": "tweededatum",
-          "objecttype": "Vondst",
-          "onderwerpBron": "zijn",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
+          {
+            "node": "Attribute",
+            "name": "tweededatum",
+            "datatype": {
+              "node": "DatumInDagen"
+            }
           },
-          "bron": "zijn tweededatum",
-          "set": false,
-          "navigatiePad": []
-        },
-        "type": {
-          "node": "DatumInDagen"
-        },
-        "bron": "zijn aangiftedatum plus zijn tweededatum"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+          {
+            "node": "Attribute",
+            "name": "toetsdatum",
+            "datatype": {
+              "node": "DatumInDagen"
+            }
+          }
+        ],
+        "characteristics": []
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "Berekening toetsdatum",
+        "soort": "GELIJKSTELLING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "toetsdatum",
+          "objecttype": "Vondst",
+          "onderwerpBron": "een Vondst",
+          "navigatieRol": null,
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "De toetsdatum van een Vondst",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Binair",
+          "op": "PLUS",
+          "links": {
+            "node": "AttribuutRef",
+            "attribuut": "aangiftedatum",
+            "objecttype": "Vondst",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "DatumInDagen"
+            },
+            "bron": "zijn aangiftedatum",
+            "set": false,
+            "navigatiePad": []
+          },
+          "rechts": {
+            "node": "AttribuutRef",
+            "attribuut": "tweededatum",
+            "objecttype": "Vondst",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "DatumInDagen"
+            },
+            "bron": "zijn tweededatum",
+            "set": false,
+            "navigatiePad": []
+          },
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "zijn aangiftedatum plus zijn tweededatum"
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

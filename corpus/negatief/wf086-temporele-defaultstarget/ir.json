@@ -1,105 +1,103 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "wachtgeld": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {
-        "wachtgeld": "MAAND"
-      },
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "kustwacht"
-      ],
-      "kenmerkSoorten": {
-        "kustwacht": "BIJVOEGLIJK"
-      },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "wachtgeld voor kustwachters",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
-  "diagnostics": [],
-  "prioritizedDefaults": [
-    {
-      "node": "PrioritizedDefaults",
-      "naam": "wachtgeld voor kustwachters",
-      "onderwerp": "Jutter",
-      "kenmerk": null,
-      "attribuut": "wachtgeld",
-      "defaults": [
-        {
-          "node": "Default",
-          "besluit": null,
-          "voorwaarde": {
-            "node": "Kenmerk",
-            "kenmerk": "kustwacht",
-            "navigatie": null,
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "hij kustwacht is"
-          },
-          "consequentie": {
-            "node": "Literal",
-            "waarde": "30",
-            "type": {
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "wachtgeld",
+            "datatype": {
               "node": "Numeriek",
               "geheel": true,
               "decimalen": 0,
               "teken": "ONBEPAALD",
               "eenheid": null
             },
-            "bron": "30"
-          },
-          "bron": null
-        }
-      ],
-      "ongeordend": false,
-      "bron": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "MAAND",
+              "count": 1
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "kustwacht",
+            "kind": "BIJVOEGLIJK"
+          }
+        ]
       }
-    }
-  ]
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "naam": "wachtgeld voor kustwachters",
+        "onderwerp": "Jutter",
+        "kenmerk": null,
+        "attribuut": "wachtgeld",
+        "defaults": [
+          {
+            "node": "Default",
+            "besluit": null,
+            "voorwaarde": {
+              "node": "Kenmerk",
+              "kenmerk": "kustwacht",
+              "navigatie": null,
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "hij kustwacht is"
+            },
+            "consequentie": {
+              "node": "Literal",
+              "waarde": "30",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "30"
+            },
+            "bron": null
+          }
+        ],
+        "ongeordend": false,
+        "bron": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ]
+  },
+  "diagnostics": []
 }

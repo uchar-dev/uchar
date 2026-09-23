@@ -1,144 +1,135 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Strandvondst": {
-      "node": "Objecttype",
-      "naam": "Strandvondst",
-      "attributen": {
-        "vondstnummer": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "kavelnummer": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Strandvondst",
+        "animate": false,
+        "plural": "Strandvondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vondstnummer",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "JAAR",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "kavelnummer",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "JAAR",
+              "count": 1
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Kust",
+        "animate": false,
+        "plural": "Kusten",
+        "attributes": [],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "ligging",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "kust",
+            "objecttypeNaam": "Kust",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "strandvondst",
+            "objecttypeNaam": "Strandvondst",
+            "meervoud": "strandvondsten",
+            "meervoudig": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [
+      {
+        "node": "ResolvedUniciteit",
+        "naam": "eenmalig nummer",
+        "subject": "Strandvondst",
+        "sleutels": [
+          "vondstnummer"
+        ],
+        "scopeVeld": null,
+        "bron": "De vondstnummers van alle Strandvondsten moeten uniek zijn.",
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
         }
       },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {
-        "vondstnummer": "JAAR",
-        "kavelnummer": "JAAR"
-      },
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Strandvondsten"
-    },
-    "Kust": {
-      "node": "Objecttype",
-      "naam": "Kust",
-      "attributen": {},
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Kusten"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {
-    "ligging": {
-      "node": "Feittype",
-      "naam": "ligging",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "kust",
-          "objecttypeNaam": "Kust",
-          "meervoud": null,
-          "meervoudig": false
+      {
+        "node": "ResolvedUniciteit",
+        "naam": "kavel per kust",
+        "subject": "Strandvondst",
+        "sleutels": [
+          "kavelnummer"
+        ],
+        "scopeVeld": "kust",
+        "bron": "De kavelnummers van alle Strandvondsten van de kust moeten uniek zijn.",
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
         },
-        {
-          "node": "Rol",
-          "naam": "strandvondst",
-          "objecttypeNaam": "Strandvondst",
-          "meervoud": "strandvondsten",
-          "meervoudig": true
+        "scopeRol": {
+          "node": "RolBinding",
+          "feittype": "ligging",
+          "rol": "kust"
         }
-      ]
-    }
+      }
+    ],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
   },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "eenmalig nummer",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "kavel per kust",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [
-    {
-      "node": "ResolvedUniciteit",
-      "naam": "eenmalig nummer",
-      "subject": "Strandvondst",
-      "sleutels": [
-        "vondstnummer"
-      ],
-      "scopeVeld": null,
-      "bron": "De vondstnummers van alle Strandvondsten moeten uniek zijn.",
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedUniciteit",
-      "naam": "kavel per kust",
-      "subject": "Strandvondst",
-      "sleutels": [
-        "kavelnummer"
-      ],
-      "scopeVeld": "kust",
-      "bron": "De kavelnummers van alle Strandvondsten van de kust moeten uniek zijn.",
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      },
-      "scopeRol": {
-        "node": "RolBinding",
-        "feittype": "ligging",
-        "rol": "kust"
-      }
-    }
-  ],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
   "diagnostics": []
 }

@@ -1,13 +1,81 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "stand": {
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "stand",
+            "datatype": {
+              "node": "SumType",
+              "domain": "stand",
+              "constructors": [
+                {
+                  "name": "Geborgen",
+                  "payload": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                },
+                {
+                  "name": "Vermist",
+                  "payload": null
+                },
+                {
+                  "name": "Betwist",
+                  "payload": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "grondslag",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "tarief",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "stand",
+        "datatype": {
           "node": "SumType",
-          "domain": "stand",
           "constructors": [
             {
               "name": "Geborgen",
@@ -34,172 +102,132 @@
               }
             }
           ]
-        },
-        "grondslag": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "tarief": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
         }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    }
+      }
+    ],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
   },
-  "domeinen": {
-    "stand": {
-      "node": "SumType",
-      "domain": "stand",
-      "constructors": [
-        {
-          "name": "Geborgen",
-          "payload": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          }
-        },
-        {
-          "name": "Vermist",
-          "payload": null
-        },
-        {
-          "name": "Betwist",
-          "payload": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          }
-        }
-      ]
-    }
-  },
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "tarief van een jutter",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "tarief van een jutter",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "tarief",
-        "objecttype": "Jutter",
-        "onderwerpBron": "Het tarief van een Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "Het tarief van een Jutter",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Match",
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "scrutinee": {
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "tarief van een jutter",
+        "soort": "BEREKENING",
+        "doel": {
           "node": "AttribuutRef",
-          "attribuut": "stand",
+          "attribuut": "tarief",
           "objecttype": "Jutter",
-          "onderwerpBron": "zijn",
+          "onderwerpBron": "Het tarief van een Jutter",
           "navigatieRol": null,
           "type": {
-            "node": "SumType",
-            "domain": "stand",
-            "constructors": [
-              {
-                "name": "Geborgen",
-                "payload": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              },
-              {
-                "name": "Vermist",
-                "payload": null
-              },
-              {
-                "name": "Betwist",
-                "payload": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              }
-            ]
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
           },
-          "bron": "zijn stand",
+          "bron": "Het tarief van een Jutter",
           "set": false,
           "navigatiePad": []
         },
-        "arms": [
-          {
-            "constructor": "Geborgen",
-            "binder": "w",
-            "body": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "BinderRef",
-                "name": "w",
+        "waarde": {
+          "node": "Match",
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "scrutinee": {
+            "node": "AttribuutRef",
+            "attribuut": "stand",
+            "objecttype": "Jutter",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "SumType",
+              "domain": "stand",
+              "constructors": [
+                {
+                  "name": "Geborgen",
+                  "payload": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                },
+                {
+                  "name": "Vermist",
+                  "payload": null
+                },
+                {
+                  "name": "Betwist",
+                  "payload": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                }
+              ]
+            },
+            "bron": "zijn stand",
+            "set": false,
+            "navigatiePad": []
+          },
+          "arms": [
+            {
+              "constructor": "Geborgen",
+              "binder": "w",
+              "body": {
+                "node": "Binair",
+                "op": "PLUS",
+                "links": {
+                  "node": "BinderRef",
+                  "name": "w",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  },
+                  "bron": "de geborgen waarde"
+                },
+                "rechts": {
+                  "node": "Literal",
+                  "waarde": "0.00",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "0.00"
+                },
                 "type": {
                   "node": "Numeriek",
                   "geheel": false,
                   "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
+                  "teken": "ONBEPAALD",
                   "eenheid": null
                 },
-                "bron": "de geborgen waarde"
-              },
-              "rechts": {
+                "bron": "de geborgen waarde plus 0.00"
+              }
+            },
+            {
+              "constructor": "Vermist",
+              "binder": null,
+              "body": {
                 "node": "Literal",
                 "waarde": "0.00",
                 "type": {
@@ -210,70 +238,56 @@
                   "eenheid": null
                 },
                 "bron": "0.00"
-              },
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de geborgen waarde plus 0.00"
-            }
-          },
-          {
-            "constructor": "Vermist",
-            "binder": null,
-            "body": {
-              "node": "Literal",
-              "waarde": "0.00",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "0.00"
-            }
-          },
-          {
-            "constructor": "Betwist",
-            "binder": "a",
-            "body": {
-              "node": "Afgerond",
-              "basis": {
-                "node": "Binair",
-                "op": "GEDEELD_DOOR",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "grondslag",
-                  "objecttype": "Jutter",
-                  "onderwerpBron": "zijn",
-                  "navigatieRol": null,
+              }
+            },
+            {
+              "constructor": "Betwist",
+              "binder": "a",
+              "body": {
+                "node": "Afgerond",
+                "basis": {
+                  "node": "Binair",
+                  "op": "GEDEELD_DOOR",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "grondslag",
+                    "objecttype": "Jutter",
+                    "onderwerpBron": "zijn",
+                    "navigatieRol": null,
+                    "type": {
+                      "node": "Numeriek",
+                      "geheel": false,
+                      "decimalen": 2,
+                      "teken": "NIET_NEGATIEF",
+                      "eenheid": null
+                    },
+                    "bron": "zijn grondslag",
+                    "set": false,
+                    "navigatiePad": []
+                  },
+                  "rechts": {
+                    "node": "BinderRef",
+                    "name": "a",
+                    "type": {
+                      "node": "Numeriek",
+                      "geheel": false,
+                      "decimalen": 2,
+                      "teken": "NIET_NEGATIEF",
+                      "eenheid": null
+                    },
+                    "bron": "de betwiste noemer"
+                  },
                   "type": {
                     "node": "Numeriek",
                     "geheel": false,
                     "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
+                    "teken": "ONBEPAALD",
                     "eenheid": null
                   },
-                  "bron": "zijn grondslag",
-                  "set": false,
-                  "navigatiePad": []
+                  "bron": "zijn grondslag gedeeld door de betwiste noemer"
                 },
-                "rechts": {
-                  "node": "BinderRef",
-                  "name": "a",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  },
-                  "bron": "de betwiste noemer"
-                },
+                "modus": "REKENKUNDIG",
+                "decimalen": 2,
                 "type": {
                   "node": "Numeriek",
                   "geheel": false,
@@ -281,39 +295,29 @@
                   "teken": "ONBEPAALD",
                   "eenheid": null
                 },
-                "bron": "zijn grondslag gedeeld door de betwiste noemer"
-              },
-              "modus": "REKENKUNDIG",
-              "decimalen": 2,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "zijn grondslag gedeeld door de betwiste noemer rekenkundig afgerond op 2 decimalen"
+                "bron": "zijn grondslag gedeeld door de betwiste noemer rekenkundig afgerond op 2 decimalen"
+              }
             }
-          }
-        ],
-        "bron": "de grondslag afhankelijk van zijn stand"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+          ],
+          "bron": "de grondslag afhankelijk van zijn stand"
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

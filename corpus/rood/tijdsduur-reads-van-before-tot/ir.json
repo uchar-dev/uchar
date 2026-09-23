@@ -1,140 +1,63 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Vaart": {
-      "node": "Objecttype",
-      "naam": "Vaart",
-      "attributen": {
-        "vertrek": {
-          "node": "DatumInDagen"
-        },
-        "vaartduur": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "dagen",
-            "stelsel": null,
-            "canoniek": null,
-            "factorNaarCanoniek": null,
-            "noemer": null
-          }
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Vaarten"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "vaartduur van een vaart",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "vaartduur van een vaart",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "vaartduur",
-        "objecttype": "Vaart",
-        "onderwerpBron": "De vaartduur van een Vaart",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "dagen",
-            "stelsel": null,
-            "canoniek": null,
-            "factorNaarCanoniek": null,
-            "noemer": null
-          }
-        },
-        "bron": "De vaartduur van een Vaart",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Let",
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "dagen",
-            "stelsel": null,
-            "canoniek": null,
-            "factorNaarCanoniek": null,
-            "noemer": null
-          }
-        },
-        "binder": "vertrekdatum",
-        "value": {
-          "node": "AttribuutRef",
-          "attribuut": "vertrek",
-          "objecttype": "Vaart",
-          "onderwerpBron": "zijn",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "zijn vertrek",
-          "set": false,
-          "navigatiePad": []
-        },
-        "body": {
-          "node": "Functie",
-          "kind": "TIJDSDUUR",
-          "argumenten": [
-            {
-              "node": "Constante",
-              "naam": "Rekendatum",
-              "type": {
-                "node": "DatumInDagen"
-              },
-              "bron": "de rekendatum"
-            },
-            {
-              "node": "BinderRef",
-              "name": "vertrekdatum",
-              "type": {
-                "node": "DatumInDagen"
-              },
-              "bron": "de vertrekdatum"
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vaart",
+        "animate": false,
+        "plural": "Vaarten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vertrek",
+            "datatype": {
+              "node": "DatumInDagen"
             }
-          ],
-          "elementObjecttype": null,
-          "leegwaarde": null,
-          "filter": null,
-          "dimensieSelectie": null,
+          },
+          {
+            "node": "Attribute",
+            "name": "vaartduur",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "dagen",
+                "stelsel": null,
+                "canoniek": null,
+                "factorNaarCanoniek": null,
+                "noemer": null
+              }
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "vaartduur van een vaart",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "vaartduur",
+          "objecttype": "Vaart",
+          "onderwerpBron": "De vaartduur van een Vaart",
+          "navigatieRol": null,
           "type": {
             "node": "Numeriek",
             "geheel": true,
@@ -149,27 +72,101 @@
               "noemer": null
             }
           },
-          "bron": "de tijdsduur van de rekendatum tot de vertrekdatum in hele dagen",
-          "granulariteit": null
+          "bron": "De vaartduur van een Vaart",
+          "set": false,
+          "navigatiePad": []
         },
-        "bron": "de vertrekdatum is zijn vertrek"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        "waarde": {
+          "node": "Let",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": {
+              "node": "Eenheid",
+              "afkorting": "dagen",
+              "stelsel": null,
+              "canoniek": null,
+              "factorNaarCanoniek": null,
+              "noemer": null
+            }
+          },
+          "binder": "vertrekdatum",
+          "value": {
+            "node": "AttribuutRef",
+            "attribuut": "vertrek",
+            "objecttype": "Vaart",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "DatumInDagen"
+            },
+            "bron": "zijn vertrek",
+            "set": false,
+            "navigatiePad": []
+          },
+          "body": {
+            "node": "Functie",
+            "kind": "TIJDSDUUR",
+            "argumenten": [
+              {
+                "node": "Constante",
+                "naam": "Rekendatum",
+                "type": {
+                  "node": "DatumInDagen"
+                },
+                "bron": "de rekendatum"
+              },
+              {
+                "node": "BinderRef",
+                "name": "vertrekdatum",
+                "type": {
+                  "node": "DatumInDagen"
+                },
+                "bron": "de vertrekdatum"
+              }
+            ],
+            "elementObjecttype": null,
+            "leegwaarde": null,
+            "filter": null,
+            "dimensieSelectie": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "dagen",
+                "stelsel": null,
+                "canoniek": null,
+                "factorNaarCanoniek": null,
+                "noemer": null
+              }
+            },
+            "bron": "de tijdsduur van de rekendatum tot de vertrekdatum in hele dagen",
+            "granulariteit": null
+          },
+          "bron": "de vertrekdatum is zijn vertrek"
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

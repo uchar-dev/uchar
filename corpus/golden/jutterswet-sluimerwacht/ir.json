@@ -1,213 +1,213 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Seinpost": {
-      "node": "Objecttype",
-      "naam": "Seinpost",
-      "attributen": {
-        "meldingen": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "meldingsafschrift": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "bemand",
-        "verlicht",
-        "sluimerend"
-      ],
-      "kenmerkSoorten": {
-        "bemand": "BIJVOEGLIJK",
-        "verlicht": "BIJVOEGLIJK",
-        "sluimerend": "BIJVOEGLIJK"
-      },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Seinposten"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "sluimerstand bij beperkte dienst",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "afschrift van de meldingen",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "sluimerstand bij beperkte dienst",
-      "soort": "KENMERKTOEKENNING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "sluimerend",
-        "objecttype": "Seinpost",
-        "onderwerpBron": "Een Seinpost",
-        "navigatieRol": null,
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "Een Seinpost is sluimerend",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "waar",
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "waar"
-      },
-      "voorwaarde": {
-        "node": "Samengesteld",
-        "kwantor": "TEN_HOOGSTE",
-        "drempel": 1,
-        "onderdelen": [
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Seinpost",
+        "animate": false,
+        "plural": "Seinposten",
+        "attributes": [
           {
-            "node": "Kenmerk",
-            "kenmerk": "bemand",
-            "navigatie": null,
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "de Seinpost bemand is"
+            "node": "Attribute",
+            "name": "meldingen",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
           },
           {
-            "node": "Kenmerk",
-            "kenmerk": "verlicht",
-            "navigatie": null,
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "de Seinpost verlicht is"
-          },
-          {
-            "node": "Vergelijking",
-            "op": "GROTER",
-            "links": {
-              "node": "AttribuutRef",
-              "attribuut": "meldingen",
-              "objecttype": "Seinpost",
-              "onderwerpBron": "de meldingen",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de meldingen van de Seinpost",
-              "set": false,
-              "navigatiePad": []
-            },
-            "rechts": {
-              "node": "Literal",
-              "waarde": "2",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "2"
-            },
-            "periode": null,
-            "bron": "haar meldingen groter zijn dan 2"
+            "node": "Attribute",
+            "name": "meldingsafschrift",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
           }
         ],
-        "bron": "ten hoogste \u00e9\u00e9n van: bemand, verlicht, meldingen boven 2"
-      },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "bemand",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "verlicht",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "sluimerend",
+            "kind": "BIJVOEGLIJK"
+          }
+        ]
       }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "afschrift van de meldingen",
-      "soort": "GELIJKSTELLING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "meldingsafschrift",
-        "objecttype": "Seinpost",
-        "onderwerpBron": "een Seinpost",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "sluimerstand bij beperkte dienst",
+        "soort": "KENMERKTOEKENNING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "sluimerend",
+          "objecttype": "Seinpost",
+          "onderwerpBron": "Een Seinpost",
+          "navigatieRol": null,
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "Een Seinpost is sluimerend",
+          "set": false,
+          "navigatiePad": []
         },
-        "bron": "Het meldingsafschrift van een Seinpost",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "AttribuutRef",
-        "attribuut": "meldingen",
-        "objecttype": "Seinpost",
-        "onderwerpBron": "de meldingen",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
+        "waarde": {
+          "node": "Literal",
+          "waarde": "waar",
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "waar"
         },
-        "bron": "de meldingen van de Seinpost",
-        "set": false,
-        "navigatiePad": []
+        "voorwaarde": {
+          "node": "Samengesteld",
+          "kwantor": "TEN_HOOGSTE",
+          "drempel": 1,
+          "onderdelen": [
+            {
+              "node": "Kenmerk",
+              "kenmerk": "bemand",
+              "navigatie": null,
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "de Seinpost bemand is"
+            },
+            {
+              "node": "Kenmerk",
+              "kenmerk": "verlicht",
+              "navigatie": null,
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "de Seinpost verlicht is"
+            },
+            {
+              "node": "Vergelijking",
+              "op": "GROTER",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "meldingen",
+                "objecttype": "Seinpost",
+                "onderwerpBron": "de meldingen",
+                "navigatieRol": null,
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "de meldingen van de Seinpost",
+                "set": false,
+                "navigatiePad": []
+              },
+              "rechts": {
+                "node": "Literal",
+                "waarde": "2",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "2"
+              },
+              "periode": null,
+              "bron": "haar meldingen groter zijn dan 2"
+            }
+          ],
+          "bron": "ten hoogste \u00e9\u00e9n van: bemand, verlicht, meldingen boven 2"
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+      {
+        "node": "ResolvedRegel",
+        "naam": "afschrift van de meldingen",
+        "soort": "GELIJKSTELLING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "meldingsafschrift",
+          "objecttype": "Seinpost",
+          "onderwerpBron": "een Seinpost",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "Het meldingsafschrift van een Seinpost",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "AttribuutRef",
+          "attribuut": "meldingen",
+          "objecttype": "Seinpost",
+          "onderwerpBron": "de meldingen",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de meldingen van de Seinpost",
+          "set": false,
+          "navigatiePad": []
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

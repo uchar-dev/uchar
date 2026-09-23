@@ -1,131 +1,17 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "metingen": {
-          "node": "ListType",
-          "element": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          }
-        },
-        "bovental": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "somverhoogd": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    }
-  },
-  "domeinen": {},
-  "parameters": {
-    "drempel": {
-      "node": "Parameter",
-      "naam": "drempel",
-      "datatype": {
-        "node": "Numeriek",
-        "geheel": false,
-        "decimalen": 2,
-        "teken": "ONBEPAALD",
-        "eenheid": null
-      },
-      "granulariteit": null
-    }
-  },
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "bovental van een jutter",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "somverhoogd van een jutter",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "bovental van een jutter",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "bovental",
-        "objecttype": "Jutter",
-        "onderwerpBron": "Het bovental van een Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "Het bovental van een Jutter",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Fold",
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "list": {
-          "node": "MapList",
-          "type": {
-            "node": "ListType",
-            "element": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            }
-          },
-          "list": {
-            "node": "AttribuutRef",
-            "attribuut": "metingen",
-            "objecttype": "Jutter",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "metingen",
+            "datatype": {
               "node": "ListType",
               "element": {
                 "node": "Numeriek",
@@ -134,27 +20,254 @@
                 "teken": "NIET_NEGATIEF",
                 "eenheid": null
               }
-            },
-            "bron": "zijn metingen",
-            "set": false,
-            "navigatiePad": []
+            }
           },
-          "function": {
-            "node": "Lambda",
-            "parameters": [
-              {
-                "name": "m",
-                "datatype": {
+          {
+            "node": "Attribute",
+            "name": "bovental",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "somverhoogd",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "naam": "drempel",
+        "datatype": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "granulariteit": null
+      }
+    ],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "bovental van een jutter",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "bovental",
+          "objecttype": "Jutter",
+          "onderwerpBron": "Het bovental van een Jutter",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "Het bovental van een Jutter",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Fold",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "list": {
+            "node": "MapList",
+            "type": {
+              "node": "ListType",
+              "element": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              }
+            },
+            "list": {
+              "node": "AttribuutRef",
+              "attribuut": "metingen",
+              "objecttype": "Jutter",
+              "onderwerpBron": "zijn",
+              "navigatieRol": null,
+              "type": {
+                "node": "ListType",
+                "element": {
                   "node": "Numeriek",
                   "geheel": false,
                   "decimalen": 2,
                   "teken": "NIET_NEGATIEF",
                   "eenheid": null
                 }
+              },
+              "bron": "zijn metingen",
+              "set": false,
+              "navigatiePad": []
+            },
+            "function": {
+              "node": "Lambda",
+              "parameters": [
+                {
+                  "name": "m",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                }
+              ],
+              "body": {
+                "node": "IfThenElse",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "condition": {
+                  "node": "Vergelijking",
+                  "op": "GROTER",
+                  "links": {
+                    "node": "BinderRef",
+                    "name": "m",
+                    "type": {
+                      "node": "Numeriek",
+                      "geheel": false,
+                      "decimalen": 2,
+                      "teken": "NIET_NEGATIEF",
+                      "eenheid": null
+                    },
+                    "bron": "de meting"
+                  },
+                  "rechts": {
+                    "node": "ParameterRef",
+                    "parameter": "drempel",
+                    "type": {
+                      "node": "Numeriek",
+                      "geheel": false,
+                      "decimalen": 2,
+                      "teken": "ONBEPAALD",
+                      "eenheid": null
+                    },
+                    "bron": "de drempel"
+                  },
+                  "periode": null,
+                  "bron": "de meting groter dan de drempel"
+                },
+                "then": {
+                  "node": "Literal",
+                  "waarde": "1",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "1"
+                },
+                "else": {
+                  "node": "Literal",
+                  "waarde": "0",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "0"
+                },
+                "bron": "1 als de meting boven de drempel ligt anders 0"
+              },
+              "bron": "de indicatoren per meting"
+            },
+            "bron": null
+          },
+          "function": {
+            "node": "Lambda",
+            "parameters": [
+              {
+                "name": "acc",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                }
+              },
+              {
+                "name": "x",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                }
               }
             ],
             "body": {
-              "node": "IfThenElse",
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "BinderRef",
+                "name": "acc",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "het opgetelde aantal"
+              },
+              "rechts": {
+                "node": "BinderRef",
+                "name": "x",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "de indicator"
+              },
               "type": {
                 "node": "Numeriek",
                 "geheel": true,
@@ -162,9 +275,110 @@
                 "teken": "ONBEPAALD",
                 "eenheid": null
               },
-              "condition": {
-                "node": "Vergelijking",
-                "op": "GROTER",
+              "bron": "het opgetelde aantal plus de indicator"
+            },
+            "bron": "de indicatoren opgeteld"
+          },
+          "init": {
+            "node": "Literal",
+            "waarde": "0",
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "0"
+          },
+          "bron": "het aantal metingen boven de drempel"
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "somverhoogd van een jutter",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "somverhoogd",
+          "objecttype": "Jutter",
+          "onderwerpBron": "De somverhoogd van een Jutter",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "De somverhoogd van een Jutter",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Fold",
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "list": {
+            "node": "MapList",
+            "type": {
+              "node": "ListType",
+              "element": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              }
+            },
+            "list": {
+              "node": "AttribuutRef",
+              "attribuut": "metingen",
+              "objecttype": "Jutter",
+              "onderwerpBron": "zijn",
+              "navigatieRol": null,
+              "type": {
+                "node": "ListType",
+                "element": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                }
+              },
+              "bron": "zijn metingen",
+              "set": false,
+              "navigatiePad": []
+            },
+            "function": {
+              "node": "Lambda",
+              "parameters": [
+                {
+                  "name": "m",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                }
+              ],
+              "body": {
+                "node": "Binair",
+                "op": "PLUS",
                 "links": {
                   "node": "BinderRef",
                   "name": "m",
@@ -178,8 +392,8 @@
                   "bron": "de meting"
                 },
                 "rechts": {
-                  "node": "ParameterRef",
-                  "parameter": "drempel",
+                  "node": "Literal",
+                  "waarde": "1.00",
                   "type": {
                     "node": "Numeriek",
                     "geheel": false,
@@ -187,196 +401,41 @@
                     "teken": "ONBEPAALD",
                     "eenheid": null
                   },
-                  "bron": "de drempel"
+                  "bron": "1.00"
                 },
-                "periode": null,
-                "bron": "de meting groter dan de drempel"
-              },
-              "then": {
-                "node": "Literal",
-                "waarde": "1",
                 "type": {
                   "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
+                  "geheel": false,
+                  "decimalen": 2,
                   "teken": "ONBEPAALD",
                   "eenheid": null
                 },
-                "bron": "1"
+                "bron": "de meting plus 1.00"
               },
-              "else": {
-                "node": "Literal",
-                "waarde": "0",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "0"
-              },
-              "bron": "1 als de meting boven de drempel ligt anders 0"
+              "bron": "de opgehoogde metingen"
             },
-            "bron": "de indicatoren per meting"
-          },
-          "bron": null
-        },
-        "function": {
-          "node": "Lambda",
-          "parameters": [
-            {
-              "name": "acc",
-              "datatype": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              }
-            },
-            {
-              "name": "x",
-              "datatype": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              }
-            }
-          ],
-          "body": {
-            "node": "Binair",
-            "op": "PLUS",
-            "links": {
-              "node": "BinderRef",
-              "name": "acc",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "het opgetelde aantal"
-            },
-            "rechts": {
-              "node": "BinderRef",
-              "name": "x",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de indicator"
-            },
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "het opgetelde aantal plus de indicator"
-          },
-          "bron": "de indicatoren opgeteld"
-        },
-        "init": {
-          "node": "Literal",
-          "waarde": "0",
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "0"
-        },
-        "bron": "het aantal metingen boven de drempel"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "somverhoogd van een jutter",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "somverhoogd",
-        "objecttype": "Jutter",
-        "onderwerpBron": "De somverhoogd van een Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "De somverhoogd van een Jutter",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Fold",
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "list": {
-          "node": "MapList",
-          "type": {
-            "node": "ListType",
-            "element": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            }
-          },
-          "list": {
-            "node": "AttribuutRef",
-            "attribuut": "metingen",
-            "objecttype": "Jutter",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "ListType",
-              "element": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              }
-            },
-            "bron": "zijn metingen",
-            "set": false,
-            "navigatiePad": []
+            "bron": null
           },
           "function": {
             "node": "Lambda",
             "parameters": [
               {
-                "name": "m",
+                "name": "acc",
                 "datatype": {
                   "node": "Numeriek",
                   "geheel": false,
                   "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                }
+              },
+              {
+                "name": "x",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
                   "eenheid": null
                 }
               }
@@ -386,19 +445,7 @@
               "op": "PLUS",
               "links": {
                 "node": "BinderRef",
-                "name": "m",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                },
-                "bron": "de meting"
-              },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "1.00",
+                "name": "acc",
                 "type": {
                   "node": "Numeriek",
                   "geheel": false,
@@ -406,7 +453,19 @@
                   "teken": "ONBEPAALD",
                   "eenheid": null
                 },
-                "bron": "1.00"
+                "bron": "de opgetelde som"
+              },
+              "rechts": {
+                "node": "BinderRef",
+                "name": "x",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "de opgehoogde meting"
               },
               "type": {
                 "node": "Numeriek",
@@ -415,63 +474,13 @@
                 "teken": "ONBEPAALD",
                 "eenheid": null
               },
-              "bron": "de meting plus 1.00"
+              "bron": "de opgetelde som plus de opgehoogde meting"
             },
-            "bron": "de opgehoogde metingen"
+            "bron": "de opgehoogde metingen opgeteld"
           },
-          "bron": null
-        },
-        "function": {
-          "node": "Lambda",
-          "parameters": [
-            {
-              "name": "acc",
-              "datatype": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              }
-            },
-            {
-              "name": "x",
-              "datatype": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              }
-            }
-          ],
-          "body": {
-            "node": "Binair",
-            "op": "PLUS",
-            "links": {
-              "node": "BinderRef",
-              "name": "acc",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de opgetelde som"
-            },
-            "rechts": {
-              "node": "BinderRef",
-              "name": "x",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de opgehoogde meting"
-            },
+          "init": {
+            "node": "Literal",
+            "waarde": "0.00",
             "type": {
               "node": "Numeriek",
               "geheel": false,
@@ -479,40 +488,27 @@
               "teken": "ONBEPAALD",
               "eenheid": null
             },
-            "bron": "de opgetelde som plus de opgehoogde meting"
+            "bron": "0.00"
           },
-          "bron": "de opgehoogde metingen opgeteld"
+          "bron": "de som van de opgehoogde metingen"
         },
-        "init": {
-          "node": "Literal",
-          "waarde": "0.00",
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "0.00"
-        },
-        "bron": "de som van de opgehoogde metingen"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

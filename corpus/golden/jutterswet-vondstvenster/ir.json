@@ -1,218 +1,205 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "eerste vondstdag": {
-          "node": "DatumInDagen"
-        },
-        "laatste vondstdag": {
-          "node": "DatumInDagen"
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    },
-    "Vondst": {
-      "node": "Objecttype",
-      "naam": "Vondst",
-      "attributen": {
-        "vondstdatum": {
-          "node": "DatumInDagen"
-        }
-      },
-      "attribuutMeervoud": {
-        "vondstdatum": "vondstdata"
-      },
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Vondsten"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {
-    "vondstaanmelding": {
-      "node": "Feittype",
-      "naam": "vondstaanmelding",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "aanmelder",
-          "objecttypeNaam": "Jutter",
-          "meervoud": null,
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "vondst",
-          "objecttypeNaam": "Vondst",
-          "meervoud": "vondsten",
-          "meervoudig": true
-        }
-      ]
-    }
-  },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "eerste vondstdag van een jutter",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "laatste vondstdag van een jutter",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "eerste vondstdag van een jutter",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "eerste vondstdag",
-        "objecttype": "Jutter",
-        "onderwerpBron": "een Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "DatumInDagen"
-        },
-        "bron": "De eerste vondstdag van een Jutter",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "EERSTE",
-        "argumenten": [
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
           {
-            "node": "AttribuutRef",
-            "attribuut": "vondstdatum",
-            "objecttype": "Vondst",
-            "onderwerpBron": "alle vondsten van de Jutter",
-            "navigatieRol": null,
-            "type": {
+            "node": "Attribute",
+            "name": "eerste vondstdag",
+            "datatype": {
               "node": "DatumInDagen"
-            },
-            "bron": "de vondstdatum van alle vondsten van de Jutter",
-            "set": true,
-            "navigatiePad": []
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "laatste vondstdag",
+            "datatype": {
+              "node": "DatumInDagen"
+            }
           }
         ],
-        "elementObjecttype": "Vondst",
-        "leegwaarde": null,
-        "filter": null,
-        "dimensieSelectie": null,
-        "type": {
-          "node": "DatumInDagen"
-        },
-        "bron": "de eerste van de vondstdatum van alle vondsten van de Jutter",
-        "granulariteit": null,
-        "bronRol": {
-          "node": "RolBinding",
-          "feittype": "vondstaanmelding",
-          "rol": "vondst"
-        }
+        "characteristics": []
       },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "laatste vondstdag van een jutter",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "laatste vondstdag",
-        "objecttype": "Jutter",
-        "onderwerpBron": "een Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "DatumInDagen"
-        },
-        "bron": "De laatste vondstdag van een Jutter",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "LAATSTE",
-        "argumenten": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
           {
-            "node": "AttribuutRef",
-            "attribuut": "vondstdatum",
-            "objecttype": "Vondst",
-            "onderwerpBron": "alle vondsten van de Jutter",
-            "navigatieRol": null,
-            "type": {
+            "node": "Attribute",
+            "name": "vondstdatum",
+            "datatype": {
               "node": "DatumInDagen"
             },
-            "bron": "de vondstdatum van alle vondsten van de Jutter",
-            "set": true,
-            "navigatiePad": []
+            "plural": "vondstdata"
           }
         ],
-        "elementObjecttype": "Vondst",
-        "leegwaarde": null,
-        "filter": null,
-        "dimensieSelectie": null,
-        "type": {
-          "node": "DatumInDagen"
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "vondstaanmelding",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "aanmelder",
+            "objecttypeNaam": "Jutter",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "vondst",
+            "objecttypeNaam": "Vondst",
+            "meervoud": "vondsten",
+            "meervoudig": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "eerste vondstdag van een jutter",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "eerste vondstdag",
+          "objecttype": "Jutter",
+          "onderwerpBron": "een Jutter",
+          "navigatieRol": null,
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "De eerste vondstdag van een Jutter",
+          "set": false,
+          "navigatiePad": []
         },
-        "bron": "de laatste van de vondstdatum van alle vondsten van de Jutter",
-        "granulariteit": null,
-        "bronRol": {
-          "node": "RolBinding",
-          "feittype": "vondstaanmelding",
-          "rol": "vondst"
+        "waarde": {
+          "node": "Functie",
+          "kind": "EERSTE",
+          "argumenten": [
+            {
+              "node": "AttribuutRef",
+              "attribuut": "vondstdatum",
+              "objecttype": "Vondst",
+              "onderwerpBron": "alle vondsten van de Jutter",
+              "navigatieRol": null,
+              "type": {
+                "node": "DatumInDagen"
+              },
+              "bron": "de vondstdatum van alle vondsten van de Jutter",
+              "set": true,
+              "navigatiePad": []
+            }
+          ],
+          "elementObjecttype": "Vondst",
+          "leegwaarde": null,
+          "filter": null,
+          "dimensieSelectie": null,
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "de eerste van de vondstdatum van alle vondsten van de Jutter",
+          "granulariteit": null,
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "vondstaanmelding",
+            "rol": "vondst"
+          }
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
         }
       },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+      {
+        "node": "ResolvedRegel",
+        "naam": "laatste vondstdag van een jutter",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "laatste vondstdag",
+          "objecttype": "Jutter",
+          "onderwerpBron": "een Jutter",
+          "navigatieRol": null,
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "De laatste vondstdag van een Jutter",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Functie",
+          "kind": "LAATSTE",
+          "argumenten": [
+            {
+              "node": "AttribuutRef",
+              "attribuut": "vondstdatum",
+              "objecttype": "Vondst",
+              "onderwerpBron": "alle vondsten van de Jutter",
+              "navigatieRol": null,
+              "type": {
+                "node": "DatumInDagen"
+              },
+              "bron": "de vondstdatum van alle vondsten van de Jutter",
+              "set": true,
+              "navigatiePad": []
+            }
+          ],
+          "elementObjecttype": "Vondst",
+          "leegwaarde": null,
+          "filter": null,
+          "dimensieSelectie": null,
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "de laatste van de vondstdatum van alle vondsten van de Jutter",
+          "granulariteit": null,
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "vondstaanmelding",
+            "rol": "vondst"
+          }
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

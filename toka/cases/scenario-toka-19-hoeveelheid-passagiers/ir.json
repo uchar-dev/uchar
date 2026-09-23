@@ -1,35 +1,608 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Natuurlijk persoon": {
-      "node": "Objecttype",
-      "naam": "Natuurlijk persoon",
-      "attributen": {
-        "treinmiles": {
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Natuurlijk persoon",
+        "animate": true,
+        "plural": "Natuurlijke personen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "treinmiles",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "maximaal aantal te ontvangen treinmiles",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "identificatienummer",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "POSITIEF",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "geboortedatum",
+            "datatype": {
+              "node": "DatumInDagen"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "leeftijd",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "jr",
+                "stelsel": "Tijd",
+                "canoniek": "mnd",
+                "factorNaarCanoniek": 12,
+                "noemer": null
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "belasting op basis van afstand",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "belasting op basis van reisduur",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "te betalen belasting",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "treinmiles op basis van evenredige verdeling",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "maximaal te ontvangen treinmiles bij evenredige verdeling volgens rangorde",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "burgerservicenummer",
+            "datatype": {
+              "node": "Tekst"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "woonprovincie",
+            "datatype": {
+              "node": "Tekst"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "woonregio factor",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "passagier jonger dan 18 jaar",
+            "kind": "ZELFSTANDIG"
+          },
+          {
+            "node": "Characteristic",
+            "name": "minderjarig",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "passagier van 18 tot en met 24 jaar",
+            "kind": "ZELFSTANDIG"
+          },
+          {
+            "node": "Characteristic",
+            "name": "passagier van 25 tot en met 64 jaar",
+            "kind": "ZELFSTANDIG"
+          },
+          {
+            "node": "Characteristic",
+            "name": "passagier van 65 jaar of ouder",
+            "kind": "ZELFSTANDIG"
+          },
+          {
+            "node": "Characteristic",
+            "name": "recht op duurzaamheidskorting",
+            "kind": "BEZITTELIJK"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vlucht",
+        "animate": false,
+        "plural": "Vluchten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "daadwerkelijke datum-tijd van vertrek",
+            "datatype": {
+              "node": "DatumTijd"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "datum van vertrek",
+            "datatype": {
+              "node": "DatumInDagen"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "luchthaven van vertrek",
+            "datatype": {
+              "node": "Enumeratie",
+              "domein": "Luchthavens",
+              "waarden": [
+                "Amsterdam Schiphol",
+                "Groningen Eelde",
+                "Parijs Charles de Gaulle",
+                "Londen Heathrow"
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "luchthaven van bestemming",
+            "datatype": {
+              "node": "Enumeratie",
+              "domein": "Luchthavens",
+              "waarden": [
+                "Amsterdam Schiphol",
+                "Groningen Eelde",
+                "Parijs Charles de Gaulle",
+                "Londen Heathrow"
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vluchtdatum",
+            "datatype": {
+              "node": "DatumInDagen"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "afstand tot bestemming",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "km",
+                "stelsel": "afstand",
+                "canoniek": "m",
+                "factorNaarCanoniek": 1000,
+                "noemer": null
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bereikbaar per trein",
+            "datatype": {
+              "node": "Booleaan"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "gebruik fossiele brandstof minder dan 50 procent",
+            "datatype": {
+              "node": "Booleaan"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "reisduur per trein",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "minuut",
+                "stelsel": "Tijd",
+                "canoniek": "dg",
+                "factorNaarCanoniek": 0.0006944444444444446388888888888889,
+                "noemer": null
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "hoeveelheid passagiers",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "hoeveelheid uitzonderingspassagiers",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "leeftijd van de oudste passagier",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "jr",
+                "stelsel": "Tijd",
+                "canoniek": "mnd",
+                "factorNaarCanoniek": 12,
+                "noemer": null
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "totale belasting op basis van afstand",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "totale belasting op basis van reisduur",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "totaal te betalen belasting",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "verwachte datum-tijd van aankomst",
+            "datatype": {
+              "node": "DatumTijd"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "verwachte datum-tijd van vertrek",
+            "datatype": {
+              "node": "DatumTijd"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "verwachte duur",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "minuut",
+                "stelsel": "Tijd",
+                "canoniek": "dg",
+                "factorNaarCanoniek": 0.0006944444444444446388888888888889,
+                "noemer": null
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "datum-tijd voor het berekenen van de belasting op basis van afstand",
+            "datatype": {
+              "node": "DatumTijd"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bevestigingstijdstip",
+            "datatype": {
+              "node": "DatumTijd"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "uiterste boekingstijdstip",
+            "datatype": {
+              "node": "DatumTijd"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "in het hoogseizoen",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "bereikbaar per trein",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "gebruik fossiele brandstoffen minder dan 50%",
+            "kind": "BEZITTELIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "reis met paaskorting",
+            "kind": "ZELFSTANDIG"
+          },
+          {
+            "node": "Characteristic",
+            "name": "reiziger",
+            "kind": "BEZITTELIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "duurzaam",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "belaste reis",
+            "kind": "ZELFSTANDIG"
+          },
+          {
+            "node": "Characteristic",
+            "name": "belast",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "rondvlucht",
+            "kind": "ZELFSTANDIG"
+          },
+          {
+            "node": "Characteristic",
+            "name": "bestemd voor minderjarigen",
+            "kind": "ZELFSTANDIG"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Contingent treinmiles",
+        "animate": false,
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "totaal aantal treinmiles",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "POSITIEF",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal treinmiles op basis van aantal passagiers",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "POSITIEF",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "restant na verdeling",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "POSITIEF",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "Vlucht van natuurlijke personen",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "reis",
+            "objecttypeNaam": "Vlucht",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "passagier",
+            "objecttypeNaam": "Natuurlijk persoon",
+            "meervoud": null,
+            "meervoudig": true
+          }
+        ]
+      },
+      {
+        "node": "Feittype",
+        "naam": "reis met contingent treinmiles",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "reis met treinmiles",
+            "objecttypeNaam": "Vlucht",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "vastgestelde contingent treinmiles",
+            "objecttypeNaam": "Contingent treinmiles",
+            "meervoud": null,
+            "meervoudig": false
+          }
+        ]
+      },
+      {
+        "node": "Feittype",
+        "naam": "verdeling contingent treinmiles over passagiers",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "te verdelen contingent treinmiles",
+            "objecttypeNaam": "Contingent treinmiles",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "passagier met recht op treinmiles",
+            "objecttypeNaam": "Natuurlijk persoon",
+            "meervoud": null,
+            "meervoudig": true
+          }
+        ]
+      },
+      {
+        "node": "Feittype",
+        "naam": "Partnerrelatie",
+        "wederkerig": true,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "partner",
+            "objecttypeNaam": "Natuurlijk persoon",
+            "meervoud": null,
+            "meervoudig": false
+          }
+        ]
+      }
+    ],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "naam": "korting bij gebruik niet-fossiele brandstof",
+        "datatype": {
           "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
+          "geheel": false,
+          "decimalen": 2,
           "teken": "ONBEPAALD",
           "eenheid": null
         },
-        "maximaal aantal te ontvangen treinmiles": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "identificatienummer": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "POSITIEF",
-          "eenheid": null
-        },
-        "geboortedatum": {
-          "node": "DatumInDagen"
-        },
-        "leeftijd": {
+        "granulariteit": null
+      },
+      {
+        "node": "Parameter",
+        "naam": "volwassenleeftijd",
+        "datatype": {
           "node": "Numeriek",
           "geheel": true,
           "decimalen": 0,
@@ -43,115 +616,71 @@
             "noemer": null
           }
         },
-        "belasting op basis van afstand": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "belasting op basis van reisduur": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "te betalen belasting": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "treinmiles op basis van evenredige verdeling": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "maximaal te ontvangen treinmiles bij evenredige verdeling volgens rangorde": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "burgerservicenummer": {
-          "node": "Tekst"
-        },
-        "woonprovincie": {
-          "node": "Tekst"
-        },
-        "woonregio factor": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
+        "granulariteit": null
       },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "passagier jonger dan 18 jaar",
-        "minderjarig",
-        "passagier van 18 tot en met 24 jaar",
-        "passagier van 25 tot en met 64 jaar",
-        "passagier van 65 jaar of ouder",
-        "recht op duurzaamheidskorting"
-      ],
-      "kenmerkSoorten": {
-        "passagier jonger dan 18 jaar": "ZELFSTANDIG",
-        "minderjarig": "BIJVOEGLIJK",
-        "passagier van 18 tot en met 24 jaar": "ZELFSTANDIG",
-        "passagier van 25 tot en met 64 jaar": "ZELFSTANDIG",
-        "passagier van 65 jaar of ouder": "ZELFSTANDIG",
-        "recht op duurzaamheidskorting": "BEZITTELIJK"
-      },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Natuurlijke personen"
-    },
-    "Vlucht": {
-      "node": "Objecttype",
-      "naam": "Vlucht",
-      "attributen": {
-        "daadwerkelijke datum-tijd van vertrek": {
+      {
+        "node": "Parameter",
+        "naam": "bevestigingsinterval",
+        "datatype": {
           "node": "DatumTijd"
         },
-        "datum van vertrek": {
+        "granulariteit": null
+      },
+      {
+        "node": "Parameter",
+        "naam": "eerste boekingsdatum",
+        "datatype": {
           "node": "DatumInDagen"
         },
-        "luchthaven van vertrek": {
-          "node": "Enumeratie",
-          "domein": "Luchthavens",
-          "waarden": [
-            "Amsterdam Schiphol",
-            "Groningen Eelde",
-            "Parijs Charles de Gaulle",
-            "Londen Heathrow"
-          ]
+        "granulariteit": null
+      },
+      {
+        "node": "Parameter",
+        "naam": "aantal treinmiles per passagier voor contingent",
+        "datatype": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "POSITIEF",
+          "eenheid": null
         },
-        "luchthaven van bestemming": {
-          "node": "Enumeratie",
-          "domein": "Luchthavens",
-          "waarden": [
-            "Amsterdam Schiphol",
-            "Groningen Eelde",
-            "Parijs Charles de Gaulle",
-            "Londen Heathrow"
-          ]
+        "granulariteit": null
+      },
+      {
+        "node": "Parameter",
+        "naam": "initiele belasting",
+        "datatype": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
         },
-        "vluchtdatum": {
-          "node": "DatumInDagen"
+        "granulariteit": null
+      },
+      {
+        "node": "Parameter",
+        "naam": "pensioenleeftijd",
+        "datatype": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "jr",
+            "stelsel": "Tijd",
+            "canoniek": "mnd",
+            "factorNaarCanoniek": 12,
+            "noemer": null
+          }
         },
-        "afstand tot bestemming": {
+        "granulariteit": null
+      },
+      {
+        "node": "Parameter",
+        "naam": "duurzaamheidskorting minimale afstand",
+        "datatype": {
           "node": "Numeriek",
           "geheel": true,
           "decimalen": 0,
@@ -165,13 +694,121 @@
             "noemer": null
           }
         },
-        "bereikbaar per trein": {
-          "node": "Booleaan"
+        "granulariteit": null
+      },
+      {
+        "node": "Parameter",
+        "naam": "burgerservicenummer lengte",
+        "datatype": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
         },
-        "gebruik fossiele brandstof minder dan 50 procent": {
-          "node": "Booleaan"
+        "granulariteit": null
+      },
+      {
+        "node": "Parameter",
+        "naam": "bovengrens afstand eerste schijf",
+        "datatype": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "km",
+            "stelsel": "afstand",
+            "canoniek": "m",
+            "factorNaarCanoniek": 1000,
+            "noemer": null
+          }
         },
-        "reisduur per trein": {
+        "granulariteit": null
+      },
+      {
+        "node": "Parameter",
+        "naam": "lage basistarief eerste schijf",
+        "datatype": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "granulariteit": null
+      },
+      {
+        "node": "Parameter",
+        "naam": "lage tarief vermindering eerste schijf",
+        "datatype": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "granulariteit": null
+      },
+      {
+        "node": "Parameter",
+        "naam": "percentage reisduur eerste schijf",
+        "datatype": {
+          "node": "Percentage",
+          "geheel": true,
+          "decimalen": 0,
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "%",
+            "stelsel": null,
+            "canoniek": "%",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        },
+        "granulariteit": null
+      },
+      {
+        "node": "Parameter",
+        "naam": "percentage reisduur tweede schijf",
+        "datatype": {
+          "node": "Percentage",
+          "geheel": true,
+          "decimalen": 0,
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "%",
+            "stelsel": null,
+            "canoniek": "%",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        },
+        "granulariteit": null
+      },
+      {
+        "node": "Parameter",
+        "naam": "percentage reisduur derde schijf",
+        "datatype": {
+          "node": "Percentage",
+          "geheel": true,
+          "decimalen": 0,
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "%",
+            "stelsel": null,
+            "canoniek": "%",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        },
+        "granulariteit": null
+      },
+      {
+        "node": "Parameter",
+        "naam": "bovengrens reisduur eerste schijf",
+        "datatype": {
           "node": "Numeriek",
           "geheel": true,
           "decimalen": 0,
@@ -185,26 +822,183 @@
             "noemer": null
           }
         },
-        "hoeveelheid passagiers": {
+        "granulariteit": null
+      },
+      {
+        "node": "Parameter",
+        "naam": "bovengrens reisduur tweede schijf",
+        "datatype": {
           "node": "Numeriek",
           "geheel": true,
           "decimalen": 0,
           "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "hoeveelheid uitzonderingspassagiers": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "leeftijd van de oudste passagier": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
           "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "minuut",
+            "stelsel": "Tijd",
+            "canoniek": "dg",
+            "factorNaarCanoniek": 0.0006944444444444446388888888888889,
+            "noemer": null
+          }
+        },
+        "granulariteit": null
+      },
+      {
+        "node": "Parameter",
+        "naam": "STANDAARDTERMIJN VOOR RESERVERING",
+        "datatype": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": {
+            "node": "Eenheid",
+            "afkorting": "mnd",
+            "stelsel": "Tijd",
+            "canoniek": "mnd",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        },
+        "granulariteit": null
+      }
+    ],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "Bedrag",
+        "datatype": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      {
+        "node": "Domain",
+        "name": "Luchthavens",
+        "datatype": {
+          "node": "Enumeratie",
+          "waarden": [
+            "Amsterdam Schiphol",
+            "Groningen Eelde",
+            "Parijs Charles de Gaulle",
+            "Londen Heathrow"
+          ]
+        }
+      }
+    ],
+    "unitSystems": [
+      {
+        "node": "Eenheidstelsel",
+        "naam": "Valuta",
+        "eenheden": {
+          "EUR": {
+            "node": "Eenheid",
+            "afkorting": "EUR",
+            "stelsel": "Valuta",
+            "canoniek": "EUR",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          },
+          "\u20ac": {
+            "node": "Eenheid",
+            "afkorting": "EUR",
+            "stelsel": "Valuta",
+            "canoniek": "EUR",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        },
+        "aliassen": {
+          "euro": {
+            "node": "Eenheid",
+            "afkorting": "EUR",
+            "stelsel": "Valuta",
+            "canoniek": "EUR",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          },
+          "euros": {
+            "node": "Eenheid",
+            "afkorting": "EUR",
+            "stelsel": "Valuta",
+            "canoniek": "EUR",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          }
+        }
+      },
+      {
+        "node": "Eenheidstelsel",
+        "naam": "Tijd",
+        "eenheden": {
+          "ms": {
+            "node": "Eenheid",
+            "afkorting": "ms",
+            "stelsel": "Tijd",
+            "canoniek": "dg",
+            "factorNaarCanoniek": 0.000000011574074074074079629629629629630462962962962963,
+            "noemer": null
+          },
+          "s": {
+            "node": "Eenheid",
+            "afkorting": "s",
+            "stelsel": "Tijd",
+            "canoniek": "dg",
+            "factorNaarCanoniek": 0.000011574074074074079629629629629630462962962962963,
+            "noemer": null
+          },
+          "minuut": {
+            "node": "Eenheid",
+            "afkorting": "minuut",
+            "stelsel": "Tijd",
+            "canoniek": "dg",
+            "factorNaarCanoniek": 0.0006944444444444446388888888888889,
+            "noemer": null
+          },
+          "u": {
+            "node": "Eenheid",
+            "afkorting": "u",
+            "stelsel": "Tijd",
+            "canoniek": "dg",
+            "factorNaarCanoniek": 0.04166666666666667,
+            "noemer": null
+          },
+          "dg": {
+            "node": "Eenheid",
+            "afkorting": "dg",
+            "stelsel": "Tijd",
+            "canoniek": "dg",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          },
+          "wk": {
+            "node": "Eenheid",
+            "afkorting": "wk",
+            "stelsel": "Tijd",
+            "canoniek": "dg",
+            "factorNaarCanoniek": 7,
+            "noemer": null
+          },
+          "mnd": {
+            "node": "Eenheid",
+            "afkorting": "mnd",
+            "stelsel": "Tijd",
+            "canoniek": "mnd",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          },
+          "kw": {
+            "node": "Eenheid",
+            "afkorting": "kw",
+            "stelsel": "Tijd",
+            "canoniek": "mnd",
+            "factorNaarCanoniek": 3,
+            "noemer": null
+          },
+          "jr": {
             "node": "Eenheid",
             "afkorting": "jr",
             "stelsel": "Tijd",
@@ -213,898 +1007,277 @@
             "noemer": null
           }
         },
-        "totale belasting op basis van afstand": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "totale belasting op basis van reisduur": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "totaal te betalen belasting": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "verwachte datum-tijd van aankomst": {
-          "node": "DatumTijd"
-        },
-        "verwachte datum-tijd van vertrek": {
-          "node": "DatumTijd"
-        },
-        "verwachte duur": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
+        "aliassen": {
+          "milliseconde": {
+            "node": "Eenheid",
+            "afkorting": "ms",
+            "stelsel": "Tijd",
+            "canoniek": "dg",
+            "factorNaarCanoniek": 0.000000011574074074074079629629629629630462962962962963,
+            "noemer": null
+          },
+          "seconde": {
+            "node": "Eenheid",
+            "afkorting": "s",
+            "stelsel": "Tijd",
+            "canoniek": "dg",
+            "factorNaarCanoniek": 0.000011574074074074079629629629629630462962962962963,
+            "noemer": null
+          },
+          "minuut": {
             "node": "Eenheid",
             "afkorting": "minuut",
             "stelsel": "Tijd",
             "canoniek": "dg",
             "factorNaarCanoniek": 0.0006944444444444446388888888888889,
             "noemer": null
+          },
+          "uur": {
+            "node": "Eenheid",
+            "afkorting": "u",
+            "stelsel": "Tijd",
+            "canoniek": "dg",
+            "factorNaarCanoniek": 0.04166666666666667,
+            "noemer": null
+          },
+          "dag": {
+            "node": "Eenheid",
+            "afkorting": "dg",
+            "stelsel": "Tijd",
+            "canoniek": "dg",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          },
+          "week": {
+            "node": "Eenheid",
+            "afkorting": "wk",
+            "stelsel": "Tijd",
+            "canoniek": "dg",
+            "factorNaarCanoniek": 7,
+            "noemer": null
+          },
+          "maand": {
+            "node": "Eenheid",
+            "afkorting": "mnd",
+            "stelsel": "Tijd",
+            "canoniek": "mnd",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          },
+          "kwartaal": {
+            "node": "Eenheid",
+            "afkorting": "kw",
+            "stelsel": "Tijd",
+            "canoniek": "mnd",
+            "factorNaarCanoniek": 3,
+            "noemer": null
+          },
+          "jaar": {
+            "node": "Eenheid",
+            "afkorting": "jr",
+            "stelsel": "Tijd",
+            "canoniek": "mnd",
+            "factorNaarCanoniek": 12,
+            "noemer": null
+          }
+        }
+      },
+      {
+        "node": "Eenheidstelsel",
+        "naam": "afstand",
+        "eenheden": {
+          "mm": {
+            "node": "Eenheid",
+            "afkorting": "mm",
+            "stelsel": "afstand",
+            "canoniek": "m",
+            "factorNaarCanoniek": 0.001,
+            "noemer": null
+          },
+          "cm": {
+            "node": "Eenheid",
+            "afkorting": "cm",
+            "stelsel": "afstand",
+            "canoniek": "m",
+            "factorNaarCanoniek": 0.01,
+            "noemer": null
+          },
+          "m": {
+            "node": "Eenheid",
+            "afkorting": "m",
+            "stelsel": "afstand",
+            "canoniek": "m",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          },
+          "km": {
+            "node": "Eenheid",
+            "afkorting": "km",
+            "stelsel": "afstand",
+            "canoniek": "m",
+            "factorNaarCanoniek": 1000,
+            "noemer": null
           }
         },
-        "datum-tijd voor het berekenen van de belasting op basis van afstand": {
-          "node": "DatumTijd"
-        },
-        "bevestigingstijdstip": {
-          "node": "DatumTijd"
-        },
-        "uiterste boekingstijdstip": {
-          "node": "DatumTijd"
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "in het hoogseizoen",
-        "bereikbaar per trein",
-        "gebruik fossiele brandstoffen minder dan 50%",
-        "reis met paaskorting",
-        "reiziger",
-        "duurzaam",
-        "belaste reis",
-        "belast",
-        "rondvlucht",
-        "bestemd voor minderjarigen"
-      ],
-      "kenmerkSoorten": {
-        "in het hoogseizoen": "BIJVOEGLIJK",
-        "bereikbaar per trein": "BIJVOEGLIJK",
-        "gebruik fossiele brandstoffen minder dan 50%": "BEZITTELIJK",
-        "reis met paaskorting": "ZELFSTANDIG",
-        "reiziger": "BEZITTELIJK",
-        "duurzaam": "BIJVOEGLIJK",
-        "belaste reis": "ZELFSTANDIG",
-        "belast": "BIJVOEGLIJK",
-        "rondvlucht": "ZELFSTANDIG",
-        "bestemd voor minderjarigen": "ZELFSTANDIG"
-      },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Vluchten"
-    },
-    "Contingent treinmiles": {
-      "node": "Objecttype",
-      "naam": "Contingent treinmiles",
-      "attributen": {
-        "totaal aantal treinmiles": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "POSITIEF",
-          "eenheid": null
-        },
-        "aantal treinmiles op basis van aantal passagiers": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "POSITIEF",
-          "eenheid": null
-        },
-        "restant na verdeling": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "POSITIEF",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": null
-    }
-  },
-  "domeinen": {
-    "Bedrag": {
-      "node": "Numeriek",
-      "geheel": false,
-      "decimalen": 2,
-      "teken": "ONBEPAALD",
-      "eenheid": null
-    },
-    "Luchthavens": {
-      "node": "Enumeratie",
-      "domein": "Luchthavens",
-      "waarden": [
-        "Amsterdam Schiphol",
-        "Groningen Eelde",
-        "Parijs Charles de Gaulle",
-        "Londen Heathrow"
-      ]
-    }
-  },
-  "parameters": {
-    "korting bij gebruik niet-fossiele brandstof": {
-      "node": "Parameter",
-      "naam": "korting bij gebruik niet-fossiele brandstof",
-      "datatype": {
-        "node": "Numeriek",
-        "geheel": false,
-        "decimalen": 2,
-        "teken": "ONBEPAALD",
-        "eenheid": null
-      },
-      "granulariteit": null
-    },
-    "volwassenleeftijd": {
-      "node": "Parameter",
-      "naam": "volwassenleeftijd",
-      "datatype": {
-        "node": "Numeriek",
-        "geheel": true,
-        "decimalen": 0,
-        "teken": "NIET_NEGATIEF",
-        "eenheid": {
-          "node": "Eenheid",
-          "afkorting": "jr",
-          "stelsel": "Tijd",
-          "canoniek": "mnd",
-          "factorNaarCanoniek": 12,
-          "noemer": null
-        }
-      },
-      "granulariteit": null
-    },
-    "bevestigingsinterval": {
-      "node": "Parameter",
-      "naam": "bevestigingsinterval",
-      "datatype": {
-        "node": "DatumTijd"
-      },
-      "granulariteit": null
-    },
-    "eerste boekingsdatum": {
-      "node": "Parameter",
-      "naam": "eerste boekingsdatum",
-      "datatype": {
-        "node": "DatumInDagen"
-      },
-      "granulariteit": null
-    },
-    "aantal treinmiles per passagier voor contingent": {
-      "node": "Parameter",
-      "naam": "aantal treinmiles per passagier voor contingent",
-      "datatype": {
-        "node": "Numeriek",
-        "geheel": true,
-        "decimalen": 0,
-        "teken": "POSITIEF",
-        "eenheid": null
-      },
-      "granulariteit": null
-    },
-    "initiele belasting": {
-      "node": "Parameter",
-      "naam": "initiele belasting",
-      "datatype": {
-        "node": "Numeriek",
-        "geheel": false,
-        "decimalen": 2,
-        "teken": "ONBEPAALD",
-        "eenheid": null
-      },
-      "granulariteit": null
-    },
-    "pensioenleeftijd": {
-      "node": "Parameter",
-      "naam": "pensioenleeftijd",
-      "datatype": {
-        "node": "Numeriek",
-        "geheel": true,
-        "decimalen": 0,
-        "teken": "ONBEPAALD",
-        "eenheid": {
-          "node": "Eenheid",
-          "afkorting": "jr",
-          "stelsel": "Tijd",
-          "canoniek": "mnd",
-          "factorNaarCanoniek": 12,
-          "noemer": null
-        }
-      },
-      "granulariteit": null
-    },
-    "duurzaamheidskorting minimale afstand": {
-      "node": "Parameter",
-      "naam": "duurzaamheidskorting minimale afstand",
-      "datatype": {
-        "node": "Numeriek",
-        "geheel": true,
-        "decimalen": 0,
-        "teken": "ONBEPAALD",
-        "eenheid": {
-          "node": "Eenheid",
-          "afkorting": "km",
-          "stelsel": "afstand",
-          "canoniek": "m",
-          "factorNaarCanoniek": 1000,
-          "noemer": null
-        }
-      },
-      "granulariteit": null
-    },
-    "burgerservicenummer lengte": {
-      "node": "Parameter",
-      "naam": "burgerservicenummer lengte",
-      "datatype": {
-        "node": "Numeriek",
-        "geheel": true,
-        "decimalen": 0,
-        "teken": "ONBEPAALD",
-        "eenheid": null
-      },
-      "granulariteit": null
-    },
-    "bovengrens afstand eerste schijf": {
-      "node": "Parameter",
-      "naam": "bovengrens afstand eerste schijf",
-      "datatype": {
-        "node": "Numeriek",
-        "geheel": true,
-        "decimalen": 0,
-        "teken": "ONBEPAALD",
-        "eenheid": {
-          "node": "Eenheid",
-          "afkorting": "km",
-          "stelsel": "afstand",
-          "canoniek": "m",
-          "factorNaarCanoniek": 1000,
-          "noemer": null
-        }
-      },
-      "granulariteit": null
-    },
-    "lage basistarief eerste schijf": {
-      "node": "Parameter",
-      "naam": "lage basistarief eerste schijf",
-      "datatype": {
-        "node": "Numeriek",
-        "geheel": false,
-        "decimalen": 2,
-        "teken": "ONBEPAALD",
-        "eenheid": null
-      },
-      "granulariteit": null
-    },
-    "lage tarief vermindering eerste schijf": {
-      "node": "Parameter",
-      "naam": "lage tarief vermindering eerste schijf",
-      "datatype": {
-        "node": "Numeriek",
-        "geheel": false,
-        "decimalen": 2,
-        "teken": "ONBEPAALD",
-        "eenheid": null
-      },
-      "granulariteit": null
-    },
-    "percentage reisduur eerste schijf": {
-      "node": "Parameter",
-      "naam": "percentage reisduur eerste schijf",
-      "datatype": {
-        "node": "Percentage",
-        "geheel": true,
-        "decimalen": 0,
-        "eenheid": {
-          "node": "Eenheid",
-          "afkorting": "%",
-          "stelsel": null,
-          "canoniek": "%",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        }
-      },
-      "granulariteit": null
-    },
-    "percentage reisduur tweede schijf": {
-      "node": "Parameter",
-      "naam": "percentage reisduur tweede schijf",
-      "datatype": {
-        "node": "Percentage",
-        "geheel": true,
-        "decimalen": 0,
-        "eenheid": {
-          "node": "Eenheid",
-          "afkorting": "%",
-          "stelsel": null,
-          "canoniek": "%",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        }
-      },
-      "granulariteit": null
-    },
-    "percentage reisduur derde schijf": {
-      "node": "Parameter",
-      "naam": "percentage reisduur derde schijf",
-      "datatype": {
-        "node": "Percentage",
-        "geheel": true,
-        "decimalen": 0,
-        "eenheid": {
-          "node": "Eenheid",
-          "afkorting": "%",
-          "stelsel": null,
-          "canoniek": "%",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        }
-      },
-      "granulariteit": null
-    },
-    "bovengrens reisduur eerste schijf": {
-      "node": "Parameter",
-      "naam": "bovengrens reisduur eerste schijf",
-      "datatype": {
-        "node": "Numeriek",
-        "geheel": true,
-        "decimalen": 0,
-        "teken": "ONBEPAALD",
-        "eenheid": {
-          "node": "Eenheid",
-          "afkorting": "minuut",
-          "stelsel": "Tijd",
-          "canoniek": "dg",
-          "factorNaarCanoniek": 0.0006944444444444446388888888888889,
-          "noemer": null
-        }
-      },
-      "granulariteit": null
-    },
-    "bovengrens reisduur tweede schijf": {
-      "node": "Parameter",
-      "naam": "bovengrens reisduur tweede schijf",
-      "datatype": {
-        "node": "Numeriek",
-        "geheel": true,
-        "decimalen": 0,
-        "teken": "ONBEPAALD",
-        "eenheid": {
-          "node": "Eenheid",
-          "afkorting": "minuut",
-          "stelsel": "Tijd",
-          "canoniek": "dg",
-          "factorNaarCanoniek": 0.0006944444444444446388888888888889,
-          "noemer": null
-        }
-      },
-      "granulariteit": null
-    },
-    "STANDAARDTERMIJN VOOR RESERVERING": {
-      "node": "Parameter",
-      "naam": "STANDAARDTERMIJN VOOR RESERVERING",
-      "datatype": {
-        "node": "Numeriek",
-        "geheel": true,
-        "decimalen": 0,
-        "teken": "ONBEPAALD",
-        "eenheid": {
-          "node": "Eenheid",
-          "afkorting": "mnd",
-          "stelsel": "Tijd",
-          "canoniek": "mnd",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        }
-      },
-      "granulariteit": null
-    }
-  },
-  "eenheidstelsels": {
-    "Valuta": {
-      "node": "Eenheidstelsel",
-      "naam": "Valuta",
-      "eenheden": {
-        "EUR": {
-          "node": "Eenheid",
-          "afkorting": "EUR",
-          "stelsel": "Valuta",
-          "canoniek": "EUR",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        },
-        "\u20ac": {
-          "node": "Eenheid",
-          "afkorting": "EUR",
-          "stelsel": "Valuta",
-          "canoniek": "EUR",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        }
-      },
-      "aliassen": {
-        "euro": {
-          "node": "Eenheid",
-          "afkorting": "EUR",
-          "stelsel": "Valuta",
-          "canoniek": "EUR",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        },
-        "euros": {
-          "node": "Eenheid",
-          "afkorting": "EUR",
-          "stelsel": "Valuta",
-          "canoniek": "EUR",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        }
-      }
-    },
-    "Tijd": {
-      "node": "Eenheidstelsel",
-      "naam": "Tijd",
-      "eenheden": {
-        "ms": {
-          "node": "Eenheid",
-          "afkorting": "ms",
-          "stelsel": "Tijd",
-          "canoniek": "dg",
-          "factorNaarCanoniek": 0.000000011574074074074079629629629629630462962962962963,
-          "noemer": null
-        },
-        "s": {
-          "node": "Eenheid",
-          "afkorting": "s",
-          "stelsel": "Tijd",
-          "canoniek": "dg",
-          "factorNaarCanoniek": 0.000011574074074074079629629629629630462962962962963,
-          "noemer": null
-        },
-        "minuut": {
-          "node": "Eenheid",
-          "afkorting": "minuut",
-          "stelsel": "Tijd",
-          "canoniek": "dg",
-          "factorNaarCanoniek": 0.0006944444444444446388888888888889,
-          "noemer": null
-        },
-        "u": {
-          "node": "Eenheid",
-          "afkorting": "u",
-          "stelsel": "Tijd",
-          "canoniek": "dg",
-          "factorNaarCanoniek": 0.04166666666666667,
-          "noemer": null
-        },
-        "dg": {
-          "node": "Eenheid",
-          "afkorting": "dg",
-          "stelsel": "Tijd",
-          "canoniek": "dg",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        },
-        "wk": {
-          "node": "Eenheid",
-          "afkorting": "wk",
-          "stelsel": "Tijd",
-          "canoniek": "dg",
-          "factorNaarCanoniek": 7,
-          "noemer": null
-        },
-        "mnd": {
-          "node": "Eenheid",
-          "afkorting": "mnd",
-          "stelsel": "Tijd",
-          "canoniek": "mnd",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        },
-        "kw": {
-          "node": "Eenheid",
-          "afkorting": "kw",
-          "stelsel": "Tijd",
-          "canoniek": "mnd",
-          "factorNaarCanoniek": 3,
-          "noemer": null
-        },
-        "jr": {
-          "node": "Eenheid",
-          "afkorting": "jr",
-          "stelsel": "Tijd",
-          "canoniek": "mnd",
-          "factorNaarCanoniek": 12,
-          "noemer": null
-        }
-      },
-      "aliassen": {
-        "milliseconde": {
-          "node": "Eenheid",
-          "afkorting": "ms",
-          "stelsel": "Tijd",
-          "canoniek": "dg",
-          "factorNaarCanoniek": 0.000000011574074074074079629629629629630462962962962963,
-          "noemer": null
-        },
-        "seconde": {
-          "node": "Eenheid",
-          "afkorting": "s",
-          "stelsel": "Tijd",
-          "canoniek": "dg",
-          "factorNaarCanoniek": 0.000011574074074074079629629629629630462962962962963,
-          "noemer": null
-        },
-        "minuut": {
-          "node": "Eenheid",
-          "afkorting": "minuut",
-          "stelsel": "Tijd",
-          "canoniek": "dg",
-          "factorNaarCanoniek": 0.0006944444444444446388888888888889,
-          "noemer": null
-        },
-        "uur": {
-          "node": "Eenheid",
-          "afkorting": "u",
-          "stelsel": "Tijd",
-          "canoniek": "dg",
-          "factorNaarCanoniek": 0.04166666666666667,
-          "noemer": null
-        },
-        "dag": {
-          "node": "Eenheid",
-          "afkorting": "dg",
-          "stelsel": "Tijd",
-          "canoniek": "dg",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        },
-        "week": {
-          "node": "Eenheid",
-          "afkorting": "wk",
-          "stelsel": "Tijd",
-          "canoniek": "dg",
-          "factorNaarCanoniek": 7,
-          "noemer": null
-        },
-        "maand": {
-          "node": "Eenheid",
-          "afkorting": "mnd",
-          "stelsel": "Tijd",
-          "canoniek": "mnd",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        },
-        "kwartaal": {
-          "node": "Eenheid",
-          "afkorting": "kw",
-          "stelsel": "Tijd",
-          "canoniek": "mnd",
-          "factorNaarCanoniek": 3,
-          "noemer": null
-        },
-        "jaar": {
-          "node": "Eenheid",
-          "afkorting": "jr",
-          "stelsel": "Tijd",
-          "canoniek": "mnd",
-          "factorNaarCanoniek": 12,
-          "noemer": null
-        }
-      }
-    },
-    "afstand": {
-      "node": "Eenheidstelsel",
-      "naam": "afstand",
-      "eenheden": {
-        "mm": {
-          "node": "Eenheid",
-          "afkorting": "mm",
-          "stelsel": "afstand",
-          "canoniek": "m",
-          "factorNaarCanoniek": 0.001,
-          "noemer": null
-        },
-        "cm": {
-          "node": "Eenheid",
-          "afkorting": "cm",
-          "stelsel": "afstand",
-          "canoniek": "m",
-          "factorNaarCanoniek": 0.01,
-          "noemer": null
-        },
-        "m": {
-          "node": "Eenheid",
-          "afkorting": "m",
-          "stelsel": "afstand",
-          "canoniek": "m",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        },
-        "km": {
-          "node": "Eenheid",
-          "afkorting": "km",
-          "stelsel": "afstand",
-          "canoniek": "m",
-          "factorNaarCanoniek": 1000,
-          "noemer": null
-        }
-      },
-      "aliassen": {
-        "millimeter": {
-          "node": "Eenheid",
-          "afkorting": "mm",
-          "stelsel": "afstand",
-          "canoniek": "m",
-          "factorNaarCanoniek": 0.001,
-          "noemer": null
-        },
-        "millimeters": {
-          "node": "Eenheid",
-          "afkorting": "mm",
-          "stelsel": "afstand",
-          "canoniek": "m",
-          "factorNaarCanoniek": 0.001,
-          "noemer": null
-        },
-        "centimeter": {
-          "node": "Eenheid",
-          "afkorting": "cm",
-          "stelsel": "afstand",
-          "canoniek": "m",
-          "factorNaarCanoniek": 0.01,
-          "noemer": null
-        },
-        "centimeters": {
-          "node": "Eenheid",
-          "afkorting": "cm",
-          "stelsel": "afstand",
-          "canoniek": "m",
-          "factorNaarCanoniek": 0.01,
-          "noemer": null
-        },
-        "meter": {
-          "node": "Eenheid",
-          "afkorting": "m",
-          "stelsel": "afstand",
-          "canoniek": "m",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        },
-        "meters": {
-          "node": "Eenheid",
-          "afkorting": "m",
-          "stelsel": "afstand",
-          "canoniek": "m",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        },
-        "kilometer": {
-          "node": "Eenheid",
-          "afkorting": "km",
-          "stelsel": "afstand",
-          "canoniek": "m",
-          "factorNaarCanoniek": 1000,
-          "noemer": null
-        },
-        "kilometers": {
-          "node": "Eenheid",
-          "afkorting": "km",
-          "stelsel": "afstand",
-          "canoniek": "m",
-          "factorNaarCanoniek": 1000,
-          "noemer": null
-        }
-      }
-    }
-  },
-  "feittypen": {
-    "Vlucht van natuurlijke personen": {
-      "node": "Feittype",
-      "naam": "Vlucht van natuurlijke personen",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "reis",
-          "objecttypeNaam": "Vlucht",
-          "meervoud": null,
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "passagier",
-          "objecttypeNaam": "Natuurlijk persoon",
-          "meervoud": null,
-          "meervoudig": true
-        }
-      ]
-    },
-    "reis met contingent treinmiles": {
-      "node": "Feittype",
-      "naam": "reis met contingent treinmiles",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "reis met treinmiles",
-          "objecttypeNaam": "Vlucht",
-          "meervoud": null,
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "vastgestelde contingent treinmiles",
-          "objecttypeNaam": "Contingent treinmiles",
-          "meervoud": null,
-          "meervoudig": false
-        }
-      ]
-    },
-    "verdeling contingent treinmiles over passagiers": {
-      "node": "Feittype",
-      "naam": "verdeling contingent treinmiles over passagiers",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "te verdelen contingent treinmiles",
-          "objecttypeNaam": "Contingent treinmiles",
-          "meervoud": null,
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "passagier met recht op treinmiles",
-          "objecttypeNaam": "Natuurlijk persoon",
-          "meervoud": null,
-          "meervoudig": true
-        }
-      ]
-    },
-    "Partnerrelatie": {
-      "node": "Feittype",
-      "naam": "Partnerrelatie",
-      "wederkerig": true,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "partner",
-          "objecttypeNaam": "Natuurlijk persoon",
-          "meervoud": null,
-          "meervoudig": false
-        }
-      ]
-    }
-  },
-  "dimensies": {},
-  "tijdlijnen": [
-    {
-      "node": "Tijdlijn",
-      "naam": "de variabele periode van 3 maanden",
-      "variabelStartpunt": true,
-      "granulariteit": "KWARTAAL",
-      "aantal": 1
-    }
-  ],
-  "dagsoorten": [
-    "kerstdag"
-  ],
-  "dagsoortPerEenheid": {
-    "kerstdag": "kerstdag",
-    "kerstdagen": "kerstdag"
-  },
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "Hoeveelheid passagiers van een reis",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "Hoeveelheid passagiers van een reis",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "hoeveelheid passagiers",
-        "objecttype": "Vlucht",
-        "onderwerpBron": "een reis",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "De hoeveelheid passagiers van een reis",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "AANTAL",
-        "argumenten": [
-          {
-            "node": "AttribuutRef",
-            "attribuut": "passagiers",
-            "objecttype": "Vlucht",
-            "onderwerpBron": "de reis",
-            "navigatieRol": "reis",
-            "type": {
-              "node": "Onbekend",
-              "reden": "niet opgelost"
-            },
-            "bron": "passagiers van de reis",
-            "set": false,
-            "navigatiePad": []
+        "aliassen": {
+          "millimeter": {
+            "node": "Eenheid",
+            "afkorting": "mm",
+            "stelsel": "afstand",
+            "canoniek": "m",
+            "factorNaarCanoniek": 0.001,
+            "noemer": null
+          },
+          "millimeters": {
+            "node": "Eenheid",
+            "afkorting": "mm",
+            "stelsel": "afstand",
+            "canoniek": "m",
+            "factorNaarCanoniek": 0.001,
+            "noemer": null
+          },
+          "centimeter": {
+            "node": "Eenheid",
+            "afkorting": "cm",
+            "stelsel": "afstand",
+            "canoniek": "m",
+            "factorNaarCanoniek": 0.01,
+            "noemer": null
+          },
+          "centimeters": {
+            "node": "Eenheid",
+            "afkorting": "cm",
+            "stelsel": "afstand",
+            "canoniek": "m",
+            "factorNaarCanoniek": 0.01,
+            "noemer": null
+          },
+          "meter": {
+            "node": "Eenheid",
+            "afkorting": "m",
+            "stelsel": "afstand",
+            "canoniek": "m",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          },
+          "meters": {
+            "node": "Eenheid",
+            "afkorting": "m",
+            "stelsel": "afstand",
+            "canoniek": "m",
+            "factorNaarCanoniek": 1,
+            "noemer": null
+          },
+          "kilometer": {
+            "node": "Eenheid",
+            "afkorting": "km",
+            "stelsel": "afstand",
+            "canoniek": "m",
+            "factorNaarCanoniek": 1000,
+            "noemer": null
+          },
+          "kilometers": {
+            "node": "Eenheid",
+            "afkorting": "km",
+            "stelsel": "afstand",
+            "canoniek": "m",
+            "factorNaarCanoniek": 1000,
+            "noemer": null
           }
-        ],
-        "elementObjecttype": "Natuurlijk persoon",
-        "leegwaarde": null,
-        "filter": null,
-        "dimensieSelectie": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "bron": "het aantal passagiers van de reis",
-        "granulariteit": null
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        }
       }
+    ],
+    "dimensions": [],
+    "timelines": [
+      {
+        "node": "Tijdlijn",
+        "naam": "de variabele periode van 3 maanden",
+        "variabelStartpunt": true,
+        "granulariteit": "KWARTAAL",
+        "aantal": 1
+      }
+    ],
+    "dayKinds": [
+      "kerstdag"
+    ],
+    "dagsoortPerEenheid": {
+      "kerstdag": "kerstdag",
+      "kerstdagen": "kerstdag"
     }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "Hoeveelheid passagiers van een reis",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "hoeveelheid passagiers",
+          "objecttype": "Vlucht",
+          "onderwerpBron": "een reis",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "De hoeveelheid passagiers van een reis",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Functie",
+          "kind": "AANTAL",
+          "argumenten": [
+            {
+              "node": "AttribuutRef",
+              "attribuut": "passagiers",
+              "objecttype": "Vlucht",
+              "onderwerpBron": "de reis",
+              "navigatieRol": "reis",
+              "type": {
+                "node": "Onbekend",
+                "reden": "niet opgelost"
+              },
+              "bron": "passagiers van de reis",
+              "set": false,
+              "navigatiePad": []
+            }
+          ],
+          "elementObjecttype": "Natuurlijk persoon",
+          "leegwaarde": null,
+          "filter": null,
+          "dimensieSelectie": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "het aantal passagiers van de reis",
+          "granulariteit": null
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

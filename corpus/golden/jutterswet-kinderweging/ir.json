@@ -1,100 +1,82 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "inkomen": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "kindertal": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "factor": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 4,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "gewogen": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    }
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "inkomen",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "kindertal",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "factor",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 4,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "gewogen",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
   },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "factor van een jutter",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "gewogen inkomen van een jutter",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "factor van een jutter",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "factor",
-        "objecttype": "Jutter",
-        "onderwerpBron": "De factor van een Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 4,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "De factor van een Jutter",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Binair",
-        "op": "PLUS",
-        "links": {
-          "node": "Literal",
-          "waarde": "1.0000",
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "factor van een jutter",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "factor",
+          "objecttype": "Jutter",
+          "onderwerpBron": "De factor van een Jutter",
+          "navigatieRol": null,
           "type": {
             "node": "Numeriek",
             "geheel": false,
@@ -102,31 +84,16 @@
             "teken": "ONBEPAALD",
             "eenheid": null
           },
-          "bron": "1,0000"
+          "bron": "De factor van een Jutter",
+          "set": false,
+          "navigatiePad": []
         },
-        "rechts": {
+        "waarde": {
           "node": "Binair",
-          "op": "GEDEELD_DOOR",
+          "op": "PLUS",
           "links": {
-            "node": "AttribuutRef",
-            "attribuut": "kindertal",
-            "objecttype": "Jutter",
-            "onderwerpBron": "de Jutter",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "het kindertal van de Jutter",
-            "set": false,
-            "navigatiePad": []
-          },
-          "rechts": {
             "node": "Literal",
-            "waarde": "2.0000",
+            "waarde": "1.0000",
             "type": {
               "node": "Numeriek",
               "geheel": false,
@@ -134,7 +101,48 @@
               "teken": "ONBEPAALD",
               "eenheid": null
             },
-            "bron": "2,0000"
+            "bron": "1,0000"
+          },
+          "rechts": {
+            "node": "Binair",
+            "op": "GEDEELD_DOOR",
+            "links": {
+              "node": "AttribuutRef",
+              "attribuut": "kindertal",
+              "objecttype": "Jutter",
+              "onderwerpBron": "de Jutter",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              },
+              "bron": "het kindertal van de Jutter",
+              "set": false,
+              "navigatiePad": []
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "2.0000",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 4,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "2,0000"
+            },
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 4,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "het kindertal van de Jutter gedeeld door 2,0000"
           },
           "type": {
             "node": "Numeriek",
@@ -143,106 +151,40 @@
             "teken": "ONBEPAALD",
             "eenheid": null
           },
-          "bron": "het kindertal van de Jutter gedeeld door 2,0000"
+          "bron": "1,0000 plus het kindertal van de Jutter gedeeld door 2,0000"
         },
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 4,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "1,0000 plus het kindertal van de Jutter gedeeld door 2,0000"
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "gewogen inkomen van een jutter",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "gewogen",
-        "objecttype": "Jutter",
-        "onderwerpBron": "Het gewogen inkomen van een Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "Het gewogen inkomen van een Jutter",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Afgerond",
-        "basis": {
-          "node": "Let",
+      {
+        "node": "ResolvedRegel",
+        "naam": "gewogen inkomen van een jutter",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "gewogen",
+          "objecttype": "Jutter",
+          "onderwerpBron": "Het gewogen inkomen van een Jutter",
+          "navigatieRol": null,
           "type": {
             "node": "Numeriek",
             "geheel": false,
-            "decimalen": 6,
+            "decimalen": 2,
             "teken": "ONBEPAALD",
             "eenheid": null
           },
-          "binder": "ink2",
-          "value": {
-            "node": "AttribuutRef",
-            "attribuut": "inkomen",
-            "objecttype": "Jutter",
-            "onderwerpBron": "de Jutter",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "het inkomen van de Jutter",
-            "set": false,
-            "navigatiePad": []
-          },
-          "body": {
-            "node": "Binair",
-            "op": "MAAL",
-            "links": {
-              "node": "BinderRef",
-              "name": "ink2",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
-              "bron": "ink2"
-            },
-            "rechts": {
-              "node": "AttribuutRef",
-              "attribuut": "factor",
-              "objecttype": "Jutter",
-              "onderwerpBron": "de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 4,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de factor van de Jutter",
-              "set": false,
-              "navigatiePad": []
-            },
+          "bron": "Het gewogen inkomen van een Jutter",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Afgerond",
+          "basis": {
+            "node": "Let",
             "type": {
               "node": "Numeriek",
               "geheel": false,
@@ -250,37 +192,95 @@
               "teken": "ONBEPAALD",
               "eenheid": null
             },
-            "bron": "ink2 maal de factor van de Jutter"
+            "binder": "ink2",
+            "value": {
+              "node": "AttribuutRef",
+              "attribuut": "inkomen",
+              "objecttype": "Jutter",
+              "onderwerpBron": "de Jutter",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              },
+              "bron": "het inkomen van de Jutter",
+              "set": false,
+              "navigatiePad": []
+            },
+            "body": {
+              "node": "Binair",
+              "op": "MAAL",
+              "links": {
+                "node": "BinderRef",
+                "name": "ink2",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                },
+                "bron": "ink2"
+              },
+              "rechts": {
+                "node": "AttribuutRef",
+                "attribuut": "factor",
+                "objecttype": "Jutter",
+                "onderwerpBron": "de Jutter",
+                "navigatieRol": null,
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 4,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "de factor van de Jutter",
+                "set": false,
+                "navigatiePad": []
+              },
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 6,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "ink2 maal de factor van de Jutter"
+            },
+            "bron": "ink2 is het inkomen van de Jutter"
           },
-          "bron": "ink2 is het inkomen van de Jutter"
-        },
-        "modus": "REKENKUNDIG",
-        "decimalen": 2,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
+          "modus": "REKENKUNDIG",
           "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "ink2 maal de factor van de Jutter rekenkundig afgerond op 2 decimalen"
         },
-        "bron": "ink2 maal de factor van de Jutter rekenkundig afgerond op 2 decimalen"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

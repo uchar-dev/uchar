@@ -1,272 +1,259 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "toelage": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "visser",
-        "wachter",
-        "duinwachter",
-        "geschorst",
-        "gerechtigd"
-      ],
-      "kenmerkSoorten": {
-        "visser": "BIJVOEGLIJK",
-        "wachter": "BIJVOEGLIJK",
-        "duinwachter": "BIJVOEGLIJK",
-        "geschorst": "BIJVOEGLIJK",
-        "gerechtigd": "BIJVOEGLIJK"
-      },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    }
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "toelage",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "visser",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "wachter",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "duinwachter",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "geschorst",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "gerechtigd",
+            "kind": "BIJVOEGLIJK"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
   },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "toelage voor vissers",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "toelage voor wachters",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "toelage voor duinwachters",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "gerechtigd als visser",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "niet gerechtigd bij schorsing",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
-  "diagnostics": [],
-  "prioritizedDefaults": [
-    {
-      "node": "PrioritizedDefaults",
-      "naam": "toelage voor vissers",
-      "onderwerp": "Jutter",
-      "kenmerk": null,
-      "attribuut": "toelage",
-      "defaults": [
-        {
-          "node": "Default",
-          "besluit": null,
-          "voorwaarde": {
-            "node": "Kenmerk",
-            "kenmerk": "visser",
-            "navigatie": null,
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "hij visser is"
-          },
-          "consequentie": {
-            "node": "Literal",
-            "waarde": "10",
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+  "rules": {
+    "resolvedRegels": [],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "naam": "toelage voor vissers",
+        "onderwerp": "Jutter",
+        "kenmerk": null,
+        "attribuut": "toelage",
+        "defaults": [
+          {
+            "node": "Default",
+            "besluit": null,
+            "voorwaarde": {
+              "node": "Kenmerk",
+              "kenmerk": "visser",
+              "navigatie": null,
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "hij visser is"
             },
-            "bron": "10"
-          },
-          "bron": "visser: 10"
-        }
-      ],
-      "ongeordend": true,
-      "bron": "grond A",
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "PrioritizedDefaults",
-      "naam": "toelage voor wachters",
-      "onderwerp": "Jutter",
-      "kenmerk": null,
-      "attribuut": "toelage",
-      "defaults": [
-        {
-          "node": "Default",
-          "besluit": null,
-          "voorwaarde": {
-            "node": "Kenmerk",
-            "kenmerk": "wachter",
-            "navigatie": null,
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "hij wachter is"
-          },
-          "consequentie": {
-            "node": "Literal",
-            "waarde": "20",
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+            "consequentie": {
+              "node": "Literal",
+              "waarde": "10",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "10"
             },
-            "bron": "20"
-          },
-          "bron": "wachter: 20"
+            "bron": "visser: 10"
+          }
+        ],
+        "ongeordend": true,
+        "bron": "grond A",
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
         }
-      ],
-      "bron": "grond B",
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "PrioritizedDefaults",
-      "naam": "toelage voor duinwachters",
-      "onderwerp": "Jutter",
-      "kenmerk": null,
-      "attribuut": "toelage",
-      "defaults": [
-        {
-          "node": "Default",
-          "besluit": null,
-          "voorwaarde": {
-            "node": "Kenmerk",
-            "kenmerk": "duinwachter",
-            "navigatie": null,
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "hij duinwachter is"
-          },
-          "consequentie": {
-            "node": "Literal",
-            "waarde": "10",
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "naam": "toelage voor wachters",
+        "onderwerp": "Jutter",
+        "kenmerk": null,
+        "attribuut": "toelage",
+        "defaults": [
+          {
+            "node": "Default",
+            "besluit": null,
+            "voorwaarde": {
+              "node": "Kenmerk",
+              "kenmerk": "wachter",
+              "navigatie": null,
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "hij wachter is"
             },
-            "bron": "10"
-          },
-          "bron": "duinwachter: 10"
+            "consequentie": {
+              "node": "Literal",
+              "waarde": "20",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "20"
+            },
+            "bron": "wachter: 20"
+          }
+        ],
+        "bron": "grond B",
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
         }
-      ],
-      "ongeordend": true,
-      "bron": "grond C",
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "PrioritizedDefaults",
-      "naam": "gerechtigd als visser",
-      "onderwerp": "Jutter",
-      "kenmerk": "gerechtigd",
-      "defaults": [
-        {
-          "node": "Default",
-          "besluit": true,
-          "voorwaarde": {
-            "node": "Kenmerk",
-            "kenmerk": "visser",
-            "navigatie": null,
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "hij visser is"
-          },
-          "bron": "visser"
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "naam": "toelage voor duinwachters",
+        "onderwerp": "Jutter",
+        "kenmerk": null,
+        "attribuut": "toelage",
+        "defaults": [
+          {
+            "node": "Default",
+            "besluit": null,
+            "voorwaarde": {
+              "node": "Kenmerk",
+              "kenmerk": "duinwachter",
+              "navigatie": null,
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "hij duinwachter is"
+            },
+            "consequentie": {
+              "node": "Literal",
+              "waarde": "10",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "10"
+            },
+            "bron": "duinwachter: 10"
+          }
+        ],
+        "ongeordend": true,
+        "bron": "grond C",
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
         }
-      ],
-      "ongeordend": true,
-      "bron": "grond D",
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "PrioritizedDefaults",
-      "naam": "niet gerechtigd bij schorsing",
-      "onderwerp": "Jutter",
-      "kenmerk": "gerechtigd",
-      "defaults": [
-        {
-          "node": "Default",
-          "besluit": false,
-          "voorwaarde": {
-            "node": "Kenmerk",
-            "kenmerk": "geschorst",
-            "navigatie": null,
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "hij geschorst is"
-          },
-          "bron": "geschorst"
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "naam": "gerechtigd als visser",
+        "onderwerp": "Jutter",
+        "kenmerk": "gerechtigd",
+        "defaults": [
+          {
+            "node": "Default",
+            "besluit": true,
+            "voorwaarde": {
+              "node": "Kenmerk",
+              "kenmerk": "visser",
+              "navigatie": null,
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "hij visser is"
+            },
+            "bron": "visser"
+          }
+        ],
+        "ongeordend": true,
+        "bron": "grond D",
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
         }
-      ],
-      "ongeordend": true,
-      "bron": "grond E",
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "naam": "niet gerechtigd bij schorsing",
+        "onderwerp": "Jutter",
+        "kenmerk": "gerechtigd",
+        "defaults": [
+          {
+            "node": "Default",
+            "besluit": false,
+            "voorwaarde": {
+              "node": "Kenmerk",
+              "kenmerk": "geschorst",
+              "navigatie": null,
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "hij geschorst is"
+            },
+            "bron": "geschorst"
+          }
+        ],
+        "ongeordend": true,
+        "bron": "grond E",
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ]
+    ]
+  },
+  "diagnostics": []
 }

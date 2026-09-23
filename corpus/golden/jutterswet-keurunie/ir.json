@@ -1,286 +1,275 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "aantal keurstukken": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "aantal gemelde stukken": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    },
-    "Vondst": {
-      "node": "Objecttype",
-      "naam": "Vondst",
-      "attributen": {},
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "gemerkt",
-        "gekeurd"
-      ],
-      "kenmerkSoorten": {
-        "gemerkt": "BIJVOEGLIJK",
-        "gekeurd": "BIJVOEGLIJK"
-      },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Vondsten"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {
-    "vondstaanmelding": {
-      "node": "Feittype",
-      "naam": "vondstaanmelding",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "aanmelder",
-          "objecttypeNaam": "Jutter",
-          "meervoud": null,
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "aangemelde vondst",
-          "objecttypeNaam": "Vondst",
-          "meervoud": "aangemelde vondsten",
-          "meervoudig": true
-        }
-      ]
-    }
-  },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "aantal keurstukken van een jutter",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "aantal gemelde stukken van een jutter",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "aantal keurstukken van een jutter",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "aantal keurstukken",
-        "objecttype": "Jutter",
-        "onderwerpBron": "een Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "bron": "Het aantal keurstukken van een Jutter",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "AANTAL",
-        "argumenten": [
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
           {
-            "node": "InstanceSetUnion",
-            "branches": [
-              {
-                "node": "InstanceSetBranch",
-                "elementType": "Vondst",
-                "sourceRole": {
-                  "node": "RolBinding",
-                  "feittype": "vondstaanmelding",
-                  "rol": "aangemelde vondst"
-                },
-                "filter": {
-                  "node": "Kenmerk",
-                  "kenmerk": "gemerkt",
-                  "navigatie": null,
-                  "negatie": false,
-                  "eigenaar": null,
-                  "periode": null,
-                  "bron": "gemerkt zijn"
-                },
-                "bron": "aangemelde vondsten van de Jutter die gemerkt zijn"
-              },
-              {
-                "node": "InstanceSetBranch",
-                "elementType": "Vondst",
-                "sourceRole": {
-                  "node": "RolBinding",
-                  "feittype": "vondstaanmelding",
-                  "rol": "aangemelde vondst"
-                },
-                "filter": {
-                  "node": "Kenmerk",
-                  "kenmerk": "gekeurd",
-                  "navigatie": null,
-                  "negatie": false,
-                  "eigenaar": null,
-                  "periode": null,
-                  "bron": "gekeurd zijn"
-                },
-                "bron": "aangemelde vondsten van de Jutter die gekeurd zijn"
-              }
-            ],
-            "bron": "het aantal aangemelde vondsten van de Jutter die gemerkt zijn en aangemelde vondsten van de Jutter die gekeurd zijn"
+            "node": "Attribute",
+            "name": "aantal keurstukken",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal gemelde stukken",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
           }
         ],
-        "elementObjecttype": null,
-        "leegwaarde": null,
-        "filter": null,
-        "dimensieSelectie": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "bron": "het aantal aangemelde vondsten van de Jutter die gemerkt zijn en aangemelde vondsten van de Jutter die gekeurd zijn",
-        "granulariteit": null
+        "characteristics": []
       },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "aantal gemelde stukken van een jutter",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "aantal gemelde stukken",
-        "objecttype": "Jutter",
-        "onderwerpBron": "een Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "bron": "Het aantal gemelde stukken van een Jutter",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "AANTAL",
-        "argumenten": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [],
+        "characteristics": [
           {
-            "node": "InstanceSetUnion",
-            "branches": [
-              {
-                "node": "InstanceSetBranch",
-                "elementType": "Vondst",
-                "sourceRole": {
-                  "node": "RolBinding",
-                  "feittype": "vondstaanmelding",
-                  "rol": "aangemelde vondst"
-                },
-                "filter": {
-                  "node": "Kenmerk",
-                  "kenmerk": "gemerkt",
-                  "navigatie": null,
-                  "negatie": false,
-                  "eigenaar": null,
-                  "periode": null,
-                  "bron": "gemerkt zijn"
-                },
-                "bron": "aangemelde vondsten van de Jutter die gemerkt zijn"
-              },
-              {
-                "node": "InstanceSetBranch",
-                "elementType": "Vondst",
-                "sourceRole": {
-                  "node": "RolBinding",
-                  "feittype": "vondstaanmelding",
-                  "rol": "aangemelde vondst"
-                },
-                "filter": null,
-                "bron": "aangemelde vondsten van de Jutter"
-              }
-            ],
-            "bron": "het aantal aangemelde vondsten van de Jutter die gemerkt zijn en aangemelde vondsten van de Jutter"
+            "node": "Characteristic",
+            "name": "gemerkt",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "gekeurd",
+            "kind": "BIJVOEGLIJK"
           }
-        ],
-        "elementObjecttype": null,
-        "leegwaarde": null,
-        "filter": null,
-        "dimensieSelectie": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "bron": "het aantal aangemelde vondsten van de Jutter die gemerkt zijn en aangemelde vondsten van de Jutter",
-        "granulariteit": null
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        ]
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "vondstaanmelding",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "aanmelder",
+            "objecttypeNaam": "Jutter",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "aangemelde vondst",
+            "objecttypeNaam": "Vondst",
+            "meervoud": "aangemelde vondsten",
+            "meervoudig": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "aantal keurstukken van een jutter",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "aantal keurstukken",
+          "objecttype": "Jutter",
+          "onderwerpBron": "een Jutter",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "Het aantal keurstukken van een Jutter",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Functie",
+          "kind": "AANTAL",
+          "argumenten": [
+            {
+              "node": "InstanceSetUnion",
+              "branches": [
+                {
+                  "node": "InstanceSetBranch",
+                  "elementType": "Vondst",
+                  "sourceRole": {
+                    "node": "RolBinding",
+                    "feittype": "vondstaanmelding",
+                    "rol": "aangemelde vondst"
+                  },
+                  "filter": {
+                    "node": "Kenmerk",
+                    "kenmerk": "gemerkt",
+                    "navigatie": null,
+                    "negatie": false,
+                    "eigenaar": null,
+                    "periode": null,
+                    "bron": "gemerkt zijn"
+                  },
+                  "bron": "aangemelde vondsten van de Jutter die gemerkt zijn"
+                },
+                {
+                  "node": "InstanceSetBranch",
+                  "elementType": "Vondst",
+                  "sourceRole": {
+                    "node": "RolBinding",
+                    "feittype": "vondstaanmelding",
+                    "rol": "aangemelde vondst"
+                  },
+                  "filter": {
+                    "node": "Kenmerk",
+                    "kenmerk": "gekeurd",
+                    "navigatie": null,
+                    "negatie": false,
+                    "eigenaar": null,
+                    "periode": null,
+                    "bron": "gekeurd zijn"
+                  },
+                  "bron": "aangemelde vondsten van de Jutter die gekeurd zijn"
+                }
+              ],
+              "bron": "het aantal aangemelde vondsten van de Jutter die gemerkt zijn en aangemelde vondsten van de Jutter die gekeurd zijn"
+            }
+          ],
+          "elementObjecttype": null,
+          "leegwaarde": null,
+          "filter": null,
+          "dimensieSelectie": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "het aantal aangemelde vondsten van de Jutter die gemerkt zijn en aangemelde vondsten van de Jutter die gekeurd zijn",
+          "granulariteit": null
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "aantal gemelde stukken van een jutter",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "aantal gemelde stukken",
+          "objecttype": "Jutter",
+          "onderwerpBron": "een Jutter",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "Het aantal gemelde stukken van een Jutter",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Functie",
+          "kind": "AANTAL",
+          "argumenten": [
+            {
+              "node": "InstanceSetUnion",
+              "branches": [
+                {
+                  "node": "InstanceSetBranch",
+                  "elementType": "Vondst",
+                  "sourceRole": {
+                    "node": "RolBinding",
+                    "feittype": "vondstaanmelding",
+                    "rol": "aangemelde vondst"
+                  },
+                  "filter": {
+                    "node": "Kenmerk",
+                    "kenmerk": "gemerkt",
+                    "navigatie": null,
+                    "negatie": false,
+                    "eigenaar": null,
+                    "periode": null,
+                    "bron": "gemerkt zijn"
+                  },
+                  "bron": "aangemelde vondsten van de Jutter die gemerkt zijn"
+                },
+                {
+                  "node": "InstanceSetBranch",
+                  "elementType": "Vondst",
+                  "sourceRole": {
+                    "node": "RolBinding",
+                    "feittype": "vondstaanmelding",
+                    "rol": "aangemelde vondst"
+                  },
+                  "filter": null,
+                  "bron": "aangemelde vondsten van de Jutter"
+                }
+              ],
+              "bron": "het aantal aangemelde vondsten van de Jutter die gemerkt zijn en aangemelde vondsten van de Jutter"
+            }
+          ],
+          "elementObjecttype": null,
+          "leegwaarde": null,
+          "filter": null,
+          "dimensieSelectie": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "het aantal aangemelde vondsten van de Jutter die gemerkt zijn en aangemelde vondsten van de Jutter",
+          "granulariteit": null
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

@@ -1,413 +1,105 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Vondst": {
-      "node": "Objecttype",
-      "naam": "Vondst",
-      "attributen": {
-        "vondstdatum": {
-          "node": "DatumInDagen"
-        },
-        "vondstjaar": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": null,
-          "eenheid": null
-        },
-        "vondstdag": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": null,
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "zomervondst",
-        "paasvondst"
-      ],
-      "kenmerkSoorten": {
-        "zomervondst": "BIJVOEGLIJK",
-        "paasvondst": "BIJVOEGLIJK"
-      },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Vondsten"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "Berekening vondstjaar",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "Berekening vondstdag",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "Kenmerktoekenning vondst zomervondst",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "Kenmerktoekenning vondst paasvondst",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "Berekening vondstjaar",
-      "soort": "GELIJKSTELLING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "vondstjaar",
-        "objecttype": "Vondst",
-        "onderwerpBron": "een Vondst",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": null,
-          "eenheid": null
-        },
-        "bron": "Het vondstjaar van een Vondst",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "JAAR_UIT",
-        "argumenten": [
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
           {
-            "node": "AttribuutRef",
-            "attribuut": "vondstdatum",
-            "objecttype": "Vondst",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
+            "node": "Attribute",
+            "name": "vondstdatum",
+            "datatype": {
               "node": "DatumInDagen"
-            },
-            "bron": "zijn vondstdatum",
-            "set": false,
-            "navigatiePad": []
-          }
-        ],
-        "elementObjecttype": null,
-        "leegwaarde": null,
-        "filter": null,
-        "dimensieSelectie": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": null,
-          "eenheid": null
-        },
-        "bron": "het jaar uit zijn vondstdatum",
-        "granulariteit": null
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "Berekening vondstdag",
-      "soort": "GELIJKSTELLING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "vondstdag",
-        "objecttype": "Vondst",
-        "onderwerpBron": "een Vondst",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": null,
-          "eenheid": null
-        },
-        "bron": "De vondstdag van een Vondst",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "DAG_UIT",
-        "argumenten": [
-          {
-            "node": "AttribuutRef",
-            "attribuut": "vondstdatum",
-            "objecttype": "Vondst",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumInDagen"
-            },
-            "bron": "zijn vondstdatum",
-            "set": false,
-            "navigatiePad": []
-          }
-        ],
-        "elementObjecttype": null,
-        "leegwaarde": null,
-        "filter": null,
-        "dimensieSelectie": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": null,
-          "eenheid": null
-        },
-        "bron": "de dag uit zijn vondstdatum",
-        "granulariteit": null
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "Kenmerktoekenning vondst zomervondst",
-      "soort": "KENMERKTOEKENNING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "zomervondst",
-        "objecttype": "Vondst",
-        "onderwerpBron": "Een Vondst",
-        "navigatieRol": null,
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "Een Vondst is zomervondst",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "waar",
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "waar"
-      },
-      "voorwaarde": {
-        "node": "Samengesteld",
-        "kwantor": "TEN_MINSTE",
-        "drempel": 1,
-        "onderdelen": [
-          {
-            "node": "Vergelijking",
-            "op": "GELIJK",
-            "links": {
-              "node": "Functie",
-              "kind": "MAAND_UIT",
-              "argumenten": [
-                {
-                  "node": "AttribuutRef",
-                  "attribuut": "vondstdatum",
-                  "objecttype": "Vondst",
-                  "onderwerpBron": "zijn",
-                  "navigatieRol": null,
-                  "type": {
-                    "node": "DatumInDagen"
-                  },
-                  "bron": "zijn vondstdatum",
-                  "set": false,
-                  "navigatiePad": []
-                }
-              ],
-              "elementObjecttype": null,
-              "leegwaarde": null,
-              "filter": null,
-              "dimensieSelectie": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": null,
-                "eenheid": null
-              },
-              "bron": "de maand uit zijn vondstdatum",
-              "granulariteit": null
-            },
-            "rechts": {
-              "node": "Literal",
-              "waarde": "7",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": null,
-                "eenheid": null
-              },
-              "bron": "7"
-            },
-            "periode": null,
-            "bron": "de maand uit zijn vondstdatum is gelijk aan 7"
+            }
           },
           {
-            "node": "Vergelijking",
-            "op": "GELIJK",
-            "links": {
-              "node": "Functie",
-              "kind": "MAAND_UIT",
-              "argumenten": [
-                {
-                  "node": "AttribuutRef",
-                  "attribuut": "vondstdatum",
-                  "objecttype": "Vondst",
-                  "onderwerpBron": "zijn",
-                  "navigatieRol": null,
-                  "type": {
-                    "node": "DatumInDagen"
-                  },
-                  "bron": "zijn vondstdatum",
-                  "set": false,
-                  "navigatiePad": []
-                }
-              ],
-              "elementObjecttype": null,
-              "leegwaarde": null,
-              "filter": null,
-              "dimensieSelectie": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": null,
-                "eenheid": null
-              },
-              "bron": "de maand uit zijn vondstdatum",
-              "granulariteit": null
-            },
-            "rechts": {
-              "node": "Literal",
-              "waarde": "8",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": null,
-                "eenheid": null
-              },
-              "bron": "8"
-            },
-            "periode": null,
-            "bron": "de maand uit zijn vondstdatum is gelijk aan 8"
+            "node": "Attribute",
+            "name": "vondstjaar",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": null,
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vondstdag",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": null,
+              "eenheid": null
+            }
           }
         ],
-        "bron": "hij aan ten minste een van de volgende voorwaarden voldoet"
-      },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "zomervondst",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "paasvondst",
+            "kind": "BIJVOEGLIJK"
+          }
+        ]
       }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "Kenmerktoekenning vondst paasvondst",
-      "soort": "KENMERKTOEKENNING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "paasvondst",
-        "objecttype": "Vondst",
-        "onderwerpBron": "Een Vondst",
-        "navigatieRol": null,
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "Een Vondst is paasvondst",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "waar",
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "waar"
-      },
-      "voorwaarde": {
-        "node": "Vergelijking",
-        "op": "GELIJK",
-        "links": {
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "Berekening vondstjaar",
+        "soort": "GELIJKSTELLING",
+        "doel": {
           "node": "AttribuutRef",
-          "attribuut": "vondstdatum",
+          "attribuut": "vondstjaar",
           "objecttype": "Vondst",
-          "onderwerpBron": "zijn",
+          "onderwerpBron": "een Vondst",
           "navigatieRol": null,
           "type": {
-            "node": "DatumInDagen"
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": null,
+            "eenheid": null
           },
-          "bron": "zijn vondstdatum",
+          "bron": "Het vondstjaar van een Vondst",
           "set": false,
           "navigatiePad": []
         },
-        "rechts": {
+        "waarde": {
           "node": "Functie",
-          "kind": "EERSTE_PAASDAG",
+          "kind": "JAAR_UIT",
           "argumenten": [
             {
-              "node": "Functie",
-              "kind": "JAAR_UIT",
-              "argumenten": [
-                {
-                  "node": "AttribuutRef",
-                  "attribuut": "vondstdatum",
-                  "objecttype": "Vondst",
-                  "onderwerpBron": "zijn",
-                  "navigatieRol": null,
-                  "type": {
-                    "node": "DatumInDagen"
-                  },
-                  "bron": "zijn vondstdatum",
-                  "set": false,
-                  "navigatiePad": []
-                }
-              ],
-              "elementObjecttype": null,
-              "leegwaarde": null,
-              "filter": null,
-              "dimensieSelectie": null,
+              "node": "AttribuutRef",
+              "attribuut": "vondstdatum",
+              "objecttype": "Vondst",
+              "onderwerpBron": "zijn",
+              "navigatieRol": null,
               "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": null,
-                "eenheid": null
+                "node": "DatumInDagen"
               },
-              "bron": "het jaar uit zijn vondstdatum",
-              "granulariteit": null
+              "bron": "zijn vondstdatum",
+              "set": false,
+              "navigatiePad": []
             }
           ],
           "elementObjecttype": null,
@@ -415,29 +107,328 @@
           "filter": null,
           "dimensieSelectie": null,
           "type": {
-            "node": "DatumInDagen"
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": null,
+            "eenheid": null
           },
-          "bron": "de eerste paasdag van het jaar uit zijn vondstdatum",
+          "bron": "het jaar uit zijn vondstdatum",
           "granulariteit": null
         },
-        "periode": null,
-        "bron": "zijn vondstdatum gelijk is aan de eerste paasdag van het jaar uit zijn vondstdatum"
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+      {
+        "node": "ResolvedRegel",
+        "naam": "Berekening vondstdag",
+        "soort": "GELIJKSTELLING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "vondstdag",
+          "objecttype": "Vondst",
+          "onderwerpBron": "een Vondst",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": null,
+            "eenheid": null
+          },
+          "bron": "De vondstdag van een Vondst",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Functie",
+          "kind": "DAG_UIT",
+          "argumenten": [
+            {
+              "node": "AttribuutRef",
+              "attribuut": "vondstdatum",
+              "objecttype": "Vondst",
+              "onderwerpBron": "zijn",
+              "navigatieRol": null,
+              "type": {
+                "node": "DatumInDagen"
+              },
+              "bron": "zijn vondstdatum",
+              "set": false,
+              "navigatiePad": []
+            }
+          ],
+          "elementObjecttype": null,
+          "leegwaarde": null,
+          "filter": null,
+          "dimensieSelectie": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": null,
+            "eenheid": null
+          },
+          "bron": "de dag uit zijn vondstdatum",
+          "granulariteit": null
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "Kenmerktoekenning vondst zomervondst",
+        "soort": "KENMERKTOEKENNING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "zomervondst",
+          "objecttype": "Vondst",
+          "onderwerpBron": "Een Vondst",
+          "navigatieRol": null,
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "Een Vondst is zomervondst",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Literal",
+          "waarde": "waar",
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "waar"
+        },
+        "voorwaarde": {
+          "node": "Samengesteld",
+          "kwantor": "TEN_MINSTE",
+          "drempel": 1,
+          "onderdelen": [
+            {
+              "node": "Vergelijking",
+              "op": "GELIJK",
+              "links": {
+                "node": "Functie",
+                "kind": "MAAND_UIT",
+                "argumenten": [
+                  {
+                    "node": "AttribuutRef",
+                    "attribuut": "vondstdatum",
+                    "objecttype": "Vondst",
+                    "onderwerpBron": "zijn",
+                    "navigatieRol": null,
+                    "type": {
+                      "node": "DatumInDagen"
+                    },
+                    "bron": "zijn vondstdatum",
+                    "set": false,
+                    "navigatiePad": []
+                  }
+                ],
+                "elementObjecttype": null,
+                "leegwaarde": null,
+                "filter": null,
+                "dimensieSelectie": null,
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": null,
+                  "eenheid": null
+                },
+                "bron": "de maand uit zijn vondstdatum",
+                "granulariteit": null
+              },
+              "rechts": {
+                "node": "Literal",
+                "waarde": "7",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": null,
+                  "eenheid": null
+                },
+                "bron": "7"
+              },
+              "periode": null,
+              "bron": "de maand uit zijn vondstdatum is gelijk aan 7"
+            },
+            {
+              "node": "Vergelijking",
+              "op": "GELIJK",
+              "links": {
+                "node": "Functie",
+                "kind": "MAAND_UIT",
+                "argumenten": [
+                  {
+                    "node": "AttribuutRef",
+                    "attribuut": "vondstdatum",
+                    "objecttype": "Vondst",
+                    "onderwerpBron": "zijn",
+                    "navigatieRol": null,
+                    "type": {
+                      "node": "DatumInDagen"
+                    },
+                    "bron": "zijn vondstdatum",
+                    "set": false,
+                    "navigatiePad": []
+                  }
+                ],
+                "elementObjecttype": null,
+                "leegwaarde": null,
+                "filter": null,
+                "dimensieSelectie": null,
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": null,
+                  "eenheid": null
+                },
+                "bron": "de maand uit zijn vondstdatum",
+                "granulariteit": null
+              },
+              "rechts": {
+                "node": "Literal",
+                "waarde": "8",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": null,
+                  "eenheid": null
+                },
+                "bron": "8"
+              },
+              "periode": null,
+              "bron": "de maand uit zijn vondstdatum is gelijk aan 8"
+            }
+          ],
+          "bron": "hij aan ten minste een van de volgende voorwaarden voldoet"
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "Kenmerktoekenning vondst paasvondst",
+        "soort": "KENMERKTOEKENNING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "paasvondst",
+          "objecttype": "Vondst",
+          "onderwerpBron": "Een Vondst",
+          "navigatieRol": null,
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "Een Vondst is paasvondst",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Literal",
+          "waarde": "waar",
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "waar"
+        },
+        "voorwaarde": {
+          "node": "Vergelijking",
+          "op": "GELIJK",
+          "links": {
+            "node": "AttribuutRef",
+            "attribuut": "vondstdatum",
+            "objecttype": "Vondst",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "DatumInDagen"
+            },
+            "bron": "zijn vondstdatum",
+            "set": false,
+            "navigatiePad": []
+          },
+          "rechts": {
+            "node": "Functie",
+            "kind": "EERSTE_PAASDAG",
+            "argumenten": [
+              {
+                "node": "Functie",
+                "kind": "JAAR_UIT",
+                "argumenten": [
+                  {
+                    "node": "AttribuutRef",
+                    "attribuut": "vondstdatum",
+                    "objecttype": "Vondst",
+                    "onderwerpBron": "zijn",
+                    "navigatieRol": null,
+                    "type": {
+                      "node": "DatumInDagen"
+                    },
+                    "bron": "zijn vondstdatum",
+                    "set": false,
+                    "navigatiePad": []
+                  }
+                ],
+                "elementObjecttype": null,
+                "leegwaarde": null,
+                "filter": null,
+                "dimensieSelectie": null,
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": null,
+                  "eenheid": null
+                },
+                "bron": "het jaar uit zijn vondstdatum",
+                "granulariteit": null
+              }
+            ],
+            "elementObjecttype": null,
+            "leegwaarde": null,
+            "filter": null,
+            "dimensieSelectie": null,
+            "type": {
+              "node": "DatumInDagen"
+            },
+            "bron": "de eerste paasdag van het jaar uit zijn vondstdatum",
+            "granulariteit": null
+          },
+          "periode": null,
+          "bron": "zijn vondstdatum gelijk is aan de eerste paasdag van het jaar uit zijn vondstdatum"
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

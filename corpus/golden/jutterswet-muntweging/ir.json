@@ -1,205 +1,169 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Vondst": {
-      "node": "Objecttype",
-      "naam": "Vondst",
-      "attributen": {
-        "brutogewicht": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "brutogewicht",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "kg",
+                "stelsel": "Gewicht",
+                "canoniek": "kg",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "geborgen gewicht",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "kg",
+                "stelsel": "Gewicht",
+                "canoniek": "kg",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aangegeven gewicht",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "kg",
+                "stelsel": "Gewicht",
+                "canoniek": "kg",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Munt",
+        "supertype": "Vondst",
+        "animate": false,
+        "plural": "Munten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "jaartal",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "Eenheidstelsel",
+        "naam": "Gewicht",
+        "eenheden": {
+          "kg": {
             "node": "Eenheid",
             "afkorting": "kg",
             "stelsel": "Gewicht",
             "canoniek": "kg",
             "factorNaarCanoniek": 1,
             "noemer": null
+          },
+          "t": {
+            "node": "Eenheid",
+            "afkorting": "t",
+            "stelsel": "Gewicht",
+            "canoniek": "kg",
+            "factorNaarCanoniek": 1000,
+            "noemer": null
           }
         },
-        "geborgen gewicht": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {
+        "aliassen": {
+          "kilogram": {
             "node": "Eenheid",
             "afkorting": "kg",
             "stelsel": "Gewicht",
             "canoniek": "kg",
             "factorNaarCanoniek": 1,
             "noemer": null
-          }
-        },
-        "aangegeven gewicht": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {
+          },
+          "kilogrammen": {
             "node": "Eenheid",
             "afkorting": "kg",
             "stelsel": "Gewicht",
             "canoniek": "kg",
             "factorNaarCanoniek": 1,
             "noemer": null
+          },
+          "ton": {
+            "node": "Eenheid",
+            "afkorting": "t",
+            "stelsel": "Gewicht",
+            "canoniek": "kg",
+            "factorNaarCanoniek": 1000,
+            "noemer": null
+          },
+          "tonnen": {
+            "node": "Eenheid",
+            "afkorting": "t",
+            "stelsel": "Gewicht",
+            "canoniek": "kg",
+            "factorNaarCanoniek": 1000,
+            "noemer": null
           }
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Vondsten"
-    },
-    "Munt": {
-      "node": "Objecttype",
-      "naam": "Munt",
-      "supertype": "Vondst",
-      "attributen": {
-        "jaartal": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Munten"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {
-    "Gewicht": {
-      "node": "Eenheidstelsel",
-      "naam": "Gewicht",
-      "eenheden": {
-        "kg": {
-          "node": "Eenheid",
-          "afkorting": "kg",
-          "stelsel": "Gewicht",
-          "canoniek": "kg",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        },
-        "t": {
-          "node": "Eenheid",
-          "afkorting": "t",
-          "stelsel": "Gewicht",
-          "canoniek": "kg",
-          "factorNaarCanoniek": 1000,
-          "noemer": null
-        }
-      },
-      "aliassen": {
-        "kilogram": {
-          "node": "Eenheid",
-          "afkorting": "kg",
-          "stelsel": "Gewicht",
-          "canoniek": "kg",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        },
-        "kilogrammen": {
-          "node": "Eenheid",
-          "afkorting": "kg",
-          "stelsel": "Gewicht",
-          "canoniek": "kg",
-          "factorNaarCanoniek": 1,
-          "noemer": null
-        },
-        "ton": {
-          "node": "Eenheid",
-          "afkorting": "t",
-          "stelsel": "Gewicht",
-          "canoniek": "kg",
-          "factorNaarCanoniek": 1000,
-          "noemer": null
-        },
-        "tonnen": {
-          "node": "Eenheid",
-          "afkorting": "t",
-          "stelsel": "Gewicht",
-          "canoniek": "kg",
-          "factorNaarCanoniek": 1000,
-          "noemer": null
         }
       }
-    }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
   },
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "aangegeven gewicht van een vondst",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "geborgen gewicht van een munt",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "aangegeven gewicht van een vondst",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "aangegeven gewicht",
-        "objecttype": "Vondst",
-        "onderwerpBron": "een Vondst",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "kg",
-            "stelsel": "Gewicht",
-            "canoniek": "kg",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        },
-        "bron": "Het aangegeven gewicht van een Vondst",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Binair",
-        "op": "PLUS",
-        "links": {
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "aangegeven gewicht van een vondst",
+        "soort": "BEREKENING",
+        "doel": {
           "node": "AttribuutRef",
-          "attribuut": "brutogewicht",
+          "attribuut": "aangegeven gewicht",
           "objecttype": "Vondst",
-          "onderwerpBron": "de Vondst",
+          "onderwerpBron": "een Vondst",
           "navigatieRol": null,
           "type": {
             "node": "Numeriek",
@@ -215,88 +179,88 @@
               "noemer": null
             }
           },
-          "bron": "het brutogewicht van de Vondst",
+          "bron": "Het aangegeven gewicht van een Vondst",
           "set": false,
           "navigatiePad": []
         },
-        "rechts": {
-          "node": "Literal",
-          "waarde": "1",
+        "waarde": {
+          "node": "Binair",
+          "op": "PLUS",
+          "links": {
+            "node": "AttribuutRef",
+            "attribuut": "brutogewicht",
+            "objecttype": "Vondst",
+            "onderwerpBron": "de Vondst",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "kg",
+                "stelsel": "Gewicht",
+                "canoniek": "kg",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            },
+            "bron": "het brutogewicht van de Vondst",
+            "set": false,
+            "navigatiePad": []
+          },
+          "rechts": {
+            "node": "Literal",
+            "waarde": "1",
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "t",
+                "stelsel": "Gewicht",
+                "canoniek": "kg",
+                "factorNaarCanoniek": 1000,
+                "noemer": null
+              }
+            },
+            "bron": "1 t"
+          },
           "type": {
             "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
+            "geheel": false,
+            "decimalen": 2,
             "teken": "ONBEPAALD",
             "eenheid": {
               "node": "Eenheid",
-              "afkorting": "t",
+              "afkorting": "kg",
               "stelsel": "Gewicht",
               "canoniek": "kg",
-              "factorNaarCanoniek": 1000,
+              "factorNaarCanoniek": 1,
               "noemer": null
             }
           },
-          "bron": "1 t"
+          "bron": "het brutogewicht van de Vondst plus 1 t"
         },
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "kg",
-            "stelsel": "Gewicht",
-            "canoniek": "kg",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        },
-        "bron": "het brutogewicht van de Vondst plus 1 t"
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "geborgen gewicht van een munt",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "geborgen gewicht",
-        "objecttype": "Munt",
-        "onderwerpBron": "een Munt",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "kg",
-            "stelsel": "Gewicht",
-            "canoniek": "kg",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        },
-        "bron": "Het geborgen gewicht van een Munt",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Binair",
-        "op": "PLUS",
-        "links": {
+      {
+        "node": "ResolvedRegel",
+        "naam": "geborgen gewicht van een munt",
+        "soort": "BEREKENING",
+        "doel": {
           "node": "AttribuutRef",
-          "attribuut": "brutogewicht",
+          "attribuut": "geborgen gewicht",
           "objecttype": "Munt",
-          "onderwerpBron": "de Munt",
+          "onderwerpBron": "een Munt",
           "navigatieRol": null,
           "type": {
             "node": "Numeriek",
@@ -312,61 +276,89 @@
               "noemer": null
             }
           },
-          "bron": "het brutogewicht van de Munt",
+          "bron": "Het geborgen gewicht van een Munt",
           "set": false,
           "navigatiePad": []
         },
-        "rechts": {
-          "node": "Literal",
-          "waarde": "1",
+        "waarde": {
+          "node": "Binair",
+          "op": "PLUS",
+          "links": {
+            "node": "AttribuutRef",
+            "attribuut": "brutogewicht",
+            "objecttype": "Munt",
+            "onderwerpBron": "de Munt",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "kg",
+                "stelsel": "Gewicht",
+                "canoniek": "kg",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            },
+            "bron": "het brutogewicht van de Munt",
+            "set": false,
+            "navigatiePad": []
+          },
+          "rechts": {
+            "node": "Literal",
+            "waarde": "1",
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "t",
+                "stelsel": "Gewicht",
+                "canoniek": "kg",
+                "factorNaarCanoniek": 1000,
+                "noemer": null
+              }
+            },
+            "bron": "1 t"
+          },
           "type": {
             "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
+            "geheel": false,
+            "decimalen": 2,
             "teken": "ONBEPAALD",
             "eenheid": {
               "node": "Eenheid",
-              "afkorting": "t",
+              "afkorting": "kg",
               "stelsel": "Gewicht",
               "canoniek": "kg",
-              "factorNaarCanoniek": 1000,
+              "factorNaarCanoniek": 1,
               "noemer": null
             }
           },
-          "bron": "1 t"
+          "bron": "het brutogewicht van de Munt plus 1 t"
         },
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "kg",
-            "stelsel": "Gewicht",
-            "canoniek": "kg",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        },
-        "bron": "het brutogewicht van de Munt plus 1 t"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

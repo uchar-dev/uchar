@@ -1,261 +1,157 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Rekenkamer": {
-      "node": "Objecttype",
-      "naam": "Rekenkamer",
-      "attributen": {
-        "bergingswaarde": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "aftrek": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "heffing": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": null
-    },
-    "Bergingsaanslag": {
-      "node": "Objecttype",
-      "naam": "Bergingsaanslag",
-      "attributen": {
-        "bergingswaarde": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "hardheidsaftrek": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "verschuldigd": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "hardheid"
-      ],
-      "kenmerkSoorten": {
-        "hardheid": "BIJVOEGLIJK"
-      },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": null
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {
-    "Bergingsaanslag_rekenkamer": {
-      "node": "Feittype",
-      "naam": "Bergingsaanslag_rekenkamer",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "rekenkamer_houder",
-          "objecttypeNaam": "Bergingsaanslag",
-          "meervoud": null,
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "rekenkamer",
-          "objecttypeNaam": "Rekenkamer",
-          "meervoud": null,
-          "meervoudig": false
-        }
-      ]
-    }
-  },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "berekening heffing",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "heffing",
-        "objecttype": "Rekenkamer",
-        "onderwerpBron": "de heffing",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "de heffing",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Binair",
-        "op": "VERMINDERD_MET",
-        "links": {
-          "node": "AttribuutRef",
-          "attribuut": "bergingswaarde",
-          "objecttype": "Rekenkamer",
-          "onderwerpBron": "de bergingswaarde",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de bergingswaarde",
-          "set": false,
-          "navigatiePad": []
-        },
-        "rechts": {
-          "node": "AttribuutRef",
-          "attribuut": "aftrek",
-          "objecttype": "Rekenkamer",
-          "onderwerpBron": "de aftrek",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de aftrek",
-          "set": false,
-          "navigatiePad": []
-        },
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": null
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "berekening verschuldigd",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "verschuldigd",
-        "objecttype": "Bergingsaanslag",
-        "onderwerpBron": "de verschuldigd",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "de verschuldigd",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "AttribuutRef",
-        "attribuut": "heffing",
-        "objecttype": "Rekenkamer",
-        "onderwerpBron": "de heffing van de rekenkamer",
-        "navigatieRol": "rekenkamer",
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "de heffing van de rekenkamer",
-        "set": false,
-        "navigatiePad": [],
-        "navigatieBindingen": [
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Rekenkamer",
+        "animate": true,
+        "attributes": [
           {
-            "node": "RolBinding",
-            "feittype": "Bergingsaanslag_rekenkamer",
-            "rol": "rekenkamer"
+            "node": "Attribute",
+            "name": "bergingswaarde",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aftrek",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "heffing",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Bergingsaanslag",
+        "animate": true,
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "bergingswaarde",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "hardheidsaftrek",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "verschuldigd",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "hardheid",
+            "kind": "BIJVOEGLIJK"
           }
         ]
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [
-    {
-      "node": "ResolvedObjectCreatie",
-      "naam": "richt rekenkamer op",
-      "nieuwType": "Rekenkamer",
-      "subject": "Bergingsaanslag",
-      "toekenningen": [
-        {
-          "node": "Toekenning",
-          "attribuut": "bergingswaarde",
-          "waarde": {
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "Bergingsaanslag_rekenkamer",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "rekenkamer_houder",
+            "objecttypeNaam": "Bergingsaanslag",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "rekenkamer",
+            "objecttypeNaam": "Rekenkamer",
+            "meervoud": null,
+            "meervoudig": false
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "berekening heffing",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "heffing",
+          "objecttype": "Rekenkamer",
+          "onderwerpBron": "de heffing",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de heffing",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Binair",
+          "op": "VERMINDERD_MET",
+          "links": {
             "node": "AttribuutRef",
             "attribuut": "bergingswaarde",
-            "objecttype": "Bergingsaanslag",
+            "objecttype": "Rekenkamer",
             "onderwerpBron": "de bergingswaarde",
             "navigatieRol": null,
             "type": {
@@ -269,61 +165,12 @@
             "set": false,
             "navigatiePad": []
           },
-          "kenmerk": false
-        }
-      ],
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      },
-      "verbindendeRol": {
-        "node": "RolBinding",
-        "feittype": "Bergingsaanslag_rekenkamer",
-        "rol": "rekenkamer"
-      }
-    }
-  ],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
-  "diagnostics": [],
-  "prioritizedDefaults": [
-    {
-      "node": "PrioritizedDefaults",
-      "naam": "aftrek",
-      "onderwerp": "Rekenkamer",
-      "kenmerk": null,
-      "attribuut": "aftrek",
-      "defaults": [
-        {
-          "node": "Default",
-          "besluit": null,
-          "voorwaarde": {
-            "node": "Kenmerk",
-            "kenmerk": "hardheid",
-            "navigatie": "rekenkamer_houder",
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "hardheid",
-            "navigatieBinding": {
-              "node": "RolBinding",
-              "feittype": "Bergingsaanslag_rekenkamer",
-              "rol": "rekenkamer_houder"
-            }
-          },
-          "consequentie": {
+          "rechts": {
             "node": "AttribuutRef",
-            "attribuut": "hardheidsaftrek",
-            "objecttype": "Bergingsaanslag",
-            "onderwerpBron": "de hardheidsaftrek",
-            "navigatieRol": "rekenkamer_houder",
+            "attribuut": "aftrek",
+            "objecttype": "Rekenkamer",
+            "onderwerpBron": "de aftrek",
+            "navigatieRol": null,
             "type": {
               "node": "Numeriek",
               "geheel": true,
@@ -331,50 +178,214 @@
               "teken": "ONBEPAALD",
               "eenheid": null
             },
-            "bron": "de hardheidsaftrek",
+            "bron": "de aftrek",
             "set": false,
-            "navigatiePad": [],
-            "navigatieBindingen": [
-              {
+            "navigatiePad": []
+          },
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": null
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "berekening verschuldigd",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "verschuldigd",
+          "objecttype": "Bergingsaanslag",
+          "onderwerpBron": "de verschuldigd",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de verschuldigd",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "AttribuutRef",
+          "attribuut": "heffing",
+          "objecttype": "Rekenkamer",
+          "onderwerpBron": "de heffing van de rekenkamer",
+          "navigatieRol": "rekenkamer",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de heffing van de rekenkamer",
+          "set": false,
+          "navigatiePad": [],
+          "navigatieBindingen": [
+            {
+              "node": "RolBinding",
+              "feittype": "Bergingsaanslag_rekenkamer",
+              "rol": "rekenkamer"
+            }
+          ]
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [
+      {
+        "node": "ResolvedObjectCreatie",
+        "naam": "richt rekenkamer op",
+        "nieuwType": "Rekenkamer",
+        "subject": "Bergingsaanslag",
+        "toekenningen": [
+          {
+            "node": "Toekenning",
+            "attribuut": "bergingswaarde",
+            "waarde": {
+              "node": "AttribuutRef",
+              "attribuut": "bergingswaarde",
+              "objecttype": "Bergingsaanslag",
+              "onderwerpBron": "de bergingswaarde",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "de bergingswaarde",
+              "set": false,
+              "navigatiePad": []
+            },
+            "kenmerk": false
+          }
+        ],
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        },
+        "verbindendeRol": {
+          "node": "RolBinding",
+          "feittype": "Bergingsaanslag_rekenkamer",
+          "rol": "rekenkamer"
+        }
+      }
+    ],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "naam": "aftrek",
+        "onderwerp": "Rekenkamer",
+        "kenmerk": null,
+        "attribuut": "aftrek",
+        "defaults": [
+          {
+            "node": "Default",
+            "besluit": null,
+            "voorwaarde": {
+              "node": "Kenmerk",
+              "kenmerk": "hardheid",
+              "navigatie": "rekenkamer_houder",
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "hardheid",
+              "navigatieBinding": {
                 "node": "RolBinding",
                 "feittype": "Bergingsaanslag_rekenkamer",
                 "rol": "rekenkamer_houder"
               }
-            ]
-          },
-          "bron": "context-override aftrek"
-        },
-        {
-          "node": "Default",
-          "besluit": null,
-          "voorwaarde": {
-            "node": "Samengesteld",
-            "kwantor": "ALLE",
-            "drempel": 0,
-            "onderdelen": [],
-            "bron": "altijd"
-          },
-          "consequentie": {
-            "node": "Literal",
-            "waarde": "100",
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
             },
-            "bron": "100"
+            "consequentie": {
+              "node": "AttribuutRef",
+              "attribuut": "hardheidsaftrek",
+              "objecttype": "Bergingsaanslag",
+              "onderwerpBron": "de hardheidsaftrek",
+              "navigatieRol": "rekenkamer_houder",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "de hardheidsaftrek",
+              "set": false,
+              "navigatiePad": [],
+              "navigatieBindingen": [
+                {
+                  "node": "RolBinding",
+                  "feittype": "Bergingsaanslag_rekenkamer",
+                  "rol": "rekenkamer_houder"
+                }
+              ]
+            },
+            "bron": "context-override aftrek"
           },
-          "bron": "aftrek"
+          {
+            "node": "Default",
+            "besluit": null,
+            "voorwaarde": {
+              "node": "Samengesteld",
+              "kwantor": "ALLE",
+              "drempel": 0,
+              "onderdelen": [],
+              "bron": "altijd"
+            },
+            "consequentie": {
+              "node": "Literal",
+              "waarde": "100",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "100"
+            },
+            "bron": "aftrek"
+          }
+        ],
+        "bron": "aftrek",
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
         }
-      ],
-      "bron": "aftrek",
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
       }
-    }
-  ]
+    ]
+  },
+  "diagnostics": []
 }

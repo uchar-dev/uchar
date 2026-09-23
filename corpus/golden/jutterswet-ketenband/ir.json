@@ -1,217 +1,213 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Wachter": {
-      "node": "Objecttype",
-      "naam": "Wachter",
-      "attributen": {
-        "rangnummer": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "voorliggerrang": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "opvolgeraantal": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Wachters"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {
-    "ketenband": {
-      "node": "Feittype",
-      "naam": "ketenband",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "voorligger",
-          "objecttypeNaam": "Wachter",
-          "meervoud": "voorliggers",
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "opvolger",
-          "objecttypeNaam": "Wachter",
-          "meervoud": "opvolgers",
-          "meervoudig": true
-        }
-      ]
-    }
-  },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "voorliggerrang",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "opvolgeraantal",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "voorliggerrang",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "voorliggerrang",
-        "objecttype": "Wachter",
-        "onderwerpBron": "een Wachter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "bron": "De voorliggerrang van een Wachter",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "AttribuutRef",
-        "attribuut": "rangnummer",
-        "objecttype": "Wachter",
-        "onderwerpBron": "de Wachter",
-        "navigatieRol": "Wachter",
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "bron": "het rangnummer van de voorligger van de Wachter",
-        "set": false,
-        "navigatiePad": [
-          "voorligger"
-        ],
-        "navigatieBindingen": [
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Wachter",
+        "animate": true,
+        "plural": "Wachters",
+        "attributes": [
           {
-            "node": "RolBinding",
-            "feittype": "ketenband",
-            "rol": "voorligger"
+            "node": "Attribute",
+            "name": "rangnummer",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "voorliggerrang",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "opvolgeraantal",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "ketenband",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "voorligger",
+            "objecttypeNaam": "Wachter",
+            "meervoud": "voorliggers",
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "opvolger",
+            "objecttypeNaam": "Wachter",
+            "meervoud": "opvolgers",
+            "meervoudig": true
           }
         ]
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
       }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "opvolgeraantal",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "opvolgeraantal",
-        "objecttype": "Wachter",
-        "onderwerpBron": "een Wachter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "voorliggerrang",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "voorliggerrang",
+          "objecttype": "Wachter",
+          "onderwerpBron": "een Wachter",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "De voorliggerrang van een Wachter",
+          "set": false,
+          "navigatiePad": []
         },
-        "bron": "Het opvolgeraantal van een Wachter",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "AANTAL",
-        "argumenten": [
-          {
-            "node": "AttribuutRef",
-            "attribuut": "opvolgers",
-            "objecttype": "Wachter",
-            "onderwerpBron": "de Wachter",
-            "navigatieRol": null,
-            "type": {
-              "node": "Onbekend",
-              "reden": "niet opgelost"
-            },
-            "bron": "opvolgers van de Wachter",
-            "set": false,
-            "navigatiePad": []
-          }
-        ],
-        "elementObjecttype": "Wachter",
-        "leegwaarde": null,
-        "filter": null,
-        "dimensieSelectie": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
+        "waarde": {
+          "node": "AttribuutRef",
+          "attribuut": "rangnummer",
+          "objecttype": "Wachter",
+          "onderwerpBron": "de Wachter",
+          "navigatieRol": "Wachter",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "het rangnummer van de voorligger van de Wachter",
+          "set": false,
+          "navigatiePad": [
+            "voorligger"
+          ],
+          "navigatieBindingen": [
+            {
+              "node": "RolBinding",
+              "feittype": "ketenband",
+              "rol": "voorligger"
+            }
+          ]
         },
-        "bron": "het aantal opvolgers van de Wachter",
-        "granulariteit": null,
-        "bronRol": {
-          "node": "RolBinding",
-          "feittype": "ketenband",
-          "rol": "opvolger"
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
         }
       },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+      {
+        "node": "ResolvedRegel",
+        "naam": "opvolgeraantal",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "opvolgeraantal",
+          "objecttype": "Wachter",
+          "onderwerpBron": "een Wachter",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "Het opvolgeraantal van een Wachter",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Functie",
+          "kind": "AANTAL",
+          "argumenten": [
+            {
+              "node": "AttribuutRef",
+              "attribuut": "opvolgers",
+              "objecttype": "Wachter",
+              "onderwerpBron": "de Wachter",
+              "navigatieRol": null,
+              "type": {
+                "node": "Onbekend",
+                "reden": "niet opgelost"
+              },
+              "bron": "opvolgers van de Wachter",
+              "set": false,
+              "navigatiePad": []
+            }
+          ],
+          "elementObjecttype": "Wachter",
+          "leegwaarde": null,
+          "filter": null,
+          "dimensieSelectie": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "het aantal opvolgers van de Wachter",
+          "granulariteit": null,
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "ketenband",
+            "rol": "opvolger"
+          }
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

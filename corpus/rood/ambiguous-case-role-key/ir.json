@@ -1,201 +1,186 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Schuit": {
-      "node": "Objecttype",
-      "naam": "Schuit",
-      "attributen": {
-        "ligdiepte": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Schuiten"
-    },
-    "Ponton": {
-      "node": "Objecttype",
-      "naam": "Ponton",
-      "attributen": {
-        "draagvlak": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Pontons"
-    },
-    "Vlot": {
-      "node": "Objecttype",
-      "naam": "Vlot",
-      "attributen": {
-        "dekhoogte": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Vlotten"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {
-    "pontonligging": {
-      "node": "Feittype",
-      "naam": "pontonligging",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "pontonschuit",
-          "objecttypeNaam": "Schuit",
-          "meervoud": "pontonschuiten",
-          "meervoudig": true
-        },
-        {
-          "node": "Rol",
-          "naam": "ligger",
-          "objecttypeNaam": "Ponton",
-          "meervoud": "liggers",
-          "meervoudig": false
-        }
-      ]
-    },
-    "vlotligging": {
-      "node": "Feittype",
-      "naam": "vlotligging",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "vlotschuit",
-          "objecttypeNaam": "Schuit",
-          "meervoud": "vlotschuiten",
-          "meervoudig": true
-        },
-        {
-          "node": "Rol",
-          "naam": "ligger",
-          "objecttypeNaam": "Vlot",
-          "meervoud": "liggers",
-          "meervoudig": false
-        }
-      ]
-    }
-  },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "ligdiepte van een schuit",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "ligdiepte van een schuit",
-      "soort": "GELIJKSTELLING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "ligdiepte",
-        "objecttype": "Schuit",
-        "onderwerpBron": "een Schuit",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "bron": "De ligdiepte van een Schuit",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "AttribuutRef",
-        "attribuut": "draagvlak",
-        "objecttype": "Ponton",
-        "onderwerpBron": "de Schuit",
-        "navigatieRol": "Schuit",
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "bron": "het draagvlak van de ligger van de Schuit",
-        "set": false,
-        "navigatiePad": [
-          "ligger"
-        ],
-        "navigatieBindingen": [
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Schuit",
+        "animate": false,
+        "plural": "Schuiten",
+        "attributes": [
           {
-            "node": "RolBinding",
-            "feittype": "pontonligging",
-            "rol": "ligger"
+            "node": "Attribute",
+            "name": "ligdiepte",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Ponton",
+        "animate": false,
+        "plural": "Pontons",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "draagvlak",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vlot",
+        "animate": false,
+        "plural": "Vlotten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "dekhoogte",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "pontonligging",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "pontonschuit",
+            "objecttypeNaam": "Schuit",
+            "meervoud": "pontonschuiten",
+            "meervoudig": true
+          },
+          {
+            "node": "Rol",
+            "naam": "ligger",
+            "objecttypeNaam": "Ponton",
+            "meervoud": "liggers",
+            "meervoudig": false
           }
         ]
       },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+      {
+        "node": "Feittype",
+        "naam": "vlotligging",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "vlotschuit",
+            "objecttypeNaam": "Schuit",
+            "meervoud": "vlotschuiten",
+            "meervoudig": true
+          },
+          {
+            "node": "Rol",
+            "naam": "ligger",
+            "objecttypeNaam": "Vlot",
+            "meervoud": "liggers",
+            "meervoudig": false
+          }
+        ]
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "ligdiepte van een schuit",
+        "soort": "GELIJKSTELLING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "ligdiepte",
+          "objecttype": "Schuit",
+          "onderwerpBron": "een Schuit",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "De ligdiepte van een Schuit",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "AttribuutRef",
+          "attribuut": "draagvlak",
+          "objecttype": "Ponton",
+          "onderwerpBron": "de Schuit",
+          "navigatieRol": "Schuit",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "het draagvlak van de ligger van de Schuit",
+          "set": false,
+          "navigatiePad": [
+            "ligger"
+          ],
+          "navigatieBindingen": [
+            {
+              "node": "RolBinding",
+              "feittype": "pontonligging",
+              "rol": "ligger"
+            }
+          ]
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

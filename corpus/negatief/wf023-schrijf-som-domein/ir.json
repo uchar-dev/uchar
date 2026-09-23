@@ -1,13 +1,63 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "beschikking": {
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": false,
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "beschikking",
+            "datatype": {
+              "node": "SumType",
+              "domain": "beschikking",
+              "constructors": [
+                {
+                  "name": "Toegekend",
+                  "payload": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                },
+                {
+                  "name": "Afgewezen",
+                  "payload": null
+                },
+                {
+                  "name": "Aangehouden",
+                  "payload": null
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "uitkering",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "beschikking",
+        "datatype": {
           "node": "SumType",
-          "domain": "beschikking",
           "constructors": [
             {
               "name": "Toegekend",
@@ -28,130 +78,13 @@
               "payload": null
             }
           ]
-        },
-        "uitkering": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
         }
       },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": null
-    }
-  },
-  "domeinen": {
-    "beschikking": {
-      "node": "SumType",
-      "domain": "beschikking",
-      "constructors": [
-        {
-          "name": "Toegekend",
-          "payload": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          }
-        },
-        {
-          "name": "Afgewezen",
-          "payload": null
-        },
-        {
-          "name": "Aangehouden",
-          "payload": null
-        }
-      ]
-    },
-    "oordeel": {
-      "node": "SumType",
-      "domain": "oordeel",
-      "constructors": [
-        {
-          "name": "Goedgekeurd",
-          "payload": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          }
-        },
-        {
-          "name": "Verworpen",
-          "payload": null
-        },
-        {
-          "name": "Uitgesteld",
-          "payload": null
-        }
-      ]
-    }
-  },
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "beschikking",
-      "soort": "GELIJKSTELLING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "beschikking",
-        "objecttype": "Jutter",
-        "onderwerpBron": "de beschikking",
-        "navigatieRol": null,
-        "type": {
+      {
+        "node": "Domain",
+        "name": "oordeel",
+        "datatype": {
           "node": "SumType",
-          "domain": "beschikking",
-          "constructors": [
-            {
-              "name": "Toegekend",
-              "payload": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              }
-            },
-            {
-              "name": "Afgewezen",
-              "payload": null
-            },
-            {
-              "name": "Aangehouden",
-              "payload": null
-            }
-          ]
-        },
-        "bron": "de beschikking",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Construct",
-        "type": {
-          "node": "SumType",
-          "domain": "oordeel",
           "constructors": [
             {
               "name": "Goedgekeurd",
@@ -172,49 +105,22 @@
               "payload": null
             }
           ]
-        },
-        "constructor": "Verworpen",
-        "argument": null,
-        "bron": "verworpen"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        }
       }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "uitkering",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "uitkering",
-        "objecttype": "Jutter",
-        "onderwerpBron": "de uitkering",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "de uitkering",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Match",
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "scrutinee": {
+    ],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "beschikking",
+        "soort": "GELIJKSTELLING",
+        "doel": {
           "node": "AttribuutRef",
           "attribuut": "beschikking",
           "objecttype": "Jutter",
@@ -248,28 +154,138 @@
           "set": false,
           "navigatiePad": []
         },
-        "arms": [
-          {
-            "constructor": "Toegekend",
-            "binder": "bedrag",
-            "body": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "BinderRef",
-                "name": "bedrag",
-                "type": {
+        "waarde": {
+          "node": "Construct",
+          "type": {
+            "node": "SumType",
+            "domain": "oordeel",
+            "constructors": [
+              {
+                "name": "Goedgekeurd",
+                "payload": {
                   "node": "Numeriek",
                   "geheel": false,
                   "decimalen": 2,
                   "teken": "NIET_NEGATIEF",
                   "eenheid": null
-                },
-                "bron": "bedrag"
+                }
               },
-              "rechts": {
-                "node": "Literal",
-                "waarde": "25.00",
+              {
+                "name": "Verworpen",
+                "payload": null
+              },
+              {
+                "name": "Uitgesteld",
+                "payload": null
+              }
+            ]
+          },
+          "constructor": "Verworpen",
+          "argument": null,
+          "bron": "verworpen"
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "uitkering",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "uitkering",
+          "objecttype": "Jutter",
+          "onderwerpBron": "de uitkering",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de uitkering",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Match",
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "scrutinee": {
+            "node": "AttribuutRef",
+            "attribuut": "beschikking",
+            "objecttype": "Jutter",
+            "onderwerpBron": "de beschikking",
+            "navigatieRol": null,
+            "type": {
+              "node": "SumType",
+              "domain": "beschikking",
+              "constructors": [
+                {
+                  "name": "Toegekend",
+                  "payload": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                },
+                {
+                  "name": "Afgewezen",
+                  "payload": null
+                },
+                {
+                  "name": "Aangehouden",
+                  "payload": null
+                }
+              ]
+            },
+            "bron": "de beschikking",
+            "set": false,
+            "navigatiePad": []
+          },
+          "arms": [
+            {
+              "constructor": "Toegekend",
+              "binder": "bedrag",
+              "body": {
+                "node": "Binair",
+                "op": "PLUS",
+                "links": {
+                  "node": "BinderRef",
+                  "name": "bedrag",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  },
+                  "bron": "bedrag"
+                },
+                "rechts": {
+                  "node": "Literal",
+                  "waarde": "25.00",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "25.00"
+                },
                 "type": {
                   "node": "Numeriek",
                   "geheel": false,
@@ -277,69 +293,61 @@
                   "teken": "ONBEPAALD",
                   "eenheid": null
                 },
-                "bron": "25.00"
-              },
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": null
+                "bron": null
+              }
+            },
+            {
+              "constructor": "Afgewezen",
+              "binder": null,
+              "body": {
+                "node": "Literal",
+                "waarde": "0.00",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "0.00"
+              }
+            },
+            {
+              "constructor": "Aangehouden",
+              "binder": null,
+              "body": {
+                "node": "Literal",
+                "waarde": "12.00",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "12.00"
+              }
             }
-          },
-          {
-            "constructor": "Afgewezen",
-            "binder": null,
-            "body": {
-              "node": "Literal",
-              "waarde": "0.00",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "0.00"
-            }
-          },
-          {
-            "constructor": "Aangehouden",
-            "binder": null,
-            "body": {
-              "node": "Literal",
-              "waarde": "12.00",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "12.00"
-            }
-          }
-        ],
-        "bron": "match"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+          ],
+          "bron": "match"
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

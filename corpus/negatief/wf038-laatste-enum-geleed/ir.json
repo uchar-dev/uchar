@@ -1,169 +1,178 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Berging": {
-      "node": "Objecttype",
-      "naam": "Berging",
-      "attributen": {
-        "aanlandkust": {
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Berging",
+        "animate": false,
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "aanlandkust",
+            "datatype": {
+              "node": "Enumeratie",
+              "domein": "Kust",
+              "waarden": [
+                "Noord",
+                "Zuid",
+                "West"
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bakboordkust",
+            "datatype": {
+              "node": "Enumeratie",
+              "domein": "Kust",
+              "waarden": [
+                "Noord",
+                "Zuid",
+                "West"
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "stuurboordkust",
+            "datatype": {
+              "node": "Enumeratie",
+              "domein": "Kust",
+              "waarden": [
+                "Noord",
+                "Zuid",
+                "West"
+              ]
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "Kust",
+        "datatype": {
           "node": "Enumeratie",
-          "domein": "Kust",
-          "waarden": [
-            "Noord",
-            "Zuid",
-            "West"
-          ]
-        },
-        "bakboordkust": {
-          "node": "Enumeratie",
-          "domein": "Kust",
-          "waarden": [
-            "Noord",
-            "Zuid",
-            "West"
-          ]
-        },
-        "stuurboordkust": {
-          "node": "Enumeratie",
-          "domein": "Kust",
           "waarden": [
             "Noord",
             "Zuid",
             "West"
           ]
         }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": null
-    }
-  },
-  "domeinen": {
-    "Kust": {
-      "node": "Enumeratie",
-      "domein": "Kust",
-      "waarden": [
-        "Noord",
-        "Zuid",
-        "West"
-      ]
-    }
-  },
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "aanlandkust van een berging",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "aanlandkust",
-        "objecttype": "Berging",
-        "onderwerpBron": "de aanlandkust",
-        "navigatieRol": null,
-        "type": {
-          "node": "Enumeratie",
-          "domein": "Kust",
-          "waarden": [
-            "Noord",
-            "Zuid",
-            "West"
-          ]
-        },
-        "bron": "de aanlandkust",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "LAATSTE",
-        "argumenten": [
-          {
-            "node": "AttribuutRef",
-            "attribuut": "bakboordkust",
-            "objecttype": "Berging",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Enumeratie",
-              "domein": "Kust",
-              "waarden": [
-                "Noord",
-                "Zuid",
-                "West"
-              ]
-            },
-            "bron": "zijn bakboordkust",
-            "set": false,
-            "navigatiePad": []
-          },
-          {
-            "node": "AttribuutRef",
-            "attribuut": "stuurboordkust",
-            "objecttype": "Berging",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Enumeratie",
-              "domein": "Kust",
-              "waarden": [
-                "Noord",
-                "Zuid",
-                "West"
-              ]
-            },
-            "bron": "zijn stuurboordkust",
-            "set": false,
-            "navigatiePad": []
-          }
-        ],
-        "elementObjecttype": null,
-        "leegwaarde": null,
-        "filter": null,
-        "dimensieSelectie": null,
-        "type": {
-          "node": "Enumeratie",
-          "domein": "Kust",
-          "waarden": [
-            "Noord",
-            "Zuid",
-            "West"
-          ]
-        },
-        "bron": "de laatste van zijn bakboordkust en zijn stuurboordkust",
-        "granulariteit": null
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "aanlandkust van een berging",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "aanlandkust",
+          "objecttype": "Berging",
+          "onderwerpBron": "de aanlandkust",
+          "navigatieRol": null,
+          "type": {
+            "node": "Enumeratie",
+            "domein": "Kust",
+            "waarden": [
+              "Noord",
+              "Zuid",
+              "West"
+            ]
+          },
+          "bron": "de aanlandkust",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Functie",
+          "kind": "LAATSTE",
+          "argumenten": [
+            {
+              "node": "AttribuutRef",
+              "attribuut": "bakboordkust",
+              "objecttype": "Berging",
+              "onderwerpBron": "zijn",
+              "navigatieRol": null,
+              "type": {
+                "node": "Enumeratie",
+                "domein": "Kust",
+                "waarden": [
+                  "Noord",
+                  "Zuid",
+                  "West"
+                ]
+              },
+              "bron": "zijn bakboordkust",
+              "set": false,
+              "navigatiePad": []
+            },
+            {
+              "node": "AttribuutRef",
+              "attribuut": "stuurboordkust",
+              "objecttype": "Berging",
+              "onderwerpBron": "zijn",
+              "navigatieRol": null,
+              "type": {
+                "node": "Enumeratie",
+                "domein": "Kust",
+                "waarden": [
+                  "Noord",
+                  "Zuid",
+                  "West"
+                ]
+              },
+              "bron": "zijn stuurboordkust",
+              "set": false,
+              "navigatiePad": []
+            }
+          ],
+          "elementObjecttype": null,
+          "leegwaarde": null,
+          "filter": null,
+          "dimensieSelectie": null,
+          "type": {
+            "node": "Enumeratie",
+            "domein": "Kust",
+            "waarden": [
+              "Noord",
+              "Zuid",
+              "West"
+            ]
+          },
+          "bron": "de laatste van zijn bakboordkust en zijn stuurboordkust",
+          "granulariteit": null
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

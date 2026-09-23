@@ -1,45 +1,51 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {},
-  "domeinen": {
-    "beschikking": {
-      "node": "SumType",
-      "domain": "beschikking",
-      "constructors": [
-        {
-          "name": "Toegekend",
-          "payload": {
-            "node": "Tekst"
-          }
-        },
-        {
-          "name": "Afgewezen",
-          "payload": null
-        },
-        {
-          "name": "Aangehouden",
-          "payload": null
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "beschikking",
+        "datatype": {
+          "node": "SumType",
+          "constructors": [
+            {
+              "name": "Toegekend",
+              "payload": {
+                "node": "Tekst"
+              }
+            },
+            {
+              "name": "Afgewezen",
+              "payload": null
+            },
+            {
+              "name": "Aangehouden",
+              "payload": null
+            }
+          ]
         }
-      ]
-    }
+      }
+    ],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
   },
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [],
-  "resolvedRegels": [],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+  "rules": {
+    "resolvedRegels": [],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

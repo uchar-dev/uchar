@@ -1,166 +1,82 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Vangst": {
-      "node": "Objecttype",
-      "naam": "Vangst",
-      "attributen": {
-        "deelvangst": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "teller": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "noemer": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "vangstsom": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Vangsten"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "vangstsom van een vangst",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "vangstsom van een vangst",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "vangstsom",
-        "objecttype": "Vangst",
-        "onderwerpBron": "De vangstsom van een Vangst",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "De vangstsom van een Vangst",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "SOM",
-        "argumenten": [
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vangst",
+        "animate": false,
+        "plural": "Vangsten",
+        "attributes": [
           {
-            "node": "AttribuutRef",
-            "attribuut": "deelvangst",
-            "objecttype": "Vangst",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
+            "node": "Attribute",
+            "name": "deelvangst",
+            "datatype": {
               "node": "Numeriek",
               "geheel": true,
               "decimalen": 0,
               "teken": "ONBEPAALD",
               "eenheid": null
-            },
-            "bron": "zijn deelvangst",
-            "set": false,
-            "navigatiePad": []
+            }
           },
           {
-            "node": "AttribuutRef",
-            "attribuut": "teller",
-            "objecttype": "Vangst",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
+            "node": "Attribute",
+            "name": "teller",
+            "datatype": {
               "node": "Numeriek",
               "geheel": true,
               "decimalen": 0,
               "teken": "ONBEPAALD",
               "eenheid": null
-            },
-            "bron": "zijn teller",
-            "set": false,
-            "navigatiePad": []
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "noemer",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vangstsom",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
           }
         ],
-        "elementObjecttype": null,
-        "leegwaarde": {
-          "node": "Binair",
-          "op": "GEDEELD_DOOR",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "teller",
-            "objecttype": "Vangst",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "zijn teller",
-            "set": false,
-            "navigatiePad": []
-          },
-          "rechts": {
-            "node": "AttribuutRef",
-            "attribuut": "noemer",
-            "objecttype": "Vangst",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "zijn noemer",
-            "set": false,
-            "navigatiePad": []
-          },
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "vangstsom van een vangst",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "vangstsom",
+          "objecttype": "Vangst",
+          "onderwerpBron": "De vangstsom van een Vangst",
+          "navigatieRol": null,
           "type": {
             "node": "Numeriek",
             "geheel": true,
@@ -168,36 +84,125 @@
             "teken": "ONBEPAALD",
             "eenheid": null
           },
-          "bron": "zijn teller gedeeld door zijn noemer"
+          "bron": "De vangstsom van een Vangst",
+          "set": false,
+          "navigatiePad": []
         },
-        "filter": null,
-        "dimensieSelectie": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
+        "waarde": {
+          "node": "Functie",
+          "kind": "SOM",
+          "argumenten": [
+            {
+              "node": "AttribuutRef",
+              "attribuut": "deelvangst",
+              "objecttype": "Vangst",
+              "onderwerpBron": "zijn",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "zijn deelvangst",
+              "set": false,
+              "navigatiePad": []
+            },
+            {
+              "node": "AttribuutRef",
+              "attribuut": "teller",
+              "objecttype": "Vangst",
+              "onderwerpBron": "zijn",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "zijn teller",
+              "set": false,
+              "navigatiePad": []
+            }
+          ],
+          "elementObjecttype": null,
+          "leegwaarde": {
+            "node": "Binair",
+            "op": "GEDEELD_DOOR",
+            "links": {
+              "node": "AttribuutRef",
+              "attribuut": "teller",
+              "objecttype": "Vangst",
+              "onderwerpBron": "zijn",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "zijn teller",
+              "set": false,
+              "navigatiePad": []
+            },
+            "rechts": {
+              "node": "AttribuutRef",
+              "attribuut": "noemer",
+              "objecttype": "Vangst",
+              "onderwerpBron": "zijn",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "zijn noemer",
+              "set": false,
+              "navigatiePad": []
+            },
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "zijn teller gedeeld door zijn noemer"
+          },
+          "filter": null,
+          "dimensieSelectie": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de som van zijn deelvangst en zijn teller of zijn teller gedeeld door zijn noemer als die er niet zijn",
+          "granulariteit": null
         },
-        "bron": "de som van zijn deelvangst en zijn teller of zijn teller gedeeld door zijn noemer als die er niet zijn",
-        "granulariteit": null
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

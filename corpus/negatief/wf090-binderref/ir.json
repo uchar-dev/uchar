@@ -1,13 +1,175 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "dossier": {
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "dossier",
+            "datatype": {
+              "node": "StructType",
+              "domain": "dossier",
+              "fields": [
+                {
+                  "name": "waarde",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                },
+                {
+                  "name": "telling",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "dossiers",
+            "datatype": {
+              "node": "ListType",
+              "element": {
+                "node": "StructType",
+                "domain": "dossier",
+                "fields": [
+                  {
+                    "name": "waarde",
+                    "datatype": {
+                      "node": "Numeriek",
+                      "geheel": false,
+                      "decimalen": 2,
+                      "teken": "NIET_NEGATIEF",
+                      "eenheid": null
+                    }
+                  },
+                  {
+                    "name": "telling",
+                    "datatype": {
+                      "node": "Numeriek",
+                      "geheel": true,
+                      "decimalen": 0,
+                      "teken": "NIET_NEGATIEF",
+                      "eenheid": null
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "premie",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "waardekopie",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "totaalwaarde",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "samenvatting",
+            "datatype": {
+              "node": "StructType",
+              "domain": "dossier",
+              "fields": [
+                {
+                  "name": "waarde",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                },
+                {
+                  "name": "telling",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "dubbel",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "afwijkend",
+            "kind": "BIJVOEGLIJK"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "naam": "opslag",
+        "datatype": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "granulariteit": null
+      }
+    ],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "dossier",
+        "datatype": {
           "node": "StructType",
-          "domain": "dossier",
           "fields": [
             {
               "name": "waarde",
@@ -30,10 +192,437 @@
               }
             }
           ]
+        }
+      },
+      {
+        "node": "Domain",
+        "name": "logboek",
+        "datatype": {
+          "node": "StructType",
+          "fields": [
+            {
+              "name": "bedrag",
+              "datatype": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              }
+            },
+            {
+              "name": "aantal",
+              "datatype": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "premie van een jutter",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "premie",
+          "objecttype": "Jutter",
+          "onderwerpBron": null,
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": null,
+          "set": false,
+          "navigatiePad": []
         },
-        "dossiers": {
-          "node": "ListType",
-          "element": {
+        "waarde": {
+          "node": "Binair",
+          "op": "PLUS",
+          "links": {
+            "node": "FieldAccess",
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            },
+            "base": {
+              "node": "AttribuutRef",
+              "attribuut": "dossier",
+              "objecttype": "Jutter",
+              "onderwerpBron": null,
+              "navigatieRol": null,
+              "type": {
+                "node": "StructType",
+                "domain": "dossier",
+                "fields": [
+                  {
+                    "name": "waarde",
+                    "datatype": {
+                      "node": "Numeriek",
+                      "geheel": false,
+                      "decimalen": 2,
+                      "teken": "NIET_NEGATIEF",
+                      "eenheid": null
+                    }
+                  },
+                  {
+                    "name": "telling",
+                    "datatype": {
+                      "node": "Numeriek",
+                      "geheel": true,
+                      "decimalen": 0,
+                      "teken": "NIET_NEGATIEF",
+                      "eenheid": null
+                    }
+                  }
+                ]
+              },
+              "bron": null,
+              "set": false,
+              "navigatiePad": []
+            },
+            "field": "waarde",
+            "bron": null
+          },
+          "rechts": {
+            "node": "ParameterRef",
+            "parameter": "opslag",
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            },
+            "bron": null
+          },
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": null
+        },
+        "voorwaarde": {
+          "node": "Predicaat",
+          "soort": "GEVULD",
+          "operand": {
+            "node": "AttribuutRef",
+            "attribuut": "dossier",
+            "objecttype": "Jutter",
+            "onderwerpBron": null,
+            "navigatieRol": null,
+            "type": {
+              "node": "StructType",
+              "domain": "dossier",
+              "fields": [
+                {
+                  "name": "waarde",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                },
+                {
+                  "name": "telling",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                }
+              ]
+            },
+            "bron": null,
+            "set": false,
+            "navigatiePad": []
+          },
+          "dagsoort": null,
+          "negatie": false,
+          "cijfers": 0,
+          "periode": null,
+          "bron": null
+        },
+        "geldigheid": null
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "totaalwaarde van een jutter",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "totaalwaarde",
+          "objecttype": "Jutter",
+          "onderwerpBron": null,
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": null,
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Fold",
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "list": {
+            "node": "MapList",
+            "type": {
+              "node": "ListType",
+              "element": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              }
+            },
+            "list": {
+              "node": "AttribuutRef",
+              "attribuut": "dossiers",
+              "objecttype": "Jutter",
+              "onderwerpBron": null,
+              "navigatieRol": null,
+              "type": {
+                "node": "ListType",
+                "element": {
+                  "node": "StructType",
+                  "domain": "dossier",
+                  "fields": [
+                    {
+                      "name": "waarde",
+                      "datatype": {
+                        "node": "Numeriek",
+                        "geheel": false,
+                        "decimalen": 2,
+                        "teken": "NIET_NEGATIEF",
+                        "eenheid": null
+                      }
+                    },
+                    {
+                      "name": "telling",
+                      "datatype": {
+                        "node": "Numeriek",
+                        "geheel": true,
+                        "decimalen": 0,
+                        "teken": "NIET_NEGATIEF",
+                        "eenheid": null
+                      }
+                    }
+                  ]
+                }
+              },
+              "bron": null,
+              "set": false,
+              "navigatiePad": []
+            },
+            "function": {
+              "node": "Lambda",
+              "parameters": [
+                {
+                  "name": "d",
+                  "datatype": {
+                    "node": "StructType",
+                    "domain": "dossier",
+                    "fields": [
+                      {
+                        "name": "waarde",
+                        "datatype": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "NIET_NEGATIEF",
+                          "eenheid": null
+                        }
+                      },
+                      {
+                        "name": "telling",
+                        "datatype": {
+                          "node": "Numeriek",
+                          "geheel": true,
+                          "decimalen": 0,
+                          "teken": "NIET_NEGATIEF",
+                          "eenheid": null
+                        }
+                      }
+                    ]
+                  }
+                }
+              ],
+              "body": {
+                "node": "FieldAccess",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                },
+                "base": {
+                  "node": "BinderRef",
+                  "name": "d",
+                  "type": {
+                    "node": "StructType",
+                    "domain": "logboek",
+                    "fields": [
+                      {
+                        "name": "bedrag",
+                        "datatype": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "NIET_NEGATIEF",
+                          "eenheid": null
+                        }
+                      },
+                      {
+                        "name": "aantal",
+                        "datatype": {
+                          "node": "Numeriek",
+                          "geheel": true,
+                          "decimalen": 0,
+                          "teken": "NIET_NEGATIEF",
+                          "eenheid": null
+                        }
+                      }
+                    ]
+                  },
+                  "bron": null
+                },
+                "field": "bedrag",
+                "bron": null
+              },
+              "bron": null
+            },
+            "bron": null
+          },
+          "function": {
+            "node": "Lambda",
+            "parameters": [
+              {
+                "name": "acc",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                }
+              },
+              {
+                "name": "x",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                }
+              }
+            ],
+            "body": {
+              "node": "Binair",
+              "op": "PLUS",
+              "links": {
+                "node": "BinderRef",
+                "name": "acc",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": null
+              },
+              "rechts": {
+                "node": "BinderRef",
+                "name": "x",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                },
+                "bron": null
+              },
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": null
+            },
+            "bron": null
+          },
+          "init": {
+            "node": "Literal",
+            "waarde": "0.00",
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": null
+          },
+          "bron": null
+        },
+        "voorwaarde": null,
+        "geldigheid": null
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "samenvatting van een jutter",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "samenvatting",
+          "objecttype": "Jutter",
+          "onderwerpBron": null,
+          "navigatieRol": null,
+          "type": {
             "node": "StructType",
             "domain": "dossier",
             "fields": [
@@ -58,176 +647,403 @@
                 }
               }
             ]
-          }
+          },
+          "bron": null,
+          "set": false,
+          "navigatiePad": []
         },
-        "premie": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "waardekopie": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "totaalwaarde": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "samenvatting": {
-          "node": "StructType",
-          "domain": "dossier",
+        "waarde": {
+          "node": "StructLiteral",
+          "type": {
+            "node": "StructType",
+            "domain": "dossier",
+            "fields": [
+              {
+                "name": "waarde",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                }
+              },
+              {
+                "name": "telling",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                }
+              }
+            ]
+          },
           "fields": [
             {
               "name": "waarde",
-              "datatype": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
+              "value": {
+                "node": "AttribuutRef",
+                "attribuut": "premie",
+                "objecttype": "Jutter",
+                "onderwerpBron": null,
+                "navigatieRol": null,
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                },
+                "bron": null,
+                "set": false,
+                "navigatiePad": []
               }
             },
             {
               "name": "telling",
-              "datatype": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
+              "value": {
+                "node": "ListLength",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                },
+                "list": {
+                  "node": "AttribuutRef",
+                  "attribuut": "dossiers",
+                  "objecttype": "Jutter",
+                  "onderwerpBron": null,
+                  "navigatieRol": null,
+                  "type": {
+                    "node": "ListType",
+                    "element": {
+                      "node": "StructType",
+                      "domain": "dossier",
+                      "fields": [
+                        {
+                          "name": "waarde",
+                          "datatype": {
+                            "node": "Numeriek",
+                            "geheel": false,
+                            "decimalen": 2,
+                            "teken": "NIET_NEGATIEF",
+                            "eenheid": null
+                          }
+                        },
+                        {
+                          "name": "telling",
+                          "datatype": {
+                            "node": "Numeriek",
+                            "geheel": true,
+                            "decimalen": 0,
+                            "teken": "NIET_NEGATIEF",
+                            "eenheid": null
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "bron": null,
+                  "set": false,
+                  "navigatiePad": []
+                },
+                "bron": null
               }
             }
-          ]
-        }
+          ],
+          "bron": null
+        },
+        "voorwaarde": null,
+        "geldigheid": null
       },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "dubbel",
-        "afwijkend"
-      ],
-      "kenmerkSoorten": {
-        "dubbel": "BIJVOEGLIJK",
-        "afwijkend": "BIJVOEGLIJK"
+      {
+        "node": "ResolvedRegel",
+        "naam": "dubbel bij vast vondstdossier",
+        "soort": "KENMERKTOEKENNING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "dubbel",
+          "objecttype": "Jutter",
+          "onderwerpBron": null,
+          "navigatieRol": null,
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": null,
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Literal",
+          "waarde": "waar",
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": null
+        },
+        "voorwaarde": {
+          "node": "Vergelijking",
+          "op": "GELIJK",
+          "links": {
+            "node": "AttribuutRef",
+            "attribuut": "dossier",
+            "objecttype": "Jutter",
+            "onderwerpBron": null,
+            "navigatieRol": null,
+            "type": {
+              "node": "StructType",
+              "domain": "dossier",
+              "fields": [
+                {
+                  "name": "waarde",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                },
+                {
+                  "name": "telling",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                }
+              ]
+            },
+            "bron": null,
+            "set": false,
+            "navigatiePad": []
+          },
+          "rechts": {
+            "node": "StructLiteral",
+            "type": {
+              "node": "StructType",
+              "domain": "dossier",
+              "fields": [
+                {
+                  "name": "waarde",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                },
+                {
+                  "name": "telling",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                }
+              ]
+            },
+            "fields": [
+              {
+                "name": "waarde",
+                "value": {
+                  "node": "Literal",
+                  "waarde": "120.50",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  },
+                  "bron": null
+                }
+              },
+              {
+                "name": "telling",
+                "value": {
+                  "node": "Literal",
+                  "waarde": "3",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  },
+                  "bron": null
+                }
+              }
+            ],
+            "bron": null
+          },
+          "periode": null,
+          "bron": null
+        },
+        "geldigheid": null
       },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    }
-  },
-  "domeinen": {
-    "dossier": {
-      "node": "StructType",
-      "domain": "dossier",
-      "fields": [
-        {
-          "name": "waarde",
-          "datatype": {
+      {
+        "node": "ResolvedRegel",
+        "naam": "afwijkend bij ander vondstdossier",
+        "soort": "KENMERKTOEKENNING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "afwijkend",
+          "objecttype": "Jutter",
+          "onderwerpBron": null,
+          "navigatieRol": null,
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": null,
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Literal",
+          "waarde": "waar",
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": null
+        },
+        "voorwaarde": {
+          "node": "Vergelijking",
+          "op": "ONGELIJK",
+          "links": {
+            "node": "AttribuutRef",
+            "attribuut": "dossier",
+            "objecttype": "Jutter",
+            "onderwerpBron": null,
+            "navigatieRol": null,
+            "type": {
+              "node": "StructType",
+              "domain": "dossier",
+              "fields": [
+                {
+                  "name": "waarde",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                },
+                {
+                  "name": "telling",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                }
+              ]
+            },
+            "bron": null,
+            "set": false,
+            "navigatiePad": []
+          },
+          "rechts": {
+            "node": "StructLiteral",
+            "type": {
+              "node": "StructType",
+              "domain": "dossier",
+              "fields": [
+                {
+                  "name": "waarde",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                },
+                {
+                  "name": "telling",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  }
+                }
+              ]
+            },
+            "fields": [
+              {
+                "name": "waarde",
+                "value": {
+                  "node": "Literal",
+                  "waarde": "120.50",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  },
+                  "bron": null
+                }
+              },
+              {
+                "name": "telling",
+                "value": {
+                  "node": "Literal",
+                  "waarde": "3",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": true,
+                    "decimalen": 0,
+                    "teken": "NIET_NEGATIEF",
+                    "eenheid": null
+                  },
+                  "bron": null
+                }
+              }
+            ],
+            "bron": null
+          },
+          "periode": null,
+          "bron": null
+        },
+        "geldigheid": null
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "waardekopie van een jutter",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "waardekopie",
+          "objecttype": "Jutter",
+          "onderwerpBron": null,
+          "navigatieRol": null,
+          "type": {
             "node": "Numeriek",
             "geheel": false,
             "decimalen": 2,
             "teken": "NIET_NEGATIEF",
             "eenheid": null
-          }
+          },
+          "bron": null,
+          "set": false,
+          "navigatiePad": []
         },
-        {
-          "name": "telling",
-          "datatype": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          }
-        }
-      ]
-    },
-    "logboek": {
-      "node": "StructType",
-      "domain": "logboek",
-      "fields": [
-        {
-          "name": "bedrag",
-          "datatype": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          }
-        },
-        {
-          "name": "aantal",
-          "datatype": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          }
-        }
-      ]
-    }
-  },
-  "parameters": {
-    "opslag": {
-      "node": "Parameter",
-      "naam": "opslag",
-      "datatype": {
-        "node": "Numeriek",
-        "geheel": false,
-        "decimalen": 2,
-        "teken": "NIET_NEGATIEF",
-        "eenheid": null
-      },
-      "granulariteit": null
-    }
-  },
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "premie van een jutter",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "premie",
-        "objecttype": "Jutter",
-        "onderwerpBron": null,
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "bron": null,
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Binair",
-        "op": "PLUS",
-        "links": {
+        "waarde": {
           "node": "FieldAccess",
           "type": {
             "node": "Numeriek",
@@ -275,805 +1091,19 @@
           "field": "waarde",
           "bron": null
         },
-        "rechts": {
-          "node": "ParameterRef",
-          "parameter": "opslag",
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": null
-        },
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "bron": null
-      },
-      "voorwaarde": {
-        "node": "Predicaat",
-        "soort": "GEVULD",
-        "operand": {
-          "node": "AttribuutRef",
-          "attribuut": "dossier",
-          "objecttype": "Jutter",
-          "onderwerpBron": null,
-          "navigatieRol": null,
-          "type": {
-            "node": "StructType",
-            "domain": "dossier",
-            "fields": [
-              {
-                "name": "waarde",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              },
-              {
-                "name": "telling",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              }
-            ]
-          },
-          "bron": null,
-          "set": false,
-          "navigatiePad": []
-        },
-        "dagsoort": null,
-        "negatie": false,
-        "cijfers": 0,
-        "periode": null,
-        "bron": null
-      },
-      "geldigheid": null
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "totaalwaarde van een jutter",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "totaalwaarde",
-        "objecttype": "Jutter",
-        "onderwerpBron": null,
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": null,
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Fold",
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "list": {
-          "node": "MapList",
-          "type": {
-            "node": "ListType",
-            "element": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            }
-          },
-          "list": {
-            "node": "AttribuutRef",
-            "attribuut": "dossiers",
-            "objecttype": "Jutter",
-            "onderwerpBron": null,
-            "navigatieRol": null,
-            "type": {
-              "node": "ListType",
-              "element": {
-                "node": "StructType",
-                "domain": "dossier",
-                "fields": [
-                  {
-                    "name": "waarde",
-                    "datatype": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
-                    }
-                  },
-                  {
-                    "name": "telling",
-                    "datatype": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
-                    }
-                  }
-                ]
-              }
-            },
-            "bron": null,
-            "set": false,
-            "navigatiePad": []
-          },
-          "function": {
-            "node": "Lambda",
-            "parameters": [
-              {
-                "name": "d",
-                "datatype": {
-                  "node": "StructType",
-                  "domain": "dossier",
-                  "fields": [
-                    {
-                      "name": "waarde",
-                      "datatype": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
-                      }
-                    },
-                    {
-                      "name": "telling",
-                      "datatype": {
-                        "node": "Numeriek",
-                        "geheel": true,
-                        "decimalen": 0,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
-                      }
-                    }
-                  ]
-                }
-              }
-            ],
-            "body": {
-              "node": "FieldAccess",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
-              "base": {
-                "node": "BinderRef",
-                "name": "d",
-                "type": {
-                  "node": "StructType",
-                  "domain": "logboek",
-                  "fields": [
-                    {
-                      "name": "bedrag",
-                      "datatype": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
-                      }
-                    },
-                    {
-                      "name": "aantal",
-                      "datatype": {
-                        "node": "Numeriek",
-                        "geheel": true,
-                        "decimalen": 0,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
-                      }
-                    }
-                  ]
-                },
-                "bron": null
-              },
-              "field": "bedrag",
-              "bron": null
-            },
-            "bron": null
-          },
-          "bron": null
-        },
-        "function": {
-          "node": "Lambda",
-          "parameters": [
-            {
-              "name": "acc",
-              "datatype": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              }
-            },
-            {
-              "name": "x",
-              "datatype": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              }
-            }
-          ],
-          "body": {
-            "node": "Binair",
-            "op": "PLUS",
-            "links": {
-              "node": "BinderRef",
-              "name": "acc",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": null
-            },
-            "rechts": {
-              "node": "BinderRef",
-              "name": "x",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
-              "bron": null
-            },
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": null
-          },
-          "bron": null
-        },
-        "init": {
-          "node": "Literal",
-          "waarde": "0.00",
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": null
-        },
-        "bron": null
-      },
-      "voorwaarde": null,
-      "geldigheid": null
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "samenvatting van een jutter",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "samenvatting",
-        "objecttype": "Jutter",
-        "onderwerpBron": null,
-        "navigatieRol": null,
-        "type": {
-          "node": "StructType",
-          "domain": "dossier",
-          "fields": [
-            {
-              "name": "waarde",
-              "datatype": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              }
-            },
-            {
-              "name": "telling",
-              "datatype": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              }
-            }
-          ]
-        },
-        "bron": null,
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "StructLiteral",
-        "type": {
-          "node": "StructType",
-          "domain": "dossier",
-          "fields": [
-            {
-              "name": "waarde",
-              "datatype": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              }
-            },
-            {
-              "name": "telling",
-              "datatype": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              }
-            }
-          ]
-        },
-        "fields": [
-          {
-            "name": "waarde",
-            "value": {
-              "node": "AttribuutRef",
-              "attribuut": "premie",
-              "objecttype": "Jutter",
-              "onderwerpBron": null,
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
-              "bron": null,
-              "set": false,
-              "navigatiePad": []
-            }
-          },
-          {
-            "name": "telling",
-            "value": {
-              "node": "ListLength",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
-              "list": {
-                "node": "AttribuutRef",
-                "attribuut": "dossiers",
-                "objecttype": "Jutter",
-                "onderwerpBron": null,
-                "navigatieRol": null,
-                "type": {
-                  "node": "ListType",
-                  "element": {
-                    "node": "StructType",
-                    "domain": "dossier",
-                    "fields": [
-                      {
-                        "name": "waarde",
-                        "datatype": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "NIET_NEGATIEF",
-                          "eenheid": null
-                        }
-                      },
-                      {
-                        "name": "telling",
-                        "datatype": {
-                          "node": "Numeriek",
-                          "geheel": true,
-                          "decimalen": 0,
-                          "teken": "NIET_NEGATIEF",
-                          "eenheid": null
-                        }
-                      }
-                    ]
-                  }
-                },
-                "bron": null,
-                "set": false,
-                "navigatiePad": []
-              },
-              "bron": null
-            }
-          }
-        ],
-        "bron": null
-      },
-      "voorwaarde": null,
-      "geldigheid": null
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "dubbel bij vast vondstdossier",
-      "soort": "KENMERKTOEKENNING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "dubbel",
-        "objecttype": "Jutter",
-        "onderwerpBron": null,
-        "navigatieRol": null,
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": null,
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "waar",
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": null
-      },
-      "voorwaarde": {
-        "node": "Vergelijking",
-        "op": "GELIJK",
-        "links": {
-          "node": "AttribuutRef",
-          "attribuut": "dossier",
-          "objecttype": "Jutter",
-          "onderwerpBron": null,
-          "navigatieRol": null,
-          "type": {
-            "node": "StructType",
-            "domain": "dossier",
-            "fields": [
-              {
-                "name": "waarde",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              },
-              {
-                "name": "telling",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              }
-            ]
-          },
-          "bron": null,
-          "set": false,
-          "navigatiePad": []
-        },
-        "rechts": {
-          "node": "StructLiteral",
-          "type": {
-            "node": "StructType",
-            "domain": "dossier",
-            "fields": [
-              {
-                "name": "waarde",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              },
-              {
-                "name": "telling",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              }
-            ]
-          },
-          "fields": [
-            {
-              "name": "waarde",
-              "value": {
-                "node": "Literal",
-                "waarde": "120.50",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                },
-                "bron": null
-              }
-            },
-            {
-              "name": "telling",
-              "value": {
-                "node": "Literal",
-                "waarde": "3",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                },
-                "bron": null
-              }
-            }
-          ],
-          "bron": null
-        },
-        "periode": null,
-        "bron": null
-      },
-      "geldigheid": null
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "afwijkend bij ander vondstdossier",
-      "soort": "KENMERKTOEKENNING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "afwijkend",
-        "objecttype": "Jutter",
-        "onderwerpBron": null,
-        "navigatieRol": null,
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": null,
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "waar",
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": null
-      },
-      "voorwaarde": {
-        "node": "Vergelijking",
-        "op": "ONGELIJK",
-        "links": {
-          "node": "AttribuutRef",
-          "attribuut": "dossier",
-          "objecttype": "Jutter",
-          "onderwerpBron": null,
-          "navigatieRol": null,
-          "type": {
-            "node": "StructType",
-            "domain": "dossier",
-            "fields": [
-              {
-                "name": "waarde",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              },
-              {
-                "name": "telling",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              }
-            ]
-          },
-          "bron": null,
-          "set": false,
-          "navigatiePad": []
-        },
-        "rechts": {
-          "node": "StructLiteral",
-          "type": {
-            "node": "StructType",
-            "domain": "dossier",
-            "fields": [
-              {
-                "name": "waarde",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              },
-              {
-                "name": "telling",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              }
-            ]
-          },
-          "fields": [
-            {
-              "name": "waarde",
-              "value": {
-                "node": "Literal",
-                "waarde": "120.50",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                },
-                "bron": null
-              }
-            },
-            {
-              "name": "telling",
-              "value": {
-                "node": "Literal",
-                "waarde": "3",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                },
-                "bron": null
-              }
-            }
-          ],
-          "bron": null
-        },
-        "periode": null,
-        "bron": null
-      },
-      "geldigheid": null
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "waardekopie van een jutter",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "waardekopie",
-        "objecttype": "Jutter",
-        "onderwerpBron": null,
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "bron": null,
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "FieldAccess",
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "base": {
-          "node": "AttribuutRef",
-          "attribuut": "dossier",
-          "objecttype": "Jutter",
-          "onderwerpBron": null,
-          "navigatieRol": null,
-          "type": {
-            "node": "StructType",
-            "domain": "dossier",
-            "fields": [
-              {
-                "name": "waarde",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              },
-              {
-                "name": "telling",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              }
-            ]
-          },
-          "bron": null,
-          "set": false,
-          "navigatiePad": []
-        },
-        "field": "waarde",
-        "bron": null
-      },
-      "voorwaarde": null,
-      "geldigheid": null
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+        "voorwaarde": null,
+        "geldigheid": null
+      }
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

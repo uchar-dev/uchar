@@ -1,462 +1,444 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Schouwploeg": {
-      "node": "Objecttype",
-      "naam": "Schouwploeg",
-      "attributen": {
-        "wachttal": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "ervaren",
-        "onervaren",
-        "bevoegd",
-        "sluitend"
-      ],
-      "kenmerkSoorten": {
-        "ervaren": "BIJVOEGLIJK",
-        "onervaren": "BIJVOEGLIJK",
-        "bevoegd": "BIJVOEGLIJK",
-        "sluitend": "BIJVOEGLIJK"
-      },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Schouwploegen"
-    },
-    "Strandwacht": {
-      "node": "Objecttype",
-      "naam": "Strandwacht",
-      "attributen": {
-        "dienstjaren": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "gediplomeerd"
-      ],
-      "kenmerkSoorten": {
-        "gediplomeerd": "BIJVOEGLIJK"
-      },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Strandwachten"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {
-    "schouwindeling": {
-      "node": "Feittype",
-      "naam": "schouwindeling",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "ploeg",
-          "objecttypeNaam": "Schouwploeg",
-          "meervoud": null,
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "wacht",
-          "objecttypeNaam": "Strandwacht",
-          "meervoud": "wachten",
-          "meervoudig": true
-        }
-      ]
-    }
-  },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "ervaren bij dienstjaren",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "onervaren bij dienstjaren",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "bevoegd bij diploma",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "sluitend bij diploma",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "wachttal van een schouwploeg",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "ervaren bij dienstjaren",
-      "soort": "KENMERKTOEKENNING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "ervaren",
-        "objecttype": "Schouwploeg",
-        "onderwerpBron": "Een Schouwploeg",
-        "navigatieRol": null,
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "Een Schouwploeg is ervaren",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "waar",
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "waar"
-      },
-      "voorwaarde": {
-        "node": "Kwantorvouw",
-        "kwantor": "ALLE",
-        "elementObjecttype": "Strandwacht",
-        "filter": null,
-        "toets": {
-          "node": "Vergelijking",
-          "op": "GROTER",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "dienstjaren",
-            "objecttype": "Strandwacht",
-            "onderwerpBron": "alle wachten van de Schouwploeg",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de dienstjaren van alle wachten van de Schouwploeg",
-            "set": false,
-            "navigatiePad": []
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "5",
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "5"
-          },
-          "periode": null,
-          "bron": "de dienstjaren van alle wachten van de Schouwploeg groter zijn dan 5"
-        },
-        "bron": "de dienstjaren van alle wachten van de Schouwploeg groter zijn dan 5",
-        "bronRol": {
-          "node": "RolBinding",
-          "feittype": "schouwindeling",
-          "rol": "wacht"
-        }
-      },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "onervaren bij dienstjaren",
-      "soort": "KENMERKTOEKENNING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "onervaren",
-        "objecttype": "Schouwploeg",
-        "onderwerpBron": "Een Schouwploeg",
-        "navigatieRol": null,
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "Een Schouwploeg is onervaren",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "waar",
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "waar"
-      },
-      "voorwaarde": {
-        "node": "Kwantorvouw",
-        "kwantor": "GEEN",
-        "elementObjecttype": "Strandwacht",
-        "filter": null,
-        "toets": {
-          "node": "Vergelijking",
-          "op": "GROTER",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "dienstjaren",
-            "objecttype": "Strandwacht",
-            "onderwerpBron": "geen van de wachten van de Schouwploeg",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de dienstjaren van geen van de wachten van de Schouwploeg",
-            "set": false,
-            "navigatiePad": []
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "5",
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "5"
-          },
-          "periode": null,
-          "bron": "de dienstjaren van geen van de wachten van de Schouwploeg groter zijn dan 5"
-        },
-        "bron": "de dienstjaren van geen van de wachten van de Schouwploeg groter zijn dan 5",
-        "bronRol": {
-          "node": "RolBinding",
-          "feittype": "schouwindeling",
-          "rol": "wacht"
-        }
-      },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "bevoegd bij diploma",
-      "soort": "KENMERKTOEKENNING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "bevoegd",
-        "objecttype": "Schouwploeg",
-        "onderwerpBron": "Een Schouwploeg",
-        "navigatieRol": null,
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "Een Schouwploeg is bevoegd",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "waar",
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "waar"
-      },
-      "voorwaarde": {
-        "node": "Kwantorvouw",
-        "kwantor": "ALLE",
-        "elementObjecttype": "Strandwacht",
-        "filter": null,
-        "toets": {
-          "node": "Kenmerk",
-          "kenmerk": "gediplomeerd",
-          "navigatie": null,
-          "negatie": false,
-          "eigenaar": null,
-          "periode": null,
-          "bron": "alle wachten van de Schouwploeg gediplomeerd zijn"
-        },
-        "bron": "alle wachten van de Schouwploeg gediplomeerd zijn",
-        "bronRol": {
-          "node": "RolBinding",
-          "feittype": "schouwindeling",
-          "rol": "wacht"
-        }
-      },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "sluitend bij diploma",
-      "soort": "KENMERKTOEKENNING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "sluitend",
-        "objecttype": "Schouwploeg",
-        "onderwerpBron": "Een Schouwploeg",
-        "navigatieRol": null,
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "Een Schouwploeg is sluitend",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "waar",
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "waar"
-      },
-      "voorwaarde": {
-        "node": "Kwantorvouw",
-        "kwantor": "GEEN",
-        "elementObjecttype": "Strandwacht",
-        "filter": null,
-        "toets": {
-          "node": "Kenmerk",
-          "kenmerk": "gediplomeerd",
-          "navigatie": null,
-          "negatie": true,
-          "eigenaar": null,
-          "periode": null,
-          "bron": "geen van de wachten van de Schouwploeg niet gediplomeerd is"
-        },
-        "bron": "geen van de wachten van de Schouwploeg niet gediplomeerd is",
-        "bronRol": {
-          "node": "RolBinding",
-          "feittype": "schouwindeling",
-          "rol": "wacht"
-        }
-      },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "wachttal van een schouwploeg",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "wachttal",
-        "objecttype": "Schouwploeg",
-        "onderwerpBron": "een Schouwploeg",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "Het wachttal van een Schouwploeg",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "AANTAL",
-        "argumenten": [
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Schouwploeg",
+        "animate": false,
+        "plural": "Schouwploegen",
+        "attributes": [
           {
-            "node": "AttribuutRef",
-            "attribuut": "wachten",
-            "objecttype": "Schouwploeg",
-            "onderwerpBron": "de Schouwploeg",
-            "navigatieRol": null,
-            "type": {
-              "node": "Onbekend",
-              "reden": "niet opgelost"
-            },
-            "bron": "wachten van de Schouwploeg",
-            "set": false,
-            "navigatiePad": []
+            "node": "Attribute",
+            "name": "wachttal",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
           }
         ],
-        "elementObjecttype": "Strandwacht",
-        "leegwaarde": null,
-        "filter": null,
-        "dimensieSelectie": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "ervaren",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "onervaren",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "bevoegd",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "sluitend",
+            "kind": "BIJVOEGLIJK"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Strandwacht",
+        "animate": true,
+        "plural": "Strandwachten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "dienstjaren",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "gediplomeerd",
+            "kind": "BIJVOEGLIJK"
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "schouwindeling",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "ploeg",
+            "objecttypeNaam": "Schouwploeg",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "wacht",
+            "objecttypeNaam": "Strandwacht",
+            "meervoud": "wachten",
+            "meervoudig": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "ervaren bij dienstjaren",
+        "soort": "KENMERKTOEKENNING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "ervaren",
+          "objecttype": "Schouwploeg",
+          "onderwerpBron": "Een Schouwploeg",
+          "navigatieRol": null,
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "Een Schouwploeg is ervaren",
+          "set": false,
+          "navigatiePad": []
         },
-        "bron": "het aantal wachten van de Schouwploeg",
-        "granulariteit": null,
-        "bronRol": {
-          "node": "RolBinding",
-          "feittype": "schouwindeling",
-          "rol": "wacht"
+        "waarde": {
+          "node": "Literal",
+          "waarde": "waar",
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "waar"
+        },
+        "voorwaarde": {
+          "node": "Kwantorvouw",
+          "kwantor": "ALLE",
+          "elementObjecttype": "Strandwacht",
+          "filter": null,
+          "toets": {
+            "node": "Vergelijking",
+            "op": "GROTER",
+            "links": {
+              "node": "AttribuutRef",
+              "attribuut": "dienstjaren",
+              "objecttype": "Strandwacht",
+              "onderwerpBron": "alle wachten van de Schouwploeg",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "de dienstjaren van alle wachten van de Schouwploeg",
+              "set": false,
+              "navigatiePad": []
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "5",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "5"
+            },
+            "periode": null,
+            "bron": "de dienstjaren van alle wachten van de Schouwploeg groter zijn dan 5"
+          },
+          "bron": "de dienstjaren van alle wachten van de Schouwploeg groter zijn dan 5",
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "schouwindeling",
+            "rol": "wacht"
+          }
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
         }
       },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+      {
+        "node": "ResolvedRegel",
+        "naam": "onervaren bij dienstjaren",
+        "soort": "KENMERKTOEKENNING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "onervaren",
+          "objecttype": "Schouwploeg",
+          "onderwerpBron": "Een Schouwploeg",
+          "navigatieRol": null,
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "Een Schouwploeg is onervaren",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Literal",
+          "waarde": "waar",
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "waar"
+        },
+        "voorwaarde": {
+          "node": "Kwantorvouw",
+          "kwantor": "GEEN",
+          "elementObjecttype": "Strandwacht",
+          "filter": null,
+          "toets": {
+            "node": "Vergelijking",
+            "op": "GROTER",
+            "links": {
+              "node": "AttribuutRef",
+              "attribuut": "dienstjaren",
+              "objecttype": "Strandwacht",
+              "onderwerpBron": "geen van de wachten van de Schouwploeg",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "de dienstjaren van geen van de wachten van de Schouwploeg",
+              "set": false,
+              "navigatiePad": []
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "5",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "5"
+            },
+            "periode": null,
+            "bron": "de dienstjaren van geen van de wachten van de Schouwploeg groter zijn dan 5"
+          },
+          "bron": "de dienstjaren van geen van de wachten van de Schouwploeg groter zijn dan 5",
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "schouwindeling",
+            "rol": "wacht"
+          }
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "bevoegd bij diploma",
+        "soort": "KENMERKTOEKENNING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "bevoegd",
+          "objecttype": "Schouwploeg",
+          "onderwerpBron": "Een Schouwploeg",
+          "navigatieRol": null,
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "Een Schouwploeg is bevoegd",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Literal",
+          "waarde": "waar",
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "waar"
+        },
+        "voorwaarde": {
+          "node": "Kwantorvouw",
+          "kwantor": "ALLE",
+          "elementObjecttype": "Strandwacht",
+          "filter": null,
+          "toets": {
+            "node": "Kenmerk",
+            "kenmerk": "gediplomeerd",
+            "navigatie": null,
+            "negatie": false,
+            "eigenaar": null,
+            "periode": null,
+            "bron": "alle wachten van de Schouwploeg gediplomeerd zijn"
+          },
+          "bron": "alle wachten van de Schouwploeg gediplomeerd zijn",
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "schouwindeling",
+            "rol": "wacht"
+          }
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "sluitend bij diploma",
+        "soort": "KENMERKTOEKENNING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "sluitend",
+          "objecttype": "Schouwploeg",
+          "onderwerpBron": "Een Schouwploeg",
+          "navigatieRol": null,
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "Een Schouwploeg is sluitend",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Literal",
+          "waarde": "waar",
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "waar"
+        },
+        "voorwaarde": {
+          "node": "Kwantorvouw",
+          "kwantor": "GEEN",
+          "elementObjecttype": "Strandwacht",
+          "filter": null,
+          "toets": {
+            "node": "Kenmerk",
+            "kenmerk": "gediplomeerd",
+            "navigatie": null,
+            "negatie": true,
+            "eigenaar": null,
+            "periode": null,
+            "bron": "geen van de wachten van de Schouwploeg niet gediplomeerd is"
+          },
+          "bron": "geen van de wachten van de Schouwploeg niet gediplomeerd is",
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "schouwindeling",
+            "rol": "wacht"
+          }
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "wachttal van een schouwploeg",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "wachttal",
+          "objecttype": "Schouwploeg",
+          "onderwerpBron": "een Schouwploeg",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "Het wachttal van een Schouwploeg",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Functie",
+          "kind": "AANTAL",
+          "argumenten": [
+            {
+              "node": "AttribuutRef",
+              "attribuut": "wachten",
+              "objecttype": "Schouwploeg",
+              "onderwerpBron": "de Schouwploeg",
+              "navigatieRol": null,
+              "type": {
+                "node": "Onbekend",
+                "reden": "niet opgelost"
+              },
+              "bron": "wachten van de Schouwploeg",
+              "set": false,
+              "navigatiePad": []
+            }
+          ],
+          "elementObjecttype": "Strandwacht",
+          "leegwaarde": null,
+          "filter": null,
+          "dimensieSelectie": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "het aantal wachten van de Schouwploeg",
+          "granulariteit": null,
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "schouwindeling",
+            "rol": "wacht"
+          }
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

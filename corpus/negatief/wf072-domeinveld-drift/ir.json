@@ -1,13 +1,64 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "nest": {
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "nest",
+            "datatype": {
+              "node": "StructType",
+              "domain": "bundel",
+              "fields": [
+                {
+                  "name": "kern",
+                  "datatype": {
+                    "node": "StructType",
+                    "domain": "dossier",
+                    "fields": [
+                      {
+                        "name": "waarde",
+                        "datatype": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "NIET_NEGATIEF",
+                          "eenheid": null
+                        }
+                      },
+                      {
+                        "name": "telling",
+                        "datatype": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "NIET_NEGATIEF",
+                          "eenheid": null
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "bundel",
+        "datatype": {
           "node": "StructType",
-          "domain": "bundel",
           "fields": [
             {
               "name": "kern",
@@ -41,99 +92,53 @@
           ]
         }
       },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    }
-  },
-  "domeinen": {
-    "bundel": {
-      "node": "StructType",
-      "domain": "bundel",
-      "fields": [
-        {
-          "name": "kern",
-          "datatype": {
-            "node": "StructType",
-            "domain": "dossier",
-            "fields": [
-              {
-                "name": "waarde",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              },
-              {
-                "name": "telling",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
+      {
+        "node": "Domain",
+        "name": "dossier",
+        "datatype": {
+          "node": "StructType",
+          "fields": [
+            {
+              "name": "waarde",
+              "datatype": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
               }
-            ]
-          }
+            },
+            {
+              "name": "telling",
+              "datatype": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              }
+            }
+          ]
         }
-      ]
-    },
-    "dossier": {
-      "node": "StructType",
-      "domain": "dossier",
-      "fields": [
-        {
-          "name": "waarde",
-          "datatype": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          }
-        },
-        {
-          "name": "telling",
-          "datatype": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          }
-        }
-      ]
-    }
+      }
+    ],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
   },
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [],
-  "resolvedRegels": [],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+  "rules": {
+    "resolvedRegels": [],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

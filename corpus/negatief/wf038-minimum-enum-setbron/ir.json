@@ -1,135 +1,16 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Berging": {
-      "node": "Objecttype",
-      "naam": "Berging",
-      "attributen": {
-        "aanlandkust": {
-          "node": "Enumeratie",
-          "domein": "Kust",
-          "waarden": [
-            "Noord",
-            "Zuid",
-            "West"
-          ]
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": null
-    },
-    "Schuit": {
-      "node": "Objecttype",
-      "naam": "Schuit",
-      "attributen": {
-        "kust": {
-          "node": "Enumeratie",
-          "domein": "Kust",
-          "waarden": [
-            "Noord",
-            "Zuid",
-            "West"
-          ]
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": null
-    }
-  },
-  "domeinen": {
-    "Kust": {
-      "node": "Enumeratie",
-      "domein": "Kust",
-      "waarden": [
-        "Noord",
-        "Zuid",
-        "West"
-      ]
-    }
-  },
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {
-    "ligplaats": {
-      "node": "Feittype",
-      "naam": "ligplaats",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "berging",
-          "objecttypeNaam": "Berging",
-          "meervoud": null,
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "schuit",
-          "objecttypeNaam": "Schuit",
-          "meervoud": "schuiten",
-          "meervoudig": true
-        }
-      ]
-    }
-  },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "aanlandkust van een berging",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "aanlandkust",
-        "objecttype": "Berging",
-        "onderwerpBron": "de aanlandkust",
-        "navigatieRol": null,
-        "type": {
-          "node": "Enumeratie",
-          "domein": "Kust",
-          "waarden": [
-            "Noord",
-            "Zuid",
-            "West"
-          ]
-        },
-        "bron": "de aanlandkust",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "MINIMUM",
-        "argumenten": [
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Berging",
+        "animate": false,
+        "attributes": [
           {
-            "node": "AttribuutRef",
-            "attribuut": "kust",
-            "objecttype": "Schuit",
-            "onderwerpBron": "de kust van alle schuiten van de Berging",
-            "navigatieRol": null,
-            "type": {
+            "node": "Attribute",
+            "name": "aanlandkust",
+            "datatype": {
               "node": "Enumeratie",
               "domein": "Kust",
               "waarden": [
@@ -137,49 +18,164 @@
                 "Zuid",
                 "West"
               ]
-            },
-            "bron": "de kust van alle schuiten van de Berging",
-            "set": true,
-            "navigatiePad": []
+            }
           }
         ],
-        "elementObjecttype": "Schuit",
-        "leegwaarde": null,
-        "filter": null,
-        "dimensieSelectie": null,
-        "type": {
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Schuit",
+        "animate": false,
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "kust",
+            "datatype": {
+              "node": "Enumeratie",
+              "domein": "Kust",
+              "waarden": [
+                "Noord",
+                "Zuid",
+                "West"
+              ]
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "ligplaats",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "berging",
+            "objecttypeNaam": "Berging",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "schuit",
+            "objecttypeNaam": "Schuit",
+            "meervoud": "schuiten",
+            "meervoudig": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "Kust",
+        "datatype": {
           "node": "Enumeratie",
-          "domein": "Kust",
           "waarden": [
             "Noord",
             "Zuid",
             "West"
           ]
-        },
-        "bron": "het minimum kust van alle schuiten van de Berging",
-        "granulariteit": null,
-        "bronRol": {
-          "node": "RolBinding",
-          "feittype": "ligplaats",
-          "rol": "schuit"
         }
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "aanlandkust van een berging",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "aanlandkust",
+          "objecttype": "Berging",
+          "onderwerpBron": "de aanlandkust",
+          "navigatieRol": null,
+          "type": {
+            "node": "Enumeratie",
+            "domein": "Kust",
+            "waarden": [
+              "Noord",
+              "Zuid",
+              "West"
+            ]
+          },
+          "bron": "de aanlandkust",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Functie",
+          "kind": "MINIMUM",
+          "argumenten": [
+            {
+              "node": "AttribuutRef",
+              "attribuut": "kust",
+              "objecttype": "Schuit",
+              "onderwerpBron": "de kust van alle schuiten van de Berging",
+              "navigatieRol": null,
+              "type": {
+                "node": "Enumeratie",
+                "domein": "Kust",
+                "waarden": [
+                  "Noord",
+                  "Zuid",
+                  "West"
+                ]
+              },
+              "bron": "de kust van alle schuiten van de Berging",
+              "set": true,
+              "navigatiePad": []
+            }
+          ],
+          "elementObjecttype": "Schuit",
+          "leegwaarde": null,
+          "filter": null,
+          "dimensieSelectie": null,
+          "type": {
+            "node": "Enumeratie",
+            "domein": "Kust",
+            "waarden": [
+              "Noord",
+              "Zuid",
+              "West"
+            ]
+          },
+          "bron": "het minimum kust van alle schuiten van de Berging",
+          "granulariteit": null,
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "ligplaats",
+            "rol": "schuit"
+          }
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

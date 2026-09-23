@@ -1,56 +1,40 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {},
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    }
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
   },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [],
-  "resolvedRegels": [],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [
-    {
-      "node": "ResolvedConsistentie",
-      "naam": "Scalaire bron",
-      "subject": "Jutter",
-      "assertie": {
-        "node": "Predicaat",
-        "soort": "GEVULD",
-        "operand": {
-          "node": "Fold",
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "list": {
-            "node": "Literal",
-            "waarde": "5.00",
+  "rules": {
+    "resolvedRegels": [],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [
+      {
+        "node": "ResolvedConsistentie",
+        "naam": "Scalaire bron",
+        "subject": "Jutter",
+        "assertie": {
+          "node": "Predicaat",
+          "soort": "GEVULD",
+          "operand": {
+            "node": "Fold",
             "type": {
               "node": "Numeriek",
               "geheel": false,
@@ -58,38 +42,69 @@
               "teken": "ONBEPAALD",
               "eenheid": null
             },
-            "bron": null
-          },
-          "function": {
-            "node": "Lambda",
-            "parameters": [
-              {
-                "name": "acc",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                }
+            "list": {
+              "node": "Literal",
+              "waarde": "5.00",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
               },
-              {
-                "name": "x",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
+              "bron": null
+            },
+            "function": {
+              "node": "Lambda",
+              "parameters": [
+                {
+                  "name": "acc",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  }
+                },
+                {
+                  "name": "x",
+                  "datatype": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  }
                 }
-              }
-            ],
-            "body": {
-              "node": "Binair",
-              "op": "PLUS",
-              "links": {
-                "node": "BinderRef",
-                "name": "acc",
+              ],
+              "body": {
+                "node": "Binair",
+                "op": "PLUS",
+                "links": {
+                  "node": "BinderRef",
+                  "name": "acc",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": null
+                },
+                "rechts": {
+                  "node": "BinderRef",
+                  "name": "x",
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": null
+                },
                 "type": {
                   "node": "Numeriek",
                   "geheel": false,
@@ -99,18 +114,11 @@
                 },
                 "bron": null
               },
-              "rechts": {
-                "node": "BinderRef",
-                "name": "x",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": null
-              },
+              "bron": null
+            },
+            "init": {
+              "node": "Literal",
+              "waarde": "0.00",
               "type": {
                 "node": "Numeriek",
                 "geheel": false,
@@ -122,35 +130,22 @@
             },
             "bron": null
           },
-          "init": {
-            "node": "Literal",
-            "waarde": "0.00",
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": null
-          },
+          "dagsoort": null,
+          "negatie": false,
+          "cijfers": 0,
+          "periode": null,
           "bron": null
         },
-        "dagsoort": null,
-        "negatie": false,
-        "cijfers": 0,
-        "periode": null,
-        "bron": null
-      },
-      "bron": null,
-      "line": 1,
-      "geldigheid": null
-    }
-  ],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+        "bron": null,
+        "line": 1,
+        "geldigheid": null
+      }
+    ],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

@@ -1,333 +1,328 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Getijpost": {
-      "node": "Objecttype",
-      "naam": "Getijpost",
-      "attributen": {
-        "meldtijdstip": {
-          "node": "DatumTijd"
-        },
-        "wachttermijn": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": {
-            "node": "Eenheid",
-            "afkorting": "springtijdagen",
-            "stelsel": null,
-            "canoniek": "springtijdagen",
-            "factorNaarCanoniek": 1,
-            "noemer": null
-          }
-        },
-        "sluittijdstip": {
-          "node": "DatumTijd"
-        },
-        "openingstijdstip": {
-          "node": "DatumTijd"
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Getijposten"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [
-    "springtijdag"
-  ],
-  "dagsoortPerEenheid": {
-    "springtijdag": "springtijdag",
-    "springtijdagen": "springtijdag"
-  },
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "Dagsoortdefinitie springtijdag",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "sluittijdstip van een getijpost",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "openingstijdstip van een getijpost",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "sluittijdstip van een getijpost",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "sluittijdstip",
-        "objecttype": "Getijpost",
-        "onderwerpBron": "een Getijpost",
-        "navigatieRol": null,
-        "type": {
-          "node": "DatumTijd"
-        },
-        "bron": "Het sluittijdstip van een Getijpost",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Binair",
-        "op": "PLUS",
-        "links": {
-          "node": "AttribuutRef",
-          "attribuut": "meldtijdstip",
-          "objecttype": "Getijpost",
-          "onderwerpBron": "zijn",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumTijd"
-          },
-          "bron": "zijn meldtijdstip",
-          "set": false,
-          "navigatiePad": []
-        },
-        "rechts": {
-          "node": "AttribuutRef",
-          "attribuut": "wachttermijn",
-          "objecttype": "Getijpost",
-          "onderwerpBron": "zijn",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "springtijdagen",
-              "stelsel": null,
-              "canoniek": "springtijdagen",
-              "factorNaarCanoniek": 1,
-              "noemer": null
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Getijpost",
+        "animate": true,
+        "plural": "Getijposten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "meldtijdstip",
+            "datatype": {
+              "node": "DatumTijd"
             }
           },
-          "bron": "zijn wachttermijn",
-          "set": false,
-          "navigatiePad": []
-        },
-        "type": {
-          "node": "DatumTijd"
-        },
-        "bron": "zijn meldtijdstip plus zijn wachttermijn"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "openingstijdstip van een getijpost",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "openingstijdstip",
-        "objecttype": "Getijpost",
-        "onderwerpBron": "een Getijpost",
-        "navigatieRol": null,
-        "type": {
-          "node": "DatumTijd"
-        },
-        "bron": "Het openingstijdstip van een Getijpost",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Binair",
-        "op": "MIN",
-        "links": {
-          "node": "AttribuutRef",
-          "attribuut": "meldtijdstip",
-          "objecttype": "Getijpost",
-          "onderwerpBron": "zijn",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumTijd"
-          },
-          "bron": "zijn meldtijdstip",
-          "set": false,
-          "navigatiePad": []
-        },
-        "rechts": {
-          "node": "AttribuutRef",
-          "attribuut": "wachttermijn",
-          "objecttype": "Getijpost",
-          "onderwerpBron": "zijn",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "springtijdagen",
-              "stelsel": null,
-              "canoniek": "springtijdagen",
-              "factorNaarCanoniek": 1,
-              "noemer": null
+          {
+            "node": "Attribute",
+            "name": "wachttermijn",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "springtijdagen",
+                "stelsel": null,
+                "canoniek": "springtijdagen",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
             }
           },
-          "bron": "zijn wachttermijn",
-          "set": false,
-          "navigatiePad": []
-        },
-        "type": {
-          "node": "DatumTijd"
-        },
-        "bron": "zijn meldtijdstip min zijn wachttermijn"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    }
-  ],
-  "resolvedDagsoorten": [
-    {
-      "node": "ResolvedDagsoort",
-      "naam": "springtijdag",
-      "voorwaarde": {
-        "node": "Samengesteld",
-        "kwantor": "TEN_MINSTE",
-        "drempel": 1,
-        "onderdelen": [
           {
-            "node": "Vergelijking",
-            "op": "GELIJK",
-            "links": {
-              "node": "Functie",
-              "kind": "DAG_UIT",
-              "argumenten": [
-                {
-                  "node": "Constante",
-                  "naam": "de dag",
-                  "type": {
-                    "node": "DatumInDagen"
-                  },
-                  "bron": "de dag"
-                }
-              ],
-              "elementObjecttype": null,
-              "leegwaarde": null,
-              "filter": null,
-              "dimensieSelectie": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
-              "bron": "de dag uit de dag",
-              "granulariteit": null
-            },
-            "rechts": {
-              "node": "Literal",
-              "waarde": "1",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "1"
-            },
-            "periode": null,
-            "bron": "de dag uit de dag gelijk is aan 1"
+            "node": "Attribute",
+            "name": "sluittijdstip",
+            "datatype": {
+              "node": "DatumTijd"
+            }
           },
           {
-            "node": "Vergelijking",
-            "op": "GELIJK",
-            "links": {
-              "node": "Functie",
-              "kind": "DAG_UIT",
-              "argumenten": [
-                {
-                  "node": "Constante",
-                  "naam": "de dag",
-                  "type": {
-                    "node": "DatumInDagen"
-                  },
-                  "bron": "de dag"
-                }
-              ],
-              "elementObjecttype": null,
-              "leegwaarde": null,
-              "filter": null,
-              "dimensieSelectie": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
-              "bron": "de dag uit de dag",
-              "granulariteit": null
-            },
-            "rechts": {
-              "node": "Literal",
-              "waarde": "15",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "15"
-            },
-            "periode": null,
-            "bron": "de dag uit de dag gelijk is aan 15"
+            "node": "Attribute",
+            "name": "openingstijdstip",
+            "datatype": {
+              "node": "DatumTijd"
+            }
           }
         ],
-        "bron": "er aan ten minste 1 van de volgende voorwaarden wordt voldaan: - de dag uit de dag gelijk is aan 1 - de dag uit de dag gelijk is aan 15."
-      },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        "characteristics": []
       }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [
+      "springtijdag"
+    ],
+    "dagsoortPerEenheid": {
+      "springtijdag": "springtijdag",
+      "springtijdagen": "springtijdag"
     }
-  ],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "sluittijdstip van een getijpost",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "sluittijdstip",
+          "objecttype": "Getijpost",
+          "onderwerpBron": "een Getijpost",
+          "navigatieRol": null,
+          "type": {
+            "node": "DatumTijd"
+          },
+          "bron": "Het sluittijdstip van een Getijpost",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Binair",
+          "op": "PLUS",
+          "links": {
+            "node": "AttribuutRef",
+            "attribuut": "meldtijdstip",
+            "objecttype": "Getijpost",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "DatumTijd"
+            },
+            "bron": "zijn meldtijdstip",
+            "set": false,
+            "navigatiePad": []
+          },
+          "rechts": {
+            "node": "AttribuutRef",
+            "attribuut": "wachttermijn",
+            "objecttype": "Getijpost",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "springtijdagen",
+                "stelsel": null,
+                "canoniek": "springtijdagen",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            },
+            "bron": "zijn wachttermijn",
+            "set": false,
+            "navigatiePad": []
+          },
+          "type": {
+            "node": "DatumTijd"
+          },
+          "bron": "zijn meldtijdstip plus zijn wachttermijn"
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "openingstijdstip van een getijpost",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "openingstijdstip",
+          "objecttype": "Getijpost",
+          "onderwerpBron": "een Getijpost",
+          "navigatieRol": null,
+          "type": {
+            "node": "DatumTijd"
+          },
+          "bron": "Het openingstijdstip van een Getijpost",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Binair",
+          "op": "MIN",
+          "links": {
+            "node": "AttribuutRef",
+            "attribuut": "meldtijdstip",
+            "objecttype": "Getijpost",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "DatumTijd"
+            },
+            "bron": "zijn meldtijdstip",
+            "set": false,
+            "navigatiePad": []
+          },
+          "rechts": {
+            "node": "AttribuutRef",
+            "attribuut": "wachttermijn",
+            "objecttype": "Getijpost",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "springtijdagen",
+                "stelsel": null,
+                "canoniek": "springtijdagen",
+                "factorNaarCanoniek": 1,
+                "noemer": null
+              }
+            },
+            "bron": "zijn wachttermijn",
+            "set": false,
+            "navigatiePad": []
+          },
+          "type": {
+            "node": "DatumTijd"
+          },
+          "bron": "zijn meldtijdstip min zijn wachttermijn"
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ],
+    "resolvedDagsoorten": [
+      {
+        "node": "ResolvedDagsoort",
+        "naam": "springtijdag",
+        "voorwaarde": {
+          "node": "Samengesteld",
+          "kwantor": "TEN_MINSTE",
+          "drempel": 1,
+          "onderdelen": [
+            {
+              "node": "Vergelijking",
+              "op": "GELIJK",
+              "links": {
+                "node": "Functie",
+                "kind": "DAG_UIT",
+                "argumenten": [
+                  {
+                    "node": "Constante",
+                    "naam": "de dag",
+                    "type": {
+                      "node": "DatumInDagen"
+                    },
+                    "bron": "de dag"
+                  }
+                ],
+                "elementObjecttype": null,
+                "leegwaarde": null,
+                "filter": null,
+                "dimensieSelectie": null,
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                },
+                "bron": "de dag uit de dag",
+                "granulariteit": null
+              },
+              "rechts": {
+                "node": "Literal",
+                "waarde": "1",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "1"
+              },
+              "periode": null,
+              "bron": "de dag uit de dag gelijk is aan 1"
+            },
+            {
+              "node": "Vergelijking",
+              "op": "GELIJK",
+              "links": {
+                "node": "Functie",
+                "kind": "DAG_UIT",
+                "argumenten": [
+                  {
+                    "node": "Constante",
+                    "naam": "de dag",
+                    "type": {
+                      "node": "DatumInDagen"
+                    },
+                    "bron": "de dag"
+                  }
+                ],
+                "elementObjecttype": null,
+                "leegwaarde": null,
+                "filter": null,
+                "dimensieSelectie": null,
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                },
+                "bron": "de dag uit de dag",
+                "granulariteit": null
+              },
+              "rechts": {
+                "node": "Literal",
+                "waarde": "15",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "15"
+              },
+              "periode": null,
+              "bron": "de dag uit de dag gelijk is aan 15"
+            }
+          ],
+          "bron": "er aan ten minste 1 van de volgende voorwaarden wordt voldaan: - de dag uit de dag gelijk is aan 1 - de dag uit de dag gelijk is aan 15."
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

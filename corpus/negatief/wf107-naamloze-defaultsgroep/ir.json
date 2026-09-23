@@ -1,132 +1,132 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {},
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "nx",
-        "ny",
-        "nz",
-        "vrijgesteld"
-      ],
-      "kenmerkSoorten": {
-        "nx": "BIJVOEGLIJK",
-        "ny": "BIJVOEGLIJK",
-        "nz": "BIJVOEGLIJK",
-        "vrijgesteld": "BIJVOEGLIJK"
-      },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "vrijstelling van een jutter",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
-  "diagnostics": [],
-  "prioritizedDefaults": [
-    {
-      "node": "PrioritizedDefaults",
-      "naam": null,
-      "onderwerp": "Jutter",
-      "kenmerk": "vrijgesteld",
-      "defaults": [
-        {
-          "node": "Default",
-          "besluit": true,
-          "voorwaarde": {
-            "node": "Kenmerk",
-            "kenmerk": "nx",
-            "navigatie": null,
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "hij nx heeft"
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "nx",
+            "kind": "BIJVOEGLIJK"
           },
-          "bron": "nx: vrijgesteld, tenzij een uitzondering geldt",
-          "excepties": {
-            "ongeordend": true,
-            "leden": [
-              {
-                "node": "ExceptionGroup",
-                "defaults": [
-                  {
-                    "node": "Default",
-                    "besluit": false,
-                    "voorwaarde": {
-                      "node": "Kenmerk",
-                      "kenmerk": "ny",
-                      "navigatie": null,
-                      "negatie": false,
-                      "eigenaar": null,
-                      "periode": null,
-                      "bron": "hij ny heeft"
-                    },
-                    "bron": "ny"
-                  }
-                ],
-                "bron": "uitzondering ny: niet vrijgesteld"
-              },
-              {
-                "node": "ExceptionGroup",
-                "defaults": [
-                  {
-                    "node": "Default",
-                    "besluit": true,
-                    "voorwaarde": {
-                      "node": "Kenmerk",
-                      "kenmerk": "nz",
-                      "navigatie": null,
-                      "negatie": false,
-                      "eigenaar": null,
-                      "periode": null,
-                      "bron": "hij nz heeft"
-                    },
-                    "bron": "nz"
-                  }
-                ],
-                "bron": "uitzondering nz: vrijgesteld"
-              }
-            ]
+          {
+            "node": "Characteristic",
+            "name": "ny",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "nz",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "vrijgesteld",
+            "kind": "BIJVOEGLIJK"
           }
-        }
-      ],
-      "bron": "art. 7: de vrijstelling met een geneste uitzondering",
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        ]
       }
-    }
-  ]
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "naam": null,
+        "onderwerp": "Jutter",
+        "kenmerk": "vrijgesteld",
+        "defaults": [
+          {
+            "node": "Default",
+            "besluit": true,
+            "voorwaarde": {
+              "node": "Kenmerk",
+              "kenmerk": "nx",
+              "navigatie": null,
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "hij nx heeft"
+            },
+            "bron": "nx: vrijgesteld, tenzij een uitzondering geldt",
+            "excepties": {
+              "ongeordend": true,
+              "leden": [
+                {
+                  "node": "ExceptionGroup",
+                  "defaults": [
+                    {
+                      "node": "Default",
+                      "besluit": false,
+                      "voorwaarde": {
+                        "node": "Kenmerk",
+                        "kenmerk": "ny",
+                        "navigatie": null,
+                        "negatie": false,
+                        "eigenaar": null,
+                        "periode": null,
+                        "bron": "hij ny heeft"
+                      },
+                      "bron": "ny"
+                    }
+                  ],
+                  "bron": "uitzondering ny: niet vrijgesteld"
+                },
+                {
+                  "node": "ExceptionGroup",
+                  "defaults": [
+                    {
+                      "node": "Default",
+                      "besluit": true,
+                      "voorwaarde": {
+                        "node": "Kenmerk",
+                        "kenmerk": "nz",
+                        "navigatie": null,
+                        "negatie": false,
+                        "eigenaar": null,
+                        "periode": null,
+                        "bron": "hij nz heeft"
+                      },
+                      "bron": "nz"
+                    }
+                  ],
+                  "bron": "uitzondering nz: vrijgesteld"
+                }
+              ]
+            }
+          }
+        ],
+        "bron": "art. 7: de vrijstelling met een geneste uitzondering",
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ]
+  },
+  "diagnostics": []
 }

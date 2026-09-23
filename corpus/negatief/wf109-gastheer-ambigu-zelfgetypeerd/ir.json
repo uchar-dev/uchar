@@ -1,257 +1,242 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Wachter": {
-      "node": "Objecttype",
-      "naam": "Wachter",
-      "attributen": {
-        "erfvolgeraantal": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "bevoegd"
-      ],
-      "kenmerkSoorten": {
-        "bevoegd": "BIJVOEGLIJK"
-      },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Wachters"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {
-    "opvolging": {
-      "node": "Feittype",
-      "naam": "opvolging",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "voorganger",
-          "objecttypeNaam": "Wachter",
-          "meervoud": "voorgangers",
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "opvolger",
-          "objecttypeNaam": "Wachter",
-          "meervoud": "opvolgers",
-          "meervoudig": false
-        }
-      ]
-    },
-    "erflijn": {
-      "node": "Feittype",
-      "naam": "erflijn",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "erflater",
-          "objecttypeNaam": "Wachter",
-          "meervoud": "erflaters",
-          "meervoudig": true
-        },
-        {
-          "node": "Rol",
-          "naam": "erfvolger",
-          "objecttypeNaam": "Wachter",
-          "meervoud": "erfvolgers",
-          "meervoudig": true
-        }
-      ]
-    }
-  },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "erf de directe opvolger",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "erf de lijn door",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "erfvolgeraantal van een wachter",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "erfvolgeraantal van een wachter",
-      "soort": "GELIJKSTELLING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "erfvolgeraantal",
-        "objecttype": "Wachter",
-        "onderwerpBron": "een Wachter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "Het erfvolgeraantal van een Wachter",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "AANTAL",
-        "argumenten": [
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Wachter",
+        "animate": true,
+        "plural": "Wachters",
+        "attributes": [
           {
-            "node": "AttribuutRef",
-            "attribuut": "erfvolgers",
-            "objecttype": "Wachter",
-            "onderwerpBron": "de Wachter",
-            "navigatieRol": null,
-            "type": {
-              "node": "Onbekend",
-              "reden": "role-count source"
-            },
-            "bron": "alle erfvolgers van de Wachter",
-            "set": false,
-            "navigatiePad": []
+            "node": "Attribute",
+            "name": "erfvolgeraantal",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
           }
         ],
-        "elementObjecttype": "Wachter",
-        "leegwaarde": null,
-        "filter": null,
-        "dimensieSelectie": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "bevoegd",
+            "kind": "BIJVOEGLIJK"
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "opvolging",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "voorganger",
+            "objecttypeNaam": "Wachter",
+            "meervoud": "voorgangers",
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "opvolger",
+            "objecttypeNaam": "Wachter",
+            "meervoud": "opvolgers",
+            "meervoudig": false
+          }
+        ]
+      },
+      {
+        "node": "Feittype",
+        "naam": "erflijn",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "erflater",
+            "objecttypeNaam": "Wachter",
+            "meervoud": "erflaters",
+            "meervoudig": true
+          },
+          {
+            "node": "Rol",
+            "naam": "erfvolger",
+            "objecttypeNaam": "Wachter",
+            "meervoud": "erfvolgers",
+            "meervoudig": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "erfvolgeraantal van een wachter",
+        "soort": "GELIJKSTELLING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "erfvolgeraantal",
+          "objecttype": "Wachter",
+          "onderwerpBron": "een Wachter",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "Het erfvolgeraantal van een Wachter",
+          "set": false,
+          "navigatiePad": []
         },
-        "bron": "het aantal erfvolgers van de Wachter",
-        "granulariteit": null,
-        "bronRol": {
-          "node": "RolBinding",
-          "feittype": "erflijn",
-          "rol": "erfvolger"
-        }
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [
-    {
-      "node": "ResolvedFeitCreatie",
-      "naam": "erf de directe opvolger",
-      "anker": "Wachter",
-      "doel": "Wachter",
-      "zetVeld": "erfvolger",
-      "joinVeld": "opvolger",
-      "tussenstappen": [],
-      "voorwaarde": {
-        "node": "Kenmerk",
-        "kenmerk": "bevoegd",
-        "navigatie": null,
-        "negatie": false,
-        "eigenaar": "Wachter",
-        "periode": null,
-        "bron": "de Wachter bevoegd is"
-      },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      },
-      "feittype": "erflijn",
-      "ankerRol": "erflater",
-      "doelRol": "erfvolger",
-      "joinRol": {
-        "node": "RolBinding",
-        "feittype": "opvolging",
-        "rol": "opvolger"
-      }
-    },
-    {
-      "node": "ResolvedFeitCreatie",
-      "naam": "erf de lijn door",
-      "anker": "Wachter",
-      "doel": "Wachter",
-      "zetVeld": "erfvolger",
-      "joinVeld": "opvolger",
-      "tussenstappen": [
-        {
-          "node": "Tussenstap",
-          "type": "Wachter",
-          "veld": "erfvolger",
-          "viaOuderVeld": false,
-          "rolBinding": {
+        "waarde": {
+          "node": "Functie",
+          "kind": "AANTAL",
+          "argumenten": [
+            {
+              "node": "AttribuutRef",
+              "attribuut": "erfvolgers",
+              "objecttype": "Wachter",
+              "onderwerpBron": "de Wachter",
+              "navigatieRol": null,
+              "type": {
+                "node": "Onbekend",
+                "reden": "role-count source"
+              },
+              "bron": "alle erfvolgers van de Wachter",
+              "set": false,
+              "navigatiePad": []
+            }
+          ],
+          "elementObjecttype": "Wachter",
+          "leegwaarde": null,
+          "filter": null,
+          "dimensieSelectie": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "het aantal erfvolgers van de Wachter",
+          "granulariteit": null,
+          "bronRol": {
             "node": "RolBinding",
             "feittype": "erflijn",
             "rol": "erfvolger"
           }
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
         }
-      ],
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      },
-      "feittype": "erflijn",
-      "ankerRol": "erflater",
-      "doelRol": "erfvolger",
-      "joinRol": {
-        "node": "RolBinding",
-        "feittype": "opvolging",
-        "rol": "opvolger"
       }
-    }
-  ],
-  "resolvedStartpunten": [],
-  "regelGroepen": [
-    {
-      "node": "ResolvedRegelGroep",
-      "naam": "erfestafette",
-      "recursief": true,
-      "leden": [
-        "erf de lijn door"
-      ],
-      "bron": null,
-      "line": 1
-    }
-  ],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [
+      {
+        "node": "ResolvedFeitCreatie",
+        "naam": "erf de directe opvolger",
+        "anker": "Wachter",
+        "doel": "Wachter",
+        "zetVeld": "erfvolger",
+        "joinVeld": "opvolger",
+        "tussenstappen": [],
+        "voorwaarde": {
+          "node": "Kenmerk",
+          "kenmerk": "bevoegd",
+          "navigatie": null,
+          "negatie": false,
+          "eigenaar": "Wachter",
+          "periode": null,
+          "bron": "de Wachter bevoegd is"
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        },
+        "feittype": "erflijn",
+        "ankerRol": "erflater",
+        "doelRol": "erfvolger",
+        "joinRol": {
+          "node": "RolBinding",
+          "feittype": "opvolging",
+          "rol": "opvolger"
+        }
+      },
+      {
+        "node": "ResolvedFeitCreatie",
+        "naam": "erf de lijn door",
+        "anker": "Wachter",
+        "doel": "Wachter",
+        "zetVeld": "erfvolger",
+        "joinVeld": "opvolger",
+        "tussenstappen": [
+          {
+            "node": "Tussenstap",
+            "type": "Wachter",
+            "veld": "erfvolger",
+            "viaOuderVeld": false,
+            "rolBinding": {
+              "node": "RolBinding",
+              "feittype": "erflijn",
+              "rol": "erfvolger"
+            }
+          }
+        ],
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        },
+        "feittype": "erflijn",
+        "ankerRol": "erflater",
+        "doelRol": "erfvolger",
+        "joinRol": {
+          "node": "RolBinding",
+          "feittype": "opvolging",
+          "rol": "opvolger"
+        }
+      }
+    ],
+    "resolvedStartpunten": [],
+    "regelGroepen": [
+      {
+        "node": "ResolvedRegelGroep",
+        "naam": "erfestafette",
+        "recursief": true,
+        "leden": [
+          "erf de lijn door"
+        ],
+        "bron": null,
+        "line": 1
+      }
+    ]
+  },
   "diagnostics": []
 }

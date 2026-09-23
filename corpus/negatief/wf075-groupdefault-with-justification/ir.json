@@ -1,123 +1,127 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "heffing": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "grondX",
-        "grondY"
-      ],
-      "kenmerkSoorten": {
-        "grondX": "BIJVOEGLIJK",
-        "grondY": "BIJVOEGLIJK"
-      },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [],
-  "resolvedRegels": [],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
-  "diagnostics": [],
-  "prioritizedDefaults": [
-    {
-      "node": "PrioritizedDefaults",
-      "naam": "heffing van een jutter",
-      "onderwerp": "Jutter",
-      "kenmerk": null,
-      "attribuut": "heffing",
-      "defaults": [
-        {
-          "node": "Default",
-          "besluit": null,
-          "voorwaarde": {
-            "node": "Kenmerk",
-            "kenmerk": "grondX",
-            "navigatie": null,
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "stray justification on a group default"
-          },
-          "bron": "groep-default met een verdwaalde voorwaarde",
-          "excepties": {
-            "ongeordend": false,
-            "leden": [
-              {
-                "node": "ExceptionGroup",
-                "defaults": [
-                  {
-                    "node": "Default",
-                    "besluit": null,
-                    "voorwaarde": {
-                      "node": "Kenmerk",
-                      "kenmerk": "grondY",
-                      "navigatie": null,
-                      "negatie": false,
-                      "eigenaar": null,
-                      "periode": null,
-                      "bron": "hij grondY heeft"
-                    },
-                    "consequentie": {
-                      "node": "Literal",
-                      "waarde": "10.00",
-                      "type": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
-                      },
-                      "bron": "10.00"
-                    },
-                    "bron": "grondY: 10.00"
-                  }
-                ],
-                "bron": "uitzondering Y"
-              }
-            ]
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "heffing",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
           }
-        }
-      ],
-      "bron": "art. n",
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "grondX",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "grondY",
+            "kind": "BIJVOEGLIJK"
+          }
+        ]
       }
-    }
-  ]
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "naam": "heffing van een jutter",
+        "onderwerp": "Jutter",
+        "kenmerk": null,
+        "attribuut": "heffing",
+        "defaults": [
+          {
+            "node": "Default",
+            "besluit": null,
+            "voorwaarde": {
+              "node": "Kenmerk",
+              "kenmerk": "grondX",
+              "navigatie": null,
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "stray justification on a group default"
+            },
+            "bron": "groep-default met een verdwaalde voorwaarde",
+            "excepties": {
+              "ongeordend": false,
+              "leden": [
+                {
+                  "node": "ExceptionGroup",
+                  "defaults": [
+                    {
+                      "node": "Default",
+                      "besluit": null,
+                      "voorwaarde": {
+                        "node": "Kenmerk",
+                        "kenmerk": "grondY",
+                        "navigatie": null,
+                        "negatie": false,
+                        "eigenaar": null,
+                        "periode": null,
+                        "bron": "hij grondY heeft"
+                      },
+                      "consequentie": {
+                        "node": "Literal",
+                        "waarde": "10.00",
+                        "type": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "ONBEPAALD",
+                          "eenheid": null
+                        },
+                        "bron": "10.00"
+                      },
+                      "bron": "grondY: 10.00"
+                    }
+                  ],
+                  "bron": "uitzondering Y"
+                }
+              ]
+            }
+          }
+        ],
+        "bron": "art. n",
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ]
+  },
+  "diagnostics": []
 }

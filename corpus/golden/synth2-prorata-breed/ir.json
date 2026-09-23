@@ -1,327 +1,225 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Ligplaats": {
-      "node": "Objecttype",
-      "naam": "Ligplaats",
-      "attributen": {
-        "jaarforfait": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "ligdeel": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "staffelbasis": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "heffingdeel": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "seizoenbasis": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "toeslagdeel": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "lengte": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {
-        "jaarforfait": "JAAR",
-        "ligdeel": "MAAND",
-        "staffelbasis": "JAAR",
-        "heffingdeel": "MAAND",
-        "seizoenbasis": "JAAR",
-        "toeslagdeel": "MAAND"
-      },
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "bezet"
-      ],
-      "kenmerkSoorten": {
-        "bezet": "BIJVOEGLIJK"
-      },
-      "kenmerkGranulariteit": {
-        "bezet": "MAAND"
-      },
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Ligplaatsen"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "ligdeel van een ligplaats",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "heffingdeel van een ligplaats",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "toeslagdeel van een ligplaats",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "ligdeel van een ligplaats",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "ligdeel",
-        "objecttype": "Ligplaats",
-        "onderwerpBron": "de Ligplaats",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "Het ligdeel van een Ligplaats",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "TIJDSEVENREDIG_DEEL",
-        "argumenten": [
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Ligplaats",
+        "animate": false,
+        "plural": "Ligplaatsen",
+        "attributes": [
           {
-            "node": "AttribuutRef",
-            "attribuut": "jaarforfait",
-            "objecttype": "Ligplaats",
-            "onderwerpBron": "de Ligplaats",
-            "navigatieRol": null,
-            "type": {
+            "node": "Attribute",
+            "name": "jaarforfait",
+            "datatype": {
               "node": "Numeriek",
               "geheel": true,
               "decimalen": 0,
               "teken": "ONBEPAALD",
               "eenheid": null
             },
-            "bron": "haar jaarforfait",
-            "set": false,
-            "navigatiePad": []
-          }
-        ],
-        "elementObjecttype": null,
-        "leegwaarde": null,
-        "filter": {
-          "node": "Kenmerk",
-          "kenmerk": "bezet",
-          "navigatie": null,
-          "negatie": false,
-          "eigenaar": null,
-          "periode": null,
-          "bron": "gedurende de tijd dat zij bezet is"
-        },
-        "dimensieSelectie": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "het tijdsevenredig deel per maand van haar jaarforfait gedurende de tijd dat zij bezet is",
-        "granulariteit": "MAAND"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "heffingdeel van een ligplaats",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "heffingdeel",
-        "objecttype": "Ligplaats",
-        "onderwerpBron": "de Ligplaats",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "Het heffingdeel van een Ligplaats",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "TIJDSEVENREDIG_DEEL",
-        "argumenten": [
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "JAAR",
+              "count": 1
+            }
+          },
           {
-            "node": "AttribuutRef",
-            "attribuut": "staffelbasis",
-            "objecttype": "Ligplaats",
-            "onderwerpBron": "de Ligplaats",
-            "navigatieRol": null,
-            "type": {
+            "node": "Attribute",
+            "name": "ligdeel",
+            "datatype": {
               "node": "Numeriek",
               "geheel": false,
               "decimalen": 2,
               "teken": "ONBEPAALD",
               "eenheid": null
             },
-            "bron": "haar staffelbasis",
-            "set": false,
-            "navigatiePad": []
-          }
-        ],
-        "elementObjecttype": null,
-        "leegwaarde": null,
-        "filter": {
-          "node": "Kenmerk",
-          "kenmerk": "bezet",
-          "navigatie": null,
-          "negatie": false,
-          "eigenaar": null,
-          "periode": null,
-          "bron": "gedurende de tijd dat zij bezet is"
-        },
-        "dimensieSelectie": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "het tijdsevenredig deel per maand van haar staffelbasis gedurende de tijd dat zij bezet is",
-        "granulariteit": "MAAND"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "toeslagdeel van een ligplaats",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "toeslagdeel",
-        "objecttype": "Ligplaats",
-        "onderwerpBron": "de Ligplaats",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "Het toeslagdeel van een Ligplaats",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "TIJDSEVENREDIG_DEEL",
-        "argumenten": [
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "MAAND",
+              "count": 1
+            }
+          },
           {
-            "node": "AttribuutRef",
-            "attribuut": "seizoenbasis",
-            "objecttype": "Ligplaats",
-            "onderwerpBron": "de Ligplaats",
-            "navigatieRol": null,
-            "type": {
+            "node": "Attribute",
+            "name": "staffelbasis",
+            "datatype": {
               "node": "Numeriek",
               "geheel": false,
               "decimalen": 2,
               "teken": "ONBEPAALD",
               "eenheid": null
             },
-            "bron": "haar seizoenbasis",
-            "set": false,
-            "navigatiePad": []
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "JAAR",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "heffingdeel",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "MAAND",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "seizoenbasis",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "JAAR",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "toeslagdeel",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "MAAND",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "lengte",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
           }
         ],
-        "elementObjecttype": null,
-        "leegwaarde": null,
-        "filter": {
-          "node": "Kenmerk",
-          "kenmerk": "bezet",
-          "navigatie": null,
-          "negatie": false,
-          "eigenaar": null,
-          "periode": null,
-          "bron": "gedurende de tijd dat zij bezet is"
-        },
-        "dimensieSelectie": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "het tijdsevenredig deel per maand van haar seizoenbasis gedurende de tijd dat zij bezet is",
-        "granulariteit": "MAAND"
-      },
-      "voorwaarde": {
-        "node": "Vergelijking",
-        "op": "GROTER_OF_GELIJK",
-        "links": {
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "bezet",
+            "kind": "BIJVOEGLIJK",
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "MAAND",
+              "count": 1
+            }
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "ligdeel van een ligplaats",
+        "soort": "BEREKENING",
+        "doel": {
           "node": "AttribuutRef",
-          "attribuut": "lengte",
+          "attribuut": "ligdeel",
+          "objecttype": "Ligplaats",
+          "onderwerpBron": "de Ligplaats",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "Het ligdeel van een Ligplaats",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Functie",
+          "kind": "TIJDSEVENREDIG_DEEL",
+          "argumenten": [
+            {
+              "node": "AttribuutRef",
+              "attribuut": "jaarforfait",
+              "objecttype": "Ligplaats",
+              "onderwerpBron": "de Ligplaats",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "haar jaarforfait",
+              "set": false,
+              "navigatiePad": []
+            }
+          ],
+          "elementObjecttype": null,
+          "leegwaarde": null,
+          "filter": {
+            "node": "Kenmerk",
+            "kenmerk": "bezet",
+            "navigatie": null,
+            "negatie": false,
+            "eigenaar": null,
+            "periode": null,
+            "bron": "gedurende de tijd dat zij bezet is"
+          },
+          "dimensieSelectie": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "het tijdsevenredig deel per maand van haar jaarforfait gedurende de tijd dat zij bezet is",
+          "granulariteit": "MAAND"
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "heffingdeel van een ligplaats",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "heffingdeel",
           "objecttype": "Ligplaats",
           "onderwerpBron": "de Ligplaats",
           "navigatieRol": null,
@@ -332,13 +230,44 @@
             "teken": "ONBEPAALD",
             "eenheid": null
           },
-          "bron": "de lengte van de Ligplaats",
+          "bron": "Het heffingdeel van een Ligplaats",
           "set": false,
           "navigatiePad": []
         },
-        "rechts": {
-          "node": "Literal",
-          "waarde": "15",
+        "waarde": {
+          "node": "Functie",
+          "kind": "TIJDSEVENREDIG_DEEL",
+          "argumenten": [
+            {
+              "node": "AttribuutRef",
+              "attribuut": "staffelbasis",
+              "objecttype": "Ligplaats",
+              "onderwerpBron": "de Ligplaats",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "haar staffelbasis",
+              "set": false,
+              "navigatiePad": []
+            }
+          ],
+          "elementObjecttype": null,
+          "leegwaarde": null,
+          "filter": {
+            "node": "Kenmerk",
+            "kenmerk": "bezet",
+            "navigatie": null,
+            "negatie": false,
+            "eigenaar": null,
+            "periode": null,
+            "bron": "gedurende de tijd dat zij bezet is"
+          },
+          "dimensieSelectie": null,
           "type": {
             "node": "Numeriek",
             "geheel": true,
@@ -346,26 +275,132 @@
             "teken": "ONBEPAALD",
             "eenheid": null
           },
-          "bron": "15"
+          "bron": "het tijdsevenredig deel per maand van haar staffelbasis gedurende de tijd dat zij bezet is",
+          "granulariteit": "MAAND"
         },
-        "periode": null,
-        "bron": "de lengte van de Ligplaats is groter of gelijk aan 15"
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+      {
+        "node": "ResolvedRegel",
+        "naam": "toeslagdeel van een ligplaats",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "toeslagdeel",
+          "objecttype": "Ligplaats",
+          "onderwerpBron": "de Ligplaats",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "Het toeslagdeel van een Ligplaats",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Functie",
+          "kind": "TIJDSEVENREDIG_DEEL",
+          "argumenten": [
+            {
+              "node": "AttribuutRef",
+              "attribuut": "seizoenbasis",
+              "objecttype": "Ligplaats",
+              "onderwerpBron": "de Ligplaats",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "haar seizoenbasis",
+              "set": false,
+              "navigatiePad": []
+            }
+          ],
+          "elementObjecttype": null,
+          "leegwaarde": null,
+          "filter": {
+            "node": "Kenmerk",
+            "kenmerk": "bezet",
+            "navigatie": null,
+            "negatie": false,
+            "eigenaar": null,
+            "periode": null,
+            "bron": "gedurende de tijd dat zij bezet is"
+          },
+          "dimensieSelectie": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "het tijdsevenredig deel per maand van haar seizoenbasis gedurende de tijd dat zij bezet is",
+          "granulariteit": "MAAND"
+        },
+        "voorwaarde": {
+          "node": "Vergelijking",
+          "op": "GROTER_OF_GELIJK",
+          "links": {
+            "node": "AttribuutRef",
+            "attribuut": "lengte",
+            "objecttype": "Ligplaats",
+            "onderwerpBron": "de Ligplaats",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "de lengte van de Ligplaats",
+            "set": false,
+            "navigatiePad": []
+          },
+          "rechts": {
+            "node": "Literal",
+            "waarde": "15",
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "15"
+          },
+          "periode": null,
+          "bron": "de lengte van de Ligplaats is groter of gelijk aan 15"
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

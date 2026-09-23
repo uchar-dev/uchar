@@ -1,142 +1,81 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Berging": {
-      "node": "Objecttype",
-      "naam": "Berging",
-      "attributen": {
-        "vaarwater": {
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Berging",
+        "animate": false,
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vaarwater",
+            "datatype": {
+              "node": "Enumeratie",
+              "domein": "Vaarwater",
+              "waarden": [
+                "Wad",
+                "Zeegat",
+                "Ruimzee"
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "tarief",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "Vaarwater",
+        "datatype": {
           "node": "Enumeratie",
-          "domein": "Vaarwater",
           "waarden": [
             "Wad",
             "Zeegat",
             "Ruimzee"
           ]
-        },
-        "tarief": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
         }
       },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": null
-    }
-  },
-  "domeinen": {
-    "Vaarwater": {
-      "node": "Enumeratie",
-      "domein": "Vaarwater",
-      "waarden": [
-        "Wad",
-        "Zeegat",
-        "Ruimzee"
-      ]
-    },
-    "Kust": {
-      "node": "Enumeratie",
-      "domein": "Kust",
-      "waarden": [
-        "Noord",
-        "Zuid",
-        "West"
-      ]
-    }
-  },
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "vaarwater",
-      "soort": "GELIJKSTELLING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "vaarwater",
-        "objecttype": "Berging",
-        "onderwerpBron": "de vaarwater",
-        "navigatieRol": null,
-        "type": {
+      {
+        "node": "Domain",
+        "name": "Kust",
+        "datatype": {
           "node": "Enumeratie",
-          "domein": "Vaarwater",
           "waarden": [
-            "Wad",
-            "Zeegat",
-            "Ruimzee"
+            "Noord",
+            "Zuid",
+            "West"
           ]
-        },
-        "bron": "de vaarwater",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "Noord",
-        "type": {
-          "node": "Enumeratie",
-          "domein": "Spook",
-          "waarden": [
-            "Noord"
-          ]
-        },
-        "bron": "Noord"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        }
       }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "tarief",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "tarief",
-        "objecttype": "Berging",
-        "onderwerpBron": "de tarief",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "de tarief",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Match",
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "scrutinee": {
+    ],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "vaarwater",
+        "soort": "GELIJKSTELLING",
+        "doel": {
           "node": "AttribuutRef",
           "attribuut": "vaarwater",
           "objecttype": "Berging",
@@ -155,74 +94,143 @@
           "set": false,
           "navigatiePad": []
         },
-        "arms": [
-          {
-            "constructor": "Wad",
-            "binder": null,
-            "body": {
-              "node": "Literal",
-              "waarde": "3",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "3"
-            }
+        "waarde": {
+          "node": "Literal",
+          "waarde": "Noord",
+          "type": {
+            "node": "Enumeratie",
+            "domein": "Spook",
+            "waarden": [
+              "Noord"
+            ]
           },
-          {
-            "constructor": "Zeegat",
-            "binder": null,
-            "body": {
-              "node": "Literal",
-              "waarde": "7",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "7"
-            }
-          },
-          {
-            "constructor": "Ruimzee",
-            "binder": null,
-            "body": {
-              "node": "Literal",
-              "waarde": "12",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "12"
-            }
-          }
-        ],
-        "bron": "match"
+          "bron": "Noord"
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+      {
+        "node": "ResolvedRegel",
+        "naam": "tarief",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "tarief",
+          "objecttype": "Berging",
+          "onderwerpBron": "de tarief",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de tarief",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Match",
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "scrutinee": {
+            "node": "AttribuutRef",
+            "attribuut": "vaarwater",
+            "objecttype": "Berging",
+            "onderwerpBron": "de vaarwater",
+            "navigatieRol": null,
+            "type": {
+              "node": "Enumeratie",
+              "domein": "Vaarwater",
+              "waarden": [
+                "Wad",
+                "Zeegat",
+                "Ruimzee"
+              ]
+            },
+            "bron": "de vaarwater",
+            "set": false,
+            "navigatiePad": []
+          },
+          "arms": [
+            {
+              "constructor": "Wad",
+              "binder": null,
+              "body": {
+                "node": "Literal",
+                "waarde": "3",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "3"
+              }
+            },
+            {
+              "constructor": "Zeegat",
+              "binder": null,
+              "body": {
+                "node": "Literal",
+                "waarde": "7",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "7"
+              }
+            },
+            {
+              "constructor": "Ruimzee",
+              "binder": null,
+              "body": {
+                "node": "Literal",
+                "waarde": "12",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "12"
+              }
+            }
+          ],
+          "bron": "match"
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

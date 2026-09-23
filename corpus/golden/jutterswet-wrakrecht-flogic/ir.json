@@ -1,260 +1,162 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Strandrecht": {
-      "node": "Objecttype",
-      "naam": "Strandrecht",
-      "attributen": {
-        "grondslag": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "uitkering": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "registratiekosten": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "betwist"
-      ],
-      "kenmerkSoorten": {
-        "betwist": "BIJVOEGLIJK"
-      },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": null
-    },
-    "Wrakrecht": {
-      "node": "Objecttype",
-      "naam": "Wrakrecht",
-      "supertype": "Strandrecht",
-      "attributen": {
-        "bergingsdiepte": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": null
-    },
-    "Kustgemeente": {
-      "node": "Objecttype",
-      "naam": "Kustgemeente",
-      "attributen": {
-        "uitkeringstotaal": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "registertal": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": null
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {
-    "strandrechtregistratie": {
-      "node": "Feittype",
-      "naam": "strandrechtregistratie",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "registrerende kustgemeente",
-          "objecttypeNaam": "Kustgemeente",
-          "meervoud": null,
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "geregistreerde strandrechten",
-          "objecttypeNaam": "Strandrecht",
-          "meervoud": null,
-          "meervoudig": true
-        }
-      ]
-    }
-  },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "registratiekosten van een strandrecht",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "uitkering van een strandrecht",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "uitkering van een betwist strandrecht",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "uitkering van een wrakrecht",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "uitkering van een diep wrakrecht",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "uitkeringstotaal van een kustgemeente",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "registertal van een kustgemeente",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "registratiekosten van een strandrecht",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "registratiekosten",
-        "objecttype": "Strandrecht",
-        "onderwerpBron": "?S",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "bron": "?S.registratiekosten",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "5.00",
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "5.00"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "uitkeringstotaal van een kustgemeente",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "uitkeringstotaal",
-        "objecttype": "Kustgemeente",
-        "onderwerpBron": "?K",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "bron": "?K.uitkeringstotaal",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "SOM",
-        "argumenten": [
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Strandrecht",
+        "animate": false,
+        "attributes": [
           {
-            "node": "AttribuutRef",
-            "attribuut": "uitkering",
-            "objecttype": "Strandrecht",
-            "onderwerpBron": "?K.'geregistreerde strandrechten'",
-            "navigatieRol": null,
-            "type": {
+            "node": "Attribute",
+            "name": "grondslag",
+            "datatype": {
               "node": "Numeriek",
               "geheel": false,
               "decimalen": 2,
               "teken": "NIET_NEGATIEF",
               "eenheid": null
-            },
-            "bron": "?K.'geregistreerde strandrechten'.uitkering",
-            "set": true,
-            "navigatiePad": []
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "uitkering",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "registratiekosten",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
           }
         ],
-        "elementObjecttype": "Strandrecht",
-        "leegwaarde": {
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "betwist",
+            "kind": "BIJVOEGLIJK"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Wrakrecht",
+        "supertype": "Strandrecht",
+        "animate": false,
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "bergingsdiepte",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Kustgemeente",
+        "animate": false,
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "uitkeringstotaal",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "registertal",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "strandrechtregistratie",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "registrerende kustgemeente",
+            "objecttypeNaam": "Kustgemeente",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "geregistreerde strandrechten",
+            "objecttypeNaam": "Strandrecht",
+            "meervoud": null,
+            "meervoudig": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "registratiekosten van een strandrecht",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "registratiekosten",
+          "objecttype": "Strandrecht",
+          "onderwerpBron": "?S",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "?S.registratiekosten",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
           "node": "Literal",
-          "waarde": "0.00",
+          "waarde": "5.00",
           "type": {
             "node": "Numeriek",
             "geheel": false,
@@ -262,257 +164,45 @@
             "teken": "ONBEPAALD",
             "eenheid": null
           },
-          "bron": "0.00"
+          "bron": "5.00"
         },
-        "filter": null,
-        "dimensieSelectie": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "bron": "sum{?V | ?V = ?K.'geregistreerde strandrechten'.uitkering}",
-        "granulariteit": null,
-        "bronRol": {
-          "node": "RolBinding",
-          "feittype": "strandrechtregistratie",
-          "rol": "geregistreerde strandrechten"
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
         }
       },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "registertal van een kustgemeente",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "registertal",
-        "objecttype": "Kustgemeente",
-        "onderwerpBron": "?K",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
+      {
+        "node": "ResolvedRegel",
+        "naam": "uitkeringstotaal van een kustgemeente",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "uitkeringstotaal",
+          "objecttype": "Kustgemeente",
+          "onderwerpBron": "?K",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "?K.uitkeringstotaal",
+          "set": false,
+          "navigatiePad": []
         },
-        "bron": "?K.registertal",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "AANTAL",
-        "argumenten": [
-          {
-            "node": "AttribuutRef",
-            "attribuut": "geregistreerde strandrechten",
-            "objecttype": "Kustgemeente",
-            "onderwerpBron": "?K",
-            "navigatieRol": null,
-            "type": {
-              "node": "Onbekend",
-              "reden": "niet opgelost"
-            },
-            "bron": "?K.'geregistreerde strandrechten'",
-            "set": false,
-            "navigatiePad": []
-          }
-        ],
-        "elementObjecttype": "Strandrecht",
-        "leegwaarde": null,
-        "filter": null,
-        "dimensieSelectie": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "bron": "count{?V | ?V = ?K.'geregistreerde strandrechten'}",
-        "granulariteit": null,
-        "bronRol": {
-          "node": "RolBinding",
-          "feittype": "strandrechtregistratie",
-          "rol": "geregistreerde strandrechten"
-        }
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
-  "diagnostics": [],
-  "prioritizedDefaults": [
-    {
-      "node": "PrioritizedDefaults",
-      "naam": "uitkering van een strandrecht",
-      "onderwerp": "Strandrecht",
-      "kenmerk": null,
-      "attribuut": "uitkering",
-      "defaults": [
-        {
-          "node": "Default",
-          "besluit": null,
-          "voorwaarde": {
-            "node": "Kenmerk",
-            "kenmerk": "betwist",
-            "navigatie": null,
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "?S : betwist"
-          },
-          "consequentie": {
-            "node": "Literal",
-            "waarde": "99.00",
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "99.00"
-          },
-          "bron": null
-        },
-        {
-          "node": "Default",
-          "besluit": null,
-          "voorwaarde": {
-            "node": "Samengesteld",
-            "kwantor": "ALLE",
-            "drempel": 0,
-            "onderdelen": [],
-            "bron": null
-          },
-          "consequentie": {
-            "node": "AttribuutRef",
-            "attribuut": "grondslag",
-            "objecttype": "Strandrecht",
-            "onderwerpBron": "?S",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "?S.grondslag",
-            "set": false,
-            "navigatiePad": []
-          },
-          "bron": null
-        }
-      ],
-      "bron": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "PrioritizedDefaults",
-      "naam": "uitkering van een wrakrecht",
-      "onderwerp": "Wrakrecht",
-      "kenmerk": null,
-      "attribuut": "uitkering",
-      "defaults": [
-        {
-          "node": "Default",
-          "besluit": null,
-          "voorwaarde": {
-            "node": "Vergelijking",
-            "op": "GROTER",
-            "links": {
+        "waarde": {
+          "node": "Functie",
+          "kind": "SOM",
+          "argumenten": [
+            {
               "node": "AttribuutRef",
-              "attribuut": "bergingsdiepte",
-              "objecttype": "Wrakrecht",
-              "onderwerpBron": "?W",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
-              "bron": "?W.bergingsdiepte",
-              "set": false,
-              "navigatiePad": []
-            },
-            "rechts": {
-              "node": "Literal",
-              "waarde": "20",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "20"
-            },
-            "periode": null,
-            "bron": "?W.bergingsdiepte > 20"
-          },
-          "consequentie": {
-            "node": "Literal",
-            "waarde": "55.00",
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "55.00"
-          },
-          "bron": null
-        },
-        {
-          "node": "Default",
-          "besluit": null,
-          "voorwaarde": {
-            "node": "Samengesteld",
-            "kwantor": "ALLE",
-            "drempel": 0,
-            "onderdelen": [],
-            "bron": null
-          },
-          "consequentie": {
-            "node": "Binair",
-            "op": "MAAL",
-            "links": {
-              "node": "AttribuutRef",
-              "attribuut": "grondslag",
-              "objecttype": "Wrakrecht",
-              "onderwerpBron": "?W",
+              "attribuut": "uitkering",
+              "objecttype": "Strandrecht",
+              "onderwerpBron": "?K.'geregistreerde strandrechten'",
               "navigatieRol": null,
               "type": {
                 "node": "Numeriek",
@@ -521,22 +211,15 @@
                 "teken": "NIET_NEGATIEF",
                 "eenheid": null
               },
-              "bron": "?W.grondslag",
-              "set": false,
+              "bron": "?K.'geregistreerde strandrechten'.uitkering",
+              "set": true,
               "navigatiePad": []
-            },
-            "rechts": {
-              "node": "Literal",
-              "waarde": "2",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "2"
-            },
+            }
+          ],
+          "elementObjecttype": "Strandrecht",
+          "leegwaarde": {
+            "node": "Literal",
+            "waarde": "0.00",
             "type": {
               "node": "Numeriek",
               "geheel": false,
@@ -544,17 +227,300 @@
               "teken": "ONBEPAALD",
               "eenheid": null
             },
-            "bron": "?W.grondslag * 2"
+            "bron": "0.00"
           },
-          "bron": null
+          "filter": null,
+          "dimensieSelectie": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "sum{?V | ?V = ?K.'geregistreerde strandrechten'.uitkering}",
+          "granulariteit": null,
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "strandrechtregistratie",
+            "rol": "geregistreerde strandrechten"
+          }
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
         }
-      ],
-      "bron": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "registertal van een kustgemeente",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "registertal",
+          "objecttype": "Kustgemeente",
+          "onderwerpBron": "?K",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "?K.registertal",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Functie",
+          "kind": "AANTAL",
+          "argumenten": [
+            {
+              "node": "AttribuutRef",
+              "attribuut": "geregistreerde strandrechten",
+              "objecttype": "Kustgemeente",
+              "onderwerpBron": "?K",
+              "navigatieRol": null,
+              "type": {
+                "node": "Onbekend",
+                "reden": "niet opgelost"
+              },
+              "bron": "?K.'geregistreerde strandrechten'",
+              "set": false,
+              "navigatiePad": []
+            }
+          ],
+          "elementObjecttype": "Strandrecht",
+          "leegwaarde": null,
+          "filter": null,
+          "dimensieSelectie": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": true,
+            "decimalen": 0,
+            "teken": "NIET_NEGATIEF",
+            "eenheid": null
+          },
+          "bron": "count{?V | ?V = ?K.'geregistreerde strandrechten'}",
+          "granulariteit": null,
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "strandrechtregistratie",
+            "rol": "geregistreerde strandrechten"
+          }
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ]
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "naam": "uitkering van een strandrecht",
+        "onderwerp": "Strandrecht",
+        "kenmerk": null,
+        "attribuut": "uitkering",
+        "defaults": [
+          {
+            "node": "Default",
+            "besluit": null,
+            "voorwaarde": {
+              "node": "Kenmerk",
+              "kenmerk": "betwist",
+              "navigatie": null,
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "?S : betwist"
+            },
+            "consequentie": {
+              "node": "Literal",
+              "waarde": "99.00",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "99.00"
+            },
+            "bron": null
+          },
+          {
+            "node": "Default",
+            "besluit": null,
+            "voorwaarde": {
+              "node": "Samengesteld",
+              "kwantor": "ALLE",
+              "drempel": 0,
+              "onderdelen": [],
+              "bron": null
+            },
+            "consequentie": {
+              "node": "AttribuutRef",
+              "attribuut": "grondslag",
+              "objecttype": "Strandrecht",
+              "onderwerpBron": "?S",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              },
+              "bron": "?S.grondslag",
+              "set": false,
+              "navigatiePad": []
+            },
+            "bron": null
+          }
+        ],
+        "bron": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "naam": "uitkering van een wrakrecht",
+        "onderwerp": "Wrakrecht",
+        "kenmerk": null,
+        "attribuut": "uitkering",
+        "defaults": [
+          {
+            "node": "Default",
+            "besluit": null,
+            "voorwaarde": {
+              "node": "Vergelijking",
+              "op": "GROTER",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "bergingsdiepte",
+                "objecttype": "Wrakrecht",
+                "onderwerpBron": "?W",
+                "navigatieRol": null,
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                },
+                "bron": "?W.bergingsdiepte",
+                "set": false,
+                "navigatiePad": []
+              },
+              "rechts": {
+                "node": "Literal",
+                "waarde": "20",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "20"
+              },
+              "periode": null,
+              "bron": "?W.bergingsdiepte > 20"
+            },
+            "consequentie": {
+              "node": "Literal",
+              "waarde": "55.00",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "55.00"
+            },
+            "bron": null
+          },
+          {
+            "node": "Default",
+            "besluit": null,
+            "voorwaarde": {
+              "node": "Samengesteld",
+              "kwantor": "ALLE",
+              "drempel": 0,
+              "onderdelen": [],
+              "bron": null
+            },
+            "consequentie": {
+              "node": "Binair",
+              "op": "MAAL",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "grondslag",
+                "objecttype": "Wrakrecht",
+                "onderwerpBron": "?W",
+                "navigatieRol": null,
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                },
+                "bron": "?W.grondslag",
+                "set": false,
+                "navigatiePad": []
+              },
+              "rechts": {
+                "node": "Literal",
+                "waarde": "2",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "2"
+              },
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "?W.grondslag * 2"
+            },
+            "bron": null
+          }
+        ],
+        "bron": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ]
+  },
+  "diagnostics": []
 }

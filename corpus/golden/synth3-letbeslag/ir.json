@@ -1,159 +1,28 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "grondslag": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "NIET_NEGATIEF",
-          "eenheid": null
-        },
-        "regime": {
-          "node": "SumType",
-          "domain": "regime",
-          "constructors": [
-            {
-              "name": "Vast",
-              "payload": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              }
-            },
-            {
-              "name": "Variabel",
-              "payload": null
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "grondslag",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
             }
-          ]
-        },
-        "beslag": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    }
-  },
-  "domeinen": {
-    "regime": {
-      "node": "SumType",
-      "domain": "regime",
-      "constructors": [
-        {
-          "name": "Vast",
-          "payload": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          }
-        },
-        {
-          "name": "Variabel",
-          "payload": null
-        }
-      ]
-    }
-  },
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "beslag van een jutter",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "beslag van een jutter",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "beslag",
-        "objecttype": "Jutter",
-        "onderwerpBron": "Het beslag van een Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "Het beslag van een Jutter",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Let",
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "binder": "g",
-        "value": {
-          "node": "AttribuutRef",
-          "attribuut": "grondslag",
-          "objecttype": "Jutter",
-          "onderwerpBron": "zijn",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
           },
-          "bron": "zijn grondslag",
-          "set": false,
-          "navigatiePad": []
-        },
-        "body": {
-          "node": "Match",
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "scrutinee": {
-            "node": "AttribuutRef",
-            "attribuut": "regime",
-            "objecttype": "Jutter",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
+          {
+            "node": "Attribute",
+            "name": "regime",
+            "datatype": {
               "node": "SumType",
               "domain": "regime",
               "constructors": [
@@ -172,60 +41,152 @@
                   "payload": null
                 }
               ]
-            },
-            "bron": "zijn regime",
-            "set": false,
-            "navigatiePad": []
+            }
           },
-          "arms": [
+          {
+            "node": "Attribute",
+            "name": "beslag",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "regime",
+        "datatype": {
+          "node": "SumType",
+          "constructors": [
             {
-              "constructor": "Vast",
-              "binder": "v",
-              "body": {
-                "node": "Binair",
-                "op": "PLUS",
-                "links": {
-                  "node": "BinderRef",
-                  "name": "g",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  },
-                  "bron": "de grondslag"
-                },
-                "rechts": {
-                  "node": "BinderRef",
-                  "name": "v",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  },
-                  "bron": "het vaste bedrag"
-                },
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "de grondslag plus het vaste bedrag"
+              "name": "Vast",
+              "payload": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
               }
             },
             {
-              "constructor": "Variabel",
-              "binder": null,
-              "body": {
-                "node": "Afgerond",
-                "basis": {
+              "name": "Variabel",
+              "payload": null
+            }
+          ]
+        }
+      }
+    ],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "beslag van een jutter",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "beslag",
+          "objecttype": "Jutter",
+          "onderwerpBron": "Het beslag van een Jutter",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "Het beslag van een Jutter",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Let",
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "binder": "g",
+          "value": {
+            "node": "AttribuutRef",
+            "attribuut": "grondslag",
+            "objecttype": "Jutter",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            },
+            "bron": "zijn grondslag",
+            "set": false,
+            "navigatiePad": []
+          },
+          "body": {
+            "node": "Match",
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "scrutinee": {
+              "node": "AttribuutRef",
+              "attribuut": "regime",
+              "objecttype": "Jutter",
+              "onderwerpBron": "zijn",
+              "navigatieRol": null,
+              "type": {
+                "node": "SumType",
+                "domain": "regime",
+                "constructors": [
+                  {
+                    "name": "Vast",
+                    "payload": {
+                      "node": "Numeriek",
+                      "geheel": false,
+                      "decimalen": 2,
+                      "teken": "NIET_NEGATIEF",
+                      "eenheid": null
+                    }
+                  },
+                  {
+                    "name": "Variabel",
+                    "payload": null
+                  }
+                ]
+              },
+              "bron": "zijn regime",
+              "set": false,
+              "navigatiePad": []
+            },
+            "arms": [
+              {
+                "constructor": "Vast",
+                "binder": "v",
+                "body": {
                   "node": "Binair",
-                  "op": "MAAL",
+                  "op": "PLUS",
                   "links": {
                     "node": "BinderRef",
                     "name": "g",
@@ -239,59 +200,102 @@
                     "bron": "de grondslag"
                   },
                   "rechts": {
-                    "node": "Literal",
-                    "waarde": "0.10",
+                    "node": "BinderRef",
+                    "name": "v",
                     "type": {
                       "node": "Numeriek",
                       "geheel": false,
                       "decimalen": 2,
-                      "teken": "ONBEPAALD",
+                      "teken": "NIET_NEGATIEF",
                       "eenheid": null
                     },
-                    "bron": "0.10"
+                    "bron": "het vaste bedrag"
                   },
                   "type": {
                     "node": "Numeriek",
                     "geheel": false,
-                    "decimalen": 4,
+                    "decimalen": 2,
                     "teken": "ONBEPAALD",
                     "eenheid": null
                   },
-                  "bron": "de grondslag maal 0.10"
-                },
-                "modus": "REKENKUNDIG",
-                "decimalen": 2,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
+                  "bron": "de grondslag plus het vaste bedrag"
+                }
+              },
+              {
+                "constructor": "Variabel",
+                "binder": null,
+                "body": {
+                  "node": "Afgerond",
+                  "basis": {
+                    "node": "Binair",
+                    "op": "MAAL",
+                    "links": {
+                      "node": "BinderRef",
+                      "name": "g",
+                      "type": {
+                        "node": "Numeriek",
+                        "geheel": false,
+                        "decimalen": 2,
+                        "teken": "NIET_NEGATIEF",
+                        "eenheid": null
+                      },
+                      "bron": "de grondslag"
+                    },
+                    "rechts": {
+                      "node": "Literal",
+                      "waarde": "0.10",
+                      "type": {
+                        "node": "Numeriek",
+                        "geheel": false,
+                        "decimalen": 2,
+                        "teken": "ONBEPAALD",
+                        "eenheid": null
+                      },
+                      "bron": "0.10"
+                    },
+                    "type": {
+                      "node": "Numeriek",
+                      "geheel": false,
+                      "decimalen": 4,
+                      "teken": "ONBEPAALD",
+                      "eenheid": null
+                    },
+                    "bron": "de grondslag maal 0.10"
+                  },
+                  "modus": "REKENKUNDIG",
                   "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "de grondslag maal 0.10 rekenkundig afgerond op 2 decimalen"
+                  "type": {
+                    "node": "Numeriek",
+                    "geheel": false,
+                    "decimalen": 2,
+                    "teken": "ONBEPAALD",
+                    "eenheid": null
+                  },
+                  "bron": "de grondslag maal 0.10 rekenkundig afgerond op 2 decimalen"
+                }
               }
-            }
-          ],
-          "bron": "het beslag afhankelijk van zijn regime"
+            ],
+            "bron": "het beslag afhankelijk van zijn regime"
+          },
+          "bron": "g is de grondslag van de Jutter"
         },
-        "bron": "g is de grondslag van de Jutter"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

@@ -1,120 +1,119 @@
 {
- "formaat": "regelspraak-ir-v0",
- "objecttypen": {
-  "Vondst": {
-   "node": "Objecttype",
-   "naam": "Vondst",
-   "attributen": {
-    "taxatiewaarde": {
-     "node": "Numeriek",
-     "geheel": false,
-     "decimalen": 2,
-     "teken": "ONBEPAALD",
-     "eenheid": null
-    },
-    "geschatte waarde": {
-     "node": "Numeriek",
-     "geheel": false,
-     "decimalen": 2,
-     "teken": "ONBEPAALD",
-     "eenheid": null
-    }
-   },
-   "attribuutMeervoud": {},
-   "attribuutDimensies": {},
-   "attribuutGranulariteit": {},
-   "attribuutTijdlijnAantal": {},
-   "attribuutTijdlijnNaam": {},
-   "kenmerken": [
-    "ge\\meld"
-   ],
-   "kenmerkSoorten": {
-    "ge\\meld": "BIJVOEGLIJK"
-   },
-   "kenmerkGranulariteit": {},
-   "kenmerkTijdlijnAantal": {},
-   "bezield": false,
-   "meervoud": "Vondsten"
-  }
- },
- "domeinen": {},
- "parameters": {},
- "eenheidstelsels": {},
- "feittypen": {},
- "dimensies": {},
- "tijdlijnen": [],
- "dagsoorten": [],
- "dagsoortPerEenheid": {},
- "regels": [
-  {
-   "node": "Regel",
-   "naam": "Waardestelling",
-   "soort": "regel"
-  }
- ],
- "resolvedRegels": [
-  {
-   "node": "ResolvedRegel",
-   "naam": "Waardestelling",
-   "soort": "GELIJKSTELLING",
-   "doel": {
-    "node": "AttribuutRef",
-    "attribuut": "geschatte waarde",
-    "objecttype": "Vondst",
-    "onderwerpBron": "De geschatte waarde van een Vondst",
-    "navigatieRol": null,
-    "type": {
-     "node": "Numeriek",
-     "geheel": false,
-     "decimalen": 2,
-     "teken": "ONBEPAALD",
-     "eenheid": null
-    },
-    "bron": "De geschatte waarde van een Vondst",
-    "set": false,
-    "navigatiePad": []
-   },
-   "waarde": {
-    "node": "AttribuutRef",
-    "attribuut": "taxatiewaarde",
-    "objecttype": "Vondst",
-    "onderwerpBron": "de taxatiewaarde van de Vondst",
-    "navigatieRol": null,
-    "type": {
-     "node": "Numeriek",
-     "geheel": false,
-     "decimalen": 2,
-     "teken": "ONBEPAALD",
-     "eenheid": null
-    },
-    "bron": "de taxatiewaarde van de Vondst",
-    "set": false,
-    "navigatiePad": []
-   },
-   "voorwaarde": {
-    "node": "Kenmerk",
-    "kenmerk": "ge\\meld",
-    "navigatie": null,
-    "negatie": false,
-    "eigenaar": null,
-    "periode": null,
-    "bron": "de Vondst gemeld is"
-   },
-   "geldigheid": {
-    "node": "Geldigheid",
-    "vanaf": null,
-    "tot": null
-   }
-  }
- ],
- "resolvedDagsoorten": [],
- "objectCreaties": [],
- "verdelingen": [],
- "consistenties": [],
- "uniciteiten": [],
- "uniciteitUnies": [],
- "feitCreaties": [],
- "resolvedStartpunten": [],
- "regelGroepen": [],
- "diagnostics": []
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "taxatiewaarde",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "geschatte waarde",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "ge\\meld",
+            "kind": "BIJVOEGLIJK"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "Waardestelling",
+        "soort": "GELIJKSTELLING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "geschatte waarde",
+          "objecttype": "Vondst",
+          "onderwerpBron": "De geschatte waarde van een Vondst",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "De geschatte waarde van een Vondst",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "AttribuutRef",
+          "attribuut": "taxatiewaarde",
+          "objecttype": "Vondst",
+          "onderwerpBron": "de taxatiewaarde van de Vondst",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de taxatiewaarde van de Vondst",
+          "set": false,
+          "navigatiePad": []
+        },
+        "voorwaarde": {
+          "node": "Kenmerk",
+          "kenmerk": "ge\\meld",
+          "navigatie": null,
+          "negatie": false,
+          "eigenaar": null,
+          "periode": null,
+          "bron": "de Vondst gemeld is"
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
+  "diagnostics": []
 }

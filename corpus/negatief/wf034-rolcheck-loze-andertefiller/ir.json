@@ -1,173 +1,154 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {},
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "wachtdoend",
-        "vrijgesteld"
-      ],
-      "kenmerkSoorten": {
-        "wachtdoend": "BIJVOEGLIJK",
-        "vrijgesteld": "BIJVOEGLIJK"
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "wachtdoend",
+            "kind": "BIJVOEGLIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "vrijgesteld",
+            "kind": "BIJVOEGLIJK"
+          }
+        ]
       },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    },
-    "Wachtpost": {
-      "node": "Objecttype",
-      "naam": "Wachtpost",
-      "attributen": {},
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Wachtposten"
-    }
+      {
+        "node": "ObjectType",
+        "name": "Wachtpost",
+        "animate": false,
+        "plural": "Wachtposten",
+        "attributes": [],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "wachtindeling",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "wachtjutter",
+            "objecttypeNaam": "Jutter",
+            "meervoud": "wachtjutters",
+            "meervoudig": true
+          },
+          {
+            "node": "Rol",
+            "naam": "toegewezen wachtpost",
+            "objecttypeNaam": "Wachtpost",
+            "meervoud": null,
+            "meervoudig": false
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
   },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {
-    "wachtindeling": {
-      "node": "Feittype",
-      "naam": "wachtindeling",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "wachtjutter",
-          "objecttypeNaam": "Jutter",
-          "meervoud": "wachtjutters",
-          "meervoudig": true
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "wachtdoend bij wachtpost",
+        "soort": "KENMERKTOEKENNING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "wachtdoend",
+          "objecttype": "Jutter",
+          "onderwerpBron": "Een Jutter",
+          "navigatieRol": null,
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "Een Jutter is wachtdoend",
+          "set": false,
+          "navigatiePad": []
         },
-        {
-          "node": "Rol",
-          "naam": "toegewezen wachtpost",
-          "objecttypeNaam": "Wachtpost",
-          "meervoud": null,
-          "meervoudig": false
+        "waarde": {
+          "node": "Literal",
+          "waarde": "waar",
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "waar"
+        },
+        "voorwaarde": {
+          "node": "Rollidmaatschap",
+          "rol": "wachtjutter",
+          "anderTeFiller": null,
+          "negatie": false,
+          "bron": "hij een wachtjutter is"
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
         }
-      ]
-    }
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "vrijgesteld zonder wachtpost",
+        "soort": "KENMERKTOEKENNING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "vrijgesteld",
+          "objecttype": "Jutter",
+          "onderwerpBron": "Een Jutter",
+          "navigatieRol": null,
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "Een Jutter is vrijgesteld",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Literal",
+          "waarde": "waar",
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "waar"
+        },
+        "voorwaarde": {
+          "node": "Rollidmaatschap",
+          "rol": "wachtjutter",
+          "anderTeFiller": "Wachtpost",
+          "negatie": true,
+          "bron": "hij geen wachtjutter is"
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
   },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "wachtdoend bij wachtpost",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "vrijgesteld zonder wachtpost",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "wachtdoend bij wachtpost",
-      "soort": "KENMERKTOEKENNING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "wachtdoend",
-        "objecttype": "Jutter",
-        "onderwerpBron": "Een Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "Een Jutter is wachtdoend",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "waar",
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "waar"
-      },
-      "voorwaarde": {
-        "node": "Rollidmaatschap",
-        "rol": "wachtjutter",
-        "anderTeFiller": null,
-        "negatie": false,
-        "bron": "hij een wachtjutter is"
-      },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "vrijgesteld zonder wachtpost",
-      "soort": "KENMERKTOEKENNING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "vrijgesteld",
-        "objecttype": "Jutter",
-        "onderwerpBron": "Een Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "Een Jutter is vrijgesteld",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "waar",
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "waar"
-      },
-      "voorwaarde": {
-        "node": "Rollidmaatschap",
-        "rol": "wachtjutter",
-        "anderTeFiller": "Wachtpost",
-        "negatie": true,
-        "bron": "hij geen wachtjutter is"
-      },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
   "diagnostics": []
 }

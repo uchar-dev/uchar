@@ -1,164 +1,152 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Vondst": {
-      "node": "Objecttype",
-      "naam": "Vondst",
-      "attributen": {
-        "afslag": {
-          "node": "Tekst"
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "afslag",
+            "datatype": {
+              "node": "Tekst"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "keurstatus",
+            "datatype": {
+              "node": "Tekst"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "gekeurd",
+            "kind": "BIJVOEGLIJK"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "penninggerechtigd",
+            "kind": "BIJVOEGLIJK"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "afslag van een gekeurde vondst",
+        "soort": "GELIJKSTELLING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "afslag",
+          "objecttype": "Vondst",
+          "onderwerpBron": "een Vondst",
+          "navigatieRol": null,
+          "type": {
+            "node": "Tekst"
+          },
+          "bron": "De afslag van een Vondst",
+          "set": false,
+          "navigatiePad": []
         },
-        "keurstatus": {
-          "node": "Tekst"
+        "waarde": {
+          "node": "Literal",
+          "waarde": "zeeveiling",
+          "type": {
+            "node": "Tekst"
+          },
+          "bron": "'zeeveiling'"
+        },
+        "voorwaarde": {
+          "node": "Kenmerk",
+          "kenmerk": "gekeurd",
+          "navigatie": null,
+          "negatie": false,
+          "eigenaar": "Vondst",
+          "periode": null,
+          "bron": "de Vondst gekeurd is"
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
         }
       },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "gekeurd"
-      ],
-      "kenmerkSoorten": {
-        "gekeurd": "BIJVOEGLIJK"
-      },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Vondsten"
-    },
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {},
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "penninggerechtigd"
-      ],
-      "kenmerkSoorten": {
-        "penninggerechtigd": "BIJVOEGLIJK"
-      },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    }
+      {
+        "node": "ResolvedRegel",
+        "naam": "keurstatus van een ongekeurde vondst",
+        "soort": "GELIJKSTELLING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "keurstatus",
+          "objecttype": "Vondst",
+          "onderwerpBron": "een Vondst",
+          "navigatieRol": null,
+          "type": {
+            "node": "Tekst"
+          },
+          "bron": "De keurstatus van een Vondst",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Literal",
+          "waarde": "onbekeurd",
+          "type": {
+            "node": "Tekst"
+          },
+          "bron": "'onbekeurd'"
+        },
+        "voorwaarde": {
+          "node": "Kenmerk",
+          "kenmerk": "gekeurd",
+          "navigatie": null,
+          "negatie": true,
+          "eigenaar": "Vondst",
+          "periode": null,
+          "bron": "de Vondst niet gekeurd is"
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
   },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "afslag van een gekeurde vondst",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "keurstatus van een ongekeurde vondst",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "afslag van een gekeurde vondst",
-      "soort": "GELIJKSTELLING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "afslag",
-        "objecttype": "Vondst",
-        "onderwerpBron": "een Vondst",
-        "navigatieRol": null,
-        "type": {
-          "node": "Tekst"
-        },
-        "bron": "De afslag van een Vondst",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "zeeveiling",
-        "type": {
-          "node": "Tekst"
-        },
-        "bron": "'zeeveiling'"
-      },
-      "voorwaarde": {
-        "node": "Kenmerk",
-        "kenmerk": "gekeurd",
-        "navigatie": null,
-        "negatie": false,
-        "eigenaar": "Vondst",
-        "periode": null,
-        "bron": "de Vondst gekeurd is"
-      },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "keurstatus van een ongekeurde vondst",
-      "soort": "GELIJKSTELLING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "keurstatus",
-        "objecttype": "Vondst",
-        "onderwerpBron": "een Vondst",
-        "navigatieRol": null,
-        "type": {
-          "node": "Tekst"
-        },
-        "bron": "De keurstatus van een Vondst",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "onbekeurd",
-        "type": {
-          "node": "Tekst"
-        },
-        "bron": "'onbekeurd'"
-      },
-      "voorwaarde": {
-        "node": "Kenmerk",
-        "kenmerk": "gekeurd",
-        "navigatie": null,
-        "negatie": true,
-        "eigenaar": "Vondst",
-        "periode": null,
-        "bron": "de Vondst niet gekeurd is"
-      },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
   "diagnostics": []
 }

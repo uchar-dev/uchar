@@ -1,183 +1,19 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "vangsten": {
-          "node": "ListType",
-          "element": {
-            "node": "SumType",
-            "domain": "vangst",
-            "constructors": [
-              {
-                "name": "Waardevol",
-                "payload": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              },
-              {
-                "name": "Waardeloos",
-                "payload": null
-              }
-            ]
-          }
-        },
-        "totaal": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    }
-  },
-  "domeinen": {
-    "vangst": {
-      "node": "SumType",
-      "domain": "vangst",
-      "constructors": [
-        {
-          "name": "Waardevol",
-          "payload": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          }
-        },
-        {
-          "name": "Waardeloos",
-          "payload": null
-        }
-      ]
-    }
-  },
-  "parameters": {
-    "plafond": {
-      "node": "Parameter",
-      "naam": "plafond",
-      "datatype": {
-        "node": "Numeriek",
-        "geheel": false,
-        "decimalen": 2,
-        "teken": "ONBEPAALD",
-        "eenheid": null
-      },
-      "granulariteit": null
-    }
-  },
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "totaal van een jutter",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "totaal van een jutter",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "totaal",
-        "objecttype": "Jutter",
-        "onderwerpBron": "Het totaal van een Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "Het totaal van een Jutter",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Fold",
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "list": {
-          "node": "AttribuutRef",
-          "attribuut": "vangsten",
-          "objecttype": "Jutter",
-          "onderwerpBron": "zijn",
-          "navigatieRol": null,
-          "type": {
-            "node": "ListType",
-            "element": {
-              "node": "SumType",
-              "domain": "vangst",
-              "constructors": [
-                {
-                  "name": "Waardevol",
-                  "payload": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  }
-                },
-                {
-                  "name": "Waardeloos",
-                  "payload": null
-                }
-              ]
-            }
-          },
-          "bron": "zijn vangsten",
-          "set": false,
-          "navigatiePad": []
-        },
-        "function": {
-          "node": "Lambda",
-          "parameters": [
-            {
-              "name": "acc",
-              "datatype": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              }
-            },
-            {
-              "name": "x",
-              "datatype": {
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vangsten",
+            "datatype": {
+              "node": "ListType",
+              "element": {
                 "node": "SumType",
                 "domain": "vangst",
                 "constructors": [
@@ -198,20 +34,109 @@
                 ]
               }
             }
-          ],
-          "body": {
-            "node": "Match",
-            "type": {
+          },
+          {
+            "node": "Attribute",
+            "name": "totaal",
+            "datatype": {
               "node": "Numeriek",
               "geheel": false,
               "decimalen": 2,
               "teken": "ONBEPAALD",
               "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "naam": "plafond",
+        "datatype": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "granulariteit": null
+      }
+    ],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "vangst",
+        "datatype": {
+          "node": "SumType",
+          "constructors": [
+            {
+              "name": "Waardevol",
+              "payload": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "NIET_NEGATIEF",
+                "eenheid": null
+              }
             },
-            "scrutinee": {
-              "node": "BinderRef",
-              "name": "x",
-              "type": {
+            {
+              "name": "Waardeloos",
+              "payload": null
+            }
+          ]
+        }
+      }
+    ],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "totaal van een jutter",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "totaal",
+          "objecttype": "Jutter",
+          "onderwerpBron": "Het totaal van een Jutter",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "Het totaal van een Jutter",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Fold",
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "list": {
+            "node": "AttribuutRef",
+            "attribuut": "vangsten",
+            "objecttype": "Jutter",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "ListType",
+              "element": {
                 "node": "SumType",
                 "domain": "vangst",
                 "constructors": [
@@ -230,26 +155,151 @@
                     "payload": null
                   }
                 ]
-              },
-              "bron": "de vangst"
+              }
             },
-            "arms": [
+            "bron": "zijn vangsten",
+            "set": false,
+            "navigatiePad": []
+          },
+          "function": {
+            "node": "Lambda",
+            "parameters": [
               {
-                "constructor": "Waardevol",
-                "binder": "b",
-                "body": {
-                  "node": "IfThenElse",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
-                  "condition": {
-                    "node": "Vergelijking",
-                    "op": "KLEINER_OF_GELIJK",
-                    "links": {
+                "name": "acc",
+                "datatype": {
+                  "node": "Numeriek",
+                  "geheel": false,
+                  "decimalen": 2,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                }
+              },
+              {
+                "name": "x",
+                "datatype": {
+                  "node": "SumType",
+                  "domain": "vangst",
+                  "constructors": [
+                    {
+                      "name": "Waardevol",
+                      "payload": {
+                        "node": "Numeriek",
+                        "geheel": false,
+                        "decimalen": 2,
+                        "teken": "NIET_NEGATIEF",
+                        "eenheid": null
+                      }
+                    },
+                    {
+                      "name": "Waardeloos",
+                      "payload": null
+                    }
+                  ]
+                }
+              }
+            ],
+            "body": {
+              "node": "Match",
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "scrutinee": {
+                "node": "BinderRef",
+                "name": "x",
+                "type": {
+                  "node": "SumType",
+                  "domain": "vangst",
+                  "constructors": [
+                    {
+                      "name": "Waardevol",
+                      "payload": {
+                        "node": "Numeriek",
+                        "geheel": false,
+                        "decimalen": 2,
+                        "teken": "NIET_NEGATIEF",
+                        "eenheid": null
+                      }
+                    },
+                    {
+                      "name": "Waardeloos",
+                      "payload": null
+                    }
+                  ]
+                },
+                "bron": "de vangst"
+              },
+              "arms": [
+                {
+                  "constructor": "Waardevol",
+                  "binder": "b",
+                  "body": {
+                    "node": "IfThenElse",
+                    "type": {
+                      "node": "Numeriek",
+                      "geheel": false,
+                      "decimalen": 2,
+                      "teken": "ONBEPAALD",
+                      "eenheid": null
+                    },
+                    "condition": {
+                      "node": "Vergelijking",
+                      "op": "KLEINER_OF_GELIJK",
+                      "links": {
+                        "node": "Binair",
+                        "op": "PLUS",
+                        "links": {
+                          "node": "BinderRef",
+                          "name": "acc",
+                          "type": {
+                            "node": "Numeriek",
+                            "geheel": false,
+                            "decimalen": 2,
+                            "teken": "ONBEPAALD",
+                            "eenheid": null
+                          },
+                          "bron": "de opgetelde vangst"
+                        },
+                        "rechts": {
+                          "node": "BinderRef",
+                          "name": "b",
+                          "type": {
+                            "node": "Numeriek",
+                            "geheel": false,
+                            "decimalen": 2,
+                            "teken": "NIET_NEGATIEF",
+                            "eenheid": null
+                          },
+                          "bron": "de vangstwaarde"
+                        },
+                        "type": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "ONBEPAALD",
+                          "eenheid": null
+                        },
+                        "bron": "de opgetelde vangst plus de vangstwaarde"
+                      },
+                      "rechts": {
+                        "node": "ParameterRef",
+                        "parameter": "plafond",
+                        "type": {
+                          "node": "Numeriek",
+                          "geheel": false,
+                          "decimalen": 2,
+                          "teken": "ONBEPAALD",
+                          "eenheid": null
+                        },
+                        "bron": "het plafond"
+                      },
+                      "periode": null,
+                      "bron": "de opgetelde vangst plus de vangstwaarde kleiner dan of gelijk aan het plafond"
+                    },
+                    "then": {
                       "node": "Binair",
                       "op": "PLUS",
                       "links": {
@@ -285,25 +335,7 @@
                       },
                       "bron": "de opgetelde vangst plus de vangstwaarde"
                     },
-                    "rechts": {
-                      "node": "ParameterRef",
-                      "parameter": "plafond",
-                      "type": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
-                      },
-                      "bron": "het plafond"
-                    },
-                    "periode": null,
-                    "bron": "de opgetelde vangst plus de vangstwaarde kleiner dan of gelijk aan het plafond"
-                  },
-                  "then": {
-                    "node": "Binair",
-                    "op": "PLUS",
-                    "links": {
+                    "else": {
                       "node": "BinderRef",
                       "name": "acc",
                       "type": {
@@ -315,28 +347,13 @@
                       },
                       "bron": "de opgetelde vangst"
                     },
-                    "rechts": {
-                      "node": "BinderRef",
-                      "name": "b",
-                      "type": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
-                      },
-                      "bron": "de vangstwaarde"
-                    },
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "de opgetelde vangst plus de vangstwaarde"
-                  },
-                  "else": {
+                    "bron": "de opgetelde vangst met de vangstwaarde erbij zolang het plafond niet wordt overschreden"
+                  }
+                },
+                {
+                  "constructor": "Waardeloos",
+                  "binder": null,
+                  "body": {
                     "node": "BinderRef",
                     "name": "acc",
                     "type": {
@@ -347,61 +364,44 @@
                       "eenheid": null
                     },
                     "bron": "de opgetelde vangst"
-                  },
-                  "bron": "de opgetelde vangst met de vangstwaarde erbij zolang het plafond niet wordt overschreden"
+                  }
                 }
-              },
-              {
-                "constructor": "Waardeloos",
-                "binder": null,
-                "body": {
-                  "node": "BinderRef",
-                  "name": "acc",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
-                  "bron": "de opgetelde vangst"
-                }
-              }
-            ],
-            "bron": "de opgetelde vangst afhankelijk van de vangst"
+              ],
+              "bron": "de opgetelde vangst afhankelijk van de vangst"
+            },
+            "bron": "de vangsten opgeteld tot het plafond"
           },
-          "bron": "de vangsten opgeteld tot het plafond"
-        },
-        "init": {
-          "node": "Literal",
-          "waarde": "0.00",
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
+          "init": {
+            "node": "Literal",
+            "waarde": "0.00",
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "0.00"
           },
-          "bron": "0.00"
+          "bron": "de vangsten gevouwen tot het plafond"
         },
-        "bron": "de vangsten gevouwen tot het plafond"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

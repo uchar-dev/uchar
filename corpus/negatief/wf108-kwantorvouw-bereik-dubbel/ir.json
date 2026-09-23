@@ -1,190 +1,184 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Bergingsploeg": {
-      "node": "Objecttype",
-      "naam": "Bergingsploeg",
-      "attributen": {},
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "premiegerechtigd"
-      ],
-      "kenmerkSoorten": {
-        "premiegerechtigd": "BIJVOEGLIJK"
-      },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Bergingsploegen"
-    },
-    "Berger": {
-      "node": "Objecttype",
-      "naam": "Berger",
-      "attributen": {
-        "dagvergoeding": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {
-        "dagvergoeding": "MAAND"
-      },
-      "attribuutTijdlijnAantal": {
-        "dagvergoeding": 1
-      },
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Bergers"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {
-    "ploegindeling": {
-      "node": "Feittype",
-      "naam": "ploegindeling",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "ploeg",
-          "objecttypeNaam": "Bergingsploeg",
-          "meervoud": null,
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "berger",
-          "objecttypeNaam": "Berger",
-          "meervoud": "bergers",
-          "meervoudig": true
-        }
-      ]
-    }
-  },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "premiegerechtigd bij dagvergoeding",
-      "soort": "KENMERKTOEKENNING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "premiegerechtigd",
-        "objecttype": "Bergingsploeg",
-        "onderwerpBron": "Een Bergingsploeg",
-        "navigatieRol": null,
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "Een Bergingsploeg is premiegerechtigd",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Literal",
-        "waarde": "waar",
-        "type": {
-          "node": "Booleaan"
-        },
-        "bron": "waar"
-      },
-      "voorwaarde": {
-        "node": "Kwantorvouw",
-        "kwantor": "ALLE",
-        "elementObjecttype": "Berger",
-        "filter": null,
-        "toets": {
-          "node": "Vergelijking",
-          "op": "GROTER",
-          "links": {
-            "node": "AttribuutRef",
-            "attribuut": "dagvergoeding",
-            "objecttype": "Berger",
-            "onderwerpBron": "de berger",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de dagvergoeding van de berger",
-            "set": false,
-            "navigatiePad": []
-          },
-          "rechts": {
-            "node": "Literal",
-            "waarde": "40",
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "40"
-          },
-          "periode": {
-            "node": "GeheelPeriode",
-            "jaar": true,
-            "niet": false
-          },
-          "bron": "zijn dagvergoeding gedurende het gehele jaar groter is dan 40"
-        },
-        "bron": "de dagvergoeding van alle bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40",
-        "bronRol": {
-          "node": "RolBinding",
-          "feittype": "ploegindeling",
-          "rol": "berger"
-        },
-        "bronPad": [
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Bergingsploeg",
+        "animate": false,
+        "plural": "Bergingsploegen",
+        "attributes": [],
+        "characteristics": [
           {
-            "node": "RolBinding",
-            "feittype": "ploegindeling",
-            "rol": "berger"
-          },
-          {
-            "node": "RolBinding",
-            "feittype": "ploegindeling",
-            "rol": "berger"
+            "node": "Characteristic",
+            "name": "premiegerechtigd",
+            "kind": "BIJVOEGLIJK"
           }
         ]
       },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+      {
+        "node": "ObjectType",
+        "name": "Berger",
+        "animate": false,
+        "plural": "Bergers",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "dagvergoeding",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "MAAND",
+              "count": 1
+            }
+          }
+        ],
+        "characteristics": []
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "ploegindeling",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "ploeg",
+            "objecttypeNaam": "Bergingsploeg",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "berger",
+            "objecttypeNaam": "Berger",
+            "meervoud": "bergers",
+            "meervoudig": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "premiegerechtigd bij dagvergoeding",
+        "soort": "KENMERKTOEKENNING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "premiegerechtigd",
+          "objecttype": "Bergingsploeg",
+          "onderwerpBron": "Een Bergingsploeg",
+          "navigatieRol": null,
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "Een Bergingsploeg is premiegerechtigd",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Literal",
+          "waarde": "waar",
+          "type": {
+            "node": "Booleaan"
+          },
+          "bron": "waar"
+        },
+        "voorwaarde": {
+          "node": "Kwantorvouw",
+          "kwantor": "ALLE",
+          "elementObjecttype": "Berger",
+          "filter": null,
+          "toets": {
+            "node": "Vergelijking",
+            "op": "GROTER",
+            "links": {
+              "node": "AttribuutRef",
+              "attribuut": "dagvergoeding",
+              "objecttype": "Berger",
+              "onderwerpBron": "de berger",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "de dagvergoeding van de berger",
+              "set": false,
+              "navigatiePad": []
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "40",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "40"
+            },
+            "periode": {
+              "node": "GeheelPeriode",
+              "jaar": true,
+              "niet": false
+            },
+            "bron": "zijn dagvergoeding gedurende het gehele jaar groter is dan 40"
+          },
+          "bron": "de dagvergoeding van alle bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40",
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "ploegindeling",
+            "rol": "berger"
+          },
+          "bronPad": [
+            {
+              "node": "RolBinding",
+              "feittype": "ploegindeling",
+              "rol": "berger"
+            },
+            {
+              "node": "RolBinding",
+              "feittype": "ploegindeling",
+              "rol": "berger"
+            }
+          ]
+        },
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }

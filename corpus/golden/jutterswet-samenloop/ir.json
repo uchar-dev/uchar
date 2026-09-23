@@ -1,242 +1,248 @@
 {
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "berggeld": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "wachtgeld": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "vergoeding": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [
-        "berger",
-        "wachter"
-      ],
-      "kenmerkSoorten": {
-        "berger": "BIJVOEGLIJK",
-        "wachter": "BIJVOEGLIJK"
-      },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "samenloop van aanspraken",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
-  "diagnostics": [],
-  "prioritizedDefaults": [
-    {
-      "node": "PrioritizedDefaults",
-      "naam": "samenloop van aanspraken",
-      "onderwerp": "Jutter",
-      "kenmerk": null,
-      "attribuut": "vergoeding",
-      "defaults": [
-        {
-          "node": "Default",
-          "besluit": null,
-          "voorwaarde": {
-            "node": "Samengesteld",
-            "kwantor": "ALLE",
-            "drempel": 0,
-            "onderdelen": [
-              {
-                "node": "Kenmerk",
-                "kenmerk": "berger",
-                "navigatie": null,
-                "negatie": false,
-                "eigenaar": null,
-                "periode": null,
-                "bron": "hij berger is"
-              },
-              {
-                "node": "Kenmerk",
-                "kenmerk": "wachter",
-                "navigatie": null,
-                "negatie": false,
-                "eigenaar": null,
-                "periode": null,
-                "bron": "hij wachter is"
-              },
-              {
-                "node": "Vergelijking",
-                "op": "GROTER",
-                "links": {
-                  "node": "AttribuutRef",
-                  "attribuut": "wachtgeld",
-                  "objecttype": "Jutter",
-                  "onderwerpBron": "zijn wachtgeld",
-                  "navigatieRol": null,
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
-                  "bron": "zijn wachtgeld",
-                  "set": false,
-                  "navigatiePad": []
-                },
-                "rechts": {
-                  "node": "AttribuutRef",
-                  "attribuut": "berggeld",
-                  "objecttype": "Jutter",
-                  "onderwerpBron": "zijn berggeld",
-                  "navigatieRol": null,
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
-                  "bron": "zijn berggeld",
-                  "set": false,
-                  "navigatiePad": []
-                },
-                "periode": null,
-                "bron": "zijn wachtgeld hoger is dan zijn berggeld"
-              }
-            ],
-            "bron": "hij berger en wachter is en zijn wachtgeld hoger is dan zijn berggeld"
-          },
-          "consequentie": {
-            "node": "AttribuutRef",
-            "attribuut": "wachtgeld",
-            "objecttype": "Jutter",
-            "onderwerpBron": "zijn wachtgeld",
-            "navigatieRol": null,
-            "type": {
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "berggeld",
+            "datatype": {
               "node": "Numeriek",
               "geheel": true,
               "decimalen": 0,
               "teken": "ONBEPAALD",
               "eenheid": null
-            },
-            "bron": "zijn wachtgeld",
-            "set": false,
-            "navigatiePad": []
+            }
           },
-          "bron": "bij samenloop van beide aanspraken geldt de hoogste: het wachtgeld, indien dat hoger is dan het berggeld"
-        },
-        {
-          "node": "Default",
-          "besluit": null,
-          "voorwaarde": {
-            "node": "Kenmerk",
-            "kenmerk": "berger",
-            "navigatie": null,
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "hij berger is"
-          },
-          "consequentie": {
-            "node": "AttribuutRef",
-            "attribuut": "berggeld",
-            "objecttype": "Jutter",
-            "onderwerpBron": "zijn berggeld",
-            "navigatieRol": null,
-            "type": {
+          {
+            "node": "Attribute",
+            "name": "wachtgeld",
+            "datatype": {
               "node": "Numeriek",
               "geheel": true,
               "decimalen": 0,
               "teken": "ONBEPAALD",
               "eenheid": null
-            },
-            "bron": "zijn berggeld",
-            "set": false,
-            "navigatiePad": []
+            }
           },
-          "bron": "de berger heeft aanspraak op het berggeld"
-        },
-        {
-          "node": "Default",
-          "besluit": null,
-          "voorwaarde": {
-            "node": "Kenmerk",
-            "kenmerk": "wachter",
-            "navigatie": null,
-            "negatie": false,
-            "eigenaar": null,
-            "periode": null,
-            "bron": "hij wachter is"
-          },
-          "consequentie": {
-            "node": "AttribuutRef",
-            "attribuut": "wachtgeld",
-            "objecttype": "Jutter",
-            "onderwerpBron": "zijn wachtgeld",
-            "navigatieRol": null,
-            "type": {
+          {
+            "node": "Attribute",
+            "name": "vergoeding",
+            "datatype": {
               "node": "Numeriek",
               "geheel": true,
               "decimalen": 0,
               "teken": "ONBEPAALD",
               "eenheid": null
-            },
-            "bron": "zijn wachtgeld",
-            "set": false,
-            "navigatiePad": []
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "berger",
+            "kind": "BIJVOEGLIJK"
           },
-          "bron": "de wachter heeft aanspraak op het wachtgeld"
-        }
-      ],
-      "bron": "samenloopbepaling: berggeld voor de berger, wachtgeld voor de wachter; bij samenloop van beide aanspraken geldt de hoogste",
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+          {
+            "node": "Characteristic",
+            "name": "wachter",
+            "kind": "BIJVOEGLIJK"
+          }
+        ]
       }
-    }
-  ]
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "naam": "samenloop van aanspraken",
+        "onderwerp": "Jutter",
+        "kenmerk": null,
+        "attribuut": "vergoeding",
+        "defaults": [
+          {
+            "node": "Default",
+            "besluit": null,
+            "voorwaarde": {
+              "node": "Samengesteld",
+              "kwantor": "ALLE",
+              "drempel": 0,
+              "onderdelen": [
+                {
+                  "node": "Kenmerk",
+                  "kenmerk": "berger",
+                  "navigatie": null,
+                  "negatie": false,
+                  "eigenaar": null,
+                  "periode": null,
+                  "bron": "hij berger is"
+                },
+                {
+                  "node": "Kenmerk",
+                  "kenmerk": "wachter",
+                  "navigatie": null,
+                  "negatie": false,
+                  "eigenaar": null,
+                  "periode": null,
+                  "bron": "hij wachter is"
+                },
+                {
+                  "node": "Vergelijking",
+                  "op": "GROTER",
+                  "links": {
+                    "node": "AttribuutRef",
+                    "attribuut": "wachtgeld",
+                    "objecttype": "Jutter",
+                    "onderwerpBron": "zijn wachtgeld",
+                    "navigatieRol": null,
+                    "type": {
+                      "node": "Numeriek",
+                      "geheel": true,
+                      "decimalen": 0,
+                      "teken": "ONBEPAALD",
+                      "eenheid": null
+                    },
+                    "bron": "zijn wachtgeld",
+                    "set": false,
+                    "navigatiePad": []
+                  },
+                  "rechts": {
+                    "node": "AttribuutRef",
+                    "attribuut": "berggeld",
+                    "objecttype": "Jutter",
+                    "onderwerpBron": "zijn berggeld",
+                    "navigatieRol": null,
+                    "type": {
+                      "node": "Numeriek",
+                      "geheel": true,
+                      "decimalen": 0,
+                      "teken": "ONBEPAALD",
+                      "eenheid": null
+                    },
+                    "bron": "zijn berggeld",
+                    "set": false,
+                    "navigatiePad": []
+                  },
+                  "periode": null,
+                  "bron": "zijn wachtgeld hoger is dan zijn berggeld"
+                }
+              ],
+              "bron": "hij berger en wachter is en zijn wachtgeld hoger is dan zijn berggeld"
+            },
+            "consequentie": {
+              "node": "AttribuutRef",
+              "attribuut": "wachtgeld",
+              "objecttype": "Jutter",
+              "onderwerpBron": "zijn wachtgeld",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "zijn wachtgeld",
+              "set": false,
+              "navigatiePad": []
+            },
+            "bron": "bij samenloop van beide aanspraken geldt de hoogste: het wachtgeld, indien dat hoger is dan het berggeld"
+          },
+          {
+            "node": "Default",
+            "besluit": null,
+            "voorwaarde": {
+              "node": "Kenmerk",
+              "kenmerk": "berger",
+              "navigatie": null,
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "hij berger is"
+            },
+            "consequentie": {
+              "node": "AttribuutRef",
+              "attribuut": "berggeld",
+              "objecttype": "Jutter",
+              "onderwerpBron": "zijn berggeld",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "zijn berggeld",
+              "set": false,
+              "navigatiePad": []
+            },
+            "bron": "de berger heeft aanspraak op het berggeld"
+          },
+          {
+            "node": "Default",
+            "besluit": null,
+            "voorwaarde": {
+              "node": "Kenmerk",
+              "kenmerk": "wachter",
+              "navigatie": null,
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "hij wachter is"
+            },
+            "consequentie": {
+              "node": "AttribuutRef",
+              "attribuut": "wachtgeld",
+              "objecttype": "Jutter",
+              "onderwerpBron": "zijn wachtgeld",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "zijn wachtgeld",
+              "set": false,
+              "navigatiePad": []
+            },
+            "bron": "de wachter heeft aanspraak op het wachtgeld"
+          }
+        ],
+        "bron": "samenloopbepaling: berggeld voor de berger, wachtgeld voor de wachter; bij samenloop van beide aanspraken geldt de hoogste",
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ]
+  },
+  "diagnostics": []
 }
