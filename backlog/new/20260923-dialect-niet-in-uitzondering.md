@@ -60,6 +60,12 @@ ontbreekt.
 - Een groep waarvan elke default `onwaar` beslist leidt nooit iets af:
   geen fout (welgevormd, betekent "nooit"), wel een waarschuwing van de
   RuleChecker.
+- Meegenomen uit het voorstel: `testDocument` (de scenariotoetsen)
+  accepteert `uitzonderingRegel` en `uitzonderingGroep` als
+  documentonderdelen — het grammaticadeel van bijvangst 3; het
+  scenario-harnas zelf hoort bij de regelspraak-java-kaart. En de javadoc
+  van `ir/PrioritizedDefaults.java` ("the RegelSpraak resolver never builds
+  it", onjuist sinds 2026-08-29) wordt gecorrigeerd.
 
 ## Acceptatie (bij oppakken aanscherpen)
 

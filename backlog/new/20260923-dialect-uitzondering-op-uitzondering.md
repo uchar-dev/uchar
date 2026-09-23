@@ -74,15 +74,29 @@ Catala-frontend vertaalt vertakking onder de wortel al
   conjunctie; `Uitzonderingen ongeordend op` met gelijke en met
   verschillende besluiten; de geweigerde geërfde drager; een onbekende
   drager; een `Afwijking van` op een onbekende drager.
-- (b) Goldens, elk byte-identiek na canonicalisatie aan het handanker
-  (de penningrecht-methode: frontend-diff tegen `anchor/…/ir.json`), groen
-  in ref ≡ clingo ≡ Drools-exec: de RegelSpraak-tweeling van
-  `anchor/ww-herleving-inkomen` (na de ankerkaart; zeven cases), van
-  `anchor/jutterswet-uitsluiting` (drie lagen, ontkende middenlaag) en van
-  `anchor/jutterswet-nestkenmerk` (ongeordende broers met een ontkend lid en
-  het kenmerkconflict `Jutter.vrijgesteld/0`). De vorm van de tweeling
-  (`bron.rgs` naast het anker, of een eigen golden met identieke `ir.json`)
-  kiest de kaart zo dat gate 10 en de ankerregels haar dragen.
+- (b) Goldens, elk gebouwd met de penningrechtmethode
+  (`spec/proposals/PHASE5D-DIFF.md` §2–3): een `bron.rgs`, de door het
+  frontend uitgezonden en door de serializer van gate 2 gecanoniseerde
+  `ir.json`, dezelfde cases met dezelfde absolute verwachtingen als het
+  handanker, en een NOTE met de structurele diff tegen het anker (elke
+  `bron` gestript, sleutels gesorteerd) en per verschil de triage:
+  (i) dialectverschil, (ii) IR-ontwerpfout, (iii) frontendfout — een (ii)
+  of (iii) stopt de kaart en gaat terug naar de maintainer. Groen in
+  ref ≡ clingo ≡ Drools-exec: de tweeling van `anchor/ww-herleving-inkomen`
+  (na de ankerkaart, die het kenmerk `recht op uitkering` bezittelijk
+  maakt; zeven cases), van `anchor/jutterswet-uitsluiting` (drie lagen,
+  ontkende middenlaag) en van `anchor/jutterswet-nestkenmerk` (ongeordende
+  broers met een ontkend lid en het kenmerkconflict
+  `Jutter.vrijgesteld/0`; diens `case1-y-wint` hoort met de reden van het
+  anker op de overleverslijst van gate 7). Werknamen
+  `ww-herleving-inkomen-rgs`, `jutterswet-uitsluiting-rgs`,
+  `jutterswet-nestkenmerk-rgs`; de vorm (eigen golden, of `bron.rgs` in de
+  ankermap) kiest de kaart zo dat gate 10 en de ankerregels haar dragen.
+  Gate 12: `EXPECTED_PLAYED` +3 en de drie namen in klasse (A) van
+  `DRL_CHANNEL` (de DRL-teksttak heeft geen defaults-lowering); beide
+  scripts beschermd, dus **voorstel** op de branch.
+- (b2) De registerzin voor `spec/CONSTRUCTS.md` rij 8 (de dialecttweeling
+  van het WW-anker als getuige) in het Result; de hoofdsessie landt haar.
 - (c) `jutterswet-bergingsdrempel/bron.rgs` naar `Afwijking van`,
   `ir.json` byte-identiek (gate 10).
 - (d) `DIVERGENCES.md` §4: nesting, de conjunctie, `Afwijking van`,
@@ -93,8 +107,11 @@ Catala-frontend vertaalt vertakking onder de wortel al
 
 May touch: `frontends/regelspraak/**`, `corpus/golden/jutterswet-bergingsdrempel/bron.rgs`,
 `corpus/golden/<tweelingen>/**` (of `bron.rgs` in de ankermappen —
-**voorstel**), `scripts/check-drools.sh` (**voorstel**: pins),
-kaartverplaatsing.
+**voorstel**), `scripts/check-drools.sh` en `scripts/check-noop.sh`
+(**voorstel**: pins en overleverslijst), kaartverplaatsing. Bestaande
+testbestanden alleen met toestemming van de maintainer:
+`DefaultsExtensieTest.onbekende_basisregel_weigert_luid` pint de melding
+"geen basisregel met die naam gevonden", die dit werk vervangt.
 
 Niet in deze kaart: het ankerherstel (eigen kaart, gaat vooraf); de spec,
 de verifier, de uitvoerders; `Regelgroep` rond een uitzondering en de
