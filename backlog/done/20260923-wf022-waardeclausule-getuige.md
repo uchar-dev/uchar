@@ -156,7 +156,22 @@ stays confined to a defaults group (`besluit: false`)"
 
 ### Open
 
-Niets binnen de kaart. De kaart noemde als voorwaarde de besluiten 1–8
-van het voorstel (inhoudelijk alleen het oordeel over §7.3). De
-hoofdsessie gaf haar vrij in fixronde 3, dus dat oordeel ligt bij de
-hoofdsessie.
+1. **Al doorgegeven aan de lopende ref- en Drools-kaarten** (lens ronde
+   2, advies; de hoofdsessie deed dat al, geen kaartje). Van de vier
+   uitvoerders weigert alleen clingo dit document zelf (`TRANSLATION
+   FAULT: characteristic attribution with a non-waar value`). De
+   Drools-exectak geeft stil het omgekeerde antwoord: het kenmerk staat
+   aanwezig bij de waarde `onwaar` (`FAIL case1.json: kenmerk herleefd:
+   verwacht afwezig, werkelijk aanwezig`). ref en de DRL-teksttak laten
+   het kenmerk stil afwezig (`oracle: PASS` en `PLAYED 1` op een case
+   die afwezig verwacht). Dat botst met het huisbeginsel dat elke
+   uitvoerder zelf weigert wat de verifier weigert ("een lezer die
+   aanvaardt wat geen verifier toelaat is ongetuigd gedrag", de norm
+   van de lezerszone-kaarten). Vandaag houdt alleen de verifier het
+   document tegen, en die zit alleen in de corpusgates, niet op elke
+   route naar een uitvoerder. De maat voor ref en Drools is die van
+   clingo: een benoemde weigering van een kenmerktoekenning met een
+   waarde anders dan `waar`.
+2. De kaart noemde als voorwaarde de besluiten 1–8 van het voorstel
+   (inhoudelijk alleen het oordeel over §7.3). De hoofdsessie gaf haar
+   vrij in fixronde 3, dus dat oordeel ligt bij de hoofdsessie.
