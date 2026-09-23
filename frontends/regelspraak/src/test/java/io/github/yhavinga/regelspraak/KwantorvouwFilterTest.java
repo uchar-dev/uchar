@@ -120,9 +120,10 @@ class KwantorvouwFilterTest {
         // subject is the Vondst, the same trap the toets avoids.
         String v = voorwaarde(resolveer("alle", " die aangemeld zijn"));
         int i = v.indexOf("\"filter\":");
-        String f = v.substring(i, Math.min(v.length(), i + 220));
-        assertTrue(f.contains("\"navigatie\":null"), () -> "het filter navigeert niet:\n" + f);
-        assertTrue(f.contains("\"negatie\":false"), () -> "een bevestigende deelselectie:\n" + f);
+        String f = v.substring(i, v.indexOf("\"toets\":", i));
+        assertTrue(f.contains("\"filter\":{\"node\":\"Kenmerk\",\"kenmerk\":\"aangemeld\",\"negatie\":false,"),
+                () -> "een bevestigende deelselectie:\n" + f);
+        assertFalse(f.contains("\"navigatieBinding\""), () -> "het filter navigeert niet:\n" + f);
     }
 
     @Test void een_deelselectie_over_een_kenmerk_van_het_ONDERWERP_bindt_niet() {

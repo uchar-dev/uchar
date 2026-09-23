@@ -489,18 +489,18 @@ class GenesteVouwbronTest {
                 "een WARNING mag de emissie niet blokkeren");
     }
 
-    /** The marker carries the aggregation's OWN result type, never the unknown sentinel. That is what keeps
-     *  the refused document WELL-FORMED — IR-SPEC ch. 2.4 makes Onopgelost a marker with a reason, not a type,
-     *  and WF-044's fence is behavioural — so the failure lands as a loud evaluation fault in every executor
-     *  instead of as an ill-formed document. Measured on all three routes. */
+    /** The marker carries the aggregation's OWN result type. A marker whose type is unknown carries none
+     *  (IR-SPEC ch. 4.4), and this one's is known: the fold would have produced a kg amount, and the executors
+     *  read the marker's type where a comparison or an assignment needs one. WF-044's fence is behavioural, so
+     *  the failure lands as a loud evaluation fault in every executor. Measured on all three routes. */
     @Test
     void de_markering_draagt_het_eigen_resultaattype() {
         for (String bron : List.of(MODEL_B + GEMENGDE_KETENREGEL, MODEL_B + BOTSENDE_EENSTAPSREGEL,
                 MODEL_B + VREEMD_ANKERREGEL)) {
             String json = ir(bron);
             assertTrue(json.contains("\"node\": \"Onopgelost\""), "verwacht een markering");
-            assertFalse(json.contains("\"node\": \"Onbekend\""),
-                    "de markering mag het onbekend-sentinel niet dragen (WF-034 zou het document afkeuren)");
+            assertTrue(java.util.regex.Pattern.compile("\"node\": \"Onopgelost\",\\s*\"type\": \\{").matcher(json).find(),
+                    "de markering hoort haar eigen resultaattype te dragen");
             assertTrue(json.contains("\"afkorting\": \"kg\""), "het eigen resultaattype hoort erop te staan");
         }
     }

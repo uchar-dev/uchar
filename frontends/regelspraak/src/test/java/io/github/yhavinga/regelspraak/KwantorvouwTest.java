@@ -132,16 +132,17 @@ class KwantorvouwTest {
 
     @Test void de_toets_is_een_eigen_lezing_van_het_element_met_de_periode() {
         // The matrix is evaluated PER CONTRIBUTOR with the element as subject, so the quantified operand
-        // comes back as an OWN read of the element type — set false, no navigation. The §8.2 qualifier
-        // stays on it: per member, "gedurende het gehele jaar" is what that member must satisfy.
+        // comes back as an OWN read of the element type — no binding, so no navigation and no range. The
+        // §8.2 qualifier stays on it: per member, "gedurende het gehele jaar" is what that member must satisfy.
         String v = voorwaarde(resolveer(ZIN.formatted("alle")));
         assertTrue(v.contains("\"toets\":{\"node\":\"Vergelijking\",\"op\":\"GROTER\","
                         + "\"links\":{\"node\":\"AttribuutRef\",\"attribuut\":\"gewicht\",\"objecttype\":\"Vondst\""),
                 () -> "de toets hoort het attribuut op het ELEMENTtype te lezen:\n" + v);
-        assertTrue(v.contains("\"set\":false"),
-                () -> "de gekwantificeerde operand hoort als enkelvoudige lezing terug te komen:\n" + v);
-        assertFalse(v.contains("\"set\":true"),
-                () -> "na de verlaging hoort er geen setlezing meer in de boom te staan:\n" + v);
+        assertTrue(java.util.regex.Pattern.compile("\"links\":\\{\"node\":\"AttribuutRef\",\"attribuut\":\"gewicht\","
+                        + "\"objecttype\":\"Vondst\",\"bron\":\"[^\"]*\"\\}").matcher(v).find(),
+                () -> "de gekwantificeerde operand hoort als eigen lezing terug te komen, zonder binding:\n" + v);
+        assertFalse(v.substring(v.indexOf("\"toets\":"), v.lastIndexOf("\"bronRol\":")).contains("\"bronRol\""),
+                () -> "na de verlaging hoort er geen vouw over gekoppelde instanties meer in de toets te staan:\n" + v);
         assertTrue(v.contains("\"periode\":{\"node\":\"GeheelPeriode\",\"jaar\":true,\"niet\":false}"),
                 () -> "de §8.2-kwalificatie hoort op de toets te blijven staan:\n" + v);
     }
@@ -155,7 +156,8 @@ class KwantorvouwTest {
         assertFalse(v.contains("\"navigatieBindingen\""),
                 () -> "de toets wordt met het ELEMENT als subject geëmitteerd en hoort dus geen "
                         + "navigatiebindingen te dragen:\n" + v);
-        assertTrue(v.contains("\"navigatieRol\":null"), () -> "de eigen lezing navigeert niet:\n" + v);
+        assertTrue(v.contains("\"attribuut\":\"gewicht\",\"objecttype\":\"Vondst\""),
+                () -> "de eigen lezing noemt het elementtype, het onderwerp van de toets:\n" + v);
     }
 
     @Test void de_geen_van_de_schrijfwijze_wordt_de_geen_kwantor() {
@@ -254,14 +256,18 @@ class KwantorvouwTest {
             """ + ZIN.formatted("alle"));
         assertEquals(1, wf096(m).size(), () -> "een onbindbaar bereik hoort de weigering te houden: " + m.diagnostics);
         assertEquals(1, m.diagnostics.size(), () -> "en verder niets te melden: " + m.diagnostics);
-        assertFalse(emitCompact(m).contains("Kwantorvouw"),
+        // not lowered, so the set reading stays where it was written; without a binding it has no spelling
+        // either, and the emitter writes no document at all rather than a read of the Jutter's own gewicht
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> emitCompact(m),
                 "een vouw zonder bereik hoort niet op de wire te belanden");
+        assertTrue(e.getMessage().contains("het gewicht van alle vondsten van de Jutter"), e::getMessage);
     }
 
     @Test void de_geschreven_kwantor_blijft_frontend_intern() {
         // Step 1 of the lowering hangs the written quantifier on the AttribuutRef so ALLE and GEEN are
         // distinguishable downstream. It is resolver input only: the reference node has no such wire
-        // field, and a legitimate fold (a set read that KEEPS set: true) must not start writing one.
+        // field, and a legitimate fold (a set read, which the wire spells as a fold with a range) must
+        // not start writing one.
         RegelSpraakModel m = resolveer("""
             Regel maatgevend gewicht
                 geldig altijd
@@ -269,7 +275,8 @@ class KwantorvouwTest {
             """);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         String c = emitCompact(m);
-        assertTrue(c.contains("\"set\":true"), () -> "de vouwbron hoort haar setlezing te houden:\n" + c);
+        assertTrue(c.contains("\"bronRol\":{\"node\":\"RolBinding\",\"feittype\":\"vondstaanmelding\",\"rol\":\"vondst\"}"),
+                () -> "de vouw hoort haar setlezing te houden, als bereik:\n" + c);
         assertFalse(c.contains("\"kwantor\""),
                 () -> "de geschreven kwantor is frontend-intern en hoort niet op de wire te staan:\n" + c);
     }

@@ -1,6 +1,7 @@
 package io.github.yhavinga.regelspraak;
 
 import io.github.yhavinga.regelspraak.emit.IrEmitter;
+import io.github.yhavinga.regelspraak.ir.Expr;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
 import io.github.yhavinga.regelspraak.resolver.Resolver;
 import org.junit.jupiter.api.Test;
@@ -699,13 +700,18 @@ class SubtypeDialectTest {
                 () -> "de cel hoort haar gedeclareerde label te dragen:\n" + c);
     }
 
-    @Test void een_geerfd_gedimensioneerd_attribuut_gaat_gedeclareerd_de_wire_op() {
+    @Test void een_geerfd_gedimensioneerd_attribuut_draagt_de_gedeclareerde_spelling() {
         // Plek 6, and the ONLY one of the six whose failure is silent. The §5.8.5 interval fold
         // reconstructs the attribute it folds, and it took the declared spelling from the own map:
         // for an inherited attribute that lookup misses and the WRITTEN form ("Betaalde belasting",
-        // as the sentence capitalises it) goes onto the wire. Zero diagnostics, and the verifier
-        // passes it — no WF rule holds an AttribuutRef name against the declarations, so nothing
-        // downstream catches a member name that no declaration carries. The other five fail loudly.
+        // as the sentence capitalises it) went onto the wire. Zero diagnostics, and the verifier
+        // passed it — no WF rule holds an AttribuutRef name against the declarations, so nothing
+        // downstream caught a member name that no declaration carries. The other five fail loudly.
+        //
+        // Since L2 of the v1 wire migration the interval fold itself has no spelling: it names the subject
+        // as its element type and folds the subject's own attribute under SOM, and a fold over one source
+        // with an element type carries a range (IR-SPEC ch. 4.3). The emitter therefore refuses the model,
+        // and the spelling this test exists for is pinned where the fold reconstructs it, on the record.
         String src = """
             Dimensie de jaardimensie, bestaande uit de jaardimensies (na het attribuut met voorzetsel van):
                 1. vorig jaar
@@ -723,12 +729,12 @@ class SubtypeDialectTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
-        String c = emitCompact(m);
-        assertTrue(c.contains("\"attribuut\":\"betaaldebelasting\""),
-                () -> "de vouw hoort de GEDECLAREERDE spelling te dragen:\n" + c);
-        assertFalse(c.contains("\"attribuut\":\"Betaaldebelasting\""),
-                () -> "de geschreven spelling op de wire is een lidnaam die geen declaratie draagt — en "
-                        + "geen enkele WF-regel houdt een AttribuutRef-naam tegen de declaraties:\n" + c);
+        assertTrue(m.resolvedRegels.get(0).waarde() instanceof Expr.Functie f && f.dimensieSelectie() != null
+                        && f.argumenten().get(0) instanceof Expr.AttribuutRef a
+                        && a.attribuut().equals("betaalde belasting"),
+                () -> "de vouw hoort de GEDECLAREERDE spelling te dragen: " + m.resolvedRegels.get(0).waarde());
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
+        assertTrue(e.getMessage().contains("eigen attribuut van het onderwerp"), e::getMessage);
     }
 
     @Test void twee_geerfde_tijdlijnsleutels_weigeren_de_uniciteit() {
@@ -835,8 +841,11 @@ class SubtypeDialectTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         String c = emitCompact(m);
-        assertTrue(c.contains("\"filter\":{\"node\":\"Kenmerk\",\"kenmerk\":\"gestremd\",\"navigatie\":\"vaartocht\""),
+        assertTrue(c.contains("\"filter\":{\"node\":\"Kenmerk\",\"kenmerk\":\"gestremd\","),
                 () -> "de genavigeerde klem hoort te binden op het geërfde tijdlijnkenmerk:\n" + c);
+        assertTrue(c.contains("\"navigatieBinding\":{\"node\":\"RolBinding\",\"feittype\":\"reisdeelname\","
+                        + "\"rol\":\"vaartocht\"}"),
+                () -> "de kenmerkcheck navigeert via haar binding:\n" + c);
     }
 
     @Test void een_setlezing_over_een_geerfde_tijdlijn_blijft_de_tijdvouw() {
@@ -881,7 +890,7 @@ class SubtypeDialectTest {
         // upper-bound filler test would wave that through (Wrakrecht ⊑ Strandrecht) and the fold would go
         // out bound to a relation the sentence never named: verifier-clean, and quietly folding the wrong
         // set. The binding therefore demands the role declare the element type ITSELF, and where it does
-        // not the fold stays bindingless — WF-048 then refuses it loudly, which is the outcome to want.
+        // not there is no range to write — so the emitter refuses the model, which is the outcome to want.
         String src = """
             Objecttype het Strandrecht (mv: Strandrechten)
                 de uitkering Numeriek (niet-negatief getal met 2 decimalen);
@@ -908,11 +917,8 @@ class SubtypeDialectTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
-        String c = emitCompact(m);
-        assertFalse(c.contains("\"feittype\":\"strandbeheer\""),
-                () -> "de vouwbron bindt op een relatie die de zin niet noemt — stil de verkeerde verzameling:\n" + c);
-        assertFalse(c.contains("\"bronRol\""),
-                () -> "zonder een rol die het elementtype ZELF draagt hoort de vouwbron bindingloos te blijven, "
-                        + "zodat WF-048 haar luid weigert:\n" + c);
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m),
+                "de vouwbron mag niet binden op een relatie die de zin niet noemt — stil de verkeerde verzameling");
+        assertTrue(e.getMessage().contains("geen unieke relatie van Kustgemeente naar Wrakrecht"), e::getMessage);
     }
 }
