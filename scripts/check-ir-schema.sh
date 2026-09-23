@@ -337,6 +337,9 @@ def _l2_base():
         "attributes": [{"node": "Attribute", "name": "gewicht", "datatype": dict(num)}],
         "characteristics": [{"node": "Characteristic", "name": "aangespoeld",
                              "kind": "BIJVOEGLIJK"}]})
+    d["model"]["objectTypes"].append({
+        "node": "ObjectType", "name": "Muntvondst", "supertype": "Vondst", "animate": False,
+        "attributes": [], "characteristics": []})
     d["model"]["factTypes"].append({
         "node": "Feittype", "naam": "vondstregistratie", "wederkerig": False,
         "rollen": [{"node": "Rol", "naam": "vinder", "objecttypeNaam": "Jutter",
@@ -414,6 +417,12 @@ L2_SHAPE_ROWS = [
      "the L2 shape itself: ranges written, one RoleMembership, a typeless reference layer"),
     ("RoleMembership without factType", lambda d: _part(d, 0).pop("factType"), False,
      "B9, D11: the check names the fact type it reads, and nothing derives it"),
+    ("RoleMembership with counterpartType",
+     lambda d: _part(d, 0).update(counterpartType="Muntvondst"), True,
+     "U12: the other role's filler narrowed to a subtype of its declared filler type (the "
+     "verifier crosses the subtype)"),
+    ("RoleMembership carries an unknown key", lambda d: _part(d, 0).update(filler="Muntvondst"),
+     False, "B9, U12: the closed node admits counterpartType and nothing else beside its fields"),
     ("the L1 near-side role check where the role check stands",
      lambda d: _rule(d, 0)["voorwaarde"]["onderdelen"].__setitem__(0, {
          "node": "Rollidmaatschap", "rol": "vinder", "anderTeFiller": "Vondst",

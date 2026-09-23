@@ -2291,6 +2291,9 @@
         "role": {
           "type": "string"
         },
+        "counterpartType": {
+          "type": "string"
+        },
         "negated": {
           "type": "boolean"
         },
@@ -2301,7 +2304,7 @@
           ]
         }
       },
-      "description": "The role check (IR-SPEC ch. 4.5): true iff a link of the declared fact type 'factType' exists in which the subject fills 'role', named by its declared name; 'negated': no such link exists. One node for both directions of the check (B9, D11); its key order is this 'properties' order."
+      "description": "The role check (IR-SPEC ch. 4.5): true iff a link of the declared fact type 'factType' exists in which the subject fills 'role', named by its declared name, and whose other role is filled by an instance of 'counterpartType'; 'negated': no such link exists. 'counterpartType' is optional: absent, the other role's declared filler type is meant; present, it names a strict subtype of that type (U12). One node for both directions of the check (B9, D11); its key order is this 'properties' order."
     },
     "Periode": {
       "type": "object",
