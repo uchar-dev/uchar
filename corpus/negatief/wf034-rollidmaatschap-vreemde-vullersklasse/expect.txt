@@ -1,0 +1,1 @@
+is no subtype of 'Jutter', the filler of the other role 'wachtjutter' of fact type 'wachtindeling'

@@ -5954,7 +5954,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
                             ^ filler bound ^ "'") ]
                      | _ -> [])
                  | None -> []))
-  | Role_membership { fact_type; role; _ } -> (
+  | Role_membership { fact_type; role; counterpart_type; _ } -> (
       (* WF-034, the role check (D11; IR-SPEC ch. 4.6, the v1 role arm): the
          node names the relation and the role, so the whole of the reference
          is the pair, crossed against the declarations — the fact type is
@@ -5967,7 +5967,16 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
          question in this file: an instance of the subject type fills a role
          declared at any of its supertypes (ch. 2.6). A subject-less position
          (a day-kind condition) crosses the declarations only; WF-031 refuses
-         it for reading role state at all. *)
+         it for reading role state at all.
+
+         The counterpart class (U12): where the node narrows the other end
+         of the link to [counterpart_type], that type is a declared object
+         type ⊑ the declared filler of the other role — the narrowing a
+         check such as "hij heeft een strandjutter" writes, where the role's
+         filler is the supertype. A type outside that filler's chain names
+         instances the relation can never hold at that end, so the check
+         would ask for nothing, the same mistake one field further. A
+         reciprocal fact type has one role, bound and opposite at once. *)
       match find_ci ctx.doc.feittypen fact_type with
       | None ->
           [ v "WF-034" (sub "factType")
@@ -5983,7 +5992,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
                   ("'" ^ role ^ "' is not a declared role of fact type '" ^ fact_type
                  ^ "' (a role check names the role by its declared name)") ]
           | [ r ] -> (
-              match subject with
+              (match subject with
               | Some st when not (fills ctx ~inst:st ~role:r) ->
                   [ v "WF-034" (sub "role")
                       (Printf.sprintf
@@ -5992,6 +6001,36 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
                          st role fact_type
                          (Option.value r.rol_objecttype_naam ~default:"?")) ]
               | _ -> [])
+              @
+              match counterpart_type with
+              | None -> []
+              | Some ct -> (
+                  let other =
+                    match List.filter (fun x -> x != r) ft.rollen with
+                    | [ o ] -> Some o
+                    | [] -> Some r (* the reciprocal role is its own other end *)
+                    | _ -> None
+                  in
+                  match (objecttype ctx ct, other) with
+                  | None, _ ->
+                      [ v "WF-034" (sub "counterpartType")
+                          ("role check's counterpart type '" ^ ct
+                         ^ "' is not a declared object type: the check resolves against no \
+                            declaration") ]
+                  | Some _, Some (o : rol)
+                    when not
+                           (is_sub ctx ~sub:ct
+                              ~super:(Option.value o.rol_objecttype_naam ~default:"")) ->
+                      [ v "WF-034" (sub "counterpartType")
+                          (Printf.sprintf
+                             "the counterpart type '%s' is no subtype of '%s', the filler of the \
+                              other role '%s' of fact type '%s': the check names a link whose \
+                              other end can never be one"
+                             ct
+                             (Option.value o.rol_objecttype_naam ~default:"?")
+                             (Option.value o.rol_naam ~default:"?")
+                             fact_type) ]
+                  | _ -> []))
           | _ ->
               [ v "WF-034" (sub "role")
                   ("role name '" ^ role ^ "' is ambiguous within fact type '" ^ fact_type ^ "'")

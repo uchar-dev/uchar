@@ -71,7 +71,7 @@ EXPECTED_MIN_NEGATIEF=350   # 2026-09-10: measured 350 (corpus/negatief/**/ir.js
 # expect.txt takes the arm pin of a rewritten witness with it, and its directory keeps passing on
 # the rule number alone. Measured at the L2 landing: every rewritten or replaced witness of the
 # reference layer carries one.
-EXPECTED_MIN_EXPECT=83      # 2026-09-24: measured 83 (corpus/negatief/*/expect.txt)
+EXPECTED_MIN_EXPECT=84      # 2026-09-24: measured 84 (corpus/negatief/*/expect.txt)
 
 # check 2: golden dumps — and the red corpus's documents, whose faults
 # are behavioural, never well-formedness — are verifier-clean.

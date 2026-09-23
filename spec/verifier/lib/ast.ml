@@ -317,10 +317,16 @@ and conditie =
     }
   (* The role check (IR-SPEC ch. 4.5, B9): true iff a link of the declared
      fact type [fact_type] exists in which the subject fills [role], named
-     by its declared name; [negated]: no such link exists. *)
+     by its declared name, and whose other end is an instance of
+     [counterpart_type] where that is written; [negated]: no such link
+     exists. *)
   | Role_membership of {
       fact_type : string;
       role : string;
+      counterpart_type : string option;
+          (* the object type the filler of the OTHER role of [fact_type]
+             must belong to, ⊑ that role's declared filler; absent = the
+             declared filler itself (U12) *)
       negated : bool;
       bron : string option;
     }

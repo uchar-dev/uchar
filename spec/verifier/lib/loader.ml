@@ -761,11 +761,14 @@ and conditie path j : conditie =
           navigatie_binding = ext_field path kvs "navigatieBinding" rol_binding;
         }
   | "RoleMembership" ->
-      check_keys path kvs [ "node"; "factType"; "role"; "negated"; "bron" ];
+      check_keys path kvs ~ext:[ "counterpartType" ] [ "node"; "factType"; "role"; "negated"; "bron" ];
       Role_membership
         {
           fact_type = str (path / "factType") (f "factType");
           role = str (path / "role") (f "role");
+          (* written only where it narrows the other end (U12): absent is the
+             declared filler, and a null is a load error *)
+          counterpart_type = ext_field path kvs "counterpartType" str;
           negated = bool_ (path / "negated") (f "negated");
           bron = bron ();
         }
