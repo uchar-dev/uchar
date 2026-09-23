@@ -245,7 +245,6 @@ EXPECTED_CHANNEL=(
   "jutterswet-penningbeschikking-catala|EXCLUDE|loader Refusal: Datatype:SumType"
   "jutterswet-penningstaffel-catala|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-postenheffing|EXCLUDE|loader Refusal: Datatype:ListType"
-  "jutterswet-seinjaar|EXCLUDE|transpiler SKIP: feitcreatie — voorwaarde niet naar anker of doel te lowereren, gehele-periodekwalificatie: alleen de anker is gebonden (WF-109). The anker attempt looks the time-dependent characteristic up by exact spelling and declines on 'Gehesen' against a declared 'gehesen'; under the qualifier the doel is not a bound object, so the doel attempt is refused rather than read. Until card drl-periode-zink (2026-09-23) this branch read the DOEL and answered 1 where ref and clingo pin 2 / 0 / 2. The pin goes stale by name the day the anker lookup folds case"
   "jutterswet-seizoenvondst|NOCASE|a golden with no case file — nothing to replay"
   "jutterswet-vaarwaterspelling|EXCLUDE|loader Refusal: Expr:Match"
   "jutterswet-vaarwatertoeslag-catala|EXCLUDE|loader Refusal: Expr:Match"
@@ -798,7 +797,16 @@ EXPECTED_CHANNEL=(
 # it. That backend now carries the leeg test and both negations, so the fixture moved to the corpus.
 # No source file of this backend changed; its LeegNegatieWitnessTest now reads the golden instead of
 # a resource copy.
-EXPECTED_PLAYED=181
+# 181 -> 182 (2026-09-23, card drools-temporele-naamnorm): jutterswet-seinjaar, which card
+# drl-periode-zink added as a named refusal and whose NOTE said it would go stale here. Both branches
+# asked "is this member temporal?" by EXACT spelling at 72 sites (22 kenmerk, 50 attribute) and read
+# the granularity and the period count the same way, where the verifier, ref and clingo compare
+# declared names under Checks.norm. The guard's `Gehesen` therefore missed the anker's declared
+# `gehesen`, the anker attempt declined and the doel attempt was refused. Every one of those lookups
+# now goes through Namen.bevatNaam / Namen.opNaam; the anker attempt lowers and both branches play
+# 2 / 0 / 2, ref's and clingo's pins. Measured over every golden in both branches before and after:
+# only this golden moved. EXPECTED_DRL_PLAYED moves by one as well.
+EXPECTED_PLAYED=182
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -892,8 +900,9 @@ DRL_CHANNEL=(
   "synth3-standtarief|EXCLUDE|loader Refusal: Datatype:SumType"
   "synth3-vangstsom|EXCLUDE|loader Refusal: Datatype:ListType"
   "synth3-vondststaat|EXCLUDE|loader Refusal: Datatype:StructType"
-  # (C) DrlTranspiler MARKERs — 11, this branch's own per-form refusals, each naming the rule it
-  # could not lower. 12 -> 10 (2026-09-23, card drl-creatie-koppelloos): the two objectcreatie
+  # (C) DrlTranspiler MARKERs — 10, this branch's own per-form refusals, each naming the rule it
+  # could not lower. 11 -> 10 (2026-09-23, card drools-temporele-naamnorm): jutterswet-seinjaar
+  # plays, see EXPECTED_DRL_PLAYED. 12 -> 10 (2026-09-23, card drl-creatie-koppelloos): the two objectcreatie
   # markers are gone, see EXPECTED_DRL_PLAYED. 10 -> 11 the same day (card
   # tijdvenster-conditie-normeren): jutterswet-pachtvenster, the ch. 3.10 clip on a temporal target,
   # a NEW golden refused in both branches by name, so neither played count moves.
@@ -906,8 +915,8 @@ DRL_CHANNEL=(
   # datum-setbron-breuk): jutterswet-vondstbereik, the
   # MINIMUM/MAXIMUM fold over a DATE set source, which this branch used to emit as DRL text that did
   # not compile — a whole-file refusal naming no form — and now markers by name out of the shared
-  # reason. TEN of the eleven are goldens the exec branch refuses too, on its own wording of the
-  # same limit (the many-to-many bean field, the qualified creation guard's doel attempt, the
+  # reason. NINE of the ten are goldens the exec branch refuses too, on its own wording of the
+  # same limit (the many-to-many bean field, the
   # consistency rule, the EERSTE fold over a set, the date-valued value fold, the §8.4.3 clip on a
   # temporal target, and the out-of-scope condition — jutterswet-klipwacht, shared, not split).
   # ONE is this branch alone, and the exec branch PLAYS it:
@@ -922,7 +931,6 @@ DRL_CHANNEL=(
   "jutterswet-klipwacht|EXCLUDE|MARKER regel: TODO voorwaarde — the gedurende clip as a composite member"
   "jutterswet-muntketen|EXCLUDE|MARKER regel: bronPad step Boot -> Munt has no bean field — the same many-to-many middle relation"
   "jutterswet-pachtvenster|EXCLUDE|MARKER regel: TODO periodevergelijking op een tijdsafhankelijk doel (§8.4.3) — the ch. 3.10 clip, built in ref and clingo since 2026-09-23; shared with the exec branch, each in its own words"
-  "jutterswet-seinjaar|EXCLUDE|MARKER feitcreatie: voorwaarde niet naar anker of doel te lowereren — gehele-periodekwalificatie: alleen de anker is gebonden (WF-109). Shared with the exec branch, one sentence (kern.Gastheer). Until card drl-periode-zink (2026-09-23) this branch PLAYED the golden by accident: its whole-period lowering reads the subject variable, which inside the doel pattern is the anker, and the anker carries a same-named timeline of the same type — on any other anker the same lowering failed the whole package at compile"
   "jutterswet-vondstbereik|EXCLUDE|MARKER regel: the MINIMUM/MAXIMUM fold over a DATE set source — the shared member-type reason, word for word the exec branch's (card datum-setbron-breuk, 2026-09-20). Its EERSTE/LAATSTE twin sits one line below and is refused one arm earlier, on the fold KIND rather than on the member type"
   "jutterswet-vondstvenster|EXCLUDE|MARKER regel: TODO aggregatie EERSTE over a set source"
   "jutterswet-vouwrand|EXCLUDE|MARKER regel: TODO voorwaarde — a conjunction of comparisons"
@@ -1012,7 +1020,10 @@ DRL_CHANNEL=(
 # other document are byte-identical.
 # 159 -> 160 (2026-09-23, card clingo-leeg-negatie): jutterswet-waardemelding. The loader's lowering
 # serves both branches. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=160
+# 160 -> 161 (2026-09-23, card drools-temporele-naamnorm): jutterswet-seinjaar. The temporal lookups
+# this branch shares the name contract for are the same; its anker attempt now lowers the guard, and
+# the MARKER the golden stood on in class (C) is gone. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=161
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a

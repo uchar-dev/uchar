@@ -45,10 +45,11 @@ count of its `seinen`: **2** in every case.
 ## What it pins in the Drools backend
 
 Both branches try a creation guard on the anker first and, when that declines,
-on the doel. Both anker attempts look the time-dependent characteristic up by
-its exact spelling, so `Gehesen` declines on a Kustvak that declares
-`gehesen`. The doel declares `Gehesen` itself, so the doel attempt went ahead
-with a guard that is not about the doel. Measured 2026-09-23 before the change:
+on the doel. Until card `drools-temporele-naamnorm` (2026-09-23) both anker
+attempts looked the time-dependent characteristic up by its exact spelling, so
+`Gehesen` declined on a Kustvak that declares `gehesen`. The doel declares
+`Gehesen` itself, so the doel attempt went ahead with a guard that is not about
+the doel. Measured 2026-09-23 before card `drl-periode-zink`:
 
     exec      : FAIL — vakseinaantal 1 in all three cases, the DOEL reading
     drl-tekst : PLAYED 3 — by accident: the whole-period lowering is wired to
@@ -64,7 +65,8 @@ the doel is not a bound object:
     voorwaarde niet naar anker of doel te lowereren — gehele-periodekwalificatie:
     alleen de anker is gebonden (WF-109)
 
-Gate 12 lists this golden by name in both non-player lists. **The pin is expected
-to go stale.** When the anker attempt looks names up case-insensitively, as
-the other readers do, the guard lowers on the anker, both branches play 2 / 0 / 2,
-and gate 12 fails on the stale entry by name.
+Gate 12 listed this golden by name in both non-player lists until card
+`drools-temporele-naamnorm`. That card routes every temporal lookup of both
+branches through the same name comparison the other readers use, so the anker
+attempt finds `gehesen` and lowers the guard. Both branches now play 2 / 0 / 2,
+and the golden counts as a player in both.
