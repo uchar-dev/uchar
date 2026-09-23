@@ -165,6 +165,95 @@ class RegelgroepUitzonderingTest {
         assertTrue(m.prioritizedDefaults.isEmpty(), () -> "een geweigerd blok hoort ongelift te blijven: " + m.prioritizedDefaults);
     }
 
+    // -------------------------------------------------------------------- a decision table in the group
+
+    /** A group whose member is a decision table: the table is no rule, its ROWS are ("Bergingspremie 1", …).
+     *  A Parameter ends the group, so only the membership arm can see the block below. */
+    private static final String GEGROEPEERDE_TABEL = """
+        Objecttype de Jutter (mv: Jutters) (bezield)
+            het aantal geborgen wrakken Numeriek (niet-negatief geheel getal);
+            de bergingspremie Numeriek (niet-negatief geheel getal);
+            is noodweer verklaard kenmerk (bijvoeglijk);
+
+        Regelgroep berging
+        Beslistabel Bergingspremie
+            geldig altijd
+        | | de bergingspremie van een Jutter moet gesteld worden op | indien zijn aantal geborgen wrakken groter is dan |
+        |---|---|---|
+        | 1 | 10 | 5 |
+        | 2 | 20 | 10 |
+
+        Parameter de noodweerdrempel : Numeriek (geheel getal)
+
+        """;
+
+    private static String uitzonderingOp(String basis) {
+        return """
+            Uitzondering op %s: bergingspremie bij noodweer
+                geldig altijd
+                    De bergingspremie van een Jutter moet gesteld worden op 50
+                    indien hij noodweer verklaard is.
+            """.formatted(basis);
+    }
+
+    @Test void een_rij_van_een_gegroepeerde_beslistabel_als_basis_weigert() {
+        // Measured on 52fbbdb7: written with diagnostics: [], then WF-033 and WF-050 at the verifier — the arm
+        // keyed on the table's name, and the base is a row.
+        String src = GEGROEPEERDE_TABEL + uitzonderingOp("Bergingspremie 1");
+        RegelSpraakModel m = Resolver.resolve(src);
+        Diagnostic d = enigeFout(m);
+        assertEquals(regelVan(src, "Uitzondering op"), d.line(), () -> "de melding hoort op de kop van het blok: " + d);
+        assertTrue(d.message().contains(
+                        "'Bergingspremie 1' is een rij van beslistabel 'Bergingspremie', lid van regelgroep 'berging'"),
+                d.message());
+        assertTrue(m.prioritizedDefaults.isEmpty(), "een geweigerd blok hoort ongelift te blijven");
+    }
+
+    @Test void de_tabelnaam_als_basis_krijgt_de_juistere_melding() {
+        // The table's name names no rule, so no lift can happen: the ordinary "no base rule" refusal is the
+        // true one, and the group refusal must not speak in its place.
+        String src = GEGROEPEERDE_TABEL + uitzonderingOp("Bergingspremie");
+        RegelSpraakModel m = Resolver.resolve(src);
+        Diagnostic d = enigeFout(m);
+        assertTrue(d.message().contains("geen basisregel met die naam gevonden"), d.message());
+        assertFalse(d.message().contains("regelgroep"), d.message());
+    }
+
+    @Test void een_objectcreatie_in_de_groep_als_basis_krijgt_de_juistere_melding() {
+        // A member that is no plain rule cannot be lifted, so the membership arm has no lift to speak of: the
+        // lowering's "no base rule" refusal, which names the construct, is the true one.
+        String src = """
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                is noodweer verklaard kenmerk (bijvoeglijk);
+
+            Objecttype de Vondst (mv: Vondsten)
+                is gewogen kenmerk (bijvoeglijk);
+
+            Feittype vondstaanmelding
+                de aanmelder Jutter
+                de vondst (mv: vondsten) Vondst
+            Eén aanmelder heeft meerdere vondsten
+
+            Regelgroep berging
+            Regel maak een vondst
+                geldig altijd
+                    Een Jutter heeft een vondst met gewogen gelijk aan waar
+                    indien hij noodweer verklaard is.
+
+            Parameter de noodweerdrempel : Numeriek (geheel getal)
+
+            Uitzondering op maak een vondst: noodweer
+                geldig altijd
+                    Een Jutter is noodweer verklaard
+                    indien hij noodweer verklaard is.
+            """;
+        RegelSpraakModel m = Resolver.resolve(src);
+        Diagnostic d = enigeFout(m);
+        assertTrue(d.message().contains("geen basisregel met die naam gevonden")
+                && d.message().contains("objectcreatie"), d.message());
+        assertFalse(d.message().contains("regelgroep"), d.message());
+    }
+
     // -------------------------------------------------------------------- what stays clean
 
     @Test void blok_voor_de_groepskop_blijft_schoon() {

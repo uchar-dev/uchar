@@ -219,8 +219,13 @@ block's own head, citing §9.10 and this section, with two arms:
 - **membership** — the block's base rule is a group member, wherever the
   block stands. A definition that ends the group does not help: the lift
   would still take the member out of the rule forms, and the group would
-  name nothing (WF-033). A later head that names a base of its own has to
-  join this arm by name.
+  name nothing (WF-033). A decision table in the group stands for the rules
+  of its rows ("Bergingspremie 1", …), which is what a block names as its
+  base; the table's own name names no rule. The arm speaks only where the
+  lift would happen: a base that resolves to no plain rule — a table's own
+  name, an object creation — gets the lowering's "no base rule" refusal,
+  which names the construct (fix round 2, 2026-09-23). A later head that
+  names a base of its own has to join this arm by name.
 
 A block for which both hold gets one diagnostic naming both reasons, and a
 refused block stays un-lifted together with its whole base family, as the

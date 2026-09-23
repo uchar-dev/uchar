@@ -57,6 +57,10 @@ final class RuleChecker {
      *  {@code Bron:}, in source order), set at the start of {@link #regelVersies} and carried onto every
      *  {@link ResolvedRegel} version it produces. Empty when the rule carried none. */
     private List<String> huidigeBronAnnotaties = List.of();
+    /** The names of the rules each §12 decision table desugared to, one per row, recorded by
+     *  {@link #beslistabellen}. A table has no rule form of its own — its rows are the rules — so a reader that
+     *  asks which rules a table stands for asks here. */
+    private final Map<BeslistabelContext, List<String>> rijRegels = new java.util.IdentityHashMap<>();
 
     /** The main parse's token stream, kept so the §Bron statuutannotaties on the HIDDEN channel
      *  (the {@code // Bron: …} comments) can be gathered directly above each rule. Null when the
@@ -219,12 +223,17 @@ final class RuleChecker {
      *  A refused block stays un-lifted together with its whole base family, as every other refusal of this pass
      *  leaves it. */
     private java.util.Set<ParserRuleContext> regelgroepReikwijdte(RegelSpraakDocumentContext doc) {
-        Map<String, String> groepVanLid = new LinkedHashMap<>();
+        // Keyed on RULE names: a decision-table member stands for the rules of its rows, which is what a block
+        // names as its base ("Bergingspremie 1"); the table's own name names no rule at all.
+        Map<String, Lidmaatschap> groepVanLid = new LinkedHashMap<>();
         for (RegelGroepContext g : doc.regelGroep())
             for (GroepLidContext lid : g.groepLid()) {
-                String naam = lid.regel() != null ? src(lid.regel().regelNaam())
-                        : lid.beslistabel() != null ? src(lid.beslistabel().beslistabelNaam()) : null;
-                if (naam != null) groepVanLid.putIfAbsent(naam, src(g.kaleNaam()));
+                if (lid.regel() != null)
+                    groepVanLid.putIfAbsent(src(lid.regel().regelNaam()), new Lidmaatschap(src(g.kaleNaam()), null));
+                else if (lid.beslistabel() != null)
+                    for (String rij : rijRegels.getOrDefault(lid.beslistabel(), List.of()))
+                        groepVanLid.putIfAbsent(rij, new Lidmaatschap(src(g.kaleNaam()),
+                                src(lid.beslistabel().beslistabelNaam())));
             }
         java.util.Set<ParserRuleContext> geweigerd =
                 java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
@@ -242,12 +251,15 @@ final class RuleChecker {
                 }
                 if (kind instanceof UitzonderingRegelContext u) {
                     String basis = src(u.uitzonderingBasisNaam());
-                    String g = groepVanLid.get(basis);
-                    if (g != null) {
-                        if (groep == null) groep = g;
-                        redenen.add("zijn basisregel '" + basis + "' is lid van regelgroep '" + g + "', en het liften "
-                                + "naar een defaults-groep zou dat lid uit de regelvormen halen, zodat de groep naar "
-                                + "niets meer verwijst (WF-033)");
+                    Lidmaatschap l = groepVanLid.get(basis);
+                    // Only where the lift would happen: a base that resolves to no rule gets the ordinary "no base
+                    // rule" refusal of the lowering, which is the true one there.
+                    if (l != null && !resolvedVan(basis).isEmpty()) {
+                        if (groep == null) groep = l.groep();
+                        redenen.add("zijn basisregel '" + basis + "' is "
+                                + (l.tabel() == null ? "lid" : "een rij van beslistabel '" + l.tabel() + "', lid")
+                                + " van regelgroep '" + l.groep() + "', en het liften naar een defaults-groep zou dat "
+                                + "lid uit de regelvormen halen, zodat de groep naar niets meer verwijst (WF-033)");
                     }
                 }
                 if (!redenen.isEmpty()) {
@@ -267,6 +279,10 @@ final class RuleChecker {
         }
         return geweigerd;
     }
+
+    /** A rule's place in a Regelgroep: the group, and the decision table it is a row of (null for a plain
+     *  rule member). */
+    private record Lidmaatschap(String groep, String tabel) {}
 
     /** The head a refusal names an extension block by, in the spelling the other §4 refusals use. */
     private static String blokKop(ParserRuleContext blok) {
@@ -796,6 +812,8 @@ final class RuleChecker {
                 List<String> cellen = splitRij(rij.getText());
                 if (!isScheidingsRij(cellen)) grid.add(cellen);
             }
+            List<String> rijen = new ArrayList<>();
+            rijRegels.put(b, rijen);
             if (grid.size() < 2) { // need a header row + ≥1 data row to produce anything
                 model.diagnostics.add(new Diagnostic(Severity.WARNING,
                         "beslistabel '" + naam + "' heeft geen tabelinhoud (alleen een kop) — wordt niet naar IR/DRL omgezet",
@@ -817,9 +835,10 @@ final class RuleChecker {
             List<String> tabelAnnotaties = bronAnnotaties(b);
             for (String regelSrc : BeslistabelDesugar.desugar(naam, geldig, headers, data, waarschuw)) {
                 RegelContext rc = parseRegel(regelSrc, line);
-                if (rc != null)
-                    regelVersies(DefinitionResolver.src(rc.regelNaam()), rc.regelVersie(), tabelAnnotaties,
-                            rc.getStart().getLine());
+                if (rc == null) continue;
+                rijen.add(DefinitionResolver.src(rc.regelNaam()));
+                regelVersies(DefinitionResolver.src(rc.regelNaam()), rc.regelVersie(), tabelAnnotaties,
+                        rc.getStart().getLine());
             }
         }
     }
