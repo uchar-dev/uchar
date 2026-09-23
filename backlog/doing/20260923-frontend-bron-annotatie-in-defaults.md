@@ -37,3 +37,24 @@ heruitzending), kaartverplaatsing.
 
 Niet in deze kaart: annotaties op andere geliftende vormen dan de
 defaults-extensie.
+
+## Claim (2026-09-23) — aangescherpte acceptatie
+
+Branch `card/frontend-trio` (tweede van drie), na
+`frontend-regelgroep-sluit-bij-uitzondering`.
+
+1. M6 reproduceren: twee geannoteerde blokken, geen annotatietekst in de
+   IR, verifier PASS.
+2. Plaatsing: de annotatie van een gelifte regel in `Default.bron` van de
+   default die eruit ontstaat; die van de basis bovendien of alleen in
+   `PrioritizedDefaults.bron` — kiezen en motiveren langs de handankers
+   (`anchor/ww-herleving-inkomen` en de andere defaults-ankers); bij
+   nesting op de default in de `ExceptionGroup`. Geen nieuwe wire-velden;
+   de `Regel`-stub in `regels` houdt zijn eigen `bron` zoals nu.
+3. Rood-eerst JUnit-getuige met het M6-document: beide annotatieteksten op
+   de verwachte plaats in de IR; mutatieproef met cmp-herstel.
+4. De drie extensie-goldens dragen geen annotaties (gemeten): zij blijven
+   byte-identiek, geen heruitzending, gates 5/6/12 bewegen niet.
+5. `DIVERGENCES.md` §4 beschrijft de plaats.
+6. Gate 10 byte-identiek (70 rgs-goldens), alle veertien gates groen, elk
+   als losse aanroep.
