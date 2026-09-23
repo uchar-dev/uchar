@@ -4820,13 +4820,16 @@ public final class DrlTranspiler {
         }
         if (c instanceof Conditie.Samengesteld s) {
             // §8.4.3 a window under GEEN or a counting quantifier (ten minste/ten hoogste/precies), at any depth:
-            // WF-112's composite arm, since 2026-09-23 — the quantifier would complement or count the window's
-            // verdict and no reading of that is specified. Refused by name, in the sentence both branches share
-            // (kern.Vensterpositie), because not every document goes through the verifier. ALLE/DE conjunctions (the
-            // spec's own §8.4.3 example) lower normally below.
-            if (s.kwantor() != Conditie.Kwantor.ALLE && s.kwantor() != Conditie.Kwantor.DE
-                    && s.onderdelen().stream().anyMatch(Conditie::bevatPeriode))
-                return LoweredConditie.marker(Vensterpositie.weigering(s), s.bron());
+            // WF-112, since 2026-09-23 — the quantifier would complement or count the window's verdict and no
+            // reading of that is specified. Refused by name, in the sentence both branches share
+            // (kern.Vensterpositie), because not every document goes through the verifier. Asked of EVERY
+            // composite, the conjunctions included: an ALLE or DE composite puts its own generic marker over a
+            // member that refused, so a WF-112 position nested in one (a GEEN fold or composite member, a GEEN
+            // composite in an aggregation filter) lost its name here — measured 2026-09-23, where the exec
+            // branch named it. A conjunction without such a position lowers normally below (the spec's own
+            // §8.4.3 example).
+            String vensterWeigering = Vensterpositie.weigering(s);
+            if (vensterWeigering != null) return LoweredConditie.marker(vensterWeigering, s.bron());
             // §13.4.14.4 a SINGLE aggregation bullet under GEEN / "ten minste 1": the quantifier reduces to a plain
             // boolean transform of the one leaf (GEEN = NOT the leaf; ten minste 1 = the leaf), so route it through the
             // aggregation lowering with a boolean-NEGATION flag for GEEN. Negating the rsAggVergelijk RESULT (not the

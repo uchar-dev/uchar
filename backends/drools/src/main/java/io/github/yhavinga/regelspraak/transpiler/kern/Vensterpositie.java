@@ -15,9 +15,11 @@ import io.github.yhavinga.regelspraak.ir.Expr;
  * for every subject, the complement reading nothing specifies. So each branch refuses the position itself,
  * and both give the sentence built here.
  *
- * <p>The walk is the verifier's: every composite and every fold is judged by its OWN quantifier over
- * everything beneath it, so a GEEN composite inside an ALLE fold's toets is caught on the composite. No
- * other condition node holds a condition, so the descent needs no other arm.
+ * <p>The walk is the verifier's: every composite and every fold is judged by its OWN quantifier over the
+ * conditions beneath it, so a GEEN composite inside an ALLE fold's toets is caught on the composite. A window
+ * counts only where it is a condition, never inside an operand (the verifier's position test does not enter
+ * expressions either). The walk DOES go on into operands to find further positions: a composite in the
+ * die/dat filter of an aggregation is a position of its own.
  */
 public final class Vensterpositie {
     private Vensterpositie() {}
@@ -39,6 +41,11 @@ public final class Vensterpositie {
             String w = weigering(kv.filter());
             return w != null ? w : weigering(kv.toets());
         }
+        if (c instanceof Conditie.Vergelijking v) {
+            String w = inExpressie(v.links());
+            return w != null ? w : inExpressie(v.rechts());
+        }
+        if (c instanceof Conditie.Predicaat p) return inExpressie(p.operand());
         return null;
     }
 
