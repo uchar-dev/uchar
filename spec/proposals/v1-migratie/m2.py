@@ -25,6 +25,11 @@ and of a quantifier fold and inside a union selection's filter; no subject in a
 day-kind condition or a function body. Each derivation names the function it
 mirrors. Zero or several candidates fail the document; nothing is chosen.
 
+One written name is rewritten (U11 of the card): the count source of an AANTAL with a
+range names the bound role, by declared name or declared plural (D8 (ii), WF-047).
+Where it names neither that role nor a member of the element type, the declared name
+of the bound role is written in its place; the written spelling stays in `bron`.
+
 Loud by construction: an L1 value the L2 shape cannot carry fails the document with
 its file name and the JSON pointer into the L1 input; nothing is repaired. A failing
 document is left untouched. A document already in the L2 shape is left untouched as
@@ -66,7 +71,7 @@ DERIVED_TYPE_NODES = ('Binair', 'Functie', 'Afgerond', 'Begrensd')
 
 COUNT_NAMES = ('vouwbindingen', 'kwantorbindingen', 'verdelingsrollen', 'navigatiebindingen',
                'eigen lezingen', 'rollidmaatschappen', 'scopes', 'kenmerkhops', 'referentietypes',
-               'sentinels', 'onopgelost-typen', 'afgeleide typen null')
+               'sentinels', 'onopgelost-typen', 'afgeleide typen null', 'telbronnamen')
 
 _ASCII_LOWER = {c: c + 32 for c in range(ord('A'), ord('Z') + 1)}
 
@@ -243,6 +248,27 @@ class Model:
             if self.fills(subject, b) and self.denotes(b, backref) and self.fills(filler, a):
                 out.append((fn, b, a))
         return out
+
+    # checks.ml resolve_binding: the bound role; only the declared role name binds
+    def bound_role(self, rb):
+        if not isinstance(rb, dict) or not isinstance(rb.get('feittype'), str) \
+                or not isinstance(rb.get('rol'), str):
+            return None
+        for fn, ft in self.feittypen:
+            if norm(fn) == norm(rb['feittype']):
+                hits = [r for r in ft.get('rollen') or [] if isinstance(r, dict)
+                        and isinstance(r.get('naam'), str) and norm(r['naam']) == norm(rb['rol'])]
+                return hits[0] if len(hits) == 1 else None
+        return None
+
+    # a member of [otype] as checks.ml's effective object type holds it: own and inherited
+    def is_member(self, otype, name):
+        ot = self.declared(otype)
+        return ot is not None and any(
+            isinstance(m.get('name'), str) and norm(m['name']) == norm(name)
+            for t in self.chain_from(ot)
+            for m in (t.get('attributes') or []) + (t.get('characteristics') or [])
+            if isinstance(m, dict))
 
     # checks.ml self_denoting_role
     def self_denoting_role(self, otype, name):
@@ -596,10 +622,30 @@ class Migration:
                           'one argument, kind %s), and its argument is no instance source '
                           'checks.ml derives one for: adding one would make the argument a set '
                           'source (D8 (i)), not translate it' % json.dumps(v.get('kind')))
+        if v.get('kind') == 'AANTAL' and single and is_node(args[0], 'AttribuutRef'):
+            self.count_source_name(v, args[0], el)
         # the die/dat subselection reads the ELEMENT (checks.ml walk_expr's Functie arm)
         self.children(v, p, subject, skip=('argumenten',),
                       per_key={'filter': el if isinstance(el, str) else subject})
         return v
+
+    def count_source_name(self, v, a, el):
+        """U11: under AANTAL the source's `attribuut` is the written name of the bound role
+           (the range's role, a path's last step), and it names that role by declared name or
+           declared plural (D8 (ii), WF-047). A source naming a member of the element type is
+           an attribute source, which is WF-093's to judge and stays as written; an
+           unresolvable range is WF-047's and stays as written too."""
+        rng = v.get('bronRol') if 'bronRol' in v else (
+            v['bronPad'][-1] if isinstance(v.get('bronPad'), list) and v['bronPad'] else None)
+        role = self.m.bound_role(rng)
+        name = a.get('attribuut')
+        if role is None or not isinstance(name, str) or not isinstance(el, str):
+            return
+        if self.m.denotes(role, name) or self.m.is_member(el, name):
+            return
+        a['attribuut'] = role['naam']
+        self.counts['telbronnamen'] += 1
+        self.changed = True
 
     def kwantorvouw(self, v, p, subject):
         el = v.get('elementObjecttype')
