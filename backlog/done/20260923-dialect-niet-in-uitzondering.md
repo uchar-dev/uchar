@@ -103,8 +103,9 @@ als geheel een voorstel.** Commits: `b5e0619e` (claim), `8868d701`
 (rood-eerst getuigen), `b2fa5abe` (grammatica en resolver), `6c2af050`
 (golden), `c706459e` (DIVERGENCES §4, javadoc), `23498818` (meldingen),
 `83b021a0` (gate-12-pins, **voorstel**), `4cbd373e`, `62905d78`,
-`ab0e64a2`, `bcef3dbd` en `e6704bd5` (reviewronde), plus de commit die
-deze kaart naar `done/` zet.
+`ab0e64a2`, `bcef3dbd` en `e6704bd5` (reviewronde), `f360effd` (kaart naar
+`done/`). **De fixronde van 2026-09-24 staat onderaan** (sectie "Fixronde");
+haar gates draaiden op 1c16b130.
 
 ### Wat er veranderde
 
@@ -265,21 +266,32 @@ mappen is leeg, en gate 10 zendt ze byte-identiek opnieuw uit.
 
 ### Registerzin voor `spec/CONSTRUCTS.md` rij 8 (voorstel, voor de hoofdsessie)
 
-> **Landed (2026-09-23, card `dialect-niet-in-uitzondering`):** form 1 of
-> the dialect is written from source. The RegelSpraak frontend reads `is
+*Herzien in de fixronde van 2026-09-24; deze tekst vervangt die van
+2026-09-23. De eerdere tekst beschreef de waarschuwing te breed ("warns once
+per characteristic target on which every default decides `onwaar`"). Hij
+nam daarmee lensvondst 1 over: onder overerving verandert zo'n groep wel
+uitkomsten.*
+
+> **Landed (2026-09-23/24, card `dialect-niet-in-uitzondering`):** form 1
+> of the dialect is written from source. The RegelSpraak frontend reads `is
 > niet X`, `heeft geen X`, `is geen X` and `is niet een X` (one new
 > `kenmerkToekenning` alternative) verbatim-first, as the condition side
 > does, admits the negation in every rule that becomes a default (an
 > `Uitzondering op` body, an `Uitzonderingen ongeordend` member, the base of
 > a chain) and lowers it to `besluit: false` on the group's target. It
 > refuses a negation in a plain `Regel`, a negation whose rest is no
-> characteristic of the subject, and `is niet een` on a characteristic that
-> is not zelfstandig, and warns once per characteristic target on which
-> every default decides `onwaar`; `testDocument` parses both extension
-> blocks. Golden `jutterswet-schorsing` (Jutterswet art. 3 and 4bis) is the
-> first frontend-emitted `besluit: false`: ref ≡ clingo ≡ Drools exec over
-> its four cases, the DRL-text branch refusing it on its defaults sentence.
-> No wire, verifier or executor change.
+> characteristic of the subject, `is niet een` on a characteristic that is
+> not zelfstandig, and a negation written after `een`. It warns where the
+> groups on a characteristic decide only `onwaar` and no other writer of it
+> stands in the subject's inheritance line: a defaults group there composes
+> with them (ch. 7.10) and the all-`onwaar` group then changes outcomes,
+> measured in ref, clingo and the Drools exec branch. `testDocument`
+> parses both extension blocks. The first witness of form 1 is the golden
+> `jutterswet-schorsing`, on its own casus (Jutterswet art. 3 and 4bis) and
+> not a twin of an anchor. It is also the first document whose frontend
+> emits `besluit: false`. ref, clingo and Drools exec agree on its four
+> cases; the DRL-text branch refuses it on its defaults sentence. No wire,
+> verifier or executor change.
 
 ### Tweede lezer
 
@@ -339,3 +351,153 @@ Zijn bevindingen en wat ermee gebeurde:
    noemt, is hier al vervangen.
 7. regelspraak-java vendort deze grammatica. Het nieuwe alternatief en de
    uitbreiding van `testDocument` gaan mee met de pinbump-kaart.
+
+## Fixronde (2026-09-24)
+
+Aanleiding: de onafhankelijke lens op de exportkopie van e6704bd5. Eén
+punt blokkeerde; daarnaast kwam er advies. Alles is in deze kaart
+verwerkt, in kleine commits: `68459c41`, `5f7863f9`, `384a8924`,
+`564b9133` en `1c16b130`, plus de commit die dit Result bijwerkt. Niet
+gepusht en niet gemerged.
+
+### 1 (blokkerend) — de nooit-afleidende groep onder overerving
+
+- **Fix (a).** `keurNooitAfleidend` waarschuwt niet meer als het kenmerk
+  een andere schrijver heeft in de erflijn van het onderwerp (een strikte
+  voorouder of afstammeling). Een zustersubtype telt niet mee.
+- **Wat een schrijver in de erflijn doet: eigen meting.** Gemeten in ref,
+  clingo en de Drools exec-tak, met proefdocumenten in /tmp (de verifier
+  gaf PASS op alle acht):
+
+  | Vorm | Probe | Instantie | Met de alles-onwaar-groep | Zonder |
+  |---|---|---|---|---|
+  | Groep in de erflijn, subtype alles-onwaar | a2 | W1 (Strandjutter, geweigerd) | afwezig | aanwezig |
+  | Groep in de erflijn, supertype alles-onwaar | b2 | W2 (Strandjutter, geweigerd en geschorst) | afwezig | aanwezig |
+  | Gewone kenmerkregel in de erflijn | a1 | W1 | aanwezig | aanwezig |
+  | Gewone kenmerkregel in de erflijn | b1 | W2 | aanwezig | aanwezig |
+
+  Bij een groep in de erflijn klopt de vondst van de lens dus. Een gewone
+  kenmerkregel wordt echter in geen stapel gevouwen: de vouw van ch. 7.10
+  neemt alleen attribuutschrijvers (`level_rules` in de gedeelde desugar).
+  Zij schrijft dus door naast de groep, en die blijft daar inert.
+- **Keuze.** Ik heb (a) letterlijk gevolgd, gewone regels inbegrepen: de
+  waarschuwing zwijgt ook naast een gewone kenmerkregel in de erflijn.
+  Dat is behoudend: daar zou de waarschuwing waar zijn, maar haar hint (een
+  ontbrekende `waar`-uitzondering) wijst weg van de regel die schrijft. De
+  javadoc zegt dit met de meting erbij.
+- **Fix (b).** `DIVERGENCES.md` §4: in een vlak model verandert een
+  ontkende basis niets. Op een subtype vervangt zij de basis van de groep
+  van een voorouder. Op een supertype blijven de `onwaar`-uitzonderingen
+  boven de eigen basis van een subtype. Een gewone kenmerkregel van een
+  voorouder schakelt een ontkende subtypebasis níet uit.
+- **Getuigen (c), zonder waarschuwing.**
+  - subtypegroep alles-onwaar boven een waar-groep op het supertype;
+  - supertypegroep alles-onwaar boven een waar-groep op het subtype;
+  - de twee vormen met een gewone kenmerkregel in de erflijn;
+  - het zustersubtype: daar blijft de waarschuwing wél.
+
+  De frontendtest pint de emissie (groepen, besluiten, de gewone regel
+  blijft een regel). De uitkomsten staan hierboven, gemeten; ze zijn niet
+  als golden gepind.
+
+### Adviespunten
+
+- **2.** De verwijzing naar `moet gesteld worden op onwaar` staat alleen
+  nog bij een Boolean-attribuut. Bij een ander attribuut zegt de melding
+  "is een attribuut van Jutter en geen kenmerk"; getuige met het
+  numerieke `aantal aangemelde vondsten`.
+- **3.** Achter `een` leest de resultaatkant geen ontkenning meer, net als
+  de voorwaardekant. `is een niet X` en `heeft een geen X` worden
+  geweigerd ("… ontkent niets …"), met de spelling die bij de soort van X
+  hoort; getuige met drie spellingen.
+  - Gekozen is wat de voorwaardekant doet: de registerlint toetst het
+    werkwoord, niet het negatiewoord.
+  - `heeft niet X` (bezittelijk) en `is geen X` (bijvoeglijk) gaan
+    daarom zonder melding door; getuige erbij.
+  - Beide staan in §4.
+- **4.** De registerwaarschuwing (Tabel 16) staat nu op de regel van de
+  zin (bij een tabelrij: op de regel van de tabel). De voorwaardekant
+  houdt regel 0, zodat haar diagnostiek niet verschuift. De getuige pint
+  het regelnummer.
+- **5.** De tekst van de waarschuwing:
+  - enkelvoud "kent / doet de groep", meervoud "kennen / doen de
+    groepen";
+  - "niets wat het weglaten van de groep niet ook doet" in plaats van de
+    omgekeerde zin;
+  - beide gepind.
+- **6.** "An extension node the v0 emitter never produces" is weg uit
+  `PrioritizedDefaults.java` en `Default.java`.
+- **7.** `DIVERGENCES.md` zegt niet meer dat de `Regel`-stubs in `regels`
+  op de wire staan. Sinds M1 (delta B3) schrijft de emitter geen
+  `regels`, en het model houdt de stubs; beide zinnen zijn vervangen.
+- **8.** Niet letterlijk overgenomen, want de voorgestelde getallen kloppen
+  niet (gemeten met `comm` over de twee lijsten in het script):
+  - klasse (A) telt 26 regels, waarvan 25 op de defaults-zin (de 26e is de
+    havenrooster-marker, die het kopje sinds 2026-09-22 meetelt);
+  - 24 van die 25 zijn exec-spelers; "25 of the 26" zou havenrooster als
+    exec-speler tellen;
+  - er zijn 25 exec-only-spelers in totaal: 24 uit klasse (A) en
+    `jutterswet-vouwrand` uit klasse (C). 25 − 3 = 22 = 186 − 164.
+
+  Wel gedaan (voorstel, beschermd pad): het commentaar noemt nu beide
+  tellingen en vouwrand, zodat de som na te rekenen is (r. 858–869).
+  Waarden en pins zijn ongewijzigd.
+- **9.** Getuigen erbij:
+  - verbatim-first binnen een `Uitzondering op`, voor `niet erkend`
+    naast `erkend` en voor `geen bezwaar` naast `bezwaar`;
+  - de vlakke weigering ook gepind op "staat alleen in een regel die een
+    default wordt";
+  - `is geen` bij de ongedeclareerde kenmerken;
+  - de overervingsgetuigen van punt 1.
+- **10.** De vlakke weigering zegt nu "een gewone regel kent een kenmerk op
+  de wire alleen 'waar' toe (WF-022)".
+- **11.** De scopezin in §4 zegt nu dat de geordende vorm sinds
+  `jutterswet-wrakrecht` ook op een attribuut beoefend wordt.
+- **Registerzin.** Herzien (zie hierboven): `jutterswet-schorsing` is de
+  eerste getuige van vorm 1, op eigen casus en geen ankertweeling, en de
+  zin neemt vondst 1 niet over.
+
+### Rood-bewijs van de fixronde
+
+De eindstand van de testklasse (42 tests, stand 1c16b130) is gedraaid tegen
+de RuleChecker van f360effd, in een kopie buiten de repo: 10 van de 42
+falen. Het zijn precies de nieuwe getuigen:
+- punt 1: vier getuigen (beide groepsrichtingen, de gewone regel in de
+  erflijn, de enkelvoudige groep);
+- punt 5: het meervoud;
+- punt 3: de drie spellingen achter `een`;
+- punt 2: het numerieke attribuut;
+- punt 4: het regelnummer.
+
+De overige nieuwe getuigen pinnen gedrag dat al klopte: verbatim-first in
+een uitzondering, het zustersubtype en het negatiewoord. Die slagen ook op
+f360effd.
+
+### Gates op 1c16b130 (elk los, na `eval $(opam env)`)
+
+```
+check-self-contained: PASS
+check-regelspraak: PASS — JUnit suite green (549 tests, floor 173); 72 rgs golden(s) re-emit byte-identically (floor 38)
+check-drools: PASS (played 186, pin 186; DRL-text branch played 164, pin 164; DRL-text floor 75 non-PLAYED goldens pinned by name; JUnit 679 tests, floor 239)
+check-toka-parity: PASS (re-emission: 45 .rgs re-emitted byte-identical, floor 45; TOKA suite 27 tests; 29 replay slices; 29 toka cases through ref, clingo, Drools, ZERO silent divergences)
+```
+
+Gate 2 en 3 zijn niet opnieuw gedraaid: deze ronde raakte geen golden en
+geen NOTE.
+
+### Open punten, aanvulling
+
+8. **Een val voor auteurs onder overerving (gemeten, niet opgelost).** Een
+   ontkende subtypebasis ("Een Strandjutter is niet uitgesloten.") schakelt
+   een gewone kenmerkregel van de voorouder niet uit. Die regel wordt in
+   geen stapel gevouwen: de vouw neemt alleen attribuutschrijvers. Zij
+   schrijft dus op de instanties van het subtype door, en de verifier
+   geeft PASS (probe a1). De frontend meldt dit niet; ook de waarschuwing
+   zwijgt daar (punt 1).
+   - Of kenmerkregels mee moeten in de vouw van ch. 7.10, is een specvraag
+     voor de maintainer.
+   - Anders kan de frontend deze combinatie luid weigeren.
+9. Voorstel §4.2 ("so the outcome does not change") heeft dezelfde
+   onnauwkeurigheid als punt 1. Dat is voor de hoofdsessie, bij de
+   landing.
+
