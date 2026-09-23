@@ -51,8 +51,8 @@ May touch (aangescherpt): `ref/lib/case.ml`, zo nodig `ref/lib/value.ml`,
 ## Result:
 
 *Stand van dit Result: de eerste ronde hieronder is ongewijzigd
-bewaard; de secties "Fixronde 1" en "Fixronde 2" onderaan dragen de
-latere wijzigingen en de actuele getallen (tip na fixronde 2).*
+bewaard; de secties "Fixronde 1", "Fixronde 2" en "Fixronde 3" onderaan
+dragen de latere wijzigingen en de actuele getallen.*
 
 Alle acceptatiepunten gehaald; alle veertien gates groen, elk los
 gedraaid op `97f87646`. Fix en getuigen zitten in één commit tussen
@@ -303,9 +303,10 @@ op drie plekken — de dode `malformed asOfDate`-arm in de periodeconditie
 (tweede extra item); `ref/test/test_ref.ml` (twee blokken vóór de
 slotregel, alleen toegevoegd, plus de eigen getuigen van deze kaart
 bijgesteld); `corpus/rood/inputdatum-kalender/` (nieuw, open punt 4 van
-de eerste ronde, op aanwijzing van de hoofdsessie); en
-`scripts/check-case-schema.sh` uitsluitend als beschermd-pad-VOORSTEL
-(commit `a4f52876`). Onaangeroerd: `ref/lib/value.ml` (dus ook de
+de eerste ronde, op aanwijzing van de hoofdsessie); en, uitsluitend als
+beschermd-pad-VOORSTEL, `scripts/check-case-schema.sh` (commit
+`a4f52876`) en `scripts/check-ir-schema.sh` (commit `0b3787cd`,
+fixronde 3). Onaangeroerd: `ref/lib/value.ml` (dus ook de
 redenen van de lezers), `backends/**`, `frontends/**`, `spec/**`, de
 rest van `corpus/**` en `scripts/**`. Samenloop: de parallelle
 verifier-kaart raakt `ref/lib/eval.ml` en `ref/test/test_ref.ml` ook
@@ -622,8 +623,42 @@ rood-duo-kaart met `corpus/rood/asofdate-kalender` en het negatief
 (`ref/`, `scripts/check-case-schema.sh`, `corpus/rood/inputdatum-kalender`,
 deze kaart). Na de rebase telt gate 8 één rood document meer dan main.
 
-**Open punten** (stand na fixronde 2; de punten 3 en 4 van de eerste
-ronde zijn in fixronde 1 opgelost).
+### Fixronde 3 (hoofdsessie, 2026-09-23)
+
+**Open punt 3: gate 2 en de afsluitende newline** (commit `0b3787cd`,
+BESCHERMD-PAD-VOORSTEL in `scripts/check-ir-schema.sh`). Hetzelfde
+voorstel als voor gate 4: de corpuscontrole en de patroonzelftest van
+gate 2 gebruiken een validator die `pattern` met `re.fullmatch` toetst.
+Rood-eerst met een tijdelijk document (`corpus/golden/zz-tmp-…/ir.json`,
+`jutterswet-vensterheffing` met `"vanaf": "2026-01-01\n"`; niet
+gecommit, na de meting verwijderd): het oude script `PASS (schema valid;
+24 pattern self-test row(s); 280 file(s) validate and round-trip, floor
+192)`, terwijl de verifier het document weigert (`WF-101 FAIL
+/resolvedRegels/0/geldigheid/vanaf: validity bound '2026-01-01\n' is not
+the ISO form yyyy-mm-dd …`). Met het voorstel: `FAIL:
+corpus/golden/zz-tmp-geldigheid-newline/ir.json`, `at:
+resolvedRegels/0/geldigheid/vanaf`, `'2026-01-01\n' does not match
+'^[0-9]{4}-[0-9]{2}-[0-9]{2}$'`, `check-ir-schema: FAIL (1 of 280 file(s)
+bad)`; zonder het tijdelijke document `PASS (schema valid; 26 pattern
+self-test row(s); 279 file(s) validate and round-trip, floor 192)`.
+
+De zelftesttabel kreeg een rij `"2026-01-01\n"` (moet weigeren), zodat de
+volle match een vaste getuige heeft. Die rij eerst alleen, onder de
+standaardvalidator: `FAIL: pattern self-test, Geldigheid.vanaf =
+'2026-01-01\n': schema accepts it, expected refuse`, idem `tot`,
+`check-ir-schema: FAIL (2 pattern self-test row(s) bad)`. De gates 9 en
+14 voeren het serialiserende deel van dit script uit; dat deel is
+onveranderd en beide bleven groen.
+
+Gates na fixronde 3 (elk los, op `0b3787cd`; daarna alleen deze
+kaartcommit): 1 PASS; 2 PASS (26 zelftestrijen, 279 bestanden, floor
+192); 3 PASS (279 schoon / 440 negatief, floor 350); 9 PASS (201 checks,
+12 goldens); 14 PASS (130 checks, 2 goldens). Fixronde 3 raakte geen
+code onder `ref/`; de uitslagen van de gates 4 tot en met 8, 11 en 13 op
+`21a9f738` blijven gelden (suite 921).
+
+**Open punten** (stand na fixronde 3; de punten 3 en 4 van de eerste
+ronde zijn in fixronde 1 opgelost, het gate-2-punt in fixronde 3).
 
 1. Drools-caselezer (`backends/drools`, andere zone): de getallezer
    (`new BigDecimal` in `waardeNaarArg`) aanvaardt `.5`, `1E3` en `+5`,
@@ -633,21 +668,20 @@ ronde zijn in fixronde 1 opgelost).
    huispatroon is een klem met het schemapatroon, zoals
    `datumVanCaseWire`. Zijn datumweigering noemt het attribuut maar niet
    het instantielabel.
-2. Clingo `backends/clingo/lib/translate.ml` (andere zone): dode armen
-   van dezelfde klasse als de hier verwijderde eval-arm — r. 1904
-   `malformed date literal %S`, r. 3746 en r. 5839 `malformed asOfDate
-   %S`, en de stille `| _ -> ()` op r. 4764 achter `datetime_of_lexeme`.
-   Daarnaast toetst zijn WF-022-arm (r. 7334) alleen het lexeem `waar`
-   en niet het type Booleaan dat de verifier eist; een `waar` getypt als
-   Tekst gaat daar door waar ref (sinds fixronde 1) en de verifier
-   weigeren.
-3. Gate 2 (`scripts/check-ir-schema.sh`, beschermd pad) heeft hetzelfde
-   `$`-gat als gate 4 had: zijn standaardvalidator laat voor de
-   Geldigheid-patronen `"2026-01-01\n"` door (gemeten: Pythons
-   `re.search` matcht, `re.fullmatch` niet); de zelftesttabel draagt een
-   rij met afsluitende spatie maar niet met afsluitende newline. Zelfde
-   remedie als het gate-4-voorstel; WF-101 in de verifier vangt de waarde
-   daarna wel.
+2. Clingo `backends/clingo/lib/translate.ml` (andere zone; de
+   hoofdsessie geeft dit door aan de clingo-kaart): dode armen van
+   dezelfde klasse als de hier verwijderde eval-arm — r. 1904 `malformed
+   date literal %S`, r. 3746 en r. 5839 `malformed asOfDate %S`, en de
+   stille `| _ -> ()` op r. 4764 achter `datetime_of_lexeme`. Daarnaast
+   toetst zijn WF-022-arm (r. 7334) alleen het lexeem `waar` en niet het
+   type Booleaan dat de verifier eist; een `waar` getypt als Tekst gaat
+   daar door waar ref (sinds fixronde 1) en de verifier weigeren.
+3. Het gate-4-voorstel (`a4f52876`) heeft geen vaste getuige: gate 4
+   kent geen patroonzelftest zoals gate 2, dus wie de volle match daar
+   terugdraait, merkt het aan geen gate (geen corpusdocument draagt een
+   afsluitende newline). Het script van gate 2 noemt een zelftest voor de
+   patronen van het case-schema al als eigen kaart; de rij met
+   afsluitende newline hoort daar bij.
 4. Bewust ongepositioneerd gelaten: drie weigeringen op de wortel die geen
    plaats nodig hebben omdat de wortel uniek is en de zin het veld noemt
    (`unsupported case format "…"`, `a case carries exactly one of
