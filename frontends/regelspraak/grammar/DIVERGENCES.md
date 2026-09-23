@@ -666,6 +666,19 @@ not write and add a second refusal ("is geen kenmerktoekenning of
 gelijkstelling", "schrijft een ander doel") beside the true one (fix round 3).
 Witness: `RegeldoelTest`.
 
+**A cell of a dimensioned attribute as the target** (fix round 3). The wire has
+no cell assignment: a rule's target is an attribute reference, which WF-022
+demands, and the dimension-cell node is a read (IR-SPEC ch. 4.3). "De premie
+van een Jutter in voorjaar moet gesteld worden op 10" put the label into the
+subject text and wrote the WHOLE attribute — verifier PASS on a different
+document than the one written. It is refused now with the cell named
+(attribute, dimension, label), and so is "De premie in voorjaar van een Jutter
+…", which was refused before as an undeclared attribute without naming the
+dimension. A whole-attribute write of a dimensioned attribute, with no label at
+all, stays unfenced: the verifier admits it, `ref` and clingo write the value as
+a scalar, and the Drools exec branch fails at fire time — a norm question for
+the verifier line, recorded in the card. Witness: `DimensieDoelTest`.
+
 ---
 
 ## §13.4.17.47 The count's operand list — an ACCEPTING superset, fenced in the resolver

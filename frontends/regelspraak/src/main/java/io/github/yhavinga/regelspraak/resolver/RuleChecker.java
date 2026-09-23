@@ -374,6 +374,13 @@ final class RuleChecker {
                 fout = "het onderwerp '" + a.onderwerpBron() + "' lost niet op tot een objecttype: een regel schrijft "
                         + "een attribuut of kenmerk van zijn eigen universele onderwerp ('een <Objecttype>'), en een "
                         + "navigatie naar een ander exemplaar bouwt deze frontend niet als regeldoel";
+            else if (r.soort() != ResolvedRegel.Soort.KENMERKTOEKENNING && a.objecttype().attribuut(a.attribuut()) == null
+                    && celAlsNaam(a.objecttype(), a.attribuut()) != null)
+                fout = "'" + a.attribuut() + "' is een " + celAlsNaam(a.objecttype(), a.attribuut()) + CEL_GEEN_DOEL;
+            else if (r.soort() != ResolvedRegel.Soort.KENMERKTOEKENNING && a.objecttype().attribuut(a.attribuut()) != null
+                    && celNaOnderwerp(a.objecttype(), a.attribuut(), a.onderwerpBron()) != null)
+                fout = "het doel is een " + celNaOnderwerp(a.objecttype(), a.attribuut(), a.onderwerpBron())
+                        + CEL_GEEN_DOEL + "; zonder dit hek schreef de zin het hele attribuut";
             else if (r.soort() != ResolvedRegel.Soort.KENMERKTOEKENNING && a.objecttype().attribuut(a.attribuut()) == null)
                 fout = a.attribuut().matches("(?i).*\\svan\\s.*")
                         ? "het doel is een genavigeerde lezing: '" + a.attribuut() + "' is geen attribuut van "
@@ -387,6 +394,47 @@ final class RuleChecker {
                         + " (WF-022, IR-SPEC ch. 3.1)", line));
             }
         }
+    }
+
+    /** The wire has no cell assignment: a rule's target is an attribute reference (WF-022 refuses any other node
+     *  there), and the dimension-cell node is a READ (IR-SPEC ch. 4.3). */
+    private static final String CEL_GEEN_DOEL = " — een regel kent op de wire een attribuut toe en geen cel (het doel "
+            + "is een attribuutverwijzing; de dimensiecel bestaat alleen als lezing)";
+
+    /** "cel van het gedimensioneerde attribuut 'premie' (dimensie seizoen, label 'voorjaar')" when {@code naam} is
+     *  a dimensioned attribute of {@code ot} with its preposition and one of its labels written behind it as one
+     *  name ("premie in voorjaar"), else null. Single-dimension attributes, the suffix form — the shape
+     *  {@code ExpressieBouwer.dimensieCel} reads. */
+    private String celAlsNaam(Objecttype ot, String naam) {
+        for (var e : ot.gedimensioneerdeLeden().entrySet()) {
+            if (e.getValue().size() != 1) continue;
+            RegelSpraakModel.Dimensie d = model.dimensieOpNaam(e.getValue().get(0));
+            if (d == null || d.voorzetsel() == null) continue;
+            for (String label : d.waarden())
+                if ((e.getKey() + " " + d.voorzetsel() + " " + label).equalsIgnoreCase(naam.trim()))
+                    return celTekst(e.getKey(), d, label);
+        }
+        return null;
+    }
+
+    /** The same cell written after the SUBJECT ("De premie van een Jutter in voorjaar"): the parse left the
+     *  attribute bare and put the preposition and label into the subject text. Null when it is not. */
+    private String celNaOnderwerp(Objecttype ot, String attribuut, String onderwerpTekst) {
+        if (onderwerpTekst == null) return null;
+        for (String dn : ot.dimensiesVan(attribuut)) {
+            RegelSpraakModel.Dimensie d = model.dimensieOpNaam(dn);
+            if (d == null || d.voorzetsel() == null) continue;
+            for (String label : d.waarden())
+                if (onderwerpTekst.toLowerCase(java.util.Locale.ROOT).endsWith(
+                        (" " + d.voorzetsel() + " " + label).toLowerCase(java.util.Locale.ROOT)))
+                    return celTekst(ot.attribuutNaam(attribuut), d, label);
+        }
+        return null;
+    }
+
+    private static String celTekst(String attribuut, RegelSpraakModel.Dimensie d, String label) {
+        return "cel van het gedimensioneerde attribuut '" + attribuut + "' (dimensie " + d.naam() + ", label '"
+                + label + "')";
     }
 
     /** WF-112 (maintainer decision 2026-09-23), producer side: a time window never sits under 'geen van de' or
