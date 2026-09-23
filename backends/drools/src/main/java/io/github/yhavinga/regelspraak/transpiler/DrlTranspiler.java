@@ -1198,8 +1198,13 @@ public final class DrlTranspiler {
         if (v.voorwaarde() != null) {
             Frag vwFrag = conditieInline(vwAcc, v.voorwaarde(), bron, true);
             if (vwFrag.marker() || !vwAcc.clausules.isEmpty()) {
+                // A window under GEEN or a counting quantifier is WF-112's position: this emitter writes its own
+                // marker over the condition's, so the rule is named here, in the sentence the exec branch gives.
+                String vensterWeigering = Vensterpositie.weigering(v.voorwaarde());
                 out.append(new Regel(v.naam())
-                    .clausule("// onopgelost verdeling (voorwaarde): " + commentVeilig(v.naam()))
+                    .clausule("// onopgelost verdeling ("
+                            + (vensterWeigering == null ? "voorwaarde" : commentVeilig(vensterWeigering)) + "): "
+                            + commentVeilig(v.naam()))
                     .clausule("eval(true)")
                     .render());
                 return;
