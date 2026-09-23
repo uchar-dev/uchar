@@ -7127,10 +7127,11 @@ let () =
 
    De evaluatiedatum-poort zelf staat groen in het corpus
    (corpus/golden/jutterswet-premievenster, vier uitvoerders, zes
-   clausules). Wat hier staat zijn de twee weigeringen: de grensvorm die
-   ch. 3.10's mirror-note uitstelt — ook rood gepind — en ch. 3.10's ANDERE
-   geval, de clip op een tijdlijndoel, waar het venster de geschreven
-   tijdlijn snijdt in plaats van de regel te poorten.
+   clausules). Wat hier staat: de grensvorm die WF-111 sinds 2026-09-23
+   verbiedt (negatief wf111-periodegrens-parameterdatum; deze arm is nu
+   het faalsnel-hek achter de verifier), en ch. 3.10's ANDERE geval, de
+   clip op een tijdlijndoel, met de clausule die geen corpusgolden kan
+   dragen en de weigering die blijft.
 
    Beide zinnen lopen door tot de FASE-staart ("Declined in translation"),
    want `ref` weigert woordelijk hetzelfde tot aan die staart. Zonder haar
@@ -7205,37 +7206,137 @@ let () =
   faults_with ~name:"ch3.10 de grensweigering draagt haar fase-staart" ~ir
     ~case_text:venster_case ~needle:"Declined in translation"
 
-let () =
-  (* het tijdlijndoel: dezelfde voorwaarde, maar het doel is tijdsafhankelijk,
-     en dan is het venster de CLIP en niet de poort. De weigering valt bij de
-     REGEL — een conditie ziet geen doel — dus vóór het venster gelezen wordt. *)
-  let doel =
-    {|{ "node": "AttribuutRef", "attribuut": "vergoeding", "objecttype": "Vondst",
-        "onderwerpBron": "een Vondst", "navigatieRol": null, "type": |} ^ num_geheel
-    ^ {|, "bron": "De vergoeding van een Vondst", "set": false, "navigatiePad": [] }|}
-  in
-  let ir =
-    {|{ "formaat": "regelspraak-ir-v0",
+(* het tijdlijndoel: dezelfde soort voorwaarde, maar het doel is
+   tijdsafhankelijk, en dan is het venster de CLIP en niet de poort —
+   gebouwd 2026-09-23. Tot die dag pinde dit blok de WEIGERING van die clip;
+   nu pint het de clausule die het corpus niet kan dragen: een grens midden
+   in een bucket snijdt het segment en houdt zijn waarde. Het case-formaat
+   legt elke verwachte tijdlijn op het raster van de declaratie, dus deze
+   test leest de tl/5-atomen zelf uit het stabiele model. Ref pint dezelfde
+   clausule in zijn eigen suite (WV-3.10-clip-knipt-segment-houdt-waarde).
+   De corpusgetuige van de clip is corpus/golden/jutterswet-pachtvenster.
+
+   De weigering die blijft staat eronder: het venster als LID van een
+   samenstelling op een tijdlijndoel, bij de REGEL en met fase-staart. *)
+let clip_doc voorwaarde =
+  let num = num_geheel in
+  {|{ "formaat": "regelspraak-ir-v0",
   "objecttypen": { "Vondst": {
     "node": "Objecttype", "naam": "Vondst",
-    "attributen": { "vergoeding": |} ^ num_geheel
-    ^ {| },
+    "attributen": { "vergoeding": |} ^ num ^ {|, "tarief": |} ^ num
+  ^ {| },
     "attribuutMeervoud": {}, "attribuutDimensies": {},
-    "attribuutGranulariteit": { "vergoeding": "JAAR" },
-    "attribuutTijdlijnAantal": { "vergoeding": 1 }, "attribuutTijdlijnNaam": {},
-    "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
+    "attribuutGranulariteit": { "vergoeding": "JAAR", "tarief": "JAAR" },
+    "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+    "kenmerken": [ "actief" ], "kenmerkSoorten": { "actief": "BIJVOEGLIJK" },
+    "kenmerkGranulariteit": { "actief": "JAAR" },
     "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vondsten" } },
   "domeinen": {}, "parameters": {},
   "eenheidstelsels": {}, "feittypen": {}, "dimensies": {}, "tijdlijnen": [],
   "dagsoorten": [], "dagsoortPerEenheid": {}, "regels": [],
   "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "vergoeding van een vondst",
-      "soort": "BEREKENING", "doel": |} ^ doel
-    ^ {|, "waarde": { "node": "Literal", "waarde": "10", "type": |} ^ num_geheel
-    ^ {|, "bron": "10" },
-      "voorwaarde": { "node": "Periode",
-        "vanaf": { "node": "Literal", "waarde": "2024-01-01",
-                   "type": { "node": "DatumInDagen" }, "bron": "1 januari 2024" },
-        "tot": null, "totInclusief": false, "bron": "vanaf 1 januari 2024" },
+      "soort": "GELIJKSTELLING",
+      "doel": { "node": "AttribuutRef", "attribuut": "vergoeding", "objecttype": "Vondst",
+        "onderwerpBron": "een Vondst", "navigatieRol": null, "type": |} ^ num
+  ^ {|, "bron": "De vergoeding van een Vondst", "set": false, "navigatiePad": [] },
+      "waarde": { "node": "Functie", "kind": "TIJDSEVENREDIG_DEEL",
+        "argumenten": [ { "node": "AttribuutRef", "attribuut": "tarief", "objecttype": "Vondst",
+          "onderwerpBron": "zijn", "navigatieRol": null, "type": |} ^ num
+  ^ {|, "bron": "zijn tarief", "set": false, "navigatiePad": [] } ],
+        "elementObjecttype": null, "leegwaarde": null,
+        "filter": { "node": "Kenmerk", "kenmerk": "actief", "navigatie": null, "negatie": false,
+          "eigenaar": null, "periode": null, "bron": "gedurende de tijd dat hij actief is" },
+        "dimensieSelectie": null, "type": |} ^ num
+  ^ {|, "bron": "het tijdsevenredig deel per jaar van zijn tarief", "granulariteit": "JAAR" },
+      "voorwaarde": |} ^ voorwaarde
+  ^ {|,
+      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+  "regelGroepen": [], "diagnostics": []
+}
+|}
+
+let clip_venster =
+  {|{ "node": "Periode",
+        "vanaf": { "node": "Literal", "waarde": "2025-03-15",
+                   "type": { "node": "DatumInDagen" }, "bron": "15 maart 2025" },
+        "tot": { "node": "Literal", "waarde": "2025-06-30",
+                 "type": { "node": "DatumInDagen" }, "bron": "30 juni 2025" },
+        "totInclusief": true, "bron": "van 15 maart 2025 tot en met 30 juni 2025" }|}
+
+let clip_case =
+  {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+    { "label": "V1", "objectType": "Vondst",
+      "attributes": { "tarief": { "timeline": [
+        { "from": "2024-01-01", "to": "2025-01-01", "value": { "number": "10" } },
+        { "from": "2025-01-01", "to": "2026-01-01", "value": { "number": "12" } } ] } },
+      "roles": {}, "characteristics": [],
+      "characteristicTimelines": { "actief": [ { "from": "2024-01-01", "to": "2026-01-01" } ] } } ],
+    "parameters": {} },
+  "expected": [ { "kind": "consistent" } ]
+}
+|}
+
+let () =
+  let dag iso =
+    match Uchar_ref.Value.date_of_iso iso with Uchar_ref.Value.Date d -> d | _ -> assert false
+  in
+  let name = "ch3.10 de clip knipt het segment midden in de bucket en houdt de waarde" in
+  let doc, case = load_pair ~ir:(clip_doc clip_venster) ~case_text:clip_case in
+  (match
+     match Solve.run_clingo (translate doc case) with
+     | out, Unix.WEXITED (10 | 30) ->
+         Ok
+           (List.filter_map
+              (fun (a : Model.atom) ->
+                match a with
+                | { name = "tl"; args = [ A_str "V1"; A_str "vergoeding"; A_int v; A_int t; A_int w ] }
+                  ->
+                    Some (v, t, w)
+                | _ -> None)
+              (Model.model_of_outf2 (Yojson.Safe.from_string out)))
+     | _, _ -> Error "clingo gaf geen model"
+   with
+  | Ok segs ->
+      (* [2025-03-15, 2025-07-01) with 12 — not 12 x 108/365, and nothing of
+         2024 or of the rest of 2025 *)
+      check (name ^ Printf.sprintf " (%d segment(en))" (List.length segs))
+        (segs = [ (dag "2025-03-15", dag "2025-07-01", 12) ])
+  | Error m -> check (name ^ " (" ^ m ^ ")") false
+  | exception Uchar_ref.Value.Fault m -> check (name ^ " (fout: " ^ m ^ ")") false);
+  let lid = {|{ "node": "Samengesteld", "kwantor": "ALLE", "drempel": 0, "onderdelen": [ |}
+            ^ clip_venster ^ {| ], "bron": "alle" }|} in
+  faults_with ~name:"ch3.10 het venster als lid op een tijdlijndoel blijft geweigerd"
+    ~ir:(clip_doc lid) ~case_text:clip_case ~needle:"inside a composite on the temporal target";
+  faults_with ~name:"ch3.10 de lidweigering draagt haar fase-staart" ~ir:(clip_doc lid)
+    ~case_text:clip_case ~needle:"Declined in translation"
+
+(* ch. 3.11 — een KENMERKTOEKENNING op een tijdsafhankelijk kenmerk schrijft
+   een tijdlijn, en heeft/2 is de scalaire lezing. Tot 2026-09-23 schreef
+   deze vertaling daar stil een heeft/2-feit; ref weigert de vorm bij naam.
+   Nu weigeren beide. *)
+let () =
+  let ir =
+    {|{ "formaat": "regelspraak-ir-v0",
+  "objecttypen": { "Vondst": {
+    "node": "Objecttype", "naam": "Vondst", "attributen": {},
+    "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+    "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+    "kenmerken": [ "geborgen" ], "kenmerkSoorten": { "geborgen": "BIJVOEGLIJK" },
+    "kenmerkGranulariteit": { "geborgen": "JAAR" },
+    "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vondsten" } },
+  "domeinen": {}, "parameters": {},
+  "eenheidstelsels": {}, "feittypen": {}, "dimensies": {}, "tijdlijnen": [],
+  "dagsoorten": [], "dagsoortPerEenheid": {}, "regels": [],
+  "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "berging van een vondst",
+      "soort": "KENMERKTOEKENNING",
+      "doel": { "node": "AttribuutRef", "attribuut": "geborgen", "objecttype": "Vondst",
+        "onderwerpBron": "een Vondst", "navigatieRol": null, "type": { "node": "Booleaan" },
+        "bron": "Een Vondst is geborgen", "set": false, "navigatiePad": [] },
+      "waarde": { "node": "Literal", "waarde": "waar", "type": { "node": "Booleaan" }, "bron": "waar" },
+      "voorwaarde": null,
       "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
   "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
   "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
@@ -7244,18 +7345,16 @@ let () =
 |}
   in
   let case_text =
-    {|{ "format": "uchar-case-v0", "asOfDate": "2024-06-15",
+    {|{ "format": "uchar-case-v0", "asOfDate": null,
   "input": { "instances": [
     { "label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {},
       "characteristics": [] } ], "parameters": {} },
-  "expected": [ { "kind": "attributeEmpty", "label": "V1", "attribute": "vergoeding" } ]
+  "expected": [ { "kind": "consistent" } ]
 }
 |}
   in
-  faults_with ~name:"ch3.10 een venster op een tijdlijndoel is de clip, niet de poort" ~ir
-    ~case_text ~needle:"is ch. 3.10's CLIP, not the evaluation-date gate";
-  faults_with ~name:"ch3.10 de clipweigering draagt haar fase-staart" ~ir ~case_text
-    ~needle:"Declined in translation"
+  faults_with ~name:"ch3.11 een tijdsafhankelijk kenmerk krijgt geen scalair heeft-feit" ~ir
+    ~case_text ~needle:"temporal characteristic \"geborgen\": temporal writes are not implemented"
 
 (* WF-110 / ch. 3.4d — the INSTANCE-SET UNION, the §5.7 concatenation of
    subject expressions under a count. Three things no corpus golden can

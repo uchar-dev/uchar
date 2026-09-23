@@ -5711,42 +5711,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
          2026-09-23, so the verifier refuses the rest and the arm below is the
          fail-fast belt. Two executors that carried different bound forms would
          let the differential arbitrate a form only one of them reads. *)
-      let bound side e =
-        (match e with
-         | Literal _ -> ()
-         | Attribuut_ref
-             { attribuut = Some a; objecttype = Some otn; navigatie_rol = None; navigatie_pad = [];
-               set = false; _ }
-           when Ir_v0.Checks.norm otn = Ir_v0.Checks.norm subject_ot
-                && not (attr_temporal ctx ~otype:otn ~attr:a) ->
-             ()
-         | _ ->
-             (* ref's sentence to the last word before the PHASE tail, which
-                is where the two must differ — see the note on its arm *)
-             fault
-               "the %s bound of a period condition is neither a date literal nor an own scalar \
-                date attribute of the subject, the only two shapes WF-111 admits: the document is \
-                not well-formed. Declined in translation"
-               side);
-        if is_datetime_operand (Some e) then
-          fault
-            "the %s bound of a period condition is a datum-tijd: ch. 3.10 gates on the evaluation \
-             DATE, which is a civil day, and no clause says what an instant bound means there (no \
-             corpus case)"
-            side;
-        let atoms, term, scale = expr_term ctx ~subject ~subject_ot e in
-        (* a day-precision date rides scale 1 (one integer per civil day), so
-           the comparison below needs no harmonisation and no range guard: the
-           terms are five orders of magnitude below gringo's 32-bit grounding
-           limit. The assertion is what keeps that argument true. *)
-        if scale <> 1 then
-          fault "the %s bound of a period condition carries no day-precision date term" side;
-        (atoms, term)
-      in
-      let v = match vanaf with Some e -> Some (bound "vanaf" e) | None -> None in
-      let t = match tot with Some e -> Some (bound "tot" e) | None -> None in
-      if v = None && t = None then
-        fault "a period condition without any bound has no window to gate on (WF-042)";
+      let v, t = venster_grenzen ctx ~subject ~subject_ot vanaf tot in
       (match ctx.case.as_of with
        | None ->
            (* "an unset evaluation date never matches" — a false body literal,
@@ -5773,6 +5738,51 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
    attribute read, a parameter, an arithmetic combination) needs an atom the
    calling position has nowhere to put — the callers that can carry atoms
    ([expr_term], [closed_term]) lower such a payload themselves. *)
+(* ch. 3.10's two bounds for BOTH of the chapter's cases — the gate in
+   [cond_atoms] and the clip in [translate_regel] — as (body atoms, day
+   term) pairs, [None] for an absent (open) bound. A leeg own attribute binds
+   no val atom, so every body that carries the pair fails: the gate never
+   matches, and the clip writes nothing. One reader for both cases, as in
+   ref, so the two cannot disagree about what a bound may be. *)
+and venster_grenzen ctx ~subject ~subject_ot vanaf tot =
+  let bound side e =
+    (match e with
+     | Literal _ -> ()
+     | Attribuut_ref
+         { attribuut = Some a; objecttype = Some otn; navigatie_rol = None; navigatie_pad = [];
+           set = false; _ }
+       when Ir_v0.Checks.norm otn = Ir_v0.Checks.norm subject_ot
+            && not (attr_temporal ctx ~otype:otn ~attr:a) ->
+         ()
+     | _ ->
+         (* ref's sentence to the last word before the PHASE tail, which
+            is where the two must differ — see the note on its arm *)
+         fault
+           "the %s bound of a period condition is neither a date literal nor an own scalar \
+            date attribute of the subject, the only two shapes WF-111 admits: the document is \
+            not well-formed. Declined in translation"
+           side);
+    if is_datetime_operand (Some e) then
+      fault
+        "the %s bound of a period condition is a datum-tijd: ch. 3.10 gates on the evaluation \
+         DATE, which is a civil day, and no clause says what an instant bound means there (no \
+         corpus case)"
+        side;
+    let atoms, term, scale = expr_term ctx ~subject ~subject_ot e in
+    (* a day-precision date rides scale 1 (one integer per civil day), so
+       a comparison against it needs no harmonisation and no range guard: the
+       terms are five orders of magnitude below gringo's 32-bit grounding
+       limit. The assertion is what keeps that argument true. *)
+    if scale <> 1 then
+      fault "the %s bound of a period condition carries no day-precision date term" side;
+    (atoms, term)
+  in
+  let v = match vanaf with Some e -> Some (bound "vanaf" e) | None -> None in
+  let t = match tot with Some e -> Some (bound "tot" e) | None -> None in
+  if v = None && t = None then
+    fault "a period condition without any bound has no window to gate on (WF-042)";
+  (v, t)
+
 and construct_ground_term ctx typ constructor_ argument =
   let constructoren = sum_constructors typ in
   let f = ctor_functor constructor_ in
@@ -6914,6 +6924,55 @@ let fitted ctx ~subject ~what ~body term scale target =
     end
     else fault "value scale %d does not align with target scale %d for %S" scale target what
 
+(* the write of one bucket segment [B, N) with value [value], and — when
+   ch. 3.10's clip is in force — its restriction to the subject's window.
+   The restriction cuts segments and keeps their values, as ref's
+   Timeline.clip does: the cut start is max(B, lo), the cut end min(N, hi),
+   and since gringo has no min/max on terms each bound contributes two
+   rules, one per side of the comparison. An open bound contributes none.
+   A leeg own-attribute bound binds no val atom, so nothing is written — the
+   empty window of ch. 3.10. On a standing temporal target the effect atom
+   rides the same bodies, so the case input stands exactly when no clipped
+   segment was derived (ch. 7.8), as for any producer. *)
+let schrijf_segment ctx ~subject ~ot ~a ~clip ~p ~value ~body =
+  let heads =
+    match clip with
+    | None -> [ ("B", "N", body) ]
+    | Some (vanaf, tot, incl) ->
+        let v, t = venster_grenzen ctx ~subject ~subject_ot:ot vanaf tot in
+        let lo =
+          match v with
+          | None -> [ ("B", []) ]
+          | Some (atoms, l) ->
+              [ ("B", atoms @ [ Printf.sprintf "B >= %s" l ]);
+                (l, atoms @ [ Printf.sprintf "B < %s" l ]) ]
+        in
+        let hi =
+          match t with
+          | None -> [ ("N", []) ]
+          | Some (atoms, h) ->
+              let h = if incl then Printf.sprintf "(%s+1)" h else h in
+              [ ("N", atoms @ [ Printf.sprintf "N <= %s" h ]);
+                (h, atoms @ [ Printf.sprintf "N > %s" h ]) ]
+        in
+        List.concat_map
+          (fun (l, la) ->
+            List.map (fun (h, ha) -> (l, h, body @ la @ ha @ [ Printf.sprintf "%s < %s" l h ])) hi)
+          lo
+  in
+  List.iter
+    (fun (van, tot, b) ->
+      head_body ctx (Printf.sprintf "tl(%s,%s,%s,%s,%s)" subject (str a) van tot value) b)
+    heads;
+  if List.mem (norm ot, norm a) (Ir_v0.Desugar.standing_temporal_targets ctx.doc) then begin
+    let eff = Printf.sprintf "%s_eff(%s)" p subject in
+    List.iter (fun (_, _, b) -> head_body ctx eff b) heads;
+    head_body ctx
+      (Printf.sprintf "tl(%s,%s,Van,Tot,V)" subject (str a))
+      [ Printf.sprintf "inputtl(%s,%s,Van,Tot,V)" subject (str a);
+        Printf.sprintf "isa(%s,%s)" subject (str ot); "not " ^ eff ]
+  end
+
 (* ch. 3.7: the pro-rata temporal target. The whole calendar is
    compile-time data (the shared Timeline module, like the clip's wu
    facts): bucket facts carry start, end and day count over the case's
@@ -6924,7 +6983,7 @@ let fitted ctx ~subject ~what ~body term scale target =
    remainder derives a viol/2 witness (ref computes the exact rational;
    v0 approximates a non-terminating fraction in DECIMAL64 — the
    recorded ch. 3.7 delta), fenced like every division. *)
-let translate_pro_rata ctx ~subject ~ot ~a ~cond ~b ~k ~(g : granulariteit) =
+let translate_pro_rata ?clip ctx ~subject ~ot ~a ~cond ~b ~k ~(g : granulariteit) =
   let base = Printf.sprintf "isa(%s,%s)" subject (str ot) in
   if not (attr_temporal ctx ~otype:ot ~attr:b) then
     fault "pro-rata base %S is not a temporal attribute (WF-056)" b;
@@ -6996,25 +7055,18 @@ let translate_pro_rata ctx ~subject ~ot ~a ~cond ~b ~k ~(g : granulariteit) =
      lost)\",S) :- %s, %s \\ %s != 0."
     (String.concat ", " body)
     numt dent;
-  head_body ctx
-    (Printf.sprintf "tl(S,%s,B,N,%s/%s)" (str a) numt dent)
-    (body @ [ Printf.sprintf "%s \\ %s == 0" numt dent ]);
   (* ch. 7.8, the timeline arm: on a standing temporal target the fold
      decides only when it derives at least one bucket — the case's
      input timeline (entered as inputtl/5) stands whole by NAF
      otherwise, matching ref's no-write on an empty result *)
-  if List.mem (norm ot, norm a) (Ir_v0.Desugar.standing_temporal_targets ctx.doc) then begin
-    let eff = Printf.sprintf "%s_eff(S)" p in
-    head_body ctx eff (body @ [ Printf.sprintf "%s \\ %s == 0" numt dent ]);
-    head_body ctx
-      (Printf.sprintf "tl(S,%s,Van,Tot,V)" (str a))
-      [ Printf.sprintf "inputtl(S,%s,Van,Tot,V)" (str a); base; "not " ^ eff ]
-  end
+  schrijf_segment ctx ~subject ~ot ~a ~clip ~p
+    ~value:(Printf.sprintf "%s/%s" numt dent)
+    ~body:(body @ [ Printf.sprintf "%s \\ %s == 0" numt dent ])
 
 (* ch. 3.8 "aantal dagen in (de maand / het jaar)": per touched bucket
    one segment carrying the true-day count — the pro-rata numerator
    without the base join. WF-058 mirrors WF-056's facets. *)
-let translate_aantal_dagen ctx ~subject ~ot ~a ~cond ~k ~(g : granulariteit) =
+let translate_aantal_dagen ?clip ctx ~subject ~ot ~a ~cond ~k ~(g : granulariteit) =
   let base = Printf.sprintf "isa(%s,%s)" subject (str ot) in
   if attr_unit ctx ~otype:ot ~attr:a <> None then
     fault "day-count into a unit-carrying target is not translated (no corpus case)";
@@ -7049,15 +7101,8 @@ let translate_aantal_dagen ctx ~subject ~ot ~a ~cond ~k ~(g : granulariteit) =
      46340 < #count { KV,KT : %s_d(S,B,KV,KT,_) }."
     (String.concat ", " ((base :: ctx.rule_guard) @ cond @ [ Printf.sprintf "%s_b(B,_,_)" p ]))
     p;
-  head_body ctx (Printf.sprintf "tl(S,%s,B,N,%s)" (str a) vterm) body;
   (* the ch. 7.8 timeline arm, as for pro-rata *)
-  if List.mem (norm ot, norm a) (Ir_v0.Desugar.standing_temporal_targets ctx.doc) then begin
-    let eff = Printf.sprintf "%s_eff(S)" p in
-    head_body ctx eff body;
-    head_body ctx
-      (Printf.sprintf "tl(S,%s,Van,Tot,V)" (str a))
-      [ Printf.sprintf "inputtl(S,%s,Van,Tot,V)" (str a); base; "not " ^ eff ]
-  end
+  schrijf_segment ctx ~subject ~ot ~a ~clip ~p ~value:vterm ~body
 
 let translate_regel ctx (r : resolved_regel) =
   (* the ch. 8.2 validity gate: an excluded rule does not apply — nothing
@@ -7101,20 +7146,50 @@ let translate_regel ctx (r : resolved_regel) =
             | Some Kenmerktoekenning -> kenmerk_temporal ctx ~otype:ot ~kenmerk:a
             | _ -> attr_temporal ctx ~otype:ot ~attr:a
           in
-          if doel_tijdlijn && Option.fold ~none:false ~some:Eval.bevat_periode r.rr_voorwaarde then
-            fault
-              "a period condition on the temporal target %S is ch. 3.10's CLIP, not the \
-               evaluation-date gate: the window intersects the written timeline instead of \
-               deciding whether the rule applies, and that half of the chapter is not built. \
-               Declined in translation"
-              a;
+          (* ch. 3.10's CLIP (built 2026-09-23): on a timeline target the
+             window is taken off the condition position — it gates nothing —
+             and cuts the producer's segments instead ([schrijf_segment]).
+             Two positions stay refused by name, in ref's words up to the
+             phase: a characteristic target, whose timeline neither OCaml
+             executor writes (ch. 3.11), and the window as a composite
+             MEMBER, where the chapter says nothing about the other members. *)
+          let clip =
+            if doel_tijdlijn && Option.fold ~none:false ~some:Eval.bevat_periode r.rr_voorwaarde
+            then
+              match (r.rr_soort, r.rr_voorwaarde) with
+              | Some Kenmerktoekenning, _ ->
+                  fault
+                    "a period condition on the temporal characteristic target %S is ch. 3.10's \
+                     CLIP over a characteristic timeline, and no temporal characteristic is \
+                     written here (ch. 3.11), so there is no timeline to cut. Declined in \
+                     translation"
+                    a
+              | _, Some (Periode_conditie { vanaf; tot; tot_inclusief; _ }) ->
+                  Some (vanaf, tot, tot_inclusief)
+              | _ ->
+                  fault
+                    "a period condition inside a composite on the temporal target %S: ch. 3.10 \
+                     specifies the clip for the window as the rule's whole condition and says \
+                     nothing about what the other members do to a timeline. Declined in \
+                     translation"
+                    a
+            else None
+          in
           let cond =
-            match r.rr_voorwaarde with
-            | Some c -> cond_atoms ctx ~subject ~subject_ot:ot c
-            | None -> []
+            match (clip, r.rr_voorwaarde) with
+            | Some _, _ | None, None -> []
+            | None, Some c -> cond_atoms ctx ~subject ~subject_ot:ot c
           in
           (match r.rr_soort with
           | Some Kenmerktoekenning ->
+              (* ch. 3.11: a temporal characteristic's write is a TIMELINE of
+                 true-periods, and heeft/2 is the scalar reading. Until
+                 2026-09-23 this arm wrote heeft/2 on such a target anyway —
+                 measured on the document of red case
+                 periodevenster-tijdlijnkenmerk without its window: PASS
+                 here, where ref refuses. Refused now, in ref's words. *)
+              if kenmerk_temporal ctx ~otype:ot ~kenmerk:a then
+                fault "temporal characteristic %S: temporal writes are not implemented" a;
               (match r.waarde with
               | Some (Literal { waarde = Some "waar"; _ }) -> ()
               | _ -> fault "characteristic attribution with a non-waar value");
@@ -7229,7 +7304,7 @@ let translate_regel ctx (r : resolved_regel) =
                        granulariteit = Some g; leegwaarde = None; dimensie_selectie = None; _ })
                 when norm bot = norm ot ->
                   clip_member_qualifications fc;
-                  translate_pro_rata ctx ~subject ~ot ~a ~cond ~b ~k ~g
+                  translate_pro_rata ?clip ctx ~subject ~ot ~a ~cond ~b ~k ~g
               | Some
                   (Functie
                      { kind = Aantal_dagen_in; argumenten = [];
@@ -7239,7 +7314,7 @@ let translate_regel ctx (r : resolved_regel) =
                               { kenmerk = Some k; navigatie = None; negatie = false; _ } as fc);
                        granulariteit = Some g; leegwaarde = None; dimensie_selectie = None; _ }) ->
                   clip_member_qualifications fc;
-                  translate_aantal_dagen ctx ~subject ~ot ~a ~cond ~k ~g
+                  translate_aantal_dagen ?clip ctx ~subject ~ot ~a ~cond ~k ~g
               | _ ->
                   fault
                     "a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count \
