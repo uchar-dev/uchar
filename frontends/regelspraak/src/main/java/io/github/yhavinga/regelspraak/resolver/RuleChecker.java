@@ -810,9 +810,16 @@ final class RuleChecker {
             // surfaced as a WARNING — never silently dropped.
             java.util.function.Consumer<String> waarschuw = msg -> model.diagnostics.add(
                     new Diagnostic(Severity.WARNING, "beslistabel '" + naam + "': " + msg, line));
+            // The table's // Bron: annotations go onto EVERY rule it desugars to — the multi-version precedent of
+            // IR-SPEC ch. 3.1 (one comment block above a shared header, stamped per flattened entry). Each row is
+            // re-parsed in a stream of its own, where no comment stands above it, so the annotations are read here,
+            // off the table in the main stream, or they are lost.
+            List<String> tabelAnnotaties = bronAnnotaties(b);
             for (String regelSrc : BeslistabelDesugar.desugar(naam, geldig, headers, data, waarschuw)) {
                 RegelContext rc = parseRegel(regelSrc, line);
-                if (rc != null) regelVersies(rc);
+                if (rc != null)
+                    regelVersies(DefinitionResolver.src(rc.regelNaam()), rc.regelVersie(), tabelAnnotaties,
+                            rc.getStart().getLine());
             }
         }
     }

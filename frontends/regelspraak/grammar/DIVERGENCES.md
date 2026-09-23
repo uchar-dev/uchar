@@ -163,7 +163,13 @@ placement since, with no new wire field (card `frontend-bron-annotatie-in-defaul
   on a member the author did not choose. The same WARNING, citing §9.10,
   covers an annotation above a `Regelgroep` header (fix round, 2026-09-23).
   The group's own `bron` field is no place for it: on a `ResolvedRegelGroep`
-  that field is the v0 source snippet of the group's name. An annotation above
+  that field is the v0 source snippet of the group's name. A `Beslistabel`
+  header is the one header whose annotation does reach the wire, because the
+  table is rules: the annotation lands in the `bronAnnotaties` of every rule the
+  table desugars to, the multi-version precedent of IR-SPEC ch. 3.1 (one comment
+  block above a shared header, stamped per flattened entry). Until the same fix
+  round it vanished, since each row is re-parsed in a stream of its own where no
+  comment stands above it. An annotation above
   a definition (an `Objecttype`, `Feittype`, `Domein`, `Parameter`, …) draws no
   warning: it documents the declaration, which has no wire slot for it, and it
   is common practice — 351 of the 736 annotations in the measured operational
