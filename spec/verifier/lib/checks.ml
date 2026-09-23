@@ -1,4 +1,4 @@
-(* Well-formedness checks over a loaded uchar-ir-v1 document (M1 shape).
+(* Well-formedness checks over a loaded uchar-ir-v1 document (L2 shape).
 
    Each check implements one WF rule of spec/IR-SPEC.md, restricted to what
    the wire format can express (the WF index records per rule which
@@ -1620,10 +1620,9 @@ let wf034_verdeling_namen ctx =
    fourth wave). The empty-reference class of the earlier waves, one field
    further along: an allocation whose `bronType` or `doelType` is null names
    the object type it distributes FROM, or TO, nowhere. An UNDECLARED type is
-   already caught — WF-047 crosses it against the connecting role's fillers on
-   the bound form, WF-048 against the derivable fact type on the bindingless
-   one — but both of those read `Some t` and a null slips past them together
-   with everything else keyed on the type: WF-025's ordering-key datatype,
+   already caught — WF-047 crosses it against the fillers of the recipient
+   role the allocation carries — but that reads `Some t` and a null slips
+   past it together with everything else keyed on the type: WF-025's ordering-key datatype,
    WF-050's defaults overlap, the dependency graph's read and write edges, and
    this card's own name resolution below, which has no scope to resolve
    against without it.
@@ -1672,9 +1671,8 @@ let wf034_verdeling_typen ctx =
                 maximumAttribuut  the cap (read per recipient)
                 groepeerAttribuut the ordering key (read per recipient)
 
-   An undeclared TYPE is another rule's business (WF-047 on the bound form,
-   WF-048 on the bindingless one — both RULES measured loud, though the
-   executors are not: an undeclared `bronType` leaves `ref` silent with every
+   An undeclared TYPE is another rule's business (WF-047, against the
+   recipient role's fillers — measured loud, though the executors are not: an undeclared `bronType` leaves `ref` silent with every
    share *leeg* where 300/200/300 and a 400 remainder are pinned, while clingo
    refuses to translate), and a null type is the sibling arm above; this one
    resolves only where there is a scope to resolve in. A declared KENMERK name
@@ -1722,7 +1720,7 @@ let wf034_verdeling_naamresolutie ctx =
            match (scope, name) with
            | Some tn, Some a when norm a <> "" -> (
                match objecttype ctx tn with
-               | None -> [] (* the type itself is undeclared: WF-047/WF-048 *)
+               | None -> [] (* the type itself is undeclared: WF-047 *)
                | Some ot ->
                    if has_attr ot a then []
                    else
@@ -1982,22 +1980,21 @@ let keuzetype_same a b =
   norm (keuzetype_name a) = norm (keuzetype_name b)
   && match (a, b) with Kt_enum _, Kt_enum _ | Kt_sum _, Kt_sum _ -> true | _ -> false
 
-(* WF-089 (domain identity, IR-SPEC ch. 2.4): a use site's serialized [typ]
+(* WF-089 (domain identity, IR-SPEC ch. 2.4): a derived node's annotation
    and the datatype of the source it TAKES its value from must name the same
    keuzetype (variant and domain, ci) whenever either of them names one — the
-   domain extension of the soort cross-check WF-023/WF-027/WF-078 perform.
+   domain extension of the soort cross-check WF-023 and WF-027 perform.
    WF-088 and WF-061 bind a use site to the domain it NAMES; this is the read
-   half of the other binding. Two use sites call it: a reference expression,
-   whose source is the DECLARATION it reads (the [source] default), and an
-   element-passing fold, whose source is each OPERAND it hands through — the
-   operand being anchored in turn, so the fold chains to a declaration. The
-   write half is WF-023's domain clause ([wf023_assignment]); all of them
-   together are what make ref's "match has no arm" fault unreachable on a
-   verifier-clean document — the read half alone was measured insufficient
-   (fix round 1), the reference positions alone were too (fix round 2).
-   Either side unknown (the v0 sentinel), an unresolved source, or a use site
-   carrying no type defers, exactly as WF-023 and WF-078 do. [what] names the
-   use site in the message, [source] what it reads. *)
+   half of the other binding. Since L2 a reference carries no annotation of
+   its own (B13), so the use sites are the derived ones: an element-passing
+   fold, whose source is each OPERAND it hands through (an operand typed by
+   its declaration, so the fold chains to one), and the composite positions
+   of [composite_identity]. The write half is WF-023's domain clause
+   ([wf023_assignment]); together they make ref's "match has no arm" fault
+   unreachable on a verifier-clean document. Either side unknown — an
+   unresolved source or a use site carrying no type — defers, exactly as
+   WF-023 does. [what] names the use site in the message, [source] what it
+   reads. *)
 let wf089_domain_identity ?(source = "the declaration it reads from") at ~what ~decl ~typ =
   match (decl, typ) with
   | None, _ | _, None -> []
@@ -2052,8 +2049,8 @@ let rec struct_domain = function
    it comes from or enters, which is why a StructLiteral of domain B written
    into an attribute of domain A was verifier-clean while ref faulted at the
    field read and the ASP backend gave a wrong answer (measured, the card).
-   Either side unknown (the v0 sentinel), an unresolved source, or a use site
-   carrying no type defers, exactly as WF-089 and WF-023 do. *)
+   Either side unknown — an unresolved source or a use site carrying no type
+   — defers, exactly as WF-089 and WF-023 do. *)
 let wf090_struct_identity ?(source = "the declaration it reads from") at ~what ~decl ~typ =
   match (decl, typ) with
   | None, _ | _, None -> []
@@ -2204,50 +2201,36 @@ let rec datatype_full = function
   | List_type { element } -> "list of " ^ datatype_full element
   | other -> datatype_kind other
 
-(* WF-091 (reference-type identity, IR-SPEC ch. 4.1) and the numbers it
-   defers to. ONE comparison of a use site's serialized [typ] against the
-   declaration it takes its value from, facet by facet in one fixed order —
-   soort, domain, unit, decimals, wholeness, sign, residual structure — of
-   which the FIRST differing facet is reported, once: one divergence is one
-   message per comparison, never two facets for one comparison. (A caller
-   that compares one path repeatedly — the aggregation walk, once per
-   operand — can still report more than one.)
+(* WF-091 (derived-type identity, IR-SPEC ch. 4.1) and the numbers it
+   defers to. ONE comparison of a derived node's annotation against the
+   type its operands derive ([composite_expectation] below), facet by facet
+   in one fixed order — soort, domain, unit, decimals, wholeness, sign,
+   residual structure — of which the FIRST differing facet is reported,
+   once: one divergence is one message per comparison, never two facets for
+   one comparison.
 
-   The rule NUMBER follows the facet and the arm, not this function. A facet
-   that already carries a number on this arm keeps that number and its
-   wording verbatim: the domain facet is WF-089 (keuzetype family) and
-   WF-090 (struct domains) on every arm, and the soort facet is WF-078 on a
-   `BinderRef` (the caller passes [soort]). Every facet without one is
-   WF-091's, its name in the message — which is what lets a further facet
-   land without a further rule number.
+   The rule NUMBER follows the facet, not this function. The domain facet is
+   WF-089 (keuzetype family) and WF-090 (struct domains); every facet
+   without a number of its own is WF-091's, its name in the message. Since
+   L2 the five reference classes carry no annotation (B13) and the
+   reference-type arms of all three rules left with it: a reference's type
+   IS its declaration's ([expr_type]), so there is no copy to cross.
 
    The soort facet deliberately stops short of the domain-carrying kinds:
    `domeinen` is ONE namespace, so enumeration-versus-sum-type and
    domain-versus-no-domain are the domain facet's own clauses (WF-089's
    variant and one-sided arms, WF-090's), stated and numbered there.
 
-   Deferrals are the family's, unchanged: either side absent or the v0
-   unknown sentinel, or a declaration that does not resolve. The WF-034
-   widening (2026-09-04, two waves) closes the shapes a document could
-   CHOOSE one with, not the self-serving of deferrals as such: a reference
-   naming no objecttype and one naming no attribuut, each in a value
-   position and in a fold source (four arms — the aggregation branch
-   replaces the walk, so each half needs one on both paths); a
-   ParameterRef naming no parameter; and both spellings of the unknown type
-   on a rule target, the sentinel and an absent type. Measured on the
-   goldens, one field at a time: 409 of 751 attribuut positions, 35 of 37
-   parameter positions and 295 of 295 target types stayed verifier-clean
-   before, none after.
+   Either side absent defers.
 
-   [skip] names facets this comparison does NOT make. It exists for the
-   DERIVED arm ([composite_expectation] below), where the expectation is a
-   formula over the operands rather than a copy of one declaration, and a
-   formula may be silent on a facet while speaking on the rest. Every entry
-   is reason-carrying at its call site; a caller that skips a NAMED facet
-   also skips [residual], since the backstop would otherwise re-report the
-   very facet the caller declined to claim. No reference arm passes it. *)
-let use_site_identity ?(source = "the declaration it reads from") ?soort ?(skip = []) at ~what
-    ~decl ~typ =
+   [skip] names facets this comparison does NOT make: the expectation is a
+   formula over the operands, and a formula may be silent on a facet while
+   speaking on the rest. Every entry is reason-carrying at its call site; a
+   caller that skips a NAMED facet also skips [residual], since the
+   backstop would otherwise re-report the very facet the caller declined to
+   claim. *)
+let use_site_identity ?(source = "the declaration it reads from") ?(skip = []) at ~what ~decl
+    ~typ =
   match (decl, typ) with
   | None, _ | _, None -> []
   | Some d, Some t ->
@@ -2260,10 +2243,7 @@ let use_site_identity ?(source = "the declaration it reads from") ?soort ?(skip 
       let soort_facet () =
         if names_a_domain t || names_a_domain d then []
         else if datatype_kind t = datatype_kind d then []
-        else
-          match soort with
-          | Some (rule, render) -> [ v rule at (render (datatype_kind t) (datatype_kind d)) ]
-          | None -> mismatch "soort" (datatype_kind t) (datatype_kind d)
+        else mismatch "soort" (datatype_kind t) (datatype_kind d)
       in
       let domain_facet () = use_site_domain ~source at ~what ~decl ~typ in
       let tl, dl = peel_lists t d in
@@ -2316,32 +2296,34 @@ let use_site_identity ?(source = "the declaration it reads from") ?soort ?(skip 
 
 (* --- the DERIVED expectation on composite positions (WF-091) ------------ *)
 
-(* A reference type is a COPY of one declaration; a composite type is a
-   DERIVATION over its operands (RUNTIME-SEMANTICS ch. 2.10, clause 2). The
+(* A reference's type is its declaration's (since L2 the reference carries
+   no copy of it); a composite type is a DERIVATION over its operands (RUNTIME-SEMANTICS ch. 2.10, clause 2). The
    facet engine above needs a [decl] to compare against, and at a composite
    there is none — which is why WF-091's honesty note 4 recorded the numeric
    facets of a derived type as crossed by nothing. What follows puts the
    DERIVATION where the declaration sits: the expectation is computed from
-   the operands' own serialized types by the ch. 2.3 precision table and the
-   ch. 2.6 unit rules, and the node's annotation is crossed against it by the
-   SAME engine, in the same facet order, under the same number-follows-the-
-   facet rule — so the DOMAIN facet reports under WF-089/WF-090 at a composite
-   exactly as it does at a reference (`wf089-composiet-domein`).
+   the operands' static types ([expr_type]) by the ch. 2.3 precision table
+   and the ch. 2.6 unit rules, and the node's annotation is crossed against
+   it by the facet engine, under the number-follows-the-facet rule — so the
+   DOMAIN facet reports under WF-089/WF-090 at a composite
+   (`wf089-composiet-domein`).
 
-   How far the chain reaches. An operand's own type may be anchored in turn —
-   a reference arm against its declaration, a composite against its own
-   operands — and where every operand underneath is anchored that way, the
-   composite is bound to the declarations beneath it. That is the good case,
+   How far the chain reaches. An operand's own type is anchored in turn — a
+   reference IS its declaration's type since L2, a composite is crossed
+   against its own operands — and where every operand underneath is
+   anchored that way, the composite is bound to the declarations beneath
+   it. That is the good case,
    not a theorem: the chain reaches only through operands something actually
    crosses, and it BREAKS at a fourth-class operand. A GEDEELD_DOOR over two
    unitless operands may be annotated `kg`, nothing crosses it, and a rounding
    above it then derives `kg` all the way into a `kg` target, verifier-clean
    (measured 2026-09-04: 26 such operand positions over 19 of the 174
-   golden+rood documents). The deferral proper is not self-servable — an
-   operand carrying the unknown sentinel or no type at all is already
-   WF-034-ill-formed at every value node — but a fabricated fourth-class
-   annotation is the stronger escape and stays OPEN: it does not switch the
-   cross off, it feeds it a premise.
+   golden+rood documents). The deferral proper is not self-servable — a
+   value node carrying no type at all is already WF-034-ill-formed, and a
+   reference or an [Onopgelost] whose type nothing declares is reported by
+   its own rule — but a fabricated fourth-class annotation is the stronger
+   escape and stays OPEN: it does not switch the cross off, it feeds it a
+   premise.
 
    The SIGN is claimed at no arm below, and therefore neither is [residual]:
    the backstop would re-report exactly the facet every formula here declines.
@@ -3059,8 +3041,9 @@ let wf033 ctx =
 (* Expression layer: WF-034 .. WF-043 (walk)                               *)
 (* ======================================================================= *)
 
-(* [typ_of_expr] is defined above WF-027 (it types a characteristic
-   initialisation's value); the expression walk below shares it. *)
+(* [annotation] and [expr_type] are defined above WF-027 (they type a
+   characteristic initialisation's value); the expression walk below shares
+   them. *)
 
 (* Is this expression a time-dependent operand (for WF-043)? *)
 let expr_temporal ctx = function
@@ -3253,39 +3236,27 @@ let is_role_name ctx name =
 
    The pair set is CHAIN-CLOSED (IR-SPEC ch. 2.6): a role declaring filler
    T is filled by every S ⊑ T, so a fact type declared on supertypes
-   relates every subtype pair below it. One consequence is stated here so
-   it is not discovered later — adding a subtype can turn a previously
-   well-formed bindingless navigation into a WF-048 refusal, because a pair
-   that was uniquely connected may become doubly connected once the chain
-   closes. WF-048's text is unchanged and its refusal stays loud; the
-   answer is an explicit role binding.
+   relates every subtype pair below it. Since L2 no navigation, fold range,
+   allocation or scope is derived from a type pair (B12): what still asks
+   this question is WF-052's created-side role and the dependency edge of an
+   object creation, whose back-link binding stays optional.
 
    [fills] is also the JOIN test of every walk in this file — "the walk
-   stands at T; does T fill this hop's near role?" — and that is worth
-   saying once, because the two spellings of one hop used to answer it
-   differently. A BINDINGLESS hop resolves through [nav_role_by_name],
-   which has gone through [fills] since the chain landed; a BOUND hop
-   compared the two type NAMES literally, so the same document was
-   admitted without a role binding and refused with one — while ch. 2.6's
-   own advice is to write the binding whenever a subtype is in play.
-
-   TEN comparison sites were swept for that on 2026-09-12 (card
-   subtype-verdeling-keten), and they do not all get the same answer.
-   Five are the near-side join above and go through [fills] — WF-053's
-   navigation chain and its characteristic check, WF-102's bronPad step,
-   WF-028's creation chain and WF-054's uniqueness scope. Four are the
-   "this position is used AS type Y" question, and those are ONE-SIDED,
-   because a position accepts every instance at or below its declared
-   type and none above it: WF-053's endpoint (⊑ the written endpoint,
-   which is exactly what ref faults on per instance), WF-028's
-   ankerRol/doelRol agreement and WF-034's intermediate bean type (both
-   ⊑ the role's declared filler), and WF-052's created-side role, which
-   is not a comparison at all any more but the executors' own
+   stands at T; does T fill this hop's near role?" — and the role check's
+   subject test (WF-034, [Role_membership]). Every near-side join goes
+   through it: WF-053's navigation chain and its characteristic check,
+   WF-102's bronPad step, WF-028's creation chain and WF-054's uniqueness
+   scope. The "this position is used AS type Y" questions are ONE-SIDED,
+   because a position accepts every instance at or below its declared type
+   and none above it: WF-053's endpoint (⊑ the written endpoint, which is
+   exactly what ref faults on per instance), WF-028's ankerRol/doelRol
+   agreement (⊑ the role's declared filler), and WF-052's created-side
+   role, which is not a comparison at all but the executors' own
    [connecting_role_candidates] — "the first role the created type fills"
    picks the ANCESTOR's role under ⊑ and reads its cardinality, so the
-   verdict followed the order the wire listed the roles in. The tenth,
-   WF-102's landing on the elementObjecttype, stays TWO-SIDED on the
-   WF-047 line; the comment there says why.
+   verdict would follow the order the wire lists the roles in. WF-102's
+   landing on the elementObjecttype stays TWO-SIDED on the WF-047 line; the
+   comment there says why.
 
    The rule that separates them: [fills] and the one-sided [is_sub] where
    a position must HOLD what reaches it, [type_compatible] only where a
@@ -3510,7 +3481,7 @@ let aggregation_source_check ctx at ~element_type ~subject ~kind ~ranged e =
                    ^ "': a value fold's source reads an attribute of each contributor") ]))
   | _ -> []
 
-(* --- WF-047 / WF-048: symbolic role bindings (v1 extension) -------------- *)
+(* --- WF-047: symbolic role bindings --------------------------------------- *)
 
 (* Resolve a binding to (fact type, bound role, opposite role). Only the
    declared role name binds — the plural is presentation (WF-047). *)
@@ -4459,10 +4430,10 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          | None -> [])
       (* WF-089/WF-090 (domain identity, ch. 2.4), aggregation position: an
          element-passing fold's own type against each operand's type. The
-         operand's type is itself bound to the declaration it reads (the
-         reference arms below, or a structural equality for a composite),
-         so crossing the node against its operand chains the node to that
-         declaration — without this the fold is a laundering step: its
+         operand's type is itself bound to the declaration it reads (a
+         reference's type IS its declaration's, a composite is crossed
+         against its own operands), so crossing the node against its
+         operand chains the node to that declaration — without this the fold is a laundering step: its
          value comes from a Kust attribute and its type says Vaarwater.
 
          The DOMAIN facet only, deliberately, where every other arm crosses
@@ -6368,10 +6339,10 @@ let expression_layer ctx =
    the creation members of recursive rule groups is acyclic.
    WF-046: no cycle in the full graph carries a negative edge.
    Recorded narrowings (ch. 6.1): relation membership CONDITION reads
-   are treated as input; bindingless folds/allocations keep the
-   population proxy; day-kind definitions contribute no edges. Bound
-   relation reads (a RolBinding on a fold, an allocation, or a creation
-   hop) are relation-node edges (n_rel). *)
+   are treated as input; a fold reads the element population beside its
+   relation; day-kind definitions contribute no edges. Relation reads (a
+   RolBinding on a fold, an allocation, a navigation or a creation hop)
+   are relation-node edges (n_rel). *)
 
 let n_attr ot a = "attr:" ^ norm ot ^ ":" ^ norm a
 let n_char ot k = "char:" ^ norm ot ^ ":" ^ norm k
@@ -6467,9 +6438,8 @@ let member_writes ctx ~kind ~over ot m =
     (node ot m :: List.filter_map (fun n -> if carries n then Some (node n m) else None) reached)
 
 (* the link set of one declared relation (ch. 6.1): written by the fact
-   creations that create it, read by every symbolic hop over it and by
-   every fold/allocation that names it in a role binding. Bindingless
-   forms keep the population proxy — the recorded narrowing. *)
+   creations that create it, read by every hop over it and by every
+   fold/allocation that names it in a role binding. *)
 let n_rel ft = "rel:" ^ norm ft
 
 (* Edge kinds (RUNTIME-SEMANTICS ch. 6.1): positive; stratum-strict (a
@@ -7089,9 +7059,6 @@ let wf045_046 ctx =
 
 (* ======================================================================= *)
 
-(* WF-047/048 on the allocation: the recipient-role binding agrees with
-   the declared (bronType, doelType); a bindingless allocation must be
-   uniquely derivable. *)
 (* WF-047 on the allocation's recipient role, which it carries since L2
    (B12): the binding resolves and its fillers agree with the source and
    target types. *)
@@ -7588,13 +7555,14 @@ let wf054 ctx =
 (* WF-023 (the shallow slice), at every attribute WRITE position — a rule's
    target, an object creation's attribute member, a defaults consequence:
    assignment typing between the target's DECLARED type and the value's
-   serialized type — same family (numeric kinds count as one), compatible
+   static type ([expr_type]: a reference's declaration, every other value's
+   annotation) — same family (numeric kinds count as one), compatible
    units (a unitless literal adopts), no contradictory sign restriction, and
    the DOMAIN clause: a keuzetype-typed side names the same keuzetype
    (variant and domain, ci, through a ListType element) as the other. The
    domain clause is the write half of WF-089's domain identity — WF-089
-   crosses what a reference READS, this crosses what is WRITTEN into the
-   declaration it reads — and the two together make ref's "match has no arm"
+   crosses what a fold hands through, this crosses what is WRITTEN into a
+   declaration — and the two together make ref's "match has no arm"
    fault unreachable on a verifier-clean document (fix round 1 of the card:
    without it a Literal or Construct of another domain, a ghost-domain
    literal and a list of another domain entered the read declaration
