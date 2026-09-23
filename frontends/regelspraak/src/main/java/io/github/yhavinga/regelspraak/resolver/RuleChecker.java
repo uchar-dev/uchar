@@ -66,6 +66,10 @@ final class RuleChecker {
      *  second, misleading refusal beside the true one. */
     private final java.util.Set<ResolvedRegel> geweigerdeDoelen =
             java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+    /** Where each defaults group was written — the block's head line and the head's own words — so a refusal
+     *  about the group can stand at the block that made it. */
+    private final Map<PrioritizedDefaults, Herkomst> pdHerkomst = new java.util.IdentityHashMap<>();
+    private record Herkomst(int line, String kop) {}
 
     /** The main parse's token stream, kept so the §Bron statuutannotaties on the HIDDEN channel
      *  (the {@code // Bron: …} comments) can be gathered directly above each rule. Null when the
@@ -213,6 +217,62 @@ final class RuleChecker {
         java.util.Set<ParserRuleContext> geweigerd = regelgroepReikwijdte(doc);
         ordeningsDefaults(doc, geweigerd);
         groepsDefaults(doc, geweigerd);
+        keurEnigeSchrijver();
+    }
+
+    /** WF-050's single writer, producer side (fix round 3, 2026-09-23): a target with a defaults group has no
+     *  other writer — no plain rule beside the group, and no second group unless every group on the target is
+     *  declared unordered. The lowering built each group from its own block and never looked beside it, so an
+     *  'Uitzondering op' with another plain rule on its target, an exception on one row of a decision table (the
+     *  other rows write on), two ordered families on one target, a family beside an unordered block, and an
+     *  unordered block beside a plain rule all reached disk silently for the verifier to refuse. Keyed on the
+     *  DECLARED object type, as WF-050 is: a supertype's and a subtype's stacks are two keys (the inheritance
+     *  obligation of IR-SPEC ch. 6.1). One ERROR per target and clause, naming both writers; a rule whose target
+     *  is refused already is not counted again. */
+    private void keurEnigeSchrijver() {
+        Map<String, List<PrioritizedDefaults>> perDoel = new LinkedHashMap<>();
+        for (PrioritizedDefaults pd : model.prioritizedDefaults)
+            perDoel.computeIfAbsent(doelSleutel(pd.onderwerp(), pd.isKenmerk(), pd.doel()), k -> new ArrayList<>()).add(pd);
+        for (var e : perDoel.entrySet()) {
+            List<PrioritizedDefaults> groepen = e.getValue();
+            String doelTekst = groepen.get(0).onderwerp() + "." + groepen.get(0).doel();
+            String groepsnamen = opsomming(groepen.stream().map(PrioritizedDefaults::naam).toList());
+            List<String> anderen = new ArrayList<>();
+            for (ResolvedRegel r : model.resolvedRegels) {
+                if (geweigerdeDoelen.contains(r)) continue;
+                DefaultsDoel d = doelVan(r);
+                if (d != null && e.getKey().equals(doelSleutel(d.onderwerp().naam, d.kenmerk(), d.naam())))
+                    anderen.add("'" + r.naam() + "'" + tabelVanRij(r.naam()));
+            }
+            if (!anderen.isEmpty()) {
+                Herkomst h = pdHerkomst.getOrDefault(groepen.get(0), new Herkomst(0, "defaults-groep"));
+                model.diagnostics.add(new Diagnostic(Severity.ERROR, h.kop() + ": het doel " + doelTekst
+                        + " heeft naast de defaults-groep " + groepsnamen + " nog "
+                        + (anderen.size() == 1 ? "een schrijver: regel " : "schrijvers: regels ")
+                        + String.join(", ", anderen) + " — een doel met een defaults-groep verdraagt geen andere "
+                        + "schrijver, want een gewone regel ernaast zou de besluiten van de groep stil tenietdoen "
+                        + "(WF-050). Neem de regel op in de groep, of geef hem een ander doel", h.line()));
+            }
+            if (groepen.size() > 1 && !groepen.stream().allMatch(PrioritizedDefaults::ongeordend)) {
+                Herkomst h = pdHerkomst.getOrDefault(groepen.get(groepen.size() - 1), new Herkomst(0, "defaults-groep"));
+                model.diagnostics.add(new Diagnostic(Severity.ERROR, h.kop() + ": het doel " + doelTekst
+                        + " heeft meer dan één defaults-groep (" + groepsnamen + ") en niet elke groep is "
+                        + "ongeordend — meerdere groepen op één doel mogen alleen als elk ongeordend is, want "
+                        + "voorrang is expliciet of expliciet afwezig (WF-050). Zet de uitzonderingen onder één "
+                        + "basisregel, of schrijf de leden samen in een ongeordend blok", h.line()));
+            }
+        }
+    }
+
+    private static String doelSleutel(String onderwerp, boolean kenmerk, String naam) {
+        return onderwerp + "|" + (kenmerk ? "kenmerk" : "attribuut") + "|" + naam.toLowerCase(java.util.Locale.ROOT);
+    }
+
+    /** " (een rij van beslistabel 'T')" when {@code regel} is a row of decision table T, else "". */
+    private String tabelVanRij(String regel) {
+        for (var e : rijRegels.entrySet())
+            if (e.getValue().contains(regel)) return " (een rij van beslistabel '" + src(e.getKey().beslistabelNaam()) + "')";
+        return "";
     }
 
     /** §9.10 × §4 (maintainer decision 2026-09-23): an extension block within the scope of a Regelgroep is
@@ -515,8 +575,10 @@ final class RuleChecker {
 
             List<Default> defaults = new ArrayList<>(excDefaults);
             defaults.add(defaultVan(basisRegel, doel.kenmerk()));
-            model.prioritizedDefaults.add(defaultsVan(basisNaam, doel, false, defaults, basisRegel.geldigheid(),
-                    annotatieTekst(basisRegel.bronAnnotaties())));
+            PrioritizedDefaults groep = defaultsVan(basisNaam, doel, false, defaults, basisRegel.geldigheid(),
+                    annotatieTekst(basisRegel.bronAnnotaties()));
+            model.prioritizedDefaults.add(groep);
+            pdHerkomst.put(groep, new Herkomst(line, "Uitzondering op '" + basisNaam + "'"));
 
             model.resolvedRegels.remove(basisRegel);
             for (UitzonderingRegelContext u : excepties) {
@@ -568,8 +630,10 @@ final class RuleChecker {
             }
             if (fout || gedeeld == null) continue;
             for (ResolvedRegel r : leden) {
-                model.prioritizedDefaults.add(defaultsVan(r.naam(), gedeeld, true,
-                        List.of(defaultVan(r, gedeeld.kenmerk())), r.geldigheid(), annotatieTekst(r.bronAnnotaties())));
+                PrioritizedDefaults zuster = defaultsVan(r.naam(), gedeeld, true,
+                        List.of(defaultVan(r, gedeeld.kenmerk())), r.geldigheid(), annotatieTekst(r.bronAnnotaties()));
+                model.prioritizedDefaults.add(zuster);
+                pdHerkomst.put(zuster, new Herkomst(line, "Uitzonderingen ongeordend"));
                 model.resolvedRegels.remove(r);
             }
         }

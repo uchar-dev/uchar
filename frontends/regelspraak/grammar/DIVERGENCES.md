@@ -195,7 +195,15 @@ Witness: `DefaultsBronAnnotatieTest`, `BronAnnotatiePlaatsTest`.
 - a base rule or exception with more than one `geldig`-versie (not carried by
   this first card);
 - an extension block within the scope of a `Regelgroep`, or over a base rule
-  that is a group member (next subsection).
+  that is a group member (next subsection);
+- a second writer on a group's target (WF-050, fix round 3): a plain rule
+  beside a defaults group — another rule on the base's target, or the other
+  rows of a decision table when one row is the base — or a second group on the
+  target unless every group there is declared unordered (two ordered
+  families, a family beside an unordered block). Each reached disk silently
+  for the verifier to refuse; the ERROR names both writers. Keyed on the
+  declared object type, as WF-050 is, so a supertype's and a subtype's stacks
+  stay two targets. Two unordered blocks on one target stay admitted.
 
 ### Interaction with `Regelgroep` (§9.10) — refused
 
