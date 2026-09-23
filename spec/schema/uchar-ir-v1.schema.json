@@ -4076,7 +4076,7 @@
       }
     },
     "Diagnostic": {
-      "description": "The producer's own account of what stayed unresolved in a document it did write (WF-113). 'severity' is WARNING only: an ERROR means the producer refused to write the document, and INFO is not a wire severity. A non-empty 'message' and the accounting of every Onopgelost node are verifier checks (WF-113).",
+      "description": "The producer's own account of what stayed unresolved in a document it did write (WF-113). 'severity' is WARNING only: an ERROR means the producer refused to write the document, and INFO is not a wire severity. A 'message' that is neither empty nor blank, a 'line' of at least 0 (0 = no source position, a hand-built document) and the accounting of every Onopgelost node are verifier checks (WF-113), so 'line' admits any integer here.",
       "type": "object",
       "additionalProperties": false,
       "required": [

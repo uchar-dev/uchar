@@ -9858,13 +9858,15 @@ let wf105 ctx =
    unresolved in a document it did write (IR-SPEC ch. 2, decision V2 (ii);
    the rule since M1, 2026-09-23).
 
-   (a) Every entry carries severity WARNING, a non-empty message and an
-   integer line. The line is the loader's: it reads [line] as an integer or
-   refuses the document. ERROR and INFO are refused here BY NAME — the loader
-   admits both so that a document carrying one fails on this rule and says
-   why, not on a load error: an ERROR means the producer refused to write the
-   document, and INFO is tooling talk (zero carriers in 817 documents,
-   measured 2026-09-23).
+   (a) Every entry carries severity WARNING, a message that is neither empty
+   nor blank, and an integer line >= 0. That the line is an integer is the
+   loader's: it reads [line] as one or refuses the document; a negative one
+   is refused here, because 0 is already the value for "no source position"
+   (a hand-built document) and a line below it names nothing. ERROR and INFO
+   are refused here BY NAME — the loader admits both so that a document
+   carrying one fails on this rule and says why, not on a load error: an
+   ERROR means the producer refused to write the document, and INFO is
+   tooling talk (zero carriers in 769 documents, measured 2026-09-23).
 
    (b) Every Onopgelost node — the expression marker and the condition
    marker, at every expression and condition position of the document — is
@@ -9872,9 +9874,11 @@ let wf105 ctx =
    `bron` verbatim (the decision of 2026-09-19 that every surviving marker
    carries a WARNING, made checkable). Any diagnostic counts; that it is a
    WARNING is (a)'s business, so each clause fails on its own witness. A
-   marker whose `bron` is null has nothing a message could contain and is
-   refused. The containment is literal, so an EMPTY `bron` is contained in
-   every message: such a marker is accounted for by any diagnostic.
+   marker whose `bron` is null or blank is refused: blank counts as absent,
+   as it does for a named form's name (WF-107). The containment is literal,
+   so an empty `bron` would be contained in every message and a blank one in
+   nearly every message, and a message about another marker would account
+   for it.
 
    (c) — no consumer reads the list for evaluation — is a rule on consumers
    and has no document to reject. *)
@@ -9978,6 +9982,8 @@ let marker_positions ctx : (string * string option list) list =
       ctx.doc.prioritized_defaults
   @ idx "functionDefs" (fun at (fd : function_def) -> e (at ^ "/body") fd.fd_body) ctx.doc.function_defs
 
+let blank s = String.trim s = ""
+
 let contains_verbatim ~hay ~needle =
   let n = String.length needle and h = String.length hay in
   let rec at i = i + n <= h && (String.sub hay i n = needle || at (i + 1)) in
@@ -10000,12 +10006,20 @@ let wf113 ctx =
       | None ->
           [ v "WF-113" (at ^ "/severity")
               "diagnostic without a severity: the one wire severity is WARNING" ])
+      @ (match d.message with
+        | Some m when not (blank m) -> []
+        | _ ->
+            [ v "WF-113" (at ^ "/message")
+                "diagnostic with an empty or blank message: an entry that says nothing accounts \
+                 for nothing" ])
       @
-      match d.message with
-      | Some m when m <> "" -> []
-      | _ ->
-          [ v "WF-113" (at ^ "/message")
-              "diagnostic with an empty message: an entry that says nothing accounts for nothing" ])
+      if d.diag_line >= 0 then []
+      else
+        [ v "WF-113" (at ^ "/line")
+            (Printf.sprintf
+               "diagnostic with line %d: a line is a source position, and 0 is the value for \
+                none (a hand-built document)"
+               d.diag_line) ])
     diags
   @ List.concat_map
       (fun (at, brons) ->
@@ -10016,6 +10030,12 @@ let wf113 ctx =
                   (v "WF-113" at
                      "Onopgelost marker whose bron is null: no diagnostic message can contain \
                       it, so it cannot be accounted for")
+            | Some b when blank b ->
+                Some
+                  (v "WF-113" at
+                     "Onopgelost marker whose bron is blank: blank counts as absent, since \
+                      nearly every message contains it and a message about another marker \
+                      would account for this one")
             | Some b ->
                 if
                   List.exists

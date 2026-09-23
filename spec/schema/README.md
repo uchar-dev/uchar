@@ -134,11 +134,13 @@ nullable only where the format actually emits `null`. `$id`:
 `https://uchar.dev/schema/uchar-ir-v1.schema.json`. It replaces the
 `regelspraak-ir-v0` schema; the two do not exist side by side.
 
-Two admissions are deliberate and leave the refusal to the verifier:
+Three admissions are deliberate and leave the refusal to the verifier:
 `Attribute.datatype` admits `null`, as the v0 attribute map did, so a
 datatype-less attribute stays a loadable document that the verifier refuses
-(WF-059); and `TimelineFacet.count` admits any integer, because `count ≥ 1` is
-WF-005, a verifier check with its own negatief witness.
+(WF-059); `TimelineFacet.count` admits any integer, because `count ≥ 1` is
+WF-005, a verifier check with its own negatief witness; and `Diagnostic.line`
+admits any integer, because `line ≥ 0` (0 = no source position, a hand-built
+document) is WF-113 (a), likewise with its own witness.
 
 **Extension fields** (the decided wire-entry discipline, `../IR-SPEC.md`
 § Method): a v1 construct enters the wire additively, as an *optional*
