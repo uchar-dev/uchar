@@ -166,14 +166,14 @@ let value_scale = function
    ordering fold over two sum-typed operands, whose own operand fence knew the
    ch. 1.2d scalars but not SumType.
 
-   The fence hangs on the SCALE and not on a wire `type` annotation, which is
-   what makes it the smallest cut that holds. The annotation-shaped fences
-   beside it ([numeric_ok], [is_symbolic_operand]) read [typ_of_expr] — the
-   wire — while the scale is derived from the DECLARATION, so an absent or
-   lying annotation walks straight past them into the division (§2.10: a
-   consumer derives from declarations). Every divisor position routes through
-   here instead, so a new unscaled datatype is refused the day it is added
-   rather than the day it crashes. *)
+   The fence hangs on the SCALE and not on a static type, which is what makes
+   it the smallest cut that holds. The type-shaped fences beside it
+   ([numeric_ok], [is_symbolic_operand]) read [static_type] — a composite's
+   own annotation — while the scale is derived from the DECLARATION, so an
+   absent or lying annotation walks straight past them into the division
+   (§2.10: a consumer derives from declarations). Every divisor position
+   routes through here instead, so a new unscaled datatype is refused the day
+   it is added rather than the day it crashes. *)
 let numeric_scale ~what s =
   if s < 1 then
     fault
