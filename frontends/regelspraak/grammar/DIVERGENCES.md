@@ -145,8 +145,12 @@ so a declared characteristic whose name begins with `niet` or `geen` binds
 itself; only when the whole name binds nothing is a leading `niet` or `geen`
 read as the negation and the rest bound. A verb that does not fit the kind
 (`is geen` on a bezittelijk characteristic) gets the condition side's Tabel 16
-WARNING; the lowering is the same. A positive name keeps its written spelling
-without a lookup, as before.
+WARNING; the lowering is the same. `is niet een` binds a zelfstandig
+characteristic only, as it does in a condition; on another kind the sentence is
+refused and the message gives the kind's own spelling (`is niet X`, `heeft geen
+X`), since a result cannot stay an unresolved marker the way a condition can. A
+positive name keeps its written spelling, as before: the lookup only decides
+whether the name is negated.
 
 **Grammar.** `is niet X`, `is geen X` and `heeft geen X` parsed already: `NIET`
 is a name word and `geen` lexes as an ordinary word, so both stand inside the
@@ -180,8 +184,9 @@ makes it false anyway.
 **Refusals and the warning** (witness: `NietInUitzonderingTest`):
 
 - a negated kenmerktoekenning in a plain `Regel` — no exception, no member of
-  an unordered block, no base of a chain — is an ERROR that cites §9.2, WF-022
-  and this section ("een gewone regel kan een kenmerk niet ontkennen …").
+  an unordered block, no base of a chain — is an ERROR that cites §9.2, §3.5,
+  WF-022 and this section ("een gewone regel kan een kenmerk niet ontkennen
+  …").
   Measured on the frontend before this card: the sentence went to disk as an
   undeclared characteristic `niet uitgesloten` with `diagnostics: []`, for the
   verifier to refuse under WF-022; in an `Uitzondering op` it drew "schrijft een
@@ -192,21 +197,30 @@ makes it false anyway.
 - a negation whose rest names no characteristic of the subject (`is niet
   vervallen` with `vervallen` undeclared, and no characteristic `niet vervallen`
   either) is an ERROR naming the rest ("… ontkent geen kenmerk van Jutter —
-  'vervallen' is niet gedeclareerd …"); the lowering then skips the block's
-  family instead of adding a target-mismatch ERROR. A POSITIVE result on an
-  undeclared characteristic is still not refused here: it reaches the
-  verifier's WF-022;
+  'vervallen' is geen kenmerk van Jutter …"); when the rest is a declared
+  ATTRIBUTE the message says so and points to `moet gesteld worden op onwaar`.
+  The lowering then skips the block's family instead of adding a
+  target-mismatch ERROR. A POSITIVE result on an undeclared characteristic is
+  still not refused here: it reaches the verifier's WF-022;
+- `is niet een X` on an X that is bijvoeglijk or bezittelijk is an ERROR ("de
+  vorm 'is niet een' ontkent een zelfstandig kenmerk (Tabel 16) …");
 - there is no negated gelijkstelling: an attribute has no polarity. `moet
   gesteld worden op onwaar` on a Boolean attribute stays a value — a
   `consequentie`, never a `besluit` — and `niet` written into an attribute name
   is no negation (the undeclared-attribute refusal of WF-022);
-- a characteristic target on which every default of every group decides
-  `onwaar` never derives anything. It is well-formed and draws no ERROR; the
-  RuleChecker gives one WARNING per target ("… wordt nooit afgeleid …"), which
-  the emitter writes into `diagnostics` (WF-113 (a)). Per target, not per
-  group: an unordered block spreads its target over sibling groups, and a
-  target with a negated sibling beside a positive one derives through the
-  positive one.
+- on a characteristic target where every default of every group decides
+  `onwaar`, the groups never attribute the characteristic. That is well-formed
+  and draws no ERROR; the RuleChecker gives one WARNING per target ("… kent het
+  nooit toe …"), which the emitter writes into `diagnostics` (WF-113 (a)). Per
+  target, not per group: an unordered block spreads its target over sibling
+  groups, and a target with a negated sibling beside a positive one derives
+  through the positive one. The warning speaks of the groups only — a subtype's
+  own rule or an object creation may still attribute the characteristic — and
+  it is left out beside a plain rule on the same target, which draws WF-050's
+  ERROR instead;
+- the refusals above stand at the decision table's own line when the rule is
+  a table row (a row is re-parsed in a stream of its own) and name the table;
+  a rule with several versions draws one ERROR, not one per version.
 
 **Which documents change.** Only a document with a result sentence whose name,
 after an article, begins with `niet` or `geen` and does not bind as a whole, or
@@ -305,7 +319,11 @@ Witness: `DefaultsBronAnnotatieTest`, `BronAnnotatiePlaatsTest`.
   families, a family beside an unordered block). Each reached disk silently
   for the verifier to refuse; the ERROR names both writers. Keyed on the
   declared object type, as WF-050 is, so a supertype's and a subtype's stacks
-  stay two targets. Two unordered blocks on one target stay admitted.
+  stay two targets. Two unordered blocks on one target stay admitted. A rule
+  written in an extension block whose family or block the lowering refused is
+  not counted as a second writer (2026-09-23, card
+  `dialect-niet-in-uitzondering`): its block's own ERROR stands, and "neem de
+  regel op in de groep" would name a block the rule already stands in.
 
 ### Interaction with `Regelgroep` (§9.10) — refused
 

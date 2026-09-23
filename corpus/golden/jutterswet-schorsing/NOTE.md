@@ -19,6 +19,13 @@ target. The law is the Jutterswet (`corpus/jutterswet/wet-v4.md`):
   is.` The characteristic `recht op de penning` is bezittelijk, so the
   negation is `heeft geen` (Tabel 16).
 
+RUNTIME-SEMANTICS ch. 7.1 takes art. 4bis ("evenmin") as its example of
+parallel grounds: separate defaults groups, each on its own target, that a
+consumer combines. This golden writes the article's own sentence instead, as
+an exception on the art. 3 target, because that sentence denies the right
+itself. With one ground on each side the two models give the same answer:
+the right holds iff the count reaches 12 and the vergunning is not geschorst.
+
 ## Source (`bron.rgs`)
 
 - Base rule **penningrecht art 3**: `Een Jutter heeft recht op de penning
