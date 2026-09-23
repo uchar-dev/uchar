@@ -4935,7 +4935,10 @@ public final class DrlTranspiler {
      *  gelowerd" for a shape the exec branch ALSO refuses, and for a range whose reason has nothing to do
      *  with either branch. The reasons are per decline now, and each names the axis it was declined on. */
     private LoweredConditie kvMarker(Conditie.Kwantorvouw kv, String reden) {
-        return LoweredConditie.marker("§8.2 kwantorvouw (" + kv.kwantor() + " over "
+        // "§8.2" only where the matrix IS the §8.2 whole-period form: a fold over any other matrix is ch. 3.9a's
+        // node without the qualifier, and the frame said §8.2 for it until 2026-09-23.
+        return LoweredConditie.marker((geheelPeriodeVan(kv.toets()) != null ? "§8.2 kwantorvouw (" : "kwantorvouw (")
+                + kv.kwantor() + " over "
                 + (kv.elementObjecttype() == null ? "<onopgelost elementtype>" : kv.elementObjecttype().naam)
                 + ") — " + reden, kv.bron());
     }
@@ -4983,8 +4986,10 @@ public final class DrlTranspiler {
         // complemented verdict no reading specifies — measured 2026-09-23 under all four, and under GEEN in a
         // time-free session the rule fired for every subject. The verifier refuses such a document; this branch
         // refuses it too, because not every document goes through the verifier.
+        // The sentence names the position that is ill-formed — this fold, or a composite or fold nested in its
+        // filter or toets, each with its own quantifier and element type — so it is not framed as THIS fold's.
         String vensterWeigering = Vensterpositie.weigering(kv);
-        if (vensterWeigering != null) return kvMarker(kv, vensterWeigering);
+        if (vensterWeigering != null) return LoweredConditie.marker(vensterWeigering, kv.bron());
         // Both routes below answer with a SEPARATE when-clause (a `not` witness pattern, a count accumulate, the
         // §8.2 collectList+eval) and an EMPTY inline — which is faithful only where the compound AND-s its parts.
         // Under a fold that ORs or negates them the clause would assert unconditionally what the fold means to

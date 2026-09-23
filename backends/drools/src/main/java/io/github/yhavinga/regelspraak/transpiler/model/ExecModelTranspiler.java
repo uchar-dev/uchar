@@ -3176,8 +3176,14 @@ public final class ExecModelTranspiler {
         // WF-112 before anything else: this arm now lowers a window in the matrix and the filter, and under
         // GEEN or a counting quantifier that lowering would answer the counted or complemented verdict no
         // reading specifies. The verifier refuses such a document, but not every document goes through the verifier.
+        // The sentence names the position that is ill-formed — this fold, or a composite or fold nested in its
+        // filter or toets, each with its own quantifier and element type — so it is not framed as THIS fold's.
         String vensterWeigering = Vensterpositie.weigering(kv);
-        if (vensterWeigering != null) return kvSkip(kv, vensterWeigering);
+        if (vensterWeigering != null) {
+            String snip = kv.bron() == null ? null : kv.bron().snippet();
+            overgeslagen.add(vensterWeigering + (snip == null || snip.isEmpty() ? "" : ": " + snip));
+            return null;
+        }
         if (subject == null || subjectVar == null)
             return kvSkip(kv, "geen subjectpatroon om het bereik aan te hangen");
         // The loader refuses DE and every unknown token by name (WF-108 (a)); this is the defensive twin,

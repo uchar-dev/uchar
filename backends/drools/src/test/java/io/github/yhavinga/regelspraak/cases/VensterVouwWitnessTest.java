@@ -181,16 +181,20 @@ class VensterVouwWitnessTest {
     // ---------------- WF-112: GEEN and the counting quantifiers, refused by name in both branches ----------------
 
     /** The complement flank: a time-free case, where a lowered GEEN would answer bevoegd for every ploeg. Each
-     *  refusal names the fold's quantifier and the rule, in both branches, for the window in the toets and in
-     *  the filter alike (WF-112 reaches both). */
+     *  refusal names the position (toets or filter), the fold's quantifier and element type, and the rule, in
+     *  both branches (WF-112 reaches both positions). In the filter the window SELECTS the members the quantifier
+     *  counts or complements the toets over, and the sentence says that rather than the toets's reason. */
     @Test void onder_geen_en_de_tellende_kwantoren_weigeren_beide_takken_het_venster() throws Exception {
         for (String kw : List.of("GEEN", "TEN_MINSTE", "TEN_HOOGSTE", "PRECIES")) {
             Integer drempel = "GEEN".equals(kw) ? null : 1;
-            String fragment = "kwantorvouw onder " + kw + " (WF-112)";
+            String vouw = "een kwantorvouw onder " + kw + " over Strandwacht (WF-112)";
             BeideTakken.geweigerd(document(kw, drempel, null, LIT), casus(null, ALLE_PLOEGEN),
-                    fragment, "het venster in de toets onder " + kw);
+                    "periodevenster in de toets van " + vouw + ": de kwantor telt of ontkent het vensterverdict",
+                    "het venster in de toets onder " + kw);
             BeideTakken.geweigerd(document(kw, drempel, LIT, GEDIPLOMEERD), casus(null, ALLE_PLOEGEN),
-                    fragment, "het venster in het filter onder " + kw);
+                    "periodevenster in het filter van " + vouw
+                            + ": het venster kiest de leden waarover de kwantor telt of ontkent",
+                    "het venster in het filter onder " + kw);
         }
     }
 
@@ -220,7 +224,8 @@ class VensterVouwWitnessTest {
     @Test void de_wf112_negatieven_van_het_corpus_weigeren_beide_takken_bij_naam() throws Exception {
         BeideTakken.geweigerd(NEGATIEF.resolve("wf112-venster-in-geen-vouw").resolve("ir.json"),
                 JSON.readTree(Files.readString(SCHOUWPLOEG.resolve("case1-allen-ervaren.json"))),
-                "kwantorvouw onder GEEN (WF-112)", "de vouwarm van WF-112, tijdvrij");
+                "periodevenster in de toets van een kwantorvouw onder GEEN over Strandwacht (WF-112)",
+                "de vouwarm van WF-112, tijdvrij");
         BeideTakken.geweigerd(NEGATIEF.resolve("wf112-periodevenster-tellende-kwantor").resolve("ir.json"),
                 JSON.readTree("""
                         { "format": "uchar-case-v0", "asOfDate": null,
