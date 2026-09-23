@@ -15,8 +15,8 @@ The move to v1 is one break carried out in steps (`../proposals/V1-WIREMIGRATIE.
 (`../CONSTRUCTS.md`), never a silent rewrite. Rationale and method:
 `../IR-SPEC.md`.
 
-The schema carries the **M1 shape**: the container is restructured and nothing
-else.
+The schema carries the **L2 shape**: the container is restructured (L1) and the
+reference layer is reduced to its symbolic form (L2); nothing else.
 
 Shape, in brief:
 
@@ -43,11 +43,22 @@ Shape, in brief:
   side-maps keyed by member name are gone, and with them the possibility of a
   facet without a member.
 - A `Domain` is `{ "node": "Domain", "name", "datatype" }` (next section).
+- The reference layer is symbolic (L2). The five reference classes
+  (`AttribuutRef`, `ParameterRef`, `DimensieCel`, `BinderRef`, `VariabeleRef`)
+  carry no `type`: the declaration is the one source of a reference's type. An
+  `AttribuutRef` navigates by its `navigatieBindingen` alone, and without them
+  it is the subject's own read. The role check is one `RoleMembership` node
+  (`factType`, `role`, `negated`, `bron`). A fact creation carries its symbolic
+  fields alone, a scoped uniqueness its `scopeRol`, a navigated characteristic
+  check its hop as `navigatieBinding`. An unresolved expression's `type` is
+  optional (absent: unknown), and `Onbekend` is no datatype. The written ranges
+  have their own section below.
 - Every other node — `Parameter`, `Feittype`, `Eenheidstelsel`, `Dimensie`,
   `Tijdlijn`, the datatype, expression and condition families, every
   `Resolved*` node — keeps its v0 name, field spellings and enum values until
-  its own M step. So do the enum values inside the new nodes (`DAG` … `JAAR`,
-  `BIJVOEGLIJK`/`BEZITTELIJK`/`ZELFSTANDIG`).
+  its own landing, less the keys L2 removed; `RoleMembership` is the one node
+  L2 renames (it restructures two). So do the enum values inside the new
+  nodes (`DAG` … `JAAR`, `BIJVOEGLIJK`/`BEZITTELIJK`/`ZELFSTANDIG`).
 - One field of four of those nodes does change at M1: `naam` on `Parameter`,
   `Eenheidstelsel`, `Feittype` and `Dimensie` is a non-null string. With the
   map key gone it is the declaration's only name (delta B2), so a `null` there
@@ -60,12 +71,14 @@ Shape, in brief:
   unions on that field.
 
 Canonical form. **Key order is the `properties` order of the object's schema
-definition.** The migration script writes the M1 containers and nodes (the
+definition.** The migration scripts write the M1 containers and nodes (the
 root, `model`, `rules`, `ObjectType`, `Attribute`, `Characteristic`,
-`TimelineFacet`, `Domain`) in exactly that order, and every emitter must, so
-that gate 2's round-trip and the byte-identical re-emission gates (9, 10, 11,
-14) prove one and the same form. A node carried over unchanged from v0 keeps
-the order its producer wrote, byte for byte until its own M step; measured
+`TimelineFacet`, `Domain`) and `RoleMembership` in exactly that order, and
+every emitter must, so that gate 2's round-trip and the byte-identical
+re-emission gates (9, 10, 11, 14) prove one and the same form. A node carried
+over from v0 keeps the order its producer wrote, less the keys L2 removed; a
+binding L2 derives is appended after the node's last key, where every
+producer already writes it. Measured
 2026-09-23, 23 of the 12768 node objects in `corpus/golden` and `corpus/rood`
 deviate from their definition's `properties` order (kinds `Default`,
 `PrioritizedDefaults`, `Functie`, `Kwantorvouw`, `Let`). Gate 2 does not check
@@ -125,6 +138,36 @@ each field schema is defined once. The shared loader
 (`../verifier/lib/loader.ml`) refuses the field on a characteristic as a load
 failure that names its path.
 
+## The written ranges (L2)
+
+A range is written, never derived (delta B12, decision D7): the relation an
+instance fold, a quantifier fold, an allocation or a union selection reads is a
+`RolBinding` on the node, and a reader that finds none has no type-pair
+derivation to fall back on. The schema states the obligation where it can:
+
+- `ResolvedVerdeling.verbindendeRol` and `InstanceSetBranch.sourceRole` are
+  required and non-null: both nodes read a relation, always.
+- `Kwantorvouw` carries exactly one of `bronRol` (the one-step range) and
+  `bronPad` (the multi-step range): a quantifier fold ranges over linked
+  instances, always.
+- `Functie` carries exactly one of the two when it has an `elementObjecttype`,
+  exactly one argument and a kind other than `TOTAAL` (an `if`/`then` with a
+  `oneOf` over `required`), and never both, under any kind.
+
+The `Functie` condition is narrower than "has an `elementObjecttype`" on two
+sides, each for a measured reason (2026-09-23). A bindingless `TOTAAL` is the
+subject's own read over its own attribute, the timeline total (D8 (iv)):
+fifteen folds in the golden and red zones carry it, they read no relation, and
+the verifier holds that such a node really is the own read (WF-083) — which
+depends on the declarations, so the schema cannot state it. A fold with two or
+more arguments is the listed value fold, which reads its operands and not a
+relation; the RegelSpraak frontend stamps an `elementObjecttype` on some of
+them anyway (five folds in two golden documents, two in the parity zone), so a
+condition on the element type alone would demand a range such a fold does not
+have. The single-argument scope is D7's own: a range belongs to a fold with
+one argument that reads linked instances. The precedent for a conditional
+obligation is the `drempel` of `Kwantorvouw` (WF-108 (e)).
+
 ## `uchar-ir-v1.schema.json`
 
 JSON Schema (draft 2020-12) for the format. It is strict: every object sets
@@ -145,18 +188,18 @@ WF-113 (a), likewise with its own witness.
 
 **Extension fields** (the decided wire-entry discipline, `../IR-SPEC.md`
 § Method): a v1 construct enters the wire additively, as an *optional*
-property the v0 emitter never produces — currently `verbindendeRol` on
-`ResolvedVerdeling`, `bronRol` on `Functie`, and the symbolic
-fact-creation fields (`feittype`/`ankerRol`/`doelRol`/`joinRol`,
-`Tussenstap.rolBinding`), all carrying the `RolBinding` node, the
-`TemporalRead` expression node (the row-11 point read), and the
-`prioritizedDefaults` list under `rules` (the Phase-4 defaults groups).
-When present they are written whole, never null; the loaders admit
-exactly these keys and nothing else. Mirror purity holds per file: an emitter
-dump carries none of them, a hand-written anchor case may carry them,
-and the same schema validates both. The non-additive cleanup (renames;
-dropping the superseded fields) is the v1 migration itself, landed step by
-step.
+property — the `RolBinding`-carrying fields, the `TemporalRead` expression
+node (the row-11 point read), and the `prioritizedDefaults` list under
+`rules` (the Phase-4 defaults groups). When present they are written whole,
+never null; the loaders admit exactly these keys and nothing else. Since L2
+part of that set is required, because the fields it superseded left the wire:
+`verbindendeRol` on `ResolvedVerdeling`, the symbolic fact-creation fields
+(`feittype`/`ankerRol`/`doelRol`/`joinRol`, `Tussenstap.rolBinding`), and the
+ranges of the section above. The rest stays optional where its absence has a
+meaning of its own: no `navigatieBindingen` is the subject's own read, no
+`scopeRol` an unscoped uniqueness, no `navigatieBinding` a check on the subject
+itself. The non-additive cleanup (renames; dropping the superseded fields) is
+the v1 migration itself, landed step by step.
 
 **Migration.** `../proposals/v1-migratie/m1.py` converts a `regelspraak-ir-v0`
 document to the M1 shape (file arguments, or `--all` for every `ir.json` in the
@@ -169,6 +212,18 @@ a facet entry without a granularity key, an empty dimension list, a value
 outside its enum. A document already in `uchar-ir-v1` is left untouched, so a
 second run changes nothing.
 
+`../proposals/v1-migratie/m2.py` converts an L1 document to the L2 shape, with
+the same interface and the same serialiser. It removes what L2 takes off the
+wire and writes out every binding the L2 shape requires and the document
+lacks, with the resolution the verifier performs
+(`../verifier/lib/checks.ml`: the range from the type pair, the navigation
+walk, the scope and the characteristic hop by role name, the two role checks)
+and the subject type taken from the same context. Zero or several candidates
+refuse the document with the file name and a JSON pointer into the L1 input,
+and so does every L1 value the L2 shape cannot carry. One line on stderr per
+migrated document counts what was derived and removed; a document already in
+the L2 shape is left untouched.
+
 ## Gate: `../../scripts/check-ir-schema.sh`
 
 The repo's second CI gate. It performs three checks, and two self-tests:
@@ -177,9 +232,10 @@ The repo's second CI gate. It performs three checks, and two self-tests:
    - **Self-tests** — what the schema refuses by itself has no corpus witness
      (golden and rood must validate, negatief is not validated here), so it is
      held against the schema directly, in both polarities: the date patterns
-     against a lexeme table, and the positions the M1 shape closes against one
-     small valid M1 document with one mutation per row. The rows that must
-     pass pin the three admissions above.
+     against a lexeme table, and the positions the M1 and L2 shapes close
+     against one small valid document per shape with one mutation per row.
+     The rows that must pass pin the three admissions above and the two
+     narrowings of the written ranges.
 2. **Validation** — every `corpus/golden/**/ir.json` validates against the
    schema. The file count is reported; an empty corpus passes and says so.
 3. **Round-trip** — each such file is parsed (preserving the original number
