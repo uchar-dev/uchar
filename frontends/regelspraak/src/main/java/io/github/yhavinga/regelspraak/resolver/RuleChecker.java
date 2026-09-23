@@ -255,9 +255,9 @@ final class RuleChecker {
     /** Dialect §4, form 1 (maintainer decision 2, 2026-09-23): a characteristic target on which every default of
      *  every defaults group decides 'onwaar' never derives anything — a false decision writes nothing, so the
      *  characteristic comes from the input alone. That is well-formed (it means "never", and the wire admits it), so
-     *  it is no error; but it is most likely not what the author meant, so the RuleChecker warns, once per target:
-     *  an unordered block spreads one target over sibling groups, and a sibling that decides 'onwaar' beside one
-     *  that decides 'waar' derives plenty. */
+     *  it is no error; it says what no rule at all says, so the RuleChecker warns. Once per target, not per group: an
+     *  unordered block spreads one target over sibling groups, and a sibling deciding 'onwaar' beside one deciding
+     *  'waar' leaves the target derivable. */
     private void keurNooitAfleidend() {
         Map<String, List<PrioritizedDefaults>> perDoel = new LinkedHashMap<>();
         for (PrioritizedDefaults pd : model.prioritizedDefaults)
@@ -2040,15 +2040,17 @@ final class RuleChecker {
         String kenmerk = geschreven.replaceFirst("^(?i)(de|het|een)\\s+", "");
         boolean ontkend = false;
         String zonderKenmerk = null;   // the refusal of a negation that names no declared characteristic
-        if (subject != null && kt.NIET() != null) {
-            // 'is niet een X': the grammar carries the negation, so X itself must bind.
-            String g = KenmerkMatcher.vind(subject, geschreven);
-            if (g == null) g = KenmerkMatcher.vind(subject, kenmerk);
+        if (kt.NIET() != null) {
+            // 'is niet een X': the grammar carries the negation, so X itself must bind. An unresolved subject is
+            // refused by keurRegeldoelen, and the negation stays recorded for whatever reads the rule before that.
+            ontkend = true;
+            String g = subject == null ? null : KenmerkMatcher.vind(subject, geschreven);
+            if (g == null && subject != null) g = KenmerkMatcher.vind(subject, kenmerk);
             if (g != null) {
                 kenmerk = g;
-                ontkend = true;
                 keurNegatieSoort(subject, new Conditie.Kenmerk(g, null, true, bron(kt)), false);
-            } else zonderKenmerk = ontkenningZonderKenmerk(naam, subject, "niet een " + kenmerk, kenmerk, false);
+            } else if (subject != null)
+                zonderKenmerk = ontkenningZonderKenmerk(naam, subject, "niet een " + kenmerk, kenmerk, false);
         } else if (subject != null) {
             boolean heeft = kt.HEEFT() != null;
             Conditie c = kenmerkConditie(subject, geschreven, null, heeft, bron(kt));
