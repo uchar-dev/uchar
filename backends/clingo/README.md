@@ -36,8 +36,21 @@ spec bug.
   barrier only that member raises. `Let k = restpost in (som(bonus van
   werven die TEN MINSTE 1 schuiten [k > 0]) plus p)`, with one schuit
   created for each Werf and restpost leeg, refuses in the named
-  sentence where ref faults at p in the pass before the creation. So
-  the named refusal also stands where ref plays: two creations of 8
+  sentence where ref faults at p in the pass before the creation. The
+  same holds for a short circuit that a created member settles at the
+  fixpoint (decision of the main session, 2026-09-23): a TEN MINSTE
+  composite's prefix or a TEN MINSTE fold's open prefix is open in that
+  pass, and the read behind it, or the value of a Let whose binder such
+  a read reads, gets the named refusal. The pass is followed through
+  the reads ch. 6.3 counts positive (a TEN MINSTE fold's range, filter
+  and matrix, an ALLE fold's matrix, the members of an ALLE, DE or TEN
+  MINSTE composite); the read's own members are taken to be there, as
+  a member a creation adds is there before the members added to its
+  own ranges. `keur = 99 indien TEN MINSTE 1 [TEN MINSTE 1 schuiten
+  [lengte > 5], p > 0]`, with one schuit of 8 created for each Werf,
+  refuses in the named sentence where ref faults at p in the pass
+  before the creation. So the named refusal also stands where ref
+  plays: two creations of 8
   and 3 for each Werf, each behind a condition that holds, and `TEN
   MINSTE 1 [lengte > 5, lengte > p]` over the schuiten — ref runs them
   in document order, reads 8 and stops, and [3, 8] reads p [N1]; the
@@ -61,14 +74,22 @@ spec bug.
   - Loud, a refusal where ref plays. [L1] The day-kind table and the
     §7.1 horizon fence read their parameter at translation and refuse
     there, also behind a rule condition that fails, where ref never
-    reads it. [L2] A Let barrier that only a created member raises
-    counts the pass before the creation also in a rule that ch. 6.3
-    puts above that creation, where ref has no such pass; the
-    translator does not know the strata. `Let k = restpost in
-    (som(lengte van schuiten die k > 0) plus p)` under the condition
-    `ALLE schuiten [lengte > 0]`, with one schuit of 8 created for each
-    Werf and restpost leeg: ref answers leeg, clingo refuses in the
-    named sentence.
+    reads it. [L2] A Let barrier that only a created member raises,
+    or a short circuit that only a created member settles, counts the
+    pass before the creation also where ref has no such pass for the
+    read: in a rule that ch. 6.3 puts above that creation, or at a
+    member ref makes only after the members that settle its short
+    circuit; the translator knows neither the strata nor the order of
+    ref's passes. `Let k = restpost in (som(lengte van schuiten die
+    k > 0) plus p)` under the condition `ALLE schuiten [lengte > 0]`,
+    with one schuit of 8 created for each Werf and restpost leeg: ref
+    answers leeg, clingo refuses in the named sentence; the same
+    condition before `TEN MINSTE 1 [TEN MINSTE 1 schuiten [lengte > 5],
+    p > 0]` likewise. And a rapport made for each Werf once it has a
+    schuit of more than 5, with `keur = 99 indien TEN MINSTE 1 [TEN
+    MINSTE 1 schuiten van zijn werf [lengte > 5], p > 0]`: ref makes
+    the rapport after the schuit and never reads p, clingo refuses in
+    the named sentence.
   - Silent, an answer where ref faults. [S1] The Let lowering keeps a
     value behind an enclosing need on a path that does not read it, and
     the guard follows the lowering: `Let k = restpost in Let bel = (als
@@ -88,15 +109,13 @@ spec bug.
     it, and clingo answers the fixpoint: `heffing = 5,00 indien TEN
     MINSTE 1 [a > 0, p > 0]`, written before `a = inkomen`, with
     inkomen 20 and p unbound, answers 5,00 where ref faults; with the
-    writing rule first both answer 5,00. The writer can be a creation:
-    `keur = 99 indien TEN MINSTE 1 [TEN MINSTE 1 schuiten [lengte > 5],
-    p > 0]` with one schuit of 8 created for each Werf answers 99 where
-    ref faults in the pass before the creation. For a Let barrier that
-    pass gives the named refusal above; for a short circuit it stays
-    silent. Whether ref's fault in such a pass is the arbiter's answer
-    is a norm question for the maintainer.
+    writing rule first both answer 5,00. Where the writer is a
+    creation, that pass is the pass before the creation and the
+    refusal is named (above). Whether ref's fault in such a pass is
+    the arbiter's answer is a norm question for the maintainer.
 
-  Each tagged entry, here and under Recorded limitations ([V1], [V2]),
+  Each tagged entry, here and under Recorded limitations ([V1], [V2],
+  [V3]),
   has a frame in the suite, named `README [tag]`, that pins it and
   goes red when the entry no longer holds.
 - Exact arithmetic by declared-decimals integer scaling: a value of an
@@ -243,8 +262,15 @@ Recorded limitations:
   operator, so the hoisted form differs exactly there. [V2] A branch in
   a Let's value where the body evaluates something before that Let's
   binder: the [S1] form with p = 10 answers leeg where ref answers
-  11,00. The exact lowering, the need per path instead of on the whole
-  body, changes the translation of every Let body.
+  11,00. [V3] A short circuit that settles before the binder's read:
+  `Let k = restpost in som(bonus van werven die TEN MINSTE 1 [TEN
+  MINSTE 1 schuiten [lengte > 5], k > 0, bonus > p])`, W1 with bonus 4
+  and a schuit of 8, restpost leeg, answers leeg where ref answers
+  4,00. With the schuit created, the pass before the creation reads k
+  first, and its barrier ends the Let there before p, so no pass reads
+  p and nothing is refused. The exact lowering, the need per path
+  instead of on the whole body, changes the translation of every Let
+  body.
 - Negative or empty allocation operands make the generated program
   UNSATISFIABLE — clingo then fails exactly where `ref/` faults
   (ch. 4.4), instead of silently diverging by the truncation/floor
