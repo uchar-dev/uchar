@@ -44,9 +44,11 @@ spec bug.
   a read reads, gets the named refusal. The pass is followed through
   the reads ch. 6.3 counts positive (a TEN MINSTE fold's range, filter
   and matrix, an ALLE fold's matrix, the members of an ALLE, DE or TEN
-  MINSTE composite); the read's own members are taken to be there, as
-  a member a creation adds is there before the members added to its
-  own ranges. `keur = 99 indien TEN MINSTE 1 [TEN MINSTE 1 schuiten
+  MINSTE composite, and a comparison, a navigated characteristic or a
+  role check that reads through a role, read there with the case's own
+  links only); the read's own members are taken to be there, as a
+  member a creation adds is there before the members added to its own
+  ranges. `keur = 99 indien TEN MINSTE 1 [TEN MINSTE 1 schuiten
   [lengte > 5], p > 0]`, with one schuit of 8 created for each Werf,
   refuses in the named sentence where ref faults at p in the pass
   before the creation. So the named refusal also stands where ref
@@ -112,7 +114,16 @@ spec bug.
     writing rule first both answer 5,00. Where the writer is a
     creation, that pass is the pass before the creation and the
     refusal is named (above). Whether ref's fault in such a pass is
-    the arbiter's answer is a norm question for the maintainer.
+    the arbiter's answer is a norm question for the maintainer. [S4] A
+    condition that holds on absence (ch. 6.1: a count against zero,
+    read positively) with a creation as writer, in an ALLE prefix or
+    in a taken arm: `ALLE [het aantal schuiten = 0, p > 0]`, or `Let
+    n = het aantal schuiten in (als n > 0 dan 99 anders p)`, with one
+    schuit created for each Werf. In the pass before the creation the
+    member holds, or the other arm is taken, and ref faults there;
+    clingo answers the fixpoint. Only a TEN MINSTE prefix gets that
+    pass (above); an ALLE prefix and a branch condition are read at the
+    fixpoint.
 
   Each tagged entry, here and under Recorded limitations ([V1], [V2],
   [V3]),

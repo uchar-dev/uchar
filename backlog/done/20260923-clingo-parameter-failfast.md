@@ -1498,8 +1498,9 @@ that only a created member settles at the fixpoint: a TEN_MINSTE
 composite's prefix, or a TEN_MINSTE fold's open prefix, is open in that
 pass, and the read behind it, or a Let value that such a read of its
 binder demands, gets the named refusal; the pass is followed through the
-reads ch. 6.3 counts positive, and the read's own members are taken to
-be there. "Every allowed order" is decided per read, so two reads of one binder that each cover some orders
+reads ch. 6.3 counts positive (a comparison, a navigated characteristic
+or a role check that reads through a role read there with the case's
+own links only), and the read's own members are taken to be there. "Every allowed order" is decided per read, so two reads of one binder that each cover some orders
 and together all give the named sentence where ref's words were due.
 Where the guard is not exact otherwise it errs in one recorded
 direction. Loud, a refusal where ref plays: the day-kind table and the
@@ -1515,7 +1516,9 @@ enclosing need on a path that does not read it, and the guard follows
 that lowering, which deviates without any parameter; and a read ref
 reaches only in a pass before a rule of the same stratum has written
 what the read's short circuit depends on (ch. 6.1, recorded
-residual). A list-typed parameter reads leeg on absence in
+residual); and a read ref reaches only in the pass before a creation
+through a condition that holds on absence (a count against zero, ch.
+6.1), in an ALLE prefix or a taken arm. A list-typed parameter reads leeg on absence in
 both. Red twin `corpus/rood/aanvoergeld-parameter-ongebonden` (value and
 condition position) pins the refusal in ref and clingo. The Drools
 backend still answers there (NOFAULT, listed in gate 8)."
