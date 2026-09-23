@@ -7951,19 +7951,16 @@ let pf_ot ?(naam = "Jutter") ?(meervoud = "Jutters") ?(granulariteit = []) ?(ken
 
 let pf_jutter = pf_ot [ ("inkomen", pf_n2); ("restpost", pf_n2); ("heffing", pf_n2) ]
 
-let pf_a ?(ot = "Jutter") ?(typ = pf_n2) n =
-  Printf.sprintf
-    {|{ "node": "AttribuutRef", "attribuut": "%s", "objecttype": "%s", "onderwerpBron": "zijn",
-        "navigatieRol": null, "type": %s, "bron": "zijn %s", "set": false, "navigatiePad": [] }|}
-    n ot typ n
+let pf_a ?(ot = "Jutter") n =
+  Printf.sprintf {|{ "node": "AttribuutRef", "attribuut": "%s", "objecttype": "%s", "bron": "zijn %s" }|}
+    n ot n
 
-let pf_p ?(typ = pf_n2) n =
-  Printf.sprintf {|{ "node": "ParameterRef", "parameter": "%s", "type": %s, "bron": "de %s" }|} n typ n
+let pf_p n = Printf.sprintf {|{ "node": "ParameterRef", "parameter": "%s", "bron": "de %s" }|} n n
 
 let pf_l ?(typ = pf_n2) w =
   Printf.sprintf {|{ "node": "Literal", "waarde": "%s", "type": %s, "bron": "%s" }|} w typ w
 
-let pf_b n = Printf.sprintf {|{ "node": "BinderRef", "name": "%s", "type": %s, "bron": "de %s" }|} n pf_n2 n
+let pf_b n = Printf.sprintf {|{ "node": "BinderRef", "name": "%s", "bron": "de %s" }|} n n
 
 let pf_bin ?(typ = pf_n2) op l r =
   Printf.sprintf {|{ "node": "Binair", "op": "%s", "links": %s, "rechts": %s, "type": %s, "bron": "%s" }|}
@@ -7988,18 +7985,16 @@ let pf_comp ?(drempel = 0) k parts =
 let pf_decl ?(typ = pf_n2) n =
   Printf.sprintf {|{ "node": "Parameter", "naam": "%s", "datatype": %s, "granulariteit": null }|} n typ
 
-let pf_regel ?(ot = "Jutter") ?(doel = "heffing") ?(typ = pf_n2) ?(soort = "BEREKENING")
-    ?(voorwaarde = "null") waarde =
+let pf_regel ?(ot = "Jutter") ?(doel = "heffing") ?(soort = "BEREKENING") ?(voorwaarde = "null")
+    waarde =
   let naam = doel ^ " van een " ^ String.lowercase_ascii ot in
   ( naam,
     Printf.sprintf
       {|{ "node": "ResolvedRegel", "naam": "%s", "soort": "%s",
-      "doel": { "node": "AttribuutRef", "attribuut": "%s", "objecttype": "%s",
-        "onderwerpBron": "een %s", "navigatieRol": null, "type": %s, "bron": "De %s",
-        "set": false, "navigatiePad": [] },
+      "doel": { "node": "AttribuutRef", "attribuut": "%s", "objecttype": "%s", "bron": "De %s" },
       "waarde": %s, "voorwaarde": %s,
       "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }|}
-      naam soort doel ot ot typ doel waarde voorwaarde )
+      naam soort doel ot doel waarde voorwaarde )
 
 let pf_doc ?(objecttypen = [ pf_jutter ]) ?(domeinen = "") ?(feittypen = "") ?(parameters = [])
     ?(regels = []) ?(consistenties = []) ?(defaults = []) ?(creaties = []) ?(feitcreaties = [])
@@ -8193,17 +8188,16 @@ let () =
       { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
       { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] }|}
   in
-  let lengte = pf_a ~ot:"Schuit" ~typ:pf_n0 "lengte" and p = pf_p ~typ:pf_n0 "p" in
+  let lengte = pf_a ~ot:"Schuit" "lengte" and p = pf_p "p" in
   let bron_rol = {|{ "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" }|} in
   let som =
     Printf.sprintf
       {|{ "node": "Functie", "kind": "SOM",
         "argumenten": [ { "node": "AttribuutRef", "attribuut": "lengte", "objecttype": "Schuit",
-          "onderwerpBron": "alle schuiten", "navigatieRol": null, "type": %s,
-          "bron": "de lengte van alle schuiten", "set": true, "navigatiePad": [] } ],
+          "bron": "de lengte van alle schuiten" } ],
         "elementObjecttype": "Schuit", "leegwaarde": %s, "filter": %s, "dimensieSelectie": null,
         "type": %s, "bron": "de som", "granulariteit": null, "bronRol": %s }|}
-      pf_n0 (pf_l ~typ:pf_n0 "0") (pf_cmp "GROTER" lengte p) pf_n0 bron_rol
+      (pf_l ~typ:pf_n0 "0") (pf_cmp "GROTER" lengte p) pf_n0 bron_rol
   in
   let geen =
     Printf.sprintf
@@ -8215,8 +8209,8 @@ let () =
     pf_doc ~objecttypen:[ werf; schuit ] ~feittypen:ligplaats ~parameters:[ pf_decl ~typ:pf_n0 "p" ]
       ~regels:[ regel ] ()
   in
-  let som_doc = doc (pf_regel ~ot:"Werf" ~doel:"bonus" ~typ:pf_n0 som) in
-  let geen_doc = doc (pf_regel ~ot:"Werf" ~doel:"keur" ~typ:pf_n0 ~voorwaarde:geen (pf_l ~typ:pf_n0 "99")) in
+  let som_doc = doc (pf_regel ~ot:"Werf" ~doel:"bonus" som) in
+  let geen_doc = doc (pf_regel ~ot:"Werf" ~doel:"keur" ~voorwaarde:geen (pf_l ~typ:pf_n0 "99")) in
   let inst label ot attrs roles =
     Printf.sprintf {|{ "label": "%s", "objectType": "%s", "attributes": { %s }, "roles": { %s }, "characteristics": [] }|}
       label ot attrs roles
@@ -8267,7 +8261,7 @@ let () =
   let fold ~init body =
     Printf.sprintf
       {|{ "node": "Fold", "type": %s, "list": %s, "function": %s, "init": %s, "bron": "de vouw" }|}
-      pf_n2 (pf_p ~typ:lijst "bedragen") (lambda body) init
+      pf_n2 (pf_p "bedragen") (lambda body) init
   in
   let doc waarde =
     pf_doc ~parameters:[ pf_decl ~typ:lijst "bedragen"; pf_decl "p" ] ~regels:[ pf_regel waarde ] ()
@@ -8299,7 +8293,7 @@ let () =
                "function": { "node": "Lambda", "parameters": [ { "name": "b", "datatype": %s } ],
                  "body": %s, "bron": "de verhoging" }, "bron": "de verhoogde bedragen" },
              "function": %s, "init": %s, "bron": "de vouw" }|}
-         pf_n2 lijst (pf_p ~typ:lijst "bedragen") pf_n2 (pf_bin "PLUS" (pf_b "b") (pf_p "p"))
+         pf_n2 lijst (pf_p "bedragen") pf_n2 (pf_bin "PLUS" (pf_b "b") (pf_p "p"))
          (lambda (pf_bin "PLUS" (pf_b "acc") (pf_b "x")))
          (pf_l "0.00"))
   in
@@ -8323,8 +8317,8 @@ let () =
         [ pf_ot [ ("aangiftedatum", pf_datum); ("vervaldatum", pf_datum) ] ]
       ~parameters:[ pf_decl ~typ:dagen "termijn" ]
       ~regels:
-        [ pf_regel ~doel:"vervaldatum" ~typ:pf_datum
-            (pf_bin ~typ:pf_datum "PLUS" (pf_a ~typ:pf_datum "aangiftedatum") (pf_p ~typ:dagen "termijn")) ]
+        [ pf_regel ~doel:"vervaldatum"
+            (pf_bin ~typ:pf_datum "PLUS" (pf_a "aangiftedatum") (pf_p "termijn")) ]
       ()
   in
   let j1_datum =
@@ -8344,12 +8338,12 @@ let () =
       ~objecttypen:[ pf_ot [ ("peildatum", pf_datum); ("looptijd", dagen) ] ]
       ~parameters:[ pf_decl ~typ:pf_datum "startdatum" ]
       ~regels:
-        [ pf_regel ~doel:"looptijd" ~typ:dagen
+        [ pf_regel ~doel:"looptijd"
             (Printf.sprintf
                {|{ "node": "Functie", "kind": "TIJDSDUUR", "argumenten": [ %s, %s ], "elementObjecttype": null,
                    "leegwaarde": null, "filter": null, "dimensieSelectie": null, "type": %s,
                    "bron": "de tijdsduur", "granulariteit": null }|}
-               (pf_p ~typ:pf_datum "startdatum") (pf_a ~typ:pf_datum "peildatum") dagen) ]
+               (pf_p "startdatum") (pf_a "peildatum") dagen) ]
       ()
   in
   let j1_peil =
@@ -8370,7 +8364,7 @@ let () =
   in
   let gp_ir =
     met_parameter
-      (gpv_doc ~toets:(kv_geheel ~niet:"true" ~rechts:(pf_p ~typ:kv_num0 "grens") ()) ())
+      (gpv_doc ~toets:(kv_geheel ~niet:"true" ~rechts:(pf_p "grens") ()) ())
   in
   let gp_case ~bound ~waar =
     let c = gpv_case ~tijdlijn:(heel_jaar "50") ~waar in
@@ -8381,7 +8375,7 @@ let () =
      above the bound all year. The bound is read per MEMBER, so its guard is
      keyed on the member, not on the per-segment helper's own subject *)
   let kv_ir =
-    met_parameter (kv_doc ~toets:(kv_geheel ~rechts:(pf_p ~typ:kv_num0 "grens") ()) ())
+    met_parameter (kv_doc ~toets:(kv_geheel ~rechts:(pf_p "grens") ()) ())
   in
   let kv_bound ~bound ~waar =
     let c = kv_case ~leden:[ ("S1", heel_jaar "50") ] ~waar () in
@@ -8406,13 +8400,13 @@ let () =
         [ pf_ot ~granulariteit:[ (vergoeding, "MAAND") ] [ (vergoeding, pf_n0); ("topsom", pf_n0) ] ]
       ~parameters:[ pf_decl ~typ:pf_n0 "klipgrens" ]
       ~regels:
-        [ pf_regel ~doel:"topsom" ~typ:pf_n0 ~soort:"GELIJKSTELLING"
+        [ pf_regel ~doel:"topsom" ~soort:"GELIJKSTELLING"
             (Printf.sprintf
                {|{ "node": "Functie", "kind": "TOTAAL", "argumenten": [ %s ], "elementObjecttype": "Jutter",
                    "leegwaarde": null, "filter": %s, "dimensieSelectie": null, "type": %s,
                    "bron": "het totaal gedurende de tijd dat", "granulariteit": null }|}
-               (pf_a ~typ:pf_n0 vergoeding)
-               (pf_cmp "GROTER" (pf_a ~typ:pf_n0 vergoeding) (pf_p ~typ:pf_n0 "klipgrens"))
+               (pf_a vergoeding)
+               (pf_cmp "GROTER" (pf_a vergoeding) (pf_p "klipgrens"))
                pf_n0) ]
       ()
   in
@@ -8443,7 +8437,7 @@ let () =
   in
   let kenmerk k =
     Printf.sprintf
-      {|{ "node": "Kenmerk", "kenmerk": "%s", "navigatie": null, "negatie": false, "eigenaar": null,
+      {|{ "node": "Kenmerk", "kenmerk": "%s", "negatie": false, "eigenaar": null,
           "periode": null, "bron": "hij %s is" }|}
       k k
   in
@@ -8458,8 +8452,8 @@ let () =
       {|{ "node": "PrioritizedDefaults", "naam": "waardering van een jutter", "onderwerp": "Jutter",
           "kenmerk": null, "attribuut": "waardering", "defaults": [ %s, %s, %s ], "bron": "w",
           "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }|}
-      (default (kenmerk "erkend") (pf_a ~typ:pf_n0 "basisbedrag"))
-      (default tweede (pf_a ~typ:pf_n0 "kandidaatbedrag"))
+      (default (kenmerk "erkend") (pf_a "basisbedrag"))
+      (default tweede (pf_a "kandidaatbedrag"))
       (default ~init:true "null" init_waarde)
   in
   let doc ~param ~tweede ~init_waarde =
@@ -8473,7 +8467,7 @@ let () =
   in
   let erkend = jutter_case ~chars:{|"erkend"|} {|"basisbedrag": { "number": "50" }|} in
   (* the initialisation's consequence reads [standaard] *)
-  let gevolg = doc ~param:"standaard" ~tweede:(kenmerk "kandidaat") ~init_waarde:(pf_p ~typ:pf_n0 "standaard") in
+  let gevolg = doc ~param:"standaard" ~tweede:(kenmerk "kandidaat") ~init_waarde:(pf_p "standaard") in
   pf_position ~name:"defaults: the deciding default's consequence" ~ir:gevolg ~param:"standaard"
     ~value:"25" ~instances:[ jutter_case "" ] ~bound:[ pf_is ~attr:"waardering" "25"; pf_cons ]
     ~silent_rows:[ pf_leeg ~attr:"waardering" (); pf_cons ] ~silent:"waardering leeg" ();
@@ -8482,7 +8476,7 @@ let () =
   (* the second default's justification reads [drempel]: kandidaatbedrag 30 *)
   let rechtvaardiging =
     doc ~param:"drempel"
-      ~tweede:(pf_cmp "GROTER" (pf_a ~typ:pf_n0 "kandidaatbedrag") (pf_p ~typ:pf_n0 "drempel"))
+      ~tweede:(pf_cmp "GROTER" (pf_a "kandidaatbedrag") (pf_p "drempel"))
       ~init_waarde:(pf_l ~typ:pf_n0 "25")
   in
   let kandidaat = jutter_case {|"kandidaatbedrag": { "number": "30" }|} in
@@ -8517,7 +8511,7 @@ let () =
           "afnemend": false, "voorwaarde": %s,
           "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null },
           "verbindendeRol": { "node": "RolBinding", "feittype": "veilingdeelname", "rol": "veilingjutter" } }|}
-      (pf_cmp "GROTER" (pf_a ~ot:"Strandveiling" ~typ:pf_n0 "veilingopbrengst") (pf_p ~typ:pf_n0 "minimum"))
+      (pf_cmp "GROTER" (pf_a ~ot:"Strandveiling" "veilingopbrengst") (pf_p "minimum"))
   in
   let ir =
     pf_doc ~objecttypen:[ veiling; jutter ] ~feittypen ~parameters:[ pf_decl ~typ:pf_n0 "minimum" ]
@@ -8562,10 +8556,8 @@ let () =
   in
   let terug =
     pf_regel ~ot:"Werf" ~doel:"keur"
-      {|{ "node": "AttribuutRef", "attribuut": "bedrag", "objecttype": "Rapport", "onderwerpBron": "zijn rapport",
-          "navigatieRol": "rapport", "type": { "node": "Numeriek", "geheel": false, "decimalen": 2,
-          "teken": "ONBEPAALD", "eenheid": null }, "bron": "het bedrag van zijn rapport", "set": false,
-          "navigatiePad": [], "navigatieBindingen": [ { "node": "RolBinding", "feittype": "keuring", "rol": "rapport" } ] }|}
+      {|{ "node": "AttribuutRef", "attribuut": "bedrag", "objecttype": "Rapport", "bron": "het bedrag van zijn rapport",
+          "navigatieBindingen": [ { "node": "RolBinding", "feittype": "keuring", "rol": "rapport" } ] }|}
   in
   let doc ~param ~voorwaarde waarde =
     pf_doc ~objecttypen:[ werf; rapport ] ~feittypen:keuring ~parameters:[ pf_decl param ]
@@ -8602,7 +8594,7 @@ let () =
    plays. Unbound, the read happens in translation, so it refuses there, in
    the shared sentence. *)
 let () =
-  let ir = {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[{"node":"Attribute","name":"keurlast","datatype":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null}}}],"characteristics":[]},{"node":"ObjectType","name":"Vondst","animate":false,"plural":"Vondsten","attributes":[{"node":"Attribute","name":"keurtarief","datatype":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":{"node":"Eenheid","afkorting":"mnd","stelsel":"Keurtijd","canoniek":"mnd","factorNaarCanoniek":1,"noemer":null}}},"plural":"keurtarieven","timeline":{"node":"TimelineFacet","granularity":"MAAND","count":1}},{"node":"Attribute","name":"gewicht","datatype":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null}}],"characteristics":[{"node":"Characteristic","name":"gekeurd","kind":"BIJVOEGLIJK"}]}],"factTypes":[{"node":"Feittype","naam":"keuring","wederkerig":false,"rollen":[{"node":"Rol","naam":"keurende jutter","objecttypeNaam":"Jutter","meervoud":null,"meervoudig":false},{"node":"Rol","naam":"vondst","objecttypeNaam":"Vondst","meervoud":"vondsten","meervoudig":true}]}],"parameters":[{"node":"Parameter","naam":"minimumgewicht","datatype":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null},"granulariteit":null}],"domains":[],"unitSystems":[{"node":"Eenheidstelsel","naam":"Munt","eenheden":{"EUR":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null},"€":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null}},"aliassen":{"euro":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null},"euros":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null}}},{"node":"Eenheidstelsel","naam":"Keurtijd","eenheden":{"mnd":{"node":"Eenheid","afkorting":"mnd","stelsel":"Keurtijd","canoniek":"mnd","factorNaarCanoniek":1,"noemer":null}},"aliassen":{"maand":{"node":"Eenheid","afkorting":"mnd","stelsel":"Keurtijd","canoniek":"mnd","factorNaarCanoniek":1,"noemer":null}}}],"dimensions":[],"timelines":[],"dayKinds":[],"dagsoortPerEenheid":{}},"rules":{"resolvedRegels":[{"node":"ResolvedRegel","naam":"keurlast van een jutter","soort":"BEREKENING","doel":{"node":"AttribuutRef","attribuut":"keurlast","objecttype":"Jutter","onderwerpBron":"een Jutter","navigatieRol":null,"type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null}},"bron":"De keurlast van een Jutter","set":false,"navigatiePad":[]},"waarde":{"node":"Functie","kind":"TOTAAL","argumenten":[{"node":"AttribuutRef","attribuut":"keurtarief","objecttype":"Vondst","onderwerpBron":"alle vondsten van de Jutter die gekeurd zijn","navigatieRol":null,"type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":{"node":"Eenheid","afkorting":"mnd","stelsel":"Keurtijd","canoniek":"mnd","factorNaarCanoniek":1,"noemer":null}}},"bron":"het keurtarief van alle vondsten van de Jutter die gekeurd zijn","set":true,"navigatiePad":[]}],"elementObjecttype":"Vondst","leegwaarde":null,"filter":{"node":"Vergelijking","op":"GROTER","links":{"node":"AttribuutRef","attribuut":"gewicht","objecttype":"Vondst","onderwerpBron":"","navigatieRol":null,"type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null},"bron":"gewicht","set":false,"navigatiePad":[]},"rechts":{"node":"ParameterRef","parameter":"minimumgewicht","type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null},"bron":"het minimumgewicht"},"periode":null,"bron":"zwaarder dan het minimumgewicht"},"dimensieSelectie":null,"type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null}},"bron":"het totaal van het keurtarief van alle vondsten van de Jutter die gekeurd zijn","granulariteit":null,"bronRol":{"node":"RolBinding","feittype":"keuring","rol":"vondst"}},"voorwaarde":null,"geldigheid":{"node":"Geldigheid","vanaf":null,"tot":null}}],"resolvedDagsoorten":[],"objectCreaties":[],"verdelingen":[],"consistenties":[],"uniciteiten":[],"uniciteitUnies":[],"feitCreaties":[],"resolvedStartpunten":[],"regelGroepen":[]},"diagnostics":[]}|} in
+  let ir = {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[{"node":"Attribute","name":"keurlast","datatype":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null}}}],"characteristics":[]},{"node":"ObjectType","name":"Vondst","animate":false,"plural":"Vondsten","attributes":[{"node":"Attribute","name":"keurtarief","datatype":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":{"node":"Eenheid","afkorting":"mnd","stelsel":"Keurtijd","canoniek":"mnd","factorNaarCanoniek":1,"noemer":null}}},"plural":"keurtarieven","timeline":{"node":"TimelineFacet","granularity":"MAAND","count":1}},{"node":"Attribute","name":"gewicht","datatype":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null}}],"characteristics":[{"node":"Characteristic","name":"gekeurd","kind":"BIJVOEGLIJK"}]}],"factTypes":[{"node":"Feittype","naam":"keuring","wederkerig":false,"rollen":[{"node":"Rol","naam":"keurende jutter","objecttypeNaam":"Jutter","meervoud":null,"meervoudig":false},{"node":"Rol","naam":"vondst","objecttypeNaam":"Vondst","meervoud":"vondsten","meervoudig":true}]}],"parameters":[{"node":"Parameter","naam":"minimumgewicht","datatype":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null},"granulariteit":null}],"domains":[],"unitSystems":[{"node":"Eenheidstelsel","naam":"Munt","eenheden":{"EUR":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null},"€":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null}},"aliassen":{"euro":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null},"euros":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null}}},{"node":"Eenheidstelsel","naam":"Keurtijd","eenheden":{"mnd":{"node":"Eenheid","afkorting":"mnd","stelsel":"Keurtijd","canoniek":"mnd","factorNaarCanoniek":1,"noemer":null}},"aliassen":{"maand":{"node":"Eenheid","afkorting":"mnd","stelsel":"Keurtijd","canoniek":"mnd","factorNaarCanoniek":1,"noemer":null}}}],"dimensions":[],"timelines":[],"dayKinds":[],"dagsoortPerEenheid":{}},"rules":{"resolvedRegels":[{"node":"ResolvedRegel","naam":"keurlast van een jutter","soort":"BEREKENING","doel":{"node":"AttribuutRef","attribuut":"keurlast","objecttype":"Jutter","bron":"De keurlast van een Jutter"},"waarde":{"node":"Functie","kind":"TOTAAL","argumenten":[{"node":"AttribuutRef","attribuut":"keurtarief","objecttype":"Vondst","bron":"het keurtarief van alle vondsten van de Jutter die gekeurd zijn"}],"elementObjecttype":"Vondst","leegwaarde":null,"filter":{"node":"Vergelijking","op":"GROTER","links":{"node":"AttribuutRef","attribuut":"gewicht","objecttype":"Vondst","bron":"gewicht"},"rechts":{"node":"ParameterRef","parameter":"minimumgewicht","bron":"het minimumgewicht"},"periode":null,"bron":"zwaarder dan het minimumgewicht"},"dimensieSelectie":null,"type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null}},"bron":"het totaal van het keurtarief van alle vondsten van de Jutter die gekeurd zijn","granulariteit":null,"bronRol":{"node":"RolBinding","feittype":"keuring","rol":"vondst"}},"voorwaarde":null,"geldigheid":{"node":"Geldigheid","vanaf":null,"tot":null}}],"resolvedDagsoorten":[],"objectCreaties":[],"verdelingen":[],"consistenties":[],"uniciteiten":[],"uniciteitUnies":[],"feitCreaties":[],"resolvedStartpunten":[],"regelGroepen":[]},"diagnostics":[]}|} in
   let case_text params rows =
     Printf.sprintf
       {|{ "format": "uchar-case-v0", "asOfDate": "2026-03-15", "input": { "instances": [
@@ -8648,7 +8640,7 @@ let () =
     pf_doc
       ~objecttypen:[ pf_ot [ ("datum", pf_datum); ("heffing", pf_n2) ] ]
       ~regels:
-        [ pf_regel ~voorwaarde:(pf_cmp "LATER" (pf_a ~typ:pf_datum "datum") (pf_l ~typ:pf_datum "2026-13-40"))
+        [ pf_regel ~voorwaarde:(pf_cmp "LATER" (pf_a "datum") (pf_l ~typ:pf_datum "2026-13-40"))
             (pf_l "5") ]
       ()
   in
@@ -8682,7 +8674,7 @@ let () =
   in
   let kenmerk k =
     Printf.sprintf
-      {|{ "node": "Kenmerk", "kenmerk": "%s", "navigatie": null, "negatie": false, "eigenaar": null,
+      {|{ "node": "Kenmerk", "kenmerk": "%s", "negatie": false, "eigenaar": null,
           "periode": null, "bron": "hij %s is" }|}
       k k
   in
@@ -8716,7 +8708,7 @@ let () =
   let doc defaults = pf_doc ~objecttypen:[ jutter ] ~parameters:[ pf_decl ~typ:pf_n0 "p" ] ~defaults ()
   in
   let n0 v = pf_l ~typ:pf_n0 v in
-  let rechtvaardiging = pf_cmp "GROTER" (pf_a ~typ:pf_n0 "inkomen") (pf_p ~typ:pf_n0 "p") in
+  let rechtvaardiging = pf_cmp "GROTER" (pf_a "inkomen") (pf_p "p") in
   let vorm_a = default ~excepties:[ [ default (kenmerk "grondY") (n0 "10") ] ] rechtvaardiging (n0 "40") in
   let init = default ~init:true "null" (n0 "25") in
   let j1 chars =
@@ -8734,7 +8726,7 @@ let () =
     ~param:"p" ~case_text:(pf_case ~instances:[ zonder ] (waardering "25"))
     ~silent:"waardering 25: the justification failed and the initialisation decided";
   (* d-l / d-k: the same form a as default 1, behind an erkend default that does not decide *)
-  let d1 = doc [ stack [ default (kenmerk "erkend") (pf_a ~typ:pf_n0 "basisbedrag"); vorm_a; init ] ] in
+  let d1 = doc [ stack [ default (kenmerk "erkend") (pf_a "basisbedrag"); vorm_a; init ] ] in
   both_answer ~name:"defaults, lazy: an exception decides before the form-a justification on default 1 (d-l)"
     ~ir:d1 ~case_text:(pf_case ~instances:[ met_grond ] (waardering "10"));
   unbound_fires ~name:"defaults: the form-a justification on default 1 when no exception decides (d-k)"
@@ -8800,7 +8792,7 @@ let () =
                       "arms": [ { "constructor": "Hoog", "binder": null, "body": %s },
                                 { "constructor": "Laag", "binder": null, "body": %s } ],
                       "bron": "match klasse" }|}
-                  pf_n2 (pf_a ~typ:klasse "klasse") (pf_bin "PLUS" k p) (pf_bin "PLUS" p k))) ]
+                  pf_n2 (pf_a "klasse") (pf_bin "PLUS" k p) (pf_bin "PLUS" p k))) ]
       ()
   in
   let j1 v =
@@ -8852,22 +8844,20 @@ let () =
     Printf.sprintf
       {|{ "node": "Functie", "kind": "SOM",
         "argumenten": [ { "node": "AttribuutRef", "attribuut": "lengte", "objecttype": "Schuit",
-          "onderwerpBron": "alle schuiten", "navigatieRol": null, "type": %s,
-          "bron": "de lengte van alle schuiten", "set": true, "navigatiePad": [] } ],
+          "bron": "de lengte van alle schuiten" } ],
         "elementObjecttype": "Schuit", "leegwaarde": null, "filter": %s, "dimensieSelectie": null,
         "type": %s, "bron": "de som", "granulariteit": null,
         "bronRol": { "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" } }|}
-      pf_n0
-      (pf_cmp "GROTER" (pf_a ~ot:"Schuit" ~typ:pf_n0 "lengte")
-         (Printf.sprintf {|{ "node": "BinderRef", "name": "a", "type": %s, "bron": "de a" }|} pf_n0))
+      (pf_cmp "GROTER" (pf_a ~ot:"Schuit" "lengte")
+         {|{ "node": "BinderRef", "name": "a", "bron": "de a" }|})
       pf_n0
   in
   let lv5 =
     pf_doc ~objecttypen:[ werf; schuit ] ~feittypen:ligplaats ~parameters:[ pf_decl ~typ:pf_n0 "p" ]
       ~regels:
-        [ pf_regel ~ot:"Werf" ~doel:"bonus" ~typ:pf_n0
+        [ pf_regel ~ot:"Werf" ~doel:"bonus"
             (Printf.sprintf {|{ "node": "Let", "type": %s, "binder": "a", "value": %s, "body": %s, "bron": "let a" }|}
-               pf_n0 (pf_p ~typ:pf_n0 "p") som) ]
+               pf_n0 (pf_p "p") som) ]
       ()
   in
   let inst label ot attrs roles =
@@ -8904,7 +8894,7 @@ let () =
       { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
       { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] }|}
   in
-  let lengte = pf_a ~ot:"Schuit" ~typ:pf_n0 "lengte" and p = pf_p ~typ:pf_n0 "p" in
+  let lengte = pf_a ~ot:"Schuit" "lengte" and p = pf_p "p" in
   let gt l r = pf_cmp "GROTER" l r and vijf = pf_l ~typ:pf_n0 "5" in
   let kv ?drempel kwantor toets =
     Printf.sprintf
@@ -8917,7 +8907,7 @@ let () =
   in
   let doc voorwaarde =
     pf_doc ~objecttypen:[ werf; schuit ] ~feittypen:ligplaats ~parameters:[ pf_decl ~typ:pf_n0 "p" ]
-      ~regels:[ pf_regel ~ot:"Werf" ~doel:"keur" ~typ:pf_n0 ~voorwaarde (pf_l ~typ:pf_n0 "99") ]
+      ~regels:[ pf_regel ~ot:"Werf" ~doel:"keur" ~voorwaarde (pf_l ~typ:pf_n0 "99") ]
       ()
   in
   let inst label ot attrs roles =
@@ -9023,7 +9013,6 @@ let () =
   let q v = [ pf_bind "q" v ] in
   let q_gt_0 = pf_cmp "GROTER" (pf_p "q") (pf_l "0") in
   (* lz-m3: only the Hoog arm reads k, and p follows the Match *)
-  let klasse = {|{ "node": "Enumeratie", "domein": "Klasse", "waarden": [ "Hoog", "Laag" ] }|} in
   let m3 =
     doc
       (pf_let "k" restpost
@@ -9033,7 +9022,7 @@ let () =
                    "arms": [ { "constructor": "Hoog", "binder": null, "body": %s },
                              { "constructor": "Laag", "binder": null, "body": %s } ],
                    "bron": "match klasse" }|}
-               pf_n2 (pf_a ~typ:klasse "klasse") k (pf_l "0.00"))
+               pf_n2 (pf_a "klasse") k (pf_l "0.00"))
             p))
   in
   both_answer ~name:"Let, lazy: the Match arm read k before p (lz-m3)" ~ir:m3
@@ -9161,27 +9150,26 @@ let () =
       { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
       { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] }|}
   in
-  let lengte = pf_a ~ot:"Schuit" ~typ:pf_n0 "lengte" in
-  let k = Printf.sprintf {|{ "node": "BinderRef", "name": "k", "type": %s, "bron": "de k" }|} pf_n0 in
-  let filter = pf_cmp "GROTER" (pf_bin ~typ:pf_n0 "PLUS" k lengte) (pf_p ~typ:pf_n0 "p") in
+  let lengte = pf_a ~ot:"Schuit" "lengte" in
+  let k = {|{ "node": "BinderRef", "name": "k", "bron": "de k" }|} in
+  let filter = pf_cmp "GROTER" (pf_bin ~typ:pf_n0 "PLUS" k lengte) (pf_p "p") in
   let som =
     Printf.sprintf
       {|{ "node": "Functie", "kind": "SOM",
         "argumenten": [ { "node": "AttribuutRef", "attribuut": "lengte", "objecttype": "Schuit",
-          "onderwerpBron": "alle schuiten", "navigatieRol": null, "type": %s,
-          "bron": "de lengte van alle schuiten", "set": true, "navigatiePad": [] } ],
+          "bron": "de lengte van alle schuiten" } ],
         "elementObjecttype": "Schuit", "leegwaarde": null, "filter": %s, "dimensieSelectie": null,
         "type": %s, "bron": "de som", "granulariteit": null,
         "bronRol": { "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" } }|}
-      pf_n0 filter pf_n0
+      filter pf_n0
   in
   let ir =
     pf_doc ~objecttypen:[ werf; schuit ] ~feittypen:ligplaats ~parameters:[ pf_decl ~typ:pf_n0 "p" ]
       ~regels:
-        [ pf_regel ~ot:"Werf" ~doel:"bonus" ~typ:pf_n0
+        [ pf_regel ~ot:"Werf" ~doel:"bonus"
             (Printf.sprintf
                {|{ "node": "Let", "type": %s, "binder": "k", "value": %s, "body": %s, "bron": "let k" }|}
-               pf_n0 (pf_a ~ot:"Werf" ~typ:pf_n0 "restpost") som) ]
+               pf_n0 (pf_a ~ot:"Werf" "restpost") som) ]
       ()
   in
   let inst label ot attrs roles =
@@ -9265,7 +9253,7 @@ let () =
   let vangst = Printf.sprintf {|{ "node": "SumType", "domain": "vangst", %s }|} constructors in
   let lijst = Printf.sprintf {|{ "node": "ListType", "element": %s }|} vangst in
   let jutter = pf_ot [ ("totaal", pf_n2); ("vangsten", lijst) ] in
-  let x = Printf.sprintf {|{ "node": "BinderRef", "name": "x", "type": %s, "bron": "de vangst" }|} vangst in
+  let x = {|{ "node": "BinderRef", "name": "x", "bron": "de vangst" }|} in
   let match_on binder ~waardevol ~waardeloos =
     Printf.sprintf
       {|{ "node": "Match", "type": %s, "scrutinee": %s, "arms": [
@@ -9286,7 +9274,7 @@ let () =
                    "function": { "node": "Lambda", "parameters": [ { "name": "acc", "datatype": %s }, { "name": "x", "datatype": %s } ],
                      "body": %s, "bron": "de optelling" },
                    "init": %s, "bron": "de vouw" }|}
-               pf_n2 (pf_a ~typ:lijst "vangsten") pf_n2 vangst body (pf_l "0.00")) ]
+               pf_n2 (pf_a "vangsten") pf_n2 vangst body (pf_l "0.00")) ]
       ()
   in
   let j1 items =
@@ -9385,28 +9373,27 @@ let () =
       { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": null, "meervoudig": false },
       { "node": "Rol", "naam": "lading", "objecttypeNaam": "Lading", "meervoud": "ladingen", "meervoudig": true } ] }|}
   in
-  let lengte = pf_a ~ot:"Schuit" ~typ:pf_n0 "lengte" and gewicht = pf_a ~ot:"Lading" ~typ:pf_n0 "gewicht" in
-  let p = pf_p ~typ:pf_n0 "p" and vijf = pf_l ~typ:pf_n0 "5" and nul = pf_l ~typ:pf_n0 "0" in
-  let k = Printf.sprintf {|{ "node": "BinderRef", "name": "k", "type": %s, "bron": "de k" }|} pf_n0 in
+  let lengte = pf_a ~ot:"Schuit" "lengte" and gewicht = pf_a ~ot:"Lading" "gewicht" in
+  let p = pf_p "p" and vijf = pf_l ~typ:pf_n0 "5" and nul = pf_l ~typ:pf_n0 "0" in
+  let k = {|{ "node": "BinderRef", "name": "k", "bron": "de k" }|} in
   let gt l r = pf_cmp "GROTER" l r in
   let som filter =
     Printf.sprintf
       {|{ "node": "Functie", "kind": "SOM",
         "argumenten": [ { "node": "AttribuutRef", "attribuut": "lengte", "objecttype": "Schuit",
-          "onderwerpBron": "alle schuiten", "navigatieRol": null, "type": %s,
-          "bron": "de lengte van alle schuiten", "set": true, "navigatiePad": [] } ],
+          "bron": "de lengte van alle schuiten" } ],
         "elementObjecttype": "Schuit", "leegwaarde": null, "filter": %s, "dimensieSelectie": null,
         "type": %s, "bron": "de som", "granulariteit": null,
         "bronRol": { "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" } }|}
-      pf_n0 filter pf_n0
+      filter pf_n0
   in
   let doc filter =
     pf_doc ~objecttypen:[ werf; schuit; lading ] ~feittypen ~parameters:[ pf_decl ~typ:pf_n0 "p" ]
       ~regels:
-        [ pf_regel ~ot:"Werf" ~doel:"bonus" ~typ:pf_n0
+        [ pf_regel ~ot:"Werf" ~doel:"bonus"
             (Printf.sprintf
                {|{ "node": "Let", "type": %s, "binder": "k", "value": %s, "body": %s, "bron": "let k" }|}
-               pf_n0 (pf_a ~ot:"Werf" ~typ:pf_n0 "restpost") (som filter)) ]
+               pf_n0 (pf_a ~ot:"Werf" "restpost") (som filter)) ]
       ()
   in
   let inst label ot attrs roles =
@@ -9459,10 +9446,10 @@ let () =
   let late =
     pf_doc ~objecttypen:[ werf; schuit; lading ] ~feittypen ~parameters:[ pf_decl ~typ:pf_n0 "p" ]
       ~regels:
-        [ pf_regel ~ot:"Werf" ~doel:"bonus" ~typ:pf_n0
+        [ pf_regel ~ot:"Werf" ~doel:"bonus"
             (Printf.sprintf
                {|{ "node": "Let", "type": %s, "binder": "k", "value": %s, "body": %s, "bron": "let k" }|}
-               pf_n0 (pf_a ~ot:"Werf" ~typ:pf_n0 "restpost")
+               pf_n0 (pf_a ~ot:"Werf" "restpost")
                (pf_bin ~typ:pf_n0 "PLUS"
                   (som
                      (Printf.sprintf
@@ -9536,7 +9523,7 @@ let () =
       { "node": "Rol", "naam": "haven", "objecttypeNaam": "Haven", "meervoud": null, "meervoudig": false },
       { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": "werven", "meervoudig": true } ] }|}
   in
-  let lengte = pf_a ~ot:"Schuit" ~typ:pf_n0 "lengte" and p = pf_p ~typ:pf_n0 "p" in
+  let lengte = pf_a ~ot:"Schuit" "lengte" and p = pf_p "p" in
   let gt l r = pf_cmp "GROTER" l r and vijf = pf_l ~typ:pf_n0 "5" in
   let schuiten = {|{ "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" }|} in
   let kv ?drempel ?pad kwantor toets =
@@ -9562,7 +9549,7 @@ let () =
   in
   let doc ?(ot = "Werf") ?(feittypen = ligplaats) ~creaties voorwaarde =
     pf_doc ~objecttypen:[ haven; werf; schuit ] ~feittypen ~parameters:[ pf_decl ~typ:pf_n0 "p" ]
-      ~regels:[ pf_regel ~ot ~doel:"keur" ~typ:pf_n0 ~voorwaarde (pf_l ~typ:pf_n0 "99") ]
+      ~regels:[ pf_regel ~ot ~doel:"keur" ~voorwaarde (pf_l ~typ:pf_n0 "99") ]
       ~creaties:(List.mapi creatie creaties) ()
   in
   let inst label ot attrs roles =
@@ -9644,8 +9631,8 @@ let () =
   in
   let schuiten = {|{ "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" }|}
   and werven = {|{ "node": "RolBinding", "feittype": "havenwerf", "rol": "werf" }|} in
-  let lengte = pf_a ~ot:"Schuit" ~typ:pf_n0 "lengte" and p = pf_p ~typ:pf_n0 "p" in
-  let k = Printf.sprintf {|{ "node": "BinderRef", "name": "k", "type": %s, "bron": "de k" }|} pf_n0 in
+  let lengte = pf_a ~ot:"Schuit" "lengte" and p = pf_p "p" in
+  let k = {|{ "node": "BinderRef", "name": "k", "bron": "de k" }|} in
   let gt l r = pf_cmp "GROTER" l r and lit v = pf_l ~typ:pf_n0 v in
   let let_ b v body =
     Printf.sprintf {|{ "node": "Let", "type": %s, "binder": "%s", "value": %s, "body": %s, "bron": "let %s" }|}
@@ -9663,11 +9650,10 @@ let () =
     Printf.sprintf
       {|{ "node": "Functie", "kind": "SOM",
         "argumenten": [ { "node": "AttribuutRef", "attribuut": "%s", "objecttype": "%s",
-          "onderwerpBron": "alle", "navigatieRol": null, "type": %s,
-          "bron": "de %s", "set": true, "navigatiePad": [] } ],
+          "bron": "de %s" } ],
         "elementObjecttype": "%s", "leegwaarde": null, "filter": %s, "dimensieSelectie": null,
         "type": %s, "bron": "de som", "granulariteit": null, "bronRol": %s }|}
-      attr el pf_n0 attr el filter pf_n0 rol
+      attr el attr el filter pf_n0 rol
   in
   let creatie ?(toekenningen = []) ?(voorwaarde = "null") naam nieuw subject rol =
     Printf.sprintf
@@ -9700,7 +9686,7 @@ let () =
   in
   let d1 = [ inst "D1" "Droogdok" "" "" ] and bound = [ pf_bind "p" "1" ] in
   (* the matrix: keur 99 for a werf whose schuiten satisfy the fold *)
-  let keur_doc cs voorwaarde = doc cs (pf_regel ~ot:"Werf" ~doel:"keur" ~typ:pf_n0 ~voorwaarde (lit "99")) in
+  let keur_doc cs voorwaarde = doc cs (pf_regel ~ot:"Werf" ~doel:"keur" ~voorwaarde (lit "99")) in
   let keur v = [ (match v with Some v -> pf_is ~label:"D1" ~attr:"keur" v | None -> pf_leeg ~label:"D1" ~attr:"keur" ()); pf_cons ] in
   let minst = kv ~drempel:1 "TEN_MINSTE" (pf_comp ~drempel:1 "TEN_MINSTE" [ gt lengte (lit "5"); gt lengte p ])
   and alle = kv "ALLE" (pf_comp "ALLE" [ gt lengte (lit "5"); gt lengte p ]) in
@@ -9722,8 +9708,8 @@ let () =
      at 8 ends the Let, a read of p at 3 faults, whichever comes first *)
   let pm_doc cs =
     doc cs
-      (pf_regel ~ot:"Werf" ~doel:"bonus" ~typ:pf_n0 ~voorwaarde:(kv "ALLE" (gt lengte (lit "0")))
-         (let_ "k" (pf_a ~ot:"Werf" ~typ:pf_n0 "restpost")
+      (pf_regel ~ot:"Werf" ~doel:"bonus" ~voorwaarde:(kv "ALLE" (gt lengte (lit "0")))
+         (let_ "k" (pf_a ~ot:"Werf" "restpost")
             (som ~el:"Schuit" ~attr:"lengte" ~rol:schuiten
                (pf_comp ~drempel:1 "TEN_MINSTE" [ pf_comp "ALLE" [ gt lengte (lit "5"); gt k (lit "0") ]; gt lengte p ]))))
   in
@@ -9741,7 +9727,7 @@ let () =
      where the matrix reads k, at 3 only if 3 comes before 8 *)
   let vraag_doc cs =
     doc cs
-      (pf_regel ~ot:"Haven" ~doel:"bonus" ~typ:pf_n0
+      (pf_regel ~ot:"Haven" ~doel:"bonus"
          (let_ "k" p
             (som ~el:"Werf" ~attr:"keur" ~rol:werven
                (kv ~drempel:1 "TEN_MINSTE" (pf_comp ~drempel:1 "TEN_MINSTE" [ gt lengte (lit "5"); gt lengte k ])))))
@@ -9781,7 +9767,7 @@ let () =
     ~case_text:(pf_case ~instances:w1 [ pf_leeg ~label:"W1" ~attr:"bonus" (); pf_cons ]);
   let disj =
     doc (per_werf [ "8"; "3" ])
-      (pf_regel ~ot:"Haven" ~doel:"bonus" ~typ:pf_n0
+      (pf_regel ~ot:"Haven" ~doel:"bonus"
          (let_ "k" p
             (pf_bin ~typ:pf_n0 "PLUS"
                (som ~el:"Werf" ~attr:"keur" ~rol:werven
@@ -9830,8 +9816,8 @@ let () =
   in
   let schuiten = {|{ "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" }|}
   and werven = {|{ "node": "RolBinding", "feittype": "havenwerf", "rol": "werf" }|} in
-  let lengte = pf_a ~ot:"Schuit" ~typ:n0 "lengte" and p = pf_p ~typ:n0 "p" in
-  let bref b = Printf.sprintf {|{ "node": "BinderRef", "name": "%s", "type": %s, "bron": "de %s" }|} b n0 b in
+  let lengte = pf_a ~ot:"Schuit" "lengte" and p = pf_p "p" in
+  let bref b = Printf.sprintf {|{ "node": "BinderRef", "name": "%s", "bron": "de %s" }|} b b in
   let k = bref "k" and j = bref "j" in
   let gt l r = pf_cmp "GROTER" l r and lit v = pf_l ~typ:n0 v and plus l r = pf_bin ~typ:n0 "PLUS" l r in
   let let_ b v body =
@@ -9850,11 +9836,10 @@ let () =
     Printf.sprintf
       {|{ "node": "Functie", "kind": "SOM",
         "argumenten": [ { "node": "AttribuutRef", "attribuut": "%s", "objecttype": "%s",
-          "onderwerpBron": "alle", "navigatieRol": null, "type": %s,
-          "bron": "de %s", "set": true, "navigatiePad": [] } ],
+          "bron": "de %s" } ],
         "elementObjecttype": "%s", "leegwaarde": null, "filter": %s, "dimensieSelectie": null,
         "type": %s, "bron": "de som", "granulariteit": null, "bronRol": %s }|}
-      attr el n0 attr el filter n0 rol
+      attr el attr el filter n0 rol
   in
   let acht ?(voorwaarde = "null") () =
     Printf.sprintf
@@ -9878,8 +9863,8 @@ let () =
   let s1 = inst "S1" "Schuit" {|"lengte": { "number": "8" }|} "" in
   (* tr-cr-1 and its controls *)
   let tr =
-    pf_regel ~ot:"Haven" ~doel:"bonus" ~typ:n0
-      (let_ "k" (pf_a ~ot:"Haven" ~typ:n0 "restpost")
+    pf_regel ~ot:"Haven" ~doel:"bonus"
+      (let_ "k" (pf_a ~ot:"Haven" "restpost")
          (plus (som ~el:"Werf" ~attr:"bonus" ~rol:werven (kv ~drempel:1 "TEN_MINSTE" (gt k (lit "0")))) p))
   in
   let h1 ?rp ?(case_schuit = false) () =
@@ -9898,8 +9883,8 @@ let () =
     ~silent:"bonus leeg";
   (* tr-w-1: the read of k in a part inside the value of j *)
   let trw ?voorwaarde () =
-    pf_regel ~ot:"Werf" ~doel:"bonus" ~typ:n0 ?voorwaarde
-      (let_ "k" (pf_a ~ot:"Werf" ~typ:n0 "restpost")
+    pf_regel ~ot:"Werf" ~doel:"bonus" ?voorwaarde
+      (let_ "k" (pf_a ~ot:"Werf" "restpost")
          (let_ "j" (plus (lit "1") (som ~el:"Schuit" ~attr:"lengte" ~rol:schuiten (gt k (lit "0")))) (plus j p)))
   in
   let w1 ?rp ?(case_schuit = false) () =
@@ -9925,10 +9910,10 @@ let () =
      except in that pass — the member below the level equated with the
      guard's. Measured with each of those two presence conditions left out:
      clingo answered where ref faults *)
-  let bonus_w = pf_a ~ot:"Werf" ~typ:n0 "bonus" in
+  let bonus_w = pf_a ~ot:"Werf" "bonus" in
   let pm filter =
-    pf_regel ~ot:"Haven" ~doel:"bonus" ~typ:n0
-      (let_ "k" (pf_a ~ot:"Haven" ~typ:n0 "restpost") (som ~el:"Werf" ~attr:"bonus" ~rol:werven filter))
+    pf_regel ~ot:"Haven" ~doel:"bonus"
+      (let_ "k" (pf_a ~ot:"Haven" "restpost") (som ~el:"Werf" ~attr:"bonus" ~rol:werven filter))
   in
   let tm_k = kv ~drempel:1 "TEN_MINSTE" (gt k (lit "0")) in
   let pm1 = pm (pf_comp ~drempel:1 "TEN_MINSTE" [ tm_k; pf_comp "ALLE" [ gt bonus_w (lit "4"); gt bonus_w p ] ])
@@ -9985,7 +9970,7 @@ let () =
       toets werven
   in
   let kv_regel =
-    pf_regel ~ot:"Haven" ~doel:"bonus" ~typ:n0
+    pf_regel ~ot:"Haven" ~doel:"bonus"
       ~voorwaarde:
         (werven_kv
            (pf_comp ~drempel:1 "TEN_MINSTE" [ lengte_5; pf_comp "ALLE" [ gt bonus_w (lit "4"); gt bonus_w p ] ]))
@@ -10000,7 +9985,7 @@ let () =
   both_answer ~name:"W1's own schuit beside the created one closes the fold in that pass too (r6-kv-both, control)"
     ~ir:(doc ~creaties:[ onder_vijf ] kv_regel) ~case_text:(pf_case ~instances:(h2 ~case_schuit:true ()) h99);
   let dmd =
-    pf_regel ~ot:"Haven" ~doel:"bonus" ~typ:n0
+    pf_regel ~ot:"Haven" ~doel:"bonus"
       (let_ "k" p
          (som ~el:"Werf" ~attr:"bonus" ~rol:werven (pf_comp ~drempel:1 "TEN_MINSTE" [ lengte_5; gt bonus_w k ])))
   in
@@ -10009,8 +9994,8 @@ let () =
     ~name:"the pass before a creation reads k, whose value reads p (r6-dmd-1)" ~ir:(doc ~creaties:[ acht_ ] dmd)
     ~param:"p" ~case_text:(pf_case ~instances:(h1 ()) h4);
   let prebar =
-    pf_regel ~ot:"Haven" ~doel:"bonus" ~typ:n0
-      (let_ "k" (pf_a ~ot:"Haven" ~typ:n0 "restpost")
+    pf_regel ~ot:"Haven" ~doel:"bonus"
+      (let_ "k" (pf_a ~ot:"Haven" "restpost")
          (som ~el:"Werf" ~attr:"bonus" ~rol:werven
             (pf_comp ~drempel:1 "TEN_MINSTE" [ lengte_5; gt k (lit "0"); gt bonus_w p ])))
   in
@@ -10022,8 +10007,8 @@ let () =
     ~ir:(doc prebar) ~case_text:(pf_case ~instances:(h1 ~case_schuit:true ()) h4)
     ~answers:[ "H1.bonus is underived (leeg), expected 4" ];
   let ebar =
-    pf_regel ~ot:"Haven" ~doel:"bonus" ~typ:n0
-      (let_ "k" (pf_a ~ot:"Haven" ~typ:n0 "restpost")
+    pf_regel ~ot:"Haven" ~doel:"bonus"
+      (let_ "k" (pf_a ~ot:"Haven" "restpost")
          (plus
             (som ~el:"Werf" ~attr:"bonus" ~rol:werven
                (pf_comp ~drempel:3 "TEN_MINSTE" [ lengte_5; gt k (lit "0"); gt bonus_w (lit "1") ]))
@@ -10041,7 +10026,7 @@ let () =
       lengte_5 werven
   in
   let alle_regel =
-    pf_regel ~ot:"Haven" ~doel:"bonus" ~typ:n0
+    pf_regel ~ot:"Haven" ~doel:"bonus"
       ~voorwaarde:(pf_comp ~drempel:1 "TEN_MINSTE" [ alle_werven; gt p (lit "0") ])
       (lit "99")
   in
@@ -10059,7 +10044,7 @@ let () =
       (lit "3") werven
   in
   let pres =
-    pf_regel ~ot:"Haven" ~doel:"bonus" ~typ:n0
+    pf_regel ~ot:"Haven" ~doel:"bonus"
       (som ~el:"Werf" ~attr:"bonus" ~rol:werven (pf_comp ~drempel:1 "TEN_MINSTE" [ lengte_5; gt bonus_w p ]))
   in
   named_refusal ~by:"the composite condition" ~ref_plays:false
@@ -10068,8 +10053,8 @@ let () =
     ~case_text:(pf_case ~instances:(h1 ~case_schuit:true ()) [ pf_is ~label:"H1" ~attr:"bonus" "7"; pf_cons ]);
   (* tr-strat-1: the rule sits above the creation *)
   let strat =
-    pf_regel ~ot:"Werf" ~doel:"bonus" ~typ:n0 ~voorwaarde:(kv "ALLE" (gt lengte (lit "0")))
-      (let_ "k" (pf_a ~ot:"Werf" ~typ:n0 "restpost")
+    pf_regel ~ot:"Werf" ~doel:"bonus" ~voorwaarde:(kv "ALLE" (gt lengte (lit "0")))
+      (let_ "k" (pf_a ~ot:"Werf" "restpost")
          (plus (som ~el:"Schuit" ~attr:"lengte" ~rol:schuiten (gt k (lit "0"))) p))
   in
   pinned_loud ~entry:"L2"
@@ -10126,7 +10111,7 @@ let () =
       { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] }|}
   and schuiten = {|{ "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" }|} in
   let lit v = pf_l ~typ:pf_n0 v in
-  let lengte = pf_a ~ot:"Schuit" ~typ:pf_n0 "lengte" in
+  let lengte = pf_a ~ot:"Schuit" "lengte" in
   let kv ?(drempel = "") kwantor toets =
     Printf.sprintf
       {|{ "node": "Kwantorvouw", "kwantor": "%s"%s, "elementObjecttype": "Schuit",
@@ -10134,9 +10119,9 @@ let () =
       kwantor drempel toets schuiten
   in
   let fold = kv ~drempel:{|, "drempel": 1|} "TEN_MINSTE" (pf_cmp "GROTER" lengte (lit "5")) in
-  let p_gt_0 = pf_cmp "GROTER" (pf_p ~typ:pf_n0 "p") (lit "0") in
+  let p_gt_0 = pf_cmp "GROTER" (pf_p "p") (lit "0") in
   let of_ = pf_comp ~drempel:1 "TEN_MINSTE" [ fold; p_gt_0 ] in
-  let keur voorwaarde = pf_regel ~ot:"Werf" ~doel:"keur" ~typ:pf_n0 ~voorwaarde (lit "99") in
+  let keur voorwaarde = pf_regel ~ot:"Werf" ~doel:"keur" ~voorwaarde (lit "99") in
   let maak v =
     Printf.sprintf
       {|{ "node": "ResolvedObjectCreatie", "naam": "maak schuit", "nieuwType": "Schuit", "subject": "Werf",
@@ -10222,20 +10207,17 @@ let () =
     Printf.sprintf
       {|{ "node": "Functie", "kind": "AANTAL",
         "argumenten": [ { "node": "AttribuutRef", "attribuut": "schuiten", "objecttype": "Werf",
-          "onderwerpBron": "zijn", "navigatieRol": null, "type": { "node": "Onbekend", "reden": "niet opgelost" },
-          "bron": "schuiten", "set": false, "navigatiePad": [] } ],
+          "bron": "schuiten" } ],
         "elementObjecttype": "Schuit", "leegwaarde": null, "filter": null, "dimensieSelectie": null,
-        "type": %s, "bron": "het aantal schuiten", "granulariteit": null }|}
+        "type": %s, "bron": "het aantal schuiten", "granulariteit": null,
+        "bronRol": { "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" } }|}
       nn
   in
   let bedrag =
-    Printf.sprintf
-      {|{ "node": "AttribuutRef", "attribuut": "bedrag", "objecttype": "Rapport", "onderwerpBron": "zijn rapport",
-        "navigatieRol": "rapport", "type": %s, "bron": "het bedrag van zijn rapport", "set": false,
-        "navigatiePad": [], "navigatieBindingen": [ { "node": "RolBinding", "feittype": "keuring", "rol": "rapport" } ] }|}
-      n0
+    {|{ "node": "AttribuutRef", "attribuut": "bedrag", "objecttype": "Rapport", "bron": "het bedrag van zijn rapport",
+        "navigatieBindingen": [ { "node": "RolBinding", "feittype": "keuring", "rol": "rapport" } ] }|}
   in
-  let p_gt_0 = pf_cmp "GROTER" (pf_p ~typ:n0 "p") (lit "0") in
+  let p_gt_0 = pf_cmp "GROTER" (pf_p "p") (lit "0") in
   let maak ~naam ~nieuw ~attr ~waarde rol =
     Printf.sprintf
       {|{ "node": "ResolvedObjectCreatie", "naam": "%s", "nieuwType": "%s", "subject": "Werf",
@@ -10248,7 +10230,7 @@ let () =
   and vijf = maak ~naam:"maak rapport" ~nieuw:"Rapport" ~attr:"bedrag" ~waarde:"5" ("keuring", "rapport") in
   let doc ?(creaties = []) ?voorwaarde waarde =
     pf_doc ~objecttypen:[ werf; schuit; rapport ] ~feittypen ~parameters:[ pf_decl ~typ:n0 "p" ]
-      ~regels:[ pf_regel ~ot:"Werf" ~doel:"keur" ~typ:n0 ?voorwaarde waarde ] ~creaties ()
+      ~regels:[ pf_regel ~ot:"Werf" ~doel:"keur" ?voorwaarde waarde ] ~creaties ()
   in
   let w1 roles = Printf.sprintf {|{ "label": "W1", "objectType": "Werf", "attributes": {}, "roles": { %s }, "characteristics": [] }|} roles in
   let s1 = {|{ "label": "S1", "objectType": "Schuit", "attributes": { "lengte": { "number": "8" } }, "roles": {}, "characteristics": [] }|}
@@ -10277,8 +10259,8 @@ let () =
     ~case_text:(pf_case ~instances:[ w1 "" ] (rows None));
   both_answer ~name:"the count against zero with the case's own schuit (r6-alle-nul-case, control)"
     ~ir:(doc ~voorwaarde:nul (lit "99")) ~case_text:(pf_case ~instances:met_schuit (rows None));
-  let n = Printf.sprintf {|{ "node": "BinderRef", "name": "n", "type": %s, "bron": "de n" }|} nn in
-  let tak = pf_let "n" aantal (pf_ite (pf_cmp "GROTER" n (lit "0")) (lit "99") (pf_p ~typ:n0 "p")) in
+  let n = {|{ "node": "BinderRef", "name": "n", "bron": "de n" }|} in
+  let tak = pf_let "n" aantal (pf_ite (pf_cmp "GROTER" n (lit "0")) (lit "99") (pf_p "p")) in
   let tak =
     (* pf_let and pf_ite write the two-decimal type; this rule is whole *)
     replace ~tok:pf_n2 ~by:n0 tak
@@ -10289,10 +10271,10 @@ let () =
     ~ir:(doc tak) ~case_text:(pf_case ~instances:met_schuit (rows (Some "99")));
   let nul_regel = pf_cmp "GELIJK" aantal (lit "0") in
   pinned_silent ~entry:"S4" ~name:"a rule's condition counts no schuit in the pass before a creation (r6-regelcond-nul)"
-    ~ir:(doc ~creaties:[ acht ] ~voorwaarde:nul_regel (pf_p ~typ:n0 "p")) ~param:"p"
+    ~ir:(doc ~creaties:[ acht ] ~voorwaarde:nul_regel (pf_p "p")) ~param:"p"
     ~case_text:(pf_case ~instances:[ w1 "" ] (rows None));
   both_answer ~name:"the rule's condition with the case's own schuit (r6-regelcond-nul-case, control)"
-    ~ir:(doc ~voorwaarde:nul_regel (pf_p ~typ:n0 "p")) ~case_text:(pf_case ~instances:met_schuit (rows None))
+    ~ir:(doc ~voorwaarde:nul_regel (pf_p "p")) ~case_text:(pf_case ~instances:met_schuit (rows None))
 
 (* FIXRONDE 6, README [L2]'s other half: the read's own member is there in the
    pass before a creation, as the Let barrier takes the guard's own member. A
@@ -10321,7 +10303,7 @@ let () =
   let schuiten = {|{ "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" }|}
   and zijn_werf = {|{ "node": "RolBinding", "feittype": "keuring", "rol": "werf" }|}
   and het_rapport = {|{ "node": "RolBinding", "feittype": "keuring", "rol": "rapport" }|} in
-  let lengte_5 = pf_cmp "GROTER" (pf_a ~ot:"Schuit" ~typ:n0 "lengte") (lit "5") in
+  let lengte_5 = pf_cmp "GROTER" (pf_a ~ot:"Schuit" "lengte") (lit "5") in
   let kv range =
     Printf.sprintf
       {|{ "node": "Kwantorvouw", "kwantor": "TEN_MINSTE", "drempel": 1, "elementObjecttype": "Schuit",
@@ -10345,11 +10327,11 @@ let () =
       ~toekenningen:"" het_rapport
   in
   let keur =
-    pf_regel ~ot:"Rapport" ~doel:"keur" ~typ:n0
+    pf_regel ~ot:"Rapport" ~doel:"keur"
       ~voorwaarde:
         (pf_comp ~drempel:1 "TEN_MINSTE"
            [ kv (Printf.sprintf {|"bronPad": [ %s, %s ]|} zijn_werf schuiten);
-             pf_cmp "GROTER" (pf_p ~typ:n0 "p") (lit "0") ])
+             pf_cmp "GROTER" (pf_p "p") (lit "0") ])
       (lit "99")
   in
   let ir =
@@ -10396,9 +10378,9 @@ let () =
       {|{ "node": "Kwantorvouw", "kwantor": "TEN_MINSTE", "drempel": 1, "elementObjecttype": "Schuit",
         "filter": null, "toets": %s, "bron": "de schuiten",
         "bronRol": { "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" } }|}
-      (pf_cmp "GROTER" (pf_a ~ot:"Schuit" ~typ:n0 "lengte") (lit "5"))
+      (pf_cmp "GROTER" (pf_a ~ot:"Schuit" "lengte") (lit "5"))
   in
-  let of_ = pf_comp ~drempel:1 "TEN_MINSTE" [ fold; pf_cmp "GROTER" (pf_p ~typ:n0 "p") (lit "0") ] in
+  let of_ = pf_comp ~drempel:1 "TEN_MINSTE" [ fold; pf_cmp "GROTER" (pf_p "p") (lit "0") ] in
   let maak ~naam ~nieuw ~attr ~waarde ~voorwaarde rol =
     Printf.sprintf
       {|{ "node": "ResolvedObjectCreatie", "naam": "%s", "nieuwType": "%s", "subject": "Werf",
@@ -10437,7 +10419,7 @@ let () =
     ~ir:(doc ~consistenties:[ assertie ] [ acht ]) ~case_text:(w1 [ pf_cons ]) ~needle;
   let booleaan = {|{ "node": "Booleaan" }|} in
   let goed =
-    pf_regel ~ot:"Werf" ~doel:"goed" ~typ:booleaan ~soort:"KENMERKTOEKENNING" ~voorwaarde:of_
+    pf_regel ~ot:"Werf" ~doel:"goed" ~soort:"KENMERKTOEKENNING" ~voorwaarde:of_
       (pf_l ~typ:booleaan "waar")
   in
   pinned_loud ~entry:"L2" ~name:"a characteristic assignment stands strictly above the schuit's creation (P13)"
@@ -10465,7 +10447,7 @@ let () =
       { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] }|}
   and schuiten = {|{ "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" }|}
   and zijn_werf = {|{ "node": "RolBinding", "feittype": "ligplaats", "rol": "werf" }|} in
-  let lengte = pf_a ~ot:"Schuit" ~typ:pf_n0 "lengte" and lit v = pf_l ~typ:pf_n0 v in
+  let lengte = pf_a ~ot:"Schuit" "lengte" and lit v = pf_l ~typ:pf_n0 v in
   let tm1 parts = pf_comp ~drempel:1 "TEN_MINSTE" parts in
   let fold ~bron ~range toets =
     Printf.sprintf
@@ -10476,7 +10458,7 @@ let () =
   let inner =
     fold ~bron:"de schuiten van zijn werf"
       ~range:(Printf.sprintf {|"bronPad": [ %s, %s ]|} zijn_werf schuiten)
-      (tm1 [ pf_cmp "KLEINER" lengte (lit "5"); pf_cmp "GROTER" lengte (pf_p ~typ:pf_n0 "p") ])
+      (tm1 [ pf_cmp "KLEINER" lengte (lit "5"); pf_cmp "GROTER" lengte (pf_p "p") ])
   in
   let outer =
     fold ~bron:"de schuiten" ~range:(Printf.sprintf {|"bronRol": %s|} schuiten)
@@ -10492,7 +10474,7 @@ let () =
   in
   let doc creaties =
     pf_doc ~objecttypen:[ werf; schuit ] ~feittypen:ligplaats ~parameters:[ pf_decl ~typ:pf_n0 "p" ]
-      ~regels:[ pf_regel ~ot:"Werf" ~doel:"keur" ~typ:pf_n0 ~voorwaarde:outer (lit "99") ]
+      ~regels:[ pf_regel ~ot:"Werf" ~doel:"keur" ~voorwaarde:outer (lit "99") ]
       ~creaties:(List.mapi creatie creaties) ()
   in
   let inst label ot attrs roles =
@@ -10526,8 +10508,7 @@ let () =
         (Printf.sprintf
            {|{ "node": "Vergelijking", "op": "LATER",
                "links": %s,
-               "rechts": { "node": "ParameterRef", "parameter": "grensdatum",
-                           "type": { "node": "DatumInDagen" }, "bron": "de grensdatum" },
+               "rechts": { "node": "ParameterRef", "parameter": "grensdatum", "bron": "de grensdatum" },
                "periode": null, "bron": "de dag later is dan de grensdatum" }|}
            de_dag)
       ~parameters:
