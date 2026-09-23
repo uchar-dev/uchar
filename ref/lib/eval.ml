@@ -203,13 +203,17 @@ let rec bevat_periode (c : conditie) =
 
 (* ch. 3.10's v0 mirror note carries TWO bounds on the window and this is the
    second: v0's backends "refuse the condition under counting quantifiers".
-   Measured 2026-09-20 on verifier-clean documents, one per quantifier, with
-   the window as the second member of a composite: the DRL-text branch names
-   this very limit ("periodevergelijking onder een tellende kwantor") under
-   GEEN, TEN_MINSTE, TEN_HOOGSTE and PRECIES, and the exec branch drops the
-   rule; both PLAY under ALLE and DE. So the boundary is not invented here,
-   it is read off the three other executors — and the two carried quantifiers
-   are exactly the two this interpreter has a corpus witness for.
+   Measured 2026-09-20, before card drools-venster-vouwtoets (2026-09-23), on
+   verifier-clean documents, one per quantifier, with the window as the
+   second member of a composite: the DRL-text branch then named this very
+   limit ("periodevergelijking onder een tellende kwantor") under GEEN,
+   TEN_MINSTE, TEN_HOOGSTE and PRECIES, and the exec branch dropped the rule;
+   both PLAYED under ALLE and DE. So the boundary is not invented here, it is
+   read off the three other executors — and the two carried quantifiers are
+   exactly the two this interpreter has a corpus witness for. Since that card
+   both Drools branches play the window under ALLE and refuse it by name
+   under GEEN and the counting quantifiers, citing WF-112, in a composite and
+   in a fold alike.
 
    What the refused position would otherwise do is a reading nothing norms:
    under GEEN the window's verdict is COMPLEMENTED, so a time-free session —
@@ -223,11 +227,11 @@ let rec bevat_periode (c : conditie) =
    Since 2026-09-23 the position is WF-112 (maintainer decision): the
    verifier refuses the document, so this fault is fail-fast on a
    non-conforming input rather than the answer to a conforming one, and it
-   may not be softened to a fallback. The fold measurement of that day is
-   why the rule covers the fold as well: the Drools DRL-text branch PLAYED a
-   window under all five fold quantifiers, and under GEEN in a time-free
-   session it answered the complement — true — which is exactly the reading
-   nothing norms. *)
+   may not be softened to a fallback. The fold measurement of that day, taken
+   before card drools-venster-vouwtoets, is why the rule covers the fold as
+   well: the Drools DRL-text branch then PLAYED a window under all five fold
+   quantifiers, and under GEEN in a time-free session it answered the
+   complement — true — which is exactly the reading nothing norms. *)
 let periode_onder_telkwantor (kwantor : kwantor) (parts : conditie list) =
   match kwantor with
   | Alle | De -> ()
