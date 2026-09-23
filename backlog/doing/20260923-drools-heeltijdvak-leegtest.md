@@ -25,3 +25,21 @@ ongenegeerde bleef buiten die kaart.
 
 May touch: `backends/drools/**`, kaartverplaatsing. NB: serieel met
 andere Drools-kaarten.
+
+## Acceptatie (aangescherpt bij de claim, 2026-09-23)
+
+- (a) Proef-IR's uit `corpus/rood/leegnegatie-heel-tijdvak`: LEEG en
+  GEVULD × `negatie` × `GeheelPeriode.niet` (acht varianten), elk
+  gemeten in verifier, ref, clingo, exec-tak en DRL-tekst-tak; de
+  letterlijke uitvoer in het Result. Dragers in corpus/ en toka/
+  hertellen.
+- (b) Eén loader-weigering in `IrLoader.predicaat` voor de ONgenegeerde
+  vorm, met een eigen sleutel en een eigen zin (grond: ref voert de
+  ch.-3.9-vouw voor leeg/gevuld niet uit; geen bodemzin). De genegeerde
+  vorm houdt haar bestaande weigering (`Predicaat.negatie`), zodat de
+  check-rood-regel van `leegnegatie-heel-tijdvak` waar blijft. Rood-eerst
+  een getuige voor beide takken in `LeegNegatieWitnessTest` (nieuwe
+  test; bestaande tests onaangeroerd). Mutatieproef met `cmp`.
+- (c) Sweep beide takken over alle golden+rood-documenten vóór/na:
+  `cmp` identiek. Alle veertien gates groen, elk los; pins 181/160
+  bewegen niet.
