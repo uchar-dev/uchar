@@ -47,9 +47,10 @@ characteristic of that whole name, and binds the rest. Both rules leave
 empty.
 
 A `false` decision writes nothing (RUNTIME-SEMANTICS ch. 7.1; ch. 5.3's
-monotone writes hold). None of the cases supplies `recht op de penning` as
-input: what a negated decision does to an input characteristic is a
-separate question, left to its own card.
+monotone writes hold), so it leaves a characteristic the input sets in
+place. None of the cases supplies `recht op de penning` as input: whether
+input should rank below the rules is the question of a card of its own,
+and this golden does not pin an answer to it.
 
 ## Case derivations (hand-computed, absolute)
 
