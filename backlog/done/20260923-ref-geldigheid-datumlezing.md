@@ -244,6 +244,77 @@ suites with a mutation per position; the verifier alone still orders
 bounds as strings, sound under WF-101; no replay moved (ref+clingo sweep
 over 638 cases identical)".
 
+**Slotronde (lens 2026-09-23, oordeel MERGEN, vier adviezen).**
+
+- A1 — de getuigen pinden een prefix. Nu pinnen ref (gelijkheid) en
+  clingo (`faults_with`, de volle zin als needle) de HELE weigerzin incl.
+  `yyyy-mm-dd (<reden van de lezer>)`, en de caselader-pins idem.
+  Rood-eerst onder mutant A1 (reden uit de zin): ref `8 failure(s)`,
+  o.a. `FAIL WV-3.10-geldigheid-vanaf-dag-eerst-weigert (got: validity
+  gate: geldigheid.vanaf "01-01-2026" is not the ISO date lexeme)`;
+  clingo `FAIL geldigheid.vanaf dag-eerst faults loudly (validity gate:
+  geldigheid.vanaf "01-01-2026" is not the ISO date lexeme)`, idem
+  `tot`, `523 checks, 2 FAILURES`; herstel `cmp identiek`, 806/523.
+- A2 — nieuwe pin `WV-3.10-geldigheid-vanaf-weigert-ook-buiten-tot`
+  (as_of 2027-06-01, vanaf `01-01-2026`, tot 2026-12-31). Rood onder L2
+  (vanaf-lezing lui achter de tot-kortsluiting): `FAIL
+  WV-3.10-geldigheid-vanaf-weigert-ook-buiten-tot (no fault at all)`, `1
+  failure(s)`; herstel `cmp identiek`.
+- A3(i) — `WV-3.10-geldigheid-vanaf-inclusief` (as_of = vanaf ⇒ 125)
+  plus `…-dag-voor-vanaf` (leeg). Rood onder L3 (vanaf exclusief): `FAIL
+  WV-3.10-geldigheid-vanaf-inclusief (got leeg)`, `1 failure(s)`;
+  herstel `cmp identiek`.
+- A3(ii) — maandlengte: `WV-3.10-geldigheid-vanaf-maandlengte-weigert`
+  (`2026-02-30` als vanaf) en `WV-3.10-caselader-weigert-29-februari-
+  asofdate` (`2025-02-29`). Rood onder E1 (`date_of_iso` met `d > 31`):
+  `FAIL WV-3.10-geldigheid-vanaf-maandlengte-weigert (no fault at all)`,
+  `FAIL WV-3.10-caselader-weigert-29-februari-asofdate (loaded)`, `2
+  failure(s)`; herstel `cmp identiek`. Alle mutanten ook door de
+  clingo-suite gedraaid: L2/L3/E1 laten die groen (523) — zijn
+  poort-pins dekken de vorm, de ordening en kalender zijn dezelfde
+  ref-functie en in ref gepind.
+- A4 — verruimd mandaat (hoofdsessie, alleen deze teksten, beschrijvend):
+  (i) `spec/schema/regelspraak-ir-v0.schema.json`, Geldigheid-description:
+  "the interpreter, the ASP backend and the verifier all hold a bound as
+  an OPAQUE STRING …" → "the verifier holds a bound as an OPAQUE STRING
+  and orders it lexicographically for WF-021's overlap check …; The
+  interpreter and the ASP backend held bounds the same way until
+  2026-09-23; since then they read the evaluation date and both bounds
+  through the strict date reader, compare day numbers and refuse a
+  non-date naming its position", de meting herformuleerd naar "made the
+  interpreter and the ASP backend apply …", en de slotzin "refused one
+  field deeper, by WF-101 in the verifier and by each executor's date
+  reader". (ii) `spec/verifier/lib/checks.ml` WF-101-commentaar: "three
+  readers (this verifier, ref and the ASP backend) hold a bound as an
+  OPAQUE STRING" → "this verifier holds a bound as an OPAQUE STRING …
+  Ref and the ASP backend did the same until 2026-09-23 and now read the
+  bounds through the strict date reader", en "where the three
+  opaque-string readers do not" → "as the executors now do, where an
+  opaque-string reader does not". (iii) IR-SPEC r. 3437–3438: zie het
+  volgende punt.
+- **IR-SPEC-voorstel, aanvulling (iii)** (niet op de branch gewijzigd,
+  consistent met de andere IR-SPEC-passages die als voorsteltekst in dit
+  Result staan): ch. 4.1 "Three readers hold a bound as an **opaque
+  string** and order it with `<=` — this verifier, the reference
+  interpreter and the ASP backend — and `RUNTIME-SEMANTICS.md` ch. 8's
+  version selection is that comparison." → "Until 2026-09-23 three
+  readers held a bound as an opaque string and ordered it with `<=` —
+  the verifier, the reference interpreter and the ASP backend — and
+  ch. 8's version selection in the two executors WAS that comparison;
+  since then the executors read the evaluation date and both bounds
+  through the strict date reader and compare day numbers, and only the
+  verifier's WF-021 overlap test still orders the raw strings."
+- Gates na de slotronde (elk los): ref-suite 806, clingo-suite 523; gate
+  1 PASS; 2 PASS (278 bestanden, schema metaschema-geldig, round-trip);
+  3 PASS (278 golden / 440 negatief); 5 PASS (806, 595 cases); 6 PASS
+  (523, 595 cases).
+- **Informatief voor de Drools-kant** (buiten scope, niet aangeraakt):
+  `backends/drools/.../loader/IrLoader.java:838` ("The three other readers
+  of this wire hold a bound as an OPAQUE STRING …") en
+  `backends/drools/src/test/.../loader/IrWireDatumWitnessTest.java:44`
+  zeggen hetzelfde en zijn sinds deze kaart onwaar voor ref en clingo;
+  de hoofdsessie legt het bij de naamnorm/Drools-voorraad.
+
 **Open.**
 
 - Rood-getuige voor de kalenderhelft van asOfDate (`2026-13-01` of
