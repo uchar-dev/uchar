@@ -659,8 +659,8 @@ count over ALL instances of a type, and measured that it does not:
 - the count takes a plural subject expression (§5.8.1; typeringen §4.11 admits
   subject expressions only), and §5.8 enumerates the plural ones — a
   concatenation (§5.7), a selection whose object or role selector is plural
-  (§5.5.2, §5.5.5), a subselection (§5.6) — each reached from the rule's
-  subject;
+  (§5.5.2, §5.5.5), a subselection (§5.6) — each hanging on a subject the rule
+  binds per instance (§5.5.3);
 - an object type stands in an onderwerpketen only in the singular, behind an
   article: as the universal subject the rule is applied to per instance, or as
   a reference back to it (§5.5.1, §5.5.3, §13.4.1). Its plural has no place
@@ -679,7 +679,7 @@ than the card (WF-037's source-less-count arm), but its sentence said that the
 operand "names no instances to count", which is untrue for an author who named
 a population. The sentence now states the norm and the way out — count through
 a role from the rule's subject, naming that role when exactly one reaches the
-type — for every spelling that reaches it: bare, with an article or "alle", the
+type from it — for every spelling that reaches it: bare, with an article or "alle", the
 type's own name, the plural in lower case, in parentheses. Only an operand that
 resolved to nothing declared qualifies, so a parameter or a "Daarbij geldt"
 variable that shares a type's name keeps the generic sentence. A subselection

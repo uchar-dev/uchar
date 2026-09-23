@@ -1710,9 +1710,9 @@ final class ExpressieBouwer {
      *  article or with "alle" — and nothing it is counted from. The card frontend-typemeervoud-telling
      *  (2026-09-23) answered the norm question NO: RegelSpraak v2.3.0 has no count over all instances of a type.
      *  The count takes a plural subject expression (§5.8.1, typeringen §4.11), and §5.8 names the plural ones —
-     *  a concatenation, a selection whose object or role is plural, a subselection — each reached from the
-     *  rule's subject; an object type stands in an onderwerpketen only in the singular, as the universal
-     *  subject the rule binds per instance (§5.5.3, §13.4.1). The one document-wide range, "van alle
+     *  a concatenation, a selection whose object or role is plural, a subselection — each hanging on a subject
+     *  the rule binds per instance (§5.5.3); an object type stands in an onderwerpketen only in the singular,
+     *  as a universal subject or a reference back to one (§5.5.1, §13.4.1). The one document-wide range, "van alle
      *  &lt;objecttype&gt;", is the uniqueness check's own subject expression (§8.1.6) and no aggregation operand.
      *
      *  <p>The refusal predates this sentence; what the sentence replaces is the generic one, which told an
@@ -1741,11 +1741,12 @@ final class ExpressieBouwer {
         return "telling zonder bron, over een objecttype: '" + bron(f).snippet() + "' noemt het objecttype "
                 + type.naam + " zonder onderwerp waarvandaan het geteld wordt, en zou zo alle instanties van "
                 + type.naam + " in het document tellen — die telling kent de brontaal niet. RegelSpraak v2.3.0 "
-                + "telt de instanties van een meervoudige onderwerpexpressie (§5.8.1, typeringen §4.11), en "
+                + "telt de instanties van een meervoudige onderwerpexpressie (§5.8.1, typeringen §4.11); "
                 + "meervoudig is alleen een concatenatie, een selectie met een meervoudig object of een "
-                + "meervoudige rol, of een subselectie (§5.8), steeds bereikt vanaf het onderwerp van de regel; "
-                + "een objecttype staat in een onderwerpketen alleen enkelvoudig, als universeel onderwerp dat "
-                + "per instantie bindt (§5.5.3, §13.4.1). De enige documentbrede reikwijdte, 'van alle "
+                + "meervoudige rol, of een subselectie (§5.8), en elk daarvan hangt aan een onderwerp dat de "
+                + "regel per instantie bindt (§5.5.3). Een objecttype staat in een onderwerpketen alleen "
+                + "enkelvoudig: als universeel onderwerp of als verwijzing daarnaar (§5.5.1, §13.4.1). De "
+                + "enige documentbrede reikwijdte, 'van alle "
                 + "<objecttype>', hoort bij de uniciteitscontrole (§8.1.6) en is geen aggregatie. Tel via een "
                 + "rol vanaf het onderwerp ('het aantal <rol> van <onderwerp>', §5.5.5)" + uitweg
                 + " (WF-037, IR-SPEC ch. 4.3)";
