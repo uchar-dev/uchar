@@ -12,8 +12,12 @@
             "node": "Attribute",
             "name": "aantal aangemelde vondsten",
             "datatype": {
-              "node": "Onbekend",
-              "reden": "domein Bedragen niet gevonden"
+              "node": "Enumeratie",
+              "domein": "Bedragen",
+              "waarden": [
+                "laag",
+                "hoog"
+              ]
             }
           }
         ],
@@ -58,14 +62,7 @@
           "node": "AttribuutRef",
           "attribuut": "penninggerechtigd",
           "objecttype": "Jutter",
-          "onderwerpBron": "Een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Jutter is penninggerechtigd",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Jutter is penninggerechtigd"
         },
         "waarde": {
           "node": "Literal",
@@ -77,38 +74,28 @@
         },
         "voorwaarde": {
           "node": "Vergelijking",
-          "op": "GROTER_OF_GELIJK",
+          "op": "GELIJK",
           "links": {
             "node": "AttribuutRef",
             "attribuut": "aantal aangemelde vondsten",
             "objecttype": "Jutter",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "zijn aantal aangemelde vondsten",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn aantal aangemelde vondsten"
           },
           "rechts": {
-            "node": "ParameterRef",
-            "parameter": "vondstdrempel",
+            "node": "Literal",
+            "waarde": "hoog",
             "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
+              "node": "Enumeratie",
+              "domein": "Bedragen",
+              "waarden": [
+                "laag",
+                "hoog"
+              ]
             },
-            "bron": "de vondstdrempel"
+            "bron": "hoog"
           },
           "periode": null,
-          "bron": "zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel"
+          "bron": "zijn aantal aangemelde vondsten gelijk is aan hoog"
         },
         "geldigheid": {
           "node": "Geldigheid",

@@ -69,10 +69,10 @@
         "node": "ResolvedDagsoort",
         "naam": "feestdag",
         "voorwaarde": {
-          "node": "Rollidmaatschap",
-          "rol": "wachtjutter",
-          "anderTeFiller": null,
-          "negatie": false,
+          "node": "RoleMembership",
+          "factType": "wachtindeling",
+          "role": "wachtjutter",
+          "negated": false,
           "bron": "de dag valt op een dag waarop hij een wachtjutter is"
         },
         "geldigheid": {

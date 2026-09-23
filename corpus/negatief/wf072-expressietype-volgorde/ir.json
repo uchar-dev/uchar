@@ -104,9 +104,65 @@
               "eenheid": null
             },
             "base": {
-              "node": "AttribuutRef",
-              "attribuut": "dossier",
-              "objecttype": "Jutter",
+              "node": "StructLiteral",
+              "type": {
+                "node": "StructType",
+                "domain": "dossier",
+                "fields": [
+                  {
+                    "name": "telling",
+                    "datatype": {
+                      "node": "Numeriek",
+                      "geheel": true,
+                      "decimalen": 0,
+                      "teken": "NIET_NEGATIEF",
+                      "eenheid": null
+                    }
+                  },
+                  {
+                    "name": "waarde",
+                    "datatype": {
+                      "node": "Numeriek",
+                      "geheel": false,
+                      "decimalen": 2,
+                      "teken": "NIET_NEGATIEF",
+                      "eenheid": null
+                    }
+                  }
+                ]
+              },
+              "fields": [
+                {
+                  "name": "waarde",
+                  "value": {
+                    "node": "Literal",
+                    "waarde": "1.50",
+                    "type": {
+                      "node": "Numeriek",
+                      "geheel": false,
+                      "decimalen": 2,
+                      "teken": "NIET_NEGATIEF",
+                      "eenheid": null
+                    },
+                    "bron": null
+                  }
+                },
+                {
+                  "name": "telling",
+                  "value": {
+                    "node": "Literal",
+                    "waarde": "3",
+                    "type": {
+                      "node": "Numeriek",
+                      "geheel": true,
+                      "decimalen": 0,
+                      "teken": "NIET_NEGATIEF",
+                      "eenheid": null
+                    },
+                    "bron": null
+                  }
+                }
+              ],
               "bron": null
             },
             "field": "waarde",

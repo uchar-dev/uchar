@@ -16,7 +16,14 @@
               "geheel": true,
               "decimalen": 0,
               "teken": "NIET_NEGATIEF",
-              "eenheid": null
+              "eenheid": {
+                "node": "Eenheid",
+                "afkorting": "jr",
+                "stelsel": null,
+                "canoniek": null,
+                "factorNaarCanoniek": null,
+                "noemer": null
+              }
             }
           }
         ],

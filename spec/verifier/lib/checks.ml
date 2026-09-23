@@ -4717,6 +4717,15 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          | None -> (
              match (fold_source, f.bron_rol) with
              | _, None -> []
+             (* the range beside a count's union is WF-110 (c)'s second claim, and
+                the filled count's non-reference source is WF-037's: one defect,
+                one rule *)
+             | None, Some _ when f.kind = Aantal && arity = 1
+                                 && (match f.argumenten with
+                                    | [ Instance_set_union _ ] -> true
+                                    | _ -> false) ->
+                 []
+             | None, Some _ when f.kind = Aantal_gevulde && source_position -> []
              | None, Some _ ->
                  [ v "WF-047" (sub "bronRol")
                      "a fold-source role binding on a node that is not an instance fold over a \

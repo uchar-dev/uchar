@@ -184,25 +184,7 @@
           "node": "AttribuutRef",
           "attribuut": "sluitsom",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "EUR",
-              "stelsel": "Munt",
-              "canoniek": "EUR",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "De sluitsom van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De sluitsom van een Vondst"
         },
         "waarde": {
           "node": "Functie",
@@ -212,49 +194,13 @@
               "node": "AttribuutRef",
               "attribuut": "meldloon",
               "objecttype": "Vondst",
-              "onderwerpBron": "haar",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": {
-                  "node": "Eenheid",
-                  "afkorting": "EUR",
-                  "stelsel": "Munt",
-                  "canoniek": "EUR",
-                  "factorNaarCanoniek": 1,
-                  "noemer": null
-                }
-              },
-              "bron": "haar meldloon",
-              "set": false,
-              "navigatiePad": []
+              "bron": "haar meldloon"
             },
             {
               "node": "AttribuutRef",
               "attribuut": "bakenloon",
               "objecttype": "Baken",
-              "onderwerpBron": "het Baken",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": {
-                  "node": "Eenheid",
-                  "afkorting": "EUR",
-                  "stelsel": "Munt",
-                  "canoniek": "EUR",
-                  "factorNaarCanoniek": 1,
-                  "noemer": null
-                }
-              },
-              "bron": "het bakenloon van het Baken",
-              "set": false,
-              "navigatiePad": []
+              "bron": "het bakenloon van het Baken"
             }
           ],
           "elementObjecttype": "Vondst",

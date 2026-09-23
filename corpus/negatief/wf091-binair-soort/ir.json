@@ -312,10 +312,7 @@
             "bron": "de deel van de Jutter"
           },
           "type": {
-            "node": "Percentage",
-            "geheel": false,
-            "decimalen": 2,
-            "eenheid": null
+            "node": "Booleaan"
           },
           "bron": "het deel van de Jutter plus het deel van de Jutter"
         },

@@ -35,11 +35,7 @@
         "node": "Parameter",
         "naam": "vondstdrempel",
         "datatype": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
+          "node": "Tekst"
         },
         "granulariteit": null
       }
