@@ -290,15 +290,24 @@ PASS (ref 29, clingo 29, Drools 29 PLAYED); 12 PASS (played 182, DRL
 161, JUnit 620); 13 PASS (131 twists over 27 goldens, 128 replays, 25
 DRL-played, 0 overlevers); 14 PASS (130 checks, 2 goldens).
 
-**May-touch-verbreding** (maintaineraanwijzing 2026-09-23): naast de
-datumlexemen ook de dateTime- en getalposities, labeluniciteit, de
-roostercontrole en de segmentposities in `ref/lib/case.ml`, en één
-dode arm in `ref/lib/eval.ml` (periodeconditie, rond r. 2387 — let op
-bij het samenvoegen met de parallelle verifier-normkaart, die rond
-`eval.ml` een notitie mag toevoegen). `ref/lib/value.ml` onaangeroerd,
-dus ook de redenen van de lezers. `test_ref.ml`: alleen een blok
-toegevoegd vóór de slotregel. Niet aangeraakt: `backends/**`,
-`frontends/**`, `spec/**`, `corpus/**`, `scripts/**`.
+**May-touch-verbreding** (maintaineraanwijzingen 2026-09-23; stand na
+fixronde 2). Aangeraakt: `ref/lib/case.ml` (lexemen, vormweigeringen,
+labeluniciteit, rooster, segment- en payloadposities); `ref/lib/eval.ml`
+op drie plekken — de dode `malformed asOfDate`-arm in de periodeconditie
+(rond r. 2387), het gedateerde commentaar bij `periode_onder_telkwantor`
+(rond r. 204, eerste extra item) en de WF-022-weigering vóór `run_rule`
+(tweede extra item); `ref/test/test_ref.ml` (twee blokken vóór de
+slotregel, alleen toegevoegd, plus de eigen getuigen van deze kaart
+bijgesteld); `corpus/rood/inputdatum-kalender/` (nieuw, open punt 4 van
+de eerste ronde, op aanwijzing van de hoofdsessie); en
+`scripts/check-case-schema.sh` uitsluitend als beschermd-pad-VOORSTEL
+(commit `a4f52876`). Onaangeroerd: `ref/lib/value.ml` (dus ook de
+redenen van de lezers), `backends/**`, `frontends/**`, `spec/**`, de
+rest van `corpus/**` en `scripts/**`. Samenloop: de parallelle
+verifier-kaart raakt `ref/lib/eval.ml` en `ref/test/test_ref.ml` ook
+(volgens de lens 3-weg schoon; de WF-022-weigering staat ver van haar
+leeg-testnotitie); wie als tweede landt, draait gate 5 na de rebase
+opnieuw.
 
 **Beschermd pad:** geen voorstel nodig; geen specificatiezin wordt
 onwaar. IR-SPEC ch. 4.1 (de case-lezertabel bij WF-095) zegt dat de
