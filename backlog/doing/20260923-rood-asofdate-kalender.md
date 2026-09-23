@@ -23,3 +23,23 @@ Drools-takken weigeren de waarde ook, maar met hun eigen zin).
 
 May touch: `corpus/rood/**`, `scripts/check-rood.sh` (**voorstel**),
 `spec/schema/**` (**voorstel**), kaartverplaatsing.
+
+## Acceptatie (aangescherpt bij de claim, 2026-09-23)
+
+Branch `card/rood-duo`, samen met `rood-heeltijdvak-ongenegeerd`.
+
+- (a) `corpus/rood/asofdate-kalender`: `ir.json` is het document van
+  golden `jutterswet-vensterheffing` byte voor byte (twee
+  geldigheidsvensters, dus de datum doet ertoe), de case heeft
+  `asOfDate` `2026-02-30`. Gemeten: gate 4 laat de waarde door. ref en
+  clingo weigeren bij het laden. Gepind wordt de volle laderzin, geen
+  bodemzin.
+- (b) Rood-eerst tegen de lader van `cc0e6a1b` (basis van de
+  geldigheidskaart, vóór `6ff39603`): `git archive` naar /tmp,
+  `dune build`, en laten zien dat de oude runners stil antwoorden.
+- (c) Drools-been gemeten met DroolsRoodMain en met beide takken. Bij
+  een FAULT met een eigen zin wordt het fragment gepind. Bij een ERROR
+  volgt een open punt en geen uitsluiting.
+- (d) Schemaweging gemotiveerd. `spec/schema` blijft ongewijzigd,
+  tenzij er een dwingende reden is (dan als voorstel).
+- (e) Gates 1–14 groen, elk los. De pins bewegen niet.
