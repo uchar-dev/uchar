@@ -1303,7 +1303,8 @@ Cases: the ten of G1, same inputs, same expectations. Gates: 2, 3, 4,
   order.
 - **G4, `jutterswet-nestkenmerk-rgs`** — unordered exceptions on a base,
   one of them negative, with the nested characteristic conflict. Diff
-  partner: `anchor/jutterswet-nestkenmerk` (three cases). Declarations:
+  partner: `anchor/jutterswet-nestkenmerk` (four cases since its repair,
+  card `anker-nestkenmerk-dragervoorwaarde`, 2026-09-23). Declarations:
   `nx`, `ny`, `nz` and `vrijgesteld`, bijvoeglijk, on `Jutter`.
 
   ```
@@ -1326,15 +1327,20 @@ Cases: the ten of G1, same inputs, same expectations. Gates: 2, 3, 4,
 
   Expected diff: a group-default above the base versus the anchor's
   form-a base — (i), same decisions and the same conflict key
-  `Jutter.vrijgesteld/0` ([M11] on the analogous probe). *Not decided:*
-  decision 4(d) is written for `Uitzondering op`; whether the members of an
-  `Uitzonderingen ongeordend op X:` group also inherit X's condition is
-  open. The anchor's members carry their own condition only, and its three
-  cases cannot tell the readings apart: [M] with `nz` and without `nx` the
-  anchor answers present in ref, clingo and the exec branch; [I] a twin
-  whose members inherit `nx` would answer absent there. The twin's
-  `case1-y-wint` survives a no-op run as the anchor's does and joins the
-  survivor list of `scripts/check-noop.sh` with the anchor's reason.
+  `Jutter.vrijgesteld/0` ([M11] on the analogous probe). *Decided
+  (2026-09-23, maintainer, via the card `anker-nestkenmerk-dragervoorwaarde`):*
+  the members of an `Uitzonderingen ongeordend op X:` group DO inherit X's
+  condition, exactly as decision 4(d) reads for `Uitzondering op`. The
+  anchor now writes each member's justification with the carrier's `nx`
+  first (`nx ∧ ny`, `nx ∧ nz`, one flat `ALLE`), and its fourth case
+  `case4-nz-zonder-nx` pins the two inputs on which the unconjoined
+  reading answered differently: [M] with `nz` and without `nx` the anchor
+  now answers absent in ref, clingo and the exec branch (it answered
+  present before the repair), and `ny` with `nz` raises no conflict. The
+  twin therefore inherits `nx` in both members and is diffed against that
+  form. The twin's `case1-y-wint` survives a no-op run as the anchor's
+  does and joins the survivor list of `scripts/check-noop.sh` with the
+  anchor's reason.
 
 ### 8.4 What the Drools branches carry
 

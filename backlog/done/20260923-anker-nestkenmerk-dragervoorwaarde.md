@@ -55,8 +55,8 @@ Niet in deze kaart: het dialect; de attribuutankers.
 Geland op de kaartbranch als **voorstel** (beschermde paden; de maintainer
 merget): `corpus/golden/anchor/jutterswet-nestkenmerk/` (`ir.json`, nieuw
 `case4-nz-zonder-nx.json`, nieuw `NOTE.md`) en één rij in de tabel van
-`spec/RUNTIME-SEMANTICS.md` ch. 7.9. Commits: 84fd363f (claim), ee21825f
-(`ir.json` en case4), 49513ab4 (NOTE), 14e86186 (spec-rij, voorstel), en
+`spec/RUNTIME-SEMANTICS.md` ch. 7.9. Commits: 1d7ea217 (claim), a2d137b1
+(`ir.json` en case4), 2d8b3aa4 (NOTE), 8595464d (spec-rij, voorstel), en
 deze. case1–case3 zijn byte-ongewijzigd; in `ir.json` veranderen alleen de
 twee broervoorwaarden.
 
@@ -144,7 +144,7 @@ wordt er iets geschreven. Omdat default 0 de enige default van de
 wortelketen is, verdringt het `onwaar`-besluit van de mutant ook niets
 (aangevuld in fixronde 1; zie open punt 3).
 
-**Gates**, elk als losse aanroep na `eval $(opam env)`, op 14e86186 (de
+**Gates**, elk als losse aanroep na `eval $(opam env)`, op 8595464d (de
 inhoud van deze branch; deze laatste commit raakt alleen `backlog/`):
 
 ```
@@ -169,7 +169,7 @@ check-flogic: PASS — frontend suite green (135 checks, floor 81); 2 flogic gol
 
 Gate 12: de pins 185 (played) en 164 (DRL) zijn ongewijzigd, het is
 hetzelfde golden. Gate 7: de overleverslijst is ongewijzigd (37). Een
-eerdere volledige run op ee21825f (vóór NOTE en spec-rij) gaf dezelfde
+eerdere volledige run op a2d137b1 (vóór NOTE en spec-rij) gaf dezelfde
 regels. De gates zijn niet vooraf op 98d888ee gedraaid; tellingen van vóór
 deze kaart zijn daarom niet gemeten, alleen afgeleid (één case-file meer).
 
@@ -234,7 +234,7 @@ bijwerken is werk voor de hoofdsessie.
    boven de tabel in ch. 7.9 noemde de broers alleen op hun eigen grond;
    zij luidt nu "`{ nx ∧ ny → do-not-attribute (false), nx ∧ nz → attribute
    (true) }` — each justification conjoins its carrier's `nx` (ch. 7.1)"
-   (commit e0a488c1).
+   (commit fd395642).
 3. *Wat geen gate bewaakt* (aangevuld in fixronde 1, lenspunt 5a). Het
    conjunct `nx` in de broer `ny` (groep 0) en de volgorde met de drager
    voorop zijn onwaarneembaar (mutantmeting). Geen gate bewaakt ze; alleen
@@ -276,14 +276,14 @@ bijwerken is werk voor de hoofdsessie.
 mandaat is uitgebreid tot de beschrijvingsregel boven de tabel in ch. 7.9.
 Elk punt is een eigen commit:
 
-- **1 (blokkerend), e0a488c1 — RS ch. 7.9, de beschrijvingsregel.** Het
+- **1 (blokkerend), fd395642 — RS ch. 7.9, de beschrijvingsregel.** Het
   hoofd van de voorbeelden belooft de ankers woordelijk. De regel luidt nu
   "`{ nx ∧ ny → do-not-attribute (false), nx ∧ nz → attribute (true) }` —
   each justification conjoins its carrier's `nx` (ch. 7.1)".
-- **2, 719540a3 — RS ch. 7.9, de case4-rij.** "each exception group's
+- **2, e5bb84df — RS ch. 7.9, de case4-rij.** "each exception group's
   justification" wordt "the justification of each exception group's
   default": een groep heeft volgens ch. 7.9 zelf geen rechtvaardiging.
-- **3, af00b36e — NOTE, het onwaarneembare conjunct.** De uitleg noemt nu
+- **3, 4dba5521 — NOTE, het onwaarneembare conjunct.** De uitleg noemt nu
   alle drie de redenen: een `onwaar`-besluit schrijft niets en neemt niets
   weg; de broer `nz` beslist zonder `nx` niet; default 0 is de enige
   default van de wortelketen, dus `onwaar` verdringt niets. Het verschil
@@ -295,7 +295,7 @@ Elk punt is een eigen commit:
   het verschil zichtbaar maken. Dat is een gevolgtrekking; geen uitvoerder
   implementeert (7-ii). De alinea over de zes gelijke combinaties noemt
   dezelfde derde reden, en de afgebroken regel is weg.
-- **4, b68a4e52 — NOTE, taal.** Een broer krijgt "zijn"/"hij" (r. 6–7, 68,
+- **4, b8e6383f — NOTE, taal.** Een broer krijgt "zijn"/"hij" (r. 6–7, 68,
   78, 187; r. 85 zat in punt 3). De overige "haar"/"zij" slaan op default
   0, een groep, de markering of de case en blijven staan. Verder "het
   geneste kenmerkdoel" en "Volgens ch. 7.9 beslissen de
@@ -303,10 +303,10 @@ Elk punt is een eigen commit:
 - **5** staat als open punten 3, 5 en 6 hierboven (niet gefixt).
 
 `ir.json` en de vier case-files zijn in deze ronde niet veranderd:
-`git diff ee21825f..HEAD` over de json-bestanden van het anker geeft 0
+`git diff a2d137b1..HEAD` over de json-bestanden van het anker geeft 0
 regels. Deze ronde raakt alleen `NOTE.md` en `spec/RUNTIME-SEMANTICS.md`;
 dat is proza, en van de gates leest alleen gate 1 die bestanden. Gate 1, 2
-en 3 zijn opnieuw gedraaid, elk los na `eval $(opam env)`, op b68a4e52:
+en 3 zijn opnieuw gedraaid, elk los na `eval $(opam env)`, op b8e6383f:
 
 ```
 check-self-contained: PASS
@@ -314,5 +314,5 @@ check-ir-schema: PASS (schema valid; 26 pattern self-test row(s); 22 shape self-
 check-verifier: PASS (286 golden clean; 444 negatief rejected for their declared rule, floor 350)
 ```
 
-De regels van gate 4 tot en met 14 hierboven (op 14e86186) gelden voor
+De regels van gate 4 tot en met 14 hierboven (op 8595464d) gelden voor
 dezelfde `ir.json` en cases.

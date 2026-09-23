@@ -2023,7 +2023,11 @@ all-undecided no-op survivor; `anchor/jutterswet-nestkenmerk` (the
 characteristic arm, art. 7) — case1-y-wint the sub-besluit `false`
 displacing the root `true` (vrijgesteld absent, consistent),
 case2-conflict the `Jutter.vrijgesteld/0` key, case3-terugval the
-fall-back to `true` when the exception groups decide nothing. The seven
+fall-back to `true` when the exception groups decide nothing,
+case4-nz-zonder-nx (2026-09-23, the carrier-condition repair) the two
+inputs without `nx` on which nothing decides — `nz` alone stays absent
+and `ny` with `nz` raises no conflict — beside a contrast instance with
+`nx` and `nz` that is attributed. The seven
 nested-group negatiefs pin what the verifier rejects before translation
 ever runs:
 `wf050-half-marked-group`, `wf050-subdefault-wrong-shape`,
