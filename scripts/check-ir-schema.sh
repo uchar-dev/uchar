@@ -7,8 +7,9 @@
 #      polarities, with no corpus document involved — without it, deleting a
 #      pattern is a silent green (measured 2026-09-11). A clamp fails when a
 #      pattern appears at a position the table does not carry;
-#  1c. the positions the M1 shape closes by schema alone are held the same way:
-#      one small valid M1 document, one mutation per row, in both polarities;
+#  1c. the positions the M1 and L2 shapes close by schema alone are held the same
+#      way: one small valid document per shape, one mutation per row, in both
+#      polarities;
 #   2. every corpus/golden/**/ir.json validates against it;
 #   3. every such file round-trips: parsed with raw number lexemes preserved and
 #      re-emitted canonically, the output is byte-identical to the input (this is
@@ -307,20 +308,184 @@ M1_SHAPE_ROWS = [
      "absent is the one spelling of a scalar attribute (WF-004)"),
 ]
 
+
+# --- check 1c, the L2 rows (card L2, 2026-09-23) -------------------------------------------------
+# L2 closes the reference layer by schema: the fields a reference no longer carries, the ranges
+# that are written instead of derived (the conditional obligations of spec/schema/README.md), the
+# one role-check node, the symbolic fact creation and scoped uniqueness, the unknown datatype.
+# Same mechanism as the M1 rows: one small valid L2 document — the M1 base plus a fact type and
+# one node of every class L2 reshapes — and one mutation per row. The rows that must PASS pin the
+# deliberate admissions: the bindingless TOTAAL (the subject's own read, held by the verifier) and
+# the listed fold, whose elementObjecttype does not make it a ranged fold.
+def _l2_base():
+    d = _m1_base()
+    num = {"node": "Numeriek", "geheel": True, "decimalen": 0, "teken": "ONBEPAALD",
+           "eenheid": None}
+    rb = lambda rol: {"node": "RolBinding", "feittype": "vondstregistratie", "rol": rol}
+    ref = lambda attr, ot: {"node": "AttribuutRef", "attribuut": attr, "objecttype": ot,
+                            "bron": None}
+    fold = lambda kind, args, el: {
+        "node": "Functie", "kind": kind, "argumenten": args, "elementObjecttype": el,
+        "leegwaarde": None, "filter": None, "dimensieSelectie": None, "type": dict(num),
+        "bron": None, "granulariteit": None}
+    rule = lambda naam, waarde, voorwaarde: {
+        "node": "ResolvedRegel", "naam": naam, "soort": "BEREKENING",
+        "doel": ref("vondstwaarde", "Jutter"), "waarde": waarde, "voorwaarde": voorwaarde,
+        "geldigheid": None}
+    d["model"]["objectTypes"].append({
+        "node": "ObjectType", "name": "Vondst", "animate": False, "plural": "Vondsten",
+        "attributes": [{"node": "Attribute", "name": "gewicht", "datatype": dict(num)}],
+        "characteristics": [{"node": "Characteristic", "name": "aangespoeld",
+                             "kind": "BIJVOEGLIJK"}]})
+    d["model"]["factTypes"].append({
+        "node": "Feittype", "naam": "vondstregistratie", "wederkerig": False,
+        "rollen": [{"node": "Rol", "naam": "vinder", "objecttypeNaam": "Jutter",
+                    "meervoud": "vinders", "meervoudig": False},
+                   {"node": "Rol", "naam": "vondst", "objecttypeNaam": "Vondst",
+                    "meervoud": "vondsten", "meervoudig": True}]})
+    som = fold("SOM", [ref("gewicht", "Vondst")], "Vondst")
+    som["bronRol"] = rb("vondst")
+    count = fold("AANTAL", [{"node": "InstanceSetUnion", "bron": None, "branches": [{
+        "node": "InstanceSetBranch", "elementType": "Vondst", "sourceRole": rb("vondst"),
+        "filter": None, "bron": None}]}], None)
+    check = {"node": "Kenmerk", "kenmerk": "aangespoeld", "negatie": False, "eigenaar": None,
+             "periode": None, "bron": None}
+    condition = {"node": "Samengesteld", "kwantor": "ALLE", "drempel": 0, "bron": None,
+                 "onderdelen": [
+                     {"node": "RoleMembership", "factType": "vondstregistratie", "role": "vinder",
+                      "negated": False, "bron": None},
+                     {"node": "Kwantorvouw", "kwantor": "ALLE", "elementObjecttype": "Vondst",
+                      "filter": None, "toets": check, "bron": None, "bronRol": rb("vondst")}]}
+    d["rules"]["resolvedRegels"] = [
+        rule("vondstwaarde", som, condition),
+        rule("vondstaantal", count, None),
+        rule("vondstdrempel", {"node": "ParameterRef", "parameter": "vondstdrempel",
+                               "bron": None}, None),
+        rule("vondstonbekend", {"node": "Onopgelost", "type": dict(num), "bron": None}, None),
+    ]
+    d["rules"]["verdelingen"] = [{
+        "node": "ResolvedVerdeling", "naam": "vondstverdeling", "bronType": "Jutter",
+        "bronAttribuut": "vondstwaarde", "doelType": "Vondst", "doelAttribuut": "gewicht",
+        "methode": "GELIJKE_DELEN", "ratoAttribuut": None, "maximumAttribuut": None,
+        "afrondingDecimalen": None, "restantAttribuut": None, "groepeerAttribuut": None,
+        "afnemend": False, "voorwaarde": None, "geldigheid": None,
+        "verbindendeRol": rb("vondst")}]
+    d["rules"]["uniciteiten"] = [{
+        "node": "ResolvedUniciteit", "naam": "uniek gewicht", "subject": "Vondst",
+        "sleutels": ["gewicht"], "bron": None, "geldigheid": None, "scopeRol": rb("vinder")}]
+    d["rules"]["feitCreaties"] = [{
+        "node": "ResolvedFeitCreatie", "naam": "registratie", "anker": "Jutter", "doel": "Vondst",
+        "tussenstappen": [{"node": "Tussenstap", "rolBinding": rb("vondst")}],
+        "voorwaarde": None, "geldigheid": None, "feittype": "vondstregistratie",
+        "ankerRol": "vinder", "doelRol": "vondst", "joinRol": rb("vondst")}]
+    return d
+
+
+def _rule(d, i):
+    return d["rules"]["resolvedRegels"][i]
+
+
+def _som(d):
+    return _rule(d, 0)["waarde"]
+
+
+def _part(d, i):
+    return _rule(d, 0)["voorwaarde"]["onderdelen"][i]
+
+
+def _listed(d):
+    # the listed value fold: two operands and an elementObjecttype, as the producer writes it
+    _rule(d, 2)["waarde"] = {
+        "node": "Functie", "kind": "EERSTE", "elementObjecttype": "Jutter",
+        "argumenten": [{"node": "AttribuutRef", "attribuut": "vondstwaarde",
+                        "objecttype": "Jutter", "bron": None}, _rule(d, 2)["waarde"]],
+        "leegwaarde": None, "filter": None, "dimensieSelectie": None, "type": None, "bron": None,
+        "granulariteit": None}
+
+
+def _both(d, kind):
+    _som(d).update(kind=kind, bronPad=[dict(_som(d)["bronRol"]), dict(_som(d)["bronRol"])])
+
+
+_NUM = {"node": "Numeriek", "geheel": True, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": None}
+
+L2_SHAPE_ROWS = [
+    ("the L2 base document", lambda d: None, True,
+     "the L2 shape itself: ranges written, one RoleMembership, a typeless reference layer"),
+    ("RoleMembership without factType", lambda d: _part(d, 0).pop("factType"), False,
+     "B9, D11: the check names the fact type it reads, and nothing derives it"),
+    ("the L1 near-side role check where the role check stands",
+     lambda d: _rule(d, 0)["voorwaarde"]["onderdelen"].__setitem__(0, {
+         "node": "Rollidmaatschap", "rol": "vinder", "anderTeFiller": "Vondst",
+         "negatie": False, "bron": None}), False,
+     "B9: RoleMembership is the one role-check node, in both directions"),
+    ("AttribuutRef carries set", lambda d: _rule(d, 0)["doel"].update(set=False), False,
+     "B11, D8: the set reading is the argument of a ranged fold, not a field"),
+    ("AttribuutRef carries navigatieRol",
+     lambda d: _rule(d, 0)["doel"].update(navigatieRol="vinder"), False,
+     "B11: a navigation is its role bindings; a written name beside them could drift"),
+    ("AttribuutRef carries type", lambda d: _rule(d, 0)["doel"].update(type=dict(_NUM)), False,
+     "B13: the declaration is the one source of a reference's type"),
+    ("ParameterRef carries type", lambda d: _rule(d, 2)["waarde"].update(type=dict(_NUM)), False,
+     "B13: the declaration is the one source of a reference's type"),
+    ("Functie SOM with an elementObjecttype and no range", lambda d: _som(d).pop("bronRol"),
+     False, "U2, D7: an instance fold's range is written, never derived"),
+    ("Functie TOTAAL with an elementObjecttype and no range",
+     lambda d: _som(d).update(kind="TOTAAL") or _som(d).pop("bronRol"), True,
+     "U2, D8 (iv): the bindingless TOTAAL is the subject's own read (the verifier holds it)"),
+    ("Functie SOM with both bronRol and bronPad", lambda d: _both(d, "SOM"), False,
+     "U2: one range, one spelling"),
+    ("Functie TOTAAL with both bronRol and bronPad", lambda d: _both(d, "TOTAAL"), False,
+     "U2: never both, under TOTAAL too"),
+    ("Functie EERSTE over two listed operands with an elementObjecttype and no range",
+     _listed, True,
+     "U2 is scoped to one argument: a listed value fold reads its operands and has no range"),
+    ("Kwantorvouw without a range", lambda d: _part(d, 1).pop("bronRol"), False,
+     "U2: a quantifier fold's range is written, always"),
+    ("ResolvedVerdeling without verbindendeRol",
+     lambda d: d["rules"]["verdelingen"][0].pop("verbindendeRol"), False,
+     "U2, D7: the allocation's relation is written, never derived"),
+    ("InstanceSetBranch.sourceRole = null",
+     lambda d: _rule(d, 1)["waarde"]["argumenten"][0]["branches"][0].update(sourceRole=None),
+     False, "U2: the selection's relation is required and non-null"),
+    ("ResolvedFeitCreatie carries zetVeld",
+     lambda d: d["rules"]["feitCreaties"][0].update(zetVeld="vondst"), False,
+     "B7: a fact creation carries its symbolic fields alone"),
+    ("ResolvedFeitCreatie without joinRol",
+     lambda d: d["rules"]["feitCreaties"][0].pop("joinRol"), False,
+     "B7, D5 (c): the symbolic block is the whole creation"),
+    ("Tussenstap without rolBinding",
+     lambda d: d["rules"]["feitCreaties"][0]["tussenstappen"][0].pop("rolBinding"), False,
+     "B7, D12: a creation step is its binding"),
+    ("ResolvedUniciteit carries scopeVeld",
+     lambda d: d["rules"]["uniciteiten"][0].update(scopeVeld="vinder"), False,
+     "B8: scopeRol alone is the scoping"),
+    ("Kenmerk carries navigatie", lambda d: _part(d, 1)["toets"].update(navigatie="vondst"), False,
+     "D53: the hop is navigatieBinding alone"),
+    ("Onbekend as a datatype",
+     lambda d: d["model"]["parameters"][0].update(datatype={"node": "Onbekend", "reden": None}),
+     False, "B16, D15: Onbekend is no datatype"),
+    ("Onopgelost without type", lambda d: _rule(d, 3)["waarde"].pop("type"), True,
+     "D14: absent is the one spelling of an unknown type"),
+    ("Onopgelost with type = null", lambda d: _rule(d, 3)["waarde"].update(type=None), False,
+     "D14, U10: absent, never null"),
+]
+
 shape_bad = 0
-for row, mutate, want_ok, why in M1_SHAPE_ROWS:
-    probe = _m1_base()
-    mutate(probe)
-    got_ok = not list(validator.iter_errors(probe))
-    if got_ok != want_ok:
-        shape_bad += 1
-        sys.stderr.write("FAIL: shape self-test, %s: schema %s it, expected %s\n  %s\n"
-                         % (row, "accepts" if got_ok else "refuses",
-                            "accept" if want_ok else "refuse", why))
+for base, rows in ((_m1_base, M1_SHAPE_ROWS), (_l2_base, L2_SHAPE_ROWS)):
+    for row, mutate, want_ok, why in rows:
+        probe = base()
+        mutate(probe)
+        got_ok = not list(validator.iter_errors(probe))
+        if got_ok != want_ok:
+            shape_bad += 1
+            sys.stderr.write("FAIL: shape self-test, %s: schema %s it, expected %s\n  %s\n"
+                             % (row, "accepts" if got_ok else "refuses",
+                                "accept" if want_ok else "refuse", why))
 if shape_bad:
     sys.stderr.write("check-ir-schema: FAIL (%d shape self-test row(s) bad)\n" % shape_bad)
     sys.exit(1)
-n_shape = len(M1_SHAPE_ROWS)
+n_shape = len(M1_SHAPE_ROWS) + len(L2_SHAPE_ROWS)
 
 
 # NOTE: gate 9 (scripts/check-catala.sh) executes the slice of this
