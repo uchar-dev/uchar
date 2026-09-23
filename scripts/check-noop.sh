@@ -161,9 +161,9 @@
 #     false decision displaces the lower defaults and writes nothing, it never
 #     retracts (ch. 7.1, "not a retraction"; ch. 5.3). The presence IS the
 #     assertion — it refutes an executor that lets a false decision remove an
-#     input characteristic, which a do-nothing run cannot show. Pinned while the
-#     card kenmerkinvoer-en-invoer-boven-berekening leaves ch. 7.8 as it stands
-#     (its option 7-ii would flip the expectation to absent). The eight sibling
+#     input characteristic, which a do-nothing run cannot show. Pinned as long
+#     as the card kenmerkinvoer-en-invoer-boven-berekening does not choose its
+#     option 7-ii, which would flip the expectation to absent. The nine sibling
 #     cases all pin computed attributes and are not survivors.
 SURVIVORS='corpus/golden/anchor/jutterswet-vondstwaardering/case5-input-blijft.json
 corpus/golden/anchor/jutterswet-waardering-v0vorm/case3-input-blijft.json
