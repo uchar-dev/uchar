@@ -1,0 +1,24 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2026-03-15",
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "bewaarvergoeding per maand": {
+            "date": "2024-01-15"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "ref": "maal: expected a number, got 2024-01-15",
+    "clingo": "the TOTAAL over the timeline of \"bewaarvergoeding per maand\" on \"Jutter\" multiplies DATE-valued timeline segments by their whole grid units: a temporal total is arithmetic, a date is a calendar POSITION, and scaling one has no meaning \u2014 this translation would multiply its day number and answer a definite number no calendar reads back. Declined in translation"
+  }
+}

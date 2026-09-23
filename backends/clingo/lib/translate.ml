@@ -339,6 +339,32 @@ let attr_unit ctx ~otype ~attr =
   | Some (Some (Numeriek { eenheid; _ } | Percentage { eenheid; _ })) -> eenheid
   | _ -> None
 
+(* THE TEMPORAL TOTAL IS ARITHMETIC: ch. 3.6 multiplies each segment value
+   by the whole grid units it spans, so the segment values must be amounts.
+   A DATE is not — this encoding gives it a day number, and at one month
+   segment the factor is 1, so the day number itself came out as the
+   answer. Measured 2026-09-23 on a verifier-CLEAN document: 19737
+   (2024-01-15) answered by the own-subject total AND by the gedurende clip,
+   where ref faults on the multiplication itself. The set-source sister arm
+   declines the same class for the additive set fold (card
+   datum-setbron-breuk); this is its timeline half.
+   [Datum_in_dagen] EXACTLY, for the same measured reason as there: a text,
+   enum, boolean or datum-tijd timeline never reaches a temporal-total arm
+   (its target routes it through [symbolic_term]/[dt_term], which refuse
+   it), and [decimals_of_datatype] hands every other non-numeric datatype no
+   scale at all. Asked of the DECLARATION (§2.10), so the refusal is about
+   the document and not about what a case supplies. *)
+let refuse_date_timeline_total ctx ~what ~otype ~attr =
+  match Ir_v0.Checks.find_ci (objecttype ctx otype).attributen attr with
+  | Some (Some Datum_in_dagen) ->
+      fault
+        "%s of %S on %S multiplies DATE-valued timeline segments by their whole grid units: a \
+         temporal total is arithmetic, a date is a calendar POSITION, and scaling one has no \
+         meaning — this translation would multiply its day number and answer a definite number \
+         no calendar reads back. Declined in translation"
+        what attr otype
+  | _ -> ()
+
 let attr_sum_typed ctx ~otype ~attr =
   match Ir_v0.Checks.find_ci (objecttype ctx otype).attributen attr with
   | Some (Some (Sum_type _)) -> true
@@ -2747,6 +2773,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          ASP and the calendar cannot drift from ref/. A fully
          clipped-away or absent timeline sums to 0 — the #sum over the
          empty set, exactly the mirrored v0 nuance. *)
+      refuse_date_timeline_total ctx ~what:"the gedurende-clipped TOTAAL over the timeline"
+        ~otype:aot ~attr:a;
       (* the clip needs full timelines where the attribute is carried at
          all — an ABSENT attribute clips to the empty sum (0, the v0
          nuance), but a bucket scalar would read silently wrong *)
@@ -3070,6 +3098,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          below. [navigatie_bindingen] is deliberately NOT narrowed: with
          navigatie_rol = None ref reads the subject too, so the executors
          agree and a refusal here would be the divergence. *)
+      refuse_date_timeline_total ctx ~what:"the TOTAAL over the timeline" ~otype:aot ~attr:a;
       refuse_attr_timeline ctx ~otype:aot ~attr:a;
       grid_strip_ok ctx
         ~what:(Printf.sprintf "the temporal total of %S" a)
