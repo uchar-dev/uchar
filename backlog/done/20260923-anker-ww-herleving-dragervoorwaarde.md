@@ -221,9 +221,11 @@ golden, zelfde kanalen.
 > a characteristic target: a `besluit: false` leaves an input-set target
 > characteristic standing (ch. 7.1, "not a retraction"; case7, a
 > reason-carrying gate-7 survivor until card
-> `kenmerkinvoer-en-invoer-boven-berekening` decides otherwise). No wire,
-> verifier or executor change; the DRL-text branch keeps refusing the golden
-> on its defaults sentence.
+> `kenmerkinvoer-en-invoer-boven-berekening` decides otherwise). The target
+> characteristic is marked bezittelijk, the spelling its RegelSpraak twin
+> writes (`heeft (geen) recht op uitkering`); measured, no executor reads
+> the kind. No wire, verifier or executor change; the DRL-text branch keeps
+> refusing the golden on its defaults sentence.
 
 **Open punten.**
 
@@ -241,21 +243,15 @@ golden, zelfde kanalen.
    uitzondering op de basis (einde) — en draagt negen cases, niet de "zeven
    cases" van haar kaarttekst. Haar besluit 4d ("ook aan de wortel") levert
    die vorm op. De kaarttekst bijwerken is werk voor de hoofdsessie.
-3. In het voorstel `DIALECT-DEFAULTS-NIET-EN-NESTING.md` zijn §2.3 en §8.1
-   in fixronde 1 bijgewerkt (zie hieronder). Buiten die twee secties
-   beschrijven nog vijf plaatsen de oude reparatie; zij zijn op aanwijzing
-   van de hoofdsessie niet aangeraakt: §1 punt 6 ("on two inputs", r. 79),
-   §2.2 M12 ("seven cases … the two corners of §2.3", r. 188–189; een
-   gedateerde meting), §5.4 ("decide wrongly on two inputs; written with it,
-   all six inputs pass", r. 758–759), §8.2 (de brontekst van de tweeling
-   zonder `werkloos` in einde, herleving en blokkade, r. 1098–1120; "passes
-   all seven cases", r. 1144; "the seven of G1", r. 1151) en §8.4 ("plays
-   7/7", r. 1225; een gedateerde meting). §8.1 eindigt nu met de zin dat
-   §8.2 van vóór de landing is en wat dat voor G2 betekent.
-4. §8.1 van dat voorstel zette `recht op uitkering` ook op `BEZITTELIJK`, voor
-   "heeft (geen) recht op uitkering" in de tweeling. Dat staat niet in deze
-   kaart en is niet gedaan; heeft de tweeling het nodig, dan is het een
-   wijziging aan dit anker (beschermd pad) om in die kaart voor te stellen.
+3. *Gefixt in fixronde 2.* Het voorstel `DIALECT-DEFAULTS-NIET-EN-NESTING.md`
+   volgt het gelande anker nu overal: §2.3 en §8.1 sinds fixronde 1, en §1
+   punt 6, §2.2 M12, §5.4, §8.2 en §8.4 sinds fixronde 2 (commit 3737e8da,
+   zie hieronder).
+4. *Gefixt in fixronde 2.* `recht op uitkering` is `BEZITTELIJK` in
+   `kenmerkSoorten` (commit 2f23e029, op verzoek van de maintainer). De
+   tweeling schrijft "heeft (geen) recht op uitkering" en moet byte-identiek
+   op dit anker uitkomen. De soort stuurt alleen die bronspelling; geen
+   uitvoerder leest haar (meting hieronder).
 5. Het wetsantwoord van case8 steunt op de lezing van `werkloos` als de grond
    van art. 15 op het moment dat het recht ontstond. De NOTE schrijft die
    lezing nu uit; case4 steunde er al op (werkloos én een inkomen boven de
@@ -278,3 +274,52 @@ case7 in de overleverslijst van gate 7, `recht op uitkering` blijft
 `BIJVOEGLIJK`. Waar het afwijkt van de eerste versie, noemt het die. De
 sectie sluit af met het gevolg voor G2: dezelfde platte vorm, negen cases.
 Anker, NOTE en `check-noop.sh` zijn niet aangeraakt. Gate 1 opnieuw: PASS.
+
+**Fixronde 2 (hoofdsessie, 2026-09-23).** Twee items, elk een eigen commit.
+
+*Item 1, commit 2f23e029: `recht op uitkering` wordt `BEZITTELIJK`* (mandaat
+voor `ir.json` en NOTE). Eén waarde in `kenmerkSoorten`. De NOTE zegt nu
+waarom (de tweeling) en dat de soort alleen de bronspelling stuurt: `heeft
+(geen) recht op uitkering` in plaats van `is (niet) recht op uitkering`.
+Gemeten vóór (`BIJVOEGLIJK`) en na (`BEZITTELIJK`):
+- verifier PASS, alle negen cases PASS in ref en clingo, exec `PLAYED 9`,
+  DRL `EXCLUDE drl: ch. 7 prioritizedDefaults — the DRL-text branch has no
+  defaults lowering`; de volledige uitvoer van vóór en na is byte-identiek;
+- clingo: via een PATH-shim het ASP-programma per case vastgelegd dat
+  clingo oplost, vóór en na: 9 van 9 byte-identiek. Het kenmerk staat in
+  beide als `heeft(S,"recht op uitkering")`: het predicaat is uniform en
+  hangt niet van de soort af;
+- Drools: `IrLoader` (r. 354) parseert de tabel in het model, en geen code
+  in de backend leest haar terug. De enige aanroepers van `kenmerkSoort()`
+  zitten in de `RuleChecker` van het frontend, die de backend niet
+  compileert. De beanleden uit `FactModelGenerator.leden` (een probe tegen
+  de gate-12-jar) zijn vóór en na gelijk: `Lid[eigenschap=rechtOpUitkering,
+  javaType=boolean, isVorm=true]`; alleen de ingelezen tabel verschilt;
+- ref en de ASP-backend verwijzen nergens in hun bibliotheekcode naar
+  `kenmerk_soorten`; de gedeelde OCaml-loader parseert de tabel en de
+  verifier toetst alleen verweesde sleutels. IR-SPEC zegt hetzelfde: "which
+  the Drools loader parses and nothing reads back";
+- gate 2 PASS (278 bestanden, round-trip), gate 3 PASS, gate 12 PASS met
+  played 182 en DRL 161 (JUnit 620). case1–case4 zijn byte-ongewijzigd
+  tegenover 3a140fe4.
+
+*Item 2, commit 3737e8da: de overige verouderde plaatsen in het voorstel.*
+- §1 punt 6, M12, §5.4 en §8.4 staan nu als gedateerde metingen (8dd05e25)
+  naast de gelande stand: vier verschilpunten, negen cases, PLAYED 9.
+- M12 is opnieuw gemeten op het gelande anker, omgebouwd naar de ketenvorm
+  van de tweeling (einde als ketenpositie boven toekenning, dieper genest):
+  verifier PASS; ref en clingo 9 van 9; exec `PLAYED 9`; DRL `EXCLUDE`.
+- §8.2 geeft de tweelingbron volgens het gelande anker: `werkloos` in
+  einde, herleving en blokkade; `recht op uitkering` bezittelijk; negen
+  cases.
+- §8.2 zegt uitdrukkelijk dat de spelling van de dragerconjunctie in de
+  bron afhangt van besluit 4d, dat nog open is. Het geeft beide spellingen,
+  zonder te kiezen: (1) per uitzondering uitgeschreven (optie A), of (2)
+  impliciet in een beperkende `Uitzondering op`, met `Afwijking van` voor
+  verruimingen (de lezing van besluit 4d van de tweelingkaart). Beide
+  moeten op dezelfde platte `ALLE` uitkomen.
+
+Alle veertien gates opnieuw groen op de inhoud van deze ronde. Gate 1, 2, 3
+en 12 draaiden na item 1; gate 4 tot en met 11, 13 en 14 draaiden erna. Item
+2 raakt alleen het voorstel, buiten elke gatezone; gate 1 is daarna
+opnieuw gedraaid: PASS.
