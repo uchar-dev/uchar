@@ -164,8 +164,8 @@ v0 and exits 1 if there is one). It writes with gate 2's own serialiser, so
 a migrated document round-trips byte-identically, and it refuses — with the
 file name and a JSON pointer into the v0 input — every v0 value the M1 shape
 cannot carry: a null or disagreeing self-name, a null datatype, a side-map key
-naming no member, a facet entry without a granularity key, a value outside its
-enum. A document already in `uchar-ir-v1` is left untouched, so a second run
+naming no member, a facet entry without a granularity key, an empty dimension
+list, a value outside its enum. A document already in `uchar-ir-v1` is left untouched, so a second run
 changes nothing.
 
 ## Gate: `../../scripts/check-ir-schema.sh`

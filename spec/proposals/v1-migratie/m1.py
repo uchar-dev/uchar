@@ -16,7 +16,8 @@ wrapper whose datatype drops its self-name. Every other node is carried verbatim
 
 Loud by construction: a v0 value the M1 shape cannot carry (a null or a
 disagreeing self-name, a null datatype, a side-map key naming no member, a facet
-entry without a granularity key, a value outside its enum) fails the document
+entry without a granularity key, an empty dimension list, a value outside its
+enum) fails the document
 with its file name and the JSON pointer into the v0 input; nothing is repaired.
 A failing document is left untouched. A document already in uchar-ir-v1 is left
 untouched as well, byte for byte, so a second run changes nothing.
@@ -252,7 +253,12 @@ class Migration:
                 dims = maps['attribuutDimensies'][a]
                 if not isinstance(dims, list) or not all(isinstance(x, str) for x in dims):
                     self.fail(p('attribuutDimensies', a), 'dimensions are not a list of strings')
-                elif dims:
+                elif not dims:
+                    # dropping it would turn a WF-004 violation into a clean scalar attribute
+                    self.fail(p('attribuutDimensies', a), 'empty dimension list: WF-004 refuses '
+                              'it, and in the M1 shape a scalar attribute has one spelling, '
+                              'without a dimensions field')
+                else:
                     node['dimensions'] = dims
             if a in maps['attribuutGranulariteit']:
                 node['timeline'] = self.facet(

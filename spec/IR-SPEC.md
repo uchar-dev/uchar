@@ -512,7 +512,7 @@ default. The clause left the wire with the side-maps (ch. 4.6 (p), WF index).
 | `name` | string | declared name |
 | `datatype` | Datatype | inline or resolved from a domain reference |
 | `plural` | string? | declared plural; absent = none declared |
-| `dimensions` | list of dimension names | absent/empty = scalar; order as declared |
+| `dimensions` | list of dimension names | absent = scalar; when present non-empty (WF-004); order as declared |
 | `timeline` | TimelineFacet? | absent = not time-dependent |
 
 **Characteristic** — a boolean trait; it has no datatype.
@@ -7654,7 +7654,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-001 | top-level names unique per namespace (ci) | gate 3 | `jutterswet-vondsttelling` | `wf001-duplicate-parameter` |
 | WF-002 | member names unique per kind within an object type (ci) | gate 3 | `jutterswet-vondsttelling` | `wf002-duplicate-kenmerk` |
 | WF-003 | every model-layer name reference resolves | gate 3 (partial: sentinel datatypes, enum domains, role fillers, named timelines; a reference v0 *dropped* is invisible in the dump) | `jutterswet-penningjaar` | `wf003-unresolved-domain` |
-| WF-004 | dimensioned attribute: non-empty, duplicate-free, resolving dimension list | gate 3 | `jutterswet-vormenkabinet` (the dimensioned opbrengst) | `wf004-duplicate-dimension` |
+| WF-004 | dimensioned attribute: non-empty, duplicate-free, resolving dimension list | gate 3 (the schema also refuses an empty list since M1: absent is the one spelling of a scalar attribute) | `jutterswet-vormenkabinet` (the dimensioned opbrengst) | `wf004-duplicate-dimension` + `wf004-lege-dimensielijst` (a present, empty list; the verifier arm the not schema-gated negatief zone holds in place) |
 | WF-005 | timeline facet: count ≥ 1; named adoption total and consistent | gate 3 (attributes; characteristic and parameter facets are under-represented in v0 — ch. 2.10) | `jutterswet-penningjaar` | `wf005-count-zero` |
 | WF-006 | enumeration domain: ≥ 1 value, values unique | gate 3 | `jutterswet-keurstaat` (the keurklasse domain) | `wf006-duplicate-enum-value` |
 | WF-007 | number precision is exactly one of whole / fixed / unbounded — at every `Number` in the document: the declarations (model layer), every `type` the expression walk enters, and, since 2026-09-04, a rule TARGET's own `type`, the position the walk never enters. Measured and OPEN: the form check reaches none of a `ListType` element, `StructType` field, `SumType` payload, `FunctionDef` result/parameter or lambda parameter's `datatype`; two of those yield verifier-clean documents today (witnesses `jutterswet-postenheffing`, `jutterswet-waarderingsinvoer`), the other four are refused everywhere by neighbouring rules (WF-062/067/068/070/073/074/091); the enum walk recurses through lists, sums and structs, the struct walk only through lists, and a lambda parameter's `datatype` is reached by neither | gate 3 (model layer + the walk's type prologue + the rule-target arm) | `jutterswet-vondstnummer` (declarations) + `jutterswet-vondsttarief` (the rule-target arm crossing a `Percentage` target clean; 239 numeric-typed targets over 119 golden+rood documents, the anchor subset included, ride it) | `wf007-whole-with-decimals` + `wf007-doeltype-geheel-met-decimalen` (the rule-target arm, on a CHARACTERISTIC target — the window where the shape is observable, since the identity family defers there by construction; on an attribute target WF-091 masks it with a facet mismatch, measured) |

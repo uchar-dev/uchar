@@ -2792,7 +2792,7 @@
       }
     },
     "Attribute": {
-      "description": "An attribute of an ObjectType (IR-SPEC ch. 2.2), in declaration order. 'plural' absent = none declared; 'dimensions' absent = scalar (the migration writes no empty list); 'timeline' absent = not time-dependent. 'datatype' admits null exactly as the v0 attribute map did: a datatype-less attribute is a loadable document, and the verifier refuses it (WF-059).",
+      "description": "An attribute of an ObjectType (IR-SPEC ch. 2.2), in declaration order. 'plural' absent = none declared; 'dimensions' absent = scalar; when present it is non-empty (minItems 1, WF-004), so a scalar attribute has one spelling; 'timeline' absent = not time-dependent. 'datatype' admits null exactly as the v0 attribute map did: a datatype-less attribute is a loadable document, and the verifier refuses it (WF-059).",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -2822,6 +2822,7 @@
         },
         "dimensions": {
           "type": "array",
+          "minItems": 1,
           "items": {
             "type": "string"
           }
