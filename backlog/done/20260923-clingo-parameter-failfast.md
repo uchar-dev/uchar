@@ -57,7 +57,9 @@ toegepast is hij groen gemeten. De andere dertien gates zijn groen.
 
 Commits: `ef42897a` (claim), `fdd81fe5` (de gedeelde fail-fast met
 suite, README en de gedeelde diagnose), `d5d81150` (de dode
-datumlezingen, item van de hoofdsessie), `4a9e937a` (rode corpusdrager).
+datumlezingen, item van de hoofdsessie), `4a9e937a` (rode corpusdrager),
+`792a6f02` (kaart naar done), `a179db05` (venstercommentaar, tweede item
+van de hoofdsessie).
 
 ### (a) Inventaris
 
@@ -341,6 +343,20 @@ Alles bleef binnen `backends/clingo/**`, één nieuwe map
    misvormde datumliteral weigert in de lezer). De datum-tijdliteral had
    al twee pins. De asOfDate-weigering pint refs eigen suite.
 3. **Gedeelde UNSAT-diagnose** (`Solve.diagnose`), zie (b).
+4. **Venstercommentaar** (tweede item van de hoofdsessie, eigen commit
+   `a179db05`, alleen commentaar). Het commentaar bij
+   `periode_onder_telkwantor` (basis r. ~516, branch r. 543) citeerde de
+   weigerzin van de DRL-tekst-tak van 2026-09-20 ("periodevergelijking
+   onder een tellende kwantor") als geldende meting. Het dateert die
+   meting nu (vóór kaart drools-venster-vouwtoets, 2026-09-23) en noemt
+   de nieuwe stand volgens het Result van die kaart: beide Drools-takken
+   spelen het venster onder ALLE, de exec-tak nu ook in toets en filter
+   van een kwantorvouw, en beide weigeren elke WF-112-positie zelf, bij
+   naam, in één gedeelde zin. Die kaart staat op
+   `card/drools-venster-vouwtoets` en nog niet op main; het commentaar
+   beschrijft de stand na haar landing. Suite 699/0 en gate 1 PASS na de
+   wijziging. Aan de code veranderde niets, dus de gate-uitslagen
+   hieronder gelden onverkort.
 
 ### Gates (elk los, na `eval $(opam env)`, op de gecommitte code)
 
