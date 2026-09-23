@@ -315,19 +315,22 @@ public final class CaseRunner {
 
     // ---------------- the red path (corpus/rood, gate 8's Drools leg) ----------------
 
-    /** What the v0 Drools backend OBSERVES when it replays one {@code expectedFault} case:
-     *  FAULT (a fault raised after the build — at fire, or a hard refusal while the case is read — with the
-     *  fault text ref/clingo pin against), EXCLUDE (a form the backend does not carry, with the reason), or
-     *  NOFAULT (the case ran to a model — the backend does not enforce this red-path constraint, so its form is
-     *  not Drools-carried). */
+    /** What the v0 Drools backend OBSERVES when it replays one {@code expectedFault} case: FAULT (any runtime
+     *  exception after the build, at fire or while the case is read, a crash included, with its full cause chain
+     *  as the text a pinned fragment is matched against), EXCLUDE (a form the backend does not carry, with the
+     *  reason), or NOFAULT (the case ran to a model — the backend does not enforce this red-path constraint, so
+     *  its form is not Drools-carried). */
     public record RoodResult(String status, String detail) {}
 
-    /** Replay a single {@code corpus/rood} case and report what the backend observes. A form the backend does not
-     *  carry is an EXCLUDE: a loader refusal, or an {@link Excluded} from the build or from a case-input form. Any
-     *  other runtime exception raised after the build is the FAULT this gate leg pins — a fault AT fire (a division
-     *  by zero, a fixpoint failure), and equally a hard refusal while the case is read: a date lexeme that names
-     *  no day is a document defect to this backend, not a form it does not carry, so it lands here and not in
-     *  EXCLUDE (measured 2026-09-23 on corpus/rood/asofdate-kalender). */
+    /** Replay a single {@code corpus/rood} case and report what the backend observes. The split is by exception
+     *  TYPE, not by phase. A loader refusal, or an {@link Excluded} from the build or from a case-input form, is an
+     *  EXCLUDE. An I/O failure, and any other exception while the IR is loaded and the KieBase built, leaves this
+     *  method and the CLI reports it as ERROR. Every other runtime exception after the build is a FAULT: a fault
+     *  AT fire (a division by zero, a fixpoint failure), a named refusal while the case is read (a date lexeme
+     *  that names no day, corpus/rood/asofdate-kalender), and equally a CRASH while the case is read — measured
+     *  2026-09-23: meldwaarde written as a boolean gives "IllegalArgumentException: argument type mismatch", an
+     *  undeclared characteristic a failed setter call. Gate 8 therefore pins only this backend's own sentence,
+     *  never platform text: a pin on a JDK message would pin a crash. */
     public static RoodResult runRood(Path irPath, Path casePath) {
         CaseRunner runner;
         try {
