@@ -58,14 +58,30 @@ fi
 
 # shellcheck disable=SC2086
 $RUN - "$@" <<'PY'
-import sys, json
+import sys, json, re
 
 try:
-    from jsonschema import Draft202012Validator
-    from jsonschema.exceptions import best_match, SchemaError
+    from jsonschema import Draft202012Validator, validators
+    from jsonschema.exceptions import best_match, SchemaError, ValidationError
 except Exception as exc:  # pragma: no cover
     sys.stderr.write("FAIL: could not import jsonschema: %s\n" % exc)
     sys.exit(2)
+
+# JSON Schema's `pattern` is an ECMA-262 regular expression, and there `$`
+# matches only at the end of the input. The stock validator runs Python's
+# re.search, whose `$` also matches before a final newline, so it admitted a
+# validity bound "2026-01-01\n" that only WF-101 in the verifier then refused
+# (measured 2026-09-23, the gate-4 twin of this fix). Both patterns of this
+# schema are anchored at both ends, so a FULL match is what ECMA-262 asks of
+# them; on a pattern that is not anchored that way a full match is only ever
+# stricter than ECMA-262's search, never laxer. The self-test below runs the
+# same validator as the corpus check, and its trailing-newline row fails the
+# day the pattern is matched Python's way again.
+def ecma_pattern(validator, pattern, instance, schema):
+    if validator.is_type(instance, "string") and re.fullmatch(pattern, instance) is None:
+        yield ValidationError("%r does not match %r" % (instance, pattern))
+
+IrValidator = validators.extend(Draft202012Validator, {"pattern": ecma_pattern})
 
 schema_path = sys.argv[1]
 mode = sys.argv[2]
@@ -82,7 +98,7 @@ except SchemaError as exc:
     sys.stderr.write("FAIL: %s is not a valid draft 2020-12 schema:\n  %s\n"
                      % (schema_path, exc.message))
     sys.exit(1)
-validator = Draft202012Validator(schema)
+validator = IrValidator(schema)
 
 # --- check 1b: the pattern self-test (maintainer decision 2026-09-11) -----------------------------
 # A schema pattern is a MUST with no failing witness of its own: taking it out leaves every gate
@@ -120,6 +136,9 @@ BOUND_LEXEMES = [
     ("26-01-01",            False, "a two-digit year"),
     ("2026-01-01T00:00:00", False, "a datetime where a day is called for"),
     ("2026-01-01 ",         False, "a trailing space: the anchors are what keep it out"),
+    ("2026-01-01\n",        False, "a trailing newline: Python's `$` also matches before a final "
+                                   "newline, ECMA-262's only at the end, so this row fails the day "
+                                   "the pattern is matched Python's way again"),
     ("",                    False, "the empty string"),
 ]
 
@@ -148,7 +167,7 @@ if set(_positions) != PATTERN_POSITIONS:
         sys.stderr.write("  self-test row with no pattern:  %s\n" % p)
     sys.exit(1)
 
-_bound = Draft202012Validator({"$defs": schema["$defs"], "$ref": "#/$defs/Geldigheid"})
+_bound = IrValidator({"$defs": schema["$defs"], "$ref": "#/$defs/Geldigheid"})
 selftest_bad = 0
 for field in ("vanaf", "tot"):
     for lexeme, want_ok, why in BOUND_LEXEMES:
