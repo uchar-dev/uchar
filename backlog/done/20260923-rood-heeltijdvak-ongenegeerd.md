@@ -42,10 +42,10 @@ Branch `card/rood-duo`, samen met `rood-asofdate-kalender`.
 ## Result (2026-09-23)
 
 **Geland als voorstel, alle veertien gates groen.** Het document is
-`corpus/rood/leegtest-heel-tijdvak` (commits `72936b35`, `5f314873`).
+`corpus/rood/leegtest-heel-tijdvak` (commits `a7f31a44`, `21b7056e`).
 Het is `leegnegatie-heel-tijdvak` met `negatie: false` en een `bron`
 zonder "niet", met een byte-gelijke case. De Drools-regel staat in
-`8f24ad3d` (**beschermd-pad-voorstel**, `scripts/check-rood.sh`).
+`65d71ea8` (**beschermd-pad-voorstel**, `scripts/check-rood.sh`).
 
 ### Wat elke uitvoerder doet (worktree, HEAD)
 
@@ -138,8 +138,8 @@ vallen; clingo komt op zijn restarm. Dat staat nu in de NOTE.
 Elk los, na `eval $(opam env)`. De gates 2–7 en 9–14 draaiden op de
 eerste versie van de gate-commit (vóór een amend dat alleen de
 getuigezin in de redenregel preciezer maakte; na de rebase is dat
-`8f24ad3d`). Wat daarna kwam raakt alleen die redenregel, een
-NOTE-alinea en de kaarten. Gate 8 draaide opnieuw op `5f314873`, gate 1
+`65d71ea8`). Wat daarna kwam raakt alleen die redenregel, een
+NOTE-alinea en de kaarten. Gate 8 draaide opnieuw op `21b7056e`, gate 1
 op de eindstand. 1 PASS · 2 PASS (280 bestanden, vloer 192) · 3 PASS
 (280 schoon; 440 negatief, vloer 350) · 4 PASS (640 cases) · 5 PASS
 (ref-suite 806; 595 cases) · 6 PASS (523 checks; 595 cases) · 7 PASS
@@ -160,10 +160,10 @@ dus de pins bewogen niet.
   asOfDate-kaart (zie daar).
 - Verbreding volgens de aanwijzing van de maintainer: geen in de
   eerste ronde. In fixronde 1, onder mandaat van de hoofdsessie:
-  **voorstel** `spec/RUNTIME-SEMANTICS.md` (één rij, `78e90ae4`) en
-  `corpus/golden/jutterswet-waardemelding/NOTE.md` (`1250d15b`).
+  **voorstel** `spec/RUNTIME-SEMANTICS.md` (één rij, `b72b6a0b`) en
+  `corpus/golden/jutterswet-waardemelding/NOTE.md` (`f867236a`).
   Fixronde 1b: **voorstel** `spec/RUNTIME-SEMANTICS.md` ch. 1.2
-  (`3b628a2b`). Fixronde 2: **voorstel** `scripts/check-rood.sh` (kop en
+  (`4178e125`). Fixronde 2: **voorstel** `scripts/check-rood.sh` (kop en
   lus van het Drools-been, zeven oudere redenen, de leegtest-regel, een
   nieuwe gevuldtest-regel), **voorstel** `spec/RUNTIME-SEMANTICS.md`
   (ch. 3.12 en ch. 1.2, drie documenten), het nieuwe document
@@ -211,7 +211,7 @@ refusal in all three executors … by an EXCLUDE entry naming
 
 Stand na fixronde 1: 1 en 2 afgehandeld, 3 gemeld en niet gekaart.
 
-1. **Afgehandeld in `78e90ae4` (voorstel).** De gecommitte rij wijkt
+1. **Afgehandeld in `b72b6a0b` (voorstel).** De gecommitte rij wijkt
    af van de voorsteltekst hieronder; de commit is maatgevend (zie
    Fixronde 1). `spec/RUNTIME-SEMANTICS.md`, tabelrij "Whole-period
    qualifier, the **leeg/gevuld** tests" (beschermd, zone spec): "no
@@ -229,7 +229,7 @@ Stand na fixronde 1: 1 en 2 afgehandeld, 3 gemeld en niet gekaart.
    longer lets reach it; the sibling that landed above deliberately did
    not take it along, because a clause with no witness on this side would
    be a green subset".
-2. **Afgehandeld in `1250d15b`**, met een eigen formulering (zie
+2. **Afgehandeld in `f867236a`**, met een eigen formulering (zie
    Fixronde 1). `corpus/golden/jutterswet-waardemelding/NOTE.md`
    r. 47–48 (zone golden, buiten may-touch) noemde als rode tweeling
    alleen
@@ -265,7 +265,7 @@ Stand na fixronde 1: 1 en 2 afgehandeld, 3 gemeld en niet gekaart.
 Twee open punten opgelost, elk met een eigen commit, onder mandaat van
 de hoofdsessie:
 
-- `78e90ae4`, **beschermd-pad-voorstel** `spec/RUNTIME-SEMANTICS.md`,
+- `b72b6a0b`, **beschermd-pad-voorstel** `spec/RUNTIME-SEMANTICS.md`,
   alleen de rij "Whole-period qualifier, the **leeg/gevuld** tests" in
   ch. 3.12. Ze droeg "not executed by either OCaml executor … no corpus
   case" en "implemented in the Drools runtime alone". Nu staat er:
@@ -277,12 +277,12 @@ de hoofdsessie:
   en houdt Drools als EXCLUDE. De drempelclausule staat in de
   Drools-runtime, maar geen document bereikt haar zolang de loader
   weigert. De rest van de rij is ongewijzigd.
-- `1250d15b`, `corpus/golden/jutterswet-waardemelding/NOTE.md`
+- `f867236a`, `corpus/golden/jutterswet-waardemelding/NOTE.md`
   (**may-touch-verbreding**, alleen de NOTE; `ir.json` en `case.json`
   onaangeroerd). De NOTE noemt nu beide rode tweelingen, elk met de
   eigen grond.
 
-**Gefixt in fixronde 1b (`3b628a2b`).** Buiten het mandaat van
+**Gefixt in fixronde 1b (`4178e125`).** Buiten het mandaat van
 fixronde 1 gezien en toen nog niet aangeraakt:
 `spec/RUNTIME-SEMANTICS.md` r. 96 (ch. 1.2, de leeg/gevuld-rij) zei
 over de genegeerde test onder heel-tijdvak "ref and both Drools
@@ -297,7 +297,7 @@ PASS (played 182 = pin, DRL-tekst 161 = pin, JUnit 620).
 
 ### Fixronde 1b (hoofdsessie, 2026-09-23)
 
-- `3b628a2b`, **beschermd-pad-voorstel** `spec/RUNTIME-SEMANTICS.md`,
+- `4178e125`, **beschermd-pad-voorstel** `spec/RUNTIME-SEMANTICS.md`,
   alleen de zin in de ch.-1.2-rij over de genegeerde leegtest onder
   heel-tijdvak. Eerst stond er: "ref and both Drools branches refuse the
   form by name until it is chosen". Nu staat er: "all three executors
@@ -322,11 +322,11 @@ eigen commits. De punten van deze kaart staan hier, die van de
 zusterkaart in haar Result.
 
 - **Punt 1, blokkerend** (gedeeld met de zusterkaart, details daar):
-  het commentaar dat ik in `8f24ad3d` in de kop van het Drools-been
+  het commentaar dat ik in `65d71ea8` in de kop van het Drools-been
   zette, beschreef een scheiding die de code niet maakt. Hersteld in
-  `662d75a1` (gate 8, voorstel), `52c642cc` (javadoc) en `3789e7ce`
+  `5151f558` (gate 8, voorstel), `2ce4ad81` (javadoc) en `1fe21232`
   (case-schema, voorstel). **Bijvangst, zelfde mechanisme**
-  (`f210c278`): zeven oudere uitsluitingsredenen in gate 8 (voorstel)
+  (`324f6247`): zeven oudere uitsluitingsredenen in gate 8 (voorstel)
   en de NOTEs van `unknown-role-target-label`,
   `periodevenster-tijdlijnkenmerk` en `datumsetbron-somvouw`
   (may-touch-verbreding binnen `corpus/rood`) gaven als grond "FAULT is
@@ -335,13 +335,13 @@ zusterkaart in haar Result.
   er: het been pint alleen op FAULT, en een loader- of
   transpilerweigering is een EXCLUDE. Categorieën en gevallen zijn niet
   veranderd.
-- **Punt 2** (`906a9321`): open punt 3 en de CONSTRUCTS-zin
+- **Punt 2** (`fe5f3244`): open punt 3 en de CONSTRUCTS-zin
   gecorrigeerd. Het been herbouwt de jar met de JUnit-suite, en
   `LeegNegatieWitnessTest` r. 129 bewaakt de sleutel. Gemeten met een
   sleutelmutant: `Tests run: 620, Failures: 1`, `BUILD FAILURE`. De
   redenregel (voorstel) zegt dat nu ook.
 - **Punt 3**: de gevuld-tweeling `corpus/rood/gevuldtest-heel-tijdvak`
-  (`19777ed7`). Dat is `leegtest-heel-tijdvak` met `soort: GEVULD` en
+  (`bc6c4c74`). Dat is `leegtest-heel-tijdvak` met `soort: GEVULD` en
   een aangepaste `bron`, met een byte-gelijke case. Handwaarden volgens
   ch. 3.9 (days(B)): S1 365/365 waar, S2 vacuüm waar, beide meldpremie
   40. De NOTE zegt dat die case de twee drempels niet scheidt. Gemeten:
@@ -363,12 +363,12 @@ zusterkaart in haar Result.
   3.3; …)` en clingo `TRANSLATION FAULT: condition kind not translated
   (no corpus case exercises it)`, een bodemzin. Met de arm versmald tot
   `negatie = true` vallen beide ongenegeerde documenten (rc 1 in beide
-  uitvoerders). Verder: de uitsluitingsregel (`29ed49de`, voorstel), de
-  RUNTIME-SEMANTICS-passages in ch. 3.12 en ch. 1.2 (`3002ac46`,
+  uitvoerders). Verder: de uitsluitingsregel (`21ac113a`, voorstel), de
+  RUNTIME-SEMANTICS-passages in ch. 3.12 en ch. 1.2 (`9564c2ab`,
   voorstel, nu met "a negated gevuld test under the qualifier has no
   corpus case"), en de NOTE van waardemelding, de leegtest-NOTE en de
-  CONSTRUCTS-zin (`d3c3a870`).
-- **Punt 6** (`434f027d`): in de leegtest-NOTE "two fields changed" en
+  CONSTRUCTS-zin (`d3462de3`).
+- **Punt 6** (`ea885861`): in de leegtest-NOTE "two fields changed" en
   "pins a fragment only on a FAULT". De redenregel (voorstel) en de
   NOTE maken nu onderscheid tussen de groene kopie (PLAYED 1), de rode
   run (NOFAULT) en de replay op het rode document zelf (PLAYED 0,
@@ -398,7 +398,7 @@ naar de branch na de rebase. De oude hashes zijn per commitonderwerp
 omgezet, 51 plaatsen in de twee rood-Results.
 
 **De vierde tweeling, `corpus/rood/gevuldnegatie-heel-tijdvak`**
-(`80cf5f32`). Dat is `leegnegatie-heel-tijdvak` met `soort: GEVULD` en
+(`27d2020a`). Dat is `leegnegatie-heel-tijdvak` met `soort: GEVULD` en
 "niet gevuld" in de `bron`. Langs `gevuldtest-heel-tijdvak` afgeleid
 (negatie op true, "niet" erbij) geeft het dezelfde bytes, en de case
 delen alle vier. De vorm stond in fixronde 2 als waargenomen gat; dat
@@ -471,17 +471,17 @@ FAIL: reason drift — gevuldnegatie-heel-tijdvak is listed as EXCLUDE but Drool
 
 Voor deze hoek is het rode document dus de enige bewaker van de
 Drools-weigering. De JUnit-getuige dekt de genegeerde weigering alleen
-voor LEEG. Dat staat in de NOTE, in de uitsluitingsregel (`e47cc971`,
+voor LEEG. Dat staat in de NOTE, in de uitsluitingsregel (`f2198f5c`,
 voorstel), in de RUNTIME-SEMANTICS-rij ("for the negated gevuld test
-the listed category is the only guard", `2a4acdf6`, voorstel) en in de
+the listed category is the only guard", `bd2c6032`, voorstel) en in de
 CONSTRUCTS-zin hierboven.
 
 **Vier documenten, het vierkant soort × negatie.** De RUNTIME-SEMANTICS-
-passages in ch. 3.12 en ch. 1.2 (`2a4acdf6`, voorstel), de NOTEs van
+passages in ch. 3.12 en ch. 1.2 (`bd2c6032`, voorstel), de NOTEs van
 waardemelding, leegtest en gevuldtest, de voorgestelde CONSTRUCTS-zin
 en één nieuwe zin in de NOTE van `leegnegatie-heel-tijdvak`
 (may-touch-verbreding binnen `corpus/rood`) noemen nu de vier
-documenten (`07ad33b2`).
+documenten (`efa69789`).
 
 Gates na fixronde 3, elk los na `eval $(opam env)`: 1 PASS · 2 PASS
 (282 bestanden, vloer 192) · 3 PASS (282 schoon; 441 negatief, met het
@@ -511,9 +511,9 @@ de zusterkaart betreffen staan ook in haar Result.
   na de bouw uit de caselezer (`ambiguous-case-role-key`,
   `unknown-role-target-label`, `uni-temporal-key-scalar`,
   `uu-temporal-key-scalar`, `datumtijdlijn-totaalvouw`,
-  `datumtijdlijn-klipvouw`). Commits: `450e90fe` (gatekop, voorstel),
-  `8d800461` (javadoc, code zonder commentaar gelijk gemeten) en
-  `4a830f4e` (schema, voorstel, validatiesleutels gelijk gemeten).
+  `datumtijdlijn-klipvouw`). Commits: `6f693149` (gatekop, voorstel),
+  `45d0a9e9` (javadoc, code zonder commentaar gelijk gemeten) en
+  `1a652d4c` (schema, voorstel, validatiesleutels gelijk gemeten).
 - **Punt 2, blokkerend:** de redenregels geven als grond nu het
   uitzonderingstype en niet de fase. De transpiler werpt een
   `Excluded`, de IR-loader een `IrLoader.Refusal`, en de rode run
@@ -524,21 +524,21 @@ de zusterkaart betreffen staan ook in haar Result.
   een FAULT. Ook aangepast: de fase-redenering bij
   `leegnegatie-heel-tijdvak` en `periodevenster-tijdlijnkenmerk`, en in
   de NOTEs van `leegnegatie`, `datumsetbron-somvouw`, `periodevenster`
-  en de drie tweelingen van deze kaart. Commits: `076ac1e8` (gate 8,
-  voorstel) en `4fc7d4ca` (NOTEs, may-touch-verbreding binnen
+  en de drie tweelingen van deze kaart. Commits: `097de116` (gate 8,
+  voorstel) en `ed168a75` (NOTEs, may-touch-verbreding binnen
   `corpus/rood`).
-- **Punt 3** (`e48f5c7e`): de CONSTRUCTS-zin noemt nu drie mutanten,
+- **Punt 3** (`0a887d10`): de CONSTRUCTS-zin noemt nu drie mutanten,
   opnieuw gemeten op alle vier de documenten. De negatie-mutant: beide
   genegeerde groen, beide ongenegeerde rc 1. De LEEG-mutant: beide
   leeg-documenten groen, beide gevuld-documenten rc 1. De hoekmutant:
   alleen `gevuldnegatie`. De oude zin ("fails the gevuld one") was
   gemeten toen er één gevuld-document was.
-- **Punt 5** (`b418fca5`, gate 8, voorstel): de redenregel van
+- **Punt 5** (`fc30e1bb`, gate 8, voorstel): de redenregel van
   `to-one-second-filler` citeert nu wat de jar meldt, een
   transpiler-SKIP "aggregatie over de enkelvoudige elementrol
   'bergende gemeente' …", in plaats van de rolinvoerweigering die daar
   sinds `e1f779aa` stond. De categorie EXCLUDE is ongewijzigd.
-- **Punt 6** (`4fc7d4ca`): de te lange regel in de NOTE van
+- **Punt 6** (`ed168a75`): de te lange regel in de NOTE van
   `unknown-role-target-label` is afgebroken.
 
 Gates na fixronde 4, elk los na `eval $(opam env)`: 1 PASS · 2 PASS

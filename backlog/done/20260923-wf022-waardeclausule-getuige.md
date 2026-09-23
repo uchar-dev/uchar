@@ -59,8 +59,8 @@ na de rebase op main `3a140fe4`.
 
 ## Result (2026-09-23)
 
-**Geland in `card/rood-duo`, gates groen.** Commits: `2d91a08c`
-(claim), `d4dabdd1` (het negatief) en `38288a1d` (de WF-022-rij,
+**Geland in `card/rood-duo`, gates groen.** Commits: `307d4af7`
+(claim), `3f918e2b` (het negatief) en `9450a034` (de WF-022-rij,
 **voorstel**).
 
 ### Het negatief

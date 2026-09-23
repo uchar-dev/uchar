@@ -47,11 +47,11 @@ Branch `card/rood-duo`, samen met `rood-heeltijdvak-ongenegeerd`.
 ## Result (2026-09-23)
 
 **Geland, alle veertien gates groen.** Het document is
-`corpus/rood/asofdate-kalender` (commit `e03dcc30`): `ir.json` is golden
+`corpus/rood/asofdate-kalender` (commit `2d07eb1c`): `ir.json` is golden
 `jutterswet-vensterheffing` byte voor byte (`cmp`), de case is de input
 van die golden (M1, meldwaarde 100) met `asOfDate` `2026-02-30`, en
 `expectedFault` pint alle drie de uitvoerders. De commentaarregels van
-het Drools-been staan in `8f24ad3d` (**beschermd-pad-voorstel**, zie
+het Drools-been staan in `65d71ea8` (**beschermd-pad-voorstel**, zie
 onder).
 
 ### Waarom 2026-02-30
@@ -317,13 +317,13 @@ vegen alleen `corpus/golden`, dus de pins bewogen niet.
 - Geen bestaand corpusdocument of test gewijzigd.
 - Fixronde 1, onder mandaat van de hoofdsessie: **voorstel**
   `spec/schema/uchar-case-v0.schema.json` (twee beschrijvingen,
-  `87072df7`) en de may-touch-verbreding `backends/drools`, alleen
-  javadoc (`a1b9d590`).
+  `ac55d45f`) en de may-touch-verbreding `backends/drools`, alleen
+  javadoc (`7872d651`).
 - Fixronde 2: dezelfde drie bestanden opnieuw, alleen tekst
-  (`662d75a1` voorstel, `52c642cc` javadoc, `3789e7ce` voorstel), plus
-  de NOTE van dit document (`a0db6321`, `2c62ff9e`).
+  (`5151f558` voorstel, `2ce4ad81` javadoc, `1fe21232` voorstel), plus
+  de NOTE van dit document (`59f8bb03`, `2599b105`).
 - Fixronde 4: dezelfde drie bestanden nog eens, alleen tekst
-  (`450e90fe` voorstel, `8d800461` javadoc, `4a830f4e` voorstel); zie
+  (`6f693149` voorstel, `45d0a9e9` javadoc, `1a652d4c` voorstel); zie
   de sectie Fixronde 4.
 
 ### Registertekst (hoofdsessie)
@@ -349,7 +349,7 @@ overgangsheffing leeg);"
 Stand na fixronde 2: 1, 2 en 4 afgehandeld; 3 en 5 gaan naar de
 lopende Drools-lijn.
 
-1. **Afgehandeld in `87072df7` (voorstel).**
+1. **Afgehandeld in `ac55d45f` (voorstel).**
    `spec/schema/uchar-case-v0.schema.json`, beschrijving van
    `expectedFault` (beschermd, zone spec): "`drools` against the Drools
    backend's fault-at-fire report" en "present only where the v0 Drools
@@ -358,7 +358,7 @@ lopende Drools-lijn.
    Voorstel: "… against the Drools backend's red-run fault report (a
    fault at fire, or a hard refusal while the red run reads the case)"
    en "… carries the red-path form and faults on it".
-2. **Afgehandeld in `a1b9d590`** (alleen commentaartekst).
+2. **Afgehandeld in `7872d651`** (alleen commentaartekst).
    `backends/drools` (zone van een parallelle kaart), javadoc. In
    `CaseRunner.runRood` staat "A fault the loader or a case-input form
    raises before fire is an EXCLUDE (the form is not carried); a fault
@@ -388,7 +388,7 @@ lopende Drools-lijn.
    `RuntimeException` als `ERROR`, en de datumlezer werpt een
    `IllegalArgumentException`. In gate 12 speelt het niet, want een
    golden met zo'n datum is al rood in gate 5 (`CASE ERROR`, rc 2).
-4. **Afgehandeld in `87072df7` (voorstel)**, met een eigen formulering
+4. **Afgehandeld in `ac55d45f` (voorstel)**, met een eigen formulering
    (zie Fixronde 1). `spec/schema/uchar-case-v0.schema.json`,
    beschrijving van `asOfDate` (alleen de beschrijving, geen validatie;
    zone spec). Voorstel, naar
@@ -444,7 +444,7 @@ lopende Drools-lijn.
 Drie open punten opgelost, onder mandaat van de hoofdsessie, in twee
 commits:
 
-- `87072df7`, **beschermd-pad-voorstel**
+- `ac55d45f`, **beschermd-pad-voorstel**
   `spec/schema/uchar-case-v0.schema.json`, alleen
   beschrijvingstekst. Gemeten: de validatiesleutels zijn gelijk
   (`json.load` van oud en nieuw, zonder de descriptions: identiek).
@@ -460,7 +460,7 @@ commits:
     corpus/rood/asofdate-kalender)." Er staat bewust niet "a pattern
     cannot check the calendar", want dat kan wel (zie (b)). Er staat
     wat dit patroon doet.
-- `a1b9d590`, **may-touch-verbreding** `backends/drools`, alleen
+- `7872d651`, **may-touch-verbreding** `backends/drools`, alleen
   commentaartekst in `CaseRunner.java` (de javadoc van `RoodResult` en
   `runRood`) en `DroolsRoodMain.java` (de FAULT-regel in de tabel).
   Nu staat er: EXCLUDE is een loaderweigering of een `Excluded` uit de
@@ -484,7 +484,7 @@ fragmenten; Drools-been 10/35) · 12 PASS (played 182 = pin, DRL-tekst
 Geen wijziging binnen deze kaart. Fixronde 1b loste de bijvangst uit de
 zusterkaart op: de ch.-1.2-zin in `spec/RUNTIME-SEMANTICS.md` noemt
 voor de genegeerde heel-tijdvak-leegtest nu alle drie de weigeraars en
-de twee rode documenten (`3b628a2b`, voorstel; details in
+de twee rode documenten (`4178e125`, voorstel; details in
 `20260923-rood-heeltijdvak-ongenegeerd.md`). Gate 1 opnieuw: PASS.
 Open punt 3 hier (het ERROR-token van de replay-runner) staat
 ongewijzigd en gaat naar de Drools-lijn.
@@ -495,8 +495,8 @@ De punten van deze kaart staan hier. Punt 2, 3 en 6 staan in het Result
 van de zusterkaart.
 
 - **Punt 1, blokkerend.** De tekst die ik in fixronde 1 schreef (kop
-  van het Drools-been in `8f24ad3d`, javadoc `a1b9d590`, schema
-  `87072df7`), zei dat FAULT "een fout bij fire of een harde weigering
+  van het Drools-been in `65d71ea8`, javadoc `7872d651`, schema
+  `ac55d45f`), zei dat FAULT "een fout bij fire of een harde weigering
   bij het lezen" is. De code deelt echter in naar uitzonderingstype,
   zo sinds `e1f779aa` (2026-08-27). Een loaderweigering of een
   `Excluded` is EXCLUDE. I/O en elke uitzondering tijdens het laden van
@@ -508,39 +508,39 @@ van de zusterkaart.
   RuntimeException: kon setter setVerzonnen(boolean) niet aanroepen
   …`; een niet-gedeclareerd attribuut en een onbekend label geven
   EXCLUDE. Hersteld, alleen tekst:
-  - `662d75a1` (gate 8, voorstel): de kop beschrijft de indeling naar
+  - `5151f558` (gate 8, voorstel): de kop beschrijft de indeling naar
     type, met de metingen, en legt de pinregel vast: een
     `drools`-fragment citeert de eigen zin van de backend (positie en
     lexeem), nooit platformtekst. De herlezing van "a genuine fault at
     fire" is geschrapt. De twee luscommentaren zeggen niet meer dat een
     crash ERROR is.
-  - `52c642cc` (javadoc, alleen commentaar, code zonder commentaar
+  - `2ce4ad81` (javadoc, alleen commentaar, code zonder commentaar
     gelijk aan HEAD gemeten): `RoodResult`, `runRood` en de tabel van
     `DroolsRoodMain` zeggen hetzelfde. ERROR is nu "bad invocation, I/O,
     or an exception while the IR is loaded and the KieBase built — a
     crash AFTER the build is a FAULT, not an ERROR".
-  - `3789e7ce` (case-schema, voorstel, validatiesleutels gelijk
+  - `1fe21232` (case-schema, voorstel, validatiesleutels gelijk
     gemeten): de `drools`-beschrijving noemt de indeling naar type, de
     crash als FAULT en de pinregel.
-  - `f210c278`: dezelfde onjuiste premisse in oudere redenen en NOTEs
+  - `324f6247`: dezelfde onjuiste premisse in oudere redenen en NOTEs
     (zie de zusterkaart).
   Dit document voldoet aan de pinregel: het pint de eigen zin tot vóór
   de haakjes met de JDK-parseertekst.
-- **Punt 4** (`a0db6321`): de NOTE beschrijft vensterheffing nu als
+- **Punt 4** (`59f8bb03`): de NOTE beschrijft vensterheffing nu als
   twee los gedateerde regels met eigen namen en eigen doelattributen,
   dus een venster per regel en geen versieselectie (IR-SPEC ch. 4.1).
   De handberekening spreekt van vensters die de datum toelaten of
   uitsluiten.
-- **Punt 5** (`2c62ff9e`): het sterkste argument voor `2026-02-30`
+- **Punt 5** (`2599b105`): het sterkste argument voor `2026-02-30`
   staat nu in de NOTE en onder "Waarom 2026-02-30" hierboven, met de
   metingen. De oude lader antwoordde ook op `2026-13-01` stil, maar een
   mutant `d > 31` laat alleen `02-30` door. De CONSTRUCTS-tekst spreekt
   van "the month-length check" in plaats van "the calendar half",
   zegt dat maandgrens en schrikkelregel alleen in de ref-suite gepind
   zijn, en noemt `6ff39603` in plaats van "before 2026-09-23".
-- **Punt 7** (`9edcb65f`): het patroon van 213 tekens, het toetsscript
+- **Punt 7** (`6a3e77fa`): het patroon van 213 tekens, het toetsscript
   en de uitvoer staan letterlijk onder (b).
-- **Punt 8** (`c1f7bdbf`): open punt 5, voor de Drools-lijn, naast
+- **Punt 8** (`f0053661`): open punt 5, voor de Drools-lijn, naast
   punt 3.
 
 Gates na fixronde 2: dezelfde runs als in de zusterkaart. 1 PASS · 2
@@ -573,9 +573,9 @@ Open punten 3 en 5 (voor de Drools-lijn) staan ongewijzigd.
   lezen van de case: "Breuk deling door 0", "deling door 0" en "geen
   fixpunt (kringverwijzing?)" zijn eigen zinnen zonder die twee. Deze
   pin (`malformed date '2026-02-30' on 'asOfDate': …`) is wel zo'n
-  weigering en noemt beide. Commits: `450e90fe` (gatekop, voorstel),
-  `8d800461` (javadoc) en `4a830f4e` (schema, voorstel).
-- **Punt 6** (`c9331aa1`): de bullet "Beschermd pad" beschreef het
+  weigering en noemt beide. Commits: `6f693149` (gatekop, voorstel),
+  `45d0a9e9` (javadoc) en `1a652d4c` (schema, voorstel).
+- **Punt 6** (`5333ab48`): de bullet "Beschermd pad" beschreef het
   commentaar uit de eerste ronde nog als huidige stand. Hij is nu als
   vervangen gemarkeerd.
 
