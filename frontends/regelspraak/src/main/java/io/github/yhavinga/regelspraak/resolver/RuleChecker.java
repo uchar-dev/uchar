@@ -149,6 +149,7 @@ final class RuleChecker {
         for (RegelGroepContext g : doc.regelGroep()) {
             boolean recursief = g.RECURSIEF() != null;
             int line = g.getStart().getLine();
+            kopAnnotatie(g, "Regelgroep '" + DefinitionResolver.src(g.kaleNaam()) + "'", "§9.10", line);
             List<String> leden = new ArrayList<>();
             for (GroepLidContext lid : g.groepLid())
                 if (lid.regel() != null) leden.add(DefinitionResolver.src(lid.regel().regelNaam()));
@@ -367,7 +368,7 @@ final class RuleChecker {
         for (UitzonderingGroepContext g : DefinitionResolver.alleUitzonderingGroepen(doc)) {
             if (geweigerd.contains(g)) continue;   // refused at its head already
             int line = g.getStart().getLine();
-            kopAnnotatie(g, line);
+            kopAnnotatie(g, "Uitzonderingen ongeordend", "dialect §4", line);
             List<ResolvedRegel> leden = new ArrayList<>();
             DefaultsDoel gedeeld = null;
             boolean fout = false;
@@ -441,17 +442,20 @@ final class RuleChecker {
         return gevuld.isEmpty() ? null : String.join("; ", gevuld);
     }
 
-    /** A {@code // Bron:} annotation written above an 'Uitzonderingen ongeordend:' header belongs to no rule —
-     *  an annotation travels with the rule directly below it, and the header is none — so it reaches no default
-     *  and no group. It used to vanish without a word; the WARNING says where the citation has to go. Not an
-     *  ERROR: the document is sound, only the citation is lost. */
-    private void kopAnnotatie(UitzonderingGroepContext g, int line) {
-        String kop = annotatieTekst(bronAnnotaties(g));
-        if (kop == null) return;
+    /** A {@code // Bron:} annotation written above a block HEADER — 'Uitzonderingen ongeordend:' or 'Regelgroep
+     *  &lt;naam&gt;' — belongs to no rule: an annotation travels with the rule directly below it, and a header is
+     *  none, so it reaches no default, no group and no rule. It used to vanish without a word; the WARNING says
+     *  where the citation has to go. Not an ERROR: the document is sound, only the citation is lost. These two
+     *  headers warn because they open rules, which is where an author expects the citation to reach; an
+     *  annotation above a definition documents the declaration and has no wire slot to miss. The group's own
+     *  {@code bron} is no place for it either: on a Regelgroep that field is the v0 snippet of its name. */
+    private void kopAnnotatie(ParserRuleContext kop, String kopNaam, String verwijzing, int line) {
+        String tekst = annotatieTekst(bronAnnotaties(kop));
+        if (tekst == null) return;
         model.diagnostics.add(new Diagnostic(Severity.WARNING,
-                "Uitzonderingen ongeordend: de // Bron:-annotatie '" + kop + "' boven de kop hoort bij geen regel — "
+                kopNaam + ": de // Bron:-annotatie '" + tekst + "' boven de kop hoort bij geen regel — "
                 + "een annotatie hoort bij de regel direct eronder, en de kop is geen regel — en komt daarom niet op "
-                + "de wire. Zet haar boven het lid of de leden waarvoor zij geldt (dialect §4)", line));
+                + "de wire. Zet haar boven het lid of de leden waarvoor zij geldt (" + verwijzing + ")", line));
     }
 
     /** The vacuously true justification. WF-050 requires EVERY non-initialisation default to carry one,

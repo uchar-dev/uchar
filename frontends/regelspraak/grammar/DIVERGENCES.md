@@ -143,9 +143,16 @@ placement since, with no new wire field (card `frontend-bron-annotatie-in-defaul
   to no rule — an annotation belongs to the rule directly below it, and the
   header is none — so it reaches no default and no group. It used to vanish
   without a word; it now draws a WARNING that names it, instead of being hung
-  on a member the author did not choose.
+  on a member the author did not choose. The same WARNING, citing §9.10,
+  covers an annotation above a `Regelgroep` header (fix round, 2026-09-23).
+  The group's own `bron` field is no place for it: on a `ResolvedRegelGroep`
+  that field is the v0 source snippet of the group's name. An annotation above
+  a definition (an `Objecttype`, `Feittype`, `Domein`, `Parameter`, …) draws no
+  warning: it documents the declaration, which has no wire slot for it, and it
+  is common practice — 351 of the 736 annotations in the measured operational
+  ruleset collection stand above a definition.
 
-Witness: `DefaultsBronAnnotatieTest`.
+Witness: `DefaultsBronAnnotatieTest`, `BronAnnotatiePlaatsTest`.
 
 ### Fail-fast refusals (resolver, loud diagnostics)
 
