@@ -4439,7 +4439,14 @@ many strata as the chain is deep.
   the transient leeg and kept its write: b = 1 with the reader first and
   b leeg with the writer first, on one verifier-clean document, while
   the ASP backend answered leeg in both orders. Now the reader sits above
-  the writer and b is leeg in both orders (WV-6.4-f).
+  the writer and b is leeg in both orders (WV-6.4-f). The move reaches
+  every position in the condition of an attribute-writing form: measured
+  on the same reader-first shape, the own operand, a navigated operand,
+  a fold filter, a quantifier filter, a Let as the operand and a gevuld
+  test in the filter of a count compared with zero each moved from b = 1
+  to leeg, which is the ASP backend's answer in every case. A creation
+  condition and a characteristic rule did not move, because they already
+  read stratum-strict.
 - Ill-formed: `a ← b + 1` and `b ← a + 1` on one object type is a
   WF-045 cycle through no creation (negatief case
   `wf045-cyclic-attribute-dependency`). A recursive creation whose

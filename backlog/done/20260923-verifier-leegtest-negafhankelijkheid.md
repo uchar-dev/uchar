@@ -417,9 +417,17 @@ niet aangeraakt.
    vergelijking. Voor de kenmerklezer gold (i) al vóór deze kaart.
 4. **ref-gedrag buiten het corpus.** "Geen gedragswijziging in ref"
    geldt voor de code en voor het corpus (`cmp` identiek). Via de
-   gedeelde graaf verandert wel: R1/R3 worden geweigerd, en een
-   leeg-lezer buiten een cyclus staat nu boven zijn schrijver, zoals
-   clingo al rekende. Graag bevestigen.
+   gedeelde graaf verandert wel iets: R1/R3 worden geweigerd, en een
+   leeg-lezer staat nu boven zijn schrijver op elke positie in de
+   voorwaarde van een attribuutschrijvende vorm. Met de lezer voorop
+   gemeten (fixronde 2, main tegen tip) verschuiven de eigen operand, de
+   genavigeerde operand, het vouwfilter, het kwantorfilter, een Let als
+   operand en GEVULD in een filter onder telling = 0 van b = 1 naar leeg.
+   Dat is in elk geval het antwoord van clingo. Creatievoorwaarden en
+   kenmerkregels verschuiven niet, want die lazen al stratumstrikt.
+   **De hoofdsessie bevestigt dat dit binnen de norm valt:** de kant
+   bepaalt de evaluatievolgorde, en ref volgt de gedeelde graaf by
+   design.
 5. **Geen golden voor de schone negatieve leeg-kant.** Geen corpustest
    leest een geschreven knoop. De schone getuige is WV-6.4-f in de
    ref-suite. Een golden hoort in `corpus/golden` (buiten deze kaart).
