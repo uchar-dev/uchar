@@ -33,6 +33,7 @@ import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Parameter;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel.RolBindingRef;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Severity;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Tijdlijn;
+import io.github.yhavinga.regelspraak.transpiler.kern.Namen;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -406,19 +407,21 @@ public final class IrLoader {
         return c.intValue();
     }
 
-    /** WF-001: a namespace holds a name once, under the verifier's name identity ({@link #naamSleutel}). The
-     *  model's tables are keyed on the exact string and look a name up case-insensitively after an exact miss, so
-     *  two spellings of one name would both enter and a lookup would pick one of them. */
+    /** WF-001: a namespace holds a name once, under the verifier's name identity ({@link Namen#norm}, the same
+     *  function both transpiler branches compare declared names with), so this loader refuses the collisions
+     *  WF-001/WF-002 refuse and no others. The model's tables are keyed on the exact string and look a name up
+     *  case-insensitively after an exact miss, so two spellings of one name would both enter and a lookup would
+     *  pick one of them. */
     private static <V> void eenmaal(Map<String, V> tabel, String pad, String naam, V waarde) {
         String eerder = botsing(tabel.keySet(), naam);
         if (eerder != null) throw new Documentfout(pad, dubbel(naam, eerder, "WF-001"));
         tabel.put(naam, waarde);
     }
 
-    /** The declared name {@code naam} collides with under {@link #naamSleutel}, or null. */
+    /** The declared name {@code naam} collides with under {@link Namen#norm}, or null. */
     private static String botsing(java.util.Collection<String> namen, String naam) {
-        String sleutel = naamSleutel(naam);
-        for (String n : namen) if (naamSleutel(n).equals(sleutel)) return n;
+        String sleutel = Namen.norm(naam);
+        for (String n : namen) if (Namen.norm(n).equals(sleutel)) return n;
         return null;
     }
 
@@ -427,19 +430,6 @@ public final class IrLoader {
                 ? "the name '" + naam + "' is declared twice (" + regel + ")"
                 : "the name '" + naam + "' collides with the earlier '" + eerder + "' (" + regel
                         + " compares names case-insensitively)";
-    }
-
-    /** The verifier's name identity ({@code norm} in {@code spec/verifier/lib/checks.ml}): ASCII letters folded to
-     *  lower case, runs of spaces and tabs collapsed, the ends trimmed. Mirrored exactly, so this loader refuses the
-     *  collisions WF-001/WF-002 refuse and no others. */
-    private static String naamSleutel(String naam) {
-        StringBuilder sb = new StringBuilder();
-        for (String deel : naam.split("[ \t]+")) {
-            if (deel.isEmpty()) continue;
-            if (sb.length() > 0) sb.append(' ');
-            for (char c : deel.toCharArray()) sb.append(c >= 'A' && c <= 'Z' ? (char) (c + ('a' - 'A')) : c);
-        }
-        return sb.toString();
     }
 
     /** A JSON value as a message quotes it, cut short: the value is evidence, not the document. */
