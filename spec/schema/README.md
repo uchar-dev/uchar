@@ -48,6 +48,13 @@ Shape, in brief:
   `Resolved*` node — keeps its v0 name, field spellings and enum values until
   its own M step. So do the enum values inside the new nodes (`DAG` … `JAAR`,
   `BIJVOEGLIJK`/`BEZITTELIJK`/`ZELFSTANDIG`).
+- One field of four of those nodes does change at M1: `naam` on `Parameter`,
+  `Eenheidstelsel`, `Feittype` and `Dimensie` is a non-null string. With the
+  map key gone it is the declaration's only name (delta B2), so a `null` there
+  would be a declaration without a name; the schema no longer admits it, and
+  no golden, red or negatief document carried one (measured 2026-09-23). `Tijdlijn`
+  and `Rol` keep their nullable `naam`: timelines were a list in v0 already,
+  and a role is not a model-list entry.
 - Every node object carries a `"node"` discriminator holding its subtype name.
   The `Datatype`, `Expr` and `Conditie` families are modelled as discriminated
   unions on that field.

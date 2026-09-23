@@ -42,7 +42,7 @@ on the rule its directory name declares, as before (gate 3).
 | `wf094-zelfnaam-feittype` | WF-094 | B2 | verwijderd-met-reden | idem |
 | `wf094-zelfnaam-dimensie` | WF-094 | B2 | verwijderd-met-reden | idem |
 | `wf094-zelfnaam-null-objecttype` | WF-094 (d) | B2 | verwijderd-met-reden | `ObjectType.name` is a required string: an object type without a name cannot be written (m1.py: "self-name is null") |
-| `wf094-zelfnaam-null-parameter` | WF-094 (d) | B2 | verwijderd-met-reden | no map key is left to fall back on, so the node's `naam` is the declaration's only name; a null there is refused by the verifier's loader at load, without a WF id (see the note below) |
+| `wf094-zelfnaam-null-parameter` | WF-094 (d) | B2 | verwijderd-met-reden | no map key is left to fall back on, so the node's `naam` is the declaration's only name, and since M1 the schema types it as a non-null string: the null form cannot be written (m1.py: "self-name is null or absent") |
 | `wf094-zelfnaam-null-eenheidstelsel` | WF-094 (d) | B2 | verwijderd-met-reden | idem |
 | `wf094-zelfnaam-null-feittype` | WF-094 (d) | B2 | verwijderd-met-reden | idem |
 | `wf094-zelfnaam-null-dimensie` | WF-094 (d) | B2 | verwijderd-met-reden | idem |
@@ -59,13 +59,13 @@ on the rule its directory name declares, as before (gate 3).
 | `wf059-kenmerk-zonder-granulariteit` | WF-059 arm 2 | B5 | verwijderd-met-reden | idem, on a characteristic |
 | `wf059-attribute-without-datatype` | WF-059 arm 1 | B5 | herschreven | the rule holds; the document was rewritten by hand in the M1 shape (an Attribute node with `"datatype": null`, which the schema admits) and is still rejected on WF-059, not by a load error |
 
-The null half of WF-094 on the four nodes that keep their v0 shape at M1
-(`Parameter`, `Eenheidstelsel`, `Feittype`, `Dimensie`) is not unwritable: the
-schema keeps their `naam` typed `["string", "null"]` until the nodes' own
-migration step. A document with `"naam": null` on such a node in its model
-list validates and round-trips under gate 2 (measured 2026-09-23 on the four
-removed witnesses rewritten in the M1 shape). The shared OCaml loader
+The null half of WF-094 on the four nodes that otherwise keep their v0 shape
+at M1 (`Parameter`, `Eenheidstelsel`, `Feittype`, `Dimensie`) is unwritable as
+well: since M1 their `naam` is a non-null string in
+`spec/schema/uchar-ir-v1.schema.json`, because with the map key gone it is the
+declaration's only name. Measured 2026-09-23 on the four removed witnesses
+rewritten in the M1 shape with `"naam": null`: gate 2 refuses each of them
+(`None is not of type 'string'`), and the shared OCaml loader
 (`spec/verifier/lib/loader.ml`, which `ref` and the ASP backend load through as
-well) refuses it with a load error naming the path, so the document cannot enter
-the golden or red corpus; it carries no WF id, so it has no negatief witness
-here.
+well) refuses them at load. No golden, red or negatief document carried a null
+there (237 + 48 + 438 documents, 714 declarations on the four lists).

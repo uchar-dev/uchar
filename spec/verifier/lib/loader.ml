@@ -6,17 +6,18 @@
    discriminator, and every enum value must be a known member. Any
    deviation raises [Error] with the JSON path — never a silent default.
 
-   Three deliberate narrowings relative to bare JSON Schema, all fail-fast:
+   Two deliberate narrowings relative to bare JSON Schema, both fail-fast:
    integer fields accept only canonical integer lexemes (a float-shaped
    "2.0" or an integer beyond native range is a load error, matching the
    byte-identical round-trip discipline of gate 2, which already pins the
-   canonical emitter form); a declaration in one of the four model lists
-   whose node is still v0 (factTypes, parameters, unitSystems, dimensions)
-   must carry a string `naam` — the schema keeps that field nullable until
-   the node's own migration step, but since M1 there is no map key beside
-   it, so a null there is a declaration without a name, which no reader can
-   resolve; and paths are built eagerly, which is quadratic only on
-   pathologically deep (100k+ nesting) documents. *)
+   canonical emitter form); and paths are built eagerly, which is
+   quadratic only on pathologically deep (100k+ nesting) documents.
+
+   One M1 rule is enforced here and in the schema alike: a declaration in
+   one of the four model lists whose node otherwise keeps its v0 shape
+   (factTypes, parameters, unitSystems, dimensions) carries a string
+   `naam`. There is no map key beside it any more, so that field is the
+   declaration's only name. *)
 
 open Ast
 
@@ -909,9 +910,12 @@ let domain path j : string * datatype option =
   let name = str (path / "name") (field path kvs "name") in
   (name, Some (domain_datatype name (path / "datatype") (field path kvs "datatype")))
 
-(* A declaration in a model list whose node is still v0: the list has no map
-   key, so the node's `naam` is the declaration's one name (loader header,
-   second narrowing). *)
+(* A declaration in a model list whose node otherwise keeps its v0 shape:
+   the list has no map key, so the node's `naam` is the declaration's one
+   name, a non-null string since M1 (loader header). The node decoders keep
+   reading `naam` into the AST's `string option` field, the type every
+   reader of this library uses; a null is refused here, so no reader gets
+   [None] from these four lists. *)
 let named path (decode : string -> json -> 'a) (naam : 'a -> string option) j : string * 'a =
   let x = decode path j in
   match naam x with

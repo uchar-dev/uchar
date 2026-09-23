@@ -2924,10 +2924,7 @@
           "const": "Parameter"
         },
         "naam": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         },
         "datatype": {
           "anyOf": [
@@ -2965,10 +2962,7 @@
           "const": "Eenheidstelsel"
         },
         "naam": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         },
         "eenheden": {
           "type": "object",
@@ -3012,10 +3006,7 @@
           "const": "Feittype"
         },
         "naam": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         },
         "wederkerig": {
           "type": "boolean"
@@ -3262,10 +3253,7 @@
           "const": "Dimensie"
         },
         "naam": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         },
         "naamMeervoud": {
           "type": [
