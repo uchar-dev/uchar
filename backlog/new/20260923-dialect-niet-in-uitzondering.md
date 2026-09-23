@@ -70,8 +70,8 @@ ontbreekt.
 
 - (a) Rood-eerst: JUnit-getuigen voor de drie ontkenningsvormen in een
   `Uitzondering op`, voor `niet` in een vlakke `Regel` (gerichte melding),
-  voor de basisregel met `niet` (toegelaten of geweigerd zoals het gelande
-  voorstel zegt), voor het ongedeclareerde kenmerk na strippen, en voor
+  voor de basisregel met `niet` (toegelaten, besluit 2), voor het
+  ongedeclareerde kenmerk na strippen, en voor
   de nooit-afleidende groep (waarschuwing).
 - (b) Eén nieuw golden met `bron.rgs`, eigen casusmateriaal (bijvoorbeeld
   art. 15 en art. 19 lid 1 WW: `heeft geen recht op uitkering` als

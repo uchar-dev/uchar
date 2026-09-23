@@ -36,9 +36,13 @@ Drie gemeten gaten:
   defaults; een `onwaar`-besluit wordt benoemd.
 - (c) Conformance groen op de pin; de uchar-gates ongewijzigd groen.
 
+Het `testDocument`-grammaticadeel zit in dialect-niet-in-uitzondering en
+bereikt regelspraak-java via de gevendorde slice van
+regelspraak-java-dialect-pinbump; het harnasdeel van deze kaart komt dus
+na die pin-bump.
+
 May touch: regelspraak-java (harnas, playground, uitleg, dekking);
-`frontends/regelspraak/**` alleen voor het `testDocument`-grammaticadeel
-als dat niet al in een dialectkaart zit; kaartverplaatsing.
+kaartverplaatsing.
 
 Niet in deze kaart: de dialectvormen; de Drools-lowering (bestaat in de
 uchar-backend; de toolchain-vuurroute behoudt haar luide weigering tot haar
