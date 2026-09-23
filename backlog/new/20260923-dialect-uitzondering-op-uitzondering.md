@@ -6,9 +6,7 @@ kaarten anker-ww-herleving-dragervoorwaarde en dialect-niet-in-uitzondering
 de repo (`../research/dialect-defaults-niet-en-nesting/onderzoek-niet-in-uitzonderingen.md`,
 §8.2, §8.3, §9) en het gelande voorstel
 `spec/proposals/DIALECT-DEFAULTS-NIET-EN-NESTING.md`. Deze kaart draagt de
-maintainersbesluiten van 2026-09-23; waar het voorstel op besluit 4d
-anders luidt, wordt het voorstel gelijkgetrokken (kaart
-voorstel-niet-en-nesting-besluiten), niet deze kaart.
+maintainersbesluiten van 2026-09-23.
 
 Vandaag weigert de resolver `Uitzondering op <naam van een uitzondering>`:
 `ordeningsDefaults` (`RuleChecker.java:206–283`) zoekt de drager alleen
@@ -52,9 +50,7 @@ Catala-frontend vertaalt vertakking onder de wortel al
   insluiting in W), dus zij moet ergens staan; de juridische betekenis van
   een uitzondering is beperkend; hoek B van het anker is de stille fout van
   de andere keuze. Maintainersbesluit 2026-09-23 (besluitvraag, bevestigd):
-  **beperkend met erven, plus `Afwijking van`**. Het gelande voorstel (§10,
-  besluit 4d) kiest zelfstandig geschreven voorwaarden met een
-  waarschuwing en gaat mee via de kaart voorstel-niet-en-nesting-besluiten.
+  **beperkend met erven, plus `Afwijking van`**.
 - 5 Overerving: `Uitzondering op` met een geërfde uitzondering als drager
   wordt luid geweigerd (SUBTYPING §4.4: een geërfde `excepties`-subboom hoort
   bij de geërfde default, het subtype adresseert er niet in). De

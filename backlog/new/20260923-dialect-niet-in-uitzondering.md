@@ -5,9 +5,7 @@ het rapport buiten de repo
 (`../research/dialect-defaults-niet-en-nesting/onderzoek-niet-in-uitzonderingen.md`,
 §8.1 en §9) en het gelande voorstel
 `spec/proposals/DIALECT-DEFAULTS-NIET-EN-NESTING.md`. Deze kaart draagt de
-maintainersbesluiten van 2026-09-23; waar het voorstel op besluit 2 anders
-luidt, wordt het voorstel gelijkgetrokken (kaart
-voorstel-niet-en-nesting-besluiten), niet deze kaart.
+maintainersbesluiten van 2026-09-23.
 
 Vandaag leest het frontend `Een Recht is niet herleefd` als toekenning van
 een kenmerk met de naam "niet herleefd": `NIET` is een naamwoord in
@@ -41,9 +39,7 @@ ontbreekt.
   een naam om aan te hangen). Nooit in een vlakke `Regel` die geen default
   wordt: dat vraagt een tweede schrijver op één doel en een
   botsingssemantiek (rapport §5.7). Maintainersbesluit 2026-09-23
-  (besluitvraag, bevestigd): de ontkende basisregel is **toegestaan**; het
-  gelande voorstel (§10, besluit 2) zegt weigeren en gaat mee via de kaart
-  voorstel-niet-en-nesting-besluiten.
+  (besluitvraag, bevestigd): de ontkende basisregel is **toegestaan**.
 - Besluit 3 (spelling): bijvoeglijk `is niet X`, bezittelijk `heeft geen
   X`, zelfstandig `is geen X` en `is niet een X` — de vormen die voorwaarden
   al kennen (§8.1.8 van de spec, tabel 16), gelezen met hetzelfde
