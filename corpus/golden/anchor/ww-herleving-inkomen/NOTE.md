@@ -326,7 +326,11 @@ maandloon` = 2300,00; `maxdatum` = 2026-11-30; geen `eindigingsdatum`, geen
 
 Feiten: niet werkloos; `maandinkomen` = 1800,00; omstandigheid vervallen met
 `vervaldatum` = 2025-09-01; geen nieuw recht (`nieuw maandloon` = 0,00);
-`maxdatum` = 2026-11-30; geen `eindigingsdatum`.
+`maxdatum` = 2026-11-30; geen `eindigingsdatum`. De `vervaldatum` en de
+`maxdatum` horen bij een recht dat volgens de lezing van `werkloos` als grond
+van art. 15 nooit ontstond; ze staan er bewust, als invoer voor de
+rekenregels, en een datum in de invoer betekent in dit model niet dat er
+een recht was.
 
 - Blokkade, herleving en einde eisen alle drie `werkloos` én 1800,00 >
   2100,00; geen van beide geldt → geen van de drie beslist.
@@ -370,7 +374,11 @@ invoer.
 Feiten: die van case1 zonder `werkloos`: `maandinkomen` = 2500,00;
 omstandigheid vervallen; geen nieuw recht (`nieuw maandloon` = 0,00);
 `eindigingsdatum` = 2025-05-01; `vervaldatum` = 2025-09-01; `maxdatum` =
-2026-11-30.
+2026-11-30. De `eindigingsdatum`, `vervaldatum` en `maxdatum` horen bij een
+recht dat volgens de lezing van `werkloos` als grond van art. 15 nooit
+ontstond; ze staan er bewust, omdat case8 case1 is met één verschil, en een
+`eindigingsdatum` in de invoer betekent in dit model niet dat er een recht
+was.
 
 - Blokkade art. 21-2-a: geen nieuw recht → beslist niet.
 - Herleving art. 21-1: 2500,00 > 2100,00 en de omstandigheid is vervallen,
