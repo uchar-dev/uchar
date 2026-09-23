@@ -4470,19 +4470,28 @@ many strata as the chain is deep.
   reading has no stable model), R3 with merk(W1) = 1 (the ASP reading
   has five stable models).
   So, too, is a recursive creation guarded by a quantifier fold whose
-  range grows under the creation, under *alle* or *geen*, or whose
-  matrix the cycle derives, under *geen* (`IR-SPEC.md` ch. 5.2):
-  "alle opvolgers hebben een rang groter dan 5" and "geen van de
-  opvolgers heeft een rang groter dan 0" over the successors it mints,
-  "geen van de ploegleden heeft een merk groter dan 0" with merk derived
-  from the minted successors, and the same ALLE fold with no bound role
-  — negatief cases `wf046-kwantorvouw-alle-bereik`,
-  `wf046-kwantorvouw-geen-vergelijking`, `wf046-kwantorvouw-geen-matrix`
-  and `wf046-kwantorvouw-bindingloos-bereik`. Before the rule the first,
-  second and fourth minted a chain in the reference interpreter where
-  the ASP reading has no stable model; the third split the two
-  executors without either failing (the reference interpreter minted for
-  W1, the ASP backend did not).
+  range grows under the creation, under *alle*, *geen*, *ten hoogste*
+  or *precies*, or whose matrix the cycle derives, under *geen*, *ten
+  hoogste* or *precies*, or which sits under an enclosing propositional
+  *geen* (`IR-SPEC.md` ch. 5.2): "alle opvolgers hebben een rang groter
+  dan 5" and "geen van de opvolgers heeft een rang groter dan 0" over the
+  successors it mints, "geen van de ploegleden heeft een merk groter dan
+  0" with merk derived from the minted successors, the same ALLE fold
+  with no bound role, "ten hoogste 1" and "precies 1 opvolger heeft een
+  kleur ongelijk aan 7" with kleur input only, "ten hoogste 1" and
+  "precies 1 ploeglid heeft een merk groter dan 0", and "geen van: ten
+  minste 1 opvolger heeft een rang groter dan 0" — negatief cases
+  `wf046-kwantorvouw-alle-bereik`, `wf046-kwantorvouw-geen-vergelijking`,
+  `wf046-kwantorvouw-geen-matrix`, `wf046-kwantorvouw-bindingloos-bereik`,
+  `wf046-kwantorvouw-tenhoogste-bereik`, `wf046-kwantorvouw-precies-bereik`,
+  `wf046-kwantorvouw-tenhoogste-matrix`, `wf046-kwantorvouw-precies-matrix`
+  and `wf046-kwantorvouw-onder-geen`. Before the rule, where the range
+  or an enclosing negation closed the cycle, the reference interpreter
+  minted on a condition that the mint itself falsified (a chain, one
+  successor, or for the bindingless fold one Post) and the ASP reading
+  has no stable model; where only the matrix closed it, the two
+  executors split without either failing (the reference interpreter
+  minted for W1, the ASP backend did not).
 - Well-formed, the monotone parts of the same fold on the same kind of
   cycle (golden `jutterswet-opvolgerquorum`): the creation mints while
   "ten minste 1 opvolger heeft een rang groter dan 3" and "alle
