@@ -235,6 +235,10 @@ vegen alleen `corpus/golden`, dus de pins bewogen niet.
   fault at fire" in de redenregels gelezen moet worden. Het commentaar
   in de lus is gelijkgetrokken. De redenregels zelf zijn onaangeroerd.
 - Geen bestaand corpusdocument of test gewijzigd.
+- Fixronde 1, onder mandaat van de hoofdsessie: **voorstel**
+  `spec/schema/uchar-case-v0.schema.json` (twee beschrijvingen,
+  `e61e6d18`) en de may-touch-verbreding `backends/drools`, alleen
+  javadoc (`ab6711fc`).
 
 ### Registertekst (hoofdsessie)
 
@@ -252,15 +256,20 @@ window in silence (vensterheffing 125, overgangsheffing leeg);"
 
 ### Open punten
 
-1. `spec/schema/uchar-case-v0.schema.json`, beschrijving van
+Stand na fixronde 1: 1, 2 en 4 afgehandeld; 3 gaat naar de lopende
+Drools-lijn.
+
+1. **Afgehandeld in `e61e6d18` (voorstel).**
+   `spec/schema/uchar-case-v0.schema.json`, beschrijving van
    `expectedFault` (beschermd, zone spec): "`drools` against the Drools
    backend's fault-at-fire report" en "present only where the v0 Drools
    backend carries the red-path form and faults at fire". Sinds dit
    document is er een `drools`-pin op een weigering bij het lezen.
    Voorstel: "… against the Drools backend's red-run fault report (a
-   fault at fire, or a hard refusal while the red run reads the case)" en
-   "… carries the red-path form and faults on it".
-2. `backends/drools` (zone van een parallelle kaart), javadoc. In
+   fault at fire, or a hard refusal while the red run reads the case)"
+   en "… carries the red-path form and faults on it".
+2. **Afgehandeld in `ab6711fc`** (alleen commentaartekst).
+   `backends/drools` (zone van een parallelle kaart), javadoc. In
    `CaseRunner.runRood` staat "A fault the loader or a case-input form
    raises before fire is an EXCLUDE (the form is not carried); a fault
    raised AT fire … is the FAULT this gate leg pins", en in de tabel van
@@ -270,13 +279,70 @@ window in silence (vensterheffing 125, overgangsheffing leeg);"
    de javadoc zegt "a form the backend does not carry (an `Excluded` or
    a loader refusal) is an EXCLUDE; anything else raised after the
    build, while reading the case or at fire, is a FAULT".
-3. Ter informatie (Drools-zone, geen crash): de replay-runner meldt deze
-   benoemde weigering als `ERROR …` (rc 3) in beide takken, onder
-   hetzelfde token als een echte crash. In gate 12 speelt het niet:
-   een golden met zo'n datum is al rood in gate 5 (`CASE ERROR`, rc 2).
-4. `spec/schema/uchar-case-v0.schema.json`, beschrijving van `asOfDate`
-   (alleen de beschrijving, geen validatie; zone spec). Voorstel, naar
+3. **Naar de lopende Drools-lijn** (hoofdsessie, 2026-09-23; niet in
+   deze branch). Drools-zone, geen crash: de replay-runner meldt deze
+   benoemde weigering onder hetzelfde token als een echte crash, in
+   beide takken. Letterlijk, op een groene kopie van dit document (de
+   replay slaat een `expectedFault`-case over):
+
+   ```
+   -- exec-tak (groene kopie)
+   ERROR IllegalArgumentException: malformed date '2026-02-30' on 'asOfDate': the field widths are right but the calendar is not (Text '2026-02-30' could not be parsed: Invalid date 'FEBRUARY 30')
+   rc=3
+   -- DRL-tekst-tak (groene kopie)
+   ERROR IllegalArgumentException: malformed date '2026-02-30' on 'asOfDate': the field widths are right but the calendar is not (Text '2026-02-30' could not be parsed: Invalid date 'FEBRUARY 30')
+   rc=3
+   ```
+
+   De oorzaak: `DroolsBackendMain.main` vangt elke
+   `RuntimeException` als `ERROR`, en de datumlezer werpt een
+   `IllegalArgumentException`. In gate 12 speelt het niet, want een
+   golden met zo'n datum is al rood in gate 5 (`CASE ERROR`, rc 2).
+4. **Afgehandeld in `e61e6d18` (voorstel)**, met een eigen formulering
+   (zie Fixronde 1). `spec/schema/uchar-case-v0.schema.json`,
+   beschrijving van `asOfDate` (alleen de beschrijving, geen validatie;
+   zone spec). Voorstel, naar
    het voorbeeld van `Geldigheid` in het IR-schema: "The pattern is a
    shape test and cannot check the calendar: '2026-02-30' matches here
    and is refused one step later, by every executor's case reader at
    load (red witness `corpus/rood/asofdate-kalender`)."
+
+### Fixronde 1 (hoofdsessie, 2026-09-23)
+
+Drie open punten opgelost, onder mandaat van de hoofdsessie, in twee
+commits:
+
+- `e61e6d18`, **beschermd-pad-voorstel**
+  `spec/schema/uchar-case-v0.schema.json`, alleen
+  beschrijvingstekst. Gemeten: de validatiesleutels zijn gelijk
+  (`json.load` van oud en nieuw, zonder de descriptions: identiek).
+  - `expectedFault`: `drools` wordt gematcht "against the Drools
+    backend's red-run fault report: a fault at fire, or a hard refusal
+    while that run reads the case (a date lexeme that names no day)",
+    en is aanwezig "where the v0 Drools backend carries the red-path
+    form and faults on it". Eerst stond er twee keer "at fire".
+  - `asOfDate`: "The pattern checks the field widths, not the calendar:
+    '2026-02-30' matches it. The calendar is checked one layer deeper,
+    by each executor's case reader, which refuses a lexeme that names no
+    day when it reads the case (red witness:
+    corpus/rood/asofdate-kalender)." Er staat bewust niet "a pattern
+    cannot check the calendar", want dat kan wel (zie (b)). Er staat
+    wat dit patroon doet.
+- `ab6711fc`, **may-touch-verbreding** `backends/drools`, alleen
+  commentaartekst in `CaseRunner.java` (de javadoc van `RoodResult` en
+  `runRood`) en `DroolsRoodMain.java` (de FAULT-regel in de tabel).
+  Nu staat er: EXCLUDE is een loaderweigering of een `Excluded` uit de
+  bouw of uit een case-invoervorm. Elke andere runtime-uitzondering na
+  de bouw is FAULT, dus ook een harde weigering bij het lezen van de
+  case. `RoodResult` viel buiten de letter van het mandaat ("runRood
+  en DroolsRoodMain"), maar het is het resultaattype van `runRood` en
+  zei hetzelfde "fault at fire", dus het is meegenomen. Gemeten dat
+  het alleen commentaar is: beide bestanden met het commentaar
+  weggestript zijn gelijk aan HEAD. Tijdens het werk raakte geen
+  andere worktree deze twee bestanden (committed of dirty, alle zes
+  gemeten).
+
+Gates na de fixronde, elk los na `eval $(opam env)`: 1 PASS · 2 PASS
+(280 bestanden, vloer 192) · 4 PASS (640 cases) · 8 PASS (45 rood; 90
+fragmenten; Drools-been 10/35) · 12 PASS (played 182 = pin, DRL-tekst
+161 = pin, JUnit 620: de suite compileert en draait na de javadoc).

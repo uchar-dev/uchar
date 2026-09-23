@@ -135,18 +135,18 @@ vallen; clingo komt op zijn restarm. Dat staat nu in de NOTE.
 
 Elk los, na `eval $(opam env)`. De gates 2–7 en 9–14 draaiden op de
 eerste versie van de gate-commit (`3b86800c`, daarna geamendeerd tot
-`84ed8713`: alleen de getuigezin in de redenregel preciezer). Wat
-daarna kwam raakt alleen die redenregel, een NOTE-alinea en de
-kaarten. Gate 8 draaide opnieuw op `8dd7764b`, gate 1 op de eindstand. 1 PASS · 2 PASS (280 bestanden,
-vloer 192) · 3 PASS (280 schoon; 440 negatief, vloer 350) · 4 PASS
-(640 cases) · 5 PASS (ref-suite 806; 595 cases) · 6 PASS (523
-checks; 595 cases) · 7 PASS (559; 36 overlevers) · 8 PASS (45 rood,
-was 43; 90 fragmenten, was 86; geen bodemzin; Drools-been 10 gepind /
-35 met reden, was 9/34) · 9 PASS (201; 12 goldens) · 10 PASS (409
-tests; 70 goldens) · 11 PASS (29/29/29) · 12 PASS (played 182 = pin,
-DRL-tekst 161 = pin, JUnit 620) · 13 PASS (131 twists, 128 replays,
-25 DRL, 0 overlevers) · 14 PASS (130; 2 goldens). Gate 12 en 13 vegen
-alleen `corpus/golden` (`find corpus/golden` in beide scripts) en
+`84ed8713`: alleen de getuigezin in de redenregel preciezer). Wat daarna
+kwam raakt alleen die redenregel, een NOTE-alinea en de kaarten. Gate 8
+draaide opnieuw op `8dd7764b`, gate 1 op de eindstand. 1 PASS · 2 PASS
+(280 bestanden, vloer 192) · 3 PASS (280 schoon; 440 negatief, vloer
+350) · 4 PASS (640 cases) · 5 PASS (ref-suite 806; 595 cases) · 6 PASS
+(523 checks; 595 cases) · 7 PASS (559; 36 overlevers) · 8 PASS (45 rood,
+was 43; 90 fragmenten, was 86; geen bodemzin; Drools-been 10 gepind / 35
+met reden, was 9/34) · 9 PASS (201; 12 goldens) · 10 PASS (409 tests; 70
+goldens) · 11 PASS (29/29/29) · 12 PASS (played 182 = pin, DRL-tekst 161
+= pin, JUnit 620) · 13 PASS (131 twists, 128 replays, 25 DRL, 0
+overlevers) · 14 PASS (130; 2 goldens). Gate 12 en 13 vegen alleen
+`corpus/golden` (`find corpus/golden` in beide scripts) en
 `check-drools.sh` is onaangeraakt, dus de pins bewogen niet.
 
 ### Beschermd pad en may-touch
@@ -155,7 +155,10 @@ alleen `corpus/golden` (`find corpus/golden` in beide scripts) en
   `leegtest-heel-tijdvak|EXCLUDE …` in de Drools-uitsluitingslijst.
   De twee commentaarblokken in dezelfde commit horen bij de
   asOfDate-kaart (zie daar).
-- Verbreding volgens de aanwijzing van de maintainer: geen.
+- Verbreding volgens de aanwijzing van de maintainer: geen in de
+  eerste ronde. In fixronde 1, onder mandaat van de hoofdsessie:
+  **voorstel** `spec/RUNTIME-SEMANTICS.md` (één rij, `a4fcc645`) en
+  `corpus/golden/jutterswet-waardemelding/NOTE.md` (`ec77dbd3`).
 
 ### Registertekst (hoofdsessie)
 
@@ -166,17 +169,30 @@ carries it." is na deze landing onwaar. Vervangen door:
 "The form is normed in ch. 3.9 but executed by no executor. Since card
 `rood-heeltijdvak-ongenegeerd` (2026-09-23) the red twin
 `corpus/rood/leegtest-heel-tijdvak` (`negatie: false`, otherwise the
-negated twin's document and case) pins that refusal in all three
-executors: ref and the ASP backend by their ch. 3.9 sentence, the
-Drools leg of gate 8 by an EXCLUDE entry naming `Predicaat.periode`. A
-jar from before the loader refusal played the document in both branches
-against the ch. 3.9 hand values, and a mutant that narrows the OCaml
-arms to the negated form passes the negated twin and fails this one."
+negated twin's document and case) holds that refusal in all three
+executors: gate 8 pins the ch. 3.9 sentence in ref and the ASP backend
+and lists the case as a Drools loader EXCLUDE (`Predicaat.periode`; the
+leg checks the category, `LeegNegatieWitnessTest` the key). A jar from
+before the loader refusal played the document in both branches against
+the ch. 3.9 hand values, and a mutant that narrows the OCaml arms to the
+negated form passes the negated twin and fails this one."
+
+Gecontroleerd tegen de nieuwe RUNTIME-SEMANTICS-rij (fixronde 1): die
+zegt "executed by no executor" en "gate 8 pins the OCaml sentence in
+both OCaml executors and lists each case as a Drools loader EXCLUDE".
+De zin hierboven is daarop aangescherpt. Eerst stond er "pins that
+refusal in all three executors … by an EXCLUDE entry naming
+`Predicaat.periode`", en dat beloofde meer dan het been toetst.
 
 ### Open punten
 
-1. `spec/RUNTIME-SEMANTICS.md`, tabelrij "Whole-period qualifier, the
-   **leeg/gevuld** tests" (beschermd, zone spec): "no corpus case" en
+Stand na fixronde 1: 1 en 2 afgehandeld, 3 gemeld en niet gekaart.
+
+1. **Afgehandeld in `a4fcc645` (voorstel).** De gecommitte rij wijkt
+   af van de voorsteltekst hieronder; de commit is maatgevend (zie
+   Fixronde 1). `spec/RUNTIME-SEMANTICS.md`, tabelrij "Whole-period
+   qualifier, the **leeg/gevuld** tests" (beschermd, zone spec): "no
+   corpus case" en
    "implemented in the Drools runtime alone" kloppen niet meer. Voorstel:
    "specified (ch. 3.9), **executed by no executor** — the two OCaml
    executors refuse both tests by name, and since 2026-09-23 the Drools
@@ -190,17 +206,55 @@ arms to the negated form passes the negated twin and fails this one."
    longer lets reach it; the sibling that landed above deliberately did
    not take it along, because a clause with no witness on this side would
    be a green subset".
-2. `corpus/golden/jutterswet-waardemelding/NOTE.md` r. 47–48 (zone
-   golden, buiten may-touch) noemt als rode tweeling alleen
+2. **Afgehandeld in `ec77dbd3`**, met een eigen formulering (zie
+   Fixronde 1). `corpus/golden/jutterswet-waardemelding/NOTE.md`
+   r. 47–48 (zone golden, buiten may-touch) noemde als rode tweeling
+   alleen
    `leegnegatie-heel-tijdvak`. Voorstel: "… is the red twin
    `corpus/rood/leegnegatie-heel-tijdvak`, and for the unnegated test
    `corpus/rood/leegtest-heel-tijdvak`."
-3. Het Drools-been van gate 8 controleert bij een uitsluiting alleen de
-   categorie. Als `Predicaat.periode` morgen een andere EXCLUDE wordt,
-   bijvoorbeeld een transpiler-SKIP, blijft gate 8 groen; alleen de
-   JUnit-getuige ziet het dan. Dat geldt voor alle 35 regels. Het
-   voorstel is een optionele, machinaal getoetste sleutel per regel
-   (bijvoorbeeld een veld tussen categorie en reden, waarvan de
-   EXCLUDE-regel van DroolsRoodMain de tekst moet bevatten). Dat
+3. **Gemeld, niet gekaart** (gatecontractbesluit, hoofdsessie
+   2026-09-23). Het Drools-been van gate 8 controleert bij een
+   uitsluiting alleen de categorie. Als `Predicaat.periode` morgen een
+   andere EXCLUDE wordt, bijvoorbeeld een transpiler-SKIP, blijft gate 8
+   groen; alleen de JUnit-getuige ziet het dan. Dat geldt voor alle 35
+   regels. Het voorstel is een optionele, machinaal getoetste sleutel
+   per regel (bijvoorbeeld een veld tussen categorie en reden, waarvan
+   de EXCLUDE-regel van DroolsRoodMain de tekst moet bevatten). Dat
    verandert het contract van de gate, dus het is een besluit van de
    maintainer.
+
+### Fixronde 1 (hoofdsessie, 2026-09-23)
+
+Twee open punten opgelost, elk met een eigen commit, onder mandaat van
+de hoofdsessie:
+
+- `a4fcc645`, **beschermd-pad-voorstel** `spec/RUNTIME-SEMANTICS.md`,
+  alleen de rij "Whole-period qualifier, the **leeg/gevuld** tests" in
+  ch. 3.12. Ze droeg "not executed by either OCaml executor … no corpus
+  case" en "implemented in the Drools runtime alone". Nu staat er:
+  door geen uitvoerder uitgevoerd, alle drie weigeren benoemd. De
+  OCaml-uitvoerders doen dat in dezelfde woorden, de Drools-loader op
+  `Predicaat.negatie` (drempel open, ch. 1.2) en sinds vandaag op
+  `Predicaat.periode` (ref voert geen van beide vouwen uit). Twee rode
+  documenten houden de weigeringen vast, en gate 8 pint de OCaml-zin
+  en houdt Drools als EXCLUDE. De drempelclausule staat in de
+  Drools-runtime, maar geen document bereikt haar zolang de loader
+  weigert. De rest van de rij is ongewijzigd.
+- `ec77dbd3`, `corpus/golden/jutterswet-waardemelding/NOTE.md`
+  (**may-touch-verbreding**, alleen de NOTE; `ir.json` en `case.json`
+  onaangeroerd). De NOTE noemt nu beide rode tweelingen, elk met de
+  eigen grond.
+
+Buiten het mandaat gezien en niet aangeraakt:
+`spec/RUNTIME-SEMANTICS.md` r. 96 (ch. 1.2, de leeg/gevuld-rij) zegt
+over de genegeerde test onder heel-tijdvak "ref and both Drools
+branches refuse the form by name until it is chosen". Dat klopt, maar
+de ASP-backend weigert de vorm sinds de clingo-leeg-negatie-kaart ook,
+en de zin noemt hem niet. Het is een onvolledigheid, geen onwaarheid;
+de hoofdsessie weegt dat bij de landing.
+
+Gates na de fixronde, elk los na `eval $(opam env)`: 1 PASS · 2 PASS
+(280 bestanden, vloer 192) · 4 PASS (640 cases) · 8 PASS (45 rood; 90
+fragmenten, geen bodemzin; Drools-been 10 gepind / 35 met reden) · 12
+PASS (played 182 = pin, DRL-tekst 161 = pin, JUnit 620).
