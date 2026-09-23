@@ -4264,8 +4264,9 @@ every form that reads it — in three kinds:
   comparisons; the leeg/gevuld predicates read negatively, below) by a
   form whose write is *irrevocable* — a characteristic attribution
   (monotone, ch. 5.3), a consistency or uniqueness (channel facts are
-  never retracted, ch. 5.6), or a creation. Such a form must evaluate strictly above the
-  producers of what it reads: a transient it acted on would persist.
+  never retracted, ch. 5.6), or a creation. Such a form must evaluate
+  strictly above the producers of what it reads: a transient it acted
+  on would persist.
   Within a WF-045-admissible recursive-creation cycle the strictness is
   discharged by the one-generation-per-instance progression (ch. 5.5)
   rather than a stratum boundary.

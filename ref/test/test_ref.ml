@@ -875,9 +875,11 @@ let () =
   check "WV-6.4-d-x0" (run "0" = (false, true, false, true));
   check "WV-6.4-d-x1" (run "1" = (true, false, true, false))
 
-(* WV-6.4-e: an emptiness test on a derived attribute is a stratum-strict
-   edge — the outcome is rule-order-independent (the verification round's
-   counterexample, locked) *)
+(* WV-6.4-e: an emptiness test on a derived attribute by a characteristic
+   rule is a negative edge (stratum-strict until 2026-09-23, when every
+   read under a leeg/gevuld test became negative) — either way the reader
+   sits above the writer and the outcome is rule-order-independent (the
+   verification round's counterexample, locked) *)
 let () =
   let writer =
     rr "zet a" Gelijkstelling (Some (aref "a" "Ding" num0)) (Some (litv "5" num0)) None

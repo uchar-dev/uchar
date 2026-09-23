@@ -370,11 +370,14 @@ NOT close that card's ALLE-matrix gap."
 
 ### May-touch
 
-Niets buiten de opgegeven zones. `ref/test/test_ref.ml` (twee nieuwe
-voorbeelden, geen bestaande gewijzigd) valt onder (d). IR-SPEC ch. 5.5
-valt onder `spec/IR-SPEC.md`. Bestaande tests en corpusdocumenten zijn
-niet gewijzigd. Clingo, Drools, frontends, golden, rood, scripts en
-schema zijn niet aangeraakt.
+`spec/RUNTIME-SEMANTICS.md` stond niet in de may-touch van de kaart zelf;
+het mandaat kwam uit de opdracht van de hoofdsessie, die het expliciet
+noemde. `ref/test/test_ref.ml`: twee nieuwe voorbeelden onder (d), en in
+fixronde 2 het commentaar bij WV-6.4-e ("stratum-strict edge"), alleen
+commentaar, onder mandaat van de hoofdsessie. IR-SPEC ch. 5.5 valt onder
+`spec/IR-SPEC.md`. Verder zijn geen bestaande tests of corpusdocumenten
+gewijzigd, en clingo, Drools, frontends, rood, scripts en schema zijn
+niet aangeraakt.
 
 ### Open punten
 

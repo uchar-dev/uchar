@@ -7532,8 +7532,10 @@ minted, and it is refused because the decision counts both polarities; it
 is the witness that separates the decision from the narrower reading "only
 a test that holds on absence is negative". In
 `wf046-leegtest-kwantorvouw-recursieve-creatie` the test is the matrix of an
-ALLE fold over the successors that the creation mints. Off a cycle the rule orders a reader strictly above the writers
-of its operand, which also closes an order dependence in the reference
+ALLE fold over the successors that the creation mints.
+
+Off a cycle the rule orders a reader strictly above the writers of its
+operand, which also closes an order dependence in the reference
 interpreter: a leeg test in an ATTRIBUTE rule on a derived attribute shared
 its writer's stratum, and the reader's position in the document decided
 whether it acted on the transient leeg (`RUNTIME-SEMANTICS.md` ch. 6.4).
