@@ -1720,7 +1720,8 @@ final class ExpressieBouwer {
      *  NOTHING declared qualifies — a bare name kept as a {@link Expr.VariabeleRef}, or an unresolved one — so
      *  a parameter, a "Daarbij geldt" variable or an attribute that shares a type's name is never re-read. The
      *  way out is named from the rule's subject when exactly one role reaches the type from it
-     *  ({@link RegelSpraakModel#verbindendeRolBinding}); otherwise the sentence gives the general spelling.
+     *  ({@link RegelSpraakModel#verbindendeRolBinding}) and that role is plural; otherwise the sentence gives
+     *  the general spelling.
      *  Null when the operand names no type. */
     private String tellingOverObjecttype(List<Expr> argumenten, FunctieAanroepContext f) {
         if (!(f instanceof AantalFuncContext af) || argumenten.size() != 1) return null;
@@ -1733,10 +1734,12 @@ final class ExpressieBouwer {
         RegelSpraakModel.RolBindingRef paar = model.verbindendeRolBinding(huidigSubject, type);
         RegelSpraakModel.Feittype ft = paar == null ? null : model.feittypen.get(paar.feittype());
         if (ft != null) {
-            String rol = paar.rol();
+            // Only a PLURAL role is a way out: the sentence says a count needs one, and counting a to-one role
+            // ("het aantal aanmelders" of a Vondst, which has one) answers 0 or 1, never a population.
             for (RegelSpraakModel.Rol r : ft.rollen)
-                if (r.naam().equals(paar.rol()) && r.meervoud() != null) rol = r.meervoud();
-            uitweg = " — vanaf " + huidigSubject.naam + " is dat de rol '" + rol + "' (feittype " + ft.naam + ")";
+                if (r.naam().equals(paar.rol()) && r.meervoudig())
+                    uitweg = " — vanaf " + huidigSubject.naam + " is dat de rol '"
+                            + (r.meervoud() != null ? r.meervoud() : r.naam()) + "' (feittype " + ft.naam + ")";
         }
         return "telling zonder bron, over een objecttype: '" + bron(f).snippet() + "' noemt het objecttype "
                 + type.naam + " zonder onderwerp waarvandaan het geteld wordt, en zou zo alle instanties van "

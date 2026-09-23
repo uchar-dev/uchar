@@ -805,7 +805,8 @@ than the card (WF-037's source-less-count arm), but its sentence said that the
 operand "names no instances to count", which is untrue for an author who named
 a population. The sentence now states the norm and the way out — count through
 a role from the rule's subject, naming that role when exactly one reaches the
-type from it — for every spelling that reaches it: bare, with an article or "alle", the
+type from it and it is plural (a to-one role counts 0 or 1, never a
+population) — for every spelling that reaches it: bare, with an article or "alle", the
 type's own name, the plural in lower case, in parentheses. Only an operand that
 resolved to nothing declared qualifies, so a parameter or a "Daarbij geldt"
 variable that shares a type's name keeps the generic sentence. A subselection

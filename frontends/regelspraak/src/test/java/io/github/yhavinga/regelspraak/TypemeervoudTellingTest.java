@@ -91,6 +91,22 @@ class TypemeervoudTellingTest {
         assertFalse(ds.get(0).message().contains("vanaf Jutter is dat de rol"), ds.get(0).message());
     }
 
+    @Test void een_enkelvoudige_rol_wordt_niet_als_uitweg_genoemd() {
+        // From Vondst the one role reaching Jutter is 'aanmelder', and a Vondst has ONE aanmelder: counting it
+        // is no count over a plural role, which is what the sentence itself says a count needs.
+        String src = MODEL + """
+
+            Regel gewicht
+                geldig altijd
+                    Het gewicht van een Vondst moet berekend worden als het aantal Jutters.
+            """;
+        RegelSpraakModel m = Resolver.resolve(src);
+        List<Diagnostic> ds = overType(m);
+        assertEquals(1, ds.size(), () -> "kreeg: " + m.diagnostics);
+        assertTrue(ds.get(0).message().contains("noemt het objecttype Jutter"), ds.get(0).message());
+        assertFalse(ds.get(0).message().contains("is dat de rol"), ds.get(0).message());
+    }
+
     @Test void de_rolteling_blijft_schoon() {
         RegelSpraakModel m = Resolver.resolve(MODEL + regel("het aantal vondsten van de Jutter"));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
