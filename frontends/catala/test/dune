@@ -1,6 +1,6 @@
 (executable
  (name suite)
- (libraries unix))
+ (libraries unix yojson uchar-ir-v0 catala_frontend_lib))
 
 ; The end-to-end plugin suite. It drives the plugin plus the three
 ; workspace executors (verifier, reference runner, clingo runner) over

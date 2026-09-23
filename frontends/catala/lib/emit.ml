@@ -162,7 +162,10 @@ let rec expr (e : expr) : json =
       node "VariabeleRef" [ ("naam", so naam); typ t; bron br ]
   | Constante { naam; typ = t; bron = br } ->
       node "Constante" [ ("naam", so naam); typ t; bron br ]
-  | Expr_onopgelost { typ = t; bron = br } -> node "Onopgelost" [ typ t; bron br ]
+  (* The translator builds no marker, and a written one would need a WARNING
+     naming its bron in [diagnostics] (WF-113 (b)), which this serialiser
+     never writes: it refuses like any node the skeleton never builds. *)
+  | Expr_onopgelost _ -> failwith "Emit.expr: node not produced by the skeleton: Onopgelost"
   | Construct { typ = t; constructor_; argument; bron = br } ->
       node "Construct"
         [ ("type", opt datatype t); ("constructor", s constructor_);
@@ -274,7 +277,9 @@ and conditie (c : conditie) : json =
         ([ ("kenmerk", so kenmerk); ("navigatie", so navigatie);
            ("negatie", b negatie); ("eigenaar", so eigenaar); periode p; bron br ]
         @ ext)
-  | Conditie_onopgelost { bron = br } -> node "Onopgelost" [ bron br ]
+  (* no marker either: see the expression arm *)
+  | Conditie_onopgelost _ ->
+      failwith "Emit.conditie: condition shape not produced by the skeleton: Onopgelost"
   | _ -> failwith "Emit.conditie: condition shape not produced by the skeleton"
 
 let geldigheid (g : geldigheid) : json =
@@ -467,9 +472,29 @@ let function_def (fd : function_def) : json =
    order. functionDefs is an extension list, written only when non-empty;
    prioritizedDefaults is written whole, as it always was. The plugin
    builds no parameter, unit system, dimension, timeline, day kind or
-   diagnostic, so those lists are empty; no Onopgelost is ever built
-   either, so no diagnostic has anything to account for (WF-113). *)
+   diagnostic, so those lists are written empty, and a filled one refuses:
+   written as [] it would drop what it held without a word. The serialiser
+   refuses an Onopgelost as well, so no written document holds a marker a
+   diagnostic would have to account for (WF-113). *)
 let document (d : document) : json =
+  let unfilled list = function
+    | [] -> ()
+    | _ -> failwith (Printf.sprintf "Emit: the document fills %s, which the plugin never builds" list)
+  in
+  unfilled "parameters" d.parameters;
+  unfilled "unitSystems" d.eenheidstelsels;
+  unfilled "dimensions" d.dimensies;
+  unfilled "timelines" d.tijdlijnen;
+  unfilled "dayKinds" d.dagsoorten;
+  unfilled "dagsoortPerEenheid" d.dagsoort_per_eenheid;
+  unfilled "resolvedDagsoorten" d.resolved_dagsoorten;
+  unfilled "verdelingen" d.verdelingen;
+  unfilled "uniciteiten" d.uniciteiten;
+  unfilled "uniciteitUnies" d.uniciteit_unies;
+  unfilled "feitCreaties" d.feit_creaties;
+  unfilled "resolvedStartpunten" d.resolved_startpunten;
+  unfilled "regelGroepen" d.regel_groepen;
+  unfilled "diagnostics" d.diagnostics;
   let function_defs =
     match d.function_defs with [] -> [] | fds -> [ ("functionDefs", `List (List.map function_def fds)) ]
   in

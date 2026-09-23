@@ -409,5 +409,67 @@ let () =
         (code <> 0 && contains ~needle o)
         (Printf.sprintf "exit %d, wanted %S in:\n%s" code needle o))
     refusals;
+  (* The serialiser's own refusals, which no Catala source reaches: the
+     translator builds no Onopgelost and fills none of the lists the document
+     writes empty, so an E2E run never meets these arms. A loaded document
+     drives them instead. A marker written without its WARNING fails WF-113
+     (b) at the verifier, and a filled list written as [] drops what it held
+     without a word, so each has to refuse at the serialiser. *)
+  let m1_doc ?(parameters = "") ?(regels = "") ?(diagnostics = "") () =
+    Printf.sprintf
+      {|{ "format": "uchar-ir-v1",
+  "model": { "objectTypes": [], "factTypes": [], "parameters": [%s], "domains": [],
+    "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": [],
+    "dagsoortPerEenheid": {} },
+  "rules": { "resolvedRegels": [%s], "resolvedDagsoorten": [], "objectCreaties": [],
+    "verdelingen": [], "consistenties": [], "uniciteiten": [], "uniciteitUnies": [],
+    "feitCreaties": [], "resolvedStartpunten": [], "regelGroepen": [] },
+  "diagnostics": [%s] }|}
+      parameters regels diagnostics
+  in
+  let regel ~waarde ~voorwaarde =
+    Printf.sprintf
+      {|{ "node": "ResolvedRegel", "naam": "r", "soort": null, "doel": null,
+  "waarde": %s, "voorwaarde": %s, "geldigheid": null }|}
+      waarde voorwaarde
+  in
+  let emit_refusals =
+    [ ("an expression Onopgelost",
+       m1_doc
+         ~regels:
+           (regel ~voorwaarde:"null"
+              ~waarde:{|{ "node": "Onopgelost", "type": null, "bron": "de onbekende waarde" }|})
+         (),
+       "Onopgelost");
+      ("a condition Onopgelost",
+       m1_doc
+         ~regels:
+           (regel ~waarde:"null"
+              ~voorwaarde:{|{ "node": "Onopgelost", "bron": "de onbekende voorwaarde" }|})
+         (),
+       "Onopgelost");
+      ("a filled diagnostics list",
+       m1_doc
+         ~diagnostics:
+           {|{ "node": "Diagnostic", "severity": "WARNING", "message": "een melding", "line": 1 }|}
+         (),
+       "fills diagnostics");
+      ("a filled parameters list",
+       m1_doc
+         ~parameters:
+           {|{ "node": "Parameter", "naam": "drempel",
+  "datatype": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
+  "granulariteit": null }|}
+         (),
+       "fills parameters") ]
+  in
+  List.iter
+    (fun (what, text, needle) ->
+      Printf.printf "[emit-refuse] %s\n%!" what;
+      let name = what ^ " : the serialiser refuses naming " ^ needle in
+      match Catala_frontend_lib.Emit.to_string (Ir_v0.Loader.document (Yojson.Safe.from_string text)) with
+      | (_ : string) -> check name false "the serialiser wrote a document"
+      | exception Failure m -> check name (contains ~needle m) m)
+    emit_refusals;
   Printf.printf "\n%d checks, %d failures\n%!" !ntests !failures;
   if !failures > 0 then exit 1
