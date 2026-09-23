@@ -59,7 +59,7 @@ die rebase. Metingen uit de rondes 1 tot en met 4 zijn gedaan op de oude
 basis `8dd05e25`; de getallen op de nieuwe basis staan in fixronde 5.*
 
 Alle acceptatiepunten gehaald; alle veertien gates groen, elk los
-gedraaid op `84cf4214`. Fix en getuigen zitten in één commit tussen
+gedraaid op `66a4c27c`. Fix en getuigen zitten in één commit tussen
 claim en afsluiting (`ref: de caselader weigert misvormde lexemen bij
 het laden, met positie`). Onder de maintaineraanwijzing van 2026-09-23
 (bijvangst in dezelfde zone of hetzelfde mechanisme meteen mee) is de
@@ -288,7 +288,7 @@ exactly through clingo`); gate 8 uitvoer identiek (`43 red cases …; 86
 pinned fragments cite none of the 36 listed bottom sentences`, Drools-
 been `9 fault-pinned, 34 not-carried`).
 
-**Gates** (elk los, na `eval $(opam env)`, op `84cf4214`): 1 PASS; 2
+**Gates** (elk los, na `eval $(opam env)`, op `66a4c27c`): 1 PASS; 2
 PASS (278 bestanden, floor 192); 3 PASS (278 golden / 440 negatief,
 floor 350); 4 PASS (638 cases); 5 PASS (ref-suite 847, floor 489; 595
 cases, floor 427); 6 PASS (523 checks, 595 cases); 7 PASS (559 + 36
@@ -309,9 +309,9 @@ slotregel, alleen toegevoegd, plus de eigen getuigen van deze kaart
 bijgesteld); `corpus/rood/inputdatum-kalender/` (nieuw, open punt 4 van
 de eerste ronde, op aanwijzing van de hoofdsessie); en, uitsluitend als
 beschermd-pad-VOORSTEL, `scripts/check-case-schema.sh` (commits
-`d6e9d1c8`, `cf43e54f` en `9a22704e`) en `scripts/check-ir-schema.sh`
-(commit `785b8248`, fixronde 3, en commentaar in `cf43e54f` en
-`9a22704e`). Onaangeroerd: `ref/lib/value.ml` (dus ook de
+`a118fdc4`, `b76af45b` en `e6c3b413`) en `scripts/check-ir-schema.sh`
+(commit `98884c2e`, fixronde 3, en commentaar in `b76af45b` en
+`e6c3b413`). Onaangeroerd: `ref/lib/value.ml` (dus ook de
 redenen van de lezers), `backends/**`, `frontends/**`, `spec/**`, de
 rest van `corpus/**` en `scripts/**`. Samenloop: de parallelle
 verifier-kaart raakt `ref/lib/eval.ml` en `ref/test/test_ref.ml` ook
@@ -381,7 +381,7 @@ refuses".
 ### Fixronde 1 (hoofdsessie, 2026-09-23)
 
 **Open punt 4: het rode document `corpus/rood/inputdatum-kalender`**
-(commit `d65796cb`). `ir.json` is `jutterswet-bergingsklok` byte voor byte
+(commit `74b40103`). `ir.json` is `jutterswet-bergingsklok` byte voor byte
 (`cmp`); `case1.json` is case2 van die golden met één waarde anders,
 `P4.meldingsdatum` = `"2026-02-30"`, die het case-schema doorlaat; NOTE met
 handmatige uitleg. Pins: ref en clingo `P4.meldingsdatum "2026-02-30" is
@@ -409,7 +409,7 @@ de rood-duo-kaart, nog niet op deze branch) rekent een benoemde weigering
 van de caselezer tot FAULT en eist voor een pin de eigen zin zonder
 platformtekst; deze pin voldoet daaraan.
 
-**Open punt 3: positiedragende vormweigeringen** (commit `a65bae5c`). De
+**Open punt 3: positiedragende vormweigeringen** (commit `df683743`). De
 strikte helpers `obj`, `str`, `list_` en `field` dragen een positie en
 tonen wat ze vonden (`… : expected a string, got 20260310`); een veld en
 zijn JSON-soort worden in één aanroep gelezen (`str_field`, `obj_field`,
@@ -444,7 +444,7 @@ haar case en IR, afgespeeld met de runners van deze branch: `oracle:
 expected fault observed at load (…)` rc 0, clingo idem.
 
 Rood-eerst, de hele set nieuwe en bijgestelde getuigen tegen de lader van
-vóór deze stap (`d65796cb`), suite van na de stap:
+vóór deze stap (`74b40103`), suite van na de stap:
 
 ```
 FAIL caselader-lexeem-constructorpayload-datum (got: V1.status "10-03-2026" is not the uchar-case-v0 date lexeme yyyy-mm-dd (malformed date lexeme "10-03-2026" (expected ISO yyyy-mm-dd)))
@@ -532,14 +532,14 @@ payload op de constructorpositie `2`; MV10 tijdlijnlijst op het attribuut
 `2`; MV11a/b/c de drie kruiscontroles zonder positie, elk `1`.
 
 **Eerste extra item: het commentaar bij `periode_onder_telkwantor`**
-(commit `9bf590ff`, alleen commentaar, regels identiek aan basis
+(commit `41ae5a22`, alleen commentaar, regels identiek aan basis
 `8dd05e25` en daar geverifieerd). De meting van 2026-09-20 (de oude
 DRL-weigerzin) en die van de vouw op 2026-09-23 heten nu metingen van vóór
 de kaart drools-venster-vouwtoets, met de nieuwe stand erbij: beide
 Drools-takken spelen het venster onder ALLE en weigeren het bij naam onder
 GEEN en de tellende kwantoren, met WF-112, in samenstelling en vouw.
 
-**Tweede extra item: WF-022 in ref** (commit `8dccc160`). Een platte
+**Tweede extra item: WF-022 in ref** (commit `287cecaf`). Een platte
 KENMERKTOEKENNING met een andere waarde dan de constante `waar` weigert nu
 vóór er een onderwerp genomen wordt, met de test van de verifier zelf (het
 literal `waar` getypt Booleaan):
@@ -569,13 +569,13 @@ moet dragen (gate 3 weigert het); sweep ongewijzigd.
 
 ### Fixronde 2 (lens-adviezen, 2026-09-23; oordeel MERGEN)
 
-1. **Overlevende tellermutant** (commit `7f1a5fe4`). Getuigen `1.5/2` en
+1. **Overlevende tellermutant** (commit `1f34aa5b`). Getuigen `1.5/2` en
    `-/3` op `V1.gewicht`; tegen de lensmutant (`digits num && …` → `ignore
    num; …`): `FAIL caselader-lexeem-attribuut-getal-teller-decimaal
    (escaped the loader as Value.Fault: malformed number lexeme "1.5/2")`,
    idem `"-/3"`, `2 failure(s)`; herstel `cmp identiek`, 919 groen.
-2. **Gate 4 en de afsluitende newline** (commit `d6e9d1c8`, BESCHERMD-PAD-
-   VOORSTEL in `scripts/check-case-schema.sh`; commentaren in `28cac5b6`).
+2. **Gate 4 en de afsluitende newline** (commit `a118fdc4`, BESCHERMD-PAD-
+   VOORSTEL in `scripts/check-case-schema.sh`; commentaren in `3e402fe1`).
    Gemeten met vier tijdelijke cases naast `jutterswet-bergingsklok`
    (niet gecommit, na de meting verwijderd): met het oude script `PASS
    (schema valid; 643 case file(s) validate)`, terwijl de lader elk
@@ -587,8 +587,8 @@ moet dragen (gate 3 weigert het); sweep ongewijzigd.
    (schema valid; 639 case file(s) validate)`. De testkop en het
    commentaar van het getalhek zeggen nu wat onder beide lezingen waar is.
    Gate 2 heeft hetzelfde gat: open punt 3.
-3. **Registerzin** (commit `0899b1fd`): versmald, zie boven.
-4. **Roosterweigering** (commit `b3fa110e`). De lader vraagt het rooster
+3. **Registerzin** (commit `560acca6`): versmald, zie boven.
+4. **Roosterweigering** (commit `9ee362f5`). De lader vraagt het rooster
    zelf af en noemt het, als v0-grens: `V1.tarief: the declared grid is
    DAG, which every day boundary sits on, yet this loader checks a
    timeline's grid through the calendar bucketing and v0 defines buckets
@@ -605,15 +605,15 @@ moet dragen (gate 3 weigert het); sweep ongewijzigd.
    indeling) `1 failure(s)` (`escaped … bucketing is defined for month and
    year only (ch. 3.2)`), MG2 (roosternaam vast op WEEK) `1 failure(s)`;
    herstel `cmp identiek`, 921 groen.
-5. **Payload-achtervoegsel**: al gedaan in fixronde 1 (`a65bae5c`,
+5. **Payload-achtervoegsel**: al gedaan in fixronde 1 (`df683743`,
    `V1.status.payload`), vóór het advies kwam; getuigen
    `caselader-lexeem-constructorpayload-datum` en
    `caselader-vorm-payload-geen-object`, mutant MV9. Geen aparte commit.
-6. **May-touch** (commit `c69416d8`): de paragraaf klopt nu met de branch,
+6. **May-touch** (commit `ab3e2840`): de paragraaf klopt nu met de branch,
    met de samenloop en de gate-5-afspraak.
 
 **Gates na fixronde 2** (elk los, na `eval $(opam env)`, op de codetip
-`b3fa110e`; daarna alleen kaartcommits): 1 PASS; 2 PASS (279 bestanden,
+`9ee362f5`; daarna alleen kaartcommits): 1 PASS; 2 PASS (279 bestanden,
 floor 192); 3 PASS (279 schoon / 440 negatief, floor 350); 4 PASS (639
 cases); 5 PASS (**ref-suite 921**, floor 489; 595 cases, floor 427); 6
 PASS (523 checks, 595 cases; uitvoer byte-identiek aan main); 7 PASS (559
@@ -622,8 +622,8 @@ Drools 10 fault-pinned, 34 not-carried); 9 PASS (201 checks, 12
 goldens); 11 PASS (ref 29, clingo 29, Drools 29 PLAYED); 13 PASS (131
 twists over 27 goldens, 128 replays, 25 DRL-played, 0 overlevers); 14 PASS
 (130 checks, 2 goldens). Gates 10 en 12 raken geen ref-code en liepen
-laatst op `84cf4214` groen (409 tests / 70 goldens; played 182, DRL 161,
-JUnit 620). Sweep ref en clingo over 639 cases op `b3fa110e`: tegenover
+laatst op `66a4c27c` groen (409 tests / 70 goldens; played 182, DRL 161,
+JUnit 620). Sweep ref en clingo over 639 cases op `9ee362f5`: tegenover
 main verschilt alleen `inputdatum-kalender` (main rc 1 evaluatiefout, hier
 rc 0 fault bij het laden); asOfDate-lexeemzin `cmp` identiek met main.
 
@@ -635,7 +635,7 @@ deze kaart). Na de rebase telt gate 8 één rood document meer dan main.
 
 ### Fixronde 3 (hoofdsessie, 2026-09-23)
 
-**Open punt 3: gate 2 en de afsluitende newline** (commit `785b8248`,
+**Open punt 3: gate 2 en de afsluitende newline** (commit `98884c2e`,
 BESCHERMD-PAD-VOORSTEL in `scripts/check-ir-schema.sh`). Hetzelfde
 voorstel als voor gate 4: de corpuscontrole en de patroonzelftest van
 gate 2 gebruiken een validator die `pattern` met `re.fullmatch` toetst.
@@ -660,17 +660,17 @@ standaardvalidator: `FAIL: pattern self-test, Geldigheid.vanaf =
 14 voeren het serialiserende deel van dit script uit; dat deel is
 onveranderd en beide bleven groen.
 
-Gates na fixronde 3 (elk los, op `785b8248`; daarna alleen deze
+Gates na fixronde 3 (elk los, op `98884c2e`; daarna alleen deze
 kaartcommit): 1 PASS; 2 PASS (26 zelftestrijen, 279 bestanden, floor
 192); 3 PASS (279 schoon / 440 negatief, floor 350); 9 PASS (201 checks,
 12 goldens); 14 PASS (130 checks, 2 goldens). Fixronde 3 raakte geen
 code onder `ref/`; de uitslagen van de gates 4 tot en met 8, 11 en 13 op
-`b3fa110e` blijven gelden (suite 921).
+`9ee362f5` blijven gelden (suite 921).
 
 ### Fixronde 4 (hoofdsessie, 2026-09-23)
 
 **Open punt 3: een vaste getuige voor het gate-4-voorstel** (commit
-`cf43e54f`, BESCHERMD-PAD-VOORSTEL in `scripts/check-case-schema.sh`). Naar
+`b76af45b`, BESCHERMD-PAD-VOORSTEL in `scripts/check-case-schema.sh`). Naar
 het model van gate 2 houdt gate 4 nu een patroonzelftest: een klem op het
 patroonoppervlak van het case-schema (de tien posities: asOfDate, de
 periodegrenzen van kenmerktijdlijnen, de waardevarianten number, date en
@@ -700,13 +700,13 @@ expected refuse`. Het commentaar in het gate-2-script dat de zelftest
 voor de case-patronen nog als eigen kaart noemde, zegt nu dat gate 4 ze
 sinds 2026-09-23 zelf houdt.
 
-Gates na fixronde 4 (elk los, op `cf43e54f`; daarna alleen deze
+Gates na fixronde 4 (elk los, op `b76af45b`; daarna alleen deze
 kaartcommit): 1 PASS; 4 PASS (92 zelftestrijen, 639 cases); 2 PASS (26
 zelftestrijen, 279 bestanden; alleen een commentaarregel veranderd).
 
 ### Fixronde 5 (lensronde 2, oordeel MERGEN; laatste ronde vóór de merge)
 
-1. **WF-022-teksten** (commit `ec675812`). ref toetst de waardeclausule op
+1. **WF-022-teksten** (commit `1240a2f4`). ref toetst de waardeclausule op
    de soort, de verifier op een kenmerkdoel. Nagemeten (lensmeting V7):
    `jutterswet-penningdrempel` met een KENMERKTOEKENNING op het attribuut
    `aantal aangemelde vondsten`, getypeerd als dat attribuut, waarde
@@ -725,34 +725,34 @@ zelftestrijen, 279 bestanden; alleen een commentaarregel veranderd).
    Rood-eerst: de drie bestaande WF-022-getuigen met de nieuwe zin en een
    nieuwe getuige voor de V7-vorm vielen onder de oude zin (`3 failure(s)`),
    daarna groen. V8 en V11 staan als open punten 5 en 6.
-2. **Beide helften van de constante** (commit `d7b97f1d`). Getuigen
+2. **Beide helften van de constante** (commit `edf69873`). Getuigen
    `waar` getypt Tekst en `Waar` getypt Booleaan (beide weigeren). Onder
    MW3 (typehelft weg): `FAIL WF-022-kenmerk-waar-als-tekst-weigert (no
    fault at all; herleefd on R1: true, on R2: false)`, `1 failure(s)`; onder
    MW4 (lexeem hoofdletterongevoelig): `FAIL
    WF-022-kenmerk-hoofdletter-weigert (no fault at all; herleefd on R1:
    true, on R2: false)`, `1 failure(s)`; herstel `cmp identiek`.
-3. **Fullmatch-commentaar** (commit `9a22704e`, voorstel in beide
+3. **Fullmatch-commentaar** (commit `e6c3b413`, voorstel in beide
    scripts). Nagemeten met node: `^a$\n?` op `"a\n"`, `^\d+$` op
    U+0663 en `^\w+$` op `é` matchen in Python heel en falen in ECMA-262;
    voor de drie gedragen patronen geen verschil op 1437 paren (beide
    zelftesttabellen en elk corpuslexeem van deze soorten; de lens telde
    1449 op haar set). Het commentaar beperkt zich daartoe en zegt dat de
    zelftests een overstap van `[0-9]` naar `\d` niet zien (open punt 7).
-4. **Vondst afgekapt** (commit `be639dc5`). `got …` houdt op na 80 bytes,
+4. **Vondst afgekapt** (commit `f30ca136`). `got …` houdt op na 80 bytes,
    op een tekengrens, met `…`: `<root>: expected an object, got
    [1,2,3,…,28,29,3…` in plaats van de hele lijst. Getuigen: de lijst van
    veertig getallen en een reeks van zestig é's (afgekapt na negenendertig
    hele é's). MK1 (geen afkapping) `2 failure(s)`, MK2 (zonder tekengrens)
    `1 failure(s)` met een half teken in de zin; herstel `cmp identiek`.
-5. **Leeg instantielabel** (commit `a2106c2a`). `input.instances[0].label:
+5. **Leeg instantielabel** (commit `2e82ef54`). `input.instances[0].label:
    expected a non-empty string, got ""`; rood-eerst `FAIL
    caselader-vorm-label-leeg (loaded)`, mutant ML1 idem, herstel `cmp
    identiek`.
 
 **Rebase** op main `a1b9daf0`: schoon (23 commits), main raakte geen
 bestand van deze branch; alle hashes in dit Result omgezet. Op de nieuwe
-basis, elk los, op de codetip `a2106c2a`: gate 1 PASS; 2 PASS (26
+basis, elk los, op de codetip `2e82ef54`: gate 1 PASS; 2 PASS (26
 zelftestrijen, 283 bestanden, floor 192); 3 PASS (283 schoon / 441
 negatief); 4 PASS (92 zelftestrijen, 643 cases); 5 PASS (**ref-suite
 927**, 595 cases); 6 PASS (523 checks, 595 cases); 8 PASS (**48 rood**, 96
@@ -784,7 +784,7 @@ getuige voor gate 4 in fixronde 4).
    toetst zijn WF-022-arm (r. 7334) alleen het lexeem `waar` en niet het
    type Booleaan dat de verifier eist; een `waar` getypt als Tekst gaat
    daar door waar ref (sinds fixronde 1) en de verifier weigeren.
-3. Opgelost in fixronde 4 (`cf43e54f`): het gate-4-voorstel heeft nu een
+3. Opgelost in fixronde 4 (`b76af45b`): het gate-4-voorstel heeft nu een
    vaste getuige in de patroonzelftest van gate 4.
 4. Bewust ongepositioneerd gelaten: drie weigeringen op de wortel die geen
    plaats nodig hebben omdat de wortel uniek is en de zin het veld noemt
