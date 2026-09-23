@@ -51,7 +51,8 @@ Shape, in brief:
   (`factType`, `role`, `negated`, `bron`). A fact creation carries its symbolic
   fields alone, a scoped uniqueness its `scopeRol`, a navigated characteristic
   check its hop as `navigatieBinding`. An unresolved expression's `type` is
-  optional (absent: unknown), and `Onbekend` is no datatype. The written ranges
+  optional (absent: unknown), and the datatype union has no member for an
+  unknown type (B16). The written ranges
   have their own section below.
 - Every other node — `Parameter`, `Feittype`, `Eenheidstelsel`, `Dimensie`,
   `Tijdlijn`, the datatype, expression and condition families, every
