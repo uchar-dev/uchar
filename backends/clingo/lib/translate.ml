@@ -686,17 +686,21 @@ let param_unbound ctx name =
 let unbound_param_reason name =
   Printf.sprintf "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)" name
 
-(* The fail-fast fires where evaluation READS the parameter and nowhere else:
-   ch. 5.11 says an operand that is never reached raises no fault, and ref
-   reaches a read only down the taken branch, under a holding condition, inside
-   a composite whose outcome does not stand yet, per element of a list that has
-   elements, and in a default the walk gets to. Refusing in translation would
-   decline documents ref plays whenever the read sits behind one of those. So
-   the refusal is a viol/2 guard like every other fail-fast of this
-   translator, and [guard] is the body that says the read is reached; it is
-   only built for a parameter that is in fact unbound, so a bound read emits
-   nothing and costs nothing. The witness is the guard's subject, so the
-   diagnosis names who read it. *)
+(* The fail-fast is to fire where evaluation READS the parameter: ch. 5.11
+   says an operand that is never reached raises no fault, and ref reaches a
+   read only down the taken branch, under a holding condition, inside a
+   composite or quantifier fold whose outcome does not stand yet, per element
+   of a list that has elements, before a Let barrier, and in a default the
+   walk gets to. Refusing in translation would decline documents ref plays
+   whenever the read sits behind one of those. So the refusal is a viol/2
+   guard like every other fail-fast of this translator, and [guard] is the
+   body that says the read is reached; it is only built for a parameter that
+   is in fact unbound, so a bound read emits nothing and costs nothing. The
+   witness is the guard's subject, so the diagnosis names who read it. Where
+   the body can say less than that is written at the place that builds it:
+   the created members of a quantifier fold ([emit_kv_reach]), a per-member
+   part and the Let lowering ([emit_barriers]); the day-kind table and the
+   horizon fence read in translation and refuse there, reached or not. *)
 let unbound_param_guard ctx ~witness ~guard name =
   if param_unbound ctx name then
     emit ctx "viol(%s,%s) :- %s." (quote (unbound_param_reason name)) witness

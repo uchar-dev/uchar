@@ -16,8 +16,18 @@ spec bug.
   Names are normalised on both sides. A scalar parameter the case does
   not bind has no fact, and binding is fail-fast (ch. 5.7): every read
   of it carries one `viol/2` guard in ref's own words, whose body is
-  where evaluation reaches that read (ch. 5.11), so the program goes
-  UNSAT exactly where ref faults and answers where ref never reads it.
+  where evaluation reaches that read (ch. 5.11): the taken arm, a
+  composite's or quantifier fold's open prefix in ref's member order,
+  the barrier of every enclosing Let decided per read. The program goes
+  UNSAT where ref faults and answers where ref does not read the
+  parameter, except in four recorded places. The day-kind table and the
+  §7.1 horizon fence read their parameter at translation and refuse
+  there, whether or not ref reaches it. Members a creation adds to a
+  quantifier fold's range follow no order this program knows, so the
+  guard in its matrix fires only where every order reaches them. A Let
+  barrier inside a per-member part is ordered as one member runs it.
+  And where the Let lowering keeps a value behind an enclosing need on
+  a path that does not read it, the guard follows the lowering.
 - Exact arithmetic by declared-decimals integer scaling: a value of an
   attribute declared with d decimals is the integer value × 10^d;
   comparisons harmonise scales by multiplication. Clingo's integer

@@ -8050,7 +8050,8 @@ let () =
    complement a definite answer where the arbiter has none. The leeg arm and
    the day-kind table refused it on their own before this card; every other
    position answered. Now every read carries one guard, in ref's words, that
-   fires where evaluation reaches the read and nowhere else (ch. 5.11).
+   fires where evaluation reaches the read (ch. 5.11), with the exceptions
+   the backend's README records.
 
    Each position below is a pair. The BOUND twin plays in both executors on
    hand-computed rows, so the position is carried and the refusal is about the
