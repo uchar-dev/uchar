@@ -111,8 +111,8 @@ validator = IrValidator(schema)
 #
 # SCOPE is this schema's WHOLE pattern surface, which is these two positions and nothing else. The
 # clamp below fails when a pattern turns up at a position the table does not carry, so a new pattern
-# arrives with its own rows or not at all. Named rather than silently omitted: the ten patterns of
-# uchar-case-v0 stand in exactly the same position and are gate 4's to close, on a card of its own.
+# arrives with its own rows or not at all. The ten patterns of uchar-case-v0 stood in exactly the
+# same position; since 2026-09-23 gate 4 holds them against a table of its own, on this model.
 PATTERN_POSITIONS = {
     "/$defs/Geldigheid/properties/vanaf",
     "/$defs/Geldigheid/properties/tot",
