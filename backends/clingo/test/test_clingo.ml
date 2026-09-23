@@ -9337,13 +9337,14 @@ let () =
   let lijst = Printf.sprintf {|{ "node": "ListType", "element": %s }|} vangst in
   let jutter = pf_ot (Printf.sprintf {|"totaal": %s, "vangsten": %s|} pf_n2 lijst) in
   let x = Printf.sprintf {|{ "node": "BinderRef", "name": "x", "type": %s, "bron": "de vangst" }|} vangst in
-  let match_ ~waardevol ~waardeloos =
+  let match_on binder ~waardevol ~waardeloos =
     Printf.sprintf
       {|{ "node": "Match", "type": %s, "scrutinee": %s, "arms": [
-          { "constructor": "Waardevol", "binder": "b", "body": %s },
+          { "constructor": "Waardevol", "binder": "%s", "body": %s },
           { "constructor": "Waardeloos", "binder": null, "body": %s } ], "bron": "match vangst" }|}
-      pf_n2 x waardevol waardeloos
+      pf_n2 x binder waardevol waardeloos
   in
+  let match_ = match_on "b" in
   let doc body =
     pf_doc ~objecttypen:[ jutter ] ~domeinen:(Printf.sprintf {|"vangst": %s|} vangst)
       ~parameters:[ pf_decl "p" ]
@@ -9394,7 +9395,40 @@ let () =
   both_answer ~name:"closed body, lazy: the arm's branch that reads k is not taken (cl-3)" ~ir:cl3
     ~case_text:(pf_case ~instances:[ j1 [ Some "0.50"; None ] ] (totaal "0"));
   unbound_fires ~name:"closed body: the arm's branch that reads k is taken (cl-3, control)" ~ir:cl3 ~param:"p"
-    ~case_text:(pf_case ~instances:[ j1 [ Some "5.00" ] ] leeg) ~silent:"totaal leeg"
+    ~case_text:(pf_case ~instances:[ j1 [ Some "5.00" ] ] leeg) ~silent:"totaal leeg";
+  (* FIXRONDE 4, lens point 2: an arm's payload that a value of the chain reads
+     (acc, the accumulator's name) or that a Let of the chain binds (j) is
+     renamed where the arm is wrapped. Such a chain used to keep its values at
+     the Let, which refused in ref's words where ref plays (cl-capture-ww). A
+     value is only visible where p is not read, so in the j frames k = p is
+     read in the Waardeloos arm alone and j carries the value: 6,00 where a
+     value reading the payload would give 11,00, and 5,00 where the arm reading
+     the chain's j would give 1,00 *)
+  let capture = doc (pf_let "k" (pf_bin "PLUS" acc p) (match_on "acc" ~waardevol:(pf_bin "PLUS" acc k) ~waardeloos:acc)) in
+  both_answer ~name:"closed body, lazy: the payload is named acc, the value reads the accumulator (cl-capture-ww)"
+    ~ir:capture ~case_text:(pf_case ~instances:[ j1 [ None; None ] ] (totaal "0"));
+  unbound_fires ~name:"closed body: a Waardevol element reads k, whose value reads p (cl-capture-w5, control)"
+    ~ir:capture ~param:"p" ~case_text:(pf_case ~instances:[ j1 [ None; Some "5.00" ] ] leeg) ~silent:"totaal leeg";
+  let j = pf_b "j" in
+  let capture_j =
+    doc
+      (pf_let "k" p
+         (pf_let "j" (pf_bin "PLUS" acc (pf_l "1.00"))
+            (match_on "acc" ~waardevol:(pf_bin "PLUS" acc j) ~waardeloos:(pf_bin "PLUS" acc k))))
+  in
+  both_answer ~name:"closed body, lazy: j's value reads the accumulator, the arm its payload acc (cl-capture-j5)"
+    ~ir:capture_j ~case_text:(pf_case ~instances:[ j1 [ Some "5.00" ] ] (totaal "6"));
+  unbound_fires ~name:"closed body: a Waardeloos element reads k (cl-capture-j, control)" ~ir:capture_j ~param:"p"
+    ~case_text:(pf_case ~instances:[ j1 [ Some "5.00"; None ] ] leeg) ~silent:"totaal leeg";
+  let shadow_j =
+    doc
+      (pf_let "k" p
+         (pf_let "j" (pf_l "1.00") (match_on "j" ~waardevol:(pf_bin "PLUS" acc j) ~waardeloos:(pf_bin "PLUS" acc k))))
+  in
+  both_answer ~name:"closed body, lazy: the payload j, not the chain's j (cl-shadow-j5)" ~ir:shadow_j
+    ~case_text:(pf_case ~instances:[ j1 [ Some "5.00" ] ] (totaal "5"));
+  unbound_fires ~name:"closed body: a Waardeloos element reads k (cl-shadow-j, control)" ~ir:shadow_j ~param:"p"
+    ~case_text:(pf_case ~instances:[ j1 [ Some "5.00"; None ] ] leeg) ~silent:"totaal leeg"
 
 (* FIXRONDE 3, point 2: a Let barrier in a part that runs member by member is
    exact. The part ran "as one member", so a read by a LATER member counted as

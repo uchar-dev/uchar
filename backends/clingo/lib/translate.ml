@@ -2633,10 +2633,9 @@ let emit_kv_reach ctx ~reach ~subject ~subject_ot ~x ~join ~fatoms ~atoms ~kwant
 (* a chain of Lets over a Match in a closed body, as [body_branches] pushes it
    into the arms: [Some (lets, scrutinee, arms)], the Lets outermost first, when
    some Let's value may read a parameter the case does not bind, the scrutinee
-   reads none of the binders, and no name is bound twice — neither by two Lets
-   nor by a Let and an arm's payload — nor read by a value while an arm's
-   payload binds it, so that wrapping an arm in its Lets captures nothing. Any
-   other shape keeps each value at its Let. *)
+   reads none of the binders, and no two Lets bind the same name. An arm's
+   payload that a value reads or a Let binds is renamed where the arm is
+   wrapped ([unshadow_payload]). Any other shape keeps each value at its Let. *)
 let closed_let_chain ctx (e : expr) =
   let rec chain acc (e : expr) =
     match e with
@@ -2648,7 +2647,6 @@ let closed_let_chain ctx (e : expr) =
   | None -> None
   | Some (lets, scrutinee, arms) ->
       let names = List.map (fun (b, _, _, _) -> norm b) lets in
-      let payloads = List.filter_map (fun (_, b, _) -> Option.map norm b) arms in
       let unbound = function
         | Parameter_ref { parameter = Some p; _ } -> param_unbound ctx p
         | _ -> false
@@ -2657,14 +2655,31 @@ let closed_let_chain ctx (e : expr) =
         List.exists (fun (_, v, _, _) -> expr_reaches ctx unbound v) lets
         && (not (List.exists (fun (b, _, _, _) -> reads_binder b scrutinee) lets))
         && List.length (List.sort_uniq compare names) = List.length names
-        && (not (List.exists (fun b -> List.mem b names) payloads))
-        && not
-             (List.exists
-                (fun (_, v, _, _) ->
-                  List.exists (fun b -> Ir_v0.Checks.mentions_binder b v) payloads)
-                lets)
       then Some (lets, scrutinee, arms)
       else None
+
+(* [match_branches] wraps an arm in the chain of Lets from [closed_let_chain].
+   A payload binder [b] that a value of the chain reads, or that a Let of the
+   chain binds, would capture that name there: the value would read the
+   payload, or the arm's body the Let. So the arm binds its payload under a
+   fresh name that nothing inside reads, and a Let at the arm's body binds [b]
+   to it: the values read what they read at the Match, the body its payload. *)
+let unshadow_payload (lets : (string * expr * datatype option * string option) list) payload_typ b
+    (body : expr) =
+  if List.exists (fun (lb, v, _, _) -> norm lb = norm b || Ir_v0.Checks.mentions_binder b v) lets then begin
+    let taken = List.map (fun (lb, _, _, _) -> norm lb) lets
+    and inside = body :: List.map (fun (_, v, _, _) -> v) lets in
+    let rec pick n =
+      let c = b ^ String.make n '\'' in
+      if List.mem (norm c) taken || List.exists (Ir_v0.Checks.mentions_binder c) inside then pick (n + 1) else c
+    in
+    let c = pick 1 in
+    ( c,
+      Let
+        { typ = Ir_v0.Checks.typ_of_expr body; binder = b;
+          value = Binder_ref { naam = c; typ = payload_typ; bron = None }; body; bron = None } )
+  end
+  else (b, body)
 
 let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
   match let_into_arm e with
@@ -7235,6 +7250,13 @@ and match_branches ctx ~guard_body ~witness ?pending scrutinee arms =
   List.concat_map
     (fun (ctor, binder, body) ->
       let f = ctor_functor ctor in
+      let binder, body =
+        match (pending, binder) with
+        | Some lets, Some b ->
+            let b, body = unshadow_payload lets (ctor_payload_datatype constructoren ctor) b body in
+            (Some b, body)
+        | _ -> (binder, body)
+      in
       let pattern, binding =
         match (ctor_payload_datatype constructoren ctor, binder) with
         | None, None -> (Printf.sprintf "%s = %s" sv f, None)
