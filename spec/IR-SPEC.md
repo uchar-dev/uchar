@@ -7560,8 +7560,11 @@ admissible creation cycle each of them was measured verifier-clean with the
 executors split, and off a cycle each leaves the reference interpreter
 order-dependent in the condition of an attribute-writing form
 (`RUNTIME-SEMANTICS.md` ch. 6.1, recorded residuals). This decision does not
-cover them. The quantifier fold over a comparison, first measured in the
-same round, is covered by the decision that follows.
+cover them. The quantifier fold, first measured in the same round, is
+covered by the decision that follows, but only in its range under *all*,
+*none*, *at-most* and *exactly* and in its matrix under *none*, *at-most*
+and *exactly*. A comparison in the matrix of an *all* or *at-least* fold
+keeps its positive or stratum-strict reading.
 
 **The quantifier fold's range and matrix** *(maintainer decision 2026-09-23,
 same card, second fix round)*. The decision, in full:
@@ -7621,6 +7624,22 @@ under *all*, *at-most* or *exactly*, the matrix positive under *none*,
 reach; and in the other direction the range negative under *at-least*, or
 the matrix negative under *at-least* or *all*, each of which refuses the
 golden.
+
+*Recorded open, not decided here:* "monotone in the matrix" is a property of
+the verdict, and it holds only while the matrix itself cannot lose its
+truth. A comparison that a growing value falsifies can: in the golden's
+model, with the ALLE matrix read as "merk kleiner dan 2" (or "merk ongelijk
+aan 2") and merk the number of successors, the document is verifier-clean
+and the executors split on case 4 (the reference interpreter and the Drools
+exec branch 2, the ASP backend and the DRL-text branch 1); with "ten minste 1
+ploeglid heeft een merk kleiner dan 2", and a ploeglid under W3 so that W3
+mints, the reference interpreter and both Drools branches answer 2 and the
+ASP backend 1. The same class without a fold predates this card: "het merk
+van de ploegleider is ongelijk aan 2" is verifier-clean on the main line and
+splits the reference interpreter (2) from the ASP backend (1). The
+one-generation progression that discharges strictness on an admissible
+cycle is unsound for every read whose truth can be lost, a growing value
+included (`RUNTIME-SEMANTICS.md` ch. 6.1).
 
 *Cost:* none. Over the 753 corpus and parity-zone documents that this card
 did not add, 58 read positions in 17 documents change kind against the

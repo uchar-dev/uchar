@@ -4314,10 +4314,12 @@ and §9.5 deposits from arithmetic transients within a stratum persist
 ch. 7.
 
 *Recorded residual — conditions that hold on absence (measured
-2026-09-23, open).* The leeg/gevuld predicate and the quantifier fold are
-not the only conditions that are true while an operand is absent and can
-turn false once it arrives. The others carry no `negated` field and keep
-their positive or stratum-strict reading, and on a WF-045-admissible
+2026-09-23, open).* The leeg/gevuld predicate, the range of a quantifier
+fold under *alle*, *geen*, *ten hoogste* and *precies*, and its matrix
+under *geen*, *ten hoogste* and *precies* are not the only conditions that
+are true while an operand is absent and can turn false once it arrives.
+The others carry no `negated` field and keep their positive or
+stratum-strict reading, and on a WF-045-admissible
 creation cycle that reading is unsound in the way the leeg/gevuld decision
 records. Measured on one shape: a recursive creation "werf de opvolger"
 whose condition is "de rang van de Wachter is kleiner dan 5 en X", with X
@@ -4352,6 +4354,25 @@ in the reference interpreter, which acted on the transient leeg and keeps
 its write, while the ASP backend answers leeg; with the writer first both
 answer leeg. The leeg/gevuld test is out of that residual because its reads
 are negative edges, which order the reader above the writer.
+
+*Recorded residual — a value that grows (measured 2026-09-23, open).* The
+discharge of strictness on an admissible creation cycle fails for any read
+that can lose its truth, and absence is only one way to lose it. A
+comparison that a growing value falsifies is another, inside a fold's
+monotone part and outside any fold. In the model of the golden
+`jutterswet-opvolgerquorum` (merk the number of a Wachter's successors),
+with its case 4 as input, the document stays verifier-clean when the ALLE
+matrix reads "merk kleiner dan 2" or "merk ongelijk aan 2", and the four
+executors split: the reference interpreter and the Drools exec branch
+answer merk(W1) = 2, the ASP backend and the DRL-text branch 1. A TEN_MINSTE
+fold with "merk kleiner dan 2", given a ploeglid under W3 so that W3 mints,
+splits the reference interpreter and both Drools branches (2) from the ASP
+backend (1). Without any fold, "het merk van de ploegleider van de Wachter
+is ongelijk aan 2" was already verifier-clean on the main line before this
+card, with merk(W3) = 2 in the reference interpreter and both Drools
+branches and 1 in the ASP backend. Whether "monotone in the matrix" should
+demand a matrix that is monotone itself is a norm question the
+quantifier-fold decision leaves open.
 
 The two-form shape splits silently rather than loudly. With "het merk is
 ongelijk aan 1" in the creation and a rule writing merk = 1 when "de rang
