@@ -968,6 +968,147 @@ let () =
   let w = World.add_instance World.empty (inst "x" "Ding" []) in
   expect_fault "WV-6.4-c-cycle-fault" (fun () -> Eval.evaluate (env_of doc) w)
 
+(* WV-6.4-f: a leeg test in an ATTRIBUTE rule on a derived attribute is a
+   negative edge (maintainer decision 2026-09-23), so the reader sits
+   strictly above the writer and the rule order no longer matters. It was a
+   positive edge until then: both rules shared a stratum, and a reader
+   listed first acted on the transient leeg and kept its write, because
+   nothing retracts it (ch. 6.1). One verifier-clean document gave b = 1
+   with the reader first and leeg with the writer first. The ASP backend
+   answered leeg in both orders. WV-6.4-e is the same pair with a
+   characteristic reader, which was already stratum-strict. *)
+let () =
+  let writer = rr "zet a" Gelijkstelling (Some (aref "a" "Ding" num0)) (Some (litv "5" num0)) None in
+  let reader =
+    rr "zet b" Berekening
+      (Some (aref "b" "Ding" num0))
+      (Some (litv "1" num0))
+      (Some
+         (Predicaat
+            {
+              soort = Leeg;
+              operand = Some (aref "a" "Ding" num0);
+              dagsoort = None;
+              negatie = false;
+              cijfers = 0;
+              periode = None;
+              bron = None;
+            }))
+  in
+  let run rules =
+    let doc =
+      {
+        empty_doc with
+        objecttypen = [ ot "Ding" [ ("a", Some num0); ("b", Some num0) ] [] ];
+        resolved_regels = rules;
+      }
+    in
+    let final = Eval.evaluate (env_of doc) (World.add_instance World.empty (inst "x" "Ding" [])) in
+    World.attr (World.get final "x") "b"
+  in
+  expect_leeg "WV-6.4-f-writer-first" (run [ writer; reader ]);
+  expect_leeg "WV-6.4-f-reader-first" (run [ reader; writer ])
+
+(* WV-6.4-g: a leeg/gevuld test on a WF-045-admissible creation cycle is a
+   WF-046 fault in ref/, in both polarities. The recursive creation "werf de
+   opvolger" mints a successor Wachter; "merk van een wachter" writes
+   merk = 1 from the successor's rang. The R3 shape tests "het merk is niet
+   gevuld" in the creation and "de rang van de opvolger is niet gevuld" in
+   the rule (negatie true in both); the R1 shape tests "het merk is leeg"
+   and "de rang van de opvolger is gevuld" (negatie false in both). Both
+   were verifier-clean until the arm. On R3 ref/ answered merk(W1) = 1,
+   which is what its pass order produces (rules before creations): the
+   opposite order mints W2 and leaves merk(W1) leeg, and the ASP reading
+   has five stable models, one per chain length. On R1 ref/ minted a chain
+   of five while the ASP reading has no stable model. Eval.evaluate re-runs
+   the shared WF-045/046 check before it computes strata, so both
+   documents are now refused, never answered. *)
+let () =
+  let merk = aref "merk" "Wachter" num0 and rang = aref "rang" "Wachter" num0 in
+  let opvolger : Ir_v0.Ast.rol_binding = { rb_feittype = "opvolging"; rb_rol = "opvolger" } in
+  let opvolger_rang : Ir_v0.Ast.expr =
+    Attribuut_ref
+      {
+        attribuut = Some "rang";
+        objecttype = Some "Wachter";
+        onderwerp_bron = None;
+        navigatie_rol = Some "opvolger";
+        typ = Some num0;
+        bron = None;
+        set = false;
+        navigatie_pad = [];
+        navigatie_bindingen = Some [ opvolger ];
+      }
+  in
+  let toets soort negatie operand : Ir_v0.Ast.conditie =
+    Predicaat
+      { soort; operand = Some operand; dagsoort = None; negatie; cijfers = 0; periode = None; bron = None }
+  in
+  let rol naam meervoud : Ir_v0.Ast.rol =
+    { rol_naam = Some naam; rol_objecttype_naam = Some "Wachter"; rol_meervoud = meervoud; rol_meervoudig = false }
+  in
+  let doc ~in_creatie ~in_regel =
+    {
+      empty_doc with
+      objecttypen = [ ot "Wachter" [ ("rang", Some num0); ("merk", Some num0) ] [] ];
+      feittypen =
+        [ ( "opvolging",
+            { ft_naam = Some "opvolging"; wederkerig = false;
+              rollen = [ rol "voorganger" None; rol "opvolger" (Some "opvolgers") ] } ) ];
+      resolved_regels =
+        [ rr "merk van een wachter" Berekening (Some merk) (Some (litv "1" num0)) (Some in_regel) ];
+      object_creaties =
+        [
+          {
+            oc_naam = Some "werf de opvolger";
+            nieuw_type = Some "Wachter";
+            oc_subject = Some "Wachter";
+            toekenningen =
+              [
+                {
+                  toe_attribuut = Some "rang";
+                  toe_waarde =
+                    Some
+                      (Binair
+                         { op = Plus; links = Some rang; rechts = Some (litv "1" num0); typ = Some num0;
+                           bron = None });
+                  toe_kenmerk = false;
+                };
+              ];
+            oc_voorwaarde =
+              Some
+                (Samengesteld
+                   {
+                     kwantor = Alle;
+                     drempel = 0;
+                     onderdelen =
+                       [
+                         Vergelijking
+                           { op = Kleiner; links = Some rang; rechts = Some (litv "5" num0);
+                             periode = None; bron = None };
+                         in_creatie;
+                       ];
+                     bron = None;
+                   });
+            oc_geldigheid = None;
+            oc_verbindende_rol = Some opvolger;
+          };
+        ];
+      regel_groepen =
+        [ { rgr_naam = Some "estafette"; recursief = true; leden = [ Some "werf de opvolger" ];
+            rgr_bron = None; rgr_line = 1 } ];
+    }
+  in
+  let run d =
+    Eval.evaluate (env_of d) (World.add_instance World.empty (inst "W1" "Wachter" [ ("rang", n "1") ]))
+  in
+  expect_fault_msg "WV-6.4-g-r3-negatie-waar"
+    (fun () -> run (doc ~in_creatie:(toets Gevuld true merk) ~in_regel:(toets Gevuld true opvolger_rang)))
+    "WF-046 at /objectCreaties/0: negative dependency edge on a cycle";
+  expect_fault_msg "WV-6.4-g-r1-negatie-onwaar"
+    (fun () -> run (doc ~in_creatie:(toets Leeg false merk) ~in_regel:(toets Gevuld false opvolger_rang)))
+    "WF-046 at /objectCreaties/0: negative dependency edge on a cycle"
+
 (* WV-7.9: nested exception groups (ch. 7.9) — the PHASE4-DEFAULTS §7
    spurious-conflict test at the unit level (b <- x, x <- {y, z}, hand-built
    attribute defaults). Only y applicable and x justified must yield y, never a

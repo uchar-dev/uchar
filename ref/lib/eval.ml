@@ -3604,7 +3604,27 @@ let evaluate env world =
      passes through a recursive-group creation), and ch. 6.3
      discharges strictness there by the one-generation-per-instance
      progression, not a boundary — cycle edges count positive. Failure
-     to converge is a cycle the verifier should have rejected. *)
+     to converge is a cycle the verifier should have rejected.
+
+     Invariant note (2026-09-23). "Cycle edges count positive" holds only
+     for reads that the generation progression settles. A leeg/gevuld
+     test is not one of them, and until the verifier counted it as a
+     negative edge it reached this loop on an admissible cycle and was
+     answered in pass order. On the R3 shape (a recursive creation under
+     "het merk is niet gevuld", a rule writing merk = 1 when the
+     successor's rang is not gevuld) this interpreter answered
+     merk(W1) = 1, because [pass] runs rules before creations; the
+     opposite order mints W2 and leaves merk(W1) leeg, and the ASP reading
+     has five stable models. On the R1 shape it minted a chain whose every
+     creation is justified by a leeg merk that the final world fills.
+     Since the WF-046 arm such documents are refused by the re-run above
+     and never get here (ref/test WV-6.4-g). The same arm moved an
+     off-cycle leeg reader strictly above its writer, so the reader's
+     position in the document no longer decides whether it acts on a
+     transient leeg (WV-6.4-f). Other conditions that hold on absence
+     (a comparison against leeg, a count against zero, an ALLE fold over a
+     comparison) are not negative edges and still reach this loop on an
+     admissible cycle; RUNTIME-SEMANTICS ch. 6.1 records them as open. *)
   let dforms = Ir_v0.Checks.dep_forms { doc = env.doc } in
   let n = List.length dforms in
   let arr = Array.of_list dforms in
