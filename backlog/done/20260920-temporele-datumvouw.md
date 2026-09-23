@@ -118,6 +118,7 @@ clingo (vóór) leeg, exec PLAYED 1 (leeg), DRL compilefout.
 | NAVIGERENDE set (bronPad/navigatie op het argument) | — | — | de setarm-datumguard staat vóór `source_join`; argument-navigatie valt in de benoemde `NAVIGATED per-element`-arm | geen gat (codelezing, niet apart gemeten) |
 | datum-tijd / tekst tijdlijn onder TOTAAL | PASS | `maal: expected a number` | weigert al, met BODEMZIN (`dt_term` r. 167 / `symbolic_term` r. 162 van de 36-lijst) | geen fout getal; bodemzin — zie §7 |
 | datumtijdlijn naar NUMERIEK doel | FAIL WF-091 | `maal` | gaf 19737, weigert nu ook (de guard vraagt de declaratie, niet het doel) | tweede verdedigingslinie |
+| ch. 3.7 PRO-RATA over een DATUMbasis (`translate_pro_rata`; lensvondst B1, fixronde) | PASS | `pro-rata base is not numeric: 2024-01-18` | **`borgdeel` = 19740.00** over een hele maand (19737.00 bij 2024-01-15); over een deelmaand datumafhankelijk: de exactheidsguard vuurt alleen als het dagnummer niet deelbaar uitkomt | ZELFDE klasse, gedicht (fixronde, zie §11) |
 
 In de DRL-tak dekt de ene guard in `tijdreeksAggregatie` eigen, to-one
 genavigeerd en geclipt tegelijk (ze delen die functie); de set-vorm gaat
@@ -144,9 +145,24 @@ setarm: datum-tijd/tekst/enum/boolean bereiken deze armen niet (gemeten,
 tabel §2), en `decimals_of_datatype` geeft andere niet-numerieke typen
 geen schaal.
 
-**Asymmetrie, bewust:** de weigering hangt aan het document, dus bij een
-casus zonder waarde weigert clingo waar `ref` leeg antwoordt — dezelfde
-onschadelijke richting als de setarm. Staat in de NOTE.
+**Asymmetrie, per arm verschillend (gecorrigeerd in de fixronde):** de
+weigering hangt aan het document, dus ook een casus zonder waarde wordt
+geweigerd. In de EIGEN-SUBJECT-arm antwoordt `ref` daar leeg — de
+onschadelijke richting, zoals in de setarm. In de KLIP-arm NIET: `ref`
+antwoordt `K1.wachtsom = 0` zowel zonder waardetijdlijn als met een
+weggeklipte waarde (gemeten 2026-09-23) — een betekenisloos getal in
+een datumslot; clingo antwoordde vóór deze kaart dezelfde lege som
+([0] = 1970-01-01), en de Drools exec-tak CRASHT op de casus zonder
+waarde (`ClassCastException: Cannot cast java.math.BigDecimal to
+java.time.LocalDate`). Daar is de arbiterclaim dus onwaar. Het is een
+eigen kaart, `20260923-ref-klipvouw-nul` (de hoofdsessie maakt hem
+aan); beide NOTEs zeggen het.
+
+**De DRL-match is breder dan de ASP-match, bewust.** `tijdlijnWeigering`
+weigert elk niet-getalachtig type, de ASP-arm exact `Datum_in_dagen`.
+Een datum-tijd- of teksttijdlijn krijgt in de DRL-tak dus de benoemde
+marker en in clingo een bodemzin (`dt_term`/`symbolic_term`, die hem
+eerder vangen). Onschadelijk — beide weigeren — en vastgelegd.
 
 ### 4. De Drools-weigering, woordelijk
 
@@ -238,6 +254,8 @@ De smalheidsrij bleef groen onder de mutant, zoals hij hoort.
 | 6 | clingo | 0 | suite 480 (vloer 83); 591 casussen exact |
 | 7 | noop | 0 | 555 casussen, 36 overlevers |
 | 8 | rood | 0 | **43** rode casussen (was 41), vloer 26; **86** fragmenten (was 82), geen bodemzin; Drools 9 fault-pinned / **34** met reden (was 32) |
+
+*Na de fixronde (§11) opnieuw gedraaid: gate 8 **44** rode casussen, **88** fragmenten, Drools 9 / **35** met reden; gate 2 277 bestanden, gate 3 277 schoon / 431 negatief, gate 4 635 casusbestanden, gate 6 suite 480 / 591 casussen, gate 13 groen; gate 1 groen. `backends/drools` niet geraakt in de fixronde, dus gate 12 niet opnieuw.*
 | 9 | catala | 0 | 201 checks; 12 goldens |
 | 10 | regelspraak | 0 | 393 tests; 70 rgs-goldens |
 | 11 | toka-parity | 0 | ref 29/29, clingo 29/29, Drools 29 PLAYED |
@@ -254,7 +272,16 @@ aangeraakt.
   Drools-uitsluitingslijst, alfabetisch na `datumsetbron-totaalvouw`:
   `datumtijdlijn-klipvouw|EXCLUDE …` en `datumtijdlijn-totaalvouw|EXCLUDE
   …`. Puur additief, niets herordend, geen bestaande reden herschreven.
-  Telling Drools-been 32 → 34 met reden.
+  Telling Drools-been 32 → 34 met reden; in de fixronde een derde regel,
+  `datumbasis-prorata|EXCLUDE …`, vóór `datumsetbron-somvouw` → 35.
+- **Voor de vervolgkaart `20260923-ref-klipvouw-nul` (niet zelf
+  uitgevoerd, beschermd pad `spec/verifier/` + `spec/IR-SPEC.md`):** een
+  WF-regel "de operand van TOTAAL, SOM en het tijdsevenredig deel is
+  numeriek". WF-091 vergelijkt nu alleen het aggregaattype met het
+  operandtype en laat een geheel datumgetypeerde vouw dus door; met die
+  regel worden alle drie de rode getuigen van deze kaart en de twee van
+  datum-setbron-breuk verifier-afwijzingen, en verhuizen ze naar
+  `corpus/negatief/`.
 
 ### 9. Registervoorstel `spec/CONSTRUCTS.md`, rij 1
 
@@ -270,14 +297,22 @@ datum-setbron-breuk)**":
 > total arms, the own-subject total and the gedurende clip, under
 > verifier-clean documents. Both arms now decline by name in translation,
 > asked of the DECLARATION (so a case without a value is declined too
-> where `ref` answers leeg — the harmless direction, as in the set arm).
+> where `ref` answers leeg in the own-subject arm; in the clip arm `ref`
+> itself answers 0 on an empty or clipped-away case, carded separately as
+> `20260923-ref-klipvouw-nul`).
 > The DRL-text branch, which failed the whole file on compile, markers the
 > form through `Vouwwaarde.tijdlijnWeigering`, the timeline half of the
 > reason the set arm shares; the exec branch already refused the
 > date-valued segment at case load. Measured and NOT a gap: the §7.1
 > per-element set fold (the set arm's date guard fires first), and the
-> navigated own-timeline total (verifier WF-083, and both OCaml executors
-> refuse it by name). Witnesses `corpus/rood/datumtijdlijn-totaalvouw` and
+> navigated own-timeline total (verifier WF-083; clingo refuses it by
+> name, `ref` with the bottom sentence "unsupported instance-fold source
+> shape"). The same class sat in the ch. 3.7 pro-rata arm: a DATE base
+> answered its day number as the part (19740.00 for 2024-01-18 over a
+> whole month) where `ref` faults "pro-rata base is not numeric"; the
+> ASP translation declines it by name too, witness
+> `corpus/rood/datumbasis-prorata`; neither Drools branch lowers that
+> temporal assignment at all. Witnesses `corpus/rood/datumtijdlijn-totaalvouw` and
 > `corpus/rood/datumtijdlijn-klipvouw`. No producer route: the frontend
 > types the form away. Gate 12 pins unchanged (180 / 159).
 
@@ -299,3 +334,67 @@ datum-setbron-breuk)**":
 - **"on \"Klipjutter\""** in de clip-zin noemt het objecttype van de
   lezing, niet het declarerende supertype `Jutter` — waar, maar een lezer
   kan het declarerende type verwachten.
+
+### 11. Fixronde na de lens (2026-09-23)
+
+**B1 — de pro-rata-arm, dezelfde klasse.** `translate_pro_rata` schaalt
+de basis met ware dagen over emmerdagen en liet bij een DATUMbasis het
+dagnummer als deel naar buiten. Meetdocument: `anchor/jutterswet-borgdeel`
+teruggebracht tot de `borgdeel`-regel, `borgtarief` (JAAR) naar `Datum
+in dagen`, doel numeriek; J1 met één waardesegment 2024-01-01..2025-01-01
+en borgplichtig 2024-01-01..2024-02-01 (één hele maand).
+
+| | verifier | `ref` | clingo |
+|---|---|---|---|
+| vóór, basis 2024-01-18 | PASS | `pro-rata base is not numeric: 2024-01-18` | `J1.borgdeel timeline = [19723,19754)=1974000` — **19740.00** |
+| vóór, basis 2024-01-15 | PASS | idem met 2024-01-15 | `[19723,19754)=1973700` — **19737.00** |
+| ná | PASS | ongewijzigd | TRANSLATION FAULT (zin hieronder) |
+
+Drools: exec `transpiler SKIP … regel (temporele toekenning buiten
+Phase-F scope)`, DRL `MARKER … TODO temporele toekenning` — beide
+onafhankelijk van het basistype, niet aangeraakt.
+
+Zin, gevraagd aan de DECLARATIE van de basis direct na de
+temporaliteitscheck:
+
+> the pro-rata part (tijdsevenredig deel) of the base "borgtarief" on
+> "Jutter" scales a DATE-valued base by true days over bucket days: a
+> pro-rata part is arithmetic, a date is a calendar POSITION, and
+> scaling one has no meaning — this translation would scale its day
+> number and answer a definite number no calendar reads back. Declined
+> in translation
+
+Derde rode getuige `corpus/rood/datumbasis-prorata` (de 19740-variant
+over een hele maand, zodat hij het lek pint en niet de toevallige
+exactheidsguard). Rood eerst (translate.ml op HEAD e2cc91be, herbouwd):
+
+```
+EXPECTED FAULT DID NOT OCCUR: clingo found a model
+oracle: expected fault observed (pro-rata base is not numeric: 2024-01-18)
+```
+
+Mutatie (`| Some (Some Datum_in_dagen) when false ->` in de pro-rata-arm):
+
+```
+== mutant
+EXPECTED FAULT DID NOT OCCUR: clingo found a model
+MISMATCH: J1.borgdeel timeline = [19723,19754)=1974000, expected (empty)
+RESTORED            (cp + cmp)
+clingo: expected fault observed (the pro-rata part (tijdseve…
+```
+
+**B2 — de klip-arm: de arbiter antwoordt zelf een getal.** Gemeten op
+`datumtijdlijn-klipvouw`: zonder waardetijdlijn `ref` `K1.wachtsom = 0`,
+Drools exec `ERROR ConsequenceException … ClassCastException: Cannot
+cast java.math.BigDecimal to java.time.LocalDate`, DRL de marker; met
+weggeklipte waarde `ref` `0`, exec EXCLUDE (lader), DRL de marker.
+clingo weigert beide. De onschadelijkheidsclaim in §3 en in de
+registertekst gold alleen voor de eigen-arm en is gecorrigeerd; de
+klip-NOTE heeft een eigen alinea. `ref` en de exec-crash zijn de kaart
+`20260923-ref-klipvouw-nul` (hoofdsessie), met het WF-voorstel in §8.
+
+**Advies 1** — de registertekst noemde de genavigeerde weigering in
+beide OCaml-uitvoerders "by name"; `ref` weigert met de bodemzin
+`unsupported instance-fold source shape`. Gecorrigeerd.
+
+**Advies 3** — de DRL-match is breder dan de ASP-match; vastgelegd in §3.

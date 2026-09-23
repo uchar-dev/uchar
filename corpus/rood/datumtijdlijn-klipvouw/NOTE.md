@@ -23,3 +23,19 @@ before fire; the DRL-text branch, which failed the whole file on compile
 (`Unable to Analyse Expression if (rsTijdTotaal(rsTijdKnip(…`), markers
 the form through the shared timeline reason. Listed in gate 8's
 exclusion list with that reason.
+
+**Where this arm parts from its own-subject sibling, and why it is not
+harmless here.** The refusal is about the DOCUMENT, so a case with NO
+value timeline, or with a value the clip removes entirely, is declined
+too. In the own-subject arm `ref` answers leeg there, so the refusal is
+the harmless direction. In THIS arm it is not: measured 2026-09-23 on
+this document, `ref` answers `K1.wachtsom = 0` both without a value
+timeline and with the value clipped away — the empty clipped sum, a
+NUMBER in a date slot that no chapter defines. Before this card the ASP
+backend answered the same empty sum (read back as 1970-01-01), and the
+Drools exec branch CRASHES on the case without a value
+(`ClassCastException: Cannot cast java.math.BigDecimal to
+java.time.LocalDate`) — the DRL-text branch declines it by name. The
+arbiter's own 0 is out of this card's scope (`ref` is not touched); it
+is carded as `20260923-ref-klipvouw-nul`, together with a
+well-formedness rule that the operand of TOTAAL/SOM/pro rata is numeric.
