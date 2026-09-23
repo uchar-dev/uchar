@@ -183,6 +183,60 @@ class NietInUitzonderingTest {
         assertTrue(d.message().startsWith("regel 'vlak'") && d.message().contains("§9.2"), d.message());
     }
 
+    @Test void een_vlakke_ontkenning_met_twee_versies_weigert_eenmaal() {
+        RegelSpraakModel m = Resolver.resolve(MODEL + """
+
+            Regel vlak
+                geldig vanaf 2024 t/m 2024
+                    Een Jutter is niet uitgesloten
+                    indien hij geschorst is.
+                geldig vanaf 2025
+                    Een Jutter is niet uitgesloten
+                    indien hij vergunning geweigerd is.
+            """);
+        Diagnostic d = enigeFout(m);
+        assertTrue(d.message().startsWith("regel 'vlak':"), "de regel, niet een versie ervan: " + d.message());
+    }
+
+    @Test void een_ontkende_tabelrij_weigert_op_de_regel_van_de_tabel() {
+        // A decision-table row is re-parsed in a stream of its own; the refusal stands at the table, and names it.
+        RegelSpraakModel m = Resolver.resolve(MODEL + """
+
+            Beslistabel Uitsluitingstabel
+                geldig altijd
+            | | een Jutter is niet uitgesloten | indien zijn aantal aangemelde vondsten groter is dan |
+            |---|---|---|
+            | 1 | waar | 5 |
+            """);
+        Diagnostic d = enigeFout(m);
+        assertTrue(d.message().contains("een rij van beslistabel 'Uitsluitingstabel'") && d.message().contains("§9.2"),
+                d.message());
+        assertEquals(9, d.line(), "de regel van de tabelkop in het document, niet die in de apart geparste rij");
+    }
+
+    @Test void een_vlakke_positieve_schrijver_naast_een_groep_die_alleen_onwaar_beslist_krijgt_alleen_wf050() {
+        // The group never attributes the characteristic, but the plain rule beside it does: WF-050's ERROR is the
+        // true diagnosis, and a warning that the characteristic is never derived would contradict it.
+        RegelSpraakModel m = Resolver.resolve(MODEL + """
+
+            Regel niet uitgesloten
+                geldig altijd
+                    Een Jutter is niet uitgesloten.
+
+            Uitzondering op niet uitgesloten: niet uitgesloten bij schorsing
+                geldig altijd
+                    Een Jutter is niet uitgesloten
+                    indien hij geschorst is.
+
+            Regel wel uitgesloten
+                geldig altijd
+                    Een Jutter is uitgesloten
+                    indien hij vergunning geweigerd is.
+            """);
+        assertEquals(1, m.diagnostics.size(), () -> "verwachtte alleen de WF-050-fout: " + m.diagnostics);
+        assertTrue(m.diagnostics.get(0).message().contains("WF-050"), m.diagnostics.get(0).message());
+    }
+
     // -------------------------------------------------------------------- refused: undeclared after the strip
 
     @ParameterizedTest
@@ -195,9 +249,65 @@ class NietInUitzonderingTest {
         RegelSpraakModel m = Resolver.resolve(familie("Een Jutter is uitgesloten", resultaat));
         Diagnostic d = enigeFout(m);
         assertTrue(d.message().contains("ontkent geen kenmerk van Jutter")
-                        && d.message().contains("'" + kenmerk + "' is niet gedeclareerd"),
+                        && d.message().contains("'" + kenmerk + "' is geen kenmerk van Jutter"),
                 () -> "de weigering noemt het ongedeclareerde kenmerk niet: " + d.message());
         assertFalse(d.message().contains("ander doel"), "niet de misleidende doelmelding van meting 1");
+    }
+
+    @Test void een_ontkend_attribuut_wijst_naar_de_gelijkstelling() {
+        // The rest names a declared ATTRIBUTE: it is declared, only not as a characteristic, and its false is a value.
+        RegelSpraakModel m = Resolver.resolve(MODEL.replace("het aantal aangemelde vondsten",
+                "de penningwaardigheid Boolean;\n    het aantal aangemelde vondsten")
+                + """
+
+            Regel basis
+                geldig altijd
+                    Een Jutter is uitgesloten.
+
+            Uitzondering op basis: ontkenning
+                geldig altijd
+                    Een Jutter is niet penningwaardigheid
+                    indien hij geschorst is.
+            """);
+        Diagnostic d = enigeFout(m);
+        assertTrue(d.message().contains("'penningwaardigheid' is een attribuut van Jutter en geen kenmerk")
+                && d.message().contains("moet gesteld worden op onwaar"), d.message());
+        assertFalse(d.message().contains("is geen kenmerk van Jutter, en"), d.message());
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "Een Jutter is uitgesloten            | Een Jutter is niet een uitgesloten         | bijvoeglijk; schrijf 'is niet uitgesloten'",
+            "Een Jutter heeft recht op de penning | Een Jutter is niet een recht op de penning | bezittelijk; schrijf 'heeft geen recht op de penning'"
+    })
+    void is_niet_een_ontkent_alleen_een_zelfstandig_kenmerk(String basis, String uitzondering, String fragment) {
+        // Tabel 16: under 'is niet een' the condition side binds a zelfstandig kenmerk only; a result cannot stay a
+        // marker, so the sentence is refused and the message names the spelling of the kind.
+        Diagnostic d = enigeFout(Resolver.resolve(familie(basis, uitzondering)));
+        assertTrue(d.message().contains("ontkent een zelfstandig kenmerk (Tabel 16)") && d.message().contains(fragment),
+                d.message());
+    }
+
+    @Test void een_geweigerd_lid_van_een_ongeordend_blok_laat_de_andere_leden_niet_als_schrijver_melden() {
+        // The block is refused on its second member; its first member stays un-lifted, and is no plain writer beside
+        // the chain on its target: "neem de regel op in de groep" would send the author to a block it stands in.
+        RegelSpraakModel m = Resolver.resolve(familie("Een Jutter is uitgesloten", "Een Jutter is niet uitgesloten")
+                + """
+
+            Uitzonderingen ongeordend:
+            Regel lid een
+                geldig altijd
+                    Een Jutter is uitgesloten
+                    indien hij vergunning geweigerd is.
+
+            Regel lid twee
+                geldig altijd
+                    Een Jutter is niet vervallen
+                    indien hij geschorst is.
+            """);
+        Diagnostic d = enigeFout(m);
+        assertTrue(d.message().startsWith("regel 'lid twee'") && d.message().contains("ontkent geen kenmerk"),
+                d.message());
     }
 
     @Test void een_gedeclareerd_kenmerk_dat_met_niet_begint_bindt_positief() {
@@ -279,11 +389,11 @@ class NietInUitzonderingTest {
         assertEquals(1, m.diagnostics.size(), () -> "verwachtte één waarschuwing: " + m.diagnostics);
         Diagnostic w = m.diagnostics.get(0);
         assertEquals(Severity.WARNING, w.severity());
-        assertTrue(w.message().contains("wordt nooit afgeleid") && w.message().contains("Jutter.uitgesloten"),
+        assertTrue(w.message().contains("kent het nooit toe") && w.message().contains("Jutter.uitgesloten"),
                 w.message());
         assertTrue(w.line() > 0, "de waarschuwing staat bij het blok");
         // WF-113 (a): the WARNING rides the wire; the emitter refuses anything else.
-        assertTrue(IrEmitter.emit(m).contains("wordt nooit afgeleid"));
+        assertTrue(IrEmitter.emit(m).contains("kent het nooit toe"));
     }
 
     @Test void een_ongeordend_blok_dat_alleen_onwaar_beslist_waarschuwt_eenmaal() {
@@ -302,7 +412,7 @@ class NietInUitzonderingTest {
             """);
         assertTrue(m.isOk(), () -> "welgevormd, dus geen fout: " + m.errors());
         assertEquals(1, m.diagnostics.size(), () -> "één waarschuwing per doel, niet per zustergroep: " + m.diagnostics);
-        assertTrue(m.diagnostics.get(0).message().contains("wordt nooit afgeleid"), m.diagnostics.get(0).message());
+        assertTrue(m.diagnostics.get(0).message().contains("kent het nooit toe"), m.diagnostics.get(0).message());
     }
 
     @Test void twee_ongeordende_blokken_op_een_doel_waarvan_een_waar_beslist_waarschuwen_niet() {
