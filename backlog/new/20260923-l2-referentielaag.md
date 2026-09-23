@@ -616,7 +616,7 @@ main-tip, dan is dat de main-run), en:
   in het Result; DV: 4 fragmenten noemen `set`), de 36 bodemzinnen opnieuw
   vastgesteld waar hun tekst verandert; `EXPECTED_MIN_ROOD_CASES` 26 blijft.
 - (f) Gates 9, 10, 14: alle emittergoldens byte-identiek na her-emissie (12
-  catala; 70 rgs plus die van de dialectkaarten; 2 flogic) — en byte-identiek
+  catala; 71 rgs plus die van de dialectkaarten; 2 flogic) — en byte-identiek
   aan de mechanische migratie van diezelfde documenten (een verschil is een
   bevinding over script of emitter); vloeren 201/12, 173/38, 81/1 blijven;
   JUnit-tellingen gemeld.
