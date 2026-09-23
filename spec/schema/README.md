@@ -158,15 +158,15 @@ dropping the superseded fields) is the v1 migration itself, landed step by
 step.
 
 **Migration.** `../proposals/v1-migratie/m1.py` converts a `regelspraak-ir-v0`
-document to the M1 shape (file arguments, or `--all` for every `ir.json` in
-the corpus zones and the parity zone; `--check` lists the documents still in
-v0 and exits 1 if there is one). It writes with gate 2's own serialiser, so
-a migrated document round-trips byte-identically, and it refuses — with the
-file name and a JSON pointer into the v0 input — every v0 value the M1 shape
-cannot carry: a null or disagreeing self-name, a null datatype, a side-map key
-naming no member, a facet entry without a granularity key, an empty dimension
-list, a value outside its enum. A document already in `uchar-ir-v1` is left untouched, so a second run
-changes nothing.
+document to the M1 shape (file arguments, or `--all` for every `ir.json` in the
+corpus zones and the parity zone; `--check` lists the documents still in v0 and
+exits 1 if there is one). It writes with gate 2's own serialiser, so a migrated
+document round-trips byte-identically, and it refuses — with the file name and a
+JSON pointer into the v0 input — every v0 value the M1 shape cannot carry: a
+null or disagreeing self-name, a null datatype, a side-map key naming no member,
+a facet entry without a granularity key, an empty dimension list, a value
+outside its enum. A document already in `uchar-ir-v1` is left untouched, so a
+second run changes nothing.
 
 ## Gate: `../../scripts/check-ir-schema.sh`
 
