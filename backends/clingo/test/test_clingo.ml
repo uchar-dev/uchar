@@ -80,128 +80,131 @@ let pct_factor2_eenheid =
 let doc_json left_eenheid =
   Printf.sprintf
     {|{
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Vondst": {
-      "node": "Objecttype",
-      "naam": "Vondst",
-      "attributen": {
-        "opbrengst": {
-          "node": "Numeriek",
-          "geheel": true,
-          "decimalen": 0,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "vindersloon": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Vondsten"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "vindersloon van een vondst",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "vindersloon",
-        "objecttype": "Vondst",
-        "onderwerpBron": "de Vondst",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "Het vindersloon van een Vondst",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Binair",
-        "op": "PERCENTAGE_VAN",
-        "links": {
-          "node": "Literal",
-          "waarde": "20",
-          "type": {
-            "node": "Percentage",
-            "geheel": true,
-            "decimalen": 0,
-            "eenheid": %s
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "opbrengst",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
           },
-          "bron": "20%%"
-        },
-        "rechts": {
+          {
+            "node": "Attribute",
+            "name": "vindersloon",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "vindersloon van een vondst",
+        "soort": "BEREKENING",
+        "doel": {
           "node": "AttribuutRef",
-          "attribuut": "opbrengst",
+          "attribuut": "vindersloon",
           "objecttype": "Vondst",
           "onderwerpBron": "de Vondst",
           "navigatieRol": null,
           "type": {
             "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
+            "geheel": false,
+            "decimalen": 2,
             "teken": "ONBEPAALD",
             "eenheid": null
           },
-          "bron": "de opbrengst van de Vondst",
+          "bron": "Het vindersloon van een Vondst",
           "set": false,
           "navigatiePad": []
         },
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
+        "waarde": {
+          "node": "Binair",
+          "op": "PERCENTAGE_VAN",
+          "links": {
+            "node": "Literal",
+            "waarde": "20",
+            "type": {
+              "node": "Percentage",
+              "geheel": true,
+              "decimalen": 0,
+              "eenheid": %s
+            },
+            "bron": "20%%"
+          },
+          "rechts": {
+            "node": "AttribuutRef",
+            "attribuut": "opbrengst",
+            "objecttype": "Vondst",
+            "onderwerpBron": "de Vondst",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "de opbrengst van de Vondst",
+            "set": false,
+            "navigatiePad": []
+          },
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "20%% van de opbrengst van de Vondst"
         },
-        "bron": "20%% van de opbrengst van de Vondst"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }
 |}
@@ -376,85 +379,92 @@ let () =
    pins looptijd = 27 (24 + 3), the value clingo now reproduces. *)
 let duur_doc =
   {|{
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Bergingsvergunning": {
-      "node": "Objecttype",
-      "naam": "Bergingsvergunning",
-      "attributen": {
-        "basisduur": {
-          "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "NIET_NEGATIEF",
-          "eenheid": { "node": "Eenheid", "afkorting": "maand", "stelsel": "Termijn",
-            "canoniek": "maand", "factorNaarCanoniek": 1, "noemer": null }
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType", "name": "Bergingsvergunning", "animate": false,
+        "plural": "Bergingsvergunningen",
+        "attributes": [
+          {
+            "node": "Attribute", "name": "basisduur",
+            "datatype": {
+              "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "NIET_NEGATIEF",
+              "eenheid": { "node": "Eenheid", "afkorting": "maand", "stelsel": "Termijn",
+                "canoniek": "maand", "factorNaarCanoniek": 1, "noemer": null }
+            }
+          },
+          {
+            "node": "Attribute", "name": "looptijd",
+            "datatype": {
+              "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "NIET_NEGATIEF",
+              "eenheid": { "node": "Eenheid", "afkorting": "maand", "stelsel": "Termijn",
+                "canoniek": "maand", "factorNaarCanoniek": 1, "noemer": null }
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [], "parameters": [], "domains": [],
+    "unitSystems": [
+      {
+        "node": "Eenheidstelsel", "naam": "Termijn",
+        "eenheden": {
+          "maand": { "node": "Eenheid", "afkorting": "maand", "stelsel": "Termijn",
+            "canoniek": "maand", "factorNaarCanoniek": 1, "noemer": null },
+          "jaar": { "node": "Eenheid", "afkorting": "jaar", "stelsel": "Termijn",
+            "canoniek": "maand", "factorNaarCanoniek": 12, "noemer": null }
         },
-        "looptijd": {
-          "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "NIET_NEGATIEF",
-          "eenheid": { "node": "Eenheid", "afkorting": "maand", "stelsel": "Termijn",
-            "canoniek": "maand", "factorNaarCanoniek": 1, "noemer": null }
-        }
-      },
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Bergingsvergunningen"
-    }
+        "aliassen": {}
+      }
+    ],
+    "dimensions": [], "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {}
   },
-  "domeinen": {}, "parameters": {},
-  "eenheidstelsels": {
-    "Termijn": {
-      "node": "Eenheidstelsel", "naam": "Termijn",
-      "eenheden": {
-        "maand": { "node": "Eenheid", "afkorting": "maand", "stelsel": "Termijn",
-          "canoniek": "maand", "factorNaarCanoniek": 1, "noemer": null },
-        "jaar": { "node": "Eenheid", "afkorting": "jaar", "stelsel": "Termijn",
-          "canoniek": "maand", "factorNaarCanoniek": 12, "noemer": null }
-      },
-      "aliassen": {}
-    }
-  },
-  "feittypen": {}, "dimensies": {}, "tijdlijnen": [], "dagsoorten": [],
-  "dagsoortPerEenheid": {}, "regels": [],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel", "naam": "looptijd van een bergingsvergunning",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef", "attribuut": "looptijd", "objecttype": "Bergingsvergunning",
-        "onderwerpBron": "een Bergingsvergunning", "navigatieRol": null,
-        "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "NIET_NEGATIEF",
-          "eenheid": { "node": "Eenheid", "afkorting": "maand", "stelsel": "Termijn",
-            "canoniek": "maand", "factorNaarCanoniek": 1, "noemer": null } },
-        "bron": "De looptijd van een Bergingsvergunning", "set": false, "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Binair", "op": "PLUS",
-        "links": {
-          "node": "Literal", "waarde": "2",
-          "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD",
-            "eenheid": { "node": "Eenheid", "afkorting": "jaar", "stelsel": "Termijn",
-              "canoniek": "maand", "factorNaarCanoniek": 12, "noemer": null } },
-          "bron": "2 jaar"
-        },
-        "rechts": {
-          "node": "AttribuutRef", "attribuut": "basisduur", "objecttype": "Bergingsvergunning",
-          "onderwerpBron": "de Bergingsvergunning", "navigatieRol": null,
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel", "naam": "looptijd van een bergingsvergunning",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef", "attribuut": "looptijd", "objecttype": "Bergingsvergunning",
+          "onderwerpBron": "een Bergingsvergunning", "navigatieRol": null,
           "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "NIET_NEGATIEF",
             "eenheid": { "node": "Eenheid", "afkorting": "maand", "stelsel": "Termijn",
               "canoniek": "maand", "factorNaarCanoniek": 1, "noemer": null } },
-          "bron": "de basisduur van de Bergingsvergunning", "set": false, "navigatiePad": []
+          "bron": "De looptijd van een Bergingsvergunning", "set": false, "navigatiePad": []
         },
-        "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD",
-          "eenheid": { "node": "Eenheid", "afkorting": "jaar", "stelsel": "Termijn",
-            "canoniek": "maand", "factorNaarCanoniek": 12, "noemer": null } },
-        "bron": "2 jaar plus de basisduur van de Bergingsvergunning"
-      },
-      "voorwaarde": null,
-      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null }
-    }
-  ],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-  "regelGroepen": [], "diagnostics": []
+        "waarde": {
+          "node": "Binair", "op": "PLUS",
+          "links": {
+            "node": "Literal", "waarde": "2",
+            "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD",
+              "eenheid": { "node": "Eenheid", "afkorting": "jaar", "stelsel": "Termijn",
+                "canoniek": "maand", "factorNaarCanoniek": 12, "noemer": null } },
+            "bron": "2 jaar"
+          },
+          "rechts": {
+            "node": "AttribuutRef", "attribuut": "basisduur", "objecttype": "Bergingsvergunning",
+            "onderwerpBron": "de Bergingsvergunning", "navigatieRol": null,
+            "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "NIET_NEGATIEF",
+              "eenheid": { "node": "Eenheid", "afkorting": "maand", "stelsel": "Termijn",
+                "canoniek": "maand", "factorNaarCanoniek": 1, "noemer": null } },
+            "bron": "de basisduur van de Bergingsvergunning", "set": false, "navigatiePad": []
+          },
+          "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD",
+            "eenheid": { "node": "Eenheid", "afkorting": "jaar", "stelsel": "Termijn",
+              "canoniek": "maand", "factorNaarCanoniek": 12, "noemer": null } },
+          "bron": "2 jaar plus de basisduur van de Bergingsvergunning"
+        },
+        "voorwaarde": null,
+        "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null }
+      }
+    ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
+  "diagnostics": []
 }
 |}
 
@@ -587,153 +597,203 @@ let () =
    WF-036 comparison (a Massa attribute against a Gewicht literal). *)
 let kruis_doc ~mcanon ~tonf =
   replace ~tok:"@TONF@" ~by:tonf (replace ~tok:"@MCANON@" ~by:mcanon {|{
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Weging": {
-      "node": "Objecttype",
-      "naam": "Weging",
-      "attributen": {
-        "ruwgewicht": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Weging",
+        "animate": false,
+        "plural": "Wegingen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "ruwgewicht",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "ondergewicht",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "spiegelgewicht",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null}
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "somgewicht",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "keurgewicht",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "Eenheidstelsel",
+        "naam": "Gewicht",
+        "eenheden": {
+          "kg": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
         },
-        "ondergewicht": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
-        },
-        "spiegelgewicht": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null}
-        },
-        "somgewicht": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
-        },
-        "keurgewicht": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+        "aliassen": {
+          "kilogram": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null},
+          "kilogrammen": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
         }
       },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Wegingen"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {
-    "Gewicht": {
-      "node": "Eenheidstelsel",
-      "naam": "Gewicht",
-      "eenheden": {
-        "kg": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
-      },
-      "aliassen": {
-        "kilogram": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null},
-        "kilogrammen": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
-      }
-    },
-    "Massa": {
-      "node": "Eenheidstelsel",
-      "naam": "Massa",
-      "eenheden": {
-        "kg": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null},
-        "kgm": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null},
-        "t": {"node": "Eenheid", "afkorting": "t", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": @TONF@, "noemer": null}
-      },
-      "aliassen": {
-        "kilogram": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null},
-        "kilogrammen": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null},
-        "ton": {"node": "Eenheid", "afkorting": "t", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": @TONF@, "noemer": null},
-        "tonnen": {"node": "Eenheid", "afkorting": "t", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": @TONF@, "noemer": null}
-      }
-    }
-  },
-  "feittypen": {},
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "ondergewicht van een vangst",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "spiegelgewicht van een vangst",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "somgewicht van een vangst",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "toeslaggewicht van een vangst",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "lastgewicht van een vangst",
-      "soort": "regel"
-    },
-    {
-      "node": "Regel",
-      "naam": "keurgewicht van een vangst",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "ondergewicht van een weging",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "ondergewicht",
-        "objecttype": "Weging",
-        "onderwerpBron": "een Weging",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+      {
+        "node": "Eenheidstelsel",
+        "naam": "Massa",
+        "eenheden": {
+          "kg": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null},
+          "kgm": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null},
+          "t": {"node": "Eenheid", "afkorting": "t", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": @TONF@, "noemer": null}
         },
-        "bron": "Het ondergewicht van een Weging",
-        "set": false,
-        "navigatiePad": []
+        "aliassen": {
+          "kilogram": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null},
+          "kilogrammen": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null},
+          "ton": {"node": "Eenheid", "afkorting": "t", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": @TONF@, "noemer": null},
+          "tonnen": {"node": "Eenheid", "afkorting": "t", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": @TONF@, "noemer": null}
+        }
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "ondergewicht van een weging",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "ondergewicht",
+          "objecttype": "Weging",
+          "onderwerpBron": "een Weging",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+          },
+          "bron": "Het ondergewicht van een Weging",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Begrensd",
+          "basis": {
+            "node": "AttribuutRef",
+            "attribuut": "ruwgewicht",
+            "objecttype": "Weging",
+            "onderwerpBron": "de Weging",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+            },
+            "bron": "het ruwgewicht van de Weging",
+            "set": false,
+            "navigatiePad": []
+          },
+          "minimum": {
+            "node": "Literal",
+            "waarde": "1",
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {"node": "Eenheid", "afkorting": "t", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": @TONF@, "noemer": null}
+            },
+            "bron": "1 t"
+          },
+          "maximum": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+          },
+          "bron": "het ruwgewicht van de Weging, met een minimum van 1 t"
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       },
-      "waarde": {
-        "node": "Begrensd",
-        "basis": {
+      {
+        "node": "ResolvedRegel",
+        "naam": "spiegelgewicht van een weging",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "spiegelgewicht",
+          "objecttype": "Weging",
+          "onderwerpBron": "een Weging",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null}
+          },
+          "bron": "Het spiegelgewicht van een Weging",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
           "node": "AttribuutRef",
           "attribuut": "ruwgewicht",
           "objecttype": "Weging",
@@ -750,105 +810,109 @@ let kruis_doc ~mcanon ~tonf =
           "set": false,
           "navigatiePad": []
         },
-        "minimum": {
-          "node": "Literal",
-          "waarde": "1",
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      },
+      {
+        "node": "ResolvedRegel",
+        "naam": "somgewicht van een weging",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "somgewicht",
+          "objecttype": "Weging",
+          "onderwerpBron": "een Weging",
+          "navigatieRol": null,
           "type": {
             "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
+            "geheel": false,
+            "decimalen": 2,
             "teken": "ONBEPAALD",
-            "eenheid": {"node": "Eenheid", "afkorting": "t", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": @TONF@, "noemer": null}
+            "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
           },
-          "bron": "1 t"
+          "bron": "Het somgewicht van een Weging",
+          "set": false,
+          "navigatiePad": []
         },
-        "maximum": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+        "waarde": {
+          "node": "Binair",
+          "op": "PLUS",
+          "links": {
+            "node": "AttribuutRef",
+            "attribuut": "ruwgewicht",
+            "objecttype": "Weging",
+            "onderwerpBron": "de Weging",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+            },
+            "bron": "het ruwgewicht van de Weging",
+            "set": false,
+            "navigatiePad": []
+          },
+          "rechts": {
+            "node": "AttribuutRef",
+            "attribuut": "spiegelgewicht",
+            "objecttype": "Weging",
+            "onderwerpBron": "de Weging",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null}
+            },
+            "bron": "het spiegelgewicht van de Weging",
+            "set": false,
+            "navigatiePad": []
+          },
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+          },
+          "bron": "het ruwgewicht van de Weging plus het spiegelgewicht van de Weging"
         },
-        "bron": "het ruwgewicht van de Weging, met een minimum van 1 t"
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "spiegelgewicht van een weging",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "spiegelgewicht",
-        "objecttype": "Weging",
-        "onderwerpBron": "een Weging",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null}
+      {
+        "node": "ResolvedRegel",
+        "naam": "keurgewicht van een weging",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "keurgewicht",
+          "objecttype": "Weging",
+          "onderwerpBron": "een Weging",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+          },
+          "bron": "Het keurgewicht van een Weging",
+          "set": false,
+          "navigatiePad": []
         },
-        "bron": "Het spiegelgewicht van een Weging",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "AttribuutRef",
-        "attribuut": "ruwgewicht",
-        "objecttype": "Weging",
-        "onderwerpBron": "de Weging",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
-        },
-        "bron": "het ruwgewicht van de Weging",
-        "set": false,
-        "navigatiePad": []
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "somgewicht van een weging",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "somgewicht",
-        "objecttype": "Weging",
-        "onderwerpBron": "een Weging",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
-        },
-        "bron": "Het somgewicht van een Weging",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Binair",
-        "op": "PLUS",
-        "links": {
+        "waarde": {
           "node": "AttribuutRef",
           "attribuut": "ruwgewicht",
           "objecttype": "Weging",
@@ -865,128 +929,58 @@ let kruis_doc ~mcanon ~tonf =
           "set": false,
           "navigatiePad": []
         },
-        "rechts": {
-          "node": "AttribuutRef",
-          "attribuut": "spiegelgewicht",
-          "objecttype": "Weging",
-          "onderwerpBron": "de Weging",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null}
+        "voorwaarde": {
+          "node": "Vergelijking",
+          "op": "GROTER",
+          "links": {
+            "node": "AttribuutRef",
+            "attribuut": "spiegelgewicht",
+            "objecttype": "Weging",
+            "onderwerpBron": "de Weging",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null}
+            },
+            "bron": "het spiegelgewicht van de Weging",
+            "set": false,
+            "navigatiePad": []
           },
-          "bron": "het spiegelgewicht van de Weging",
-          "set": false,
-          "navigatiePad": []
+          "rechts": {
+            "node": "Literal",
+            "waarde": "1000",
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
+            },
+            "bron": "1000 kg"
+          },
+          "periode": null,
+          "bron": "het spiegelgewicht van de Weging groter is dan 1000 kg"
         },
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
-        },
-        "bron": "het ruwgewicht van de Weging plus het spiegelgewicht van de Weging"
-      },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
       }
-    },
-    {
-      "node": "ResolvedRegel",
-      "naam": "keurgewicht van een weging",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "keurgewicht",
-        "objecttype": "Weging",
-        "onderwerpBron": "een Weging",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
-        },
-        "bron": "Het keurgewicht van een Weging",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "AttribuutRef",
-        "attribuut": "ruwgewicht",
-        "objecttype": "Weging",
-        "onderwerpBron": "de Weging",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
-        },
-        "bron": "het ruwgewicht van de Weging",
-        "set": false,
-        "navigatiePad": []
-      },
-      "voorwaarde": {
-        "node": "Vergelijking",
-        "op": "GROTER",
-        "links": {
-          "node": "AttribuutRef",
-          "attribuut": "spiegelgewicht",
-          "objecttype": "Weging",
-          "onderwerpBron": "de Weging",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Massa", "canoniek": "@MCANON@", "factorNaarCanoniek": 1, "noemer": null}
-          },
-          "bron": "het spiegelgewicht van de Weging",
-          "set": false,
-          "navigatiePad": []
-        },
-        "rechts": {
-          "node": "Literal",
-          "waarde": "1000",
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {"node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null}
-          },
-          "bron": "1000 kg"
-        },
-        "periode": null,
-        "bron": "het spiegelgewicht van de Weging groter is dan 1000 kg"
-      },
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
-      }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }
 |})
@@ -1106,69 +1100,82 @@ let () =
    ("unit unknown is never a wire type"). This synthetic doc pins the red→green. *)
 let onbekend_binair_doc =
   {|{
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Meting": {
-      "node": "Objecttype", "naam": "Meting",
-      "attributen": {
-        "tarief":      { "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD", "eenheid": null },
-        "hoeveelheid": { "node": "Numeriek", "geheel": true,  "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
-        "basis":       { "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD", "eenheid": null },
-        "kosten":      { "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD", "eenheid": null }
-      },
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Metingen"
-    }
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType", "name": "Meting", "animate": false, "plural": "Metingen",
+        "attributes": [
+          {
+            "node": "Attribute", "name": "tarief",
+            "datatype": { "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD", "eenheid": null }
+          },
+          {
+            "node": "Attribute", "name": "hoeveelheid",
+            "datatype": { "node": "Numeriek", "geheel": true,  "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null }
+          },
+          {
+            "node": "Attribute", "name": "basis",
+            "datatype": { "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD", "eenheid": null }
+          },
+          {
+            "node": "Attribute", "name": "kosten",
+            "datatype": { "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD", "eenheid": null }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
+    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {}
   },
-  "domeinen": {}, "parameters": {}, "eenheidstelsels": {},
-  "feittypen": {}, "dimensies": {}, "tijdlijnen": [], "dagsoorten": [],
-  "dagsoortPerEenheid": {}, "regels": [],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel", "naam": "kosten van een meting", "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef", "attribuut": "kosten", "objecttype": "Meting",
-        "onderwerpBron": "een Meting", "navigatieRol": null,
-        "type": { "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD", "eenheid": null },
-        "bron": "De kosten van een Meting", "set": false, "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Binair", "op": "MIN",
-        "links": {
-          "node": "AttribuutRef", "attribuut": "basis", "objecttype": "Meting",
-          "onderwerpBron": "de Meting", "navigatieRol": null,
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel", "naam": "kosten van een meting", "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef", "attribuut": "kosten", "objecttype": "Meting",
+          "onderwerpBron": "een Meting", "navigatieRol": null,
           "type": { "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD", "eenheid": null },
-          "bron": "de basis van de Meting", "set": false, "navigatiePad": []
+          "bron": "De kosten van een Meting", "set": false, "navigatiePad": []
         },
-        "rechts": {
-          "node": "Binair", "op": "MAAL",
+        "waarde": {
+          "node": "Binair", "op": "MIN",
           "links": {
-            "node": "AttribuutRef", "attribuut": "tarief", "objecttype": "Meting",
+            "node": "AttribuutRef", "attribuut": "basis", "objecttype": "Meting",
             "onderwerpBron": "de Meting", "navigatieRol": null,
             "type": { "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD", "eenheid": null },
-            "bron": "het tarief van de Meting", "set": false, "navigatiePad": []
+            "bron": "de basis van de Meting", "set": false, "navigatiePad": []
           },
           "rechts": {
-            "node": "AttribuutRef", "attribuut": "hoeveelheid", "objecttype": "Meting",
-            "onderwerpBron": "de Meting", "navigatieRol": null,
-            "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
-            "bron": "de hoeveelheid van de Meting", "set": false, "navigatiePad": []
+            "node": "Binair", "op": "MAAL",
+            "links": {
+              "node": "AttribuutRef", "attribuut": "tarief", "objecttype": "Meting",
+              "onderwerpBron": "de Meting", "navigatieRol": null,
+              "type": { "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD", "eenheid": null },
+              "bron": "het tarief van de Meting", "set": false, "navigatiePad": []
+            },
+            "rechts": {
+              "node": "AttribuutRef", "attribuut": "hoeveelheid", "objecttype": "Meting",
+              "onderwerpBron": "de Meting", "navigatieRol": null,
+              "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
+              "bron": "de hoeveelheid van de Meting", "set": false, "navigatiePad": []
+            },
+            "type": { "node": "Onbekend", "reden": "samengestelde eenheid" },
+            "bron": "het tarief van de Meting maal de hoeveelheid van de Meting"
           },
-          "type": { "node": "Onbekend", "reden": "samengestelde eenheid" },
-          "bron": "het tarief van de Meting maal de hoeveelheid van de Meting"
+          "type": { "node": "Onbekend", "reden": "operand" },
+          "bron": "de basis van de Meting min het tarief van de Meting maal de hoeveelheid van de Meting"
         },
-        "type": { "node": "Onbekend", "reden": "operand" },
-        "bron": "de basis van de Meting min het tarief van de Meting maal de hoeveelheid van de Meting"
-      },
-      "voorwaarde": null,
-      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null }
-    }
-  ],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-  "regelGroepen": [], "diagnostics": []
+        "voorwaarde": null,
+        "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null }
+      }
+    ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
+  "diagnostics": []
 }
 |}
 
@@ -1212,39 +1219,57 @@ let () =
 let num0 =
   {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null }|}
 
-let meldstatus =
-  {|{ "node": "SumType", "domain": "meldstatus", "constructors": [
-        { "name": "Openstaand", "payload": |} ^ num0
+(* the constructor lists are shared because a domain is spelled twice: at its
+   declaration (the M1 Domain wrapper, whose datatype carries no self-name) and
+   at every reference position, which keeps "domain" *)
+let meldstatus_constructors =
+  {|[ { "name": "Openstaand", "payload": |} ^ num0
   ^ {| }, { "name": "Vervuld", "payload": null },
-        { "name": "Geschonden", "payload": null } ] }|}
+        { "name": "Geschonden", "payload": null } ]|}
+
+let meldstatus =
+  {|{ "node": "SumType", "domain": "meldstatus", "constructors": |} ^ meldstatus_constructors
+  ^ {| }|}
+
+let gebeurtenis_constructors =
+  {|[ { "name": "Dagverloop", "payload": |} ^ num0
+  ^ {| }, { "name": "Melding", "payload": null } ]|}
 
 let gebeurtenis =
-  {|{ "node": "SumType", "domain": "gebeurtenis", "constructors": [
-        { "name": "Dagverloop", "payload": |} ^ num0
-  ^ {| }, { "name": "Melding", "payload": null } ] }|}
+  {|{ "node": "SumType", "domain": "gebeurtenis", "constructors": |} ^ gebeurtenis_constructors
+  ^ {| }|}
+
+(* an M1 Attribute node, the form in which the frames below take their attributes *)
+let attribuut naam datatype =
+  {|{ "node": "Attribute", "name": "|} ^ naam ^ {|", "datatype": |} ^ datatype ^ {| }|}
 
 (* attributes / parameters / rule body are spliced per door; the frame is one *)
 let door_doc ~attributen ~parameters ~regel =
-  {|{ "formaat": "regelspraak-ir-v0",
-  "objecttypen": { "Meldplicht": {
-    "node": "Objecttype", "naam": "Meldplicht",
-    "attributen": { |} ^ attributen
-  ^ {| },
-    "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-    "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-    "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
-    "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Meldplichten" } },
-  "domeinen": { "meldstatus": |} ^ meldstatus ^ {|, "gebeurtenis": |} ^ gebeurtenis
-  ^ {| },
-  "parameters": { |} ^ parameters
-  ^ {| },
-  "eenheidstelsels": {}, "feittypen": {}, "dimensies": {}, "tijdlijnen": [],
-  "dagsoorten": [], "dagsoortPerEenheid": {}, "regels": [],
-  "resolvedRegels": [ |} ^ regel
+  {|{ "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Meldplicht", "animate": false, "plural": "Meldplichten",
+        "attributes": [ |} ^ attributen
   ^ {| ],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-  "regelGroepen": [], "diagnostics": []
+        "characteristics": [] } ],
+    "factTypes": [],
+    "parameters": [ |} ^ parameters
+  ^ {| ],
+    "domains": [
+      { "node": "Domain", "name": "meldstatus",
+        "datatype": { "node": "SumType", "constructors": |} ^ meldstatus_constructors
+  ^ {| } },
+      { "node": "Domain", "name": "gebeurtenis",
+        "datatype": { "node": "SumType", "constructors": |} ^ gebeurtenis_constructors
+  ^ {| } } ],
+    "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {} },
+  "rules": {
+    "resolvedRegels": [ |} ^ regel
+  ^ {| ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+    "regelGroepen": [] },
+  "diagnostics": []
 }
 |}
 
@@ -1278,9 +1303,9 @@ let faults_with ~name ~ir ~case_text ~needle =
    both instances came back carrying BOTH outcomes. Refused, not answered. *)
 let plist_init_doc =
   door_doc
-    ~attributen:({|"termijn": |} ^ num0 ^ {|, "meldpositie": |} ^ meldstatus)
+    ~attributen:(attribuut "termijn" num0 ^ ", " ^ attribuut "meldpositie" meldstatus)
     ~parameters:
-      ({|"meldreeks": { "node": "Parameter", "naam": "meldreeks",
+      ({|{ "node": "Parameter", "naam": "meldreeks",
           "datatype": { "node": "ListType", "element": |} ^ gebeurtenis
      ^ {| }, "granulariteit": null }|})
     ~regel:
@@ -1321,9 +1346,9 @@ let plist_init_case =
    read; anything else (a parameter, a Match, a composite) has no witness. *)
 let param_payload_doc =
   door_doc
-    ~attributen:({|"meldpositie": |} ^ meldstatus)
+    ~attributen:(attribuut "meldpositie" meldstatus)
     ~parameters:
-      ({|"volle termijn": { "node": "Parameter", "naam": "volle termijn",
+      ({|{ "node": "Parameter", "naam": "volle termijn",
           "datatype": |} ^ num0 ^ {|, "granulariteit": null }|})
     ~regel:
       ({|{ "node": "ResolvedRegel", "naam": "meldpositie van een meldplicht", "soort": "BEREKENING",
@@ -1351,7 +1376,8 @@ let param_payload_case =
 let sum_operand_doc =
   door_doc
     ~attributen:
-      ({|"termijn": |} ^ num0 ^ {|, "meldpositie": |} ^ meldstatus ^ {|, "boete": |} ^ num0)
+      (attribuut "termijn" num0 ^ ", " ^ attribuut "meldpositie" meldstatus ^ ", "
+     ^ attribuut "boete" num0)
     ~parameters:""
     ~regel:
       ({|{ "node": "ResolvedRegel", "naam": "boete van een meldplicht", "soort": "BEREKENING",
@@ -1391,8 +1417,9 @@ let sum_operand_case =
 let closed_attr_doc =
   door_doc
     ~attributen:
-      ({|"termijn": |} ^ num0 ^ {|, "meldreeks": { "node": "ListType", "element": |} ^ gebeurtenis
-     ^ {| }, "meldpositie": |} ^ meldstatus)
+      (attribuut "termijn" num0 ^ ", "
+     ^ attribuut "meldreeks" ({|{ "node": "ListType", "element": |} ^ gebeurtenis ^ {| }|})
+     ^ ", " ^ attribuut "meldpositie" meldstatus)
     ~parameters:""
     ~regel:
       ({|{ "node": "ResolvedRegel", "naam": "meldpositie van een meldplicht", "soort": "BEREKENING",
@@ -1488,8 +1515,8 @@ let () =
 let sumfold_doc =
   door_doc
     ~attributen:
-      ({|"bakboordstand": |} ^ meldstatus ^ {|, "stuurboordstand": |} ^ meldstatus
-     ^ {|, "meldpositie": |} ^ meldstatus)
+      (attribuut "bakboordstand" meldstatus ^ ", " ^ attribuut "stuurboordstand" meldstatus
+     ^ ", " ^ attribuut "meldpositie" meldstatus)
     ~parameters:""
     ~regel:
       ({|{ "node": "ResolvedRegel", "naam": "meldpositie van een meldplicht", "soort": "BEREKENING",
@@ -1551,8 +1578,8 @@ let num_tijdseenheid afk =
 let dagduur_lie_doc =
   door_doc
     ~attributen:
-      ({|"peildatum": |} ^ datum_t ^ {|, "meldpositie": |} ^ meldstatus
-     ^ {|, "vervaldatum": |} ^ datum_t)
+      (attribuut "peildatum" datum_t ^ ", " ^ attribuut "meldpositie" meldstatus
+     ^ ", " ^ attribuut "vervaldatum" datum_t)
     ~parameters:""
     ~regel:
       ({|{ "node": "ResolvedRegel", "naam": "vervaldatum van een meldplicht", "soort": "BEREKENING",
@@ -1583,8 +1610,8 @@ let dagduur_lie_case =
 let dtduur_lie_doc =
   door_doc
     ~attributen:
-      ({|"meldmoment": |} ^ datumtijd_t ^ {|, "meldpositie": |} ^ meldstatus
-     ^ {|, "vervalmoment": |} ^ datumtijd_t)
+      (attribuut "meldmoment" datumtijd_t ^ ", " ^ attribuut "meldpositie" meldstatus
+     ^ ", " ^ attribuut "vervalmoment" datumtijd_t)
     ~parameters:""
     ~regel:
       ({|{ "node": "ResolvedRegel", "naam": "vervalmoment van een meldplicht", "soort": "BEREKENING",
@@ -1646,60 +1673,56 @@ let jaar_num =
    "bewaartarief" shares the name with the Jutter's (the wrong-value form),
    spelling it "vondsttarief" does not (the silent-leeg form). *)
 let totaal_doc ~vondst_attribuut ~operand =
-  {|{ "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": { "node": "Objecttype", "naam": "Jutter",
-      "attributen": { "bewaartarief": |}
-  ^ jaar_num
-  ^ {| },
-      "attribuutMeervoud": {}, "attribuutDimensies": {},
-      "attribuutGranulariteit": { "bewaartarief": "JAAR" },
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": { "bewaartarief": "penningjaar" },
-      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {}, "bezield": true, "meervoud": "Jutters" },
-    "Vondst": { "node": "Objecttype", "naam": "Vondst",
-      "attributen": { "bewaarlast": |}
-  ^ jaar_num ^ {|, "|} ^ vondst_attribuut ^ {|": |} ^ jaar_num
-  ^ {| },
-      "attribuutMeervoud": {}, "attribuutDimensies": {},
-      "attribuutGranulariteit": { "|} ^ vondst_attribuut
-  ^ {|": "JAAR" },
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": { "|} ^ vondst_attribuut
-  ^ {|": "penningjaar" },
-      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vondsten" } },
-  "domeinen": {}, "parameters": {}, "eenheidstelsels": {},
-  "feittypen": { "bewaring": { "node": "Feittype", "naam": "bewaring", "wederkerig": false,
-    "rollen": [
-      { "node": "Rol", "naam": "bewarende jutter", "objecttypeNaam": "Jutter",
-        "meervoud": null, "meervoudig": false },
-      { "node": "Rol", "naam": "vondst", "objecttypeNaam": "Vondst",
-        "meervoud": "vondsten", "meervoudig": true } ] } },
-  "dimensies": {},
-  "tijdlijnen": [ { "node": "Tijdlijn", "naam": "het penningjaar", "variabelStartpunt": false,
-    "granulariteit": "JAAR", "aantal": 1 } ],
-  "dagsoorten": [], "dagsoortPerEenheid": {},
-  "regels": [ { "node": "Regel", "naam": "bewaarlast van een vondst", "soort": "regel" } ],
-  "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "bewaarlast van een vondst",
-    "soort": "BEREKENING",
-    "doel": { "node": "AttribuutRef", "attribuut": "bewaarlast", "objecttype": "Vondst",
-      "onderwerpBron": "een Vondst", "navigatieRol": null, "type": |}
+  {|{ "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters",
+        "attributes": [
+          { "node": "Attribute", "name": "bewaartarief", "datatype": |} ^ jaar_num ^ {|,
+            "timeline": { "node": "TimelineFacet", "granularity": "JAAR", "count": 1,
+              "timelineName": "penningjaar" } } ],
+        "characteristics": [] },
+      { "node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten",
+        "attributes": [
+          { "node": "Attribute", "name": "bewaarlast", "datatype": |} ^ jaar_num ^ {| },
+          { "node": "Attribute", "name": "|} ^ vondst_attribuut ^ {|",
+            "datatype": |} ^ jaar_num ^ {|,
+            "timeline": { "node": "TimelineFacet", "granularity": "JAAR", "count": 1,
+              "timelineName": "penningjaar" } } ],
+        "characteristics": [] } ],
+    "factTypes": [
+      { "node": "Feittype", "naam": "bewaring", "wederkerig": false,
+        "rollen": [
+          { "node": "Rol", "naam": "bewarende jutter", "objecttypeNaam": "Jutter",
+            "meervoud": null, "meervoudig": false },
+          { "node": "Rol", "naam": "vondst", "objecttypeNaam": "Vondst",
+            "meervoud": "vondsten", "meervoudig": true } ] } ],
+    "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
+    "timelines": [ { "node": "Tijdlijn", "naam": "het penningjaar", "variabelStartpunt": false,
+      "granulariteit": "JAAR", "aantal": 1 } ],
+    "dayKinds": [], "dagsoortPerEenheid": {} },
+  "rules": {
+    "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "bewaarlast van een vondst",
+      "soort": "BEREKENING",
+      "doel": { "node": "AttribuutRef", "attribuut": "bewaarlast", "objecttype": "Vondst",
+        "onderwerpBron": "een Vondst", "navigatieRol": null, "type": |}
   ^ jaar_num
   ^ {|,
-      "bron": "De bewaarlast van een Vondst", "set": false, "navigatiePad": [] },
-    "waarde": { "node": "Functie", "kind": "TOTAAL", "argumenten": [ |}
+        "bron": "De bewaarlast van een Vondst", "set": false, "navigatiePad": [] },
+      "waarde": { "node": "Functie", "kind": "TOTAAL", "argumenten": [ |}
   ^ operand
   ^ {| ],
-      "elementObjecttype": "Jutter", "leegwaarde": null, "filter": null,
-      "dimensieSelectie": null, "type": |}
+        "elementObjecttype": "Jutter", "leegwaarde": null, "filter": null,
+        "dimensieSelectie": null, "type": |}
   ^ jaar_num
   ^ {|,
-      "bron": "het totaal van het bewaartarief van de bewarende jutter",
-      "granulariteit": null },
-    "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-  "regelGroepen": [], "diagnostics": []
+        "bron": "het totaal van het bewaartarief van de bewarende jutter",
+        "granulariteit": null },
+      "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+    "regelGroepen": [] },
+  "diagnostics": []
 }
 |}
 
@@ -1929,80 +1952,72 @@ let euro_num eenheid =
    where the write fence cannot help the anchor. *)
 let setvouw_doc ~kind ~operand_ot ~tarief_eenheid ~doel_eenheid =
   let tarief = euro_num tarief_eenheid in
-  {|{ "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": { "node": "Objecttype", "naam": "Jutter",
-      "attributen": { "bewaarlast": |}
-  ^ euro_num doel_eenheid
-  ^ {| },
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {}, "bezield": true, "meervoud": "Jutters" },
-    "Vondst": { "node": "Objecttype", "naam": "Vondst",
-      "attributen": { "bewaartarief": |}
-  ^ tarief
-  ^ {| },
-      "attribuutMeervoud": { "bewaartarief": "bewaartarieven" }, "attribuutDimensies": {},
-      "attribuutGranulariteit": { "bewaartarief": "MAAND" },
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vondsten" },
-    "Kist": { "node": "Objecttype", "naam": "Kist",
-      "attributen": { "bewaartarief": |}
-  ^ tarief
-  ^ {| },
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Kisten" } },
-  "domeinen": {}, "parameters": {},
-  "eenheidstelsels": {
-    "Munt": { "node": "Eenheidstelsel", "naam": "Munt",
-      "eenheden": { "EUR": |}
+  {|{ "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters",
+        "attributes": [
+          { "node": "Attribute", "name": "bewaarlast", "datatype": |} ^ euro_num doel_eenheid ^ {| } ],
+        "characteristics": [] },
+      { "node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten",
+        "attributes": [
+          { "node": "Attribute", "name": "bewaartarief", "datatype": |} ^ tarief ^ {|,
+            "plural": "bewaartarieven",
+            "timeline": { "node": "TimelineFacet", "granularity": "MAAND", "count": 1 } } ],
+        "characteristics": [] },
+      { "node": "ObjectType", "name": "Kist", "animate": false, "plural": "Kisten",
+        "attributes": [
+          { "node": "Attribute", "name": "bewaartarief", "datatype": |} ^ tarief ^ {| } ],
+        "characteristics": [] } ],
+    "factTypes": [
+      { "node": "Feittype", "naam": "bewaring", "wederkerig": false,
+        "rollen": [
+          { "node": "Rol", "naam": "bewarende jutter", "objecttypeNaam": "Jutter",
+            "meervoud": null, "meervoudig": false },
+          { "node": "Rol", "naam": "vondst", "objecttypeNaam": "Vondst",
+            "meervoud": "vondsten", "meervoudig": true } ] } ],
+    "parameters": [], "domains": [],
+    "unitSystems": [
+      { "node": "Eenheidstelsel", "naam": "Munt",
+        "eenheden": { "EUR": |}
   ^ eur "null"
   ^ {| }, "aliassen": {} },
-    "Bewaartijd": { "node": "Eenheidstelsel", "naam": "Bewaartijd",
-      "eenheden": { "mnd": |}
+      { "node": "Eenheidstelsel", "naam": "Bewaartijd",
+        "eenheden": { "mnd": |}
   ^ mnd_eenheid ^ {|, "jr": |} ^ jr_eenheid
-  ^ {| }, "aliassen": {} } },
-  "feittypen": { "bewaring": { "node": "Feittype", "naam": "bewaring", "wederkerig": false,
-    "rollen": [
-      { "node": "Rol", "naam": "bewarende jutter", "objecttypeNaam": "Jutter",
-        "meervoud": null, "meervoudig": false },
-      { "node": "Rol", "naam": "vondst", "objecttypeNaam": "Vondst",
-        "meervoud": "vondsten", "meervoudig": true } ] } },
-  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
-  "regels": [ { "node": "Regel", "naam": "bewaarlast van een jutter", "soort": "regel" } ],
-  "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "bewaarlast van een jutter",
-    "soort": "BEREKENING",
-    "doel": { "node": "AttribuutRef", "attribuut": "bewaarlast", "objecttype": "Jutter",
-      "onderwerpBron": "een Jutter", "navigatieRol": null, "type": |}
+  ^ {| }, "aliassen": {} } ],
+    "dimensions": [], "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {} },
+  "rules": {
+    "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "bewaarlast van een jutter",
+      "soort": "BEREKENING",
+      "doel": { "node": "AttribuutRef", "attribuut": "bewaarlast", "objecttype": "Jutter",
+        "onderwerpBron": "een Jutter", "navigatieRol": null, "type": |}
   ^ euro_num doel_eenheid
   ^ {|,
-      "bron": "De bewaarlast van een Jutter", "set": false, "navigatiePad": [] },
-    "waarde": { "node": "Functie", "kind": "|}
+        "bron": "De bewaarlast van een Jutter", "set": false, "navigatiePad": [] },
+      "waarde": { "node": "Functie", "kind": "|}
   ^ kind
   ^ {|", "argumenten": [
-      { "node": "AttribuutRef", "attribuut": "bewaartarief", "objecttype": "|}
+        { "node": "AttribuutRef", "attribuut": "bewaartarief", "objecttype": "|}
   ^ operand_ot
   ^ {|",
-        "onderwerpBron": "alle vondsten van de Jutter", "navigatieRol": null, "type": |}
+          "onderwerpBron": "alle vondsten van de Jutter", "navigatieRol": null, "type": |}
   ^ tarief
   ^ {|,
-        "bron": "het bewaartarief van alle vondsten van de Jutter", "set": true,
-        "navigatiePad": [] } ],
-      "elementObjecttype": "Vondst", "leegwaarde": null, "filter": null,
-      "dimensieSelectie": null, "type": |}
+          "bron": "het bewaartarief van alle vondsten van de Jutter", "set": true,
+          "navigatiePad": [] } ],
+        "elementObjecttype": "Vondst", "leegwaarde": null, "filter": null,
+        "dimensieSelectie": null, "type": |}
   ^ euro_num doel_eenheid
   ^ {|,
-      "bron": "het totaal van het bewaartarief van alle vondsten van de Jutter",
-      "granulariteit": null,
-      "bronRol": { "node": "RolBinding", "feittype": "bewaring", "rol": "vondst" } },
-    "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-  "regelGroepen": [], "diagnostics": []
+        "bron": "het totaal van het bewaartarief van alle vondsten van de Jutter",
+        "granulariteit": null,
+        "bronRol": { "node": "RolBinding", "feittype": "bewaring", "rol": "vondst" } },
+      "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+    "regelGroepen": [] },
+  "diagnostics": []
 }
 |}
 
@@ -2057,8 +2072,10 @@ let replace_first ~needle ~by s =
 let with_allocation ~pot_type ir =
   ir
   |> replace_first
-       ~needle:{|"attributen": { "bewaarlast": |}
-       ~by:({|"attributen": { "bewaarpot": |} ^ pot_type ^ {|, "bewaarlast": |})
+       ~needle:{|{ "node": "Attribute", "name": "bewaarlast", |}
+       ~by:
+         ({|{ "node": "Attribute", "name": "bewaarpot", "datatype": |} ^ pot_type
+         ^ {| }, { "node": "Attribute", "name": "bewaarlast", |})
   |> replace_first ~needle:{|"verdelingen": []|}
        ~by:
          {|"verdelingen": [
@@ -2262,12 +2279,11 @@ let () =
   let met_kenmerk =
     vervang straight
       ~oud:
-        {|"kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vondsten" }|}
+        {|"timeline": { "node": "TimelineFacet", "granularity": "MAAND", "count": 1 } } ],
+        "characteristics": [] }|}
       ~nieuw:
-        {|"kenmerken": [ "gekeurd" ], "kenmerkSoorten": { "gekeurd": "BIJVOEGLIJK" },
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vondsten" }|}
+        {|"timeline": { "node": "TimelineFacet", "granularity": "MAAND", "count": 1 } } ],
+        "characteristics": [ { "node": "Characteristic", "name": "gekeurd", "kind": "BIJVOEGLIJK" } ] }|}
   in
   let met_filter f = vervang met_kenmerk ~oud:{|"filter": null|} ~nieuw:({|"filter": |} ^ f) in
   let kenmerkfilter =
@@ -2388,7 +2404,7 @@ let () =
 
    The clip's characteristic arm emits ktl(S,k,V,T), and ktl facts exist for
    ONE reason: the case's characteristic timelines. Over a characteristic
-   that is not temporal — no kenmerkGranulariteit entry — no case may carry a
+   that is not temporal — no `timeline` on its declaration — no case may carry a
    timeline at all, so the join finds nothing, the intersection is empty and
    the #sum answers 0 without a word. Measured on the renamed-key twist of
    corpus/golden/anchor/jutterswet-dubbelwacht: ref faults WF-055 on
@@ -2415,47 +2431,49 @@ let clip_alle k1 k2 =
   ^ clip_kenmerk k1 ^ {|, |} ^ clip_kenmerk k2
   ^ {| ], "bron": "gedurende de tijd dat hij |} ^ k1 ^ {| en |} ^ k2 ^ {| is" }|}
 
-(* [kenmerk_gran] is the kenmerkGranulariteit map body — what makes a
-   characteristic temporal — and [filter] the clip itself. *)
-let clip_doc ~kenmerk_gran ~filter =
-  {|{ "formaat": "regelspraak-ir-v0",
-  "objecttypen": { "Jutter": {
-    "node": "Objecttype", "naam": "Jutter",
-    "attributen": { "wachtvergoeding per maand": |} ^ num0 ^ {|, "dubbelwachtsom": |} ^ num0
-  ^ {| },
-    "attribuutMeervoud": {}, "attribuutDimensies": {},
-    "attribuutGranulariteit": { "wachtvergoeding per maand": "MAAND" },
-    "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-    "kenmerken": [ "borgplichtig", "aangesteld" ],
-    "kenmerkSoorten": { "borgplichtig": "BIJVOEGLIJK", "aangesteld": "BIJVOEGLIJK" },
-    "kenmerkGranulariteit": { |} ^ kenmerk_gran
-  ^ {| },
-    "kenmerkTijdlijnAantal": {}, "bezield": true, "meervoud": "Jutters" } },
-  "domeinen": {}, "parameters": {}, "eenheidstelsels": {}, "feittypen": {},
-  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
-  "regels": [],
-  "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "dubbelwachtsom van een jutter",
-    "soort": "BEREKENING",
-    "doel": { "node": "AttribuutRef", "attribuut": "dubbelwachtsom", "objecttype": "Jutter",
-      "onderwerpBron": "De dubbelwachtsom van een Jutter", "navigatieRol": null,
-      "type": |} ^ num0
+(* [aangesteld_gran] is the "aangesteld" characteristic's timeline member, or
+   nothing — a timeline is what makes a characteristic temporal, and
+   "borgplichtig" carries one in every frame — and [filter] the clip itself. *)
+let clip_doc ~aangesteld_gran ~filter =
+  {|{ "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters",
+        "attributes": [
+          { "node": "Attribute", "name": "wachtvergoeding per maand", "datatype": |} ^ num0 ^ {|,
+            "timeline": { "node": "TimelineFacet", "granularity": "MAAND", "count": 1 } },
+          { "node": "Attribute", "name": "dubbelwachtsom", "datatype": |} ^ num0 ^ {| } ],
+        "characteristics": [
+          { "node": "Characteristic", "name": "borgplichtig", "kind": "BIJVOEGLIJK",
+            "timeline": { "node": "TimelineFacet", "granularity": "MAAND", "count": 1 } },
+          { "node": "Characteristic", "name": "aangesteld", "kind": "BIJVOEGLIJK"|} ^ aangesteld_gran
+  ^ {| } ] } ],
+    "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
+    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {} },
+  "rules": {
+    "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "dubbelwachtsom van een jutter",
+      "soort": "BEREKENING",
+      "doel": { "node": "AttribuutRef", "attribuut": "dubbelwachtsom", "objecttype": "Jutter",
+        "onderwerpBron": "De dubbelwachtsom van een Jutter", "navigatieRol": null,
+        "type": |} ^ num0
   ^ {|, "bron": "De dubbelwachtsom van een Jutter", "set": false, "navigatiePad": [] },
-    "waarde": { "node": "Functie", "kind": "TOTAAL",
-      "argumenten": [ { "node": "AttribuutRef", "attribuut": "wachtvergoeding per maand",
-        "objecttype": "Jutter", "onderwerpBron": "zijn", "navigatieRol": null, "type": |}
+      "waarde": { "node": "Functie", "kind": "TOTAAL",
+        "argumenten": [ { "node": "AttribuutRef", "attribuut": "wachtvergoeding per maand",
+          "objecttype": "Jutter", "onderwerpBron": "zijn", "navigatieRol": null, "type": |}
   ^ num0
   ^ {|, "bron": "zijn wachtvergoeding per maand", "set": false, "navigatiePad": [] } ],
-      "elementObjecttype": "Jutter", "leegwaarde": null,
-      "filter": |} ^ filter
+        "elementObjecttype": "Jutter", "leegwaarde": null,
+        "filter": |} ^ filter
   ^ {|,
-      "dimensieSelectie": null, "type": |} ^ num0
+        "dimensieSelectie": null, "type": |} ^ num0
   ^ {|,
-      "bron": "het totaal van zijn wachtvergoeding per maand gedurende die tijd",
-      "granulariteit": null },
-    "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-  "regelGroepen": [], "diagnostics": []
+        "bron": "het totaal van zijn wachtvergoeding per maand gedurende die tijd",
+        "granulariteit": null },
+      "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+    "regelGroepen": [] },
+  "diagnostics": []
 }
 |}
 
@@ -2505,23 +2523,23 @@ let () =
   (* the bare arm: one non-temporal characteristic IS the whole clip *)
   faults_with ~name:"gedurende clip over a non-temporal characteristic"
     ~ir:
-      (clip_doc ~kenmerk_gran:{|"borgplichtig": "MAAND"|}
-         ~filter:(clip_kenmerk "aangesteld"))
+      (clip_doc ~aangesteld_gran:"" ~filter:(clip_kenmerk "aangesteld"))
     ~case_text:clip_case_bare ~needle;
   (* the same characteristic reached through the ALLE composite — the
      measured anchor twist's own shape, and a second route into the arm *)
   faults_with ~name:"gedurende clip, non-temporal member of the ALLE composite"
     ~ir:
-      (clip_doc ~kenmerk_gran:{|"borgplichtig": "MAAND"|}
-         ~filter:(clip_alle "borgplichtig" "aangesteld"))
+      (clip_doc ~aangesteld_gran:"" ~filter:(clip_alle "borgplichtig" "aangesteld"))
     ~case_text:clip_case_bare ~needle;
   (* the over-rejection control: make "aangesteld" temporal and the very
      same document must not merely translate but ANSWER — the gate refuses
      the shape, not the clip. Both executors pin 60 (six covered months at
      10), so an over-firing gate and a silently emptied intersection are
      distinguishable failures here, and neither can pass. *)
-  let temporal_gran = {|"borgplichtig": "MAAND", "aangesteld": "MAAND"|} in
-  let bare_ok = clip_doc ~kenmerk_gran:temporal_gran ~filter:(clip_kenmerk "aangesteld") in
+  let temporal_gran =
+    {|, "timeline": { "node": "TimelineFacet", "granularity": "MAAND", "count": 1 }|}
+  in
+  let bare_ok = clip_doc ~aangesteld_gran:temporal_gran ~filter:(clip_kenmerk "aangesteld") in
   ref_matches ~name:"gedurende clip over a temporal characteristic still answers"
     ~ir:bare_ok ~case_text:clip_case;
   clingo_matches ~name:"gedurende clip over a temporal characteristic still answers"
@@ -2529,7 +2547,7 @@ let () =
   (* and the composite's own positive control: the second route into the
      arm, both members temporal, intersecting to the same six months *)
   let alle_ok =
-    clip_doc ~kenmerk_gran:temporal_gran ~filter:(clip_alle "borgplichtig" "aangesteld")
+    clip_doc ~aangesteld_gran:temporal_gran ~filter:(clip_alle "borgplichtig" "aangesteld")
   in
   ref_matches ~name:"gedurende ALLE composite, both members temporal" ~ir:alle_ok
     ~case_text:clip_case;
@@ -2545,30 +2563,30 @@ let () =
    datum-tijd equality — which WF-036 and the arm's own reason keep out of
    the golden zone. *)
 
-let dt_doc ~attributen ~kenmerken ~kenmerk_soorten ~regels =
+let dt_doc ~attributen ~kenmerken ~regels =
   Printf.sprintf
     {|{
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Wachtpost": {
-      "node": "Objecttype", "naam": "Wachtpost",
-      "attributen": { %s },
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [ %s ], "kenmerkSoorten": { %s },
-      "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
-      "bezield": false, "meervoud": "Wachtposten"
-    }
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType", "name": "Wachtpost", "animate": false, "plural": "Wachtposten",
+        "attributes": [ %s ],
+        "characteristics": [ %s ]
+      }
+    ],
+    "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
+    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {}
   },
-  "domeinen": {}, "parameters": {}, "eenheidstelsels": {}, "feittypen": {}, "dimensies": {},
-  "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
-  "regels": [ { "node": "Regel", "naam": "tijdig", "soort": "regel" } ],
-  "resolvedRegels": [ %s ],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-  "regelGroepen": [], "diagnostics": []
+  "rules": {
+    "resolvedRegels": [ %s ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
+  "diagnostics": []
 }|}
-    attributen kenmerken kenmerk_soorten regels
+    attributen kenmerken regels
 
 let dt_attr naam =
   Printf.sprintf
@@ -2613,7 +2631,8 @@ let dt_case ~attrs ~expected =
 
 let () =
   let paar_attributen =
-    {|"aanvangstip": { "node": "DatumTijd" }, "sluitingstip": { "node": "DatumTijd" }|}
+    attribuut "aanvangstip" {|{ "node": "DatumTijd" }|} ^ ", "
+    ^ attribuut "sluitingstip" {|{ "node": "DatumTijd" }|}
   in
   (* 1. the LITERAL-FREE ordering: two DatumTijd attributes under EERDER.
      Before the pair-term ordering arm this document faulted
@@ -2621,8 +2640,8 @@ let () =
      exactly (measured 2026-09-06) — a one-executor answer, which is no
      differential at all. *)
   let paar_ir =
-    dt_doc ~attributen:paar_attributen ~kenmerken:{|"tijdig"|}
-      ~kenmerk_soorten:{|"tijdig": "BIJVOEGLIJK"|}
+    dt_doc ~attributen:paar_attributen
+      ~kenmerken:{|{ "node": "Characteristic", "name": "tijdig", "kind": "BIJVOEGLIJK" }|}
       ~regels:(dt_regel ~op:"EERDER" ~links:(dt_attr "aanvangstip")
                  ~rechts:(dt_attr "sluitingstip"))
   in
@@ -2673,8 +2692,8 @@ let () =
      literal enters as a GROUND pair term, never as an absolute ms integer
      (which gringo would wrap at 32 bits, silently) *)
   let lit_ir =
-    dt_doc ~attributen:{|"aanvangstip": { "node": "DatumTijd" }|} ~kenmerken:{|"tijdig"|}
-      ~kenmerk_soorten:{|"tijdig": "BIJVOEGLIJK"|}
+    dt_doc ~attributen:(attribuut "aanvangstip" {|{ "node": "DatumTijd" }|})
+      ~kenmerken:{|{ "node": "Characteristic", "name": "tijdig", "kind": "BIJVOEGLIJK" }|}
       ~regels:
         (dt_regel ~op:"EERDER" ~links:(dt_attr "aanvangstip")
            ~rechts:(dt_lit "2026-03-15T12:00:00.000"))
@@ -2710,8 +2729,8 @@ let () =
   List.iter
     (fun (op, wat) ->
       let ir =
-        dt_doc ~attributen:{|"aanvangstip": { "node": "DatumTijd" }|} ~kenmerken:{|"tijdig"|}
-          ~kenmerk_soorten:{|"tijdig": "BIJVOEGLIJK"|}
+        dt_doc ~attributen:(attribuut "aanvangstip" {|{ "node": "DatumTijd" }|})
+          ~kenmerken:{|{ "node": "Characteristic", "name": "tijdig", "kind": "BIJVOEGLIJK" }|}
           ~regels:
             (dt_regel ~op ~links:(dt_attr "aanvangstip")
                ~rechts:(dt_lit "2026-03-15T12:00:00.000"))
@@ -2728,8 +2747,11 @@ let () =
      representation (WF-036 refuses the document too, so this is the
      executor's own last line). *)
   let gemengd_ir =
-    dt_doc ~attributen:{|"aanvangstip": { "node": "DatumTijd" }, "ijkdag": { "node": "DatumInDagen" }|}
-      ~kenmerken:{|"tijdig"|} ~kenmerk_soorten:{|"tijdig": "BIJVOEGLIJK"|}
+    dt_doc
+      ~attributen:
+        (attribuut "aanvangstip" {|{ "node": "DatumTijd" }|} ^ ", "
+        ^ attribuut "ijkdag" {|{ "node": "DatumInDagen" }|})
+      ~kenmerken:{|{ "node": "Characteristic", "name": "tijdig", "kind": "BIJVOEGLIJK" }|}
       ~regels:(dt_regel ~op:"EERDER" ~links:(dt_attr "aanvangstip") ~rechts:(dag_attr "ijkdag"))
   in
   faults_with ~name:"gemengde datumprecisie in een ordening" ~ir:gemengd_ir
@@ -2740,8 +2762,8 @@ let () =
   (* datum-tijd equality: a different shape, not a tighter one — no corpus
      case, so a named refusal rather than an untested encoding *)
   let gelijk_ir =
-    dt_doc ~attributen:paar_attributen ~kenmerken:{|"tijdig"|}
-      ~kenmerk_soorten:{|"tijdig": "BIJVOEGLIJK"|}
+    dt_doc ~attributen:paar_attributen
+      ~kenmerken:{|{ "node": "Characteristic", "name": "tijdig", "kind": "BIJVOEGLIJK" }|}
       ~regels:(dt_regel ~op:"GELIJK" ~links:(dt_attr "aanvangstip")
                  ~rechts:(dt_attr "sluitingstip"))
   in
@@ -2751,8 +2773,8 @@ let () =
      verifier is bypassed (WF-095 refuses the document); the arm must still
      refuse it by name rather than answer some other instant *)
   let stuk_ir =
-    dt_doc ~attributen:{|"aanvangstip": { "node": "DatumTijd" }|} ~kenmerken:{|"tijdig"|}
-      ~kenmerk_soorten:{|"tijdig": "BIJVOEGLIJK"|}
+    dt_doc ~attributen:(attribuut "aanvangstip" {|{ "node": "DatumTijd" }|})
+      ~kenmerken:{|{ "node": "Characteristic", "name": "tijdig", "kind": "BIJVOEGLIJK" }|}
       ~regels:
         (dt_regel ~op:"EERDER" ~links:(dt_attr "aanvangstip")
            ~rechts:(dt_lit "2026-03-15T12:00:00.1"))
@@ -2768,8 +2790,8 @@ let () =
      p5-datumtijd-lexeem; the snippet is now refused here, quoted, before
      any program is grounded (card datumtijd-lezers-versmalling). *)
   let snippet_ir =
-    dt_doc ~attributen:{|"aanvangstip": { "node": "DatumTijd" }|} ~kenmerken:{|"tijdig"|}
-      ~kenmerk_soorten:{|"tijdig": "BIJVOEGLIJK"|}
+    dt_doc ~attributen:(attribuut "aanvangstip" {|{ "node": "DatumTijd" }|})
+      ~kenmerken:{|{ "node": "Characteristic", "name": "tijdig", "kind": "BIJVOEGLIJK" }|}
       ~regels:
         (dt_regel ~op:"EERDER" ~links:(dt_attr "aanvangstip")
            ~rechts:(dt_lit "15-03-2026 12:00:00.000"))
@@ -2802,27 +2824,34 @@ let () =
    keeps its static delivery, which is the only delivery it has. *)
 let kenmerklevering_doc =
   {|{
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Wachtpost": {
-      "node": "Objecttype", "naam": "Wachtpost",
-      "attributen": { "bezetting": { "node": "Numeriek", "geheel": true, "decimalen": 0,
-                                     "teken": "ONBEPAALD", "eenheid": null } },
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [ "dienstdoend", "gemeentelijk" ],
-      "kenmerkSoorten": { "dienstdoend": "BIJVOEGLIJK", "gemeentelijk": "BIJVOEGLIJK" },
-      "kenmerkGranulariteit": { "dienstdoend": "MAAND" },
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false, "meervoud": "Wachtposten"
-    }
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType", "name": "Wachtpost", "animate": false, "plural": "Wachtposten",
+        "attributes": [
+          {
+            "node": "Attribute", "name": "bezetting",
+            "datatype": { "node": "Numeriek", "geheel": true, "decimalen": 0,
+                          "teken": "ONBEPAALD", "eenheid": null }
+          }
+        ],
+        "characteristics": [
+          { "node": "Characteristic", "name": "dienstdoend", "kind": "BIJVOEGLIJK",
+            "timeline": { "node": "TimelineFacet", "granularity": "MAAND", "count": 1 } },
+          { "node": "Characteristic", "name": "gemeentelijk", "kind": "BIJVOEGLIJK" }
+        ]
+      }
+    ],
+    "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
+    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {}
   },
-  "domeinen": {}, "parameters": {}, "eenheidstelsels": {}, "feittypen": {}, "dimensies": {},
-  "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
-  "regels": [], "resolvedRegels": [],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-  "regelGroepen": [], "diagnostics": []
+  "rules": {
+    "resolvedRegels": [], "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [],
+    "consistenties": [], "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [],
+    "resolvedStartpunten": [], "regelGroepen": []
+  },
+  "diagnostics": []
 }|}
 
 let kenmerklevering_case ~statisch ~tijdlijnen =
@@ -2864,61 +2893,60 @@ let () =
     ~needle:None
 
 (* THE HAND-BUILT NULL ATTRIBUTE GRANULARITY (maintainer decision 2026-09-10,
-   WF-059's THIRD arm). `attribuutGranulariteit` declares its attribute
-   time-dependent by the presence of its KEY and names the grid in its VALUE.
-   Since 2026-09-10 the schema no longer admits a null value and WF-059's third
-   arm refuses it, so the WIRE cannot carry the shape at all — which is exactly
-   why the loader arm behind it needs pinning HERE and can have no corpus
-   witness. A document that reaches it is hand-built and schema-invalid by
-   construction, so it fits in no zone: gate 2 schema-gates golden and rood,
-   and a load-time refusal exits 2, which gate 8 reads as a failure rather than
-   as the pinned fault — the same argument the characteristic block above
-   makes, one side table over.
+   WF-059's THIRD arm). On the v0 wire `attribuutGranulariteit` declared its
+   attribute time-dependent by the presence of its KEY and named the grid in
+   its VALUE. From 2026-09-10 the schema no longer admitted a null value and
+   WF-059's third arm refused it, so the WIRE could not carry the shape at all
+   — which is exactly why the loader arm behind it was pinned HERE and could
+   have no corpus witness. A document that reached it was hand-built and
+   schema-invalid by construction, so it fit in no zone: gate 2 schema-gates
+   golden and rood, and a load-time refusal exits 2, which gate 8 reads as a
+   failure rather than as the pinned fault — the same argument the
+   characteristic block above makes, one side table over. On the uchar-ir-v1
+   wire (M1) the grid is the required `granularity` of the attribute's
+   `timeline` facet, so not even a hand-built document can carry a null
+   granularity: that check is gone (verwijderd-met-reden (M1), at its place
+   below), and WF-059's second and third arms with it.
 
    The reader is SHARED: the ASP backend loads its cases through
    `Uchar_ref.Case`, so this is this backend's proof obligation as much as the
    interpreter's — the two speak this refusal with one voice or they diverge.
 
-   What is being pinned is the WORDING, and it is pinned because
-   `spec/IR-SPEC.md` (WF-059, third arm) quotes it verbatim. The needle is
-   therefore the WHOLE cited sentence, `(WF-059)` included, not its opening
-   clause: with only the opening clause pinned, the tail could be reworded and
-   this suite stayed green — measured 2026-09-10 — which is exactly the silent
-   spec/code decoupling the pin exists to prevent.
+   Two checks remain. The first is the over-rejection guard: a real
+   granularity still loads. The second pins the arm for an attribute that
+   declares no timeline at all: give the null-granularity message to the
+   `None` arm as well and it fails (measured 2026-09-10). The mirror direction
+   — folding the arms back into the pre-card catch-all — was seen by the
+   removed check alone and has no witness left.
 
-   Three checks, and BOTH mutant directions are named, because the pair is what
-   keeps the two arms apart (measured 2026-09-10, one direction at a time):
-     - fold the arms back into the pre-card catch-all (the OLD message for both
-       key-absent and value-null) and check 1 fails — check 3 survives, because
-       that catch-all is exactly what check 3 expects;
-     - give the NEW message to the `None` arm as well and check 3 fails —
-       check 1 survives for the mirror-image reason.
-   Neither check alone sees both; the arm boundary is the thing they pin
-   together. Check 2 is the over-rejection guard: a real granularity still
-   loads. *)
+   [granulariteit] is the attribute's `timeline` member, or nothing. *)
 let attribuutlevering_doc ~granulariteit =
   Printf.sprintf
     {|{
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Wachtpost": {
-      "node": "Objecttype", "naam": "Wachtpost",
-      "attributen": { "wachtvergoeding": { "node": "Numeriek", "geheel": true, "decimalen": 0,
-                                           "teken": "ONBEPAALD", "eenheid": null } },
-      "attribuutMeervoud": {}, "attribuutDimensies": {},
-      "attribuutGranulariteit": { %s },
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false, "meervoud": "Wachtposten"
-    }
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType", "name": "Wachtpost", "animate": false, "plural": "Wachtposten",
+        "attributes": [
+          {
+            "node": "Attribute", "name": "wachtvergoeding",
+            "datatype": { "node": "Numeriek", "geheel": true, "decimalen": 0,
+                          "teken": "ONBEPAALD", "eenheid": null }%s
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
+    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {}
   },
-  "domeinen": {}, "parameters": {}, "eenheidstelsels": {}, "feittypen": {}, "dimensies": {},
-  "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
-  "regels": [], "resolvedRegels": [],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-  "regelGroepen": [], "diagnostics": []
+  "rules": {
+    "resolvedRegels": [], "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [],
+    "consistenties": [], "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [],
+    "resolvedStartpunten": [], "regelGroepen": []
+  },
+  "diagnostics": []
 }|}
     granulariteit
 
@@ -2948,74 +2976,77 @@ let laadt_ir_case ~name ~ir ~case_text ~needle =
   | None, Error m -> check (name ^ ": expected a clean load, got a refusal (" ^ m ^ ")") false
 
 let () =
-  laadt_ir_case ~name:"een tijdlijn op een attribuut met granulariteit null"
-    ~ir:(attribuutlevering_doc ~granulariteit:{|"wachtvergoeding": null|})
-    ~case_text:attribuutlevering_case
-    ~needle:
-      (Some
-         {|the attribute is declared time-dependent but its granularity is null: the timeline has no grid to sit on (WF-059)|});
+  (* verwijderd-met-reden (M1): "een tijdlijn op een attribuut met granulariteit
+     null". TimelineFacet.granularity is a required enum on the uchar-ir-v1
+     wire, so a document with a null granularity cannot be written; WF-059's
+     second and third arms lapse with the M1 card. *)
   laadt_ir_case ~name:"hetzelfde attribuut met een echte granulariteit"
-    ~ir:(attribuutlevering_doc ~granulariteit:{|"wachtvergoeding": "MAAND"|})
+    ~ir:
+      (attribuutlevering_doc
+         ~granulariteit:
+           {|, "timeline": { "node": "TimelineFacet", "granularity": "MAAND", "count": 1 }|})
     ~case_text:attribuutlevering_case ~needle:None;
   laadt_ir_case ~name:"een tijdlijn op een attribuut zonder granulariteitssleutel"
     ~ir:(attribuutlevering_doc ~granulariteit:"")
     ~case_text:attribuutlevering_case
     ~needle:(Some "a timeline value on a non-temporal attribute")
 
-(* THE HAND-BUILT NULL CHARACTERISTIC GRANULARITY (2026-09-11). The same three
-   checks one side table over, on the arm the third arm's card left standing:
-   `kenmerkGranulariteit` also declares its characteristic time-dependent by the
-   presence of its KEY and names the grid in its VALUE, and its
-   `characteristicTimelines` arm folded "key present, value null" together with
-   "no key at all" into one catch-all, so a document that declares the
-   characteristic temporal was refused for being non-temporal. WF-059's SECOND
-   arm (2026-09-09) shut the enum, so a null value reaches this arm only from a
-   hand-built document.
+(* THE HAND-BUILT NULL CHARACTERISTIC GRANULARITY (2026-09-11). The same
+   checks on the characteristic side, on the arm the third arm's card left
+   standing: on the v0 wire `kenmerkGranulariteit` also declared its
+   characteristic time-dependent by the presence of its KEY and named the grid
+   in its VALUE, and its `characteristicTimelines` arm folded "key present,
+   value null" together with "no key at all" into one catch-all, so a document
+   that declared the characteristic temporal was refused for being
+   non-temporal. WF-059's SECOND arm (2026-09-09) shut the enum, so a null
+   value reached this arm only from a hand-built document. On the uchar-ir-v1
+   wire (M1) the grid is the required `granularity` of the characteristic's
+   `timeline` facet, so not even a hand-built document can carry a null
+   granularity: that check is gone (verwijderd-met-reden (M1), at its place
+   below), and WF-059's second and third arms with it.
 
-   Neither message can be pinned in a corpus zone, for the ground they share:
-   the refusal falls at LOAD time and exits 2, which gate 8 reads as a failure
-   rather than as the pinned fault, so no case-replaying zone can hold the case
-   that draws it. Gate 2 bars the null-value IR from golden and rood on top of
-   that; check 3's key-absent document is schema-valid and verifier-PASS
-   (measured 2026-09-11), and only its case oversteps.
+   The message that remains cannot be pinned in a corpus zone: the refusal
+   falls at LOAD time and exits 2, which gate 8 reads as a failure rather than
+   as the pinned fault, so no case-replaying zone can hold the case that draws
+   it. Its document, the one without a timeline, is schema-valid and
+   verifier-PASS (measured 2026-09-11 on its v0 form), and only its case
+   oversteps.
 
    The reader is SHARED — the ASP backend loads its cases through
    `Uchar_ref.Case` — so both executors speak this refusal with one voice or
    they diverge, and this backend owes the proof as much as the interpreter.
 
-   The needle is again the WHOLE sentence, `(WF-059)` included, because
-   `spec/IR-SPEC.md` quotes it verbatim; an opening clause alone would let the
-   tail be reworded under a green suite.
+   Two checks remain. The first is the over-rejection guard: a real
+   granularity still loads. The second pins the arm for a characteristic that
+   declares no timeline: give the null-granularity message to the `None` arm
+   as well and it fails (measured 2026-09-11). The mirror direction — folding
+   the two arms back into the pre-card catch-all — was seen by the removed
+   check alone and has no witness left.
 
-   Both mutant directions, measured 2026-09-11 one at a time:
-     - fold the two arms back into the pre-card catch-all and check 1 fails,
-       while check 3 survives — that catch-all is what check 3 expects;
-     - give the NEW message to the `None` arm as well and check 3 fails, while
-       check 1 survives.
-   Check 2 is the over-rejection guard: a real granularity still loads. *)
+   [granulariteit] is the characteristic's `timeline` member, or nothing. *)
 let kenmerkgranulariteit_doc ~granulariteit =
   Printf.sprintf
     {|{
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Wachtpost": {
-      "node": "Objecttype", "naam": "Wachtpost",
-      "attributen": {},
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [ "dienstdoend" ],
-      "kenmerkSoorten": { "dienstdoend": "BIJVOEGLIJK" },
-      "kenmerkGranulariteit": { %s },
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false, "meervoud": "Wachtposten"
-    }
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType", "name": "Wachtpost", "animate": false, "plural": "Wachtposten",
+        "attributes": [],
+        "characteristics": [
+          { "node": "Characteristic", "name": "dienstdoend", "kind": "BIJVOEGLIJK"%s }
+        ]
+      }
+    ],
+    "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
+    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {}
   },
-  "domeinen": {}, "parameters": {}, "eenheidstelsels": {}, "feittypen": {}, "dimensies": {},
-  "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
-  "regels": [], "resolvedRegels": [],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-  "regelGroepen": [], "diagnostics": []
+  "rules": {
+    "resolvedRegels": [], "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [],
+    "consistenties": [], "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [],
+    "resolvedStartpunten": [], "regelGroepen": []
+  },
+  "diagnostics": []
 }|}
     granulariteit
 
@@ -3028,14 +3059,15 @@ let kenmerkgranulariteit_case =
   "expected": [ { "kind": "consistent" } ] }|}
 
 let () =
-  laadt_ir_case ~name:"een tijdlijn op een kenmerk met granulariteit null"
-    ~ir:(kenmerkgranulariteit_doc ~granulariteit:{|"dienstdoend": null|})
-    ~case_text:kenmerkgranulariteit_case
-    ~needle:
-      (Some
-         {|the characteristic is declared time-dependent but its granularity is null: the timeline has no grid to sit on (WF-059)|});
+  (* verwijderd-met-reden (M1): "een tijdlijn op een kenmerk met granulariteit
+     null". TimelineFacet.granularity is a required enum on the uchar-ir-v1
+     wire, so a document with a null granularity cannot be written; WF-059's
+     second and third arms lapse with the M1 card. *)
   laadt_ir_case ~name:"hetzelfde kenmerk met een echte granulariteit"
-    ~ir:(kenmerkgranulariteit_doc ~granulariteit:{|"dienstdoend": "MAAND"|})
+    ~ir:
+      (kenmerkgranulariteit_doc
+         ~granulariteit:
+           {|, "timeline": { "node": "TimelineFacet", "granularity": "MAAND", "count": 1 }|})
     ~case_text:kenmerkgranulariteit_case ~needle:None;
   laadt_ir_case ~name:"een tijdlijn op een kenmerk zonder granulariteitssleutel"
     ~ir:(kenmerkgranulariteit_doc ~granulariteit:"")
@@ -3056,40 +3088,39 @@ let () =
 let eigenaar_doc ?(navigatie = "null") ~eigenaar () =
   Printf.sprintf
     {|{
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Vondst": { "node": "Objecttype", "naam": "Vondst",
-      "attributen": { "afslag": { "node": "Tekst" } },
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [ "gekeurd" ], "kenmerkSoorten": { "gekeurd": "BIJVOEGLIJK" },
-      "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
-      "bezield": false, "meervoud": "Vondsten" },
-    "Jutter": { "node": "Objecttype", "naam": "Jutter",
-      "attributen": {},
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [ "gekeurd" ], "kenmerkSoorten": { "gekeurd": "BIJVOEGLIJK" },
-      "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
-      "bezield": true, "meervoud": "Jutters" }
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten",
+        "attributes": [
+          { "node": "Attribute", "name": "afslag", "datatype": { "node": "Tekst" } } ],
+        "characteristics": [
+          { "node": "Characteristic", "name": "gekeurd", "kind": "BIJVOEGLIJK" } ] },
+      { "node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters",
+        "attributes": [],
+        "characteristics": [
+          { "node": "Characteristic", "name": "gekeurd", "kind": "BIJVOEGLIJK" } ] }
+    ],
+    "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
+    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {}
   },
-  "domeinen": {}, "parameters": {}, "eenheidstelsels": {}, "feittypen": {},
-  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
-  "regels": [ { "node": "Regel", "naam": "afslag", "soort": "regel" } ],
-  "resolvedRegels": [
-    { "node": "ResolvedRegel", "naam": "afslag", "soort": "GELIJKSTELLING",
-      "doel": { "node": "AttribuutRef", "attribuut": "afslag", "objecttype": "Vondst",
-        "onderwerpBron": "een Vondst", "navigatieRol": null, "type": { "node": "Tekst" },
-        "bron": "De afslag van een Vondst", "set": false, "navigatiePad": [] },
-      "waarde": { "node": "Literal", "waarde": "zeeveiling", "type": { "node": "Tekst" },
-        "bron": "'zeeveiling'" },
-      "voorwaarde": { "node": "Kenmerk", "kenmerk": "gekeurd", "navigatie": %s,
-        "negatie": false, "eigenaar": %s, "periode": null, "bron": "de Vondst gekeurd is" },
-      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }
-  ],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-  "regelGroepen": [], "diagnostics": []
+  "rules": {
+    "resolvedRegels": [
+      { "node": "ResolvedRegel", "naam": "afslag", "soort": "GELIJKSTELLING",
+        "doel": { "node": "AttribuutRef", "attribuut": "afslag", "objecttype": "Vondst",
+          "onderwerpBron": "een Vondst", "navigatieRol": null, "type": { "node": "Tekst" },
+          "bron": "De afslag van een Vondst", "set": false, "navigatiePad": [] },
+        "waarde": { "node": "Literal", "waarde": "zeeveiling", "type": { "node": "Tekst" },
+          "bron": "'zeeveiling'" },
+        "voorwaarde": { "node": "Kenmerk", "kenmerk": "gekeurd", "navigatie": %s,
+          "negatie": false, "eigenaar": %s, "periode": null, "bron": "de Vondst gekeurd is" },
+        "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }
+    ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
+  "diagnostics": []
 }
 |}
     navigatie eigenaar
@@ -3167,86 +3198,84 @@ let () =
    verifier refuses that document now, and this is the backend's fail-fast on
    a non-conforming input, asserted by sentence. *)
 
-(* [extra_type] splices one more object type into the map and [sein_eigen] replaces the Sein
-   declaration's own supertype-and-kenmerken fragment, so the two subtyping rows below reuse this
-   model instead of copying it. Both default to the flat shape the first four rows want. *)
-let vlak = {|"kenmerken": [ "gehesen" ], "kenmerkSoorten": { "gehesen": "BIJVOEGLIJK" },|}
+(* [extra_type] splices one more object type into the list and [sein_eigen] replaces the Sein
+   declaration's own supertype and characteristics — a pair, because an M1 ObjectType carries the
+   two apart — so the two subtyping rows below reuse this model instead of copying it. Both
+   default to the flat shape the first four rows want. *)
+let vlak = ("", {|{ "node": "Characteristic", "name": "gehesen", "kind": "BIJVOEGLIJK" }|})
 
 let gastheer_doc ?(extra_type = "") ?(kustvak_eigen = vlak) ?(sein_eigen = vlak) ~eigenaar () =
+  let kustvak_super, kustvak_kenmerken = kustvak_eigen in
+  let sein_super, sein_kenmerken = sein_eigen in
   Printf.sprintf
     {|{
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    %s
-    "Kustvak": { "node": "Objecttype", "naam": "Kustvak",
-      "attributen": { "vakseinaantal": { "node": "Numeriek", "geheel": true, "decimalen": 0,
-        "teken": "ONBEPAALD", "eenheid": null } },
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
       %s
-      "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
-      "bezield": false, "meervoud": "Kustvakken" },
-    "Post": { "node": "Objecttype", "naam": "Post", "attributen": {},
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [ "gehesen" ], "kenmerkSoorten": { "gehesen": "BIJVOEGLIJK" },
-      "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
-      "bezield": false, "meervoud": "Posten" },
-    "Sein": { "node": "Objecttype", "naam": "Sein", "attributen": {},
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      %s
-      "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
-      "bezield": false, "meervoud": "Seinen" }
+      { "node": "ObjectType", "name": "Kustvak", %s"animate": false, "plural": "Kustvakken",
+        "attributes": [
+          { "node": "Attribute", "name": "vakseinaantal",
+            "datatype": { "node": "Numeriek", "geheel": true, "decimalen": 0,
+              "teken": "ONBEPAALD", "eenheid": null } } ],
+        "characteristics": [ %s ] },
+      { "node": "ObjectType", "name": "Post", "animate": false, "plural": "Posten",
+        "attributes": [],
+        "characteristics": [
+          { "node": "Characteristic", "name": "gehesen", "kind": "BIJVOEGLIJK" } ] },
+      { "node": "ObjectType", "name": "Sein", %s"animate": false, "plural": "Seinen",
+        "attributes": [], "characteristics": [ %s ] }
+    ],
+    "factTypes": [
+      { "node": "Feittype", "naam": "kustligging", "wederkerig": false, "rollen": [
+        { "node": "Rol", "naam": "kustvak", "objecttypeNaam": "Kustvak", "meervoud": null, "meervoudig": false },
+        { "node": "Rol", "naam": "post", "objecttypeNaam": "Post", "meervoud": "posten", "meervoudig": true } ] },
+      { "node": "Feittype", "naam": "seinvoering", "wederkerig": false, "rollen": [
+        { "node": "Rol", "naam": "post", "objecttypeNaam": "Post", "meervoud": null, "meervoudig": false },
+        { "node": "Rol", "naam": "sein", "objecttypeNaam": "Sein", "meervoud": "seinen", "meervoudig": true } ] },
+      { "node": "Feittype", "naam": "vakbeseining", "wederkerig": false, "rollen": [
+        { "node": "Rol", "naam": "seinvak", "objecttypeNaam": "Kustvak", "meervoud": null, "meervoudig": false },
+        { "node": "Rol", "naam": "vaksein", "objecttypeNaam": "Sein", "meervoud": "vakseinen", "meervoudig": true } ] } ],
+    "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [],
+    "dayKinds": [], "dagsoortPerEenheid": {}
   },
-  "domeinen": {}, "parameters": {}, "eenheidstelsels": {},
-  "feittypen": {
-    "kustligging": { "node": "Feittype", "naam": "kustligging", "wederkerig": false, "rollen": [
-      { "node": "Rol", "naam": "kustvak", "objecttypeNaam": "Kustvak", "meervoud": null, "meervoudig": false },
-      { "node": "Rol", "naam": "post", "objecttypeNaam": "Post", "meervoud": "posten", "meervoudig": true } ] },
-    "seinvoering": { "node": "Feittype", "naam": "seinvoering", "wederkerig": false, "rollen": [
-      { "node": "Rol", "naam": "post", "objecttypeNaam": "Post", "meervoud": null, "meervoudig": false },
-      { "node": "Rol", "naam": "sein", "objecttypeNaam": "Sein", "meervoud": "seinen", "meervoudig": true } ] },
-    "vakbeseining": { "node": "Feittype", "naam": "vakbeseining", "wederkerig": false, "rollen": [
-      { "node": "Rol", "naam": "seinvak", "objecttypeNaam": "Kustvak", "meervoud": null, "meervoudig": false },
-      { "node": "Rol", "naam": "vaksein", "objecttypeNaam": "Sein", "meervoud": "vakseinen", "meervoudig": true } ] }
+  "rules": {
+    "resolvedRegels": [
+      { "node": "ResolvedRegel", "naam": "vakseinaantal van een kustvak", "soort": "BEREKENING",
+        "doel": { "node": "AttribuutRef", "attribuut": "vakseinaantal", "objecttype": "Kustvak",
+          "onderwerpBron": "een Kustvak", "navigatieRol": null,
+          "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
+          "bron": "Het vakseinaantal van een Kustvak", "set": false, "navigatiePad": [] },
+        "waarde": { "node": "Functie", "kind": "AANTAL", "argumenten": [
+            { "node": "AttribuutRef", "attribuut": "vakseinen", "objecttype": "Kustvak",
+              "onderwerpBron": "het kustvak", "navigatieRol": null,
+              "type": { "node": "Onbekend", "reden": "niet opgelost" },
+              "bron": "vakseinen van het kustvak", "set": false, "navigatiePad": [] } ],
+          "elementObjecttype": "Sein", "leegwaarde": null, "filter": null, "dimensieSelectie": null,
+          "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "NIET_NEGATIEF", "eenheid": null },
+          "bron": "het aantal vakseinen van het kustvak", "granulariteit": null,
+          "bronRol": { "node": "RolBinding", "feittype": "vakbeseining", "rol": "vaksein" } },
+        "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }
+    ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "uniciteitUnies": [],
+    "feitCreaties": [
+      { "node": "ResolvedFeitCreatie", "naam": "vakbeseining door het kustvak",
+        "anker": "Kustvak", "doel": "Sein", "zetVeld": "seinvak", "joinVeld": "post",
+        "tussenstappen": [ { "node": "Tussenstap", "type": "Post", "veld": "kustvak", "viaOuderVeld": false,
+          "rolBinding": { "node": "RolBinding", "feittype": "kustligging", "rol": "post" } } ],
+        "voorwaarde": { "node": "Kenmerk", "kenmerk": "gehesen", "navigatie": null, "negatie": false,
+          "eigenaar": %s, "periode": null, "bron": "het sein gehesen is" },
+        "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null },
+        "feittype": "vakbeseining", "ankerRol": "seinvak", "doelRol": "vaksein",
+        "joinRol": { "node": "RolBinding", "feittype": "seinvoering", "rol": "sein" } }
+    ],
+    "resolvedStartpunten": [], "regelGroepen": []
   },
-  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
-  "regels": [ { "node": "Regel", "naam": "vakseinaantal van een kustvak", "soort": "regel" } ],
-  "resolvedRegels": [
-    { "node": "ResolvedRegel", "naam": "vakseinaantal van een kustvak", "soort": "BEREKENING",
-      "doel": { "node": "AttribuutRef", "attribuut": "vakseinaantal", "objecttype": "Kustvak",
-        "onderwerpBron": "een Kustvak", "navigatieRol": null,
-        "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
-        "bron": "Het vakseinaantal van een Kustvak", "set": false, "navigatiePad": [] },
-      "waarde": { "node": "Functie", "kind": "AANTAL", "argumenten": [
-          { "node": "AttribuutRef", "attribuut": "vakseinen", "objecttype": "Kustvak",
-            "onderwerpBron": "het kustvak", "navigatieRol": null,
-            "type": { "node": "Onbekend", "reden": "niet opgelost" },
-            "bron": "vakseinen van het kustvak", "set": false, "navigatiePad": [] } ],
-        "elementObjecttype": "Sein", "leegwaarde": null, "filter": null, "dimensieSelectie": null,
-        "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "NIET_NEGATIEF", "eenheid": null },
-        "bron": "het aantal vakseinen van het kustvak", "granulariteit": null,
-        "bronRol": { "node": "RolBinding", "feittype": "vakbeseining", "rol": "vaksein" } },
-      "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }
-  ],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-  "uniciteiten": [], "uniciteitUnies": [],
-  "feitCreaties": [
-    { "node": "ResolvedFeitCreatie", "naam": "vakbeseining door het kustvak",
-      "anker": "Kustvak", "doel": "Sein", "zetVeld": "seinvak", "joinVeld": "post",
-      "tussenstappen": [ { "node": "Tussenstap", "type": "Post", "veld": "kustvak", "viaOuderVeld": false,
-        "rolBinding": { "node": "RolBinding", "feittype": "kustligging", "rol": "post" } } ],
-      "voorwaarde": { "node": "Kenmerk", "kenmerk": "gehesen", "navigatie": null, "negatie": false,
-        "eigenaar": %s, "periode": null, "bron": "het sein gehesen is" },
-      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null },
-      "feittype": "vakbeseining", "ankerRol": "seinvak", "doelRol": "vaksein",
-      "joinRol": { "node": "RolBinding", "feittype": "seinvoering", "rol": "sein" } }
-  ],
-  "resolvedStartpunten": [], "regelGroepen": [], "diagnostics": []
+  "diagnostics": []
 }
 |}
-    extra_type kustvak_eigen sein_eigen eigenaar
+    extra_type kustvak_super kustvak_kenmerken sein_super sein_kenmerken eigenaar
 
 let gastheer_case ~aantal () =
   Printf.sprintf
@@ -3311,19 +3340,16 @@ let () =
        it; a unit row does not need to. *)
 
 let baken_type =
-  {|"Baken": { "node": "Objecttype", "naam": "Baken", "attributen": {},
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [ "gehesen" ], "kenmerkSoorten": { "gehesen": "BIJVOEGLIJK" },
-      "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
-      "bezield": false, "meervoud": "Bakens" },|}
+  {|{ "node": "ObjectType", "name": "Baken", "animate": false, "plural": "Bakens",
+        "attributes": [],
+        "characteristics": [
+          { "node": "Characteristic", "name": "gehesen", "kind": "BIJVOEGLIJK" } ] },|}
 
 (* a type that declares nothing of its own and inherits from [ouder] — WF-105
    forbids re-declaring a name along one chain, so the characteristic HAS to be
    inherited for these two rows to be about the host and not about the
    declaration *)
-let erft ouder =
-  Printf.sprintf {|"supertype": "%s", "kenmerken": [], "kenmerkSoorten": {},|} ouder
+let erft ouder = (Printf.sprintf {|"supertype": "%s", |} ouder, "")
 
 let () =
   let ir_super = gastheer_doc ~extra_type:baken_type ~sein_eigen:(erft "Baken")
@@ -3356,64 +3382,67 @@ let () =
    vacuously. Row d "passed" — for the wrong reason, which is why it is pinned
    here beside the other three and not trusted alone.
 
-   The document below carries `"kenmerkTijdlijnAantal": {}` and must keep
-   doing so. The emitter writes that key only for a count OTHER than 1, so no
-   frontend-produced document has it at 1; a hand-built one that does flips
-   both Drools branches into a refusal, because their gate is `containsKey`
-   and not "two or more". The corpus golden `synth-gehelejaarkenmerk` pins
-   the same four rows in all three executors and is what makes this clause a
-   closed square rather than two OCaml opinions. *)
+   On the v0 wire the document below carried `"kenmerkTijdlijnAantal": {}`
+   and had to keep doing so. The emitter wrote that key only for a count OTHER
+   than 1, so no frontend-produced document had it at 1; a hand-built one that
+   did flipped both Drools branches into a refusal, because their gate was
+   `containsKey` and not "two or more". On the uchar-ir-v1 wire (M1) the
+   count is a member of the timeline facet, and this document writes it as 1.
+   The corpus golden `synth-gehelejaarkenmerk` pins the same four rows in all
+   three executors and is what makes this clause a closed square rather than
+   two OCaml opinions. *)
 
 let gp_doc ?(jaar = "true") ?(niet = "false") ?(negatie = "false")
-    ?(granulariteit = {|"bedrijvig": "MAAND"|}) () =
+    ?(granulariteit =
+      {|, "timeline": { "node": "TimelineFacet", "granularity": "MAAND", "count": 1 }|}) () =
   Printf.sprintf
     {|{
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Werf": { "node": "Objecttype", "naam": "Werf",
-      "attributen": {},
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [ "bedrijvig" ], "kenmerkSoorten": { "bedrijvig": "BIJVOEGLIJK" },
-      "kenmerkGranulariteit": { %s }, "kenmerkTijdlijnAantal": {},
-      "bezield": false, "meervoud": "Werven" },
-    "Schuit": { "node": "Objecttype", "naam": "Schuit",
-      "attributen": {
-        "lengte": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
-        "toeslag": { "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD", "eenheid": null } },
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [], "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
-      "bezield": false, "meervoud": "Schuiten" }
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Werf", "animate": false, "plural": "Werven",
+        "attributes": [],
+        "characteristics": [
+          { "node": "Characteristic", "name": "bedrijvig", "kind": "BIJVOEGLIJK"%s } ] },
+      { "node": "ObjectType", "name": "Schuit", "animate": false, "plural": "Schuiten",
+        "attributes": [
+          { "node": "Attribute", "name": "lengte",
+            "datatype": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null } },
+          { "node": "Attribute", "name": "toeslag",
+            "datatype": { "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD", "eenheid": null } } ],
+        "characteristics": [] }
+    ],
+    "factTypes": [
+      { "node": "Feittype", "naam": "ligplaats", "wederkerig": false,
+        "rollen": [
+          { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
+          { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true }
+        ] } ],
+    "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [],
+    "dayKinds": [], "dagsoortPerEenheid": {}
   },
-  "domeinen": {}, "parameters": {}, "eenheidstelsels": {},
-  "feittypen": { "ligplaats": { "node": "Feittype", "naam": "ligplaats", "wederkerig": false,
-    "rollen": [
-      { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
-      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true }
-    ] } },
-  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
-  "regels": [ { "node": "Regel", "naam": "toeslag van een schuit", "soort": "regel" } ],
-  "resolvedRegels": [
-    { "node": "ResolvedRegel", "naam": "toeslag van een schuit", "soort": "BEREKENING",
-      "doel": { "node": "AttribuutRef", "attribuut": "toeslag", "objecttype": "Schuit",
-        "onderwerpBron": "een Schuit", "navigatieRol": null,
-        "type": { "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD", "eenheid": null },
-        "bron": "De toeslag van een Schuit", "set": false, "navigatiePad": [] },
-      "waarde": { "node": "AttribuutRef", "attribuut": "lengte", "objecttype": "Schuit",
-        "onderwerpBron": "de Schuit", "navigatieRol": null,
-        "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
-        "bron": "de lengte van de Schuit", "set": false, "navigatiePad": [] },
-      "voorwaarde": { "node": "Kenmerk", "kenmerk": "bedrijvig", "navigatie": "werf",
-        "negatie": %s, "eigenaar": null,
-        "periode": { "node": "GeheelPeriode", "jaar": %s, "niet": %s },
-        "bron": "de werf van de Schuit gedurende het gehele jaar bedrijvig is" },
-      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }
-  ],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-  "regelGroepen": [], "diagnostics": []
+  "rules": {
+    "resolvedRegels": [
+      { "node": "ResolvedRegel", "naam": "toeslag van een schuit", "soort": "BEREKENING",
+        "doel": { "node": "AttribuutRef", "attribuut": "toeslag", "objecttype": "Schuit",
+          "onderwerpBron": "een Schuit", "navigatieRol": null,
+          "type": { "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD", "eenheid": null },
+          "bron": "De toeslag van een Schuit", "set": false, "navigatiePad": [] },
+        "waarde": { "node": "AttribuutRef", "attribuut": "lengte", "objecttype": "Schuit",
+          "onderwerpBron": "de Schuit", "navigatieRol": null,
+          "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
+          "bron": "de lengte van de Schuit", "set": false, "navigatiePad": [] },
+        "voorwaarde": { "node": "Kenmerk", "kenmerk": "bedrijvig", "navigatie": "werf",
+          "negatie": %s, "eigenaar": null,
+          "periode": { "node": "GeheelPeriode", "jaar": %s, "niet": %s },
+          "bron": "de werf van de Schuit gedurende het gehele jaar bedrijvig is" },
+        "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }
+    ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
+  "diagnostics": []
 }
 |}
     granulariteit negatie jaar niet
@@ -3451,53 +3480,56 @@ let half_jan = {|{ "from": "2026-01-15", "to": "2026-03-01" }|}
    case decides both attributes. *)
 let gp_eigen_doc =
   {|{
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Werf": { "node": "Objecttype", "naam": "Werf",
-      "attributen": {
-        "opslag": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
-        "aftrek": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null } },
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [ "bedrijvig" ], "kenmerkSoorten": { "bedrijvig": "BIJVOEGLIJK" },
-      "kenmerkGranulariteit": { "bedrijvig": "MAAND" }, "kenmerkTijdlijnAantal": {},
-      "bezield": false, "meervoud": "Werven" }
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Werf", "animate": false, "plural": "Werven",
+        "attributes": [
+          { "node": "Attribute", "name": "opslag",
+            "datatype": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null } },
+          { "node": "Attribute", "name": "aftrek",
+            "datatype": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null } } ],
+        "characteristics": [
+          { "node": "Characteristic", "name": "bedrijvig", "kind": "BIJVOEGLIJK",
+            "timeline": { "node": "TimelineFacet", "granularity": "MAAND", "count": 1 } } ] }
+    ],
+    "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
+    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {}
   },
-  "domeinen": {}, "parameters": {}, "eenheidstelsels": {}, "feittypen": {},
-  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
-  "regels": [ { "node": "Regel", "naam": "opslag", "soort": "regel" },
-              { "node": "Regel", "naam": "aftrek", "soort": "regel" } ],
-  "resolvedRegels": [
-    { "node": "ResolvedRegel", "naam": "opslag", "soort": "BEREKENING",
-      "doel": { "node": "AttribuutRef", "attribuut": "opslag", "objecttype": "Werf",
-        "onderwerpBron": "een Werf", "navigatieRol": null,
-        "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
-        "bron": "De opslag van een Werf", "set": false, "navigatiePad": [] },
-      "waarde": { "node": "Literal", "waarde": "7",
-        "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
-        "bron": "7" },
-      "voorwaarde": { "node": "Kenmerk", "kenmerk": "bedrijvig", "navigatie": null,
-        "negatie": false, "eigenaar": null,
-        "periode": { "node": "GeheelPeriode", "jaar": true, "niet": false },
-        "bron": "de Werf gedurende het gehele jaar bedrijvig is" },
-      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } },
-    { "node": "ResolvedRegel", "naam": "aftrek", "soort": "BEREKENING",
-      "doel": { "node": "AttribuutRef", "attribuut": "aftrek", "objecttype": "Werf",
-        "onderwerpBron": "een Werf", "navigatieRol": null,
-        "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
-        "bron": "De aftrek van een Werf", "set": false, "navigatiePad": [] },
-      "waarde": { "node": "Literal", "waarde": "7",
-        "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
-        "bron": "7" },
-      "voorwaarde": { "node": "Kenmerk", "kenmerk": "bedrijvig", "navigatie": null,
-        "negatie": false, "eigenaar": null,
-        "periode": { "node": "GeheelPeriode", "jaar": true, "niet": true },
-        "bron": "de Werf niet gedurende het gehele jaar bedrijvig is" },
-      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }
-  ],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-  "regelGroepen": [], "diagnostics": []
+  "rules": {
+    "resolvedRegels": [
+      { "node": "ResolvedRegel", "naam": "opslag", "soort": "BEREKENING",
+        "doel": { "node": "AttribuutRef", "attribuut": "opslag", "objecttype": "Werf",
+          "onderwerpBron": "een Werf", "navigatieRol": null,
+          "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
+          "bron": "De opslag van een Werf", "set": false, "navigatiePad": [] },
+        "waarde": { "node": "Literal", "waarde": "7",
+          "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
+          "bron": "7" },
+        "voorwaarde": { "node": "Kenmerk", "kenmerk": "bedrijvig", "navigatie": null,
+          "negatie": false, "eigenaar": null,
+          "periode": { "node": "GeheelPeriode", "jaar": true, "niet": false },
+          "bron": "de Werf gedurende het gehele jaar bedrijvig is" },
+        "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } },
+      { "node": "ResolvedRegel", "naam": "aftrek", "soort": "BEREKENING",
+        "doel": { "node": "AttribuutRef", "attribuut": "aftrek", "objecttype": "Werf",
+          "onderwerpBron": "een Werf", "navigatieRol": null,
+          "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
+          "bron": "De aftrek van een Werf", "set": false, "navigatiePad": [] },
+        "waarde": { "node": "Literal", "waarde": "7",
+          "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null },
+          "bron": "7" },
+        "voorwaarde": { "node": "Kenmerk", "kenmerk": "bedrijvig", "navigatie": null,
+          "negatie": false, "eigenaar": null,
+          "periode": { "node": "GeheelPeriode", "jaar": true, "niet": true },
+          "bron": "de Werf niet gedurende het gehele jaar bedrijvig is" },
+        "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }
+    ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
+  "diagnostics": []
 }
 |}
 
@@ -3591,218 +3623,199 @@ let vervang ~waar ~door tekst =
 
 let bp_doc =
   {|{
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "laagste vondstgewicht": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    },
-    "Boot": {
-      "node": "Objecttype",
-      "naam": "Boot",
-      "attributen": {},
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Boten"
-    },
-    "Vondst": {
-      "node": "Objecttype",
-      "naam": "Vondst",
-      "attributen": {
-        "gewicht": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Vondsten"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {
-    "bemanning": {
-      "node": "Feittype",
-      "naam": "bemanning",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "schipper",
-          "objecttypeNaam": "Jutter",
-          "meervoud": "schippers",
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "gevoerde boot",
-          "objecttypeNaam": "Boot",
-          "meervoud": "gevoerde boten",
-          "meervoudig": true
-        }
-      ]
-    },
-    "berging": {
-      "node": "Feittype",
-      "naam": "berging",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "bergende boot",
-          "objecttypeNaam": "Boot",
-          "meervoud": "bergende boten",
-          "meervoudig": true
-        },
-        {
-          "node": "Rol",
-          "naam": "geborgen vondst",
-          "objecttypeNaam": "Vondst",
-          "meervoud": "geborgen vondsten",
-          "meervoudig": true
-        }
-      ]
-    }
-  },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "laagste vondstgewicht van een jutter",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "laagste vondstgewicht van een jutter",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "laagste vondstgewicht",
-        "objecttype": "Jutter",
-        "onderwerpBron": "een Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "Het laagste vondstgewicht van een Jutter",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "MINIMUM",
-        "argumenten": [
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
           {
-            "node": "AttribuutRef",
-            "attribuut": "gewicht",
-            "objecttype": "Vondst",
-            "onderwerpBron": "alle geborgen vondsten van alle gevoerde boten van de Jutter",
-            "navigatieRol": null,
-            "type": {
+            "node": "Attribute",
+            "name": "laagste vondstgewicht",
+            "datatype": {
               "node": "Numeriek",
               "geheel": false,
               "decimalen": 2,
               "teken": "ONBEPAALD",
               "eenheid": null
-            },
-            "bron": "het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter",
-            "set": true,
-            "navigatiePad": []
+            }
           }
         ],
-        "elementObjecttype": "Vondst",
-        "leegwaarde": null,
-        "filter": null,
-        "dimensieSelectie": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "de minimale waarde van het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter",
-        "granulariteit": null,
-        "bronPad": [
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Boot",
+        "animate": false,
+        "plural": "Boten",
+        "attributes": [],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
           {
-            "node": "RolBinding",
-            "feittype": "bemanning",
-            "rol": "gevoerde boot"
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "bemanning",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "schipper",
+            "objecttypeNaam": "Jutter",
+            "meervoud": "schippers",
+            "meervoudig": false
           },
           {
-            "node": "RolBinding",
-            "feittype": "berging",
-            "rol": "geborgen vondst"
+            "node": "Rol",
+            "naam": "gevoerde boot",
+            "objecttypeNaam": "Boot",
+            "meervoud": "gevoerde boten",
+            "meervoudig": true
           }
         ]
       },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+      {
+        "node": "Feittype",
+        "naam": "berging",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "bergende boot",
+            "objecttypeNaam": "Boot",
+            "meervoud": "bergende boten",
+            "meervoudig": true
+          },
+          {
+            "node": "Rol",
+            "naam": "geborgen vondst",
+            "objecttypeNaam": "Vondst",
+            "meervoud": "geborgen vondsten",
+            "meervoudig": true
+          }
+        ]
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "laagste vondstgewicht van een jutter",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "laagste vondstgewicht",
+          "objecttype": "Jutter",
+          "onderwerpBron": "een Jutter",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "Het laagste vondstgewicht van een Jutter",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Functie",
+          "kind": "MINIMUM",
+          "argumenten": [
+            {
+              "node": "AttribuutRef",
+              "attribuut": "gewicht",
+              "objecttype": "Vondst",
+              "onderwerpBron": "alle geborgen vondsten van alle gevoerde boten van de Jutter",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter",
+              "set": true,
+              "navigatiePad": []
+            }
+          ],
+          "elementObjecttype": "Vondst",
+          "leegwaarde": null,
+          "filter": null,
+          "dimensieSelectie": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de minimale waarde van het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter",
+          "granulariteit": null,
+          "bronPad": [
+            {
+              "node": "RolBinding",
+              "feittype": "bemanning",
+              "rol": "gevoerde boot"
+            },
+            {
+              "node": "RolBinding",
+              "feittype": "berging",
+              "rol": "geborgen vondst"
+            }
+          ]
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }|}
 
@@ -3908,11 +3921,11 @@ let () =
       (vervang bp_doc
          ~waar:
            {|{
-            "node": "RolBinding",
-            "feittype": "bemanning",
-            "rol": "gevoerde boot"
-          },
-          |}
+              "node": "RolBinding",
+              "feittype": "bemanning",
+              "rol": "gevoerde boot"
+            },
+            |}
          ~door:"")
     ~case_text:bp_case ~needle:"at least TWO steps";
   (* (a) a path beside a binding: two spellings of one range *)
@@ -3921,7 +3934,7 @@ let () =
       (vervang bp_doc ~waar:{|"bronPad": [|}
          ~door:
            {|"bronRol": { "node": "RolBinding", "feittype": "berging", "rol": "geborgen vondst" },
-        "bronPad": [|})
+          "bronPad": [|})
     ~case_text:bp_case ~needle:"bronPad beside a bronRol";
   (* (c) the row-1 wart hands the fold linked INSTANCES; there is nothing for
      a range to range over, and reading the wart while dropping the range
@@ -3934,22 +3947,22 @@ let () =
             ~waar:{|"kind": "MINIMUM"|} ~door:{|"kind": "AANTAL"|})
          ~waar:
            {|"attribuut": "gewicht",
-            "objecttype": "Vondst",
-            "onderwerpBron": "alle geborgen vondsten van alle gevoerde boten van de Jutter",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },|}
+              "objecttype": "Vondst",
+              "onderwerpBron": "alle geborgen vondsten van alle gevoerde boten van de Jutter",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },|}
          ~door:
            {|"attribuut": "geborgen vondst",
-            "objecttype": "Jutter",
-            "onderwerpBron": "de Jutter",
-            "navigatieRol": null,
-            "type": { "node": "Onbekend", "reden": "niet opgelost" },|})
+              "objecttype": "Jutter",
+              "onderwerpBron": "de Jutter",
+              "navigatieRol": null,
+              "type": { "node": "Onbekend", "reden": "niet opgelost" },|})
     ~case_text:bp_case ~needle:"bronPad on the row-1 wart"
 
 
@@ -3970,239 +3983,220 @@ let () =
    in its own suite (WV-3.4b-toone-stap / WV-3.4b-toone-leeg-bereik). *)
 let bp_toone_doc =
   {|{
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype",
-      "naam": "Jutter",
-      "attributen": {
-        "laagste vondstgewicht": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": true,
-      "meervoud": "Jutters"
-    },
-    "Boot": {
-      "node": "Objecttype",
-      "naam": "Boot",
-      "attributen": {},
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Boten"
-    },
-    "Vondst": {
-      "node": "Objecttype",
-      "naam": "Vondst",
-      "attributen": {
-        "gewicht": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        }
-      },
-      "attribuutMeervoud": {},
-      "attribuutDimensies": {},
-      "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {},
-      "attribuutTijdlijnNaam": {},
-      "kenmerken": [],
-      "kenmerkSoorten": {},
-      "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {},
-      "bezield": false,
-      "meervoud": "Vondsten"
-    }
-  },
-  "domeinen": {},
-  "parameters": {},
-  "eenheidstelsels": {},
-  "feittypen": {
-    "bemanning": {
-      "node": "Feittype",
-      "naam": "bemanning",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "schipper",
-          "objecttypeNaam": "Jutter",
-          "meervoud": null,
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "boot",
-          "objecttypeNaam": "Boot",
-          "meervoud": null,
-          "meervoudig": false
-        }
-      ]
-    },
-    "bootvangst": {
-      "node": "Feittype",
-      "naam": "bootvangst",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "vangende boot",
-          "objecttypeNaam": "Boot",
-          "meervoud": null,
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "vondst",
-          "objecttypeNaam": "Vondst",
-          "meervoud": "vondsten",
-          "meervoudig": true
-        }
-      ]
-    },
-    "jutterbezit": {
-      "node": "Feittype",
-      "naam": "jutterbezit",
-      "wederkerig": false,
-      "rollen": [
-        {
-          "node": "Rol",
-          "naam": "bezitter",
-          "objecttypeNaam": "Jutter",
-          "meervoud": null,
-          "meervoudig": false
-        },
-        {
-          "node": "Rol",
-          "naam": "bezeten vondst",
-          "objecttypeNaam": "Vondst",
-          "meervoud": "bezeten vondsten",
-          "meervoudig": true
-        }
-      ]
-    }
-  },
-  "dimensies": {},
-  "tijdlijnen": [],
-  "dagsoorten": [],
-  "dagsoortPerEenheid": {},
-  "regels": [
-    {
-      "node": "Regel",
-      "naam": "laagste vondstgewicht van een jutter",
-      "soort": "regel"
-    }
-  ],
-  "resolvedRegels": [
-    {
-      "node": "ResolvedRegel",
-      "naam": "laagste vondstgewicht van een jutter",
-      "soort": "BEREKENING",
-      "doel": {
-        "node": "AttribuutRef",
-        "attribuut": "laagste vondstgewicht",
-        "objecttype": "Jutter",
-        "onderwerpBron": "een Jutter",
-        "navigatieRol": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "Het laagste vondstgewicht van een Jutter",
-        "set": false,
-        "navigatiePad": []
-      },
-      "waarde": {
-        "node": "Functie",
-        "kind": "MINIMUM",
-        "argumenten": [
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
           {
-            "node": "AttribuutRef",
-            "attribuut": "gewicht",
-            "objecttype": "Vondst",
-            "onderwerpBron": "alle vondsten van de boot van de Jutter",
-            "navigatieRol": null,
-            "type": {
+            "node": "Attribute",
+            "name": "laagste vondstgewicht",
+            "datatype": {
               "node": "Numeriek",
               "geheel": false,
               "decimalen": 2,
               "teken": "ONBEPAALD",
               "eenheid": null
-            },
-            "bron": "het gewicht van alle vondsten van de boot van de Jutter",
-            "set": true,
-            "navigatiePad": []
+            }
           }
         ],
-        "elementObjecttype": "Vondst",
-        "leegwaarde": null,
-        "filter": null,
-        "dimensieSelectie": null,
-        "type": {
-          "node": "Numeriek",
-          "geheel": false,
-          "decimalen": 2,
-          "teken": "ONBEPAALD",
-          "eenheid": null
-        },
-        "bron": "de minimale waarde van het gewicht van alle vondsten van de boot van de Jutter",
-        "granulariteit": null,
-        "bronPad": [
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Boot",
+        "animate": false,
+        "plural": "Boten",
+        "attributes": [],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
           {
-            "node": "RolBinding",
-            "feittype": "bemanning",
-            "rol": "boot"
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": false,
+              "decimalen": 2,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "Feittype",
+        "naam": "bemanning",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "schipper",
+            "objecttypeNaam": "Jutter",
+            "meervoud": null,
+            "meervoudig": false
           },
           {
-            "node": "RolBinding",
-            "feittype": "bootvangst",
-            "rol": "vondst"
+            "node": "Rol",
+            "naam": "boot",
+            "objecttypeNaam": "Boot",
+            "meervoud": null,
+            "meervoudig": false
           }
         ]
       },
-      "voorwaarde": null,
-      "geldigheid": {
-        "node": "Geldigheid",
-        "vanaf": null,
-        "tot": null
+      {
+        "node": "Feittype",
+        "naam": "bootvangst",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "vangende boot",
+            "objecttypeNaam": "Boot",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "vondst",
+            "objecttypeNaam": "Vondst",
+            "meervoud": "vondsten",
+            "meervoudig": true
+          }
+        ]
+      },
+      {
+        "node": "Feittype",
+        "naam": "jutterbezit",
+        "wederkerig": false,
+        "rollen": [
+          {
+            "node": "Rol",
+            "naam": "bezitter",
+            "objecttypeNaam": "Jutter",
+            "meervoud": null,
+            "meervoudig": false
+          },
+          {
+            "node": "Rol",
+            "naam": "bezeten vondst",
+            "objecttypeNaam": "Vondst",
+            "meervoud": "bezeten vondsten",
+            "meervoudig": true
+          }
+        ]
       }
-    }
-  ],
-  "resolvedDagsoorten": [],
-  "objectCreaties": [],
-  "verdelingen": [],
-  "consistenties": [],
-  "uniciteiten": [],
-  "uniciteitUnies": [],
-  "feitCreaties": [],
-  "resolvedStartpunten": [],
-  "regelGroepen": [],
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      {
+        "node": "ResolvedRegel",
+        "naam": "laagste vondstgewicht van een jutter",
+        "soort": "BEREKENING",
+        "doel": {
+          "node": "AttribuutRef",
+          "attribuut": "laagste vondstgewicht",
+          "objecttype": "Jutter",
+          "onderwerpBron": "een Jutter",
+          "navigatieRol": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "Het laagste vondstgewicht van een Jutter",
+          "set": false,
+          "navigatiePad": []
+        },
+        "waarde": {
+          "node": "Functie",
+          "kind": "MINIMUM",
+          "argumenten": [
+            {
+              "node": "AttribuutRef",
+              "attribuut": "gewicht",
+              "objecttype": "Vondst",
+              "onderwerpBron": "alle vondsten van de boot van de Jutter",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": false,
+                "decimalen": 2,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "het gewicht van alle vondsten van de boot van de Jutter",
+              "set": true,
+              "navigatiePad": []
+            }
+          ],
+          "elementObjecttype": "Vondst",
+          "leegwaarde": null,
+          "filter": null,
+          "dimensieSelectie": null,
+          "type": {
+            "node": "Numeriek",
+            "geheel": false,
+            "decimalen": 2,
+            "teken": "ONBEPAALD",
+            "eenheid": null
+          },
+          "bron": "de minimale waarde van het gewicht van alle vondsten van de boot van de Jutter",
+          "granulariteit": null,
+          "bronPad": [
+            {
+              "node": "RolBinding",
+              "feittype": "bemanning",
+              "rol": "boot"
+            },
+            {
+              "node": "RolBinding",
+              "feittype": "bootvangst",
+              "rol": "vondst"
+            }
+          ]
+        },
+        "voorwaarde": null,
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
   "diagnostics": []
 }|}
 
@@ -4263,29 +4257,22 @@ let kv_num0 =
   {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null }|}
 
 let kv_objecttypen =
-  {|"Werf": { "node": "Objecttype", "naam": "Werf",
-      "attributen": { "keur": |} ^ kv_num0
-  ^ {| },
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
-      "bezield": false, "meervoud": "Werven" },
-    "Schuit": { "node": "Objecttype", "naam": "Schuit",
-      "attributen": { "vangst": |} ^ kv_num0 ^ {|, "toeslag": |} ^ kv_num0
-  ^ {| },
-      "attribuutMeervoud": {}, "attribuutDimensies": {},
-      "attribuutGranulariteit": { "vangst": "MAAND" },
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [ "gekeurd" ], "kenmerkSoorten": { "gekeurd": "BIJVOEGLIJK" },
-      "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
-      "bezield": false, "meervoud": "Schuiten" }|}
+  {|{ "node": "ObjectType", "name": "Werf", "animate": false, "plural": "Werven",
+      "attributes": [ { "node": "Attribute", "name": "keur", "datatype": |} ^ kv_num0 ^ {| } ],
+      "characteristics": [] },
+    { "node": "ObjectType", "name": "Schuit", "animate": false, "plural": "Schuiten",
+      "attributes": [
+        { "node": "Attribute", "name": "vangst", "datatype": |} ^ kv_num0 ^ {|,
+          "timeline": { "node": "TimelineFacet", "granularity": "MAAND", "count": 1 } },
+        { "node": "Attribute", "name": "toeslag", "datatype": |} ^ kv_num0 ^ {| } ],
+      "characteristics": [ { "node": "Characteristic", "name": "gekeurd", "kind": "BIJVOEGLIJK" } ] }|}
 
 let kv_feittypen =
-  {|{ "ligplaats": { "node": "Feittype", "naam": "ligplaats", "wederkerig": false,
+  {|[ { "node": "Feittype", "naam": "ligplaats", "wederkerig": false,
     "rollen": [
       { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
       { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true }
-    ] } }|}
+    ] } ]|}
 
 (* the subject's OWN vangst read — the ch. 3.9 timeline side *)
 let kv_vangst_ref =
@@ -4320,26 +4307,30 @@ let kv_doc ?(kwantor = "ALLE") ?drempel ?(toets = kv_geheel ()) ?(filter = "null
   let dr = match drempel with None -> "" | Some d -> Printf.sprintf {|, "drempel": %d|} d in
   Printf.sprintf
     {|{
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": { %s },
-  "domeinen": {}, "parameters": {}, "eenheidstelsels": {},
-  "feittypen": %s,
-  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
-  "regels": [ { "node": "Regel", "naam": "keur van een werf", "soort": "regel" } ],
-  "resolvedRegels": [
-    { "node": "ResolvedRegel", "naam": "keur van een werf", "soort": "BEREKENING",
-      "doel": { "node": "AttribuutRef", "attribuut": "keur", "objecttype": "Werf",
-        "onderwerpBron": "een Werf", "navigatieRol": null, "type": %s,
-        "bron": "De keur van een Werf", "set": false, "navigatiePad": [] },
-      "waarde": { "node": "Literal", "waarde": "5", "type": %s, "bron": "5" },
-      "voorwaarde": { "node": "Kwantorvouw", "kwantor": "%s"%s, "elementObjecttype": %s,
-        "filter": %s, "toets": %s,
-        "bron": "%s schuiten van de Werf gedurende het gehele jaar een vangst van meer dan 40 hebben"%s },
-      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }
-  ],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-  "regelGroepen": [], "diagnostics": []
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [ %s ],
+    "factTypes": %s,
+    "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [],
+    "dayKinds": [], "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      { "node": "ResolvedRegel", "naam": "keur van een werf", "soort": "BEREKENING",
+        "doel": { "node": "AttribuutRef", "attribuut": "keur", "objecttype": "Werf",
+          "onderwerpBron": "een Werf", "navigatieRol": null, "type": %s,
+          "bron": "De keur van een Werf", "set": false, "navigatiePad": [] },
+        "waarde": { "node": "Literal", "waarde": "5", "type": %s, "bron": "5" },
+        "voorwaarde": { "node": "Kwantorvouw", "kwantor": "%s"%s, "elementObjecttype": %s,
+          "filter": %s, "toets": %s,
+          "bron": "%s schuiten van de Werf gedurende het gehele jaar een vangst van meer dan 40 hebben"%s },
+        "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }
+    ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
+  "diagnostics": []
 }
 |}
     kv_objecttypen kv_feittypen kv_num0 kv_num0 kwantor dr element filter toets kwantor ext
@@ -4349,24 +4340,28 @@ let kv_doc ?(kwantor = "ALLE") ?drempel ?(toets = kv_geheel ()) ?(filter = "null
 let gpv_doc ?(toets = kv_geheel ()) () =
   Printf.sprintf
     {|{
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": { %s },
-  "domeinen": {}, "parameters": {}, "eenheidstelsels": {},
-  "feittypen": %s,
-  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
-  "regels": [ { "node": "Regel", "naam": "toeslag van een schuit", "soort": "regel" } ],
-  "resolvedRegels": [
-    { "node": "ResolvedRegel", "naam": "toeslag van een schuit", "soort": "BEREKENING",
-      "doel": { "node": "AttribuutRef", "attribuut": "toeslag", "objecttype": "Schuit",
-        "onderwerpBron": "een Schuit", "navigatieRol": null, "type": %s,
-        "bron": "De toeslag van een Schuit", "set": false, "navigatiePad": [] },
-      "waarde": { "node": "Literal", "waarde": "5", "type": %s, "bron": "5" },
-      "voorwaarde": %s,
-      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }
-  ],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-  "regelGroepen": [], "diagnostics": []
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [ %s ],
+    "factTypes": %s,
+    "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [],
+    "dayKinds": [], "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      { "node": "ResolvedRegel", "naam": "toeslag van een schuit", "soort": "BEREKENING",
+        "doel": { "node": "AttribuutRef", "attribuut": "toeslag", "objecttype": "Schuit",
+          "onderwerpBron": "een Schuit", "navigatieRol": null, "type": %s,
+          "bron": "De toeslag van een Schuit", "set": false, "navigatiePad": [] },
+        "waarde": { "node": "Literal", "waarde": "5", "type": %s, "bron": "5" },
+        "voorwaarde": %s,
+        "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }
+    ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
+  "diagnostics": []
 }
 |}
     kv_objecttypen kv_feittypen kv_num0 kv_num0 toets
@@ -4870,40 +4865,42 @@ let tak_let ~typ ~binder ~value ~body =
 let tak_doc ~attributen ~parameters ~doel_typ ~waarde =
   Printf.sprintf
     {|{
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": {
-      "node": "Objecttype", "naam": "Jutter",
-      "attributen": { %s },
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {}, "bezield": true, "meervoud": "Jutters"
-    }
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters",
+        "attributes": [ %s ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [ %s ],
+    "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": [],
+    "dagsoortPerEenheid": {}
   },
-  "domeinen": {},
-  "parameters": { %s },
-  "eenheidstelsels": {}, "feittypen": {}, "dimensies": {},
-  "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
-  "regels": [], "resolvedRegels": [
-    { "node": "ResolvedRegel", "naam": "heffing van een jutter", "soort": "BEREKENING",
-      "doel": { "node": "AttribuutRef", "attribuut": "heffing", "objecttype": "Jutter",
-                "onderwerpBron": "De heffing van een Jutter", "navigatieRol": null,
-                "type": %s, "bron": "De heffing van een Jutter",
-                "set": false, "navigatiePad": [] },
-      "waarde": %s,
-      "voorwaarde": null,
-      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }
-  ],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-  "regelGroepen": [], "diagnostics": []
+  "rules": {
+    "resolvedRegels": [
+      { "node": "ResolvedRegel", "naam": "heffing van een jutter", "soort": "BEREKENING",
+        "doel": { "node": "AttribuutRef", "attribuut": "heffing", "objecttype": "Jutter",
+                  "onderwerpBron": "De heffing van een Jutter", "navigatieRol": null,
+                  "type": %s, "bron": "De heffing van een Jutter",
+                  "set": false, "navigatiePad": [] },
+        "waarde": %s,
+        "voorwaarde": null,
+        "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }
+    ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
+  "diagnostics": []
 }|}
     attributen parameters doel_typ waarde
 
 let tak_param naam =
-  Printf.sprintf {|"%s": { "node": "Parameter", "naam": "%s", "datatype": %s,
-                          "granulariteit": null }|} naam naam tak_ob
+  Printf.sprintf {|{ "node": "Parameter", "naam": "%s", "datatype": %s,
+                    "granulariteit": null }|} naam tak_ob
 
 (* de deling waarvan §6.5 de lege deler meldt en de numerieke nul-deler
    afbreekt — in de ANDERS-arm van de knoop hieronder *)
@@ -4918,7 +4915,8 @@ let tak_deling =
 let tak_doc12 =
   tak_doc
     ~attributen:
-      (Printf.sprintf {|"inkomen": %s, "restpost": %s, "heffing": %s|} tak_nn tak_nn tak_ob)
+      (attribuut "inkomen" tak_nn ^ ", " ^ attribuut "restpost" tak_nn ^ ", "
+      ^ attribuut "heffing" tak_ob)
     ~parameters:(tak_param "drempel" ^ ", " ^ tak_param "basisheffing")
     ~doel_typ:tak_ob
     ~waarde:
@@ -4934,7 +4932,8 @@ let tak_doc12 =
 let tak_doc4 =
   tak_doc
     ~attributen:
-      (Printf.sprintf {|"inkomen": %s, "restpost": %s, "heffing": %s|} tak_nn tak_nn tak_ob)
+      (attribuut "inkomen" tak_nn ^ ", " ^ attribuut "restpost" tak_nn ^ ", "
+      ^ attribuut "heffing" tak_ob)
     ~parameters:(tak_param "drempel" ^ ", " ^ tak_param "basisheffing")
     ~doel_typ:tak_ob
     ~waarde:
@@ -4954,7 +4953,8 @@ let tak_doc4 =
 let tak_doc5 =
   tak_doc
     ~attributen:
-      (Printf.sprintf {|"inkomen": %s, "restpost": %s, "heffing": %s|} tak_nn tak_nn tak_ob)
+      (attribuut "inkomen" tak_nn ^ ", " ^ attribuut "restpost" tak_nn ^ ", "
+      ^ attribuut "heffing" tak_ob)
     ~parameters:(tak_param "drempel" ^ ", " ^ tak_param "basisheffing")
     ~doel_typ:tak_ob
     ~waarde:
@@ -4978,7 +4978,7 @@ let tak_doc3 =
                  tak_nn)
   in
   tak_doc
-    ~attributen:(Printf.sprintf {|"inkomen": %s, "heffing": %s|} tak_nn tak_nn)
+    ~attributen:(attribuut "inkomen" tak_nn ^ ", " ^ attribuut "heffing" tak_nn)
     ~parameters:(tak_param "drempel" ^ ", " ^ tak_param "hoge drempel")
     ~doel_typ:tak_nn
     ~waarde:
@@ -5219,42 +5219,44 @@ let cb_plus rechts bron =
    ch.-10.6-variant (de deling achter een behoefte) hetzelfde raamwerk deelt *)
 let cb_doc ~drempel ~lambda_body =
   Printf.sprintf
-    {|{ "formaat": "regelspraak-ir-v0",
-  "objecttypen": { "Jutter": { "node": "Objecttype", "naam": "Jutter",
-    "attributen": { "delertotaal": %s },
-    "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-    "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-    "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
-    "kenmerkTijdlijnAantal": {}, "bezield": true, "meervoud": "Jutters" } },
-  "domeinen": {},
-  "parameters": {
-    "grondslag": { "node": "Parameter", "naam": "grondslag", "datatype": %s,
-                   "granulariteit": null },
-    "kindertallen": { "node": "Parameter", "naam": "kindertallen",
-      "datatype": { "node": "ListType", "element": %s }, "granulariteit": null } },
-  "eenheidstelsels": {}, "feittypen": {}, "dimensies": {},
-  "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
-  "regels": [], "resolvedRegels": [
-    { "node": "ResolvedRegel", "naam": "delertotaal van een jutter", "soort": "BEREKENING",
-      "doel": { "node": "AttribuutRef", "attribuut": "delertotaal", "objecttype": "Jutter",
-                "onderwerpBron": "Het delertotaal van een Jutter", "navigatieRol": null,
-                "type": %s, "bron": "Het delertotaal van een Jutter",
-                "set": false, "navigatiePad": [] },
-      "waarde": { "node": "Fold", "type": %s,
-        "list": { "node": "ParameterRef", "parameter": "kindertallen",
-                  "type": { "node": "ListType", "element": %s }, "bron": "de kindertallen" },
-        "function": { "node": "Lambda",
-          "parameters": [ { "name": "acc", "datatype": %s },
-                          { "name": "x", "datatype": %s } ],
-          "body": %s,
-          "bron": "de kinddelen opgeteld" },
-        "init": { "node": "Literal", "waarde": "0.00", "type": %s, "bron": "0.00" },
-        "bron": "de kindertallen gevouwen tot het delertotaal" },
-      "voorwaarde": null,
-      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-  "regelGroepen": [], "diagnostics": [] }|}
+    {|{ "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters",
+        "attributes": [ { "node": "Attribute", "name": "delertotaal", "datatype": %s } ],
+        "characteristics": [] } ],
+    "factTypes": [],
+    "parameters": [
+      { "node": "Parameter", "naam": "grondslag", "datatype": %s,
+        "granulariteit": null },
+      { "node": "Parameter", "naam": "kindertallen",
+        "datatype": { "node": "ListType", "element": %s }, "granulariteit": null } ],
+    "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": [],
+    "dagsoortPerEenheid": {} },
+  "rules": {
+    "resolvedRegels": [
+      { "node": "ResolvedRegel", "naam": "delertotaal van een jutter", "soort": "BEREKENING",
+        "doel": { "node": "AttribuutRef", "attribuut": "delertotaal", "objecttype": "Jutter",
+                  "onderwerpBron": "Het delertotaal van een Jutter", "navigatieRol": null,
+                  "type": %s, "bron": "Het delertotaal van een Jutter",
+                  "set": false, "navigatiePad": [] },
+        "waarde": { "node": "Fold", "type": %s,
+          "list": { "node": "ParameterRef", "parameter": "kindertallen",
+                    "type": { "node": "ListType", "element": %s }, "bron": "de kindertallen" },
+          "function": { "node": "Lambda",
+            "parameters": [ { "name": "acc", "datatype": %s },
+                            { "name": "x", "datatype": %s } ],
+            "body": %s,
+            "bron": "de kinddelen opgeteld" },
+          "init": { "node": "Literal", "waarde": "0.00", "type": %s, "bron": "0.00" },
+          "bron": "de kindertallen gevouwen tot het delertotaal" },
+        "voorwaarde": null,
+        "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+    "regelGroepen": [] },
+  "diagnostics": []
+}|}
     cb_som cb_tel cb_tel cb_som cb_som cb_tel cb_som cb_tel (lambda_body ~drempel) cb_som
 
 (* als het kindertal groter of gelijk aan <drempel> is dan het opgetelde deel
@@ -5376,8 +5378,8 @@ let () =
    eronder: die pint dat de duw alleen de behoefte verplaatst en niets anders. *)
 
 let tak_attrs_wikkel =
-  Printf.sprintf {|"inkomen": %s, "restpost": %s, "wikkeldeler": %s, "heffing": %s|} tak_nn tak_nn
-    tak_nn tak_ob
+  attribuut "inkomen" tak_nn ^ ", " ^ attribuut "restpost" tak_nn ^ ", "
+  ^ attribuut "wikkeldeler" tak_nn ^ ", " ^ attribuut "heffing" tak_ob
 
 (* Let k = zijn inkomen in (Let z = k gedeeld door zijn restpost in
       ((als k > de drempel dan 0,00 anders z) plus <rechterhand>)) *)
@@ -5417,7 +5419,8 @@ let tak_doc10 =
 let tak_doc6 =
   tak_doc
     ~attributen:
-      (Printf.sprintf {|"inkomen": %s, "restpost": %s, "heffing": %s|} tak_nn tak_nn tak_ob)
+      (attribuut "inkomen" tak_nn ^ ", " ^ attribuut "restpost" tak_nn ^ ", "
+      ^ attribuut "heffing" tak_ob)
     ~parameters:(tak_param "drempel" ^ ", " ^ tak_param "basisheffing")
     ~doel_typ:tak_ob
     ~waarde:
@@ -5585,7 +5588,8 @@ let verifier_refuses ~name ~ir ~wf =
     (vs <> [] && List.for_all is vs)
 
 let tak_attrs3 =
-  Printf.sprintf {|"inkomen": %s, "restpost": %s, "heffing": %s|} tak_nn tak_nn tak_ob
+  attribuut "inkomen" tak_nn ^ ", " ^ attribuut "restpost" tak_nn ^ ", "
+  ^ attribuut "heffing" tak_ob
 
 let tak_lit w = Printf.sprintf {|{ "node": "Literal", "waarde": "%s", "type": %s, "bron": "%s" }|}
                   w tak_ob w
@@ -5915,9 +5919,9 @@ let tak_vouw =
     ~parameters:
       (tak_param "drempel" ^ ", " ^ tak_param "basisheffing"
       ^ Printf.sprintf
-          {|, "reeks": { "node": "Parameter", "naam": "reeks",
-                         "datatype": { "node": "ListType", "element": %s },
-                         "granulariteit": null }|} tak_ob)
+          {|, { "node": "Parameter", "naam": "reeks",
+                "datatype": { "node": "ListType", "element": %s },
+                "granulariteit": null }|} tak_ob)
     ~doel_typ:tak_ob
     ~waarde:
       (tak_let ~typ:tak_ob ~binder:"k" ~value:(tak_attr "inkomen")
@@ -5970,25 +5974,22 @@ let () =
 (* de aggregatie vouwt over een echt feittype, zodat de enige klacht over het
    document de WF-069 van de takknoop is en niet een gedegradeerde vouwbron *)
 let met_vondsten ir =
-  replace_first ir ~needle:{|"objecttypen": {|}
+  replace_first ir ~needle:{|"objectTypes": [|}
     ~by:
       (Printf.sprintf
-         {|"objecttypen": {
-    "Vondst": { "node": "Objecttype", "naam": "Vondst",
-      "attributen": { "waarde": %s },
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vondsten" },|}
+         {|"objectTypes": [
+      { "node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten",
+        "attributes": [ { "node": "Attribute", "name": "waarde", "datatype": %s } ],
+        "characteristics": [] },|}
          tak_ob)
-  |> replace_first ~needle:{|"feittypen": {},|}
+  |> replace_first ~needle:{|"factTypes": [],|}
        ~by:
-         {|"feittypen": { "berging": { "node": "Feittype", "naam": "berging",
+         {|"factTypes": [ { "node": "Feittype", "naam": "berging",
     "wederkerig": false,
     "rollen": [ { "node": "Rol", "naam": "bergende jutter", "objecttypeNaam": "Jutter",
                   "meervoud": null, "meervoudig": false },
                 { "node": "Rol", "naam": "vondst", "objecttypeNaam": "Vondst",
-                  "meervoud": "vondsten", "meervoudig": true } ] } },|}
+                  "meervoud": "vondsten", "meervoudig": true } ] } ],|}
 
 let () =
   (* positie 1: de §5.8.2-leegwaarde, een zuivere waardepositie *)
@@ -6061,53 +6062,53 @@ let () =
 
 let venster_doc ~kind ~attribuut ~doel =
   Printf.sprintf
-    {|{ "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": { "node": "Objecttype", "naam": "Jutter",
-      "attributen": { "%s": { "node": "DatumInDagen" } },
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {}, "bezield": true, "meervoud": "Jutters" },
-    "Vondst": { "node": "Objecttype", "naam": "Vondst",
-      "attributen": { "vondstdatum": { "node": "DatumInDagen" } },
-      "attribuutMeervoud": { "vondstdatum": "vondstdata" }, "attribuutDimensies": {},
-      "attribuutGranulariteit": {}, "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vondsten" } },
-  "domeinen": {}, "parameters": {}, "eenheidstelsels": {},
-  "feittypen": { "vondstaanmelding": { "node": "Feittype", "naam": "vondstaanmelding",
-    "wederkerig": false,
-    "rollen": [
-      { "node": "Rol", "naam": "aanmelder", "objecttypeNaam": "Jutter",
-        "meervoud": null, "meervoudig": false },
-      { "node": "Rol", "naam": "vondst", "objecttypeNaam": "Vondst",
-        "meervoud": "vondsten", "meervoudig": true } ] } },
-  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
-  "regels": [ { "node": "Regel", "naam": "%s van een jutter", "soort": "regel" } ],
-  "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "%s van een jutter",
-    "soort": "BEREKENING",
-    "doel": { "node": "AttribuutRef", "attribuut": "%s", "objecttype": "Jutter",
-      "onderwerpBron": "een Jutter", "navigatieRol": null,
-      "type": { "node": "DatumInDagen" },
-      "bron": "De %s van een Jutter", "set": false, "navigatiePad": [] },
-    "waarde": { "node": "Functie", "kind": "%s", "argumenten": [
-      { "node": "AttribuutRef", "attribuut": "%s", "objecttype": "Vondst",
-        "onderwerpBron": "alle vondsten van de Jutter", "navigatieRol": null,
+    {|{ "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters",
+        "attributes": [
+          { "node": "Attribute", "name": "%s", "datatype": { "node": "DatumInDagen" } } ],
+        "characteristics": [] },
+      { "node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten",
+        "attributes": [
+          { "node": "Attribute", "name": "vondstdatum", "datatype": { "node": "DatumInDagen" },
+            "plural": "vondstdata" } ],
+        "characteristics": [] } ],
+    "factTypes": [
+      { "node": "Feittype", "naam": "vondstaanmelding",
+        "wederkerig": false,
+        "rollen": [
+          { "node": "Rol", "naam": "aanmelder", "objecttypeNaam": "Jutter",
+            "meervoud": null, "meervoudig": false },
+          { "node": "Rol", "naam": "vondst", "objecttypeNaam": "Vondst",
+            "meervoud": "vondsten", "meervoudig": true } ] } ],
+    "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [],
+    "dayKinds": [], "dagsoortPerEenheid": {} },
+  "rules": {
+    "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "%s van een jutter",
+      "soort": "BEREKENING",
+      "doel": { "node": "AttribuutRef", "attribuut": "%s", "objecttype": "Jutter",
+        "onderwerpBron": "een Jutter", "navigatieRol": null,
         "type": { "node": "DatumInDagen" },
-        "bron": "de %s van alle vondsten van de Jutter", "set": true,
-        "navigatiePad": [] } ],
-      "elementObjecttype": "Vondst", "leegwaarde": null, "filter": null,
-      "dimensieSelectie": null, "type": { "node": "DatumInDagen" },
-      "bron": "de vouw van de %s van alle vondsten van de Jutter",
-      "granulariteit": null,
-      "bronRol": { "node": "RolBinding", "feittype": "vondstaanmelding", "rol": "vondst" } },
-    "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-  "regelGroepen": [], "diagnostics": []
+        "bron": "De %s van een Jutter", "set": false, "navigatiePad": [] },
+      "waarde": { "node": "Functie", "kind": "%s", "argumenten": [
+        { "node": "AttribuutRef", "attribuut": "%s", "objecttype": "Vondst",
+          "onderwerpBron": "alle vondsten van de Jutter", "navigatieRol": null,
+          "type": { "node": "DatumInDagen" },
+          "bron": "de %s van alle vondsten van de Jutter", "set": true,
+          "navigatiePad": [] } ],
+        "elementObjecttype": "Vondst", "leegwaarde": null, "filter": null,
+        "dimensieSelectie": null, "type": { "node": "DatumInDagen" },
+        "bron": "de vouw van de %s van alle vondsten van de Jutter",
+        "granulariteit": null,
+        "bronRol": { "node": "RolBinding", "feittype": "vondstaanmelding", "rol": "vondst" } },
+      "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+    "regelGroepen": [] },
+  "diagnostics": []
 }|}
-    doel doel doel doel doel kind attribuut attribuut attribuut
+    doel doel doel doel kind attribuut attribuut attribuut
 
 (* De leden staan in AFLOPENDE datumvolgorde, dus een positionele lezing van
    "de eerste van" zou 2025-11-01 opleveren en "de laatste van" 2025-02-14 —
@@ -6323,35 +6324,43 @@ let () =
    twee uitvoerders dezelfde plek in dezelfde woorden noemen. *)
 let onopgelost_voorwaarde_doc =
   {|{
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Vondst": {
-      "node": "Objecttype", "naam": "Vondst",
-      "attributen": { "waardering": { "node": "Numeriek", "geheel": true, "decimalen": 0,
-                                      "teken": "ONBEPAALD", "eenheid": null } },
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vondsten" } },
-  "domeinen": {}, "parameters": {}, "eenheidstelsels": {}, "feittypen": {},
-  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
-  "regels": [],
-  "resolvedRegels": [
-    { "node": "ResolvedRegel", "naam": "waardering van een vondst", "soort": "BEREKENING",
-      "doel": { "node": "AttribuutRef", "attribuut": "waardering", "objecttype": "Vondst",
-                "onderwerpBron": "een Vondst", "navigatieRol": null,
-                "type": { "node": "Numeriek", "geheel": true, "decimalen": 0,
-                          "teken": "ONBEPAALD", "eenheid": null },
-                "bron": "De waardering van een Vondst", "set": false, "navigatiePad": [] },
-      "waarde": { "node": "Literal", "waarde": "1",
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute", "name": "waardering",
+            "datatype": { "node": "Numeriek", "geheel": true, "decimalen": 0,
+                          "teken": "ONBEPAALD", "eenheid": null }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
+    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [
+      { "node": "ResolvedRegel", "naam": "waardering van een vondst", "soort": "BEREKENING",
+        "doel": { "node": "AttribuutRef", "attribuut": "waardering", "objecttype": "Vondst",
+                  "onderwerpBron": "een Vondst", "navigatieRol": null,
                   "type": { "node": "Numeriek", "geheel": true, "decimalen": 0,
-                            "teken": "ONBEPAALD", "eenheid": null }, "bron": "1" },
-      "voorwaarde": { "node": "Onopgelost",
-                      "bron": "de taxatie volgens het niet-gemodelleerde protocol" },
-      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-  "regelGroepen": [], "diagnostics": []
+                            "teken": "ONBEPAALD", "eenheid": null },
+                  "bron": "De waardering van een Vondst", "set": false, "navigatiePad": [] },
+        "waarde": { "node": "Literal", "waarde": "1",
+                    "type": { "node": "Numeriek", "geheel": true, "decimalen": 0,
+                              "teken": "ONBEPAALD", "eenheid": null }, "bron": "1" },
+        "voorwaarde": { "node": "Onopgelost",
+                        "bron": "de taxatie volgens het niet-gemodelleerde protocol" },
+        "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+    "regelGroepen": []
+  },
+  "diagnostics": []
 }
 |}
 
@@ -6425,8 +6434,8 @@ let som_operand naam =
    haar cellen. WF-037 laat dan één operand toe waar een gelijste vouw er twee
    eist — de uitzondering die "stempel afwezig" dubbelzinnig maakt. *)
 let som_dimensies =
-  {|"seizoen": { "node": "Dimensie", "naam": "seizoen", "naamMeervoud": "seizoenen",
-                 "voorzetsel": "in", "waarden": [ "voorjaar", "najaar" ] }|}
+  {|{ "node": "Dimensie", "naam": "seizoen", "naamMeervoud": "seizoenen",
+      "voorzetsel": "in", "waarden": [ "voorjaar", "najaar" ] }|}
 
 let som_dimensieselectie =
   {|{ "node": "DimensieSelectie", "dimensie": "seizoen",
@@ -6440,33 +6449,35 @@ let gelijste_vouw_doc ?(dimensies = "") ?(attribuut_dimensies = "")
     | None -> som_operand "deelvangst" ^ ", " ^ som_operand "teller"
   in
   Printf.sprintf
-    {|{ "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Vangst": { "node": "Objecttype", "naam": "Vangst",
-      "attributen": { "deelvangst": %s, "teller": %s, "vangstsom": %s },
-      "attribuutMeervoud": {}, "attribuutDimensies": { %s }, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vangsten" } },
-  "domeinen": {}, "parameters": {}, "eenheidstelsels": {}, "feittypen": {},
-  "dimensies": { %s }, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
-  "regels": [],
-  "resolvedRegels": [
-    { "node": "ResolvedRegel", "naam": "vangstsom van een vangst", "soort": "BEREKENING",
-      "doel": { "node": "AttribuutRef", "attribuut": "vangstsom", "objecttype": "Vangst",
-                "onderwerpBron": "een Vangst", "navigatieRol": null, "type": %s,
-                "bron": "De vangstsom van een Vangst", "set": false, "navigatiePad": [] },
-      "waarde": { "node": "Functie", "kind": "%s", "argumenten": [ %s ],
-                  "elementObjecttype": %s, "leegwaarde": null, "filter": null,
-                  "dimensieSelectie": %s, "type": %s,
-                  "bron": "de vouw van zijn deelvangst", "granulariteit": null },
-      "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-  "regelGroepen": [], "diagnostics": []
+    {|{ "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Vangst", "animate": false, "plural": "Vangsten",
+        "attributes": [
+          { "node": "Attribute", "name": "deelvangst", "datatype": %s%s },
+          { "node": "Attribute", "name": "teller", "datatype": %s },
+          { "node": "Attribute", "name": "vangstsom", "datatype": %s } ],
+        "characteristics": [] } ],
+    "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [ %s ],
+    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {} },
+  "rules": {
+    "resolvedRegels": [
+      { "node": "ResolvedRegel", "naam": "vangstsom van een vangst", "soort": "BEREKENING",
+        "doel": { "node": "AttribuutRef", "attribuut": "vangstsom", "objecttype": "Vangst",
+                  "onderwerpBron": "een Vangst", "navigatieRol": null, "type": %s,
+                  "bron": "De vangstsom van een Vangst", "set": false, "navigatiePad": [] },
+        "waarde": { "node": "Functie", "kind": "%s", "argumenten": [ %s ],
+                    "elementObjecttype": %s, "leegwaarde": null, "filter": null,
+                    "dimensieSelectie": %s, "type": %s,
+                    "bron": "de vouw van zijn deelvangst", "granulariteit": null },
+        "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+    "regelGroepen": [] },
+  "diagnostics": []
 }
 |}
-    som_num0 som_num0 som_num0 attribuut_dimensies dimensies som_num0 kind argumenten
+    som_num0 attribuut_dimensies som_num0 som_num0 dimensies som_num0 kind argumenten
     element_objecttype dimensie_selectie som_num0
 
 let gelijste_vouw_case =
@@ -6511,7 +6522,7 @@ let () =
   faults_with ~name:"WF-037 armgrens: de dimensiecel-som houdt de bodem"
     ~ir:
       (gelijste_vouw_doc ~dimensies:som_dimensies
-         ~attribuut_dimensies:{|"deelvangst": [ "seizoen" ]|}
+         ~attribuut_dimensies:{|, "dimensions": [ "seizoen" ]|}
          ~dimensie_selectie:som_dimensieselectie
          ~argumenten:(som_operand "deelvangst") ~kind:"SOM" ~element_objecttype:"null" ())
     ~case_text:dimensie_vouw_case
@@ -6542,35 +6553,36 @@ let dk_doc ?(registry = {|"nevelsdagen": "nevelsdag"|}) ?(dagsoorten = {|"nevels
   in
   Printf.sprintf
     {|{
-  "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Baken": { "node": "Objecttype", "naam": "Baken",
-      "attributen": {
-        "peildatum": %s,
-        "termijn": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": %s },
-        "uitkomst": %s },
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Bakens" }
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Baken", "animate": false, "plural": "Bakens",
+        "attributes": [
+          { "node": "Attribute", "name": "peildatum", "datatype": %s },
+          { "node": "Attribute", "name": "termijn",
+            "datatype": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": %s } },
+          { "node": "Attribute", "name": "uitkomst", "datatype": %s } ],
+        "characteristics": [] }
+    ],
+    "factTypes": [], "parameters": [ %s ], "domains": [], "unitSystems": [], "dimensions": [],
+    "timelines": [],
+    "dayKinds": [ %s ],
+    "dagsoortPerEenheid": { %s }
   },
-  "domeinen": {}, "parameters": { %s }, "eenheidstelsels": {}, "feittypen": {},
-  "dimensies": {}, "tijdlijnen": [],
-  "dagsoorten": [ %s ],
-  "dagsoortPerEenheid": { %s },
-  "regels": [],
-  "resolvedRegels": [
-    { "node": "ResolvedRegel", "naam": "uitkomst van een baken", "soort": "BEREKENING",
-      "doel": { "node": "AttribuutRef", "attribuut": "uitkomst", "objecttype": "Baken",
-                "onderwerpBron": "een Baken", "navigatieRol": null, "type": %s,
-                "bron": "De uitkomst van een Baken", "set": false, "navigatiePad": [] },
-      "waarde": %s,
-      "voorwaarde": null,
-      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }
-  ],
-  "resolvedDagsoorten": [ %s ],
-  "objectCreaties": [], "verdelingen": [], "consistenties": [], "uniciteiten": [],
-  "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [], "regelGroepen": [],
+  "rules": {
+    "resolvedRegels": [
+      { "node": "ResolvedRegel", "naam": "uitkomst van een baken", "soort": "BEREKENING",
+        "doel": { "node": "AttribuutRef", "attribuut": "uitkomst", "objecttype": "Baken",
+                  "onderwerpBron": "een Baken", "navigatieRol": null, "type": %s,
+                  "bron": "De uitkomst van een Baken", "set": false, "navigatiePad": [] },
+        "waarde": %s,
+        "voorwaarde": null,
+        "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }
+    ],
+    "resolvedDagsoorten": [ %s ],
+    "objectCreaties": [], "verdelingen": [], "consistenties": [], "uniciteiten": [],
+    "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [], "regelGroepen": []
+  },
   "diagnostics": []
 }
 |}
@@ -6773,7 +6785,7 @@ let () =
                   "periode": null, "bron": "de dag later is dan de grensdatum" }|}
               de_dag)
          ~parameters:
-           {|"grensdatum": { "node": "Parameter", "naam": "grensdatum",
+           {|{ "node": "Parameter", "naam": "grensdatum",
                "datatype": { "node": "DatumInDagen" }, "granulariteit": null }|}
          ~waarde:(stap ()) ())
     ~case_text:dk_case ~needle:"is unbound in this case";
@@ -6858,58 +6870,57 @@ let () =
    not a consequence of malformed input. *)
 
 let aantalgevulde_doc ~vondst_granulariteit =
-  {|{ "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": { "node": "Objecttype", "naam": "Jutter",
-      "attributen": { "aantal gevulde vondstgewichten": |} ^ num0
-  ^ {| },
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {}, "bezield": true, "meervoud": "Jutters" },
-    "Vondst": { "node": "Objecttype", "naam": "Vondst",
-      "attributen": { "gewicht": { "node": "Numeriek", "geheel": false, "decimalen": 2,
-                                   "teken": "ONBEPAALD", "eenheid": null } },
-      "attribuutMeervoud": {}, "attribuutDimensies": {},
-      "attribuutGranulariteit": { |} ^ vondst_granulariteit
-  ^ {| },
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vondsten" } },
-  "domeinen": {}, "parameters": {}, "eenheidstelsels": {},
-  "feittypen": { "vondstaanmelding": { "node": "Feittype", "naam": "vondstaanmelding",
-    "wederkerig": false, "rollen": [
-      { "node": "Rol", "naam": "aanmelder", "objecttypeNaam": "Jutter",
-        "meervoud": null, "meervoudig": false },
-      { "node": "Rol", "naam": "vondst", "objecttypeNaam": "Vondst",
-        "meervoud": "vondsten", "meervoudig": true } ] } },
-  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
-  "regels": [],
-  "resolvedRegels": [
-    { "node": "ResolvedRegel", "naam": "aantal gevulde vondstgewichten", "soort": "BEREKENING",
-      "doel": { "node": "AttribuutRef", "attribuut": "aantal gevulde vondstgewichten",
-                "objecttype": "Jutter", "onderwerpBron": "een Jutter", "navigatieRol": null,
-                "type": |} ^ num0
+  {|{ "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters",
+        "attributes": [
+          { "node": "Attribute", "name": "aantal gevulde vondstgewichten",
+            "datatype": |} ^ num0 ^ {| } ],
+        "characteristics": [] },
+      { "node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten",
+        "attributes": [
+          { "node": "Attribute", "name": "gewicht",
+            "datatype": { "node": "Numeriek", "geheel": false, "decimalen": 2,
+                          "teken": "ONBEPAALD", "eenheid": null }|} ^ vondst_granulariteit
+  ^ {| } ],
+        "characteristics": [] } ],
+    "factTypes": [
+      { "node": "Feittype", "naam": "vondstaanmelding",
+        "wederkerig": false, "rollen": [
+          { "node": "Rol", "naam": "aanmelder", "objecttypeNaam": "Jutter",
+            "meervoud": null, "meervoudig": false },
+          { "node": "Rol", "naam": "vondst", "objecttypeNaam": "Vondst",
+            "meervoud": "vondsten", "meervoudig": true } ] } ],
+    "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [],
+    "dayKinds": [], "dagsoortPerEenheid": {} },
+  "rules": {
+    "resolvedRegels": [
+      { "node": "ResolvedRegel", "naam": "aantal gevulde vondstgewichten", "soort": "BEREKENING",
+        "doel": { "node": "AttribuutRef", "attribuut": "aantal gevulde vondstgewichten",
+                  "objecttype": "Jutter", "onderwerpBron": "een Jutter", "navigatieRol": null,
+                  "type": |} ^ num0
   ^ {|, "bron": "Het aantal gevulde vondstgewichten van een Jutter",
-                "set": false, "navigatiePad": [] },
-      "waarde": { "node": "Functie", "kind": "AANTAL_GEVULDE",
-        "argumenten": [ { "node": "AttribuutRef", "attribuut": "gewicht", "objecttype": "Vondst",
-                          "onderwerpBron": "alle vondsten van de Jutter", "navigatieRol": null,
-                          "type": { "node": "Numeriek", "geheel": false, "decimalen": 2,
-                                    "teken": "ONBEPAALD", "eenheid": null },
-                          "bron": "het gewicht van alle vondsten van de Jutter",
-                          "set": true, "navigatiePad": [] } ],
-        "elementObjecttype": "Vondst", "leegwaarde": null, "filter": null,
-        "dimensieSelectie": null, "type": |} ^ num0
+                  "set": false, "navigatiePad": [] },
+        "waarde": { "node": "Functie", "kind": "AANTAL_GEVULDE",
+          "argumenten": [ { "node": "AttribuutRef", "attribuut": "gewicht", "objecttype": "Vondst",
+                            "onderwerpBron": "alle vondsten van de Jutter", "navigatieRol": null,
+                            "type": { "node": "Numeriek", "geheel": false, "decimalen": 2,
+                                      "teken": "ONBEPAALD", "eenheid": null },
+                            "bron": "het gewicht van alle vondsten van de Jutter",
+                            "set": true, "navigatiePad": [] } ],
+          "elementObjecttype": "Vondst", "leegwaarde": null, "filter": null,
+          "dimensieSelectie": null, "type": |} ^ num0
   ^ {|,
-        "bron": "het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter",
-        "granulariteit": null,
-        "bronRol": { "node": "RolBinding", "feittype": "vondstaanmelding", "rol": "vondst" } },
-      "voorwaarde": null,
-      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-  "regelGroepen": [], "diagnostics": []
+          "bron": "het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter",
+          "granulariteit": null,
+          "bronRol": { "node": "RolBinding", "feittype": "vondstaanmelding", "rol": "vondst" } },
+        "voorwaarde": null,
+        "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+    "regelGroepen": [] },
+  "diagnostics": []
 }
 |}
 
@@ -6977,7 +6988,11 @@ let () =
 
 (* ch. 3.4c's one exclusion, and the pin a red case rests on *)
 let () =
-  let ir = aantalgevulde_doc ~vondst_granulariteit:{|"gewicht": "DAG"|} in
+  let ir =
+    aantalgevulde_doc
+      ~vondst_granulariteit:
+        {|, "timeline": { "node": "TimelineFacet", "granularity": "DAG", "count": 1 }|}
+  in
   faults_with ~name:"AANTAL_GEVULDE: the temporal set source is refused by its own arm" ~ir
     ~case_text:aantalgevulde_case
     ~needle:"no moment at which a filled count can ask a timeline whether it is filled";
@@ -7011,82 +7026,82 @@ let () =
    refuses split under a verifier-clean document, and the write fence stays quiet
    because it is silent as soon as one side has no unit. *)
 let gemiddelde_kg_doc =
-  {|{ "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": { "node": "Objecttype", "naam": "Jutter",
-      "attributen": { "aantal gewogen vondsten": |} ^ num0
-  ^ {|, "puntensom": |} ^ num0
-  ^ {|, "puntendeel": |} ^ num0
-  ^ {| },
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {}, "bezield": true, "meervoud": "Jutters" },
-    "Vondst": { "node": "Objecttype", "naam": "Vondst",
-      "attributen": { "gewicht": { "node": "Numeriek", "geheel": false, "decimalen": 2,
-          "teken": "ONBEPAALD", "eenheid": { "node": "Eenheid", "afkorting": "kg",
-            "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null } } },
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vondsten" } },
-  "domeinen": {}, "parameters": {},
-  "eenheidstelsels": { "Gewicht": { "node": "Eenheidstelsel", "naam": "Gewicht",
-    "eenheden": { "kg": { "node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht",
-      "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null } }, "aliassen": {} } },
-  "feittypen": { "vondstaanmelding": { "node": "Feittype", "naam": "vondstaanmelding",
-    "wederkerig": false, "rollen": [
-      { "node": "Rol", "naam": "aanmelder", "objecttypeNaam": "Jutter",
-        "meervoud": null, "meervoudig": false },
-      { "node": "Rol", "naam": "vondst", "objecttypeNaam": "Vondst",
-        "meervoud": "vondsten", "meervoudig": true } ] } },
-  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
-  "regels": [],
-  "resolvedRegels": [
-    { "node": "ResolvedRegel", "naam": "aantal gewogen vondsten", "soort": "BEREKENING",
-      "doel": { "node": "AttribuutRef", "attribuut": "aantal gewogen vondsten",
-                "objecttype": "Jutter", "onderwerpBron": "een Jutter", "navigatieRol": null,
-                "type": |} ^ num0
+  {|{ "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters",
+        "attributes": [
+          { "node": "Attribute", "name": "aantal gewogen vondsten", "datatype": |} ^ num0 ^ {| },
+          { "node": "Attribute", "name": "puntensom", "datatype": |} ^ num0 ^ {| },
+          { "node": "Attribute", "name": "puntendeel", "datatype": |} ^ num0 ^ {| } ],
+        "characteristics": [] },
+      { "node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten",
+        "attributes": [
+          { "node": "Attribute", "name": "gewicht",
+            "datatype": { "node": "Numeriek", "geheel": false, "decimalen": 2,
+                "teken": "ONBEPAALD", "eenheid": { "node": "Eenheid", "afkorting": "kg",
+                  "stelsel": "Gewicht", "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null } } } ],
+        "characteristics": [] } ],
+    "factTypes": [
+      { "node": "Feittype", "naam": "vondstaanmelding",
+        "wederkerig": false, "rollen": [
+          { "node": "Rol", "naam": "aanmelder", "objecttypeNaam": "Jutter",
+            "meervoud": null, "meervoudig": false },
+          { "node": "Rol", "naam": "vondst", "objecttypeNaam": "Vondst",
+            "meervoud": "vondsten", "meervoudig": true } ] } ],
+    "parameters": [], "domains": [],
+    "unitSystems": [
+      { "node": "Eenheidstelsel", "naam": "Gewicht",
+        "eenheden": { "kg": { "node": "Eenheid", "afkorting": "kg", "stelsel": "Gewicht",
+          "canoniek": "kg", "factorNaarCanoniek": 1, "noemer": null } }, "aliassen": {} } ],
+    "dimensions": [], "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {} },
+  "rules": {
+    "resolvedRegels": [
+      { "node": "ResolvedRegel", "naam": "aantal gewogen vondsten", "soort": "BEREKENING",
+        "doel": { "node": "AttribuutRef", "attribuut": "aantal gewogen vondsten",
+                  "objecttype": "Jutter", "onderwerpBron": "een Jutter", "navigatieRol": null,
+                  "type": |} ^ num0
   ^ {|, "bron": "Het aantal gewogen vondsten van een Jutter",
-                "set": false, "navigatiePad": [] },
-      "waarde": { "node": "Functie", "kind": "AANTAL_GEVULDE",
-        "argumenten": [ { "node": "AttribuutRef", "attribuut": "gewicht", "objecttype": "Vondst",
-                          "onderwerpBron": "alle vondsten van de Jutter", "navigatieRol": null,
-                          "type": { "node": "Numeriek", "geheel": false, "decimalen": 2,
-                                    "teken": "ONBEPAALD", "eenheid": { "node": "Eenheid",
-                                      "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg",
-                                      "factorNaarCanoniek": 1, "noemer": null } },
-                          "bron": "het gewicht van alle vondsten van de Jutter",
-                          "set": true, "navigatiePad": [] } ],
-        "elementObjecttype": "Vondst", "leegwaarde": null, "filter": null,
-        "dimensieSelectie": null, "type": |} ^ num0
+                  "set": false, "navigatiePad": [] },
+        "waarde": { "node": "Functie", "kind": "AANTAL_GEVULDE",
+          "argumenten": [ { "node": "AttribuutRef", "attribuut": "gewicht", "objecttype": "Vondst",
+                            "onderwerpBron": "alle vondsten van de Jutter", "navigatieRol": null,
+                            "type": { "node": "Numeriek", "geheel": false, "decimalen": 2,
+                                      "teken": "ONBEPAALD", "eenheid": { "node": "Eenheid",
+                                        "afkorting": "kg", "stelsel": "Gewicht", "canoniek": "kg",
+                                        "factorNaarCanoniek": 1, "noemer": null } },
+                            "bron": "het gewicht van alle vondsten van de Jutter",
+                            "set": true, "navigatiePad": [] } ],
+          "elementObjecttype": "Vondst", "leegwaarde": null, "filter": null,
+          "dimensieSelectie": null, "type": |} ^ num0
   ^ {|,
-        "bron": "het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter",
-        "granulariteit": null,
-        "bronRol": { "node": "RolBinding", "feittype": "vondstaanmelding", "rol": "vondst" } },
-      "voorwaarde": null,
-      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } },
-    { "node": "ResolvedRegel", "naam": "puntendeel", "soort": "BEREKENING",
-      "doel": { "node": "AttribuutRef", "attribuut": "puntendeel", "objecttype": "Jutter",
-                "onderwerpBron": "een Jutter", "navigatieRol": null, "type": |} ^ num0
+          "bron": "het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter",
+          "granulariteit": null,
+          "bronRol": { "node": "RolBinding", "feittype": "vondstaanmelding", "rol": "vondst" } },
+        "voorwaarde": null,
+        "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } },
+      { "node": "ResolvedRegel", "naam": "puntendeel", "soort": "BEREKENING",
+        "doel": { "node": "AttribuutRef", "attribuut": "puntendeel", "objecttype": "Jutter",
+                  "onderwerpBron": "een Jutter", "navigatieRol": null, "type": |} ^ num0
   ^ {|, "bron": "Het puntendeel van een Jutter", "set": false, "navigatiePad": [] },
-      "waarde": { "node": "Binair", "op": "GEDEELD_DOOR",
-        "links": { "node": "AttribuutRef", "attribuut": "puntensom", "objecttype": "Jutter",
-                   "onderwerpBron": "de Jutter", "navigatieRol": null, "type": |} ^ num0
+        "waarde": { "node": "Binair", "op": "GEDEELD_DOOR",
+          "links": { "node": "AttribuutRef", "attribuut": "puntensom", "objecttype": "Jutter",
+                     "onderwerpBron": "de Jutter", "navigatieRol": null, "type": |} ^ num0
   ^ {|, "bron": "de puntensom van de Jutter", "set": false, "navigatiePad": [] },
-        "rechts": { "node": "AttribuutRef", "attribuut": "aantal gewogen vondsten",
-                    "objecttype": "Jutter", "onderwerpBron": "de Jutter", "navigatieRol": null,
-                    "type": |} ^ num0
+          "rechts": { "node": "AttribuutRef", "attribuut": "aantal gewogen vondsten",
+                      "objecttype": "Jutter", "onderwerpBron": "de Jutter", "navigatieRol": null,
+                      "type": |} ^ num0
   ^ {|, "bron": "het aantal gewogen vondsten van de Jutter",
-                    "set": false, "navigatiePad": [] },
-        "type": |} ^ num0
+                      "set": false, "navigatiePad": [] },
+          "type": |} ^ num0
   ^ {|,
-        "bron": "de puntensom van de Jutter gedeeld door het aantal gewogen vondsten van de Jutter" },
-      "voorwaarde": null,
-      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-  "regelGroepen": [], "diagnostics": []
+          "bron": "de puntensom van de Jutter gedeeld door het aantal gewogen vondsten van de Jutter" },
+        "voorwaarde": null,
+        "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+    "regelGroepen": [] },
+  "diagnostics": []
 }
 |}
 
@@ -7138,25 +7153,25 @@ let () =
    zou een faseverwisseling hier ongezien passeren — het WF-044-zusterargument,
    toegepast op dit paar. *)
 let venster_doc ~attributen ~parameters ~regel =
-  {|{ "formaat": "regelspraak-ir-v0",
-  "objecttypen": { "Vondst": {
-    "node": "Objecttype", "naam": "Vondst",
-    "attributen": { |} ^ attributen
-  ^ {| },
-    "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-    "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-    "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {},
-    "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vondsten" } },
-  "domeinen": {},
-  "parameters": { |} ^ parameters
-  ^ {| },
-  "eenheidstelsels": {}, "feittypen": {}, "dimensies": {}, "tijdlijnen": [],
-  "dagsoorten": [], "dagsoortPerEenheid": {}, "regels": [],
-  "resolvedRegels": [ |} ^ regel
+  {|{ "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten",
+        "attributes": [ |} ^ attributen
   ^ {| ],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-  "regelGroepen": [], "diagnostics": []
+        "characteristics": [] } ],
+    "factTypes": [],
+    "parameters": [ |} ^ parameters
+  ^ {| ],
+    "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": [],
+    "dagsoortPerEenheid": {} },
+  "rules": {
+    "resolvedRegels": [ |} ^ regel
+  ^ {| ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+    "regelGroepen": [] },
+  "diagnostics": []
 }
 |}
 
@@ -7194,9 +7209,9 @@ let () =
         "tot": null, "totInclusief": false, "bron": "vanaf de peildatum" }|}
   in
   let ir =
-    venster_doc ~attributen:({|"vondstpremie": |} ^ num_geheel)
+    venster_doc ~attributen:(attribuut "vondstpremie" num_geheel)
       ~parameters:
-        {|"peildatum": { "node": "Parameter", "naam": "peildatum",
+        {|{ "node": "Parameter", "naam": "peildatum",
             "datatype": { "node": "DatumInDagen" }, "granulariteit": null }|}
       ~regel:(regel parametergrens)
   in
@@ -7220,40 +7235,42 @@ let () =
    samenstelling op een tijdlijndoel, bij de REGEL en met fase-staart. *)
 let clip_doc voorwaarde =
   let num = num_geheel in
-  {|{ "formaat": "regelspraak-ir-v0",
-  "objecttypen": { "Vondst": {
-    "node": "Objecttype", "naam": "Vondst",
-    "attributen": { "vergoeding": |} ^ num ^ {|, "tarief": |} ^ num
-  ^ {| },
-    "attribuutMeervoud": {}, "attribuutDimensies": {},
-    "attribuutGranulariteit": { "vergoeding": "JAAR", "tarief": "JAAR" },
-    "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-    "kenmerken": [ "actief" ], "kenmerkSoorten": { "actief": "BIJVOEGLIJK" },
-    "kenmerkGranulariteit": { "actief": "MAAND" },
-    "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vondsten" } },
-  "domeinen": {}, "parameters": {},
-  "eenheidstelsels": {}, "feittypen": {}, "dimensies": {}, "tijdlijnen": [],
-  "dagsoorten": [], "dagsoortPerEenheid": {}, "regels": [],
-  "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "vergoeding van een vondst",
-      "soort": "GELIJKSTELLING",
-      "doel": { "node": "AttribuutRef", "attribuut": "vergoeding", "objecttype": "Vondst",
-        "onderwerpBron": "een Vondst", "navigatieRol": null, "type": |} ^ num
+  {|{ "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten",
+        "attributes": [
+          { "node": "Attribute", "name": "vergoeding", "datatype": |} ^ num ^ {|,
+            "timeline": { "node": "TimelineFacet", "granularity": "JAAR", "count": 1 } },
+          { "node": "Attribute", "name": "tarief", "datatype": |} ^ num ^ {|,
+            "timeline": { "node": "TimelineFacet", "granularity": "JAAR", "count": 1 } } ],
+        "characteristics": [
+          { "node": "Characteristic", "name": "actief", "kind": "BIJVOEGLIJK",
+            "timeline": { "node": "TimelineFacet", "granularity": "MAAND", "count": 1 } } ] } ],
+    "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
+    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {} },
+  "rules": {
+    "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "vergoeding van een vondst",
+        "soort": "GELIJKSTELLING",
+        "doel": { "node": "AttribuutRef", "attribuut": "vergoeding", "objecttype": "Vondst",
+          "onderwerpBron": "een Vondst", "navigatieRol": null, "type": |} ^ num
   ^ {|, "bron": "De vergoeding van een Vondst", "set": false, "navigatiePad": [] },
-      "waarde": { "node": "Functie", "kind": "TIJDSEVENREDIG_DEEL",
-        "argumenten": [ { "node": "AttribuutRef", "attribuut": "tarief", "objecttype": "Vondst",
-          "onderwerpBron": "zijn", "navigatieRol": null, "type": |} ^ num
+        "waarde": { "node": "Functie", "kind": "TIJDSEVENREDIG_DEEL",
+          "argumenten": [ { "node": "AttribuutRef", "attribuut": "tarief", "objecttype": "Vondst",
+            "onderwerpBron": "zijn", "navigatieRol": null, "type": |} ^ num
   ^ {|, "bron": "zijn tarief", "set": false, "navigatiePad": [] } ],
-        "elementObjecttype": null, "leegwaarde": null,
-        "filter": { "node": "Kenmerk", "kenmerk": "actief", "navigatie": null, "negatie": false,
-          "eigenaar": null, "periode": null, "bron": "gedurende de tijd dat hij actief is" },
-        "dimensieSelectie": null, "type": |} ^ num
+          "elementObjecttype": null, "leegwaarde": null,
+          "filter": { "node": "Kenmerk", "kenmerk": "actief", "navigatie": null, "negatie": false,
+            "eigenaar": null, "periode": null, "bron": "gedurende de tijd dat hij actief is" },
+          "dimensieSelectie": null, "type": |} ^ num
   ^ {|, "bron": "het tijdsevenredig deel per jaar van zijn tarief", "granulariteit": "JAAR" },
-      "voorwaarde": |} ^ voorwaarde
+        "voorwaarde": |} ^ voorwaarde
   ^ {|,
-      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-  "regelGroepen": [], "diagnostics": []
+        "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+    "regelGroepen": [] },
+  "diagnostics": []
 }
 |}
 
@@ -7352,28 +7369,29 @@ let () =
    Nu weigeren beide. *)
 let () =
   let ir =
-    {|{ "formaat": "regelspraak-ir-v0",
-  "objecttypen": { "Vondst": {
-    "node": "Objecttype", "naam": "Vondst", "attributen": {},
-    "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-    "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-    "kenmerken": [ "geborgen" ], "kenmerkSoorten": { "geborgen": "BIJVOEGLIJK" },
-    "kenmerkGranulariteit": { "geborgen": "JAAR" },
-    "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vondsten" } },
-  "domeinen": {}, "parameters": {},
-  "eenheidstelsels": {}, "feittypen": {}, "dimensies": {}, "tijdlijnen": [],
-  "dagsoorten": [], "dagsoortPerEenheid": {}, "regels": [],
-  "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "berging van een vondst",
-      "soort": "KENMERKTOEKENNING",
-      "doel": { "node": "AttribuutRef", "attribuut": "geborgen", "objecttype": "Vondst",
-        "onderwerpBron": "een Vondst", "navigatieRol": null, "type": { "node": "Booleaan" },
-        "bron": "Een Vondst is geborgen", "set": false, "navigatiePad": [] },
-      "waarde": { "node": "Literal", "waarde": "waar", "type": { "node": "Booleaan" }, "bron": "waar" },
-      "voorwaarde": null,
-      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-  "regelGroepen": [], "diagnostics": []
+    {|{ "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten",
+        "attributes": [],
+        "characteristics": [
+          { "node": "Characteristic", "name": "geborgen", "kind": "BIJVOEGLIJK",
+            "timeline": { "node": "TimelineFacet", "granularity": "JAAR", "count": 1 } } ] } ],
+    "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
+    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {} },
+  "rules": {
+    "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "berging van een vondst",
+        "soort": "KENMERKTOEKENNING",
+        "doel": { "node": "AttribuutRef", "attribuut": "geborgen", "objecttype": "Vondst",
+          "onderwerpBron": "een Vondst", "navigatieRol": null, "type": { "node": "Booleaan" },
+          "bron": "Een Vondst is geborgen", "set": false, "navigatiePad": [] },
+        "waarde": { "node": "Literal", "waarde": "waar", "type": { "node": "Booleaan" }, "bron": "waar" },
+        "voorwaarde": null,
+        "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+    "regelGroepen": [] },
+  "diagnostics": []
 }
 |}
   in
@@ -7397,39 +7415,38 @@ let () =
    sentence. *)
 let unie_body ~waarde =
   Printf.sprintf
-    {|{ "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Jutter": { "node": "Objecttype", "naam": "Jutter",
-      "attributen": { "aantal strandvondsten": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "NIET_NEGATIEF", "eenheid": null } },
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
-      "bezield": true, "meervoud": "Jutters" },
-    "Vondst": { "node": "Objecttype", "naam": "Vondst", "attributen": {},
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
-      "bezield": false, "meervoud": "Vondsten" } },
-  "domeinen": {}, "parameters": {}, "eenheidstelsels": {},
-  "feittypen": {
-    "vondstaanmelding": { "node": "Feittype", "naam": "vondstaanmelding", "wederkerig": false,
-      "rollen": [ { "node": "Rol", "naam": "aanmelder", "objecttypeNaam": "Jutter", "meervoud": null, "meervoudig": false },
-                  { "node": "Rol", "naam": "aangemelde vondst", "objecttypeNaam": "Vondst", "meervoud": "aangemelde vondsten", "meervoudig": true } ] },
-    "vondstberging": { "node": "Feittype", "naam": "vondstberging", "wederkerig": false,
-      "rollen": [ { "node": "Rol", "naam": "berger", "objecttypeNaam": "Jutter", "meervoud": null, "meervoudig": false },
-                  { "node": "Rol", "naam": "geborgen vondst", "objecttypeNaam": "Vondst", "meervoud": "geborgen vondsten", "meervoudig": true } ] } },
-  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
-  "regels": [ { "node": "Regel", "naam": "aantal strandvondsten", "soort": "regel" } ],
-  "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "aantal strandvondsten", "soort": "BEREKENING",
-    "doel": { "node": "AttribuutRef", "attribuut": "aantal strandvondsten", "objecttype": "Jutter",
-      "onderwerpBron": "een Jutter", "navigatieRol": null,
-      "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "NIET_NEGATIEF", "eenheid": null },
-      "bron": "Het aantal strandvondsten van een Jutter", "set": false, "navigatiePad": [] },
-    "waarde": %s,
-    "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-  "regelGroepen": [], "diagnostics": [] }
+    {|{ "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters",
+        "attributes": [
+          { "node": "Attribute", "name": "aantal strandvondsten",
+            "datatype": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "NIET_NEGATIEF", "eenheid": null } } ],
+        "characteristics": [] },
+      { "node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten",
+        "attributes": [], "characteristics": [] } ],
+    "factTypes": [
+      { "node": "Feittype", "naam": "vondstaanmelding", "wederkerig": false,
+        "rollen": [ { "node": "Rol", "naam": "aanmelder", "objecttypeNaam": "Jutter", "meervoud": null, "meervoudig": false },
+                    { "node": "Rol", "naam": "aangemelde vondst", "objecttypeNaam": "Vondst", "meervoud": "aangemelde vondsten", "meervoudig": true } ] },
+      { "node": "Feittype", "naam": "vondstberging", "wederkerig": false,
+        "rollen": [ { "node": "Rol", "naam": "berger", "objecttypeNaam": "Jutter", "meervoud": null, "meervoudig": false },
+                    { "node": "Rol", "naam": "geborgen vondst", "objecttypeNaam": "Vondst", "meervoud": "geborgen vondsten", "meervoudig": true } ] } ],
+    "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [],
+    "dayKinds": [], "dagsoortPerEenheid": {} },
+  "rules": {
+    "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "aantal strandvondsten", "soort": "BEREKENING",
+      "doel": { "node": "AttribuutRef", "attribuut": "aantal strandvondsten", "objecttype": "Jutter",
+        "onderwerpBron": "een Jutter", "navigatieRol": null,
+        "type": { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "NIET_NEGATIEF", "eenheid": null },
+        "bron": "Het aantal strandvondsten van een Jutter", "set": false, "navigatiePad": [] },
+      "waarde": %s,
+      "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+    "regelGroepen": [] },
+  "diagnostics": []
+}
 |}
     waarde
 
@@ -7550,38 +7567,32 @@ let () =
 let leeg_num = {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null }|}
 
 let leeg_doc_vol ~parameters ~consistenties ~werf_attrs ~regels =
-  let namen =
-    String.concat ", "
-      (List.map (fun (n, _) -> {|{ "node": "Regel", "naam": "|} ^ n ^ {|", "soort": "regel" }|}) regels)
-  in
   let lijf = String.concat ", " (List.map snd regels) in
-  {|{ "formaat": "regelspraak-ir-v0",
-  "objecttypen": {
-    "Werf": { "node": "Objecttype", "naam": "Werf",
-      "attributen": { "tarief": |} ^ leeg_num ^ werf_attrs ^ {| },
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {}, "kenmerken": [],
-      "kenmerkSoorten": {}, "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
-      "bezield": false, "meervoud": "Werven" },
-    "Schuit": { "node": "Objecttype", "naam": "Schuit",
-      "attributen": { "lengte": |} ^ leeg_num ^ {|, "meldpremie": |} ^ leeg_num ^ {| },
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {}, "kenmerken": [],
-      "kenmerkSoorten": {}, "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
-      "bezield": false, "meervoud": "Schuiten" } },
-  "domeinen": {}, "parameters": { |} ^ parameters ^ {| }, "eenheidstelsels": {},
-  "feittypen": { "ligplaats": { "node": "Feittype", "naam": "ligplaats", "wederkerig": false,
-    "rollen": [
-      { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
-      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten",
-        "meervoudig": true } ] } },
-  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
-  "regels": [ |} ^ namen ^ {| ],
-  "resolvedRegels": [ |} ^ lijf ^ {| ],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [],
-  "consistenties": [ |} ^ consistenties ^ {| ],
-  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-  "regelGroepen": [], "diagnostics": []
+  {|{ "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Werf", "animate": false, "plural": "Werven",
+        "attributes": [ |} ^ attribuut "tarief" leeg_num ^ werf_attrs ^ {| ],
+        "characteristics": [] },
+      { "node": "ObjectType", "name": "Schuit", "animate": false, "plural": "Schuiten",
+        "attributes": [ |} ^ attribuut "lengte" leeg_num ^ {|, |} ^ attribuut "meldpremie" leeg_num
+  ^ {| ],
+        "characteristics": [] } ],
+    "factTypes": [
+      { "node": "Feittype", "naam": "ligplaats", "wederkerig": false,
+        "rollen": [
+          { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
+          { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten",
+            "meervoudig": true } ] } ],
+    "parameters": [ |} ^ parameters ^ {| ], "domains": [], "unitSystems": [], "dimensions": [],
+    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {} },
+  "rules": {
+    "resolvedRegels": [ |} ^ lijf ^ {| ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [],
+    "consistenties": [ |} ^ consistenties ^ {| ],
+    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+    "regelGroepen": [] },
+  "diagnostics": []
 }
 |}
 
@@ -7683,7 +7694,7 @@ let () =
   List.iter
     (fun (name, kwantor, soort, negatie) ->
       let ir =
-        leeg_doc ~werf_attrs:({|, "keurpremie": |} ^ leeg_num)
+        leeg_doc ~werf_attrs:(", " ^ attribuut "keurpremie" leeg_num)
           ~regels:
             [ leeg_regel ~naam:"keurpremie" ~ot:"Werf" ~doel:"keurpremie" ~waarde:"10"
                 (kv kwantor soort negatie) ]
@@ -7710,14 +7721,10 @@ let () =
                 (leeg_pred ~soort ~negatie:true
                    ~periode:{|{ "node": "GeheelPeriode", "jaar": true, "niet": false }|}
                    (leeg_ref ~ot:"Schuit" ~attr:"lengte" ~nav:None)) ]
-        |> replace ~tok:{|"attribuutGranulariteit": {},
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {}, "kenmerken": [],
-      "kenmerkSoorten": {}, "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
-      "bezield": false, "meervoud": "Schuiten"|}
-             ~by:{|"attribuutGranulariteit": { "lengte": "MAAND" },
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {}, "kenmerken": [],
-      "kenmerkSoorten": {}, "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
-      "bezield": false, "meervoud": "Schuiten"|}
+        |> replace ~tok:(attribuut "lengte" leeg_num)
+             ~by:
+               ({|{ "node": "Attribute", "name": "lengte", "datatype": |} ^ leeg_num
+               ^ {|, "timeline": { "node": "TimelineFacet", "granularity": "MAAND", "count": 1 } }|})
       in
       let case_text =
         leeg_case
@@ -7788,7 +7795,9 @@ let () =
   in
   let ir =
     leeg_doc
-      ~werf_attrs:({|, "bonus": |} ^ leeg_num ^ {|, "malus": |} ^ leeg_num ^ {|, "extra": |} ^ leeg_num)
+      ~werf_attrs:
+        (", " ^ attribuut "bonus" leeg_num ^ ", " ^ attribuut "malus" leeg_num ^ ", "
+        ^ attribuut "extra" leeg_num)
       ~regels:
         [ leeg_regel ~naam:"b" ~ot:"Werf" ~doel:"bonus" ~waarde:"99"
             (kvh ~kwantor:"ALLE" ~filter:(leeg_pred ~soort:"LEEG" ~negatie:true own) groter);
@@ -7806,7 +7815,7 @@ let () =
   let param_doc ~negatie =
     leeg_doc_vol ~consistenties:"" ~werf_attrs:""
       ~parameters:
-        ({|"drempel": { "node": "Parameter", "naam": "drempel", "datatype": |} ^ leeg_num
+        ({|{ "node": "Parameter", "naam": "drempel", "datatype": |} ^ leeg_num
         ^ {|, "granulariteit": null }|})
       ~regels:
         [ leeg_regel ~naam:"meldpremie" ~ot:"Schuit" ~doel:"meldpremie" ~waarde:"40"
@@ -7832,18 +7841,17 @@ let () =
     [ ("LEEG on an unbound parameter", false); ("LEEG negated on an unbound parameter", true) ];
   (* the recursive creation group *)
   let r_ir ~rsoort ~csoort ~cneg =
-    {|{"formaat":"regelspraak-ir-v0","objecttypen":{"Wachter":{"node":"Objecttype","naam":"Wachter",
-"attributen":{"rang":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null},
-"opvolgerrang":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null},
-"merk":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null}},
-"attribuutMeervoud":{},"attribuutDimensies":{},"attribuutGranulariteit":{},"attribuutTijdlijnAantal":{},
-"attribuutTijdlijnNaam":{},"kenmerken":[],"kenmerkSoorten":{},"kenmerkGranulariteit":{},"kenmerkTijdlijnAantal":{},
-"bezield":true,"meervoud":"Wachters"}},"domeinen":{},"parameters":{},"eenheidstelsels":{},"feittypen":{"opvolging":{"node":"Feittype",
+    {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Wachter","animate":true,
+"plural":"Wachters","attributes":[{"node":"Attribute","name":"rang","datatype":{"node":"Numeriek",
+"geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null}},{"node":"Attribute","name":"opvolgerrang",
+"datatype":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null}},
+{"node":"Attribute","name":"merk","datatype":{"node":"Numeriek","geheel":true,"decimalen":0,
+"teken":"ONBEPAALD","eenheid":null}}],"characteristics":[]}],"factTypes":[{"node":"Feittype",
 "naam":"opvolging","wederkerig":false,"rollen":[{"node":"Rol","naam":"voorganger","objecttypeNaam":"Wachter",
 "meervoud":null,"meervoudig":false},{"node":"Rol","naam":"opvolger","objecttypeNaam":"Wachter",
-"meervoud":"opvolgers","meervoudig":false}]}},"dimensies":{},"tijdlijnen":[],"dagsoorten":[],
-"dagsoortPerEenheid":{},"regels":[{"node":"Regel","naam":"merk van een wachter","soort":"regel"}],
-"resolvedRegels":[{"node":"ResolvedRegel","naam":"merk van een wachter","soort":"BEREKENING",
+"meervoud":"opvolgers","meervoudig":false}]}],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],
+"timelines":[],"dayKinds":[],"dagsoortPerEenheid":{}},"rules":{"resolvedRegels":[{"node":"ResolvedRegel",
+"naam":"merk van een wachter","soort":"BEREKENING",
 "doel":{"node":"AttribuutRef","attribuut":"merk","objecttype":"Wachter","onderwerpBron":"een Wachter",
 "navigatieRol":null,"type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD",
 "eenheid":null},"bron":"merk","set":false,"navigatiePad":[]},"waarde":{"node":"Literal","waarde":"1",
@@ -7881,7 +7889,7 @@ let () =
 "bron":"de rang van de Wachter is kleiner dan 99"},"bron":"Er moet worden voldaan aan: de rang van elke Wachter is kleiner dan 99",
 "line":1,"geldigheid":{"node":"Geldigheid","vanaf":null,"tot":null}}],"uniciteiten":[],"uniciteitUnies":[],
 "feitCreaties":[],"resolvedStartpunten":[],"regelGroepen":[{"node":"ResolvedRegelGroep","naam":"estafette",
-"recursief":true,"leden":["werf de opvolger"],"bron":null,"line":1}],"diagnostics":[]}|}
+"recursief":true,"leden":["werf de opvolger"],"bron":null,"line":1}]},"diagnostics":[]}|}
     |> replace ~tok:"@RSOORT@" ~by:rsoort
     |> replace ~tok:"@CSOORT@" ~by:csoort
     |> replace ~tok:"@CNEG@" ~by:(string_of_bool cneg)
@@ -7907,8 +7915,8 @@ let () =
    reader's reason included, as ref's suite does: one refusal for both. *)
 let () =
   let venster_ir vanaf tot =
-    dt_doc ~attributen:{|"aanvangstip": { "node": "DatumTijd" }|} ~kenmerken:{|"tijdig"|}
-      ~kenmerk_soorten:{|"tijdig": "BIJVOEGLIJK"|}
+    dt_doc ~attributen:(attribuut "aanvangstip" {|{ "node": "DatumTijd" }|})
+      ~kenmerken:{|{ "node": "Characteristic", "name": "tijdig", "kind": "BIJVOEGLIJK" }|}
       ~regels:
         (Printf.sprintf
            {|{ "node": "ResolvedRegel", "naam": "tijdig", "soort": "KENMERKTOEKENNING",
