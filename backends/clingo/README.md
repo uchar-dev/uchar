@@ -18,16 +18,32 @@ spec bug.
   of it carries one `viol/2` guard in ref's own words, whose body is
   where evaluation reaches that read (ch. 5.11): the taken arm, a
   composite's or quantifier fold's open prefix in ref's member order,
-  the barrier of every enclosing Let decided per read. The program goes
-  UNSAT where ref faults and answers where ref does not read the
-  parameter, except in four recorded places. The day-kind table and the
-  §7.1 horizon fence read their parameter at translation and refuse
-  there, whether or not ref reaches it. Members a creation adds to a
-  quantifier fold's range follow no order this program knows, so the
-  guard in its matrix fires only where every order reaches them. A Let
-  barrier inside a per-member part is ordered as one member runs it.
-  And where the Let lowering keeps a value behind an enclosing need on
-  a path that does not read it, the guard follows the lowering.
+  the barrier of every enclosing Let decided per read and, in a part
+  that runs member by member, per member. Where a creation can add a
+  member to a quantifier fold's range, the order of the added members
+  is not normed (ch. 3.9a/5.7a): a matrix read that every allowed
+  order reaches fires in ref's words, one that only ref's order
+  reaches fires in a sentence naming that order. Where the guard is
+  not exact, it errs in one of two directions:
+  - Loud, a refusal where ref plays. The day-kind table and the §7.1
+    horizon fence read their parameter at translation and refuse
+    there, also behind a rule condition that fails, where ref never
+    reads it. The program knows ref's order of the added members only
+    for unconditional creations with literal initialisations; for
+    others the named refusal takes the smallest prefix ref can have,
+    so two creations of 8 and 3 with a condition that holds are
+    refused by name where ref, reading 8 first, plays. And a Let
+    barrier in a per-member part stops the guard only for a member
+    whose order the program knows: with the same two creations filling
+    a set fold's range, the guard fires in ref's words where ref's
+    barrier at 8 ended the Let (the named sentence the matrix gets is
+    not given there, also not where ref's order is known).
+  - Silent, an answer where ref faults. The Let lowering keeps a value
+    behind an enclosing need on a path that does not read it, and the
+    guard follows the lowering. That lowering is inexact without any
+    parameter: `Let k = restpost in ((match klasse: Hoog → k, Laag →
+    0,00) plus p)` with klasse Laag, restpost leeg and p = 10 answers
+    leeg where ref answers 10,00.
 - Exact arithmetic by declared-decimals integer scaling: a value of an
   attribute declared with d decimals is the integer value × 10^d;
   comparisons harmonise scales by multiplication. Clingo's integer

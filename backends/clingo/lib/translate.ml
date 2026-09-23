@@ -738,10 +738,15 @@ let unbound_param_order_reason name fold =
    body that says the read is reached; it is only built for a parameter that
    is in fact unbound, so a bound read emits nothing and costs nothing. The
    witness is the guard's subject, so the diagnosis names who read it. Where
-   the body can say less than that is written at the place that builds it:
-   the created members of a quantifier fold ([emit_kv_reach]), a per-member
-   part and the Let lowering ([emit_barriers]); the day-kind table and the
-   horizon fence read in translation and refuse there, reached or not. *)
+   the body is not exact, it errs in one of two directions, each written at
+   the place that builds it. Loud: the day-kind table and the horizon fence
+   read in translation and refuse there, reached or not; the named twin of a
+   quantifier fold's matrix read takes the smallest prefix ref can have where
+   the program does not know ref's order of the members a creation adds
+   ([emit_kv_reach]); a Let barrier in a per-member part stops the guard only
+   for a member whose order is known ([emit_barriers]). Silent: the Let
+   lowering keeps a value behind an enclosing need on a path that does not
+   read it, and the guard follows the lowering ([reach_at]). *)
 let unbound_param_guard ctx ~witness ~guard name =
   if param_unbound ctx name then begin
     let body = guard () in
@@ -918,7 +923,10 @@ let barred li (s : site) i =
    enclosing Let decided per read instead of by the need alone. ref reaches
    the node unless an EARLIER read of the binder, on the path taken, found the
    need leeg; so each need's atoms leave the body and [barred] takes their
-   place. A Let whose value encloses [s] is covered: the value runs at the
+   place. The need is the lowering's: where the Let lowering keeps a value
+   behind an enclosing need on a path that does not read it, the need looks
+   leeg where ref's value is not, and the barrier then silences a guard ref
+   reaches. A Let whose value encloses [s] is covered: the value runs at the
    first read of that Let's binder, whose own reach carries the enclosing
    barriers (the demand, or [read_places]). [skip] is the Let a read reads,
    by identity: the read itself happens whatever that Let's need, while an
