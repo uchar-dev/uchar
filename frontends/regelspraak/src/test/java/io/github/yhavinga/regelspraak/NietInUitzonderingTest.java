@@ -279,11 +279,11 @@ class NietInUitzonderingTest {
         assertEquals(1, m.diagnostics.size(), () -> "verwachtte één waarschuwing: " + m.diagnostics);
         Diagnostic w = m.diagnostics.get(0);
         assertEquals(Severity.WARNING, w.severity());
-        assertTrue(w.message().contains("leidt nooit iets af") && w.message().contains("Jutter.uitgesloten"),
+        assertTrue(w.message().contains("wordt nooit afgeleid") && w.message().contains("Jutter.uitgesloten"),
                 w.message());
         assertTrue(w.line() > 0, "de waarschuwing staat bij het blok");
         // WF-113 (a): the WARNING rides the wire; the emitter refuses anything else.
-        assertTrue(IrEmitter.emit(m).contains("leidt nooit iets af"));
+        assertTrue(IrEmitter.emit(m).contains("wordt nooit afgeleid"));
     }
 
     @Test void een_ongeordend_blok_dat_alleen_onwaar_beslist_waarschuwt_eenmaal() {
@@ -302,7 +302,7 @@ class NietInUitzonderingTest {
             """);
         assertTrue(m.isOk(), () -> "welgevormd, dus geen fout: " + m.errors());
         assertEquals(1, m.diagnostics.size(), () -> "één waarschuwing per doel, niet per zustergroep: " + m.diagnostics);
-        assertTrue(m.diagnostics.get(0).message().contains("leidt nooit iets af"), m.diagnostics.get(0).message());
+        assertTrue(m.diagnostics.get(0).message().contains("wordt nooit afgeleid"), m.diagnostics.get(0).message());
     }
 
     // -------------------------------------------------------------------- the register lint (Tabel 16)

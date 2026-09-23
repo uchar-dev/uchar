@@ -202,7 +202,7 @@ makes it false anyway.
   is no negation (the undeclared-attribute refusal of WF-022);
 - a characteristic target on which every default of every group decides
   `onwaar` never derives anything. It is well-formed and draws no ERROR; the
-  RuleChecker gives one WARNING per target ("… leidt nooit iets af …"), which
+  RuleChecker gives one WARNING per target ("… wordt nooit afgeleid …"), which
   the emitter writes into `diagnostics` (WF-113 (a)). Per target, not per
   group: an unordered block spreads its target over sibling groups, and a
   target with a negated sibling beside a positive one derives through the

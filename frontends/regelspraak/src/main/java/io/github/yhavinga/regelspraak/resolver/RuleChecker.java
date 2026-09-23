@@ -268,11 +268,12 @@ final class RuleChecker {
             PrioritizedDefaults eerste = groepen.get(0);
             Herkomst h = pdHerkomst.getOrDefault(eerste, new Herkomst(0, "defaults-groep"));
             model.diagnostics.add(new Diagnostic(Severity.WARNING, h.kop() + ": het kenmerk " + eerste.onderwerp() + "."
-                    + eerste.doel() + " leidt nooit iets af — elke default van "
+                    + eerste.doel() + " wordt nooit afgeleid — elke default van "
+                    + (groepen.size() == 1 ? "de defaults-groep " : "de defaults-groepen ")
                     + opsomming(groepen.stream().map(PrioritizedDefaults::naam).toList()) + " beslist 'onwaar', en "
-                    + "een besluit 'onwaar' schrijft niets, dus het kenmerk komt alleen uit de invoer. Welgevormd, maar "
-                    + "gelijk aan geen regel; schrijf de uitzondering die 'waar' beslist, of laat de groep weg "
-                    + "(dialect §4)", h.line()));
+                    + "een besluit 'onwaar' schrijft niets, dus het kenmerk komt alleen uit de invoer. Dat is "
+                    + "welgevormd, maar het zegt hetzelfde als geen regel: schrijf de uitzondering die 'waar' beslist, "
+                    + "of laat de groep weg (dialect §4)", h.line()));
         }
     }
 
@@ -2093,7 +2094,8 @@ final class RuleChecker {
                                                   boolean heelNaamOok) {
         return "regel '" + regel + "': '" + geschreven + "' ontkent geen kenmerk van " + subject.naam + " — '" + rest
                 + "' is niet gedeclareerd" + (heelNaamOok ? ", en '" + geschreven + "' evenmin" : "")
-                + ". Een ontkende kenmerkbeslissing ontkent een gedeclareerd kenmerk (§3.5, dialect §4)";
+                + ". Declareer het kenmerk bij " + subject.naam + ", of schrijf de naam zoals hij gedeclareerd is "
+                + "(§3.5, dialect §4)";
     }
 
     /** §9.9/§13.4.12 startpuntbepaling: "Het startpunt van <tijdlijn> voor <onderwerp> wordt bepaald
