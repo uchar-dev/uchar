@@ -619,8 +619,10 @@ let wf004 ctx =
                 match d with
                 | Some d when find_ci ctx.doc.dimensies d = None ->
                     [ v "WF-004" at ("reference to undeclared dimension '" ^ d ^ "'") ]
-                | None -> [ v "WF-004" at "null dimension entry" ]
-                | _ -> [])
+                | Some _ -> []
+                (* the loader reads every entry of a `dimensions` list as a
+                   string, so a null entry cannot reach this walk since M1 *)
+                | None -> assert false)
               dims)
         ot.attribuut_dimensies)
     ctx.doc.objecttypen
@@ -652,7 +654,10 @@ let wf005 ctx =
                     let facet_count =
                       match find_ci ot.attribuut_tijdlijn_aantal a |> Option.join with
                       | Some c -> c
-                      | None -> 1
+                      (* a timeline name sits inside a TimelineFacet, whose count
+                         is a required field since M1: v0's "absent = 1" has no
+                         wire form left *)
+                      | None -> assert false
                     in
                     (if facet_gran <> tl.tl_granulariteit then
                        [ v "WF-005" (at ^ "/attribuutTijdlijnNaam/" ^ a)
@@ -7094,7 +7099,9 @@ let expression_layer ctx =
                   [ v wf (at ^ "/waarde")
                       (what ^ " bucket granularity differs from the target's declared granularity")
                   ]
-              | _ -> [])
+              | Some (_, Some _) | None -> []
+              (* TimelineFacet.granularity is a required enum since M1 *)
+              | Some (_, None) -> assert false)
           | None -> [])
       | _ -> [])
       (* WF-058 (rule level): the day count MUST carry a gedurende
@@ -9211,8 +9218,9 @@ let wf057 ctx =
     [ List.concat_map
         (fun (key, (ot : objecttype)) ->
           let at = "/objecttypen/" ^ key in
+          (* the key IS the node's name since M1 (the loader builds both from
+             one field), so a second reading would report the name twice *)
           check at "object type name" (Some key)
-          @ check at "object type name" ot.ot_naam
           @ check at "plural" ot.meervoud
           @ keys at "attribute name" ot.attributen
           @ List.concat_map (fun (_, m) -> check at "attribute plural" m) ot.attribuut_meervoud
@@ -9222,7 +9230,6 @@ let wf057 ctx =
         (fun (key, (ft : feittype)) ->
           let at = "/feittypen/" ^ key in
           check at "fact type name" (Some key)
-          @ check at "fact type name" ft.ft_naam
           @ List.concat_map
               (fun (r : rol) ->
                 check at "role name" r.rol_naam @ check at "role plural" r.rol_meervoud)
@@ -9235,7 +9242,6 @@ let wf057 ctx =
         (fun (key, (d : dimensie)) ->
           let at = "/dimensies/" ^ key in
           check at "dimension name" (Some key)
-          @ check at "dimension name" d.dim_naam
           @ check at "dimension plural" d.dim_naam_meervoud)
         ctx.doc.dimensies;
       List.concat_map (fun (tl : tijdlijn) -> check "/tijdlijnen" "timeline name" tl.tl_naam)
@@ -9575,9 +9581,9 @@ let wf065 ctx =
               let at = "/objecttypen/" ^ otname ^ "/attributen/" ^ an in
               element_check at element
               @ (if
-                   List.exists
-                     (fun (n, g) -> norm n = norm an && g <> None)
-                     ot.attribuut_granulariteit
+                   (* a facet's presence is the temporality decision; since M1
+                      it always carries its grid, so the key alone decides *)
+                   List.exists (fun (n, _) -> norm n = norm an) ot.attribuut_granulariteit
                  then
                    [ v "WF-065" at
                        "a list-typed attribute carries a granularity — a list-typed temporal \
