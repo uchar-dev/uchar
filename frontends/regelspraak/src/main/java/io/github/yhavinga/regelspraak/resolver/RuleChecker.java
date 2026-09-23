@@ -138,7 +138,7 @@ final class RuleChecker {
 
     /** §9.10 build the {@link io.github.yhavinga.regelspraak.ir.ResolvedRegelGroep} carriers (member RULE NAMES + the
      *  {@code recursief} marker) and run the fase-2 structural checks — a DOCUMENTED EXTENSION (see
-     *  docs/grammar-divergences.md '§9.10 recursie / regelgroep'). Members were already resolved as ungrouped
+     *  grammar/DIVERGENCES.md '§9.10 recursie / regelgroep'). Members were already resolved as ungrouped
      *  rules above (their {@link ResolvedRegel}/objectcreatie/… entries keep the bare written name); this only
      *  records the grouping and validates the recursief marker. Fase-2 checks:
      *  (a) a recursief group with NO objectcreatie member -> ERROR (nothing can advance the chain);
@@ -1778,7 +1778,7 @@ final class RuleChecker {
      *  which demands an explicit afronding), so enforcement is RESOLVER-STATIC over the statically-decidable
      *  surface — a LITERAL assigned/initialised into a sign-restricted Numeriek doel — exactly the
      *  enum-domein posture (Tabel 61 rij 7). A computed value's sign is undecidable here and stays
-     *  unchecked (documented in docs/grammar-divergences.md). Percentage carries no Teken in the model. */
+     *  unchecked (documented in grammar/DIVERGENCES.md). Percentage carries no Teken in the model. */
     private void keurTeken(Datatype doelType, Expr waarde, int line) {
         if (!(doelType instanceof Datatype.Numeriek n) || n.teken() == Datatype.Teken.ONBEPAALD) return;
         if (!(waarde instanceof Expr.Literal lit) || lit.type() == null || !lit.type().isNumeriek()) return;

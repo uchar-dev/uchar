@@ -1572,7 +1572,7 @@ final class ExpressieBouwer {
             // explicit Percentage row + prose exactly where it admits one (§5.1/§5.3 comparison tables) and
             // explicitly excludes Percentage where it means to (§6.7 maal) — Tabel 21 does neither. The
             // "gespecialiseerd numeriek datatype" sentence (§3.3.5) does not override the tables (see
-            // grammar-divergences). A Percentage som-operand is now a type error, no longer silently summed.
+            // grammar/DIVERGENCES.md). A Percentage som-operand is now a type error, no longer silently summed.
             case SOM -> Typering.getalAggregatie("som van", typen);
             // §4.6 Tabel 16 (wortel van) / §4.9 Tabel 20 (absolute waarde van): the single operand must be Numeriek.
             // WORTEL always types Numeriek regardless of its radicand, so "de wortel van <tekst>" produced a Numeriek
@@ -1589,7 +1589,7 @@ final class ExpressieBouwer {
             // eenheid per tijdseenheid" — the NUMERIEK part via getalAggregatie (like MIN/MAX), the rate part
             // via totaalOperandFout: a unit-BEARING operand must carry a tijdseenheid denominator; a UNITLESS
             // operand is admitted, because the spec's own §7.1 worked example totals a unitless Bedrag (the
-            // temporality lives in the timeline, not the unit) — see grammar-divergences.
+            // temporality lives in the timeline, not the unit) — see grammar/DIVERGENCES.md.
             case TOTAAL -> totaalOperandFout(argumenten);
             case EERSTE  -> Typering.datumAggregatie("eerste van", typen);
             case LAATSTE -> Typering.datumAggregatie("laatste van", typen);
@@ -1807,7 +1807,7 @@ final class ExpressieBouwer {
      *  on a NON-temporal operand is the Tabel-30 fout, while a temporal attribute's per-tijdseenheid
      *  dimension lives in its TIMELINE declaration ("voor elke maand"), not its unit: the spec's own §7.1
      *  worked example totals a timeline-declared Bedrag, so a plain-unit temporal operand must not be
-     *  rejected (see grammar-divergences). A unitless operand is likewise admitted; Onbekend makes no claim. */
+     *  rejected (see grammar/DIVERGENCES.md). A unitless operand is likewise admitted; Onbekend makes no claim. */
     private static String totaalOperandFout(List<Expr> argumenten) {
         String f = Typering.getalAggregatie("totaal van", argumenten.stream().map(Expr::type).toList());
         if (f != null) return f;
@@ -1998,7 +1998,7 @@ final class ExpressieBouwer {
             // in each aggregation's operand list). As a STANDALONE value it has no scalar meaning, so both back-
             // ends marker it symmetrically; typing it Tekst fabricated a spurious "Tekst→Numeriek" mismatch that
             // MASKED that honest marker. Leave it onbekend (the not-lowered-kind convention) — see
-            // docs/grammar-divergences.md "concatenatie as a standalone value".
+            // grammar/DIVERGENCES.md "concatenatie as a standalone value".
             case CONCATENATIE -> onbekend();
             // §13.4.17.13: a square root is non-negative; its precision comes from the MANDATORY afronding that
             // wraps it (a sqrt is generally irrational), and its unit would be the operand's unit's root —
@@ -2153,7 +2153,7 @@ final class ExpressieBouwer {
                     "de attribuutverwijzing noemt geen attribuutnaam met lidwoord (§13.4.2.9)");
         String attr = src(a.attribuutMetLidwoord().kaleNaam());
         // §13.4.17.12/§6.8 "het percentage P van V" WITHOUT the '%': our grammar requires '%' on percentageVanExpr to
-        // disambiguate from a 'van' navigation (docs/grammar-divergences.md), so the no-'%' form parses HERE as a
+        // disambiguate from a 'van' navigation (grammar/DIVERGENCES.md), so the no-'%' form parses HERE as a
         // navigation. But when the leftmost name P is a Percentage-typed PARAMETER (never a real attribuut of any
         // objecttype), this IS the percentage function, not a navigation — reinterpret it as PERCENTAGE_VAN(P, V) with
         // V the onderwerp built as a value (V·P/100, §4.8 Tabel 19; leeg telt als 0). A name that is no Percentage

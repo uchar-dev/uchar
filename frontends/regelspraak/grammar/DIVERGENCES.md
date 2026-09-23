@@ -13,6 +13,23 @@ layer: the extension's opening tokens occur **nowhere** in the flat v2.3.0
 corpus, so an official document parses byte-for-byte as before and emits an IR
 with no extension keys.
 
+**Pointers this register does not answer yet.** The frontend came over from the
+source toolchain with its comments, and those comments pointed at that
+toolchain's own register, a file that does not exist in this repository. Since
+the fix round of 2026-09-23 the 24 in the grammar and the main sources point
+here (two in existing tests still name the old file), but the text they cited
+stayed behind. This register does not carry the sections
+`'§9.10 recursie / regelgroep'`, `'§Scenariotoetsen'`, `'negated membership'`
+and `"concatenatie as a standalone value"`, nor the untitled topics at the other
+sites: the percentage forms and the percentage sign, the unit checks of the
+aggregations, the begrenzing bound, the period lowering, the "is gevuurd"
+predicate, the mixed date precision, the best-effort role plural, and the
+`Regelgroep` extension itself beyond the introduction above. At each site the
+comment states its own rationale, and a card that touches such a construct
+writes its section here. Two pointers land on text: the count's operand list
+(§13.4.17.47 below) and the interaction of `Regelgroep` with the defaults
+extension (§4).
+
 ---
 
 ## §4 The prioritized-defaults extension — `Uitzondering op` / `Uitzonderingen ongeordend`
