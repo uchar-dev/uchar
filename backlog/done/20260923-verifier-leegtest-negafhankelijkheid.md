@@ -40,14 +40,27 @@ May touch: `spec/IR-SPEC.md` en `spec/verifier/**` (**voorstel**),
 ## Result (2026-09-23)
 
 **Geland op de branch, beschermde paden als voorstel.** WF-046 telt een
-leeg/gevuld-test nu als negatieve kant, in beide polariteiten. Speczin
-en verifier-arm zijn voorstellen voor de maintainer. Vier negatiefs zijn
-rood-eerst en hebben elk een NOTE. ref heeft een invariantnotitie en
-twee suitegetuigen. Alle veertien gates zijn groen. Commits: `4d4c820f`
-(claim), `bb010b83` (spec + arm + drie negatiefs, **voorstel**),
-`8883c7d8` (ref-notitie + WV-6.4-f/g), `25780207` (IR-SPEC 5.5,
-Drools-flank, **voorstel**), `95dabd4a` (vierde negatief, kwantormatrix,
-**voorstel**), en deze slotcommit.
+leeg/gevuld-test nu als negatieve kant, in beide polariteiten. Sinds
+fixronde 2 geldt dat ook voor het bereik van een kwantorvouw onder ALLE,
+GEEN, TEN_HOOGSTE en PRECIES, en voor de matrix onder GEEN, TEN_HOOGSTE en
+PRECIES. Speczin en verifier-arm zijn voorstellen voor de maintainer. Acht
+negatiefs zijn rood-eerst en hebben elk een NOTE; daarnaast is er één
+nieuwe golden. ref heeft een invariantnotitie en twee suitegetuigen.
+Dertien gates zijn groen; gate 12 faalt alleen op de gelijkheidspin
+(played 183 tegen 182), en met het pinvoorstel hieronder is hij groen.
+Commits, na de rebase op main `3a140fe4`:
+- `8b8bfc1e` claim
+- `8822165d` spec + arm + drie negatiefs (**voorstel**)
+- `11b2f0f8` ref-notitie + WV-6.4-f/g
+- `81c86327` IR-SPEC 5.5, Drools-flank (**voorstel**)
+- `aa19bef3` vierde negatief, kwantormatrix (**voorstel**)
+- `96f1b0c5` Result
+- `1994592e` fixronde 2, punt 5: hygiëne
+- `95599369` punt 1: IR-SPEC 5.5 in twee vormen (**voorstel**)
+- `c5f2de46` punt 2: de kwantorvouw (**voorstel**; golden en vier negatiefs)
+- `c6135f97` punt 3: RS 6.4-reikwijdte (**voorstel**)
+- `fccdcab8` punt 4: clingo-overdracht
+- de slotcommit van fixronde 2 (dit Result)
 
 ### Aangescherpte acceptatie, zoals uitgevoerd
 
@@ -55,9 +68,11 @@ Drools-flank, **voorstel**), `95dabd4a` (vierde negatief, kwantormatrix,
 mutatieproef met `cmp`. (b) Inventaris per conditieklasse: wat dezelfde
 arm dekt, gemeten met een eigen negatief; de rest gemeten en als open
 punt benoemd. (c) Corpusmeting over golden, rood, negatief en toka: nul
-bewegingen. (d) ref: notitie en getuige, geen codewijziging in ref. (e)
+bewegingen, in beide rondes. (d) ref: notitie en getuige, geen codewijziging in ref. (e)
 Clingo niet aangeraakt; de versmalling staat hieronder als overdracht.
-(f) Veertien gates groen, met getallen.
+(f) Veertien gates, met getallen. In fixronde 1 waren ze alle groen. Na
+fixronde 2 zijn er dertien groen en is gate 12 rood op de gelijkheidspin;
+met het pinvoorstel is hij groen.
 
 ### De norm
 
@@ -82,7 +97,8 @@ operand worden negatief, ook de hoprelaties van een genavigeerde
 operand, en in elke positie die de wandeling bereikt. Hij zegt ook
 waarom de generatievoortgang deze lezing niet ontlast, en geeft de
 metingen R1/R3, de getuigen, de kosten (nul) en de niet-gedekte klassen.
-De WF-indexrij van WF-046 kreeg een datum en vier negatiefs.
+De WF-indexrij van WF-046 kreeg een datum en vier negatiefs (na
+fixronde 2 acht, plus de golden).
 `RUNTIME-SEMANTICS.md` ch. 6.1: dezelfde kantsoorten, de uitzondering
 in de bestaande restpost ("conditions on attribute-writing forms read
 positively here, except a leeg/gevuld predicate …") en een nieuwe
@@ -208,8 +224,8 @@ van main, verifier na de arm, ref op main, clingo op main.
 | numerieke gelijkheid, twee leeg | rang opvolger = merk (leeg) | PASS | PASS | keten | UNSAT |
 | AANTAL-nul | aantal opvolgers = 0 | PASS | PASS | keten | UNSAT |
 | AANTAL_GEVULDE-nul | aantal gevulde rangen = 0 | PASS | PASS | keten | UNSAT |
-| ALLE-kwantorvouw (R5) | ALLE opvolgers: rang > 5 | PASS | PASS | keten | UNSAT |
-| GEEN-kwantorvouw | GEEN opvolger: rang > 0 | PASS | PASS | keten | UNSAT |
+| ALLE-kwantorvouw (R5) | ALLE opvolgers: rang > 5 | PASS | PASS; sinds fixronde 2 WF-046 | keten | UNSAT |
+| GEEN-kwantorvouw | GEEN opvolger: rang > 0 | PASS | PASS; sinds fixronde 2 WF-046 | keten | UNSAT |
 | propositionele GEEN | geen van: rang opvolger > 0 | PASS | PASS | keten | UNSAT |
 | coalescerende rekenkunde | rang opvolger plus 0 < 1 | PASS | PASS | keten | UNSAT |
 | genegeerde rolcheck (twee typen, niet-recursief) | hij is geen bemanner | PASS | PASS | maakt één Post | UNSAT |
@@ -329,27 +345,24 @@ Zie open punt 4.
   R1/R3-pins naar de WF-046-zin. Deze kaart raakt `backends/clingo` niet
   aan.
 
-### Gates (elk los, na `eval $(opam env)`, op `95dabd4a`)
+### Gates
 
-1 self-contained PASS · 2 ir-schema PASS (278 bestanden, vloer 192) ·
-3 verifier PASS (278 golden+rood schoon; 444 negatief, was 440, vloer
-350) · 4 case-schema PASS (638) · 5 oracle PASS (ref-suite 810, was
-806, vloer 489; 595 cases, vloer 427) · 6 clingo PASS (suite 523, vloer
-83; 595 cases) · 7 noop PASS (559; 36 survivors) · 8 rood PASS (43; 86
-fragmenten; Drools-leg 9 gepind / 34 met reden) · 9 catala PASS (201;
-12 goldens) · 10 regelspraak PASS (409 tests; 70 goldens) · 11
-toka-parity PASS (45 byte-identiek; suite 27; 29/29/29) · 12 drools PASS
-(played 182 = pin; DRL-tekst 161 = pin; JUnit 620) · 13
-reftype-derivation PASS (131 twists over 27 goldens; 128 replays, 25
-DRL) · 14 flogic PASS (130 checks; 2 goldens). Dezelfde veertien waren
-ook groen op `8883c7d8`.
+Fixronde 1: alle veertien groen op de toenmalige tip (443/444 negatief,
+ref-suite 810, played 182). De stand na fixronde 2 staat in de sectie
+Fixronde 2 hieronder.
 
 ### Voorstellen voor beschermde paden
 
-`spec/IR-SPEC.md` (ch. 4.6 WF-046, ch. 5.2 kantsoorten met het besluit,
-ch. 5.5 de Drools-flank, de WF-indexrij), `spec/RUNTIME-SEMANTICS.md`
-(ch. 6.1, 6.3, 6.4) en `spec/verifier/lib/checks.ml` (de arm, de
-WF-046-rapportzin, twee commentaren). De maintainer merget.
+- `spec/IR-SPEC.md`: ch. 4.6 WF-046; ch. 5.2, de kantsoorten met beide
+  besluiten, het leeg-besluit en het kwantorvouwbesluit; ch. 5.5, de
+  Drools-flank in twee vormen; en de WF-indexrij.
+- `spec/RUNTIME-SEMANTICS.md`: ch. 6.1 (kantsoorten, de restpunten met
+  de tabel en de volgorde-afhankelijkheid buiten een cyclus), ch. 6.3 en
+  ch. 6.4 (de voorbeelden en de reikwijdte).
+- `spec/verifier/lib/checks.ml`: de leeg-arm, de Kwantorvouw-tak, de
+  WF-046-rapportzin en de commentaren.
+
+De maintainer merget.
 
 ### Registerzinnen (hoofdsessie, `spec/CONSTRUCTS.md`)
 
@@ -357,16 +370,23 @@ Rij 6 (Negation over derived characteristics, de WF-045/046-rij),
 toevoegen:
 
 "**Widened (2026-09-23, card `verifier-leegtest-negafhankelijkheid`,
-maintainer decision):** every read under a leeg/gevuld test is a
+two maintainer decisions):** every read under a leeg/gevuld test is a
 negative edge in both polarities, the hop relations of a navigated
-operand included, so a cycle through one violates WF-046 even where
-WF-045 admits it (a recursive creation group). ref inherits the edge
+operand included; every read in a quantifier fold's range (reach and
+filter) is negative under ALLE, GEEN, TEN_HOOGSTE and PRECIES, and every
+read in its matrix under GEEN, TEN_HOOGSTE and PRECIES, while TEN_MINSTE
+and an ALLE matrix read positively (golden `jutterswet-opvolgerquorum`).
+A cycle through such an edge violates WF-046 even where WF-045 admits it
+(a recursive creation group). ref inherits the edge
 through the shared graph: it refuses the R1/R3 shapes and orders an
 off-cycle leeg reader above its operand's writer (WV-6.4-f/g). Witnesses
 `corpus/negatief/wf046-leegtest-{recursieve-creatie,
 negatie-recursieve-creatie, aanwezigheid-recursieve-creatie,
-kwantorvouw-recursieve-creatie}`. Corpus cost zero: none of the 28
-leeg/gevuld tests reads a written node. Recorded open: the other
+kwantorvouw-recursieve-creatie}` and
+`wf046-kwantorvouw-{alle-bereik, geen-vergelijking, geen-matrix,
+bindingloos-bereik}`. Corpus cost zero: none of the 28 leeg/gevuld tests
+reads a written node, and of the 59 fold read positions that change kind
+only one has a writer, in a negatief already refused. Recorded open: the other
 absence-true conditions (RUNTIME-SEMANTICS ch. 6.1) and the Drools flank
 (IR-SPEC ch. 5.5): both branches act on a transient leeg when an own-operand
 or filter reader precedes the writer of what it tests, and a navigated read
@@ -384,79 +404,24 @@ five). Since card `verifier-leegtest-negafhankelijkheid` (2026-09-23) it
 does, in both polarities, so on verifier-clean input the helper's
 negation lies on no dependency cycle and the document-wide cut is wider
 than the norm needs. Narrowing it to the verifier's own WF-045/046 check
-is handed to `20260923-clingo-alle-matrix-stratificatie`. This arm does
-NOT close that card's ALLE-matrix gap."
+is handed to `20260923-clingo-alle-matrix-stratificatie`. The same card's
+quantifier-fold decision makes that card's R5 (an ALLE fold over a
+comparison on such a cycle) a WF-046 violation too; the remaining
+absence-true classes stay open (RUNTIME-SEMANTICS ch. 6.1)."
 
 ### May-touch
 
 `spec/RUNTIME-SEMANTICS.md` stond niet in de may-touch van de kaart zelf;
 het mandaat kwam uit de opdracht van de hoofdsessie, die het expliciet
-noemde. `ref/test/test_ref.ml`: twee nieuwe voorbeelden onder (d), en in
+noemde. `corpus/golden/jutterswet-opvolgerquorum` is nieuw, onder mandaat
+van de hoofdsessie in fixronde 2 (corpus/golden viel buiten de
+oorspronkelijke zone). `ref/test/test_ref.ml`: twee nieuwe voorbeelden onder (d), en in
 fixronde 2 het commentaar bij WV-6.4-e ("stratum-strict edge"), alleen
 commentaar, onder mandaat van de hoofdsessie. IR-SPEC ch. 5.5 valt onder
 `spec/IR-SPEC.md`. Verder zijn geen bestaande tests of corpusdocumenten
 gewijzigd, en clingo, Drools, frontends, rood, scripts en schema zijn
-niet aangeraakt.
-
-### Open punten
-
-1. **Normbesluit: de andere afwezigheidscondities.** Gemeten: acht
-   klassen, allemaal verifier-schoon op een toegelaten creatiecyclus,
-   ref met een ongerechtvaardigde keten, clingo UNSAT, en één
-   tweevormige variant met een stille keuze (tabel in RUNTIME-SEMANTICS
-   6.1). Voor de drie kwantorklassen ligt een variant klaar met nul
-   corpuskosten: `neg` naar vergelijkingslezingen plus een negatief
-   bereik voor ALLE/GEEN/TEN_HOOGSTE/PRECIES. De overige vijf (≠, = twee
-   leeg, AANTAL-nul, AANTAL_GEVULDE-nul, coalescentie) vragen een eigen
-   arm op waarde-semantiek.
-2. **De rolcheck-versmalling.** Een genegeerde rolcheck die de eigen
-   terugverwijzing van een creatie leest, is verifier-schoon zonder
-   recursie. ref maakt één keer, clingo is UNSAT. Het is een normvraag
-   over de vastgelegde versmalling "relation membership read by a
-   condition is input".
-3. **Drools-flank** (vastgelegd in IR-SPEC 5.5, in fixronde 2
-   herschreven na de lens en opnieuw gemeten met de gate-12-jar, beide
-   takken). Twee vormen. (i) Een EIGEN operand, en een vouwfilter of
-   kwantorfilter in een voorwaarde: volgorde-afhankelijk. Met de lezer
-   vóór de schrijver schrijft een attribuutlezer 1 en kent een
-   kenmerklezer toe, terwijl ref en clingo leeg en afwezig geven; met de
-   schrijver voorop PLAYED. Een vouw in de WAARDE van een regel wordt
-   opnieuw geëvalueerd en speelt in beide volgordes. (ii) Een
-   GENAVIGEERDE operand in een voorwaarde: volgorde-onafhankelijk. In
-   beide volgordes geeft "de a van het ding is leeg" b = 1 waar ref en
-   clingo leeg geven, en "… gevuld is" en "… groter dan 3" geven leeg waar
-   ref en clingo 1 geven. De oorzaak: een genavigeerde lezing in een
-   VOORWAARDE reageert in geen van beide takken op een latere schrijfactie
-   aan de verre kant. `navReactiviteit` wordt alleen op `r.waarde()`
-   toegepast (DrlTranspiler r. ~1920, ExecModelTranspiler r. ~686). Een
-   saliency alleen dekt dit dus niet. Vorm (ii) is ouder dan het
-   leeg-besluit en raakt elke genavigeerde voorwaarde, ook een
-   vergelijking. Voor de kenmerklezer gold (i) al vóór deze kaart.
-4. **ref-gedrag buiten het corpus.** "Geen gedragswijziging in ref"
-   geldt voor de code en voor het corpus (`cmp` identiek). Via de
-   gedeelde graaf verandert wel iets: R1/R3 worden geweigerd, en een
-   leeg-lezer staat nu boven zijn schrijver op elke positie in de
-   voorwaarde van een attribuutschrijvende vorm. Met de lezer voorop
-   gemeten (fixronde 2, main tegen tip) verschuiven de eigen operand, de
-   genavigeerde operand, het vouwfilter, het kwantorfilter, een Let als
-   operand en GEVULD in een filter onder telling = 0 van b = 1 naar leeg.
-   Dat is in elk geval het antwoord van clingo. Creatievoorwaarden en
-   kenmerkregels verschuiven niet, want die lazen al stratumstrikt.
-   **De hoofdsessie bevestigt dat dit binnen de norm valt:** de kant
-   bepaalt de evaluatievolgorde, en ref volgt de gedeelde graaf by
-   design.
-5. **Geen golden voor de schone negatieve leeg-kant.** Geen corpustest
-   leest een geschreven knoop. De schone getuige is WV-6.4-f in de
-   ref-suite. Een golden hoort in `corpus/golden` (buiten deze kaart).
-   Staat de lezer daarin vóór zijn schrijver, dan stuit gate 12 op punt
-   3 tot de Drools-kant is gedicht.
-6. De clingo-versmalling: overdracht hierboven, geen kaart.
-7. **Voor de Drools-lijn, niet in deze kaart** (`scripts/check-drools.sh`
-   is de zone van een parallelle Drools-kaart): reactiviteit aan de verre
-   kant voor voorwaarden of een benoemde weigering, een saliency onder de
-   schrijvers van de operand voor vorm (i), en een golden met de
-   WV-6.4-f-vorm plus de genavigeerde variant in de
-   value-divergence-lijst van gate 12.
+niet aangeraakt. Het pinvoorstel voor gate 12 is gemeten met een
+ongetrackte kopie van het script in /tmp, niet in de worktree.
 
 ## Fixronde 2 (2026-09-23)
 
@@ -592,3 +557,151 @@ indien de a van het ding ongelijk is aan 5" en "b = 1 indien het aantal
 dingen waarvan a > 0 gelijk is aan 0": ref b = 1, clingo leeg; met de
 schrijver voorop allebei leeg). Dat staat in de restpuntalinea van RS 6.1
 en in de notitie in `ref/lib/eval.ml`.
+
+### Punt 1: de Drools-flank (blokkerend, tekst)
+
+IR-SPEC 5.5 is herschreven in twee vormen, opnieuw gemeten met de
+gate-12-jar, beide takken, en ref en clingo ernaast. Probes: een Houder
+met één Ding, en Ding.a = 5 door een regel.
+
+| vorm | lezer eerst | schrijver eerst | ref, clingo |
+|---|---|---|---|
+| eigen operand, attribuutlezer ("… leeg") | exec/DRL 1 | PLAYED | leeg |
+| eigen operand, kenmerklezer | toegekend | PLAYED | afwezig |
+| vouwfilter in een voorwaarde (aantal met lege a > 0) | 1 | PLAYED | leeg |
+| kwantorfilter (ten minste 1 met lege a) | 1 | PLAYED | leeg |
+| vouwfilter in de WAARDE | PLAYED | PLAYED | 0 |
+| genavigeerd "de a van het ding is leeg" | 1 | 1 | leeg |
+| genavigeerd "… gevuld is" | leeg | leeg | 1 |
+| genavigeerd "… groter dan 3" | leeg | leeg | 1 |
+
+Oorzaak van de genavigeerde vorm: `navReactiviteit` wordt alleen op
+`r.waarde()` toegepast (DrlTranspiler r. ~1920, ExecModelTranspiler
+r. ~686). Een genavigeerde lezing in een voorwaarde reageert dus in geen
+van beide takken op een latere schrijfactie aan de verre kant. Open
+punten 3 en 7 en de registerzin voor rij 6 zijn mee aangepast.
+
+### Punt 3: reikwijdte in RS 6.4 en open punt 4
+
+Gemeten, main tegen tip, lezer eerst, ref: de eigen operand, de
+genavigeerde operand, het vouwfilter, het kwantorfilter, een Let als
+operand en GEVULD in het filter van een telling tegen nul gaan van b = 1
+naar leeg. Dat is telkens het antwoord van clingo. Met de schrijver
+voorop geven beide leeg. RS 6.4 en open punt 4 zeggen dit nu, met de
+bevestiging van de hoofdsessie.
+
+### Punt 4: clingo-overdracht
+
+Aangevuld in de sectie Clingo-overdracht hierboven: de drie teksten in
+`backends/clingo` die na de landing onwaar worden, en de vervanging die
+bij de clingo-kaart hoort.
+
+### Punt 5: hygiëne
+
+(a) Het mandaat voor RUNTIME-SEMANTICS staat onder May-touch. (b) Het
+commentaar bij WV-6.4-e is gecorrigeerd, alleen commentaar, onder
+mandaat. (c) De alinea in IR-SPEC is afgebroken, en de lange regel in RS
+ook.
+
+### Gates na fixronde 2 (elk los, na `eval $(opam env)`, op `fccdcab8`)
+
+1 self-contained PASS · 2 ir-schema PASS (279, vloer 192) · 3 verifier
+PASS (279 golden+rood schoon; 448 negatief, was 444, vloer 350) · 4
+case-schema PASS (642) · 5 oracle PASS (ref-suite 810; 599 cases, vloer
+427) · 6 clingo PASS (suite 523; 599 cases) · 7 noop PASS (563; 36
+survivors) · 8 rood PASS (43; 86 fragmenten; Drools-leg 9/34) · 9
+catala PASS (201; 12 goldens) · 10 regelspraak PASS (409 tests; 70
+goldens) · 11 toka-parity PASS (45; suite 27; 29/29/29) · 12 drools
+**FAIL** op de pin: `check-drools: FAIL — played 183, but
+EXPECTED_PLAYED pins 182 — a golden entered or left the played channel
+without the list noticing (a new golden plays: raise the number; …)` ·
+13 reftype-derivation PASS (131 twists over 27 goldens; 128 replays, 25
+DRL; de golden draagt geen eenheden, dus geen pinwijziging) · 14 flogic
+PASS (130; 2 goldens).
+
+Gate 12 met het pinvoorstel, gedraaid als ongetrackte kopie in /tmp
+(alleen de `cd`-regel en de twee pins gewijzigd): `check-drools: PASS`,
+`played 183`, `DRL-text branch played 162 (… pin 162)`, `JUnit 620
+tests`. Het getrackte script is ongewijzigd.
+
+## Open punten (stand na fixronde 2)
+
+
+1. **Normbesluit: de overige afwezigheidscondities.** Stand na
+   fixronde 2: de kwantorvouw is besloten en gebouwd (sectie Fixronde 2,
+   punt 2). Open blijven zes klassen: ≠ met één lege operand, numerieke =
+   met twee lege, AANTAL = 0, AANTAL_GEVULDE = 0, propositionele GEEN over
+   een vergelijking, en coalescerende rekenkunde. Alle zes zijn
+   verifier-schoon op een toegelaten creatiecyclus, met ref op een
+   onterechte keten en clingo UNSAT. Buiten een cyclus maken ze ref
+   volgorde-afhankelijk in de voorwaarde van een attribuutschrijvende
+   vorm. De tweevormige ≠-variant splitst stil. Allemaal staat het in de
+   tabel en de restpuntalinea van RS 6.1. Ze vallen onder het oudere
+   restpunt "conditions on attribute-writing forms read positively" en
+   vragen elk een eigen arm op waarde-semantiek.
+2. **De rolcheck-versmalling.** Een genegeerde rolcheck die de eigen
+   terugverwijzing van een creatie leest, is verifier-schoon zonder
+   recursie. ref maakt één keer, clingo is UNSAT. Het is een normvraag
+   over de vastgelegde versmalling "relation membership read by a
+   condition is input".
+3. **Drools-flank** (vastgelegd in IR-SPEC 5.5, in fixronde 2
+   herschreven na de lens en opnieuw gemeten met de gate-12-jar, beide
+   takken). Twee vormen. (i) Een EIGEN operand, en een vouwfilter of
+   kwantorfilter in een voorwaarde: volgorde-afhankelijk. Met de lezer
+   vóór de schrijver schrijft een attribuutlezer 1 en kent een
+   kenmerklezer toe, terwijl ref en clingo leeg en afwezig geven; met de
+   schrijver voorop PLAYED. Een vouw in de WAARDE van een regel wordt
+   opnieuw geëvalueerd en speelt in beide volgordes. (ii) Een
+   GENAVIGEERDE operand in een voorwaarde: volgorde-onafhankelijk. In
+   beide volgordes geeft "de a van het ding is leeg" b = 1 waar ref en
+   clingo leeg geven, en "… gevuld is" en "… groter dan 3" geven leeg waar
+   ref en clingo 1 geven. De oorzaak: een genavigeerde lezing in een
+   VOORWAARDE reageert in geen van beide takken op een latere schrijfactie
+   aan de verre kant. `navReactiviteit` wordt alleen op `r.waarde()`
+   toegepast (DrlTranspiler r. ~1920, ExecModelTranspiler r. ~686). Een
+   saliency alleen dekt dit dus niet. Vorm (ii) is ouder dan het
+   leeg-besluit en raakt elke genavigeerde voorwaarde, ook een
+   vergelijking. Voor de kenmerklezer gold (i) al vóór deze kaart.
+4. **ref-gedrag buiten het corpus.** "Geen gedragswijziging in ref"
+   geldt voor de code en voor het corpus (`cmp` identiek). Via de
+   gedeelde graaf verandert wel iets: R1/R3 worden geweigerd, en een
+   leeg-lezer staat nu boven zijn schrijver op elke positie in de
+   voorwaarde van een attribuutschrijvende vorm. Met de lezer voorop
+   gemeten (fixronde 2, main tegen tip) verschuiven de eigen operand, de
+   genavigeerde operand, het vouwfilter, het kwantorfilter, een Let als
+   operand en GEVULD in een filter onder telling = 0 van b = 1 naar leeg.
+   Dat is in elk geval het antwoord van clingo. Creatievoorwaarden en
+   kenmerkregels verschuiven niet, want die lazen al stratumstrikt.
+   **De hoofdsessie bevestigt dat dit binnen de norm valt:** de kant
+   bepaalt de evaluatievolgorde, en ref volgt de gedeelde graaf by
+   design.
+5. **Geen golden voor de schone negatieve leeg-kant.** Geen corpustest
+   leest een geschreven knoop. De schone getuige is WV-6.4-f in de
+   ref-suite. (Voor de kwantorvouw is er sinds fixronde 2 wel een
+   golden: `jutterswet-opvolgerquorum`.) Een leeg-golden zou in
+   `corpus/golden` komen; staat de lezer daarin vóór zijn schrijver, dan
+   stuit gate 12 op punt 3 tot de Drools-kant is gedicht. Zie punt 7.
+6. De clingo-versmalling: overdracht hierboven, geen kaart.
+7. **Voor de Drools-lijn, niet in deze kaart** (`scripts/check-drools.sh`
+   is de zone van een parallelle Drools-kaart): reactiviteit aan de verre
+   kant voor voorwaarden of een benoemde weigering, een saliency onder de
+   schrijvers van de operand voor vorm (i), en een golden met de
+   WV-6.4-f-vorm plus de genavigeerde variant in de
+   value-divergence-lijst van gate 12.
+8. **Gate-12-pins, voorstel** (`scripts/check-drools.sh`, niet
+   aangeraakt): `EXPECTED_PLAYED` 182 → 183 en `EXPECTED_DRL_PLAYED`
+   161 → 162, voor `jutterswet-opvolgerquorum`. Zonder die wijziging is
+   gate 12 rood op de gelijkheidspin; met die wijziging groen (gemeten,
+   zie Fixronde 2).
+9. **Mijn lezing van "BEREIK" en van "s6", benoemd.** (a) Het bereik
+   omvat de `filter` (de bereikvelden van IR-SPEC 4.5). Wie het filter
+   onder ALLE monotoon wil, verandert één regel in de Kwantorvouw-tak.
+   Geen corpusdocument heeft een filter met een schrijver. (b) De derde
+   kwantornegatief isoleert de GEEN-matrix. De propositionele GEEN (mijn
+   s6) staat op de lijst van klassen die buiten blijven; wil de
+   maintainer hem toch onder de arm, dan is dat één regel in de
+   Samengesteld-tak plus één negatief.
+10. **Bindingloze kwantorvouw** (bijvangst, gefixt): die trok geen
+   bereikkant. Hij leest nu de afgeleide relatie en de populatie, met
+   een eigen negatief. Nul in het corpus. Omdat het een kleine uitbreiding
+   is van wat de verifier leest, staat hij hier ter beoordeling.
