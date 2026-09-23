@@ -236,13 +236,39 @@ golden, zelfde kanalen.
    een onjuiste premisse uit: gate 13 blijft groen, maar raakt deze kaart
    niet. Dekking vergt converteerbare eenheden in het model; dat valt buiten
    deze kaart.
-2. **Voor de tweelingkaart dialect-uitzondering-op-uitzondering:** de
-   RegelSpraak-tweeling moet dezelfde platte `ALLE`-vorm uitzenden als het
-   anker — per geneste default één `Samengesteld` met kwantor `ALLE`, de
-   dragerconjuncten voorop in de volgorde van de drager, `werkloos` ook in de
-   uitzondering op de basis (einde) — en draagt negen cases, niet de "zeven
-   cases" van haar kaarttekst. Haar besluit 4d ("ook aan de wortel") levert
-   die vorm op. De kaarttekst bijwerken is werk voor de hoofdsessie.
+2. **Voor de tweelingkaart dialect-uitzondering-op-uitzondering.**
+   - *Vorm.* De RegelSpraak-tweeling moet dezelfde platte `ALLE`-vorm
+     uitzenden als het anker: per geneste default één `Samengesteld` met
+     kwantor `ALLE`, de dragerconjuncten voorop in de volgorde van de
+     drager, `werkloos` ook in de uitzondering op de basis (einde), en
+     `recht op uitkering` bezittelijk. Ze draagt tien cases, niet de "zeven
+     cases" van haar kaarttekst. Hoe de conjunctie in de bron gespeld
+     wordt, hangt af van besluit 4d; §8.2 van het voorstel geeft beide
+     spellingen.
+   - *Meting van de lens, nagemeten in fixronde 3.* Elk conjunct apart
+     weggehaald, alle tien cases in ref en clingo.
+     - Twee van de zes dragerconjuncten zijn waarneembaar: `werkloos` in de
+       herleving (case8 valt) en T in de blokkade (case9 valt). Sinds
+       case10 is ook het eigen conjunct `nieuw maandloon > inkomensgrens`
+       van de blokkade gepind (case10 valt).
+     - Vier dragerconjuncten hebben geen waarneembaar effect: `werkloos` in
+       einde, `werkloos` in de blokkade, T in de herleving en V in de
+       blokkade. Bij T en V geeft een lagere default hetzelfde besluit (de
+       grant `waar`, einde `onwaar`). Bij de twee `werkloos`-conjuncten
+       beslist de mutant `onwaar` waar het anker niets beslist, en een
+       `onwaar`-besluit schrijft niets, dus het kenmerk blijft in beide
+       gevallen afwezig.
+   - *Wat die vier bewaakt.* Geen gate. De vier mutanten zijn
+     schema-geldig, hun round-trip is identiek (gate 2 slaagt dus), de
+     verifier geeft PASS en alle tien cases blijven groen. De lens schreef
+     dat gate 2 ze met een round-trip bewaakt; dat klopt niet, want gate 2
+     toetst alleen de serialisatievorm. Ze worden bewaakt door de review
+     van het beschermde pad en, straks, door de frontend-diff van de
+     tweeling tegen dit anker.
+   - *Gevolg.* De tweelingkaart moet de platte vorm met de dragerconjuncten
+     voorop uitdrukkelijk eisen; een tweeling zonder die vier conjuncten
+     haalt alle cases.
+   - De kaarttekst bijwerken is werk voor de hoofdsessie.
 3. *Gefixt in fixronde 2.* Het voorstel `DIALECT-DEFAULTS-NIET-EN-NESTING.md`
    volgt het gelande anker nu overal: §2.3 en §8.1 sinds fixronde 1, en §1
    punt 6, §2.2 M12, §5.4, §8.2 en §8.4 sinds fixronde 2 (commit 3737e8da,
