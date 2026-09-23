@@ -168,6 +168,30 @@ class VensterVouwWitnessTest {
                 "ALLE[gediplomeerd, venster] als subselectie");
     }
 
+    /** The same count as the OPERAND of a rule condition — "bevoegd" when more than 0 of the ploeg's wachten
+     *  serve from their own aanstelling — which reaches the rekendatum registration through the condition, not
+     *  through a value: measured, the exec-model branch declined it ("voorwaarde buiten Phase-B scope") where the
+     *  other three answered S1, S3, S5 and S6 at 2024-06-15 and nobody in a time-free session. */
+    @Test void de_telling_met_een_venster_als_operand_van_een_voorwaarde() throws Exception {
+        ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(aggregatieDocument(ATTR)));
+        JsonNode telling = doc.withArray("resolvedRegels").get(0).get("waarde");
+        ObjectNode bron = (ObjectNode) JSON.readTree(Files.readString(SCHOUWPLOEG.resolve("ir.json")));
+        for (String ot : new String[] { "Strandwacht", "Schouwploeg" })
+            ((ObjectNode) bron.get("objecttypen").get(ot).get("attributen")).set("aanstelling", JSON.readTree(DATUM));
+        houdRegel(bron, "bevoegd bij diploma");
+        ObjectNode vergelijking = JSON.createObjectNode();
+        vergelijking.put("node", "Vergelijking").put("op", "GROTER").set("links", telling);
+        vergelijking.set("rechts", JSON.readTree("""
+                { "node": "Literal", "waarde": "0", "type": { "node": "Numeriek", "geheel": true, "decimalen": 0,
+                  "teken": "ONBEPAALD", "eenheid": null }, "bron": "0" }"""));
+        vergelijking.putNull("periode").put("bron", "het aantal wachten die vanaf hun aanstelling dienen groter is dan 0");
+        ((ObjectNode) bron.withArray("resolvedRegels").get(0)).set("voorwaarde", vergelijking);
+        Path ir = tmp.resolve("venstervouw-" + (n++) + ".json");
+        Files.writeString(ir, bron.toPrettyString());
+        BeideTakken.groen(ir, casus(BINNEN, "S1", "S3", "S5", "S6"), "de telling in de voorwaarde selecteert per wacht");
+        BeideTakken.groen(ir, casus(null), "tijdvrij: niemand telt, dus niemand bevoegd");
+    }
+
     // ---------------- WF-112: GEEN and the counting quantifiers, refused by name in both branches ----------------
 
     /** The complement flank: a time-free case, where a lowered GEEN would answer bevoegd for every ploeg. Each
