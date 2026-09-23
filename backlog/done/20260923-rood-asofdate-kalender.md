@@ -346,3 +346,13 @@ Gates na de fixronde, elk los na `eval $(opam env)`: 1 PASS · 2 PASS
 (280 bestanden, vloer 192) · 4 PASS (640 cases) · 8 PASS (45 rood; 90
 fragmenten; Drools-been 10/35) · 12 PASS (played 182 = pin, DRL-tekst
 161 = pin, JUnit 620: de suite compileert en draait na de javadoc).
+
+### Fixronde 1b (hoofdsessie, 2026-09-23)
+
+Geen wijziging binnen deze kaart. Fixronde 1b loste de bijvangst uit de
+zusterkaart op: de ch.-1.2-zin in `spec/RUNTIME-SEMANTICS.md` noemt
+voor de genegeerde heel-tijdvak-leegtest nu alle drie de weigeraars en
+de twee rode documenten (`55601502`, voorstel; details in
+`20260923-rood-heeltijdvak-ongenegeerd.md`). Gate 1 opnieuw: PASS.
+Open punt 3 hier (het ERROR-token van de replay-runner) staat
+ongewijzigd en gaat naar de Drools-lijn.

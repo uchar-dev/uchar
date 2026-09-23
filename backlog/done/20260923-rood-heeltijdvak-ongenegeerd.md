@@ -246,15 +246,35 @@ de hoofdsessie:
   onaangeroerd). De NOTE noemt nu beide rode tweelingen, elk met de
   eigen grond.
 
-Buiten het mandaat gezien en niet aangeraakt:
-`spec/RUNTIME-SEMANTICS.md` r. 96 (ch. 1.2, de leeg/gevuld-rij) zegt
+**Gefixt in fixronde 1b (`55601502`).** Buiten het mandaat van
+fixronde 1 gezien en toen nog niet aangeraakt:
+`spec/RUNTIME-SEMANTICS.md` r. 96 (ch. 1.2, de leeg/gevuld-rij) zei
 over de genegeerde test onder heel-tijdvak "ref and both Drools
-branches refuse the form by name until it is chosen". Dat klopt, maar
-de ASP-backend weigert de vorm sinds de clingo-leeg-negatie-kaart ook,
-en de zin noemt hem niet. Het is een onvolledigheid, geen onwaarheid;
-de hoofdsessie weegt dat bij de landing.
+branches refuse the form by name until it is chosen". De ASP-backend
+weigert de vorm sinds de clingo-leeg-negatie-kaart ook, maar de zin
+noemde hem niet: onvolledig, niet onwaar. Zie Fixronde 1b.
 
 Gates na de fixronde, elk los na `eval $(opam env)`: 1 PASS · 2 PASS
 (280 bestanden, vloer 192) · 4 PASS (640 cases) · 8 PASS (45 rood; 90
 fragmenten, geen bodemzin; Drools-been 10 gepind / 35 met reden) · 12
 PASS (played 182 = pin, DRL-tekst 161 = pin, JUnit 620).
+
+### Fixronde 1b (hoofdsessie, 2026-09-23)
+
+- `55601502`, **beschermd-pad-voorstel** `spec/RUNTIME-SEMANTICS.md`,
+  alleen de zin in de ch.-1.2-rij over de genegeerde leegtest onder
+  heel-tijdvak. Eerst stond er: "ref and both Drools branches refuse the
+  form by name until it is chosen". Nu staat er: "all three executors
+  refuse the form by name: ref and the ASP backend in the same words,
+  because neither executes any whole-period leeg/gevuld test, and both
+  Drools branches in the loader as `Predicaat.negatie`, on that open
+  threshold. Red case `corpus/rood/leegnegatie-heel-tijdvak` holds the
+  refusal; its twin `corpus/rood/leegtest-heel-tijdvak` holds the
+  refusal of the unnegated test, which ch. 3.9 norms and no executor
+  runs, ch. 3.12". "until it is chosen" is weggelaten: voor ref en de
+  ASP-backend klopte dat niet. Zij weigeren ook als de drempel gekozen
+  is, zolang ze de vouw niet uitvoeren.
+- Gate 1 opnieuw, los na `eval $(opam env)`: PASS.
+- Open punten 1 (sleuteltoets, gemeld en niet gekaart) en 2
+  (ERROR-token van de replay-runner, naar de Drools-lijn) staan
+  ongewijzigd.
