@@ -8,8 +8,8 @@ twin.
 
 ## The shape
 
-`leegnegatie-heel-tijdvak` with one field changed: `Predicaat.negatie` is
-`false`, and the `bron` text drops its "niet". Everything else is the
+`leegnegatie-heel-tijdvak` with two fields changed: `Predicaat.negatie`
+is `false`, and the `bron` text drops its "niet". Everything else is the
 twin's, and the case file is the same byte for byte. The lengte is
 month-granular, the qualifier is `GeheelPeriode` (jaar, `niet: false`),
 and the case supplies S1's lengte as a timeline, so the scalar-input
@@ -45,18 +45,19 @@ S2.meldpremie 40.
   it, as `Predicaat.periode`: "a leeg/gevuld test under a whole-period
   qualifier (ch. 3.9): ref executes neither the leeg fold (touched days)
   nor the gevuld fold (days(B)), so this backend does not answer the form
-  either". Gate 8's Drools leg pins a fragment only on a fault at fire,
-  and a loader refusal comes one phase earlier, so the leg lists this
-  case with that reason instead.
+  either". That refusal is an EXCLUDE, and gate 8's Drools leg pins a
+  fragment only on a FAULT, so the leg lists this case with that reason
+  instead.
 
 ## Why a RED case
 
-Until 2026-09-23 both Drools branches played this form, and on this
-document they answered the hand values. Measured with a jar built from
-before the loader refusal: the red runner reported `NOFAULT ran to a
-model without faulting`, and a copy of the case with the hand values
-above as `expected` came out `PLAYED 1` in the exec branch and in the
-DRL-text branch. The fold lives in the Drools runtime alone, and `ref`
+Until 2026-09-23 both Drools branches played this form. Measured with a
+jar built from before the loader refusal: the red runner reported
+`NOFAULT ran to a model without faulting` on this document, and a green
+copy of the case, with the hand values above as `expected`, came out
+`PLAYED 1` in the exec branch and in the DRL-text branch. The replay
+runner skips an `expectedFault` case, so on this document itself it
+reported `PLAYED 0`. The fold lives in the Drools runtime alone, and `ref`
 does not execute it, so no second executor could check that answer. The
 refusal brought Drools into line with the other two.
 
