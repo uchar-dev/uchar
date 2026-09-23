@@ -5811,16 +5811,23 @@ let () =
       ("verwacht-vondstdag", "2026-03-10"); ("verwacht-meldstip", "2026-03-10T09:00:00");
       ("verwacht-gewicht", "12.50"); ("verwacht-van", "2026-01-01"); ("verwacht-tot", "2026-02-01") ]
   in
+  (* A slot that does not occur fails: the text would pass through unchanged
+     and the witness would pin a different case than its name says. *)
   let vervang ~sub ~door s =
-    let b = Buffer.create (String.length s) and n = String.length sub in
+    let b = Buffer.create (String.length s) and n = String.length sub and treffers = ref 0 in
     let rec go i =
       if i > String.length s - n then Buffer.add_string b (String.sub s i (String.length s - i))
-      else if String.sub s i n = sub then (Buffer.add_string b door; go (i + n))
+      else if String.sub s i n = sub then (Buffer.add_string b door; incr treffers; go (i + n))
       else (Buffer.add_char b s.[i]; go (i + 1))
     in
     go 0;
+    if !treffers = 0 then failwith (Printf.sprintf "vervang: %S does not occur" sub);
     Buffer.contents b
   in
+  check "vervang fails on a slot that does not occur"
+    (match vervang ~sub:"{geen-slot}" ~door:"x" sjabloon with
+    | (_ : string) -> false
+    | exception Failure _ -> true);
   let case_met slot lex =
     if slot <> "" && not (List.mem_assoc slot canoniek) then invalid_arg ("unknown slot " ^ slot);
     List.fold_left

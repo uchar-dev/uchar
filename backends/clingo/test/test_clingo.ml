@@ -521,14 +521,17 @@ let () =
 
 (* a one-token textual substitution, so the cross-system document below is
    written ONCE and re-read with the Massa system's canonical name or its ton
-   factor mutated. *)
+   factor mutated. A token that does not occur fails: the document would pass
+   through unchanged and the check would pin a different document than its
+   name says. *)
 let replace ~tok ~by s =
   let n = String.length tok and len = String.length s in
   let b = Buffer.create len in
-  let i = ref 0 in
+  let i = ref 0 and hits = ref 0 in
   while !i < len do
     if !i + n <= len && String.sub s !i n = tok then begin
       Buffer.add_string b by;
+      incr hits;
       i := !i + n
     end
     else begin
@@ -536,7 +539,14 @@ let replace ~tok ~by s =
       incr i
     end
   done;
+  if !hits = 0 then failwith (Printf.sprintf "replace: the token %S does not occur" tok);
   Buffer.contents b
+
+let () =
+  check "replace fails on a token that does not occur"
+    (match replace ~tok:"@GEEN@" ~by:"x" "abc" with
+    | (_ : string) -> false
+    | exception Failure _ -> true)
 
 let kg_gewicht : Ir_v0.Ast.eenheid = eenh ~stelsel:"Gewicht" ~canoniek:"kg" "kg" (Some 1.0)
 let kg_massa : Ir_v0.Ast.eenheid = eenh ~stelsel:"Massa" ~canoniek:"kg" "kg" (Some 1.0)
