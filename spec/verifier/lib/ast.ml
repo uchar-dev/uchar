@@ -1,11 +1,20 @@
-(* Typed AST of the regelspraak-ir-v0 wire format
-   (spec/schema/regelspraak-ir-v0.schema.json).
+(* Typed AST of the uchar-ir-v1 wire format in its M1 shape
+   (spec/schema/uchar-ir-v1.schema.json).
 
-   Modelling rules, matching the schema exactly:
-   - every record field is always present on the wire; "optional" means the
-     value may be null, mapped to [option] — never a missing key;
-   - JSON maps become ordered association lists (declaration order is
-     normative, WF-019);
+   Modelling rules:
+   - every record field of a node carried over from v0 is always present on
+     the wire; "optional" means the value may be null, mapped to [option] —
+     never a missing key;
+   - JSON maps and the model lists become ordered association lists
+     (declaration order is normative, WF-019). A model list carries no map
+     key, so the key here is the declaration's own name as its node writes
+     it; the loader refuses an entry without one;
+   - an object type keeps its members in the in-memory shape every OCaml
+     reader of this library (this verifier, ref, the ASP backend and the two
+     OCaml frontends) was written against: a name-keyed table per facet. The loader builds
+     those tables from the M1 member nodes (Attribute, Characteristic,
+     TimelineFacet), so a table key is always a member's own name and a
+     facet always hangs on a member — the wire can no longer say otherwise;
    - the three unions (datatype / expr / conditie) each carry their own
      "Onbekend" variant — the discriminator value is reused across unions
      and must be dispatched per union, never globally;
@@ -347,6 +356,11 @@ and conditie =
 
 (* --- model layer ------------------------------------------------------- *)
 
+(* Built by the loader from an M1 ObjectType node. Since M1 the wire writes
+   each member once, as a node carrying its own facets, so several values
+   this record can hold are no longer produced: [ot_naam] is always [Some],
+   every granularity and period count is [Some], and a facet table holds a
+   key only for a member that carries that facet. *)
 type objecttype = {
   ot_naam : string option;
   ot_supertype : string option;
@@ -405,10 +419,6 @@ type tijdlijn = {
   tl_granulariteit : granulariteit option;
   tl_aantal : int;
 }
-
-(* Parse-stage rule stub; its [soort] is a free string, not the
-   ResolvedRegel enum. *)
-type regel_stub = { rg_naam : string option; rg_soort : string option }
 
 (* --- rule layer -------------------------------------------------------- *)
 
@@ -595,7 +605,8 @@ type prioritized_defaults = {
 (* Extension form (v1, row 10): a named reusable function — DMN's Business
    Knowledge Model (IR-SPEC ch. 2.11). Typed, uniquely named parameters; a
    resolvable result; a closed body; an acyclic invocation graph (WF-067).
-   Carried by the optional top-level [function_defs]. Never emitter-produced. *)
+   Carried by the optional [function_defs] (the [functionDefs] list under
+   [model] on the wire). Never emitter-produced. *)
 type function_def = {
   fd_naam : string;
   fd_parameters : (string * datatype) list;
@@ -604,9 +615,14 @@ type function_def = {
   fd_bron : string option;
 }
 
+(* The M1 root nests [model] (the declaration set) and [rules]; this record
+   keeps them flat, and [format] is checked by the loader and not kept. *)
 type document = {
   objecttypen : (string * objecttype) list;
   domeinen : (string * datatype option) list;
+      (* the Domain wrapper's name and datatype; always [Some] since M1. At
+         this declaration position the wire writes no self-name, and the
+         loader sets the datatype's own domain field to the wrapper's name *)
   parameters : (string * parameter) list;
   eenheidstelsels : (string * eenheidstelsel) list;
   feittypen : (string * feittype) list;
@@ -614,7 +630,6 @@ type document = {
   tijdlijnen : tijdlijn list;
   dagsoorten : string option list;
   dagsoort_per_eenheid : (string * string option) list;
-  regels : regel_stub list;
   resolved_regels : resolved_regel list;
   resolved_dagsoorten : resolved_dagsoort list;
   object_creaties : resolved_object_creatie list;

@@ -1,7 +1,7 @@
-(* Well-formedness checks over a loaded regelspraak-ir-v0 document.
+(* Well-formedness checks over a loaded uchar-ir-v1 document (M1 shape).
 
    Each check implements one WF rule of spec/IR-SPEC.md, restricted to what
-   the v0 wire format can express (the WF index records per rule which
+   the wire format can express (the WF index records per rule which
    clauses are covered here and which stay OPEN). Conventions:
 
    - name matching is case-insensitive over whitespace-collapsed strings
@@ -9,7 +9,11 @@
      article (the v0 identity rule of IR-SPEC ch. 2.8);
    - v0 flattens versioned forms into per-version entries whose names carry
      a " #i" suffix; version-aware checks group by the stripped name;
-   - a violation carries the WF id, the JSON-ish path, and a reason. *)
+   - a violation carries the WF id, the JSON-ish path, and a reason. The
+     path names a declaration by its v0 table and its name
+     (`/objecttypen/<name>/...`) and a rule form by its v0 list and index
+     (`/resolvedRegels/<i>/...`), as it did before M1 nested the root; the
+     loader's own errors carry JSON pointers into the M1 document. *)
 
 open Ast
 
@@ -287,19 +291,19 @@ type ctx = { doc : document }
 
 (* --- the supertype chain (IR-SPEC ch. 2.2) ------------------------------- *)
 
-(* The DECLARED record, exactly as the document writes it. Three rules read
-   this raw view on purpose: WF-002 (duplicates within one declaration),
-   WF-105 (shadowing, which needs to see own and inherited apart) and
-   WF-034's side-map key cross (a facet belongs to the type that declares
-   its member). Reading those on the chain-closed view below would make
-   every inherited member a duplicate of itself. WF-103 is the fourth and
-   is a different reason: a supertype reference must name a DECLARED type,
-   so resolving it through the chain would be circular.
+(* The DECLARED record, exactly as the document writes it. Two rules read
+   this raw view on purpose: WF-002 (duplicates within one declaration) and
+   WF-105 (shadowing, which needs to see own and inherited apart). Reading
+   those on the chain-closed view below would make every inherited member a
+   duplicate of itself. (WF-034's side-map key cross was the third until M1
+   folded the side maps into member nodes.) WF-103 is the next and is a
+   different reason: a supertype reference must name a DECLARED type, so
+   resolving it through the chain would be circular.
 
    Every other raw reader in this file is not a name LOOKUP at all but an
    iteration over the declaration table, checking each record where it is
-   written — WF-001, WF-002, WF-094 (both arms), WF-003, WF-004, WF-005,
-   WF-007, WF-092, WF-034's side maps, WF-057, WF-059, WF-061, WF-065,
+   written — WF-001, WF-002, WF-003, WF-004, WF-005,
+   WF-007, WF-092, WF-057, WF-059, WF-061, WF-065,
    WF-072, WF-088, WF-104 and WF-105. Those are raw BY CONSTRUCTION and
    must stay so: their subject is the declaration at that JSON path, and a
    chain-closed view would report one inherited member once per descendant,
@@ -529,132 +533,6 @@ let wf002 ctx =
          |> List.map (fun (a, b, p) ->
              v "WF-002" p (Printf.sprintf "characteristics '%s' and '%s' collide case-insensitively" a b))))
     ctx.doc.objecttypen
-
-(* WF-094: a keyed declaration's redundant SELF-NAME is its map key, spelled
-   VERBATIM (IR-SPEC ch. 2.1's carriage rule, ch. 4.6's naming class).
-
-   The v0 wire stores five declaration kinds as a MAP — object types,
-   parameters, unit systems, fact types, dimensions — and every value repeats
-   its own name in a `naam` field. That field is not a reference: it is the
-   declaration's identity written a second time, the denormalisation of the
-   ONE name a v1 declaration carries on its node (ch. 2.2/2.5/2.6/2.7/2.10).
-   So the question this rule answers is not "does this name resolve" but "is
-   the document a faithful spelling of one declaration" — ch. 2.1's carriage
-   rule, not its matching rule, which is why the comparison is byte-exact and
-   not `norm`.
-
-   FIVE ARMS, one per table, because they are five independent readerships and
-   each has its own witness (`wf094-zelfnaam-<kind>`); a mutant that drops one
-   arm frees exactly one document, and a mutant that relaxes the comparison to
-   `norm` frees all five (every witness is a one-character recapitalisation).
-
-   The harm is a silently DIFFERENT program, not a missing value: every
-   consumer that RESOLVES anything keys off the map key, and no consumer
-   crosses the two. What each does read, exactly (the spec clause says the
-   same): `ref` reads none of the five self-names; the ASP backend reads
-   `es_naam` only to NAME a system inside a fault message it would raise
-   anyway; and THIS verifier reads three of the five — `ot_naam`, `ft_naam`
-   and `dim_naam`, each once, in WF-057's target-text-safety walk, which also
-   walks all five KEYS and never puts a self-name beside its key. The
-   parameter and unit-system self-names it does not read at all, which is why
-   those two arms below have no reader in this binary other than themselves.
-   The bean-model executor is the one that loads the self-name AS the
-   declaration's name and reads it back at 105 (object type), 32 (parameter),
-   3 (fact type) and 1 (dimension)
-   sites. Measured 2026-09-06, one self-name twisted at a time over every
-   golden: a parameter self-name differing from its key in ONE CAPITAL leaves
-   the verifier, `ref` and the ASP backend passing on 11 of the goldens' 34
-   parameter positions while the third executor answers with WRONG VALUES
-   (`jutterswet-aanvoergeld`: 322.50 becomes 310.00), because the case binds
-   its globals by the written name and the transpiler registers them under the
-   self-name. Cost over the four zones: none — all 1919 entries the five
-   tables held before this rule spell their key byte for byte (1935 after it,
-   the five witnesses bringing their whole source documents along; 1937 in the
-   corpus as it now stands).
-
-   Scope: the PRESENT self-name. `naam: null` is the empty half of the same
-   field; it is closed by clause (d) below, which is why this comparison may
-   pass over the absent name without leaving a hole. *)
-let wf094 ctx =
-  let arm table kind self entries =
-    List.filter_map
-      (fun (key, x) ->
-        match self x with
-        | Some n when n <> key ->
-            Some
-              (v "WF-094"
-                 ("/" ^ table ^ "/" ^ key ^ "/naam")
-                 (Printf.sprintf
-                    "%s self-name '%s' is not the key '%s' it is stored under: a keyed \
-                     declaration carries its own name verbatim"
-                    kind n key))
-        | _ -> None)
-      entries
-  in
-  arm "objecttypen" "object type" (fun (o : objecttype) -> o.ot_naam) ctx.doc.objecttypen
-  @ arm "parameters" "parameter" (fun (p : parameter) -> p.par_naam) ctx.doc.parameters
-  @ arm "eenheidstelsels" "unit system" (fun (s : eenheidstelsel) -> s.es_naam)
-      ctx.doc.eenheidstelsels
-  @ arm "feittypen" "fact type" (fun (f : feittype) -> f.ft_naam) ctx.doc.feittypen
-  @ arm "dimensies" "dimension" (fun (d : dimensie) -> d.dim_naam) ctx.doc.dimensies
-
-(* WF-094 clause (d): the EMPTY half of the same field — a keyed declaration
-   whose `naam` is `null` rather than disagreeing with its key (maintainer
-   decision 2026-09-09).
-
-   Same class, same field, same five tables, so the same rule number: the
-   clause above asks whether the second spelling of the ONE name agrees, and
-   this one asks whether it is there at all. The OMISSION flank needs no clause
-   — `naam` is `required` on the wire, so gate 2 rejects a missing field and
-   the shared OCaml loader (this library's own, consumed by the verifier, `ref`
-   and the ASP backend alike, so it is ONE refusal reached three times rather
-   than three independent ones) refuses it with a load error naming the path —
-   but the field is typed ["string", "null"], so `naam: null` is schema-valid,
-   round-trips, and passed this verifier, `ref` and the ASP backend cleanly
-   while KILLING the bean-model executor: a NullPointerException inside the
-   identifier contract, which trims the name before splitting it. That is the
-   shape the ch. 4.6 (n)/(o) pair does not have — there both OCaml executors
-   were loud — and it is why the wire, not one loader, has to answer.
-
-   FIVE ARMS again, one per table, one witness each
-   (`wf094-zelfnaam-null-<kind>`), so a mutant dropping one arm frees exactly
-   one document and no other — including its non-null sister above, which is a
-   separate function for exactly that reason.
-
-   The honest ground per arm, since it differs and the clause does not pretend
-   otherwise: on `parameters` and `dimensies` the harm is MEASURED — those two
-   are the loader's terugval-less tables, where the self-name goes straight
-   into the identifier contract. On `objecttypen`, `eenheidstelsels` and
-   `feittypen` the same loader falls back to the map key, so those three arms
-   rest on the CONSTRUCT — a declaration carries its own name — and not on a
-   crash. Three of five on the construct is the same split the clause above
-   writes down for its own arms, and each witness's NOTE.md states which of the
-   two grounds it stands on. (The Drools loader learned the fall-back on all
-   five at this card as well: route 2, so a document written before this rule
-   stops crashing. That fix does not make the arms superfluous — it removes the
-   one LOUD reader, and without a wire rule the next consumer chooses again.) *)
-let wf094_null ctx =
-  let arm table kind self entries =
-    List.filter_map
-      (fun (key, x) ->
-        match self x with
-        | None ->
-            Some
-              (v "WF-094"
-                 ("/" ^ table ^ "/" ^ key ^ "/naam")
-                 (Printf.sprintf
-                    "%s under the key '%s' carries no self-name (naam is null): a keyed \
-                     declaration carries its own name, and an absent name is not one"
-                    kind key))
-        | Some _ -> None)
-      entries
-  in
-  arm "objecttypen" "object type" (fun (o : objecttype) -> o.ot_naam) ctx.doc.objecttypen
-  @ arm "parameters" "parameter" (fun (p : parameter) -> p.par_naam) ctx.doc.parameters
-  @ arm "eenheidstelsels" "unit system" (fun (s : eenheidstelsel) -> s.es_naam)
-      ctx.doc.eenheidstelsels
-  @ arm "feittypen" "fact type" (fun (f : feittype) -> f.ft_naam) ctx.doc.feittypen
-  @ arm "dimensies" "dimension" (fun (d : dimensie) -> d.dim_naam) ctx.doc.dimensies
 
 let wf003 ctx =
   (* Model-layer resolution: no Onbekend datatype on attributes/domains;
@@ -1612,157 +1490,6 @@ let wf034_dagsoort_eenheden ctx =
                    against no day kind"
                   spelling)))
     ctx.doc.dagsoort_per_eenheid
-
-(* WF-034 on the EIGHT SIDE-TABLE KEYS of an object type (maintainer decision
-   2026-09-05, sixth wave; IR-SPEC ch. 4.6 (p)). An object type declares its
-   members in two places — `attributen` (name -> datatype) and `kenmerken` (a
-   name list) — and then hangs eight per-member FACET maps beside them, each
-   keyed by a member name. Nothing required those keys to name a declared
-   member. They are references, and they are more than that: a side-table key
-   is the v0 DENORMALISATION of a facet v1 carries on the member node itself
-   (IR-SPEC ch. 2.2 / `CONSTRUCTS.md` row 11 — "each v0 map entry folds into
-   the corresponding member node"), so the key IS that member's identity,
-   written out beside the declaration instead of on it. A key that names no
-   member resolves against no declaration; a key that MISSPELLS one carries an
-   identity nobody declared.
-
-   The harm is a SILENT SEMANTIC CHANGE, not a missing value, and that is what
-   separates this arm from the empty-field class of the earlier waves. A key in
-   `kenmerkGranulariteit` spelled `verjaart` where the declared characteristic
-   is `verjaard` says "this characteristic is time-dependent" about a
-   characteristic that does not exist — and leaves the declared one
-   NON-temporal, silently. No consumer complains: a case-insensitive reader
-   looks the facet up by the declared member's name, finds nothing, and takes
-   the default. The CASE-SENSITIVE half of the readership (below) reaches the
-   same silence by the other road — it does not find the key at all. That is a
-   different program, not a fault.
-
-   EIGHT arms, not one, because the eight tables are eight independent readers
-   and a mutant that removes one must free exactly one document. Measured over
-   the four zones (2026-09-05): the readers per table are
-
-     attribuutMeervoud       NO wire consumer of the KEY. WF-057 walks this
-                             table but reads the VALUE — the plural's
-                             target-text-safety — and discards the key; the
-                             Drools loader stores the map and nothing reads it
-                             back. The key's only reader is the EMITTER side
-                             (the frontend's `MeervoudMatcher`, off its own
-                             in-memory model), which is not a consumer of the
-                             wire
-     attribuutDimensies      WF-004 (the dimension list) and WF-040's
-                             label/dimension cross inside [walk_expr]
-     attribuutGranulariteit  [attr_temporal], WF-005's named-timeline
-                             adoption, WF-043 in [walk_expr], the temporal
-                             prologue of [expression_layer], WF-065 — and all
-                             three executors (`ref` eval/case, the ASP
-                             translator, the Drools transpiler + contract
-                             validator + fact-model generator)
-     attribuutTijdlijnAantal WF-005; the two Drools transpiler branches
-     attribuutTijdlijnNaam   the KEY is a CROSS-TABLE JOIN key in WF-005, which
-                             carries it into [attribuut_granulariteit] and
-                             [attribuut_tijdlijn_aantal] to compare the adopted
-                             facets against the declaration ([find_ci], so ci
-                             on this side); WF-003 reads the VALUE only. The
-                             Drools loader stores the map and nothing reads it
-                             back; the RegelSpraak frontend reads it
-                             case-sensitively at two sites off its own model —
-                             the emitter again, not the wire
-     kenmerkSoorten          NO reader in any of the four consumers — the
-                             Drools loader parses it and stops there
-     kenmerkGranulariteit    WF-043 in [walk_expr] and [walk_cond],
-                             [expression_layer], WF-086 — and all three
-                             executors
-     kenmerkTijdlijnAantal   WF-005; the two Drools transpiler branches
-
-   so the arms differ in how much they switch off, from "everything a temporal
-   member has" down to `kenmerkSoorten` and `attribuutMeervoud`, whose KEYS no
-   wire consumer reads at all and which are here for the wire: the tables are
-   keyed by member name in the serialization contract, and a conforming
-   consumer may read them tomorrow.
-   Cost: none. All 924 keys the four zones held before this wave (24 + 9 + 74 +
-   2 + 2 + 788 + 24 + 1) resolve against a declared member; the only orphans
-   anywhere are this wave's own eight witnesses.
-
-   Identity is BYTE-EXACT: the key MUST be the member's declared spelling,
-   whitespace and case included (fix round 2026-09-06). That is ch. 2.1's
-   CARRIAGE rule, not its matching rule — "Declared names are carried verbatim
-   (whitespace-collapsed, case preserved). Name matching is case-insensitive."
-   A side-table key is not a matching site: it is the member's denormalised
-   identity (the paragraph above), and an identity is carried verbatim, so this
-   arm asks the same question of the key that the v1 member node would answer
-   by construction.
-
-   The ground is MEASURED, not stylistic. The consumers do not agree on how
-   they look these facets up. The verifier ([find_ci] / [norm]), `ref` and the
-   ASP translator are case-insensitive; the bean-model executor is NOT. The
-   Drools backend reaches these maps through raw, CASE-SENSITIVE lookups at
-   109 sites across four of the eight tables (attribuutGranulariteit 65,
-   kenmerkGranulariteit 20, attribuutTijdlijnAantal 17, kenmerkTijdlijnAantal
-   7; remeasured 2026-09-11), against five case-insensitive lookups through
-   its own [Namen.bevatNaam] helper. The two GRANULARITY tables are read at
-   the call site with [Map.get] / [Map.containsKey]; the two COUNT tables
-   are read through one shared predicate ([Tijdlijnen.meerPeriodiek],
-   2026-09-11), which does the same raw [Map.get] on the map its caller
-   hands it — so a grep for a table name beside those two methods now finds
-   85, and the remaining 24 positions are the ones that pass the map along.
-   Under a case-INsensitive arm, therefore, a key differing from its
-   declaration in capitalisation alone is no orphan and the document stays
-   verifier-clean, ref-clean and clingo-clean while the third executor drops
-   the golden out of the differential in silence. Measured 2026-09-06 on
-   `corpus/golden/synth2-clip-over-prorata`, `kenmerkGranulariteit` key
-   `borgplichtig` capitalised (a one-character diff): verifier PASS, `ref` PASS
-   (3 expectations), clingo PASS (3 expectations), and Drools PLAYED -> EXCLUDE
-   (a transpiler SKIP: the assignment is no longer temporal), which takes gate
-   12 from played 109 to played 108 and leaves it GREEN — its only floor is
-   played > 0. The wire has to catch what no gate catches; the witness is
-   `corpus/negatief/wf034-zijtabel-kapitalisatiewees`.
-
-   Cost of the byte rule: none. Of the 943 keys the four zones held after the
-   sixth wave and before this round, ZERO differ from the declared member in
-   byte while resolving case-insensitively; before the wave, likewise zero of
-   924.
-
-   SCOPE is exactly these eight keys. The neighbouring arms stay
-   case-insensitive on purpose: a characteristic check's `eigenaar` and a
-   unit's `stelsel` are ordinary NAME RESOLUTION — a name pointing AT a
-   declaration, not a declaration's identity written out — and every reader of
-   those resolves case-insensitively ([find_ci] here, the ASP translator, and
-   the Drools loader's exact-then-`equalsIgnoreCase` object-type lookup).
-   `corpus/negatief/wf091-attribuutref-eenheid-kast` pins that boundary
-   deliberately, carrying `stelsel: "GEWICHT"` against a declared `Gewicht`:
-   name RESOLUTION is case-insensitive, copy FIDELITY is a different question,
-   and a byte rule on `stelsel` would make that witness say something else. *)
-let wf034_zijtabelsleutels ctx =
-  let orphan otn tab kind present table =
-    List.filter_map
-      (fun (key, _) ->
-        if present key then None
-        else
-          Some
-            (v "WF-034"
-               ("/objecttypen/" ^ otn ^ "/" ^ tab ^ "/" ^ key)
-               (Printf.sprintf
-                  "%s key '%s' names no declared %s of '%s': the side table resolves against no \
-                   declaration"
-                  tab key kind otn)))
-      table
-  in
-  List.concat_map
-    (fun (otn, ot) ->
-      (* BYTE-EXACT, and passed per table so a ci-relapse on ONE table is an
-         arm-exact mutant: the key IS the member's identity, and an identity is
-         carried verbatim (ch. 2.1's carriage rule — see the block above). *)
-      let a n = List.exists (fun (dk, _) -> dk = n) ot.attributen
-      and k n = List.exists (fun x -> x = Some n) ot.kenmerken in
-      orphan otn "attribuutMeervoud" "attribute" a ot.attribuut_meervoud
-      @ orphan otn "attribuutDimensies" "attribute" a ot.attribuut_dimensies
-      @ orphan otn "attribuutGranulariteit" "attribute" a ot.attribuut_granulariteit
-      @ orphan otn "attribuutTijdlijnAantal" "attribute" a ot.attribuut_tijdlijn_aantal
-      @ orphan otn "attribuutTijdlijnNaam" "attribute" a ot.attribuut_tijdlijn_naam
-      @ orphan otn "kenmerkSoorten" "characteristic" k ot.kenmerk_soorten
-      @ orphan otn "kenmerkGranulariteit" "characteristic" k ot.kenmerk_granulariteit
-      @ orphan otn "kenmerkTijdlijnAantal" "characteristic" k ot.kenmerk_tijdlijn_aantal)
-    ctx.doc.objecttypen
 
 (* WF-034 on the allocation's two ENDPOINT attributes (maintainer decision
    2026-09-04, third wave). An allocation is not an expression, so the
@@ -9505,63 +9232,12 @@ let wf057 ctx =
    it. The shared case loader refuses such input as the last-line
    backstop.
 
-   SECOND ARM (maintainer decision 2026-09-09): the same shape one side
-   table over. A `kenmerkGranulariteit` entry declares its characteristic
-   TIME-DEPENDENT by the presence of its KEY and names the grid in its
-   VALUE — and the readers split on exactly that seam. Three of them
-   (this file's WF-055 clip check, ref's [kenmerk_temporal], the ASP
-   translator's clip arm) decide temporality on KEY EXISTENCE; the shared
-   case loader decides on the VALUE. A null value therefore declares a
-   characteristic temporal to the clip and non-temporal to the loader.
-
-   Measured 2026-09-09 on `jutterswet-tegenwacht` with
-   `kenmerkGranulariteit.aangesteld` set to null and nothing else changed
-   (pre-arm verifier md5 5111932e2d1e51de144290ab16abab00): the document
-   was schema-valid AND verifier-PASS, and then
-     - a case DELIVERING the timeline died at load in both executors with
-       "a characteristic timeline on a non-temporal characteristic" — a
-       message that contradicts the document it was given;
-     - a case OMITTING it ran to completion and answered
-       tegenwachtsom = 60 and stilwachtsom = 120 where the golden pins 30
-       and 30 — silently wrong, and wrong IDENTICALLY in ref and clingo,
-       so no differential gate could see it.
-   The schema drops null from the enum in the same change, so the wire and
-   the verifier close it together; this arm is what still catches a
-   hand-built or future-emitted document that never met the schema.
-
-   THIRD ARM (maintainer decision 2026-09-10): the same shape on the
-   ATTRIBUTE side table, `attribuutGranulariteit`. Structurally identical —
-   [attr_temporal] above reads KEY EXISTENCE, the shared case loader's
-   attribute arm reads the VALUE (`Some (Some gran)`) — but a measurably
-   DIFFERENT CLASS of fault, which is why it closes on its own evidence
-   rather than on the characteristic table's.
-
-   Measured 2026-09-10 on the pre-arm binary (md5
-   f55fdba98ccd5ac68bb99492519aa580), one granularity value nulled and
-   nothing else changed. There is no silent wrong answer anywhere; every
-   path dies. What is wrong is the DIAGNOSIS.
-     - On a pro-rata base (`anchor/jutterswet-borgdeel`, `borgtarief`) the
-       document was schema-valid and the verifier caught it — but as
-       WF-056, "pro-rata base 'borgtarief' is not a temporal attribute",
-       which names a different defect than the one present.
-     - On an ordinary clip base (`jutterswet-tegenwacht`,
-       `wachtvergoeding per maand`), where WF-056 does not reach, the
-       document was schema-valid AND verifier-PASS — silent here — while a
-       case DELIVERING the timeline died at load in both executors with "a
-       timeline value on a non-temporal attribute", a message that
-       contradicts the document that declares the attribute temporal.
-     - The same document with the attribute delivered SCALAR — the shape
-       the loader does accept — drew two different diagnoses of one
-       defect: ref "temporal attribute ... without a granularity", the ASP
-       backend "the gedurende clip ... needs the full timeline".
-   Closed the same way as arm 2: the schema drops null from this enum too,
-   and this arm refuses it for any document that never met the schema. The
-   case loader's contradicting message is corrected in the same change —
-   with the enum shut that path is reachable only for a hand-built
-   document, and then it must name the real reason. Cost: none — 0 of the
-   577 documents across the four zones and the parity zone carried a null
-   there before this arm (1 on the branch head: this arm's own witness).
-   Witness: `corpus/negatief/wf059-attribuut-zonder-granulariteit`. *)
+   Arms 2 and 3 (a characteristic or an attribute declared time-dependent
+   by a granularity KEY whose VALUE was null, maintainer decisions
+   2026-09-09 and 2026-09-10) left with M1: a facet is a TimelineFacet
+   node on its member, its granularity is a required non-null enum, and
+   the shared loader refuses anything else, so a timeline without a grid
+   cannot be written (IR-SPEC ch. 2.2, WF index). *)
 let wf059 ctx =
   List.concat_map
     (fun (key, (ot : objecttype)) ->
@@ -9573,29 +9249,7 @@ let wf059 ctx =
                   ("/objecttypen/" ^ key ^ "/attributen/" ^ an)
                   "declared attribute carries no datatype" ]
           | Some _ -> [])
-        ot.attributen
-      @ List.concat_map
-          (fun (kn, gran) ->
-            match gran with
-            | None ->
-                [ v "WF-059"
-                    ("/objecttypen/" ^ key ^ "/kenmerkGranulariteit/" ^ kn)
-                    "characteristic declared time-dependent carries no granularity: the key \
-                     makes the clip readers temporal while the case loader reads the value and \
-                     refuses the timeline" ]
-            | Some _ -> [])
-          ot.kenmerk_granulariteit
-      @ List.concat_map
-          (fun (an, gran) ->
-            match gran with
-            | None ->
-                [ v "WF-059"
-                    ("/objecttypen/" ^ key ^ "/attribuutGranulariteit/" ^ an)
-                    "attribute declared time-dependent carries no granularity: the key makes \
-                     the temporal readers treat it as a timeline while the case loader reads \
-                     the value and refuses that timeline" ]
-            | Some _ -> [])
-          ot.attribuut_granulariteit)
+        ot.attributen)
     ctx.doc.objecttypen
 
 (* The composite domains a declared domain directly references — the sum-type
@@ -10200,19 +9854,200 @@ let wf105 ctx =
               (some_names ot.kenmerken))
     ctx.doc.objecttypen
 
+(* WF-113: `diagnostics` is the producer's own account of what stayed
+   unresolved in a document it did write (IR-SPEC ch. 2, decision V2 (ii);
+   the rule since M1, 2026-09-23).
+
+   (a) Every entry carries severity WARNING, a non-empty message and an
+   integer line. The line is the loader's: it reads [line] as an integer or
+   refuses the document. ERROR and INFO are refused here BY NAME — the loader
+   admits both so that a document carrying one fails on this rule and says
+   why, not on a load error: an ERROR means the producer refused to write the
+   document, and INFO is tooling talk (zero carriers in 817 documents,
+   measured 2026-09-23).
+
+   (b) Every Onopgelost node — the expression marker and the condition
+   marker, at every expression and condition position of the document — is
+   accounted for: at least one diagnostic's message contains the marker's
+   `bron` verbatim (the decision of 2026-09-19 that every surviving marker
+   carries a WARNING, made checkable). Any diagnostic counts; that it is a
+   WARNING is (a)'s business, so each clause fails on its own witness. A
+   marker whose `bron` is null has nothing a message could contain and is
+   refused. The containment is literal, so an EMPTY `bron` is contained in
+   every message: such a marker is accounted for by any diagnostic.
+
+   (c) — no consumer reads the list for evaluation — is a rule on consumers
+   and has no document to reject. *)
+let rec markers_expr acc (e : expr) : string option list =
+  let o acc = function Some e -> markers_expr acc e | None -> acc in
+  let c acc = function Some x -> markers_cond acc x | None -> acc in
+  match e with
+  | Expr_onopgelost { bron; _ } -> bron :: acc
+  | Literal _ | Attribuut_ref _ | Parameter_ref _ | Variabele_ref _ | Constante _ | Binder_ref _ ->
+      acc
+  | Tekst_reeks { delen; _ } ->
+      List.fold_left
+        (fun acc -> function Ingevoegd { expr } -> o acc expr | Letterlijk _ -> acc)
+        acc delen
+  | Binair { links; rechts; _ } -> o (o acc links) rechts
+  | Functie { argumenten; leegwaarde; filter; _ } ->
+      c (o (List.fold_left markers_expr acc argumenten) leegwaarde) filter
+  | Instance_set_union { branches; _ } ->
+      List.fold_left (fun acc (b : instance_set_branch) -> c acc b.isb_filter) acc branches
+  | Afgerond { basis; _ } -> o acc basis
+  | Begrensd { basis; minimum; maximum; _ } -> o (o (o acc basis) minimum) maximum
+  | Dimensie_cel { attribuut; _ } -> o acc attribuut
+  | Temporal_read { basis; datum; _ } -> markers_expr (markers_expr acc basis) datum
+  | Construct { argument; _ } -> o acc argument
+  | Match { scrutinee; arms; _ } ->
+      List.fold_left (fun acc (_, _, b) -> markers_expr acc b) (markers_expr acc scrutinee) arms
+  | Struct_literal { velden; _ } -> List.fold_left (fun acc (_, x) -> markers_expr acc x) acc velden
+  | Field_access { base; _ } -> markers_expr acc base
+  | Let { value; body; _ } -> markers_expr (markers_expr acc value) body
+  | List_literal { elements; _ } -> List.fold_left markers_expr acc elements
+  | Lambda { body; _ } -> markers_expr acc body
+  | If_then_else { condition; then_; else_; _ } ->
+      markers_expr (markers_expr (markers_cond acc condition) then_) else_
+  | Invoke { arguments; _ } -> List.fold_left markers_expr acc arguments
+  | Fold { list; functie; init; _ } -> markers_fn (markers_expr (markers_expr acc list) init) functie
+  | Map_list { list; functie; _ } -> markers_fn (markers_expr acc list) functie
+  | Filter_list { list; condition; _ } -> markers_cond (markers_expr acc list) condition
+  | List_length { list; _ } -> markers_expr acc list
+
+and markers_fn acc = function Fn_lambda { body; _ } -> markers_expr acc body | Fn_name _ -> acc
+
+and markers_cond acc (c : conditie) : string option list =
+  let o acc = function Some e -> markers_expr acc e | None -> acc in
+  let oc acc = function Some x -> markers_cond acc x | None -> acc in
+  match c with
+  | Conditie_onopgelost { bron } -> bron :: acc
+  | Vergelijking { links; rechts; _ } -> o (o acc links) rechts
+  | Predicaat { operand; _ } -> o acc operand
+  | Periode_conditie { vanaf; tot; _ } -> o (o acc vanaf) tot
+  | Samengesteld { onderdelen; _ } -> List.fold_left markers_cond acc onderdelen
+  | Kwantorvouw { kv_filter; kv_toets; _ } -> oc (oc acc kv_filter) kv_toets
+  | Kenmerk_check _ | Rollidmaatschap _ | Verre_rollidmaatschap _ | Regelversie _ -> acc
+
+(* Every expression and condition position of the document, with the
+   markers below it in document order. *)
+let marker_positions ctx : (string * string option list) list =
+  let e at x = [ (at, List.rev (markers_expr [] x)) ] in
+  let oe at = function Some x -> e at x | None -> [] in
+  let oc at = function Some x -> [ (at, List.rev (markers_cond [] x)) ] | None -> [] in
+  let idx name f l = List.concat (List.mapi (fun i x -> f (Printf.sprintf "/%s/%d" name i) x) l) in
+  let rec default at (d : default) =
+    oc (at ^ "/voorwaarde") d.default_voorwaarde
+    @ oe (at ^ "/consequentie") d.default_consequentie
+    @
+    match d.default_excepties with
+    | Some egs ->
+        List.concat
+          (List.mapi
+             (fun k (eg : exception_group) ->
+               List.concat
+                 (List.mapi
+                    (fun m x -> default (Printf.sprintf "%s/excepties/leden/%d/defaults/%d" at k m) x)
+                    eg.eg_defaults))
+             egs.egs_leden)
+    | None -> []
+  in
+  idx "resolvedRegels"
+    (fun at (r : resolved_regel) ->
+      oe (at ^ "/doel") r.doel @ oe (at ^ "/waarde") r.waarde @ oc (at ^ "/voorwaarde") r.rr_voorwaarde)
+    ctx.doc.resolved_regels
+  @ idx "resolvedDagsoorten"
+      (fun at (r : resolved_dagsoort) -> oc (at ^ "/voorwaarde") r.rd_voorwaarde)
+      ctx.doc.resolved_dagsoorten
+  @ idx "objectCreaties"
+      (fun at (r : resolved_object_creatie) ->
+        idx "toekenningen" (fun t (x : toekenning) -> oe (at ^ t ^ "/waarde") x.toe_waarde) r.toekenningen
+        @ oc (at ^ "/voorwaarde") r.oc_voorwaarde)
+      ctx.doc.object_creaties
+  @ idx "verdelingen"
+      (fun at (r : resolved_verdeling) -> oc (at ^ "/voorwaarde") r.vd_voorwaarde)
+      ctx.doc.verdelingen
+  @ idx "consistenties"
+      (fun at (r : resolved_consistentie) -> oc (at ^ "/assertie") r.assertie)
+      ctx.doc.consistenties
+  @ idx "feitCreaties"
+      (fun at (r : resolved_feit_creatie) -> oc (at ^ "/voorwaarde") r.fc_voorwaarde)
+      ctx.doc.feit_creaties
+  @ idx "prioritizedDefaults"
+      (fun at (l : prioritized_defaults) ->
+        idx "defaults" (fun d x -> default (at ^ d) x) l.defaults)
+      ctx.doc.prioritized_defaults
+  @ idx "functionDefs" (fun at (fd : function_def) -> e (at ^ "/body") fd.fd_body) ctx.doc.function_defs
+
+let contains_verbatim ~hay ~needle =
+  let n = String.length needle and h = String.length hay in
+  let rec at i = i + n <= h && (String.sub hay i n = needle || at (i + 1)) in
+  at 0
+
+let wf113 ctx =
+  let diags = List.mapi (fun i d -> (Printf.sprintf "/diagnostics/%d" i, d)) ctx.doc.diagnostics in
+  List.concat_map
+    (fun (at, (d : diagnostic)) ->
+      (match d.diag_severity with
+      | Some Sev_warning -> []
+      | Some Sev_error ->
+          [ v "WF-113" (at ^ "/severity")
+              "severity ERROR is not a wire severity: an ERROR means the producer refused to \
+               write the document, so a document that was written carries none" ]
+      | Some Sev_info ->
+          [ v "WF-113" (at ^ "/severity")
+              "severity INFO is not a wire severity: the list is the account of what stayed \
+               unresolved, and INFO is tooling talk" ]
+      | None ->
+          [ v "WF-113" (at ^ "/severity")
+              "diagnostic without a severity: the one wire severity is WARNING" ])
+      @
+      match d.message with
+      | Some m when m <> "" -> []
+      | _ ->
+          [ v "WF-113" (at ^ "/message")
+              "diagnostic with an empty message: an entry that says nothing accounts for nothing" ])
+    diags
+  @ List.concat_map
+      (fun (at, brons) ->
+        List.filter_map
+          (function
+            | None ->
+                Some
+                  (v "WF-113" at
+                     "Onopgelost marker whose bron is null: no diagnostic message can contain \
+                      it, so it cannot be accounted for")
+            | Some b ->
+                if
+                  List.exists
+                    (fun (_, (d : diagnostic)) ->
+                      match d.message with
+                      | Some m -> contains_verbatim ~hay:m ~needle:b
+                      | None -> false)
+                    diags
+                then None
+                else
+                  Some
+                    (v "WF-113" at
+                       (Printf.sprintf
+                          "Onopgelost marker '%s' is not accounted for: no diagnostic message \
+                           contains its bron verbatim"
+                          b)))
+          brons)
+      (marker_positions ctx)
+
 let all (doc : document) : violation list =
   let ctx = { doc } in
   List.concat
     [ wf001 ctx; wf002 ctx; wf103 ctx; wf104 ctx; wf105 ctx;
-      wf094 ctx; wf094_null ctx; wf003 ctx; wf004 ctx; wf005 ctx; wf006 ctx;
+      wf003 ctx; wf004 ctx; wf005 ctx; wf006 ctx;
       wf007_model ctx; wf009 ctx; wf092 ctx; wf011 ctx; wf012 ctx; wf013 ctx; wf014 ctx;
       wf015 ctx; wf016 ctx; wf017 ctx; wf018 ctx; wf107 ctx; wf020 ctx; wf101 ctx; wf021 ctx;
       wf022 ctx; wf023 ctx; wf024 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
       wf029 ctx; wf030 ctx; wf031 ctx; wf085 ctx; wf032 ctx; wf033 ctx;
-      wf034_dagsoort_eenheden ctx; wf034_zijtabelsleutels ctx;
+      wf034_dagsoort_eenheden ctx;
       wf034_verdelingen ctx; wf034_verdeling_namen ctx; wf034_verdeling_typen ctx;
       wf034_verdeling_naamresolutie ctx; wf034_objectcreatie_subject ctx;
       wf034_feitcreatie_beanvelden ctx; wf045_046 ctx;
       wf047_048_verdelingen ctx; wf050 ctx; wf051 ctx; wf052 ctx; wf079 ctx; wf082 ctx; wf054 ctx;
       wf057 ctx; wf059 ctx; wf060 ctx; wf087 ctx; wf061 ctx; wf088 ctx; wf065 ctx; wf067 ctx;
-      wf071 ctx; wf072 ctx; wf075 ctx; wf086 ctx; expression_layer ctx ]
+      wf071 ctx; wf072 ctx; wf075 ctx; wf086 ctx; wf113 ctx; expression_layer ctx ]

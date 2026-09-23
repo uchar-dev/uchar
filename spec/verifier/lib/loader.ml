@@ -1,4 +1,4 @@
-(* Strict loader for the regelspraak-ir-v0 wire format.
+(* Strict loader for the uchar-ir-v1 wire format in its M1 shape.
 
    Strict means: every object must carry exactly the keys the format
    declares (the schema is additionalProperties:false with every property
@@ -6,12 +6,17 @@
    discriminator, and every enum value must be a known member. Any
    deviation raises [Error] with the JSON path — never a silent default.
 
-   Two deliberate narrowings relative to bare JSON Schema, both fail-fast:
+   Three deliberate narrowings relative to bare JSON Schema, all fail-fast:
    integer fields accept only canonical integer lexemes (a float-shaped
    "2.0" or an integer beyond native range is a load error, matching the
    byte-identical round-trip discipline of gate 2, which already pins the
-   canonical emitter form); and paths are built eagerly, which is
-   quadratic only on pathologically deep (100k+ nesting) documents. *)
+   canonical emitter form); a declaration in one of the four model lists
+   whose node is still v0 (factTypes, parameters, unitSystems, dimensions)
+   must carry a string `naam` — the schema keeps that field nullable until
+   the node's own migration step, but since M1 there is no map key beside
+   it, so a null there is a declaration without a name, which no reader can
+   resolve; and paths are built eagerly, which is quadratic only on
+   pathologically deep (100k+ nesting) documents. *)
 
 open Ast
 
@@ -124,6 +129,7 @@ let granulariteit_tbl =
   [ ("DAG", Dag); ("WEEK", Week); ("MAAND", Maand); ("KWARTAAL", Kwartaal); ("JAAR", Jaar) ]
 
 let granulariteit_opt = enum_opt "Granulariteit" granulariteit_tbl
+let granulariteit = enum "Granulariteit" granulariteit_tbl
 
 (* The symbolic role binding (extension node, IR-SPEC ch. 2.6): both
    fields are plain strings — a binding is written whole or not at all. *)
@@ -141,8 +147,8 @@ let teken_opt =
     [ ("ONBEPAALD", Onbepaald); ("NEGATIEF", Negatief);
       ("NIET_NEGATIEF", Niet_negatief); ("POSITIEF", Positief) ]
 
-let kenmerk_soort_opt =
-  enum_opt "KenmerkSoort"
+let kenmerk_soort =
+  enum "KenmerkSoort"
     [ ("BIJVOEGLIJK", Bijvoeglijk); ("BEZITTELIJK", Bezittelijk); ("ZELFSTANDIG", Zelfstandig) ]
 
 let afrond_modus =
@@ -264,15 +270,7 @@ let rec datatype path j : datatype =
       Sum_type
         {
           domein = str (path / "domain") (f "domain");
-          constructoren =
-            List.mapi
-              (fun i c ->
-                let cp = path / "constructors" / string_of_int i in
-                let ckvs = obj cp c in
-                check_keys cp ckvs [ "name"; "payload" ];
-                ( str (cp / "name") (field cp ckvs "name"),
-                  opt (cp / "payload") datatype (field cp ckvs "payload") ))
-              (list_ (path / "constructors") (f "constructors"));
+          constructoren = sum_constructors (path / "constructors") (f "constructors");
         }
   | "ListType" ->
       (* extension node (v1, row 10): the sole child is the element datatype,
@@ -286,19 +284,48 @@ let rec datatype path j : datatype =
          and sum types). *)
       check_keys path kvs [ "node"; "domain"; "fields" ];
       Struct_type
-        {
-          domein = str (path / "domain") (f "domain");
-          velden =
-            List.mapi
-              (fun i fld ->
-                let fp = path / "fields" / string_of_int i in
-                let fkvs = obj fp fld in
-                check_keys fp fkvs [ "name"; "datatype" ];
-                ( str (fp / "name") (field fp fkvs "name"),
-                  datatype (fp / "datatype") (field fp fkvs "datatype") ))
-              (list_ (path / "fields") (f "fields"));
-        }
+        { domein = str (path / "domain") (f "domain"); velden = struct_fields (path / "fields") (f "fields") }
   | k -> fail (path / "node") ("unknown datatype node \"" ^ k ^ "\"")
+
+and sum_constructors path j =
+  List.mapi
+    (fun i c ->
+      let cp = path / string_of_int i in
+      let ckvs = obj cp c in
+      check_keys cp ckvs [ "name"; "payload" ];
+      (str (cp / "name") (field cp ckvs "name"), opt (cp / "payload") datatype (field cp ckvs "payload")))
+    (list_ path j)
+
+and struct_fields path j =
+  List.mapi
+    (fun i fld ->
+      let fp = path / string_of_int i in
+      let fkvs = obj fp fld in
+      check_keys fp fkvs [ "name"; "datatype" ];
+      (str (fp / "name") (field fp fkvs "name"), datatype (fp / "datatype") (field fp fkvs "datatype")))
+    (list_ path j)
+
+(* The datatype at the DECLARATION position, `Domain.datatype`. The three
+   forms that carry a domain name at a reference position carry none here:
+   the Domain wrapper holds it, and a self-name written beside it is an
+   unknown field. The record's own domain field is set to the wrapper's
+   name, which is what it held in v0 as well, so every reader sees one
+   datatype shape at both positions. *)
+let domain_datatype name path j : datatype =
+  let kvs = obj path j in
+  let f key = field path kvs key in
+  match node_kind path kvs with
+  | "Enumeratie" ->
+      check_keys path kvs [ "node"; "waarden" ];
+      Enumeratie { domein = Some name; waarden = str_opt_list (path / "waarden") (f "waarden") }
+  | "SumType" ->
+      check_keys path kvs [ "node"; "constructors" ];
+      Sum_type
+        { domein = name; constructoren = sum_constructors (path / "constructors") (f "constructors") }
+  | "StructType" ->
+      check_keys path kvs [ "node"; "fields" ];
+      Struct_type { domein = name; velden = struct_fields (path / "fields") (f "fields") }
+  | _ -> datatype path j
 
 let geheel_periode path j : geheel_periode =
   let kvs = obj path j in
@@ -800,42 +827,98 @@ and conditie path j : conditie =
 
 (* --- model layer -------------------------------------------------------- *)
 
-let objecttype path j : objecttype =
+(* An M1 ObjectType node. Its members are Attribute and Characteristic
+   nodes, each carrying its own TimelineFacet; the in-memory record keeps
+   the name-keyed facet tables (Ast, [objecttype]), built here member by
+   member in declaration order. An optional key that is absent adds no
+   table entry: no plural, no dimension list, no timeline. *)
+let timeline_facet path j =
   let kvs = obj path j in
-  expect_node path kvs "Objecttype";
-  check_keys path kvs ~ext:[ "supertype" ]
-    [ "node"; "naam"; "attributen"; "attribuutMeervoud"; "attribuutDimensies";
-      "attribuutGranulariteit"; "attribuutTijdlijnAantal"; "attribuutTijdlijnNaam";
-      "kenmerken"; "kenmerkSoorten"; "kenmerkGranulariteit"; "kenmerkTijdlijnAantal";
-      "bezield"; "meervoud" ];
+  expect_node path kvs "TimelineFacet";
+  check_keys path kvs ~ext:[ "timelineName" ] [ "node"; "granularity"; "count" ];
+  ( granulariteit (path / "granularity") (field path kvs "granularity"),
+    int_ (path / "count") (field path kvs "count"),
+    ext_field path kvs "timelineName" str )
+
+let objecttype path j : string * objecttype =
+  let kvs = obj path j in
+  expect_node path kvs "ObjectType";
+  check_keys path kvs ~ext:[ "supertype"; "plural" ]
+    [ "node"; "name"; "animate"; "attributes"; "characteristics" ];
   let f name = field path kvs name in
-  {
-    ot_naam = str_opt (path / "naam") (f "naam");
-    (* whole or not at all: the extension field is absent or a string,
-       never null — a null parent would name a type called nothing *)
-    ot_supertype =
-      (match List.assoc_opt "supertype" kvs with
-       | None -> None
-       | Some j -> Some (str (path / "supertype") j));
-    attributen = map_ (path / "attributen") (fun p j -> opt p datatype j) (f "attributen");
-    attribuut_meervoud = map_ (path / "attribuutMeervoud") str_opt (f "attribuutMeervoud");
-    attribuut_dimensies =
-      map_ (path / "attribuutDimensies") str_opt_list (f "attribuutDimensies");
-    attribuut_granulariteit =
-      map_ (path / "attribuutGranulariteit") granulariteit_opt (f "attribuutGranulariteit");
-    attribuut_tijdlijn_aantal =
-      map_ (path / "attribuutTijdlijnAantal") int_opt (f "attribuutTijdlijnAantal");
-    attribuut_tijdlijn_naam =
-      map_ (path / "attribuutTijdlijnNaam") str_opt (f "attribuutTijdlijnNaam");
-    kenmerken = str_opt_list (path / "kenmerken") (f "kenmerken");
-    kenmerk_soorten = map_ (path / "kenmerkSoorten") kenmerk_soort_opt (f "kenmerkSoorten");
-    kenmerk_granulariteit =
-      map_ (path / "kenmerkGranulariteit") granulariteit_opt (f "kenmerkGranulariteit");
-    kenmerk_tijdlijn_aantal =
-      map_ (path / "kenmerkTijdlijnAantal") int_opt (f "kenmerkTijdlijnAantal");
-    bezield = bool_ (path / "bezield") (f "bezield");
-    meervoud = str_opt (path / "meervoud") (f "meervoud");
-  }
+  let name = str (path / "name") (f "name") in
+  let attrs =
+    List.mapi
+      (fun i a ->
+        let ap = path / "attributes" / string_of_int i in
+        let akvs = obj ap a in
+        expect_node ap akvs "Attribute";
+        check_keys ap akvs ~ext:[ "plural"; "dimensions"; "timeline" ] [ "node"; "name"; "datatype" ];
+        ( str (ap / "name") (field ap akvs "name"),
+          opt (ap / "datatype") datatype (field ap akvs "datatype"),
+          ext_field ap akvs "plural" str,
+          ext_field ap akvs "dimensions" (fun p j ->
+              List.mapi (fun k x -> Some (str (p / string_of_int k) x)) (list_ p j)),
+          ext_field ap akvs "timeline" timeline_facet ))
+      (list_ (path / "attributes") (f "attributes"))
+  in
+  let chars =
+    List.mapi
+      (fun i c ->
+        let cp = path / "characteristics" / string_of_int i in
+        let ckvs = obj cp c in
+        expect_node cp ckvs "Characteristic";
+        check_keys cp ckvs ~ext:[ "timeline" ] [ "node"; "name"; "kind" ];
+        ( str (cp / "name") (field cp ckvs "name"),
+          kenmerk_soort (cp / "kind") (field cp ckvs "kind"),
+          ext_field cp ckvs "timeline" timeline_facet ))
+      (list_ (path / "characteristics") (f "characteristics"))
+  in
+  let table get members = List.filter_map (fun m -> get m) members in
+  let tl_attr get = table (fun (n, _, _, _, t) -> Option.map (fun t -> (n, get t)) t) attrs in
+  let tl_char get = table (fun (n, _, t) -> Option.map (fun t -> (n, get t)) t) chars in
+  ( name,
+    {
+      ot_naam = Some name;
+      (* whole or not at all: the extension field is absent or a string,
+         never null — a null parent would name a type called nothing *)
+      ot_supertype = ext_field path kvs "supertype" str;
+      attributen = List.map (fun (n, dt, _, _, _) -> (n, dt)) attrs;
+      attribuut_meervoud = table (fun (n, _, pl, _, _) -> Option.map (fun p -> (n, Some p)) pl) attrs;
+      attribuut_dimensies = table (fun (n, _, _, ds, _) -> Option.map (fun d -> (n, d)) ds) attrs;
+      attribuut_granulariteit = tl_attr (fun (g, _, _) -> Some g);
+      attribuut_tijdlijn_aantal = tl_attr (fun (_, c, _) -> Some c);
+      attribuut_tijdlijn_naam =
+        table
+          (fun (n, _, _, _, t) ->
+            match t with Some (_, _, Some tn) -> Some (n, Some tn) | _ -> None)
+          attrs;
+      kenmerken = List.map (fun (n, _, _) -> Some n) chars;
+      kenmerk_soorten = List.map (fun (n, k, _) -> (n, Some k)) chars;
+      kenmerk_granulariteit = tl_char (fun (g, _, _) -> Some g);
+      kenmerk_tijdlijn_aantal = tl_char (fun (_, c, _) -> Some c);
+      bezield = bool_ (path / "animate") (f "animate");
+      meervoud = ext_field path kvs "plural" str;
+    } )
+
+(* A Domain wrapper: the one place a domain's name is written. *)
+let domain path j : string * datatype option =
+  let kvs = obj path j in
+  expect_node path kvs "Domain";
+  check_keys path kvs [ "node"; "name"; "datatype" ];
+  let name = str (path / "name") (field path kvs "name") in
+  (name, Some (domain_datatype name (path / "datatype") (field path kvs "datatype")))
+
+(* A declaration in a model list whose node is still v0: the list has no map
+   key, so the node's `naam` is the declaration's one name (loader header,
+   second narrowing). *)
+let named path (decode : string -> json -> 'a) (naam : 'a -> string option) j : string * 'a =
+  let x = decode path j in
+  match naam x with
+  | Some n -> (n, x)
+  | None ->
+      fail (path / "naam")
+        "a declaration in a model list carries its name on its node, and null is no name"
 
 let parameter path j : parameter =
   let kvs = obj path j in
@@ -905,15 +988,6 @@ let tijdlijn path j : tijdlijn =
     tl_granulariteit =
       granulariteit_opt (path / "granulariteit") (field path kvs "granulariteit");
     tl_aantal = int_ (path / "aantal") (field path kvs "aantal");
-  }
-
-let regel_stub path j : regel_stub =
-  let kvs = obj path j in
-  expect_node path kvs "Regel";
-  check_keys path kvs [ "node"; "naam"; "soort" ];
-  {
-    rg_naam = str_opt (path / "naam") (field path kvs "naam");
-    rg_soort = str_opt (path / "soort") (field path kvs "soort");
   }
 
 (* --- rule layer --------------------------------------------------------- *)
@@ -1225,58 +1299,61 @@ let function_def path j : function_def =
     fd_bron = str_opt (path / "bron") (f "bron");
   }
 
+(* The M1 root: {format, model, rules, diagnostics}. [model] is the
+   declaration set as lists, [rules] the v0 rule lists under their v0 keys;
+   each carries one optional extension list. *)
 let document (j : json) : document =
   let path = "" in
   let kvs = obj path j in
-  check_keys path kvs ~ext:[ "prioritizedDefaults"; "functionDefs" ]
-    [ "formaat"; "objecttypen"; "domeinen"; "parameters"; "eenheidstelsels";
-      "feittypen"; "dimensies"; "tijdlijnen"; "dagsoorten"; "dagsoortPerEenheid";
-      "regels"; "resolvedRegels"; "resolvedDagsoorten"; "objectCreaties";
-      "verdelingen"; "consistenties"; "uniciteiten"; "uniciteitUnies";
-      "feitCreaties"; "resolvedStartpunten"; "regelGroepen"; "diagnostics" ];
-  let f name = field path kvs name in
-  (match str (path / "formaat") (f "formaat") with
-  | "regelspraak-ir-v0" -> ()
-  | s -> fail (path / "formaat") ("unknown format \"" ^ s ^ "\""));
-  let arr name g =
-    List.mapi (fun i x -> g (path / name / string_of_int i) x) (list_ (path / name) (f name))
+  check_keys path kvs [ "format"; "model"; "rules"; "diagnostics" ];
+  (match str (path / "format") (field path kvs "format") with
+  | "uchar-ir-v1" -> ()
+  | s -> fail (path / "format") ("unknown format \"" ^ s ^ "\""));
+  let mpath = path / "model" in
+  let model = obj mpath (field path kvs "model") in
+  check_keys mpath model ~ext:[ "functionDefs" ]
+    [ "objectTypes"; "factTypes"; "parameters"; "domains"; "unitSystems"; "dimensions";
+      "timelines"; "dayKinds"; "dagsoortPerEenheid" ];
+  let rpath = path / "rules" in
+  let rules = obj rpath (field path kvs "rules") in
+  check_keys rpath rules ~ext:[ "prioritizedDefaults" ]
+    [ "resolvedRegels"; "resolvedDagsoorten"; "objectCreaties"; "verdelingen";
+      "consistenties"; "uniciteiten"; "uniciteitUnies"; "feitCreaties";
+      "resolvedStartpunten"; "regelGroepen" ];
+  let arr p kvs name g =
+    List.mapi (fun i x -> g (p / name / string_of_int i) x) (list_ (p / name) (field p kvs name))
   in
+  let ext p kvs name g =
+    match List.assoc_opt name kvs with
+    | Some j -> List.mapi (fun i x -> g (p / name / string_of_int i) x) (list_ (p / name) j)
+    | None -> []
+  in
+  let m name g = arr mpath model name g and r name g = arr rpath rules name g in
   {
-    objecttypen = map_ (path / "objecttypen") objecttype (f "objecttypen");
-    domeinen = map_ (path / "domeinen") (fun p j -> opt p datatype j) (f "domeinen");
-    parameters = map_ (path / "parameters") parameter (f "parameters");
-    eenheidstelsels = map_ (path / "eenheidstelsels") eenheidstelsel (f "eenheidstelsels");
-    feittypen = map_ (path / "feittypen") feittype (f "feittypen");
-    dimensies = map_ (path / "dimensies") dimensie (f "dimensies");
-    tijdlijnen = arr "tijdlijnen" tijdlijn;
-    dagsoorten = str_opt_list (path / "dagsoorten") (f "dagsoorten");
-    dagsoort_per_eenheid = map_ (path / "dagsoortPerEenheid") str_opt (f "dagsoortPerEenheid");
-    regels = arr "regels" regel_stub;
-    resolved_regels = arr "resolvedRegels" resolved_regel;
-    resolved_dagsoorten = arr "resolvedDagsoorten" resolved_dagsoort;
-    object_creaties = arr "objectCreaties" resolved_object_creatie;
-    verdelingen = arr "verdelingen" resolved_verdeling;
-    consistenties = arr "consistenties" resolved_consistentie;
-    uniciteiten = arr "uniciteiten" resolved_uniciteit;
-    uniciteit_unies = arr "uniciteitUnies" resolved_uniciteit_unie;
-    feit_creaties = arr "feitCreaties" resolved_feit_creatie;
-    resolved_startpunten = arr "resolvedStartpunten" resolved_startpunt;
-    regel_groepen = arr "regelGroepen" resolved_regel_groep;
-    diagnostics = arr "diagnostics" diagnostic;
-    prioritized_defaults =
-      (match List.assoc_opt "prioritizedDefaults" kvs with
-      | Some j ->
-          List.mapi
-            (fun i x -> prioritized_defaults (path / "prioritizedDefaults" / string_of_int i) x)
-            (list_ (path / "prioritizedDefaults") j)
-      | None -> []);
-    function_defs =
-      (match List.assoc_opt "functionDefs" kvs with
-      | Some j ->
-          List.mapi
-            (fun i x -> function_def (path / "functionDefs" / string_of_int i) x)
-            (list_ (path / "functionDefs") j)
-      | None -> []);
+    objecttypen = m "objectTypes" objecttype;
+    domeinen = m "domains" domain;
+    parameters = m "parameters" (fun p -> named p parameter (fun (x : parameter) -> x.par_naam));
+    eenheidstelsels =
+      m "unitSystems" (fun p -> named p eenheidstelsel (fun (x : eenheidstelsel) -> x.es_naam));
+    feittypen = m "factTypes" (fun p -> named p feittype (fun (x : feittype) -> x.ft_naam));
+    dimensies = m "dimensions" (fun p -> named p dimensie (fun (x : dimensie) -> x.dim_naam));
+    tijdlijnen = m "timelines" tijdlijn;
+    dagsoorten = str_opt_list (mpath / "dayKinds") (field mpath model "dayKinds");
+    dagsoort_per_eenheid =
+      map_ (mpath / "dagsoortPerEenheid") str_opt (field mpath model "dagsoortPerEenheid");
+    resolved_regels = r "resolvedRegels" resolved_regel;
+    resolved_dagsoorten = r "resolvedDagsoorten" resolved_dagsoort;
+    object_creaties = r "objectCreaties" resolved_object_creatie;
+    verdelingen = r "verdelingen" resolved_verdeling;
+    consistenties = r "consistenties" resolved_consistentie;
+    uniciteiten = r "uniciteiten" resolved_uniciteit;
+    uniciteit_unies = r "uniciteitUnies" resolved_uniciteit_unie;
+    feit_creaties = r "feitCreaties" resolved_feit_creatie;
+    resolved_startpunten = r "resolvedStartpunten" resolved_startpunt;
+    regel_groepen = r "regelGroepen" resolved_regel_groep;
+    diagnostics = arr path kvs "diagnostics" diagnostic;
+    prioritized_defaults = ext rpath rules "prioritizedDefaults" prioritized_defaults;
+    function_defs = ext mpath model "functionDefs" function_def;
   }
 
 let load_file (filename : string) : document =
