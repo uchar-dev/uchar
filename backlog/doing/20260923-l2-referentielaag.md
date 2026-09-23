@@ -142,7 +142,10 @@ besluit V1–V17, naamprincipe of M1-precedent).
   van het argument, DV L2-1) blijven zo schrijfbaar; de verifier bewaakt dat
   een bindingloze `TOTAAL` werkelijk de eigen lezing is (WF-083, D8 (iv)).
   Precedent voor een schemaconditie: het `drempel`-veld van `Kwantorvouw`
-  (WF-108 (e)).
+  (WF-108 (e)). Uitvoering (A1, door de hoofdsessie aanvaard): de voorwaarde
+  op `Functie` geldt alleen bij precies één argument, want de opgesomde
+  EERSTE/LAATSTE-vouwen dragen een vestigiaal `elementObjecttype` zonder
+  bereik (5 in twee goldens, 2 in toka, 10 in negatief).
 - **U3 — de ene `Onbekend` buiten de referentieposities in de
   pariteitszone.** `toka/casus/ir.json`, `/rules/resolvedRegels/16/waarde/type`
   is een `Binair.type` met `Onbekend` (toka-45, de 16Y-divergentie: datum +
@@ -155,6 +158,11 @@ besluit V1–V17, naamprincipe of M1-precedent).
   L2 noemt die ene knoop; toka-45 blijft holdout. De verifier verandert zijn
   houding tegenover een null-annotatie op een afgeleide positie in L2 niet
   (A2 meldt in het Result wat hij vandaag doet; L3/L4 beslissen erover).
+  Uitvoering (A1, door de hoofdsessie aanvaard): `m2.py` schrijft een
+  `Onbekend` als `type` van `Binair`, `Functie`, `Afgerond` of `Begrensd` als
+  `null` en telt het (in het corpus alleen deze ene knoop), zodat de dump
+  mechanisch migreert; op elke andere positie buiten een referentietype
+  weigert het script een `Onbekend`.
 - **U4 — de afleidingen van het migratiescript spiegelen de verifier.**
   `m2.py` leidt bindingen (D7, D10, D53), de scope (D12) en `factType`/`role`
   (D11) af met exact de resolutie die `spec/verifier/lib/checks.ml` vandaag
@@ -210,6 +218,12 @@ besluit V1–V17, naamprincipe of M1-precedent).
 - **U10 — `Onopgelost.type` in de migratie:** `Onbekend` of `null` → afwezig;
   een echt datatype blijft (`corpus/rood/wf044-onopgelost-reached` draagt
   `Numeriek` en houdt het).
+- **U11 — de telbronnaam:** waar de geschreven naam op de `AANTAL`-bron de
+  gebonden rol niet aanduidt op gedeclareerde naam of gedeclareerd meervoud,
+  schrijven migratie en emitter de gedeclareerde rolnaam in `attribuut`;
+  WF-047 blijft 'moet aanduiden op naam of meervoud'. Normvraag voor de
+  maintainer met dit als standaardantwoord (hoofdsessie 2026-09-24; gemeten
+  door A1: 2 goldens, 4 toka-plekken).
 
 ## Lens-checklist — vooraf, per bouwer (de terugkerende vondstklassen van L1)
 
@@ -756,3 +770,37 @@ weg), `Kenmerk` (`navigatie` weg), `Onbekend` (2.4: geland), `VariabeleRef`
 gate 13 «reference and composite positions» → de afgeleide posities die na
 B13 een annotatie houden, met datum; gate 3: de fragmenttoets (U1). Daarna
 de herpin van de toolchain (k) en de memory.
+
+## Correcties op de kaarttekst (A1, gemeten)
+
+Gemeten op de kaartbranch na de rebase op main `cf1090a5` (760 documenten:
+golden 238, negatief 444, rood 48, toka 30).
+
+- (g): de "3 navigaties" in de casus-dump zijn geen afgeleide bindingen maar
+  drie geschreven navigaties die eigen lezingen worden (twee
+  nul-hop-zelfverwijzingen en één telbron die het subject aanduidt). De dump
+  krijgt 2 vouwbereiken, 1 `RoleMembership`, de U3-knoop en geen
+  navigatiebinding.
+- "L2 raakt 705 documenten": gemeten zijn 685 documenten geraakt, 653
+  gemigreerd (golden 227, rood 45, negatief 358, toka 23) plus 32 geweigerd
+  (allemaal negatief). 75 documenten zonder referentielaag blijven
+  byte-gelijk (golden 11, rood 3, negatief 54, toka 7).
+- "3010 referentietypes": gemeten 2866 verwijderd in de gemigreerde
+  documenten.
+- "141 `Onbekend`-knopen": gemeten 137, waarvan 130 op een referentietype, 6
+  in declaraties of payloads van negatief-documenten en 1 via U3. Er
+  verdwijnen er 124 (123 met het referentietype, 1 via U3); de overige 13
+  staan in geweigerde documenten.
+- "de 6 met een bindingloze verdeling": gemeten 7 bindingloze verdelingen in
+  6 documenten. `wf050-allocation-beside-defaults` krijgt zijn rol afgeleid;
+  `wf020-crossform-collision`, `wf024-complex`, `wf025-max-without-ratio` en
+  `wf026-two-allocations-one-target` (twee verdelingen) hebben
+  `bronType: null` en weigeren; `wf048-ambiguous-connecting-relation` is
+  gestempeld.
+- U11: 6 telbronnamen herschreven in 5 documenten: golden
+  `jutterswet-kaveltelling` en `jutterswet-muntpeiling` (1 elk), toka 4
+  plekken in 3 documenten (`toka/cases/scenario-toka-19-hoeveelheid-passagiers`,
+  `toka/cases/scenario-toka-28-vastgestelde-contingent`, en `toka/casus` met
+  2). Buiten U11 blijven de twee attribuutbronnen onder `AANTAL`
+  (`wf096-aantal-setbron`, `wf096-aantal-setbron-bronpad`): hun naam is een
+  attribuut van het elementtype en geen telbron; dat oordeel is aan WF-093.
