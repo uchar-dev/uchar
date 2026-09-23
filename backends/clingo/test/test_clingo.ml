@@ -7549,7 +7549,7 @@ let () =
    reads leeg (ch. 1.2). *)
 let leeg_num = {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null }|}
 
-let leeg_doc ~werf_attrs ~regels =
+let leeg_doc_vol ~parameters ~consistenties ~werf_attrs ~regels =
   let namen =
     String.concat ", "
       (List.map (fun (n, _) -> {|{ "node": "Regel", "naam": "|} ^ n ^ {|", "soort": "regel" }|}) regels)
@@ -7569,7 +7569,7 @@ let leeg_doc ~werf_attrs ~regels =
       "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {}, "kenmerken": [],
       "kenmerkSoorten": {}, "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
       "bezield": false, "meervoud": "Schuiten" } },
-  "domeinen": {}, "parameters": {}, "eenheidstelsels": {},
+  "domeinen": {}, "parameters": { |} ^ parameters ^ {| }, "eenheidstelsels": {},
   "feittypen": { "ligplaats": { "node": "Feittype", "naam": "ligplaats", "wederkerig": false,
     "rollen": [
       { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
@@ -7578,11 +7578,14 @@ let leeg_doc ~werf_attrs ~regels =
   "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
   "regels": [ |} ^ namen ^ {| ],
   "resolvedRegels": [ |} ^ lijf ^ {| ],
-  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [],
+  "consistenties": [ |} ^ consistenties ^ {| ],
   "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
   "regelGroepen": [], "diagnostics": []
 }
 |}
+
+let leeg_doc = leeg_doc_vol ~parameters:"" ~consistenties:""
 
 let leeg_ref ~ot ~attr ~nav =
   {|{ "node": "AttribuutRef", "attribuut": "|} ^ attr ^ {|", "objecttype": "|} ^ ot
@@ -7611,7 +7614,7 @@ let leeg_regel ~naam ~ot ~doel ~waarde voorwaarde =
       "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }|} )
 
 (* [lengte] as a scalar or, for the whole-period frame, a one-segment timeline *)
-let leeg_case ?(lengte = fun n -> {|{ "number": "|} ^ n ^ {|" }|}) expected =
+let leeg_case ?(params = "") ?(lengte = fun n -> {|{ "number": "|} ^ n ^ {|" }|}) expected =
   {|{ "format": "uchar-case-v0", "asOfDate": null,
   "input": { "instances": [
     { "label": "W1", "objectType": "Werf", "attributes": { "tarief": { "number": "312" } },
@@ -7625,7 +7628,7 @@ let leeg_case ?(lengte = fun n -> {|{ "number": "|} ^ n ^ {|" }|}) expected =
   ^ {| }, "roles": {}, "characteristics": [] },
     { "label": "S4", "objectType": "Schuit", "attributes": {}, "roles": { "werf": ["W2"] },
       "characteristics": [] } ],
-    "parameters": {} },
+    "parameters": { |} ^ params ^ {| } },
   "expected": [ |} ^ String.concat ", " expected ^ {| ] }|}
 
 (* one row per label: [attr] = [waarde] on the labels in [hits], leeg on the rest *)
@@ -7726,6 +7729,173 @@ let () =
       faults_with ~name:(soort ^ " negated under a whole-period qualifier") ~ir ~case_text
         ~needle:"whole-period leeg/gevuld test is ch. 3.9 scope, not executed here")
     [ "LEEG"; "GEVULD" ]
+
+(* FIXRONDE (lens, 2026-09-23). Four more positions and three refusals.
+
+   The ASSERTION and the FOLD FILTER are positions the register text claims
+   for this arm; they get one standing pin each (probes G and H of the lens).
+
+   An unbound PARAMETER in the operand: ref faults (ch. 5.7), and the unbound
+   join made this arm ANSWER — leeg waar (measured: clingo PASS 40 where ref
+   threw). Refused in ref's words, on both routes. The bound twin is the
+   witness for the helper's isa(S,ot) atom: a parameter's atoms do not bind
+   S, so without it the helper is unsafe and the frame no longer plays.
+
+   A RECURSIVE CREATION GROUP: `not gvN(S)` is not stratified through a cycle
+   WF-045 admits, because WF-046 counts no leeg test as a negative edge.
+   Measured on this branch before the refusal: R1 (LEEG in the creation's
+   condition) went UNSATISFIABLE, R3 (GEVULD negated there, LEEG in the rule)
+   gave a wrong answer (`W1.merk is underived (leeg), expected 1`); ref and
+   both Drools branches play both. Maintainer decision 2026-09-23: the
+   complement route refuses by name in such a document. *)
+let () =
+  let own = leeg_ref ~ot:"Schuit" ~attr:"lengte" ~nav:None in
+  (* the assertion: niet leeg fails on S2 and S4, leeg on S1 and S3 *)
+  List.iter
+    (fun (name, negatie, labels) ->
+      let ir =
+        leeg_doc_vol ~parameters:"" ~werf_attrs:""
+          ~consistenties:
+            ({|{ "node": "ResolvedConsistentie", "naam": "lengte check", "subject": "Schuit",
+      "assertie": |} ^ leeg_pred ~soort:"LEEG" ~negatie own
+            ^ {|, "bron": "c", "line": 1, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }|})
+          ~regels:[]
+      in
+      let case_text =
+        leeg_case
+          (List.map
+             (fun l -> {|{ "kind": "inconsistent", "rule": "lengte check", "label": "|} ^ l ^ {|" }|})
+             labels)
+      in
+      ref_matches ~name ~ir ~case_text;
+      clingo_matches ~name ~ir ~case_text)
+    [ ("assertion LEEG negated", true, [ "S2"; "S4" ]); ("assertion LEEG", false, [ "S1"; "S3" ]) ];
+  (* the fold filter and the counting matrix (lens probe H): W1 holds S1 (8),
+     S2 (leeg), S5 (3); W2 holds S4 and S7 (both leeg); W3 holds S6 (9).
+     bonus: ALLE over the niet-leeg ones has lengte > 6 — W1 fails on S5, W2
+     vacuous, W3 holds. malus: GEEN of the niet-gevulde ones is leeg — W3
+     alone (its filter set is empty). extra: at least 2 leeg — W2 alone. *)
+  let kvh ~kwantor ?drempel ~filter toets =
+    {|{ "node": "Kwantorvouw", "kwantor": "|} ^ kwantor ^ {|", "elementObjecttype": "Schuit",
+      "filter": |} ^ filter ^ {|, "toets": |} ^ toets
+    ^ (match drempel with None -> "" | Some d -> {|, "drempel": |} ^ string_of_int d)
+    ^ {|, "bron": "vouw", "bronRol": { "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" } }|}
+  in
+  let groter =
+    {|{ "node": "Vergelijking", "op": "GROTER", "links": |} ^ own
+    ^ {|, "rechts": { "node": "Literal", "waarde": "6", "type": |} ^ leeg_num
+    ^ {|, "bron": "6" }, "periode": null, "bron": "groter" }|}
+  in
+  let ir =
+    leeg_doc
+      ~werf_attrs:({|, "bonus": |} ^ leeg_num ^ {|, "malus": |} ^ leeg_num ^ {|, "extra": |} ^ leeg_num)
+      ~regels:
+        [ leeg_regel ~naam:"b" ~ot:"Werf" ~doel:"bonus" ~waarde:"99"
+            (kvh ~kwantor:"ALLE" ~filter:(leeg_pred ~soort:"LEEG" ~negatie:true own) groter);
+          leeg_regel ~naam:"m" ~ot:"Werf" ~doel:"malus" ~waarde:"11"
+            (kvh ~kwantor:"GEEN" ~filter:(leeg_pred ~soort:"GEVULD" ~negatie:true own)
+               (leeg_pred ~soort:"LEEG" ~negatie:false own));
+          leeg_regel ~naam:"e" ~ot:"Werf" ~doel:"extra" ~waarde:"7"
+            (kvh ~kwantor:"TEN_MINSTE" ~drempel:2 ~filter:"null"
+               (leeg_pred ~soort:"LEEG" ~negatie:false own)) ]
+  in
+  let case_text = {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "W1", "objectType": "Werf", "attributes": {}, "roles": {}, "characteristics": []}, {"label": "W2", "objectType": "Werf", "attributes": {}, "roles": {}, "characteristics": []}, {"label": "W3", "objectType": "Werf", "attributes": {}, "roles": {}, "characteristics": []}, {"label": "S1", "objectType": "Schuit", "attributes": {"lengte": {"number": "8"}}, "roles": {"werf": ["W1"]}, "characteristics": []}, {"label": "S2", "objectType": "Schuit", "attributes": {}, "roles": {"werf": ["W1"]}, "characteristics": []}, {"label": "S5", "objectType": "Schuit", "attributes": {"lengte": {"number": "3"}}, "roles": {"werf": ["W1"]}, "characteristics": []}, {"label": "S4", "objectType": "Schuit", "attributes": {}, "roles": {"werf": ["W2"]}, "characteristics": []}, {"label": "S6", "objectType": "Schuit", "attributes": {"lengte": {"number": "9"}}, "roles": {"werf": ["W3"]}, "characteristics": []}, {"label": "S7", "objectType": "Schuit", "attributes": {}, "roles": {"werf": ["W2"]}, "characteristics": []}], "parameters": {}}, "expected": [{"kind": "attributeEmpty", "label": "W1", "attribute": "bonus"}, {"kind": "attributeValue", "label": "W2", "attribute": "bonus", "value": {"number": "99"}}, {"kind": "attributeValue", "label": "W3", "attribute": "bonus", "value": {"number": "99"}}, {"kind": "attributeEmpty", "label": "W1", "attribute": "malus"}, {"kind": "attributeEmpty", "label": "W2", "attribute": "malus"}, {"kind": "attributeValue", "label": "W3", "attribute": "malus", "value": {"number": "11"}}, {"kind": "attributeEmpty", "label": "W1", "attribute": "extra"}, {"kind": "attributeValue", "label": "W2", "attribute": "extra", "value": {"number": "7"}}, {"kind": "attributeEmpty", "label": "W3", "attribute": "extra"}, {"kind": "consistent"}]}|} in
+  ref_matches ~name:"fold filter and counting matrix" ~ir ~case_text;
+  clingo_matches ~name:"fold filter and counting matrix" ~ir ~case_text;
+  (* the parameter operand, bound and unbound *)
+  let param_doc ~negatie =
+    leeg_doc_vol ~consistenties:"" ~werf_attrs:""
+      ~parameters:
+        ({|"drempel": { "node": "Parameter", "naam": "drempel", "datatype": |} ^ leeg_num
+        ^ {|, "granulariteit": null }|})
+      ~regels:
+        [ leeg_regel ~naam:"meldpremie" ~ot:"Schuit" ~doel:"meldpremie" ~waarde:"40"
+            (leeg_pred ~soort:"LEEG" ~negatie
+               ({|{ "node": "ParameterRef", "parameter": "drempel", "type": |} ^ leeg_num
+               ^ {|, "bron": "drempel" }|})) ]
+  in
+  List.iter
+    (fun (name, negatie, hits) ->
+      let ir = param_doc ~negatie in
+      let case_text =
+        leeg_case ~params:{|"drempel": { "number": "3" }|}
+          (leeg_rijen ~attr:"meldpremie" ~waarde:"40" ~labels:schuiten hits)
+      in
+      ref_matches ~name ~ir ~case_text;
+      clingo_matches ~name ~ir ~case_text)
+    [ ("LEEG on a bound parameter", false, []);
+      ("LEEG negated on a bound parameter", true, schuiten) ];
+  List.iter
+    (fun (name, negatie) ->
+      faults_with ~name ~ir:(param_doc ~negatie) ~case_text:(leeg_case [ {|{ "kind": "consistent" }|} ])
+        ~needle:{|parameter "drempel" is unbound in this case (binding is fail-fast, ch. 5.7)|})
+    [ ("LEEG on an unbound parameter", false); ("LEEG negated on an unbound parameter", true) ];
+  (* the recursive creation group *)
+  let r_ir ~rsoort ~csoort ~cneg =
+    {|{"formaat":"regelspraak-ir-v0","objecttypen":{"Wachter":{"node":"Objecttype","naam":"Wachter",
+"attributen":{"rang":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null},
+"opvolgerrang":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null},
+"merk":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null}},
+"attribuutMeervoud":{},"attribuutDimensies":{},"attribuutGranulariteit":{},"attribuutTijdlijnAantal":{},
+"attribuutTijdlijnNaam":{},"kenmerken":[],"kenmerkSoorten":{},"kenmerkGranulariteit":{},"kenmerkTijdlijnAantal":{},
+"bezield":true,"meervoud":"Wachters"}},"domeinen":{},"parameters":{},"eenheidstelsels":{},"feittypen":{"opvolging":{"node":"Feittype",
+"naam":"opvolging","wederkerig":false,"rollen":[{"node":"Rol","naam":"voorganger","objecttypeNaam":"Wachter",
+"meervoud":null,"meervoudig":false},{"node":"Rol","naam":"opvolger","objecttypeNaam":"Wachter",
+"meervoud":"opvolgers","meervoudig":false}]}},"dimensies":{},"tijdlijnen":[],"dagsoorten":[],
+"dagsoortPerEenheid":{},"regels":[{"node":"Regel","naam":"merk van een wachter","soort":"regel"}],
+"resolvedRegels":[{"node":"ResolvedRegel","naam":"merk van een wachter","soort":"BEREKENING",
+"doel":{"node":"AttribuutRef","attribuut":"merk","objecttype":"Wachter","onderwerpBron":"een Wachter",
+"navigatieRol":null,"type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD",
+"eenheid":null},"bron":"merk","set":false,"navigatiePad":[]},"waarde":{"node":"Literal","waarde":"1",
+"type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null},"bron":"1"},
+"voorwaarde":{"node":"Predicaat","soort":"@RSOORT@","operand":{"node":"AttribuutRef","attribuut":"rang",
+"objecttype":"Wachter","onderwerpBron":"de Wachter","navigatieRol":"opvolger","type":{"node":"Numeriek",
+"geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null},"bron":"rang","set":false,"navigatiePad":[],
+"navigatieBindingen":[{"node":"RolBinding","feittype":"opvolging","rol":"opvolger"}]},"dagsoort":null,
+"negatie":false,"cijfers":0,"periode":null,"bron":"p"},"geldigheid":{"node":"Geldigheid","vanaf":null,
+"tot":null}}],"resolvedDagsoorten":[],"objectCreaties":[{"node":"ResolvedObjectCreatie","naam":"werf de opvolger",
+"nieuwType":"Wachter","subject":"Wachter","toekenningen":[{"node":"Toekenning","attribuut":"rang",
+"waarde":{"node":"Binair","op":"PLUS","links":{"node":"AttribuutRef","attribuut":"rang","objecttype":"Wachter",
+"onderwerpBron":"de Wachter","navigatieRol":null,"type":{"node":"Numeriek","geheel":true,"decimalen":0,
+"teken":"ONBEPAALD","eenheid":null},"bron":"de rang van de Wachter","set":false,"navigatiePad":[]},
+"rechts":{"node":"Literal","waarde":"1","type":{"node":"Numeriek","geheel":true,"decimalen":0,
+"teken":"ONBEPAALD","eenheid":null},"bron":"1"},"type":{"node":"Numeriek","geheel":true,"decimalen":0,
+"teken":"ONBEPAALD","eenheid":null},"bron":"de rang van de Wachter plus 1"},"kenmerk":false}],
+"voorwaarde":{"node":"Samengesteld","kwantor":"ALLE","drempel":0,"onderdelen":[{"node":"Vergelijking",
+"op":"KLEINER","links":{"node":"AttribuutRef","attribuut":"rang","objecttype":"Wachter","onderwerpBron":"de Wachter",
+"navigatieRol":null,"type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD",
+"eenheid":null},"bron":"de rang van de Wachter","set":false,"navigatiePad":[]},"rechts":{"node":"Literal",
+"waarde":"5","type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null},
+"bron":"98"},"periode":null,"bron":"de rang van de Wachter is kleiner dan 98"},{"node":"Predicaat",
+"soort":"@CSOORT@","operand":{"node":"AttribuutRef","attribuut":"merk","objecttype":"Wachter",
+"onderwerpBron":"de Wachter","navigatieRol":null,"type":{"node":"Numeriek","geheel":true,"decimalen":0,
+"teken":"ONBEPAALD","eenheid":null},"bron":"merk","set":false,"navigatiePad":[]},"dagsoort":null,
+"negatie":@CNEG@,"cijfers":0,"periode":null,"bron":"p"}],"bron":"x"},"geldigheid":{"node":"Geldigheid",
+"vanaf":null,"tot":null},"verbindendeRol":{"node":"RolBinding","feittype":"opvolging","rol":"opvolger"}}],
+"verdelingen":[],"consistenties":[{"node":"ResolvedConsistentie","naam":"rangdetector","subject":"Wachter",
+"assertie":{"node":"Vergelijking","op":"KLEINER","links":{"node":"AttribuutRef","attribuut":"rang",
+"objecttype":"Wachter","onderwerpBron":"de Wachter","navigatieRol":null,"type":{"node":"Numeriek",
+"geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null},"bron":"de rang van de Wachter",
+"set":false,"navigatiePad":[]},"rechts":{"node":"Literal","waarde":"99","type":{"node":"Numeriek",
+"geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null},"bron":"99"},"periode":null,
+"bron":"de rang van de Wachter is kleiner dan 99"},"bron":"Er moet worden voldaan aan: de rang van elke Wachter is kleiner dan 99",
+"line":1,"geldigheid":{"node":"Geldigheid","vanaf":null,"tot":null}}],"uniciteiten":[],"uniciteitUnies":[],
+"feitCreaties":[],"resolvedStartpunten":[],"regelGroepen":[{"node":"ResolvedRegelGroep","naam":"estafette",
+"recursief":true,"leden":["werf de opvolger"],"bron":null,"line":1}],"diagnostics":[]}|}
+    |> replace ~tok:"@RSOORT@" ~by:rsoort
+    |> replace ~tok:"@CSOORT@" ~by:csoort
+    |> replace ~tok:"@CNEG@" ~by:(string_of_bool cneg)
+  in
+  let r_case = {|{"format":"uchar-case-v0","asOfDate":null,"input":{"instances":[{"label":"W1","objectType":"Wachter",
+"attributes":{"rang":{"number":"1"}},"roles":{},"characteristics":[]}],"parameters":{}},"expected":[{"kind":"attributeValue",
+"label":"W1","attribute":"merk","value":{"number":"1"}},{"kind":"consistent"}]}|} in
+  List.iter
+    (fun (name, rsoort, csoort, cneg) ->
+      faults_with ~name ~ir:(r_ir ~rsoort ~csoort ~cneg) ~case_text:r_case
+        ~needle:"is not translated in a document with a recursive creation group")
+    [ ("R1: LEEG in a recursive creation's condition", "GEVULD", "LEEG", false);
+      ("R3: GEVULD negated in a recursive creation, LEEG in the rule", "LEEG", "GEVULD", true) ]
+
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total

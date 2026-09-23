@@ -600,6 +600,73 @@ let has_recursive_creation (doc : document) =
            g.leden)
     doc.regel_groepen
 
+(* the first scalar, non-granular parameter an expression reads that the case
+   does not bind — for the leeg/gevuld arm of [cond_atoms], where an unbound
+   parameter leaves the join unbound and the test would ANSWER (leeg: waar)
+   where ref faults (ch. 5.7, binding is fail-fast). A list-typed parameter is
+   exempt because ref reads its absence as leeg, which is what the unbound
+   join says too. The walk enters conditions nested in the expression and the
+   body of an invoked function (acyclic by WF-068), so it may refuse a
+   parameter ref would never reach on a lazy branch: loud, never wrong. *)
+let unbound_param_in ctx (e : expr) : string option =
+  let found = ref None in
+  let rec ex (e : expr) =
+    let opt = function Some x -> ex x | None -> () in
+    match e with
+    | Parameter_ref { parameter = Some p; _ } -> (
+        match Ir_v0.Checks.find_ci ctx.doc.parameters p with
+        | Some { par_granulariteit = None; par_datatype; _ }
+          when (match par_datatype with Some (List_type _) -> false | _ -> true)
+               && Eval.SMap.find_opt (norm p) ctx.case.params = None
+               && !found = None ->
+            found := Some p
+        | _ -> ())
+    | Binair { links; rechts; _ } -> opt links; opt rechts
+    | Afgerond { basis; _ } -> opt basis
+    | Begrensd { basis; minimum; maximum; _ } -> opt basis; opt minimum; opt maximum
+    | Functie { argumenten; leegwaarde; filter; _ } ->
+        List.iter ex argumenten;
+        opt leegwaarde;
+        (match filter with Some c -> co c | None -> ())
+    | If_then_else { condition; then_; else_; _ } -> co condition; ex then_; ex else_
+    | Let { value; body; _ } -> ex value; ex body
+    | Match { scrutinee; arms; _ } -> ex scrutinee; List.iter (fun (_, _, b) -> ex b) arms
+    | Construct { argument; _ } -> opt argument
+    | Field_access { base; _ } -> ex base
+    | Struct_literal { velden; _ } -> List.iter (fun (_, x) -> ex x) velden
+    | List_literal { elements; _ } -> List.iter ex elements
+    | Temporal_read { basis; datum; _ } -> ex basis; ex datum
+    | Fold { list; init; functie; _ } -> ex list; ex init; fn functie
+    | Map_list { list; functie; _ } -> ex list; fn functie
+    | List_length { list; _ } -> ex list
+    | Filter_list { list; condition; _ } -> ex list; co condition
+    | Invoke { functie; arguments; _ } -> List.iter ex arguments; named functie
+    | Tekst_reeks { delen; _ } ->
+        List.iter (function Ingevoegd { expr = Some x } -> ex x | _ -> ()) delen
+    | Dimensie_cel { attribuut; _ } -> opt attribuut
+    | _ -> ()
+  and fn = function Fn_lambda { body; _ } -> ex body | Fn_name n -> named n
+  and named n =
+    match
+      List.find_opt (fun (d : function_def) -> norm d.fd_naam = norm n) ctx.doc.function_defs
+    with
+    | Some d -> ex d.fd_body
+    | None -> ()
+  and co (c : conditie) =
+    let opt = function Some x -> ex x | None -> () in
+    match c with
+    | Vergelijking { links; rechts; _ } -> opt links; opt rechts
+    | Predicaat { operand; _ } -> opt operand
+    | Periode_conditie { vanaf; tot; _ } -> opt vanaf; opt tot
+    | Samengesteld { onderdelen; _ } -> List.iter co onderdelen
+    | Kwantorvouw { kv_toets; kv_filter; _ } ->
+        (match kv_toets with Some t -> co t | None -> ());
+        (match kv_filter with Some f -> co f | None -> ())
+    | _ -> ()
+  in
+  ex e;
+  !found
+
 (* the canonical role name: the plural for a to-many role, the singular
    otherwise — the same convention the case facts use *)
 let role_canonical (r : rol) =
@@ -5692,9 +5759,29 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
          safe for a subject the join does not bind, and the join's own
          variables (a navigated step's target among them) stay local to it —
          what the negation needs, since "the werf's tarief is leeg" means NO
-         binding exists. Stratified by construction: the helper is named after
-         a counter that only grows, over atoms translated before the name. *)
+         binding exists.
+
+         The helper is NOT stratified by construction. Its name is fresh, but
+         `not gvN(S)` reads, negated, whatever produces the operand, and the
+         verifier counts no leeg/gevuld test as a negative dependency edge
+         (WF-046 walks the operand as a positive read). A recursive creation
+         group WF-045 admits can therefore close a cycle through the negation:
+         measured, clingo went UNSATISFIABLE on one such document and picked
+         one of five stable models on another, while ref and both Drools
+         branches answered. So the complement route refuses by name in any
+         document with a recursive creation group (maintainer decision
+         2026-09-23). That is a first, conservative cut: document-wide, not
+         "a group that can reach this operand". The root is a norm card
+         (20260923-verifier-leegtest-negafhankelijkheid); the same gap in the
+         ALLE-matrix reification is 20260923-clingo-alle-matrix-stratificatie.
+
+         An unbound scalar parameter in the operand faults in ref (ch. 5.7);
+         here it would leave the join unbound and ANSWER — leeg waar, gevuld
+         onwaar. Both routes refuse it in ref's words. *)
       let operand = req "Predicaat.operand" operand in
+      (match unbound_param_in ctx operand with
+       | Some p -> fault "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)" p
+       | None -> ());
       let atoms =
         if is_struct_operand (Some operand) then fst (struct_term ctx ~subject ~subject_ot operand)
         else
@@ -5703,6 +5790,12 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
       in
       if (soort = Gevuld) <> negatie then atoms
       else begin
+        if has_recursive_creation ctx.doc then
+          fault
+            "a leeg test (or a negated gevuld test) is not translated in a document with a \
+             recursive creation group: this backend reads it as the negation of a helper, and \
+             WF-046 counts no leeg test as a negative edge, so a creation cycle through it need \
+             not be stratified. Declined in translation, conservatively for the whole document";
         ctx.fresh <- ctx.fresh + 1;
         let p = Printf.sprintf "gv%d" ctx.fresh in
         emit ctx "%s(%s) :- %s." p subject
