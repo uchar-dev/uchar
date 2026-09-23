@@ -52,11 +52,32 @@ let contains ~needle hay =
   let rec go i = i + nn <= nh && (String.sub hay i nn = needle || go (i + 1)) in
   go 0
 
-(* --- json helpers (strict) --------------------------------------------- *)
+(* --- json helpers (strict, positioned) ---------------------------------- *)
 
-let obj = function `Assoc kvs -> kvs | _ -> fail "expected an object"
-let str = function `String s -> s | _ -> fail "expected a string"
-let field kvs k = match List.assoc_opt k kvs with Some v -> v | None -> fail "missing field %S" k
+(* Every shape refusal names the position of the JSON value it refuses and
+   what it found there. A position is the dotted path the lexeme refusals
+   below use: an instance by its label once the label is read, a parameter
+   as "parameter <name>", an array element as "[i]", and the plain JSON path
+   where no such name exists yet ("input.instances[0]", "expected[2]",
+   "expectedFault"); the case root is "<root>", as the runners call the root
+   of an IR document. Until 2026-09-23 these helpers said "expected an
+   object", "expected a string" and "missing field" with no position, which
+   left the author of a hand-built case to search the whole file. *)
+let root = ""
+let where at = if at = root then "<root>" else at
+let child at k = if at = root then k else at ^ "." ^ k
+let got j = Yojson.Safe.to_string j
+let obj ~at = function `Assoc kvs -> kvs | j -> fail "%s: expected an object, got %s" (where at) (got j)
+let str ~at = function `String s -> s | j -> fail "%s: expected a string, got %s" (where at) (got j)
+let list_ ~at = function `List l -> l | j -> fail "%s: expected a list, got %s" (where at) (got j)
+
+let field ~at kvs k =
+  match List.assoc_opt k kvs with Some v -> v | None -> fail "%s: missing field %S" (where at) k
+
+(* a field and its JSON kind in one positioned read: the common case *)
+let str_field ~at kvs k = str ~at:(child at k) (field ~at kvs k)
+let obj_field ~at kvs k = obj ~at:(child at k) (field ~at kvs k)
+let list_field ~at kvs k = list_ ~at:(child at k) (field ~at kvs k)
 
 (* --- typed values against a declared datatype -------------------------- *)
 
@@ -144,46 +165,48 @@ let number_at ~at s =
   Value.q_of_lexeme s
 
 let rec value_of_json ~at (decl : datatype option) (j : Yojson.Safe.t) : Value.t =
-  let kvs = obj j in
+  let kvs = obj ~at j in
   match List.assoc_opt "constructor" kvs with
   | Some ctor_j -> constructor_of_json ~at decl kvs ctor_j
   | None ->
-  let variant, v = match kvs with [ (k, v) ] -> (k, v) | _ -> fail "%s: malformed value" at in
+  let variant, v =
+    match kvs with [ (k, v) ] -> (k, v) | _ -> fail "%s: expected one value variant, got %s" at (got j)
+  in
+  (* the variant's JSON string, positioned at the variant key *)
+  let as_string () = str ~at:(child at variant) v in
   match (variant, decl) with
   | "number", Some (Numeriek { eenheid; _ } | Percentage { eenheid; _ }) ->
       let u = match eenheid with Some e -> Value.Unit e | None -> Value.Unitless in
-      Value.Num (number_at ~at (str v), u)
+      Value.Num (number_at ~at (as_string ()), u)
   (* WF-059 backstop: a value against a datatype-less declaration would
      split the executors (ref would read a bare unitless number where
      the integer-scaling translation cannot scale) — the shared loader
      refuses it in both, last-line behind the verifier's rejection *)
   | "number", None ->
       fail "%s: a value against a declaration without a datatype (WF-059 for attributes, WF-018 for parameters)" at
-  | "date", Some Datum_in_dagen -> date_at ~at (str v)
-  | "dateTime", Some Datum_tijd -> datetime_at ~at (str v)
+  | "date", Some Datum_in_dagen -> date_at ~at (as_string ())
+  | "dateTime", Some Datum_tijd -> datetime_at ~at (as_string ())
   | "boolean", Some Booleaan -> (
-      match v with `Bool b -> Value.Bool b | _ -> fail "%s: malformed boolean" at)
-  | "text", Some Tekst -> Value.Text (str v)
+      match v with
+      | `Bool b -> Value.Bool b
+      | j -> fail "%s: expected true or false, got %s" (child at variant) (got j))
+  | "text", Some Tekst -> Value.Text (as_string ())
   | "enumeration", Some (Enumeratie { waarden; _ }) ->
-      let s = str v in
+      let s = as_string () in
       if List.exists (function Some w -> norm w = norm s | None -> false) waarden then Value.Enum s
       else fail "%s: %S is not a declared enumeration value" at s
   (* the list value form of §2.5 (RUNTIME-SEMANTICS ch. 10.5): each element
      loads recursively against the declared element datatype, in order; a
      null/leeg element is refused — list positions are never leeg (ch. 10.1) *)
-  | "list", Some (List_type { element }) -> (
-      match v with
-      | `List elems ->
-          Value.Lijst
-            (List.mapi
-               (fun i ej ->
-                 match ej with
-                 | `Null ->
-                     fail "%s[%d]: a list element is leeg; list positions are never leeg (ch. 10.1)"
-                       at i
-                 | _ -> value_of_json ~at:(Printf.sprintf "%s[%d]" at i) (Some element) ej)
-               elems)
-      | _ -> fail "%s: a list value's \"list\" field is not an array" at)
+  | "list", Some (List_type { element }) ->
+      Value.Lijst
+        (List.mapi
+           (fun i ej ->
+             match ej with
+             | `Null ->
+                 fail "%s[%d]: a list element is leeg; list positions are never leeg (ch. 10.1)" at i
+             | _ -> value_of_json ~at:(Printf.sprintf "%s[%d]" at i) (Some element) ej)
+           (list_ ~at:(child at variant) v))
   (* WF-059/WF-018 backstop, widened to the list value: a value against a
      datatype-less declaration splits the executors, so the shared loader
      refuses it in both *)
@@ -193,23 +216,20 @@ let rec value_of_json ~at (decl : datatype option) (j : Yojson.Safe.t) : Value.t
      fields, in declaration order, each loaded recursively against its field
      datatype. Fail fast on a missing, extra, wrong-typed or leeg field — the
      no-hole rule at the boundary (the WF-059/WF-018 backstop, widened). *)
-  | "struct", Some (Struct_type { velden; _ }) -> (
-      match v with
-      | `Assoc field_kvs ->
-          if List.length field_kvs <> List.length velden then
-            fail "%s: record supplies %d fields, the struct declares %d" at (List.length field_kvs)
-              (List.length velden);
-          Value.Record
-            (List.map
-               (fun (fname, fdt) ->
-                 match List.find_opt (fun (k, _) -> norm k = norm fname) field_kvs with
-                 | None -> fail "%s: record is missing declared field %S" at fname
-                 | Some (_, `Null) ->
-                     fail "%s.%s: a record field is leeg; record fields are never leeg (ch. 11.1)"
-                       at fname
-                 | Some (_, fj) -> (fname, value_of_json ~at:(at ^ "." ^ fname) (Some fdt) fj))
-               velden)
-      | _ -> fail "%s: a record value's \"struct\" field is not an object" at)
+  | "struct", Some (Struct_type { velden; _ }) ->
+      let field_kvs = obj ~at:(child at variant) v in
+      if List.length field_kvs <> List.length velden then
+        fail "%s: record supplies %d fields, the struct declares %d" at (List.length field_kvs)
+          (List.length velden);
+      Value.Record
+        (List.map
+           (fun (fname, fdt) ->
+             match List.find_opt (fun (k, _) -> norm k = norm fname) field_kvs with
+             | None -> fail "%s: record is missing declared field %S" at fname
+             | Some (_, `Null) ->
+                 fail "%s.%s: a record field is leeg; record fields are never leeg (ch. 11.1)" at fname
+             | Some (_, fj) -> (fname, value_of_json ~at:(at ^ "." ^ fname) (Some fdt) fj))
+           velden)
   (* WF-059/WF-018 backstop, widened to the record value *)
   | "struct", None ->
       fail "%s: a value against a declaration without a datatype (WF-059 for attributes, WF-018 for parameters)" at
@@ -222,14 +242,15 @@ let rec value_of_json ~at (decl : datatype option) (j : Yojson.Safe.t) : Value.t
    (ci), the payload is present iff the constructor is unary and loads
    recursively against the declared payload datatype. *)
 and constructor_of_json ~at (decl : datatype option) kvs ctor_j : Value.t =
-  let tag = str ctor_j in
+  let tag = str ~at:(child at "constructor") ctor_j in
   match decl with
   | Some (Sum_type { constructoren; _ }) -> (
       match List.find_opt (fun (name, _) -> norm name = norm tag) constructoren with
       | None -> fail "%s: %S is not a declared constructor of the sum type" at tag
       | Some (_, payload_decl) -> (
           match (payload_decl, List.assoc_opt "payload" kvs) with
-          | Some pdt, Some pj -> Value.Ctor (tag, Some (value_of_json ~at (Some pdt) pj))
+          | Some pdt, Some pj ->
+              Value.Ctor (tag, Some (value_of_json ~at:(child at "payload") (Some pdt) pj))
           | None, None -> Value.Ctor (tag, None)
           | Some _, None -> fail "%s: unary constructor %S carries no payload" at tag
           | None, Some _ -> fail "%s: nullary constructor %S carries a payload" at tag))
@@ -240,21 +261,18 @@ and constructor_of_json ~at (decl : datatype option) kvs ctor_j : Value.t =
          attributes, WF-018 for parameters)"
         at
 
-(* Is this value JSON the timeline variant? *)
-let is_timeline_json j =
-  match j with `Assoc [ ("timeline", _) ] -> true | _ -> false
+(* The segment list of a timeline-variant value, or None for any other
+   value form *)
+let timeline_json j = match j with `Assoc [ ("timeline", t) ] -> Some t | _ -> None
 
-(* The full-timeline value variant: ordered, non-overlapping, day-precision
+(* The full-timeline value variant, read from its segment list [t] (the
+   value of the "timeline" key): ordered, non-overlapping, day-precision
    segments aligned to the declaration's granularity grid; segment values
    are scalars of the element datatype. From inclusive, to exclusive;
    absence between segments is a gap (leeg on read, ch. 3.1). *)
 let timeline_of_json ?(allow_empty = false) ~at ~(gran : granulariteit) (decl : datatype option)
-    (j : Yojson.Safe.t) : Timeline.t =
-  let segs =
-    match j with
-    | `Assoc [ ("timeline", `List l) ] -> l
-    | _ -> fail "%s: malformed timeline value" at
-  in
+    (t : Yojson.Safe.t) : Timeline.t =
+  let segs = list_ ~at:(child at "timeline") t in
   if segs = [] && not allow_empty then
     fail "%s: a timeline value carries at least one segment" at;
   (* the grid is checked through the bucketing, which ch. 3.2 defines for
@@ -268,20 +286,18 @@ let timeline_of_json ?(allow_empty = false) ~at ~(gran : granulariteit) (decl : 
   let parsed =
     List.mapi
       (fun i sj ->
-        let kvs = obj sj in
-        let grens what =
-          day_at ~at:(Printf.sprintf "%s.timeline[%d].%s" at i what) (str (field kvs what))
-        in
+        let seg = Printf.sprintf "%s.timeline[%d]" at i in
+        let kvs = obj ~at:seg sj in
+        let grens what = day_at ~at:(child seg what) (str_field ~at:seg kvs what) in
         let van = grens "from" in
         let tot = grens "to" in
-        if tot <= van then fail "%s.timeline[%d]: segment 'to' must lie after 'from'" at i;
+        if tot <= van then fail "%s: segment 'to' must lie after 'from'" seg;
         if not (aligned van && aligned tot) then
-          fail "%s.timeline[%d]: segment boundaries must sit on the declared granularity grid" at i;
+          fail "%s: segment boundaries must sit on the declared granularity grid" seg;
         {
           Timeline.s_van = van;
           s_tot = tot;
-          s_waarde =
-            value_of_json ~at:(Printf.sprintf "%s.timeline[%d].value" at i) decl (field kvs "value");
+          s_waarde = value_of_json ~at:(child seg "value") decl (field ~at:seg kvs "value");
         })
       segs
   in
@@ -348,26 +364,27 @@ let resolve_role doc ~otype ~key =
   let _, far, _ = resolve_role_ft doc ~otype ~key in
   far
 
-let load_instance (doc : document) (j : Yojson.Safe.t) : World.instance =
-  let kvs = obj j in
-  let label = str (field kvs "label") in
+let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
+  let kvs = obj ~at j in
+  let label = str_field ~at kvs "label" in
   (* "::" is the minted-instance namespace (Eval.run_object_creatie's
      deterministic labels); a case label there could silently suppress
      a creation — refused at load, never read wrong *)
   if contains ~needle:"::" label then
     fail "label %S: \"::\" is reserved for created instances" label;
-  let otype_name = str (field kvs "objectType") in
+  let otype_name = str_field ~at:label kvs "objectType" in
   let ot = find_objecttype doc otype_name in
   let attrs, tls =
     List.fold_left
       (fun (attrs, tls) (name, vj) ->
         match Ir_v0.Checks.find_ci ot.attributen name with
-        | Some decl ->
+        | Some decl -> (
             let at = label ^ "." ^ name in
-            if is_timeline_json vj then (
+            match timeline_json vj with
+            | Some t -> (
               match Ir_v0.Checks.find_ci ot.attribuut_granulariteit name with
               | Some (Some gran) ->
-                  (attrs, SMap.add (norm name) (timeline_of_json ~at ~gran decl vj) tls)
+                  (attrs, SMap.add (norm name) (timeline_of_json ~at ~gran decl t) tls)
               | Some None ->
                   (* The KEY is present, so the document declares this attribute
                      time-dependent — every other reader (the verifier's
@@ -384,15 +401,15 @@ let load_instance (doc : document) (j : Yojson.Safe.t) : World.instance =
                      the timeline has no grid to sit on (WF-059)"
                     at
               | None -> fail "%s: a timeline value on a non-temporal attribute" at)
-            else (SMap.add (norm name) (value_of_json ~at decl vj) attrs, tls)
+            | None -> (SMap.add (norm name) (value_of_json ~at decl vj) attrs, tls))
         | None -> fail "attribute %S is not declared on %S" name otype_name)
       (SMap.empty, SMap.empty)
-      (obj (field kvs "attributes"))
+      (obj_field ~at:label kvs "attributes")
   in
   let chars =
-    List.map
-      (fun cj ->
-        let c = str cj in
+    List.mapi
+      (fun i cj ->
+        let c = str ~at:(Printf.sprintf "%s.characteristics[%d]" label i) cj in
         if not (Ir_v0.Checks.mem_ci (Ir_v0.Checks.some_names ot.kenmerken) c) then
           fail "characteristic %S is not declared on %S" c otype_name;
         (* The two deliveries are NOT interchangeable, and until 2026-09-09
@@ -420,7 +437,7 @@ let load_instance (doc : document) (j : Yojson.Safe.t) : World.instance =
              scalar truth no temporal reader consults"
             label c c otype_name;
         norm c)
-      (match field kvs "characteristics" with `List l -> l | _ -> fail "characteristics: expected a list")
+      (list_field ~at:label kvs "characteristics")
   in
   let links =
     List.fold_left
@@ -436,16 +453,13 @@ let load_instance (doc : document) (j : Yojson.Safe.t) : World.instance =
             fail "role keys %S and %S on %S both name the role %S; deliver one key" prev key
               label role_id
         | None -> ());
-        let labels =
-          match vj with
-          | `List l -> List.map str l
-          | _ -> fail "role %S: expected a list of labels" key
-        in
+        let rol = child (child label "roles") key in
+        let labels = List.mapi (fun i l -> str ~at:(Printf.sprintf "%s[%d]" rol i) l) (list_ ~at:rol vj) in
         if (not role.rol_meervoudig) && List.length labels <> 1 then
-          fail "to-one role %S carries %d labels" key (List.length labels);
+          fail "%s: to-one role %S carries %d labels" rol key (List.length labels);
         (SMap.add (norm key) labels acc, (norm role_id, key) :: seen))
       (SMap.empty, [])
-      (obj (field kvs "roles"))
+      (obj_field ~at:label kvs "roles")
     |> fst
   in
   let ctls =
@@ -489,20 +503,16 @@ let load_instance (doc : document) (j : Yojson.Safe.t) : World.instance =
                pro-rata's whole point); the granularity governs the
                characteristic's bucketing, never its period grid *)
             let periods =
-              match pj with
-              | `List l ->
-                  List.mapi
-                    (fun i sj ->
-                      let skvs = obj sj in
-                      let grens what =
-                        day_at ~at:(Printf.sprintf "%s[%d].%s" at i what) (str (field skvs what))
-                      in
-                      let van = grens "from" in
-                      let tot = grens "to" in
-                      if tot <= van then fail "%s[%d]: period 'to' must lie after 'from'" at i;
-                      (van, tot))
-                    l
-              | _ -> fail "%s: expected a list of periods" at
+              List.mapi
+                (fun i sj ->
+                  let per = Printf.sprintf "%s[%d]" at i in
+                  let skvs = obj ~at:per sj in
+                  let grens what = day_at ~at:(child per what) (str_field ~at:per skvs what) in
+                  let van = grens "from" in
+                  let tot = grens "to" in
+                  if tot <= van then fail "%s: period 'to' must lie after 'from'" per;
+                  (van, tot))
+                (list_ ~at pj)
             in
             let sorted = List.sort compare periods in
             List.iteri
@@ -512,7 +522,8 @@ let load_instance (doc : document) (j : Yojson.Safe.t) : World.instance =
                   if v < prev_t then fail "%s: periods overlap" at)
               sorted;
             SMap.add (norm cname) sorted acc)
-          SMap.empty (obj j)
+          SMap.empty
+          (obj ~at:(child label "characteristicTimelines") j)
   in
   { label; otype = otype_name; attrs; chars; links; tls; ctls }
 
@@ -622,18 +633,19 @@ let check_role_targets (doc : document) (world : World.t) =
         i.links)
     world.instances
 
-let load_expectation (doc : document) (world : World.t) (j : Yojson.Safe.t) : expectation =
-  let kvs = obj j in
+let load_expectation (doc : document) (world : World.t) ~at (j : Yojson.Safe.t) : expectation =
+  let kvs = obj ~at j in
   let get_instance () =
-    let label = str (field kvs "label") in
+    let label = str_field ~at kvs "label" in
     match SMap.find_opt label world.instances with
     | Some i -> i
     | None -> fail "expectation references unknown label %S" label
   in
-  match str (field kvs "kind") with
+  let kind = str_field ~at kvs "kind" in
+  match kind with
   | "attributeValue" ->
       let i = get_instance () in
-      let attr = str (field kvs "attribute") in
+      let attr = str_field ~at kvs "attribute" in
       let ot = find_objecttype doc i.otype in
       let decl =
         match Ir_v0.Checks.find_ci ot.attributen attr with
@@ -644,18 +656,18 @@ let load_expectation (doc : document) (world : World.t) (j : Yojson.Safe.t) : ex
         {
           label = i.label;
           attr;
-          value = value_of_json ~at:("expected " ^ i.label ^ "." ^ attr) decl (field kvs "value");
+          value = value_of_json ~at:("expected " ^ i.label ^ "." ^ attr) decl (field ~at kvs "value");
         }
   | "attributeEmpty" ->
       let i = get_instance () in
-      let attr = str (field kvs "attribute") in
+      let attr = str_field ~at kvs "attribute" in
       let ot = find_objecttype doc i.otype in
       if not (Ir_v0.Checks.has_attr ot attr) then
         fail "expected attribute %S is not declared on %S" attr i.otype;
       Attribute_empty { label = i.label; attr }
   | "attributeTimeline" ->
       let i = get_instance () in
-      let attr = str (field kvs "attribute") in
+      let attr = str_field ~at kvs "attribute" in
       let ot = find_objecttype doc i.otype in
       let decl =
         match Ir_v0.Checks.find_ci ot.attributen attr with
@@ -675,20 +687,20 @@ let load_expectation (doc : document) (world : World.t) (j : Yojson.Safe.t) : ex
             timeline_of_json ~allow_empty:true
               ~at:("expected " ^ i.label ^ "." ^ attr)
               ~gran decl
-              (`Assoc [ ("timeline", field kvs "timeline") ]);
+              (field ~at kvs "timeline");
         }
   | "characteristicPresent" | "characteristicAbsent" ->
       let i = get_instance () in
-      let c = str (field kvs "characteristic") in
+      let c = str_field ~at kvs "characteristic" in
       let ot = find_objecttype doc i.otype in
       if not (Ir_v0.Checks.mem_ci (Ir_v0.Checks.some_names ot.kenmerken) c) then
         fail "expected characteristic %S is not declared on %S" c i.otype;
-      if str (field kvs "kind") = "characteristicPresent" then
+      if kind = "characteristicPresent" then
         Char_present { label = i.label; char = c }
       else Char_absent { label = i.label; char = c }
   | "consistent" -> Consistent
   | "inconsistent" ->
-      let opt_str k = Option.map str (List.assoc_opt k kvs) in
+      let opt_str k = Option.map (str ~at:(child at k)) (List.assoc_opt k kvs) in
       (* the rule pin refuses at load when NO form in the document
          carries the pinned name — symmetric with the unknown-label
          refusal below (maintainer decision 2026-08-21): a typo
@@ -748,7 +760,7 @@ let load_expectation (doc : document) (world : World.t) (j : Yojson.Safe.t) : ex
           (channel_names ())
       in
       (match (opt_str "rule", opt_str "label") with
-      | None, Some _ -> fail "an inconsistent label pin requires a rule pin"
+      | None, Some _ -> fail "%s: an inconsistent label pin requires a rule pin" at
       | (Some r, _) when not (known_rule r) ->
           let cands = List.sort_uniq compare (channel_names ()) in
           let shown = List.filteri (fun i _ -> i < 8) cands in
@@ -763,15 +775,16 @@ let load_expectation (doc : document) (world : World.t) (j : Yojson.Safe.t) : ex
             fail "inconsistent expectation references unknown label %S" l
           else Inconsistent { rule; label }
       | rule, label -> Inconsistent { rule; label })
-  | k -> fail "unknown expectation kind %S" k
+  | k -> fail "%s: unknown expectation kind %S" (child at "kind") k
 
 let expected_fault_of_kvs kvs =
   match List.assoc_opt "expectedFault" kvs with
   | None -> None
   | Some j ->
-      let fk = obj j in
+      let at = "expectedFault" in
+      let fk = obj ~at j in
       let frag what =
-        let s = str (field fk what) in
+        let s = str_field ~at fk what in
         if s = "" then fail "expectedFault.%s: an empty fragment would match any fault" what;
         s
       in
@@ -787,16 +800,16 @@ let expected_fault_of_kvs kvs =
    is the case's contract, not part of its input, so it is parsed
    without one. *)
 let expected_fault_of_file path : expected_fault option =
-  expected_fault_of_kvs (obj (Yojson.Safe.from_file path))
+  expected_fault_of_kvs (obj ~at:root (Yojson.Safe.from_file path))
 
 let load_file (doc : document) path : t =
   let j = Yojson.Safe.from_file path in
-  let kvs = obj j in
-  (match str (field kvs "format") with
+  let kvs = obj ~at:root j in
+  (match str_field ~at:root kvs "format" with
   | "uchar-case-v0" -> ()
   | f -> fail "unsupported case format %S" f);
   let as_of =
-    match field kvs "asOfDate" with
+    match field ~at:root kvs "asOfDate" with
     | `Null -> None
     | `String s ->
         (* read here, at load, so a non-date is refused before any
@@ -804,22 +817,20 @@ let load_file (doc : document) path : t =
            "2026-13-01" *)
         ignore (date_at ~at:"asOfDate" s);
         Some s
-    | _ -> fail "malformed asOfDate"
+    | j -> fail "asOfDate: expected a string or null, got %s" (got j)
   in
-  let input = obj (field kvs "input") in
+  let input = obj_field ~at:root kvs "input" in
   let world =
-    match field input "instances" with
-    | `List l ->
-        List.fold_left
-          (fun (w : World.t) ij ->
-            let i = load_instance doc ij in
-            (* label uniqueness is this loader's cross-check (see the header);
-               left to the world's own guard it surfaced as an evaluation
-               fault, exit 1, from a case that never got to evaluation *)
-            if SMap.mem i.label w.instances then fail "duplicate instance label %S" i.label;
-            World.add_instance w i)
-          World.empty l
-    | _ -> fail "instances: expected a list"
+    List.fold_left
+      (fun (w : World.t) (n, ij) ->
+        let i = load_instance doc ~at:(Printf.sprintf "input.instances[%d]" n) ij in
+        (* label uniqueness is this loader's cross-check (see the header);
+           left to the world's own guard it surfaced as an evaluation
+           fault, exit 1, from a case that never got to evaluation *)
+        if SMap.mem i.label w.instances then fail "duplicate instance label %S" i.label;
+        World.add_instance w i)
+      World.empty
+      (List.mapi (fun n ij -> (n, ij)) (list_field ~at:"input" input "instances"))
   in
   let world = materialise_relations doc world in
   check_role_targets doc world;
@@ -827,31 +838,35 @@ let load_file (doc : document) path : t =
     List.fold_left
       (fun (params, ptls) (name, vj) ->
         match Ir_v0.Checks.find_ci doc.parameters name with
-        | Some p ->
+        | Some p -> (
             let at = "parameter " ^ name in
-            if is_timeline_json vj then (
+            match timeline_json vj with
+            | Some t -> (
               match p.par_granulariteit with
               | Some gran ->
-                  (params, SMap.add (norm name) (timeline_of_json ~at ~gran p.par_datatype vj) ptls)
+                  (params, SMap.add (norm name) (timeline_of_json ~at ~gran p.par_datatype t) ptls)
               | None -> fail "%s: a timeline value on a non-granular parameter" at)
-            else if p.par_granulariteit <> None then
-              (* the symmetric refusal: a granular parameter takes a
-                 timeline, never a scalar — the scalar slot is unread
-                 (ch. 8), so accepting one only breeds divergence *)
-              fail "%s: a scalar value on a granular parameter (it takes a timeline)" at
-            else (SMap.add (norm name) (value_of_json ~at p.par_datatype vj) params, ptls)
+            | None ->
+                if p.par_granulariteit <> None then
+                  (* the symmetric refusal: a granular parameter takes a
+                     timeline, never a scalar — the scalar slot is unread
+                     (ch. 8), so accepting one only breeds divergence *)
+                  fail "%s: a scalar value on a granular parameter (it takes a timeline)" at
+                else (SMap.add (norm name) (value_of_json ~at p.par_datatype vj) params, ptls))
         | None -> fail "parameter %S is not declared" name)
       (SMap.empty, SMap.empty)
-      (obj (field input "parameters"))
+      (obj_field ~at:"input" input "parameters")
   in
   let expected_fault = expected_fault_of_kvs kvs in
   let expected =
     match (List.assoc_opt "expected" kvs, expected_fault) with
-    | Some (`List l), None -> List.map (load_expectation doc world) l
-    | Some _, None -> fail "expected: expected a list"
+    | Some j, None ->
+        List.mapi
+          (fun n ej -> load_expectation doc world ~at:(Printf.sprintf "expected[%d]" n) ej)
+          (list_ ~at:"expected" j)
     | None, Some _ -> []
     | Some _, Some _ -> fail "a case carries exactly one of expected / expectedFault"
-    | None, None -> fail "missing field %S" "expected"
+    | None, None -> fail "%s: missing field %S" (where root) "expected"
   in
   if expected = [] && expected_fault = None then fail "empty expectation list";
   { as_of; world; params; param_tls; expected; expected_fault }

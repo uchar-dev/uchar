@@ -5599,7 +5599,8 @@ let () =
             Some
               (Ir_v0.Ast.Sum_type
                  { domein = "Vondststatus"; constructoren = [ ("Gepland", Some datum); ("Open", None) ] }) );
-          ("gewicht", Some bedrag); ("tarief", Some bedrag); ("ijkdag", Some datum) ]
+          ("gewicht", Some bedrag); ("tarief", Some bedrag); ("ijkdag", Some datum);
+          ("gemeld", Some Ir_v0.Ast.Booleaan) ]
         [ "dienstdoend" ]
     in
     ( naam,
@@ -5736,7 +5737,7 @@ let () =
     [ ("attribuut-datum", "vondstdag", "V1.vondstdag");
       ("lijstelement-datum", "vangstdag", "V1.vangstdagen[1]");
       ("structveld-datum", "peildag", "V1.dossier.peildag");
-      ("constructorpayload-datum", "gepland", "V1.status");
+      ("constructorpayload-datum", "gepland", "V1.status.payload");
       ("attribuuttijdlijn-van", "tarief-van", "V1.tarief.timeline[0].from");
       ("attribuuttijdlijn-tot", "tarief-tot", "V1.tarief.timeline[1].to");
       ("attribuuttijdlijn-waarde-datum", "ijkdag-waarde", "V1.ijkdag.timeline[0].value");
@@ -5840,7 +5841,245 @@ let () =
   weigert "caselader-segment-buiten-rooster" "tarief-van" "2026-01-15"
     "V1.tarief.timeline[0]: segment boundaries must sit on the declared granularity grid";
   weigert "caselader-periode-tot-niet-na-van" "dienst-tot" "2026-03-01"
-    "V1.dienstdoend[1]: period 'to' must lie after 'from'"
+    "V1.dienstdoend[1]: period 'to' must lie after 'from'";
+  (* The JSON-shape refusals: a value of the wrong JSON kind, or a missing
+     field, named by the same positions as the lexeme refusals above, with
+     what was found there. Until 2026-09-23 they read "expected an object",
+     "expected a string" and "missing field" with no position at all, a
+     non-string asOfDate read "malformed asOfDate", and the value forms each
+     had a wording of their own ("malformed value", "malformed boolean", "a
+     list value's "list" field is not an array", "malformed timeline
+     value"). Gate 4's schema keeps every one of them out of the corpus
+     files, so they are pinned here, one per call site of the loader. *)
+  let canon = case_met "" "" in
+  let tel sub s =
+    let n = String.length sub in
+    let rec go i k =
+      if i > String.length s - n then k
+      else if String.sub s i n = sub then go (i + n) (k + 1)
+      else go (i + 1) k
+    in
+    go 0 0
+  in
+  (* one edit of the canonical case; the anchor must occur exactly once, or
+     the witness would pin a different edit than its name says *)
+  let bewerkt ~sub ~door =
+    let k = tel sub canon in
+    if k <> 1 then invalid_arg (Printf.sprintf "witness anchor %S occurs %d times" sub k);
+    vervang ~sub ~door canon
+  in
+  let vorm ?d naam ~sub ~door verwacht = weigert_tekst ?d naam (bewerkt ~sub ~door) verwacht in
+  let kaal ?(asof = "null") ?(input = {|{ "instances": [], "parameters": {} }|})
+      ?(rest = {|, "expected": [ { "kind": "consistent" } ]|}) () =
+    Printf.sprintf {|{ "format": "uchar-case-v0", "asOfDate": %s, "input": %s%s }|} asof input rest
+  in
+  let met_instantie inst =
+    kaal ~input:(Printf.sprintf {|{ "instances": [ %s ], "parameters": {} }|} inst) ()
+  in
+  let v1 rest = Printf.sprintf {|{ "label": "V1", "objectType": "Vondst"%s }|} rest in
+  let doc_rol =
+    { doc with
+      objecttypen = doc.objecttypen @ [ ot "Melder" [] [] ];
+      feittypen =
+        [ ( "vondstmelding",
+            { Ir_v0.Ast.ft_naam = Some "vondstmelding";
+              wederkerig = false;
+              rollen =
+                [ { Ir_v0.Ast.rol_naam = Some "melder"; rol_objecttype_naam = Some "Melder";
+                    rol_meervoud = Some "melders"; rol_meervoudig = true };
+                  { Ir_v0.Ast.rol_naam = Some "vondst"; rol_objecttype_naam = Some "Vondst";
+                    rol_meervoud = None; rol_meervoudig = false } ] } ) ] }
+  in
+  (* the root and the input *)
+  weigert_tekst "caselader-vorm-wortel-geen-object" "[]" "<root>: expected an object, got []";
+  vorm "caselader-vorm-format-ontbreekt" ~sub:{|"format": "uchar-case-v0", |} ~door:""
+    {|<root>: missing field "format"|};
+  vorm "caselader-vorm-format-geen-tekst" ~sub:{|"format": "uchar-case-v0"|} ~door:{|"format": 0|}
+    "format: expected a string, got 0";
+  vorm "caselader-vorm-asofdate-ontbreekt" ~sub:{|"asOfDate": "2026-06-01",|} ~door:""
+    {|<root>: missing field "asOfDate"|};
+  vorm "caselader-vorm-asofdate-geen-tekst" ~sub:{|"asOfDate": "2026-06-01"|}
+    ~door:{|"asOfDate": 20260601|} "asOfDate: expected a string or null, got 20260601";
+  weigert_tekst "caselader-vorm-input-geen-object" (kaal ~input:"[]" ())
+    "input: expected an object, got []";
+  weigert_tekst "caselader-vorm-input-ontbreekt"
+    {|{ "format": "uchar-case-v0", "asOfDate": null, "expected": [ { "kind": "consistent" } ] }|}
+    {|<root>: missing field "input"|};
+  weigert_tekst "caselader-vorm-instances-geen-lijst"
+    (kaal ~input:{|{ "instances": {}, "parameters": {} }|} ())
+    "input.instances: expected a list, got {}";
+  weigert_tekst "caselader-vorm-instances-ontbreekt" (kaal ~input:{|{ "parameters": {} }|} ())
+    {|input: missing field "instances"|};
+  weigert_tekst "caselader-vorm-parameters-geen-object"
+    (kaal ~input:{|{ "instances": [], "parameters": [] }|} ())
+    "input.parameters: expected an object, got []";
+  weigert_tekst "caselader-vorm-parameters-ontbreekt" (kaal ~input:{|{ "instances": [] }|} ())
+    {|input: missing field "parameters"|};
+  weigert_tekst "caselader-vorm-expected-geen-lijst" (kaal ~rest:{|, "expected": {}|} ())
+    "expected: expected a list, got {}";
+  weigert_tekst "caselader-vorm-expected-ontbreekt" (kaal ~rest:"" ())
+    {|<root>: missing field "expected"|};
+  weigert_tekst "caselader-vorm-expectedfault-geen-object"
+    (kaal ~rest:{|, "expectedFault": []|} ())
+    "expectedFault: expected an object, got []";
+  weigert_tekst "caselader-vorm-expectedfault-veld-ontbreekt"
+    (kaal ~rest:{|, "expectedFault": { "ref": "x" }|} ())
+    {|expectedFault: missing field "clingo"|};
+  weigert_tekst "caselader-vorm-expectedfault-geen-tekst"
+    (kaal ~rest:{|, "expectedFault": { "ref": 1, "clingo": "x" }|} ())
+    "expectedFault.ref: expected a string, got 1";
+  (* an instance: by its array position until its label is read, by the
+     label from then on *)
+  weigert_tekst "caselader-vorm-instantie-geen-object" (met_instantie "5")
+    "input.instances[0]: expected an object, got 5";
+  vorm "caselader-vorm-label-ontbreekt" ~sub:{|{ "label": "V1", "objectType": "Vondst",|}
+    ~door:{|{ "objectType": "Vondst",|} {|input.instances[0]: missing field "label"|};
+  vorm "caselader-vorm-label-geen-tekst" ~sub:{|"label": "V1", "objectType"|}
+    ~door:{|"label": 7, "objectType"|} "input.instances[0].label: expected a string, got 7";
+  vorm "caselader-vorm-objecttype-geen-tekst" ~sub:{|"objectType": "Vondst"|}
+    ~door:{|"objectType": 1|} "V1.objectType: expected a string, got 1";
+  List.iter
+    (fun (naam, rest, verwacht) ->
+      weigert_tekst ~d:doc_rol ("caselader-vorm-" ^ naam) (met_instantie (v1 rest)) verwacht)
+    [ ("attributes-ontbreekt", {|, "roles": {}, "characteristics": []|},
+       {|V1: missing field "attributes"|});
+      ("attributes-geen-object", {|, "attributes": [], "roles": {}, "characteristics": []|},
+       "V1.attributes: expected an object, got []");
+      ("characteristics-ontbreekt", {|, "attributes": {}, "roles": {}|},
+       {|V1: missing field "characteristics"|});
+      ("characteristics-geen-lijst", {|, "attributes": {}, "roles": {}, "characteristics": {}|},
+       "V1.characteristics: expected a list, got {}");
+      ("kenmerk-geen-tekst", {|, "attributes": {}, "roles": {}, "characteristics": [ 3 ]|},
+       "V1.characteristics[0]: expected a string, got 3");
+      ("roles-ontbreekt", {|, "attributes": {}, "characteristics": []|},
+       {|V1: missing field "roles"|});
+      ("roles-geen-object", {|, "attributes": {}, "roles": [], "characteristics": []|},
+       "V1.roles: expected an object, got []");
+      ("rol-geen-lijst", {|, "attributes": {}, "roles": { "melders": "M1" }, "characteristics": []|},
+       {|V1.roles.melders: expected a list, got "M1"|});
+      ("rollabel-geen-tekst",
+       {|, "attributes": {}, "roles": { "melders": [ 5 ] }, "characteristics": []|},
+       "V1.roles.melders[0]: expected a string, got 5");
+      ("kenmerktijdlijnen-geen-object",
+       {|, "attributes": {}, "roles": {}, "characteristics": [], "characteristicTimelines": []|},
+       "V1.characteristicTimelines: expected an object, got []");
+      ("perioden-geen-lijst",
+       {|, "attributes": {}, "roles": {}, "characteristics": [],
+          "characteristicTimelines": { "dienstdoend": {} }|},
+       "V1.dienstdoend: expected a list, got {}");
+      ("periode-geen-object",
+       {|, "attributes": {}, "roles": {}, "characteristics": [],
+          "characteristicTimelines": { "dienstdoend": [ 5 ] }|},
+       "V1.dienstdoend[0]: expected an object, got 5");
+      ("periodegrens-ontbreekt",
+       {|, "attributes": {}, "roles": {}, "characteristics": [],
+          "characteristicTimelines": { "dienstdoend": [ { "from": "2026-01-01" } ] }|},
+       {|V1.dienstdoend[0]: missing field "to"|});
+      ("periodegrens-geen-tekst",
+       {|, "attributes": {}, "roles": {}, "characteristics": [],
+          "characteristicTimelines": { "dienstdoend": [ { "from": 20260101, "to": "2026-02-01" } ] }|},
+       "V1.dienstdoend[0].from: expected a string, got 20260101") ];
+  (* values, timeline segments and parameters *)
+  vorm "caselader-vorm-waarde-geen-object" ~sub:{|"vondstdag": { "date": "2026-03-10" }|}
+    ~door:{|"vondstdag": "2026-03-10"|} {|V1.vondstdag: expected an object, got "2026-03-10"|};
+  vorm "caselader-vorm-datum-geen-tekst" ~sub:{|"vondstdag": { "date": "2026-03-10" }|}
+    ~door:{|"vondstdag": { "date": 20260310 }|} "V1.vondstdag.date: expected a string, got 20260310";
+  vorm "caselader-vorm-getal-geen-tekst" ~sub:{|"gewicht": { "number": "-12.50" }|}
+    ~door:{|"gewicht": { "number": -12.5 }|} "V1.gewicht.number: expected a string, got -12.5";
+  vorm "caselader-vorm-datumtijd-geen-tekst"
+    ~sub:{|"meldstip": { "dateTime": "2026-03-10T09:00:00" }|}
+    ~door:{|"meldstip": { "dateTime": 1 }|} "V1.meldstip.dateTime: expected a string, got 1";
+  vorm "caselader-vorm-waarde-meerdere-varianten" ~sub:{|"vondstdag": { "date": "2026-03-10" }|}
+    ~door:{|"vondstdag": { "date": "2026-03-10", "number": "1" }|}
+    {|V1.vondstdag: expected one value variant, got {"date":"2026-03-10","number":"1"}|};
+  weigert_tekst "caselader-vorm-boolean-geen-boolean"
+    (met_instantie
+       (v1 {|, "attributes": { "gemeld": { "boolean": "waar" } }, "roles": {}, "characteristics": []|}))
+    {|V1.gemeld.boolean: expected true or false, got "waar"|};
+  vorm "caselader-vorm-lijst-geen-lijst"
+    ~sub:{|"vangstdagen": { "list": [ { "date": "2026-03-09" }, { "date": "2026-03-11" } ] }|}
+    ~door:{|"vangstdagen": { "list": {} }|} "V1.vangstdagen.list: expected a list, got {}";
+  vorm "caselader-vorm-struct-geen-object"
+    ~sub:{|"dossier": { "struct": { "peildag": { "date": "2026-03-10" } } }|}
+    ~door:{|"dossier": { "struct": [] }|} "V1.dossier.struct: expected an object, got []";
+  vorm "caselader-vorm-payload-geen-object" ~sub:{|"payload": { "date": "2026-03-10" }|}
+    ~door:{|"payload": 5|} "V1.status.payload: expected an object, got 5";
+  weigert_tekst "caselader-vorm-tijdlijn-geen-lijst"
+    (met_instantie
+       (v1 {|, "attributes": { "tarief": { "timeline": {} } }, "roles": {}, "characteristics": []|}))
+    "V1.tarief.timeline: expected a list, got {}";
+  vorm "caselader-vorm-constructor-geen-tekst" ~sub:{|"constructor": "Gepland"|}
+    ~door:{|"constructor": 1|} "V1.status.constructor: expected a string, got 1";
+  vorm "caselader-vorm-lijstelement-geen-tekst" ~sub:{|{ "date": "2026-03-09" }|}
+    ~door:{|{ "date": 9 }|} "V1.vangstdagen[0].date: expected a string, got 9";
+  vorm "caselader-vorm-structveld-geen-tekst" ~sub:{|"peildag": { "date": "2026-03-10" }|}
+    ~door:{|"peildag": { "date": 10 }|} "V1.dossier.peildag.date: expected a string, got 10";
+  vorm "caselader-vorm-segment-geen-object"
+    ~sub:{|{ "from": "2026-02-01", "to": "2026-03-01", "value": { "number": "6" } }|} ~door:"5"
+    "V1.tarief.timeline[1]: expected an object, got 5";
+  vorm "caselader-vorm-segmentwaarde-ontbreekt"
+    ~sub:{|{ "from": "2026-02-01", "to": "2026-03-01", "value": { "number": "6" } }|}
+    ~door:{|{ "from": "2026-02-01", "to": "2026-03-01" }|}
+    {|V1.tarief.timeline[1]: missing field "value"|};
+  vorm "caselader-vorm-segmentgrens-geen-tekst" ~sub:{|{ "from": "2026-02-01", "to": "2026-03-01"|}
+    ~door:{|{ "from": 20260201, "to": "2026-03-01"|}
+    "V1.tarief.timeline[1].from: expected a string, got 20260201";
+  vorm "caselader-vorm-parameterwaarde-geen-object" ~sub:{|"heffing": { "number": "3/4" }|}
+    ~door:{|"heffing": 34|} "parameter heffing: expected an object, got 34";
+  vorm "caselader-vorm-parameterdatum-geen-tekst" ~sub:{|"peildatum": { "date": "2026-03-10" }|}
+    ~door:{|"peildatum": { "date": 1 }|} "parameter peildatum.date: expected a string, got 1";
+  (* expectations: by their array position, their value by label and attribute *)
+  vorm "caselader-vorm-verwachting-geen-object" ~sub:{|{ "kind": "consistent" }|} ~door:"5"
+    "expected[4]: expected an object, got 5";
+  vorm "caselader-vorm-kind-ontbreekt" ~sub:{|{ "kind": "consistent" }|} ~door:"{ }"
+    {|expected[4]: missing field "kind"|};
+  vorm "caselader-vorm-kind-geen-tekst" ~sub:{|{ "kind": "consistent" }|} ~door:{|{ "kind": 1 }|}
+    "expected[4].kind: expected a string, got 1";
+  vorm "caselader-vorm-verwacht-label-ontbreekt" ~sub:{|"label": "V1", "attribute": "vondstdag",|}
+    ~door:{|"attribute": "vondstdag",|} {|expected[0]: missing field "label"|};
+  vorm "caselader-vorm-verwacht-label-geen-tekst" ~sub:{|"label": "V1", "attribute": "vondstdag"|}
+    ~door:{|"label": 1, "attribute": "vondstdag"|} "expected[0].label: expected a string, got 1";
+  vorm "caselader-vorm-verwacht-attribuut-geen-tekst" ~sub:{|"attribute": "vondstdag"|}
+    ~door:{|"attribute": 3|} "expected[0].attribute: expected a string, got 3";
+  vorm "caselader-vorm-verwachte-waarde-ontbreekt"
+    ~sub:"\"attribute\": \"vondstdag\",\n      \"value\": { \"date\": \"2026-03-10\" } }"
+    ~door:{|"attribute": "vondstdag" }|} {|expected[0]: missing field "value"|};
+  vorm "caselader-vorm-verwachte-waarde-geen-object"
+    ~sub:{|"value": { "date": "2026-03-10" }|} ~door:{|"value": "2026-03-10"|}
+    {|expected V1.vondstdag: expected an object, got "2026-03-10"|};
+  let verwachte_tijdlijn =
+    {|"timeline": [|} ^ "\n      "
+    ^ {|{ "from": "2026-01-01", "to": "2026-02-01", "value": { "number": "5" } } ]|}
+  in
+  vorm "caselader-vorm-verwachte-tijdlijn-ontbreekt"
+    ~sub:({|"attribute": "tarief", |} ^ verwachte_tijdlijn ^ " }")
+    ~door:{|"attribute": "tarief" }|} {|expected[3]: missing field "timeline"|};
+  vorm "caselader-vorm-verwachte-tijdlijn-geen-lijst" ~sub:verwachte_tijdlijn
+    ~door:{|"timeline": {}|} "expected V1.tarief.timeline: expected a list, got {}";
+  vorm "caselader-vorm-kenmerk-ontbreekt" ~sub:{|{ "kind": "consistent" }|}
+    ~door:{|{ "kind": "characteristicPresent", "label": "V1" }|}
+    {|expected[4]: missing field "characteristic"|};
+  vorm "caselader-vorm-regel-geen-tekst" ~sub:{|{ "kind": "consistent" }|}
+    ~door:{|{ "kind": "inconsistent", "rule": 5 }|} "expected[4].rule: expected a string, got 5";
+  (* three cross-checks of the same functions that named no position either:
+     with two to-one links or two inconsistent pins in one case the author
+     could not tell which one was meant *)
+  vorm "caselader-positie-onbekende-soort" ~sub:{|{ "kind": "consistent" }|}
+    ~door:{|{ "kind": "consistentt" }|} {|expected[4].kind: unknown expectation kind "consistentt"|};
+  vorm "caselader-positie-labelpin-zonder-regel" ~sub:{|{ "kind": "consistent" }|}
+    ~door:{|{ "kind": "inconsistent", "label": "V1" }|}
+    "expected[4]: an inconsistent label pin requires a rule pin";
+  weigert_tekst ~d:doc_rol "caselader-positie-naar-een-rol-twee-labels"
+    (kaal
+       ~input:
+         {|{ "instances": [
+            { "label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": [] },
+            { "label": "V2", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": [] },
+            { "label": "M1", "objectType": "Melder", "attributes": {},
+              "roles": { "vondst": [ "V1", "V2" ] }, "characteristics": [] } ],
+          "parameters": {} }|}
+       ())
+    {|M1.roles.vondst: to-one role "vondst" carries 2 labels|}
 
 let () =
   if !failures > 0 then begin
