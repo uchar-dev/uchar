@@ -336,27 +336,34 @@ fi
 # --- the Drools leg (decision V3-b, 2026-08-27) -----------------------------------------------
 # The Drools backend CONSUMES the uchar IR (loads ir.json off the wire). For each rood case it
 # either reports a FAULT — the report this leg matches the case's `expectedFault.drools` fragment
-# against — or it does not carry the red-path form (an EXCLUDE from the loader/transpiler, or a
-# NOFAULT where the backend does not enforce the constraint and runs to a model). A carried form
-# pins a fragment; a not-carried form is listed below with a reason. The exclusion list is
-# stale-guarded: a listed case that now FAULTS, or is gone, fails the gate; a case that is neither
-# pinned nor listed fails the gate (completeness).
+# against — or it does not carry the red-path form (an EXCLUDE from the loader, a transpiler or
+# the case reader, or a NOFAULT where the backend does not enforce the constraint and runs to a
+# model). A carried form pins a fragment; a not-carried form is listed below with a reason. The
+# exclusion list is stale-guarded: a listed case that now FAULTS, or is gone, fails the gate; a
+# case that is neither pinned nor listed fails the gate (completeness).
 #
 # HOW THE RED RUN CLASSIFIES: by exception TYPE, never by phase, and so since the leg landed
-# (e1f779aa, 2026-08-27). A loader refusal, or an `Excluded` from the build or from the case
-# reader, is EXCLUDE; an I/O failure, or any other exception while the IR is loaded and the
-# KieBase built, is ERROR; ANY other runtime exception after the build is FAULT — at fire, and
-# equally while the case is read, a crash included. So FAULT does not separate a fault at fire
-# from a refusal of the case, and a case defect lands on either side: measured 2026-09-23 on the
-# vensterheffing document, an undeclared attribute and a role link to an unknown label are
-# EXCLUDEs, while meldwaarde written as {"boolean": true} gives "FAULT IllegalArgumentException:
-# argument type mismatch" and an undeclared characteristic gives "FAULT RuntimeException: kon
-# setter setVerzonnen(boolean) niet aanroepen …". Hence the PIN RULE: a `drools` fragment cites
-# the backend's OWN sentence, one that names position and lexeme (asofdate-kalender: "malformed
-# date '2026-02-30' on 'asOfDate': the field widths are right but the calendar is not"), and never
+# (e1f779aa, 2026-08-27). A refusal of a form the backend does not carry — a loader refusal, or an
+# `Excluded` from the build or from the case reader — is EXCLUDE; an I/O failure, or any other
+# exception while the IR is loaded and the KieBase built, is ERROR; ANY other runtime exception
+# after the build is FAULT — at fire, and equally while the case is read, a crash included; and a
+# run that hits the fire cap without reaching a fixpoint is a FAULT that raises no exception
+# ("geen fixpunt (kringverwijzing?)"). So FAULT does not separate a fault at fire from a refusal
+# of the case, and a case defect lands on either side: measured 2026-09-23, six listed cases get
+# their EXCLUDE from the case reader after the build (ambiguous-case-role-key,
+# unknown-role-target-label, uni-temporal-key-scalar, uu-temporal-key-scalar,
+# datumtijdlijn-totaalvouw, datumtijdlijn-klipvouw), and on the vensterheffing document an
+# undeclared attribute gives "EXCLUDE case sets undeclared attribute", while meldwaarde written as
+# {"boolean": true} gives "FAULT IllegalArgumentException: argument type mismatch" and an
+# undeclared characteristic gives "FAULT RuntimeException: kon setter setVerzonnen(boolean) niet
+# aanroepen …". Hence the PIN RULE: a `drools` fragment cites the backend's OWN sentence and never
 # platform text — a JDK exception message, or the parse message the backend appends in
-# parentheses. A pin on platform text pins a crash: this leg accepted a trial red case pinned on
-# "argument type mismatch" (lens, 2026-09-23). The rule is a review rule; nothing below checks it.
+# parentheses. Its own sentence may be a runtime message ("Breuk deling door 0", "geen fixpunt
+# (kringverwijzing?)"); for a refusal while the case is read it is a sentence that names position
+# and lexeme (asofdate-kalender: "malformed date '2026-02-30' on 'asOfDate': the field widths are
+# right but the calendar is not"). A pin on platform text pins a crash: this leg accepted a trial
+# red case pinned on "argument type mismatch" (lens, 2026-09-23). The rule is a review rule;
+# nothing below checks it.
 #
 # Conditional on a JDK + python3 (gate-9 pattern for the RUNNER: skip loudly where java is
 # absent; the ref/clingo legs above remain the CI blocker). WITHIN the leg, mvn is a hard
