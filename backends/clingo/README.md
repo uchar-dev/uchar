@@ -29,7 +29,14 @@ spec bug.
   ref keeps (maintainer decision 2026-09-23); a read no allowed order
   reaches fires nothing. That holds for a quantifier fold's matrix, for
   a Let barrier in a part that runs member by member, and for the
-  value of a Let whose binder is read at such a place. So the named refusal
+  value of a Let whose binder is read at such a place. For the Let
+  barrier the pass before a creation is one of the allowed orders: ref
+  runs a pass's rules before its creations, so the member a creation
+  adds is absent in that pass, and so is a barrier only that member
+  raises. `Let k = restpost in (som(bonus van werven die TEN MINSTE 1
+  schuiten [k > 0]) plus p)`, with one schuit created for each Werf and
+  restpost leeg, refuses in the named sentence where ref faults at p in
+  the pass before the creation. So the named refusal
   also stands where ref plays: two creations of 8 and 3 for each Werf,
   each behind a condition that holds, and `TEN MINSTE 1 [lengte > 5,
   lengte > p]` over the schuiten — ref runs them in document order,
@@ -45,7 +52,14 @@ spec bug.
   - Loud, a refusal where ref plays. [L1] The day-kind table and the
     §7.1 horizon fence read their parameter at translation and refuse
     there, also behind a rule condition that fails, where ref never
-    reads it.
+    reads it. [L2] A Let barrier that only a created member raises
+    counts the pass before the creation also in a rule that ch. 6.3
+    puts above that creation, where ref has no such pass; the
+    translator does not know the strata. `Let k = restpost in
+    (som(lengte van schuiten die k > 0) plus p)` under the condition
+    `ALLE schuiten [lengte > 0]`, with one schuit of 8 created for each
+    Werf and restpost leeg: ref answers leeg, clingo refuses in the
+    named sentence.
   - Silent, an answer where ref faults. [S1] The Let lowering keeps a
     value behind an enclosing need on a path that does not read it, and
     the guard follows the lowering: `Let k = restpost in Let bel = (als

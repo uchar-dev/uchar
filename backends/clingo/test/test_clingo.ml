@@ -9970,6 +9970,173 @@ let () =
   both_answer ~name:"two quantifier folds read k in opposite orders, p bound (disj-8-3-gebonden, control)" ~ir:disj
     ~case_text:(pf_case ~params:bound ~instances:h1w1 [ pf_cons ])
 
+(* FIXRONDE 5, lens point 1 (the maintainer decision on the order of created
+   members, as the main session applied it on 2026-09-23): ref runs a pass's
+   rules before its creations, so in the pass before a creation the member it
+   adds is not in the range yet. Nothing reads by that member, a Let barrier it
+   would raise is not there, and the guard is reached. That pass is the
+   degenerate order in which the member is absent, and the refusal there is
+   named: "barred in every allowed order" counts a read only through members
+   that are in the range in every pass, the case's own links. tr-cr-1: H1 with
+   W1 (bonus 4), one schuit of 8 created for each Werf, and bonus = Let k =
+   restpost in (som(bonus van werven die TEN MINSTE 1 schuiten [k > 0]) plus
+   p), restpost leeg: before the pass that creates the schuit W1 has none, k is
+   not read, and ref reads p. tr-w-1 puts the read of k in a part inside a Let
+   value, (Let j = (1 plus som(lengte van schuiten die k > 0)) in (j plus p)),
+   which the lens's prototype did not reach. tr-strat-1: a rule condition that
+   reads the range under ALLE puts the rule above the creation (ch. 6.3), so
+   ref never runs the rule before the creation and plays, while the translator,
+   which does not know the strata, refuses in the named sentence (README
+   [L2]). *)
+let () =
+  let n0 = pf_n0 in
+  let haven = pf_ot ~naam:"Haven" ~meervoud:"Havens" (Printf.sprintf {|"bonus": %s, "restpost": %s|} n0 n0)
+  and werf = pf_ot ~naam:"Werf" ~meervoud:"Werven" (Printf.sprintf {|"bonus": %s, "restpost": %s|} n0 n0)
+  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" (Printf.sprintf {|"lengte": %s|} n0) in
+  let feittypen =
+    {|{ "ligplaats": { "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
+      { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] },
+      "havenwerf": { "node": "Feittype", "naam": "havenwerf", "wederkerig": false, "rollen": [
+      { "node": "Rol", "naam": "haven", "objecttypeNaam": "Haven", "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": "werven", "meervoudig": true } ] } }|}
+  in
+  let schuiten = {|{ "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" }|}
+  and werven = {|{ "node": "RolBinding", "feittype": "havenwerf", "rol": "werf" }|} in
+  let lengte = pf_a ~ot:"Schuit" ~typ:n0 "lengte" and p = pf_p ~typ:n0 "p" in
+  let bref b = Printf.sprintf {|{ "node": "BinderRef", "name": "%s", "type": %s, "bron": "de %s" }|} b n0 b in
+  let k = bref "k" and j = bref "j" in
+  let gt l r = pf_cmp "GROTER" l r and lit v = pf_l ~typ:n0 v and plus l r = pf_bin ~typ:n0 "PLUS" l r in
+  let let_ b v body =
+    Printf.sprintf {|{ "node": "Let", "type": %s, "binder": "%s", "value": %s, "body": %s, "bron": "let %s" }|}
+      n0 b v body b
+  in
+  let kv ?drempel kwantor toets =
+    Printf.sprintf
+      {|{ "node": "Kwantorvouw", "kwantor": "%s"%s, "elementObjecttype": "Schuit", "filter": null,
+        "toets": %s, "bron": "de schuiten", "bronRol": %s }|}
+      kwantor
+      (match drempel with Some d -> Printf.sprintf {|, "drempel": %d|} d | None -> "")
+      toets schuiten
+  in
+  let som ~el ~attr ~rol filter =
+    Printf.sprintf
+      {|{ "node": "Functie", "kind": "SOM",
+        "argumenten": [ { "node": "AttribuutRef", "attribuut": "%s", "objecttype": "%s",
+          "onderwerpBron": "alle", "navigatieRol": null, "type": %s,
+          "bron": "de %s", "set": true, "navigatiePad": [] } ],
+        "elementObjecttype": "%s", "leegwaarde": null, "filter": %s, "dimensieSelectie": null,
+        "type": %s, "bron": "de som", "granulariteit": null, "bronRol": %s }|}
+      attr el n0 attr el filter n0 rol
+  in
+  let acht ?(voorwaarde = "null") () =
+    Printf.sprintf
+      {|{ "node": "ResolvedObjectCreatie", "naam": "maak schuit", "nieuwType": "Schuit", "subject": "Werf",
+          "toekenningen": [ { "node": "Toekenning", "attribuut": "lengte", "waarde": %s, "kenmerk": false } ],
+          "voorwaarde": %s, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null },
+          "verbindendeRol": %s }|}
+      (lit "8") voorwaarde schuiten
+  in
+  let acht_ = acht () in
+  let doc ?(creaties = []) regel =
+    pf_doc ~objecttypen:[ haven; werf; schuit ] ~feittypen ~parameters:[ pf_decl ~typ:n0 "p" ] ~regels:[ regel ]
+      ~creaties ()
+  in
+  let inst label ot attrs roles =
+    Printf.sprintf
+      {|{ "label": "%s", "objectType": "%s", "attributes": { %s }, "roles": { %s }, "characteristics": [] }|}
+      label ot attrs roles
+  in
+  let restpost = function Some v -> Printf.sprintf {|"restpost": { "number": "%s" }|} v | None -> "" in
+  let s1 = inst "S1" "Schuit" {|"lengte": { "number": "8" }|} "" in
+  (* tr-cr-1 and its controls *)
+  let tr =
+    pf_regel ~ot:"Haven" ~doel:"bonus" ~typ:n0
+      (let_ "k" (pf_a ~ot:"Haven" ~typ:n0 "restpost")
+         (plus (som ~el:"Werf" ~attr:"bonus" ~rol:werven (kv ~drempel:1 "TEN_MINSTE" (gt k (lit "0")))) p))
+  in
+  let h1 ?rp ?(case_schuit = false) () =
+    [ inst "H1" "Haven" (restpost rp) {|"werven": [ "W1" ]|};
+      inst "W1" "Werf" {|"bonus": { "number": "4" }|} (if case_schuit then {|"schuiten": [ "S1" ]|} else "") ]
+    @ if case_schuit then [ s1 ] else []
+  in
+  let hb = [ pf_leeg ~label:"H1" ~attr:"bonus" (); pf_cons ] in
+  named_refusal ~by:{|the Let "k"|} ~ref_plays:false
+    ~name:"the pass before a creation: the barrier the created schuit raises is not there yet (tr-cr-1)"
+    ~ir:(doc ~creaties:[ acht_ ] tr) ~param:"p" ~case_text:(pf_case ~instances:(h1 ()) hb);
+  both_answer ~name:"the same barrier raised by the case's own schuit (tr-case-1, control)" ~ir:(doc tr)
+    ~case_text:(pf_case ~instances:(h1 ~case_schuit:true ()) hb);
+  unbound_fires ~name:"the created schuit reads k, whose need is filled (tr-cr-1-ctl, control)"
+    ~ir:(doc ~creaties:[ acht_ ] tr) ~param:"p" ~case_text:(pf_case ~instances:(h1 ~rp:"1" ()) hb)
+    ~silent:"bonus leeg";
+  (* tr-w-1: the read of k in a part inside the value of j *)
+  let trw ?voorwaarde () =
+    pf_regel ~ot:"Werf" ~doel:"bonus" ~typ:n0 ?voorwaarde
+      (let_ "k" (pf_a ~ot:"Werf" ~typ:n0 "restpost")
+         (let_ "j" (plus (lit "1") (som ~el:"Schuit" ~attr:"lengte" ~rol:schuiten (gt k (lit "0")))) (plus j p)))
+  in
+  let w1 ?rp ?(case_schuit = false) () =
+    inst "W1" "Werf" (restpost rp) (if case_schuit then {|"schuiten": [ "S1" ]|} else "")
+    :: (if case_schuit then [ s1 ] else [])
+  in
+  let wb = [ pf_leeg ~label:"W1" ~attr:"bonus" (); pf_cons ] in
+  named_refusal ~by:{|the Let "k"|} ~ref_plays:false
+    ~name:"the pass before a creation: the created schuit reads k inside the value of j (tr-w-1)"
+    ~ir:(doc ~creaties:[ acht_ ] (trw ())) ~param:"p" ~case_text:(pf_case ~instances:(w1 ()) wb);
+  both_answer ~name:"the value of j reads k at the case's own schuit (tr-w-case, control)" ~ir:(doc (trw ()))
+    ~case_text:(pf_case ~instances:(w1 ~case_schuit:true ()) wb);
+  unbound_fires ~name:"inside the value of j, k's need is filled (tr-w-ctl, control)"
+    ~ir:(doc ~creaties:[ acht_ ] (trw ())) ~param:"p" ~case_text:(pf_case ~instances:(w1 ~rp:"1" ()) wb)
+    ~silent:"bonus leeg";
+  (* per member: H1 with W1 (bonus 4) and W2 (bonus 5); bonus = Let k =
+     restpost in som(bonus van werven die TEN MINSTE 1 [TEN MINSTE 1 schuiten
+     [k > 0], ALLE [bonus > 4, bonus > p]]) and, for tr-pm2, [..., bonus > p]
+     with W1 alone. tr-pm-1: the schuit is created for W1 only (bonus below
+     5), and W1's read of k bars W2's read of p, except in the pass before the
+     creation — the member below the level that orders W1 before W2.
+     tr-pm2-1: W1's own read of k at an earlier place bars its read of p,
+     except in that pass — the member below the level equated with the
+     guard's. Measured with each of those two presence conditions left out:
+     clingo answered where ref faults *)
+  let bonus_w = pf_a ~ot:"Werf" ~typ:n0 "bonus" in
+  let pm filter =
+    pf_regel ~ot:"Haven" ~doel:"bonus" ~typ:n0
+      (let_ "k" (pf_a ~ot:"Haven" ~typ:n0 "restpost") (som ~el:"Werf" ~attr:"bonus" ~rol:werven filter))
+  in
+  let tm_k = kv ~drempel:1 "TEN_MINSTE" (gt k (lit "0")) in
+  let pm1 = pm (pf_comp ~drempel:1 "TEN_MINSTE" [ tm_k; pf_comp "ALLE" [ gt bonus_w (lit "4"); gt bonus_w p ] ])
+  and pm2 = pm (pf_comp ~drempel:1 "TEN_MINSTE" [ tm_k; gt bonus_w p ]) in
+  let onder_vijf = acht ~voorwaarde:(pf_cmp "KLEINER" bonus_w (lit "5")) () in
+  let h2 ?(case_schuit = false) () =
+    [ inst "H1" "Haven" "" {|"werven": [ "W1", "W2" ]|};
+      inst "W1" "Werf" {|"bonus": { "number": "4" }|} (if case_schuit then {|"schuiten": [ "S1" ]|} else "");
+      inst "W2" "Werf" {|"bonus": { "number": "5" }|} "" ]
+    @ if case_schuit then [ s1 ] else []
+  in
+  named_refusal ~by:{|the Let "k"|} ~ref_plays:false
+    ~name:"the pass before a creation: W1's created schuit bars W2's read of p (tr-pm-1)"
+    ~ir:(doc ~creaties:[ onder_vijf ] pm1) ~param:"p" ~case_text:(pf_case ~instances:(h2 ()) hb);
+  both_answer ~name:"W1's own schuit bars W2's read of p (tr-pm-case, control)" ~ir:(doc pm1)
+    ~case_text:(pf_case ~instances:(h2 ~case_schuit:true ()) hb);
+  named_refusal ~by:{|the Let "k"|} ~ref_plays:false
+    ~name:"the pass before a creation: W1's created schuit bars W1's own later read of p (tr-pm2-1)"
+    ~ir:(doc ~creaties:[ acht_ ] pm2) ~param:"p" ~case_text:(pf_case ~instances:(h1 ()) hb);
+  both_answer ~name:"W1's own schuit bars its later read of p (tr-pm2-case, control)" ~ir:(doc pm2)
+    ~case_text:(pf_case ~instances:(h1 ~case_schuit:true ()) hb);
+  (* tr-strat-1: the rule sits above the creation *)
+  let strat =
+    pf_regel ~ot:"Werf" ~doel:"bonus" ~typ:n0 ~voorwaarde:(kv "ALLE" (gt lengte (lit "0")))
+      (let_ "k" (pf_a ~ot:"Werf" ~typ:n0 "restpost")
+         (plus (som ~el:"Schuit" ~attr:"lengte" ~rol:schuiten (gt k (lit "0"))) p))
+  in
+  pinned_loud ~entry:"L2"
+    ~name:"a rule above the creation reads k at the created schuit, and ref has no pass before it (tr-strat-1)"
+    ~ir:(doc ~creaties:[ acht_ ] strat) ~case_text:(pf_case ~instances:(w1 ()) wb)
+    ~needle:
+      {|parameter "p" is unbound in this case, and whether the Let "k" reads it depends on the order of the members a creation adds|};
+  both_answer ~name:"the rule above the creation, with the case's own schuit (tr-strat-case, control)" ~ir:(doc strat)
+    ~case_text:(pf_case ~instances:(w1 ~case_schuit:true ()) wb)
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

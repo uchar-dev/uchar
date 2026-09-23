@@ -763,10 +763,13 @@ let unbound_param_order_reason name what =
    Where the body is not exact otherwise, it errs in one of two directions,
    each written at the place that builds it. Loud: the day-kind table and the
    horizon fence read in translation and refuse there, reached or not (README
-   [L1]). Silent: the Let lowering keeps a value behind an enclosing need on a
-   path that does not read it, and the guard follows the lowering ([reach_at],
-   README [S1]); and the branch hoist reads a condition before the operand
-   beside the branch ([hoist_branch], README [S2]). *)
+   [L1]); and a Let barrier that only a created member raises counts the pass
+   before the creation also where ch. 6.3 puts the rule above the creation, so
+   that ref has no such pass ([emit_barriers], README [L2]). Silent: the Let
+   lowering keeps a value behind an enclosing need on a path that does not
+   read it, and the guard follows the lowering ([reach_at], README [S1]); and
+   the branch hoist reads a condition before the operand beside the branch
+   ([hoist_branch], README [S2]). *)
 let unbound_param_guard ctx ~witness ~guard name =
   if param_unbound ctx name then begin
     let body = guard () in
@@ -1000,20 +1003,24 @@ let rule_reach ?(skip : let_info option) ctx ~subject ~subject_ot =
   fun (node : expr) -> reach_at ctx ?skip s node
 
 (* the places in [li]'s body where the read at [node] (site [s]) of a binder
-   happens, each with the atoms that say it does and the per-member parts it
-   stands in. A read inside the value of a Let nested in [li] happens where that
-   value runs: at every read of that Let's binder — the first one runs it, and a
-   later one is reached only after the first — so its places and parts are those
-   of the reads of that binder, joined to its own reach within the value. *)
+   happens, each with the atoms that say it does, the per-member parts it
+   stands in, and the parts inside a Let value it stands in. A read inside the
+   value of a Let nested in [li] happens where that value runs: at every read of
+   that Let's binder — the first one runs it, and a later one is reached only
+   after the first — so its places and parts are those of the reads of that
+   binder, joined to its own reach within the value. The parts inside the value
+   order nothing against the guard's members; they only say whose members must
+   be in the range for the read to happen ([emit_barriers]). *)
 let rec read_places ctx li ~(skip : let_info) (node, (s : site)) =
   match read_place li node with
-  | Some i -> [ (i, reach_at ctx ~skip ~cut:li s node, rel_parts li s) ]
+  | Some i -> [ (i, reach_at ctx ~skip ~cut:li s node, rel_parts li s, []) ]
   | None -> (
       match s.si_value_of with
       | Some m when List.memq li m.li_outer ->
-          let within = reach_at ctx ~skip ~cut:li s node in
+          let within = reach_at ctx ~skip ~cut:li s node and inner = rel_parts m s in
           List.concat_map
-            (fun r -> List.map (fun (i, a, ps) -> (i, a @ within, ps)) (read_places ctx li ~skip:m r))
+            (fun r ->
+              List.map (fun (i, a, ps, ins) -> (i, a @ within, ps, ins @ inner)) (read_places ctx li ~skip:m r))
             (List.rev m.li_reads)
       | _ -> [])
 
@@ -1026,7 +1033,13 @@ let rec read_places ctx li ~(skip : let_info) (node, (s : site)) =
      case's links among themselves. A link a creation or a fact creation adds
      has no normed place, not among the case's links either, and in a
      multi-step range a fact creation can move a case member forward through
-     the union, so there the case order holds only without fact creations.
+     the union, so there the case order holds only without fact creations;
+   - roN_q(P,X): X is in the range in every pass ref makes — a case link.
+     ref runs a pass's rules before its creations, so a member a creation
+     adds is missing in the pass before that creation, the degenerate order
+     in which it is absent; "barred in every allowed order" counts only
+     members that are there in that pass too ([emit_barriers]). Written
+     only where a creation or a fact creation can add a member.
    There is no relation for ref's own order of the added links. That order
    follows from how ref runs the creations, which the spec does not norm: ref
    runs a fixpoint per stratum, so a creation for each Werf sits above a
@@ -1043,7 +1056,8 @@ let use_ro ctx (ro : range_order) =
     List.iter (fun (a, b, i) -> emit ctx "%s_o(%s,%s,%d)." p (str_raw a) (str_raw b) i) (Lazy.force ro.ro_facts);
     if ro.ro_one_step || not (ro.ro_dynamic && ctx.doc.feit_creaties <> []) then
       emit ctx "%s_n(P,X,Y) :- %s_o(P,X,I), %s_o(P,Y,J), I < J." p p p
-    else emit ctx "#defined %s_n/3." p
+    else emit ctx "#defined %s_n/3." p;
+    if ro.ro_dynamic then emit ctx "%s_q(P,X) :- %s_o(P,X,_)." p p
   end;
   p
 
@@ -1058,13 +1072,14 @@ let use_ro ctx (ro : range_order) =
    member, that is the case order and one family of rules answers. Where one
    can, the order of the added members is not normed, and each ask gets two
    families: [name]_c, "barred in every allowed order" (a read that every order
-   reaches, by a member that every order puts first), and [name], "barred in
-   some allowed order" (a read that some order reaches, by a member that some
-   order puts first). The guard reads "not [name]", its named twin "not
-   [name]_c" ([barred]). Lets are taken shallow first, because a barrier rule
-   asks only about Lets nested deeper, so every place is asked before its Let
-   is written. Only guards ask, so a case that binds its parameters writes
-   none of this. *)
+   reaches, by a member that every order puts first, through members that are
+   in the range in every pass — the pass before a creation is such an order),
+   and [name], "barred in some allowed order" (a read that some order reaches,
+   by a member that some order puts first). The guard reads "not [name]", its
+   named twin "not [name]_c" ([barred]). Lets are taken shallow first, because
+   a barrier rule asks only about Lets nested deeper, so every place is asked
+   before its Let is written. Only guards ask, so a case that binds its
+   parameters writes none of this. *)
 let emit_barriers ctx =
   let dynamic = doc_dynamic ctx.doc in
   let some_order a = match List.assoc_opt a ctx.named with Some (o, _, _) -> o | None -> a in
@@ -1079,15 +1094,34 @@ let emit_barriers ctx =
         if dynamic then emit ctx "#defined %s/3." lbr_o;
         emit ctx "lbn%d(%s) :- %s." li.li_id sv (String.concat ", " (base :: li.li_va));
         let reads = List.concat_map (read_places ctx li ~skip:li) (List.rev li.li_reads) in
+        (* "barred in every allowed order" has to hold in the pass before a
+           creation too: ref runs a pass's rules before its creations, so the
+           member that creation adds is not in the range yet, nothing reads by
+           it, and the guard is reached. That family therefore counts a read
+           only through members that are in the range in every pass (roN_q,
+           [use_ro]), at every level of the read's chain — the parts inside a
+           Let value included — except a level its rule equates with the
+           guard's own member, which is there wherever the guard is read *)
+        let present ?(from = 0) parts =
+          if not dynamic then []
+          else
+            List.concat
+              (List.mapi
+                 (fun j (q : part) ->
+                   if j >= from then
+                     [ Printf.sprintf "%s_q(%s,%s)" (use_ro ctx q.pt_order) q.pt_parent q.pt_member ]
+                   else [])
+                 parts)
+        in
         let write_reads lbr form =
           List.iter
-            (fun (i, atoms, parts) ->
+            (fun (i, atoms, parts, inner) ->
               let top = match parts with q :: _ -> q.pt_id | [] -> 0 in
-              emit ctx "%s(%s,%d,%d) :- %s." lbr sv i top (String.concat ", " (form atoms)))
+              emit ctx "%s(%s,%d,%d) :- %s." lbr sv i top (String.concat ", " (form atoms parts inner)))
             reads
         in
-        write_reads lbr Fun.id;
-        if dynamic then write_reads lbr_o (List.map some_order);
+        write_reads lbr (fun atoms parts inner -> atoms @ present (parts @ inner));
+        if dynamic then write_reads lbr_o (fun atoms _ _ -> List.map some_order atoms);
         (* the rules of one family for one ask; [some]: barred in some allowed
            order, else in every one *)
         let family ~some ~lbr name (i, gparts) =
@@ -1118,7 +1152,7 @@ let emit_barriers ctx =
                       Printf.sprintf "I < %d" i; not_n ]
                    @ dom 0));
               List.iter
-                (fun (ir, atoms, rparts) ->
+                (fun (ir, atoms, rparts, inner) ->
                   match rparts with
                   | p1 :: _ when p1.pt_id = q1.pt_id ->
                       let xs = List.map (fun (q : part) -> q.pt_member) rparts in
@@ -1129,6 +1163,11 @@ let emit_barriers ctx =
                       in
                       let c = common rparts gparts in
                       let eqs k = List.init k (fun j -> Printf.sprintf "%s = %s" (List.nth bg j) (List.nth xs j)) in
+                      (* in every order, the read's members on the levels
+                         below the ones this rule equates with the guard's
+                         members or orders before them — the member [first]
+                         orders is a case link already *)
+                      let pres from = if some then [] else present ~from rparts @ present inner in
                       for lvl = 0 to c - 1 do
                         let ro = use_ro ctx (List.nth rparts lvl).pt_order in
                         let parent = parent_of xs lvl and x = List.nth xs lvl and g = List.nth bg lvl in
@@ -1142,10 +1181,12 @@ let emit_barriers ctx =
                             @ dom lvl
                           else Printf.sprintf "%s_n(%s,%s,%s)" ro parent x g :: dom (lvl + 1)
                         in
-                        emit ctx "%s :- %s." head (String.concat ", " (form atoms @ eqs lvl @ first @ [ not_n ]))
+                        emit ctx "%s :- %s." head
+                          (String.concat ", " (form atoms @ pres (lvl + 1) @ eqs lvl @ first @ [ not_n ]))
                       done;
                       if ir < i then
-                        emit ctx "%s :- %s." head (String.concat ", " (form atoms @ eqs c @ dom c @ [ not_n ]))
+                        emit ctx "%s :- %s." head
+                          (String.concat ", " (form atoms @ pres c @ eqs c @ dom c @ [ not_n ]))
                   | _ -> ())
                 reads
         in
