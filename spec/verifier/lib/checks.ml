@@ -4457,9 +4457,11 @@ let wf097_clip_qualifications at (c : conditie) : violation list =
    general date expression WF-042's typing admits is an OPEN wire decision,
    so it is refused here instead of by each executor at its own phase.
    "Own" is extensional, as everywhere (ch. 2.2): an attribute declared on a
-   type the subject satisfies. The day-precision clause is the same pair read
-   at its datatype — both OCaml executors decline an instant bound, and
-   ch. 3.10 speaks of civil days only. The declared datatype decides for an
+   type the subject satisfies. The day-precision clause (maintainer decision
+   2026-09-23) closes a measured split: a LEEG datum-tijd attribute bound
+   played in ref (a leeg bound never matches; ref refused only a FILLED
+   instant) while the ASP backend refused it statically — ref ≠ clingo on a
+   verifier-clean document. Ch. 3.10 speaks of civil days only. The declared datatype decides for an
    attribute and the annotation for a literal, which carries no other. *)
 let wf111_bound ctx ~subject at side (e : expr) =
   let refuse what =

@@ -6966,7 +6966,9 @@ ch. 3.12), and it belongs to whoever measures it.
 - **WF-042** A TimeWindow MUST have at least one bound, and its bounds
   MUST be date expressions (mirror; v0 checks date-ness only — either
   precision is admitted, unchecked against the operand). WF-111 narrows
-  the bound to two shapes.
+  the bound to two shapes, both of day precision — so "either precision"
+  holds for the date typing this rule checks and no longer for a
+  well-formed window.
 - **WF-111** Each bound of a TimeWindow MUST be one of two shapes: a date
   `Literal`, or an `AttributeRef` to a **scalar** (non-time-dependent)
   date attribute of the enclosing form's own subject — un-navigated (no
@@ -6974,7 +6976,14 @@ ch. 3.12), and it belongs to whoever measures it.
   the subject satisfies (`S ⊑ O`, ch. 2.2). Either shape MUST be of day
   precision (`DatumInDagen`): the window is a range of civil days
   (`RUNTIME-SEMANTICS.md` ch. 3.10) and no clause reads an instant bound.
-  *(Maintainer decision 2026-09-23.)* This is the v0 backends' carried
+  *(Maintainer decision 2026-09-23; the day-precision clause adopted by the
+  maintainer at this rule's merge.)* That clause carries its own
+  motivation, a latent split measured before the rule: a LEEG datum-tijd
+  attribute bound played in the reference interpreter (a leeg bound never
+  matches — a dynamic net that looks at the value, and refuses only a
+  FILLED instant) while the ASP backend refused it statically, so the two
+  answered differently on a verifier-clean document. Day precision closes
+  that split statically, for every executor. This is the v0 backends' carried
   pair, promoted from backend maturity to the norm. **Delta
   (restriction):** v0's IR admits any date expression here (WF-042) and
   its backends refuse the rest; v1 refuses it on the wire instead. The

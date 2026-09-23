@@ -2570,7 +2570,10 @@ Worked example: window [2024-01-01, 2025-01-01), evaluation date
 2024-12-31 → applies; 2025-01-01 → does not; the "tot en met 2024-12-31"
 form still applies on 2024-12-31. *Well-formedness (maintainer decision
 2026-09-23):* a bound is a date literal or the subject's own scalar date
-attribute, of day precision (`IR-SPEC.md` WF-111), and the window never
+attribute, of day precision (`IR-SPEC.md` WF-111 — the precision clause
+closes a measured split: a LEEG datum-tijd bound played in `ref`, which
+refused only a filled instant, while the ASP backend refused the bound
+statically), and the window never
 sits under `GEEN` or a counting quantifier (WF-112). Both rules promote
 what used to be a v0 mirror note about backend maturity: v0's backends
 lower only those two bound shapes and refuse the condition under counting
@@ -2614,7 +2617,12 @@ producer gives them — a gap, absent other writers. **Delta (tracked,
 manifest family "period-comparison clipping, §8.4.3"); v1 supplies the
 clip semantics above, and `ref/` implemented them first.
 
-The clip's clauses, each pinned by `corpus/golden/jutterswet-pachtvenster`:
+The clip's clauses. `corpus/golden/jutterswet-pachtvenster` pins every one
+whose case lies on the declared grid. The one it cannot hold, a bound
+inside a bucket, is pinned in the two OCaml executors' own suites (`ref`
+`WV-3.10-clip-knipt-segment-houdt-waarde` and the day-count example below
+verbatim; the ASP backend reading its `tl/5` atoms), because the case
+format pins every expected timeline to the grid (ch. 3.12, OPEN):
 
 - **The window is the rule's whole condition, and the evaluation date plays
   no part.** The window says which days of the timeline are written, so the
@@ -2630,6 +2638,7 @@ The clip's clauses, each pinned by `corpus/golden/jutterswet-pachtvenster`:
   is the restriction of a function to a smaller domain, so the producer's
   value is not recomputed for the shorter span. A monthly day count of 31
   cut at the fifth of the month still reads 31 on the days that remain.
+  *Suite-pinned only* (see above).
 - **An empty window writes an empty timeline.** A leeg bound puts no day in
   the window (the gate's "a leeg bound never matches", read per day), and a
   window whose `vanaf` lies after its `tot` has no days either. A window
@@ -2744,7 +2753,9 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 | min/max/eerste/laatste over timelines | refused (mirrored); OPEN — the two readings (per-period vs over-time) must be defined apart |
 | §8.4.3 period condition on a **scalar** target | **specified and executed, ch. 3.10** — all four executors since 2026-09-20, witness `corpus/golden/jutterswet-premievenster` (six clauses; as a rule's whole condition and as an ALLE/DE composite member) |
 | §8.4.3 period condition under `GEEN` or a counting quantifier | **ill-formed (WF-112, maintainer decision 2026-09-23)**: the window gates the rule, and no reading is specified for its complemented or counted verdict (the time-free session is where the two readings part). Covers a quantifier fold's `filter` and `toets` too. Negatief `wf112-periodevenster-tellende-kwantor`; the executors' refusals remain as fail-fast checks |
-| §8.4.3 period condition on a temporal target | **specified (delta) and executed: the clip, ch. 3.10** — `ref` and the ASP backend since 2026-09-23, on attribute targets with the ch. 3.7/3.8 producers, witness `corpus/golden/jutterswet-pachtvenster` (segments cut and values kept, the evaluation date ignored, a leeg or empty window writing the empty timeline). Both Drools branches refuse it by name. Still refused by name in both OCaml executors: the window as a composite MEMBER on a temporal target (OPEN), and a temporal CHARACTERISTIC target (red case `periodevenster-tijdlijnkenmerk`), because no temporal characteristic is written (ch. 3.11) |
+| §8.4.3 period condition on a temporal target | **specified (delta) and executed: the clip, ch. 3.10** — `ref` and the ASP backend since 2026-09-23, on attribute targets with the ch. 3.7/3.8 producers. Corpus-pinned by `corpus/golden/jutterswet-pachtvenster` wherever the case lies on the grid (the evaluation date ignored — unset and outside every window alike —, a leeg or empty window writing the empty timeline); the SEGMENT-CUTTING clause is suite-pinned only, in both OCaml executors. Both Drools branches refuse it by name. Still refused by name in both OCaml executors: the window as a composite MEMBER on a temporal target (OPEN), and a temporal CHARACTERISTIC target (red case `periodevenster-tijdlijnkenmerk`), because no temporal characteristic is written (ch. 3.11) |
+| A corpus carrier for a clipped (off-grid) bucket | **OPEN** — a corpus carrier for a cut bucket needs the case schema (`uchar-case-v0`, `timelineValue`) to release EXPECTED timelines from the declared grid; until then the clause lives in the executors' suites. The alternative, a WF rule demanding on-grid bounds for a clip, is not taken |
+| A time window inside the `filter` of an `ALLE` quantifier fold, in a time-free session | **OPEN, no WF-112 widening** (maintainer decision 2026-09-23): `ref`, the ASP backend and the Drools DRL-text branch answer consistently — the window never matches, the member is filtered out, the fold is vacuously true — so there is no unnamed complement reading and no ground for refusal. The Drools exec-model branch's SKIP there is a channel asymmetry (card `20260923-drools-venster-vouwtoets`) |
 | A period-condition bound other than a literal or an own scalar attribute | **ill-formed (WF-111, maintainer decision 2026-09-23)**; negatief `wf111-periodegrens-parameterdatum`. The general date expression (a parameter, a navigated read, arithmetic) is an **OPEN wire decision**: no corpus document asks for it, and a bound not tied to the subject gives the ASP encoding no fault atom to attach to. A v1 card that takes it on moves WF-111 and gives ch. 5.11's `vanaf`-before-`tot` order its first witness |
 | Negated temporal-characteristic condition | **specified (delta) within a clipped span, ch. 3.11**; unbounded complement OPEN; the navigated case stays refused/OPEN — as a WRITE producer only; the navigated whole-period READ is the row below |
 | Version-validity window on a temporal write | OPEN — the ch. 8 axis decision |
