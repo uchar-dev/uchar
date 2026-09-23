@@ -161,6 +161,13 @@ overlevers) · 14 PASS (130; 2 goldens). Gate 12 en 13 vegen alleen
   eerste ronde. In fixronde 1, onder mandaat van de hoofdsessie:
   **voorstel** `spec/RUNTIME-SEMANTICS.md` (één rij, `a4fcc645`) en
   `corpus/golden/jutterswet-waardemelding/NOTE.md` (`ec77dbd3`).
+  Fixronde 1b: **voorstel** `spec/RUNTIME-SEMANTICS.md` ch. 1.2
+  (`55601502`). Fixronde 2: **voorstel** `scripts/check-rood.sh` (kop en
+  lus van het Drools-been, zeven oudere redenen, de leegtest-regel, een
+  nieuwe gevuldtest-regel), **voorstel** `spec/RUNTIME-SEMANTICS.md`
+  (ch. 3.12 en ch. 1.2, drie documenten), het nieuwe document
+  `corpus/rood/gevuldtest-heel-tijdvak`, en als verbreding de NOTEs van
+  drie oudere rode documenten en opnieuw die van waardemelding.
 
 ### Registertekst (hoofdsessie)
 
@@ -299,3 +306,77 @@ PASS (played 182 = pin, DRL-tekst 161 = pin, JUnit 620).
 - Open punten 1 (sleuteltoets, gemeld en niet gekaart) en 2
   (ERROR-token van de replay-runner, naar de Drools-lijn) staan
   ongewijzigd.
+
+### Fixronde 2 (lens: EERST FIXEN, 2026-09-23)
+
+Eén blokkerende vondst en zeven adviezen. Elk punt heeft een of meer
+eigen commits. De punten van deze kaart staan hier, die van de
+zusterkaart in haar Result.
+
+- **Punt 1, blokkerend** (gedeeld met de zusterkaart, details daar):
+  het commentaar dat ik in `84ed8713` in de kop van het Drools-been
+  zette, beschreef een scheiding die de code niet maakt. Hersteld in
+  `e5c5a485` (gate 8, voorstel), `c07b16cb` (javadoc) en `3b32284c`
+  (case-schema, voorstel). **Bijvangst, zelfde mechanisme**
+  (`696bdee1`): zeven oudere uitsluitingsredenen in gate 8 (voorstel)
+  en de NOTEs van `unknown-role-target-label`,
+  `periodevenster-tijdlijnkenmerk` en `datumsetbron-somvouw`
+  (may-touch-verbreding binnen `corpus/rood`) gaven als grond "FAULT is
+  gereserveerd voor een echte fout bij fire". Die premisse klopt niet.
+  De conclusie bleef wel waar, want het zijn allemaal EXCLUDEs. Nu staat
+  er: het been pint alleen op FAULT, en een loader- of
+  transpilerweigering is een EXCLUDE. Categorieën en gevallen zijn niet
+  veranderd.
+- **Punt 2** (`8e42ddec`): open punt 3 en de CONSTRUCTS-zin
+  gecorrigeerd. Het been herbouwt de jar met de JUnit-suite, en
+  `LeegNegatieWitnessTest` r. 129 bewaakt de sleutel. Gemeten met een
+  sleutelmutant: `Tests run: 620, Failures: 1`, `BUILD FAILURE`. De
+  redenregel (voorstel) zegt dat nu ook.
+- **Punt 3**: de gevuld-tweeling `corpus/rood/gevuldtest-heel-tijdvak`
+  (`4e2e5be0`). Dat is `leegtest-heel-tijdvak` met `soort: GEVULD` en
+  een aangepaste `bron`, met een byte-gelijke case. Handwaarden volgens
+  ch. 3.9 (days(B)): S1 365/365 waar, S2 vacuüm waar, beide meldpremie
+  40. De NOTE zegt dat die case de twee drempels niet scheidt. Gemeten:
+
+  ```
+  verifier: PASS
+  oracle: expected fault observed (whole-period leeg/gevuld test is ch. 3.9 scope, not executed here)
+  clingo: expected fault observed (whole-period leeg/gevuld test is ch. 3.9 scope, not executed here)
+  EXCLUDE loader: form not carried by the v0 Drools backend: Predicaat.periode (…)   (huidige jar)
+  NOFAULT ran to a model without faulting                                            (jar van 8b685402)
+  PLAYED 1 / PLAYED 1   (oude jar, exec en DRL-tekst, groene kopie S1 40, S2 40)
+  PLAYED 0 / PLAYED 0   (oude jar, replay op het rode document zelf)
+  ref --bodemzin: PINS 2, geen HIT
+  ```
+
+  Mutant met de OCaml-arm versmald tot `soort = Leeg`: de twee
+  leeg-documenten blijven groen, dit document valt. ref geeft
+  `temporal attribute "lengte" in a scalar context is refused (ch.
+  3.3; …)` en clingo `TRANSLATION FAULT: condition kind not translated
+  (no corpus case exercises it)`, een bodemzin. Met de arm versmald tot
+  `negatie = true` vallen beide ongenegeerde documenten (rc 1 in beide
+  uitvoerders). Verder: de uitsluitingsregel (`8872423a`, voorstel), de
+  RUNTIME-SEMANTICS-passages in ch. 3.12 en ch. 1.2 (`8ca8a8b7`,
+  voorstel, nu met "a negated gevuld test under the qualifier has no
+  corpus case"), en de NOTE van waardemelding, de leegtest-NOTE en de
+  CONSTRUCTS-zin (`c78b33b6`).
+- **Punt 6** (`a24450c0`): in de leegtest-NOTE "two fields changed" en
+  "pins a fragment only on a FAULT". De redenregel (voorstel) en de
+  NOTE maken nu onderscheid tussen de groene kopie (PLAYED 1), de rode
+  run (NOFAULT) en de replay op het rode document zelf (PLAYED 0,
+  opnieuw gemeten op de jar van 8b685402).
+
+Gates na fixronde 2, elk los na `eval $(opam env)`: 1 PASS · 2 PASS
+(281 bestanden, vloer 192) · 3 PASS (281 schoon; 440 negatief, vloer
+350) · 4 PASS (641 cases) · 8 PASS (46 rood, vloer 26; 92 fragmenten,
+geen bodemzin; Drools-been 10 gepind / 36 met reden) · 12 PASS (played
+182 = pin, DRL-tekst 161 = pin, JUnit 620). De pins van gate 12 bewogen
+niet.
+
+Nog open, ongewijzigd: open punt 3 (de sleuteltoets, in gecorrigeerde
+vorm; gemeld, niet gekaart). Waargenomen, niet gedaan: de genegeerde
+gevuld-test onder heel-tijdvak heeft geen corpusdrager en ook geen
+JUnit-getuige; alleen de proefmeting van de heeltijdvak-leegtest-kaart
+dekt hem. De twee mutanten hierboven laten zien dat de drie documenten
+elke versmalling langs soort of negatie vangen; een arm die precies
+(GEVULD, genegeerd) uitzondert, vangen ze niet.

@@ -316,6 +316,9 @@ vegen alleen `corpus/golden`, dus de pins bewogen niet.
   `spec/schema/uchar-case-v0.schema.json` (twee beschrijvingen,
   `e61e6d18`) en de may-touch-verbreding `backends/drools`, alleen
   javadoc (`ab6711fc`).
+- Fixronde 2: dezelfde drie bestanden opnieuw, alleen tekst
+  (`e5c5a485` voorstel, `c07b16cb` javadoc, `3b32284c` voorstel), plus
+  de NOTE van dit document (`42760a90`, `2d0e8f53`).
 
 ### Registertekst (hoofdsessie)
 
@@ -479,3 +482,61 @@ de twee rode documenten (`55601502`, voorstel; details in
 `20260923-rood-heeltijdvak-ongenegeerd.md`). Gate 1 opnieuw: PASS.
 Open punt 3 hier (het ERROR-token van de replay-runner) staat
 ongewijzigd en gaat naar de Drools-lijn.
+
+### Fixronde 2 (lens: EERST FIXEN, 2026-09-23)
+
+De punten van deze kaart staan hier. Punt 2, 3 en 6 staan in het Result
+van de zusterkaart.
+
+- **Punt 1, blokkerend.** De tekst die ik in fixronde 1 schreef (kop
+  van het Drools-been in `84ed8713`, javadoc `ab6711fc`, schema
+  `e61e6d18`), zei dat FAULT "een fout bij fire of een harde weigering
+  bij het lezen" is. De code deelt echter in naar uitzonderingstype,
+  zo sinds `e1f779aa` (2026-08-27). Een loaderweigering of een
+  `Excluded` is EXCLUDE. I/O en elke uitzondering tijdens het laden van
+  de IR en de bouw van de KieBase zijn ERROR. Elke andere
+  runtime-uitzondering na de bouw is FAULT, ook een crash bij het lezen
+  van de case. Opnieuw gemeten met de huidige jar (zie open punt 5):
+  een boolean in meldwaarde geeft `FAULT IllegalArgumentException:
+  argument type mismatch`; een niet-gedeclareerd kenmerk geeft `FAULT
+  RuntimeException: kon setter setVerzonnen(boolean) niet aanroepen
+  …`; een niet-gedeclareerd attribuut en een onbekend label geven
+  EXCLUDE. Hersteld, alleen tekst:
+  - `e5c5a485` (gate 8, voorstel): de kop beschrijft de indeling naar
+    type, met de metingen, en legt de pinregel vast: een
+    `drools`-fragment citeert de eigen zin van de backend (positie en
+    lexeem), nooit platformtekst. De herlezing van "a genuine fault at
+    fire" is geschrapt. De twee luscommentaren zeggen niet meer dat een
+    crash ERROR is.
+  - `c07b16cb` (javadoc, alleen commentaar, code zonder commentaar
+    gelijk aan HEAD gemeten): `RoodResult`, `runRood` en de tabel van
+    `DroolsRoodMain` zeggen hetzelfde. ERROR is nu "bad invocation, I/O,
+    or an exception while the IR is loaded and the KieBase built — a
+    crash AFTER the build is a FAULT, not an ERROR".
+  - `3b32284c` (case-schema, voorstel, validatiesleutels gelijk
+    gemeten): de `drools`-beschrijving noemt de indeling naar type, de
+    crash als FAULT en de pinregel.
+  - `696bdee1`: dezelfde onjuiste premisse in oudere redenen en NOTEs
+    (zie de zusterkaart).
+  Dit document voldoet aan de pinregel: het pint de eigen zin tot vóór
+  de haakjes met de JDK-parseertekst.
+- **Punt 4** (`42760a90`): de NOTE beschrijft vensterheffing nu als
+  twee los gedateerde regels met eigen namen en eigen doelattributen,
+  dus een venster per regel en geen versieselectie (IR-SPEC ch. 4.1).
+  De handberekening spreekt van vensters die de datum toelaten of
+  uitsluiten.
+- **Punt 5** (`2d0e8f53`): het sterkste argument voor `2026-02-30`
+  staat nu in de NOTE en onder "Waarom 2026-02-30" hierboven, met de
+  metingen. De oude lader antwoordde ook op `2026-13-01` stil, maar een
+  mutant `d > 31` laat alleen `02-30` door. De CONSTRUCTS-tekst spreekt
+  van "the month-length check" in plaats van "the calendar half",
+  zegt dat maandgrens en schrikkelregel alleen in de ref-suite gepind
+  zijn, en noemt `6ff39603` in plaats van "before 2026-09-23".
+- **Punt 7** (`d953edf0`): het patroon van 213 tekens, het toetsscript
+  en de uitvoer staan letterlijk onder (b).
+- **Punt 8** (`9ddb0273`): open punt 5, voor de Drools-lijn, naast
+  punt 3.
+
+Gates na fixronde 2: dezelfde runs als in de zusterkaart. 1 PASS · 2
+PASS (281) · 3 PASS (281 / 440) · 4 PASS (641) · 8 PASS (46 rood, 92
+fragmenten, Drools 10/36) · 12 PASS (182 / 161, JUnit 620).
