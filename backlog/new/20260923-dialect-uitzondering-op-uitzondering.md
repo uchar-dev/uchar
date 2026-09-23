@@ -50,7 +50,13 @@ Catala-frontend vertaalt vertakking onder de wortel al
   insluiting in W), dus zij moet ergens staan; de juridische betekenis van
   een uitzondering is beperkend; hoek B van het anker is de stille fout van
   de andere keuze. Maintainersbesluit 2026-09-23 (besluitvraag, bevestigd):
-  **beperkend met erven, plus `Afwijking van`**.
+  **beperkend met erven, plus `Afwijking van`**. Tweede besluitvraag, zelfde
+  dag: **`Afwijking van` alleen met een basisregel als drager**; een
+  `Afwijking van` die een uitzondering als drager noemt wordt luid
+  geweigerd (een niet-ervend blok midden in de boom kan `waar` beslissen
+  waar nooit een recht bestond, de fout die het WW-anker liet zien). Komt
+  een wettekst die het echt nodig heeft, dan opnieuw met die tekst als
+  getuige.
 - 5 Overerving: `Uitzondering op` met een geërfde uitzondering als drager
   wordt luid geweigerd (SUBTYPING §4.4: een geërfde `excepties`-subboom hoort
   bij de geërfde default, het subtype adresseert er niet in). De
@@ -63,7 +69,18 @@ Catala-frontend vertaalt vertakking onder de wortel al
   reconciliëren, verschillende geven het padgesleutelde §9.5-feit. Met
   `niet` toegelaten wordt het kenmerkconflict vanuit het dialect
   schrijfbaar; de zin in `DIVERGENCES.md` §4 dat een §9.5-conflict alleen
-  op een attribuutdoel uitdrukbaar is, vervalt.
+  op een attribuutdoel uitdrukbaar is, vervalt. **De leden erven de
+  (geconjungeerde) rechtvaardiging van X**, net als een enkele
+  `Uitzondering op X` (maintainersbesluit 2026-09-23, besluitvraag): één
+  briefje of drie tegelijk, het blijven uitzonderingen óp X. Gevolg voor
+  de nestkenmerk-tweeling: het anker `jutterswet-nestkenmerk` draagt zijn
+  broers `ny`/`nz` vandaag zonder `nx`; de kaart
+  anker-nestkenmerk-dragervoorwaarde voegt `nx` toe (de drie bestaande
+  cases hebben `nx` en veranderen niet) en gaat aan de tweeling vooraf.
+- Het gelande voorstel kent deze twee besluiten (erven onder
+  `Uitzonderingen ongeordend op`, `Afwijking van` alleen op een basis) nog
+  niet: de kaart neemt de proposaltekst mee als **voorstel** in dezelfde
+  branch.
 - Nieuwe koptokens `AFWIJKING_VAN` en `UITZONDERINGEN ONGEORDEND OP` naar
   het patroon van `UITZONDERING_OP`: whole-phrase, inert op officiële
   v2.3.0-documenten; de gereserveerde naamwoorden in `DIVERGENCES.md`
@@ -75,8 +92,10 @@ Catala-frontend vertaalt vertakking onder de wortel al
   broervolgorde; de conjunctie (de wire-conditie van een geneste
   uitzondering bevat de dragervoorwaarde); `Afwijking van` zonder
   conjunctie; `Uitzonderingen ongeordend op` met gelijke en met
-  verschillende besluiten; de geweigerde geërfde drager; een onbekende
-  drager; een `Afwijking van` op een onbekende drager.
+  verschillende besluiten (de leden dragen de voorwaarde van X op de
+  wire); de geweigerde geërfde drager; een onbekende drager; een
+  `Afwijking van` op een onbekende drager; een `Afwijking van` met een
+  uitzondering als drager (geweigerd).
 - (b) Goldens, elk gebouwd met de penningrechtmethode
   (`spec/proposals/PHASE5D-DIFF.md` §2–3): een `bron.rgs`, de door het
   frontend uitgezonden en door de serializer van gate 2 gecanoniseerde
@@ -116,6 +135,10 @@ testbestanden alleen met toestemming van de maintainer:
 `DefaultsExtensieTest.onbekende_basisregel_weigert_luid` pint de melding
 "geen basisregel met die naam gevonden", die dit werk vervangt.
 
-Niet in deze kaart: het ankerherstel (eigen kaart, gaat vooraf); de spec,
-de verifier, de uitvoerders; `Regelgroep` rond een uitzondering en de
+May touch, aanvulling: `spec/proposals/DIALECT-DEFAULTS-NIET-EN-NESTING.md`
+(**voorstel**: de twee besluiten van de tweede besluitvraag).
+
+Niet in deze kaart: de ankerherstellen (eigen kaarten, gaan vooraf: het
+WW-anker is geland, het nestkenmerk-anker volgt); de spec, de verifier,
+de uitvoerders; `Regelgroep` rond een uitzondering en de
 `// Bron:`-annotaties (eigen kaarten).
