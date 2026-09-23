@@ -2855,12 +2855,12 @@
           ]
         },
         "timeline": {
-          "$ref": "#/$defs/TimelineFacet"
+          "$ref": "#/$defs/CharacteristicTimelineFacet"
         }
       }
     },
     "TimelineFacet": {
-      "description": "The time-dependence of one member (IR-SPEC ch. 2.2). 'granularity' is required and non-null, so a facet without a grid cannot be written; the values keep their v0 spelling until M8. 'count' is always written (1 = single-period). That it is at least 1 is WF-005, a verifier check, so the schema admits any integer here. 'timelineName' is present iff the member was declared via a named timeline.",
+      "description": "The time-dependence of one member (IR-SPEC ch. 2.2). 'granularity' is required and non-null, so a facet without a grid cannot be written; the values keep their v0 spelling until M8. 'count' is always written (1 = single-period). That it is at least 1 is WF-005, a verifier check, so the schema admits any integer here. 'timelineName' is present iff the attribute was declared via a named timeline; a Characteristic's facet is CharacteristicTimelineFacet, which has no such field.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -2886,6 +2886,27 @@
         },
         "timelineName": {
           "type": "string"
+        }
+      }
+    },
+    "CharacteristicTimelineFacet": {
+      "description": "The TimelineFacet of a Characteristic (IR-SPEC ch. 2.2): the same node without 'timelineName'. v0 recorded no timeline name for a characteristic, so M1 keeps that position closed: an open one would be a wire field no producer writes and no reader checks. 'granularity' and 'count' are the attribute facet's own field schemas, by JSON pointer, so each is defined once.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "granularity",
+        "count"
+      ],
+      "properties": {
+        "node": {
+          "const": "TimelineFacet"
+        },
+        "granularity": {
+          "$ref": "#/$defs/TimelineFacet/properties/granularity"
+        },
+        "count": {
+          "$ref": "#/$defs/TimelineFacet/properties/count"
         }
       }
     },

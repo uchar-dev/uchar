@@ -533,6 +533,9 @@ boolean membership is core.
 | `count` | integer ≥ 1 | periods per segment; 1 = single-period |
 | `timelineName` | string? | present iff declared via a named timeline |
 
+A characteristic's facet carries no `timelineName`: v0 recorded none, and M1
+keeps the position closed.
+
 *v0 mirror note:* inline declarations record granularity and count but no
 name; only the named form records the name. A named reference adopts both
 granularity and count from the timeline declaration (§13.3.6.10).

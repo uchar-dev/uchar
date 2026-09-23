@@ -39,9 +39,9 @@ Shape, in brief:
   `characteristics`) carries its members as `Attribute` nodes (`name`,
   `datatype`, `plural`?, `dimensions`?, `timeline`?) and `Characteristic` nodes
   (`name`, `kind`, `timeline`?), each with its own `TimelineFacet`
-  (`granularity`, `count`, `timelineName`?). The eight v0 side-maps keyed by
-  member name are gone, and with them the possibility of a facet without a
-  member.
+  (`granularity`, `count`, and on an attribute `timelineName`?). The eight v0
+  side-maps keyed by member name are gone, and with them the possibility of a
+  facet without a member.
 - A `Domain` is `{ "node": "Domain", "name", "datatype" }` (next section).
 - Every other node — `Parameter`, `Feittype`, `Eenheidstelsel`, `Dimensie`,
   `Tijdlijn`, the datatype, expression and condition families, every
@@ -100,6 +100,30 @@ the reference-position definitions stay byte-for-byte v0 and keep their
 `required` list; `additionalProperties: false` makes a self-name at the
 declaration position unwritable rather than merely optional; and each field
 schema is still defined once, so the two forms cannot diverge.
+
+## A characteristic's timeline facet
+
+v0 recorded a timeline name for an attribute (`attribuutTijdlijnNaam`) and
+none for a characteristic: there was no such side-map. So in M1 an
+attribute's `TimelineFacet` may carry `timelineName` and a characteristic's
+may not. Admitting the field on a characteristic would open a wire position
+that no v0 document fills, no producer writes and no reader checks — WF-005
+resolves a named timeline only for attributes — so a name written there would
+be accepted and dropped. Measured 2026-09-23 before this closure: a
+characteristic facet naming an undeclared timeline, or naming one whose grid
+contradicts the facet's own, validated against the schema and passed the
+verifier.
+
+Mechanism: `Characteristic.timeline` refers to `CharacteristicTimelineFacet`,
+a closed definition with the same `node` value (`TimelineFacet`) and without
+`timelineName`, whose `granularity` and `count` are `$ref`s by JSON pointer
+into `TimelineFacet`. It follows the domain precedent above rather than an
+`allOf` with a `not: {required: ["timelineName"]}` clause, for the same
+reasons: `additionalProperties: false` makes the field unwritable instead of
+conditionally forbidden, the attribute's facet definition stays as it is, and
+each field schema is defined once. The shared loader
+(`../verifier/lib/loader.ml`) refuses the field on a characteristic as a load
+failure that names its path.
 
 ## `uchar-ir-v1.schema.json`
 

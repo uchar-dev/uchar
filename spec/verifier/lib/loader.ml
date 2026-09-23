@@ -832,11 +832,17 @@ and conditie path j : conditie =
    nodes, each carrying its own TimelineFacet; the in-memory record keeps
    the name-keyed facet tables (Ast, [objecttype]), built here member by
    member in declaration order. An optional key that is absent adds no
-   table entry: no plural, no dimension list, no timeline. *)
-let timeline_facet path j =
+   table entry: no plural, no dimension list, no timeline.
+   Only an attribute's facet may name a timeline: v0 recorded no timeline
+   name for a characteristic, and M1 keeps that position closed (IR-SPEC
+   ch. 2.2), so a [timelineName] there is an unknown field, refused with
+   its path rather than read and dropped. *)
+let timeline_facet ~named path j =
   let kvs = obj path j in
   expect_node path kvs "TimelineFacet";
-  check_keys path kvs ~ext:[ "timelineName" ] [ "node"; "granularity"; "count" ];
+  check_keys path kvs
+    ~ext:(if named then [ "timelineName" ] else [])
+    [ "node"; "granularity"; "count" ];
   ( granulariteit (path / "granularity") (field path kvs "granularity"),
     int_ (path / "count") (field path kvs "count"),
     ext_field path kvs "timelineName" str )
@@ -860,7 +866,7 @@ let objecttype path j : string * objecttype =
           ext_field ap akvs "plural" str,
           ext_field ap akvs "dimensions" (fun p j ->
               List.mapi (fun k x -> Some (str (p / string_of_int k) x)) (list_ p j)),
-          ext_field ap akvs "timeline" timeline_facet ))
+          ext_field ap akvs "timeline" (timeline_facet ~named:true) ))
       (list_ (path / "attributes") (f "attributes"))
   in
   let chars =
@@ -872,7 +878,7 @@ let objecttype path j : string * objecttype =
         check_keys cp ckvs ~ext:[ "timeline" ] [ "node"; "name"; "kind" ];
         ( str (cp / "name") (field cp ckvs "name"),
           kenmerk_soort (cp / "kind") (field cp ckvs "kind"),
-          ext_field cp ckvs "timeline" timeline_facet ))
+          ext_field cp ckvs "timeline" (timeline_facet ~named:false) ))
       (list_ (path / "characteristics") (f "characteristics"))
   in
   let table get members = List.filter_map (fun m -> get m) members in
