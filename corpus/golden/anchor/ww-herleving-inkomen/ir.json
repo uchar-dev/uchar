@@ -388,44 +388,61 @@
                     "node": "Default",
                     "besluit": false,
                     "voorwaarde": {
-                      "node": "Vergelijking",
-                      "op": "GROTER",
-                      "links": {
-                        "node": "AttribuutRef",
-                        "attribuut": "maandinkomen",
-                        "objecttype": "Werknemer",
-                        "onderwerpBron": "zijn maandinkomen",
-                        "navigatieRol": null,
-                        "type": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "NIET_NEGATIEF",
-                          "eenheid": null
+                      "node": "Samengesteld",
+                      "kwantor": "ALLE",
+                      "drempel": 0,
+                      "onderdelen": [
+                        {
+                          "node": "Kenmerk",
+                          "kenmerk": "werkloos",
+                          "navigatie": null,
+                          "negatie": false,
+                          "eigenaar": null,
+                          "periode": null,
+                          "bron": "hij werkloos is"
                         },
-                        "bron": "zijn maandinkomen",
-                        "set": false,
-                        "navigatiePad": []
-                      },
-                      "rechts": {
-                        "node": "AttribuutRef",
-                        "attribuut": "inkomensgrens",
-                        "objecttype": "Werknemer",
-                        "onderwerpBron": "zijn inkomensgrens",
-                        "navigatieRol": null,
-                        "type": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
-                        },
-                        "bron": "zijn inkomensgrens",
-                        "set": false,
-                        "navigatiePad": []
-                      },
-                      "periode": null,
-                      "bron": "zijn maandinkomen groter is dan zijn inkomensgrens"
+                        {
+                          "node": "Vergelijking",
+                          "op": "GROTER",
+                          "links": {
+                            "node": "AttribuutRef",
+                            "attribuut": "maandinkomen",
+                            "objecttype": "Werknemer",
+                            "onderwerpBron": "zijn maandinkomen",
+                            "navigatieRol": null,
+                            "type": {
+                              "node": "Numeriek",
+                              "geheel": false,
+                              "decimalen": 2,
+                              "teken": "NIET_NEGATIEF",
+                              "eenheid": null
+                            },
+                            "bron": "zijn maandinkomen",
+                            "set": false,
+                            "navigatiePad": []
+                          },
+                          "rechts": {
+                            "node": "AttribuutRef",
+                            "attribuut": "inkomensgrens",
+                            "objecttype": "Werknemer",
+                            "onderwerpBron": "zijn inkomensgrens",
+                            "navigatieRol": null,
+                            "type": {
+                              "node": "Numeriek",
+                              "geheel": false,
+                              "decimalen": 2,
+                              "teken": "ONBEPAALD",
+                              "eenheid": null
+                            },
+                            "bron": "zijn inkomensgrens",
+                            "set": false,
+                            "navigatiePad": []
+                          },
+                          "periode": null,
+                          "bron": "zijn maandinkomen groter is dan zijn inkomensgrens"
+                        }
+                      ],
+                      "bron": "hij werkloos is en zijn maandinkomen groter is dan zijn inkomensgrens"
                     },
                     "bron": "art. 20 lid 1 onderdeel c: het recht eindigt bij inkomen boven de grens",
                     "excepties": {
@@ -438,13 +455,70 @@
                               "node": "Default",
                               "besluit": true,
                               "voorwaarde": {
-                                "node": "Kenmerk",
-                                "kenmerk": "omstandigheid vervallen",
-                                "navigatie": null,
-                                "negatie": false,
-                                "eigenaar": null,
-                                "periode": null,
-                                "bron": "de omstandigheid die tot het eindigen heeft geleid is vervallen"
+                                "node": "Samengesteld",
+                                "kwantor": "ALLE",
+                                "drempel": 0,
+                                "onderdelen": [
+                                  {
+                                    "node": "Kenmerk",
+                                    "kenmerk": "werkloos",
+                                    "navigatie": null,
+                                    "negatie": false,
+                                    "eigenaar": null,
+                                    "periode": null,
+                                    "bron": "hij werkloos is"
+                                  },
+                                  {
+                                    "node": "Vergelijking",
+                                    "op": "GROTER",
+                                    "links": {
+                                      "node": "AttribuutRef",
+                                      "attribuut": "maandinkomen",
+                                      "objecttype": "Werknemer",
+                                      "onderwerpBron": "zijn maandinkomen",
+                                      "navigatieRol": null,
+                                      "type": {
+                                        "node": "Numeriek",
+                                        "geheel": false,
+                                        "decimalen": 2,
+                                        "teken": "NIET_NEGATIEF",
+                                        "eenheid": null
+                                      },
+                                      "bron": "zijn maandinkomen",
+                                      "set": false,
+                                      "navigatiePad": []
+                                    },
+                                    "rechts": {
+                                      "node": "AttribuutRef",
+                                      "attribuut": "inkomensgrens",
+                                      "objecttype": "Werknemer",
+                                      "onderwerpBron": "zijn inkomensgrens",
+                                      "navigatieRol": null,
+                                      "type": {
+                                        "node": "Numeriek",
+                                        "geheel": false,
+                                        "decimalen": 2,
+                                        "teken": "ONBEPAALD",
+                                        "eenheid": null
+                                      },
+                                      "bron": "zijn inkomensgrens",
+                                      "set": false,
+                                      "navigatiePad": []
+                                    },
+                                    "periode": null,
+                                    "bron": "zijn maandinkomen groter is dan zijn inkomensgrens"
+                                  },
+                                  {
+                                    "node": "Kenmerk",
+                                    "kenmerk": "omstandigheid vervallen",
+                                    "navigatie": null,
+                                    "negatie": false,
+                                    "eigenaar": null,
+                                    "periode": null,
+                                    "bron": "de omstandigheid die tot het eindigen heeft geleid is vervallen"
+                                  }
+                                ],
+                                "bron": "hij werkloos is, zijn maandinkomen groter is dan zijn inkomensgrens en de omstandigheid die tot het eindigen heeft geleid is vervallen"
                               },
                               "bron": "art. 21 lid 1: het recht herleeft als de omstandigheid is vervallen",
                               "excepties": {
@@ -461,6 +535,64 @@
                                           "kwantor": "ALLE",
                                           "drempel": 0,
                                           "onderdelen": [
+                                            {
+                                              "node": "Kenmerk",
+                                              "kenmerk": "werkloos",
+                                              "navigatie": null,
+                                              "negatie": false,
+                                              "eigenaar": null,
+                                              "periode": null,
+                                              "bron": "hij werkloos is"
+                                            },
+                                            {
+                                              "node": "Vergelijking",
+                                              "op": "GROTER",
+                                              "links": {
+                                                "node": "AttribuutRef",
+                                                "attribuut": "maandinkomen",
+                                                "objecttype": "Werknemer",
+                                                "onderwerpBron": "zijn maandinkomen",
+                                                "navigatieRol": null,
+                                                "type": {
+                                                  "node": "Numeriek",
+                                                  "geheel": false,
+                                                  "decimalen": 2,
+                                                  "teken": "NIET_NEGATIEF",
+                                                  "eenheid": null
+                                                },
+                                                "bron": "zijn maandinkomen",
+                                                "set": false,
+                                                "navigatiePad": []
+                                              },
+                                              "rechts": {
+                                                "node": "AttribuutRef",
+                                                "attribuut": "inkomensgrens",
+                                                "objecttype": "Werknemer",
+                                                "onderwerpBron": "zijn inkomensgrens",
+                                                "navigatieRol": null,
+                                                "type": {
+                                                  "node": "Numeriek",
+                                                  "geheel": false,
+                                                  "decimalen": 2,
+                                                  "teken": "ONBEPAALD",
+                                                  "eenheid": null
+                                                },
+                                                "bron": "zijn inkomensgrens",
+                                                "set": false,
+                                                "navigatiePad": []
+                                              },
+                                              "periode": null,
+                                              "bron": "zijn maandinkomen groter is dan zijn inkomensgrens"
+                                            },
+                                            {
+                                              "node": "Kenmerk",
+                                              "kenmerk": "omstandigheid vervallen",
+                                              "navigatie": null,
+                                              "negatie": false,
+                                              "eigenaar": null,
+                                              "periode": null,
+                                              "bron": "de omstandigheid die tot het eindigen heeft geleid is vervallen"
+                                            },
                                             {
                                               "node": "Kenmerk",
                                               "kenmerk": "nieuw recht ontstaan",
@@ -511,7 +643,7 @@
                                               "bron": "zijn nieuw maandloon groter is dan zijn inkomensgrens"
                                             }
                                           ],
-                                          "bron": "hij een nieuw recht heeft waarvan het maandloon boven de grens ligt"
+                                          "bron": "hij werkloos is, zijn maandinkomen groter is dan zijn inkomensgrens, de omstandigheid die tot het eindigen heeft geleid is vervallen en hij een nieuw recht heeft waarvan het maandloon boven de grens ligt"
                                         },
                                         "bron": "art. 21 lid 2 onderdeel a: geen herleving bij een nieuw recht boven de grens"
                                       }

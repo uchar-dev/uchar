@@ -1,0 +1,50 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "W7",
+        "objectType": "Werknemer",
+        "attributes": {
+          "maandloon": {
+            "number": "2400.00"
+          },
+          "maandinkomen": {
+            "number": "2500.00"
+          },
+          "nieuw maandloon": {
+            "number": "2300.00"
+          },
+          "eindigingsdatum": {
+            "date": "2024-03-01"
+          },
+          "vervaldatum": {
+            "date": "2024-06-01"
+          },
+          "maxdatum": {
+            "date": "2025-10-15"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "werkloos",
+          "omstandigheid vervallen",
+          "nieuw recht ontstaan",
+          "recht op uitkering"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "W7",
+      "characteristic": "recht op uitkering"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -154,6 +154,17 @@
 #     characteristic present no member fires, so wachtgeld stays empty; the
 #     absence IS the assertion (the group analogue of samenloop case6-geen-grond).
 #     The value/conflict siblings (case1/2/3) all decide and are not survivors.
+#   - ww-herleving-inkomen/case7-invoer-staat-tegen-blokkade.json: the input
+#     standing on a CHARACTERISTIC defaults target — case3's facts, so the
+#     blokkade default decides do-not-attribute (besluit false), plus the target
+#     `recht op uitkering` in the case input. The characteristic stays present: a
+#     false decision displaces the lower defaults and writes nothing, it never
+#     retracts (ch. 7.1, "not a retraction"; ch. 5.3). The presence IS the
+#     assertion — it refutes an executor that lets a false decision remove an
+#     input characteristic, which a do-nothing run cannot show. Pinned while the
+#     card kenmerkinvoer-en-invoer-boven-berekening leaves ch. 7.8 as it stands
+#     (its option 7-ii would flip the expectation to absent). The eight sibling
+#     cases all pin computed attributes and are not survivors.
 SURVIVORS='corpus/golden/anchor/jutterswet-vondstwaardering/case5-input-blijft.json
 corpus/golden/anchor/jutterswet-waardering-v0vorm/case3-input-blijft.json
 corpus/golden/jutterswet-vondstnummer/case-consistent.json
@@ -189,7 +200,8 @@ corpus/golden/jutterswet-samenloop/case6-geen-grond.json
 corpus/golden/jutterswet-paasvondst/case5-leeg.json
 corpus/golden/jutterswet-bergingsdrempel/case3-onder-quotum.json
 corpus/golden/jutterswet-bergingsdrempel/case4-onder-noodweer.json
-corpus/golden/jutterswet-wachtgeld/case4-geen.json'
+corpus/golden/jutterswet-wachtgeld/case4-geen.json
+corpus/golden/anchor/ww-herleving-inkomen/case7-invoer-staat-tegen-blokkade.json'
 
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
