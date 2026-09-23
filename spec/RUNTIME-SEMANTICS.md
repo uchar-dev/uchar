@@ -167,15 +167,16 @@ the WIRE now, by WF-037's count-arity arm (`IR-SPEC.md` ch. 4.3), so the
 promise holds at both — one at evaluation, one before anything runs.
 Below two operands the residue closed on 2026-09-23 (maintainer
 decision): a count of ONE operand or none without an element type has no
-source at all, and WF-037's second count arm refuses it on the wire — the
-interpreter had answered it with the same filled count, and with **1** on a
-single list literal whether the list held two elements or none. The
-interpreter's arm for a count handed values, out of reach through any
-well-formed document since that date, now faults by name instead of
-counting: aantal over the operands (5 kg, leeg), over (5 kg), over no
-operand, and over the list literals [1, 2] and [] each fault with "a count folds
-INSTANCES and this node hands it …" (worked examples `WV-3.4a-opgesomd-*`,
-`-eenoperand-*`, `-geen-operand`, `-lijstliteraal-*`). **Ratified (maintainer
+source at all, and WF-037's second count arm refuses it on the wire —
+the interpreter had answered it with the same filled count, and with
+**1** on a single list literal whether the list held two elements or
+none. The interpreter's arm for a count handed values, out of reach
+through any well-formed document since that date, now faults by name
+instead of counting: aantal over the operands (5 kg, leeg), over (5 kg),
+over no operand, and over the list literals [1, 2] and [] each fault
+with "a count folds INSTANCES and this node hands it …" (worked examples
+`WV-3.4a-opgesomd-*`, `-eenoperand-*`, `-geen-operand`,
+`-lijstliteraal-*`). **Ratified (maintainer
 decision 2026-09-04, landed 2026-09-05):** the numeric half of this fold
 is a v1 *widening*, not a mirror. v0's static typing (§4.14/§4.15)
 admits eerste/laatste over date expressions only — a concrete non-date

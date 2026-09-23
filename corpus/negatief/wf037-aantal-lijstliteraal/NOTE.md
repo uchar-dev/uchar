@@ -4,7 +4,9 @@ Violates WF-037 (`spec/IR-SPEC.md` ch. 4.3) in the count's SOURCE arm —
 the maintainer decision of 2026-09-23 (option (a) of
 `backlog/done/20260920-aantal-zonder-bron.md`): a count is an instance
 fold and MUST carry an element type, the same sentence the filled count's
-element-type arm states. This is the spelling that SHOWED the defect instead of describing it: one `ListLiteral` argument (ch. 4.8) under a count without an element type.
+element-type arm states. This is the spelling that SHOWED the defect
+instead of describing it: one `ListLiteral` argument (ch. 4.8) under a
+count without an element type.
 
     WF-037 FAIL /resolvedRegels/0/waarde: the count is an INSTANCE fold and
     MUST carry an element type: without one its argument is no fold source
@@ -14,9 +16,11 @@ element-type arm states. This is the spelling that SHOWED the defect instead of 
 
 The document. A `Jutter` with two weighed posts of her own (`gewogen
 vangst`, `gewogen bijvangst`, kg with two decimals) and a count-typed
-target, `aantal gewogen posten` (whole, non-negative, unitless). The `AANTAL` carries one argument, a `ListLiteral` of two unitless decimals (1.00 and 2.00), and no `elementObjecttype`.
-Every other clause holds: no facet, no set reading, no sentinel, the node
-type is the count's own derived type; the verifier reports one fault.
+target, `aantal gewogen posten` (whole, non-negative, unitless). The
+`AANTAL` carries one argument, a `ListLiteral` of two unitless decimals
+(1.00 and 2.00), and no `elementObjecttype`. Every other clause holds: no
+facet, no set reading, no sentinel, the node type is the count's own
+derived type; the verifier reports one fault.
 
 Why the form left the wire. It was verifier-clean and exactly ONE executor
 answered it. Measured before the arm on this shape, with a case in which
@@ -50,7 +54,7 @@ spec/verifier` as gate 3 builds it): `verifier: PASS`, exit 0. With the arm
 Falsifiable, arm-exact: guard the count-source arm off (`when false` on its
 refusing case, one line; source md5 `67db51d0ed8694a33013dc4b34f494eb`).
 Swept over golden + rood + negatief + parity (746 documents), exactly
-three documents move — this case and its two siblings
+three documents move — the three negatiefs of this arm
 (`wf037-aantal-zonder-elementtype`, `wf037-aantal-geen-operand`,
 `wf037-aantal-lijstliteraal`) — and the mutant's reports are
 byte-identical to the pre-arm verifier's on all 746. A second mutant

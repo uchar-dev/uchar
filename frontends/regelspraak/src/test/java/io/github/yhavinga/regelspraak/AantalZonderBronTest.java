@@ -20,9 +20,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * <p><b>The route was live.</b> {@code aantalFunc} takes any {@code primaireExpressie}; when the
  * operand names no role or object type the element derivation yields null, and unless the whole
  * phrase is a declared parameter the count was emitted anyway. Measured 2026-09-23 before the arm:
- * every operand below emitted an {@code AANTAL} with {@code elementObjecttype: null} and
- * {@code diagnostics: []} (the last one with a non-blocking WARNING) — documents the verifier now
- * rejects, and which the reference interpreter used to answer with the OPERAND counted.
+ * every operand below emitted an {@code AANTAL} with {@code elementObjecttype: null}, and none was
+ * blocked — all but the last with {@code diagnostics: []}, the last with a WARNING that does not
+ * block. The verifier now rejects those documents; the reference interpreter used to answer them
+ * with the OPERAND counted.
  *
  * <p>The grammar is untouched, as with {@link AantalOpgesomdTest}: the fence stands where the
  * element is derived.

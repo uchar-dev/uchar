@@ -351,6 +351,22 @@ Geen vloer aangeraakt.
    een aparte normvraag; vandaag emitteerde de frontend er een
    `VariabeleRef`-telling van die niets telde.
 3. Herpin van de toolchain volgt spec-first (frontendgedrag veranderd).
+4. Een attribuut dat "aantal …" heet. "het aantal gewogen posten van de
+   Jutter", met een gedeclareerd attribuut `aantal gewogen posten`, krijgt
+   nu "telling zonder bron". De ware oorzaak noemt die melding niet: de
+   naamterugval in `bouwFunctie` vangt alleen PARAMETERS, geen attributen,
+   dus de zin wordt als telling gelezen. Vóór deze kaart ging hij
+   ongeblokkeerd als bronloze telling de wire op; nu is hij geweigerd met
+   een misleidende reden. De hoofdsessie maakt er een kaart van:
+   `20260923-frontend-aantal-attribuutnaam`.
+
+**Dubbele citaties op al-foute vormen (lensronde, genoteerd, geen actie).**
+Twee vormen die al om een andere reden geweigerd werden, krijgen nu een
+meevurende WF-037-regel: de setbron onder een telling zonder elementtype
+citeert WF-096 + WF-037, en een onopgeloste bron zonder elementtype
+WF-034 + WF-037. Nul corpusdragers; de elementtypearm van de gevulde
+telling gedraagt zich op dezelfde vormen gelijk. Bewust gelaten: de twee
+tellingen houden zo dezelfde wet, en het verdict verandert nergens.
 
 ### 12. Registervoorstel — `spec/CONSTRUCTS.md` rij 1
 
