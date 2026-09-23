@@ -529,7 +529,9 @@ let kenmerk_temporal ctx ~otype ~kenmerk =
    refused reading is not a near miss — under GEEN the window's verdict is
    COMPLEMENTED, so a time-free session, where ch. 3.10 says the window never
    matches, would make the composite true and fire the rule. Word for word
-   ref's sentence up to the phase, as the other ch. 3.10 refusals are. *)
+   ref's sentence up to the phase, as the other ch. 3.10 refusals are. Since
+   2026-09-23 the position is WF-112 and the verifier refuses the document;
+   this stays as the fail-fast belt on non-conforming input. *)
 let periode_onder_telkwantor (kwantor : kwantor) (parts : conditie list) =
   match kwantor with
   | Alle | De -> ()
@@ -537,9 +539,9 @@ let periode_onder_telkwantor (kwantor : kwantor) (parts : conditie list) =
       if List.exists Eval.bevat_periode parts then
         fault
           "a period condition under GEEN or a counting quantifier (ten minste / ten hoogste / \
-           precies) is the position ch. 3.10's mirror note refuses: the quantifier counts or \
-           complements the window's verdict, while the chapter norms the window as a gate on the \
-           RULE. Declined in translation"
+           precies) is the position WF-112 refuses: the quantifier counts or complements the \
+           window's verdict, while ch. 3.10 norms the window as a gate on the RULE, so the \
+           document is not well-formed. Declined in translation"
 
 let attr_granularity ctx ~otype ~attr =
   match Ir_v0.Checks.find_ci (objecttype ctx otype).attribuut_granulariteit attr with
@@ -5705,8 +5707,9 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
          nothing may hold.
 
          The carried bound shapes are ref's, deliberately not a superset: a
-         literal or the subject's own scalar date attribute (ch. 3.10's v0
-         mirror note). Two executors that carried different bound forms would
+         literal or the subject's own scalar date attribute — WF-111 since
+         2026-09-23, so the verifier refuses the rest and the arm below is the
+         fail-fast belt. Two executors that carried different bound forms would
          let the differential arbitrate a form only one of them reads. *)
       let bound side e =
         (match e with
@@ -5722,8 +5725,8 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
                 is where the two must differ — see the note on its arm *)
              fault
                "the %s bound of a period condition is neither a date literal nor an own scalar \
-                date attribute of the subject: ch. 3.10's mirror note carries those two and defers \
-                the general date expression WF-042 admits. Declined in translation"
+                date attribute of the subject, the only two shapes WF-111 admits: the document is \
+                not well-formed. Declined in translation"
                side);
         if is_datetime_operand (Some e) then
           fault

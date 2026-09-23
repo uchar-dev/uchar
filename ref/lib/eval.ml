@@ -196,10 +196,17 @@ let rec bevat_periode (c : conditie) =
    TRUE and fire the rule. The chapter norms the window as a gate on the
    RULE, not as a member a quantifier may count.
 
-   The fold node is refused by the same rule and for the same reason, without
-   a Drools measurement of its own: its quantifiers are the composite's, the
-   quantification is the same one over instances instead of parts, and the
-   safe direction of an unmeasured boundary is the refusal. *)
+   The fold node is refused by the same rule and for the same reason: its
+   quantifiers are the composite's, applied to instances instead of parts.
+
+   Since 2026-09-23 the position is WF-112 (maintainer decision): the
+   verifier refuses the document, so this fault is fail-fast on a
+   non-conforming input rather than the answer to a conforming one, and it
+   may not be softened to a fallback. The fold measurement of that day is
+   why the rule covers the fold as well: the Drools DRL-text branch PLAYED a
+   window under all five fold quantifiers, and under GEEN in a time-free
+   session it answered the complement — true — which is exactly the reading
+   nothing norms. *)
 let periode_onder_telkwantor (kwantor : kwantor) (parts : conditie list) =
   match kwantor with
   | Alle | De -> ()
@@ -207,9 +214,9 @@ let periode_onder_telkwantor (kwantor : kwantor) (parts : conditie list) =
       if List.exists bevat_periode parts then
         Value.fault
           "a period condition under GEEN or a counting quantifier (ten minste / ten hoogste / \
-           precies) is the position ch. 3.10's mirror note refuses: the quantifier counts or \
-           complements the window's verdict, while the chapter norms the window as a gate on the \
-           RULE. Declined at evaluation"
+           precies) is the position WF-112 refuses: the quantifier counts or complements the \
+           window's verdict, while ch. 3.10 norms the window as a gate on the RULE, so the \
+           document is not well-formed. Declined at evaluation"
 
 (* WF-100 / IR-SPEC ch. 4.6 (q1), maintainer decision 2026-09-10: on a
    characteristic check the `eigenaar` is AUTHORITATIVE for the declaration.
@@ -2285,11 +2292,12 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
          [run_rule] refuses it by name before a subject is taken, because the
          case distinction is on the rule's TARGET and a condition sees none.
 
-         The mirror note bounds what a bound may BE (backend maturity, not IR
-         scope): a literal or the subject's own scalar date attribute. WF-042
-         admits any date expression, so the rest is refused by name here and
-         in the ASP backend alike — one carried set for both, or the
-         differential would arbitrate a form only one of them reads.
+         What a bound may BE is WF-111 since 2026-09-23 (maintainer decision;
+         until then ch. 3.10's mirror note, backend maturity): a literal or the
+         subject's own scalar date attribute. The verifier refuses the rest, so
+         the refusal below is fail-fast on a non-conforming input — kept, word
+         for word the ASP backend's up to the phase, so the two executors carry
+         one set and the differential never arbitrates a form only one reads.
 
          Both bounds are evaluated, vanaf before tot (ch. 5.11), and BEFORE
          the verdict looks at the evaluation date: the order is normative and
@@ -2310,8 +2318,8 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
                 phases apart, so a swap would pass unseen *)
              Value.fault
                "the %s bound of a period condition is neither a date literal nor an own scalar \
-                date attribute of the subject: ch. 3.10's mirror note carries those two and defers \
-                the general date expression WF-042 admits. Declined at evaluation"
+                date attribute of the subject, the only two shapes WF-111 admits: the document is \
+                not well-formed. Declined at evaluation"
                side);
         eval_expr env world self ~err e
       in
@@ -2324,7 +2332,7 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
         | Some Value.Empty -> Some None (* a leeg bound never matches *)
         | Some (Value.Date z) -> Some (Some z)
         | Some other ->
-            Value.fault "a period condition's bound is %s, which is not a date (WF-042)"
+            Value.fault "a period condition's bound is %s, which is not a day-precision date (WF-042, WF-111)"
               (Value.to_string other)
       in
       (* both [day] calls can FAULT (a bound that is not a date), and OCaml
