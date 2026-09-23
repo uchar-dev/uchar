@@ -509,6 +509,7 @@ class NietInUitzonderingTest {
             is uitgesloten kenmerk (bijvoeglijk);
             is geschorst kenmerk (bijvoeglijk);
             is vergunning geweigerd kenmerk (bijvoeglijk);
+            is ingezetene kenmerk (bijvoeglijk);
 
         Objecttype de Strandjutter is een Jutter (mv: Strandjutters) (bezield)
             het aantal strandvakken Numeriek (niet-negatief geheel getal);
@@ -517,73 +518,111 @@ class NietInUitzonderingTest {
             het aantal duinvakken Numeriek (niet-negatief geheel getal);
         """;
 
+    private static final String JUTTER_WAAR_GROEP = """
+
+        Regel uitsluiting bij weigering
+            geldig altijd
+                Een Jutter is uitgesloten
+                indien hij vergunning geweigerd is.
+
+        Uitzondering op uitsluiting bij weigering: uitsluiting van een ingezetene
+            geldig altijd
+                Een Jutter is uitgesloten
+                indien hij ingezetene is.
+        """;
+
+    private static final String JUTTER_ONWAAR_GROEP = """
+
+        Regel geen uitsluiting
+            geldig altijd
+                Een Jutter is niet uitgesloten.
+
+        Uitzondering op geen uitsluiting: geen uitsluiting bij schorsing
+            geldig altijd
+                Een Jutter is niet uitgesloten
+                indien hij geschorst is.
+        """;
+
+    private static final String STRANDJUTTER_ONWAAR_GROEP = """
+
+        Regel geen uitsluiting van een strandjutter
+            geldig altijd
+                Een Strandjutter is niet uitgesloten.
+
+        Uitzondering op geen uitsluiting van een strandjutter: geen uitsluiting bij schorsing
+            geldig altijd
+                Een Strandjutter is niet uitgesloten
+                indien hij geschorst is.
+        """;
+
+    private static final String STRANDJUTTER_WAAR_GROEP = """
+
+        Regel uitsluiting van een strandjutter
+            geldig altijd
+                Een Strandjutter is uitgesloten
+                indien hij vergunning geweigerd is.
+
+        Uitzondering op uitsluiting van een strandjutter: uitsluiting van een ingezeten strandjutter
+            geldig altijd
+                Een Strandjutter is uitgesloten
+                indien hij ingezetene is.
+        """;
+
     @Test void een_subtypegroep_die_alleen_onwaar_beslist_boven_een_geerfde_waar_basis_waarschuwt_niet() {
-        // ch. 7.10: the subtype's own base replaces the inherited base, so on a Strandjutter the inherited positive
-        // rule no longer applies — the all-'onwaar' group changes the outcome and is no "never" to warn about.
-        RegelSpraakModel m = Resolver.resolve(KETEN + """
+        // ch. 7.10: the subtype's own base replaces the inherited base. A Strandjutter whose vergunning is geweigerd
+        // is uitgesloten through the Jutter group's base without the Strandjutter group, and is not with it —
+        // measured 2026-09-24 in ref, clingo and the Drools exec branch. The group changes the outcome, so there is
+        // no "never" to warn about.
+        RegelSpraakModel m = Resolver.resolve(KETEN + JUTTER_WAAR_GROEP + STRANDJUTTER_ONWAAR_GROEP);
+        assertTrue(m.diagnostics.isEmpty(), () -> "geen waarschuwing in een erflijn met een groep: " + m.diagnostics);
+        assertEquals(List.of("Jutter", "Strandjutter"),
+                m.prioritizedDefaults.stream().map(PrioritizedDefaults::onderwerp).toList());
+        assertEquals(List.of(Boolean.TRUE, Boolean.TRUE), besluiten(m.prioritizedDefaults.get(0)));
+        assertEquals(List.of(Boolean.FALSE, Boolean.FALSE), besluiten(m.prioritizedDefaults.get(1)));
+    }
+
+    @Test void een_supertypegroep_die_alleen_onwaar_beslist_boven_een_positieve_subtypebasis_waarschuwt_niet() {
+        // ch. 7.10: an inherited exception stays above the subtype's own base. A Strandjutter that is geschorst and
+        // whose vergunning is geweigerd is uitgesloten through its own base without the Jutter group, and is not
+        // with it — measured 2026-09-24 in ref, clingo and the Drools exec branch.
+        RegelSpraakModel m = Resolver.resolve(KETEN + JUTTER_ONWAAR_GROEP + STRANDJUTTER_WAAR_GROEP);
+        assertTrue(m.diagnostics.isEmpty(), () -> "geen waarschuwing in een erflijn met een groep: " + m.diagnostics);
+        assertEquals(List.of(Boolean.FALSE, Boolean.FALSE), besluiten(m.prioritizedDefaults.get(0)));
+        assertEquals(List.of(Boolean.TRUE, Boolean.TRUE), besluiten(m.prioritizedDefaults.get(1)));
+    }
+
+    @Test void een_gewone_kenmerkregel_in_de_erflijn_laat_de_waarschuwing_ook_weg() {
+        // A plain kenmerk rule is folded into no stack — the fold of ch. 7.10 takes attribute writers only — so it
+        // keeps firing on the subtype's instances beside the groups, which then stay inert: measured 2026-09-24,
+        // the outcome is the same with and without the all-'onwaar' group, in both directions. The warning is left
+        // out here all the same: its hint, a missing 'waar' exception, would point away from the rule that writes.
+        String supertypeRegel = """
 
             Regel uitsluiting bij weigering
                 geldig altijd
                     Een Jutter is uitgesloten
                     indien hij vergunning geweigerd is.
-
-            Regel geen uitsluiting van een strandjutter
-                geldig altijd
-                    Een Strandjutter is niet uitgesloten.
-
-            Uitzondering op geen uitsluiting van een strandjutter: geen uitsluiting bij schorsing
-                geldig altijd
-                    Een Strandjutter is niet uitgesloten
-                    indien hij geschorst is.
-            """);
-        assertTrue(m.diagnostics.isEmpty(), () -> "geen waarschuwing in een erflijn met een andere schrijver: " + m.diagnostics);
-        assertEquals(1, m.prioritizedDefaults.size());
-        PrioritizedDefaults g = m.prioritizedDefaults.get(0);
-        assertEquals("Strandjutter", g.onderwerp());
-        assertEquals(List.of(Boolean.FALSE, Boolean.FALSE), besluiten(g));
-        assertEquals(1, m.resolvedRegels.size(), "de gewone regel op Jutter blijft een regel");
-        assertEquals("Jutter", ((Expr.AttribuutRef) m.resolvedRegels.get(0).doel()).objecttype().naam);
-    }
-
-    @Test void een_supertypegroep_die_alleen_onwaar_beslist_boven_een_positieve_subtypebasis_waarschuwt_niet() {
-        // ch. 7.10: the inherited exceptions stay above the subtype's own base, so where a Strandjutter is geschorst
-        // the supertype's 'onwaar' exception blocks the subtype's positive rule.
-        RegelSpraakModel m = Resolver.resolve(KETEN + """
-
-            Regel geen uitsluiting
-                geldig altijd
-                    Een Jutter is niet uitgesloten.
-
-            Uitzondering op geen uitsluiting: geen uitsluiting bij schorsing
-                geldig altijd
-                    Een Jutter is niet uitgesloten
-                    indien hij geschorst is.
+            """;
+        String subtypeRegel = """
 
             Regel uitsluiting van een strandjutter
                 geldig altijd
                     Een Strandjutter is uitgesloten
                     indien hij vergunning geweigerd is.
-            """);
-        assertTrue(m.diagnostics.isEmpty(), () -> "geen waarschuwing in een erflijn met een andere schrijver: " + m.diagnostics);
-        assertEquals("Jutter", m.prioritizedDefaults.get(0).onderwerp());
-        assertEquals(List.of(Boolean.FALSE, Boolean.FALSE), besluiten(m.prioritizedDefaults.get(0)));
-        assertEquals(1, m.resolvedRegels.size(), "de gewone regel op Strandjutter blijft een regel");
-        assertEquals("Strandjutter", ((Expr.AttribuutRef) m.resolvedRegels.get(0).doel()).objecttype().naam);
+            """;
+        for (String src : List.of(KETEN + supertypeRegel + STRANDJUTTER_ONWAAR_GROEP,
+                                  KETEN + JUTTER_ONWAAR_GROEP + subtypeRegel)) {
+            RegelSpraakModel m = Resolver.resolve(src);
+            assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+            assertEquals(1, m.prioritizedDefaults.size());
+            assertEquals(1, m.resolvedRegels.size(), "de gewone kenmerkregel blijft een regel");
+        }
     }
 
     @Test void een_zustersubtype_met_een_schrijver_heft_de_waarschuwing_niet_op() {
         // A sibling composes with nothing: on a Strandjutter the group still never attributes the characteristic,
         // and nothing above or below it in its own line does.
-        RegelSpraakModel m = Resolver.resolve(KETEN + """
-
-            Regel geen uitsluiting van een strandjutter
-                geldig altijd
-                    Een Strandjutter is niet uitgesloten.
-
-            Uitzondering op geen uitsluiting van een strandjutter: geen uitsluiting bij schorsing
-                geldig altijd
-                    Een Strandjutter is niet uitgesloten
-                    indien hij geschorst is.
+        RegelSpraakModel m = Resolver.resolve(KETEN + STRANDJUTTER_ONWAAR_GROEP + """
 
             Regel uitsluiting van een duinjutter
                 geldig altijd

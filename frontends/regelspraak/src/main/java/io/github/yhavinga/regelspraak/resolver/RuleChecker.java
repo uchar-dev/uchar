@@ -283,14 +283,17 @@ final class RuleChecker {
      *  per group: an unordered block spreads one target over sibling groups, and a sibling deciding 'onwaar' beside
      *  one deciding 'waar' leaves the target derivable.
      *
-     *  <p>No warning where the characteristic has another writer in the subject's inheritance line — a defaults
-     *  group or a live plain rule on a strict ancestor or descendant — because ch. 7.10 composes them into one
-     *  effective stack per type, and there the all-'onwaar' group changes outcomes. On a subtype its base replaces
-     *  the inherited base, so an inherited positive base stops applying to the subtype's instances; on a supertype
-     *  its exceptions stay above a subtype's own base and block it where they apply. Measured on 2026-09-24 in ref,
-     *  clingo and the Drools exec branch: a subtype instance that the inherited positive base gives the
-     *  characteristic loses it under such a subtype group. No warning either beside a live plain rule on the same
-     *  type: {@link #keurEnigeSchrijver} refuses that rule (WF-050), and a warning beside its ERROR adds nothing. */
+     *  <p>No warning where the characteristic has another writer in the subject's inheritance line, a strict
+     *  ancestor or descendant. A defaults group there composes with these groups into one effective stack per type
+     *  (ch. 7.10), and then the all-'onwaar' group changes outcomes: on a subtype its base replaces the inherited
+     *  base, on a supertype its exceptions stay above a subtype's own base. Measured 2026-09-24 in ref, clingo and
+     *  the Drools exec branch, both directions: a subtype instance the other group gives the characteristic loses
+     *  it. A plain kenmerk rule there is folded into no stack (the fold takes attribute writers only), so it keeps
+     *  writing on the subtype's instances and the groups stay inert beside it — measured the same day, same outcome
+     *  with and without the group. The warning is left out there as well, because its hint, a missing 'waar'
+     *  exception, would point away from the rule that does the writing. No warning either beside a live plain rule
+     *  on the same type: {@link #keurEnigeSchrijver} refuses that rule (WF-050), and a warning beside its ERROR
+     *  adds nothing. */
     private void keurNooitAfleidend() {
         Map<String, List<PrioritizedDefaults>> perDoel = new LinkedHashMap<>();
         for (PrioritizedDefaults pd : model.prioritizedDefaults)
