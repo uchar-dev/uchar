@@ -30,9 +30,11 @@ import java.util.Set;
  * <p><b>The document.</b> {@code corpus/golden/jutterswet-schouwploeg} reduced to its rule "bevoegd bij
  * diploma", with a day-precision {@code aanstelling} added to BOTH object types. The fold's own subject
  * carries the attribute too, with values chosen so that a lowering which read the PLOEG's date instead of
- * the contributor's would compile and answer differently in three of the five ploegen: S1 and S5 hold a
- * date after the evaluation date, S2 one before it. The measured ref/clingo answer and that wrong reading
- * part company on S1, S2 and S5, so a pass here excludes the wrong subject.
+ * the contributor's would compile and answer differently: S1 and S5 hold a date after the evaluation date,
+ * S2 and S6 one before it. In the toets the measured ref/clingo answer and that wrong reading part company
+ * on S1, S2, S5 and S6, in the filter on S5 and S6, so a pass here excludes the wrong subject. S6 also holds
+ * the one contributor that the filter must DROP to change the verdict: W7 is outside the window and not
+ * gediplomeerd, so a filter that selected everyone would read S6 onwaar.
  *
  * <p><b>The instances</b>, shared by every row but one (evaluation date 2024-06-15 unless the row says
  * otherwise; the exception is the whole-period route, built from {@code jutterswet-ploegpremie} the same way
@@ -43,6 +45,7 @@ import java.util.Set;
  *   S3 (no own date):    W4 2023-01-01 gediplomeerd, W5 without a date (a leeg bound never matches)
  *   S4 (own 2020-01-01): no wachten (the vacuous row of ch. 3.9a)
  *   S5 (own 2025-06-01): W6 2023-01-01, NOT gediplomeerd
+ *   S6 (own 2020-01-01): W7 2024-09-01, NOT gediplomeerd (after the date), W8 2023-01-01 gediplomeerd
  * </pre>
  * Every expected verdict below was computed by hand before the first run and measured equal in {@code ref}
  * and clingo on the same document; each row names the ploegen that come out bevoegd, every other ploeg is
@@ -76,7 +79,7 @@ class VensterVouwWitnessTest {
     /** The same document against the answer a lowering reading the PLOEG's own date would give: both branches
      *  must reject it, so the row above really separates the two subjects. */
     @Test void de_lezing_van_de_ploeg_zelf_wordt_door_beide_takken_verworpen() throws Exception {
-        BeideTakken.rood(document("ALLE", null, null, ATTR), casus(BINNEN, "S2", "S4"),
+        BeideTakken.rood(document("ALLE", null, null, ATTR), casus(BINNEN, "S2", "S4", "S6"),
                 "kenmerk bevoegd: verwacht aanwezig, werkelijk afwezig",
                 "de datum van de ploeg is niet de grens van de bijdrager");
     }
@@ -86,7 +89,7 @@ class VensterVouwWitnessTest {
     @Test void de_totgrens_sluit_de_evaluatiedatum_uit_en_tot_en_met_sluit_hem_in() throws Exception {
         BeideTakken.groen(document("ALLE", null, null, EXCL), casus(BINNEN, "S4"),
                 "tot 15 juni: de evaluatiedatum ligt buiten het venster");
-        BeideTakken.groen(document("ALLE", null, null, INCL), casus(BINNEN, "S1", "S2", "S3", "S4", "S5"),
+        BeideTakken.groen(document("ALLE", null, null, INCL), casus(BINNEN, "S1", "S2", "S3", "S4", "S5", "S6"),
                 "tot en met 15 juni: de evaluatiedatum ligt erin");
     }
 
@@ -117,12 +120,14 @@ class VensterVouwWitnessTest {
     // ---------------- the window in an ALLE fold's FILTER: played, with ref's values ----------------
 
     /** The window SELECTS the contributors, per contributor: S2's only wacht falls out and S2 holds vacuously,
-     *  S5's wacht stays in and is not gediplomeerd. In a time-free session nothing is selected anywhere, so every
-     *  ploeg holds vacuously — ch. 3.12's recorded reading of this position (maintainer decision 2026-09-23). */
+     *  S5's wacht stays in and is not gediplomeerd, and S6 holds only because W7 falls out. In a time-free
+     *  session nothing is selected anywhere, so every ploeg holds vacuously — ch. 3.12's recorded reading of this
+     *  position (maintainer decision 2026-09-23). */
     @Test void het_venster_in_het_filter_kiest_de_bijdragers_per_bijdrager() throws Exception {
         Path ir = document("ALLE", null, ATTR, GEDIPLOMEERD);
-        BeideTakken.groen(ir, casus(BINNEN, "S1", "S2", "S3", "S4"), "het filter selecteert per bijdrager");
-        BeideTakken.groen(ir, casus(null, "S1", "S2", "S3", "S4", "S5"), "tijdvrij: niets geselecteerd, vacuüm waar");
+        BeideTakken.groen(ir, casus(BINNEN, "S1", "S2", "S3", "S4", "S6"), "het filter selecteert per bijdrager");
+        BeideTakken.groen(ir, casus(null, "S1", "S2", "S3", "S4", "S5", "S6"),
+                "tijdvrij: niets geselecteerd, vacuüm waar");
     }
 
     /** The fold's OTHER route — the ch. 3.9 whole-year matrix over each contributor's own timeline,
@@ -155,9 +160,9 @@ class VensterVouwWitnessTest {
         for (String kw : List.of("GEEN", "TEN_MINSTE", "TEN_HOOGSTE", "PRECIES")) {
             Integer drempel = "GEEN".equals(kw) ? null : 1;
             String fragment = "kwantorvouw onder " + kw + " (WF-112)";
-            BeideTakken.geweigerd(document(kw, drempel, null, LIT), casus(null, "S1", "S2", "S3", "S4", "S5"),
+            BeideTakken.geweigerd(document(kw, drempel, null, LIT), casus(null, ALLE_PLOEGEN),
                     fragment, "het venster in de toets onder " + kw);
-            BeideTakken.geweigerd(document(kw, drempel, LIT, GEDIPLOMEERD), casus(null, "S1", "S2", "S3", "S4", "S5"),
+            BeideTakken.geweigerd(document(kw, drempel, LIT, GEDIPLOMEERD), casus(null, ALLE_PLOEGEN),
                     fragment, "het venster in het filter onder " + kw);
         }
     }
@@ -165,7 +170,7 @@ class VensterVouwWitnessTest {
     /** WF-112's walk is deep: a GEEN composite inside an ALLE fold's toets complements the window as surely as a
      *  GEEN fold does, and is refused on ITS quantifier. */
     @Test void een_venster_onder_een_geen_samenstelling_in_een_alle_vouw_wordt_geweigerd() throws Exception {
-        BeideTakken.geweigerd(document("ALLE", null, null, samen("GEEN", LIT)), casus(null, "S1", "S2", "S3", "S4", "S5"),
+        BeideTakken.geweigerd(document("ALLE", null, null, samen("GEEN", LIT)), casus(null, ALLE_PLOEGEN),
                 "GEEN-samenstelling (WF-112)", "GEEN[venster] als toets van een ALLE-vouw");
     }
 
@@ -294,6 +299,8 @@ class VensterVouwWitnessTest {
                 "roles": {}, "characteristics": [] },
               { "label": "S5", "objectType": "Schouwploeg", "attributes": { "aanstelling": { "date": "2025-06-01" } },
                 "roles": { "wachten": [ "W6" ] }, "characteristics": [] },
+              { "label": "S6", "objectType": "Schouwploeg", "attributes": { "aanstelling": { "date": "2020-01-01" } },
+                "roles": { "wachten": [ "W7", "W8" ] }, "characteristics": [] },
               { "label": "W1", "objectType": "Strandwacht",
                 "attributes": { "dienstjaren": { "number": "8" }, "aanstelling": { "date": "2023-01-01" } },
                 "roles": {}, "characteristics": [ "gediplomeerd" ] },
@@ -310,13 +317,21 @@ class VensterVouwWitnessTest {
                 "roles": {}, "characteristics": [ "gediplomeerd" ] },
               { "label": "W6", "objectType": "Strandwacht",
                 "attributes": { "dienstjaren": { "number": "8" }, "aanstelling": { "date": "2023-01-01" } },
-                "roles": {}, "characteristics": [] } ]""";
+                "roles": {}, "characteristics": [] },
+              { "label": "W7", "objectType": "Strandwacht",
+                "attributes": { "dienstjaren": { "number": "8" }, "aanstelling": { "date": "2024-09-01" } },
+                "roles": {}, "characteristics": [] },
+              { "label": "W8", "objectType": "Strandwacht",
+                "attributes": { "dienstjaren": { "number": "8" }, "aanstelling": { "date": "2023-01-01" } },
+                "roles": {}, "characteristics": [ "gediplomeerd" ] } ]""";
 
     /** The shared instances at {@code asOf} (null: a time-free session), expecting "bevoegd" present on exactly
      *  the named ploegen and absent on the others, plus no inconsistency. */
     private static JsonNode casus(String asOf, String... bevoegd) throws Exception {
-        return casus(INSTANTIES, List.of("S1", "S2", "S3", "S4", "S5"), "bevoegd", asOf, bevoegd);
+        return casus(INSTANTIES, List.of(ALLE_PLOEGEN), "bevoegd", asOf, bevoegd);
     }
+
+    private static final String[] ALLE_PLOEGEN = { "S1", "S2", "S3", "S4", "S5", "S6" };
 
     private static final String BERGERS = """
             [ { "label": "P1", "objectType": "Bergingsploeg", "attributes": { "aanstelling": { "date": "2020-01-01" } },
