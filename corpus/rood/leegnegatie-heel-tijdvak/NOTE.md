@@ -29,8 +29,9 @@ leeg/gevuld test is ch. 3.9 scope, not executed here"). The ASP backend
 refuses the same form in the same words, from a named arm that comes
 before its leeg/gevuld arm. The Drools loader refuses the negated form by
 name (`Predicaat.negatie`, "the threshold of the negated test is not
-normed"). The Drools leg lists it as an EXCLUDE, because that refusal
-comes one phase before fire.
+normed"). The Drools leg lists it as an EXCLUDE: the red run reports a
+loader refusal as EXCLUDE by its exception type, and the leg pins a
+fragment only on a FAULT.
 
 The document is verifier-clean: no WF rule forbids the form, because the
 norm has not decided it. Until this case existed only the backends' own

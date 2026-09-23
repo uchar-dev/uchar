@@ -40,8 +40,9 @@ words, and its own suite pins it.
 Both pins run to the **phase tail**, `Declined at evaluation` against
 `Declined in translation`, so a swap of the two phases fails here and
 cannot pass unseen. The Drools branches are in the gate's exclusion list,
-not fragment-pinned: a transpiler refusal is an EXCLUDE, and that leg
-pins a fragment only on a FAULT.
+not fragment-pinned: the transpiler raises the refusal as an Excluded,
+which the red run reports as EXCLUDE, and that leg pins a fragment only
+on a FAULT.
 
 This directory becomes a golden when temporal characteristic writes land
 (ch. 3.11). The gate's stale guards will report it then.

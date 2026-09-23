@@ -47,8 +47,9 @@ value.
   `Predicaat.periode`, "a leeg/gevuld test under a whole-period
   qualifier (ch. 3.9): ref executes neither the leeg fold (touched days)
   nor the gevuld fold (days(B)), so this backend does not answer the form
-  either". That refusal is an EXCLUDE, and gate 8's Drools leg pins a
-  fragment only on a FAULT, so the leg lists this case with that reason.
+  either". The red run reports that loader refusal as an EXCLUDE, by its
+  exception type, and gate 8's Drools leg pins a fragment only on a
+  FAULT, so the leg lists this case with that reason.
   The backend's own witness test asserts the key and the ground for
   leeg and gevuld alike, and gate 8 runs it when it rebuilds the jar.
 
