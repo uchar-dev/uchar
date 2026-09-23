@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Two forms that reached disk silently while the verifier refused them, measured on the frontend before this
- * fence (a54f9bd3).
+ * fence (78edd45d).
  *
  * <p><b>A rule target that is no attribute of the subject.</b> A rule writes an attribute or a characteristic
  * of its own universal subject (WF-022). "De vakpremie van het strandvak van een Jutter moet gesteld worden op 10"

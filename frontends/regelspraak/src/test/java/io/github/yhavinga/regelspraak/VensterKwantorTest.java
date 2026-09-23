@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * WF-112 (maintainer decision 2026-09-23), producer side: a time window never sits under 'geen van de' or a
  * counting quantifier — a composite member at any depth, or the filter or test of such a quantifier fold. The
  * window gates the RULE, and no reading is specified for a verdict that is complemented or counted. Measured on
- * the frontend before this fence (a54f9bd3): the window as a bullet under 'geen van de', 'ten minste één van de',
+ * the frontend before this fence (78edd45d): the window as a bullet under 'geen van de', 'ten minste één van de',
  * 'ten hoogste één van de' and 'precies één van de', and under a 'geen van de' sub-compound of an 'alle'
  * compound, each reached disk with {@code diagnostics: []}, and the verifier refused every one under WF-112.
  * Under 'alle' the window is admitted and stays clean.

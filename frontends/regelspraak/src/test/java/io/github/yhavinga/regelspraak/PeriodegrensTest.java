@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * WF-111 (maintainer decision 2026-09-23), producer side: a time window's bound is a date literal or an own
  * scalar date attribute of the subject, both of day precision. §13.4.15.68 lets a periodevergelijking take any
  * date expression, and the frontend built every one of them into a window — measured on the frontend before
- * this fence (4bc5134f): a parameter, a navigated read, a datum-tijd attribute, a computed date, a
+ * this fence (1c71ecf3): a parameter, a navigated read, a datum-tijd attribute, a computed date, a
  * time-dependent attribute, a datum-tijd literal and an attribute of another object type all reached disk with
  * {@code diagnostics: []}, and the verifier refused each one (WF-111, and WF-053 for the supertype-named read).
  *

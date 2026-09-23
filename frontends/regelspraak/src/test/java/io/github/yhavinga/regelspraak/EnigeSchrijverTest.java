@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * WF-050's single writer, producer side: a target with a defaults group has no other writer — no plain rule
  * beside the group, and no second group unless every group on the target is declared unordered. Measured on
- * the frontend before this fence (4d0643a7), each of the five placements below reached disk with
+ * the frontend before this fence (402dc130), each of the five placements below reached disk with
  * {@code diagnostics: []} and the verifier refused it under WF-050: an 'Uitzondering op' with another plain
  * rule on the base's target; an 'Uitzondering op' on one row of a decision table (outside a group — the other
  * rows go on writing); two ordered families on one target; an ordered family beside an unordered block; an

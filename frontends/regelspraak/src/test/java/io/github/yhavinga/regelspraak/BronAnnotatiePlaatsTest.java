@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Where a {@code // Bron:} annotation lands when it is not written directly above a rule of its own. An
  * annotation belongs to the rule directly below it ({@code bronAnnotaties}, IR-SPEC ch. 3.1). A {@code Regelgroep}
  * header is no rule, so an annotation above it reached nothing and vanished without a word — measured on the
- * frontend before this fix (4d5da739): {@code diagnostics: []}, the annotation nowhere in the IR. It now draws the
+ * frontend before this fix (df485007): {@code diagnostics: []}, the annotation nowhere in the IR. It now draws the
  * WARNING the {@code Uitzonderingen ongeordend:} header already draws. The group's own {@code bron} field is no
  * place for it: that field is the v0 source snippet of the group's name.
  *

@@ -234,7 +234,7 @@ class RegelgroepUitzonderingTest {
     }
 
     @Test void een_rij_van_een_gegroepeerde_beslistabel_als_basis_weigert() {
-        // Measured on 625d735f: written with diagnostics: [], then WF-033 and WF-050 at the verifier — the arm
+        // Measured on 57114772: written with diagnostics: [], then WF-033 and WF-050 at the verifier — the arm
         // keyed on the table's name, and the base is a row.
         String src = GEGROEPEERDE_TABEL + uitzonderingOp("Bergingspremie 1");
         RegelSpraakModel m = Resolver.resolve(src);

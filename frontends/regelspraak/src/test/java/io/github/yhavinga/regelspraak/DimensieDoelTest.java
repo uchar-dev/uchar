@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * A rule that assigns one CELL of a dimensioned attribute. The wire has no cell assignment: a rule's target is an
  * attribute reference (WF-022 refuses any other node there), and the dimension-cell node is a read. Measured on
- * the frontend before this fix (522cd9c8): "De premie van een Jutter in voorjaar moet gesteld worden op 10" put the
+ * the frontend before this fix (d4a25506): "De premie van een Jutter in voorjaar moet gesteld worden op 10" put the
  * label into the subject text and wrote the WHOLE attribute premie — verifier PASS on a different document than
  * the one written; "De premie in voorjaar van een Jutter …" was refused, but as an undeclared attribute, without
  * naming the dimension. Both are refused now with the cell named. Reading a cell stays what it was.

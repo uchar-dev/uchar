@@ -177,7 +177,7 @@ Gemeten per spelling, vóór (build na de eerste kaart) en na:
     mutant T2 (opgeloste-operandwacht weg):    1 failed (de parameter "vondsten" kreeg de typezin)
     mutant T3 (uitweg zonder rol):             6 failed (de zes spellingen)
     elke mutant teruggezet met cp, cmp gelijk (md5 fd075975d5508f716a077957cce4c814,
-    vóór de woordverfijning van commit df508d07)
+    vóór de woordverfijning van commit 9c7c8c59)
 
 ### 6. Gates, elk als losse aanroep na `eval $(opam env)`
 
@@ -196,7 +196,7 @@ Gemeten per spelling, vóór (build na de eerste kaart) en na:
     13 check-reftype-derivation PASS  131 twists over 27 goldens, 128 replays, 25 DRL-tekst
     14 check-flogic             PASS  130 checks, 2 goldens
 
-Gates 1, 10 en 11 opnieuw na de woordverfijning (df508d07): PASS, 431 / 70
+Gates 1, 10 en 11 opnieuw na de woordverfijning (9c7c8c59): PASS, 431 / 70
 / 45. Geen vloer of pin aangeraakt.
 
 ### 7. Herpin
@@ -251,7 +251,7 @@ Aansluitend op het blok "**Follow-up (2026-09-23, card
 
 Opdracht van de hoofdsessie na de drie kaarten, als verbreding van
 may-touch binnen `frontends/regelspraak` (geen kaartje; eigen commit
-`66de32a2`). Vastgelegd bij deze kaart omdat zij er het dichtst bij ligt:
+`af624b51`). Vastgelegd bij deze kaart omdat zij er het dichtst bij ligt:
 ook hier trekt de frontend een hek op dat een wireregel van 2026-09-23
 spiegelt. Aanleiding: de Drools-vouwtoets-kaart zag dat
 `Tijdrekening.periodeGrensLowerbaar` het objecttype van een venstergrens
@@ -259,7 +259,7 @@ op identiteit vergelijkt, waar WF-111 `S ⊑ O` toelaat. Die helper staat
 in `frontends/regelspraak` (pakket `kern`) maar wordt alleen door de
 twee Drools-takken aangeroepen.
 
-### De meting (build vóór de fence, `4bc5134f`; model met `Klipjutter is een Jutter`)
+### De meting (build vóór de fence, `1c71ecf3`; model met `Klipjutter is een Jutter`)
 
     grens (subject: bound)                                   frontend            verifier
     Klipjutter: vanaf zijn peildatum (geërfd)                schoon, op Klipjutter  PASS
@@ -311,7 +311,7 @@ vorm plus de tot-grens, en zeven schone vormen.
     mutant M4 (tijdsafhankelijkheid uit):         1 failed
     elke mutant teruggezet met cp, cmp gelijk (md5 b304844d2b62d7692fea1d54529d0ca1)
 
-### Gates op `66de32a2`, elk als losse aanroep
+### Gates op `af624b51`, elk als losse aanroep
 
 Alle veertien PASS; de getallen zijn die van de derde kaart, behalve gate
 10: 448 JUnit (431 + 17), 70 rgs-goldens byte-identiek. Gate 11: 45 .rgs
@@ -408,15 +408,15 @@ volgt het besluit; tot dan laat zij door wat de verifier doorlaat.
 **Voor de herpin (hoofdsessie).** In regelspraak-java verwacht
 `RuleCheckTest.periodevergelijking_met_parametergrens_blijft_eerlijke_marker`
 dat "vanaf de PEILDATUM" (een parametergrens) zonder fouten resolvet. Sinds
-de WF-111-fence van deze branch (`66de32a2`) is een parametergrens een
+de WF-111-fence van deze branch (`af624b51`) is een parametergrens een
 ERROR. Die test kantelt dus bij de herpin, naar dezelfde weigering die de
 verifier al gaf.
 
 ### Fixronde 2 (2026-09-23, hoofdsessie; lensadviezen 2, 3, 6 en 8)
 
-**Advies 2, `5c81ba84`: het WF-112-hek.** De brontaal laat een
+**Advies 2, `3f89448e`: het WF-112-hek.** De brontaal laat een
 periodebullet onder elke kwantor toe; de wire niet onder 'geen van de'
-of een tellende kwantor. Gemeten op `a54f9bd3`: onder elk van de vier,
+of een tellende kwantor. Gemeten op `78edd45d`: onder elk van de vier,
 en onder een geen-samenstelling binnen een alle-samenstelling, ging het
 document met `diagnostics: []` de schijf op, waarna de verifier WF-112
 gaf. `RuleChecker.keurVensterposities` loopt nu over elke voorwaarde die
@@ -432,9 +432,9 @@ venster schoon. Notitie in `DIVERGENCES.md` §8.4.3.
     mutant W3 (ook 'alle' geweigerd):     2 failed (de schone vormen)
     teruggezet met cp, cmp gelijk (md5 c2e56a2f9c606b30e205cd072dfca08c)
 
-**Advies 3, `83b5851f`: het regeldoel buiten het onderwerp, en het
+**Advies 3, `c424a087`: het regeldoel buiten het onderwerp, en het
 gesplitste venster.** Een regel schrijft een attribuut of kenmerk van
-zijn eigen universele onderwerp. Gemeten op `a54f9bd3`:
+zijn eigen universele onderwerp. Gemeten op `78edd45d`:
 
 - "De vakpremie van het strandvak van een Jutter moet gesteld worden op
   10": doel 'vakpremie van het strandvak' op Jutter, omdat de naam de
@@ -471,7 +471,7 @@ alinea in §8.4.3.
     mutant T4 (splitsing niet herkend):       1 failed
     teruggezet met cp, cmp gelijk (md5 c7ec34fa545de39d0d517688d9e0ed99)
 
-**Advies 6, `1de96e46`: alleen een meervoudige rol als uitweg.** In een
+**Advies 6, `de18d48f`: alleen een meervoudige rol als uitweg.** In een
 regel op Vondst noemde de typetellingzin bij "het aantal Jutters" de rol
 'aanmelder', terwijl een vondst er één heeft. Nu wordt alleen een
 meervoudige rol genoemd. Rood-eerst tegen ExpressieBouwer md5
@@ -479,7 +479,7 @@ e3c843a60f7f1561501abf71d466d256: 11 tests, 10 successful, 1 failed;
 mutant E (ook enkelvoudig) 1 failed; cmp-herstel (md5
 fa3771f6ed9b777fac0497f97ec4c53f).
 
-**Advies 8, `93f272f6`:** de spec-voorbeeldfrase in §1 staat nu in
+**Advies 8, `8d6eac7d`:** de spec-voorbeeldfrase in §1 staat nu in
 Jutterswet-woorden, en de toka-meting in §2 beschrijft de vorm zonder
 casusnamen.
 
@@ -491,7 +491,7 @@ casusnamen.
     11 check-toka-parity        PASS  45 .rgs byte-identiek; ref, clingo en Drools 29/29
     12 check-drools             PASS  gespeeld 182 (pin), DRL-tekst 161 (pin), JUnit 620
 
-Gate 10 opnieuw na de hash-commit `68e0ed16` (alleen commentaar en
+Gate 10 opnieuw na de hash-commit `bf9e2c54` (alleen commentaar en
 backlog): PASS, 475 / 70. De rebase liep zonder conflict: main raakte
 `frontends/` niet aan.
 

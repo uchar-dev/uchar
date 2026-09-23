@@ -69,7 +69,7 @@ drie extensie-goldens dragen geen annotaties: byte-identiek, geen
 heruitzending, geen mandaat gebruikt, en gates 5, 6 en 12 bewegen niet.
 Alle veertien gates groen. Dit is een HERPIN-kaart.
 
-### 1. Reproductie (basis `143fd3d3`, na de eerste kaart van de branch)
+### 1. Reproductie (basis `54395152`, na de eerste kaart van de branch)
 
 M6-probe (buiten de repository): `// Bron: art. 4 lid 1 Jutterswet` boven
 de basis, `// Bron: art. 4 lid 2 Jutterswet` boven haar `Uitzondering op`.
@@ -202,7 +202,7 @@ id stays open (LRML-audit C1's optional tail)":
 
 ### Fixronde 1 (2026-09-23, hoofdsessie)
 
-**Open punt 1 gesloten in `9fd44dbe`.** Eerst gemeten of binding kon.
+**Open punt 1 gesloten in `e0642b55`.** Eerst gemeten of binding kon.
 Het schema geeft `ResolvedRegelGroep` wel een verplicht `bron`-veld,
 maar de emitter schrijft daar het v0-bronfragment van de groepsnaam in
 (`g.bron().snippet()`, "berging"). Een wetsverwijzing op die plek zou een
@@ -215,7 +215,7 @@ ongeordende blok bleef letterlijk gelijk. Een WARNING komt in de
 `Regelgroep`, dus niets beweegt.
 
     getuige BronAnnotatiePlaatsTest (nieuw)
-    tegen RuleChecker md5 b304844d2b62d7692fea1d54529d0ca1 (tip 4d5da739):
+    tegen RuleChecker md5 b304844d2b62d7692fea1d54529d0ca1 (tip df485007):
       2 tests, 1 successful, 1 failed —
       "verwachtte precies één melding: [] ==> expected: <1> but was: <0>";
       de tegenproef (annotatie onder de kop hoort bij het eerste lid) groen
@@ -238,10 +238,10 @@ documenteert de declaratie en de wire heeft er geen plek voor (open punt
 golden `jutterswet-schouwrooster` (annotatie boven een Dagsoort) zou
 een melding in zijn `diagnostics` krijgen.
 
-**Bijvangst, opgelost in `e8d030cf`.** Een annotatie boven een
+**Bijvangst, opgelost in `2db4b27c`.** Een annotatie boven een
 `Beslistabel` verdween ook stil: elke rij wordt in een eigen tokenstroom
 geparsed, waar geen commentaar boven staat. Gemeten op de build van
-`cd37c5a9`: `diagnostics: []`, geen `bronAnnotaties` op de twee ontlede
+`0a023e17`: `diagnostics: []`, geen `bronAnnotaties` op de twee ontlede
 regels, "art. 8" nergens in de IR. Een tabel is regels, dus de annotatie
 landt nu op elke ontlede regel. Dat volgt de meerversieregel van IR-SPEC
 ch. 3.1: één commentaarblok boven een gedeelde kop, per afgevlakte regel
@@ -255,7 +255,7 @@ gestempeld.
     teruggezet met cp, cmp gelijk (md5 f42fbaf463d3bd58b9d41548bdbfa2b4)
 
 Geen golden en geen pariteitsbron draagt een geannoteerde beslistabel.
-Op tip `e8d030cf`: gate 10 PASS (451 tests, 70 rgs-goldens
+Op tip `2db4b27c`: gate 10 PASS (451 tests, 70 rgs-goldens
 byte-identiek), gate 1 PASS, gate 11 PASS (45 .rgs byte-identiek, de twee
 beslistabellen van de pariteitszone inbegrepen). Het vendored slice
 beweegt verder: HERPIN.
@@ -281,7 +281,7 @@ Aanvulling op het registervoorstel voor rij 3, als laatste zin:
 
 ### Fixronde 2 (2026-09-23, hoofdsessie; lensadvies 5)
 
-`89ed0f46`: de "; "-koppeling van meerdere annotaties op één blok is
+`a25152d8`: de "; "-koppeling van meerdere annotaties op één blok is
 niet terug te draaien. Eén annotatie die zelf "; " bevat, leest daarna
 precies als twee, en zo'n tekst staat al op de wire (de groepsverwijzing
 van golden `jutterswet-samenloop`). `DIVERGENCES.md` §4 legt dat verlies

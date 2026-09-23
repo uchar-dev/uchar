@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * A decision-table row becomes a rule named after the table and the row's number, the first cell ("Bonustabel
  * 1"). Rows without a number, or with the same number, therefore get the SAME rule name. Measured on the frontend
- * before this fix (b2cc445b): such a table reached disk with {@code diagnostics: []} and two rules of one name,
+ * before this fix (e67fc386): such a table reached disk with {@code diagnostics: []} and two rules of one name,
  * which the verifier refused under WF-020 (duplicate name) and WF-021 (overlapping versions). It is an ERROR now,
  * naming the duplicate, and a group holding the table lists each name once.
  */

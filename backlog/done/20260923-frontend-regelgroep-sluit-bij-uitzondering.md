@@ -232,7 +232,7 @@ Aan het eind van de IR-deltakolom, na "… witnessed by
 
 ### Fixronde 1 (2026-09-23, hoofdsessie)
 
-Open punt 2 gesloten in `cd37c5a9`: alleen commentaar en registertekst.
+Open punt 2 gesloten in `0a023e17`: alleen commentaar en registertekst.
 De 24 commentaren in de grammatica en de hoofdbronnen (`grammar/*.g4`,
 `resolver/`, `ir/`, `model/`) die naar `docs/grammar-divergences.md`
 wezen, wijzen nu naar `grammar/DIVERGENCES.md`. Dat pad is relatief aan
@@ -262,10 +262,10 @@ vendored slice beweegt verder (commentaar in grammatica en bronnen,
 
 ### Fixronde 2 (2026-09-23, hoofdsessie; lensadviezen 1, 4 en 7)
 
-**Advies 1, `8a902609`: de lidmaatschapsarm kent de rijen van een
+**Advies 1, `a8ab1639`: de lidmaatschapsarm kent de rijen van een
 gegroepeerde beslistabel.** Een beslistabel in de groep staat voor de
 regels van haar rijen ("Bergingspremie 1", …), en die noemt een blok als
-basis. De arm sleutelde op de tabelnaam. Gemeten op `625d735f`: een blok
+basis. De arm sleutelde op de tabelnaam. Gemeten op `57114772`: een blok
 op een rij, achter een Parameter die de groep sluit, ging met
 `diagnostics: []` de schijf op, waarna de verifier WF-033 en WF-050 gaf.
 De arm sleutelt nu op regelnamen (de desugaring legt de rijen vast) en
@@ -281,7 +281,7 @@ die de constructie noemt.
     mutant R2 (liftwacht resolvedVan weg):    1 failed (objectcreatie)
     teruggezet met cp, cmp gelijk (md5 bd954129327a7b234b3071bd0e4dd7f3)
 
-**Bijvangst, `a54f9bd3`: een Regelgroep noemt de rijen van haar
+**Bijvangst, `78edd45d`: een Regelgroep noemt de rijen van haar
 beslistabel als leden.** Gemeten bij advies 1: elke groep met een
 beslistabel, ook zonder extensieblok, werd met de tabelnaam als lid
 uitgezonden en door de verifier geweigerd (`WF-033 FAIL /regelGroepen/0:
@@ -292,7 +292,7 @@ rood-eerst 1 failed ("but was: <[bergingsbonus, Bergingspremie]>"),
 mutant L (tabelnaam terug) 1 failed, cmp-herstel. Geen bron in welke
 zone ook draagt een Regelgroep.
 
-**Advies 4, `a78fd26c`: de uitweg klopt overal.** De melding raadde "vóór
+**Advies 4, `d555c43f`: de uitweg klopt overal.** De melding raadde "vóór
 de kop 'Regelgroep <deze groep>'" aan. Bij twee groepen direct na elkaar
 komt wie dat volgt achter het laatste lid van de andere groep terecht en
 wordt opnieuw geweigerd. De melding noemt nu: vóór de eerste
@@ -308,7 +308,7 @@ die vervalt.
     mutant M2 (uitweg naar de laatste groep):  1 failed
     teruggezet met cp, cmp gelijk (md5 d08cb8fed53f71a447411d028bf6e642)
 
-**Advies 7, `86bd4b5d`:** de openingszin van dit Result gecorrigeerd. Twee
+**Advies 7, `41e47795`:** de openingszin van dit Result gecorrigeerd. Twee
 verifier-schone plaatsingen worden nu geweigerd (§1, rij 3 en 4).
 
 Aanvulling op het registervoorstel voor rij 14, als laatste zin:
