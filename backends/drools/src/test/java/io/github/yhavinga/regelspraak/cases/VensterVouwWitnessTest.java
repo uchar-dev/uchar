@@ -173,21 +173,7 @@ class VensterVouwWitnessTest {
      *  through a value: measured, the exec-model branch declined it ("voorwaarde buiten Phase-B scope") where the
      *  other three answered S1, S3, S5 and S6 at 2024-06-15 and nobody in a time-free session. */
     @Test void de_telling_met_een_venster_als_operand_van_een_voorwaarde() throws Exception {
-        ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(aggregatieDocument(ATTR)));
-        JsonNode telling = doc.withArray("resolvedRegels").get(0).get("waarde");
-        ObjectNode bron = (ObjectNode) JSON.readTree(Files.readString(SCHOUWPLOEG.resolve("ir.json")));
-        for (String ot : new String[] { "Strandwacht", "Schouwploeg" })
-            ((ObjectNode) bron.get("objecttypen").get(ot).get("attributen")).set("aanstelling", JSON.readTree(DATUM));
-        houdRegel(bron, "bevoegd bij diploma");
-        ObjectNode vergelijking = JSON.createObjectNode();
-        vergelijking.put("node", "Vergelijking").put("op", "GROTER").set("links", telling);
-        vergelijking.set("rechts", JSON.readTree("""
-                { "node": "Literal", "waarde": "0", "type": { "node": "Numeriek", "geheel": true, "decimalen": 0,
-                  "teken": "ONBEPAALD", "eenheid": null }, "bron": "0" }"""));
-        vergelijking.putNull("periode").put("bron", "het aantal wachten die vanaf hun aanstelling dienen groter is dan 0");
-        ((ObjectNode) bron.withArray("resolvedRegels").get(0)).set("voorwaarde", vergelijking);
-        Path ir = tmp.resolve("venstervouw-" + (n++) + ".json");
-        Files.writeString(ir, bron.toPrettyString());
+        Path ir = voorwaardeTellingDocument(ATTR);
         BeideTakken.groen(ir, casus(BINNEN, "S1", "S3", "S5", "S6"), "de telling in de voorwaarde selecteert per wacht");
         BeideTakken.groen(ir, casus(null), "tijdvrij: niemand telt, dus niemand bevoegd");
     }
@@ -213,10 +199,16 @@ class VensterVouwWitnessTest {
     @Test void een_venster_onder_een_geen_samenstelling_in_een_alle_vouw_wordt_geweigerd() throws Exception {
         BeideTakken.geweigerd(document("ALLE", null, null, samen("GEEN", LIT)), casus(null, ALLE_PLOEGEN),
                 "GEEN-samenstelling (WF-112)", "GEEN[venster] als toets van een ALLE-vouw");
-        // the same position as an aggregation's subselection: both branches refused it before, under a generic
-        // aggregation note, and now name the rule
+    }
+
+    /** The same position as an aggregation's subselection, in a value and as the operand of a condition. Both
+     *  branches refused it before, under a generic note ("aggregatie buiten Phase-C scope" / "TODO aggregatie
+     *  AANTAL"; "voorwaarde buiten Phase-B scope" / "TODO voorwaarde"), and now name the rule. */
+    @Test void een_venster_onder_geen_in_een_aggregatiefilter_wordt_bij_naam_geweigerd() throws Exception {
         BeideTakken.geweigerd(aggregatieDocument(samen("GEEN", ATTR)), tellingCasus(null, 2, 1, 2, 0, 1, 2),
                 "GEEN-samenstelling (WF-112)", "GEEN[venster] als subselectie van een telling");
+        BeideTakken.geweigerd(voorwaardeTellingDocument(samen("GEEN", ATTR)), casus(null, ALLE_PLOEGEN),
+                "GEEN-samenstelling (WF-112)", "diezelfde telling als operand van een voorwaarde");
     }
 
     /** The corpus's own WF-112 witnesses, loaded as gate 12 and the replay API load a document: with no
@@ -322,6 +314,27 @@ class VensterVouwWitnessTest {
             ((ObjectNode) doc.get("objecttypen").get(ot).get("attributen")).set("aanstelling", JSON.readTree(DATUM));
         houdRegel(doc, "wachttal van een schouwploeg");
         ((ObjectNode) doc.withArray("resolvedRegels").get(0).get("waarde")).set("filter", JSON.readTree(filter));
+        Path p = tmp.resolve("venstervouw-" + (n++) + ".json");
+        Files.writeString(p, doc.toPrettyString());
+        return p;
+    }
+
+    /** The golden's document with ONE rule, "bevoegd bij diploma", whose whole condition is "the count of the
+     *  ploeg's wachten carrying {@code filter} is greater than 0". */
+    private Path voorwaardeTellingDocument(String filter) throws Exception {
+        ObjectNode telDoc = (ObjectNode) JSON.readTree(Files.readString(aggregatieDocument(filter)));
+        JsonNode telling = telDoc.withArray("resolvedRegels").get(0).get("waarde");
+        ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(SCHOUWPLOEG.resolve("ir.json")));
+        for (String ot : new String[] { "Strandwacht", "Schouwploeg" })
+            ((ObjectNode) doc.get("objecttypen").get(ot).get("attributen")).set("aanstelling", JSON.readTree(DATUM));
+        houdRegel(doc, "bevoegd bij diploma");
+        ObjectNode vergelijking = JSON.createObjectNode();
+        vergelijking.put("node", "Vergelijking").put("op", "GROTER").set("links", telling);
+        vergelijking.set("rechts", JSON.readTree("""
+                { "node": "Literal", "waarde": "0", "type": { "node": "Numeriek", "geheel": true, "decimalen": 0,
+                  "teken": "ONBEPAALD", "eenheid": null }, "bron": "0" }"""));
+        vergelijking.putNull("periode").put("bron", "het aantal wachten die vanaf hun aanstelling dienen groter is dan 0");
+        ((ObjectNode) doc.withArray("resolvedRegels").get(0)).set("voorwaarde", vergelijking);
         Path p = tmp.resolve("venstervouw-" + (n++) + ".json");
         Files.writeString(p, doc.toPrettyString());
         return p;

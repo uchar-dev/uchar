@@ -1,6 +1,7 @@
 package io.github.yhavinga.regelspraak.transpiler.kern;
 
 import io.github.yhavinga.regelspraak.ir.Conditie;
+import io.github.yhavinga.regelspraak.ir.Expr;
 
 /**
  * WF-112 ({@code spec/IR-SPEC.md} ch. 4.6; {@code spec/RUNTIME-SEMANTICS.md} ch. 3.10): a time window never
@@ -39,6 +40,14 @@ public final class Vensterpositie {
             return w != null ? w : weigering(kv.toets());
         }
         return null;
+    }
+
+    /** The refusal for the first die/dat filter inside {@code e} — an aggregation's subselection, read in an
+     *  operand or a value — that places a window under GEEN or a counting quantifier, or null. Null-safe. */
+    public static String inExpressie(Expr e) {
+        String[] eerste = { null };
+        Expr.bevat(e, x -> x instanceof Expr.Functie f && (eerste[0] = weigering(f.filter())) != null);
+        return eerste[0];
     }
 
     /** GEEN complements the window's verdict and the three counting quantifiers count it; ALLE and DE only

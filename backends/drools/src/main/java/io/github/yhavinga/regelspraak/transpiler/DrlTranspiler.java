@@ -4637,10 +4637,15 @@ public final class DrlTranspiler {
                 // The label is the manifest reason a reader sees. A bare "voorwaarde" cannot distinguish a
                 // construct this back-end does not carry from an UNREADABLE date or datum-tijd lexeme (IR-SPEC ch. 4.1) —
                 // a document defect the producer can fix. Name those, in the exec branch's words.
+                // The same holds for a window under GEEN or a counting quantifier in an operand's aggregation
+                // filter: WF-112's position, which the exec branch names in these words.
                 boolean lexeem = Literalen.onleesbaarDatumTijdLexeem(v.links()) || Literalen.onleesbaarDatumTijdLexeem(v.rechts());
                 boolean datumLexeem = Literalen.onleesbaarDatumLexeem(v.links()) || Literalen.onleesbaarDatumLexeem(v.rechts());
+                String venster = Vensterpositie.inExpressie(v.links());
+                if (venster == null) venster = Vensterpositie.inExpressie(v.rechts());
                 return LoweredConditie.marker(lexeem ? "voorwaarde met onleesbaar datum-tijd-lexeem"
-                        : datumLexeem ? "voorwaarde met onleesbaar datum-lexeem" : "voorwaarde", v.bron());
+                        : datumLexeem ? "voorwaarde met onleesbaar datum-lexeem"
+                        : venster != null ? venster : "voorwaarde", v.bron());
             }
             // §5.5.5 a comparison with a TO-ONE navigated operand: mvel's `!.` (from operand()) short-circuits the whole
             // constraint to a non-match on a null relation — spec-correct for ordering/GELIJK (a leeg operand is onwaar)
