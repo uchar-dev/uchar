@@ -10,11 +10,13 @@ import java.nio.file.Path;
  * gate classifies:
  *
  * <pre>
- *   FAULT &lt;text&gt;      exit 0   any runtime exception after the build: at fire, or while the case is read,
- *                              a named refusal or a crash alike; the gate matches the pinned fragment, which
- *                              cites this backend's own sentence and never platform text
+ *   FAULT &lt;text&gt;      exit 0   any runtime exception after the build other than an Excluded — at fire or while
+ *                              the case is read, a named refusal or a crash alike — and a run that hits the fire
+ *                              cap without a fixpoint; the gate matches the pinned fragment, which cites this
+ *                              backend's own sentence and never platform text
  *   NOFAULT &lt;detail&gt;  exit 1   the case ran to a model — the backend does not enforce this red-path constraint
- *   EXCLUDE &lt;reason&gt;  exit 2   a form the v0 backend does not carry (loader refusal / marker / unsupported input)
+ *   EXCLUDE &lt;reason&gt;  exit 2   a form the v0 backend does not carry: a loader refusal, or an Excluded from the
+ *                              build (a transpiler marker) or from the case reader (an input it declines)
  *   ERROR &lt;detail&gt;    exit 3   bad invocation, I/O, or an exception while the IR is loaded and the KieBase
  *                              built — a crash AFTER the build is a FAULT, not an ERROR
  * </pre>

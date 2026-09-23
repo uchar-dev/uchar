@@ -315,11 +315,13 @@ public final class CaseRunner {
 
     // ---------------- the red path (corpus/rood, gate 8's Drools leg) ----------------
 
-    /** What the v0 Drools backend OBSERVES when it replays one {@code expectedFault} case: FAULT (any runtime
-     *  exception after the build, at fire or while the case is read, a crash included, with its full cause chain
-     *  as the text a pinned fragment is matched against), EXCLUDE (a form the backend does not carry, with the
-     *  reason), or NOFAULT (the case ran to a model — the backend does not enforce this red-path constraint, so
-     *  its form is not Drools-carried). */
+    /** What the v0 Drools backend OBSERVES when it replays one {@code expectedFault} case, by exception TYPE: FAULT
+     *  (any runtime exception after the build other than an {@link Excluded}, at fire or while the case is read, a
+     *  crash included, with its full cause chain as the text a pinned fragment is matched against; and a run that
+     *  hits the fire cap without a fixpoint, which raises nothing), EXCLUDE (a form the backend does not carry — a
+     *  loader refusal, or an {@link Excluded} from the build or from the case reader — with the reason), or NOFAULT
+     *  (the case ran to a model — the backend does not enforce this red-path constraint, so its form is not
+     *  Drools-carried). */
     public record RoodResult(String status, String detail) {}
 
     /** Replay a single {@code corpus/rood} case and report what the backend observes. The split is by exception
@@ -329,8 +331,10 @@ public final class CaseRunner {
      *  AT fire (a division by zero, a fixpoint failure), a named refusal while the case is read (a date lexeme
      *  that names no day, corpus/rood/asofdate-kalender), and equally a CRASH while the case is read — measured
      *  2026-09-23: meldwaarde written as a boolean gives "IllegalArgumentException: argument type mismatch", an
-     *  undeclared characteristic a failed setter call. Gate 8 therefore pins only this backend's own sentence,
-     *  never platform text: a pin on a JDK message would pin a crash. */
+     *  undeclared characteristic a failed setter call. A run that hits the fire cap without a fixpoint is a FAULT
+     *  too, and raises no exception ("geen fixpunt (kringverwijzing?)"). Gate 8 therefore pins only this backend's
+     *  own sentence, never platform text, since a pin on a JDK message would pin a crash; for a refusal while the
+     *  case is read, that sentence names position and lexeme. */
     public static RoodResult runRood(Path irPath, Path casePath) {
         CaseRunner runner;
         try {
