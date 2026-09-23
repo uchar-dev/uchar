@@ -830,7 +830,14 @@ EXPECTED_CHANNEL=(
 # the frontend reports in a WARNING and does not lower). One rule, a wrakkenloon product; both branches play
 # its two cases on the first run, PLAYED 2 each, with ref's and clingo's values. M1 itself moves no golden:
 # measured with this gate's own jar on the M1 corpus, the played set is the 184 of the base plus this one.
-EXPECTED_PLAYED=185
+# 185 -> 186 (2026-09-23, card dialect-niet-in-uitzondering): jutterswet-schorsing, new — the first golden
+# whose RegelSpraak source carries a negated exception, so the first whose frontend emits `besluit: false`
+# (art. 4bis Jutterswet, `heeft geen recht op de penning`, over the art. 3 base). No source file of this
+# backend changed: the exec branch's defaults walk already carried a false decision (anchors
+# jutterswet-uitsluiting and ww-herleving-inkomen), and it plays the four cases on the first run, PLAYED 4,
+# with ref's and clingo's values. The DRL-text branch refuses it on its defaults sentence (class (A) of
+# DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
+EXPECTED_PLAYED=186
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -843,19 +850,19 @@ EXPECTED_PLAYED=185
 #   FAIL     printed — the golden loads, lowers and fires without faulting, and answers a WRONG VALUE
 #   ERROR    printed — the golden faults AT FIRE; a defect of this branch, not a semantic difference
 #   NOCASE   the sweep's own token, never printed by the branch: no case file, so no run at all
-# Why the reasons are grouped rather than written one by one: seventy-one of the seventy-four
+# Why the reasons are grouped rather than written one by one: seventy-two of the seventy-five
 # entries carry one of three class reasons, and a per-golden retelling of the same sentence would be
 # noise around the only thing that is compared, which is the CHANNEL. Each class is explained in the
 # comment that opens it; each golden still stands there BY NAME, which is what the stale guard needs.
 DRL_CHANNEL=(
-  # (A) ch. 7 prioritizedDefaults — 25, and since the objectcreatie repair below the ONLY remaining
-  # reason of size for this count sitting 21 below the exec one: the exec branch grew a spec-ch.-7
+  # (A) ch. 7 prioritizedDefaults — 26, and since the objectcreatie repair below the ONLY remaining
+  # reason of size for this count sitting 22 below the exec one: the exec branch grew a spec-ch.-7
   # defaults lowering at the defaults-service card (2026-08-29) that the production toolchain does
   # not have, and DrlTranspiler never did. Every golden here refuses on that one sentence.
-  # 23 of the 24 ARE that asymmetry — the exec branch plays them. anchor/jutterswet-toelagegronden
-  # is NOT, and is named here so the class is not read as 24 exec-only players: the exec branch
+  # 24 of the 25 ARE that asymmetry — the exec branch plays them. anchor/jutterswet-toelagegronden
+  # is NOT, and is named here so the class is not read as 25 exec-only players: the exec branch
   # refuses it too, on a different sentence (its kenmerk target shares its name with an attribute,
-  # a v0 bean-model limit), so it contributes nothing to the gap. The 21 is 24 exec-only players
+  # a v0 bean-model limit), so it contributes nothing to the gap. The 22 is 25 exec-only players
   # minus 3 goldens this branch plays and the exec one does not (anchor/jutterswet-vindersloon,
   # jutterswet-vondsttarief, synth2-afrondingscombinaties, all three a transpiler SKIP over there).
   "anchor/jutterswet-hardheid|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
@@ -874,6 +881,7 @@ DRL_CHANNEL=(
   "jutterswet-overzeelezing-catala|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-penningrecht-catala|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-samenloop|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "jutterswet-schorsing|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-tariefrecht-catala|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-vangstheffing-catala|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-wachtgeld|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
