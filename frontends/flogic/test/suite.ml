@@ -157,7 +157,7 @@ let () =
       (* a refusal writes no document: a half-lowered IR would be worse
          than none *)
       check (src ^ " : leaves no output")
-        (not (contains ~needle:"formaat" (try
+        (not (contains ~needle:"uchar-ir-v1" (try
                 let ic = open_in out in
                 let s = read_all ic in
                 close_in ic; s

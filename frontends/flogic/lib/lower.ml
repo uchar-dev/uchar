@@ -1,4 +1,4 @@
-(* F-logic slice -> regelspraak-ir-v0 (Ir_v0.Ast).
+(* F-logic slice -> uchar-ir-v1 (Ir_v0.Ast).
 
    THE MAPPING, in one place.
 
@@ -831,10 +831,6 @@ let document (stmts : stmt list) : A.document =
   List.iter
     (fun d -> if not (List.mem d.d_target !targets) then targets := !targets @ [ d.d_target ])
     (barred @ defs);
-  (* the name index: one entry per named definition, in source order *)
-  let regels =
-    List.map (fun (_, id) -> { A.rg_naam = Some id; rg_soort = Some "regel" }) named
-  in
   let resolved = ref [] and groups = ref [] in
   List.iter
     (fun ((subject, attr) as target) ->
@@ -938,7 +934,7 @@ let document (stmts : stmt list) : A.document =
   in
   { A.objecttypen; domeinen = []; parameters = []; eenheidstelsels = []; feittypen;
     dimensies = []; tijdlijnen = []; dagsoorten = []; dagsoort_per_eenheid = [];
-    regels; resolved_regels = !resolved; resolved_dagsoorten = []; object_creaties = [];
+    regels = []; resolved_regels = !resolved; resolved_dagsoorten = []; object_creaties = [];
     verdelingen = []; consistenties = []; uniciteiten = []; uniciteit_unies = [];
     feit_creaties = []; resolved_startpunten = []; regel_groepen = []; diagnostics = [];
     prioritized_defaults = !groups; function_defs = [] }
