@@ -5487,33 +5487,58 @@ let () =
   (* the canonical window still decides by calendar, both bounds inclusive *)
   expect_num "WV-3.10-geldigheid-binnen-venster" (run (fst jaar) (snd jaar)) "125";
   expect_leeg "WV-3.10-geldigheid-voor-venster" (run ~as_of:"2025-06-01" (fst jaar) (snd jaar));
+  expect_num "WV-3.10-geldigheid-vanaf-inclusief" (run ~as_of:"2026-01-01" (fst jaar) (snd jaar)) "125";
+  expect_leeg "WV-3.10-geldigheid-dag-voor-vanaf" (run ~as_of:"2025-12-31" (fst jaar) (snd jaar));
   expect_num "WV-3.10-geldigheid-tot-inclusief" (run ~as_of:"2026-12-31" (fst jaar) (snd jaar)) "125";
   expect_leeg "WV-3.10-geldigheid-na-venster" (run ~as_of:"2027-01-01" (fst jaar) (snd jaar));
+  (* The WHOLE refusal sentence is pinned, reader's reason included: the
+     clingo suite pins the same sentences, which is what makes "one refusal
+     for both executors" a witnessed claim rather than a shared prefix. *)
+  let zin what lex why =
+    Printf.sprintf "validity gate: %s %S is not the ISO date lexeme yyyy-mm-dd (%s)" what lex why
+  in
+  let vorm lex = Printf.sprintf "malformed date lexeme %S (expected ISO yyyy-mm-dd)" lex in
+  let maand lex = Printf.sprintf "month out of range in date lexeme %S" lex in
+  let dag lex = Printf.sprintf "day out of range in date lexeme %S" lex in
+  let weigert naam f verwacht =
+    match f () with
+    | exception Value.Fault m -> check (naam ^ " (got: " ^ m ^ ")") (m = verwacht)
+    | _ -> check (naam ^ " (no fault at all)") false
+  in
   (* position vanaf: day-first sorted before "2026-06-01", so the window
      opened; month 13 sorted after, so it stayed shut *)
-  expect_fault_msg "WV-3.10-geldigheid-vanaf-dag-eerst-weigert"
+  weigert "WV-3.10-geldigheid-vanaf-dag-eerst-weigert"
     (fun () -> run (Some "01-01-2026") (snd jaar))
-    "validity gate: geldigheid.vanaf \"01-01-2026\" is not the ISO date lexeme";
-  expect_fault_msg "WV-3.10-geldigheid-vanaf-kalender-weigert"
+    (zin "geldigheid.vanaf" "01-01-2026" (vorm "01-01-2026"));
+  weigert "WV-3.10-geldigheid-vanaf-kalender-weigert"
     (fun () -> run (Some "2026-13-01") None)
-    "validity gate: geldigheid.vanaf \"2026-13-01\" is not the ISO date lexeme";
+    (zin "geldigheid.vanaf" "2026-13-01" (maand "2026-13-01"));
+  (* the month-length half of the calendar: 30 February has the shape and
+     even sorts correctly, and only the reader's month length refuses it *)
+  weigert "WV-3.10-geldigheid-vanaf-maandlengte-weigert"
+    (fun () -> run (Some "2026-02-30") None)
+    (zin "geldigheid.vanaf" "2026-02-30" (dag "2026-02-30"));
   (* position tot: "31-12-2025" sorted before "2026-06-01", so the window
      closed; a day-first tot that sorts AFTER the date kept it open *)
-  expect_fault_msg "WV-3.10-geldigheid-tot-dag-eerst-weigert"
+  weigert "WV-3.10-geldigheid-tot-dag-eerst-weigert"
     (fun () -> run (fst jaar) (Some "31-12-2026"))
-    "validity gate: geldigheid.tot \"31-12-2026\" is not the ISO date lexeme";
-  expect_fault_msg "WV-3.10-geldigheid-tot-kalender-weigert"
+    (zin "geldigheid.tot" "31-12-2026" (vorm "31-12-2026"));
+  weigert "WV-3.10-geldigheid-tot-kalender-weigert"
     (fun () -> run None (Some "2026-12-32"))
-    "validity gate: geldigheid.tot \"2026-12-32\" is not the ISO date lexeme";
+    (zin "geldigheid.tot" "2026-12-32" (dag "2026-12-32"));
   (* a malformed bound is refused even where the other bound already
-     excludes the date: the reading is not behind a short-circuit *)
-  expect_fault_msg "WV-3.10-geldigheid-tot-weigert-ook-buiten-vanaf"
+     excludes the date, in both directions: neither reading sits behind
+     the other bound's short-circuit *)
+  weigert "WV-3.10-geldigheid-tot-weigert-ook-buiten-vanaf"
     (fun () -> run ~as_of:"2025-06-01" (fst jaar) (Some "31-12-2026"))
-    "validity gate: geldigheid.tot \"31-12-2026\"";
+    (zin "geldigheid.tot" "31-12-2026" (vorm "31-12-2026"));
+  weigert "WV-3.10-geldigheid-vanaf-weigert-ook-buiten-tot"
+    (fun () -> run ~as_of:"2027-06-01" (Some "01-01-2026") (snd jaar))
+    (zin "geldigheid.vanaf" "01-01-2026" (vorm "01-01-2026"));
   (* position asOfDate, at the gate: an env built without the case loader *)
-  expect_fault_msg "WV-3.10-geldigheid-asofdate-dag-eerst-weigert"
+  weigert "WV-3.10-geldigheid-asofdate-dag-eerst-weigert"
     (fun () -> run ~as_of:"01-06-2026" (fst jaar) (snd jaar))
-    "validity gate: asOfDate \"01-06-2026\" is not the ISO date lexeme";
+    (zin "asOfDate" "01-06-2026" (vorm "01-06-2026"));
   (* position asOfDate, at the case loader — the one ref and clingo share,
      so the refusal comes before either executor runs *)
   let load as_of =
@@ -5532,14 +5557,17 @@ let () =
   check "WV-3.10-caselader-neemt-canonieke-asofdate"
     (match load "2026-06-01" with Ok c -> c.as_of = Some "2026-06-01" | Error _ -> false);
   List.iter
-    (fun (naam, lex) ->
+    (fun (naam, lex, why) ->
+      let verwacht =
+        Printf.sprintf "asOfDate %S is not the uchar-case-v0 date lexeme yyyy-mm-dd (%s)" lex why
+      in
       match load lex with
-      | Error m ->
-          check (naam ^ " (got: " ^ m ^ ")")
-            (substring m (Printf.sprintf "asOfDate %S is not the uchar-case-v0 date lexeme" lex))
+      | Error m -> check (naam ^ " (got: " ^ m ^ ")") (m = verwacht)
       | Ok _ -> check (naam ^ " (loaded)") false)
-    [ ("WV-3.10-caselader-weigert-dag-eerst-asofdate", "01-06-2026");
-      ("WV-3.10-caselader-weigert-maand-13-asofdate", "2026-13-01") ]
+    [ ("WV-3.10-caselader-weigert-dag-eerst-asofdate", "01-06-2026", vorm "01-06-2026");
+      ("WV-3.10-caselader-weigert-maand-13-asofdate", "2026-13-01", maand "2026-13-01");
+      (* the pattern-admitted calendar hole: 29 February outside a leap year *)
+      ("WV-3.10-caselader-weigert-29-februari-asofdate", "2025-02-29", dag "2025-02-29") ]
 
 let () =
   if !failures > 0 then begin

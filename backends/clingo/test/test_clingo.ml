@@ -7903,7 +7903,8 @@ let () =
    kept the transition version on: 140 where leeg is right). It now calls
    ref's [Eval.window_admits], so a bound that is not a date refuses before
    any program is grounded. WF-101 keeps such bounds out of the corpus;
-   these pins are the only witnesses. *)
+   these pins are the only witnesses. They pin the WHOLE sentence, the
+   reader's reason included, as ref's suite does: one refusal for both. *)
 let () =
   let venster_ir vanaf tot =
     dt_doc ~attributen:{|"aanvangstip": { "node": "DatumTijd" }|} ~kenmerken:{|"tijdig"|}
@@ -7940,11 +7941,15 @@ let () =
   faults_with ~name:"geldigheid.vanaf dag-eerst"
     ~ir:(venster_ir {|"01-01-2026"|} {|"2026-12-31"|})
     ~case_text:(venster_case "2026-06-01" true)
-    ~needle:"validity gate: geldigheid.vanaf \"01-01-2026\" is not the ISO date lexeme";
+    ~needle:
+      "validity gate: geldigheid.vanaf \"01-01-2026\" is not the ISO date lexeme yyyy-mm-dd \
+       (malformed date lexeme \"01-01-2026\" (expected ISO yyyy-mm-dd))";
   faults_with ~name:"geldigheid.tot dag-eerst"
     ~ir:(venster_ir "null" {|"31-12-2026"|})
     ~case_text:(venster_case "2026-06-01" true)
-    ~needle:"validity gate: geldigheid.tot \"31-12-2026\" is not the ISO date lexeme"
+    ~needle:
+      "validity gate: geldigheid.tot \"31-12-2026\" is not the ISO date lexeme yyyy-mm-dd \
+       (malformed date lexeme \"31-12-2026\" (expected ISO yyyy-mm-dd))"
 
 
 let () =
