@@ -341,6 +341,12 @@ fi
 # constraint and runs to a model). A carried form pins a fragment; a not-carried form is listed
 # below with a reason. The exclusion list is stale-guarded: a listed case that now FAULTS, or is
 # gone, fails the gate; a case that is neither pinned nor listed fails the gate (completeness).
+# FAULT reaches one step before fire, measured 2026-09-23 (asofdate-kalender): the red run reads
+# the case inside the same guard as fire, so a HARD refusal while it reads — a date lexeme that
+# names no day — reports FAULT too. The backend treats such a lexeme as a document defect, never
+# as a form it does not carry, and its sentence names position and lexeme, so the leg pins it like
+# any other. Read "a genuine fault at fire" in the reasons below as that class: what the backend
+# raises against the case itself, as opposed to an EXCLUDE, a form it does not carry.
 #
 # Conditional on a JDK + python3 (gate-9 pattern for the RUNNER: skip loudly where java is
 # absent; the ref/clingo legs above remain the CI blocker). WITHIN the leg, mvn is a hard
@@ -416,6 +422,7 @@ finite-chain-over-budget|NOFAULT the self-typed generative chain now RUNS (2026-
 input-overprecision|NOFAULT the v0 case runner does not enforce declared attribute input precision — it accepts the over-precise value and runs to a model
 input-overprecision-param|NOFAULT the v0 case runner does not enforce declared parameter input precision — it accepts the over-precise value and runs to a model
 leegnegatie-heel-tijdvak|EXCLUDE measured 2026-09-23 (card clingo-leeg-negatie): the loader refuses `Predicaat.negatie` by name, "a negated leeg/gevuld test under a whole-period qualifier (ch. 3.9): the threshold of the negated test is not normed" — the same judgement ref and clingo pin (ch. 3.9 gives the leeg test touched days and every other test days(B), and which a negated leeg test takes is not chosen). One phase before fire, so this leg's vocabulary keeps it an EXCLUDE; the day the norm picks a threshold all three refusals go stale together
+leegtest-heel-tijdvak|EXCLUDE measured 2026-09-23 (card rood-heeltijdvak-ongenegeerd): the UNNEGATED twin of the entry above, `negatie: false`. Both branches refuse it in the loader as `Predicaat.periode`, "a leeg/gevuld test under a whole-period qualifier (ch. 3.9): ref executes neither the leeg fold (touched days) nor the gevuld fold (days(B)), so this backend does not answer the form either" — here the norm is not open, as it is above; ch. 3.9 states it and no other executor runs it, and ref and clingo pin that judgement in their ch. 3.9 sentence. Until card drools-heeltijdvak-leegtest (2026-09-23) both branches PLAYED this document against the ch. 3.9 hand values (S1 meldpremie leeg, S2 meldpremie 40; measured again on a jar built from 8b685402), the one executor answering where the other two refused. Listed rather than fragment-pinned: the refusal is one phase before fire, and this leg pins a fragment only on a FAULT (measured: a `drools` pin of `Predicaat.periode` fails the leg with "observed EXCLUDE"). The leg checks the category alone; the key and the ground its sentence gives ("ref executes neither the leeg fold") are asserted by the backend's own LeegNegatieWitnessTest. The day ref executes the fold, the two OCaml pins fail first and this refusal loses its stated ground
 list-element-overprecision|EXCLUDE the v0 loader refuses the model's record datatype (StructType) before any list-element precision is reached — the record/struct form is not carried
 near-side-rolcheck-to-many|EXCLUDE the rolcheck rule (bemand met jutter) does not lower — a transpiler SKIP (voorwaarde buiten Phase-B scope); fire is never reached
 periodevenster-tijdlijnkenmerk|EXCLUDE measured 2026-09-20, reason updated 2026-09-23: a period condition on a TEMPORAL target is ch. 3.10's clip, not the evaluation-date gate. The clip is built for ATTRIBUTE targets in ref and clingo since 2026-09-23 (golden jutterswet-pachtvenster, which both branches of this backend decline by name); this document's target is a CHARACTERISTIC, whose timeline neither OCaml executor writes (ch. 3.11), so all four refuse. This backend classified the form correctly before either OCaml executor did — exec "periodevergelijking op tijdsafhankelijk doel — §8.4.3 clip", DRL-text "TODO periodevergelijking op een tijdsafhankelijk doel (§8.4.3)" — while the ASP backend once PLAYED the scalar gate here because its target test read only the ATTRIBUTE granularity table. Listed rather than fragment-pinned: a transpiler refusal is one phase before fire
@@ -447,8 +454,9 @@ EOF
                     echo "FAIL: $name carries a drools fragment AND sits in the Drools exclusion list — drop the static entry" >&2
                     status=1
                 fi
-                # a carried case MUST be a genuine FAULT at fire whose report contains the pinned fragment; any
-                # other token (NOFAULT / EXCLUDE / a crash ERROR) is a regression, never a pass.
+                # a carried case MUST be a genuine FAULT (at fire, or a hard refusal while the case is read — see
+                # the head of this leg) whose report contains the pinned fragment; any other token (NOFAULT /
+                # EXCLUDE / a crash ERROR) is a regression, never a pass.
                 case "$tok" in
                     FAULT)
                         case "$out" in
