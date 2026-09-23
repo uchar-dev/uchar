@@ -232,6 +232,33 @@ let ms_of_lexeme s = match Value.datetime_of_lexeme s with Value.Date_time t -> 
 
 (* --- document lookups --------------------------------------------------- *)
 
+(* ch. 10.6 for the unbound-parameter guard ([reach_at]): one record per Let
+   the rule level translates *)
+type let_info = {
+  li_id : int;
+  li_binder : string; (* normalised *)
+  li_depth : int; (* how many Lets' bodies enclose this Let *)
+  li_outer : let_info list; (* those Lets, innermost first *)
+  li_subject : string;
+  li_ot : string;
+  li_order : (expr * (int * int * bool)) list Lazy.t; (* [let_order] of the body *)
+  mutable li_va : string list; (* the need's atoms, once the value is translated *)
+  mutable li_entry : (string list * string * int) option; (* its [binders] entry *)
+  mutable li_demand : string option; (* the demand atom, when the value has one *)
+  mutable li_reads : (expr * site) list; (* every read of the binder, latest first *)
+  mutable li_asks : (int * int) list; (* the places guards asked about *)
+}
+
+(* where a node is translated: what [reach_at] needs of the context *)
+and site = {
+  si_subject : string;
+  si_ot : string;
+  si_guard : string list;
+  si_needs : let_info list;
+  si_value_of : let_info option;
+  si_outer : expr -> string list;
+}
+
 type ctx = {
   doc : document;
   case : Case.t;
@@ -273,13 +300,15 @@ type ctx = {
      a case that binds its parameters translates byte for byte as before.
      [fun _ -> []] at rule level. *)
   mutable param_reach : expr -> string list;
-  (* the Let needs [rule_guard] carries: the binder, the need's atoms, and the
-     IR nodes of its body whose evaluation may complete BEFORE the binder's
-     first read ([nodes_before_binder]). ch. 10.6's barrier sits at that first
-     read, so a read at one of those nodes is reached whether or not the need
-     is leeg, and its guard must not wait for the need's atoms. Nodes, not
-     names: two reads of one parameter can sit on different paths *)
-  mutable let_needs : (string * string list * expr list) list;
+  (* the Lets whose bodies enclose the current node, innermost first: their
+     needs ride [rule_guard], and [reach_at] decides their barriers per read *)
+  mutable let_needs : let_info list;
+  (* the innermost Let whose VALUE is being translated: ch. 10.6 runs that
+     value at the first read of its binder, not where the Let stands *)
+  mutable value_of : let_info option;
+  (* every Let translated so far, latest first, and their serial *)
+  mutable lets : let_info list;
+  mutable let_serial : int;
   (* ch. 10.6: a Let's value is evaluated at the FIRST read of its binder, so a
      parameter the value reads is reached exactly where the binder is read.
      A binder whose value reads a parameter the case does not bind (directly,
@@ -673,153 +702,226 @@ let unbound_param_guard ctx ~witness ~guard name =
     emit ctx "viol(%s,%s) :- %s." (quote (unbound_param_reason name)) witness
       (String.concat ", " (guard ()))
 
-(* the reach of the read at [node] (subject [subject]) in the current context:
-   the subject, the enclosing [rule_guard] (condition, composite prefix, taken
-   arm or match pattern, Let needs) and the extra [param_reach] of a nested
-   context. A Let need whose binder may be read only AFTER this node is
-   dropped: the barrier comes after the read, so the read happens even where
-   the need is leeg. Captured as a closure, so a nested context can hand it on
-   unchanged. *)
-let rule_reach ?skip ctx ~subject ~subject_ot =
-  let rg = ctx.rule_guard and needs = ctx.let_needs and outer = ctx.param_reach in
-  fun (node : expr) ->
-    let early =
-      List.concat_map
-        (fun (b, va, nodes) ->
-          if Some b = skip || List.exists (fun n -> n == node) nodes then va else [])
-        needs
-    in
-    (Printf.sprintf "isa(%s,%s)" subject (str subject_ot)
-     :: List.filter (fun a -> not (List.mem a early)) rg)
-    @ outer node
-
-(* an inner Let's binder, mapped to its value and the scope that value was
-   written in (see [params_before_binder]) *)
-type needs_env = Needs of (string * (expr * needs_env)) list
-
-(* ch. 5.11 and ch. 10.6: the IR nodes whose evaluation may COMPLETE before
-   the first read of binder [b] — a leaf when it is read, a composite node
-   after its operands — and whether evaluating [e] surely reads [b] at all.
-   Wire order, one branch of a choice, a composite that may stop after its
-   first member, and call-by-need: an inner Let's value runs at the first read
-   of ITS binder, so [env] maps that binder to the value, and reading it is
-   reading the value there. Per NODE, so two reads of one parameter on two
-   paths are told apart. Conservative in the one direction that matters: a
-   node that may complete first on SOME path to it is listed, and "surely" is
-   claimed only where every path reads [b]. Listing one too many makes a guard
-   fire where ref met the barrier first — loud; omitting one would let the
-   program answer where ref faults. A closed body's nodes are not listed: its
-   guards ask about the fold or map that hosts it ([expr_term]'s Fold arm,
-   [list_source]). [b] = "" lists every node. *)
-let rec nodes_before_binder ?(env = Needs []) b (e : expr) : expr list * bool =
-  let go = nodes_before_binder ~env b in
-  let one = function Some x -> go x | None -> ([], false) in
-  let seq parts =
-    List.fold_left
-      (fun (acc, sure) part ->
-        if sure then (acc, true)
-        else
-          let ns, s = part () in
-          (acc @ ns, s))
-      ([], false) parts
+(* ch. 5.11's evaluation order, as ref walks an expression: [visit] sees every
+   node as it COMPLETES (a composite after its operands) with the span it lies
+   in. A span is a per-member part — the filter and arguments of a set fold,
+   the filter of a quantifier fold, its matrix — whose nodes run once per
+   member, interleaved, so two nodes in one span are not ordered against each
+   other; 0 is no span, and a span inside a span is the outer one. A closed
+   body is not walked: its reads answer to the node that hosts it, which is.
+   The value of a Let is walked only where [value] says so, at the Let. *)
+let walk_order ~(value : string -> expr -> bool) (visit : expr -> int -> unit) =
+  let spans = ref 0 in
+  let span g =
+    if g > 0 then g
+    else begin
+      incr spans;
+      !spans
+    end
   in
-  (* [e] itself completes after its operands, so it is early exactly when they
-     do not surely read [b] *)
-  let self (ns, s) = if s then (ns, true) else (ns @ [ e ], false) in
-  match e with
-  | Binder_ref { naam; _ } -> (
-      if b <> "" && norm naam = norm b then ([], true)
-      else
-        let (Needs bound) = env in
-        match List.assoc_opt (norm naam) bound with
-        | Some (value, venv) -> self (nodes_before_binder ~env:venv b value)
-        | None -> ([ e ], false))
-  | Binair { links; rechts; _ } -> self (seq [ (fun () -> one links); (fun () -> one rechts) ])
-  | Afgerond { basis; _ } -> self (one basis)
-  | Begrensd { basis; minimum; maximum; _ } ->
-      self (seq [ (fun () -> one basis); (fun () -> one minimum); (fun () -> one maximum) ])
-  | Functie { argumenten; leegwaarde; filter; _ } ->
-      let ns, s = seq (List.map (fun a () -> go a) argumenten @ [ (fun () -> one leegwaarde) ]) in
-      if s then (ns, true)
-      else
-        (ns @ (match filter with Some c -> fst (cond_nodes_before "" c) | None -> []) @ [ e ], false)
-  | Dimensie_cel { attribuut; _ } -> self (one attribuut)
-  | Temporal_read { basis; datum; _ } -> self (seq [ (fun () -> go datum); (fun () -> go basis) ])
-  | Construct { argument; _ } -> self (one argument)
-  | Field_access { base; _ } -> self (go base)
-  | Struct_literal { velden; _ } -> self (seq (List.map (fun (_, x) () -> go x) velden))
-  | List_literal { elements; _ } -> self (seq (List.map (fun x () -> go x) elements))
-  | Tekst_reeks { delen; _ } ->
-      self
-        (seq
-           (List.filter_map
-              (function Ingevoegd { expr = Some x } -> Some (fun () -> go x) | _ -> None)
-              delen))
-  | If_then_else { condition; then_; else_; _ } ->
-      let nc, sc = cond_nodes_before ~env b condition in
-      if sc then (nc, true)
-      else
-        let nt, st = go then_ and ne, se = go else_ in
-        self (nc @ nt @ ne, st && se)
-  | Match { scrutinee; arms; _ } ->
-      let ns, s = go scrutinee in
-      if s then (ns, true)
-      else
-        let arm_results = List.map (fun (_, _, body) -> go body) arms in
-        self
-          ( ns @ List.concat_map fst arm_results,
-            arm_results <> [] && List.for_all snd arm_results )
-  | Let { binder; value; body; _ } ->
-      if b <> "" && norm binder = norm b then
-        (fst (nodes_before_binder "" value) @ fst (nodes_before_binder "" body) @ [ e ], false)
-      else
-        let (Needs bound) = env in
-        self (nodes_before_binder ~env:(Needs ((norm binder, (value, env)) :: bound)) b body)
-  | Lambda _ -> ([ e ], false)
-  | Invoke { arguments; _ } -> self (seq (List.map (fun x () -> go x) arguments))
-  | Fold { list; init; _ } -> self (seq [ (fun () -> go list); (fun () -> go init) ])
-  | Map_list { list; _ } | Filter_list { list; _ } | List_length { list; _ } -> self (go list)
-  | Parameter_ref _ | Literal _ | Attribuut_ref _ | Variabele_ref _ | Constante _
-  | Expr_onopgelost _ | Instance_set_union _ ->
-      ([ e ], false)
-
-and cond_nodes_before ?(env = Needs []) b (c : conditie) : expr list * bool =
-  let one = function Some x -> nodes_before_binder ~env b x | None -> ([], false) in
-  let pair x y =
-    let nx, sx = one x in
-    if sx then (nx, true)
-    else
-      let ny, sy = one y in
-      (nx @ ny, sy)
+  let rec x g (e : expr) =
+    let opt = function Some y -> x g y | None -> () in
+    (match e with
+    | Binair { links; rechts; _ } ->
+        opt links;
+        opt rechts
+    | Afgerond { basis; _ } -> opt basis
+    | Begrensd { basis; minimum; maximum; _ } ->
+        opt basis;
+        opt minimum;
+        opt maximum
+    | Functie { argumenten; leegwaarde; filter; element_objecttype; _ } ->
+        let gm = if filter <> None || element_objecttype <> None then span g else g in
+        (match filter with Some c -> cond gm c | None -> ());
+        List.iter (x gm) argumenten;
+        opt leegwaarde
+    | Dimensie_cel { attribuut; _ } -> opt attribuut
+    | Temporal_read { basis; datum; _ } ->
+        x g datum;
+        x g basis
+    | Construct { argument; _ } -> opt argument
+    | Field_access { base; _ } -> x g base
+    | Struct_literal { velden; _ } -> List.iter (fun (_, y) -> x g y) velden
+    | List_literal { elements; _ } -> List.iter (x g) elements
+    | Tekst_reeks { delen; _ } ->
+        List.iter (function Ingevoegd { expr = Some y } -> x g y | _ -> ()) delen
+    | If_then_else { condition; then_; else_; _ } ->
+        cond g condition;
+        x g then_;
+        x g else_
+    | Match { scrutinee; arms; _ } ->
+        x g scrutinee;
+        List.iter (fun (_, _, b) -> x g b) arms
+    | Let { binder; value = v; body; _ } ->
+        if value binder body then x g v;
+        x g body
+    | Invoke { arguments; _ } -> List.iter (x g) arguments
+    | Fold { list; init; _ } ->
+        x g list;
+        x g init
+    | Map_list { list; _ } | Filter_list { list; _ } | List_length { list; _ } -> x g list
+    | Lambda _ | Parameter_ref _ | Literal _ | Attribuut_ref _ | Variabele_ref _ | Constante _
+    | Binder_ref _ | Expr_onopgelost _ | Instance_set_union _ ->
+        ());
+    visit e g
+  and cond g (c : conditie) =
+    let opt = function Some y -> x g y | None -> () in
+    match c with
+    | Vergelijking { links; rechts; _ } ->
+        opt links;
+        opt rechts
+    | Predicaat { operand; _ } -> opt operand
+    | Periode_conditie { vanaf; tot; _ } ->
+        opt vanaf;
+        opt tot
+    | Samengesteld { onderdelen; _ } -> List.iter (cond g) onderdelen
+    | Kwantorvouw { kv_filter; kv_toets; _ } ->
+        (match kv_filter with Some f -> cond (span g) f | None -> ());
+        (match kv_toets with Some t -> cond (span g) t | None -> ())
+    | Kenmerk_check _ | Rollidmaatschap _ | Verre_rollidmaatschap _ | Regelversie _
+    | Conditie_onopgelost _ ->
+        ()
   in
-  match c with
-  | Vergelijking { links; rechts; _ } -> pair links rechts
-  | Predicaat { operand; _ } -> one operand
-  | Periode_conditie { vanaf; tot; _ } -> pair vanaf tot
-  | Samengesteld { onderdelen; _ } -> (
-      (* only the first member is surely read (ch. 5.10) *)
-      match onderdelen with
-      | [] -> ([], false)
-      | first :: rest ->
-          let n1, s1 = cond_nodes_before ~env b first in
-          if s1 then (n1, true)
-          else (n1 @ List.concat_map (fun m -> fst (cond_nodes_before ~env b m)) rest, false))
-  | Kwantorvouw { kv_toets; kv_filter; _ } ->
-      let opt = function Some x -> fst (cond_nodes_before "" x) | None -> [] in
-      (opt kv_filter @ opt kv_toets, false)
-  | Kenmerk_check _ | Rollidmaatschap _ | Verre_rollidmaatschap _ | Regelversie _
-  | Conditie_onopgelost _ ->
-      ([], false)
+  (x 0, cond 0)
 
-(* the nodes of [body] that may complete before [binder]'s first read, as
-   [let_needs] stores them *)
-let early_nodes binder body = fst (nodes_before_binder binder body)
+(* the places of a Let's body: node -> (index, span, shared). The value of a
+   nested Let has no place here — ch. 10.6 evaluates it at the first read of
+   its binder, which [read_places] finds. A node the document shares, met
+   twice, keeps its last place and says so; the list is latest first. *)
+let let_order (body : expr) : (expr * (int * int * bool)) list =
+  let acc = ref [] and next = ref 0 in
+  let visit e g =
+    acc := (e, (!next, g, List.exists (fun (n, _) -> n == e) !acc)) :: !acc;
+    incr next
+  in
+  fst (walk_order ~value:(fun _ _ -> false) visit) body;
+  !acc
 
 (* the parameters a condition may read, by name *)
 let cond_param_names c =
-  List.filter_map
-    (function Parameter_ref { parameter = Some p; _ } -> Some p | _ -> None)
-    (fst (cond_nodes_before "" c))
+  let names = ref [] in
+  snd
+    (walk_order
+       ~value:(fun b body -> Ir_v0.Checks.mentions_binder b body)
+       (fun e _ -> match e with Parameter_ref { parameter = Some p; _ } -> names := p :: !names | _ -> ()))
+    c;
+  List.rev !names
+
+(* the place of [node] in [li]'s body; a shared node has none *)
+let let_place li node =
+  match List.find_opt (fun (n, _) -> n == node) (Lazy.force li.li_order) with
+  | Some (_, (i, g, false)) -> Some (i, g)
+  | Some (_, (_, _, true)) | None -> None
+
+(* the same for a read of the binder, where a shared node takes its last place:
+   a read counted later suppresses fewer guards *)
+let read_place li node =
+  match List.find_opt (fun (n, _) -> n == node) (Lazy.force li.li_order) with
+  | Some (_, (i, g, _)) -> Some (i, g)
+  | None -> None
+
+let site ctx ~subject ~subject_ot =
+  { si_subject = subject; si_ot = subject_ot; si_guard = ctx.rule_guard; si_needs = ctx.let_needs;
+    si_value_of = ctx.value_of; si_outer = ctx.param_reach }
+
+(* the barrier atom of [li] for a node at place (i, g): "a read of the binder
+   came before, on the path taken, and found the need leeg". Registers the
+   place, so [emit_barriers] writes its rule. *)
+let barred li (i, g) =
+  if not (List.mem (i, g) li.li_asks) then li.li_asks <- (i, g) :: li.li_asks;
+  Printf.sprintf "not lbb%d(%s,%d,%d)" li.li_id li.li_subject i g
+
+(* the reach of [node] at site [s]: the subject, the enclosing [rule_guard]
+   (condition, composite prefix, taken arm or match pattern) and the extra
+   [param_reach] of a nested context, with ch. 10.6's barrier of every
+   enclosing Let decided per read instead of by the need alone. ref reaches
+   the node unless an EARLIER read of the binder, on the path taken, found the
+   need leeg; so each need's atoms leave the body and [barred] takes their
+   place. A Let whose value encloses [s] is covered: the value runs at the
+   first read of that Let's binder, whose own reach carries the enclosing
+   barriers (the demand, or [read_places]). [skip] is the binder a read
+   reads — the read itself happens whatever its need. [cut] is for the
+   barrier rules themselves: they drop [cut] and every Let around it, and the
+   demands of the Lets inside it, which [read_places] replaces — so a
+   barrier rule reads only barriers of Lets nested deeper, and the program
+   stays stratified. *)
+let reach_at ctx ?skip ?cut (s : site) (node : expr) : string list =
+  let covered = match s.si_value_of with Some m -> m.li_depth | None -> 0 in
+  let cut_depth = match cut with Some c -> c.li_depth | None -> -1 in
+  let drop = List.concat_map (fun li -> li.li_va) s.si_needs in
+  let barriers =
+    List.filter_map
+      (fun li ->
+        if li.li_depth < covered || li.li_depth <= cut_depth || Some li.li_binder = skip then None
+        else Option.map (barred li) (let_place li node))
+      (List.rev s.si_needs)
+  in
+  let atoms =
+    (Printf.sprintf "isa(%s,%s)" s.si_subject (str s.si_ot)
+     :: List.filter (fun a -> not (List.mem a drop)) s.si_guard)
+    @ barriers @ s.si_outer node
+  in
+  match cut with
+  | None -> atoms
+  | Some c ->
+      let inner =
+        List.filter_map (fun m -> if List.memq c m.li_outer then m.li_demand else None) ctx.lets
+      in
+      List.filter (fun a -> not (List.mem a inner)) atoms
+
+(* the reach of a read at [node] in the current context, captured as a
+   closure so a nested context can hand it on unchanged *)
+let rule_reach ?skip ctx ~subject ~subject_ot =
+  let s = site ctx ~subject ~subject_ot in
+  fun (node : expr) -> reach_at ctx ?skip s node
+
+(* the places in [li]'s body where the read at [node] (site [s]) of a binder
+   happens, each with the atoms that say it does. A read inside the value of a
+   Let nested in [li] happens where that value runs: at every read of that
+   Let's binder — the first one runs it, and a later one is reached only after
+   the first — so its places are those of the reads of that binder, joined to
+   its own reach within the value. *)
+let rec read_places ctx li ~skip (node, (s : site)) =
+  match read_place li node with
+  | Some (i, g) -> [ (i, g, reach_at ctx ~skip ~cut:li s node) ]
+  | None -> (
+      match s.si_value_of with
+      | Some m when List.memq li m.li_outer ->
+          let within = reach_at ctx ~skip ~cut:li s node in
+          List.concat_map
+            (fun r ->
+              List.map (fun (i, g, a) -> (i, g, a @ within)) (read_places ctx li ~skip:m.li_binder r))
+            (List.rev m.li_reads)
+      | _ -> [])
+
+(* ch. 10.6's barrier, for the guards that asked ([barred]): per Let, its need,
+   the places its binder is read with their reach, and per asked place "an
+   earlier read found the need leeg". Two nodes in one span are not ordered,
+   so an earlier read counts only outside the asking node's span — the guard
+   then fires where ref may have met the barrier first: loud. Lets are taken
+   shallow first, because a barrier rule asks only about Lets nested deeper,
+   so every place is asked before its Let is written. Only guards ask, so a
+   case that binds its parameters writes none of this. *)
+let emit_barriers ctx =
+  List.iter
+    (fun li ->
+      if li.li_asks <> [] then begin
+        let base = Printf.sprintf "isa(%s,%s)" li.li_subject (str li.li_ot) in
+        emit ctx "#defined lbr%d/3." li.li_id;
+        emit ctx "lbn%d(%s) :- %s." li.li_id li.li_subject (String.concat ", " (base :: li.li_va));
+        List.iter
+          (fun (i, g, atoms) ->
+            emit ctx "lbr%d(%s,%d,%d) :- %s." li.li_id li.li_subject i g (String.concat ", " atoms))
+          (List.concat_map (read_places ctx li ~skip:li.li_binder) (List.rev li.li_reads));
+        List.iter
+          (fun (i, g) ->
+            emit ctx "lbb%d(S,%d,%d) :- lbr%d(S,I,G), I < %d%s, not lbn%d(S)." li.li_id i g li.li_id
+              i
+              (if g > 0 then Printf.sprintf ", G != %d" g else "")
+              li.li_id)
+          (List.rev li.li_asks)
+      end)
+    (List.stable_sort (fun a b -> compare a.li_depth b.li_depth) (List.rev ctx.lets))
 
 (* does evaluating [e] possibly read a node [hit] accepts? Everywhere: closed
    bodies and the bodies of invoked functions included *)
@@ -897,10 +999,21 @@ let under_demand ctx demand (f : unit -> 'a) : 'a =
       ctx.param_reach <- saved;
       r
 
-(* a read of a Let binder that has a demand: the demand holds wherever this
-   read is reached — the binder's own need excluded, for the read is what
-   evaluates it *)
+(* a read of a binder. A Let's binder keeps the read and where it stands, for
+   the barrier rules of [emit_barriers]; a binder with a demand derives it
+   wherever this read is reached — the binder's own need excluded, for the
+   read is what evaluates it *)
 let note_binder_read ctx ~subject ~subject_ot (node : expr) naam =
+  (match List.assoc_opt (norm naam) ctx.binders with
+  | Some entry -> (
+      match
+        List.find_opt
+          (fun li -> match li.li_entry with Some e -> e == entry | None -> false)
+          ctx.let_needs
+      with
+      | Some li -> li.li_reads <- (node, site ctx ~subject ~subject_ot) :: li.li_reads
+      | None -> ())
+  | None -> ());
   match List.assoc_opt (norm naam) ctx.demands with
   | None -> ()
   | Some (d, subj) ->
@@ -2032,6 +2145,38 @@ let let_binder ctx ~subject ~subject_ot ((va, vt, vs) : string list * string * i
     let v = fresh ctx "LB" in
     ([ Printf.sprintf "%s(%s,%s)" p subject v ], v, vs)
   end
+
+(* a Let at rule level, up to its body: the value, translated as the value of
+   this Let ([ctx.value_of]) and under its demand, and the binding the body
+   reads — the binder, the need's atoms in [rule_guard] and the Let in
+   [let_needs]. The caller saves the context before and restores it after the
+   body. Returns the need's atoms. *)
+let bind_let ctx ~subject ~subject_ot ~binder ~value ~body translate_value =
+  ctx.let_serial <- ctx.let_serial + 1;
+  let li =
+    { li_id = ctx.let_serial; li_binder = norm binder; li_depth = List.length ctx.let_needs;
+      li_outer = ctx.let_needs; li_subject = subject; li_ot = subject_ot;
+      li_order = lazy (let_order body); li_va = []; li_entry = None; li_demand = None; li_reads = [];
+      li_asks = [] }
+  in
+  ctx.lets <- li :: ctx.lets;
+  let demand = demand_for ctx ~subject value in
+  li.li_demand <- Option.map (fun (d, subj) -> Printf.sprintf "%s(%s)" d subj) demand;
+  let saved_v = ctx.value_of in
+  ctx.value_of <- Some li;
+  let va, vt, vs = under_demand ctx demand translate_value in
+  ctx.value_of <- saved_v;
+  li.li_va <- va;
+  let entry = let_binder ctx ~subject ~subject_ot (va, vt, vs) in
+  li.li_entry <- Some entry;
+  ctx.binders <- (norm binder, entry) :: ctx.binders;
+  ctx.rule_guard <- ctx.rule_guard @ va;
+  ctx.let_needs <- li :: ctx.let_needs;
+  ctx.demands <-
+    (match demand with
+    | Some dm -> (norm binder, dm) :: ctx.demands
+    | None -> List.remove_assoc (norm binder) ctx.demands);
+  va
 
 (* the ch. 1.2d NON-numeric inequality, Tabel 44 (uniform over every datatype):
    ongelijk-aan with EXACTLY ONE empty operand is waar, both empty is onwaar,
@@ -4152,17 +4297,12 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          value's and the body's, so the caller's rule body binds every variable
          it uses (and a coalescing position that swallows the read's own letN
          atom cannot swallow these). *)
-      let demand = demand_for ctx ~subject value in
-      let va, vt, vs = under_demand ctx demand (fun () -> expr_term ctx ~subject ~subject_ot value) in
       let saved_b = ctx.binders and saved_g = ctx.rule_guard and saved_n = ctx.let_needs in
       let saved_d = ctx.demands in
-      ctx.binders <- (norm binder, let_binder ctx ~subject ~subject_ot (va, vt, vs)) :: ctx.binders;
-      ctx.rule_guard <- ctx.rule_guard @ va;
-      ctx.let_needs <- (norm binder, va, early_nodes binder body) :: ctx.let_needs;
-      ctx.demands <-
-        (match demand with
-         | Some dm -> (norm binder, dm) :: ctx.demands
-         | None -> List.remove_assoc (norm binder) ctx.demands);
+      let va =
+        bind_let ctx ~subject ~subject_ot ~binder ~value ~body (fun () ->
+            expr_term ctx ~subject ~subject_ot value)
+      in
       let ba, bt, bs = expr_term ctx ~subject ~subject_ot body in
       ctx.binders <- saved_b;
       ctx.rule_guard <- saved_g;
@@ -7058,20 +7198,12 @@ and translate_money_mult ctx ~subject ~subject_ot ~basis : string list * string 
         (* ch. 10.6 clause 3: an unread binder evaluates nothing *)
         peel body
     | Let { binder; value; body; _ } ->
-        let demand = demand_for ctx ~subject value in
-        let va, vt, vs =
-          under_demand ctx demand (fun () -> expr_term ctx ~subject ~subject_ot value)
-        in
-        ctx.demands <-
-          (match demand with
-           | Some dm -> (norm binder, dm) :: ctx.demands
-           | None -> List.remove_assoc (norm binder) ctx.demands);
-        ctx.binders <- (norm binder, let_binder ctx ~subject ~subject_ot (va, vt, vs)) :: ctx.binders;
         (* the peeled value's atoms ride [rule_guard] into the product helper's
            own body (below): a coalescing operand swallows the read's letN atom,
            so this is where the read-place barrier survives the money product *)
-        ctx.rule_guard <- ctx.rule_guard @ va;
-        ctx.let_needs <- (norm binder, va, early_nodes binder body) :: ctx.let_needs;
+        ignore
+          (bind_let ctx ~subject ~subject_ot ~binder ~value ~body (fun () ->
+               expr_term ctx ~subject ~subject_ot value));
         peel body
     | Binair { op = Maal; links; rechts; _ } ->
         (req "money multiplication links" links, req "money multiplication rechts" rechts)
@@ -7368,17 +7500,12 @@ let rec value_branches ctx ~subject ~subject_ot (e : expr) : vbranch list =
          fact, and the body's branches ARE the Let's *)
       value_branches ctx ~subject ~subject_ot body
   | Let { binder; value; body; _ } ->
-      let demand = demand_for ctx ~subject value in
-      let va, vt, vs = under_demand ctx demand (fun () -> expr_term ctx ~subject ~subject_ot value) in
       let saved_b = ctx.binders and saved_g = ctx.rule_guard and saved_n = ctx.let_needs in
       let saved_d = ctx.demands in
-      ctx.binders <- (norm binder, let_binder ctx ~subject ~subject_ot (va, vt, vs)) :: ctx.binders;
-      ctx.rule_guard <- ctx.rule_guard @ va;
-      ctx.let_needs <- (norm binder, va, early_nodes binder body) :: ctx.let_needs;
-      ctx.demands <-
-        (match demand with
-         | Some dm -> (norm binder, dm) :: ctx.demands
-         | None -> List.remove_assoc (norm binder) ctx.demands);
+      let va =
+        bind_let ctx ~subject ~subject_ot ~binder ~value ~body (fun () ->
+            expr_term ctx ~subject ~subject_ot value)
+      in
       let branches = value_branches ctx ~subject ~subject_ot body in
       ctx.binders <- saved_b;
       ctx.rule_guard <- saved_g;
@@ -8252,16 +8379,18 @@ let rec translate_chain ctx ~is_char ~subject ~subject_ot ~base ~path ~root
          default's wait on its exception groups: ref reads the justification
          only when they decide nothing *)
       let saved_r = ctx.param_reach and saved_g = ctx.rule_guard in
-      let saved_n = ctx.let_needs and saved_b = ctx.binders in
+      let saved_n = ctx.let_needs and saved_b = ctx.binders and saved_v = ctx.value_of in
       ctx.param_reach <- (fun _ -> (base :: reached n) @ extra);
       ctx.rule_guard <- [];
       ctx.let_needs <- [];
       ctx.binders <- [];
+      ctx.value_of <- None;
       let atoms = cond_atoms ctx ~subject ~subject_ot (req "default justification" r.default_voorwaarde) in
       ctx.param_reach <- saved_r;
       ctx.rule_guard <- saved_g;
       ctx.let_needs <- saved_n;
       ctx.binders <- saved_b;
+      ctx.value_of <- saved_v;
       atoms
     end
   in
@@ -9346,7 +9475,8 @@ let translate (doc : document) (case : Case.t) : string =
   let doc = Ir_v0.Desugar.document doc in
   let ctx =
     { doc; case; buf = Buffer.create 4096; fresh = 0; rule_guard = []; write_scale = 1;
-      rule_name = "?"; binders = []; param_reach = (fun _ -> []); let_needs = []; demands = [] }
+      rule_name = "?"; binders = []; param_reach = (fun _ -> []); let_needs = []; value_of = None;
+      lets = []; let_serial = 0; demands = [] }
   in
   (* ch. 8.4: the shared session-start Parameterset coverage check —
      data-plane validation (like the shared case loader), run before a
@@ -9416,6 +9546,7 @@ let translate (doc : document) (case : Case.t) : string =
   List.iteri (translate_consistentie ctx) doc.consistenties;
   List.iter (translate_uniciteit ctx) doc.uniciteiten;
   List.iteri (translate_uniciteit_unie ctx) doc.uniciteit_unies;
+  emit_barriers ctx;
   translate_case ctx case;
   emit ctx "#show val/3. #show heeft/2. #show inconsistent/2. #show tl/5.";
   Buffer.contents ctx.buf

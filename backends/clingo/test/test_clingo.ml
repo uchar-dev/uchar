@@ -9114,6 +9114,111 @@ let () =
     ~param:"p" ~case_text:(pf_case ~instances:(gematerialiseerd [ ("B3", "3"); ("A8", "8") ]) (keur None))
     ~silent:"keur leeg: A8's matrix failed its join"
 
+(* FIXRONDE 2, point 4: the Let barrier in the guard is decided per read, not
+   by a static "may come first" / "surely comes after" split. A parameter p
+   after a Let's body parts is reached unless an EARLIER read of the binder,
+   on the path actually taken, found the need leeg (ch. 10.6, ch. 5.11). The
+   static split was wrong both ways. Loud: a Match arm that reads k, a branch
+   under an operator whose other operand reads k later, two branches that
+   read k on opposite arms, and a Let value that reads k in one arm only
+   (relocated to the read of its binder) all made p "maybe first", so the
+   guard fired where ref met the barrier. Silent: an inner Let whose own need
+   is leeg ends before its body reads k, so p IS reached, but "the inner Let
+   surely reads k" made the guard wait for k's need. restpost and extra are
+   leeg unless a case says otherwise. *)
+let () =
+  let p = pf_p "p" and k = pf_b "k" and restpost = pf_a "restpost" in
+  let jutter =
+    pf_ot
+      (Printf.sprintf {|"inkomen": %s, "restpost": %s, "extra": %s, "heffing": %s, "klasse": %s|}
+         pf_n2 pf_n2 pf_n2 pf_n2
+         {|{ "node": "Enumeratie", "domein": "Klasse", "waarden": [ "Hoog", "Laag" ] }|})
+  in
+  let doc waarde =
+    pf_doc ~objecttypen:[ jutter ]
+      ~domeinen:{|"Klasse": { "node": "Enumeratie", "domein": "Klasse", "waarden": [ "Hoog", "Laag" ] }|}
+      ~parameters:[ pf_decl "p"; pf_decl "q" ] ~regels:[ pf_regel waarde ] ()
+  in
+  let j1 ?(extra = "") klasse =
+    Printf.sprintf
+      {|{ "label": "J1", "objectType": "Jutter", "attributes": { "inkomen": { "number": "20" }%s%s }, "roles": {}, "characteristics": [] }|}
+      (match klasse with Some c -> Printf.sprintf {|, "klasse": { "enumeration": "%s" }|} c | None -> "")
+      (if extra = "" then "" else Printf.sprintf {|, "extra": { "number": "%s" }|} extra)
+  in
+  let leeg = [ pf_leeg (); pf_cons ] in
+  let q v = [ pf_bind "q" v ] in
+  let q_gt_0 = pf_cmp "GROTER" (pf_p "q") (pf_l "0") in
+  (* lz-m3: only the Hoog arm reads k, and p follows the Match *)
+  let klasse = {|{ "node": "Enumeratie", "domein": "Klasse", "waarden": [ "Hoog", "Laag" ] }|} in
+  let m3 =
+    doc
+      (pf_let "k" restpost
+         (pf_bin "PLUS"
+            (Printf.sprintf
+               {|{ "node": "Match", "type": %s, "scrutinee": %s,
+                   "arms": [ { "constructor": "Hoog", "binder": null, "body": %s },
+                             { "constructor": "Laag", "binder": null, "body": %s } ],
+                   "bron": "match klasse" }|}
+               pf_n2 (pf_a ~typ:klasse "klasse") k (pf_l "0.00"))
+            p))
+  in
+  both_answer ~name:"Let, lazy: the Match arm read k before p (lz-m3)" ~ir:m3
+    ~case_text:(pf_case ~params:(q "1") ~instances:[ j1 (Some "Hoog") ] leeg);
+  unbound_fires ~name:"Let: the Match arm left k unread before p (control)" ~ir:m3 ~param:"p"
+    ~case_text:(pf_case ~params:(q "1") ~instances:[ j1 (Some "Laag") ] leeg)
+    ~silent:"heffing leeg";
+  (* lz-c: the branch reads k before p on then, the last operand after p *)
+  let c = doc (pf_let "k" restpost (pf_bin "PLUS" (pf_bin "PLUS" (pf_ite q_gt_0 k (pf_l "0")) p) k)) in
+  both_answer ~name:"Let, lazy: the taken arm read k before p, a later operand again (lz-c)" ~ir:c
+    ~case_text:(pf_case ~params:(q "5") ~instances:[ j1 None ] leeg);
+  unbound_fires ~name:"Let: only the operand after p reads k (control)" ~ir:c ~param:"p"
+    ~case_text:(pf_case ~params:(q "-5") ~instances:[ j1 None ] leeg) ~silent:"heffing leeg";
+  (* lz-d: two branches read k on opposite arms, so every path reads it first *)
+  let d =
+    doc
+      (pf_let "k" restpost
+         (pf_bin "PLUS"
+            (pf_bin "PLUS" (pf_ite q_gt_0 k (pf_l "0")) (pf_ite q_gt_0 (pf_l "0") k))
+            p))
+  in
+  both_answer ~name:"Let, lazy: each path reads k in one of two branches before p (lz-d)" ~ir:d
+    ~case_text:(pf_case ~params:(q "5") ~instances:[ j1 None ] leeg);
+  (* lz-v: the value of bel reads k in one arm; bel is read before p. Its
+     control (q = -5, where ref faults) is not pinned: this lowering keeps
+     bel's value behind k's need even on the arm that does not read k — with
+     p bound that is a missing write — and the guard can only follow the
+     lowering there *)
+  let v =
+    doc
+      (pf_let "k" restpost
+         (pf_let "bel" (pf_ite q_gt_0 k (pf_l "0")) (pf_bin "PLUS" (pf_b "bel") p)))
+  in
+  both_answer ~name:"Let, lazy: a value read before p reads k in its taken arm (lz-v)" ~ir:v
+    ~case_text:(pf_case ~params:(q "5") ~instances:[ j1 None ] leeg);
+  (* lz-s2: the inner Let's need (extra) is leeg, so it ends before reading k
+     and p is reached; with extra filled it reads k, whose need ends the Let *)
+  let s2 =
+    doc (pf_let "k" restpost (pf_bin "PLUS" (pf_let "m" (pf_a "extra") (pf_bin "PLUS" (pf_b "m") k)) p))
+  in
+  unbound_fires ~name:"Let: an inner barrier ends before k is read, so p is (lz-s2)" ~ir:s2
+    ~param:"p" ~case_text:(pf_case ~instances:[ j1 None ] leeg)
+    ~silent:"heffing leeg: the guard waited for k's need, which the inner Let never read";
+  both_answer ~name:"Let, lazy: the inner Let reads k, which ends the Let before p (control)"
+    ~ir:s2 ~case_text:(pf_case ~instances:[ j1 ~extra:"1" None ] leeg);
+  (* lz-s: the same inner Let as the value of j, read before p *)
+  let s =
+    doc
+      (pf_let "k" restpost
+         (pf_bin "PLUS"
+            (pf_let "j" (pf_let "m" (pf_a "extra") (pf_bin "PLUS" (pf_b "m") k)) (pf_b "j"))
+            p))
+  in
+  unbound_fires ~name:"Let: a value's inner barrier ends before k is read, so p is (lz-s)" ~ir:s
+    ~param:"p" ~case_text:(pf_case ~instances:[ j1 None ] leeg)
+    ~silent:"heffing leeg: the guard waited for k's need, which the value never read";
+  both_answer ~name:"Let, lazy: the value reads k, which ends the Let before p (control)" ~ir:s
+    ~case_text:(pf_case ~instances:[ j1 ~extra:"1" None ] leeg)
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
