@@ -884,6 +884,42 @@ class IrEmitterTest {
                 () -> "de rolcheck aan de verre zijde noemt de rol die het onderwerp speelt:\n" + c);
     }
 
+    @Test void een_rolcheck_die_de_andere_zijde_vernauwt_draagt_het_type_van_die_zijde() {
+        // U12 of the L2 card: a check whose other end names a STRICT subtype of that role's declared filler
+        // ("heeft een Strandjutter", where wachtjutter is declared on Jutter) narrows the link it asks for, and
+        // the wire says so in counterpartType; naming the declared filler itself narrows nothing and the field
+        // stays absent. The frontend resolves a written role to its declared filler, so the narrowing is set on
+        // the resolved record here, as the hand-written golden jutterswet-postbezetting carries it.
+        RegelSpraakModel m = Resolver.resolve("""
+            Objecttype de Jutter (mv: Jutters) (bezield)
+            Objecttype de Strandjutter is een Jutter (mv: Strandjutters) (bezield)
+            Objecttype de Wachtpost (mv: Wachtposten)
+                is bemand kenmerk (bijvoeglijk);
+            Feittype wachtindeling
+                de wachtjutter (mv: wachtjutters) Jutter
+                de toegewezen wachtpost Wachtpost
+            Eén toegewezen wachtpost telt meerdere wachtjutters
+            Regel bemand
+                geldig altijd
+                    Een Wachtpost is bemand indien hij een wachtjutter heeft.
+            """);
+        assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
+        ResolvedRegel r = m.resolvedRegels.get(0);
+        assertTrue(r.voorwaarde() instanceof Conditie.VerreRollidmaatschap v && v.filler().naam.equals("Jutter"),
+                () -> "de resolver hoort de verre rolcheck te bouwen: " + r.voorwaarde());
+        String zonder = IrEmitter.emit(m).replaceAll("\\s+", "");
+        assertTrue(zonder.contains("\"role\":\"toegewezenwachtpost\",\"negated\":false,"),
+                () -> "de gedeclareerde vuller vernauwt niets:\n" + zonder);
+        Conditie.VerreRollidmaatschap v = (Conditie.VerreRollidmaatschap) r.voorwaarde();
+        m.resolvedRegels.set(0, new ResolvedRegel(r.naam(), r.soort(), r.doel(), r.waarde(),
+                new Conditie.VerreRollidmaatschap(m.objecttypen.get("Strandjutter"), v.backref(), v.negatie(), v.bron()),
+                r.geldigheid()));
+        String met = IrEmitter.emit(m).replaceAll("\\s+", "");
+        assertTrue(met.contains("{\"node\":\"RoleMembership\",\"factType\":\"wachtindeling\","
+                        + "\"role\":\"toegewezenwachtpost\",\"counterpartType\":\"Strandjutter\",\"negated\":false,"),
+                () -> "een strikt subtype van de gedeclareerde vuller vernauwt de link:\n" + met);
+    }
+
     @Test void een_lezing_die_navigeert_zonder_unieke_binding_wordt_geweigerd() {
         // IR-SPEC ch. 4.1a: a read without bindings is the subject's own, so a read the resolver took to another
         // type but whose relation it cannot name has no spelling — written without its binding, it would read

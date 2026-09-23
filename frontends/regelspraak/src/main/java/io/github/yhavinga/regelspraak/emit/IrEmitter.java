@@ -766,8 +766,9 @@ public final class IrEmitter {
                     w.key("navigatieBinding"); rolBinding(nb);
                 }
             }
-            // IR-SPEC ch. 4.5: one node for both sides of the role check, naming the fact type and the role the
-            // subject plays in it; where the reference sits is the consumer's storage question, not the wire's
+            // IR-SPEC ch. 4.5: one node for both sides of the role check, naming the fact type, the role the
+            // subject plays in it and, where the check narrows it, the type of the other end; where the
+            // reference sits is the consumer's storage question, not the wire's
             case Conditie.Rollidmaatschap r -> rolLidmaatschap(lidmaatschapNabij(r), r.negatie(), r.bron());
             case Conditie.VerreRollidmaatschap r -> rolLidmaatschap(lidmaatschapVer(r), r.negatie(), r.bron());
             case Conditie.Periode p -> {
@@ -1150,21 +1151,25 @@ public final class IrEmitter {
         return false;
     }
 
+    /** A role check as the wire carries it: the binding (the fact type and the role the subject plays) and,
+     *  where the check narrows the other end to a strict subtype of that role's declared filler, the type it
+     *  narrows to (null: no narrowing). */
+    private record Lidmaatschap(RegelSpraakModel.RolBindingRef binding, String tegenpartij) {}
+
     /** The role check with the subject on the near side ("hij is een wachtjutter"): the fact type in which
-     *  the subject plays the written role and {@code anderTeFiller} the other. The written name denotes the
-     *  role by declared name or declared plural; a check the resolver bound in any other way has no binding
-     *  to write, and is refused. */
-    private RegelSpraakModel.RolBindingRef lidmaatschapNabij(Conditie.Rollidmaatschap r) {
-        RegelSpraakModel.RolBindingRef gevonden = null;
+     *  the subject plays the written role and {@code anderTeFiller} fills the other. The written name denotes
+     *  the role by declared name or declared plural; a check the resolver bound in any other way has no
+     *  binding to write, and is refused. */
+    private Lidmaatschap lidmaatschapNabij(Conditie.Rollidmaatschap r) {
+        Lidmaatschap gevonden = null;
         int n = 0;
         if (m != null && huidigSubject != null && r.rol() != null && r.anderTeFiller() != null)
             for (Feittype ft : m.feittypen.values()) {
                 if (ft.wederkerig || ft.rollen.size() != 2) continue;
                 for (int i = 0; i < 2; i++) {
                     Rol eigen = ft.rollen.get(i), ander = ft.rollen.get(1 - i);
-                    if (duidtAan(eigen, r.rol()) && vult(huidigSubject, eigen)
-                            && m.objecttypeOpNaam(ander.objecttypeNaam()) == r.anderTeFiller()) {
-                        gevonden = new RegelSpraakModel.RolBindingRef(ft.naam, eigen.naam());
+                    if (duidtAan(eigen, r.rol()) && vult(huidigSubject, eigen) && vult(r.anderTeFiller(), ander)) {
+                        gevonden = lidmaatschap(ft, eigen, ander, r.anderTeFiller());
                         n++;
                     }
                 }
@@ -1179,15 +1184,15 @@ public final class IrEmitter {
 
     /** The role check with the subject on the far side ("de wachtpost heeft een wachtjutter"): the fact type
      *  in which the subject plays the role {@code backref} names and {@code filler} fills the other. */
-    private RegelSpraakModel.RolBindingRef lidmaatschapVer(Conditie.VerreRollidmaatschap r) {
-        RegelSpraakModel.RolBindingRef gevonden = null;
+    private Lidmaatschap lidmaatschapVer(Conditie.VerreRollidmaatschap r) {
+        Lidmaatschap gevonden = null;
         int n = 0;
         if (m != null && huidigSubject != null && r.backref() != null && r.filler() != null)
             for (Feittype ft : m.feittypen.values()) {
                 if (ft.wederkerig && ft.rollen.size() == 1) {
                     Rol rol = ft.rollen.get(0);
                     if (duidtAan(rol, r.backref()) && vult(huidigSubject, rol) && vult(r.filler(), rol)) {
-                        gevonden = new RegelSpraakModel.RolBindingRef(ft.naam, rol.naam());
+                        gevonden = lidmaatschap(ft, rol, rol, r.filler());
                         n++;
                     }
                     continue;
@@ -1196,7 +1201,7 @@ public final class IrEmitter {
                 for (int i = 0; i < 2; i++) {
                     Rol eigen = ft.rollen.get(i), ander = ft.rollen.get(1 - i);
                     if (duidtAan(eigen, r.backref()) && vult(huidigSubject, eigen) && vult(r.filler(), ander)) {
-                        gevonden = new RegelSpraakModel.RolBindingRef(ft.naam, eigen.naam());
+                        gevonden = lidmaatschap(ft, eigen, ander, r.filler());
                         n++;
                     }
                 }
@@ -1208,10 +1213,19 @@ public final class IrEmitter {
         return gevonden;
     }
 
-    private void rolLidmaatschap(RegelSpraakModel.RolBindingRef rb, boolean negatie, Bron bron) {
+    /** The check's other end narrows only where it names a STRICT subtype of the other role's declared filler;
+     *  naming the declared type itself is no narrowing, and the field then stays absent. */
+    private Lidmaatschap lidmaatschap(Feittype ft, Rol eigen, Rol ander, Objecttype tegenpartij) {
+        Objecttype gedeclareerd = m.objecttypeOpNaam(ander.objecttypeNaam());
+        return new Lidmaatschap(new RegelSpraakModel.RolBindingRef(ft.naam, eigen.naam()),
+                tegenpartij == gedeclareerd ? null : tegenpartij.naam);
+    }
+
+    private void rolLidmaatschap(Lidmaatschap l, boolean negatie, Bron bron) {
         w.key("node").value("RoleMembership");
-        w.key("factType").value(rb.feittype());
-        w.key("role").value(rb.rol());
+        w.key("factType").value(l.binding().feittype());
+        w.key("role").value(l.binding().rol());
+        if (l.tegenpartij() != null) w.key("counterpartType").value(l.tegenpartij());
         w.key("negated").value(negatie);
         w.key("bron").value(bron.snippet());
     }
