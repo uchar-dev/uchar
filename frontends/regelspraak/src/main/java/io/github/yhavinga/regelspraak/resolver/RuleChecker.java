@@ -93,6 +93,7 @@ final class RuleChecker {
         keurSetlezingen();
         keurDeelselecties(doc);
         defaults(doc);        // §4 lift the base+exception families and unordered groups into PrioritizedDefaults nodes
+        keurVensterposities(); // WF-112, over the conditions as emitted — after the lift, so defaults are covered
     }
 
     /**
@@ -285,6 +286,109 @@ final class RuleChecker {
     /** A rule's place in a Regelgroep: the group, and the decision table it is a row of (null for a plain
      *  rule member). */
     private record Lidmaatschap(String groep, String tabel) {}
+
+    /** WF-112 (maintainer decision 2026-09-23), producer side: a time window never sits under 'geen van de' or
+     *  a counting quantifier — as a member of such a composite at any depth, or in the filter or test of such a
+     *  quantifier fold. The window gates the RULE (RUNTIME-SEMANTICS ch. 3.10); a quantifier that complements or
+     *  counts its verdict reads it as something no clause specifies. Before this fence each such document was
+     *  written without a word and refused by the verifier. The walk mirrors the verifier's: every condition the
+     *  emitter writes (the roots {@code Resolver.meldOnopgelost} sweeps), into the conditions nested in
+     *  expressions, with {@link Conditie#bevatPeriode} as the window test — the reach of its
+     *  {@code cond_has_window}. One ERROR per offending composite or fold, so {@link Resolver#irModus} writes
+     *  nothing. */
+    private void keurVensterposities() {
+        for (ResolvedRegel r : model.resolvedRegels) {
+            vensterPositie(r.voorwaarde()); vensterPositieIn(r.doel()); vensterPositieIn(r.waarde());
+        }
+        for (var d : model.resolvedDagsoorten) vensterPositie(d.voorwaarde());
+        for (var oc : model.objectCreaties) {
+            vensterPositie(oc.voorwaarde());
+            for (var t : oc.toekenningen()) vensterPositieIn(t.waarde());
+        }
+        for (var v : model.verdelingen) vensterPositie(v.voorwaarde());
+        for (var c : model.consistenties) vensterPositie(c.assertie());
+        for (var fc : model.feitCreaties) vensterPositie(fc.voorwaarde());
+        for (var pd : model.prioritizedDefaults) vensterPositieDefaults(pd.defaults());
+    }
+
+    private void vensterPositieDefaults(List<Default> defaults) {
+        if (defaults == null) return;
+        for (Default d : defaults) {
+            vensterPositie(d.voorwaarde());
+            vensterPositieIn(d.consequentie());
+            if (d.excepties() != null)
+                for (var groep : d.excepties().leden()) vensterPositieDefaults(groep.defaults());
+        }
+    }
+
+    private void vensterPositie(Conditie c) {
+        if (c == null) return;
+        switch (c) {
+            case Conditie.Samengesteld s -> {
+                if (teltOfOntkent(s.kwantor()) && s.onderdelen().stream().anyMatch(Conditie::bevatPeriode))
+                    vensterFout(s.kwantor(), s.drempel(), s.bron(), "als lid van een samengestelde voorwaarde");
+                s.onderdelen().forEach(this::vensterPositie);
+            }
+            case Conditie.Kwantorvouw k -> {
+                if (teltOfOntkent(k.kwantor()) && (Conditie.bevatPeriode(k.filter()) || Conditie.bevatPeriode(k.toets())))
+                    vensterFout(k.kwantor(), k.drempel(), k.bron(), "in het filter of de toets van een kwantorvouw");
+                vensterPositie(k.filter());
+                vensterPositie(k.toets());
+            }
+            case Conditie.Vergelijking v -> { vensterPositieIn(v.links()); vensterPositieIn(v.rechts()); }
+            case Conditie.Predicaat p -> vensterPositieIn(p.operand());
+            case Conditie.Periode p -> { vensterPositieIn(p.vanaf()); vensterPositieIn(p.tot()); }
+            default -> { }
+        }
+    }
+
+    private void vensterPositieIn(Expr e) {
+        if (e == null) return;
+        switch (e) {
+            case Expr.Binair b -> { vensterPositieIn(b.links()); vensterPositieIn(b.rechts()); }
+            case Expr.Functie f -> {
+                f.argumenten().forEach(this::vensterPositieIn);
+                vensterPositieIn(f.leegwaarde());
+                vensterPositie(f.filter());
+            }
+            case Expr.Afgerond a -> vensterPositieIn(a.basis());
+            case Expr.Begrensd b -> {
+                vensterPositieIn(b.basis()); vensterPositieIn(b.minimum()); vensterPositieIn(b.maximum());
+            }
+            case Expr.TekstReeks t -> t.delen().forEach(d -> {
+                if (d instanceof Expr.TekstReeks.Ingevoegd i) vensterPositieIn(i.expr());
+            });
+            case Expr.DimensieCel dc -> vensterPositieIn(dc.attribuut());
+            case Expr.Let l -> { vensterPositieIn(l.value()); vensterPositieIn(l.body()); }
+            case Expr.IfThenElse k -> {
+                vensterPositie(k.conditie()); vensterPositieIn(k.dan()); vensterPositieIn(k.anders());
+            }
+            case Expr.InstanceSetUnion u -> u.takken().forEach(t -> vensterPositie(t.filter()));
+            default -> { }
+        }
+    }
+
+    /** 'geen van de' and the three counting quantifiers: the ones that complement or count a verdict. */
+    private static boolean teltOfOntkent(Conditie.Kwantor k) {
+        return k == Conditie.Kwantor.GEEN || k == Conditie.Kwantor.TEN_MINSTE
+                || k == Conditie.Kwantor.TEN_HOOGSTE || k == Conditie.Kwantor.PRECIES;
+    }
+
+    private void vensterFout(Conditie.Kwantor k, int drempel, Bron bron, String plaats) {
+        String woorden = switch (k) {
+            case GEEN -> "geen van de";
+            case TEN_MINSTE -> "ten minste " + drempel;
+            case TEN_HOOGSTE -> "ten hoogste " + drempel;
+            case PRECIES -> "precies " + drempel;
+            default -> k.name().toLowerCase();
+        };
+        model.diagnostics.add(new Diagnostic(Severity.ERROR,
+                "periodevergelijking onder '" + woorden + "' (" + plaats + "): een venster (§8.4.3) maakt de REGEL "
+                + "tijdsafhankelijk, en onder 'geen van de' of een tellende kwantor wordt zijn oordeel ontkend of "
+                + "geteld — daar is geen lezing voor (WF-112, IR-SPEC ch. 4.6). Zet het venster buiten die "
+                + "kwantor: als eigen voorwaardendeel, of als lid onder 'alle'",
+                bron == null ? 0 : bron.line()));
+    }
 
     /** The head a refusal names an extension block by, in the spelling the other §4 refusals use. */
     private static String blokKop(ParserRuleContext blok) {

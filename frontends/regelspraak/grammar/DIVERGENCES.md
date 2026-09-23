@@ -598,6 +598,21 @@ supertype-named read on to a verifier that refuses it. The message for that
 case says how to read the subject's own date instead. Witness:
 `PeriodegrensTest`.
 
+**The window's position — WF-112** (fix round 2, 2026-09-23). v2.3.0 lets a
+"het is de periode …" bullet stand in any compound condition (§13.4.15.69),
+under any quantifier. The wire does not: a window gates the RULE, so under
+'geen van de' or a counting quantifier ('ten minste', 'ten hoogste',
+'precies') its verdict would be complemented or counted, and no reading is
+specified for that. Measured before the fence: the bullet under each of those
+four quantifiers, and under a 'geen van de' sub-compound of an 'alle' compound,
+reached disk with `diagnostics: []`, and the verifier refused every one.
+`RuleChecker.keurVensterposities` now walks every condition the emitter writes —
+the reach of the verifier's own walk, conditions nested in expressions included
+— and refuses each composite or quantifier fold of that kind that holds a
+window, with an ERROR naming the quantifier. Under 'alle', or as the rule's own
+voorwaardendeel, the window stays admitted. No source in any zone writes the
+refused form. Witness: `VensterKwantorTest`.
+
 ---
 
 ## §13.4.17.47 The count's operand list — an ACCEPTING superset, fenced in the resolver
