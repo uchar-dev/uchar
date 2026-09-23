@@ -73,13 +73,16 @@ Every factual statement about a source carries one of four marks:
    the RegelSpraak frontend. No new WF rule is needed; one existing clause
    (WF-022's value clause) has a verifier check but no negatief of its own
    (§7.3).
-6. **A finding in the hand anchor.** `anchor/ww-herleving-inkomen` writes
+6. **A finding in the hand anchor.** `anchor/ww-herleving-inkomen` wrote
    its nested justifications without its carriers' conditions. Under
    RUNTIME-SEMANTICS ch. 7.9 an exception decides whether or not its
-   carrier applies, so on two inputs its four cases do not exercise the
-   anchor answers against the statute text — identically in all three
-   executors [M, §2.3]. The repair is a protected-path proposal (G1, §8.1) and comes
-   before the RegelSpraak twin.
+   carrier applies, so on inputs that its four cases did not exercise, the
+   anchor answered against the statute text — identically in all three
+   executors [M, §2.3]. Measured first on two inputs (8dd05e25); the
+   enumeration at the repair card found four of the sixteen input
+   combinations. The repair (G1, §8.1: every nested justification
+   conjoined with its carrier's, `werkloos` included, nine cases) landed on
+   2026-09-23 as a protected-path proposal, before the RegelSpraak twin.
 7. **Form 3 (input above computation) is split off** into a card of its
    own (§6): it is expressible today as program structure, the missing
    part is sugar and explanation, and a semantic variant would touch the
@@ -185,9 +188,14 @@ The proposed decisions, one line each (full text in §10):
   keyed `Werknemer.recht op uitkering/0`.
 - **M12 — the wire the RegelSpraak twin should emit** (§8.2): first-level
   exception as a chain position, deeper exceptions nested, conditions
-  written out, `recht op uitkering` bezittelijk. Verifier PASS; seven
-  cases (the anchor's four, the two corners of §2.3, the input case of
-  M9) pass in ref, clingo and the exec branch.
+  written out, `recht op uitkering` bezittelijk. Measured on 8dd05e25 with
+  the conditions first proposed (without `werkloos`): verifier PASS; seven
+  cases (the anchor's four, probes A and B of §2.3, the input case of M9)
+  passed in ref, clingo and the exec branch. Re-measured 2026-09-23 on the
+  landed anchor (§8.1: conditions conjoined with `werkloos`, bezittelijk)
+  restructured to this shape: verifier PASS; all nine cases pass in ref and
+  clingo, `PLAYED 9` in the exec branch; the DRL-text branch refuses it on
+  its defaults sentence.
 
 ### 2.3 The anchor's corners
 
@@ -755,8 +763,11 @@ facts:
   Two authors wrote nested exceptions as if it did: the hand anchor (§2.3) and the
   card's own probe p3 (`tegenuitzondering … indien hij wia ontstaan is`).
 - [M] Written without the carrier's condition, the anchor's nested
-  exceptions decide wrongly on two inputs; written with it, all six
-  inputs pass (§2.3).
+  exceptions decided wrongly on four of the sixteen input combinations
+  (two measured first, on 8dd05e25; four after the enumeration of §2.3).
+  Written with the carriers' conditions at every nested level, `werkloos`
+  included, all nine cases of §8.1 pass; written with them but without
+  `werkloos`, probe C stays wrong.
 - [I] At the first level the override reading is intended: an exception
   there may widen its base (`jutterswet-bergingsdrempel`: noodweer and
   eight wrecks against a base of twenty; art. 5 Jutterswet: "zes" in place
@@ -1000,9 +1011,10 @@ witnesses are frontend fixtures (JUnit, beside
 ### 8.1 G1 — repair of `anchor/ww-herleving-inkomen` (protected path)
 
 *Landed 2026-09-23 as a proposal branch the maintainer merges (card
-`anker-ww-herleving-dragervoorwaarde`, commits 560859e0, a7e24b5c). This
-section records the landed form; where it differs from the version first
-proposed here, the first version is named.*
+`anker-ww-herleving-dragervoorwaarde`, commits 560859e0 and a7e24b5c, the
+bezittelijk kind in 2f23e029). This section records the landed form; where
+it differs from the version first proposed here, the first version is
+named.*
 
 - Every nested default's justification is one flat `ALLE` (one
   `Samengesteld`, no nested `ALLE`): its carrier's conjuncts first, in the
@@ -1040,14 +1052,21 @@ proposed here, the first version is named.*
   survivor list of `scripts/check-noop.sh` (gate 7: 563 refuting, 37
   survivors; red without the entry). *First proposed:* no new entry, which
   held for a case4-based input case that also pinned `inkomensgrens`.
-- `recht op uitkering` stays `BIJVOEGLIJK`. *First proposed:*
-  `BEZITTELIJK`, so the twin can write `heeft (geen) recht op uitkering`
-  ([M12] the verifier and the three executors pass with it); the card did
-  not include it, so if G2 needs it, G2 proposes it as a change to this
-  anchor.
+- `recht op uitkering` is `BEZITTELIJK` in `kenmerkSoorten`, as first
+  proposed here: the card left it out, and its fix round 2 (commit
+  2f23e029) added it at the maintainer's request, so the twin can write
+  `heeft (geen) recht op uitkering` and land byte-identically on the
+  anchor. [M] The kind steers only that source spelling. With
+  `BIJVOEGLIJK` and with `BEZITTELIJK` the verifier passes, all nine cases
+  pass in ref and clingo, the exec branch plays 9, gate 12's pins stay
+  182 and 161, the ASP program clingo solves is byte-identical per case,
+  and the Drools bean carries the same field (`rechtOpUitkering`,
+  boolean). The Drools loader parses the table and no backend code reads
+  it back; ref and the ASP backend do not read it at all.
 - The NOTE gains the self-contained reading of ch. 7.9, the four corners
   of §2.3 with what the unconjoined tree answers on each, the reading of
-  `werkloos` on which probe C rests, and all nine hand computations.
+  `werkloos` on which probe C rests, the reason for the bezittelijk kind,
+  and all nine hand computations.
 
 [M] The repaired tree passes all nine cases in ref, clingo and the Drools
 exec branch (`PLAYED 9`); the DRL-text branch keeps refusing the golden on
@@ -1055,10 +1074,11 @@ its defaults sentence, and gate 12's pins (played 182, DRL 161) do not
 move. Gate 13 does not probe this golden: its only unit, `dag`, declares no
 canonical and no factor, so there is nothing to twist.
 
-*Consequence for G2 (§8.2 predates the landing and is not updated here):*
-the twin's wire must carry the same flat `ALLE` per nested default, carrier
-conjuncts first and `werkloos` included at einde, and its cases are these
-nine, not seven.
+*Consequence for G2 (§8.2):* the twin's wire must carry the same flat
+`ALLE` per nested default, carrier conjuncts first and `werkloos` included
+at einde, with `recht op uitkering` bezittelijk, and its cases are these
+nine. §8.2 gives the source in both spellings that decision 4d leaves
+open.
 
 ### 8.2 G2 — the RegelSpraak twin (required by the card)
 
@@ -1071,7 +1091,16 @@ sorted, the same cases with the same absolute expectations as the (repaired)
 hand anchor, and each difference classified as (i) dialect difference,
 (ii) IR design flaw or (iii) frontend defect.
 
-Source (`bron.rgs`) under decisions 1–4 as proposed:
+*Updated 2026-09-23 (fix round 2 of card
+`anker-ww-herleving-dragervoorwaarde`): the source follows the landed
+anchor of §8.1 — `werkloos` in the conditions of einde, herleving and
+blokkade, `recht op uitkering` bezittelijk, nine cases. How the carrier
+conjunction is SPELLED in the source is not settled: it depends on
+decision 4d, which the maintainer has yet to take. Both spellings follow;
+this plan chooses neither.*
+
+Source (`bron.rgs`) under decisions 1–3 as proposed. The declarations, the
+base rule and the three rekenregels are the same under either spelling:
 
 ```
 Objecttype de Werknemer (mv: Werknemers) (bezield)
@@ -1095,30 +1124,6 @@ Regel toekenning art 15
         Een Werknemer heeft recht op uitkering
         indien hij werkloos is.
 
-// Bron: WW art. 20 lid 1 onderdeel c
-Uitzondering op toekenning art 15: einde art 20 lid 1 c
-    geldig altijd
-        Een Werknemer heeft geen recht op uitkering
-        indien zijn maandinkomen groter is dan zijn inkomensgrens.
-
-// Bron: WW art. 21 lid 1
-Uitzondering op einde art 20 lid 1 c: herleving art 21 lid 1
-    geldig altijd
-        Een Werknemer heeft recht op uitkering
-        indien hij aan alle volgende voorwaarden voldoet:
-        - zijn maandinkomen is groter dan zijn inkomensgrens
-        - hij is omstandigheid vervallen.
-
-// Bron: WW art. 21 lid 2 onderdeel a
-Uitzondering op herleving art 21 lid 1: blokkade art 21 lid 2 a
-    geldig altijd
-        Een Werknemer heeft geen recht op uitkering
-        indien hij aan alle volgende voorwaarden voldoet:
-        - zijn maandinkomen is groter dan zijn inkomensgrens
-        - hij is omstandigheid vervallen
-        - hij is nieuw recht ontstaan
-        - zijn nieuw maandloon is groter dan zijn inkomensgrens.
-
 Regel inkomensgrens van een werknemer
     geldig altijd
         De inkomensgrens van een Werknemer moet berekend worden als zijn maandloon maal 0,8750 rekenkundig afgerond op 2 decimalen.
@@ -1132,23 +1137,100 @@ Regel nieuwe maxdatum bij herleving
         De nieuwe maxdatum van een Werknemer moet berekend worden als zijn maxdatum plus zijn verstreken periode.
 ```
 
+The three `Uitzondering op` blocks, in two spellings. Both must lower to
+the landed wire: per nested default one flat `ALLE`, the carrier's
+conjuncts first in the carrier's order, then the block's own — so a
+frontend that conjoins flattens.
+
+*Spelling 1 — the carrier conjunction written out per exception* (§5.4
+option (A)): each block writes its carrier's conditions and then its own,
+and the frontend emits exactly what is written.
+
+```
+// Bron: WW art. 20 lid 1 onderdeel c
+Uitzondering op toekenning art 15: einde art 20 lid 1 c
+    geldig altijd
+        Een Werknemer heeft geen recht op uitkering
+        indien hij aan alle volgende voorwaarden voldoet:
+        - hij is werkloos
+        - zijn maandinkomen is groter dan zijn inkomensgrens.
+
+// Bron: WW art. 21 lid 1
+Uitzondering op einde art 20 lid 1 c: herleving art 21 lid 1
+    geldig altijd
+        Een Werknemer heeft recht op uitkering
+        indien hij aan alle volgende voorwaarden voldoet:
+        - hij is werkloos
+        - zijn maandinkomen is groter dan zijn inkomensgrens
+        - hij is omstandigheid vervallen.
+
+// Bron: WW art. 21 lid 2 onderdeel a
+Uitzondering op herleving art 21 lid 1: blokkade art 21 lid 2 a
+    geldig altijd
+        Een Werknemer heeft geen recht op uitkering
+        indien hij aan alle volgende voorwaarden voldoet:
+        - hij is werkloos
+        - zijn maandinkomen is groter dan zijn inkomensgrens
+        - hij is omstandigheid vervallen
+        - hij is nieuw recht ontstaan
+        - zijn nieuw maandloon is groter dan zijn inkomensgrens.
+```
+
+*Spelling 2 — the carrier conjunction implicit in a restrictive
+`Uitzondering op`* (the reading the build card
+dialect-uitzondering-op-uitzondering writes as its decision 4d): the
+frontend conjoins the carrier's already conjoined justification with the
+block's own condition at every level, the first one included, and an
+exception that widens its base is written `Afwijking van <naam>: <naam>`
+with its own condition only. Each block writes only its own condition:
+
+```
+// Bron: WW art. 20 lid 1 onderdeel c
+Uitzondering op toekenning art 15: einde art 20 lid 1 c
+    geldig altijd
+        Een Werknemer heeft geen recht op uitkering
+        indien zijn maandinkomen groter is dan zijn inkomensgrens.
+
+// Bron: WW art. 21 lid 1
+Uitzondering op einde art 20 lid 1 c: herleving art 21 lid 1
+    geldig altijd
+        Een Werknemer heeft recht op uitkering
+        indien hij omstandigheid vervallen is.
+
+// Bron: WW art. 21 lid 2 onderdeel a
+Uitzondering op herleving art 21 lid 1: blokkade art 21 lid 2 a
+    geldig altijd
+        Een Werknemer heeft geen recht op uitkering
+        indien hij aan alle volgende voorwaarden voldoet:
+        - hij is nieuw recht ontstaan
+        - zijn nieuw maandloon is groter dan zijn inkomensgrens.
+```
+
+[I] What differs between the two: under spelling 1 the source repeats
+every carrier condition and the `werkloos` of einde is written by the
+author; under spelling 2 the source says less than its wire, the frontend
+supplies `werkloos` at einde (the "ook aan de wortel" of that card), and
+`jutterswet-bergingsdrempel` moves to `Afwijking van`. The anchor's
+expectations and the twin's wire are the same under both.
+
 [M] The declarations, the three rekenregels, the bezittelijk attribution
 and the four-part condition already resolve on the current frontend (a
-probe without the exception blocks); only the three `Uitzondering op`
-blocks need the build card.
+probe without the exception blocks, 8dd05e25); only the three `Uitzondering
+op` blocks need the build card. [I] Spelling 1's two-, three- and
+five-part conditions use the same list form.
 
 Expected result of the diff:
 
 | Item | Class | Status |
 |---|---|---|
-| einde is a chain position above toekenning; the anchor nests it in toekenning's `excepties` | (i) — §5.2: inheritance-safe lowering, identical on every input | [M12] the twin's shape passes all seven cases |
+| einde is a chain position above toekenning; the anchor nests it in toekenning's `excepties` | (i) — §5.2: inheritance-safe lowering, identical on every input | [M12] the twin's shape passes all nine cases on the landed conditions |
 | herleving and blokkade nested as in the anchor | — | identical after G1 |
 | group name `toekenning art 15` versus `recht op uitkering bij herleving`; `bron` texts | (i) | not compared (bron stripped) |
 | literal `0,8750` with 3 decimals (product 5) versus the anchor's `"0.8750"` with 4 (product 6) | (i) — the lexeme and a literal-typing detail; the result is rounded to 2 decimals | [M] measured on the probe |
 | unit `dag` with `canoniek: "dag"`, factor 1, `teken: "ONBEPAALD"` versus `null`/`null`/`null` | (i) — both spellings satisfy WF-092 | [M] measured on the probe |
-| `recht op uitkering` bezittelijk | none after G1 | — |
+| `recht op uitkering` bezittelijk | none: the anchor is bezittelijk since G1 | — |
 
-Cases: the seven of G1, same inputs, same expectations. Gates: 2, 3, 4,
+Cases: the nine of G1, same inputs, same expectations. Gates: 2, 3, 4,
 5, 6, 7, 10 (the re-emission of `bron.rgs`), 12 and 13.
 
 ### 8.3 G3 and G4 — two further twins
@@ -1220,9 +1302,11 @@ Cases: the seven of G1, same inputs, same expectations. Gates: 2, 3, 4,
 
 ### 8.4 What the Drools branches carry
 
-- **Exec-model branch: everything needed, today.** [M8] the anchor plays
-  4/4; [M11] a characteristic group-default with unordered exceptions and a
-  conflict plays 4/4; [M12] the twin's shape plays 7/7. The branch lowers a
+- **Exec-model branch: everything needed, today.** [M8] the anchor played
+  4/4 on 8dd05e25 and plays 9/9 since its repair (§8.1); [M11] a
+  characteristic group-default with unordered exceptions and a conflict
+  plays 4/4; [M12] the twin's shape played 7/7 on 8dd05e25 and plays 9/9
+  on the landed conditions. The branch lowers a
   defaults group to one reduce-rule whose walk recurses into nested groups
   and writes a characteristic only for a `true` decision
   (`ExecModelTranspiler.java:7543-7687`, `:7649`). Its fences do not touch
