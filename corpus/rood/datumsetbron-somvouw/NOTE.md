@@ -38,5 +38,5 @@ about the case changes: two filled contributors still reach the fold.
 The Drools backend refuses the form in both branches, one phase earlier:
 the fold lowers to a `BigDecimal` accumulate and a date-valued member has
 no place in it. That refusal is listed with its reason in gate 8's
-exclusion list rather than fragment-pinned, which is this leg's standing
-convention — FAULT there means a genuine fault at fire.
+exclusion list rather than fragment-pinned: a transpiler refusal is an
+EXCLUDE, and that leg pins a fragment only on a FAULT.

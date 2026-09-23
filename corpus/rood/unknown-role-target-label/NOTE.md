@@ -30,9 +30,8 @@ key, and only the bad one is named.
 
 Measured 2026-09-19: the backend's own loader refuses the same input,
 naming the same unknown label (`role 'liggers' names unknown label S9`),
-but it refuses it as a form it does not carry — an `EXCLUDE`, in the red
-leg's vocabulary, where `FAULT` is reserved for a genuine fault at fire.
-Gate 8 therefore lists the case with that reason rather than pinning a
-`drools` fragment. The agreement is real and worth recording even though
+but it refuses it as a form it does not carry — an `EXCLUDE` in the red
+leg, which pins a `drools` fragment only on a `FAULT`. Gate 8 therefore
+lists the case with that reason rather than pinning a fragment. The agreement is real and worth recording even though
 the leg cannot pin it: all three executors reject this case, and no
 executor computes anything from it.
