@@ -159,8 +159,9 @@ public final class Resolver {
 
     /** The --ir mode body: {@code rest} = [out.json, file.rgs...] after flag removal — the FIRST remaining arg is
      *  the output file, the rest are the source files of the model chain (concatenated in order). Writes a
-     *  FAITHFUL v0 JSON dump of the complete resolved model (the uchar "mirror" artifact — Dutch v0 field names
-     *  exactly as the Java records name them, warts included) via {@link io.github.yhavinga.regelspraak.emit.IrEmitter}.
+     *  FAITHFUL {@code uchar-ir-v1} JSON dump of the complete resolved model (the uchar "mirror" artifact — the
+     *  M1 container, and the Dutch v0 field names elsewhere, warts included) via
+     *  {@link io.github.yhavinga.regelspraak.emit.IrEmitter}.
      *  Returns the process exit code (0 = ir geschreven, 1 = resolver-fouten, 2 = usage) instead of exiting, so the
      *  disk discipline is testable as the REAL CLI path: an unresolvable model writes NOTHING and exits non-zero. */
     public static int irModus(java.util.List<String> rest) throws java.io.IOException {
@@ -194,7 +195,7 @@ public final class Resolver {
         return 0;
     }
 
-    /** CLI: with --ir &lt;out.json&gt; over one-or-more source files, emit a FAITHFUL v0 JSON dump of the
+    /** CLI: with --ir &lt;out.json&gt; over one-or-more source files, emit a FAITHFUL {@code uchar-ir-v1} JSON dump of the
      *  complete resolved model (the uchar "mirror" artifact). This frontend carries exactly one output mode —
      *  the IR is the product; a bare invocation prints usage and exits 2. */
     public static void main(String[] args) throws java.io.IOException {
