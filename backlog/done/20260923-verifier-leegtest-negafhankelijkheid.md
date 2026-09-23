@@ -60,7 +60,11 @@ Commits, na de rebase op main `3a140fe4`:
 - `c5f2de46` punt 2: de kwantorvouw (**voorstel**; golden en vier negatiefs)
 - `c6135f97` punt 3: RS 6.4-reikwijdte (**voorstel**)
 - `fccdcab8` punt 4: clingo-overdracht
-- de slotcommit van fixronde 2 (dit Result)
+- `745da8b5` Result na fixronde 2
+- de laatste commit: in de Engelse weergave van het kwantorbesluit in
+  IR-SPEC staat "the review round" voor "de lens" en "the branch tip"
+  voor "de tip", zodat het citaat zonder projectjargon leest; het
+  Nederlandse citaat hieronder is letterlijk
 
 ### Aangescherpte acceptatie, zoals uitgevoerd
 

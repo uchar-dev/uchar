@@ -7570,12 +7570,12 @@ same card, second fix round)*. The decision, in full:
 > TEN_HOOGSTE and PRECIES (the outcome can be lost as the range grows; not
 > under TEN_MINSTE); the MATRIX, comparisons included, is negative only
 > under GEEN, TEN_HOOGSTE and PRECIES (under TEN_MINSTE and ALLE the
-> outcome is monotone in the matrix). Motivation: the builder's variant
-> carried `neg` through to filter and matrix for EVERY quantifier, and the
-> lens found the counter-witness — a recursive creation under "rang < 5 en
-> ten minste 1 opvolger heeft rang > 3", on which ref and clingo agree
-> (nothing minted, at rang 1 and at rang 4), the tip passes and the
-> variant gives WF-046: an unjustified refusal.
+> outcome is monotone in the matrix). Motivation: the card builder's
+> variant carried `neg` through to filter and matrix for EVERY quantifier,
+> and the review round found the counter-witness — a recursive creation
+> under "rang < 5 en ten minste 1 opvolger heeft rang > 3", on which ref
+> and clingo agree (nothing minted, at rang 1 and at rang 4), the branch
+> tip passes it and the variant gives WF-046: an unjustified refusal.
 
 How it reads in the walk. The range is the reach (`sourceRole` or
 `sourcePath`) together with the `filter`: those are the fold's range fields
