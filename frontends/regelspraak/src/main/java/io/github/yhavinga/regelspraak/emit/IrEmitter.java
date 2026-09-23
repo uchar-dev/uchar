@@ -76,6 +76,13 @@ public final class IrEmitter {
         List<Diagnostic> weigeringen = wireWeigeringen(m);
         if (!weigeringen.isEmpty())
             throw new IllegalStateException("de v0-wire kan dit model niet dragen: " + weigeringen);
+        // WF-113 (a): an ERROR means the producer refused the document, so a model that carries one has no
+        // document to write; checked here and not only in irModus, so no emission route bypasses it
+        List<Diagnostic> nietWire = m.diagnostics.stream()
+                .filter(d -> d.severity() != RegelSpraakModel.Severity.WARNING).toList();
+        if (!nietWire.isEmpty())
+            throw new IllegalStateException("IrEmitter: WF-113 (a) — de wire draagt alleen WARNING; dit model draagt "
+                    + nietWire);
         IrEmitter e = new IrEmitter();
         e.model(m);
         e.w.sb.append('\n');
