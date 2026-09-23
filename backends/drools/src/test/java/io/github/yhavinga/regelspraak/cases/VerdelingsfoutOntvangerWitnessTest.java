@@ -80,7 +80,32 @@ class VerdelingsfoutOntvangerWitnessTest {
         BeideTakken.groen(RANG.resolve("ir.json"), c, "empty pot: no distribution, no error");
     }
 
+    /** The recipient set is what the allocation's join reaches from THIS source. A second berging B2 holds Berger Y
+     *  without a weight; Berger X, also weightless, belongs to no berging. The error lands on Y alone: not on X, which
+     *  no source reaches, and not on B1's bergers. Every other row has one source with every recipient linked, so a
+     *  lowering that dropped the join passed them all. */
+    @Test void alleen_wat_de_join_bereikt_krijgt_een_fout() throws Exception {
+        BeideTakken.groen(BERGING.resolve("ir.json"), tweePotten(inconsistent(BERG_REGEL, "Y")), "the error on Y alone");
+        String uit = BeideTakken.rood(BERGING.resolve("ir.json"), tweePotten(inconsistent(BERG_REGEL, "X")),
+                "verwacht inconsistent (" + BERG_REGEL + " @ X), niet gevonden onder " + BERG_REGEL + " @ Y",
+                "no error on the unlinked X");
+        assertTrue(!uit.contains(" @ W") && !uit.contains(" @ H") && !uit.contains(" @ D"), uit);
+    }
+
     // ---------------- fixtures ----------------
+
+    private static ObjectNode tweePotten(JsonNode verwachting) throws Exception {
+        ObjectNode c = berging();
+        ArrayNode inst = (ArrayNode) c.get("input").get("instances");
+        inst.add(JSON.readTree("{\"label\": \"X\", \"objectType\": \"Berger\", \"roles\": {}, \"characteristics\": [],"
+                + " \"attributes\": {\"bergingsmaximum\": {\"number\": \"300\"}}}"));
+        inst.add(JSON.readTree("{\"label\": \"B2\", \"objectType\": \"Berging\", \"roles\": {\"bergers\": [\"Y\"]},"
+                + " \"characteristics\": [], \"attributes\": {\"opbrengst\": {\"number\": \"100\"}}}"));
+        inst.add(JSON.readTree("{\"label\": \"Y\", \"objectType\": \"Berger\", \"roles\": {}, \"characteristics\": [],"
+                + " \"attributes\": {\"bergingsmaximum\": {\"number\": \"300\"}}}"));
+        verwacht(c, verwachting);
+        return c;
+    }
 
     private static ObjectNode rang() throws Exception {
         return (ObjectNode) JSON.readTree(Files.readString(RANG.resolve("case2-nulgroep.json")));
