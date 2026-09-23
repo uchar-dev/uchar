@@ -375,39 +375,26 @@ fi
 # gains a maven cache/build step (a .github card, out of this card's reach). Not hidden: red,
 # never a silent skip.
 if command -v java >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
-    # When the leg runs, the jar is rebuilt UNCONDITIONALLY (the gate-12 model, 2026-08-30): a
-    # build-only-when-absent jar can silently predate the source under review — the lens-proven
-    # stale-jar flank. legfail is leg-LOCAL so the leg always leaves a verdict of its own,
-    # regardless of earlier red-case failures elsewhere in the gate (lens finding: keying on the
-    # global status let the leg evaporate without one).
+    # When the leg runs, the jar is taken FRESH OR REBUILT (scripts/lib/drools-jar.sh, 2026-09-23):
+    # rebuilt when it is absent or older than any path it is built from, and exactly one shaded jar
+    # is demanded. The lens-proven stale-jar flank — a build-only-when-absent jar can silently
+    # predate the source under review — stays closed, because the test is "older than the source",
+    # not "absent". From 2026-08-30 until then the leg rebuilt the jar unconditionally with `mvn
+    # package`, the backend's JUnit suite included; that suite is gate 12's obligation (its one `mvn
+    # package` runs it and refreshes the jar), so it deliberately no longer runs here. legfail is
+    # leg-LOCAL so the leg always leaves a verdict of its own, regardless of earlier red-case failures
+    # elsewhere in the gate (lens finding: keying on the global status let the leg evaporate without
+    # one).
     legfail=0
+    . scripts/lib/drools-jar.sh
     if ! command -v mvn >/dev/null 2>&1; then
-        echo 'check-rood: FAIL — Drools leg: java present but mvn missing; the leg rebuilds the jar unconditionally (stale-jar guard)' >&2
+        echo 'check-rood: FAIL — Drools leg: java present but mvn missing; the leg takes the jar fresh or rebuilt, and only mvn can rebuild a stale one (stale-jar guard)' >&2
         status=1; legfail=1
         JAR=''
-    else
-        echo 'check-rood: Drools leg — rebuilding the shaded jar (unconditional, offline)…' >&2
-        build_out=$(mvn -o -f backends/drools/pom.xml package 2>&1)
-        if [ $? -ne 0 ]; then
-            printf '%s\n' "$build_out" | tail -25 >&2
-            echo 'check-rood: FAIL — Drools leg: the shaded-jar build is red — run: mvn -o -f backends/drools/pom.xml package' >&2
-            status=1; legfail=1
-            JAR=''
-        else
-            # exactly ONE shaded jar, or the measurement is ambiguous: ls|head-1 picks the
-            # lexicographic first, which after an artifact-version bump is the STALE one (lens).
-            JAR=$(ls backends/drools/target/uchar-drools-backend-*-shaded.jar 2>/dev/null)
-            n=$(printf '%s\n' "$JAR" | grep -c .)
-            if [ "$n" -eq 0 ]; then
-                echo 'check-rood: FAIL — Drools leg: the build produced no shaded jar' >&2
-                status=1; legfail=1
-                JAR=''
-            elif [ "$n" -gt 1 ]; then
-                echo "check-rood: FAIL — Drools leg: expected exactly one shaded jar, found: $JAR (a leftover jar from an earlier artifact version would be measured instead of the fresh build — clean backends/drools/target)" >&2
-                status=1; legfail=1
-                JAR=''
-            fi
-        fi
+    elif ! JAR=$(ensure_drools_jar); then
+        echo 'check-rood: FAIL — Drools leg: no fresh shaded jar (the drools-jar line above says why)' >&2
+        status=1; legfail=1
+        JAR=''
     fi
     if [ -z "$JAR" ]; then
         # every empty-JAR path above set legfail and printed its own verdict; this arm only guards
@@ -538,7 +525,7 @@ EOF
         fi
     fi
 else
-    echo 'check-rood: Drools leg SKIPPED — needs java + python3 (and, once running, mvn: the leg rebuilds the jar unconditionally). Not a blocker on a machine without java; the ref/clingo legs above are the CI blocker. NB hosted ubuntu runners DO carry java, so there the leg runs (and needs a warm ~/.m2).' >&2
+    echo 'check-rood: Drools leg SKIPPED — needs java + python3 (and, once running, mvn: the leg takes the jar fresh or rebuilt). Not a blocker on a machine without java; the ref/clingo legs above are the CI blocker. NB hosted ubuntu runners DO carry java, so there the leg runs (and needs a warm ~/.m2).' >&2
 fi
 
 if [ "$status" -eq 0 ]; then

@@ -234,22 +234,24 @@ command -v dune >/dev/null 2>&1 || {
     echo 'FAIL: need dune (OCaml). Install via opam: opam install dune yojson zarith' >&2; exit 2; }
 command -v clingo >/dev/null 2>&1 || { echo 'FAIL: need clingo on PATH' >&2; exit 2; }
 command -v java >/dev/null 2>&1 || { echo 'FAIL: need a JDK/JRE 21+' >&2; exit 2; }
-command -v mvn >/dev/null 2>&1 || { echo 'FAIL: need mvn (the Drools backend jar is rebuilt here)' >&2; exit 2; }
+command -v mvn >/dev/null 2>&1 || { echo 'FAIL: need mvn (the Drools backend jar is taken fresh or rebuilt here, and only mvn can rebuild a stale one)' >&2; exit 2; }
 command -v python3 >/dev/null 2>&1 || { echo 'FAIL: need python3 (the twister)' >&2; exit 2; }
 
 if ! dune build ref backends 2>&1; then
     echo 'check-reftype-derivation: FAIL (ref/clingo build)' >&2
     exit 1
 fi
-# Rebuild the jar so the harness can never probe a jar that predates the source under review
-# (the gate-12 lesson). The backend's own JUnit suite is gate 12's obligation, not this one's,
-# so it is skipped here — this harness asks only whether the OUTCOME follows the declarations.
-if ! mvn -q -o -f backends/drools/pom.xml package -DskipTests >/dev/null 2>&1; then
-    echo 'check-reftype-derivation: FAIL (Drools backend build)' >&2
-    exit 1
-fi
-JAR=$(ls backends/drools/target/uchar-drools-backend-*-shaded.jar 2>/dev/null | head -1)
-[ -n "$JAR" ] || { echo 'FAIL: the build produced no shaded jar' >&2; exit 1; }
+# The jar is taken FRESH OR REBUILT (scripts/lib/drools-jar.sh, 2026-09-23), so the harness can
+# never probe a jar that predates the source under review (the gate-12 lesson): it is rebuilt when
+# it is absent or older than any path it is built from. The stale-jar flank — a
+# build-only-when-absent jar can silently predate the source — stays closed, because the test is
+# "older than the source", not "absent". Until then this step rebuilt the jar on every run, with
+# -DskipTests as the helper still does: the backend's own JUnit suite is gate 12's obligation, not
+# this one's — this harness asks only whether the OUTCOME follows the declarations. The helper also
+# demands exactly one shaded jar, where `ls | head -1` used to take the lexicographic first, and
+# shows the tail of a red build, which used to go to /dev/null.
+. scripts/lib/drools-jar.sh
+JAR=$(ensure_drools_jar) || { echo 'check-reftype-derivation: FAIL (no fresh Drools backend jar — the drools-jar line above says why)' >&2; exit 1; }
 
 TWISTER=$(mktemp) || exit 2
 WORK=$(mktemp -d) || exit 2

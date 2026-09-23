@@ -196,21 +196,18 @@ REF=_build/default/ref/bin/runner.exe
 CLINGO=_build/default/backends/clingo/bin/clingo_runner.exe
 [ -x "$REF" ] && [ -x "$CLINGO" ] || fail "ref/clingo binaries missing after the build"
 
-# the Drools backend jar — consumes the uchar IR off the wire, rebuilt UNCONDITIONALLY (the gate-12
-# model, 2026-08-30): a build-only-when-absent jar can silently predate the source under review —
-# the lens-proven stale-jar flank. mvn is a hard requirement, exactly as it is of gate 12.
-command -v mvn >/dev/null 2>&1 || fail "mvn not found — the Drools leg rebuilds the shaded jar unconditionally (stale-jar guard)"
-echo "check-toka-parity: rebuilding the Drools shaded jar (unconditional, offline)…" >&2
-build_out=$(mvn -o -f backends/drools/pom.xml package 2>&1) || {
-  printf '%s\n' "$build_out" | tail -25 >&2
-  fail "the Drools shaded-jar build is red — run: mvn -o -f backends/drools/pom.xml package"
-}
-# exactly ONE shaded jar, or the measurement is ambiguous: ls|head-1 picks the lexicographic
-# first, which after an artifact-version bump is the STALE one, not the fresh build (lens).
-DJAR=$(ls backends/drools/target/uchar-drools-backend-*-shaded.jar 2>/dev/null)
-n=$(printf '%s\n' "$DJAR" | grep -c .)
-[ "$n" -eq 0 ] && fail "the build produced no Drools shaded jar"
-[ "$n" -gt 1 ] && fail "expected exactly one Drools shaded jar, found: $DJAR (a leftover jar from an earlier artifact version would be measured instead of the fresh build — clean backends/drools/target)"
+# the Drools backend jar — consumes the uchar IR off the wire, taken FRESH OR REBUILT
+# (scripts/lib/drools-jar.sh, 2026-09-23): rebuilt when it is absent or older than any path it is
+# built from, and exactly one shaded jar is demanded. The lens-proven stale-jar flank — a
+# build-only-when-absent jar can silently predate the source under review — stays closed, because
+# the test is "older than the source", not "absent". From 2026-08-30 until then this step rebuilt
+# the jar unconditionally with `mvn package`, the backend's JUnit suite included; that suite is gate
+# 12's obligation (its one `mvn package` runs it and refreshes the jar), so it deliberately no
+# longer runs here. mvn is a hard requirement, exactly as it is of gate 12: only mvn can rebuild a
+# stale jar.
+command -v mvn >/dev/null 2>&1 || fail "mvn not found — the Drools leg takes the shaded jar fresh or rebuilt, and only mvn can rebuild a stale one (stale-jar guard)"
+. scripts/lib/drools-jar.sh || fail "could not read scripts/lib/drools-jar.sh"
+DJAR=$(ensure_drools_jar) || fail "no fresh Drools shaded jar (the drools-jar line above says why)"
 
 REPLAY_TMP=$(mktemp -d -t toka-replay-XXXXXX)
 CFRAGS="$REPLAY_TMP/clingo-faults"; DFRAGS="$REPLAY_TMP/drools-excludes"; : >"$CFRAGS"; : >"$DFRAGS"
