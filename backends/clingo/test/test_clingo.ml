@@ -8768,6 +8768,34 @@ let () =
   faults_with ~name:"horizon fence: an unbound parameter in the die/dat filter, in translation" ~ir
     ~case_text:unbound ~needle
 
+(* the translator has no date reader of its own (card clingo-parameter-
+   failfast, the dead-arm sweep): a malformed date literal in a term position
+   refuses in ref's reader, in ref's words, where this file used to carry a
+   refusal sentence of its own that no document reached *)
+let () =
+  let ir =
+    pf_doc
+      ~objecttypen:[ pf_ot (Printf.sprintf {|"datum": %s, "heffing": %s|} pf_datum pf_n2) ]
+      ~regels:
+        [ pf_regel ~voorwaarde:(pf_cmp "LATER" (pf_a ~typ:pf_datum "datum") (pf_l ~typ:pf_datum "2026-13-40"))
+            (pf_l "5") ]
+      ()
+  in
+  let case_text =
+    pf_case
+      ~instances:
+        [ {|{ "label": "J1", "objectType": "Jutter", "attributes": { "datum": { "date": "2026-03-15" } }, "roles": {}, "characteristics": [] }|} ]
+      [ pf_cons ]
+  in
+  let needle = {|month out of range in date lexeme "2026-13-40"|} in
+  let doc, case = load_pair ~ir ~case_text in
+  (match ref_report doc case with
+  | _ -> check "a malformed date literal: ref faults (it evaluated)" false
+  | exception Uchar_ref.Value.Fault m ->
+      check ("a malformed date literal: ref faults (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle m));
+  faults_with ~name:"a malformed date literal refuses in ref's reader, in translation" ~ir ~case_text
+    ~needle
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

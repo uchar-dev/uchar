@@ -217,6 +217,19 @@ let datetime_term (t : int) : string =
   let d, ms = split_datetime t in
   Printf.sprintf "dt(%d,%d)" d ms
 
+(* the day number and the instant a lexeme names. ref's readers return the
+   value or fault in ref's own words on a malformed or out-of-range lexeme,
+   and the case reader refuses a malformed asOfDate before translation
+   starts, so no other constructor can come back and the arm below says so
+   once. Four readers here used to answer that arm with a refusal sentence of
+   their own that no document reaches (measured 2026-09-23: a malformed date
+   or datum-tijd literal faults in the reader, a malformed asOfDate at the
+   case load, in both executors), and a fifth let it fall through in
+   silence. *)
+let day_of_lexeme s = match Value.date_of_iso s with Value.Date z -> z | _ -> assert false
+
+let ms_of_lexeme s = match Value.datetime_of_lexeme s with Value.Date_time t -> t | _ -> assert false
+
 (* --- document lookups --------------------------------------------------- *)
 
 type ctx = {
@@ -2043,9 +2056,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
              harmonises day numbers directly (no second date encoding). ref
              faults date ARITHMETIC (numeric_ok gates the additive/multiplicative
              families), so this only reaches comparison operands. *)
-          match Value.date_of_iso lex with
-          | Value.Date z -> ([], string_of_int z, 1)
-          | _ -> fault "malformed date literal %S" lex)
+          ([], string_of_int (day_of_lexeme lex), 1))
       | _ -> fault "non-numeric literal in a term position")
   | Parameter_ref { parameter; _ } ->
       let name = req "ParameterRef.parameter" parameter in
@@ -3914,10 +3925,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       (* ch. 8.2: the execution-date constant is a program constant — the
          session's one evaluation date as a civil day number *)
       match ctx.case.as_of with
-      | Some d -> (
-          match Value.date_of_iso d with
-          | Value.Date z -> ([], string_of_int z, 1)
-          | _ -> fault "malformed asOfDate %S" d)
+      | Some d -> ([], string_of_int (day_of_lexeme d), 1)
       | None ->
           fault "the Rekendatum constant needs an evaluation date; the case carries asOfDate null")
   | Construct { typ; constructor_; argument = (None | Some (Literal _)) as argument; _ } ->
@@ -4204,12 +4212,7 @@ and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string 
          wraps at 32 bits, silently), and two instants 27.7 days apart then
          compare BACKWARDS. The pair keeps both components inside the range,
          so no fence is needed here at all. *)
-      let ms =
-        match Value.datetime_of_lexeme (req "Literal.waarde" waarde) with
-        | Value.Date_time t -> t
-        | v -> fault "datum-tijd literal did not read as an instant: %s" (Value.to_string v)
-      in
-      let d, msod = split_datetime ms in
+      let d, msod = split_datetime (ms_of_lexeme (req "Literal.waarde" waarde)) in
       ([], string_of_int d, string_of_int msod)
   | Attribuut_ref
       { attribuut = Some a; objecttype = Some ot; navigatie_rol = None; navigatie_pad = [];
@@ -4956,8 +4959,7 @@ and dk_seen_days ctx : int list =
     let opt = function Some x -> ex x | None -> () in
     match e with
     | Literal { waarde = Some lex; typ = Some Datum_in_dagen; _ } -> add_v (Value.date_of_iso lex)
-    | Literal { waarde = Some lex; typ = Some Datum_tijd; _ } -> (
-        match Value.datetime_of_lexeme lex with Value.Date_time _ as v -> add_v v | _ -> ())
+    | Literal { waarde = Some lex; typ = Some Datum_tijd; _ } -> add_v (Value.datetime_of_lexeme lex)
     | Binair { links; rechts; _ } -> opt links; opt rechts
     | Afgerond { basis; _ } -> opt basis
     | Begrensd { basis; minimum; maximum; _ } -> opt basis; opt minimum; opt maximum
@@ -6031,11 +6033,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
               it is the same one ref returns. *)
            [ "#false" ]
        | Some d ->
-           let today =
-             match Value.date_of_iso d with
-             | Value.Date z -> z
-             | _ -> fault "malformed asOfDate %S" d
-           in
+           let today = day_of_lexeme d in
            let part sym = function
              | None -> []
              | Some (atoms, term) -> atoms @ [ Printf.sprintf "%d %s %s" today sym term ]
