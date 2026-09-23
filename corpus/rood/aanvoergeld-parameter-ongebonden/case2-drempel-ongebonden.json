@@ -1,0 +1,45 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "aangevoerd gewicht": { "number": "640.25" },
+          "aanvoerwaarde": { "number": "310.00" }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "aangevoerd gewicht": { "number": "499.99" },
+          "aanvoerwaarde": { "number": "87.40" }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {
+          "aangevoerd gewicht": { "number": "500.00" },
+          "aanvoerwaarde": { "number": "0.00" }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "aanvoertarief": { "number": "12.50" }
+    }
+  },
+  "expectedFault": {
+    "ref": "parameter \"aanvoerdrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)",
+    "clingo": "parameter \"aanvoerdrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)"
+  }
+}
