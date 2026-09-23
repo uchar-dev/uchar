@@ -69,8 +69,10 @@ erachter weigert benoemd. Waar de garde verder niet exact is, wijkt ze af
 in één van twee vastgelegde richtingen (zie "Twee richtingen" hieronder):
 luid, een weigering waar ref speelt, op twee plaatsen (de lezing in de
 vertaling, en de pass vóór een creatie waar ref die pass voor de lezing
-niet heeft: in een regel die ch. 6.3 boven die creatie zet, of bij een lid
-dat ref pas maakt na de leden die zijn kortsluiting sluiten), en stil, een
+niet heeft: in een vorm die ch. 6.1/6.3 boven die creatie zet (een regel,
+de voorwaarde van een creatie of feitcreatie, een consistentie-assertie),
+of bij een lid dat ref pas maakt na de leden die zijn kortsluiting
+sluiten), en stil, een
 antwoord waar ref faalt, op drie (de Let-verlaging, de tussentijdse pass
 binnen één stratum met een regel als schrijver, en een voorwaarde die bij
 afwezigheid geldt met een creatie als schrijver, in een ALLE-prefix, een
@@ -90,36 +92,37 @@ proefdocumenten van de eerste ronde, 29 van de tweede fixronde, 54 van de
 derde, de 87 van de lens van ronde 3, 19 eigen van de vierde, de 145 van
 de lens van ronde 4 (haar 124, mijn 19 van de vierde en haar twee
 nr-case-controles), 23 eigen van de vijfde en 35 eigen van de zesde, en
-in de suite (1009 checks). De corpusvertaling is byte-identiek aan main
+in de suite (1015 checks). De corpusvertaling is byte-identiek aan main
 `69436907`, op de twee rode cases van deze kaart na. De
-Drools-lijstregel voor gate 8 staat als voorstel in commit `3640e6f4`
+Drools-lijstregel voor gate 8 staat als voorstel in commit `48a8aed5`
 (beschermd pad); daarmee is gate 8 groen (50 rode cases).
 
-Commits (hashes na de rebase op main `69436907`, fixronde 6): `fc1b8afe`
-(claim), `216a5df2` (de gedeelde fail-fast met suite, README en de
-gedeelde diagnose), `229003e3` (de dode datumlezingen, item van de
-hoofdsessie), `3503a3cb` (rode corpusdrager), `11e9cc1e` (kaart naar
-done), `c9ca6295` (venstercommentaar, tweede item van de hoofdsessie),
-`85eb7c3e` (Result), `3640e6f4` (gate-8-regel, voorstel beschermd pad),
-fixronde 1: `22ba9659`, `94fe452f`, `83e13587`, fixronde 2: `4b1b09b8`,
-`a86d8018`, `509c95ec`, `6319b45f`, `6553128f` (Result), fixronde 3:
-`eeea06b6` (schaduwing), `13470ca0` (gesloten lichaam), `a8383988`
-(ledenvolgorde: barrière per lid en creatievolgorde), `edca53a6`
-(teksten), `6fb3414e` (Result), fixronde 4: `d47d28a7` (geen model van
-refs volgorde), `963f30d7` (payloadhernoeming), `9dfcd2e1` (de tak uit
-een Let-waarde, en de vastgepinde afwijkingen), `e26ad6fc` (teksten),
-`ad375dde` (Result), fixronde 5: `32ad9fe6` (de pass vóór een creatie),
-`6543dac7` ([S3]), `29dc32d1` ([N4]), `a17f832e` (de takhoist),
-`028b1f88` ([L1] voor de dagsoorttabel), `a4e479e6` (README en
-commentaar: [S2] met een datum in plaats van het kaartwoord), `ae9279bc`
-(Result), fixronde 6: `fb069c87` (de documenten van de kaart in de
-M1-vorm, suite en rode case), `d0e5562a` (de kortsluiting in de pass
-vóór een creatie), `6f8a78c8` (README en registerzin), `81f49ef5` (een
-lid dat door een rol leest), `11f384bc` (README en registerzin: [S4]),
-`da78e874` ([S4] ook voor de conditie van een regel), en de commit van
-dit Result.
+Commits (hashes na de rebase op main `cf1090a5`, vóór fixronde 7): `1aef3a0f`
+(claim), `b72ae719` (de gedeelde fail-fast met suite, README en de
+gedeelde diagnose), `c71d8f42` (de dode datumlezingen, item van de
+hoofdsessie), `3c399811` (rode corpusdrager), `5acc1ecc` (kaart naar
+done), `b3b55f1a` (venstercommentaar, tweede item van de hoofdsessie),
+`6b405ba9` (Result), `48a8aed5` (gate-8-regel, voorstel beschermd pad),
+fixronde 1: `653f0938`, `56736fc9`, `408cba61`, fixronde 2: `2828815a`,
+`3236bce2`, `0447a1c6`, `8b4eb282`, `ab9a2b73` (Result), fixronde 3:
+`f048d904` (schaduwing), `53161ab1` (gesloten lichaam), `d696d27f`
+(ledenvolgorde: barrière per lid en creatievolgorde), `69ebbe70`
+(teksten), `902d227b` (Result), fixronde 4: `f4fdedc7` (geen model van
+refs volgorde), `c64b2c91` (payloadhernoeming), `1c029754` (de tak uit
+een Let-waarde, en de vastgepinde afwijkingen), `a5b7667a` (teksten),
+`32d1b0dc` (Result), fixronde 5: `ba5644a0` (de pass vóór een creatie),
+`afef0a88` ([S3]), `c6767efd` ([N4]), `ad299654` (de takhoist),
+`e61352bf` ([L1] voor de dagsoorttabel), `bb1afb47` (README en
+commentaar: [S2] met een datum in plaats van het kaartwoord), `e88995ba`
+(Result), fixronde 6: `d65e4472` (de documenten van de kaart in de
+M1-vorm, suite en rode case), `4fe9e7ef` (de kortsluiting in de pass
+vóór een creatie), `c940d3c3` (README en registerzin), `60d42da4` (een
+lid dat door een rol leest), `5f0f8c1f` (README en registerzin: [S4]),
+`297a6a78` ([S4] ook voor de conditie van een regel), `3d88c230`
+(Result), fixronde 7: `6e66f534` ([L2]: de vormen die ch. 6.1 strikt
+leest), en de commit van dit Result.
 
-### Twee richtingen (stand na fixronde 6)
+### Twee richtingen (stand na fixronde 7)
 
 Elke post draagt het label van haar post in `backends/clingo/README.md`
 en heeft een frame in de suite, `README [label]`, dat het huidige gedrag
@@ -143,7 +146,7 @@ Benoemd volgens het besluit (geen afwijking, wel gepind):
   eerst komt, de andere bij 8 als 8 eerst komt. Elke toegestane volgorde
   leest p; ref faalt. clingo weigert benoemd, waar refs woorden passen:
   "elke toegestane volgorde" wordt per lezing beslist. Op main `PASS`, op
-  `6fb3414e` UNSAT in refs woorden (via het oude model).
+  `902d227b` UNSAT in refs woorden (via het oude model).
 - **[N4]**, de woorden en de uitkomst (fixronde 5, lenspunt 3): nr-1, W1
   met twee creaties van 8 en 3 per werf, `keur 99 indien TEN MINSTE 1
   schuiten [TEN MINSTE 1 [lengte > 5, TEN MINSTE 1 van de schuiten van
@@ -155,7 +158,7 @@ Benoemd volgens het besluit (geen afwijking, wel gepind):
   ([8, 3]). Dit is een weigering waar volgens het besluit niets hoort te
   vuren; de post staat hier omdat de zin de ongenormeerde volgorde noemt.
   Controles nr-case-8-3 en nr-case-3-8 (de twee schuiten in de case, in
-  beide volgordes): beide spelen. Op main `PASS`, op `ad375dde` benoemd.
+  beide volgordes): beide spelen. Op main `PASS`, op `32d1b0dc` benoemd.
 
 Luid, een weigering waar ref speelt:
 1. **[L1] De dagsoorttabel en het horizonhek** lezen hun parameter in de
@@ -177,7 +180,7 @@ Luid, een weigering waar ref speelt:
    tr-strat-1: W1, één schuit van 8 per Werf, `bonus = Let k = restpost in
    (som(lengte van schuiten die k > 0) plus p)` onder de conditie `ALLE
    schuiten [lengte > 0]`, restpost leeg: ref `PASS` (bonus leeg), clingo
-   weigert benoemd ("the Let "k""). Op main en `ad375dde` `PASS`.
+   weigert benoemd ("the Let "k""). Op main en `32d1b0dc` `PASS`.
    Getuigen van fixronde 6: r6-strat-sc, `keur = 99 indien ALLE [ALLE
    schuiten [lengte > 0], TEN MINSTE 1 [TEN MINSTE 1 schuiten [lengte >
    5], p > 0]]`: ref `PASS` (keur 99), clingo weigert benoemd ("the
@@ -185,7 +188,14 @@ Luid, een weigering waar ref speelt:
    schuit van meer dan 5 heeft, één schuit van 8 per Werf, `keur(rapport)
    = 99 indien TEN MINSTE 1 [TEN MINSTE 1 schuiten van zijn werf [lengte
    > 5], p > 0]`: ref maakt het rapport pas na de schuit en leest p niet,
-   clingo weigert benoemd. Op main en op `fb069c87` spelen beide.
+   clingo weigert benoemd. Op main en op `d65e4472` spelen beide.
+   Getuigen van fixronde 7 (de lens van ronde 6): dezelfde kortsluiting
+   als voorwaarde van een creatie die per Werf een rapport maakt (P6a),
+   als consistentie-assertie (P11) en als voorwaarde van een
+   kenmerktoekenning (P13). Ch. 6.1 zet een vorm met onherroepelijke
+   schrijvingen strikt boven wat zijn lezingen produceert, en ref
+   controleert een consistentie pas aan het fixpunt van haar stratum;
+   ref speelt, clingo weigert benoemd.
 
 De vroegere luide posten 2 (de creatievolgorde) en 3 (de Let-barrière
 per lid over gecreëerde leden) zijn sinds fixronde 4 het besluit zelf:
@@ -210,7 +220,7 @@ Stil, een antwoord waar ref faalt:
    Getuige t1: `heffing = 5,00 indien TEN MINSTE 1 [a > 0, p > 0]`,
    geschreven vóór `a = inkomen`, inkomen 20, p ongebonden: ref faalt,
    clingo heffing 5,00; controle t1b (de schrijvende regel eerst): beide
-   5,00. Op main, `ad375dde` en de tip gelijk. Sinds fixronde 6 alleen
+   5,00. Op main, `32d1b0dc` en de tip gelijk. Sinds fixronde 6 alleen
    met een regel als schrijver (t1, t2, t4): waar de schrijver een creatie
    is, weigert clingo benoemd (tr-of-1, tr-kv-1, tr-pm2-ctl; zie Fixronde
    6). De normvraag staat bij open punt 14.
@@ -532,7 +542,7 @@ Alles bleef binnen `backends/clingo/**`, één nieuwe map
    al twee pins. De asOfDate-weigering pint refs eigen suite.
 3. **Gedeelde UNSAT-diagnose** (`Solve.diagnose`), zie (b).
 4. **Venstercommentaar** (tweede item van de hoofdsessie, eigen commit
-   `c9ca6295`, alleen commentaar). Het commentaar bij
+   `b3b55f1a`, alleen commentaar). Het commentaar bij
    `periode_onder_telkwantor` (basis r. ~516, branch r. 543) citeerde de
    weigerzin van de DRL-tekst-tak van 2026-09-20 ("periodevergelijking
    onder een tellende kwantor") als geldende meting. Het dateert die
@@ -566,7 +576,7 @@ tests; 70 goldens) · 11 toka-parity PASS (29/29/29) · 12 drools PASS
 reftype-derivation PASS (131 twists, 128 replays, 25 DRL) · 14 flogic
 PASS (130 checks; 2 goldens).
 
-### Voorstel beschermd pad (gecommit als voorstel in `3640e6f4`)
+### Voorstel beschermd pad (gecommit als voorstel in `48a8aed5`)
 
 `scripts/check-rood.sh`, Drools-uitsluitingslijst, één regel,
 alfabetisch vóór `ambiguous-case-role-key`:
@@ -580,20 +590,20 @@ De lens vond buiten het corpus 17 verifier-schone documenten waar ref en
 clingo op main spelen en de branch UNSAT gaf: de garde vuurde waar ref
 de parameter nooit leest. Drie commits van de vorige bouwer:
 
-- `22ba9659`: de rechtvaardiging van een vorm-a-default krijgt de `not
+- `653f0938`: de rechtvaardiging van een vorm-a-default krijgt de `not
   U_any` die haar gevolg al had (lensklasse 1; getuigen d-e, d-l, d-i).
-- `94fe452f`: de Let-behoefte in de garde hangt per IR-knoop aan het pad
+- `56736fc9`: de Let-behoefte in de garde hangt per IR-knoop aan het pad
   in plaats van per parameternaam (lenspunt 4; getuigen lz-1, lz-3,
   lz-m1). De opdracht van fixronde 2 noemde deze commit lenspunt 6. Hij
   wijzigt alleen de garde: `rule_guard` en de andere hekken zijn in geen
   van de drie commits aangeraakt, en de sweep hieronder vindt geen
   corpusprogramma dat door een van de fixrondes verandert.
-- `83e13587`: een parameter in een Let-waarde wacht op een vraagpredicaat
+- `408cba61`: een parameter in een Let-waarde wacht op een vraagpredicaat
   dat bij elke lezing van de binder wordt afgeleid (lensklasse 3;
   getuigen iv-c, iv-d, lv-2, lv-4, lv-5).
 
-Gecontroleerd in fixronde 2: de suite van `83e13587` tegen de vertaler van
-`3640e6f4`, daarna teruggezet met `cmp` identiek:
+Gecontroleerd in fixronde 2: de suite van `408cba61` tegen de vertaler van
+`48a8aed5`, daarna teruggezet met `cmp` identiek:
 ```
 FAIL defaults, lazy: an exception decides before the form-a justification (d-e): clingo pins the values (UNSATISFIABLE — a fail-fast guard fired)
 FAIL defaults, lazy: an exception decides before the form-a justification on default 1 (d-l): clingo pins the values (UNSATISFIABLE — a fail-fast guard fired)
@@ -608,17 +618,17 @@ FAIL Let, lazy: the same in the taken arm of a branch (lv-2): clingo pins the va
 FAIL Let, lazy: the binder read in a fold filter over an empty range (lv-5): clingo pins the values (UNSATISFIABLE — a fail-fast guard fired)
 test_clingo: 735 checks, 11 FAILURES
 ```
-Op `83e13587` zelf: `test_clingo: 735 checks, 0 failures`. De drie commits
+Op `408cba61` zelf: `test_clingo: 735 checks, 0 failures`. De drie commits
 doen wat hun boodschap zegt. De klasse van lenspunt 4 bleef wel
 bereikbaar, en de Let-analyse had ook een stil gat (fixronde 2, punt 4).
 
 ### Fixronde 2 (2026-09-23)
 
 Proeven onder /tmp (niet in de repo), elk verifier-schoon, gedraaid met
-ref, clingo op main `e7e9e178`, op `83e13587` en op de tip. "fout" is
+ref, clingo op main `e7e9e178`, op `408cba61` en op de tip. "fout" is
 refs `EVALUATION FAULT: parameter "p" is unbound …`, "UNSAT" is de garde.
 
-**Punt 2, de kwantorvouw (`4b1b09b8`).** ch. 3.9a zet de leden eerst vast,
+**Punt 2, de kwantorvouw (`2828815a`).** ch. 3.9a zet de leden eerst vast,
 filter inbegrepen, en leest dan de matrix lid voor lid in de eigen
 volgorde van de leden, tot de uitkomst vaststaat volgens de
 triggertabel van ch. 5.10. Drie rijen daarvan vuren al op het lege
@@ -645,7 +655,7 @@ lengte 3:
 | q-d-rev | idem over [S2, S1] | fout | speelt | UNSAT | UNSAT |
 
 Suite: dertien frames (zeven luie, zes controles, waaronder een
-gematerialiseerde lijst op label). Rood eerst op `83e13587`:
+gematerialiseerde lijst op label). Rood eerst op `408cba61`:
 ```
 FAIL quantifier fold, lazy: at-least 2 over one member reads nothing (q-a): clingo pins the values (UNSATISFIABLE — a fail-fast guard fired)
 FAIL quantifier fold, lazy: at-most 1 over one member reads nothing (q-b): clingo pins the values (UNSATISFIABLE — a fail-fast guard fired)
@@ -656,7 +666,7 @@ FAIL quantifier fold, lazy: at-least 1 stops at S1 before S2 is read (q-d): clin
 FAIL quantifier fold, lazy: the materialised order reads A3 first (i-h, labels): clingo pins the values (UNSATISFIABLE — a fail-fast guard fired)
 test_clingo: 761 checks, 7 FAILURES
 ```
-Mutaties op `4b1b09b8`, elk teruggezet met `cmp` identiek: MK1, de garde
+Mutaties op `2828815a`, elk teruggezet met `cmp` identiek: MK1, de garde
 zonder `kvr`-atoom: `761 checks, 7 FAILURES` (de zeven luie frames). MK2,
 geen volgordefeiten, elk lid als gecreëerd: `6 FAILURES` (de zes
 controles; clingo antwoordt waar ref faalt). MK3, de tellende triggers
@@ -692,7 +702,7 @@ creatie kan vullen; en moet de spec de volgorde van gecreëerde links
 vastleggen. (Besloten door de hoofdsessie op 2026-09-23, uitgevoerd in
 fixronde 3, punt 4; de normvraag staat als open punt 7.)
 
-**Punt 4, de Let-analyse (`a86d8018`, `509c95ec`).** Na `94fe452f` was de
+**Punt 4, de Let-analyse (`3236bce2`, `0447a1c6`).** Na `56736fc9` was de
 klasse nog bereikbaar, en het oordeel "de binder wordt zeker eerder
 gelezen" was ook stil (restpost leeg, p ongebonden):
 
@@ -724,13 +734,13 @@ een geneste Let op de plaatsen waar die binder gelezen wordt) en
 `not lbbN(S,I)` in plaats van de behoefte. Een barrièreregel leest
 alleen barrières van dieper geneste Lets, dus het programma blijft
 gestratificeerd. `params_before_binder`/`nodes_before_binder` zijn weg.
-`509c95ec`: `a86d8018` hield een deel dat per lid draait (filter en
+`0447a1c6`: `3236bce2` hield een deel dat per lid draait (filter en
 argumenten van een setvouw, filter en matrix van een kwantorvouw)
 ongeordend, en maakte daarmee de gewone vorm `(k plus lengte) groter dan
 p` in een filter UNSAT waar ref speelt. Zo'n deel is nu geordend zoals
 één lid het uitvoert.
 
-Rood eerst, de suite van `a86d8018` tegen de vertaler van `4b1b09b8`,
+Rood eerst, de suite van `3236bce2` tegen de vertaler van `2828815a`,
 teruggezet met `cmp` identiek:
 ```
 FAIL Let, lazy: the Match arm read k before p (lz-m3): clingo pins the values (UNSATISFIABLE — a fail-fast guard fired)
@@ -740,12 +750,12 @@ FAIL Let: an inner barrier ends before k is read, so p is (lz-s2): clingo fires 
 FAIL Let: a value's inner barrier ends before k is read, so p is (lz-s): clingo fires the shared fail-fast (clingo answered heffing leeg: the guard waited for k's need, which the value never read)
 test_clingo: 781 checks, 5 FAILURES
 ```
-Het frame van `509c95ec` op `a86d8018`:
+Het frame van `0447a1c6` op `3236bce2`:
 ```
 FAIL Let, lazy: each member's filter reads k before p (per member): clingo pins the values (UNSATISFIABLE — a fail-fast guard fired)
 test_clingo: 785 checks, 1 FAILURES
 ```
-Mutaties op `509c95ec`, elk teruggezet met `cmp` identiek: ML1, geen
+Mutaties op `0447a1c6`, elk teruggezet met `cmp` identiek: ML1, geen
 barrière-atoom, elke behoefte uit de garde: `785 checks, 17 FAILURES`
 (alle luie Let-frames van beide fixrondes). ML2, de behoeften blijven in
 de garde en er is geen barrière-atoom: `11 FAILURES` (de ongebonden
@@ -755,7 +765,7 @@ binnen de waarde van een geneste Let telt nergens: `1 FAILURES` (de
 controle van lz-s). Wat de garde hier niet exact maakt, staat in open
 punten 5 en 8.
 
-**Punt 5, de teksten (`6319b45f` en dit Result).** README, het
+**Punt 5, de teksten (`8b4eb282` en dit Result).** README, het
 commentaar bij `unbound_param_guard` en de kop van de suite zeiden
 "UNSAT exactly where ref faults and answers where ref never reads it" en
 "nowhere else". Ze noemen nu de vier plaatsen waar dat niet geldt. Het
@@ -767,7 +777,7 @@ sloeg op de deling-door-nul-variant van de kwantorvouwklasse. Gemeten:
 i-h0 (ALLE over [S2, S1], matrix ALLE [lengte > 5; (lengte gedeeld door
 0) > 1]) en q-a0 (TEN MINSTE 2 over [S1], matrix (lengte gedeeld door 0)
 > 1) geven ref PASS en `UNSATISFIABLE — viol("division by numeric
-zero" …)` op main, op `83e13587` en op de tip. Open punt 9.
+zero" …)` op main, op `408cba61` en op de tip. Open punt 9.
 
 **Sweep.** Hetzelfde gereedschap als in (c), onder /tmp: 644 cases, 625
 programma's. Main (`e7e9e178`) tegen de tip: alleen de twee rode cases
@@ -782,11 +792,11 @@ case2-drempel-ongebonden prog.0.lp:
 > viol("parameter \"aanvoerdrempel\" is unbound in this case (binding is fail-fast, ch. 5.7)",S) :- isa(S,"jutter").
 out.txt: idem met aanvoerdrempel
 ```
-`83e13587` tegen de tip: `diff -r` leeg over alle 644 cases. Geen
-corpusprogramma verandert dus door een van de fixrondes, `94fe452f`
+`408cba61` tegen de tip: `diff -r` leeg over alle 644 cases. Geen
+corpusprogramma verandert dus door een van de fixrondes, `56736fc9`
 inbegrepen.
 
-**Gates (fixronde 2, elk los na `eval $(opam env)`, op `6319b45f`).**
+**Gates (fixronde 2, elk los na `eval $(opam env)`, op `8b4eb282`).**
 1 self-contained PASS · 2 ir-schema PASS (283 bestanden, vloer 192) · 3
 verifier PASS (283 schoon, 441 negatief, vloer 350) · 4 case-schema PASS
 (644) · 5 oracle PASS (ref-suite 806, vloer 489; 595 cases, vloer 427) ·
@@ -800,13 +810,13 @@ De lens mat ongeveer 160 eigen varianten. Alle 17 getuigen van ronde 1 en
 de frames van fixronde 2 deden wat ze claimden, en de corpusvertaling was
 byte-identiek aan main. Vier punten waren blokkerend, het vijfde betrof de
 teksten. Mijn proeven (54, onder /tmp, niet in de repo) zijn met ref en
-clingo gedraaid op main `7d97353e`, op `6553128f` (de tip vóór deze
+clingo gedraaid op main `7d97353e`, op `ab9a2b73` (de tip vóór deze
 ronde) en op de tip. Op twee na zijn ze verifier-schoon; de twee vuile
 (een kwantorvouw als conditie van een waarde-IfThenElse) tellen niet mee.
 "fout" is refs `EVALUATION FAULT: parameter "p" is unbound …`, "UNSAT" de
 garde in refs woorden, "benoemd" de nieuwe weigering van punt 4.
 
-**Punt 1, schaduwing (`eeea06b6`).** De garde sloeg bij een lezing van
+**Punt 1, schaduwing (`f048d904`).** De garde sloeg bij een lezing van
 een binder elke omsluitende Let over die dezelfde NAAM bond (`reach_at`
 vergeleek `Some li.li_binder = skip`). Een binnenste Let met de naam van
 een buitenste nam zo diens barrière mee. Nu kent een lezing de Let die ze
@@ -826,8 +836,8 @@ de Let door in plaats van zijn naam. Restpost en extra leeg, p ongebonden:
 | sh-7-ctl | sh-7 met extra 1 | speelt | speelt | speelt | speelt |
 | id-payload | `Let k = p in (match optie: Aanwezig k → k, Afwezig → 0)` | speelt | speelt | speelt | speelt |
 
-**Punt 3, gesloten lichaam (`13470ca0`).** Het vraagpredicaat van
-`83e13587` werkt op regelniveau; `body_branches` vertaalde de waarde van
+**Punt 3, gesloten lichaam (`53161ab1`).** Het vraagpredicaat van
+`408cba61` werkt op regelniveau; `body_branches` vertaalde de waarde van
 een Let in een vouwlambda bij de Let. Met een ongebonden parameter in die
 waarde vuurde de garde voor elk element, en zonder garde droeg de arm die
 de binder niet leest het param-atoom van de waarde, zodat de vouw
@@ -854,7 +864,7 @@ vangsten (Waardevol b / Waardeloos), init 0,00:
 (W is Waardeloos; cl-1-shadow, cl-1-bound-leeg, cl-2-bound en cl-3-bound
 spelen overal.)
 
-**Punt 2, een deel dat per lid draait (`a8383988`).** Fixronde 2 ordende
+**Punt 2, een deel dat per lid draait (`d696d27f`).** Fixronde 2 ordende
 zo'n deel zoals één lid het uitvoert. Een lezing van de binder door een
 later lid telde dan als eerder dan de parameter bij een eerder lid
 (stil), en een lezing door een eerder lid als later dan die bij een later
@@ -883,7 +893,7 @@ telde dan nooit en de garde vuurde waar de barrière de Let al beëindigde
 | late-kv | `(som(… die ALLE ladingen [k > 0])) plus p`, L1 8 | speelt | speelt | UNSAT | speelt |
 | late-kv-ctl | idem, restpost 1 | fout | MISMATCH | UNSAT | UNSAT |
 
-**Punt 4, gecreëerde leden (`a8383988`), maintainerbesluit.** Leden die
+**Punt 4, gecreëerde leden (`d696d27f`), maintainerbesluit.** Leden die
 een creatie aan het bereik van een kwantorvouw toevoegt, hebben geen
 genormeerde plaats (ch. 3.9a/5.7a). Besluit: waar de volgorde van
 gecreëerde links de uitkomst van de garde kan bepalen, weigert de
@@ -940,15 +950,15 @@ regel na de creatie, en S1 staat dan vooraan. De benoemde weigering volgt
 het model van het besluit, waarin een toegevoegd lid ook vóór S1 kan
 staan.
 
-**Punt 5, de teksten (`edca53a6` en dit Result).** README en het
+**Punt 5, de teksten (`69ebbe70` en dit Result).** README en het
 commentaar bij `unbound_param_guard` noemen de afwijkingen nu per
 richting, elk met een getuige (zie "Twee richtingen"). Het commentaar bij
 `reach_at` zegt waar de stille kant vandaan komt. De kop van de suite
 verwijst al naar de README.
 
 **Suite** 785 → 841 checks: 28 frames, waarvan 14 getuigen en 14
-controles. Rood eerst, de eindsuite tegen de vertaler van `6553128f`
-(vóór de rebase `1691a20e`, zelfde `translate.ml`), daarna teruggezet
+controles. Rood eerst, de eindsuite tegen de vertaler van `ab9a2b73`
+(vóór de rebase `ab9a2b73`, zelfde `translate.ml`), daarna teruggezet
 met `cmp` identiek:
 ```
 FAIL Let, lazy: an inner Let of the same name keeps the outer barrier (sh-4): clingo pins the values (UNSATISFIABLE — a fail-fast guard fired)
@@ -1002,7 +1012,7 @@ rode cases, deze kaart voegt er 2 toe), 636 tegen 638 programma's.
 garderegel per programma, een waargenomen fout in plaats van een model en
 de diagnoseherhaling als extra programma, precies als in fixronde 2.
 
-**Gates (fixronde 3, elk los na `eval $(opam env)`, op `edca53a6`).** 1
+**Gates (fixronde 3, elk los na `eval $(opam env)`, op `69ebbe70`).** 1
 self-contained PASS · 2 ir-schema PASS (286 bestanden, vloer 192) · 3
 verifier PASS (286 schoon, 454 negatief, vloer 350) · 4 case-schema PASS
 (658) · 5 oracle PASS (ref-suite 931, vloer 489; 608 cases, vloer 427) ·
@@ -1012,17 +1022,17 @@ zonder bodemzin).
 
 ### Fixronde 4 (lensronde 3, 2026-09-23)
 
-De lens toetste de tip `6fb3414e` met 87 eigen proefdocumenten, elk
+De lens toetste de tip `902d227b` met 87 eigen proefdocumenten, elk
 verifier-schoon (onder /tmp, niet in de repo). Eén punt was blokkerend,
 vier waren advies, en de normvraag kreeg een bevinding. Mijn eigen
 proeven (19, verifier-schoon, onder /tmp) staan per punt. Elke proef is
 gedraaid met ref, met de clingo-runner van main `6e67ad8f`, met die van
-`6fb3414e` (hieronder "vorige") en met die van de tip. "fout" is refs
+`902d227b` (hieronder "vorige") en met die van de tip. "fout" is refs
 `EVALUATION FAULT: parameter "p" is unbound …`, "UNSAT" de garde in refs
 woorden, "benoemd" de zin van het besluit, met tussen haakjes wat de zin
 noemt.
 
-**Punt 1, geen model van refs volgorde (`d47d28a7`), blokkerend.** Besluit
+**Punt 1, geen model van refs volgorde (`f4fdedc7`), blokkerend.** Besluit
 van de hoofdsessie, handhaving van het maintainerbesluit: gecreëerde
 vouwleden krijgen de letterlijke regel. Waar de volgorde van gecreëerde
 links de uitkomst van de garde kan bepalen, weigert clingo benoemd,
@@ -1091,7 +1101,7 @@ ref speelt"). Het frame-hulpmiddel `order_named` is veralgemeend tot
 "-zonder-werfcreatie" en stratum-ctl-nietliteral zoals gemeten
 (benoemd), "-gebonden" als `both_answer`.
 
-Rood eerst, de eindsuite tegen de vertaler van `6fb3414e`, daarna
+Rood eerst, de eindsuite tegen de vertaler van `902d227b`, daarna
 teruggezet met `cmp` identiek:
 ```
 FAIL created members: 8 then 3, ref's order stops at 8, [3, 8] reads p (cr-8-3): clingo refuses in the named sentence (clingo answered the case's rows)
@@ -1113,7 +1123,7 @@ answered the case's rows" (stil), daarnaast cr-3-8 en mx-alle (in refs
 woorden in plaats van benoemd), cr-8-3, stratum-ctl-nietliteral en de
 drie controles zonder werfcreatie.
 
-**Punt 2, een armpayload die de keten vangt (`963f30d7`), advies.**
+**Punt 2, een armpayload die de keten vangt (`c64b2c91`), advies.**
 `closed_let_chain` gaf `None` als een Let-waarde een naam las die een
 armpayload bindt (of als een payload de naam van een Let van de keten
 droeg). De waarde bleef dan bij de Let, en de garde vuurde voor elk
@@ -1134,7 +1144,7 @@ en draagt een tweede Let j de waarde:
 | cl-shadow-j5 | `Let k = p in Let j = 1,00 in match x {Waardevol j → acc plus j; Waardeloos → acc plus k}` | speelt (5,00) | MISMATCH | UNSAT | speelt |
 | cl-shadow-j-ctl | idem over [5,00, W] | fout | MISMATCH | UNSAT | UNSAT |
 
-Rood eerst tegen de vertaler van `d47d28a7`: `3 FAILURES` (cl-capture-ww,
+Rood eerst tegen de vertaler van `f4fdedc7`: `3 FAILURES` (cl-capture-ww,
 cl-capture-j5 en cl-shadow-j5, elk UNSAT waar ref speelt). Mutatieproef
 M-cap1, de hernoeming uit en de voorwaarden van `closed_let_chain` ook
 uit (md5 `b7d627d5…`): `2 FAILURES`, met precies de gevangen waarden:
@@ -1143,7 +1153,7 @@ Een eerste versie van de getuigen had gebonden tweelingen. Met p gebonden
 neemt de vertaler het ketenpad niet, en de mutant bleef groen (`0
 failures`). Die tweelingen zijn vervangen.
 
-**Punt 3, de Let-verlaging (`9dfcd2e1`), advies.** Het "Silent"-voorbeeld
+**Punt 3, de Let-verlaging (`1c029754`), advies.** Het "Silent"-voorbeeld
 van de README (lz-m3 met p = 10) was een waardeafwijking zonder
 parameter, geen stille garde. Onderzocht of die afwijking een begrensde
 fix is:
@@ -1191,12 +1201,12 @@ fix is:
 | hoist-bound | idem, p = 10 | leeg | leeg | leeg | leeg |
 | hoist-rechts-bound | `Let k = extra in (p plus (als q > 0 dan k anders 0))`, extra leeg, q = -5, p = 10 | 10,00 | 10,00 | 10,00 | 10,00 |
 
-Rood eerst tegen de vertaler van `963f30d7`: `2 FAILURES` (lz-v-bound:
+Rood eerst tegen de vertaler van `c64b2c91`: `2 FAILURES` (lz-v-bound:
 `J1.heffing is underived (leeg), expected 1000`; lz-v-ctl: clingo
 antwoordt heffing leeg). Mutatieproef M-val, de waarde-arm uit (md5
 `e9fe083b…`): dezelfde `2 FAILURES`.
 
-**Punt 4, de lijsten gepind (`9dfcd2e1`), advies.** Elke post van de twee
+**Punt 4, de lijsten gepind (`1c029754`), advies.** Elke post van de twee
 lijsten en van de vastgelegde beperking heeft nu een frame met het label
 van zijn README-post in de naam (`README [L1]` …): `pinned_loud` (ref
 speelt, clingo weigert met de zin), `pinned_silent` (ref faalt, clingo
@@ -1210,7 +1220,7 @@ wordt als de afwijking verdwijnt, toont mutatieproef M-lit:
 verdwijnt lz-lv, en [S1] en [V2] worden rood (`2 FAILURES`, "the
 deviation is gone").
 
-**Punt 5, de teksten (`e26ad6fc` en dit Result).** De README, het
+**Punt 5, de teksten (`a5b7667a` en dit Result).** De README, het
 commentaar bij `use_ro`, `emit_kv_reach`, `barred`, `emit_barriers`,
 `note_binder_read`, `unbound_param_guard` en `hoist_branch`, "Twee
 richtingen" en de registerzinnen zijn in overeenstemming gebracht met de
@@ -1237,8 +1247,8 @@ enkele fix van deze ronde verandert een corpusprogramma.
 backlogkaarten. De hashes in dit Result zijn per commitonderwerp
 omgezet.
 
-**Gates (fixronde 4, elk los na `eval $(opam env)`, op `f146ca88`, na de
-rebase `e26ad6fc`, zelfde bomen).**
+**Gates (fixronde 4, elk los na `eval $(opam env)`, op `a5b7667a`, na de
+rebase `a5b7667a`, zelfde bomen).**
 ```
 check-clingo: PASS (backend suite 899 checks, floor 83; 608 cases replay exactly through clingo — ref = clingo over the corpus)
 check-rood: PASS (50 red cases fault observably in ref and clingo, floor 26; 100 pinned fragments cite none of the 36 listed bottom sentences)
@@ -1252,7 +1262,7 @@ not-carried with reason)`.
 
 ### Fixronde 5 (lensronde 4, 2026-09-23)
 
-De lens toetste de tip `ad375dde` met 143 proefdocumenten (124 eigen en
+De lens toetste de tip `32d1b0dc` met 143 proefdocumenten (124 eigen en
 mijn 19 van fixronde 4; daarna nog twee nr-case-controles) en twee
 prototypes in een kopie van `translate.ml`. Twee punten waren blokkerend,
 drie advies; de hoofdsessie besliste per punt, en per punt staat hieronder
@@ -1261,13 +1271,13 @@ M1-landing (v1-wire), en de rebase met de migratie van de ingebedde
 v0-fixtures volgt in een eigen ronde. Mijn eigen proeven (23,
 verifier-schoon, onder /tmp) staan per punt. Elke proef is gedraaid met
 ref, met de clingo-runner van main `6e67ad8f` (md5 `e0b68c50…`), met die
-van `ad375dde` ("vorige", `61f5d515…`), met die van het lensprototype
+van `32d1b0dc` ("vorige", `61f5d515…`), met die van het lensprototype
 (`c8bc19dc…`) en met die van de tip (`4323a72e…`). "fout" is refs
 `EVALUATION FAULT: parameter "p" is unbound …`, "UNSAT" de garde in refs
 woorden, "benoemd" de zin van het besluit, "antwoordt" een model zonder
 garde.
 
-**Punt 1, de pass vóór een creatie (`32ad9fe6`), blokkerend.** De lens:
+**Punt 1, de pass vóór een creatie (`ba5644a0`), blokkerend.** De lens:
 in een document met creaties telde de familie "in elke toegestane
 volgorde" van `emit_barriers` (`…_c`) een lezing door een gecreëerd lid
 mee. ref draait in elke pass eerst de regels en dan de creaties
@@ -1315,7 +1325,7 @@ Frames: tr-cr-1, tr-w-1, tr-pm-1 en tr-pm2-1 als `named_refusal
 ~ref_plays:false`, hun case-controles als `both_answer`, tr-cr-1-ctl en
 tr-w-ctl als `unbound_fires`, tr-strat-1 als `pinned_loud ~entry:"L2"`
 met tr-strat-case als `both_answer`. Rood eerst, de suite tegen de
-vertaler van `ad375dde`: `test_clingo: 915 checks, 3 FAILURES` (tr-cr-1
+vertaler van `32d1b0dc`: `test_clingo: 915 checks, 3 FAILURES` (tr-cr-1
 en tr-w-1 "clingo answered the case's rows", [L2] "clingo no longer
 refuses"). Tegen het lensprototype: `2 FAILURES` (tr-w-1 "clingo
 answered the case's rows"; [S2] "the deviation is gone", zie punt 4).
@@ -1331,7 +1341,7 @@ Teksten: de README en het commentaar bij `use_ro`, `read_places` en
 `emit_barriers` noemen de pass vóór een creatie; de registerzin
 hieronder ook.
 
-**Punt 2, de tussentijdse pass binnen één stratum (`6543dac7`),
+**Punt 2, de tussentijdse pass binnen één stratum (`afef0a88`),
 blokkerend, geen code (besluit).** De lens: een vorm die leest wat een
 latere vorm van hetzelfde stratum schrijft, ziet dat in pass 1 leeg; valt
 daardoor een kortsluiting weg, dan leest ref de parameter en faalt,
@@ -1362,7 +1372,7 @@ pass"-waarheid van vouwen over een groeiend bereik zou een tweede
 vertaling van elke conditie met zo'n vouw vragen; niet begrensd, en
 volgens het besluit geen code in deze kaart.
 
-**Punt 3, [N4] (`29dc32d1`), advies.** De lens toonde [N3] omgekeerd:
+**Punt 3, [N4] (`c6767efd`), advies.** De lens toonde [N3] omgekeerd:
 nr-1 (zie [N4] onder "Twee richtingen") weigert benoemd waar geen
 volgorde p leest.
 Uitgevoerd: de getagde post [N4] met nr-1 als `named_refusal
@@ -1392,7 +1402,7 @@ met een bestaansvraag (UNSAT als één volgorde p leest), en die verandert
 het model van de runner (één stabiel model, waartegen de verwachtingen
 getoetst worden). Daarom alleen de lijsten.
 
-**Punt 4, de takhoist (`a17f832e`), advies, besluit: bouwen.** Volgens
+**Punt 4, de takhoist (`ad299654`), advies, besluit: bouwen.** Volgens
 lensprototype 1, maar met ctx-velden in plaats van globale refs:
 `ctx.hoisted` houdt per takknoop die de hoist bouwt (bij identiteit) de
 operanden die hij achter de conditie zette terwijl ref ze ervóór
@@ -1427,7 +1437,7 @@ FAILURES`: "the deviation is gone") en is vervangen door `unbound_fires`
 op hoist-ctl en h-diep en `both_answer` op h-na-tak, plus `unbound_fires`
 op h-dubbel-5 en `both_answer` op h-dubbel-leeg. [S2] is uit de stille
 lijst van de README en uit open punt 11. Rood eerst, de eindsuite tegen
-de vertaler van `29dc32d1`: `945 checks, 2 FAILURES` (hoist-ctl en
+de vertaler van `c6767efd`: `945 checks, 2 FAILURES` (hoist-ctl en
 h-diep, "clingo answered heffing leeg: the hoist put p behind the
 condition"). Mutatieproeven: M-text, de armatomen op tekst eruit zoals
 het prototype (`7d4401de…`): `2 FAILURES` (h-dubbel-5, h-dubbel-leeg,
@@ -1436,7 +1446,7 @@ niveau (`4667dcfc…`): `1 FAILURES` (h-diep). De gesloten lichamen
 (`body_branches`) dragen de tweede garde niet: een gesloten lichaam is
 leeg-vrij (ch. 10.1), dus de conditie kiest daar altijd een arm.
 
-**Punt 5, [L1] voor de dagsoorttabel (`028b1f88`), advies.** Frame
+**Punt 5, [L1] voor de dagsoorttabel (`e61352bf`), advies.** Frame
 `pinned_loud ~entry:"L1"` dk-cond: het dagsoortdocument van de suite met
 "de dag later is dan de grensdatum", grensdatum ongebonden, en
 regelconditie 1 > 2. ref speelt (uitkomst leeg), clingo weigert in de
@@ -1451,15 +1461,15 @@ main `6e67ad8f` (`e0b68c50…`) en die van de tip (`4323a72e…`) over alle
 636 tegen 638 programma's. `diff -r` vindt alleen de twee rode
 aanvoergeld-cases, met één garderegel per programma, een waargenomen fout
 in plaats van een model en de diagnoseherhaling als extra programma,
-precies als in fixronde 4. Tussen de runners van `ad375dde` en de tip is
+precies als in fixronde 4. Tussen de runners van `32d1b0dc` en de tip is
 elk corpusprogramma byte-identiek (na punt 1 en na punt 4 gemeten). De
-runner is die van `a17f832e`; `028b1f88` raakt alleen de suite en
-`a4e479e6` alleen tekst.
+runner is die van `ad299654`; `e61352bf` raakt alleen de suite en
+`bb1afb47` alleen tekst.
 
 **Classificatie van alle proeven** (145 van de lens: haar 124, mijn 19
 van fixronde 4 en haar twee nr-case-controles; 23 eigen van fixronde 5),
 op de tip, naar het frame dat hun uitkomst pint. Ten opzichte van
-`ad375dde` veranderen er vijf lensproeven: tr-cr-1 (speelt → benoemd) en
+`32d1b0dc` veranderen er vijf lensproeven: tr-cr-1 (speelt → benoemd) en
 hoist-ctl, h-diep, h-samengesteld en h-voor-cond-q-pos (antwoordt →
 UNSAT). Op alle 143 proeven van de lens geeft de tip dezelfde uitkomst als
 het lensprototype. Een permutatieproef (ref over elke documentvolgorde van
@@ -1495,7 +1505,7 @@ in ref altijd vóór): daar is de andere volgorde nagelopen en leest die
 p. nr-1 en nr-1b spelen in beide documentvolgordes, en ook in een
 volgorde met een van de twee leden afwezig leest geen vouw p.
 
-**Gates (fixronde 5, elk los na `eval $(opam env)`, op `028b1f88` en opnieuw op `a4e479e6`, met dezelfde regels).**
+**Gates (fixronde 5, elk los na `eval $(opam env)`, op `e61352bf` en opnieuw op `bb1afb47`, met dezelfde regels).**
 ```
 check-clingo: PASS (backend suite 947 checks, floor 83; 608 cases replay exactly through clingo — ref = clingo over the corpus)
 check-rood: PASS (50 red cases fault observably in ref and clingo, floor 26; 100 pinned fragments cite none of the 36 listed bottom sentences)
@@ -1530,7 +1540,7 @@ stond van de kaart alleen `backlog/new/20260923-clingo-parameter-failfast.md`,
 ongewijzigd sinds de basis; de verplaatsing naar `done/` verwijdert dat
 bestand.
 
-**De documenten in de M1-vorm (`fb069c87`).** In de suite schreven twee
+**De documenten in de M1-vorm (`d65e4472`).** In de suite schreven twee
 plekken van de kaart v0: de bouwer `pf_doc` (met `pf_ot`, `pf_decl` en de
 feittype- en domeinstrings van de frames) en één letterlijk document (het
 horizonhekframe). `pf_doc` schrijft nu de M1-container; `pf_ot` neemt de
@@ -1561,8 +1571,8 @@ byte-identiek aan main's golden `jutterswet-aanvoergeld`. De 23
 proefdocumenten van fixronde 5 en de 126 van de lens zijn ook
 gemigreerd, onder /tmp. Suite na de migratie: `947 checks, 0 failures`.
 
-**Punt 2, de kortsluiting in de pass vóór een creatie (`d0e5562a`,
-`81f49ef5`), besluit van de hoofdsessie.** Een kortsluiting die ref
+**Punt 2, de kortsluiting in de pass vóór een creatie (`4fe9e7ef`,
+`60d42da4`), besluit van de hoofdsessie.** Een kortsluiting die ref
 alleen in de pass vóór een creatie bereikt, krijgt dezelfde benoemde
 weigering als de Let-barrière daar. Gebouwd voor de twee kortsluitingen
 waarvan die pass de prefix kan openen: de prefix van een TEN
@@ -1581,7 +1591,7 @@ De pass volgt de lezingen die ch. 6.3 positief telt (`dep_cond` van de
 verifier), want alleen daardoor kan een regel een stratum delen met de
 creatie: bereik, filter en matrix van een TEN MINSTE-vouw (het bereik tot
 de eigen links van de case, `roN_q`), de matrix van een ALLE-vouw, de
-leden van een ALLE-, DE- of TEN MINSTE-samenstelling, en (`81f49ef5`)
+leden van een ALLE-, DE- of TEN MINSTE-samenstelling, en (`60d42da4`)
 een vergelijking, een genavigeerd kenmerk of een rolcheck die door een
 rol leest. Zo'n lid wordt voor die pass nog eens geschreven onder eigen
 namen, met elke rolatoom uit de eigen links van de case (`inputrol/3`);
@@ -1613,7 +1623,7 @@ de waarde van een Let of een telling in die pass, een tweede vertaling
 van expressies (open punt 16).
 
 Metingen, 35 eigen proeven, alle verifier-schoon, elk met ref, de runner
-van main `69436907`, die van `fb069c87` ("vóór") en die van de tip.
+van main `69436907`, die van `d65e4472` ("vóór") en die van de tip.
 "fout" is refs `EVALUATION FAULT: parameter "p" is unbound …`, "UNSAT" de
 garde in refs woorden, "benoemd" de zin van het besluit met wat hij noemt,
 "antwoordt" een model zonder garde. Eén schuit van 8 per Werf en p
@@ -1653,7 +1663,7 @@ schuit in de case, geen creatie) geven op main, vóór en tip leeg waar
 ref 4 geeft, en r6-prebar-case-gebonden (p = 1) ook: [V3]. Over alle 184
 proeven (126 van de lens, 23 van fixronde 5, 35 van deze ronde; 8 van de
 lens zijn niet verifier-schoon, zoals eerder) verschilt de tip van
-`fb069c87` op 17: 13 van "fout, antwoordt" naar benoemd (tr-of-1,
+`d65e4472` op 17: 13 van "fout, antwoordt" naar benoemd (tr-of-1,
 tr-kv-1, tr-pm2-ctl, r6-of-1, r6-kv-1, r6-of-alle, r6-alle-fold,
 r6-dmd-1, r6-ebar, r6-pres, r6-pres-omgekeerd, r6-agg-comp, r6-nav), 3
 van "speelt, speelt" naar benoemd ([L2]: r6-strat-sc, r6-rapport,
@@ -1678,9 +1688,9 @@ r6-alle-nul-case, r6-agg-ite-case, r6-regelcond-nul-case. `pinned_loud
 r6-alle-nul, r6-agg-ite, r6-regelcond-nul. `pinned_value ~entry:"V3"`:
 r6-prebar, r6-prebar-case. `dune test --force backends/clingo`:
 `test_clingo: 1009 checks, 0 failures`. Rood eerst: de eindsuite tegen de
-`translate.ml` van `fb069c87` geeft `1009 checks, 12 FAILURES` (de tien
+`translate.ml` van `d65e4472` geeft `1009 checks, 12 FAILURES` (de tien
 benoemde frames en de twee [L2]-frames van deze ronde). Mutatieproeven op
-de eindsuite (md5 van de mutant-`translate.ml` van `da78e874`): zonder de
+de eindsuite (md5 van de mutant-`translate.ml` van `297a6a78`): zonder de
 tweelingen van die pass (`fe837776…`) `10 FAILURES` (alle behalve
 r6-dmd-1 en r6-ebar); zonder de open prefix van de vouw in die pass
 (`31d002a3…`) `1 FAILURES` (tr-kv-1); zonder de regel voor de vraag
@@ -1695,24 +1705,24 @@ links zijn (`86e8a2cc…`) `1 FAILURES` (r6-pres).
 
 **Sweep.** Hetzelfde gereedschap als in (c), onder /tmp: de runner van
 main `69436907` (md5 `304fd9a8…`, gebouwd uit een `git archive`) en die
-van de tip `da78e874` (`3e2535af…`) over alle 660 corpuscases van de
-tip, met elk aan clingo gegeven programma bewaard. 638 tegen 640
+van de tip `297a6a78` (`3e2535af…`) over alle 661 corpuscases van de
+tip, met elk aan clingo gegeven programma bewaard. 639 tegen 641
 programma's. `diff -r` vindt alleen de twee rode aanvoergeld-cases, met
 één garderegel per programma, een waargenomen fout in plaats van een
 model en de diagnoseherhaling als extra programma, precies als in
-fixronde 5. De runners van `d0e5562a` (`21066e87…`) en `11f384bc`
+fixronde 5. De runners van `4fe9e7ef` (`21066e87…`) en `5f0f8c1f`
 (`e889e126…`) geven over het corpus byte voor byte dezelfde programma's
 en rapporten als die van de tip.
 
-**Gates (fixronde 6, elk los na `eval $(opam env)`, op `da78e874`; eerder
-ook op `6f8a78c8` en `11f384bc`, met dezelfde regels op de suitetelling
+**Gates (fixronde 6, elk los na `eval $(opam env)`, op `297a6a78`; eerder
+ook op `c940d3c3` en `5f0f8c1f`, met dezelfde regels op de suitetelling
 na).**
 ```
 check-self-contained: PASS
 check-ir-schema: PASS (schema valid; 26 pattern self-test row(s); 22 shape self-test row(s); 287 file(s) validate and round-trip, floor 192)
 check-verifier: PASS (287 golden clean; 444 negatief rejected for their declared rule, floor 350)
-check-oracle: PASS (ref suite 932 worked examples, floor 489; 610 cases replayed exactly, floor 427; NOT replayed, no case file yet: corpus/golden/jutterswet-seizoenvondst corpus/golden/jutterswet-vormenkabinet)
-check-clingo: PASS (backend suite 1009 checks, floor 83; 610 cases replay exactly through clingo — ref = clingo over the corpus)
+check-oracle: PASS (ref suite 932 worked examples, floor 489; 611 cases replayed exactly, floor 427; NOT replayed, no case file yet: corpus/golden/jutterswet-seizoenvondst corpus/golden/jutterswet-vormenkabinet)
+check-clingo: PASS (backend suite 1009 checks, floor 83; 611 cases replay exactly through clingo — ref = clingo over the corpus)
 check-noop: PASS (573 cases refute a do-nothing executor; 37 pinned survivors pin defeasible standing)
 check-rood: PASS (50 red cases fault observably in ref and clingo, floor 26; 100 pinned fragments cite none of the 36 listed bottom sentences)
 ```
@@ -1720,6 +1730,61 @@ Gate 8's Drools-been: `check-rood: Drools leg PASS (11 fault-pinned, 39
 not-carried with reason)`. Main telt 48 rode cases (96 fragmenten); deze
 kaart voegt er twee toe, want haar map heeft `case1` en `case2`, dus
 50/100 en niet 49/98.
+
+### Fixronde 7 (2026-09-24)
+
+De lens (een korte herkeuring van ronde 6 op een exportkopie) zei mergen,
+met twee adviespunten; de hoofdsessie besliste beide. De branch staat op
+main `cf1090a5`; de hoofdsessie rebasete hem daar en draaide de veertien
+gates groen op `3d88c230`.
+
+**Punt 1, [L2] noemt de vormen die ch. 6.1 strikt leest (`6e66f534`).**
+De lens mat varianten waar de tip benoemd weigert terwijl ref en main
+spelen: de kortsluiting `TEN MINSTE 1 [TEN MINSTE 1 schuiten [lengte >
+5], p > 0]`, met één schuit van 8 per Werf, als voorwaarde van een
+creatie (P6a en P6b, beide documentvolgordes), van een feitcreatie (P14),
+als consistentie-assertie (P11) en als voorwaarde van een
+kenmerktoekenning (P13). Nagemeten op `3d88c230`: ref `PASS` en clingo
+de benoemde zin op alle vijf; met p gebonden (P6c, P11c, P14c) spelen
+beide, en zonder creatie of zonder schuit (P6d, P11d) weigeren beide in
+refs woorden. De oorzaak volgens de lens: `strict_unless_char` in
+`checks.ml` maakt de positieve lezingen van die vormen strikt (ch. 6.1),
+en ref controleert een consistentie pas aan het fixpunt van haar stratum,
+dus ref heeft daar geen pass vóór de creatie. Besluit van de hoofdsessie:
+de minimale fix. De post [L2] in `backends/clingo/README.md`, het
+commentaar bij `unbound_param_guard` in `translate.ml`, de registerzin en
+open punt 13 noemen nu "a form that ch. 6.1/6.3 puts above that
+creation: a rule, the condition of a creation or fact creation, a
+consistency assertion". Drie frames `pinned_loud ~entry:"L2"` nemen P6a,
+P11 en P13 over als eigen fixtures in de M1-vorm. Tegen de mutant zonder
+de tweelingen van die pass (md5 `0412f7c6…`) gaan ze alle drie rood,
+`1015 checks, 13 FAILURES`. De exacte fix blijft open punt 13.
+
+**Punt 2, de hashes.** Het Result noemt de commits zoals ze na de rebase
+op `cf1090a5` heten. De omzetting komt van de lens (patch-ids gelijk);
+elk van de 41 paren is nagelopen met `git log --format='%h %s'`
+(onderwerp gelijk, nieuwe commit op de tak). De commits op main
+(`69436907`, `6e67ad8f`, `7d97353e`, `811864c6`, `e7e9e178`) blijven. De
+tellingen van fixronde 6 staan op de basis `cf1090a5`: 661 corpuscases
+in de sweep en 611 cases in de gate-regels.
+
+**Suite** 1009 → 1015 checks. `dune test --force backends/clingo`:
+`test_clingo: 1015 checks, 0 failures`.
+
+**Sweep** op `cf1090a5`, met hetzelfde gereedschap: de runner van main
+`cf1090a5` (md5 `304fd9a8…`, hetzelfde binary als dat van `69436907`) en
+die van `3d88c230` (`3e2535af…`, hetzelfde als dat van `297a6a78`), over
+de 661 corpuscases: 639 tegen 641 programma's, en `diff -r` vindt alleen
+de twee rode aanvoergeld-cases, zoals in fixronde 6. `6e66f534` wijzigt
+in `translate.ml` alleen commentaar.
+
+**Gates (fixronde 7, elk los na `eval $(opam env)`, op `6e66f534`).**
+```
+check-clingo: PASS (backend suite 1015 checks, floor 83; 611 cases replay exactly through clingo — ref = clingo over the corpus)
+check-rood: PASS (50 red cases fault observably in ref and clingo, floor 26; 100 pinned fragments cite none of the 36 listed bottom sentences)
+```
+Gate 8's Drools-been: `check-rood: Drools leg PASS (11 fault-pinned, 39
+not-carried with reason)`.
 
 ### Registerzinnen (hoofdsessie, `spec/CONSTRUCTS.md`)
 
@@ -1766,10 +1831,11 @@ day-kind table and the §7.1 horizon fence read at translation and refuse
 there, also behind a failing condition; and a Let barrier that only a
 created member raises, or a short circuit that only a created member
 settles, counts the pass before the creation also where ref has no such
-pass for the read: in a rule that ch. 6.3 puts above that creation, or
-at a member ref makes only after the members that settle its short
-circuit (the translator knows neither the strata nor the order of ref's
-passes). Silent, an answer where ref faults: the Let lowering keeps a
+pass for the read: in a form that ch. 6.1/6.3 puts above that creation
+(a rule, the condition of a creation or fact creation, a consistency
+assertion), or at a member ref makes only after the members that settle
+its short circuit (the translator knows neither the strata nor the order
+of ref's passes). Silent, an answer where ref faults: the Let lowering keeps a
 value behind an enclosing need on a path that does not read it, and the
 guard follows that lowering, which deviates without any parameter; and a
 read ref reaches only in a pass before a rule of the same stratum has
@@ -1796,7 +1862,7 @@ recorded there)."
    deze kaart. Dit is dezelfde klasse, nu aan de Drools-kant. Tot dat
    gerepareerd is, staat de rode case met reden in de lijst.
 2. **De gate-8-regel landt via de hoofdsessie.** Ze staat als voorstel in
-   `3640e6f4`. `check-rood.sh` is een beschermd pad en een parallelle
+   `48a8aed5`. `check-rood.sh` is een beschermd pad en een parallelle
    rood-kaart bewerkt het, dus de regel landt serieel. Met de regel is
    gate 8 groen (50 rode cases na de rebase op `7d97353e`).
 3. **Andere hekken, dezelfde Let-volgorde** (bestond al, werk van een
@@ -1883,7 +1949,7 @@ recorded there)."
 9. **Deling door nul in de matrix van een kwantorvouw negeert de
    kortsluiting** (bestond al, parametervrij; de laatste notitie van de
    vorige bouwer). i-h0 en q-a0 geven ref PASS en UNSAT op main,
-   `83e13587` en `6553128f`. Het `kvr`-predicaat kan de andere hekken in
+   `408cba61` en `ab9a2b73`. Het `kvr`-predicaat kan de andere hekken in
    de matrix dragen, maar dat verschuift hekken in bestaande
    corpusprogramma's: samen met punt 3 in een eigen kaart.
 10. **Advies 8 van de lens: een niet-monotone vouw vóór de creatie die
@@ -1917,7 +1983,7 @@ recorded there)."
     de conditie. Leest die operand een ongebonden parameter en leest de
     conditie een binder met een lege behoefte, dan koos de conditie geen
     arm en vuurde de garde nergens (hoist-ctl: ref fout, clingo heffing
-    leeg, op main en op `ad375dde`). De hoist onthoudt nu per takknoop die
+    leeg, op main en op `32d1b0dc`). De hoist onthoudt nu per takknoop die
     hij bouwt welke operanden ref vóór de conditie leest (`ctx.hoisted`),
     en een ongebonden parameterlezing daarin krijgt een tweede garde
     zonder de atomen van de arm, weggenomen op hun plaats in `rule_guard`.
@@ -1951,7 +2017,7 @@ recorded there)."
     pass vóór de creatie ook in een regel die ch. 6.3 boven die creatie
     zet, waar ref zo'n pass niet heeft: tr-strat-1 (ALLE-conditie over de
     schuiten, één schuit van 8 per Werf) geeft ref `PASS` en clingo de
-    benoemde weigering; op main en `ad375dde` speelden beide. Met de
+    benoemde weigering; op main en `32d1b0dc` speelden beide. Met de
     strata in de vertaler (de dependency-vormen staan in
     `Ir_v0.Checks.dep_forms`; ref rekent de strata zelf uit in
     `eval.ml`) zou de aanwezigheid van zo'n lid gelden voor een vorm
@@ -1964,7 +2030,19 @@ recorded there)."
     pas na de schuit van zijn werf, dus heeft ref geen pass waarin het
     rapport de schuit mist); ook de volgorde van refs passes kent de
     vertaler niet. Besluit van de hoofdsessie in fixronde 6: [L2] blijft
-    een gelijste luide beperking, zonder code.
+    een gelijste luide beperking, zonder code. De lens van ronde 6 mat
+    nog een oorzaak: ch. 6.1 zet een vorm met onherroepelijke schrijvingen
+    strikt boven wat zijn lezingen produceert (`strict_unless_char` in
+    `checks.ml`, voor een kenmerktoekenning, een consistentie-assertie en
+    de voorwaarde van een creatie of feitcreatie), en ref controleert een
+    consistentie pas aan het fixpunt van haar stratum (`eval.ml`). Daar
+    heeft ref nooit een pass vóór de creatie, en weigert de tip benoemd
+    waar ref en main spelen (P6a, P6b, P11, P13, P14). Besluit van de
+    hoofdsessie in fixronde 7: de minimale fix, de post, het commentaar en
+    de registerzin noemen die vormen ("in a form that ch. 6.1/6.3 puts
+    above that creation"), drie frames pinnen ze. Open blijft de exacte
+    fix: geen tweeling voor de pass vóór een creatie in een vorm die ch.
+    6.1 strikt leest.
 14. **Normvraag: de tussentijdse pass binnen één stratum** (fixronde 5,
     punt 2; README [S3]; het residu van ch. 6.1 in fail-fast-vorm). ref
     draait de vormen van een stratum pass voor pass. Een vorm die leest
@@ -1990,7 +2068,8 @@ recorded there)."
     positief telt. Wat hier open blijft, is de regel als schrijver (t1,
     t2, t4, README [S3]).
 15. **Rebase** (opdracht fixronde 5; opgelost in fixronde 6). De kaart
-    staat op main `69436907`, zonder conflict gerebased; de ingebedde
+    staat op main `cf1090a5`: in fixronde 6 zonder conflict gerebased op
+    `69436907`, daarna door de hoofdsessie op `cf1090a5`. De ingebedde
     documenten van de suite en de rode case staan in de M1-vorm.
 16. **[S4]: een voorwaarde die bij afwezigheid geldt, met een creatie als
     schrijver** (fixronde 6, gevonden bij het nalopen van punt 2; het
