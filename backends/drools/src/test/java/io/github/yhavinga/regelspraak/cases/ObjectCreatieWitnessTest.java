@@ -668,10 +668,7 @@ class ObjectCreatieWitnessTest {
                 .set("voorwaarde", JSON.readTree("""
                         { "node": "Vergelijking", "op": "GROTER",
                           "links": { "node": "AttribuutRef", "attribuut": "grondslag", "objecttype": "Jutter",
-                                     "onderwerpBron": "de Jutter", "navigatieRol": null,
-                                     "type": { "node": "Numeriek", "geheel": true, "decimalen": 0,
-                                               "teken": "NIET_NEGATIEF", "eenheid": null },
-                                     "bron": "de grondslag van de Jutter", "set": false, "navigatiePad": [] },
+                                     "bron": "de grondslag van de Jutter" },
                           "rechts": { "node": "Literal", "waarde": "100",
                                       "type": { "node": "Numeriek", "geheel": true, "decimalen": 0,
                                                 "teken": "ONBEPAALD", "eenheid": null }, "bron": "100" },

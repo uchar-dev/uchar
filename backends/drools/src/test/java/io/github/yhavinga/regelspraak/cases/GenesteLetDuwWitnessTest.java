@@ -237,9 +237,8 @@ class GenesteLetDuwWitnessTest {
 
     private static String attr(String naam) {
         return ("{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"Jutter\","
-                + "\"onderwerpBron\":\"zijn\",\"navigatieRol\":null,\"type\":%s,"
-                + "\"bron\":\"zijn %s\",\"set\":false,\"navigatiePad\":[]}")
-                .formatted(naam, pos(), naam);
+                + "\"bron\":\"zijn %s\"}")
+                .formatted(naam, naam);
     }
 
     private static String lit(String waarde) {
@@ -258,7 +257,7 @@ class GenesteLetDuwWitnessTest {
 
     /** NB the wire field is {@code name}, not {@code naam}. */
     private static String bref(String naam, String type) {
-        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"type\":%s,\"bron\":\"%s\"}".formatted(naam, type, naam);
+        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"bron\":\"%s\"}".formatted(naam, naam);
     }
 
     private static String ite(String conditie, String dan, String anders) {
@@ -297,8 +296,7 @@ class GenesteLetDuwWitnessTest {
 
     private static String doel() {
         return ("{\"node\":\"AttribuutRef\",\"attribuut\":\"uit\",\"objecttype\":\"Jutter\","
-                + "\"onderwerpBron\":\"De uit van een Jutter\",\"navigatieRol\":null,\"type\":%s,"
-                + "\"bron\":\"De uit van een Jutter\",\"set\":false,\"navigatiePad\":[]}").formatted(num());
+                + "\"bron\":\"De uit van een Jutter\"}");
     }
 
     // ---------------- the models (each ref-replayed, and clingo-replayed, before its values were pinned) ----

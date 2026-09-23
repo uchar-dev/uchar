@@ -480,9 +480,8 @@ class LetResultaatTakWitnessTest {
 
     private static String attr(String naam, int dec, boolean geheel, String teken) {
         return ("{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"Jutter\","
-                + "\"onderwerpBron\":\"de Jutter\",\"navigatieRol\":null,\"type\":%s,"
-                + "\"bron\":\"het %s van de Jutter\",\"set\":false,\"navigatiePad\":[]}")
-                .formatted(naam, num(dec, geheel, teken), naam);
+                + "\"bron\":\"het %s van de Jutter\"}")
+                .formatted(naam, naam);
     }
 
     private static String lit(String waarde, int dec, boolean geheel) {
@@ -505,8 +504,8 @@ class LetResultaatTakWitnessTest {
     /** ch. 4.10 a read of the nearest enclosing binder. NB the wire field is {@code name}, not {@code naam};
      *  WF-091 makes the read's sign that of the value it is bound to, so it rides along. */
     private static String bref(String naam, String teken) {
-        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"type\":%s,\"bron\":\"de %s\"}"
-                .formatted(naam, num(2, false, teken), naam);
+        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"bron\":\"de %s\"}"
+                .formatted(naam, naam);
     }
 
     /** ch. 4.10 the value-level conditional. WF-069 makes both arms agree with the node's {@code type}, sign

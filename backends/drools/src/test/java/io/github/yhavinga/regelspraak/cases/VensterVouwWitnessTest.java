@@ -144,9 +144,7 @@ class VensterVouwWitnessTest {
         ((ObjectNode) IrPad.rulesLijst(doc, "resolvedRegels").get(0).get("voorwaarde"))
                 .set("filter", JSON.readTree(venster("""
                 { "node": "AttribuutRef", "attribuut": "aanstelling", "objecttype": "Berger",
-                  "onderwerpBron": "alle bergers van de Bergingsploeg", "navigatieRol": null,
-                  "type": { "node": "DatumInDagen" }, "bron": "de aanstelling van de berger",
-                  "set": false, "navigatiePad": [] }""", "null", false, "vanaf de aanstelling van de berger")));
+                  "bron": "de aanstelling van de berger" }""", "null", false, "vanaf de aanstelling van de berger")));
         Path ir = tmp.resolve("venstervouw-" + (n++) + ".json");
         Files.writeString(ir, doc.toPrettyString());
         BeideTakken.groen(ir, ploegCasus("2026-03-15", "P1"), "het filter selecteert B1 en B3");
@@ -256,9 +254,7 @@ class VensterVouwWitnessTest {
     /** vanaf the contributor's own aanstelling, open above */
     private static final String ATTR = venster("""
             { "node": "AttribuutRef", "attribuut": "aanstelling", "objecttype": "Strandwacht",
-              "onderwerpBron": "alle wachten van de Schouwploeg", "navigatieRol": null,
-              "type": { "node": "DatumInDagen" }, "bron": "de aanstelling van de wacht",
-              "set": false, "navigatiePad": [] }""", "null", false, "vanaf de aanstelling van de wacht");
+              "bron": "de aanstelling van de wacht" }""", "null", false, "vanaf de aanstelling van de wacht");
     /** van 1 januari 2024 tot 15 juni 2024 */
     private static final String EXCL = venster(literal("2024-01-01"), literal("2024-06-15"), false,
             "van 1 januari 2024 tot 15 juni 2024");
@@ -267,19 +263,14 @@ class VensterVouwWitnessTest {
             "van 1 januari 2024 tot en met 15 juni 2024");
 
     private static final String GEDIPLOMEERD = """
-            { "node": "Kenmerk", "kenmerk": "gediplomeerd", "navigatie": null, "negatie": false,
+            { "node": "Kenmerk", "kenmerk": "gediplomeerd", "negatie": false,
               "eigenaar": null, "periode": null, "bron": "hij gediplomeerd is" }""";
 
     private static final String KEURGRENS = """
             { "node": "Vergelijking", "op": "GROTER",
               "links": { "node": "AttribuutRef", "attribuut": "dienstjaren", "objecttype": "Strandwacht",
-                         "onderwerpBron": "alle wachten van de Schouwploeg", "navigatieRol": null,
-                         "type": { "node": "Numeriek", "geheel": true, "decimalen": 0,
-                                   "teken": "ONBEPAALD", "eenheid": null },
-                         "bron": "zijn dienstjaren", "set": false, "navigatiePad": [] },
+                         "bron": "zijn dienstjaren" },
               "rechts": { "node": "ParameterRef", "parameter": "keurgrens",
-                          "type": { "node": "Numeriek", "geheel": true, "decimalen": 0,
-                                    "teken": "NIET_NEGATIEF", "eenheid": null },
                           "bron": "de keurgrens" },
               "periode": null, "bron": "zijn dienstjaren groter zijn dan de keurgrens" }""";
 

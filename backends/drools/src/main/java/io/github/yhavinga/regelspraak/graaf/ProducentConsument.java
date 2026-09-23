@@ -54,28 +54,31 @@ public final class ProducentConsument {
 
     /** The kenmerken/attributen a resolved rule CONSUMES: the kenmerk-membership tests + operand attribuut-reads
      *  of its voorwaarde, plus every attribuut-read in its RHS {@code waarde}. The rule's OWN write target
-     *  ({@code doel}) is excluded — a rule reading what it writes is not a cross-rule dependency. */
-    public static Set<ElementSleutel> verbruikt(ResolvedRegel r) {
+     *  ({@code doel}) is excluded — a rule reading what it writes is not a cross-rule dependency. Whether a kenmerk
+     *  check navigates is {@code genavigeerd}'s answer: IR-SPEC ch. 4.5, its binding is the hop, and the binding
+     *  rides beside the model ({@code IrLoader.Loaded.navigatieBindingen}). */
+    public static Set<ElementSleutel> verbruikt(ResolvedRegel r, java.util.function.Predicate<Conditie.Kenmerk> genavigeerd) {
         Set<ElementSleutel> uit = new LinkedHashSet<>();
         String subject = r.doel() instanceof Expr.AttribuutRef ref && ref.objecttype() != null
                 ? ref.objecttype().naam : "";
-        verzamelConditie(r.voorwaarde(), subject, uit);
+        verzamelConditie(r.voorwaarde(), subject, genavigeerd, uit);
         verzamelExpr(r.waarde(), uit);
         return uit;
     }
 
     /** Collect consumed kenmerken (from {@link Conditie.Kenmerk}) and operand attributen out of a condition tree.
-     *  A subject-own kenmerk (no navigatie, no eigenaar) is attributed to {@code subject}; a kenmerk with a bound
+     *  A subject-own kenmerk (not navigated, no eigenaar) is attributed to {@code subject}; a kenmerk with a bound
      *  {@code eigenaar} to that owner; a navigated kenmerk stays owner-unknown ("") (matched producer-side by
      *  naam only). */
-    private static void verzamelConditie(Conditie c, String subject, Set<ElementSleutel> uit) {
+    private static void verzamelConditie(Conditie c, String subject,
+            java.util.function.Predicate<Conditie.Kenmerk> genavigeerd, Set<ElementSleutel> uit) {
         if (c == null) return;
         if (c instanceof Conditie.Kenmerk k) {
-            String ot = k.eigenaar() != null ? k.eigenaar().naam : (k.navigatie() == null ? subject : "");
+            String ot = k.eigenaar() != null ? k.eigenaar().naam : (!genavigeerd.test(k) ? subject : "");
             uit.add(ElementSleutel.van(ot, k.kenmerk(), true));
         }
         if (c instanceof Conditie.Samengesteld s)
-            for (Conditie d : s.onderdelen()) verzamelConditie(d, subject, uit);
+            for (Conditie d : s.onderdelen()) verzamelConditie(d, subject, genavigeerd, uit);
         // IR-SPEC ch. 4.5: a quantifier fold's filter and matrix are conditions, and their kenmerk reads are
         // consumptions of this rule like any other. The generic bevatOperand scan below already reaches the
         // ATTRIBUTE reads inside them (Conditie.bevatExpr recurses through the node); only the kenmerk arm above is
@@ -83,8 +86,8 @@ public final class ProducentConsument {
         // (RUNTIME-SEMANTICS ch. 3.9a), hence the element type rather than the rule's own subject.
         if (c instanceof Conditie.Kwantorvouw kv) {
             String elem = kv.elementObjecttype() == null ? "" : kv.elementObjecttype().naam;
-            verzamelConditie(kv.filter(), elem, uit);
-            verzamelConditie(kv.toets(), elem, uit);
+            verzamelConditie(kv.filter(), elem, genavigeerd, uit);
+            verzamelConditie(kv.toets(), elem, genavigeerd, uit);
         }
         // operand attribuut-reads inside comparisons/predicates/periodes
         Conditie.bevatOperand(c, e -> { verzamelExpr(e, uit); return false; });

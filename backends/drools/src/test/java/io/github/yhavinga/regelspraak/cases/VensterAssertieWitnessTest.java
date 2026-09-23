@@ -86,16 +86,14 @@ class VensterAssertieWitnessTest {
     private static final String GEVULD = """
             { "node": "Predicaat", "soort": "GEVULD",
               "operand": { "node": "AttribuutRef", "attribuut": "meldatum", "objecttype": "Vondst",
-                           "onderwerpBron": "de Vondst", "navigatieRol": null, "type": { "node": "DatumInDagen" },
-                           "bron": "de meldatum van de Vondst", "set": false, "navigatiePad": [] },
+                           "bron": "de meldatum van de Vondst" },
               "dagsoort": null, "negatie": false, "cijfers": 0, "periode": null,
               "bron": "de meldatum van de Vondst gevuld is" }""";
 
     private static final String MELDATUM = """
             { "node": "Periode",
               "vanaf": { "node": "AttribuutRef", "attribuut": "meldatum", "objecttype": "Vondst",
-                         "onderwerpBron": "de Vondst", "navigatieRol": null, "type": { "node": "DatumInDagen" },
-                         "bron": "de meldatum van de Vondst", "set": false, "navigatiePad": [] },
+                         "bron": "de meldatum van de Vondst" },
               "tot": null, "totInclusief": false, "bron": "vanaf de meldatum van de Vondst" }""";
 
     private static final String LETTERLIJK = """

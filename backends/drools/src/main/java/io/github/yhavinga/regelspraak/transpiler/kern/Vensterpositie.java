@@ -2,8 +2,10 @@ package io.github.yhavinga.regelspraak.transpiler.kern;
 
 import io.github.yhavinga.regelspraak.ir.Conditie;
 import io.github.yhavinga.regelspraak.ir.Expr;
-import io.github.yhavinga.regelspraak.kern.Tijdrekening;
+import io.github.yhavinga.regelspraak.model.Datatype;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Objecttype;
+
+import java.util.function.Predicate;
 
 /**
  * The time window's well-formed POSITION and BOUND ({@code spec/IR-SPEC.md} ch. 4.6;
@@ -76,14 +78,27 @@ public final class Vensterpositie {
 
     /** Whether a window in {@code c} — as a condition, through composites and folds, not into operands — has a
      *  bound neither WF-111 shape describes for {@code subject}: the shape both branches lower, shared through
-     *  {@link Tijdrekening#periodeGrensLowerbaar}. */
-    public static boolean ondraagbareGrens(Conditie c, Objecttype subject) {
+     *  {@link #grensLowerbaar}. */
+    public static boolean ondraagbareGrens(Conditie c, Objecttype subject, Predicate<Expr.AttribuutRef> genavigeerd) {
         if (c instanceof Conditie.Periode per)
-            return (per.vanaf() != null && !Tijdrekening.periodeGrensLowerbaar(per.vanaf(), subject))
-                    || (per.tot() != null && !Tijdrekening.periodeGrensLowerbaar(per.tot(), subject));
+            return (per.vanaf() != null && !grensLowerbaar(per.vanaf(), subject, genavigeerd))
+                    || (per.tot() != null && !grensLowerbaar(per.tot(), subject, genavigeerd));
         if (c instanceof Conditie.Samengesteld s)
-            return s.onderdelen().stream().anyMatch(d -> ondraagbareGrens(d, subject));
+            return s.onderdelen().stream().anyMatch(d -> ondraagbareGrens(d, subject, genavigeerd));
         return false;
+    }
+
+    /** WF-111's two bound shapes, as both branches lower them: a {@code Datum in dagen} literal, or the subject's own
+     *  scalar {@code Datum in dagen} attribute — a read without bindings (IR-SPEC ch. 4.1a) of the subject's type,
+     *  with no timeline and no dimension. The read's type is its declaration's (IR-SPEC ch. 2.10). A bound date
+     *  computed, navigated or held in a parameter is neither. */
+    public static boolean grensLowerbaar(Expr grens, Objecttype subject, Predicate<Expr.AttribuutRef> genavigeerd) {
+        if (!(EffectieveEenheid.typeZonderBinder(grens) instanceof Datatype.DatumInDagen)) return false;
+        if (grens instanceof Expr.Literal) return true;
+        return grens instanceof Expr.AttribuutRef a && !genavigeerd.test(a)
+                && a.objecttype() != null && a.objecttype() == subject
+                && subject.granulariteitVan(a.attribuut()) == null
+                && subject.dimensiesVan(a.attribuut()).isEmpty();
     }
 
     /** GEEN complements the window's verdict and the three counting quantifiers count it; ALLE and DE only

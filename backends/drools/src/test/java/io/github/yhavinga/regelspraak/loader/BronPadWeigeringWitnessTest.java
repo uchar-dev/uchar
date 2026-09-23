@@ -60,13 +60,14 @@ class BronPadWeigeringWitnessTest {
                 "onderwerp-uitwaarts, stap voor stap, precies zoals de wire hem schrijft");
     }
 
-    /** (a) one meaning, one spelling. */
+    /** (a) one meaning, one spelling: both at once is no document (IR-SPEC ch. 4.3), refused at the path. */
     @Test void een_bronpad_naast_een_bronrol_wordt_geweigerd() throws Exception {
         ObjectNode root = (ObjectNode) anker();
         ((ObjectNode) vouw(root)).putObject("bronRol")
                 .put("node", "RolBinding").put("feittype", "berging").put("rol", "geborgen vondst");
-        assertTrue(weigering(root).contains("WF-102 (a)"),
-                "het eenstapsbereik HEET bronRol, dus de twee velden sluiten elkaar uit");
+        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(root));
+        assertTrue(e.plek().endsWith("/bronPad") && e.getMessage().contains("WF-102 (a)"),
+                "het eenstapsbereik HEET bronRol, dus de twee velden sluiten elkaar uit: " + e.getMessage());
     }
 
     /** (b) the arity: an EMPTY path reaches nothing, and a one-step path is the other spelling's territory. */
@@ -81,25 +82,25 @@ class BronPadWeigeringWitnessTest {
         assertTrue(weigering(een).contains("WF-102 (b)"), "één stap is de bronRol-spelling");
     }
 
-    /** (c) the position: the SET source of a single-argument instance fold, exactly where bronRol stands.
-     *  The other fold sources hand the fold something else entirely — the temporal total reads the
-     *  subject's own timeline, the row-1 wart hands it the subject's linked instances — so a range does not
-     *  apply to them, and a document that writes one there is refused rather than half-read. */
+    /** (c) the position: the single source of an instance fold, exactly where bronRol stands. A source that
+     *  navigates on its own hands the fold something else, so a range does not apply to it, and a document that
+     *  writes one there is refused rather than half-read. */
     @Test void een_bronpad_op_een_niet_ledenbron_wordt_geweigerd() throws Exception {
         ObjectNode root = (ObjectNode) anker();
-        ((ObjectNode) vouw(root).get("argumenten").get(0)).put("set", false);
+        ((ObjectNode) vouw(root).get("argumenten").get(0)).putArray("navigatieBindingen").addObject()
+                .put("node", "RolBinding").put("feittype", "bemanning").put("rol", "gevoerde boot");
         assertTrue(weigering(root).contains("WF-102 (c)"),
-                "alleen de setbron van een eenargumentsvouw draagt een bereik");
+                "alleen de bron van een eenargumentsvouw draagt een bereik");
     }
 
-    /** Without the field the very same document loads, and carries no path at all. */
-    @Test void zonder_het_veld_laadt_hetzelfde_document_zonder_pad() throws Exception {
+    /** Without the field the fold has no range at all, and a MINIMUM over one source with an element type is no
+     *  document without one (IR-SPEC ch. 4.3): no reader derives it from the type pair. */
+    @Test void zonder_het_veld_laadt_de_vouw_niet() throws Exception {
         ObjectNode root = (ObjectNode) anker();
         for (JsonNode regel : IrPad.rulesLijst(root, "resolvedRegels"))
             ((ObjectNode) regel.get("waarde")).remove("bronPad");
-        IrLoader.Loaded l = IrLoader.loadAll(root);
-        assertNotNull(l.model(), "zonder bronPad is er niets onbereikbaars aan dit document");
-        assertTrue(l.bronPaden().isEmpty(), "en dan draagt de zijkanaal-kaart ook niets");
+        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(root));
+        assertTrue(e.getMessage().contains("missing field 'bronRol'"), e.getMessage());
     }
 
     private static String weigering(JsonNode root) {

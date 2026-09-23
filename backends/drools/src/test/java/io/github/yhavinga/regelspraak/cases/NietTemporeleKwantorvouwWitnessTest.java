@@ -253,9 +253,7 @@ class NietTemporeleKwantorvouwWitnessTest {
         IrPad.rules(doc).set("resolvedRegels", JSON.readTree("""
                 [ { "node": "ResolvedRegel", "naam": "uitgerust bij keuring", "soort": "KENMERKTOEKENNING",
                     "doel": { "node": "AttribuutRef", "attribuut": "uitgerust", "objecttype": "Schouwploeg",
-                              "onderwerpBron": "Een Schouwploeg", "navigatieRol": null,
-                              "type": { "node": "Booleaan" }, "bron": "Een Schouwploeg is uitgerust",
-                              "set": false, "navigatiePad": [] },
+                              "bron": "Een Schouwploeg is uitgerust" },
                     "waarde": { "node": "Literal", "waarde": "waar", "type": { "node": "Booleaan" },
                                 "bron": "waar" },
                     "voorwaarde": {
@@ -263,8 +261,7 @@ class NietTemporeleKwantorvouwWitnessTest {
                       "filter": null,
                       "toets": { "node": "Kwantorvouw", "kwantor": "ALLE", "elementObjecttype": "Uitrusting",
                                  "filter": null,
-                                 "toets": { "node": "Kenmerk", "kenmerk": "gekeurd", "navigatie": null,
-                                            "negatie": false, "eigenaar": null, "periode": null,
+                                 "toets": { "node": "Kenmerk", "kenmerk": "gekeurd", "negatie": false, "eigenaar": null, "periode": null,
                                             "bron": "het stuk gekeurd is" },
                                  "bron": "alle stukken van de Strandwacht gekeurd zijn",
                                  "bronRol": { "node": "RolBinding", "feittype": "wachtuitrusting",

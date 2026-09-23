@@ -594,7 +594,7 @@ class HeelperiodeKwantorvouwWitnessTest {
             "\"bronRol\": { \"node\": \"RolBinding\", \"feittype\": \"vlootindeling\", \"rol\": \"schip\" }";
 
     private static final String ZEEGAAND_FILTER = """
-            { "node": "Kenmerk", "kenmerk": "zeegaand", "navigatie": null, "negatie": false,
+            { "node": "Kenmerk", "kenmerk": "zeegaand", "negatie": false,
               "eigenaar": null, "periode": null, "bron": "zeegaand" }""";
 
     private static final String NUMERIEK =
@@ -625,15 +625,14 @@ class HeelperiodeKwantorvouwWitnessTest {
                   "toets": {
                     "node": "Vergelijking", "op": "GROTER",
                     "links": { "node": "AttribuutRef", "attribuut": "wachtwaarde", "objecttype": "Schuit",
-                               "onderwerpBron": "zijn", "navigatieRol": null, "type": %s,
-                               "bron": "zijn wachtwaarde", "set": false, "navigatiePad": [] },
+                               "bron": "zijn wachtwaarde" },
                     "rechts": { "node": "Literal", "waarde": "10", "type": %s, "bron": "10" },
                     "periode": { "node": "GeheelPeriode", "jaar": true, "niet": %s },
                     "bron": "zijn wachtwaarde gedurende het gehele jaar groter is dan 10" },
                   %s,
                   "bron": "de wachtwaarde van %s schepen van de Vloot gedurende het gehele jaar groter is dan 10" }
                 """.formatted(kwantor, drempel < 0 ? "" : ", \"drempel\": " + drempel,
-                        filter, NUMERIEK, NUMERIEK, niet, bereik,
+                        filter, NUMERIEK, niet, bereik,
                         "GEEN".equals(kwantor) ? "geen van de" : "alle");
     }
 
@@ -645,8 +644,7 @@ class HeelperiodeKwantorvouwWitnessTest {
         ObjectNode toets = (ObjectNode) IrPad.rulesLijst(doc, "resolvedRegels").get(0).get("voorwaarde").get("toets");
         toets.set("rechts", JSON.readTree("""
                 { "node": "AttribuutRef", "attribuut": "grenswaarde", "objecttype": "Schuit",
-                  "onderwerpBron": "zijn", "navigatieRol": null, "type": %s,
-                  "bron": "zijn grenswaarde", "set": false, "navigatiePad": [] }""".formatted(NUMERIEK)));
+                  "bron": "zijn grenswaarde" }"""));
         return doc.toPrettyString();
     }
 
@@ -657,7 +655,7 @@ class HeelperiodeKwantorvouwWitnessTest {
         String nested = """
                 { "node": "Kwantorvouw", "kwantor": "ALLE", "elementObjecttype": "Uitrusting",
                   "filter": null,
-                  "toets": { "node": "Kenmerk", "kenmerk": "gekeurd", "navigatie": null, "negatie": false,
+                  "toets": { "node": "Kenmerk", "kenmerk": "gekeurd", "negatie": false,
                              "eigenaar": null, "periode": null, "bron": "het stuk gekeurd is" },
                   "bronRol": { "node": "RolBinding", "feittype": "schuituitrusting", "rol": "stuk" },
                   "bron": "die al hun stukken gekeurd hebben" }""";
@@ -688,14 +686,14 @@ class HeelperiodeKwantorvouwWitnessTest {
         ObjectNode fold = (ObjectNode) regel.get("voorwaarde");
         if (!heelperiode)   // de niet-temporele route: een kenmerkmatrix zonder heelperiodekwalificatie
             fold.set("toets", JSON.readTree("""
-                    { "node": "Kenmerk", "kenmerk": "zeegaand", "navigatie": null, "negatie": false,
+                    { "node": "Kenmerk", "kenmerk": "zeegaand", "negatie": false,
                       "eigenaar": null, "periode": null, "bron": "het schip zeegaand is" }"""));
         ObjectNode compound = JSON.createObjectNode();
         compound.put("node", "Samengesteld");
         compound.put("kwantor", "TEN_MINSTE");
         compound.put("drempel", 1);
         compound.putArray("onderdelen").add(fold).add(JSON.readTree("""
-                { "node": "Kenmerk", "kenmerk": "vlaggend", "navigatie": null, "negatie": false,
+                { "node": "Kenmerk", "kenmerk": "vlaggend", "negatie": false,
                   "eigenaar": null, "periode": null, "bron": "de Vloot vlaggend is" }"""));
         compound.put("bron", "ten minste één van de volgende voorwaarden");
         regel.set("voorwaarde", compound);
@@ -711,14 +709,13 @@ class HeelperiodeKwantorvouwWitnessTest {
                   "toets": {
                     "node": "Vergelijking", "op": "GROTER",
                     "links": { "node": "AttribuutRef", "attribuut": "wachtwaarde", "objecttype": "Schuit",
-                               "onderwerpBron": "zijn", "navigatieRol": null, "type": %s,
-                               "bron": "zijn wachtwaarde", "set": false, "navigatiePad": [] },
+                               "bron": "zijn wachtwaarde" },
                     "rechts": { "node": "Literal", "waarde": "10", "type": %s, "bron": "10" },
                     "periode": null,
                     "bron": "zijn wachtwaarde groter is dan 10" },
                   %s,
                   "bron": "de wachtwaarde van alle schepen van de Vloot groter is dan 10" }
-                """.formatted(NUMERIEK, NUMERIEK, BRONROL);
+                """.formatted(NUMERIEK, BRONROL);
     }
 
     /** The whole IR document around one quantifier fold: a Vloot whose {@code zeewaardig} kenmerk the fold
@@ -748,8 +745,7 @@ class HeelperiodeKwantorvouwWitnessTest {
                     "resolvedRegels": [
                       { "node": "ResolvedRegel", "naam": "Kenmerktoekenning zeewaardig", "soort": "KENMERKTOEKENNING",
                         "doel": { "node": "AttribuutRef", "attribuut": "zeewaardig", "objecttype": "Vloot",
-                                  "onderwerpBron": "Een Vloot", "navigatieRol": null, "type": { "node": "Booleaan" },
-                                  "bron": "Een Vloot is zeewaardig", "set": false, "navigatiePad": [] },
+                                  "bron": "Een Vloot is zeewaardig" },
                         "waarde": { "node": "Literal", "waarde": "waar", "type": { "node": "Booleaan" }, "bron": "waar" },
                         "voorwaarde": %s,
                         "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],

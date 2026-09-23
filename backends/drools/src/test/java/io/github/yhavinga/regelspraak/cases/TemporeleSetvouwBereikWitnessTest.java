@@ -116,11 +116,10 @@ class TemporeleSetvouwBereikWitnessTest {
         bewaarlast.set("datatype", eur());
         IrPad.attribute(IrPad.objectType(ir, "Vondst"), "bewaartarief").set("datatype", eur());
         ObjectNode r = (ObjectNode) ir.get("rules").get("resolvedRegels").get(0);
-        ((ObjectNode) r.get("doel")).set("type", eur());
+        // the reads take their type from the declarations above; only the fold carries an annotation of its own
         ObjectNode w = (ObjectNode) r.get("waarde");
         w.put("kind", "SOM").put("bron", "de som van het bewaartarief van alle vondsten van de Jutter");
         w.set("type", eur());
-        ((ObjectNode) w.get("argumenten").get(0)).set("type", eur());
         return ir;
     }
 

@@ -292,22 +292,17 @@ class HerhaaldTypepaarWitnessTest {
         assertTrue(exec.getMessage().contains("Deze weigering staat CONSERVATIEF"), exec.getMessage());
     }
 
-    @Test void een_consument_zonder_geschreven_rol_vindt_het_paar_nog_altijd_ambigu() throws Exception {
-        // The LOUD-AMBIGUITY row. A SOM's argument is an ATTRIBUTE name, never a role, so a fold that names
-        // no range AT ALL — no written element role, no wire binding — has only the by-PAIR search to go on,
-        // and must still refuse. This is the guard against widening the derivation into a guess: if
-        // verbindendeRol picked a winner, this marker would quietly disappear and the fold would join over
-        // whichever feittype happened to come first.
-        //
-        // Until 2026-09-19 the fixture KEPT the golden's bronRol and refused anyway, because the DRL-text
-        // branch did not read it — so this row was pinning a branch inequality as if it were the ambiguity
-        // law. It now strips the binding, which is what the sentence always claimed. The bound flank moved
-        // to BronRolVouwWitnessTest, where the same fold PLAYS in both branches.
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(somOverLiggers(), JSON.readTree(tweeRollenCase("2", "0", "0", "1")), true));
-        assertTrue(e.getMessage().contains("drl-transpiler"), e.getMessage());
-        assertTrue(e.getMessage().contains("aggregatie SOM"), e.getMessage());
-        assertTrue(e.getMessage().contains("de som van de romplengte van alle liggers van de Haven"), e.getMessage());
+    @Test void een_consument_zonder_bereik_laadt_niet() throws Exception {
+        // The LOUD-AMBIGUITY row. A SOM's argument is an ATTRIBUTE name, never a role, so a fold that names no
+        // range AT ALL has nothing but the type pair — which two fact types make ambiguous here — and no branch may
+        // pick a winner from it. Since L2 of the v1 wire migration the range is required on this fold (IR-SPEC
+        // ch. 4.3): the document is refused at load, by name, before any branch could guess. The bound flank is
+        // in BronRolVouwWitnessTest, where the same fold PLAYS in both branches.
+        for (boolean viaDrl : new boolean[] { false, true }) {
+            IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
+                    () -> CaseRunner.speelCase(somOverLiggers(), JSON.readTree(tweeRollenCase("2", "0", "0", "1")), viaDrl));
+            assertTrue(e.getMessage().contains("missing field 'bronRol'"), e.getMessage());
+        }
     }
 
     // ---------------- fixtures ----------------
@@ -421,7 +416,7 @@ class HerhaaldTypepaarWitnessTest {
         fold.remove("bronRol");
         fold.put("kind", "SOM").put("bron", "de som van de romplengte van alle liggers van de Haven");
         ObjectNode arg = (ObjectNode) fold.get("argumenten").get(0);
-        arg.put("attribuut", "romplengte").put("objecttype", "Schuit").put("onderwerpBron", "de romplengte")
+        arg.put("attribuut", "romplengte").put("objecttype", "Schuit")
            .put("bron", "de romplengte van alle liggers van de Haven");
         return tijdelijk("dv-som", ir);
     }
@@ -442,14 +437,14 @@ class HerhaaldTypepaarWitnessTest {
     /** A §8.1.7 characteristic check on the ANKER — no eigenaar, so it hosts on the anker pattern. */
     private static ObjectNode ankerKenmerk(String kenmerk) {
         return JSON.createObjectNode().put("node", "Kenmerk").put("kenmerk", kenmerk)
-                .putNull("navigatie").put("negatie", false).putNull("eigenaar")
+                .put("negatie", false).putNull("eigenaar")
                 .putNull("periode").put("bron", "de Haven " + kenmerk + " is");
     }
 
     /** A §8.1.7 characteristic check HOSTED on the doel (the eigenaar field, WF-100). */
     private static ObjectNode doelKenmerk(String kenmerk) {
         return JSON.createObjectNode().put("node", "Kenmerk").put("kenmerk", kenmerk)
-                .putNull("navigatie").put("negatie", false).put("eigenaar", "Schuit")
+                .put("negatie", false).put("eigenaar", "Schuit")
                 .putNull("periode").put("bron", "de ligger " + kenmerk + " is");
     }
 
@@ -457,11 +452,8 @@ class HerhaaldTypepaarWitnessTest {
      *  host on the $doel pattern. */
     private static ObjectNode doelVergelijking(String attribuut, String grens) {
         ObjectNode links = JSON.createObjectNode();
-        links.put("node", "AttribuutRef").put("attribuut", attribuut).put("objecttype", "Schuit")
-             .put("onderwerpBron", "de ligger").putNull("navigatieRol");
-        links.set("type", numeriek());
-        links.put("bron", "de " + attribuut + " van de ligger").put("set", false);
-        links.putArray("navigatiePad");
+        links.put("node", "AttribuutRef").put("attribuut", attribuut).put("objecttype", "Schuit");
+        links.put("bron", "de " + attribuut + " van de ligger");
         ObjectNode rechts = JSON.createObjectNode();
         rechts.put("node", "Literal").put("waarde", grens);
         rechts.set("type", numeriek());

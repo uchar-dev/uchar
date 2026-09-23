@@ -164,7 +164,7 @@ class StaandeScalaireNormWitnessTest {
         groep.put("bron", "witness: gemeld geeft 12.00");
         ObjectNode d = ((ObjectNode) groep.get("defaults").get(0)).deepCopy();
         d.set("voorwaarde", JSON.readTree(
-                "{\"node\":\"Kenmerk\",\"kenmerk\":\"gemeld\",\"navigatie\":null,\"negatie\":false,"
+                "{\"node\":\"Kenmerk\",\"kenmerk\":\"gemeld\",\"negatie\":false,"
                         + "\"eigenaar\":null,\"periode\":null,\"bron\":\"hij gemeld is\"}"));
         ((ObjectNode) d.get("consequentie")).put("waarde", "12.00");
         d.put("bron", "gemeld: 12.00");
@@ -289,7 +289,6 @@ class StaandeScalaireNormWitnessTest {
         tweede.put("naam", "Waardestelling tweede");
         ObjectNode bron = (ObjectNode) tweede.get("waarde");
         bron.put("attribuut", "tweede taxatie")
-                .put("onderwerpBron", "de tweede taxatie van de Vondst")
                 .put("bron", "de tweede taxatie van de Vondst");
         regels.add(tweede);
 

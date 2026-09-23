@@ -67,7 +67,8 @@ public final class DrlTranspiler {
      *  (a transpile-only witness) passes none and gets the pre-existing fallback. */
     private final io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid eff;
     /** §9.2: the salience derivation over the declared kenmerk graph, shared with ExecModelTranspiler. */
-    private final Stratificatie strat;
+    /** Computed at {@link #run} start, once the navigation bindings the reads depend on are known. */
+    private Stratificatie strat;
     /** RUNTIME-SEMANTICS ch. 7.8 / ch. 7.7: the standing-target classification, the SHARED derivation
      *  ({@link io.github.yhavinga.regelspraak.transpiler.kern.StaandeDoelen}) ExecModelTranspiler reads too.
      *  It decides WHERE a leeg write is suppressed; a branch-local re-derivation is what let this back-end
@@ -150,7 +151,6 @@ public final class DrlTranspiler {
         this.model = model;
         this.eff = new io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid(lets);
         this.dagsoorten = new Dagsoorten(model);
-        this.strat = Stratificatie.bereken(model.resolvedRegels);
         this.staande = io.github.yhavinga.regelspraak.transpiler.kern.StaandeDoelen.van(model, defaults);
         if (bronPaden != null && !bronPaden.isEmpty()) {
             this.bronPaden = new java.util.IdentityHashMap<>();   // identity: the nodes are value-equal records
@@ -166,13 +166,19 @@ public final class DrlTranspiler {
      *  range and this branch behaves exactly as it did before WF-102. */
     private java.util.Map<Object, java.util.List<RegelSpraakModel.RolBindingRef>> bronPaden = java.util.Map.of();
 
-    /** See the constructor parameter of the same name. Empty by default — every node then uses the by-pair
-     *  derivation alone, which is exactly the pre-2026-09-19 behaviour of this branch. */
+    /** See the constructor parameter of the same name ({@code IrLoader.Loaded.rolBindingen}). Empty by default. */
     private java.util.Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen = java.util.Map.of();
 
+    /** IR-SPEC ch. 4.3 / D8 (i): a fold whose single argument is read through a range — a one-step {@code bronRol} or
+     *  a {@code bronPad} — ranges over linked instances, and that argument is the SET source; without one the
+     *  argument is the subject's own attribute. */
+    private boolean heeftBereik(Expr.Functie f) {
+        return rolBindingen.containsKey(f) || bronPaden.containsKey(f);
+    }
+
     /** IR-SPEC ch. 4.1a: the navigation bindings per AttribuutRef / Kenmerk node ({@code IrLoader.Loaded.navigatieBindingen}),
-     *  by IDENTITY. Where a node carries one it decides the walk ({@link FactModelGenerator#navigatiewandeling}); only a
-     *  bindingless node is resolved from its written navigatieRol/navigatiePad. Set by the widest {@link #build}. */
+     *  by IDENTITY. Where a node carries one it decides the walk ({@link FactModelGenerator#navigatiewandeling}); a
+     *  bindingless node is the subject's own read. Set by the widest {@link #build}. */
     private java.util.Map<Object, java.util.List<RegelSpraakModel.RolBindingRef>> navigatieBindingen = java.util.Map.of();
 
     public static String transpile(RegelSpraakModel model) { return new DrlTranspiler(model).run(); }
@@ -233,6 +239,7 @@ public final class DrlTranspiler {
     private String fnImport(String naam) { runtimeImports.add(naam); return naam; }
 
     private String run() {
+        strat = Stratificatie.bereken(model.resolvedRegels, this::genavigeerd);
         gevuurdReferenties = model.gevuurdReferenties();   // §8.1.9 opt-in: only these rules mark their firing
         out.append("package io.github.yhavinga.regelspraak.generated;\n\n");
         // Import the fact class for each object type so Drools resolves the patterns.
@@ -737,9 +744,9 @@ public final class DrlTranspiler {
             out.append(onopgelosteSleutelvorm(u.naam(), u.geldigheid()));
             return;
         }
-        // the scope field comes from scopeRol, never from the wire's scopeVeld (V1-WIREMIGRATIE P2, gone at B8)
+        // IR-SPEC ch. 3.6: the scope field comes from scopeRol, which IS the scoping
         String scopeVeld = FactModelGenerator.scopeVeld(model, u);
-        if (scopeVeld == null && (u.scopeRol() != null || u.scopeVeld() != null)) {
+        if (scopeVeld == null && u.scopeRol() != null) {
             out.append(new Regel(u.naam())
                 .clausule("// onopgelost uniciteit (scopebinding onopgelost): " + commentVeilig(u.naam()))
                 .clausule("eval(true)")
@@ -956,8 +963,8 @@ public final class DrlTranspiler {
      *  these, typeringen Tabel 38 makes a both-empty "gelijk aan" evaluate to "fout"; the numeriek Tabel 37
      *  makes it "waar". An unresolved (Onbekend) operand is left to the numeriek-or-unknown default, so the
      *  both-empty special case never fires on a construct the resolver could not type. */
-    private static boolean nietNumeriekVergelijking(Conditie.Vergelijking v) {
-        Datatype l = v.links().type(), r = v.rechts().type();
+    private boolean nietNumeriekVergelijking(Conditie.Vergelijking v) {
+        Datatype l = eff.typeVan(v.links()), r = eff.typeVan(v.rechts());
         return !l.isOnbekend() && !r.isOnbekend()
                 && !l.isNumeriek() && !l.isPercentage() && !r.isNumeriek() && !r.isPercentage();
     }
@@ -1612,14 +1619,12 @@ public final class DrlTranspiler {
         // a flat fallback made TWO nameless creations a "Duplicate rule name" compile error where exec played
         // them — measured, and a new branch inequality in place of the one being closed.
         String naam = fc.naam() != null ? fc.naam() : "<unnamed ResolvedFeitCreatie " + nr + ">";
-        // An UNRESOLVED feitcreatie — a null anker, doel, zetVeld or joinVeld, all four nullable on the wire —
-        // is refused here UNCONDITIONALLY, exactly as ExecModelTranspiler.feitCreatie refuses it
-        // ("feitcreatie (onopgelost)"). Until 2026-09-11 this branch asked the §13.3.9 questions below only when
-        // all four were present and let a null one fall through to the emission, where ident(null) / setter(null) /
-        // anker.naam threw a NullPointerException that named no construct and took the WHOLE transpile down with
-        // it: one construct, two answers — a per-form reason there, an unattributed crash here.
-        // The bean fields come from the role bindings, never from the wire's zetVeld/joinVeld/tussenstappen
-        // (V1-WIREMIGRATIE P2): those go at B7, and ref executes the bindings alone.
+        // An UNRESOLVED feitcreatie — a null anker or doel, or a binding that names no declared role — is refused
+        // here UNCONDITIONALLY, exactly as ExecModelTranspiler.feitCreatie refuses it ("feitcreatie (onopgelost)").
+        // Until 2026-09-11 this branch let a null one fall through to the emission, where ident(null) /
+        // setter(null) / anker.naam threw a NullPointerException that named no construct and took the WHOLE
+        // transpile down with it: one construct, two answers — a per-form reason there, an unattributed crash here.
+        // The bean fields come from the role bindings (IR-SPEC ch. 3.4), which ref executes alone too.
         FactModelGenerator.Creatievelden velden = FactModelGenerator.creatievelden(model, fc);
         if (anker == null || doel == null || velden == null) {
             out.append(new Regel(naam)
@@ -1637,13 +1642,13 @@ public final class DrlTranspiler {
         Objecttype vorigeType = anker;
         String reden = null;
         for (FactModelGenerator.Creatiehop stap : velden.hops()) {
-            Objecttype drager = stap.viaOuderVeld() ? vorigeType : stap.type();
-            Objecttype hopDoel = stap.viaOuderVeld() ? stap.type() : vorigeType;
-            if (!navVeld("feitcreatie", drager, stap.veld(), hopDoel)) { reden = navReden; break; }
-            vorigeType = stap.type();
+            Objecttype drager = stap.opOuder() ? vorigeType : stap.bereikt();
+            Objecttype hopDoel = stap.opOuder() ? stap.bereikt() : vorigeType;
+            if (!navVeld("feitcreatie", drager, stap.beanveld(), hopDoel)) { reden = navReden; break; }
+            vorigeType = stap.bereikt();
         }
-        if (reden == null && !navVeld("feitcreatie", doel, velden.joinVeld(), vorigeType)) reden = navReden;
-        if (reden == null && !navVeld("feitcreatie", doel, velden.zetVeld(), anker)) reden = navReden;
+        if (reden == null && !navVeld("feitcreatie", doel, velden.koppelveld(), vorigeType)) reden = navReden;
+        if (reden == null && !navVeld("feitcreatie", doel, velden.schrijfveld(), anker)) reden = navReden;
         if (reden != null) {
             out.append(new Regel(naam)
                 .clausule("// onopgelost feitcreatie (opslagrichting): " + commentVeilig(naam))
@@ -1680,7 +1685,7 @@ public final class DrlTranspiler {
                 // the refusal says so by name rather than as a guard that lowered to neither side.
                 noFire = "eval( false ) /* TODO " + Vensterpositie.weigering(fc.voorwaarde())
                         + " — regel inert i.p.v. over-creatie */";
-            } else if (Gastheer.doelgastheerBuitenBereik(fc.voorwaarde(), doel)) {
+            } else if (Gastheer.doelgastheerBuitenBereik(fc.voorwaarde(), doel, this::genavigeerd)) {
                 // WF-109's first two doel fences. conditieInline below WOULD carry a composite on the $doel
                 // pattern — measured, it played a guard whose checks were all hosted on the doel's supertype — but
                 // inside a composite or behind a hop the doel is not a bound object, so it must not be tried.
@@ -1715,9 +1720,9 @@ public final class DrlTranspiler {
         int t = 0;
         for (FactModelGenerator.Creatiehop stap : velden.hops()) {
             String var = "$t" + t++;
-            rule.clausule(var + " : " + ident(stap.type().naam, true) + "( "
-                    + (stap.viaOuderVeld() ? "this == " + vorige + "." + ident(stap.veld(), false)
-                                           : ident(stap.veld(), false) + " == " + vorige)
+            rule.clausule(var + " : " + ident(stap.bereikt().naam, true) + "( "
+                    + (stap.opOuder() ? "this == " + vorige + "." + ident(stap.beanveld(), false)
+                                      : ident(stap.beanveld(), false) + " == " + vorige)
                     + " )");
             vorige = var;
         }
@@ -1730,10 +1735,10 @@ public final class DrlTranspiler {
         // and the creation both lowerable in this branch). A same-valued rewrite writes nothing and the chain
         // terminates — the same argument the scalar Objects.equals guard below carries, on the same seam.
         rule.clausule("$doel : " + ident(doel.naam, true) + "( "
-                + ident(velden.joinVeld(), false) + " == " + vorige
+                + ident(velden.koppelveld(), false) + " == " + vorige
                 + (!doelExtra.isEmpty() ? ", " + doelExtra : "") + " )")
-            .dan("    if (!java.util.Objects.equals($doel." + ident(velden.zetVeld(), false) + ", " + SUBJECT + ")) {\n"
-                + "    modify($doel) {\n        " + setter(velden.zetVeld()) + "( " + SUBJECT + " )\n    }\n"
+            .dan("    if (!java.util.Objects.equals($doel." + ident(velden.schrijfveld(), false) + ", " + SUBJECT + ")) {\n"
+                + "    modify($doel) {\n        " + setter(velden.schrijfveld()) + "( " + SUBJECT + " )\n    }\n"
                 + "    }\n");
         out.append(rule.render());
     }
@@ -1954,14 +1959,14 @@ public final class DrlTranspiler {
             // decide crashed bare rather than refusing. It arrives as a MARKER from waarde() above, so the
             // two are asserted together: a marker is not restated, and a typeless value that is somehow NOT
             // a marker becomes one here, by name, instead of NPEing on the unit read.
-            if (r.waarde().type() == null && !valueStr.marker())
+            if (eff.typeVan(r.waarde()) == null && !valueStr.marker())
                 valueStr = Frag.todo("typeloze regelwaarde: een waardeknoop zonder statisch type kan niet in de"
                         + " eenheid van het doel worden herschreven (WF-034 / WF-110)", r.waarde().bron());
             // restate the value in the target's unit (§4); §6.1.2 forbids AUTO-rounding —
             // if the result has too many decimals the author must add an explicit afronding. The null
             // guard is not a fallback: the arm above has already turned a typeless value into a NAMED
             // marker, so reaching here with no type means "already refused, by name, one line up".
-            if (r.waarde().type() != null && r.waarde().type().isNumeriek())
+            if (eff.typeVan(r.waarde()) != null && eff.typeVan(r.waarde()).isNumeriek())
                 valueStr = omrekenWaarde(valueStr, effType(r.waarde()), effType(a));
             // §6.1.2 write boundary: collapse any remaining exact Breuk to its decimal value BEFORE the setter, so a
             // Breuk never reaches a BigDecimal field (mvel strict-mode resolves setX(BigDecimal), never setX(Object))
@@ -2126,7 +2131,7 @@ public final class DrlTranspiler {
      *  its kenmerk members. Only the shapes conditieTijdreeks lowers reach here (a positive own subject kenmerk), so
      *  the @watch set matches exactly the fields the write timeline reads. */
     private void verzamelKenmerkReads(Conditie c, Objecttype subject, java.util.Set<String> uit) {
-        if (c instanceof Conditie.Kenmerk k && k.navigatie() == null && subject != null
+        if (c instanceof Conditie.Kenmerk k && !genavigeerd(k) && subject != null
                 && bevatNaam(subject.kenmerkGranulariteitLeden(), k.kenmerk()))
             uit.add(ident(k.kenmerk(), false));
         else if (c instanceof Conditie.Samengesteld s)
@@ -2453,46 +2458,35 @@ public final class DrlTranspiler {
         }
     }
 
-    /** THE own-read shape test: the reference carries neither a written step nor a wire binding. Every arm that
-     *  reads a reference as the subject's (or the element's) own attribute asks this, never {@code navigatieRol() == null}
-     *  alone — a BOUND by-pair read has no written step either, and an own-read arm that fired on it read the
-     *  subject's same-named attribute instead of walking the binding (V1-WIREMIGRATIE P1, lens B1). */
+    /** THE own-read shape test (IR-SPEC ch. 4.1a): a read without bindings is the subject's (or, in a fold's filter,
+     *  the element's) own. Every arm that reads a reference as an own attribute asks this. */
     private boolean ongenavigeerd(Expr.AttribuutRef a) {
-        return a.navigatieRol() == null && !navigatieBindingen.containsKey(a);
+        return !navigatieBindingen.containsKey(a);
+    }
+
+    /** A read whose bindings walk more than one hop: the §13.4.1 chain. */
+    private boolean keten(Expr.AttribuutRef a) {
+        return navigatieBindingen.containsKey(a) && navigatieBindingen.get(a).size() > 1;
     }
 
     /** Sentinel from {@link #naviRol}: the reference is the subject's own attribute. */
     private static final String EIGEN = "";
 
     /**
-     * How to read an attribute reference relative to the rule subject: the reference
-     * FIELD to navigate through, {@link #EIGEN} for the subject's own attribute, or
-     * null when it cannot be resolved (caller emits a marker).
+     * How to read an attribute reference relative to the rule subject: the reference FIELD to navigate through,
+     * {@link #EIGEN} for the subject's own attribute, or null when it cannot be resolved (caller emits a marker).
      *
-     * When the source named the role (navigatieRol), a by-name resolution is tried
-     * first — it disambiguates an object-type pair joined by more than one feittype/role
-     * AND covers a wederkerig self-relation ("zijn partner", where the navigated type
-     * equals the subject's). But a definite back-reference to the subject by its OWN
-     * role name ("de houder", where the subject already fills the role houder) names the
-     * same instance (§5.5.3), so when the by-name lookup finds nothing we fall through:
-     * a same-type reference reads as the subject's own attribute, otherwise the by-pair
-     * search applies. Returning null only when all three fail keeps an honestly
-     * unresolved reference a marker rather than a wrong own-attribute read.
+     * <p>IR-SPEC ch. 4.1a: the bindings are the navigation. A bound read walks them, and a walk that does not fit
+     * this subject stays unresolved. A read without bindings is the subject's own, which WF-053 makes a read of
+     * the subject's own type; one that names another type is unresolved, never walked by a derivation of its own.
      */
     private String naviRol(Objecttype subject, Expr.AttribuutRef a) {
         if (navigatieBindingen.containsKey(a)) {
-            // a BOUND read: the wire names the hop, and a walk that does not fit this subject stays unresolved —
-            // never re-read through the written name or as the subject's own attribute
             FactModelGenerator.Navigatiewandeling w =
                     FactModelGenerator.navigatiewandeling(model, subject, navigatieBindingen.get(a), a.objecttype());
             return w == null || w.rollen().size() != 1 ? null : w.rollen().get(0);
         }
-        if (a.navigatieRol() != null) {
-            String rol = model.verbindendeRolViaNaam(subject, a.objecttype(), a.navigatieRol());
-            if (rol != null) return rol;
-        }
-        if (a.objecttype() == subject) return EIGEN;
-        return model.verbindendeRol(subject, a.objecttype());
+        return a.objecttype() == subject ? EIGEN : null;
     }
 
     /** Whether a bare scalar read {@code $subject.getRol().getAttr()} crosses a TO-MANY role
@@ -2517,8 +2511,8 @@ public final class DrlTranspiler {
      *  the leeg/gevuld guard) format from it instead of each re-deriving {@link #naviRol} + the
      *  EIGEN/naar-veel/absent branching. {@code EIGEN} = the subject's own attribute; {@code GENAVIGEERD} =
      *  a single to-one navigation through {@code rol}; {@code KETEN} = a resolved §13.4.1 MULTI-hop to-one
-     *  chain (the ref's navigatiePad, re-validated against this subject) — lowered only by the value read,
-     *  every other emitter treats it as a marker case; the rest are the marker cases. */
+     *  chain (the read's bindings, walked from this subject) — lowered only by the value read, every other
+     *  emitter treats it as a marker case; the rest are the marker cases. */
     private enum NaviSoort { EIGEN, GENAVIGEERD, KETEN, AFWEZIG, NAAR_VEEL, ONOPGELOST }
     /** {@code pad}: a KETEN's hop roles, subject-outward (empty for every other soort). */
     private record NaviRef(NaviSoort soort, String rol, List<String> pad) {
@@ -2527,24 +2521,14 @@ public final class DrlTranspiler {
 
     private NaviRef naviResolve(Expr.AttribuutRef a, Objecttype subject) {
         if (attribuutOntbreekt(a)) return new NaviRef(NaviSoort.AFWEZIG, null);
-        if (!a.navigatiePad().isEmpty()) {
-            // A chain is lowered ONLY when the pad re-walks to-one from THIS subject and lands on the type
-            // that declares the attribute (volgKeten) — a chain resolved against another subject markers.
-            // A BOUND chain walks the wire's bindings, under the same subject-fit and to-one demand.
-            List<String> rollen;
-            List<Objecttype> bereikt;
-            if (navigatieBindingen.containsKey(a)) {
-                FactModelGenerator.Navigatiewandeling w = FactModelGenerator.navigatiewandeling(
-                        model, subject, navigatieBindingen.get(a), a.objecttype());
-                if (w == null || w.naarVeel()) return new NaviRef(NaviSoort.ONOPGELOST, null);
-                rollen = w.rollen();
-                bereikt = w.bereikt();
-            } else {
-                rollen = a.navigatiePad();
-                bereikt = model.volgKeten(subject, rollen);
-                boolean ok = bereikt != null && bereikt.get(bereikt.size() - 1) == a.objecttype();
-                if (!ok) return new NaviRef(NaviSoort.ONOPGELOST, null);
-            }
+        if (keten(a)) {
+            // A chain is lowered ONLY when its bindings walk to-one from THIS subject and land on the type that
+            // declares the attribute — a chain bound against another subject markers.
+            FactModelGenerator.Navigatiewandeling w = FactModelGenerator.navigatiewandeling(
+                    model, subject, navigatieBindingen.get(a), a.objecttype());
+            if (w == null || w.naarVeel()) return new NaviRef(NaviSoort.ONOPGELOST, null);
+            List<String> rollen = w.rollen();
+            List<Objecttype> bereikt = w.bereikt();
             Objecttype cur = subject;
             for (int i = 0; i < rollen.size(); i++) {   // EVERY hop needs a field of its own
                 if (!navVeld("genavigeerde lezing", cur, rollen.get(i), bereikt.get(i)))
@@ -2694,28 +2678,28 @@ public final class DrlTranspiler {
         // aftrekken=earlier; an aantal of 0 leaves the date unchanged). NOT mvel "+": "LocalDate + BigDecimal" is a
         // type error that breaks the Drools build. Lower via the Java-bodied rsDatumReken helper (.plus/.minus keyed
         // on the ChronoUnit), exactly like rsTijdsduur — the enum/overload resolve cleanly in plain Java, not mvel.
-        if (b.links().type().isDatum() || b.rechts().type().isDatum()) {
-            boolean datumLinks = b.links().type().isDatum();
+        if (eff.typeVan(b.links()).isDatum() || eff.typeVan(b.rechts()).isDatum()) {
+            boolean datumLinks = eff.typeVan(b.links()).isDatum();
             Expr datumExpr = datumLinks ? b.links() : b.rechts();
             Expr durExpr   = datumLinks ? b.rechts() : b.links();
             boolean optellen = b.op() == Expr.BinOp.PLUS;
             // "datum - duur" subtracts; "duur - datum" is not a date, and two datums added/subtracted is not date
             // arithmetic (a datum-difference is the §6.10 tijdsduur expression) -> honest marker.
-            if (durExpr.type().isDatum() || (!optellen && !datumLinks))
+            if (eff.typeVan(durExpr).isDatum() || (!optellen && !datumLinks))
                 return Frag.todo("datum-rekenkunde (datum +/- tijdsduur; geen datum-datum)", b.bron());
             // §6.11 datum ± N <dagsoort> ("5 werkdagen"): not a fixed ChronoUnit — step day-by-day counting only the
             // dagsoort days (the §9.8 predicate). X never counts; the result is always a dagsoort day; 0/leeg -> X
             // unchanged. A dagsoort is day-granular, so the date operand must be a Datum in dagen (a LocalDate).
             // ANNOTATION BY DESIGN (WF-035, RUNTIME-SEMANTICS ch. 2.10 exception 2): the duration operand's
             // calendar unit is what routes date arithmetic, and ref routes on the same static type.
-            io.github.yhavinga.regelspraak.model.Eenheid durEenheid = durExpr.type().eenheidOf();
+            io.github.yhavinga.regelspraak.model.Eenheid durEenheid = eff.typeVan(durExpr).eenheidOf();
             // ch. 3.8 puts the CALENDAR TABLE first — see Tijdrekening.dagsoortVoorEenheid for the order and why.
             String dagsoortUnit = Tijdrekening.dagsoortVoorEenheid(model, durEenheid);
             if (dagsoortUnit != null) {
                 // §4.1/§4.2 Tabel 2/5 rule 2: a datum-EN-tijd left operand yields a datum-en-tijd result — step over the
                 // date part and re-attach the time-of-day (rsDatumTijdPlusDagsoort). A Datum-in-dagen keeps the LocalDate
                 // path. The walking loop lives in the runtime; the §9.8 predicate rides a rsDagsoort_<Naam> global.
-                boolean datumTijd = datumExpr.type() instanceof Datatype.DatumTijd;
+                boolean datumTijd = eff.typeVan(datumExpr) instanceof Datatype.DatumTijd;
                 String glob = dagsoortGlobaal(dagsoortUnit);
                 Frag d = arg.apply(datumExpr), n = arg.apply(durExpr);
                 if (glob == null || d.marker() || n.marker()) return Frag.todo("datum-rekenkunde (dagsoort)", b.bron());
@@ -2723,15 +2707,15 @@ public final class DrlTranspiler {
                 String cast = datumTijd ? "java.time.LocalDateTime" : "java.time.LocalDate";
                 return Frag.from("((" + cast + ") " + stapFn + "(" + d.text() + ", " + n.text() + ", " + glob + ", " + optellen + "))", d, n);
             }
-            String unit = Tijdrekening.chronoUnit(durExpr.type());
+            String unit = Tijdrekening.chronoUnit(eff.typeVan(durExpr));
             if (unit == null) return Frag.todo("datum-rekenkunde (dagsoort/onbekende tijdseenheid)", b.bron());
             boolean tijdEenheid = switch (unit) { case "HOURS", "MINUTES", "SECONDS", "MILLIS" -> true; default -> false; };
-            if (tijdEenheid && !(datumExpr.type() instanceof Datatype.DatumTijd))
+            if (tijdEenheid && !(eff.typeVan(datumExpr) instanceof Datatype.DatumTijd))
                 return Frag.todo("datum-rekenkunde: een tijdseenheid vereist een datum-tijd operand (§6.10)", b.bron());
             Frag d = arg.apply(datumExpr), n = arg.apply(durExpr);
             if (d.marker() || n.marker()) return Frag.todo("datum-rekenkunde", b.bron());
             fnImport("rsDatumReken");
-            String cast = datumExpr.type() instanceof Datatype.DatumTijd ? "java.time.LocalDateTime" : "java.time.LocalDate";
+            String cast = eff.typeVan(datumExpr) instanceof Datatype.DatumTijd ? "java.time.LocalDateTime" : "java.time.LocalDate";
             return Frag.from("((" + cast + ") rsDatumReken(" + d.text() + ", " + n.text() + ", \"" + unit + "\", " + optellen + "))", d, n);
         }
         // §4: restate the right operand in the left operand's unit before +/- so a convertible-but-different unit
@@ -3054,8 +3038,8 @@ public final class DrlTranspiler {
 
     /** Whether an operand is number-like enough for {@code rsAggVergelijk} (mirrors the exec branch's
      *  {@code getalachtigVergelijkbaar}); an unknown-typed operand is refused rather than guessed. */
-    private static boolean getalachtig(Expr e) {
-        return e != null && e.type() != null && e.type().isGetalachtig();
+    private boolean getalachtig(Expr e) {
+        return e != null && eff.typeVan(e) != null && eff.typeVan(e).isGetalachtig();
     }
 
     /**
@@ -3096,7 +3080,7 @@ public final class DrlTranspiler {
             boolean tijdDeel = switch (f.kind()) {
                 case UUR_UIT, MINUUT_UIT, SECONDE_UIT, MILLISECONDE_UIT -> true; default -> false;
             };
-            if (tijdDeel && !(a.get(0).type() instanceof Datatype.DatumTijd))
+            if (tijdDeel && !(eff.typeVan(a.get(0)) instanceof Datatype.DatumTijd))
                 return Frag.todo("tijd-component uit een niet-datum-tijd (§13.4.17.21-.24)", f.bron());
             Frag d = arg.apply(a.get(0));
             if (d.marker()) return d;
@@ -3171,14 +3155,14 @@ public final class DrlTranspiler {
         // mee" the interval is half-open (van, tot] (the §6.11-consistent reading). Day-granular -> Datum operands.
         // ANNOTATION BY DESIGN (WF-038, ch. 2.10 exception 3): a tijdsduur's own unit IS the operator's parameter
         // ("in hele werkdagen"), not a derived result type.
-        io.github.yhavinga.regelspraak.model.Eenheid dagE = f.type().eenheidOf();
+        io.github.yhavinga.regelspraak.model.Eenheid dagE = eff.typeVan(f).eenheidOf();
         // ch. 3.8 puts the CALENDAR TABLE first — see Tijdrekening.dagsoortVoorEenheid for the order.
         String dagsoortUnit = Tijdrekening.dagsoortVoorEenheid(model, dagE);
         if (dagsoortUnit != null) {
             Expr a0 = f.argumenten().get(0), a1 = f.argumenten().get(1);
             // §4.16 (L676): both operands must be the SAME tijd-precisie. Both datum-EN-tijd is legal — the count is over
             // the DATE parts (rsTijdsduurTijd_<Naam>, no time carried). Mixed precision is spec-illegal -> honest marker.
-            boolean dt0 = a0.type() instanceof Datatype.DatumTijd, dt1 = a1.type() instanceof Datatype.DatumTijd;
+            boolean dt0 = eff.typeVan(a0) instanceof Datatype.DatumTijd, dt1 = eff.typeVan(a1) instanceof Datatype.DatumTijd;
             if (dt0 != dt1)
                 return Frag.todo("tijdsduur in een dagsoort vereist datum-operanden van gelijke tijd-precisie (§6.10)", f.bron());
             String glob = dagsoortGlobaal(dagsoortUnit);
@@ -3188,11 +3172,11 @@ public final class DrlTranspiler {
             return Frag.from(durFn + "(" + van0.text() + ", " + tot0.text() + ", " + glob + ", "
                     + (f.kind() == Expr.FunctieKind.ABSOLUTE_TIJDSDUUR) + ")", van0, tot0);
         }
-        String unit = Tijdrekening.chronoUnit(f.type());
+        String unit = Tijdrekening.chronoUnit(eff.typeVan(f));
         if (unit == null) return Frag.todo("tijdsduur-eenheid (dagsoort / onbekende tijdseenheid)", f.bron());
         boolean tijdEenheid = switch (unit) { case "HOURS", "MINUTES", "SECONDS", "MILLIS" -> true; default -> false; };
         Expr eVan = f.argumenten().get(0), eTot = f.argumenten().get(1);
-        if (tijdEenheid && (!(eVan.type() instanceof Datatype.DatumTijd) || !(eTot.type() instanceof Datatype.DatumTijd)))
+        if (tijdEenheid && (!(eff.typeVan(eVan) instanceof Datatype.DatumTijd) || !(eff.typeVan(eTot) instanceof Datatype.DatumTijd)))
             return Frag.todo("tijdsduur in een tijdseenheid vereist datum-tijd operanden (§6.10)", f.bron());
         Frag van = arg.apply(eVan), tot = arg.apply(eTot);
         if (van.marker() || tot.marker()) return Frag.todo("tijdsduur", f.bron());
@@ -3314,12 +3298,11 @@ public final class DrlTranspiler {
         if (f.filter() instanceof Conditie.Onopgelost) return null;
         if (!(f.argumenten().get(0) instanceof Expr.AttribuutRef a)) return null;
         if (a.objecttype() == null) return null;
-        // A "het totaal van <attr> van een SET" (alle / ten minste … / etc.) is a SET aggregation. When the element
-        // type equals the rule subject's, the resolver collapses it to an EIGEN-looking AttribuutRef (no
-        // navigatieRol) — only the structural set flag (from the onderwerp's quantifier) still records it. Folding
-        // it as the subject's own single timeline would silently drop the set, so bail to the marker (the
-        // accumulate path then markers it too; a distinct element type is caught there). No per-element fold yet.
-        if (a.set()) return null;
+        // A "het totaal van <attr> van een SET" (alle / ten minste … / etc.) is a SET aggregation: the fold carries a
+        // range (IR-SPEC ch. 4.3), and its argument is then the element's attribute, never the subject's own timeline.
+        // Folding it as the subject's own single timeline would silently drop the set, so bail to the marker (the
+        // accumulate path then markers it too). No per-element fold yet.
+        if (heeftBereik(f)) return null;
         RegelSpraakModel.Granulariteit g = opNaam(a.objecttype().granulariteitLeden(), a.attribuut());
         if (g == null) return null;   // not a temporal attribute -> fall through to the instance-accumulate / marker
         // rsTijdTotaal scales each segment value into a BigDecimal; over a non-numeric declaration the emitted
@@ -3350,10 +3333,10 @@ public final class DrlTranspiler {
         // before totalling (rsTijdKnip). A filter the resolver could not structure stays Onopgelost -> the
         // marker above; any OTHER non-null filter we do not lower is markered rather than silently dropped.
         String guard = null;   // §8.4 a static (non-temporal) compound member gates the WHOLE totaal
-        if (f.filter() instanceof Conditie.Kenmerk k && k.navigatie() == null
+        if (f.filter() instanceof Conditie.Kenmerk k && !genavigeerd(k)
                 && subject != null && bevatNaam(subject.kenmerkGranulariteitLeden(), k.kenmerk())) {
             waardeTijdreeks = kenmerkTijdKnip(waardeTijdreeks, k);
-        } else if (f.filter() instanceof Conditie.Kenmerk kn && kn.navigatie() != null && subject != null) {
+        } else if (f.filter() instanceof Conditie.Kenmerk kn && genavigeerd(kn) && subject != null) {
             // §7.1 a NAVIGATED temporal kenmerk ("gedurende de tijd dat zijn partner een recht op korting heeft"): clip
             // the value timeline to the to-one role's kenmerk timeline, read root-guarded (a null reference -> leeg).
             String cond = navigatieKenmerkTijdreeks(kn, subject);
@@ -3422,7 +3405,7 @@ public final class DrlTranspiler {
         if (v.links() instanceof Expr.AttribuutRef la && isTemporeelAttribuut(la))      { tijd = la; ander = v.rechts(); linksTemp = true; }
         else if (v.rechts() instanceof Expr.AttribuutRef ra && isTemporeelAttribuut(ra)) { tijd = ra; ander = v.links();  linksTemp = false; }
         else return null;
-        if (!(tijd.type().isNumeriek() || tijd.type().isPercentage())) return null;   // datum/tekst temporal cmp -> marker
+        if (!(eff.typeVan(tijd).isNumeriek() || eff.typeVan(tijd).isPercentage())) return null;   // datum/tekst temporal cmp -> marker
         io.github.yhavinga.regelspraak.model.Eenheid el = eff.eenheidVan(tijd), er = eff.eenheidVan(ander);
         if (ander instanceof Expr.AttribuutRef ar && isTemporeelAttribuut(ar)) return null;   // both-temporal (timeline vs timeline) -> marker
         if (el != null && er != null && el.vereistOmrekening(er)) return null;        // cross-unit -> marker (raw-magnitude would be wrong)
@@ -3476,7 +3459,7 @@ public final class DrlTranspiler {
             // DRL-fires/exec-skips divergence the differential would mask. A numeric ordering both-empty is Tabel 42/33
             // "onwaar" = the volBeide false (correct), so it keeps firing; a literal-RHS datum ordering (never both-empty)
             // keeps firing in both back-ends.
-            if (v.links().type().isDatum()) {
+            if (eff.typeVan(v.links()).isDatum()) {
                 boolean execFires = v.links() instanceof Expr.AttribuutRef la && ongenavigeerd(la)
                         && v.rechts() instanceof Expr.Literal dl && dl.type().isDatum();
                 if (!execFires) return null;
@@ -3536,13 +3519,13 @@ public final class DrlTranspiler {
                 && f.granulariteit() == gran && f.argumenten().size() == 1 && subject != null) {
             Expr base = f.argumenten().get(0);
             RegelSpraakModel.Granulariteit baseGran = null; Datatype baseType = null; String baseExpr = null;
-            if (base instanceof Expr.AttribuutRef ba && ongenavigeerd(ba) && !ba.set() && ba.objecttype() == subject
+            if (base instanceof Expr.AttribuutRef ba && ongenavigeerd(ba) && ba.objecttype() == subject
                     && bevatNaam(subject.granulariteitLeden(), ba.attribuut())
                     && !Tijdlijnen.meerPeriodiek(subject.tijdlijnAantalLeden(), ba.attribuut())) {
                 baseGran = opNaam(subject.granulariteitLeden(), ba.attribuut());
                 baseType = effType(ba);
                 baseExpr = SUBJECT + "." + getter(ba.attribuut()) + "()";
-            } else if (base instanceof Expr.AttribuutRef ba && !ongenavigeerd(ba) && !ba.set()
+            } else if (base instanceof Expr.AttribuutRef ba && !ongenavigeerd(ba)
                     && ba.objecttype() != null && bevatNaam(ba.objecttype().granulariteitLeden(), ba.attribuut())
                     && !Tijdlijnen.meerPeriodiek(ba.objecttype().tijdlijnAantalLeden(), ba.attribuut())
                     && naviResolve(ba, subject).soort() == NaviSoort.GENAVIGEERD) {
@@ -3622,28 +3605,21 @@ public final class DrlTranspiler {
      *  to-one/own operand, a multi-period element, an unresolvable join, or an unstructured die-filter -> null (marker). */
     private String tijdreeksSomAlleSet(Acc acc, Expr w, Objecttype subject, RegelSpraakModel.Granulariteit gran, Datatype doelType) {
         if (!(w instanceof Expr.Functie f) || f.kind() != Expr.FunctieKind.SOM || f.argumenten().size() != 1) return null;
-        if (!(f.argumenten().get(0) instanceof Expr.AttribuutRef a) || !a.set() || a.objecttype() == null) return null;
+        if (!(f.argumenten().get(0) instanceof Expr.AttribuutRef a) || !heeftBereik(f) || a.objecttype() == null) return null;
         RegelSpraakModel.Granulariteit eg = opNaam(a.objecttype().granulariteitLeden(), a.attribuut());
         if (eg == null) return null;                                   // non-temporal element -> the scalar accumulate path
         if (Tijdlijnen.meerPeriodiek(a.objecttype().tijdlijnAantalLeden(), a.attribuut())) return null;   // multi-period element -> out of scope
         if (eg != gran) return null;                                   // §5.1.4 the element tijdlijn must match the doel's (no set-fold gran promotion yet)
-        if (!a.type().isNumeriek()) return null;                       // §5.8.2 a sommatie is over numeriek operands (soort = routing)
+        if (!eff.typeVan(a).isNumeriek()) return null;                 // §5.8.2 a sommatie is over numeriek operands (soort = routing)
         if (!schaalbaarNaarDoel(effType(a), doelType)) return null;    // §4.1 element unit must restate to the doel unit (else marker)
         Objecttype elem = f.elementObjecttype();
         if (elem == null || subject == null) return null;
-        String rol = model.verbindendeRol(elem, subject);
+        // IR-SPEC ch. 4.3: the fold's range IS its join; a path has no one-join lowering here
+        FactModelGenerator.Bereikjoin bj = FactModelGenerator.bereikjoin(model, rolBindingen.get(f));
+        String rol = bj.rol();
         if (rol == null) {
-            // ch. 4.3, the same LAST arm the instance fold takes, from the same shared derivation. This fold
-            // resolves its own range, so a repeated (or self-typed) type pair leaves the by-pair search with
-            // nothing while the wire names the relation exactly — measured 2026-09-19 on a two-feittype
-            // Jutter/Vondst document: verifier PASS, and BOTH branches refused it generically, the same answer
-            // they give a document that carries no range at all (which WF-048 rejects outright).
-            FactModelGenerator.Bereikjoin bj = FactModelGenerator.bereikjoin(model, rolBindingen.get(f));
-            rol = bj.rol();
-            if (rol == null) {
-                if (bj.weigering() != null) navReden = bj.weigering();
-                return null;                                           // unresolvable join -> marker
-            }
+            if (bj.weigering() != null) navReden = bj.weigering();
+            return null;                                               // unresolvable join -> marker
         }
         // §13.3.9: this fold resolves its own join, so it asks the shared question itself. Measured 2026-09-11 on a
         // verifier-clean model whose element role is to-many (the field lives at the far end): the emitted
@@ -3690,7 +3666,7 @@ public final class DrlTranspiler {
             fnImport("rsTijdReken");
             return schaalTijd("rsTijdReken(" + l + ", " + r + ", \"" + bin.op().name() + "\", Segment.class)", subSum, unitTarget);
         }
-        if (!(e instanceof Expr.AttribuutRef a) || a.set() || a.type() == null || !a.type().isNumeriek()) return null;
+        if (!(e instanceof Expr.AttribuutRef a) || !eff.typeVan(a).isNumeriek()) return null;
         Objecttype ot; String getter;
         if (ongenavigeerd(a) && a.objecttype() == subject) {
             ot = subject; getter = SUBJECT + "." + getter(a.attribuut()) + "()";
@@ -3813,7 +3789,7 @@ public final class DrlTranspiler {
      *  is not lowerable as a standalone true-period timeline: a navigated, negated, multi-period, or non-subject
      *  kenmerk. */
     private String temporeelKenmerkTijdreeks(Conditie.Kenmerk k, Objecttype subject) {
-        if (k.navigatie() != null || k.negatie() || subject == null
+        if (genavigeerd(k) || k.negatie() || subject == null
                 || !bevatNaam(subject.kenmerkGranulariteitLeden(), k.kenmerk())
                 || Tijdlijnen.meerPeriodiek(subject.kenmerkTijdlijnAantalLeden(), k.kenmerk())) return null;
         return SUBJECT + "." + getter(k.kenmerk()) + "()";
@@ -3823,7 +3799,7 @@ public final class DrlTranspiler {
      *  the to-ONE role's kenmerk {@code List<Segment>}, root-guarded so a null reference reads as a leeg (null)
      *  timeline (rsTijdKnip then clips to empty). null for a negated / to-many / non-temporal navigated kenmerk. */
     private String navigatieKenmerkTijdreeks(Conditie.Kenmerk k, Objecttype subject) {
-        if (k.navigatie() == null || k.negatie() || subject == null) return null;
+        if (!genavigeerd(k) || k.negatie() || subject == null) return null;
         KenmerkHop hop = kenmerkHop(k, subject);
         if (hop == null) return null;   // the bound hop does not fit this subject
         Objecttype doel = hop.doel();
@@ -3838,17 +3814,20 @@ public final class DrlTranspiler {
         return "(" + root + " == null ? null : " + root + "." + getter(k.kenmerk()) + "())";
     }
 
+    /** Whether a kenmerk check navigates: IR-SPEC ch. 4.5, its binding IS the hop. */
+    private boolean genavigeerd(Conditie.Kenmerk k) {
+        return navigatieBindingen.containsKey(k);
+    }
+
     /** The one hop of a navigated kenmerk check: the reached role (the bean field on the subject) and the type it
-     *  reaches. From the wire's {@code navigatieBinding} where the check carries one — null when that hop does not
-     *  fit {@code subject} — else the written role, as before the port. */
+     *  reaches, from the wire's {@code navigatieBinding} — null when the check does not navigate or that hop does
+     *  not fit {@code subject}. */
     private record KenmerkHop(String rol, Objecttype doel) {}
     private KenmerkHop kenmerkHop(Conditie.Kenmerk k, Objecttype subject) {
-        if (navigatieBindingen.containsKey(k)) {
-            FactModelGenerator.Navigatiewandeling w =
-                    FactModelGenerator.navigatiewandeling(model, subject, navigatieBindingen.get(k), null);
-            return w == null || w.rollen().size() != 1 ? null : new KenmerkHop(w.rollen().get(0), w.bereikt().get(0));
-        }
-        return new KenmerkHop(k.navigatie(), subject == null ? null : model.rolDoeltypeNaarSubject(subject, k.navigatie()));
+        if (!genavigeerd(k)) return null;
+        FactModelGenerator.Navigatiewandeling w =
+                FactModelGenerator.navigatiewandeling(model, subject, navigatieBindingen.get(k), null);
+        return w == null || w.rollen().size() != 1 ? null : new KenmerkHop(w.rollen().get(0), w.bereikt().get(0));
     }
 
     /** The §8.2 whole-period qualifier on a predicate, or null when the predicate carries none. */
@@ -3885,7 +3864,7 @@ public final class DrlTranspiler {
             if (v.links() instanceof Expr.AttribuutRef la && isTemporeelAttribuut(la))      { tijd = la; ander = v.rechts(); linksTemp = true; }
             else if (v.rechts() instanceof Expr.AttribuutRef ra && isTemporeelAttribuut(ra)) { tijd = ra; ander = v.links();  linksTemp = false; }
             else return Frag.todo("§8.2 zonder tijdsafhankelijk attribuut", c.bron());
-            if (!(tijd.type().isNumeriek() || tijd.type().isPercentage()))
+            if (!(eff.typeVan(tijd).isNumeriek() || eff.typeVan(tijd).isPercentage()))
                 return Frag.todo("§8.2 niet-numerieke gehele-periodevergelijking", c.bron());
             // §8.2 cross-unit grens: the grenswaarde is compared against each Segment's value (in the temporal
             // attribute's unit el), so restate it from its own unit er into el via the EXACT factor (the same
@@ -3926,87 +3905,6 @@ public final class DrlTranspiler {
         return Frag.ok("rsGeheelPeriode(" + getter + ", \"" + gran + "\", " + toets + ", " + grens + ")");
     }
 
-    /** §8.2 over a NAVIGATED to-many temporal SET: "de &lt;temporeel attr&gt; van alle &lt;naar-veel-rol&gt; ... gedurende
-     *  het gehele jaar|maand &lt;op&gt; &lt;scalar grens&gt;" (or a GEVULD/LEEG whole-period predicate over the set). The
-     *  check holds iff it holds for EVERY element's timeline — a forall. Lowered as a {@code collectList} accumulate over
-     *  the element timelines + an {@code eval( rsGeheelPeriodeAlle($tlN, gran, toets, grens) == true|false )} clause, both
-     *  hoisted after the subject pattern (the accumulate binds $tlN, the eval reads it — the same after-$subject ordering
-     *  the aggregation comparisons use). Returns null when the onderwerp is NOT such a set (fall through to the scalar
-     *  {@link #geheelPeriodeCall}), or a marker LoweredConditie when the set form is unlowerable (cross-unit-opaque /
-     *  datum-op / unresolvable join). Mirrors the exec geheelPeriodeAlle. */
-    private LoweredConditie geheelPeriodeAlleVoorwaarde(Acc acc, Conditie c, Conditie.GeheelPeriode gp, Objecttype subject) {
-        String gran = gp.jaar() ? "JAAR" : "MAAND";
-        Expr.AttribuutRef tijd; int toets; String grens = "null"; Expr ander = null; boolean linksTemp = true;
-        if (c instanceof Conditie.Vergelijking v) {
-            if (v.links() instanceof Expr.AttribuutRef la && la.set() && isTemporeelSetAttribuut(la))      { tijd = la; ander = v.rechts(); linksTemp = true; }
-            else if (v.rechts() instanceof Expr.AttribuutRef ra && ra.set() && isTemporeelSetAttribuut(ra)) { tijd = ra; ander = v.links();  linksTemp = false; }
-            else return null;   // not a temporal-set comparison -> the scalar path
-            if (!(tijd.type().isNumeriek() || tijd.type().isPercentage()))
-                return LoweredConditie.marker("§8.2 niet-numerieke gehele-periode over verzameling", c.bron());
-            if (ander instanceof Expr.AttribuutRef ar && isTemporeelAttribuut(ar))
-                return LoweredConditie.marker("§8.2 tijdlijn-vs-tijdlijn over verzameling", c.bron());   // timeline-vs-timeline -> marker
-            io.github.yhavinga.regelspraak.model.Eenheid el = eff.eenheidVan(tijd), er = eff.eenheidVan(ander);
-            boolean crossUnit = el != null && er != null && el.vereistOmrekening(er);
-            if (crossUnit && er.exacteHerschaalFactoren(el) == null)
-                return LoweredConditie.marker("§8.2 gehele-periode over verzameling met eenheidsomrekening", c.bron());
-            Integer code = Tijdrekening.toets(linksTemp ? v.op() : Operatoren.omkeren(v.op()));
-            if (code == null) return LoweredConditie.marker("§8.2 datum-gehele-periode over verzameling", c.bron());
-            // The grens rides an eval AFTER the collectList accumulate (no $subject-relative field). Restrict to a
-            // LITERAL or a scalar Parameter-GLOBAL (a $subject-qualified own/navigated grens stays a symmetric marker,
-            // matching the exec eval which has no subject bound on the collected-list pattern).
-            if (!(ander instanceof Expr.Literal) && !(ander instanceof Expr.ParameterRef pr && pr.parameter().granulariteit() == null))
-                return LoweredConditie.marker("§8.2 gehele-periode over verzameling met niet-scalaire grens", c.bron());
-            Frag g = waarde(acc, ander, subject);   // $subject-free value (literal / global) valid in a standalone eval
-            if (g.marker()) return LoweredConditie.marker("§8.2 grenswaarde over verzameling", c.bron());
-            toets = code;
-            grens = crossUnit ? herschaalExact(g.text(), effType(ander), effType(tijd)) : g.text();
-        } else if (c instanceof Conditie.Predicaat p && p.soort() == Conditie.Predicaatsoort.GEVULD
-                && p.operand() instanceof Expr.AttribuutRef pa && pa.set() && isTemporeelSetAttribuut(pa)) {
-            tijd = pa; toets = 6;
-        } else if (c instanceof Conditie.Predicaat p && p.soort() == Conditie.Predicaatsoort.LEEG
-                && p.operand() instanceof Expr.AttribuutRef pa && pa.set() && isTemporeelSetAttribuut(pa)) {
-            tijd = pa; toets = 8;
-        } else {
-            return null;   // not a set §8.2 form the DRL lowers -> scalar path / its marker
-        }
-        int n = ++acc.n;
-        String var = "$tl" + n;
-        String accCE = temporeelSetAccumulate(tijd, subject, var);
-        if (accCE == null) return LoweredConditie.marker("§8.2 gehele-periode over onbereikbare verzameling", c.bron());
-        acc.clausules.add(accCE);   // the collectList accumulate binding $tlN
-        fnImport("rsGeheelPeriodeAlle");
-        String call = "rsGeheelPeriodeAlle(" + var + ", \"" + gran + "\", " + toets + ", " + grens + ")";
-        acc.clausules.add("eval( " + call + " == " + (gp.niet() ? "false" : "true") + " )");
-        return new LoweredConditie("", java.util.List.of(), false);
-    }
-
-    /** Whether {@code a} is a temporal (tijdlijn) attribute of its (set-element) objecttype — the set analogue of
-     *  {@link #isTemporeelAttribuut}, which requires objecttype==subject and so rejects a to-many set element. */
-    private boolean isTemporeelSetAttribuut(Expr.AttribuutRef a) {
-        return a.objecttype() != null && bevatNaam(a.objecttype().granulariteitLeden(), a.attribuut())
-                && !Tijdlijnen.meerPeriodiek(a.objecttype().tijdlijnAantalLeden(), a.attribuut());   // multi-period -> out of scope
-    }
-
-    /** §8.2 the {@code collectList} accumulate binding a to-many temporal set element's List&lt;Segment&gt; timelines into
-     *  {@code bindVar}. Returns null for an unresolvable join. The element timelines are collected RAW (no unit
-     *  restatement): the grens is instead restated into the element unit by the caller (like the scalar §8.2 path), so all
-     *  elements share the same comparison unit. */
-    private String temporeelSetAccumulate(Expr.AttribuutRef a, Objecttype subject, String bindVar) {
-        Objecttype elem = a.objecttype();
-        if (elem == null || subject == null) return null;
-        String rol = model.verbindendeRol(elem, subject);
-        if (rol == null) return null;
-        // §13.3.9: no storage-direction gate here, and the reason is measured, not assumed — the same finding the
-        // exec branch's twin carries. Every caller enters on a `set` reading, and WF-096 (2026-09-09) admits a set
-        // reading ONLY as the source of a single-argument instance fold; a §8.2 operand is an ordinary read
-        // position. The document this gate would protect is not well-formed: built and pushed through, the verifier
-        // answers "WF-096 FAIL … set reading at an ordinary read position" and ref "whole-period comparison is
-        // ch. 3 scope". Should WF-096 ever admit it, this is the line that grows a navVeld call.
-        String ev = "$el" + bindVar.substring(3);   // $tlN -> $elN (distinct element bind, no lexical-prefix overlap)
-        return "accumulate( " + ev + " : " + ident(elem.naam, true) + "( " + ident(rol, false) + " == " + SUBJECT + " ) ; "
-                + bindVar + " : collectList( " + ev + "." + getter(a.attribuut()) + "() ) )";
-    }
-
     /** §7.1 clip a value timeline by ONE temporal-kenmerk membership: rsTijdKnip to its TRUE periods, or
      *  rsTijdKnipNiet to the complement for a §8.1.8.1/.2 negated membership ("gedurende de tijd dat hij GEEN …"). */
     private String kenmerkTijdKnip(String waarde, Conditie.Kenmerk k) {
@@ -4021,7 +3919,7 @@ public final class DrlTranspiler {
      *  drempel 1) clips the value to the UNION of the per-member true-periods. */
     private String samengesteldeTijdKnip(Conditie.Samengesteld s, String waarde, Objecttype subject) {
         for (Conditie c : s.onderdelen())
-            if (!(c instanceof Conditie.Kenmerk k) || k.navigatie() != null
+            if (!(c instanceof Conditie.Kenmerk k) || genavigeerd(k)
                     || !bevatNaam(subject.kenmerkGranulariteitLeden(), k.kenmerk())) return null;
         if (s.kwantor() == Conditie.Kwantor.ALLE) {
             String expr = waarde;
@@ -4341,8 +4239,8 @@ public final class DrlTranspiler {
         String doel = knoop(plan, stap, dit, ev, naam, bewaking);
         var st = plan.stappen().get(stap - 1);
         String kern = st.achterwaarts()
-                ? doel + "." + getter(st.veld()) + "() == " + bron
-                : bron + "." + getter(st.veld()) + "() == " + doel;
+                ? doel + "." + getter(st.beanveld()) + "() == " + bron
+                : bron + "." + getter(st.beanveld()) + "() == " + doel;
         // the DEREFERENCED side must exist before its getter runs; the other side must exist for the equality to
         // MEAN reachability (two broken walks are not a meeting)
         bewaking.add(st.achterwaarts() ? doel : bron);
@@ -4387,27 +4285,14 @@ public final class DrlTranspiler {
      *  otherwise the source phrase as a marker. */
     private Frag scope(Objecttype elem, Objecttype subject, Expr.Functie f) {
         Expr.AttribuutRef arg = !f.argumenten().isEmpty() && f.argumenten().get(0) instanceof Expr.AttribuutRef a ? a : null;
-        // A count names its element role explicitly ("het aantal bestemming …"), so when more than
-        // one feittype joins the (element, subject) pair the written name picks the unique join the
-        // by-pair search cannot. Try that first, then fall back to the by-pair role.
-        String rol = null;
-        if (subject != null && arg != null && f.kind() == Expr.FunctieKind.AANTAL)
-            rol = model.verbindendeRolViaElementnaam(subject, arg.attribuut());
-        if (rol == null && subject != null) rol = model.verbindendeRol(elem, subject);
-        if (rol == null) {
-            // The wire's symbolic bronRol, LAST — so every join the two arms above already derive stays
-            // exactly as it was. This is the ONLY route for a fold whose argument is an ATTRIBUTE name
-            // (SOM/MINIMUM/MAXIMUM/TOTAAL): there the by-name arm above does not apply — an attribute name
-            // must never be matched against role names — so on a REPEATED type pair, where the by-pair
-            // search is ambiguous by construction, this branch had nothing left. The derivation AND the
-            // to-many-sibling refusal are FactModelGenerator's, shared with the exec branch.
-            FactModelGenerator.Bereikjoin bj = FactModelGenerator.bereikjoin(model, rolBindingen.get(f));
-            rol = bj.rol();
-            if (rol == null && bj.weigering() != null) navReden = bj.weigering();
-        }
+        // IR-SPEC ch. 4.3: the fold's range IS its join. The binding names the role the ELEMENT plays, and the
+        // field on the element that points back at the subject is its sibling, the role the SUBJECT plays — read
+        // from the one binding as the exec branch reads it.
+        RegelSpraakModel.Rol[] paar = FactModelGenerator.gebondenRolpaar(model, rolBindingen.get(f));
+        String rol = paar == null ? null : paar[1].naam();
         // §13.3.9 STORAGE DIRECTION: a resolved ROLE is not yet a bean FIELD. FactModelGenerator.leden derives a
         // scalar reference only where the role is to-one, uniquely reachable, and its name is not taken by a
-        // declared member — so both arms above can hand back a role the beans do not carry. The join emitted
+        // declared member — so the binding can name a role the beans do not carry. The join emitted
         // below reads `<rol>` ON THE ELEMENT, which is therefore the side the shared question is asked of. The
         // exec counterpart has asked it since 2026-08-30; this branch asked nothing and emitted a getter nobody
         // has, sinking the whole KieBase on a bare compiler error that named neither role nor member. A refusal
@@ -4428,7 +4313,7 @@ public final class DrlTranspiler {
         // becomes a visible no-op — never a silently-wrong count over EVERY instance (§5.8.1: a count
         // ranges over the subject's related instances). Consistent with the resolver's "unresolvable
         // -> marker" rule.
-        return Frag.todo("aggregatie-bereik", arg != null ? arg.onderwerpBron() : f.bron().snippet());
+        return Frag.todo("aggregatie-bereik", arg != null ? arg.bron().snippet() : f.bron().snippet());
     }
 
     /** §5.8/§13.4.14 an AGGREGATION (count / SUM / TOTAAL / MIN / MAX) as one side of a condition comparison ("het aantal /
@@ -4489,7 +4374,7 @@ public final class DrlTranspiler {
                      && (pr.parameter().datatype().isNumeriek() || pr.parameter().datatype().isPercentage()))
                 && !(ander instanceof Expr.AttribuutRef nav && nav.objecttype() != null
                      && (!ongenavigeerd(nav) || nav.objecttype() != subject) && nav.objecttype().heeftLid(nav.attribuut())
-                     && nav.type() != null && (nav.type().isNumeriek() || nav.type().isPercentage())
+                     && eff.typeVan(nav) != null && (eff.typeVan(nav).isNumeriek() || eff.typeVan(nav).isPercentage())
                      && !isTemporeelAttribuut(nav))
                 && !multiGlobalRhs) return null;
         Conditie.Operator op = linksAgg ? v.op() : Operatoren.omkeren(v.op());   // orient the aggregation on the LEFT (Operatoren.omkeren(ONGELIJK)=ONGELIJK, != symmetric)
@@ -4527,12 +4412,12 @@ public final class DrlTranspiler {
      *  this arm lowers the RHS through the value-side {@code waarde()}, which fires chains, while the exec's condition
      *  path (ketenWaardePad off) declines them — admitting it here would be a DRL-fires/exec-skips split. Used by
      *  {@link #aggregatieVoorwaarde} to admit the 2-distinct-global RHS. */
-    private static Set<String> aggRhsGlobalNamen(Expr e) {
+    private Set<String> aggRhsGlobalNamen(Expr e) {
         Set<String> uit = new java.util.LinkedHashSet<>();
         return aggRhsGlobalNamen(e, uit) ? uit : java.util.Set.of();
     }
-    private static boolean aggRhsGlobalNamen(Expr e, Set<String> uit) {
-        if (e instanceof Expr.AttribuutRef a) return a.navigatiePad().isEmpty();   // a chain leg -> poison (see doc)
+    private boolean aggRhsGlobalNamen(Expr e, Set<String> uit) {
+        if (e instanceof Expr.AttribuutRef a) return !keten(a);   // a chain leg -> poison (see doc)
         if (e instanceof Expr.ParameterRef p) {
             if (p.parameter().granulariteit() == null
                     && (p.parameter().datatype().isNumeriek() || p.parameter().datatype().isPercentage()))
@@ -4617,10 +4502,6 @@ public final class DrlTranspiler {
         // below (which would marker the temporal operand). A form §8.2 cannot lower stays an honest marker.
         Conditie.GeheelPeriode gp = geheelPeriodeVan(c);
         if (gp != null) {
-            // §8.2 over a NAVIGATED to-many temporal SET ("de X van alle Y ... gedurende het gehele jaar <op> grens"):
-            // a forall across the accumulated element timelines — a collectList accumulate + an rsGeheelPeriodeAlle eval.
-            LoweredConditie alle = geheelPeriodeAlleVoorwaarde(acc, c, gp, subject);
-            if (alle != null) return alle;
             Frag f = geheelPeriodeCall(acc, c, gp, subject);
             if (f.marker()) return LoweredConditie.marker("§8.2 gehele-periode", c.bron());
             return LoweredConditie.van(f.text() + " == " + (gp.niet() ? "false" : "true"));
@@ -4637,7 +4518,7 @@ public final class DrlTranspiler {
             for (boolean isVan : new boolean[]{true, false}) {
                 Expr grens = isVan ? per.vanaf() : per.tot();
                 if (grens == null) continue;
-                if (!Tijdrekening.periodeGrensLowerbaar(grens, subject))
+                if (!Vensterpositie.grensLowerbaar(grens, subject, a -> !ongenavigeerd(a)))
                     return LoweredConditie.marker("periodevergelijking-grens '" + grens.bron() + "' (§8.4.3)", c.bron());
                 Frag g = operand(acc, grens, subject);
                 if (g.marker()) return LoweredConditie.marker("periodevergelijking-grens (§8.4.3)", c.bron());
@@ -4690,8 +4571,8 @@ public final class DrlTranspiler {
             // == casts to BigDecimal) — so compare EXACTLY via the Breuk-aware rsAggVergelijk (single-runtime; it
             // also handles the numeric leegwaarde tables 37/44/33). Only for a numeric comparison with a Breuk-capable
             // operand; the ordinary field/literal comparison keeps its inline form (no churn).
-            boolean numeriek = (v.links().type() != null && v.links().type().isGetalachtig())
-                    || (v.rechts().type() != null && v.rechts().type().isGetalachtig());
+            boolean numeriek = (eff.typeVan(v.links()) != null && eff.typeVan(v.links()).isGetalachtig())
+                    || (eff.typeVan(v.rechts()) != null && eff.typeVan(v.rechts()).isGetalachtig());
             if (numeriek && (bevatBreukBron(v.links()) || bevatBreukBron(v.rechts()))) {
                 fnImport("rsAggVergelijk");
                 return LoweredConditie.van("rsAggVergelijk(" + o[0] + ", " + o[1] + ", \"" + Operatoren.symbool(v.op()) + "\")");
@@ -4729,7 +4610,7 @@ public final class DrlTranspiler {
                     // NEGATED form (Tabel 16 "is geen <dagsoort>") wraps it in "!" -> a leeg/non-dagsoort datum is WAAR.
                     // §8.1.5/§5.15/Tabel 57: a Datum-en-tijd (LocalDateTime) operand is day-granular here — take its
                     // .toLocalDate() for the §9.8 LocalDate predicate (after the != null guard, so no NPE; the && short-circuits).
-                    String dag = p.operand().type() instanceof Datatype.DatumTijd ? o.text() + ".toLocalDate()" : o.text();
+                    String dag = eff.typeVan(p.operand()) instanceof Datatype.DatumTijd ? o.text() + ".toLocalDate()" : o.text();
                     yield glob == null ? LoweredConditie.marker("dagsoortcontrole '" + p.dagsoort() + "'", p.bron())
                             : LoweredConditie.van((p.negatie() ? "!" : "") + "(" + o.text() + " != null && " + glob + ".test(" + dag + "))");
                 }
@@ -4755,36 +4636,47 @@ public final class DrlTranspiler {
             // boolean and sink the build; marker it. The gedurende CLIP path reads the same kenmerk as a timeline
             // via temporeelKenmerkTijdreeks (not this scalar leaf), so the clip is unaffected. Covers an own-subject
             // kenmerk AND a to-one navigated one (its owner is resolved from the reference role's far type).
-            KenmerkHop hop = k.navigatie() == null ? null : kenmerkHop(k, subject);
-            if (k.navigatie() != null && hop == null)
+            KenmerkHop hop = kenmerkHop(k, subject);
+            if (genavigeerd(k) && hop == null)
                 return LoweredConditie.marker("navigatiebinding van kenmerk '" + k.kenmerk() + "' past niet op "
                         + (subject == null ? "het onderwerp" : subject.naam), c.bron());
-            Objecttype kHouder = k.navigatie() == null ? subject : hop.doel();
+            Objecttype kHouder = hop == null ? subject : hop.doel();
             if (kHouder != null && bevatNaam(kHouder.kenmerkGranulariteitLeden(), k.kenmerk()))
                 return LoweredConditie.marker("tijdsafhankelijk kenmerk in scalaire voorwaarde (§8.2)", c.bron());
             String prop = ident(k.kenmerk(), false) + " == " + (k.negatie() ? "false" : "true");
-            if (k.navigatie() == null) return LoweredConditie.van(prop);
+            if (hop == null) return LoweredConditie.van(prop);
             String nav = ident(hop.rol(), false);
             return LoweredConditie.van(nav + " != null && " + nav + "." + prop);
         }
-        // §8.1.7 rolcheck: the subject fills the role iff its reference to the other end of the feittype is
-        // set. This lowers to a bare null-test inside the subject's own pattern ONLY when that reference is a
-        // to-ONE FORWARD field on the subject — "is een element" -> "houder != null". When the subject is on
-        // the "één" side (the reference field lives on the other, MANY side: "de Houder is een element", where
-        // `element` is a to-many role with no scalar field on Houder) a bare `element != null` would be
-        // uncompilable DRL that sinks the package, so that far-side case stays an honest marker (carded) — an
-        // exists-join would be needed, which does not fit a single in-pattern constraint.
+        // §8.1.7 / IR-SPEC ch. 4.5 the role check: a link of the fact type exists in which the subject plays the role
+        // (the loader's carrier and its binding — IrLoader.Loaded#rolBindingen), and where the check narrows the other
+        // end, its filler belongs to that type. Where the link is STORED decides the lowering
+        // (FactModelGenerator.lidmaatschapsopslag). A field on the SUBJECT, naming the other end, is a null-test inside
+        // the subject's own pattern ("is geen": the inverse). A field on the other end, naming the subject, is an
+        // EXISTS-join — a separate when-clause that cannot live inside the subject pattern, so it rides out as an extra
+        // clause (empty inline): regel() appends it after the subject pattern, a pure-conjunction compound carries it
+        // up, and a caller without a place to host it (conditieInline) degrades it to a marker. Either field must be
+        // the REFERENCE: a declared member that took the role's name is non-null whenever it holds a value, so a
+        // null-test would read that VALUE as proof of membership — measured 2026-09-10, both branches identically
+        // ("FAIL verwacht leeg, werkelijk 8"); a join on a field no bean carries sank the whole package on a bare
+        // "Unable to Analyse Expression" (measured 2026-09-11). Same shared question the exec branch asks.
         if (c instanceof Conditie.Rollidmaatschap r) {
-            String veld = subject != null ? model.verbindendeRol(subject, r.anderTeFiller()) : null;
-            // the subject fills the role iff its reference to the other end is set; the §8.1.7 "is geen" negation
-            // is the inverse null-test. The far-side / to-many case has no in-pattern reference -> marker. And the
-            // field must be the REFERENCE: a declared member that took the role's name is non-null whenever it holds
-            // a value, so the null-test would read that VALUE as proof of membership — measured 2026-09-10, both
-            // branches identically ("FAIL verwacht leeg, werkelijk 8"). Same shared question the exec branch asks.
-            if (veld != null && !model.naarVeelRol(subject, r.anderTeFiller(), veld)
-                    && navVeld("rollidmaatschapscheck", subject, veld, r.anderTeFiller()))
-                return LoweredConditie.van(ident(veld, false) + (r.negatie() ? " == null" : " != null"));
-            return LoweredConditie.marker("rollidmaatschap '" + r.rol() + "'", c.bron());
+            FactModelGenerator.Lidmaatschapsopslag o = FactModelGenerator.lidmaatschapsopslag(model, rolBindingen.get(r));
+            if (o.weigering() != null) return LoweredConditie.marker(o.weigering(), c.bron());
+            if (subject == null) return LoweredConditie.marker("rollidmaatschap '" + r.rol() + "'", c.bron());
+            Objecttype tegenpartij = io.github.yhavinga.regelspraak.loader.IrLoader.tegenpartij(r);
+            if (o.opSubject()) {
+                if (!navVeld("rollidmaatschapscheck", subject, o.beanveld(), o.ander()))
+                    return LoweredConditie.marker("rollidmaatschap '" + r.rol() + "'", c.bron());
+                String veld = ident(o.beanveld(), false);
+                if (tegenpartij == null) return LoweredConditie.van(veld + (r.negatie() ? " == null" : " != null"));
+                String test = veld + " instanceof " + ident(tegenpartij.naam, true);   // null is no instance
+                return LoweredConditie.van(r.negatie() ? "!(" + test + ")" : test);
+            }
+            Objecttype vuller = tegenpartij != null ? tegenpartij : o.ander();
+            if (!navVeld("verre rollidmaatschapscheck", vuller, o.beanveld(), subject))
+                return LoweredConditie.marker("§8.1.7 verre rolcheck zonder beanveld", c.bron());
+            return new LoweredConditie("", List.of(verreRolClausule(vuller, o.beanveld(), r.negatie())), false);
         }
         // §8.1.9 / §13.4.15.66 regelpredicaat "regelversie <X> is gevuurd|inconsistent". "is inconsistent"
         // reads the §9.5 Inconsistentie channel: an exists-join on the flag fact the named consistentie/
@@ -4810,19 +4702,6 @@ public final class DrlTranspiler {
             return LoweredConditie.marker("regelpredicaat (§8.1.9): " + (rv.inconsistent()
                     ? "onbekende regelversie '" + rv.regel() + "'"
                     : "'is gevuurd' over niet-geïnstrumenteerde regelversie '" + rv.regel() + "'"), c.bron());
-        }
-        // §8.1.7 far-side "heeft een <rol>": the reference lives on the to-many filler, so this is an EXISTS-join
-        // — a separate when-clause that CANNOT live inside the subject pattern's inline constraint. It rides out as
-        // an extra clause (empty inline); regel() appends it after the subject pattern, and a pure-conjunction
-        // compound carries it up. Any caller without a place to host it (conditieInline) degrades it to a marker.
-        if (c instanceof Conditie.VerreRollidmaatschap vr) {
-            // §13.3.9: the exists-join reads the FILLER's reference field back at the subject, so it asks the same
-            // shared question the near-side rolcheck asks of its own end. Measured 2026-09-11 on a verifier-clean
-            // model with no field at either end of the pair: this branch emitted `Schuit( werf == $subject )` and the
-            // whole KieBase build died on "Unable to Analyse Expression werf == $subject" — loud, and no diagnosis.
-            if (subject == null || !navVeld("verre rollidmaatschapscheck", vr.filler(), vr.backref(), subject))
-                return LoweredConditie.marker("§8.1.7 verre rolcheck zonder beanveld", c.bron());
-            return new LoweredConditie("", List.of(verreRolClausule(vr)), false);
         }
         if (c instanceof Conditie.Samengesteld s) {
             // §8.4.3 a window under GEEN or a counting quantifier (ten minste/ten hoogste/precies), at any depth:
@@ -5024,23 +4903,17 @@ public final class DrlTranspiler {
         // WF-111: this branch writes a window in the filter and the toets, so a window it declines there is
         // declined for its BOUND, and the refusal says so rather than naming the node class (it said "een
         // matrixvorm die deze tak niet IN het elementpatroon kan schrijven (Periode)" until 2026-09-23).
-        if (Vensterpositie.ondraagbareGrens(kv.filter(), elem) || Vensterpositie.ondraagbareGrens(kv.toets(), elem))
+        if (Vensterpositie.ondraagbareGrens(kv.filter(), elem, a -> !ongenavigeerd(a))
+                || Vensterpositie.ondraagbareGrens(kv.toets(), elem, a -> !ongenavigeerd(a)))
             return kvMarker(kv, Vensterpositie.GRENSVORM);
         // §13.3.9 STORAGE DIRECTION, the question scope() asks for an aggregation join: the role the SUBJECT
         // plays is read as a FIELD ON THE ELEMENT, and a resolved role is not yet a bean field.
-        String rol = model.verbindendeRol(elem, subject);
-        if (rol == null) {
-            // ch. 4.3, the same LAST arm the instance fold and the temporal set fold take, from the same
-            // shared derivation. Measured 2026-09-19 on jutterswet-keurploeg with a SECOND feittype over
-            // (Keurploeg, Keurmeester) and nothing else changed: exec PLAYED all seven cases — it has read
-            // kv.bronRol() since the fold landed — against this branch's whole-document refusal on "geen
-            // verbindende rol tussen Keurploeg en Keurmeester". Same wire, two answers.
-            FactModelGenerator.Bereikjoin bj = FactModelGenerator.bereikjoin(model, kv.bronRol());
-            rol = bj.rol();
-            if (rol == null)
-                return kvMarker(kv, bj.weigering() != null ? bj.weigering()
-                        : "geen verbindende rol tussen " + subject.naam + " en " + elem.naam);
-        }
+        // IR-SPEC ch. 4.5: the range IS the join, read from the one binding as the instance fold reads it
+        FactModelGenerator.Bereikjoin bj = FactModelGenerator.bereikjoin(model, kv.bronRol());
+        String rol = bj.rol();
+        if (rol == null)
+            return kvMarker(kv, bj.weigering() != null ? bj.weigering()
+                    : "geen verbindende rol tussen " + subject.naam + " en " + elem.naam);
         if (!navVeld("kwantorvouw-bereik", elem, rol, subject))
             return kvMarker(kv, "de bereik-join heeft geen beanveld — " + navReden);
         final int mark = acc.clausules.size();
@@ -5097,9 +4970,7 @@ public final class DrlTranspiler {
      * ranges over without calling the helper on the element's own timeline — which is a List in a scalar
      * constraint, the shape this branch refuses everywhere else. So the contributors' TIMELINES are collected
      * ({@code collectList}) and the fold happens in one eval over the collected
-     * {@code List<List<Segment>>} — the same three pieces the set §8.2 arm
-     * ({@link #geheelPeriodeAlleVoorwaarde}) and the exec branch's twin use, and the same shape the production
-     * toolchain lowers this sentence to.
+     * {@code List<List<Segment>>} — the same shape the production toolchain lowers this sentence to.
      *
      * <p><b>One table, three readings of it.</b> The per-contributor verdict is
      * {@link io.github.yhavinga.regelspraak.runtime.RegelSpraakRuntime#rsGeheelPeriode}, reached through the
@@ -5132,7 +5003,7 @@ public final class DrlTranspiler {
                 { tijd = ra; ander = v.links(); linksTemp = false; }
             else return kvTerug(acc, mark, kv,
                     "een matrixvergelijking zonder enkelperiodiek tijdlijnattribuut van het elementtype");
-            if (!(tijd.type().isNumeriek() || tijd.type().isPercentage()))
+            if (!(eff.typeVan(tijd).isNumeriek() || eff.typeVan(tijd).isPercentage()))
                 return kvTerug(acc, mark, kv, "een niet-numerieke heelperiodevergelijking in de matrix");
             if (ander instanceof Expr.AttribuutRef ar && ongenavigeerd(ar) && elementTijdlijnLid(elem, ar.attribuut()))
                 return kvTerug(acc, mark, kv, "een tijdlijn-vs-tijdlijnvergelijking in de matrix");
@@ -5158,7 +5029,7 @@ public final class DrlTranspiler {
                 && (p.soort() == Conditie.Predicaatsoort.GEVULD || p.soort() == Conditie.Predicaatsoort.LEEG)) {
             tlVeld = pa.attribuut();
             toetsCode = p.soort() == Conditie.Predicaatsoort.GEVULD ? 6 : 8;   // §8.2 gevuld / leeg over every moment
-        } else if (kv.toets() instanceof Conditie.Kenmerk k && k.navigatie() == null && !k.negatie()
+        } else if (kv.toets() instanceof Conditie.Kenmerk k && !genavigeerd(k) && !k.negatie()
                 && k.kenmerk() != null && bevatNaam(elem.kenmerkGranulariteitLeden(), k.kenmerk())
                 && !Tijdlijnen.meerPeriodiek(elem.kenmerkTijdlijnAantalLeden(), k.kenmerk())) {
             tlVeld = k.kenmerk(); toetsCode = 7;                                // §8.2 the kenmerk's TRUE-period timeline
@@ -5206,12 +5077,13 @@ public final class DrlTranspiler {
         return onopgelosteConstraint(wat, bron == null ? null : bron.snippet());
     }
 
-    /** §8.1.7 far-side "heeft een &lt;rol&gt;" as a separate when-clause: the subject is satisfied when at least
-     *  one filler references it ({@code exists <Filler>( <backref> == $subject )}); the "heeft geen" negation is
-     *  the {@code not} of that. Bound AFTER the subject pattern so {@code $subject} is in scope. */
-    private String verreRolClausule(Conditie.VerreRollidmaatschap vr) {
-        String patroon = ident(vr.filler().naam, true) + "( " + ident(vr.backref(), false) + " == " + SUBJECT + " )";
-        return (vr.negatie() ? "not " : "exists ") + patroon;
+    /** The role check whose link is stored on the other end, as a separate when-clause: the subject is satisfied when
+     *  at least one filler of type {@code vuller} references it through {@code veld}
+     *  ({@code exists <Vuller>( <veld> == $subject )}); the negated check is the {@code not} of that. Bound AFTER
+     *  the subject pattern so {@code $subject} is in scope. */
+    private String verreRolClausule(Objecttype vuller, String veld, boolean negatie) {
+        String patroon = ident(vuller.naam, true) + "( " + ident(veld, false) + " == " + SUBJECT + " )";
+        return (negatie ? "not " : "exists ") + patroon;
     }
 
     /** A boolean expression true when AT LEAST {@code k} of {@code delen} hold: the OR over
@@ -5388,7 +5260,7 @@ public final class DrlTranspiler {
      *  navigated leg, a non-navigated leaf, or a nested expression falls through to {@link #operand} unchanged — leeg-as-0
      *  is a numeric rule, and nested arithmetic re-enters here because operand's arithmetic cases lower through operandReken. */
     private Frag operandReken(Acc acc, Expr e, Objecttype subject) {
-        if (e instanceof Expr.AttribuutRef a && !ongenavigeerd(a) && a.type() != null && a.type().isNumeriek()
+        if (e instanceof Expr.AttribuutRef a && !ongenavigeerd(a) && eff.typeVan(a) != null && eff.typeVan(a).isNumeriek()
                 && !isGedimensioneerd(a) && !isTemporeelAttribuut(a)) {
             NaviRef n = naviResolve(a, subject);
             if (n.soort() == NaviSoort.GENAVIGEERD) {
@@ -5428,13 +5300,13 @@ public final class DrlTranspiler {
      *  NON-TERMINATING rational LITERAL (1/3 → a Breuk). A bare attribute/parameter read, a terminating literal, a
      *  date/text/boolean, or an aggregation is never a Breuk, so it stays unwrapped (no pin churn). Conservative:
      *  when in doubt (a compound), it wraps — the wrap is an identity for a BigDecimal. */
-    private static boolean kanBreukOpleveren(Expr e) {
+    private boolean kanBreukOpleveren(Expr e) {
         // Only a NUMERIC-typed result can be a Breuk. A DATUM-arithmetic Binair (a date ± a duration) or a
         // date/text builtin yields a KNOWN non-numeric value that rsWaarde (→ BigDecimal) would wrongly cast, so it
         // must NOT be wrapped — reject a known non-numeric result type. An Onbekend type (a beslistabel-desugared
         // arithmetic value carries one) falls through to the structural check: a Binair there is arithmetic (numeric),
         // and rsWaarde is a safe identity for its BigDecimal / Breuk result.
-        if (e.type() != null && !e.type().isGetalachtig() && !e.type().isOnbekend()) return false;
+        if (eff.typeVan(e) != null && !eff.typeVan(e).isGetalachtig() && !eff.typeVan(e).isOnbekend()) return false;
         if (e instanceof Expr.Binair || e instanceof Expr.Begrensd || e instanceof Expr.Afgerond) return true;
         // ch. 4.10: a Let's result IS its body's (WF-076), so the collapse question is the body's; a binder read
         // hands back whatever its need computed, which may be an exact Breuk — the numeric-type gate above is what

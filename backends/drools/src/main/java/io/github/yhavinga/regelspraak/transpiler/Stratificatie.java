@@ -47,11 +47,14 @@ import java.util.Map;
 public final class Stratificatie {
 
     private final Map<String, Integer> saliencePerRegel = new HashMap<>();
+    /** Whether a kenmerk check navigates — IR-SPEC ch. 4.5, its binding is the hop, which rides beside the model
+     *  ({@code IrLoader.Loaded.navigatieBindingen}). */
+    private final java.util.function.Predicate<Conditie.Kenmerk> genavigeerd;
 
-    private Stratificatie() {}
+    private Stratificatie(java.util.function.Predicate<Conditie.Kenmerk> genavigeerd) { this.genavigeerd = genavigeerd; }
 
-    public static Stratificatie bereken(List<ResolvedRegel> regels) {
-        Stratificatie s = new Stratificatie();
+    public static Stratificatie bereken(List<ResolvedRegel> regels, java.util.function.Predicate<Conditie.Kenmerk> genavigeerd) {
+        Stratificatie s = new Stratificatie(genavigeerd);
 
         // producers, type-qualified: (objecttype|kenmerk) -> producing rule indexes; plus the name-wide
         // index for the wildcard fallback of an unresolved navigated read
@@ -73,7 +76,7 @@ public final class Stratificatie {
             Objecttype subject =
                     r.doel() instanceof Expr.AttribuutRef doel ? doel.objecttype() : null;
             List<Read> uit = new ArrayList<>();
-            verzamelReads(r.voorwaarde(), subject, false, uit);
+            s.verzamelReads(r.voorwaarde(), subject, false, uit);
             reads.add(uit);
         }
 
@@ -144,11 +147,11 @@ public final class Stratificatie {
     /** {@code neg} is the NEGATION CONTEXT the walk has entered, carried exactly as the verifier's
      *  {@code dep_cond ~neg} carries it (RUNTIME-SEMANTICS ch. 6.1): once negative, conservatively
      *  negative — a second negation does not cancel the first. */
-    private static void verzamelReads(Conditie c, Objecttype subject, boolean neg, List<Read> uit) {
+    private void verzamelReads(Conditie c, Objecttype subject, boolean neg, List<Read> uit) {
         if (c == null) return;
         if (c instanceof Conditie.Kenmerk k && k.kenmerk() != null) {
             Objecttype eigenaar = k.eigenaar() != null ? k.eigenaar()
-                    : k.navigatie() == null ? subject : null;
+                    : !genavigeerd.test(k) ? subject : null;
             uit.add(new Read(eigenaar != null ? typeKey(eigenaar) : null,
                     naamKey(k.kenmerk()), neg || k.negatie()));
         }
@@ -234,7 +237,7 @@ public final class Stratificatie {
      *  the same way: a missing arm here under-reports ("this rule reads no kenmerk"), and an
      *  under-reported read is a rule that fires one stratum too early, which is the defect this method
      *  exists to prevent. */
-    private static void readsInExpr(Expr e, Objecttype subject, List<Read> uit) {
+    private void readsInExpr(Expr e, Objecttype subject, List<Read> uit) {
         if (e == null) return;
         switch (e) {
             case Expr.Functie f -> {

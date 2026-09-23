@@ -4,6 +4,7 @@ import io.github.yhavinga.regelspraak.ir.Conditie;
 import io.github.yhavinga.regelspraak.ir.Expr;
 import io.github.yhavinga.regelspraak.ir.ResolvedDagsoort;
 import io.github.yhavinga.regelspraak.kern.Literalen;
+import io.github.yhavinga.regelspraak.model.Datatype;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
 import io.github.yhavinga.regelspraak.runtime.RegelSpraakRuntime;
 
@@ -64,8 +65,9 @@ public final class Dagsoorten {
         if (c instanceof Conditie.Vergelijking v) {
             // a type-mismatched comparison (datum vs numeric date-component) can never compare via
             // Comparable.compareTo -> null, so both back-ends marker it symmetrically.
-            boolean compat = (v.links().type().isNumeriek() && v.rechts().type().isNumeriek())
-                    || (v.links().type().isDatum() && v.rechts().type().isDatum());
+            // a day-kind definition binds no Let, so its operands' types are their declarations' or their own
+            Datatype lt = EffectieveEenheid.typeZonderBinder(v.links()), rt = EffectieveEenheid.typeZonderBinder(v.rechts());
+            boolean compat = (lt.isNumeriek() && rt.isNumeriek()) || (lt.isDatum() && rt.isDatum());
             if (!compat) return null;
             Function<LocalDate, Object> lo = waarde(v.links()), ro = waarde(v.rechts());
             if (lo == null || ro == null) return null;

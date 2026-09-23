@@ -55,12 +55,14 @@ public final class RegelGraaf {
 
     /** Build the graph from a resolved model. Only value-writing rules and the elements they read/write appear;
      *  a data element is INVOER when no rule produces it and a produced element is marked eind-output when no
-     *  rule consumes it. */
-    public static RegelGraaf bouw(RegelSpraakModel model) {
+     *  rule consumes it. {@code genavigeerd} tells a navigated kenmerk check from the subject's own (see
+     *  {@link ProducentConsument#verbruikt}). */
+    public static RegelGraaf bouw(RegelSpraakModel model,
+            java.util.function.Predicate<io.github.yhavinga.regelspraak.ir.Conditie.Kenmerk> genavigeerd) {
         Map<ElementSleutel, Set<String>> producenten = ProducentConsument.producentIndex(model);
         // Every element that is consumed by at least one rule, so we can tell producties zonder afnemer apart.
         Set<ElementSleutel> verbruikt = new LinkedHashSet<>();
-        for (ResolvedRegel r : model.resolvedRegels) verbruikt.addAll(ProducentConsument.verbruikt(r));
+        for (ResolvedRegel r : model.resolvedRegels) verbruikt.addAll(ProducentConsument.verbruikt(r, genavigeerd));
 
         // Stable id allocation. Rule ids by base name; element ids by sleutel.
         Map<String, String> regelId = new LinkedHashMap<>();
@@ -104,7 +106,7 @@ public final class RegelGraaf {
         // 4. consumer edges: element -> rule that reads it.
         for (ResolvedRegel r : model.resolvedRegels) {
             String to = regelId.get(ProducentConsument.basisNaam(r.naam()));
-            for (ElementSleutel el : ProducentConsument.verbruikt(r)) {
+            for (ElementSleutel el : ProducentConsument.verbruikt(r, genavigeerd)) {
                 String from = elemId.get(el);
                 if (from != null && to != null) edgeSet.add(new Edge(from, to));
             }

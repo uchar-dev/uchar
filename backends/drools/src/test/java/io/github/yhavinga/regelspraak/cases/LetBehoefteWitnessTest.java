@@ -155,9 +155,8 @@ class LetBehoefteWitnessTest {
 
     private static String attr(String naam, String type) {
         return ("{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"Jutter\","
-                + "\"onderwerpBron\":\"de Jutter\",\"navigatieRol\":null,\"type\":%s,"
-                + "\"bron\":\"het %s van de Jutter\",\"set\":false,\"navigatiePad\":[]}")
-                .formatted(naam, type, naam);
+                + "\"bron\":\"het %s van de Jutter\"}")
+                .formatted(naam, naam);
     }
 
     private static String lit(String waarde, String type) {
@@ -177,7 +176,7 @@ class LetBehoefteWitnessTest {
 
     /** NB the wire field is {@code name}, not {@code naam}. */
     private static String bref(String naam, String type) {
-        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"type\":%s,\"bron\":\"%s\"}".formatted(naam, type, naam);
+        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"bron\":\"%s\"}".formatted(naam, naam);
     }
 
     private static String ite(String conditie, String dan, String anders, String type) {

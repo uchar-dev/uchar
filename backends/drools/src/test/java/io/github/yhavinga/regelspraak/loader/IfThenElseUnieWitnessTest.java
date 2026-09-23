@@ -106,9 +106,8 @@ class IfThenElseUnieWitnessTest {
 
     private static String attr(String naam, String type) {
         return ("{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"Jutter\","
-                + "\"onderwerpBron\":\"de Jutter\",\"navigatieRol\":null,\"type\":%s,"
-                + "\"bron\":\"het %s van de Jutter\",\"set\":false,\"navigatiePad\":[]}")
-                .formatted(naam, type, naam);
+                + "\"bron\":\"het %s van de Jutter\"}")
+                .formatted(naam, naam);
     }
 
     private static String lit(String waarde, String type) {
@@ -138,7 +137,7 @@ class IfThenElseUnieWitnessTest {
     }
 
     private static String bref(String naam, String type) {
-        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"type\":%s,\"bron\":\"%s\"}".formatted(naam, type, naam);
+        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"bron\":\"%s\"}".formatted(naam, naam);
     }
 
     /** The ch. 10.2 node as the LEFT operand of an ordinary Binair — so the walk must pass an ordinary node

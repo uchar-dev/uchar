@@ -73,11 +73,11 @@ class CreatieguardPositieWitnessTest {
     // ================= the document and the cases =================
 
     private static final String GEHESEN_ANKER = """
-            { "node": "Kenmerk", "kenmerk": "gehesen", "navigatie": null, "negatie": false, "eigenaar": null,
+            { "node": "Kenmerk", "kenmerk": "gehesen", "negatie": false, "eigenaar": null,
               "periode": null, "bron": "het kustvak gehesen is" }""";
 
     private static final String GEHESEN_BAKEN = """
-            { "node": "Kenmerk", "kenmerk": "gehesen", "navigatie": null, "negatie": false, "eigenaar": "Baken",
+            { "node": "Kenmerk", "kenmerk": "gehesen", "negatie": false, "eigenaar": "Baken",
               "periode": null, "bron": "het sein gehesen is" }""";
 
     private static final String VENSTER = """

@@ -41,13 +41,13 @@ import java.util.List;
 public final class Bronpad {
     private Bronpad() {}
 
-    /** One resolved hop, reduced to what a consumer reads: {@code veld} is the bean property the join reads, and
+    /** One resolved hop, reduced to what a consumer reads: {@code beanveld} is the bean property the join reads, and
      *  {@code achterwaarts} says on which end it lives — true -> the field is on the hop's TARGET and holds its
      *  SOURCE; false -> the field is on the source and holds the target. The two object types the hop connects are
      *  NOT repeated here: they are nodes {@code i-1} and {@code i} of {@link Plan#knoopTypen}, and a second copy
      *  would be a second thing to keep true. The feittype and role NAMES stop at {@link #ontleed}, which is where
      *  they are resolved and where the refusal sentences quote them. */
-    public record Stap(boolean achterwaarts, String veld) {}
+    public record Stap(boolean achterwaarts, String beanveld) {}
 
     /** The lowering plan for one path, or a refusal.
      *
@@ -82,7 +82,7 @@ public final class Bronpad {
          *  (nodes {@code achterwaartsVanaf}..n only). */
         public List<String> ketenVanafElement(int doel) {
             List<String> uit = new ArrayList<>();
-            for (int i = stappen.size(); i > doel; i--) uit.add(stappen.get(i - 1).veld());
+            for (int i = stappen.size(); i > doel; i--) uit.add(stappen.get(i - 1).beanveld());
             return uit;
         }
 
@@ -90,7 +90,7 @@ public final class Bronpad {
          *  (nodes 0..{@code voorwaarts} only). */
         public List<String> ketenVanafOnderwerp(int doel) {
             List<String> uit = new ArrayList<>();
-            for (int i = 1; i <= doel; i++) uit.add(stappen.get(i - 1).veld());
+            for (int i = 1; i <= doel; i++) uit.add(stappen.get(i - 1).beanveld());
             return uit;
         }
     }

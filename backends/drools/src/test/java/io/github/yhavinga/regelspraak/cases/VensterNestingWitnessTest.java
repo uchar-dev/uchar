@@ -119,24 +119,22 @@ class VensterNestingWitnessTest {
     private static final String BREVET_VENSTER = """
             { "node": "Periode",
               "vanaf": { "node": "AttribuutRef", "attribuut": "afgifte", "objecttype": "Brevet",
-                         "onderwerpBron": "de brevetten van de wacht", "navigatieRol": null,
-                         "type": { "node": "DatumInDagen" }, "bron": "de afgifte", "set": false, "navigatiePad": [] },
+                         "bron": "de afgifte" },
               "tot": null, "totInclusief": false, "bron": "vanaf de afgifte" }""";
 
     private static final String PARAMETERVENSTER = """
             { "node": "Periode",
-              "vanaf": { "node": "ParameterRef", "parameter": "peildatum", "type": { "node": "DatumInDagen" },
-                         "bron": "de peildatum" },
+              "vanaf": { "node": "ParameterRef", "parameter": "peildatum", "bron": "de peildatum" },
               "tot": null, "totInclusief": false, "bron": "vanaf de peildatum" }""";
 
     private static final String ERVAREN = """
-            { "node": "Kenmerk", "kenmerk": "ervaren", "navigatie": null, "negatie": false, "eigenaar": null,
+            { "node": "Kenmerk", "kenmerk": "ervaren", "negatie": false, "eigenaar": null,
               "periode": null, "bron": "hij ervaren is" }""";
     private static final String NIET_ERVAREN = """
-            { "node": "Kenmerk", "kenmerk": "ervaren", "navigatie": null, "negatie": true, "eigenaar": null,
+            { "node": "Kenmerk", "kenmerk": "ervaren", "negatie": true, "eigenaar": null,
               "periode": null, "bron": "hij niet ervaren is" }""";
     private static final String GEDIPLOMEERD = """
-            { "node": "Kenmerk", "kenmerk": "gediplomeerd", "navigatie": null, "negatie": false, "eigenaar": null,
+            { "node": "Kenmerk", "kenmerk": "gediplomeerd", "negatie": false, "eigenaar": null,
               "periode": null, "bron": "hij gediplomeerd is" }""";
 
     private static String samen(String kwantor, String... delen) {
@@ -157,8 +155,8 @@ class VensterNestingWitnessTest {
     private static String som(String filter) {
         return "{ \"node\": \"Functie\", \"kind\": \"SOM\", \"argumenten\": [ { \"node\": \"AttribuutRef\","
                 + " \"attribuut\": \"dienstjaren\", \"objecttype\": \"Strandwacht\","
-                + " \"onderwerpBron\": \"de wachten van de Schouwploeg\", \"navigatieRol\": null, \"type\": " + NUM + ","
-                + " \"bron\": \"de dienstjaren van de wachten\", \"set\": true, \"navigatiePad\": [] } ],"
+                + " "
+                + " \"bron\": \"de dienstjaren van de wachten\", \"set\": true } ],"
                 + " \"elementObjecttype\": \"Strandwacht\", \"leegwaarde\": null, \"filter\": " + filter + ","
                 + " \"dimensieSelectie\": null, \"type\": " + NUM + ", \"bron\": \"de som van de dienstjaren\","
                 + " \"granulariteit\": null, \"bronRol\": " + WACHT + " }";

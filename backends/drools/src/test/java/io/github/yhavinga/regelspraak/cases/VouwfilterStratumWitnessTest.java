@@ -158,14 +158,7 @@ class VouwfilterStratumWitnessTest {
           "node": "AttribuutRef",
           "attribuut": "alarm",
           "objecttype": "Jutter",
-          "onderwerpBron": "Een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Jutter is alarm",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Jutter is alarm"
         },
         "waarde": {
           "node": "Literal",
@@ -196,7 +189,6 @@ class VouwfilterStratumWitnessTest {
                     "filter": {
                       "node": "Kenmerk",
                       "kenmerk": "gemerkt",
-                      "navigatie": null,
                       "negatie": true,
                       "eigenaar": null,
                       "periode": null,
@@ -215,7 +207,6 @@ class VouwfilterStratumWitnessTest {
                     "filter": {
                       "node": "Kenmerk",
                       "kenmerk": "gemerkt",
-                      "navigatie": null,
                       "negatie": true,
                       "eigenaar": null,
                       "periode": null,
@@ -270,14 +261,7 @@ class VouwfilterStratumWitnessTest {
           "node": "AttribuutRef",
           "attribuut": "gemerkt",
           "objecttype": "Vondst",
-          "onderwerpBron": "Een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vondst is gemerkt",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vondst is gemerkt"
         },
         "waarde": {
           "node": "Literal",
@@ -294,18 +278,7 @@ class VouwfilterStratumWitnessTest {
             "node": "AttribuutRef",
             "attribuut": "gewicht",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "het gewicht van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het gewicht van de Vondst"
           },
           "rechts": {
             "node": "Literal",
@@ -451,14 +424,7 @@ class VouwfilterStratumWitnessTest {
           "node": "AttribuutRef",
           "attribuut": "alarm",
           "objecttype": "Jutter",
-          "onderwerpBron": "Een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Jutter is alarm",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Jutter is alarm"
         },
         "waarde": {
           "node": "Literal",
@@ -479,15 +445,7 @@ class VouwfilterStratumWitnessTest {
                 "node": "AttribuutRef",
                 "attribuut": "aangemelde vondsten",
                 "objecttype": "Jutter",
-                "onderwerpBron": "de Jutter",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Onbekend",
-                  "reden": "niet opgelost"
-                },
-                "bron": "aangemelde vondsten van de Jutter",
-                "set": false,
-                "navigatiePad": []
+                "bron": "aangemelde vondsten van de Jutter"
               }
             ],
             "elementObjecttype": "Vondst",
@@ -495,7 +453,6 @@ class VouwfilterStratumWitnessTest {
             "filter": {
               "node": "Kenmerk",
               "kenmerk": "gemerkt",
-              "navigatie": null,
               "negatie": true,
               "eigenaar": null,
               "periode": null,
@@ -546,14 +503,7 @@ class VouwfilterStratumWitnessTest {
           "node": "AttribuutRef",
           "attribuut": "gemerkt",
           "objecttype": "Vondst",
-          "onderwerpBron": "Een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vondst is gemerkt",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vondst is gemerkt"
         },
         "waarde": {
           "node": "Literal",
@@ -570,18 +520,7 @@ class VouwfilterStratumWitnessTest {
             "node": "AttribuutRef",
             "attribuut": "gewicht",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "het gewicht van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het gewicht van de Vondst"
           },
           "rechts": {
             "node": "Literal",

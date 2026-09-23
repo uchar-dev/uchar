@@ -83,11 +83,11 @@ public final class EffectieveEenheid {
         this.lets = lets == null ? List.of() : List.copyOf(lets);
     }
 
-    /** The datatype every §4 restatement site must use in place of {@code e.type()}: the node's own annotation
-     *  with its unit replaced by the DERIVED one. Non-numeric types (and a node whose derivation lands on the
-     *  annotation anyway) pass through unchanged, so a verifier-clean document lowers byte-for-byte as before. */
+    /** The datatype every §4 restatement site must use: the node's datatype ({@link #typeVan}) with its unit
+     *  replaced by the DERIVED one. Non-numeric types (and a node whose derivation lands on the annotation anyway)
+     *  pass through unchanged, so a verifier-clean document lowers byte-for-byte as before. */
     public Datatype van(Expr e) {
-        Datatype t = e == null ? null : e.type();
+        Datatype t = typeVan(e);
         if (!(t instanceof Datatype.Numeriek) && !(t instanceof Datatype.Percentage)) return t;
         Eenheid afgeleid = eenheid(e, LEEG, 0);
         if (Objects.equals(afgeleid, t.eenheidOf())) return t;
@@ -103,11 +103,110 @@ public final class EffectieveEenheid {
         return t == null ? null : t.eenheidOf();
     }
 
+    // --- the datatype -----------------------------------------------------------------------------
+
+    /**
+     * IR-SPEC ch. 2.10 / RUNTIME-SEMANTICS ch. 2.10: the DATATYPE of an expression, the one reading of it both
+     * transpiler branches use. Since L2 of the v1 wire migration a reference carries no annotation, so its type
+     * is its declaration's: an attribute read and a dimension cell have the attribute's declared datatype, a
+     * parameter read the parameter's, a binder read the datatype of the value it is bound to (WF-064: the
+     * nearest enclosing Let). A rounding and a clamp compute theirs from their base, as their records do. Every
+     * other node carries its own annotation — a literal, a composite, a fold, a Let, a constant, a marker.
+     *
+     * <p>Where the document gives no type — a read whose name declares no attribute (the count source names a
+     * role), an unbound variable or binder, a marker that leaves its type out, a derived position written null —
+     * the answer is the model's {@link Datatype.Onbekend}, which every reader here already takes as "no claim".
+     * It is this backend's in-memory reading of an absent type, never a wire value.
+     */
+    public Datatype typeVan(Expr e) {
+        return switch (e) {
+            case null -> null;
+            case Expr.BinderRef b -> {
+                if (lezingTypen == null) bouwLezingTypen();
+                Datatype t = lezingTypen.get(b);
+                yield t != null ? t : ONBEKEND;
+            }
+            case Expr.Afgerond a -> afgerond(typeVan(a.basis()), a.decimalen());
+            case Expr.Begrensd b -> typeVan(b.basis());
+            default -> typeZonderBinder(e);
+        };
+    }
+
+    /** {@link #typeVan} at a position no Let encloses (a day-kind definition): a binder read there has no
+     *  binding, and so no type. */
+    public static Datatype typeZonderBinder(Expr e) {
+        Datatype t = switch (e) {
+            case null -> null;
+            case Expr.AttribuutRef a -> a.objecttype() == null ? null : a.objecttype().attribuut(a.attribuut());
+            case Expr.DimensieCel c -> typeZonderBinder(c.attribuut());
+            case Expr.ParameterRef p -> p.parameter() == null ? null : p.parameter().datatype();
+            case Expr.BinderRef ignored -> null;
+            case Expr.VariabeleRef ignored -> null;
+            case Expr.Afgerond a -> afgerond(typeZonderBinder(a.basis()), a.decimalen());
+            case Expr.Begrensd b -> typeZonderBinder(b.basis());
+            case Expr.InstanceSetUnion ignored -> null;   // it denotes instances and carries no datatype
+            default -> e.type();
+        };
+        return t != null || e instanceof Expr.InstanceSetUnion || e == null ? t : ONBEKEND;
+    }
+
+    private static final Datatype ONBEKEND = new Datatype.Onbekend("geen type op de wire");
+
+    /** {@code Expr.Afgerond.type()}, over the base's datatype as {@link #typeVan} reads it. */
+    private static Datatype afgerond(Datatype b, int decimalen) {
+        if (b instanceof Datatype.Numeriek n) return new Datatype.Numeriek(decimalen == 0, decimalen, n.teken(), n.eenheid());
+        if (b instanceof Datatype.Percentage p) return new Datatype.Percentage(decimalen == 0, decimalen);
+        return b;
+    }
+
+    /** The datatype of every binder READ, by identity, in the scope WF-064 gives it — built like
+     *  {@link #lezingEenheden}. Null until first use. */
+    private Map<Object, Datatype> lezingTypen;
+
+    private void bouwLezingTypen() {
+        lezingTypen = new IdentityHashMap<>();
+        for (Expr l : lets) noteerType(l, Map.of(), 0);
+    }
+
+    private void noteerType(Expr e, Map<String, Datatype> omgeving, int diepte) {
+        if (e == null || diepte > MAX_DIEPTE) return;
+        if (e instanceof Expr.BinderRef lz) {
+            String k = sleutel(lz.naam());
+            if (omgeving.containsKey(k)) lezingTypen.put(e, omgeving.get(k));
+            return;
+        }
+        if (e instanceof Expr.Let b) {
+            noteerType(b.value(), omgeving, diepte + 1);
+            // WF-076: the value is typed in the ENCLOSING scope, where the binder is not yet visible
+            Map<String, Datatype> binnen = new HashMap<>(omgeving);
+            binnen.put(sleutel(b.binder()), typeIn(b.value(), omgeving));
+            noteerType(b.body(), binnen, diepte + 1);
+            return;
+        }
+        if (e instanceof Expr.IfThenElse k) {
+            for (Expr x : conditieOperanden(k.conditie())) noteerType(x, omgeving, diepte + 1);
+            noteerType(k.dan(), omgeving, diepte + 1);
+            noteerType(k.anders(), omgeving, diepte + 1);
+            return;
+        }
+        for (Expr kind : kinderen(e)) noteerType(kind, omgeving, diepte + 1);
+    }
+
+    /** A bound value's datatype in scope {@code omgeving}: a binder read there takes its binding's. */
+    private Datatype typeIn(Expr e, Map<String, Datatype> omgeving) {
+        return switch (e) {
+            case Expr.BinderRef b -> omgeving.containsKey(sleutel(b.naam())) ? omgeving.get(sleutel(b.naam())) : ONBEKEND;
+            case Expr.Afgerond a -> afgerond(typeIn(a.basis(), omgeving), a.decimalen());
+            case Expr.Begrensd b -> typeIn(b.basis(), omgeving);
+            default -> typeZonderBinder(e);
+        };
+    }
+
     // --- the derivation -------------------------------------------------------------------------
 
     private Eenheid eenheid(Expr e, Map<String, Eenheid> omgeving, int diepte) {
         if (e == null) return null;
-        Datatype t = e.type();
+        Datatype t = typeVan(e);
         Eenheid annotatie = t == null ? null : t.eenheidOf();
         if (diepte > MAX_DIEPTE) return annotatie;
 

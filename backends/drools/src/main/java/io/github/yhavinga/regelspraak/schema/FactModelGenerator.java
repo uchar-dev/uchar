@@ -383,19 +383,18 @@ public final class FactModelGenerator {
     }
 
     /** One §9.4 creation hop as the bean model stores it: the type the hop reaches, the reference field, and
-     *  whether that field sits on the PARENT (the type the hop starts from, joined {@code this == $prev.veld}) or
-     *  on the reached CHILD (joined {@code veld == $prev}). */
-    public record Creatiehop(Objecttype type, String veld, boolean viaOuderVeld) {}
+     *  whether that field sits on the PARENT (the type the hop starts from, joined {@code this == $prev.<field>}) or
+     *  on the reached CHILD (joined {@code <field> == $prev}). */
+    public record Creatiehop(Objecttype bereikt, String beanveld, boolean opOuder) {}
 
     /** The bean fields a §13.4.7 creation executes on, derived from its symbolic form: the field it WRITES on the
      *  doel, the field the doel JOINS on, and the hops in between. */
-    public record Creatievelden(String zetVeld, String joinVeld, List<Creatiehop> hops) {}
+    public record Creatievelden(String schrijfveld, String koppelveld, List<Creatiehop> hops) {}
 
     /**
      * THE bean fields of a fact creation, derived from its role bindings (IR-SPEC ch. 3.4: "derivable from the role
      * bindings by the backend's own role→field mapping") — the one derivation both transpiler branches decide a
-     * creation by (V1-WIREMIGRATIE P2). Until then both read the wire's {@code zetVeld}/{@code joinVeld}/
-     * {@code tussenstappen[].veld/viaOuderVeld/type}, the v0 fields migration step B7 removes.
+     * creation by. Since L2 of the v1 wire migration the bindings are all the wire carries of a creation.
      *
      * <p>The mapping is {@link #leden}'s own: a bean carries a reference field named after the role the OTHER end
      * plays. The write lands on the doel, pointing at the anker, so it is {@code ankerRol}. The join and each hop
@@ -407,10 +406,7 @@ public final class FactModelGenerator {
      * no field at all and the child side is handed back, so the caller's {@link #heeftReferentieVeld} gate refuses
      * it with its usual reason. The join is read on the doel only, as before.
      *
-     * <p>Null when the symbolic form is absent or does not resolve — a bean-field-only record, which WF-028
-     * rejects and ref faults on, or a binding naming no declared role; the caller refuses the creation as
-     * unresolved. No cross-check against the wire's bean fields: ref decides all three positions on the bindings
-     * alone, and a check here would give fields that B7 deletes a veto over what ref plays.
+     * <p>Null when a binding names no declared role; the caller refuses the creation as unresolved.
      */
     public static Creatievelden creatievelden(RegelSpraakModel model,
             io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie fc) {
@@ -432,41 +428,57 @@ public final class FactModelGenerator {
 
     /**
      * THE scope field of a parent-scoped uniqueness (ch. 5.9), derived from {@code scopeRol} — the role the scope
-     * parent plays, hence the reference field on the subject (V1-WIREMIGRATIE P2; migration step B8 removes the
-     * wire's {@code scopeVeld}). Null when the uniqueness is unscoped, or when a binding names no declared role
-     * (the caller refuses). A BINDINGLESS scoped uniqueness, which WF-054 admits and ref reads by the written name,
-     * keeps the written {@code scopeVeld}.
+     * parent plays, hence the reference field on the subject. IR-SPEC ch. 3.6: the binding IS the scoping, so null
+     * means an unscoped uniqueness, or a binding that names no declared role (the caller refuses).
      */
     public static String scopeVeld(RegelSpraakModel model, io.github.yhavinga.regelspraak.ir.ResolvedUniciteit u) {
-        if (u.scopeRol() == null) return u.scopeVeld();
+        if (u.scopeRol() == null) return null;
         Rol[] paar = gebondenRolpaar(model, u.scopeRol());
         return paar == null ? null : paar[0].naam();
     }
 
-    /** What {@link #verdelingsjoin} decided: the join ROLE, or the REASON there is none. Both null means the
-     *  bindingless type-pair derivation found no unique relation, and the caller's own "onopgelost" refusal
-     *  stands as before. */
+    /** Where the link a role check asks about is stored: the reference {@code beanveld}, whether it sits on the SUBJECT
+     *  ({@code opSubject}: the subject's field names the other end) or on the other end (its field names the
+     *  subject), and the other role's declared filler {@code ander}; or the {@code weigering} when no field holds
+     *  it. */
+    public record Lidmaatschapsopslag(String beanveld, boolean opSubject, Objecttype ander, String weigering) {}
+
+    /**
+     * IR-SPEC ch. 4.5 {@code RoleMembership}: "a link of the fact type exists in which the subject plays the role".
+     * The wire names the fact type and the role; where the link is STORED is this backend's question, answered by
+     * the member derivation {@link #leden} renders (§13.3.9): a to-one OTHER role is a reference field on the
+     * subject, named after that role, and the check is its null-test; a to-many other role puts the storage on the
+     * other end, whose field — named after the subject's role — must point back at the subject, which is an
+     * exists-join; with both roles to-many no bean carries the link at all.
+     */
+    public static Lidmaatschapsopslag lidmaatschapsopslag(RegelSpraakModel model, RegelSpraakModel.RolBindingRef rb) {
+        Rol[] paar = gebondenRolpaar(model, rb);
+        if (paar == null)
+            return new Lidmaatschapsopslag(null, false, null, "rollidmaatschap onopgelost: de binding ("
+                    + (rb == null ? "geen" : rb.feittype() + ", " + rb.rol()) + ") noemt geen gedeclareerde rol");
+        Objecttype ander = model.objecttypeOpNaam(paar[1].objecttypeNaam());
+        if (!paar[1].meervoudig()) return new Lidmaatschapsopslag(paar[1].naam(), true, ander, null);
+        if (!paar[0].meervoudig()) return new Lidmaatschapsopslag(paar[0].naam(), false, ander, null);
+        return new Lidmaatschapsopslag(null, false, ander, "rollidmaatschap (" + rb.feittype() + ", " + rb.rol()
+                + "): beide rollen zijn meervoudig, dus geen bean draagt de link (§13.3.9 opslagrichting)");
+    }
+
+    /** What {@link #verdelingsjoin} decided: the join ROLE, or the REASON there is none. Both null means there is
+     *  no binding to read, and the caller's own "onopgelost" refusal stands. */
     public record Verdelingsjoin(String rol, String weigering) {}
 
     /**
-     * THE recipient join of a §9.7 verdeling — the one derivation both transpiler branches decide it by
-     * (V1-WIREMIGRATIE P3). The wire's {@code verbindendeRol} binds the role the RECIPIENT plays (IR-SPEC
-     * ch. 3.2), so the join field on the recipient is its sibling, the role the source plays; for a wederkerig
-     * fact type that is the bound role itself. Until P3 both branches ignored the binding and asked the type
-     * pair ({@code verbindendeRol(doel, bron)}), which answers null on a REPEATED pair — two fact types over
-     * the same two types — and so refused a verdeling ref plays ({@code anchor/jutterswet-bergingstoezicht}).
-     *
-     * <p>A bindingless verdeling, which WF-048 admits while the pair is unique and ref derives the same way,
-     * still asks the pair; migration step B12 makes the binding required and retires that arm. A binding
-     * that names no declared role is refused by name, where ref faults. No cross-check against the pair:
-     * ref lets the binding decide, WF-047 is the fence on its fillers, and on a repeated pair the pair has no
-     * answer to check against.
+     * THE recipient join of a §9.7 verdeling — the one derivation both transpiler branches decide it by. The wire's
+     * {@code verbindendeRol} binds the role the RECIPIENT plays (IR-SPEC ch. 3.2), so the join field on the
+     * recipient is its sibling, the role the source plays; for a wederkerig fact type that is the bound role
+     * itself. The binding is required on the wire, so no pair is asked: on a REPEATED pair — two fact types over
+     * the same two types — the pair has no answer at all ({@code anchor/jutterswet-bergingstoezicht}). A binding
+     * that names no declared role is refused by name, where ref faults; WF-047 is the fence on its fillers.
      */
     public static Verdelingsjoin verdelingsjoin(RegelSpraakModel model, io.github.yhavinga.regelspraak.ir.ResolvedVerdeling v,
             RegelSpraakModel.RolBindingRef rb) {
         Objecttype bron = v.bronType(), doel = v.doelType();
-        if (bron == null || doel == null) return new Verdelingsjoin(null, null);
-        if (rb == null) return new Verdelingsjoin(model.verbindendeRol(doel, bron), null);
+        if (bron == null || doel == null || rb == null) return new Verdelingsjoin(null, null);
         Rol[] paar = gebondenRolpaar(model, rb);
         if (paar == null)
             return new Verdelingsjoin(null, "verbindende rol onopgelost: de binding (" + rb.feittype() + ", "

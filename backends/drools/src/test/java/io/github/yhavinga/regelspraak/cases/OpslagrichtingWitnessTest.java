@@ -250,28 +250,18 @@ class OpslagrichtingWitnessTest {
     //     ref / clingo : S1.premie = 0        (20% van leeg coalesces, RUNTIME-SEMANTICS ch. 1.2)
     //     Drools       : FAIL "attribuut premie: verwacht 0, werkelijk leeg"     (value-divergence, no reason)
     // A value-divergence is exactly what gate 12's played channel is meant to catch — but a golden of this shape
-    // with the displacing attribute LEFT EMPTY plays green, so the corpus can carry the broken model unseen. Both
-    // hop readers (single-hop navReader, chain navKetenReader) are witnessed apart: they differ only in whether
-    // the ref carries a navigatiePad, and each lowered the same wrong read on its own.
+    // with the displacing attribute LEFT EMPTY plays green, so the corpus can carry the broken model unseen.
+    // Since L2 of the v1 wire migration a one-hop read is one binding, which navReader reads; the chain reader
+    // takes a read of two bindings or more.
 
     @Test void de_genavigeerde_waardelezing_weigert_het_verdrongen_veld() throws Exception {
-        // navKetenReader — the ref as the frontend emits it: navigatiePad ["werf"].
+        // navReader — the read as the wire carries it: one binding, ligplaats/werf.
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(naamdelendeSchuit(true), JSON.readTree(schuitZonderRol("premie", "0"))));
+                () -> CaseRunner.speelCase(naamdelendeSchuit(), JSON.readTree(schuitZonderRol("premie", "0"))));
         assertTrue(e.getMessage().contains("premie van een schuit"), e.getMessage());
         assertTrue(e.getMessage().contains("genavigeerde lezing"), e.getMessage());
         assertTrue(e.getMessage().contains("de rol 'werf' op Schuit deelt haar naam met een gedeclareerd lid"), e.getMessage());
         assertTrue(e.getMessage().contains("§13.3.9 opslagrichting"), e.getMessage());
-    }
-
-    @Test void de_enkelvoudige_hoplezing_weigert_hetzelfde_veld() throws Exception {
-        // navReader's GENAVIGEERD case — the SAME model and case with the pad cleared and the hop named by the
-        // role (the shape synth3-kamerheffing carries). ref is indifferent to which of the two the wire uses (it
-        // resolves the hop either way and answers 0), so the two readers must be too.
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(naamdelendeSchuit(false), JSON.readTree(schuitZonderRol("premie", "0"))));
-        assertTrue(e.getMessage().contains("genavigeerde lezing"), e.getMessage());
-        assertTrue(e.getMessage().contains("de rol 'werf' op Schuit deelt haar naam met een gedeclareerd lid"), e.getMessage());
     }
 
     @Test void de_genavigeerde_vergelijking_weigert_hetzelfde_veld() throws Exception {
@@ -412,19 +402,12 @@ class OpslagrichtingWitnessTest {
 
     /** The navigatiepremie golden with a Numeriek attribute that SHARES the to-one role name `werf`, so leden()'s
      *  name-dedup displaces Schuit's reference field, reduced to its `premie` rule (`20% van het tarief van de
-     *  werf van de Schuit`). {@code ketenPad} keeps the ref as the frontend emits it — navigatiePad ["werf"],
-     *  lowered by navKetenReader; without it the pad is cleared and the hop is named by the role, which is
-     *  navReader's GENAVIGEERD case. Verifier-clean and ref-clean in BOTH shapes; the corpus ir.json is untouched. */
-    private static Path naamdelendeSchuit(boolean ketenPad) throws Exception {
+     *  werf van de Schuit`, one binding). Verifier-clean and ref-clean; the corpus ir.json is untouched. */
+    private static Path naamdelendeSchuit() throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(NAVIGATIEPREMIE)));
         IrPad.addAttribute(IrPad.objectType(ir, "Schuit"), "werf", numeriek());
         houdRegel(ir, "premie van een schuit");
-        if (!ketenPad) {
-            ObjectNode nav = (ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0).get("waarde").get("rechts");
-            nav.putArray("navigatiePad");
-            nav.put("navigatieRol", "werf");
-        }
-        return tijdelijk("schuit-naamdeling-" + (ketenPad ? "keten" : "enkelvoudig"), ir);
+        return tijdelijk("schuit-naamdeling", ir);
     }
 
     /** The same collision on the CONDITION side: the `toeslag` rule with its voorwaarde operand replaced by the
@@ -436,44 +419,36 @@ class OpslagrichtingWitnessTest {
         houdRegel(ir, "toeslag van een schuit");
         ObjectNode regel = (ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0);
         ObjectNode nav = JSON.createObjectNode();
-        nav.put("node", "AttribuutRef").put("attribuut", "tarief").put("objecttype", "Werf")
-           .put("onderwerpBron", "de werf").put("navigatieRol", "werf");
-        nav.set("type", numeriek());
-        nav.put("bron", "het tarief van de werf van de Schuit").put("set", false);
-        nav.putArray("navigatiePad");
+        nav.put("node", "AttribuutRef").put("attribuut", "tarief").put("objecttype", "Werf");
+        nav.put("bron", "het tarief van de werf van de Schuit");
         nav.putArray("navigatieBindingen").addObject()
            .put("node", "RolBinding").put("feittype", "ligplaats").put("rol", "werf");
         ((ObjectNode) regel.get("voorwaarde")).set("links", nav);
         ((ObjectNode) regel.get("voorwaarde")).put("bron", "het tarief van de werf van de Schuit groter is dan 5");
         ObjectNode eigen = JSON.createObjectNode();
-        eigen.put("node", "AttribuutRef").put("attribuut", "lengte").put("objecttype", "Schuit")
-             .put("onderwerpBron", "de Schuit").putNull("navigatieRol");
-        eigen.set("type", numeriek());
-        eigen.put("bron", "de lengte van de Schuit").put("set", false);
-        eigen.putArray("navigatiePad");
+        eigen.put("node", "AttribuutRef").put("attribuut", "lengte").put("objecttype", "Schuit");
+        eigen.put("bron", "de lengte van de Schuit");
         regel.set("waarde", eigen);
         regel.put("soort", "GELIJKSTELLING");
         return tijdelijk("schuit-naamdeling-vergelijking", ir);
     }
 
-    /** The same collision under a §8.1.7 NEAR-SIDE ROLCHECK: the `toeslag` rule keeps its own-attribute value and
-     *  its voorwaarde becomes "de Schuit een schuit is", whose lowering null-tests Schuit's `werf` reference —
-     *  the field the attribute displaced. Verifier-clean and ref-clean (ref: toeslag stays leeg). */
+    /** The same collision under a §8.1.7 ROLE CHECK stored on the subject: the `toeslag` rule keeps its
+     *  own-attribute value and its voorwaarde becomes "de Schuit een schuit is" (the Schuit plays `schuit` in
+     *  ligplaats), whose lowering null-tests Schuit's `werf` reference — the field the attribute displaced.
+     *  Verifier-clean and ref-clean (ref: toeslag stays leeg). */
     private static Path naamdelendeRolcheck() throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(NAVIGATIEPREMIE)));
         IrPad.addAttribute(IrPad.objectType(ir, "Schuit"), "werf", numeriek());
         houdRegel(ir, "toeslag van een schuit");
         ObjectNode regel = (ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0);
         ObjectNode check = JSON.createObjectNode();
-        check.put("node", "Rollidmaatschap").put("rol", "schuit").put("anderTeFiller", "Werf")
-             .put("negatie", false).put("bron", "de Schuit een schuit is");
+        check.put("node", "RoleMembership").put("factType", "ligplaats").put("role", "schuit")
+             .put("negated", false).put("bron", "de Schuit een schuit is");
         regel.set("voorwaarde", check);
         ObjectNode eigen = JSON.createObjectNode();
-        eigen.put("node", "AttribuutRef").put("attribuut", "lengte").put("objecttype", "Schuit")
-             .put("onderwerpBron", "de Schuit").putNull("navigatieRol");
-        eigen.set("type", numeriek());
-        eigen.put("bron", "de lengte van de Schuit").put("set", false);
-        eigen.putArray("navigatiePad");
+        eigen.put("node", "AttribuutRef").put("attribuut", "lengte").put("objecttype", "Schuit");
+        eigen.put("bron", "de lengte van de Schuit");
         regel.set("waarde", eigen);
         regel.put("soort", "GELIJKSTELLING");
         return tijdelijk("schuit-naamdeling-rolcheck", ir);

@@ -15,28 +15,22 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The IR-SPEC ch. 4.1a navigation-binding witness (V1-WIREMIGRATIE P1): both Drools branches decide a BOUND
- * navigation by the wire's {@code navigatieBindingen} / {@code navigatieBinding}, not by re-deriving it from the
- * written {@code navigatieRol} / {@code navigatiePad} — the v0 fields migration step B11 removes.
+ * The IR-SPEC ch. 4.1a navigation-binding witness: both Drools branches decide a navigation by the wire's
+ * {@code navigatieBindingen} / {@code navigatieBinding} and by nothing else — since L2 of the v1 wire migration a
+ * read carries no written step beside its binding, and a read without bindings is the subject's own.
  *
- * <p>The written fields and the bindings agree on every corpus document the frontend emits, so a corpus sweep
- * cannot tell which one a branch reads. The rows below can: each twists ONE binding on an in-memory variant of
- * {@code jutterswet-dubbelverbinding}, where four feittypen relate Schuit and Haven, so the twisted binding still
- * resolves — to the sister relation — and the reading is observable in the values. RED FIRST, measured
- * 2026-09-22 on the jar built from main 10b1d74a (before the port): every twist below played PLAYED 4 in both
- * branches (the twist ignored), where ref answers the twisted walk, e.g. on the chain twist
- * {@code MISMATCH: S1.vlagprijs = leeg, expected 40}; and the by-pair row was refused by both branches
- * ({@code regel (waarde buiten scope)} / {@code TODO navigatie}) where ref plays it.
- *
- * <p>The twisted documents with a written step fail the verifier (WF-053: the written step must denote the
- * bound role); that is the point of the probe, not a defect of it. The by-pair twist carries no written step
- * and is verifier-clean: there the wire is the only thing that names the relation.
+ * <p>The rows twist ONE binding on an in-memory variant of {@code jutterswet-dubbelverbinding}, where four feittypen
+ * relate Schuit and Haven, so the twisted binding still resolves — to the sister relation — and the reading is
+ * observable in the values: a wrong binding gives a loud wrong answer or a refusal, never the old answer. The
+ * written step the wire carried before L2 has nothing left to twist: written beside a binding it is an unknown
+ * field, and the loader refuses the document by name at its pointer.
  */
 class NavigatiebindingWitnessTest {
 
@@ -48,32 +42,29 @@ class NavigatiebindingWitnessTest {
 
     // ---------------- the value read, in each of its three written shapes ----------------
 
-    @Test void de_keten_volgt_de_wire_binding() throws Exception {
-        // the golden's own shape: a one-step navigatiePad
+    @Test void de_lezing_volgt_de_wire_binding() throws Exception {
+        // four relations between the pair: no derivation of the pair could name one, so the binding is the route
         ObjectNode ir = lees();
+        BeideTakken.groen(tijdelijk("nav", ir), casus(1), "the bound hop plays");
         waarde(ir).set("navigatieBindingen", bindingen("winterberging", "winterhaven"));
-        BeideTakken.rood(tijdelijk("nav-keten-twist", ir), casus(1), "verwacht leeg, werkelijk 40",
-                "the chain must walk the bound winterhaven, not the written vlaghaven");
+        BeideTakken.rood(tijdelijk("nav-twist", ir), casus(1), "verwacht leeg, werkelijk 40",
+                "the hop must walk the bound winterhaven");
     }
 
-    @Test void de_enkele_stap_op_naam_volgt_de_wire_binding() throws Exception {
-        ObjectNode ir = enkeleStap();
-        BeideTakken.groen(tijdelijk("nav-rol", ir), casus(1), "untwisted single hop plays");
-        waarde(ir).set("navigatieBindingen", bindingen("winterberging", "winterhaven"));
-        BeideTakken.rood(tijdelijk("nav-rol-twist", ir), casus(1), "verwacht leeg, werkelijk 40",
-                "the single hop must read the bound role, not the written name");
-    }
-
-    @Test void de_stap_op_paar_leest_alleen_de_wire() throws Exception {
-        // No written step, four relations between the pair: the by-pair derivation is ambiguous by construction,
-        // so before the port both branches refused this verifier-clean document. The binding is the only route.
-        ObjectNode ir = lees();
-        waarde(ir).putNull("navigatieRol");
-        waarde(ir).putArray("navigatiePad");
-        BeideTakken.groen(tijdelijk("nav-paar", ir), casus(1), "the bound by-pair hop plays");
-        waarde(ir).set("navigatieBindingen", bindingen("winterberging", "winterhaven"));
-        BeideTakken.rood(tijdelijk("nav-paar-twist", ir), casus(1), "verwacht leeg, werkelijk 40",
-                "the by-pair hop must follow the binding");
+    @Test void een_geschreven_stap_naast_de_binding_wordt_bij_naam_geweigerd() throws Exception {
+        String plek = "/rules/resolvedRegels/" + VLAGPRIJS + "/waarde/";
+        for (String veld : new String[] { "navigatieRol", "navigatiePad", "onderwerpBron", "set", "type" }) {
+            ObjectNode ir = lees();
+            switch (veld) {
+                case "navigatiePad" -> waarde(ir).putArray(veld).add("vlaghaven");
+                case "set" -> waarde(ir).put(veld, false);
+                case "type" -> waarde(ir).set(veld, IrPad.attribute(IrPad.objectType(ir, "Haven"), "kadegeld").get("datatype"));
+                default -> waarde(ir).put(veld, "vlaghaven");
+            }
+            IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir), veld);
+            assertEquals(plek + veld, e.plek(), e.getMessage());
+            assertTrue(e.getMessage().contains("unknown field on AttribuutRef"), e.getMessage());
+        }
     }
 
     // ---------------- the navigated characteristic check ----------------
@@ -81,23 +72,27 @@ class NavigatiebindingWitnessTest {
     @Test void de_genavigeerde_kenmerkcheck_volgt_de_wire_binding() throws Exception {
         ObjectNode ir = lees();
         ObjectNode k = regel(ir).putObject("voorwaarde");
-        k.put("node", "Kenmerk").put("kenmerk", "veilig").put("navigatie", "vlaghaven").put("negatie", false)
+        k.put("node", "Kenmerk").put("kenmerk", "veilig").put("negatie", false)
          .putNull("eigenaar").putNull("periode").put("bron", "zijn vlaghaven veilig is");
         k.set("navigatieBinding", binding("vlagvoering", "vlaghaven"));
         BeideTakken.groen(tijdelijk("nav-kenmerk", ir), casus(2), "untwisted navigated check plays");
         k.set("navigatieBinding", binding("winterberging", "winterhaven"));
         BeideTakken.rood(tijdelijk("nav-kenmerk-twist", ir), casus(2), "verwacht 40, werkelijk leeg",
                 "the check must read veilig on the bound winterhaven");
+        k.put("navigatie", "vlaghaven");
+        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
+        assertEquals("/rules/resolvedRegels/" + VLAGPRIJS + "/voorwaarde/navigatie", e.plek(), e.getMessage());
+        assertTrue(e.getMessage().contains("unknown field on Kenmerk"), e.getMessage());
     }
 
     // ---------------- no silent fallback ----------------
 
-    @Test void een_binding_die_niet_past_valt_niet_terug_op_de_geschreven_naam() throws Exception {
-        // thuisligging.ligger is reached FROM a Haven, not from the Schuit this rule reads on. The written name
-        // vlaghaven would resolve; a branch that fell back to it would play. Both must refuse instead.
+    @Test void een_binding_die_niet_past_valt_niet_terug_op_een_afleiding() throws Exception {
+        // thuisligging.ligger is reached FROM a Haven, not from the Schuit this rule reads on. A branch that fell
+        // back to a derivation of its own — the pair, the rule's text — would play. Both must refuse instead.
         // Each branch must refuse for the NAVIGATION, in its own words for it — the rule name alone would let any
         // refusal of this rule pass.
-        ObjectNode ir = enkeleStap();
+        ObjectNode ir = lees();
         waarde(ir).set("navigatieBindingen", bindingen("thuisligging", "ligger"));
         Path p = tijdelijk("nav-past-niet", ir);
         JsonNode c = casus(1);
@@ -116,13 +111,11 @@ class NavigatiebindingWitnessTest {
         IrPad.addAttribute(IrPad.objectType(ir, "Schuit"), "kadegeld",
                 IrPad.attribute(IrPad.objectType(ir, "Haven"), "kadegeld").get("datatype"));
         ObjectNode links = waarde(ir).deepCopy();
-        links.putNull("navigatieRol");
-        links.putArray("navigatiePad");
         ObjectNode v = regel(ir).putObject("voorwaarde");
         v.put("node", "Vergelijking").put("op", "GROTER");
         v.set("links", links);
         ObjectNode dertig = v.putObject("rechts").put("node", "Literal").put("waarde", "30");
-        dertig.set("type", links.get("type"));
+        dertig.set("type", IrPad.attribute(IrPad.objectType(ir, "Haven"), "kadegeld").get("datatype"));
         dertig.put("bron", "30");
         v.putNull("periode").put("bron", "het kadegeld van de vlaghaven van de Schuit groter is dan 30");
         BeideTakken.groen(tijdelijk("nav-paar-voorwaarde", ir), casus(1), "the bound read in the guard walks to the Haven");
@@ -147,46 +140,31 @@ class NavigatiebindingWitnessTest {
     }
 
     @Test void een_lege_bindingenlijst_wordt_bij_naam_geweigerd() throws Exception {
+        // an empty list would read as the subject's own attribute, so it is no document
         ObjectNode ir = lees();
         waarde(ir).putArray("navigatieBindingen");
-        IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class, () -> IrLoader.loadAll(ir));
-        assertTrue(r.form().equals("AttribuutRef.navigatieBindingen"), r.getMessage());
-    }
-
-    @Test void een_binding_op_een_niet_navigerende_kenmerkcheck_wordt_geweigerd() throws Exception {
-        ObjectNode ir = lees();
-        ObjectNode k = (ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(3).get("voorwaarde");   // "de Schuit gekeurd is"
-        k.set("navigatieBinding", binding("vlagvoering", "vlaghaven"));
-        IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class, () -> IrLoader.loadAll(ir));
-        assertTrue(r.form().equals("Kenmerk.navigatieBinding"), r.getMessage());
+        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
+        assertEquals("/rules/resolvedRegels/" + VLAGPRIJS + "/waarde/navigatieBindingen", e.plek(), e.getMessage());
     }
 
     @Test void een_misvormde_binding_wordt_bij_het_laden_benoemd() throws Exception {
-        // the verifier and ref give LOAD ERROR naming the field; before this row the Drools loader read the hop
-        // leniently and the document surfaced only as a generic unresolved-navigation skip
+        // the verifier and ref give LOAD ERROR naming the field, and so does this loader, at the binding's pointer
         ObjectNode ir = lees();
         ((ObjectNode) waarde(ir).get("navigatieBindingen").get(0)).remove("rol");
-        IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class, () -> IrLoader.loadAll(ir));
-        assertTrue(r.getMessage().contains("missing required field 'rol'"), r.getMessage());
+        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
+        assertEquals("/rules/resolvedRegels/" + VLAGPRIJS + "/waarde/navigatieBindingen/0", e.plek(), e.getMessage());
+        assertTrue(e.getMessage().contains("missing field 'rol'"), e.getMessage());
 
         ObjectNode ir2 = lees();
         ((ObjectNode) IrPad.rulesLijst(ir2, "resolvedRegels").get(3).get("voorwaarde")).putNull("navigatieBinding");
-        IrLoader.Refusal r2 = assertThrows(IrLoader.Refusal.class, () -> IrLoader.loadAll(ir2));
-        assertTrue(r2.getMessage().contains("malformed"), "null is malformed before it is misplaced: " + r2.getMessage());
+        IrLoader.Documentfout e2 = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir2));
+        assertEquals("/rules/resolvedRegels/3/voorwaarde/navigatieBinding", e2.plek(), e2.getMessage());
     }
 
     // ---------------- fixtures ----------------
 
     private static ObjectNode lees() throws Exception {
         return (ObjectNode) JSON.readTree(Files.readString(GOLDEN.resolve("ir.json")));
-    }
-
-    /** The vlagprijs read in the single-hop by-name shape: written role, no chain. */
-    private static ObjectNode enkeleStap() throws Exception {
-        ObjectNode ir = lees();
-        waarde(ir).put("navigatieRol", "vlaghaven");
-        waarde(ir).putArray("navigatiePad");
-        return ir;
     }
 
     private static ObjectNode regel(ObjectNode ir) {

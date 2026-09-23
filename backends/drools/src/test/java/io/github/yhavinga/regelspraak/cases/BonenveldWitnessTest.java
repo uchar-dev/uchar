@@ -15,29 +15,21 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The bean-field witness (V1-WIREMIGRATIE P2): both Drools branches execute a §13.4.7 fact creation and a
- * parent-scoped uniqueness on the fields DERIVED from the role bindings ({@code feittype}/{@code ankerRol},
- * {@code joinRol}, the hops' {@code rolBinding}, {@code scopeRol}), never on the wire's bean fields
- * ({@code zetVeld}, {@code joinVeld}, {@code tussenstappen[].veld/viaOuderVeld/type}, {@code scopeVeld}), which
- * migration steps B7 and B8 remove.
+ * The creation and scope bindings (IR-SPEC ch. 3.4, 3.6): both Drools branches execute a §13.4.7 fact creation
+ * and a parent-scoped uniqueness on the fields DERIVED from the role bindings ({@code feittype}/{@code ankerRol},
+ * {@code joinRol}, the hops' {@code rolBinding}, {@code scopeRol}) — since L2 of the v1 wire migration the only
+ * thing the wire carries of either construct.
  *
- * <p>Bean field and binding agree on every golden a branch plays, so the corpus cannot tell which one decides.
- * Each position gets two rows here. The first twists the BEAN field to another field the bean really carries and
- * demands the pinned answer: the binding still decides. The second twists the BINDING and demands the answer the
- * twisted binding gives, the one ref gives on the same document. RED FIRST, measured 2026-09-22 on the source of
- * main 58ae7a4c (before the port), in both branches: every bean-twist row followed the twisted field (a wrong
- * value, or for the hop's side and type a refusal on a field the bean does not carry), every binding-twist row
- * played the untwisted answer, the bean-field-free document was refused as unresolved, and the bean-only
- * creation and the unresolvable scope binding played.
- *
- * <p>The bean-twisted documents fail the verifier (WF-034 (m), WF-054: the bean field must name the bound
- * relation's role), except the hop-side row: no rule crosses {@code viaOuderVeld}, so that twist is
- * verifier-clean, ref plays it, and before the port both branches refused it. The added fact types in the hop and scope fixtures relate
- * the same object types a second time, so a twisted field or binding still resolves and the reading shows in
- * the values instead of in a refusal.
+ * <p>Each position gets two rows. The first puts a storage field back beside the binding, the shape the wire had
+ * before L2: there is nothing left to twist, so it is an unknown field, and the loader refuses the document by
+ * name at its pointer. The second twists the BINDING and demands the answer the twisted binding gives, the one ref
+ * gives on the same document — a wrong binding gives a loud wrong answer or a refusal, never the old answer. The
+ * added fact types in the hop and scope fixtures relate the same object types a second time, so a twisted binding
+ * still resolves and the reading shows in the values instead of in a refusal.
  */
 class BonenveldWitnessTest {
 
@@ -49,11 +41,10 @@ class BonenveldWitnessTest {
 
     // ---------------- zetVeld: the field the creation writes ----------------
 
-    @Test void zetveld_twist_op_de_boon_verandert_niets() throws Exception {
-        // winterberging writing keurhaven would empty wintertal (H1 2 -> 0)
+    @Test void een_schrijfveld_naast_de_binding_wordt_bij_naam_geweigerd() throws Exception {
         ObjectNode ir = lees(DUBBEL);
         creatie(ir, 0, "winterberging").put("zetVeld", "keurhaven");
-        BeideTakken.groen(tijdelijk("zet-boon", ir), casus(DUBBEL, "case1"), "the write follows ankerRol, not zetVeld");
+        onbekendVeld(ir, "/rules/feitCreaties/0/zetVeld", "ResolvedFeitCreatie");
     }
 
     @Test void zetveld_volgt_de_gemaakte_rol() throws Exception {
@@ -66,11 +57,10 @@ class BonenveldWitnessTest {
 
     // ---------------- joinVeld: the field the doel joins on ----------------
 
-    @Test void joinveld_twist_op_de_boon_verandert_niets() throws Exception {
-        // joining on vlaghaven would admit S1 alone (H1 wintertal 2 -> 1)
+    @Test void een_koppelveld_naast_de_binding_wordt_bij_naam_geweigerd() throws Exception {
         ObjectNode ir = lees(DUBBEL);
         creatie(ir, 0, "winterberging").put("joinVeld", "vlaghaven");
-        BeideTakken.groen(tijdelijk("join-boon", ir), casus(DUBBEL, "case1"), "the join follows joinRol, not joinVeld");
+        onbekendVeld(ir, "/rules/feitCreaties/0/joinVeld", "ResolvedFeitCreatie");
     }
 
     @Test void joinveld_volgt_de_joinbinding() throws Exception {
@@ -82,25 +72,14 @@ class BonenveldWitnessTest {
 
     // ---------------- the hops ----------------
 
-    @Test void tussenstap_twist_op_de_boon_verandert_niets() throws Exception {
-        // Post carries reservevak too, so the twisted hop resolves and would reach no post (vakseinaantal 2 -> 0)
-        ObjectNode ir = postwachtMetReserve();
-        stap(ir).put("veld", "reservevak");
-        BeideTakken.groen(tijdelijk("hop-boon", ir), casus(POSTWACHT, "case"), "the hop follows its rolBinding, not veld");
-    }
-
-    @Test void tussenstap_zijde_komt_uit_de_binding() throws Exception {
-        // Verifier-clean: no WF rule crosses viaOuderVeld, and ref plays the document. Read from the wire it put
-        // the field on Kustvak, and both branches refused what ref plays.
-        ObjectNode ir = lees(POSTWACHT);
-        stap(ir).put("viaOuderVeld", true);
-        BeideTakken.groen(tijdelijk("hop-zijde", ir), casus(POSTWACHT, "case"), "the side follows the binding");
-    }
-
-    @Test void tussenstap_type_komt_uit_de_binding() throws Exception {
-        ObjectNode ir = lees(POSTWACHT);
-        stap(ir).put("type", "Sein");
-        BeideTakken.groen(tijdelijk("hop-type", ir), casus(POSTWACHT, "case"), "the step type is the bound role's filler");
+    @Test void een_stap_draagt_alleen_haar_binding() throws Exception {
+        // the step's field, its side and its type are the backend's own derivation from the binding, so each one
+        // written beside it is an unknown field
+        for (String veld : new String[] { "veld", "viaOuderVeld", "type" }) {
+            ObjectNode ir = lees(POSTWACHT);
+            stap(ir).put(veld, veld.equals("viaOuderVeld") ? "true" : "Sein");
+            onbekendVeld(ir, "/rules/feitCreaties/0/tussenstappen/0/" + veld, "Tussenstap");
+        }
     }
 
     @Test void tussenstap_volgt_de_hopbinding() throws Exception {
@@ -133,11 +112,10 @@ class BonenveldWitnessTest {
 
     // ---------------- scopeVeld: the uniqueness scope ----------------
 
-    @Test void scopeveld_twist_op_de_boon_verandert_niets() throws Exception {
-        // scoped by sectiecode, K1..K3 (all sectiecode 10, etiket 1) would collide
+    @Test void een_scopeveld_naast_de_binding_wordt_bij_naam_geweigerd() throws Exception {
         ObjectNode ir = lees(KUSTREGISTER);
         kaveletiket(ir).put("scopeVeld", "sectiecode");
-        BeideTakken.groen(tijdelijk("scope-boon", ir), casus(KUSTREGISTER, "case1"), "the scope follows scopeRol, not scopeVeld");
+        onbekendVeld(ir, "/rules/uniciteiten/" + kaveletiketIndex(ir) + "/scopeVeld", "ResolvedUniciteit");
     }
 
     @Test void scopeveld_volgt_de_scopebinding() throws Exception {
@@ -151,28 +129,38 @@ class BonenveldWitnessTest {
                 "the scope must be the bound wijkindeling relation");
     }
 
-    // ---------------- B7/B8 ahead of time, and no fallback ----------------
+    // ---------------- the bindings are required, and there is no fallback ----------------
 
-    @Test void zonder_bonenvelden_speelt_het_document_gelijk() throws Exception {
-        // the wire as B7 and B8 leave it: every bean field of both constructs gone
+    @Test void de_bindingen_alleen_spelen_het_document() throws Exception {
+        // the golden as the wire now carries it: every construct on its bindings, no storage field anywhere
         ObjectNode ir = lees(POSTWACHT);
         ObjectNode fc = creatie(ir, 0, null);
-        fc.remove("zetVeld");
-        fc.remove("joinVeld");
-        for (JsonNode t : fc.get("tussenstappen")) ((ObjectNode) t).remove(java.util.List.of("veld", "viaOuderVeld", "type"));
-        for (JsonNode u : ir.get("rules").get("uniciteiten")) if (u.hasNonNull("scopeRol")) ((ObjectNode) u).remove("scopeVeld");
-        BeideTakken.groen(tijdelijk("zonder-bonen", ir), casus(POSTWACHT, "case"), "plays on the bindings alone");
+        for (String veld : new String[] { "zetVeld", "joinVeld" })
+            assertTrue(!fc.has(veld), "no storage field on the creation: " + fc);
+        for (JsonNode t : fc.get("tussenstappen")) {
+            java.util.List<String> velden = new java.util.ArrayList<>();
+            t.fieldNames().forEachRemaining(velden::add);
+            assertEquals(java.util.List.of("node", "rolBinding"), velden, t.toString());
+        }
+        BeideTakken.groen(tijdelijk("bindingen", ir), casus(POSTWACHT, "case"), "plays on the bindings alone");
     }
 
-    @Test void een_creatie_zonder_symbolische_vorm_wordt_geweigerd() throws Exception {
-        // WF-028 rejects the bean-only record and ref and clingo fault on it; the branches played it off the bean
-        // fields until the port
+    @Test void een_creatie_zonder_heel_symbolisch_blok_laadt_niet() throws Exception {
+        // IR-SPEC ch. 3.4: the symbolic block IS the creation, so a creation missing any part of it — here each of
+        // the four, and the step's binding — is no document; ref and clingo fault on it, and before L2 both branches
+        // refused it as unresolved
+        for (String veld : new String[] { "feittype", "ankerRol", "doelRol", "joinRol" }) {
+            ObjectNode ir = lees(POSTWACHT);
+            creatie(ir, 0, null).remove(veld);
+            IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
+            assertEquals("/rules/feitCreaties/0", e.plek(), e.getMessage());
+            assertTrue(e.getMessage().contains("missing field '" + veld + "'"), e.getMessage());
+        }
         ObjectNode ir = lees(POSTWACHT);
-        ObjectNode fc = creatie(ir, 0, null);
-        fc.remove(java.util.List.of("feittype", "ankerRol", "doelRol", "joinRol"));
-        for (JsonNode t : fc.get("tussenstappen")) ((ObjectNode) t).remove("rolBinding");
-        BeideTakken.geweigerd(tijdelijk("alleen-bonen", ir), casus(POSTWACHT, "case"), "feitcreatie (onopgelost)",
-                "the creation has no symbolic form to execute");
+        stap(ir).remove("rolBinding");
+        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
+        assertEquals("/rules/feitCreaties/0/tussenstappen/0", e.plek(), e.getMessage());
+        assertTrue(e.getMessage().contains("missing field 'rolBinding'"), e.getMessage());
     }
 
     @Test void een_scopebinding_die_niet_oplost_valt_niet_terug_op_scopeveld() throws Exception {
@@ -194,8 +182,21 @@ class BonenveldWitnessTest {
 
     private static ObjectNode stap(ObjectNode ir) {
         ObjectNode t = (ObjectNode) creatie(ir, 0, null).get("tussenstappen").get(0);
-        assertTrue(t.get("veld").asText().equals("kustvak"), t.toString());
+        assertTrue(t.get("rolBinding").get("feittype").asText().equals("kustligging"), t.toString());
         return t;
+    }
+
+    /** The loader refuses a field the L2 shape does not have, at its own pointer, as an unknown field. */
+    private static void onbekendVeld(ObjectNode ir, String plek, String knoop) {
+        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
+        assertEquals(plek, e.plek(), e.getMessage());
+        assertTrue(e.getMessage().contains("unknown field on " + knoop), e.getMessage());
+    }
+
+    private static int kaveletiketIndex(ObjectNode ir) {
+        ArrayNode u = (ArrayNode) ir.get("rules").get("uniciteiten");
+        for (int i = 0; i < u.size(); i++) if (u.get(i).get("naam").asText().equals("eenmalig kaveletiket")) return i;
+        throw new AssertionError("kustregister carries no 'eenmalig kaveletiket'");
     }
 
     private static ObjectNode creatie(ObjectNode ir, int i, String feittype) {

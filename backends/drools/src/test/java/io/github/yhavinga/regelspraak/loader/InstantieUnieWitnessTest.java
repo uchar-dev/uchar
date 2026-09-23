@@ -118,7 +118,7 @@ class InstantieUnieWitnessTest {
     private static final String TAK_ONOPGELOST = tak("\"Vondst\"", "vondstaanmelding", "aangemelde vondst",
             "{\"node\":\"Onopgelost\",\"bron\":\"die onleesbaar zijn\"}");
     private static final String TAK_GEMERKT = tak("\"Vondst\"", "vondstaanmelding", "aangemelde vondst",
-            "{\"node\":\"Kenmerk\",\"kenmerk\":\"gemerkt\",\"navigatie\":null,\"negatie\":false,"
+            "{\"node\":\"Kenmerk\",\"kenmerk\":\"gemerkt\",\"negatie\":false,"
                     + "\"eigenaar\":null,\"periode\":null,\"bron\":\"gemerkt zijn\"}");
 
     private static String unie(String... takken) {
@@ -132,10 +132,8 @@ class InstantieUnieWitnessTest {
         String waarde = ("{\"node\":\"Functie\",\"kind\":\"AANTAL\",\"argumenten\":[%s],"
                 + "\"elementObjecttype\":null,\"leegwaarde\":null,\"filter\":null,\"dimensieSelectie\":null,"
                 + "\"type\":%s,\"bron\":\"het aantal …\",\"granulariteit\":null}").formatted(unie, heel);
-        String doel = ("{\"node\":\"AttribuutRef\",\"attribuut\":\"aantal strandvondsten\","
-                + "\"objecttype\":\"Jutter\",\"onderwerpBron\":\"een Jutter\",\"navigatieRol\":null,"
-                + "\"type\":%s,\"bron\":\"Het aantal strandvondsten van een Jutter\",\"set\":false,"
-                + "\"navigatiePad\":[]}").formatted(heel);
+        String doel = "{\"node\":\"AttribuutRef\",\"attribuut\":\"aantal strandvondsten\","
+                + "\"objecttype\":\"Jutter\",\"bron\":\"Het aantal strandvondsten van een Jutter\"}";
         String jutter = ("{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\","
                 + "\"attributes\":[{\"node\":\"Attribute\",\"name\":\"aantal strandvondsten\",\"datatype\":%s}],"
                 + "\"characteristics\":[]}").formatted(heel);

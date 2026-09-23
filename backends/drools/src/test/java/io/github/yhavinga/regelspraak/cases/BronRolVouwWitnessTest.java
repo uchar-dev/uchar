@@ -149,30 +149,20 @@ class BronRolVouwWitnessTest {
                 "one feittype over the pair: unchanged, and still green");
     }
 
-    @Test void een_vouw_zonder_bronrol_blijft_in_beide_takken_geweigerd() throws Exception {
-        // THE GUARD AGAINST WIDENING THE FIX INTO A GUESS. Strip the range off the wire and the fold has
-        // nothing but the by-pair search, which four feittypen make ambiguous. Neither branch may pick a
-        // winner; each refuses in its own discipline (exec records a skip, the DRL text emits its marker).
-        //
-        // The rest of the square refuses this document too, which is why no corpus golden can carry it
-        // (measured 2026-09-19, before M1; the verifier path reads /rules/resolvedRegels/0/waarde since):
-        //   verifier : WF-048 FAIL /resolvedRegels/0/waarde: bindingless instance fold: 4 fact types relate
-        //              'Haven' to 'Schuit' — not uniquely derivable; name the connecting relation …
-        //   ref      : EVALUATION FAULT: the connecting role from "Haven" to "Schuit" is ambiguous
-        //              (4 candidate roles); the pinned runtime derives null there
-        //   clingo   : TRANSLATION FAULT: <the same sentence>
+    @Test void een_vouw_zonder_bronrol_laadt_in_geen_van_beide_takken() throws Exception {
+        // THE GUARD AGAINST WIDENING THE FIX INTO A GUESS. Strip the range off the wire and nothing names the
+        // relation — four feittypen relate the pair — so no branch may pick one. Since L2 of the v1 wire migration
+        // the range is required on this fold (IR-SPEC ch. 4.3), so the document is refused at load, by name,
+        // before either branch could guess; the verifier, ref and clingo refuse it too.
         ObjectNode ir = somModel();
         ((ObjectNode) vouwVan(ir)).remove("bronRol");
         Path p = tijdelijk("bronrol-geen-binding", ir);
         JsonNode c = JSON.readTree(zaak("liggertal", "19", "20", null));
-        CaseRunner.Excluded exec = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(p, c, false), "exec-model must refuse a bindingless fold");
-        assertTrue(exec.getMessage().contains("liggertal van een haven"), exec.getMessage());
-        CaseRunner.Excluded drl = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(p, c, true), "drl-tekst must refuse a bindingless fold");
-        assertTrue(drl.getMessage().contains("TODO aggregatie SOM"), drl.getMessage());
-        assertTrue(drl.getMessage().contains("de som van de romplengte van alle liggers van de Haven"),
-                drl.getMessage());
+        for (boolean viaDrl : new boolean[] { false, true }) {
+            IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
+                    () -> CaseRunner.speelCase(p, c, viaDrl), "a fold without its range is no document");
+            assertTrue(e.getMessage().contains("missing field 'bronRol'"), e.getMessage());
+        }
     }
 
     @Test void een_meervoudige_zusterrol_levert_geen_scalair_joinveld() throws Exception {
@@ -306,11 +296,8 @@ class BronRolVouwWitnessTest {
      *  {@code elementObjecttype} plus one {@code bronRol}, the ch. 4.3 one-step form. */
     private static ObjectNode fold(String kind, String meervoud, String feittype, String rol) {
         ObjectNode arg = JSON.createObjectNode();
-        arg.put("node", "AttribuutRef").put("attribuut", "romplengte").put("objecttype", "Schuit")
-           .put("onderwerpBron", "alle " + meervoud + " van de Haven").putNull("navigatieRol");
-        arg.set("type", numeriek());
-        arg.put("bron", "de romplengte van alle " + meervoud + " van de Haven").put("set", true);
-        arg.putArray("navigatiePad");
+        arg.put("node", "AttribuutRef").put("attribuut", "romplengte").put("objecttype", "Schuit");
+        arg.put("bron", "de romplengte van alle " + meervoud + " van de Haven");
         ObjectNode f = JSON.createObjectNode();
         f.put("node", "Functie").put("kind", kind);
         f.putArray("argumenten").add(arg);

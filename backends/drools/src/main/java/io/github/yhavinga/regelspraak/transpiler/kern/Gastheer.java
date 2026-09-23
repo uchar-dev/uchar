@@ -56,8 +56,9 @@ public final class Gastheer {
      *  navigating check. Measured 2026-09-23: a composite whose checks were all hosted on the doel's supertype was
      *  refused by the verifier, {@code ref}, clingo and the exec-model branch, and PLAYED by the DRL-text branch,
      *  which inlines a composite on the doel pattern. */
-    public static boolean doelgastheerBuitenBereik(Conditie guard, Objecttype doel) {
-        if (guard instanceof Conditie.Kenmerk k && k.navigatie() == null) return false;
+    public static boolean doelgastheerBuitenBereik(Conditie guard, Objecttype doel,
+            java.util.function.Predicate<Conditie.Kenmerk> genavigeerd) {
+        if (guard instanceof Conditie.Kenmerk k && !genavigeerd.test(k)) return false;
         return noemtDoelgastheer(guard, doel);
     }
 

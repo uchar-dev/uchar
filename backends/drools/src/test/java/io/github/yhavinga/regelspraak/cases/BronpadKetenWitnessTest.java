@@ -185,18 +185,15 @@ class BronpadKetenWitnessTest {
         return """
                 { "node": "ResolvedRegel", "naam": "%s", "soort": "BEREKENING",
                   "doel": { "node": "AttribuutRef", "attribuut": "%s", "objecttype": "Tolhuis",
-                            "onderwerpBron": "een Tolhuis", "navigatieRol": null, "type": %s,
-                            "bron": "De %s van een Tolhuis", "set": false, "navigatiePad": [] },
+                            "bron": "De %s van een Tolhuis" },
                   "waarde": { "node": "Functie", "kind": "%s",
                     "argumenten": [ { "node": "AttribuutRef", "attribuut": "%s", "objecttype": "%s",
-                                      "onderwerpBron": "alle %sen van het Tolhuis", "navigatieRol": null,
-                                      "type": %s, "bron": "de %s van alle %sen", "set": true,
-                                      "navigatiePad": [] } ],
+                                      "bron": "de %s van alle %sen" } ],
                     "elementObjecttype": "%s", "leegwaarde": %s, "filter": null, "dimensieSelectie": null,
                     "type": %s, "bron": "de vouw over het pad", "granulariteit": null,
                     "bronPad": [ %s ] },
                   "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }"""
-                .formatted(naam, attribuut, NUM2, attribuut, kind, arg, element, element, NUM2, arg, element,
+                .formatted(naam, attribuut, attribuut, kind, arg, element, arg, element,
                         element, leegwaarde, NUM2, pad);
     }
 

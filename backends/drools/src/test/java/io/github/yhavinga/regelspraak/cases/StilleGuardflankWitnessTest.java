@@ -160,7 +160,7 @@ class StilleGuardflankWitnessTest {
 
     private static ObjectNode kenmerkGuard(String kenmerk, String eigenaar, String bron) {
         ObjectNode k = JSON.createObjectNode().put("node", "Kenmerk").put("kenmerk", kenmerk);
-        k.putNull("navigatie").put("negatie", false).put("eigenaar", eigenaar);
+        k.put("negatie", false).put("eigenaar", eigenaar);
         k.putNull("periode").put("bron", bron);
         return k;
     }

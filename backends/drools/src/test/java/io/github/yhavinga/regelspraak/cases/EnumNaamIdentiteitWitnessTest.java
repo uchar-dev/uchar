@@ -113,7 +113,6 @@ class EnumNaamIdentiteitWitnessTest {
                 navigeerdeKeur(keurtype), literal(keurtype, "gaaf")));
         ObjectNode normRef = JSON.createObjectNode();
         normRef.put("node", "ParameterRef").put("parameter", "keurnorm").put("bron", "de keurnorm");
-        normRef.set("type", keurtype.deepCopy());
         resolved.add(kenmerkRegel("keurnorm gehaald", "normconform", "GELIJK",
                 staat, normRef));
         IrPad.rules(ir).putArray("consistenties");
@@ -231,15 +230,14 @@ class EnumNaamIdentiteitWitnessTest {
         return l;
     }
 
-    /** "de keur van zijn kavel", written with a {@code navigatieRol} — the form the exec-model branch's
-     *  navigated literal arm reads. */
+    /** "de keur van zijn kavel", bound over kavelindeling — the form the exec-model branch's navigated literal
+     *  arm reads. */
     private static ObjectNode navigeerdeKeur(JsonNode type) {
         ObjectNode a = JSON.createObjectNode();
-        a.put("node", "AttribuutRef").put("attribuut", "keur").put("objecttype", "Kavel")
-         .put("onderwerpBron", "zijn kavel").put("navigatieRol", "kavel");
-        a.set("type", type.deepCopy());
-        a.put("bron", "de keur van zijn kavel").put("set", false);
-        a.putArray("navigatiePad");
+        a.put("node", "AttribuutRef").put("attribuut", "keur").put("objecttype", "Kavel");
+        a.put("bron", "de keur van zijn kavel");
+        a.putArray("navigatieBindingen").addObject()
+         .put("node", "RolBinding").put("feittype", "kavelindeling").put("rol", "kavel");
         return a;
     }
 
@@ -253,8 +251,7 @@ class EnumNaamIdentiteitWitnessTest {
                                            JsonNode links, JsonNode rechts) throws Exception {
         ObjectNode r = (ObjectNode) JSON.readTree("""
                 {"node": "ResolvedRegel", "soort": "KENMERKTOEKENNING",
-                 "doel": {"node": "AttribuutRef", "objecttype": "Vondst", "onderwerpBron": "Een Vondst",
-                          "navigatieRol": null, "type": {"node": "Booleaan"}, "set": false, "navigatiePad": []},
+                 "doel": {"node": "AttribuutRef", "objecttype": "Vondst"},
                  "waarde": {"node": "Literal", "waarde": "waar", "type": {"node": "Booleaan"}, "bron": "waar"},
                  "geldigheid": {"node": "Geldigheid", "vanaf": null, "tot": null}}
                 """);

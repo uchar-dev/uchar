@@ -195,9 +195,8 @@ class LetClusterWitnessTest {
 
     private static String attr(String naam, int dec, boolean geheel, String teken) {
         return ("{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"Jutter\","
-                + "\"onderwerpBron\":\"de Jutter\",\"navigatieRol\":null,\"type\":%s,"
-                + "\"bron\":\"het %s van de Jutter\",\"set\":false,\"navigatiePad\":[]}")
-                .formatted(naam, num(dec, geheel, teken), naam);
+                + "\"bron\":\"het %s van de Jutter\"}")
+                .formatted(naam, naam);
     }
 
     private static String lit(String waarde, int dec, boolean geheel) {
@@ -219,7 +218,7 @@ class LetClusterWitnessTest {
 
     /** ch. 4.10 a read of the nearest enclosing binder. NB the wire field is {@code name}, not {@code naam}. */
     private static String bref(String naam, int dec) {
-        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"type\":%s,\"bron\":\"%s\"}".formatted(naam, num(dec), naam);
+        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"bron\":\"%s\"}".formatted(naam, naam);
     }
 
     private static String ite(String conditie, String dan, String anders, int dec) {
@@ -323,10 +322,9 @@ class LetClusterWitnessTest {
     private static String reactiviteitModel() {
         String inkomen = attr("inkomen", 2, false, "NIET_NEGATIEF");
         String vermistDoel = ("{\"node\":\"AttribuutRef\",\"attribuut\":\"vermist\",\"objecttype\":\"Jutter\","
-                + "\"onderwerpBron\":\"Een Jutter\",\"navigatieRol\":null,\"type\":{\"node\":\"Booleaan\"},"
-                + "\"bron\":\"Een Jutter is vermist\",\"set\":false,\"navigatiePad\":[]}");
+                + "\"bron\":\"Een Jutter is vermist\"}");
         String waar = "{\"node\":\"Literal\",\"waarde\":\"waar\",\"type\":{\"node\":\"Booleaan\"},\"bron\":\"waar\"}";
-        String nietVermist = ("{\"node\":\"Kenmerk\",\"kenmerk\":\"vermist\",\"navigatie\":null,\"negatie\":true,"
+        String nietVermist = ("{\"node\":\"Kenmerk\",\"kenmerk\":\"vermist\",\"negatie\":true,"
                 + "\"eigenaar\":null,\"periode\":null,\"bron\":\"hij niet vermist is\"}");
         String gewogen = let("x", inkomen,
                 binair("MAAL", bref("x", 2), attr("factor", 4, false, "ONBEPAALD"), 6), 6);

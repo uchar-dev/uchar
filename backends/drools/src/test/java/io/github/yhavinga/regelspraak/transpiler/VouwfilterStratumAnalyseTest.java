@@ -120,8 +120,9 @@ class VouwfilterStratumAnalyseTest {
     // --- the documents ------------------------------------------------------------------------------
 
     private static int salience(String ir, String regel) throws Exception {
-        List<ResolvedRegel> regels = IrLoader.loadAll(JSON.readTree(ir)).model().resolvedRegels;
-        Stratificatie s = Stratificatie.bereken(regels);
+        IrLoader.Loaded geladen = IrLoader.loadAll(JSON.readTree(ir));
+        List<ResolvedRegel> regels = geladen.model().resolvedRegels;
+        Stratificatie s = Stratificatie.bereken(regels, k -> geladen.navigatieBindingen().containsKey(k));
         return s.salience(regels.stream().filter(r -> regel.equals(r.naam())).findFirst().orElseThrow());
     }
 
@@ -130,7 +131,7 @@ class VouwfilterStratumAnalyseTest {
     private static final String BOOL = "{\"node\":\"Booleaan\"}";
 
     private static String kenmerkCheck(boolean negatie) {
-        return ("{\"node\":\"Kenmerk\",\"kenmerk\":\"gemerkt\",\"navigatie\":null,\"negatie\":%s,"
+        return ("{\"node\":\"Kenmerk\",\"kenmerk\":\"gemerkt\",\"negatie\":%s,"
                 + "\"eigenaar\":null,\"periode\":null,\"bron\":\"gemerkt zijn\"}").formatted(negatie);
     }
 
@@ -152,9 +153,7 @@ class VouwfilterStratumAnalyseTest {
 
     private static String telling(String elementType, String filter, String bronRol) {
         return ("{\"node\":\"Functie\",\"kind\":\"AANTAL\",\"argumenten\":[{\"node\":\"AttribuutRef\","
-                + "\"attribuut\":\"vondsten\",\"objecttype\":\"Jutter\",\"onderwerpBron\":\"de Jutter\","
-                + "\"navigatieRol\":null,\"type\":{\"node\":\"Onbekend\",\"reden\":\"niet opgelost\"},"
-                + "\"bron\":\"vondsten van de Jutter\",\"set\":false,\"navigatiePad\":[]}],"
+                + "\"attribuut\":\"vondsten\",\"objecttype\":\"Jutter\",\"bron\":\"vondsten van de Jutter\"}],"
                 + "\"elementObjecttype\":%s,\"leegwaarde\":null,\"filter\":%s,\"dimensieSelectie\":null,"
                 + "\"type\":%s,\"bron\":\"het aantal …\",\"granulariteit\":null%s}")
                 .formatted(elementType, filter, HEEL, bronRol);
@@ -163,11 +162,10 @@ class VouwfilterStratumAnalyseTest {
     private static String kenmerkRegel(String naam, String kenmerk, String ot, String voorwaarde) {
         return ("{\"node\":\"ResolvedRegel\",\"naam\":\"%s\",\"soort\":\"KENMERKTOEKENNING\","
                 + "\"doel\":{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"%s\","
-                + "\"onderwerpBron\":\"Een %s\",\"navigatieRol\":null,\"type\":%s,\"bron\":\"Een %s is %s\","
-                + "\"set\":false,\"navigatiePad\":[]},"
+                + "\"bron\":\"Een %s is %s\"},"
                 + "\"waarde\":{\"node\":\"Literal\",\"waarde\":\"waar\",\"type\":%s,\"bron\":\"waar\"},"
                 + "\"voorwaarde\":%s,\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}")
-                .formatted(naam, kenmerk, ot, ot, BOOL, ot, kenmerk, BOOL, voorwaarde);
+                .formatted(naam, kenmerk, ot, ot, kenmerk, BOOL, voorwaarde);
     }
 
     private static String groterDanNul(String links) {
@@ -209,7 +207,7 @@ class VouwfilterStratumAnalyseTest {
                 kenmerkRegel("consument", "druk", "Jutter",
                         groterDanNul(telling("\"Vondst\"", filter, bronRol))),
                 kenmerkRegel("producent", "gemerkt", "Vondst",
-                        "{\"node\":\"Kenmerk\",\"kenmerk\":\"kaal\",\"navigatie\":null,\"negatie\":false,"
+                        "{\"node\":\"Kenmerk\",\"kenmerk\":\"kaal\",\"negatie\":false,"
                                 + "\"eigenaar\":null,\"periode\":null,\"bron\":\"kaal zijn\"}"));
     }
 
@@ -223,7 +221,7 @@ class VouwfilterStratumAnalyseTest {
         return model(
                 kenmerkRegel("consument", "druk", "Jutter", samengesteld(kwantor, binnen)),
                 kenmerkRegel("producent", "gemerkt", "Vondst",
-                        "{\"node\":\"Kenmerk\",\"kenmerk\":\"kaal\",\"navigatie\":null,\"negatie\":false,"
+                        "{\"node\":\"Kenmerk\",\"kenmerk\":\"kaal\",\"negatie\":false,"
                                 + "\"eigenaar\":null,\"periode\":null,\"bron\":\"kaal zijn\"}"));
     }
 
@@ -231,8 +229,8 @@ class VouwfilterStratumAnalyseTest {
      *  check in its matrix ({@code inToets}) or in its filter. */
     private static String kwantorvouwDoc(String kwantor, boolean inToets) {
         String check = kenmerkCheck(false);
-        String altijd = "{\"node\":\"Rollidmaatschap\",\"rol\":\"vondst\",\"anderTeFiller\":null,"
-                + "\"negatie\":false,\"bron\":\"een vondst zijn\"}";
+        String altijd = "{\"node\":\"RoleMembership\",\"factType\":\"vondstaanmelding\",\"role\":\"vondst\","
+                + "\"negated\":false,\"bron\":\"een vondst zijn\"}";
         String drempel = switch (kwantor) {
             case "TEN_MINSTE", "TEN_HOOGSTE", "PRECIES" -> "\"drempel\":1,";
             default -> "";
@@ -245,7 +243,7 @@ class VouwfilterStratumAnalyseTest {
         return model(
                 kenmerkRegel("consument", "druk", "Jutter", vouw),
                 kenmerkRegel("producent", "gemerkt", "Vondst",
-                        "{\"node\":\"Kenmerk\",\"kenmerk\":\"kaal\",\"navigatie\":null,\"negatie\":false,"
+                        "{\"node\":\"Kenmerk\",\"kenmerk\":\"kaal\",\"negatie\":false,"
                                 + "\"eigenaar\":null,\"periode\":null,\"bron\":\"kaal zijn\"}"));
     }
 
@@ -254,16 +252,16 @@ class VouwfilterStratumAnalyseTest {
      *  same-named characteristic produced one band deep. With the name-wide fallback the consumer sinks to
      *  −2 through a homonym on a type it never walks. */
     private static String homoniemDoc() {
-        String nietGemerkt = "{\"node\":\"Kenmerk\",\"kenmerk\":\"gemerkt\",\"navigatie\":null,"
+        String nietGemerkt = "{\"node\":\"Kenmerk\",\"kenmerk\":\"gemerkt\","
                 + "\"negatie\":true,\"eigenaar\":null,\"periode\":null,\"bron\":\"niet gemerkt zijn\"}";
-        String nietKaal = "{\"node\":\"Kenmerk\",\"kenmerk\":\"kaal\",\"navigatie\":null,\"negatie\":true,"
+        String nietKaal = "{\"node\":\"Kenmerk\",\"kenmerk\":\"kaal\",\"negatie\":true,"
                 + "\"eigenaar\":null,\"periode\":null,\"bron\":\"niet kaal zijn\"}";
         return model(
                 kenmerkRegel("consument", "druk", "Jutter",
                         groterDanNul(telling("null", nietGemerkt, ""))),
                 kenmerkRegel("ketenstap", "gemerkt", "Vondst", nietKaal),
                 kenmerkRegel("basis", "kaal", "Vondst",
-                        "{\"node\":\"Rollidmaatschap\",\"rol\":\"vondst\",\"anderTeFiller\":null,"
-                                + "\"negatie\":false,\"bron\":\"een vondst zijn\"}"));
+                        "{\"node\":\"RoleMembership\",\"factType\":\"vondstaanmelding\",\"role\":\"vondst\","
+                                + "\"negated\":false,\"bron\":\"een vondst zijn\"}"));
     }
 }

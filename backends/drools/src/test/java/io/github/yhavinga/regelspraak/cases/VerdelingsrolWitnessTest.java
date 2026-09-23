@@ -16,11 +16,14 @@ import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The verdeling-role witness (V1-WIREMIGRATIE P3): both Drools branches join a §9.7 verdeling's recipients on
  * the relation its wire {@code verbindendeRol} binds (IR-SPEC ch. 3.2), through
- * {@link FactModelGenerator#verdelingsjoin}, and ask the type pair only for a bindingless verdeling (WF-048).
+ * {@link FactModelGenerator#verdelingsjoin}; since L2 of the v1 wire migration the binding is required, and a
+ * verdeling without one does not load.
  *
  * <p>On a uniquely connected pair the binding and the pair agree, and every golden but one is such a pair, so
  * the corpus alone cannot tell which decides. {@code anchor/jutterswet-bergingstoezicht} is the one: Berging and
@@ -118,11 +121,14 @@ class VerdelingsrolWitnessTest {
                 "a dangling binding is refused, not replaced by the pair");
     }
 
-    @Test void zonder_binding_beslist_het_typenpaar() throws Exception {
-        // WF-048 admits the bindingless form while the pair is unique; B12 retires it
+    @Test void zonder_binding_laadt_de_verdeling_niet() throws Exception {
+        // IR-SPEC ch. 3.2: the recipient join IS the binding, and no reader derives a missing one from the type
+        // pair, unique or not — the document is refused at load, by name
         ObjectNode ir = lees(BERGING);
         verdeling(ir).remove("verbindendeRol");
-        BeideTakken.groen(tijdelijk("bindingloos", ir), casus(BERGING), "the unique pair still decides");
+        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
+        assertEquals("/rules/verdelingen/0", e.plek(), e.getMessage());
+        assertTrue(e.getMessage().contains("missing field 'verbindendeRol'"), e.getMessage());
     }
 
     // ---------------- fixtures ----------------

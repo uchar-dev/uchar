@@ -164,12 +164,8 @@ class DatumSetvouwWitnessTest {
         IrPad.attribute(jutter, "vroegste vondstdag").set("datatype", tekst);
         IrPad.attribute(jutter, "jongste vondstdag").set("datatype", tekst);
         IrPad.attribute(IrPad.objectType(ir, "Vondst"), "vondstdatum").set("datatype", tekst);
-        for (JsonNode r : ir.get("rules").get("resolvedRegels")) {
-            ((ObjectNode) r.get("doel")).set("type", tekst);
-            ObjectNode w = (ObjectNode) r.get("waarde");
-            w.set("type", tekst);
-            ((ObjectNode) w.get("argumenten").get(0)).set("type", tekst);
-        }
+        // the reads take their type from the declarations above; only the fold carries an annotation of its own
+        for (JsonNode r : ir.get("rules").get("resolvedRegels")) ((ObjectNode) r.get("waarde")).set("type", tekst);
         return ir;
     }
 

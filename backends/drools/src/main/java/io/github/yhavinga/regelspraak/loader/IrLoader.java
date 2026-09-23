@@ -200,8 +200,10 @@ public final class IrLoader {
                          Map<Object, List<RolBindingRef>> navigatieBindingen) {}
 
     /** Parse a {@code uchar-ir-v1} tree into a resolved model, or throw {@link Refusal} for a form
-     *  the v0 backend does not carry. The prioritized-defaults extension (if any) is parsed but not returned —
-     *  use {@link #loadAll} to obtain it beside the model. */
+     *  the v0 backend does not carry. What rides beside the model — the prioritized-defaults extension and, since
+     *  L2 of the v1 wire migration, every binding a read, a fold, a role check or a verdeling walks — is parsed but
+     *  not returned: a transpiler handed this model alone reads every navigation as the subject's own. Use
+     *  {@link #loadAll} for anything that transpiles. */
     public static RegelSpraakModel load(JsonNode root) {
         return new IrLoader().model(root);
     }

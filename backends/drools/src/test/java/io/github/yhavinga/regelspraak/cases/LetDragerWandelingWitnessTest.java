@@ -273,17 +273,15 @@ class LetDragerWandelingWitnessTest {
     }
 
     private static String attr(String objecttype, String naam, String type) {
-        return ("{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"%s\",\"onderwerpBron\":\"de %s\","
-                + "\"navigatieRol\":null,\"type\":%s,\"bron\":\"het %s van de %s\",\"set\":false,\"navigatiePad\":[]}")
-                .formatted(naam, objecttype, objecttype, type, naam, objecttype);
+        return "{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"%s\",\"bron\":\"het %s van de %s\"}"
+                .formatted(naam, objecttype, naam, objecttype);
     }
 
     /** A read across a role — the shape whose reactivity {@code navRefs} is responsible for. */
     private static String navAttr(String objecttype, String naam, String type, String feittype, String rol) {
-        return ("{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"%s\",\"onderwerpBron\":\"zijn %s\","
-                + "\"navigatieRol\":\"%s\",\"type\":%s,\"bron\":\"het %s van zijn %s\",\"set\":false,"
-                + "\"navigatiePad\":[],\"navigatieBindingen\":[{\"node\":\"RolBinding\",\"feittype\":\"%s\","
-                + "\"rol\":\"%s\"}]}").formatted(naam, objecttype, rol, rol, type, naam, rol, feittype, rol);
+        return ("{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"%s\","
+                + "\"bron\":\"het %s van zijn %s\",\"navigatieBindingen\":[{\"node\":\"RolBinding\",\"feittype\":\"%s\","
+                + "\"rol\":\"%s\"}]}").formatted(naam, objecttype, naam, rol, feittype, rol);
     }
 
     private static String lit(String waarde, String type) {
@@ -308,7 +306,7 @@ class LetDragerWandelingWitnessTest {
 
     /** NB the wire field is {@code name}, not {@code naam}. */
     private static String bref(String naam, String type) {
-        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"type\":%s,\"bron\":\"%s\"}".formatted(naam, type, naam);
+        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"bron\":\"%s\"}".formatted(naam, naam);
     }
 
     private static String ite(String conditie, String dan, String anders, String type) {
@@ -327,12 +325,11 @@ class LetDragerWandelingWitnessTest {
     /** The §9.2 stratification lever both walk witnesses use: a NEGATED kenmerk read whose kenmerk has a
      *  producer sinks the reading rule's salience below that producer's, so the producer fires LAST. */
     private static final String NIET_VERMIST =
-            "{\"node\":\"Kenmerk\",\"kenmerk\":\"vermist\",\"navigatie\":null,\"negatie\":true,"
+            "{\"node\":\"Kenmerk\",\"kenmerk\":\"vermist\",\"negatie\":true,"
                     + "\"eigenaar\":null,\"periode\":null,\"bron\":\"hij niet vermist is\"}";
     private static final String VERMIST_DOEL =
             "{\"node\":\"AttribuutRef\",\"attribuut\":\"vermist\",\"objecttype\":\"Jutter\","
-                    + "\"onderwerpBron\":\"Een Jutter\",\"navigatieRol\":null,\"type\":" + BOOLEAAN + ","
-                    + "\"bron\":\"Een Jutter is vermist\",\"set\":false,\"navigatiePad\":[]}";
+                    + "\"bron\":\"Een Jutter is vermist\"}";
     private static final String VERMIST_KENMERK =
             "{\"node\":\"Characteristic\",\"name\":\"vermist\",\"kind\":\"BIJVOEGLIJK\"}";
     private static final String WAAR =

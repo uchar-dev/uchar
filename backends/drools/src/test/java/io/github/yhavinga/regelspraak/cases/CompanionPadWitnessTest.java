@@ -488,9 +488,8 @@ class CompanionPadWitnessTest {
 
     private static String attr(String naam, String type) {
         return ("{\"node\":\"AttribuutRef\",\"attribuut\":\"%s\",\"objecttype\":\"Jutter\","
-                + "\"onderwerpBron\":\"de Jutter\",\"navigatieRol\":null,\"type\":%s,"
-                + "\"bron\":\"het %s van de Jutter\",\"set\":false,\"navigatiePad\":[]}")
-                .formatted(naam, type, naam);
+                + "\"bron\":\"het %s van de Jutter\"}")
+                .formatted(naam, naam);
     }
     private static String attr(String naam) { return attr(naam, pos(2)); }
 
@@ -499,7 +498,7 @@ class CompanionPadWitnessTest {
     }
 
     private static String param(String naam, String type) {
-        return "{\"node\":\"ParameterRef\",\"parameter\":\"%s\",\"type\":%s,\"bron\":\"de %s\"}".formatted(naam, type, naam);
+        return "{\"node\":\"ParameterRef\",\"parameter\":\"%s\",\"bron\":\"de %s\"}".formatted(naam, naam);
     }
 
     private static String binair(String op, String links, String rechts, String type) {
@@ -520,7 +519,7 @@ class CompanionPadWitnessTest {
 
     /** NB the wire field is {@code name}, not {@code naam}. */
     private static String bref(String naam, String type) {
-        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"type\":%s,\"bron\":\"%s\"}".formatted(naam, type, naam);
+        return "{\"node\":\"BinderRef\",\"name\":\"%s\",\"bron\":\"%s\"}".formatted(naam, naam);
     }
 
     private static String ite(String conditie, String dan, String anders, String type) {
@@ -712,10 +711,9 @@ class CompanionPadWitnessTest {
      *  the (b) barrier body ("d plus (inkomen ÷ tweede)") or, with {@code tak}, the (c) choice on d. */
     private static String lateProducentModel(boolean tak) {
         String vermistDoel = ("{\"node\":\"AttribuutRef\",\"attribuut\":\"vermist\",\"objecttype\":\"Jutter\","
-                + "\"onderwerpBron\":\"Een Jutter\",\"navigatieRol\":null,\"type\":{\"node\":\"Booleaan\"},"
-                + "\"bron\":\"Een Jutter is vermist\",\"set\":false,\"navigatiePad\":[]}");
+                + "\"bron\":\"Een Jutter is vermist\"}");
         String waar = "{\"node\":\"Literal\",\"waarde\":\"waar\",\"type\":{\"node\":\"Booleaan\"},\"bron\":\"waar\"}";
-        String nietVermist = ("{\"node\":\"Kenmerk\",\"kenmerk\":\"vermist\",\"navigatie\":null,\"negatie\":true,"
+        String nietVermist = ("{\"node\":\"Kenmerk\",\"kenmerk\":\"vermist\",\"negatie\":true,"
                 + "\"eigenaar\":null,\"periode\":null,\"bron\":\"hij niet vermist is\"}");
         String body = tak
                 ? ite(verg("GROTER", bref("d", pos(2)), lit("1", GEHEEL_POS)), DELING, ZEVEN, num(4))
