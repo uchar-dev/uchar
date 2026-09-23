@@ -662,7 +662,22 @@ final class RuleChecker {
                 || model.consistenties.stream().anyMatch(c -> c.naam().equals(naam))
                 || model.objectCreaties.stream().anyMatch(o -> o.naam().equals(naam))
                 || model.uniciteiten.stream().anyMatch(u -> u.naam().equals(naam));
-        return anders ? " (regel '" + naam + "' is een verdeling/consistentie/objectcreatie/uniciteit, geen platte regel)" : "";
+        if (anders) return " (regel '" + naam + "' is een verdeling/consistentie/objectcreatie/uniciteit, geen platte regel)";
+        // A decision table has no rule of its own name: its rules are its rows, and they all write the table's
+        // one target, so none of them alone can be the base of a group that must be that target's only writer.
+        for (var e : rijRegels.entrySet())
+            if (src(e.getKey().beslistabelNaam()).equals(naam) && !e.getValue().isEmpty())
+                return " ('" + naam + "' is een beslistabel, geen regel: haar regels zijn de rijen "
+                        + opsomming(e.getValue()) + ", die samen hetzelfde doel schrijven — een defaults-groep heeft "
+                        + "één basisregel en geen andere schrijver op haar doel (WF-050))";
+        return "";
+    }
+
+    /** "'a'", "'a' en 'b'", "'a', 'b' en 'c'": names as a Dutch list. */
+    private static String opsomming(List<String> namen) {
+        List<String> q = namen.stream().map(n -> "'" + n + "'").toList();
+        return q.size() == 1 ? q.get(0)
+                : String.join(", ", q.subList(0, q.size() - 1)) + " en " + q.get(q.size() - 1);
     }
 
     private void multiVersieFout(String rol, String naam, int line) {

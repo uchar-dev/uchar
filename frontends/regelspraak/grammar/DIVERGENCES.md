@@ -233,7 +233,8 @@ block's own head, citing §9.10 and this section, with two arms:
   the verifier refused every group holding a table under WF-033. The arm speaks only where the
   lift would happen: a base that resolves to no plain rule — a table's own
   name, an object creation — gets the lowering's "no base rule" refusal,
-  which names the construct (fix round 2, 2026-09-23). A later head that
+  which names the construct (fix round 2, 2026-09-23); for a table it names
+  the rows and says why none of them alone can be a base (fix round 3). A later head that
   names a base of its own has to join this arm by name.
 
 A block for which both hold gets one diagnostic naming both reasons, and a

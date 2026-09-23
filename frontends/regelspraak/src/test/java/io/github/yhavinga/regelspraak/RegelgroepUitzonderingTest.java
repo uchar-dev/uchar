@@ -254,6 +254,9 @@ class RegelgroepUitzonderingTest {
         Diagnostic d = enigeFout(m);
         assertTrue(d.message().contains("geen basisregel met die naam gevonden"), d.message());
         assertFalse(d.message().contains("regelgroep"), d.message());
+        // and it names the construct, as it does for the other non-rule forms: a table, and the rules it is
+        assertTrue(d.message().contains("'Bergingspremie' is een beslistabel")
+                && d.message().contains("'Bergingspremie 1' en 'Bergingspremie 2'"), d.message());
     }
 
     @Test void een_objectcreatie_in_de_groep_als_basis_krijgt_de_juistere_melding() {
