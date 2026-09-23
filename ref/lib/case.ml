@@ -66,7 +66,18 @@ let contains ~needle hay =
 let root = ""
 let where at = if at = root then "<root>" else at
 let child at k = if at = root then k else at ^ "." ^ k
-let got j = Yojson.Safe.to_string j
+(* what was found, as the JSON it is, cut after 80 bytes on a character
+   boundary with "…": in full, a whole wrong subtree landed on one line (a
+   root given as a list ran to 2 154 characters, an input given as a list of
+   twenty copies to 26 584; measured by the lens 2026-09-23) *)
+let got j =
+  let s = Yojson.Safe.to_string j in
+  let max = 80 in
+  if String.length s <= max then s
+  else
+    (* back off to the first byte of the character the cut would split *)
+    let rec grens i = if i > 0 && Char.code s.[i] land 0xC0 = 0x80 then grens (i - 1) else i in
+    String.sub s 0 (grens max) ^ "\xe2\x80\xa6"
 let obj ~at = function `Assoc kvs -> kvs | j -> fail "%s: expected an object, got %s" (where at) (got j)
 let str ~at = function `String s -> s | j -> fail "%s: expected a string, got %s" (where at) (got j)
 let list_ ~at = function `List l -> l | j -> fail "%s: expected a list, got %s" (where at) (got j)

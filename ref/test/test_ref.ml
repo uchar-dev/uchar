@@ -6090,6 +6090,22 @@ let () =
     {|expected[4]: missing field "characteristic"|};
   vorm "caselader-vorm-regel-geen-tekst" ~sub:{|{ "kind": "consistent" }|}
     ~door:{|{ "kind": "inconsistent", "rule": 5 }|} "expected[4].rule: expected a string, got 5";
+  (* what was found is shown up to 80 bytes and cut on a character boundary:
+     a whole wrong subtree used to be printed in full on one line (a root
+     given as a list: 2 154 characters, measured by the lens 2026-09-23) *)
+  weigert_tekst "caselader-vorm-vondst-afgekapt"
+    ("[ " ^ String.concat ", " (List.init 40 (fun i -> string_of_int (i + 1))) ^ " ]")
+    "<root>: expected an object, got \
+     [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,3\xe2\x80\xa6";
+  weigert_tekst "caselader-vorm-vondst-afgekapt-op-tekengrens"
+    (kaal
+       ~input:
+         (Printf.sprintf {|{ "instances": [ "%s" ], "parameters": {} }|}
+            (String.concat "" (List.init 60 (fun _ -> "\xc3\xa9"))))
+       ())
+    ("input.instances[0]: expected an object, got \""
+    ^ String.concat "" (List.init 39 (fun _ -> "\xc3\xa9"))
+    ^ "\xe2\x80\xa6");
   (* three cross-checks of the same functions that named no position either:
      with two to-one links or two inconsistent pins in one case the author
      could not tell which one was meant *)
