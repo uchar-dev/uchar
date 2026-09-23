@@ -1674,9 +1674,12 @@ public final class ExecModelTranspiler {
     /** §13.4.2/§5.6 apply a die/dat-subselectie filter to the accumulate SOURCE pattern. A §5.6 comparison whose RHS is
      *  a NUMERIC Parameter-global binds that global on the source pattern (a 2-var expr over the element + the global) —
      *  the exec analog of DRL reading the global as a free name in the source constraint ("prijs &lt; grens"); the LHS is
-     *  the element's folded attribute. Every other supported filter is a fact-only leaf via {@link #leafPredicate}.
-     *  null -&gt; the filter is unstructured, or its global is non-numeric / unregistered -&gt; the caller skips
-     *  (symmetric with the DRL marker — DRL also needs the global declared). */
+     *  the element's folded attribute. A ch. 3.10 window binds the rekendatum global the same way and is read by
+     *  {@link #vensterToets} with the ELEMENT as its subject, so an attribute bound is read on each candidate — for
+     *  a quantifier fold's filter and an aggregation's alike (until 2026-09-23 this branch refused both, where ref,
+     *  clingo and the DRL-text branch carry them). Every other supported filter is a fact-only leaf via
+     *  {@link #leafPredicate}. null -&gt; the filter is unstructured, or its global is non-numeric / unregistered
+     *  -&gt; the caller skips (symmetric with the DRL marker — DRL also needs the global declared). */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private PatternDSL.PatternDef filterSource(PatternDSL.PatternDef src, Conditie filter, Objecttype elem) {
         // §13.4.13.4 a COMPOUND subselectie on the element ("die aan alle volgende voorwaarden voldoen: …"): ALLE/DE
@@ -1697,6 +1700,13 @@ public final class ExecModelTranspiler {
             // count INSIDE a Predicate2 — the exec analog of DRL reading the global as a free name regardless of
             // quantifier. 0 globals -> a plain Predicate1 fold. An un-lowerable leaf OR a SECOND distinct global skips
             // the whole compound (symmetric with RuleChecker's parity guard, so DRL also declines exactly those).
+            // A window among the bullets, at any depth, is WF-112's composite position: refused by name here too.
+            String vensterWeigering = Vensterpositie.weigering(s);
+            if (vensterWeigering != null) {
+                String snip = s.bron() == null ? null : s.bron().snippet();
+                overgeslagen.add(vensterWeigering + (snip == null || snip.isEmpty() ? "" : ": " + snip));
+                return null;
+            }
             final Conditie.Kwantor kw = s.kwantor(); final int n = s.drempel();
             Global<BigDecimal> bound = null;
             List<Predicate2<Object, BigDecimal>> tellers = new ArrayList<>();
@@ -1734,6 +1744,11 @@ public final class ExecModelTranspiler {
             }
             Predicate2<Object, Object> p2 = (e, gv) -> fold.test(e, (BigDecimal) gv);
             return src.expr(nextId("filter"), (Variable) bound, (Predicate2) p2);
+        }
+        if (filter instanceof Conditie.Periode per) {   // ch. 3.10: the window, read per candidate
+            Predicate2<Object, Object> venster = rekendatumGlobal == null ? null : vensterToets(per, elem);
+            return venster == null ? null
+                    : src.expr(nextId("filter"), (Variable) rekendatumGlobal, (Predicate2) venster);
         }
         GlobalVergelijking gb = globalBullet(filter, elem);   // §5.6 a getalachtig Parameter-global comparison source filter
         if (gb != null) {
@@ -2749,9 +2764,10 @@ public final class ExecModelTranspiler {
 
     /** RUNTIME-SEMANTICS ch. 3.10's scalar gate as a (subject, rekendatum) test: vanaf inclusive, tot exclusive,
      *  "tot en met" inclusive, an absent bound open, an unset rekendatum or a leeg bound never matching. ONE
-     *  reading for every position that carries a window — the rule's condition, and the toets and filter of an
-     *  ALLE quantifier fold, where {@code subject} is the ELEMENT and an attribute bound is therefore read on each
-     *  contributor. null when a bound shape is not carried ({@link #periodeGrensLezer}). */
+     *  reading for every position that carries a window — the rule's condition, the toets of an ALLE quantifier
+     *  fold, and a die/dat filter (a fold's or an aggregation's), where {@code subject} is the ELEMENT and an
+     *  attribute bound is therefore read on each contributor. null when a bound shape is not carried
+     *  ({@link #periodeGrensLezer}). */
     private Predicate2<Object, Object> vensterToets(Conditie.Periode per, Objecttype subject) {
         java.util.function.Function<Object, java.time.LocalDate> vanF = periodeGrensLezer(per.vanaf(), subject);
         java.util.function.Function<Object, java.time.LocalDate> totF = periodeGrensLezer(per.tot(), subject);
@@ -3116,32 +3132,6 @@ public final class ExecModelTranspiler {
         return Matrix.nee(matrixAs(c));
     }
 
-    /** The fold's die/dat {@code filter} on the accumulate source: {@link #filterSource}, plus the ch. 3.10
-     *  window, which that shared method does not bind. The window becomes one more conjunct of the SOURCE
-     *  pattern, reading the rekendatum global beside the element — the element is the subject, so an attribute
-     *  bound is read on each candidate. An ALLE/DE conjunction holding a window is split here so each bullet
-     *  lands on its own {@code .expr}, as filterSource splits one; under a fold quantifier a window can sit
-     *  nowhere else, because {@link Vensterpositie} has already refused every counting or complementing
-     *  position (WF-112). Every filter without a window goes to filterSource unchanged, and an aggregation's
-     *  filter never comes here. */
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private PatternDSL.PatternDef vouwFilter(PatternDSL.PatternDef src, Conditie filter, Objecttype elem) {
-        if (filter instanceof Conditie.Periode per) {
-            Predicate2<Object, Object> venster = rekendatumGlobal == null ? null : vensterToets(per, elem);
-            return venster == null ? null
-                    : src.expr(nextId("filter"), (Variable) rekendatumGlobal, (Predicate2) venster);
-        }
-        if (filter instanceof Conditie.Samengesteld s && Conditie.bevatPeriode(s)
-                && (s.kwantor() == Conditie.Kwantor.ALLE || s.kwantor() == Conditie.Kwantor.DE)) {
-            for (Conditie deel : s.onderdelen()) {
-                src = vouwFilter(src, deel, elem);
-                if (src == null) return null;
-            }
-            return src;
-        }
-        return filterSource(src, filter, elem);
-    }
-
     /** Is {@code a} a read of a SINGLE-PERIOD tijdlijn member of {@code elem} written with the ELEMENT as subject?
      *  The matrix of a fold is evaluated per contributor with the element as subject (ch. 3.9a), so a navigated
      *  read is a further hop this arm does not walk, and the member is looked up CHAIN-CLOSED (a contributor may be
@@ -3160,8 +3150,7 @@ public final class ExecModelTranspiler {
      *        fallback for the self-typed pair no by-pair search can disambiguate, with the SAME §13.3.9
      *        storage-direction questions {@link #aggregatie} asks (a derived role is not yet a bean field);</li>
      *    <li>the {@code filter} is applied to the accumulate SOURCE through {@link #filterSource}, which is exactly
-     *        how {@code Expr.Functie.filter} is applied — the field has the same reading and the same machinery —
-     *        with one addition of this position only, the ch. 3.10 window ({@link #vouwFilter});</li>
+     *        how {@code Expr.Functie.filter} is applied — the field has the same reading and the same machinery;</li>
      *    <li>the {@code toets} takes one of two routes. A §8.2 whole-period predicate over the contributor's own
      *        timeline folds the collected {@code List<List<Segment>>} through the ch. 3.9 helper per contributor;
      *        every OTHER matrix is an ordinary condition of the element, so the CONTRIBUTORS THEMSELVES are
@@ -3299,7 +3288,7 @@ public final class ExecModelTranspiler {
         // ch. 3.9a: the filter selects WHICH contributors are quantified over, per contributor with the element as
         // subject — the same field, the same reading and the same machinery as Functie.filter (ch. 3.4a).
         if (kv.filter() != null) {
-            src = vouwFilter(src, kv.filter(), elem);
+            src = filterSource(src, kv.filter(), elem);
             if (src == null) return kvSkip(kv, "een die/dat-subselectie die deze tak niet op de source kan binden");
         }
 
@@ -3539,7 +3528,7 @@ public final class ExecModelTranspiler {
         // leeg bound -> skip / no match, symmetric with the DRL marker & null-guards. Under GEEN or a COUNTING
         // quantifier the window never gets here: that position is WF-112's, refused by name at the composite and
         // at the fold (kern.Vensterpositie, the sentence the DRL side gives too). The reading itself is
-        // vensterToets, shared with an ALLE fold's toets and filter.
+        // vensterToets, shared with an ALLE fold's toets and with every die/dat filter.
         if (c instanceof Conditie.Periode per) {
             if (rekendatumGlobal == null) return null;   // defensive: heeftTijdgebonden registers it
             Predicate2<Object, Object> venster = vensterToets(per, subject);
@@ -4391,17 +4380,29 @@ public final class ExecModelTranspiler {
                 // read the Rekendatum global. DRL sets a flag exactly where it emits the text; the exec model
                 // must register the Global BEFORE rules build, so scan the IR surfaces (over-inclusion — a
                 // shape that ends up skipped — merely declares an unused global, which is harmless).
-                || model.resolvedRegels.stream().anyMatch(r -> leestRekendatum(r.voorwaarde()) || Expr.bevat(r.waarde(), Expr::isRekenConstante))
+                || model.resolvedRegels.stream().anyMatch(r -> leestRekendatum(r.voorwaarde()) || leestRekendatum(r.waarde()))
                 || model.objectCreaties.stream().anyMatch(o -> leestRekendatum(o.voorwaarde())
-                        || o.toekenningen().stream().anyMatch(t -> Expr.bevat(t.waarde(), Expr::isRekenConstante)))
+                        || o.toekenningen().stream().anyMatch(t -> leestRekendatum(t.waarde())))
                 || model.feitCreaties.stream().anyMatch(f -> leestRekendatum(f.voorwaarde()))
                 || model.verdelingen.stream().anyMatch(v -> leestRekendatum(v.voorwaarde()))
                 || model.consistenties.stream().anyMatch(cs -> leestRekendatum(cs.assertie()));
     }
 
-    /** Whether a condition contains a §8.4.3 periode-window or a §5.3 Rekendatum/Rekenjaar operand. */
+    /** Whether a condition contains a §8.4.3 periode-window or a §5.3 Rekendatum/Rekenjaar operand. A window is
+     *  also found where it sits inside an operand, as the die/dat filter of an aggregation. */
     private static boolean leestRekendatum(Conditie c) {
-        return c != null && (Conditie.bevatPeriode(c) || Conditie.bevatExpr(c, Expr::isRekenConstante));
+        return c != null && (Conditie.bevatPeriode(c) || Conditie.bevatExpr(c, ExecModelTranspiler::leestRekendatumHier));
+    }
+
+    /** The same question of a value expression. Until 2026-09-23 it asked only for a Rekendatum/Rekenjaar
+     *  operand, so a window in an aggregation's filter left the global unregistered and the aggregation declined
+     *  at {@link #filterSource}: measured, the one executor of four that refused it. */
+    private static boolean leestRekendatum(Expr e) {
+        return Expr.bevat(e, ExecModelTranspiler::leestRekendatumHier);
+    }
+
+    private static boolean leestRekendatumHier(Expr e) {
+        return Expr.isRekenConstante(e) || (e instanceof Expr.Functie f && Conditie.bevatPeriode(f.filter()));
     }
 
     /** §4.2 add the validity-window guard to a construct's pattern: an {@code .expr} over the Rekendatum global

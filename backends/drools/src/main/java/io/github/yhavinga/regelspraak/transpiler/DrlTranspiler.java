@@ -2839,7 +2839,11 @@ public final class DrlTranspiler {
             Frag tijd = tijdreeksAggregatie(acc, f, subject);    // §7.1 "het totaal van" a temporal attribute's timeline
             if (tijd != null) return tijd;
             Frag var = accumulate(acc, f, subject, false);       // hoists an accumulate into the "when" (value side: bare fold)
-            return var != null ? var : Frag.todo("aggregatie " + f.kind(), f.bron());
+            if (var != null) return var;
+            // A window under GEEN or a counting quantifier in the die/dat filter is WF-112's position; the filter's
+            // own marker is dropped on the way up, so the rule is named here, in the sentence the exec branch gives.
+            String vensterWeigering = Vensterpositie.weigering(f.filter());
+            return Frag.todo(vensterWeigering != null ? vensterWeigering : "aggregatie " + f.kind(), f.bron());
         }
         return Frag.todo("expressie", e.bron());
     }

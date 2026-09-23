@@ -16,7 +16,8 @@ import java.util.Set;
 /**
  * A TIME WINDOW (RUNTIME-SEMANTICS ch. 3.10) inside a QUANTIFIER FOLD (ch. 3.9a), replayed through BOTH
  * Drools branches: played where WF-112 admits it — the {@code toets} and the {@code filter} of an
- * {@code ALLE} fold — and refused BY NAME everywhere WF-112 forbids it.
+ * {@code ALLE} fold, and beside them the die/dat filter of an aggregation, which shares the filter's
+ * machinery — and refused BY NAME everywhere WF-112 forbids it.
  *
  * <p><b>Why these rows exist.</b> Measured 2026-09-23 (card drools-venster-vouwtoets) on documents built
  * exactly as below: the exec-model branch refused the window in an {@code ALLE} fold's toets and filter
@@ -151,6 +152,22 @@ class VensterVouwWitnessTest {
         BeideTakken.groen(ir, ploegCasus(null, "P1", "P2"), "tijdvrij: niets geselecteerd, vacuüm waar");
     }
 
+    // ---------------- the same window in an AGGREGATION's filter: the neighbouring position ----------------
+
+    /** The golden's rule "wachttal" — the count of the ploeg's wachten — with the window as its die/dat filter.
+     *  Measured the same day as the fold rows: ref, clingo and the DRL-text branch counted it and the exec-model
+     *  branch declined the whole aggregation ("aggregatie buiten Phase-C scope"), because the window in a VALUE's
+     *  filter left the rekendatum global unregistered. Per ploeg, at 2024-06-15: S1 2 (W2 on the date), S2 0,
+     *  S3 1 (W5 leeg), S4 0, S5 1, S6 1 (W7 after the date); a reading of the ploeg's own date would count 0, 1,
+     *  0, 0, 0, 2. Time-free: nothing counts. The ALLE subselection beside it drops S5's W6 as well. */
+    @Test void het_venster_in_het_filter_van_een_aggregatie_telt_per_element() throws Exception {
+        Path ir = aggregatieDocument(ATTR);
+        BeideTakken.groen(ir, tellingCasus(BINNEN, 2, 0, 1, 0, 1, 1), "de telling selecteert per wacht");
+        BeideTakken.groen(ir, tellingCasus(null, 0, 0, 0, 0, 0, 0), "tijdvrij: niets telt");
+        BeideTakken.groen(aggregatieDocument(samen("ALLE", GEDIPLOMEERD, ATTR)), tellingCasus(BINNEN, 2, 0, 1, 0, 0, 1),
+                "ALLE[gediplomeerd, venster] als subselectie");
+    }
+
     // ---------------- WF-112: GEEN and the counting quantifiers, refused by name in both branches ----------------
 
     /** The complement flank: a time-free case, where a lowered GEEN would answer bevoegd for every ploeg. Each
@@ -172,6 +189,10 @@ class VensterVouwWitnessTest {
     @Test void een_venster_onder_een_geen_samenstelling_in_een_alle_vouw_wordt_geweigerd() throws Exception {
         BeideTakken.geweigerd(document("ALLE", null, null, samen("GEEN", LIT)), casus(null, ALLE_PLOEGEN),
                 "GEEN-samenstelling (WF-112)", "GEEN[venster] als toets van een ALLE-vouw");
+        // the same position as an aggregation's subselection: both branches refused it before, under a generic
+        // aggregation note, and now name the rule
+        BeideTakken.geweigerd(aggregatieDocument(samen("GEEN", ATTR)), tellingCasus(null, 2, 1, 2, 0, 1, 2),
+                "GEEN-samenstelling (WF-112)", "GEEN[venster] als subselectie van een telling");
     }
 
     /** The corpus's own WF-112 witnesses, loaded as gate 12 and the replay API load a document: with no
@@ -268,6 +289,34 @@ class VensterVouwWitnessTest {
             for (JsonNode r : doc.withArray(veld)) if (naam.equals(r.path("naam").asText())) uit.add(r);
             doc.set(veld, uit);
         }
+    }
+
+    /** The golden's document with ONE rule, "wachttal van een schouwploeg", whose count carries {@code filter}. */
+    private Path aggregatieDocument(String filter) throws Exception {
+        ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(SCHOUWPLOEG.resolve("ir.json")));
+        for (String ot : new String[] { "Strandwacht", "Schouwploeg" })
+            ((ObjectNode) doc.get("objecttypen").get(ot).get("attributen")).set("aanstelling", JSON.readTree(DATUM));
+        houdRegel(doc, "wachttal van een schouwploeg");
+        ((ObjectNode) doc.withArray("resolvedRegels").get(0).get("waarde")).set("filter", JSON.readTree(filter));
+        Path p = tmp.resolve("venstervouw-" + (n++) + ".json");
+        Files.writeString(p, doc.toPrettyString());
+        return p;
+    }
+
+    /** The shared instances at {@code asOf}, expecting each ploeg's wachttal, S1 to S6 in order. */
+    private static JsonNode tellingCasus(String asOf, int... tal) throws Exception {
+        ObjectNode c = JSON.createObjectNode();
+        c.put("format", "uchar-case-v0");
+        if (asOf == null) c.putNull("asOfDate"); else c.put("asOfDate", asOf);
+        ObjectNode input = c.putObject("input");
+        input.set("instances", JSON.readTree(INSTANTIES));
+        input.putObject("parameters");
+        ArrayNode verwacht = c.putArray("expected");
+        for (int i = 0; i < ALLE_PLOEGEN.length; i++)
+            verwacht.addObject().put("kind", "attributeValue").put("label", ALLE_PLOEGEN[i]).put("attribute", "wachttal")
+                    .set("value", JSON.createObjectNode().put("number", String.valueOf(tal[i])));
+        verwacht.addObject().put("kind", "consistent");
+        return c;
     }
 
     /** {@code ir} with the numeric parameter {@code keurgrens} declared. */
