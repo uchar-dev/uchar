@@ -22,8 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The loader's refusals of a document that is not a well-formed {@code uchar-ir-v1} document in its M1 shape: the
- * container, the declaration lists, and the member nodes of an object type. Every fixture is a replaying corpus
- * golden with ONE twist in memory; the corpus file is read and never written.
+ * container, the declaration lists, the member nodes of an object type, the domain's datatype and each diagnostic.
+ * Every fixture is a replaying corpus golden with ONE twist in memory; the corpus file is read and never written.
  *
  * <p>Measured 2026-09-23 by the M1 lens on the loader as M1 first wrote it: each twist below was read without a
  * word — a node spelled {@code Objecttype} or without {@code node}, a v0 side map beside the member nodes, an
@@ -37,7 +37,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>Each refusal is an {@link IrLoader.Documentfout}, a hard error, and never an {@link IrLoader.Refusal}: a
  * Refusal is the differential gate's auto-excluded channel ("form not carried"), and a malformed document filed
  * there leaves the gate green over a document nobody read. Corpus golden and red documents are verifier-clean,
- * so none of them reaches these arms; this suite is the only place they are pinned.
+ * so none of them reaches these arms; this suite is the only place they are pinned. Three tests pin the other side
+ * of that line: a well-formed document of a form this backend does not carry (another format, a functionDefs
+ * list, a period count beyond a Java int) stays a Refusal.
  */
 class LaderWeigeringWitnessTest {
 
