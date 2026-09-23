@@ -5670,17 +5670,45 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
         (String.concat ", "
            ((Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: join) @ fatoms @ witness));
       [ Printf.sprintf "not %s(%s)" p subject ])
-  | Predicaat { soort = Gevuld; operand; negatie = false; dagsoort = None; periode = None; _ } ->
-      (* the gevuld gate (ref eval: value <> leeg): the operand's binding atoms
-         as a positive join. A struct operand rides struct_term (its val atom),
-         any other operand rides expr_term — either way absence leaves the atoms
-         unbound, so the gated rule does not fire (leeg-on-absence for free). The
-         value itself is discarded; only presence matters. *)
+  | Predicaat { soort = (Leeg | Gevuld) as soort; operand; negatie; dagsoort = None; periode = None; _ }
+    ->
+      (* the leeg/gevuld tests (ch. 1.2; ref eval: leeg is `value = leeg`,
+         gevuld its complement, `negatie` the inner pointwise negation of
+         either — so negated leeg IS gevuld and negated gevuld IS leeg). The
+         whole-period form never reaches here: the named refusal above takes
+         every qualified test, negated or not, because the threshold of a
+         negated leeg test under ch. 3.9 is not normed.
+
+         Gevuld is the operand's binding atoms as a positive join. A struct
+         operand rides struct_term (its val atom), any other operand rides
+         expr_term — either way absence leaves the atoms unbound, so the gated
+         rule does not fire (leeg-on-absence for free). The value itself is
+         discarded; only presence matters.
+
+         Leeg is the complement of that join, and ASP forms no complement of a
+         conjunction of atoms — only of a predicate. So the join is REIFIED in
+         a helper gvN(S), exactly as the quantifier fold reifies its matrix,
+         and leeg is `not gvN(S)`. The helper opens with isa(S,ot) so it is
+         safe for a subject the join does not bind, and the join's own
+         variables (a navigated step's target among them) stay local to it —
+         what the negation needs, since "the werf's tarief is leeg" means NO
+         binding exists. Stratified by construction: the helper is named after
+         a counter that only grows, over atoms translated before the name. *)
       let operand = req "Predicaat.operand" operand in
-      if is_struct_operand (Some operand) then fst (struct_term ctx ~subject ~subject_ot operand)
-      else
-        let atoms, _, _ = expr_term ctx ~subject ~subject_ot operand in
-        atoms
+      let atoms =
+        if is_struct_operand (Some operand) then fst (struct_term ctx ~subject ~subject_ot operand)
+        else
+          let atoms, _, _ = expr_term ctx ~subject ~subject_ot operand in
+          atoms
+      in
+      if (soort = Gevuld) <> negatie then atoms
+      else begin
+        ctx.fresh <- ctx.fresh + 1;
+        let p = Printf.sprintf "gv%d" ctx.fresh in
+        emit ctx "%s(%s) :- %s." p subject
+          (String.concat ", " (Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: atoms));
+        [ Printf.sprintf "not %s(%s)" p subject ]
+      end
   | Conditie_onopgelost _ ->
       (* the unsolved-state guard on the CONDITION position — the sibling of
          [Expr_onopgelost] above, and the form the §13.4.7 creation guard takes

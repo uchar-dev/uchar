@@ -7533,6 +7533,200 @@ let () =
      "filter": null, "bron": "geborgen vondsten van de Jutter" }|}))
     ~case_text:unie_case ~needle:"carries no sourceRole"
 
+(* THE LEEG TEST AND ITS NEGATIONS in the shared condition translation
+   (RUNTIME-SEMANTICS ch. 1.2; card clingo-leeg-negatie, 2026-09-23). ref reads
+   `Predicaat LEEG` as "the operand evaluates to leeg", GEVULD as its
+   complement, and the `negatie` field as the inner, pointwise negation of
+   that test — so negated leeg is gevuld and negated gevuld is leeg. Until
+   this card [cond_atoms] carried only the unnegated gevuld test and faulted
+   on the other three (`condition kind not translated`), so no golden could
+   hold them. Every frame is pinned against ref AND clingo on the same
+   hand-computed rows: ref is the control that the rows are right.
+
+   Own operand: S1 lengte 8, S2 leeg, S3 lengte 5, S4 leeg — filled {S1,S3}.
+   Navigated operand (het tarief van de werf): S1, S2 on W1 (tarief 312), S3
+   without a werf, S4 on W2 (no tarief) — filled {S1,S2}; an absent werf
+   reads leeg (ch. 1.2). *)
+let leeg_num = {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null }|}
+
+let leeg_doc ~werf_attrs ~regels =
+  let namen =
+    String.concat ", "
+      (List.map (fun (n, _) -> {|{ "node": "Regel", "naam": "|} ^ n ^ {|", "soort": "regel" }|}) regels)
+  in
+  let lijf = String.concat ", " (List.map snd regels) in
+  {|{ "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Werf": { "node": "Objecttype", "naam": "Werf",
+      "attributen": { "tarief": |} ^ leeg_num ^ werf_attrs ^ {| },
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {}, "kenmerken": [],
+      "kenmerkSoorten": {}, "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
+      "bezield": false, "meervoud": "Werven" },
+    "Schuit": { "node": "Objecttype", "naam": "Schuit",
+      "attributen": { "lengte": |} ^ leeg_num ^ {|, "meldpremie": |} ^ leeg_num ^ {| },
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {}, "kenmerken": [],
+      "kenmerkSoorten": {}, "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
+      "bezield": false, "meervoud": "Schuiten" } },
+  "domeinen": {}, "parameters": {}, "eenheidstelsels": {},
+  "feittypen": { "ligplaats": { "node": "Feittype", "naam": "ligplaats", "wederkerig": false,
+    "rollen": [
+      { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten",
+        "meervoudig": true } ] } },
+  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
+  "regels": [ |} ^ namen ^ {| ],
+  "resolvedRegels": [ |} ^ lijf ^ {| ],
+  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+  "regelGroepen": [], "diagnostics": []
+}
+|}
+
+let leeg_ref ~ot ~attr ~nav =
+  {|{ "node": "AttribuutRef", "attribuut": "|} ^ attr ^ {|", "objecttype": "|} ^ ot
+  ^ {|", "onderwerpBron": "de Schuit", "navigatieRol": |}
+  ^ (match nav with None -> "null" | Some r -> {|"|} ^ r ^ {|"|})
+  ^ {|, "type": |} ^ leeg_num ^ {|, "bron": "de |} ^ attr ^ {|", "set": false, "navigatiePad": []|}
+  ^ (match nav with
+     | None -> ""
+     | Some r -> {|, "navigatieBindingen": [ { "node": "RolBinding", "feittype": "ligplaats", "rol": "|} ^ r ^ {|" } ]|})
+  ^ " }"
+
+let leeg_pred ?(periode = "null") ~soort ~negatie operand =
+  {|{ "node": "Predicaat", "soort": "|} ^ soort ^ {|", "operand": |} ^ operand
+  ^ {|, "dagsoort": null, "negatie": |} ^ string_of_bool negatie
+  ^ {|, "cijfers": 0, "periode": |} ^ periode ^ {|, "bron": "leeg-toets" }|}
+
+let leeg_regel ~naam ~ot ~doel ~waarde voorwaarde =
+  ( naam,
+    {|{ "node": "ResolvedRegel", "naam": "|} ^ naam ^ {|", "soort": "BEREKENING",
+      "doel": { "node": "AttribuutRef", "attribuut": "|} ^ doel ^ {|", "objecttype": "|} ^ ot
+    ^ {|", "onderwerpBron": "een |} ^ ot ^ {|", "navigatieRol": null, "type": |} ^ leeg_num
+    ^ {|, "bron": "De |} ^ doel ^ {|", "set": false, "navigatiePad": [] },
+      "waarde": { "node": "Literal", "waarde": "|} ^ waarde ^ {|", "type": |} ^ leeg_num
+    ^ {|, "bron": "|} ^ waarde ^ {|" },
+      "voorwaarde": |} ^ voorwaarde ^ {|,
+      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }|} )
+
+(* [lengte] as a scalar or, for the whole-period frame, a one-segment timeline *)
+let leeg_case ?(lengte = fun n -> {|{ "number": "|} ^ n ^ {|" }|}) expected =
+  {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+    { "label": "W1", "objectType": "Werf", "attributes": { "tarief": { "number": "312" } },
+      "roles": {}, "characteristics": [] },
+    { "label": "W2", "objectType": "Werf", "attributes": {}, "roles": {}, "characteristics": [] },
+    { "label": "S1", "objectType": "Schuit", "attributes": { "lengte": |} ^ lengte "8"
+  ^ {| }, "roles": { "werf": ["W1"] }, "characteristics": [] },
+    { "label": "S2", "objectType": "Schuit", "attributes": {}, "roles": { "werf": ["W1"] },
+      "characteristics": [] },
+    { "label": "S3", "objectType": "Schuit", "attributes": { "lengte": |} ^ lengte "5"
+  ^ {| }, "roles": {}, "characteristics": [] },
+    { "label": "S4", "objectType": "Schuit", "attributes": {}, "roles": { "werf": ["W2"] },
+      "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [ |} ^ String.concat ", " expected ^ {| ] }|}
+
+(* one row per label: [attr] = [waarde] on the labels in [hits], leeg on the rest *)
+let leeg_rijen ~attr ~waarde ~labels hits =
+  List.map
+    (fun l ->
+      if List.mem l hits then
+        {|{ "kind": "attributeValue", "label": "|} ^ l ^ {|", "attribute": "|} ^ attr
+        ^ {|", "value": { "number": "|} ^ waarde ^ {|" } }|}
+      else {|{ "kind": "attributeEmpty", "label": "|} ^ l ^ {|", "attribute": "|} ^ attr ^ {|" }|})
+    labels
+
+let schuiten = [ "S1"; "S2"; "S3"; "S4" ]
+
+let leeg_frame ~name ~soort ~negatie ~nav hits =
+  let operand =
+    match nav with
+    | None -> leeg_ref ~ot:"Schuit" ~attr:"lengte" ~nav:None
+    | Some r -> leeg_ref ~ot:"Werf" ~attr:"tarief" ~nav:(Some r)
+  in
+  let ir =
+    leeg_doc ~werf_attrs:""
+      ~regels:
+        [ leeg_regel ~naam:"meldpremie" ~ot:"Schuit" ~doel:"meldpremie" ~waarde:"40"
+            (leeg_pred ~soort ~negatie operand) ]
+  in
+  let case_text = leeg_case (leeg_rijen ~attr:"meldpremie" ~waarde:"40" ~labels:schuiten hits) in
+  ref_matches ~name ~ir ~case_text;
+  clingo_matches ~name ~ir ~case_text
+
+let () =
+  leeg_frame ~name:"LEEG, own" ~soort:"LEEG" ~negatie:false ~nav:None [ "S2"; "S4" ];
+  leeg_frame ~name:"LEEG negated, own" ~soort:"LEEG" ~negatie:true ~nav:None [ "S1"; "S3" ];
+  leeg_frame ~name:"GEVULD, own (control)" ~soort:"GEVULD" ~negatie:false ~nav:None [ "S1"; "S3" ];
+  leeg_frame ~name:"GEVULD negated, own" ~soort:"GEVULD" ~negatie:true ~nav:None [ "S2"; "S4" ];
+  leeg_frame ~name:"LEEG, navigated" ~soort:"LEEG" ~negatie:false ~nav:(Some "werf") [ "S3"; "S4" ];
+  leeg_frame ~name:"LEEG negated, navigated" ~soort:"LEEG" ~negatie:true ~nav:(Some "werf")
+    [ "S1"; "S2" ];
+  leeg_frame ~name:"GEVULD negated, navigated" ~soort:"GEVULD" ~negatie:true ~nav:(Some "werf")
+    [ "S3"; "S4" ];
+  (* the helper's negation inside the quantifier fold's REIFIED matrix (ALLE:
+     `not kvs(X)` over a matrix that is itself `not gv(X)`) and as GEEN's
+     witness. W1 holds S1 (8) and S2 (leeg), W2 holds S4 (leeg): "alle
+     schuiten hebben een lege lengte" holds for W2 alone, and so does "geen
+     schuit heeft een niet-lege lengte". *)
+  let kv kwantor soort negatie =
+    {|{ "node": "Kwantorvouw", "kwantor": "|} ^ kwantor ^ {|", "elementObjecttype": "Schuit",
+      "filter": null, "toets": |}
+    ^ leeg_pred ~soort ~negatie (leeg_ref ~ot:"Schuit" ~attr:"lengte" ~nav:None)
+    ^ {|, "bron": "vouw", "bronRol": { "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" } }|}
+  in
+  List.iter
+    (fun (name, kwantor, soort, negatie) ->
+      let ir =
+        leeg_doc ~werf_attrs:({|, "keurpremie": |} ^ leeg_num)
+          ~regels:
+            [ leeg_regel ~naam:"keurpremie" ~ot:"Werf" ~doel:"keurpremie" ~waarde:"10"
+                (kv kwantor soort negatie) ]
+      in
+      let case_text =
+        leeg_case (leeg_rijen ~attr:"keurpremie" ~waarde:"10" ~labels:[ "W1"; "W2" ] [ "W2" ])
+      in
+      ref_matches ~name ~ir ~case_text;
+      clingo_matches ~name ~ir ~case_text)
+    [ ("ALLE over a LEEG matrix", "ALLE", "LEEG", false);
+      ("GEEN over a negated LEEG matrix", "GEEN", "LEEG", true) ];
+  (* the whole-period qualifier: ref faults on every leeg/gevuld test under
+     it, and the threshold of the NEGATED test is an open point of the norm
+     (ch. 3.9 gives leeg touched-days and every other test days(B)). The
+     negated forms must refuse in ref's words, not be answered by the new
+     arm — measured already so before this card; pinned so a reordering of
+     the arms cannot let them through. *)
+  List.iter
+    (fun soort ->
+      let ir =
+        leeg_doc ~werf_attrs:""
+          ~regels:
+            [ leeg_regel ~naam:"meldpremie" ~ot:"Schuit" ~doel:"meldpremie" ~waarde:"40"
+                (leeg_pred ~soort ~negatie:true
+                   ~periode:{|{ "node": "GeheelPeriode", "jaar": true, "niet": false }|}
+                   (leeg_ref ~ot:"Schuit" ~attr:"lengte" ~nav:None)) ]
+        |> replace ~tok:{|"attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {}, "kenmerken": [],
+      "kenmerkSoorten": {}, "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
+      "bezield": false, "meervoud": "Schuiten"|}
+             ~by:{|"attribuutGranulariteit": { "lengte": "MAAND" },
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {}, "kenmerken": [],
+      "kenmerkSoorten": {}, "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
+      "bezield": false, "meervoud": "Schuiten"|}
+      in
+      let case_text =
+        leeg_case
+          ~lengte:(fun n ->
+            {|{ "timeline": [ { "from": "2025-01-01", "to": "2026-01-01", "value": { "number": "|}
+            ^ n ^ {|" } } ] }|})
+          [ {|{ "kind": "consistent" }|} ]
+      in
+      faults_with ~name:(soort ^ " negated under a whole-period qualifier") ~ir ~case_text
+        ~needle:"whole-period leeg/gevuld test is ch. 3.9 scope, not executed here")
+    [ "LEEG"; "GEVULD" ]
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
