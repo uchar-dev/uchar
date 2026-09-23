@@ -210,8 +210,63 @@ cite none of the 36 listed bottom sentences)`.
 Technisch kan het. Een patroon van 213 tekens met de maandlengtes en de
 Gregoriaanse schrikkelregel (dezelfde als `is_leap` in ref) is gemeten
 tegen 4.620.000 lexemen (jaren 0000–9999 × maanden 00–13 × dagen
-00–32) en week 0 keer af. `spec/schema` blijft toch ongewijzigd, om
-vier redenen:
+00–32) en week 0 keer af.
+
+Reproduceerbaar vastgelegd (lensadvies, fixronde 2 punt 7). Het patroon,
+213 tekens, in de vorm die een JSON-schema `pattern` zou dragen:
+
+```
+^(?:[0-9]{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)-(?:0[1-9]|[12][0-9]|30)|02-(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:[02468][048]|[13579][26])00)-02-29)$
+```
+
+Het toetsscript, letterlijk (Python 3, alleen de standaardbibliotheek;
+de schrikkelregel is die van `is_leap` in `ref/lib/value.ml`):
+
+```python
+import re
+# a pattern that knows the proleptic Gregorian calendar for four-digit years
+cal = (r'^(?:[0-9]{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12][0-9]|3[01])'
+       r'|(?:0[469]|11)-(?:0[1-9]|[12][0-9]|30)'
+       r'|02-(?:0[1-9]|1[0-9]|2[0-8]))'
+       r'|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:[02468][048]|[13579][26])00)-02-29)$')
+rx = re.compile(cal)
+def leap(y): return y % 4 == 0 and (y % 100 != 0 or y % 400 == 0)
+def dim(y, m): return [31, 29 if leap(y) else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m-1]
+bad = 0; n = 0
+for y in range(10000):
+    for m in range(0, 14):
+        for d in range(0, 33):
+            s = f'{y:04d}-{m:02d}-{d:02d}'
+            want = 1 <= m <= 12 and 1 <= d <= dim(y, m)
+            got = rx.match(s) is not None
+            n += 1
+            if want != got: bad += 1
+print('pattern length', len(cal), 'chars; lexemes compared', n, '; disagreements', bad)
+for s in ['2026-02-30', '2025-02-29', '2028-02-29', '1900-02-29', '2000-02-29', '2026-13-01']:
+    print(s, 'admitted' if rx.match(s) else 'refused')
+print(cal)
+```
+
+Uitvoer:
+
+```
+pattern length 213 chars; lexemes compared 4620000 ; disagreements 0
+2026-02-30 refused
+2025-02-29 refused
+2028-02-29 admitted
+1900-02-29 refused
+2000-02-29 admitted
+2026-13-01 refused
+```
+
+(De laatste `print` van het script geeft daarna het patroon zelf,
+hierboven al letterlijk.) De toets vergelijkt het patroon met de
+Gregoriaanse regel over alle jaren 0000–9999, maanden 00–13 en dagen
+00–32, dus ook net buiten elk bereik. Een ECMA-262-motor (het
+regex-dialect van JSON Schema) kent dezelfde constructies: groepen
+`(?:…)`, tekenklassen en ankers; dat is niet apart gemeten.
+
+`spec/schema` blijft toch ongewijzigd, om vier redenen:
 
 1. Voor de IR-draad is de lijn al getrokken. In IR-SPEC ch. 4.1 staat
    "Two layers, and only one of them is a shape … A calendar is not a
