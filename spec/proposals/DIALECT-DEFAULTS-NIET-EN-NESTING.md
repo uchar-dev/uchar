@@ -634,7 +634,10 @@ of a rule is the simplest thing to teach: whatever an author may test as
   replaces the sentence of `DIVERGENCES.md:101-103` ("a genuine §9.5
   conflict is only expressible on an attribute target"). A negative base
   is the lowest default: under the closed world it decides `onwaar` and
-  writes nothing, so the outcome does not change. What it buys is that the
+  writes nothing, so in a flat model the outcome does not change — on a
+  subtype it replaces the inherited base (ch. 7.10) and so switches an
+  inherited positive base off (measured at the landing of card
+  `dialect-niet-in-uitzondering`, 2026-09-24). What it buys is that the
   author can write the statute ("herleeft niet, tenzij …") and that the
   exceptions hang on a named base without an invented positive rule —
   Catala's `definition x equals false` (the penningrecht base is the inert
