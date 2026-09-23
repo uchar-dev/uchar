@@ -259,3 +259,64 @@ Bewust blijven staan:
 Gate 10 PASS (450 tests, 70 rgs-goldens byte-identiek), gate 1 PASS. Het
 vendored slice beweegt verder (commentaar in grammatica en bronnen,
 `DIVERGENCES.md`).
+
+### Fixronde 2 (2026-09-23, hoofdsessie; lensadviezen 1, 4 en 7)
+
+**Advies 1, `8a902609`: de lidmaatschapsarm kent de rijen van een
+gegroepeerde beslistabel.** Een beslistabel in de groep staat voor de
+regels van haar rijen ("Bergingspremie 1", …), en die noemt een blok als
+basis. De arm sleutelde op de tabelnaam. Gemeten op `625d735f`: een blok
+op een rij, achter een Parameter die de groep sluit, ging met
+`diagnostics: []` de schijf op, waarna de verifier WF-033 en WF-050 gaf.
+De arm sleutelt nu op regelnamen (de desugaring legt de rijen vast) en
+spreekt alleen waar het liften echt zou gebeuren. Een basis die naar geen
+platte regel oplost (de tabelnaam zelf, een objectcreatie in de groep)
+krijgt de juistere weigering "geen basisregel met die naam gevonden",
+die de constructie noemt.
+
+    rood-eerst tegen RuleChecker md5 f42fbaf463d3bd58b9d41548bdbfa2b4:
+      9 tests, 6 successful, 3 failed (rij als basis: "[]"; tabelnaam en
+      objectcreatie: de regelgroepweigering in plaats van "geen basisregel")
+    mutant R1 (rijen niet gesleuteld):        1 failed
+    mutant R2 (liftwacht resolvedVan weg):    1 failed (objectcreatie)
+    teruggezet met cp, cmp gelijk (md5 bd954129327a7b234b3071bd0e4dd7f3)
+
+**Bijvangst, `a54f9bd3`: een Regelgroep noemt de rijen van haar
+beslistabel als leden.** Gemeten bij advies 1: elke groep met een
+beslistabel, ook zonder extensieblok, werd met de tabelnaam als lid
+uitgezonden en door de verifier geweigerd (`WF-033 FAIL /regelGroepen/0:
+group member 'Bergingspremie' does not resolve to a rule form`). Leden
+zijn regelnamen (IR-SPEC ch. 3.9), dus de groep noemt nu de rijregels;
+het document is daarna `verifier: PASS`. Getuige `RegelgroepLedenTest`:
+rood-eerst 1 failed ("but was: <[bergingsbonus, Bergingspremie]>"),
+mutant L (tabelnaam terug) 1 failed, cmp-herstel. Geen bron in welke
+zone ook draagt een Regelgroep.
+
+**Advies 4, `a78fd26c`: de uitweg klopt overal.** De melding raadde "vóór
+de kop 'Regelgroep <deze groep>'" aan. Bij twee groepen direct na elkaar
+komt wie dat volgt achter het laatste lid van de andere groep terecht en
+wordt opnieuw geweigerd. De melding noemt nu: vóór de eerste
+regelgroepkop van het document (daar reikt geen groep), of achter een
+definitie die de groep afsluit. De getuige volgt de raad en eist een
+schoon document. Een groepskop zonder leden (al een syntaxfout) kreeg
+daarnaast een plaatsingsmelding over een "laatste lid" dat er niet is;
+die vervalt.
+
+    rood-eerst tegen RuleChecker md5 c7ec34fa545de39d0d517688d9e0ed99:
+      11 tests, 8 successful, 3 failed (M5- en tweegroepen-uitweg, lege kop)
+    mutant M1 (lege kop weer meegeteld):       1 failed
+    mutant M2 (uitweg naar de laatste groep):  1 failed
+    teruggezet met cp, cmp gelijk (md5 d08cb8fed53f71a447411d028bf6e642)
+
+**Advies 7, `86bd4b5d`:** de openingszin van dit Result gecorrigeerd. Twee
+verifier-schone plaatsingen worden nu geweigerd (§1, rij 3 en 4).
+
+Aanvulling op het registervoorstel voor rij 14, als laatste zin:
+
+> A decision table in a group stands for the rules of its rows: the group
+> lists those rows as members — it listed the table's name, and the
+> verifier refused every group holding a table under WF-033 — and the
+> refusal's membership arm keys on them, speaking only where a lift would
+> happen. The way out the refusal names now holds wherever the author
+> follows it: before the document's first group header, or behind a
+> definition that ends the group.

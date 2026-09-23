@@ -411,3 +411,116 @@ dat "vanaf de PEILDATUM" (een parametergrens) zonder fouten resolvet. Sinds
 de WF-111-fence van deze branch (`66de32a2`) is een parametergrens een
 ERROR. Die test kantelt dus bij de herpin, naar dezelfde weigering die de
 verifier al gaf.
+
+### Fixronde 2 (2026-09-23, hoofdsessie; lensadviezen 2, 3, 6 en 8)
+
+**Advies 2, `5c81ba84`: het WF-112-hek.** De brontaal laat een
+periodebullet onder elke kwantor toe; de wire niet onder 'geen van de'
+of een tellende kwantor. Gemeten op `a54f9bd3`: onder elk van de vier,
+en onder een geen-samenstelling binnen een alle-samenstelling, ging het
+document met `diagnostics: []` de schijf op, waarna de verifier WF-112
+gaf. `RuleChecker.keurVensterposities` loopt nu over elke voorwaarde die
+de emitter schrijft, met het bereik van de verifier (ook in expressies
+genest), en geeft per samenstelling of kwantorvouw een ERROR die de
+kwantor noemt. Onder 'alle' en als eigen voorwaardendeel blijft het
+venster schoon. Notitie in `DIVERGENCES.md` §8.4.3.
+
+    getuige VensterKwantorTest, rood-eerst tegen RuleChecker md5
+      f29399455116b8c3c099dcb259097b5c: 7 tests, 2 successful, 5 failed (elk "[]")
+    mutant W1 (geen en ten minste uit):   3 failed
+    mutant W2 (geen recursie):            1 failed (geen binnen alle)
+    mutant W3 (ook 'alle' geweigerd):     2 failed (de schone vormen)
+    teruggezet met cp, cmp gelijk (md5 c2e56a2f9c606b30e205cd072dfca08c)
+
+**Advies 3, `83b5851f`: het regeldoel buiten het onderwerp, en het
+gesplitste venster.** Een regel schrijft een attribuut of kenmerk van
+zijn eigen universele onderwerp. Gemeten op `a54f9bd3`:
+
+- "De vakpremie van het strandvak van een Jutter moet gesteld worden op
+  10": doel 'vakpremie van het strandvak' op Jutter, omdat de naam de
+  navigatie opslokte; `diagnostics: []`, verifier WF-022 en WF-034;
+- hetzelfde met "berekend worden als", en voor een ongedeclareerd
+  attribuutdoel ("De onbekende premie van een Jutter …");
+- "Het strandvak van een Jutter is gemarkeerd": een kenmerkdoel zonder
+  objecttype, `diagnostics: []`, verifier WF-022.
+
+`RuleChecker.keurRegeldoelen` geeft elk een ERROR die de vorm noemt. Een
+ongedeclareerd kenmerk op een opgelost onderwerp ("Een Jutter is
+onbekend", evenzeer stil WF-022) blijft bewust buiten dit hek: dat is het
+terrein van de dialectkaart dialect-niet-in-uitzondering ("is niet X"),
+die na deze branch in dezelfde resolver werkt. Open punt 4.
+
+De vensterbullet in een samengestelde deelselectie, gemeten: als LAATSTE
+bullet sluit de parser de deelselectie af bij "het is de periode" (een
+markerkenmerk, alleen een WARNING), en de grens wordt een venster op de
+hele regel. Met een literale grens is dat `verifier: PASS`: een ander
+document dan er staat, stil op het punt dat ertoe doet. Vooraan in de
+lijst leest de parser dezelfde bullet als venster in het filter
+(verifier PASS, zoals bedoeld). Een venster achter een enkelvoudige
+deelselectie ("… die gewogen zijn vanaf dd. …") is het gewone
+regelvenster. Het gesplitste geval weigert nu met een ERROR op de regel;
+de grammatica is niet aangeraakt. `DIVERGENCES.md` kreeg de sectie
+"§13.4.4 A rule target is written on the subject — narrowed" en een
+alinea in §8.4.3.
+
+    getuige RegeldoelTest, rood-eerst tegen RuleChecker md5
+      c2e56a2f9c606b30e205cd072dfca08c: 10 tests, 5 successful, 5 failed
+    mutant T1 (doelhek uit):                  4 failed
+    mutant T2 (attribuutarm uit):             3 failed
+    mutant T3 (arm zonder objecttype uit):    1 failed
+    mutant T4 (splitsing niet herkend):       1 failed
+    teruggezet met cp, cmp gelijk (md5 c7ec34fa545de39d0d517688d9e0ed99)
+
+**Advies 6, `1de96e46`: alleen een meervoudige rol als uitweg.** In een
+regel op Vondst noemde de typetellingzin bij "het aantal Jutters" de rol
+'aanmelder', terwijl een vondst er één heeft. Nu wordt alleen een
+meervoudige rol genoemd. Rood-eerst tegen ExpressieBouwer md5
+e3c843a60f7f1561501abf71d466d256: 11 tests, 10 successful, 1 failed;
+mutant E (ook enkelvoudig) 1 failed; cmp-herstel (md5
+fa3771f6ed9b777fac0497f97ec4c53f).
+
+**Advies 8, `93f272f6`:** de spec-voorbeeldfrase in §1 staat nu in
+Jutterswet-woorden, en de toka-meting in §2 beschrijft de vorm zonder
+casusnamen.
+
+### Gates na de rebase op main `50d22c05`, elk als losse aanroep
+
+     1 check-self-contained     PASS
+     3 check-verifier           PASS  283 golden schoon; 441 negatief, vloer 350
+    10 check-regelspraak        PASS  475 JUnit, vloer 173; 70 rgs-goldens byte-identiek
+    11 check-toka-parity        PASS  45 .rgs byte-identiek; ref, clingo en Drools 29/29
+    12 check-drools             PASS  gespeeld 182 (pin), DRL-tekst 161 (pin), JUnit 620
+
+Gate 10 opnieuw na de hash-commit `68e0ed16` (alleen commentaar en
+backlog): PASS, 475 / 70. De rebase liep zonder conflict: main raakte
+`frontends/` niet aan.
+
+Registervoorstellen erbij:
+
+> Row 11, after the WF-111 producer sentence: **the window's position
+> too (WF-112).** A window under 'geen van de' or a counting quantifier —
+> a composite member at any depth, or a quantifier fold's filter or test —
+> reached disk silently and was refused by the verifier; the frontend now
+> refuses it at the composite, naming the quantifier, over the same reach
+> as the verifier's own walk. A window bullet written LAST in a compound
+> subselection, which the grammar splits into a marker characteristic and
+> a window on the whole rule, is refused as well.
+
+> Row 2, as a follow-up: **a rule target is written on the subject.** A
+> target naming another instance's attribute ("De vakpremie van het
+> strandvak van een Jutter …"), an undeclared attribute, or a
+> characteristic whose subject is a navigation used to reach the wire as
+> an unresolved target for WF-022 to refuse; the frontend refuses each by
+> name since 2026-09-23. An undeclared characteristic on a resolved
+> subject is the negated-decision dialect card's.
+
+### Open punten, bijgewerkt
+
+1. en 2. Ongewijzigd: de supertype-`AttribuutRef` (WF-053 als navigatie,
+   WF-111 als eigen lezing) en de supertypenaam als onderwerpverwijzing,
+   voor de kaart verifier-supertype-dubbele-schrijver.
+3. Het dimensie-grenspunt (hierboven, fixronde 2, advies 9).
+4. Nieuw: een ongedeclareerd kenmerkdoel op een opgelost onderwerp ("Een
+   Jutter is onbekend.") gaat nog stil de wire op (verifier WF-022). Het
+   hoort bij de dialectkaart dialect-niet-in-uitzondering, die de
+   kenmerktoekenning herschrijft.

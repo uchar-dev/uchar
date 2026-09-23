@@ -278,3 +278,13 @@ Aanvulling op het registervoorstel voor rij 3, als laatste zin:
    de werkbank) haalt de wire niet, want de IR heeft geen plek voor de
    herkomst van een declaratie. Dat is een wirebesluit (rij 3 noemt de
    gestructureerde `Bron` als open delta), geen frontendfix.
+
+### Fixronde 2 (2026-09-23, hoofdsessie; lensadvies 5)
+
+`89ed0f46`: de "; "-koppeling van meerdere annotaties op één blok is
+niet terug te draaien. Eén annotatie die zelf "; " bevat, leest daarna
+precies als twee, en zo'n tekst staat al op de wire (de groepsverwijzing
+van golden `jutterswet-samenloop`). `DIVERGENCES.md` §4 legt dat verlies
+van onderscheid vast. De wire verandert niet: een lijst bewaren zou een
+nieuw veld vergen (optie (b) van het voorstel, niet genomen). Wie de
+annotaties gescheiden wil houden, schrijft er één per blok.
