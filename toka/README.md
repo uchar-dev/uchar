@@ -77,6 +77,20 @@ stays honest about where it no longer proves toolchain agreement.
   no such diagnostic, so for this one list the dump has stopped being a
   toolchain dump. The marker itself is byte-identical, which is the point: the
   parity of every structural node is untouched.
+- **2026-09-23 — the zone is in the M1 shape of `uchar-ir-v1`.** Maintainer
+  decision of that date (the zone stays until v1 is done, and gate 11 moves with
+  it), executed by the M1 card (`20260923-m1-schema-en-container.md` in
+  `backlog/`). The container moved and nothing else: the root nests
+  `{format, model, rules, diagnostics}`, the declaration maps became lists, an
+  object type's eight side-maps became member nodes, a domain became a `Domain`
+  wrapper, and the `regels` stubs left the wire; every other node is
+  byte-identical. The 29 `cases/` slices were migrated mechanically
+  (`spec/proposals/v1-migratie/m1.py`); `casus/ir.json` was migrated the same way
+  and then re-emitted by uchar's frontend, which reproduced the migrated file
+  byte for byte (45 fragments, holdouts unchanged). The original toolchain still
+  writes `regelspraak-ir-v0`, so for the container this dump has stopped being a
+  toolchain dump: what gate 11's comparison proves is "frontend == the recorded
+  state".
 - The precedent runs the other way: `toka-45` (decision 16Y, 2026-08-29) is held
   **out** of the re-emission rather than re-pinned, because uchar's unit typing
   rejects the fragment as written. Divergence by holdout and divergence by
