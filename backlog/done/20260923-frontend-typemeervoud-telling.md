@@ -365,3 +365,15 @@ Aansluitend op de WF-111-zinnen in de deltakolom:
    niet of "de Jutter" het onderwerp kan aanduiden wanneer dat een
    Klipjutter is. Buiten de vensterfence, die dit alleen voor grenzen met
    een eigen zin weigert.
+
+### Fixronde 1 (2026-09-23, hoofdsessie)
+
+Open punten 1 en 2 van het vierde onderdeel (de supertype-`AttribuutRef`
+die WF-053 als navigatie en WF-111 als eigen lezing leest, met de
+uitvoerders gesplitst; en de supertypenaam als onderwerpverwijzing) zijn
+normbesluiten voor de verifier- en speclijn. Ze blijven hier staan met
+hun metingen; de hoofdsessie neemt ze mee in de kaart
+verifier-supertype-dubbele-schrijver. De kleinere open punten van de
+branch zijn in deze ronde gesloten: zie de Results van de kaarten
+frontend-regelgroep-sluit-bij-uitzondering en
+frontend-bron-annotatie-in-defaults.

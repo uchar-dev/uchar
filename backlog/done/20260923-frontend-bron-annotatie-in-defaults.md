@@ -199,3 +199,82 @@ id stays open (LRML-audit C1's optional tail)":
 2. Wat `ExceptionGroup.bron` draagt bij geneste uitzonderingen beslist de
    kaart dialect-uitzondering-op-uitzondering; deze kaart legt alleen vast
    dat de geneste default de annotatie van zijn blok krijgt.
+
+### Fixronde 1 (2026-09-23, hoofdsessie)
+
+**Open punt 1 gesloten in `e0a68177`.** Eerst gemeten of binding kon.
+Het schema geeft `ResolvedRegelGroep` wel een verplicht `bron`-veld,
+maar de emitter schrijft daar het v0-bronfragment van de groepsnaam in
+(`g.bron().snippet()`, "berging"). Een wetsverwijzing op die plek zou een
+gespiegeld veld een tweede betekenis geven. De kleinste stap is daarom
+de waarschuwing: een `// Bron:` boven een `Regelgroep`-kop krijgt dezelfde
+WARNING als die boven `Uitzonderingen ongeordend:`, met §9.10.
+`kopAnnotatie` is daarvoor algemeen gemaakt; de melding voor het
+ongeordende blok bleef letterlijk gelijk. Een WARNING komt in de
+`diagnostics` van de IR, maar geen bron in welke zone ook draagt een
+`Regelgroep`, dus niets beweegt.
+
+    getuige BronAnnotatiePlaatsTest (nieuw)
+    tegen RuleChecker md5 b304844d2b62d7692fea1d54529d0ca1 (tip 56b54c66):
+      2 tests, 1 successful, 1 failed —
+      "verwachtte precies één melding: [] ==> expected: <1> but was: <0>";
+      de tegenproef (annotatie onder de kop hoort bij het eerste lid) groen
+    na de fix:                              2 successful
+    mutant R (Regelgroep-kop niet gemeld):  1 failed
+    teruggezet met cp, cmp gelijk (md5 a4d57e8008af789c5e7ca0410333822a)
+
+Gemeten waar annotaties in de praktijk staan: 736 `// Bron:`-regels in
+de 513 werkbankbronnen.
+
+- 220 boven een Regel;
+- 164 boven een Situatie (de scenariolaag);
+- 351 boven een definitie: Objecttype 110, Feittype 99, Domein 97,
+  Parameter 27, Extensie 15, Eenheidsysteem 3;
+- 1 boven een Beslistabel.
+
+Een annotatie boven een definitie krijgt bewust geen waarschuwing. Zij
+documenteert de declaratie en de wire heeft er geen plek voor (open punt
+3). Honderden waarschuwingen op gewoon gebruik zouden ruis zijn, en de
+golden `jutterswet-schouwrooster` (annotatie boven een Dagsoort) zou
+een melding in zijn `diagnostics` krijgen.
+
+**Bijvangst, opgelost in `5c0d41af`.** Een annotatie boven een
+`Beslistabel` verdween ook stil: elke rij wordt in een eigen tokenstroom
+geparsed, waar geen commentaar boven staat. Gemeten op de build van
+`1f3ae38d`: `diagnostics: []`, geen `bronAnnotaties` op de twee ontlede
+regels, "art. 8" nergens in de IR. Een tabel is regels, dus de annotatie
+landt nu op elke ontlede regel. Dat volgt de meerversieregel van IR-SPEC
+ch. 3.1: één commentaarblok boven een gedeelde kop, per afgevlakte regel
+gestempeld.
+
+    tegen RuleChecker md5 4fb882fd89a6cc97ff8973d33e3addf5:
+      3 tests, 2 successful, 1 failed —
+      "rij 'Vondstwaarde 1' mist de annotatie ==> expected: <[art. 8 Jutterswet]> but was: <[]>"
+    na de fix:                                   3 successful
+    mutant B (tabelannotatie niet doorgegeven):  1 failed
+    teruggezet met cp, cmp gelijk (md5 f42fbaf463d3bd58b9d41548bdbfa2b4)
+
+Geen golden en geen pariteitsbron draagt een geannoteerde beslistabel.
+Op tip `5c0d41af`: gate 10 PASS (451 tests, 70 rgs-goldens
+byte-identiek), gate 1 PASS, gate 11 PASS (45 .rgs byte-identiek, de twee
+beslistabellen van de pariteitszone inbegrepen). Het vendored slice
+beweegt verder: HERPIN.
+
+Aanvulling op het registervoorstel voor rij 3, als laatste zin:
+
+> The same WARNING covers an annotation above a `Regelgroep` header, whose
+> own `bron` is the v0 snippet of its name; and an annotation above a
+> decision table, which vanished because each row is re-parsed in a
+> stream of its own, now lands on every rule the table desugars to (the
+> multi-version precedent of ch. 3.1). An annotation above a definition
+> stays a comment: the wire has no slot for a declaration's provenance.
+
+### Open punten, bijgewerkt
+
+1. Gesloten (hierboven).
+2. Ongewijzigd: wat `ExceptionGroup.bron` draagt, beslist de kaart
+   dialect-uitzondering-op-uitzondering.
+3. Nieuw, gemeten: een annotatie boven een definitie (351 van de 736 in
+   de werkbank) haalt de wire niet, want de IR heeft geen plek voor de
+   herkomst van een declaratie. Dat is een wirebesluit (rij 3 noemt de
+   gestructureerde `Bron` als open delta), geen frontendfix.

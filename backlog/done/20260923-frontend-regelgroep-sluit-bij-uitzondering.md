@@ -226,3 +226,33 @@ Aan het eind van de IR-deltakolom, na "… witnessed by
    onderwerpen naar `docs/grammar-divergences.md`, een bestand dat in deze
    repository niet bestaat (geërfd van de toolchain). Niet aangeraakt: het
    raakt een tiental commentaren buiten deze kaart.
+
+### Fixronde 1 (2026-09-23, hoofdsessie)
+
+Open punt 2 gesloten in `1f3ae38d`: alleen commentaar en registertekst.
+De 24 commentaren in de grammatica en de hoofdbronnen (`grammar/*.g4`,
+`resolver/`, `ir/`, `model/`) die naar `docs/grammar-divergences.md`
+wezen, wijzen nu naar `grammar/DIVERGENCES.md`. Dat pad is relatief aan
+de frontend, zoals de bestaande verwijzingen, en klopt dus ook in het
+vendored slice. De tekst die ze citeerden kwam bij de overname niet mee.
+Daarom zegt het register bovenaan welke secties het nog niet draagt
+('§9.10 recursie / regelgroep', '§Scenariotoetsen', 'negated
+membership', "concatenatie as a standalone value", plus de ongetitelde
+onderwerpen). Zo wijst geen verwijzing naar een sectie die er niet is.
+Twee verwijzingen landen op tekst: §13.4.17.47 (de operandenlijst van de
+telling) en §4 (Regelgroep bij de defaults-extensie).
+
+Bewust blijven staan:
+
+- de twee verwijzingen in bestaande tests (`RecursieTest`,
+  `TyperingTest`): bestaande tests alleen onder mandaat, en de opdracht
+  noemde grammatica en resolver;
+- die in de pariteitszone (`toka/`, read-only);
+- die in de werkproza (`spec/IR-REVIEW.md`, backlog): historische
+  citaten van het toolchainbestand;
+- de verwijzingen naar `docs/SCENARIOTOETSEN.md`, het scenariocontract
+  van regelspraak-java (niet gevraagd).
+
+Gate 10 PASS (450 tests, 70 rgs-goldens byte-identiek), gate 1 PASS. Het
+vendored slice beweegt verder (commentaar in grammatica en bronnen,
+`DIVERGENCES.md`).
