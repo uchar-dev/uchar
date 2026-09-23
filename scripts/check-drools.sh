@@ -791,7 +791,13 @@ EXPECTED_CHANNEL=(
 # so both refused it as an unresolved naar_rato. They now read the wire's verbindendeRol, as ref does
 # (FactModelGenerator.verdelingsjoin), and play it; measured over every golden and rood document in both
 # branches, no other document changed a byte of its runner output.
-EXPECTED_PLAYED=180
+# 180 -> 181 (2026-09-23, card clingo-leeg-negatie): jutterswet-waardemelding, the negated leeg/gevuld
+# test (LEEG and GEVULD with negatie: true, own attribute and one bound navigation step). Both branches
+# have carried it since card drools-leeg-negatie, where the loader lowers the negation to the sister
+# soort; the document lived as the fixture of LeegNegatieWitnessTest because the ASP backend faulted on
+# it. That backend now carries the leeg test and both negations, so the fixture moved to the corpus.
+# Nothing in this backend changed.
+EXPECTED_PLAYED=181
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1003,7 +1009,9 @@ DRL_CHANNEL=(
 # creation's verbindendeRol binding, as the exec branch has since 2026-08-30 and as ref does, and plays
 # both. Measured over every golden and rood document in both branches: the exec output and every
 # other document are byte-identical.
-EXPECTED_DRL_PLAYED=159
+# 159 -> 160 (2026-09-23, card clingo-leeg-negatie): jutterswet-waardemelding. The loader's lowering
+# serves both branches. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=160
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
