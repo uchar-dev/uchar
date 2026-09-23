@@ -260,8 +260,8 @@ final class RuleChecker {
             int tabel = tabelregel(r.naam());
             model.diagnostics.add(new Diagnostic(Severity.ERROR, "regel '" + zonderVersie(r.naam()) + "'"
                     + tabelVanRij(r.naam()) + ": een gewone regel kan een kenmerk niet ontkennen (§9.2) — zonder "
-                    + "toekenning is '" + doel.attribuut() + "' al onwaar (§3.5), en de wire kent op een kenmerk alleen "
-                    + "de toekenning 'waar' (WF-022). Een ontkenning ('is niet', 'heeft geen', 'is geen', 'is niet een') "
+                    + "toekenning is '" + doel.attribuut() + "' al onwaar (§3.5), en een gewone regel kent een kenmerk "
+                    + "op de wire alleen 'waar' toe (WF-022). Een ontkenning ('is niet', 'heeft geen', 'is geen', 'is niet een') "
                     + "staat alleen in een regel die een default wordt: het lichaam van een 'Uitzondering op', een lid van "
                     + "'Uitzonderingen ongeordend', of de basisregel van een 'Uitzondering op'-keten (dialect §4)",
                     tabel >= 0 ? tabel : doel.bron() == null ? 0 : doel.bron().line()));
@@ -277,34 +277,60 @@ final class RuleChecker {
     }
 
     /** Dialect §4, form 1 (maintainer decision 2, 2026-09-23): a characteristic target on which every default of
-     *  every defaults group decides 'onwaar' is never attributed by those groups: the
-     *  groups never attribute it — a false decision writes nothing. That is well-formed (it means "never", and the
-     *  wire admits it), so it is no error; it is also a defaults group that never does what a defaults group is for,
-     *  so the RuleChecker warns. Once per target, not per group: an unordered block spreads one target over sibling
-     *  groups, and a sibling deciding 'onwaar' beside one deciding 'waar' leaves the target derivable. The warning
-     *  claims only what the groups do: another writer the checker sees — a subtype's own rule, an object creation —
-     *  may still attribute the characteristic, and a plain rule on the same target draws WF-050's ERROR instead. */
+     *  every defaults group decides 'onwaar' is never attributed by those groups — a false decision writes nothing.
+     *  That is well-formed (it means "never", and the wire admits it), so it is no error; in a flat model such a
+     *  group does nothing that leaving it out would not do as well, so the RuleChecker warns. Once per target, not
+     *  per group: an unordered block spreads one target over sibling groups, and a sibling deciding 'onwaar' beside
+     *  one deciding 'waar' leaves the target derivable.
+     *
+     *  <p>No warning where the characteristic has another writer in the subject's inheritance line — a defaults
+     *  group or a live plain rule on a strict ancestor or descendant — because ch. 7.10 composes them into one
+     *  effective stack per type, and there the all-'onwaar' group changes outcomes. On a subtype its base replaces
+     *  the inherited base, so an inherited positive base stops applying to the subtype's instances; on a supertype
+     *  its exceptions stay above a subtype's own base and block it where they apply. Measured on 2026-09-24 in ref,
+     *  clingo and the Drools exec branch: a subtype instance that the inherited positive base gives the
+     *  characteristic loses it under such a subtype group. No warning either beside a live plain rule on the same
+     *  type: {@link #keurEnigeSchrijver} refuses that rule (WF-050), and a warning beside its ERROR adds nothing. */
     private void keurNooitAfleidend() {
         Map<String, List<PrioritizedDefaults>> perDoel = new LinkedHashMap<>();
         for (PrioritizedDefaults pd : model.prioritizedDefaults)
             if (pd.isKenmerk())
                 perDoel.computeIfAbsent(doelSleutel(pd.onderwerp(), true, pd.doel()), k -> new ArrayList<>()).add(pd);
-        for (var e : perDoel.entrySet()) {
-            List<PrioritizedDefaults> groepen = e.getValue();
+        for (List<PrioritizedDefaults> groepen : perDoel.values()) {
             if (groepen.stream().anyMatch(pd -> beslistWaar(pd.defaults()))) continue;
-            if (model.resolvedRegels.stream().anyMatch(r -> !geweigerdeDoelen.contains(r) && doelVan(r) instanceof
-                    DefaultsDoel d && e.getKey().equals(doelSleutel(d.onderwerp().naam, d.kenmerk(), d.naam()))))
-                continue;   // that rule is refused (WF-050, or its block's own ERROR); a warning beside it adds nothing
             PrioritizedDefaults eerste = groepen.get(0);
+            if (andereKenmerkschrijver(model.objecttypeOpNaam(eerste.onderwerp()), eerste.doel())) continue;
+            boolean meer = groepen.size() > 1;
             Herkomst h = pdHerkomst.getOrDefault(eerste, new Herkomst(0, "defaults-groep"));
             model.diagnostics.add(new Diagnostic(Severity.WARNING, h.kop() + ": "
-                    + (groepen.size() == 1 ? "de defaults-groep " : "de defaults-groepen ")
+                    + (meer ? "de defaults-groepen " : "de defaults-groep ")
                     + opsomming(groepen.stream().map(PrioritizedDefaults::naam).toList()) + " op het kenmerk "
-                    + eerste.onderwerp() + "." + eerste.doel() + " kent het nooit toe — elke default beslist "
-                    + "'onwaar', en een besluit 'onwaar' schrijft niets. Dat is welgevormd, maar zo doet de groep niets "
-                    + "wat een regel zonder ontkenning niet ook doet; ga na of er een uitzondering ontbreekt die 'waar' "
-                    + "beslist (dialect §4)", h.line()));
+                    + eerste.onderwerp() + "." + eerste.doel() + (meer ? " kennen" : " kent") + " het nooit toe — "
+                    + "elke default beslist 'onwaar', en een besluit 'onwaar' schrijft niets. Dat is welgevormd, maar "
+                    + "zo " + (meer ? "doen de groepen" : "doet de groep") + " niets wat het weglaten van "
+                    + (meer ? "de groepen" : "de groep") + " niet ook doet; ga na of er een uitzondering ontbreekt die "
+                    + "'waar' beslist (dialect §4)", h.line()));
         }
+    }
+
+    /** Whether characteristic {@code kenmerk} has a writer that composes with the defaults groups on {@code type}:
+     *  a live plain rule on {@code type} itself (WF-050's second writer), or a defaults group or a live plain rule on
+     *  a strict ancestor or descendant of {@code type} (ch. 7.10). A sibling subtype composes with nothing here. */
+    private boolean andereKenmerkschrijver(Objecttype type, String kenmerk) {
+        if (type == null) return false;
+        for (PrioritizedDefaults pd : model.prioritizedDefaults)
+            if (pd.isKenmerk() && pd.doel().equalsIgnoreCase(kenmerk)
+                    && inErflijn(type, model.objecttypeOpNaam(pd.onderwerp()))) return true;
+        for (ResolvedRegel r : model.resolvedRegels)
+            if (!geweigerdeDoelen.contains(r) && doelVan(r) instanceof DefaultsDoel d && d.kenmerk()
+                    && d.naam().equalsIgnoreCase(kenmerk) && (d.onderwerp() == type || inErflijn(type, d.onderwerp())))
+                return true;
+        return false;
+    }
+
+    /** Whether {@code ander} is a strict ancestor or a strict descendant of {@code type}. */
+    private static boolean inErflijn(Objecttype type, Objecttype ander) {
+        return ander != null && ander != type && (type.isEen(ander) || ander.isEen(type));
     }
 
     /** Whether some default in {@code defaults}, nested exception groups included, decides 'waar'. */
@@ -2064,14 +2090,17 @@ final class RuleChecker {
      *  writes the de-negated characteristic with {@link #ONTKEND} as its value. The defaults lowering turns that into
      *  besluit false ({@link #defaultVan}); a plain rule that still carries it after the lift is refused
      *  ({@link #keurVlakkeOntkenningen}), so the marker never reaches the wire. Refused here: a negation whose rest
-     *  names no characteristic of the subject, and 'is niet een X' on an X that is not zelfstandig — the condition
-     *  side binds only a zelfstandig kenmerk under that form (Tabel 16). A positive name keeps its written spelling
+     *  names no characteristic of the subject; 'is niet een X' on an X that is not zelfstandig — the condition side
+     *  binds only a zelfstandig kenmerk under that form (Tabel 16); and a niet/geen written after 'een', which the
+     *  condition side reads as part of the name and not as a negation. A positive name keeps its written spelling
      *  (the lookup decides only whether the name is negated), as before, so no document without a negation
      *  changes. */
     private void kenmerk(String naam, KenmerkToekenningContext kt, Conditie voorwaarde, Geldigheid geldigheid) {
         Objecttype subject = bouwer.objecttypeVanKeten(kt.onderwerpKeten());
         String geschreven = src(kt.kaleNaam());
         String kenmerk = geschreven.replaceFirst("^(?i)(de|het|een)\\s+", "");
+        int tabel = tabelregel(naam);
+        int lijn = tabel >= 0 ? tabel : kt.getStart().getLine();   // a table row's lines count in its own stream
         boolean ontkend = false;
         String zonderKenmerk = null;   // the refusal of a negation that names no declared characteristic
         if (kt.NIET() != null) {
@@ -2085,19 +2114,25 @@ final class RuleChecker {
                 kenmerk = g;
                 zonderKenmerk = "regel '" + naam + "'" + tabelVanRij(naam) + ": 'is niet een " + g + "' — de vorm "
                         + "'is niet een' ontkent een zelfstandig kenmerk (Tabel 16), en '" + g + "' is "
-                        + soort.name().toLowerCase(java.util.Locale.ROOT) + "; schrijf '"
-                        + (soort == Objecttype.KenmerkSoort.BEZITTELIJK ? "heeft geen " : "is niet ") + g
-                        + "' (dialect §4)";
+                        + soort.name().toLowerCase(java.util.Locale.ROOT) + "; schrijf "
+                        + ontkenningsspelling(soort, g) + " (dialect §4)";
             } else if (g != null) kenmerk = g;
             else if (subject != null)
                 zonderKenmerk = ontkenningZonderKenmerk(naam, subject, "niet een " + kenmerk, kenmerk, false);
+        } else if (subject != null && kt.EEN() != null) {
+            // 'is een …' / 'heeft een …': after 'een' the condition side binds the name whole and reads no negation
+            // there (the EEN-form, §8.1.8.3), and a result reads it the same way. A niet/geen after 'een' that leaves
+            // the name binding nothing is refused, with the spelling that does negate.
+            if (KenmerkMatcher.vind(subject, geschreven) == null && KenmerkMatcher.vind(subject, kenmerk) == null
+                    && kenmerk.matches("(?i)(niet|geen)\\s+\\S.*"))
+                zonderKenmerk = ontkenningNaEen(naam, subject, kt.HEEFT() != null ? "heeft" : "is", kenmerk);
         } else if (subject != null) {
             boolean heeft = kt.HEEFT() != null;
             Conditie c = kenmerkConditie(subject, geschreven, null, heeft, bron(kt));
             if (c instanceof Conditie.Kenmerk k && k.negatie()) {
                 kenmerk = k.kenmerk();
                 ontkend = true;
-                keurNegatieSoort(subject, k, heeft);
+                keurNegatieSoort(subject, k, heeft, lijn);
             } else if (c == null && kenmerk.matches("(?i)(niet|geen)\\s+\\S.*"))
                 zonderKenmerk = ontkenningZonderKenmerk(naam, subject, kenmerk,
                         kenmerk.replaceFirst("^(?i)(niet|geen)\\s+", ""), true);
@@ -2112,9 +2147,7 @@ final class RuleChecker {
             // Kept in resolvedRegels and marked refused, so the defaults lowering skips its family instead of
             // adding "schrijft een ander doel" about a target the author never meant.
             geweigerdeDoelen.add(r);
-            int tabel = tabelregel(naam);
-            model.diagnostics.add(new Diagnostic(Severity.ERROR, zonderKenmerk,
-                    tabel >= 0 ? tabel : kt.getStart().getLine()));
+            model.diagnostics.add(new Diagnostic(Severity.ERROR, zonderKenmerk, lijn));
         }
     }
 
@@ -2137,14 +2170,42 @@ final class RuleChecker {
      *  the pointer to the gelijkstelling: an attribute has no polarity, its false is a value. */
     private String ontkenningZonderKenmerk(String regel, Objecttype subject, String geschreven, String rest,
                                            boolean heelNaamOok) {
-        String waarom = subject.attribuut(rest) != null
+        Datatype attribuut = subject.attribuut(rest);
+        String waarom = attribuut instanceof Datatype.Booleaan
                 ? "'" + rest + "' is een attribuut van " + subject.naam + " en geen kenmerk, en een attribuut heeft geen "
-                        + "polariteit: zijn onwaar is een waarde, te schrijven als 'moet gesteld worden op onwaar'"
+                        + "polariteit: dit Boolean-attribuut krijgt onwaar als waarde, te schrijven als 'moet gesteld "
+                        + "worden op onwaar'"
+                : attribuut != null
+                ? "'" + rest + "' is een attribuut van " + subject.naam + " en geen kenmerk, en alleen een kenmerk "
+                        + "wordt toegekend of ontkend"
                 : "'" + rest + "' is geen kenmerk van " + subject.naam
                         + (heelNaamOok ? ", en '" + geschreven + "' evenmin" : "") + ". Declareer het kenmerk bij "
                         + subject.naam + ", of schrijf de naam zoals hij gedeclareerd is";
         return "regel '" + regel + "'" + tabelVanRij(regel) + ": '" + geschreven + "' ontkent geen kenmerk van "
                 + subject.naam + " — " + waarom + " (§3.5, dialect §4)";
+    }
+
+    /** The refusal of a negation written AFTER 'een' ("is een niet X", "heeft een geen X"). The condition side
+     *  reads the name after 'een' whole (§8.1.8.3), so there the words are an unbound name and no negation, and a
+     *  result reads them the same way. The message gives the spelling that negates X, by X's kind where X is a
+     *  characteristic of the subject. */
+    private String ontkenningNaEen(String regel, Objecttype subject, String werkwoord, String naam) {
+        String rest = naam.replaceFirst("^(?i)(niet|geen)\\s+", "");
+        String g = KenmerkMatcher.vind(subject, rest);
+        Objecttype.KenmerkSoort soort = g == null ? null : subject.kenmerkSoort(g);
+        return "regel '" + regel + "'" + tabelVanRij(regel) + ": '" + werkwoord + " een " + naam + "' ontkent niets — "
+                + "achter 'een' leest de frontend de naam als geheel, zoals een voorwaarde dat doet, en '" + naam
+                + "' is geen kenmerk van " + subject.naam + ". Een ontkenning staat niet achter 'een'"
+                + (soort != null ? "; schrijf " + ontkenningsspelling(soort, g) : "") + " (§8.1.8, dialect §4)";
+    }
+
+    /** The negated spelling Tabel 16 gives a characteristic of this kind (§8.1.8). */
+    private static String ontkenningsspelling(Objecttype.KenmerkSoort soort, String kenmerk) {
+        return switch (soort) {
+            case BIJVOEGLIJK -> "'is niet " + kenmerk + "'";
+            case BEZITTELIJK -> "'heeft geen " + kenmerk + "'";
+            case ZELFSTANDIG -> "'is geen " + kenmerk + "' of 'is niet een " + kenmerk + "'";
+        };
     }
 
     /** §9.9/§13.4.12 startpuntbepaling: "Het startpunt van <tijdlijn> voor <onderwerp> wordt bepaald
@@ -3308,6 +3369,13 @@ final class RuleChecker {
      *  Surface it as a WARNING — a writing-form lint, never a wrong gate (the lowering is unchanged). Only a de-negated
      *  kenmerk (negatie=true) is checked; the positive form's verb-keying is the EEN-form split's job. */
     private void keurNegatieSoort(Objecttype houder, Conditie kc, boolean heeftWerkwoord) {
+        keurNegatieSoort(houder, kc, heeftWerkwoord, 0);
+    }
+
+    /** As above, at {@code line}. A negated RESULT (dialect §4) passes its sentence's line, so its warning stands at
+     *  the rule on the wire; the condition-side callers keep the 0 they always passed, so the diagnostics of
+     *  documents without a negated result do not move. */
+    private void keurNegatieSoort(Objecttype houder, Conditie kc, boolean heeftWerkwoord, int line) {
         if (houder == null || !(kc instanceof Conditie.Kenmerk k) || !k.negatie()) return;
         Objecttype.KenmerkSoort soort = houder.kenmerkSoort(k.kenmerk());
         if (soort == null) return;
@@ -3316,7 +3384,7 @@ final class RuleChecker {
             model.diagnostics.add(new Diagnostic(Severity.WARNING,
                 "het " + soort.name().toLowerCase() + " kenmerk '" + k.kenmerk() + "' wordt ontkend met het werkwoord '"
                 + (heeftWerkwoord ? "heeft" : "is") + "', maar Tabel 16 vereist '" + (bezit ? "heeft" : "is")
-                + "' bij dit soort kenmerk (§8.1.8): " + k.bron(), 0));
+                + "' bij dit soort kenmerk (§8.1.8): " + k.bron(), line));
     }
 
     private Conditie kenmerkPredicaatKaal(Expr lhs, KaleNaamContext naamCtx, boolean metEen, boolean heeftWerkwoord, Bron bron) {

@@ -165,6 +165,8 @@ class NietInUitzonderingTest {
         assertTrue(d.message().startsWith("regel 'vlak'"), d.message());
         assertTrue(d.message().contains("§9.2") && d.message().contains("dialect §4"),
                 () -> "de weigering noemt §9.2 en het dialect §4 niet: " + d.message());
+        assertTrue(d.message().contains("staat alleen in een regel die een default wordt"),
+                () -> "de weigering noemt de toegelaten plaatsen niet: " + d.message());
         assertFalse(d.message().contains("ander doel"), "niet de misleidende doelmelding van meting 1");
         assertFalse(m.isOk(), "een ERROR houdt het document van de schijf");
     }
@@ -243,7 +245,8 @@ class NietInUitzonderingTest {
     @CsvSource(delimiter = '|', value = {
             "Een Jutter is niet vervallen            | vervallen",
             "Een Jutter heeft geen recht op de munt  | recht op de munt",
-            "Een Jutter is niet een vaste gast       | vaste gast"
+            "Een Jutter is niet een vaste gast       | vaste gast",
+            "Een Jutter is geen vaste gast           | vaste gast"
     })
     void een_ontkend_ongedeclareerd_kenmerk_weigert(String resultaat, String kenmerk) {
         RegelSpraakModel m = Resolver.resolve(familie("Een Jutter is uitgesloten", resultaat));
@@ -252,6 +255,32 @@ class NietInUitzonderingTest {
                         && d.message().contains("'" + kenmerk + "' is geen kenmerk van Jutter"),
                 () -> "de weigering noemt het ongedeclareerde kenmerk niet: " + d.message());
         assertFalse(d.message().contains("ander doel"), "niet de misleidende doelmelding van meting 1");
+    }
+
+    @Test void een_ontkend_niet_booleaans_attribuut_krijgt_geen_verwijzing_naar_onwaar() {
+        // 'moet gesteld worden op onwaar' is a pointer for a Boolean attribute only; a count has no onwaar at all.
+        Diagnostic d = enigeFout(Resolver.resolve(familie("Een Jutter is uitgesloten",
+                "Een Jutter is niet aantal aangemelde vondsten")));
+        assertTrue(d.message().contains("'aantal aangemelde vondsten' is een attribuut van Jutter en geen kenmerk"),
+                d.message());
+        assertFalse(d.message().contains("onwaar"), d.message());
+    }
+
+    // -------------------------------------------------------------------- refused: a negation written after 'een'
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "Een Jutter is uitgesloten            | Een Jutter is een niet uitgesloten           | 'is een niet uitgesloten' ontkent niets           | schrijf 'is niet uitgesloten'",
+            "Een Jutter heeft recht op de penning | Een Jutter heeft een geen recht op de penning | 'heeft een geen recht op de penning' ontkent niets | schrijf 'heeft geen recht op de penning'",
+            "Een Jutter is een vaste ingezetene   | Een Jutter is een geen vaste ingezetene      | 'is een geen vaste ingezetene' ontkent niets      | schrijf 'is geen vaste ingezetene' of 'is niet een vaste ingezetene'"
+    })
+    void een_ontkenning_achter_een_weigert_zoals_de_voorwaarde_haar_niet_leest(String basis, String uitzondering,
+                                                                             String fragment, String spelling) {
+        // After 'een' the condition side binds the name whole (the EEN-form) and reads no negation: 'hij is een niet
+        // uitgesloten' stays a marker there. The result side reads it the same way and refuses, naming the spelling
+        // Tabel 16 gives the kind.
+        Diagnostic d = enigeFout(Resolver.resolve(familie(basis, uitzondering)));
+        assertTrue(d.message().contains(fragment) && d.message().contains(spelling), d.message());
     }
 
     @Test void een_ontkend_attribuut_wijst_naar_de_gelijkstelling() {
@@ -308,6 +337,38 @@ class NietInUitzonderingTest {
         Diagnostic d = enigeFout(m);
         assertTrue(d.message().startsWith("regel 'lid twee'") && d.message().contains("ontkent geen kenmerk"),
                 d.message());
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "is erkend kenmerk (bijvoeglijk);      | is niet erkend kenmerk (bijvoeglijk);      | Een Jutter is niet erkend        | niet erkend",
+            "het bezwaar kenmerk (bezittelijk);    | het geen bezwaar kenmerk (bezittelijk);    | Een Jutter heeft geen bezwaar    | geen bezwaar"
+    })
+    void verbatim_eerst_ook_in_een_uitzondering(String kaal, String metVoorvoegsel, String zin, String kenmerk) {
+        // Both the bare and the prefixed name are declared. Read verbatim first, the sentence binds the prefixed
+        // characteristic positively, in the base and in the exception alike: one group on that characteristic, two
+        // decisions 'waar', and no negation of the bare one.
+        RegelSpraakModel m = Resolver.resolve("""
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                %s
+                %s
+                is geschorst kenmerk (bijvoeglijk);
+                het aantal aangemelde vondsten Numeriek (niet-negatief geheel getal);
+
+            Regel basis
+                geldig altijd
+                    %s
+                    indien zijn aantal aangemelde vondsten groter of gelijk is aan 12.
+
+            Uitzondering op basis: uitzondering
+                geldig altijd
+                    %s
+                    indien hij geschorst is.
+            """.formatted(kaal, metVoorvoegsel, zin, zin));
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        PrioritizedDefaults g = m.prioritizedDefaults.get(0);
+        assertEquals(kenmerk, g.kenmerk());
+        assertEquals(List.of(Boolean.TRUE, Boolean.TRUE), besluiten(g));
     }
 
     @Test void een_gedeclareerd_kenmerk_dat_met_niet_begint_bindt_positief() {
@@ -389,8 +450,8 @@ class NietInUitzonderingTest {
         assertEquals(1, m.diagnostics.size(), () -> "verwachtte één waarschuwing: " + m.diagnostics);
         Diagnostic w = m.diagnostics.get(0);
         assertEquals(Severity.WARNING, w.severity());
-        assertTrue(w.message().contains("kent het nooit toe") && w.message().contains("Jutter.uitgesloten"),
-                w.message());
+        assertTrue(w.message().contains("kent het nooit toe") && w.message().contains("Jutter.uitgesloten")
+                && w.message().contains("doet de groep niets wat het weglaten van de groep niet ook doet"), w.message());
         assertTrue(w.line() > 0, "de waarschuwing staat bij het blok");
         // WF-113 (a): the WARNING rides the wire; the emitter refuses anything else.
         assertTrue(IrEmitter.emit(m).contains("kent het nooit toe"));
@@ -412,7 +473,8 @@ class NietInUitzonderingTest {
             """);
         assertTrue(m.isOk(), () -> "welgevormd, dus geen fout: " + m.errors());
         assertEquals(1, m.diagnostics.size(), () -> "één waarschuwing per doel, niet per zustergroep: " + m.diagnostics);
-        assertTrue(m.diagnostics.get(0).message().contains("kent het nooit toe"), m.diagnostics.get(0).message());
+        assertTrue(m.diagnostics.get(0).message().contains("kennen het nooit toe")
+                && m.diagnostics.get(0).message().contains("doen de groepen niets"), m.diagnostics.get(0).message());
     }
 
     @Test void twee_ongeordende_blokken_op_een_doel_waarvan_een_waar_beslist_waarschuwen_niet() {
@@ -439,15 +501,113 @@ class NietInUitzonderingTest {
         assertEquals(2, m.prioritizedDefaults.size());
     }
 
+    // -------------------------------------------------------------------- the warning under inheritance (ch. 7.10)
+
+    /** A supertype and two subtypes; the characteristic is declared on the supertype. */
+    private static final String KETEN = """
+        Objecttype de Jutter (mv: Jutters) (bezield)
+            is uitgesloten kenmerk (bijvoeglijk);
+            is geschorst kenmerk (bijvoeglijk);
+            is vergunning geweigerd kenmerk (bijvoeglijk);
+
+        Objecttype de Strandjutter is een Jutter (mv: Strandjutters) (bezield)
+            het aantal strandvakken Numeriek (niet-negatief geheel getal);
+
+        Objecttype de Duinjutter is een Jutter (mv: Duinjutters) (bezield)
+            het aantal duinvakken Numeriek (niet-negatief geheel getal);
+        """;
+
+    @Test void een_subtypegroep_die_alleen_onwaar_beslist_boven_een_geerfde_waar_basis_waarschuwt_niet() {
+        // ch. 7.10: the subtype's own base replaces the inherited base, so on a Strandjutter the inherited positive
+        // rule no longer applies — the all-'onwaar' group changes the outcome and is no "never" to warn about.
+        RegelSpraakModel m = Resolver.resolve(KETEN + """
+
+            Regel uitsluiting bij weigering
+                geldig altijd
+                    Een Jutter is uitgesloten
+                    indien hij vergunning geweigerd is.
+
+            Regel geen uitsluiting van een strandjutter
+                geldig altijd
+                    Een Strandjutter is niet uitgesloten.
+
+            Uitzondering op geen uitsluiting van een strandjutter: geen uitsluiting bij schorsing
+                geldig altijd
+                    Een Strandjutter is niet uitgesloten
+                    indien hij geschorst is.
+            """);
+        assertTrue(m.diagnostics.isEmpty(), () -> "geen waarschuwing in een erflijn met een andere schrijver: " + m.diagnostics);
+        assertEquals(1, m.prioritizedDefaults.size());
+        PrioritizedDefaults g = m.prioritizedDefaults.get(0);
+        assertEquals("Strandjutter", g.onderwerp());
+        assertEquals(List.of(Boolean.FALSE, Boolean.FALSE), besluiten(g));
+        assertEquals(1, m.resolvedRegels.size(), "de gewone regel op Jutter blijft een regel");
+        assertEquals("Jutter", ((Expr.AttribuutRef) m.resolvedRegels.get(0).doel()).objecttype().naam);
+    }
+
+    @Test void een_supertypegroep_die_alleen_onwaar_beslist_boven_een_positieve_subtypebasis_waarschuwt_niet() {
+        // ch. 7.10: the inherited exceptions stay above the subtype's own base, so where a Strandjutter is geschorst
+        // the supertype's 'onwaar' exception blocks the subtype's positive rule.
+        RegelSpraakModel m = Resolver.resolve(KETEN + """
+
+            Regel geen uitsluiting
+                geldig altijd
+                    Een Jutter is niet uitgesloten.
+
+            Uitzondering op geen uitsluiting: geen uitsluiting bij schorsing
+                geldig altijd
+                    Een Jutter is niet uitgesloten
+                    indien hij geschorst is.
+
+            Regel uitsluiting van een strandjutter
+                geldig altijd
+                    Een Strandjutter is uitgesloten
+                    indien hij vergunning geweigerd is.
+            """);
+        assertTrue(m.diagnostics.isEmpty(), () -> "geen waarschuwing in een erflijn met een andere schrijver: " + m.diagnostics);
+        assertEquals("Jutter", m.prioritizedDefaults.get(0).onderwerp());
+        assertEquals(List.of(Boolean.FALSE, Boolean.FALSE), besluiten(m.prioritizedDefaults.get(0)));
+        assertEquals(1, m.resolvedRegels.size(), "de gewone regel op Strandjutter blijft een regel");
+        assertEquals("Strandjutter", ((Expr.AttribuutRef) m.resolvedRegels.get(0).doel()).objecttype().naam);
+    }
+
+    @Test void een_zustersubtype_met_een_schrijver_heft_de_waarschuwing_niet_op() {
+        // A sibling composes with nothing: on a Strandjutter the group still never attributes the characteristic,
+        // and nothing above or below it in its own line does.
+        RegelSpraakModel m = Resolver.resolve(KETEN + """
+
+            Regel geen uitsluiting van een strandjutter
+                geldig altijd
+                    Een Strandjutter is niet uitgesloten.
+
+            Uitzondering op geen uitsluiting van een strandjutter: geen uitsluiting bij schorsing
+                geldig altijd
+                    Een Strandjutter is niet uitgesloten
+                    indien hij geschorst is.
+
+            Regel uitsluiting van een duinjutter
+                geldig altijd
+                    Een Duinjutter is uitgesloten
+                    indien hij vergunning geweigerd is.
+            """);
+        assertTrue(m.isOk(), () -> "welgevormd, dus geen fout: " + m.errors());
+        assertEquals(1, m.diagnostics.size(), () -> "verwachtte één waarschuwing: " + m.diagnostics);
+        assertTrue(m.diagnostics.get(0).message().contains("Strandjutter.uitgesloten kent het nooit toe"),
+                m.diagnostics.get(0).message());
+    }
+
     // -------------------------------------------------------------------- the register lint (Tabel 16)
 
     @Test void is_geen_op_een_bezittelijk_kenmerk_krijgt_de_registerwaarschuwing() {
-        RegelSpraakModel m = Resolver.resolve(familie("Een Jutter heeft recht op de penning",
-                "Een Jutter is geen recht op de penning"));
+        String src = familie("Een Jutter heeft recht op de penning", "Een Jutter is geen recht op de penning");
+        RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.isOk(), () -> "de lowering is gelijk, dus geen fout: " + m.errors());
         assertEquals(1, m.diagnostics.size(), () -> "verwachtte één waarschuwing: " + m.diagnostics);
         assertTrue(m.diagnostics.get(0).message().contains("Tabel 16 vereist 'heeft'"), m.diagnostics.get(0).message());
         assertEquals(List.of(Boolean.FALSE, Boolean.TRUE), besluiten(m.prioritizedDefaults.get(0)));
+        // A result sentence has a line of its own, and the warning rides the wire, so it stands there (not at 0).
+        int zinsregel = src.substring(0, src.indexOf("Een Jutter is geen recht op de penning")).split("\n", -1).length;
+        assertEquals(zinsregel, m.diagnostics.get(0).line());
     }
 
     // -------------------------------------------------------------------- the scenario layer parses the blocks
