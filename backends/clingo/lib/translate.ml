@@ -8018,7 +8018,7 @@ let rec translate_chain ctx ~is_char ~subject ~subject_ot ~base ~path ~root
   let reached n = outer_displaced @ List.init n (fun m -> Printf.sprintf "not %s(%s)" (stl m) subject) in
   let dec n = Printf.sprintf "%s_dec%d" tag n in
   let conf n = Printf.sprintf "%s_conf%d" tag n in
-  let own_just n (r : default) =
+  let own_just ?(extra = []) n (r : default) =
     if r.default_initialisatie then (
       if not root then
         fault "an initialisation default inside an exception group is ill-formed (WF-075)";
@@ -8028,10 +8028,12 @@ let rec translate_chain ctx ~is_char ~subject ~subject_ot ~base ~path ~root
     else begin
       (* the chain's own context, whatever position asks for the atoms: they
          are asked for early, inside the consequence, when that consequence
-         reads a parameter the case does not bind (below) *)
+         reads a parameter the case does not bind (below). [extra] is a form-a
+         default's wait on its exception groups: ref reads the justification
+         only when they decide nothing *)
       let saved_r = ctx.param_reach and saved_g = ctx.rule_guard in
       let saved_n = ctx.let_needs and saved_b = ctx.binders in
-      ctx.param_reach <- (fun _ -> base :: reached n);
+      ctx.param_reach <- (fun _ -> (base :: reached n) @ extra);
       ctx.rule_guard <- [];
       ctx.let_needs <- [];
       ctx.binders <- [];
@@ -8052,13 +8054,13 @@ let rec translate_chain ctx ~is_char ~subject ~subject_ot ~base ~path ~root
     if is_char then
       let b = if req "default besluit" r.default_besluit then 1 else 0 in
       head_body ctx (Printf.sprintf "%s(%s,%d)" (dec n) subject b)
-        ((base :: own_just n r) @ extra)
+        ((base :: own_just ~extra n r) @ extra)
     else
       (* a consequence is read only under its holding justification. The
          justification is translated AFTER the consequence, as it always was,
          unless a parameter read inside the consequence needs its atoms first —
          which happens only for a parameter the case does not bind *)
-      let just = lazy (own_just n r) in
+      let just = lazy (own_just ~extra n r) in
       let saved_r = ctx.param_reach in
       ctx.param_reach <- (fun _ -> (base :: reached n) @ Lazy.force just @ extra);
       let bindings, term, scale =

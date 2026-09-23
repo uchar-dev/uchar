@@ -8796,6 +8796,98 @@ let () =
   faults_with ~name:"a malformed date literal refuses in ref's reader, in translation" ~ir ~case_text
     ~needle
 
+(* FIXRONDE 1, point 1: a form-a default reads its OWN justification only when
+   its exception groups decide nothing (ch. 7.9), so a parameter in that
+   justification is not reached where an exception decides. d0 below is the
+   form a: justification "inkomen > p", consequence 40, one exception group
+   [grondY -> 10]; the initialisation decides 25. With grondY the exception
+   decides 10 and ref never reads p; without it the justification is read
+   and ref faults. The same on default 1 (behind a d0 that does not decide),
+   and on a characteristic target (besluit true, the exception false). *)
+let () =
+  let jutter =
+    pf_ot ~kenmerken:[ "grondY"; "erkend"; "bevoegd" ]
+      (Printf.sprintf {|"inkomen": %s, "basisbedrag": %s, "waardering": %s|} pf_n0 pf_n0 pf_n0)
+  in
+  let kenmerk k =
+    Printf.sprintf
+      {|{ "node": "Kenmerk", "kenmerk": "%s", "navigatie": null, "negatie": false, "eigenaar": null,
+          "periode": null, "bron": "hij %s is" }|}
+      k k
+  in
+  let default ?(init = false) ?(besluit = "null") ?excepties voorwaarde consequentie =
+    Printf.sprintf
+      {|{ "node": "Default", "besluit": %s, "voorwaarde": %s,%s%s%s "bron": "d" }|}
+      besluit voorwaarde
+      (* a characteristic default carries no consequentie field at all *)
+      (if consequentie = "" then "" else Printf.sprintf {| "consequentie": %s,|} consequentie)
+      (if init then {| "initialisatie": true,|} else "")
+      (match excepties with
+       | None -> ""
+       | Some groups ->
+           Printf.sprintf {| "excepties": { "ongeordend": true, "leden": [ %s ] },|}
+             (String.concat ", "
+                (List.map
+                   (fun ds ->
+                     Printf.sprintf {|{ "node": "ExceptionGroup", "defaults": [ %s ], "bron": "u" }|}
+                       (String.concat ", " ds))
+                   groups)))
+  in
+  let stack ?(doel = {|"kenmerk": null, "attribuut": "waardering"|}) defaults =
+    (* the attribute stack names its target in "attribuut", the characteristic
+       stack in "kenmerk" and carries no "attribuut" key *)
+    Printf.sprintf
+      {|{ "node": "PrioritizedDefaults", "naam": "stapel", "onderwerp": "Jutter", %s,
+          "defaults": [ %s ], "bron": "s",
+          "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }|}
+      doel (String.concat ", " defaults)
+  in
+  let doc defaults = pf_doc ~objecttypen:[ jutter ] ~parameters:[ pf_decl ~typ:pf_n0 "p" ] ~defaults ()
+  in
+  let n0 v = pf_l ~typ:pf_n0 v in
+  let rechtvaardiging = pf_cmp "GROTER" (pf_a ~typ:pf_n0 "inkomen") (pf_p ~typ:pf_n0 "p") in
+  let vorm_a = default ~excepties:[ [ default (kenmerk "grondY") (n0 "10") ] ] rechtvaardiging (n0 "40") in
+  let init = default ~init:true "null" (n0 "25") in
+  let j1 chars =
+    Printf.sprintf
+      {|{ "label": "J1", "objectType": "Jutter", "attributes": { "inkomen": { "number": "20" } }, "roles": {}, "characteristics": [ %s ] }|}
+      chars
+  in
+  let met_grond = j1 {|"grondY"|} and zonder = j1 "" in
+  let waardering v = [ pf_is ~attr:"waardering" v; pf_cons ] in
+  (* d-e / d-f: the form a as default 0 *)
+  let d0 = doc [ stack [ vorm_a; init ] ] in
+  both_answer ~name:"defaults, lazy: an exception decides before the form-a justification (d-e)"
+    ~ir:d0 ~case_text:(pf_case ~instances:[ met_grond ] (waardering "10"));
+  unbound_fires ~name:"defaults: the form-a justification when no exception decides (d-f)" ~ir:d0
+    ~param:"p" ~case_text:(pf_case ~instances:[ zonder ] (waardering "25"))
+    ~silent:"waardering 25: the justification failed and the initialisation decided";
+  (* d-l / d-k: the same form a as default 1, behind an erkend default that does not decide *)
+  let d1 = doc [ stack [ default (kenmerk "erkend") (pf_a ~typ:pf_n0 "basisbedrag"); vorm_a; init ] ] in
+  both_answer ~name:"defaults, lazy: an exception decides before the form-a justification on default 1 (d-l)"
+    ~ir:d1 ~case_text:(pf_case ~instances:[ met_grond ] (waardering "10"));
+  unbound_fires ~name:"defaults: the form-a justification on default 1 when no exception decides (d-k)"
+    ~ir:d1 ~param:"p" ~case_text:(pf_case ~instances:[ zonder ] (waardering "25"))
+    ~silent:"waardering 25: the justification failed and the initialisation decided";
+  (* d-i: a characteristic target — the form a says true, its exception false *)
+  let di =
+    doc
+      [ stack ~doel:{|"kenmerk": "bevoegd"|}
+          [ default ~besluit:"true"
+              ~excepties:[ [ default ~besluit:"false" (kenmerk "grondY") "" ] ]
+              rechtvaardiging "" ] ]
+  in
+  let bevoegd present =
+    [ Printf.sprintf {|{ "kind": "characteristic%s", "label": "J1", "characteristic": "bevoegd" }|}
+        (if present then "Present" else "Absent");
+      pf_cons ]
+  in
+  both_answer ~name:"defaults, lazy: an exception decides a characteristic before the form-a justification (d-i)"
+    ~ir:di ~case_text:(pf_case ~instances:[ met_grond ] (bevoegd false));
+  unbound_fires ~name:"defaults: the form-a justification of a characteristic when no exception decides"
+    ~ir:di ~param:"p" ~case_text:(pf_case ~instances:[ zonder ] (bevoegd false))
+    ~silent:"bevoegd absent: the justification failed"
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
