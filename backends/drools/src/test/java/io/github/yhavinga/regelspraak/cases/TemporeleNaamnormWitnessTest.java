@@ -2,11 +2,13 @@ package io.github.yhavinga.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import io.github.yhavinga.regelspraak.transpiler.kern.Tijdlijnen;
 
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 
@@ -26,6 +28,7 @@ class TemporeleNaamnormWitnessTest {
     private static final ObjectMapper JSON = new ObjectMapper();
     // cwd under surefire is the module dir (backends/drools); the corpus is two levels up.
     private static final Path SEINJAAR = Path.of("..", "..", "corpus", "golden", "jutterswet-seinjaar", "ir.json");
+    private static final Path TEMPOVOUW = Path.of("..", "..", "corpus", "golden", "jutterswet-tempovouw");
     private static final Path KEURSPELLING = Path.of("..", "..", "corpus", "golden", "jutterswet-keurspelling", "ir.json");
 
     private static final String JAAR = "[{\"from\":\"2024-01-01\",\"to\":\"2025-01-01\"}]";
@@ -50,6 +53,64 @@ class TemporeleNaamnormWitnessTest {
         // The doel reading would answer 1 in both cases (S1 whole year, S2 half), so 1 is refused as a value.
         BeideTakken.rood(SEINJAAR, geval("\"characteristicTimelines\": { \"gehesen\": " + JAAR + " }", "1"),
                 "vakseinaantal: verwacht 1, werkelijk 2", "de doellezing is niet wat er speelt");
+    }
+
+    // ---------------- 1b. the granularity READ, not only the presence test ----------------------------------------
+
+    @Test void een_temporele_attribuutverwijzing_in_hoofdletters_speelt() throws Exception {
+        // Golden jutterswet-tempovouw with every rule reference to the MAAND-granular `bewaartarief` written
+        // BEWAARTARIEF (declarations and case untouched, so the getter stays the same). ref and clingo on this document:
+        // "oracle: PASS (3 expectations)", "clingo: PASS (3 expectations)" (measured 2026-09-23). Two readings meet here:
+        // "is it temporal?" (Namen.bevatNaam) and "at which grain?" (Namen.opNaam). A presence test by norm beside a
+        // granularity read by exact spelling hands the lowering a null grain; this row goes red on exactly that split.
+        ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(TEMPOVOUW.resolve("ir.json")));
+        int n = hoofdletters(ir.get("resolvedRegels"), "bewaartarief");
+        assertTrue(n > 0, "the probe must still name the temporal attribute somewhere in a rule, found " + n);
+        Path p = Files.createTempFile("tempovouw-hoofdletters", ".json");
+        p.toFile().deleteOnExit();
+        Files.writeString(p, ir.toString());
+        BeideTakken.groen(p, JSON.readTree(Files.readString(TEMPOVOUW.resolve("case.json"))),
+                "BEWAARTARIEF is de gedeclareerde bewaartarief, 48 / 0");
+    }
+
+    private static int hoofdletters(JsonNode x, String attr) {
+        int n = 0;
+        if (x instanceof ObjectNode o) {
+            if ("AttribuutRef".equals(o.path("node").asText()) && attr.equals(o.path("attribuut").asText())) {
+                o.put("attribuut", attr.toUpperCase(java.util.Locale.ROOT));
+                n++;
+            }
+            for (JsonNode v : o) n += hoofdletters(v, attr);
+        } else if (x != null && x.isArray()) {
+            for (JsonNode v : x) n += hoofdletters(v, attr);
+        }
+        return n;
+    }
+
+    // ---------------- 1c. timeline CASE INPUT spelled otherwise: the setter takes the declared name --------------
+
+    @Test void kenmerktijdlijninvoer_met_afwijkende_spelling_speelt() throws Exception {
+        // ref and clingo read a case key as the declared name. Measured 2026-09-23 on the first fix commit: ref and
+        // clingo "PASS (3 expectations)" on all three cases below, both Drools branches
+        //     ERROR RuntimeException: kon setter setGeHesen(List) niet aanroepen op Kustvak
+        //     ERROR RuntimeException: kon setter setBewaarTarief(List) niet aanroepen op Vondst
+        // The bean member comes from the declaration, so the setter must be named from it.
+        BeideTakken.groen(SEINJAAR, geval("\"characteristicTimelines\": { \"geHesen\": " + JAAR + " }", "2"),
+                "kenmerktijdlijn geHesen: heel jaar");
+        BeideTakken.groen(SEINJAAR, geval("\"characteristicTimelines\": { \"geHesen\": " + HALF + " }", "0"),
+                "kenmerktijdlijn geHesen: half jaar");
+    }
+
+    @Test void attribuuttijdlijninvoer_met_afwijkende_spelling_speelt() throws Exception {
+        // The attribute twin of the row above (setBewaarTarief, measured beside it).
+        ObjectNode c = (ObjectNode) JSON.readTree(Files.readString(TEMPOVOUW.resolve("case.json")));
+        int n = 0;
+        for (JsonNode i : c.get("input").get("instances")) {
+            ObjectNode a = (ObjectNode) i.get("attributes");
+            if (a.has("bewaartarief")) { a.set("bewaarTarief", a.remove("bewaartarief")); n++; }
+        }
+        assertEquals(2, n, "V1 and V2 carry the timeline");
+        BeideTakken.groen(TEMPOVOUW.resolve("ir.json"), c, "attribuuttijdlijn bewaarTarief, 48 / 0");
     }
 
     // ---------------- 2. the period count reads by the same contract as the presence test -----------------------

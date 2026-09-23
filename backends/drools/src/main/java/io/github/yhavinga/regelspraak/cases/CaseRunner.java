@@ -475,7 +475,9 @@ public final class CaseRunner {
                 throw new Excluded("dimensioned attribute input '" + e.getKey() + "' (§3.6, a Map bean member) "
                         + "is not carried by the v0 backend");
             if (temporeel(ot, e.getKey())) {
-                roep(bean, Namen.setter(e.getKey()), List.class,
+                // the bean member was generated from the DECLARATION, so a case key spelled otherwise must be
+                // brought back to it or it names a setter the bean does not have (ref reads it as the same name)
+                roep(bean, Namen.setter(Namen.gedeclareerdeNaam(ot.granulariteitLeden().keySet(), e.getKey())), List.class,
                         temporeleInvoer(e.getValue(), e.getKey(), Namen.opNaam(ot.granulariteitLeden(), e.getKey())));
                 continue;
             }
@@ -506,7 +508,8 @@ public final class CaseRunner {
             // Excluded would file a broken corpus case under "not carried", silently green.
             if (!Namen.bevatNaam(ot.kenmerkGranulariteitLeden(), e.getKey()))
                 throw new IllegalArgumentException("kenmerktijdlijn op niet-temporeel kenmerk '" + e.getKey() + "'");
-            roep(bean, Namen.setter(e.getKey()), List.class, kenmerkTijdreeks(e.getValue(), e.getKey()));
+            roep(bean, Namen.setter(Namen.gedeclareerdeNaam(ot.kenmerkGranulariteitLeden().keySet(), e.getKey())), List.class,
+                    kenmerkTijdreeks(e.getValue(), e.getKey()));
         }
     }
 
