@@ -15,6 +15,11 @@ weigering sturen waar de andere uitvoerders spelen. De golden
 `jutterswet-seinjaar` pint de huidige stand bij naam en moet bij het
 oppakken van kanaal wisselen (de NOTE zegt dat expliciet).
 
+Zelfde familie, erbij belegd (consistentie-label-kaart, 2026-09-23):
+`CaseRunner` vergelijkt de REGELNAAM van een inconsistent-sleutel
+byte-exact waar ref `norm` plus versiestrip toepast. Geen
+corpusdrager vandaag; hier meenemen.
+
 ## Acceptatie (bij oppakken aanscherpen)
 
 - (a) Inventariseer de 72 lookup-plekken en leid ze door één
