@@ -52,7 +52,8 @@ May touch (aangescherpt): `ref/lib/case.ml`, zo nodig `ref/lib/value.ml`,
 
 *Stand van dit Result: de eerste ronde hieronder is ongewijzigd
 bewaard; de secties "Fixronde 1", "Fixronde 2" en "Fixronde 3" onderaan
-dragen de latere wijzigingen en de actuele getallen.*
+dragen de latere wijzigingen en de actuele getallen, aangevuld met
+"Fixronde 4".*
 
 Alle acceptatiepunten gehaald; alle veertien gates groen, elk los
 gedraaid op `97f87646`. Fix en getuigen zitten in één commit tussen
@@ -304,9 +305,9 @@ op drie plekken — de dode `malformed asOfDate`-arm in de periodeconditie
 slotregel, alleen toegevoegd, plus de eigen getuigen van deze kaart
 bijgesteld); `corpus/rood/inputdatum-kalender/` (nieuw, open punt 4 van
 de eerste ronde, op aanwijzing van de hoofdsessie); en, uitsluitend als
-beschermd-pad-VOORSTEL, `scripts/check-case-schema.sh` (commit
-`a4f52876`) en `scripts/check-ir-schema.sh` (commit `0b3787cd`,
-fixronde 3). Onaangeroerd: `ref/lib/value.ml` (dus ook de
+beschermd-pad-VOORSTEL, `scripts/check-case-schema.sh` (commits
+`a4f52876` en `81e647bc`) en `scripts/check-ir-schema.sh` (commit
+`0b3787cd`, fixronde 3, en een commentaarregel in `81e647bc`). Onaangeroerd: `ref/lib/value.ml` (dus ook de
 redenen van de lezers), `backends/**`, `frontends/**`, `spec/**`, de
 rest van `corpus/**` en `scripts/**`. Samenloop: de parallelle
 verifier-kaart raakt `ref/lib/eval.ml` en `ref/test/test_ref.ml` ook
@@ -657,8 +658,46 @@ kaartcommit): 1 PASS; 2 PASS (26 zelftestrijen, 279 bestanden, floor
 code onder `ref/`; de uitslagen van de gates 4 tot en met 8, 11 en 13 op
 `21a9f738` blijven gelden (suite 921).
 
-**Open punten** (stand na fixronde 3; de punten 3 en 4 van de eerste
-ronde zijn in fixronde 1 opgelost, het gate-2-punt in fixronde 3).
+### Fixronde 4 (hoofdsessie, 2026-09-23)
+
+**Open punt 3: een vaste getuige voor het gate-4-voorstel** (commit
+`81e647bc`, BESCHERMD-PAD-VOORSTEL in `scripts/check-case-schema.sh`). Naar
+het model van gate 2 houdt gate 4 nu een patroonzelftest: een klem op het
+patroonoppervlak van het case-schema (de tien posities: asOfDate, de
+periodegrenzen van kenmerktijdlijnen, de waardevarianten number, date en
+dateTime, de segmentgrenzen van waarde- en verwachte tijdlijnen) en per
+soort een lexeemtabel in beide richtingen — datum 9 rijen (o.a.
+`"2026-06-01"` aanvaarden, `"2026-02-30"` aanvaarden als laaggrens, die de
+caselezers weigeren; `"2026-06-01\n"`, dag-eerst, spatie, teken, leeg
+weigeren), datumtijd 8 (o.a. uur 24 aanvaarden als laaggrens,
+`"2026-03-15T12:00:00\n"` weigeren), getal 12 (o.a. `5`, `-12.50`, `3/4`
+aanvaarden; `"5\n"`, `1,000`, `.5`, `1E3`, `+5`, `1/0`, `3/04`, `1.5/2`
+weigeren). Elke positie wordt via `$ref` door DEZELFDE validator getoetst
+als de corpuscontrole; samen 92 zelftestrijen, en de PASS-regel noemt ze
+zoals gate 2 doet: `check-case-schema: PASS (schema valid; 92 pattern
+self-test row(s); 639 case file(s) validate)`.
+
+Rood-eerst onder de oude `re.search`-validator (de volle match eruit,
+daarna teruggezet, `cmp identiek`): `check-case-schema: FAIL (10 pattern
+self-test row(s) bad)`, precies de tien newline-rijen, één per positie,
+bijvoorbeeld `FAIL: pattern self-test, /properties/asOfDate/oneOf/0 =
+'2026-06-01\n': schema accepts it, expected refuse` en `FAIL: pattern
+self-test, /$defs/value/oneOf/0/properties/number = '5\n': schema accepts
+it, expected refuse`. Ook een verruimd patroon valt: met het getalpatroon
+tijdelijk op `^-?[0-9]+([.,][0-9]+)?$|…` (niet gecommit, schema daarna met
+`cmp` hersteld) `FAIL: pattern self-test,
+/$defs/value/oneOf/0/properties/number = '1,000': schema accepts it,
+expected refuse`. Het commentaar in het gate-2-script dat de zelftest
+voor de case-patronen nog als eigen kaart noemde, zegt nu dat gate 4 ze
+sinds 2026-09-23 zelf houdt.
+
+Gates na fixronde 4 (elk los, op `81e647bc`; daarna alleen deze
+kaartcommit): 1 PASS; 4 PASS (92 zelftestrijen, 639 cases); 2 PASS (26
+zelftestrijen, 279 bestanden; alleen een commentaarregel veranderd).
+
+**Open punten** (stand na fixronde 4; de punten 3 en 4 van de eerste
+ronde zijn in fixronde 1 opgelost, het gate-2-punt in fixronde 3, de
+getuige voor gate 4 in fixronde 4).
 
 1. Drools-caselezer (`backends/drools`, andere zone): de getallezer
    (`new BigDecimal` in `waardeNaarArg`) aanvaardt `.5`, `1E3` en `+5`,
@@ -676,12 +715,8 @@ ronde zijn in fixronde 1 opgelost, het gate-2-punt in fixronde 3).
    toetst zijn WF-022-arm (r. 7334) alleen het lexeem `waar` en niet het
    type Booleaan dat de verifier eist; een `waar` getypt als Tekst gaat
    daar door waar ref (sinds fixronde 1) en de verifier weigeren.
-3. Het gate-4-voorstel (`a4f52876`) heeft geen vaste getuige: gate 4
-   kent geen patroonzelftest zoals gate 2, dus wie de volle match daar
-   terugdraait, merkt het aan geen gate (geen corpusdocument draagt een
-   afsluitende newline). Het script van gate 2 noemt een zelftest voor de
-   patronen van het case-schema al als eigen kaart; de rij met
-   afsluitende newline hoort daar bij.
+3. Opgelost in fixronde 4 (`81e647bc`): het gate-4-voorstel heeft nu een
+   vaste getuige in de patroonzelftest van gate 4.
 4. Bewust ongepositioneerd gelaten: drie weigeringen op de wortel die geen
    plaats nodig hebben omdat de wortel uniek is en de zin het veld noemt
    (`unsupported case format "…"`, `a case carries exactly one of
