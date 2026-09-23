@@ -686,5 +686,12 @@
     "resolvedStartpunten": [],
     "regelGroepen": []
   },
-  "diagnostics": []
+  "diagnostics": [
+    {
+      "node": "Diagnostic",
+      "severity": "WARNING",
+      "message": "onopgelost: de voorwaarde van de feitcreatie is niet opgelost \u2014 'het sein het sein is' blijft als marker op de wire staan",
+      "line": 0
+    }
+  ]
 }

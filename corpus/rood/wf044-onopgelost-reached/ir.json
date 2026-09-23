@@ -84,5 +84,12 @@
     "resolvedStartpunten": [],
     "regelGroepen": []
   },
-  "diagnostics": []
+  "diagnostics": [
+    {
+      "node": "Diagnostic",
+      "severity": "WARNING",
+      "message": "onopgelost: de waarde van de berekening is niet opgelost \u2014 'de taxatie volgens het niet-gemodelleerde protocol' blijft als marker op de wire staan",
+      "line": 0
+    }
+  ]
 }

@@ -34,3 +34,13 @@ Drools leg rather than pinned as a fault at fire.
 A harness in which this case stops failing has started guessing where the
 spec says "cannot express" — and, worse than in the value position, it
 has started guessing about *which objects a relation holds between*.
+
+**WF-113 (since M1, 2026-09-23).** The document carries one `WARNING` in
+`diagnostics` whose message contains the marker's `bron` verbatim, in the
+frontend's message form (`onopgelost: <reason> — '<bron>' blijft als marker op
+de wire staan`): every marker on the wire is accounted for by a diagnostic, and
+this document is one of the first corpus carriers of that clause (WF-113 (b)).
+`line` is 0 because no source file carries the marker's phrase; 0 is the value
+the RegelSpraak frontend writes for a marker without a source position. The
+case and its `expectedFault` are unchanged: the diagnostic carries no semantics
+(WF-113 (c)).
