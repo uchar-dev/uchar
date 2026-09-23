@@ -1111,13 +1111,23 @@ final class RuleChecker {
             // re-parsed in a stream of its own, where no comment stands above it, so the annotations are read here,
             // off the table in the main stream, or they are lost.
             List<String> tabelAnnotaties = bronAnnotaties(b);
+            List<String> dubbel = new ArrayList<>();
             for (String regelSrc : BeslistabelDesugar.desugar(naam, geldig, headers, data, waarschuw)) {
                 RegelContext rc = parseRegel(regelSrc, line);
                 if (rc == null) continue;
-                rijen.add(DefinitionResolver.src(rc.regelNaam()));
-                regelVersies(DefinitionResolver.src(rc.regelNaam()), rc.regelVersie(), tabelAnnotaties,
-                        rc.getStart().getLine());
+                String rijNaam = DefinitionResolver.src(rc.regelNaam());
+                if (rijen.contains(rijNaam)) { if (!dubbel.contains(rijNaam)) dubbel.add(rijNaam); }
+                else rijen.add(rijNaam);
+                regelVersies(rijNaam, rc.regelVersie(), tabelAnnotaties, rc.getStart().getLine());
             }
+            // A row's rule is named after the table and the row's number (its first cell), so rows without a
+            // number, or with the same one, share a name — two rules the verifier refuses as one (WF-020, WF-021).
+            if (!dubbel.isEmpty())
+                model.diagnostics.add(new Diagnostic(Severity.ERROR,
+                        "beslistabel '" + naam + "': rijen krijgen dezelfde regelnaam (" + opsomming(dubbel) + ") — een "
+                        + "rij heet naar de tabel en haar nummer in de eerste cel, dus rijen zonder nummer of met hetzelfde "
+                        + "nummer worden regels met één naam, die de wire niet kan onderscheiden (WF-020, WF-021). "
+                        + "Geef elke rij een eigen nummer", line));
         }
     }
 
