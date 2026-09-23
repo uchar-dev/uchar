@@ -349,6 +349,15 @@ type ctx = {
      order) maps to its form that holds in some allowed order, its form that
      holds in some and not in every one, and what the named sentence names *)
   mutable named : (string * (string * string * string)) list;
+  (* the Let lowering's branch hoist moves the operands beside a branch into
+     both arms, behind the branch's condition, while ref evaluates them before
+     it ([hoist_branch]; README [S2] until fixronde 5). [hoisted]: per branch
+     node the hoist built, by identity, those operands. [before_arm]: the arms
+     of such nodes being translated, innermost first, each with its node's
+     operands and the place of the arm's own atoms in [rule_guard] (start,
+     length), which a read in those operands does not wait for ([expr_term]) *)
+  mutable hoisted : (expr * expr list) list;
+  mutable before_arm : (expr list * int * int) list;
 }
 
 (* S ⊑ T, for the OCaml-side scans over case instances. The ASP side does
@@ -770,11 +779,10 @@ let unbound_param_order_reason name what =
    before the creation also where ch. 6.3 puts the rule above the creation, so
    that ref has no such pass ([emit_barriers], README [L2]). Silent: the Let
    lowering keeps a value behind an enclosing need on a path that does not
-   read it, and the guard follows the lowering ([reach_at], README [S1]); the
-   branch hoist reads a condition before the operand beside the branch
-   ([hoist_branch], README [S2]); and the guard is read at the fixpoint, so a
-   read ref reaches only in a pass before a form of the same stratum wrote
-   what the read's short circuit depends on fires nothing (README [S3]). *)
+   read it, and the guard follows the lowering ([reach_at], README [S1]); and
+   the guard is read at the fixpoint, so a read ref reaches only in a pass
+   before a form of the same stratum wrote what the read's short circuit
+   depends on fires nothing (README [S3]). *)
 let unbound_param_guard ctx ~witness ~guard name =
   if param_unbound ctx name then begin
     let body = guard () in
@@ -2275,11 +2283,16 @@ let rec reads_first b (e : expr) : bool =
    the ch.-5.11 position of the condition relative to those siblings — it is
    now read first. For values that is below the resolution of the encoding,
    which models order as guarding and not as stopping. For the unbound-
-   parameter guard it is not: a sibling read before the branch now waits for
-   the condition, and a condition that reads a binder whose need is leeg
-   decides no arm, so `p plus (als n > 0 dan k anders 0)` with n leeg and p
-   unbound answers where ref faults at p (README [S2], recorded rather than
-   claimed away).
+   parameter guard it is not: a sibling read before the branch waits for the
+   condition, and a condition that reads a binder whose need is leeg decides
+   no arm, so `p plus (als n > 0 dan k anders 0)` with n leeg and p unbound
+   answered where ref faults at p (README [S2] until fixronde 5). So every
+   branch node the hoist builds keeps the operands ref evaluates before its
+   condition ([ctx.hoisted]): the siblings before the reading operand, at
+   every level, and those an inner hoist kept. A parameter read in one of
+   them gets a second guard without the atoms of the arm it was copied into
+   ([expr_term]). A sibling after the reading operand stays behind the
+   condition, where ref reads it too.
 
    A NESTED `Let` between the outer one and the branch node distributes the same
    way, and for the same reason: `Let b = v in (als c dan P anders Q)` becomes
@@ -2309,7 +2322,15 @@ let rec reads_first b (e : expr) : bool =
      assuming it. Where the check fails — the outer binder read in both arms,
      directly or through `v` — eager placement stays and is exact, which is the
      D5 witness. *)
-let rec hoist_branch binder (e : expr) : expr option =
+(* the operands [ctx.hoisted] keeps for branch node [e], and their record for
+   a node the hoist builds *)
+let hoisted_before ctx (e : expr) =
+  match List.find_opt (fun (n, _) -> n == e) ctx.hoisted with Some (_, b) -> b | None -> []
+
+let note_hoisted ctx (n : expr) (before : expr list) =
+  if before <> [] then ctx.hoisted <- (n, before) :: ctx.hoisted
+
+let rec hoist_branch ctx binder (e : expr) : expr option =
   let reads = reads_binder binder in
   let opt_reads = function Some x -> reads x | None -> false in
   (* descend into the single operand that reads the binder, then distribute
@@ -2317,15 +2338,22 @@ let rec hoist_branch binder (e : expr) : expr option =
      recursive result is always an `If_then_else`, so every level distributes
      and what finally surfaces is one branch node carrying the OUTERMOST
      wrapper's type — the type the caller's `Let` had, by WF-076. The siblings
-     ride into both arms, which is what keeps the barrier's extent whole. *)
+     ride into both arms, which is what keeps the barrier's extent whole; the
+     ones before the reading operand are kept with the node, since ref
+     evaluates them before the condition *)
   let one_of typ bron (operands : (expr option * (expr -> expr)) list) =
     match List.filter (fun (o, _) -> opt_reads o) operands with
     | [ (Some o, rebuild) ] -> (
-        match hoist_branch binder o with
-        | Some (If_then_else { condition; then_; else_; _ }) ->
-            Some
-              (If_then_else
-                 { typ; condition; then_ = rebuild then_; else_ = rebuild else_; bron })
+        match hoist_branch ctx binder o with
+        | Some (If_then_else { condition; then_; else_; _ } as inner) ->
+            let n = If_then_else { typ; condition; then_ = rebuild then_; else_ = rebuild else_; bron } in
+            let rec before = function
+              | (Some x, _) :: r when x != o -> x :: before r
+              | (None, _) :: r -> before r
+              | _ -> []
+            in
+            note_hoisted ctx n (hoisted_before ctx inner @ before operands);
+            Some n
         | Some _ | None -> None)
     | _ -> None
   in
@@ -2336,11 +2364,13 @@ let rec hoist_branch binder (e : expr) : expr option =
       Some e
   | Let { binder = b2; value = v2; body = lbody; typ; bron }
     when norm b2 <> norm binder && not (Ir_v0.Checks.mentions_binder binder v2) -> (
-      match hoist_branch binder lbody with
-      | Some (If_then_else { condition; then_; else_; _ })
+      match hoist_branch ctx binder lbody with
+      | Some (If_then_else { condition; then_; else_; _ } as inner)
         when not (Ir_v0.Checks.mentions_binder_cond b2 condition) ->
           let push arm = Let { typ; binder = b2; value = v2; body = arm; bron } in
-          Some (If_then_else { typ; condition; then_ = push then_; else_ = push else_; bron })
+          let n = If_then_else { typ; condition; then_ = push then_; else_ = push else_; bron } in
+          note_hoisted ctx n (hoisted_before ctx inner);
+          Some n
       | Some (If_then_else _) ->
           fault
             "a Let whose need is read in exactly one branch arm sits behind a nested Let whose own \
@@ -2382,7 +2412,7 @@ let rec hoist_branch binder (e : expr) : expr option =
   | Let { binder = b2; value = v2; body = lbody; typ; bron }
     when norm b2 <> norm binder && Ir_v0.Checks.mentions_binder binder v2 -> (
       let moved =
-        match let_into_arm (Let { typ; binder = b2; value = v2; body = lbody; bron }) with
+        match let_into_arm ctx (Let { typ; binder = b2; value = v2; body = lbody; bron }) with
         | Some _ as m -> m
         | None -> (
             (* THE VALUE ARM: the branch that reads the outer binder in one
@@ -2394,10 +2424,13 @@ let rec hoist_branch binder (e : expr) : expr option =
                (Let b2 = E in B)`. Otherwise the outer need stayed on [v2] on
                the arm that does not read it, and [b2] went leeg there where
                ref's value is not (measured: ref 10,00, clingo leeg) *)
-            match hoist_branch binder v2 with
-            | Some (If_then_else { condition; then_; else_; bron = ite_bron; _ }) when reads_first b2 lbody ->
+            match hoist_branch ctx binder v2 with
+            | Some (If_then_else { condition; then_; else_; bron = ite_bron; _ } as inner)
+              when reads_first b2 lbody ->
                 let at v = Let { typ; binder = b2; value = v; body = lbody; bron } in
-                Some (If_then_else { typ; condition; then_ = at then_; else_ = at else_; bron = ite_bron })
+                let n = If_then_else { typ; condition; then_ = at then_; else_ = at else_; bron = ite_bron } in
+                note_hoisted ctx n (hoisted_before ctx inner);
+                Some n
             | Some _ | None -> None)
       in
       match moved with
@@ -2449,7 +2482,7 @@ let rec hoist_branch binder (e : expr) : expr option =
    between the two `Let`s with a condition reading the nested binder: the swap
    cannot step over the wrapper and the distribution cannot lift the branch
    node, which is the loud refusal in [hoist_branch]. *)
-and let_into_arm (e : expr) : expr option =
+and let_into_arm ctx (e : expr) : expr option =
   match e with
   | Let { binder; value; body; bron; typ } -> (
       let swapped =
@@ -2460,7 +2493,7 @@ and let_into_arm (e : expr) : expr option =
                && not (Ir_v0.Checks.mentions_binder b2 value) -> (
             (* WF-076 keeps both node types equal to the body type, so the pair
                carries one type and the exchange needs no retyping *)
-            match let_into_arm (Let { typ; binder; value; body = lbody; bron }) with
+            match let_into_arm ctx (Let { typ; binder; value; body = lbody; bron }) with
             | Some inner -> Some (Let { typ; binder = b2; value = v2; body = inner; bron = bron2 })
             | None -> None)
         | _ -> None
@@ -2473,13 +2506,16 @@ and let_into_arm (e : expr) : expr option =
              siblings: its extent IS the barrier's extent (ch. 10.6 clause 2),
              and wrapping only the inner read would leave the coalescing
              operator outside it, answering 0,00 where ref answers leeg. *)
-          match hoist_branch binder body with
-          | Some (If_then_else { typ; condition; then_; else_; bron = ite_bron }) ->
+          match hoist_branch ctx binder body with
+          | Some (If_then_else { typ; condition; then_; else_; bron = ite_bron } as inner) ->
               let push arm = Let { typ; binder; value; body = arm; bron } in
-              Some
-                (if reads_binder binder then_ then
-                   If_then_else { typ; condition; then_ = push then_; else_; bron = ite_bron }
-                 else If_then_else { typ; condition; then_; else_ = push else_; bron = ite_bron })
+              let n =
+                if reads_binder binder then_ then
+                  If_then_else { typ; condition; then_ = push then_; else_; bron = ite_bron }
+                else If_then_else { typ; condition; then_; else_ = push else_; bron = ite_bron }
+              in
+              note_hoisted ctx n (hoisted_before ctx inner);
+              Some n
           | Some _ | None -> None))
   | _ -> None
 
@@ -2766,7 +2802,7 @@ let unshadow_payload (lets : (string * expr * datatype option * string option) l
   else (b, body)
 
 let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
-  match let_into_arm e with
+  match let_into_arm ctx e with
   | Some pushed -> expr_term ctx ~subject ~subject_ot pushed
   | None ->
   match e with
@@ -2797,6 +2833,26 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           unbound_param_guard ctx ~witness:subject
             ~guard:(fun () -> rule_reach ctx ~subject ~subject_ot e)
             name;
+          (* an operand ref evaluates before a hoisted branch's condition is
+             reached whatever the condition decides: a second guard, without
+             the atoms of the arms the hoist copied it into ([hoist_branch]) *)
+          (if param_unbound ctx name then
+             let arms =
+               List.filter
+                 (fun (before, _, _) -> List.exists (fun b -> b == e || expr_reaches ctx (fun n -> n == e) b) before)
+                 ctx.before_arm
+             in
+             if arms <> [] then begin
+               let saved_g = ctx.rule_guard in
+               ctx.rule_guard <-
+                 List.filteri
+                   (fun i _ -> not (List.exists (fun (_, from, len) -> i >= from && i < from + len) arms))
+                   saved_g;
+               unbound_param_guard ctx ~witness:subject
+                 ~guard:(fun () -> rule_reach ctx ~subject ~subject_ot e)
+                 name;
+               ctx.rule_guard <- saved_g
+             end);
           ([ Printf.sprintf "param(%s,%s)" (str name) v ], v, pow10 d)
       | None -> fault "unknown parameter %S" name)
   | Attribuut_ref
@@ -4695,7 +4751,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       (* ch. 10.2 under an operator: the rule head cannot be split per branch
          here, so the node lowers to its own helper predicate, arm-guarded —
          see [translate_ite] *)
-      translate_ite ctx ~subject ~subject_ot ~typ ~condition ~then_ ~else_
+      translate_ite ctx ~subject ~subject_ot ~typ ~condition ~then_ ~else_ ~before:(hoisted_before ctx e)
   | Binder_ref { naam; _ } -> (
       (* ch. 9.2/10.2: the ASP variable the enclosing match arm's scrutinee
          pattern or the enclosing lambda/function parameter bound, at its
@@ -7202,7 +7258,7 @@ and list_source ctx ~subject ~subject_ot (e : expr) : string * int =
    an Invoke inlines the acyclic FunctionDef body, and any other closed term
    is a single branch. The [guard_body] grounds the emitted range fences. *)
 and body_branches ctx ~guard_body ~witness (e : expr) : (string list * string * int) list =
-  match let_into_arm e with
+  match let_into_arm ctx e with
   | Some pushed -> body_branches ctx ~guard_body ~witness pushed
   | None ->
   match e with
@@ -7906,18 +7962,20 @@ and value_condition ctx ~subject ~subject_ot (c : conditie) : string list * stri
    The condition's own atoms are in both arms' guards, so a leeg operand leaves
    NEITHER arm derivable — the ch. 10.6 barrier: a leeg need ends the Let, and
    the whole node is leeg, exactly as the rule-head route reads it. *)
-and translate_ite ctx ~subject ~subject_ot ~typ ~condition ~then_ ~else_ =
+and translate_ite ctx ~subject ~subject_ot ~typ ~condition ~then_ ~else_ ~before =
   let catoms, pos, neg = value_condition ctx ~subject ~subject_ot condition in
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "ite%d" ctx.fresh in
   let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
   let out_scale = value_scale typ in
-  let saved = ctx.rule_guard in
+  let saved = ctx.rule_guard and saved_b = ctx.before_arm in
   let arm name extra e =
     ctx.rule_guard <- saved @ catoms @ [ extra ];
+    if before <> [] then ctx.before_arm <- (before, List.length saved, List.length catoms + 1) :: saved_b;
     let atoms, term, scale = expr_term ctx ~subject ~subject_ot e in
     let body = (base :: ctx.rule_guard) @ atoms in
     ctx.rule_guard <- saved;
+    ctx.before_arm <- saved_b;
     (* WF-069 pins both branch TYPES to the node's own, so the only position
        that can arrive at a different scale is the Literal, whose scale comes
        from its LEXEME and not from its annotation (gate 13's named exemption):
@@ -7966,7 +8024,7 @@ type vbranch = {
    and clingo's underivability coincide by construction. Any other value is a
    single branch via [expr_term]. Mirrors [body_branches] at value position. *)
 let rec value_branches ctx ~subject ~subject_ot (e : expr) : vbranch list =
-  match let_into_arm e with
+  match let_into_arm ctx e with
   | Some pushed -> value_branches ctx ~subject ~subject_ot pushed
   | None ->
   match e with
@@ -8016,11 +8074,14 @@ let rec value_branches ctx ~subject ~subject_ot (e : expr) : vbranch list =
 
          The condition is evaluated on EVERY branch, so a binder it reads is
          read on every branch — the exactness the per-branch guard needs. *)
-      let saved = ctx.rule_guard in
+      let saved = ctx.rule_guard and saved_b = ctx.before_arm in
+      let before = hoisted_before ctx e in
       let arm extra e =
         ctx.rule_guard <- saved @ catoms @ [ extra ];
+        if before <> [] then ctx.before_arm <- (before, List.length saved, List.length catoms + 1) :: saved_b;
         let branches = value_branches ctx ~subject ~subject_ot e in
         ctx.rule_guard <- saved;
+        ctx.before_arm <- saved_b;
         List.map
           (fun b ->
             { b with
@@ -9952,7 +10013,8 @@ let translate (doc : document) (case : Case.t) : string =
   let ctx =
     { doc; case; buf = Buffer.create 4096; fresh = 0; rule_guard = []; write_scale = 1;
       rule_name = "?"; binders = []; param_reach = (fun _ -> []); let_needs = []; value_of = None;
-      lets = []; let_serial = 0; demands = []; parts = []; part_serial = 0; named = [] }
+      lets = []; let_serial = 0; demands = []; parts = []; part_serial = 0; named = []; hoisted = [];
+      before_arm = [] }
   in
   (* ch. 8.4: the shared session-start Parameterset coverage check —
      data-plane validation (like the shared case loader), run before a

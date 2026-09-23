@@ -7817,10 +7817,10 @@ let both_answer ~name ~ir ~case_text =
   clingo_matches ~name ~ir ~case_text
 
 (* FIXRONDE 4, lens point 4: the recorded deviations of the parameter guard
-   (backends/clingo/README.md, the entries tagged [L1], [S1], [S2], [V1],
-   [V2]), one frame each, named after its entry. A frame pins the deviation as
-   it stands and goes red when it disappears — the gate-7 survivor pattern: a
-   deviation that is gone takes its frame and its README entry with it. *)
+   (backends/clingo/README.md, the tagged entries), each with a frame named
+   after its entry. A frame pins the deviation as it stands and goes red when
+   it disappears — the gate-7 survivor pattern: a deviation that is gone takes
+   its frames and its README entry with it, as [S2] did in fixronde 5. *)
 let pinned name entry = Printf.sprintf "README [%s]: %s" entry name
 
 (* loud: ref plays the case's rows; clingo refuses, in translation or UNSAT,
@@ -9278,10 +9278,9 @@ let () =
     ~silent:"heffing leeg: bel's value kept k's need on the arm that does not read k";
   both_answer ~name:"Let, lazy: bel's value reads k, whose need is leeg, p bound (lz-v-hoog, control)" ~ir:v
     ~case_text:(pf_case ~params:(pf_bind "p" "10" :: q "5") ~instances:[ j1 None ] leeg);
-  (* what the value arm does not reach, pinned (README [S1], [S2], [V1],
-     [V2]): a body that evaluates anything before bel (a literal here), a
-     Match in place of the branch, and the branch hoist's own order — it reads
-     the condition before the operand beside the branch *)
+  (* what the value arm does not reach, pinned (README [S1], [V1], [V2]): a
+     body that evaluates anything before bel (a literal here), and a Match in
+     place of the branch *)
   let lv =
     doc
       (pf_let "k" restpost
@@ -9293,13 +9292,36 @@ let () =
   pinned_value ~entry:"V2" ~name:"a literal before bel, and bel's value kept k's need, p bound (lz-lv-bound)"
     ~ir:lv ~case_text:(pf_case ~params:(pf_bind "p" "10" :: q "-5") ~instances:[ j1 None ] [ pf_is "11"; pf_cons ])
     ~answers:[ "J1.heffing is underived (leeg), expected 1100" ];
-  let hoist =
-    doc
-      (pf_let "n" restpost
-         (pf_let "k" (pf_a "extra") (pf_bin "PLUS" p (pf_ite (pf_cmp "GROTER" (pf_b "n") (pf_l "0")) k (pf_l "0")))))
-  in
-  pinned_silent ~entry:"S2" ~name:"the branch hoist reads n before p, and n's need is leeg (hoist-ctl)" ~ir:hoist
-    ~param:"p" ~case_text:(pf_case ~instances:[ j1 ~extra:"1" None ] leeg);
+  (* the branch hoist puts the operand before the branch behind the branch's
+     condition; ref reads that operand first (README [S2] until fixronde 5,
+     lens point 4). A condition over n, whose need is leeg, decides no arm,
+     and the operand's read now has a second guard without the arm's atoms.
+     h-dubbel: an enclosing branch reads n as well, so the hoisted branch's
+     condition atoms recur in the guard around it; the second guard drops the
+     arm's atoms by their place, not by their text (by text it left n's
+     comparison without n, an unsafe rule, measured on the lens's prototype) *)
+  let n_gt l = pf_cmp "GROTER" (pf_b "n") (pf_l l) in
+  let hoist_doc body = doc (pf_let "n" restpost (pf_let "k" (pf_a "extra") body)) in
+  let branch = pf_ite (n_gt "0") k (pf_l "0") in
+  unbound_fires ~name:"the branch hoist: p before a branch whose condition reads n, n's need leeg (hoist-ctl)"
+    ~ir:(hoist_doc (pf_bin "PLUS" p branch)) ~param:"p" ~case_text:(pf_case ~instances:[ j1 ~extra:"1" None ] leeg)
+    ~silent:"heffing leeg: the hoist put p behind the condition";
+  unbound_fires ~name:"the branch hoist two levels deep: 1,00 plus (p plus the branch) (h-diep)"
+    ~ir:(hoist_doc (pf_bin "PLUS" (pf_l "1.00") (pf_bin "PLUS" p branch))) ~param:"p"
+    ~case_text:(pf_case ~instances:[ j1 ~extra:"1" None ] leeg)
+    ~silent:"heffing leeg: the hoist put p behind the condition";
+  both_answer ~name:"the branch before p: n's leeg need ends the Let before p is read (h-na-tak, control)"
+    ~ir:(hoist_doc (pf_bin "PLUS" branch p)) ~case_text:(pf_case ~instances:[ j1 ~extra:"1" None ] leeg);
+  let dubbel = hoist_doc (pf_ite (n_gt "1") (pf_bin "PLUS" p branch) (pf_l "0")) in
+  unbound_fires ~name:"an enclosing branch reads n too, restpost 5 (h-dubbel-5)" ~ir:dubbel ~param:"p"
+    ~case_text:
+      (pf_case
+         ~instances:
+           [ {|{ "label": "J1", "objectType": "Jutter", "attributes": { "inkomen": { "number": "20" }, "restpost": { "number": "5" }, "extra": { "number": "1" } }, "roles": {}, "characteristics": [] }|} ]
+         leeg)
+    ~silent:"heffing leeg";
+  both_answer ~name:"an enclosing branch reads n too, restpost leeg (h-dubbel-leeg, control)" ~ir:dubbel
+    ~case_text:(pf_case ~instances:[ j1 ~extra:"1" None ] leeg);
   (* lz-s2: the inner Let's need (extra) is leeg, so it ends before reading k
      and p is reached; with extra filled it reads k, whose need ends the Let *)
   let s2 =

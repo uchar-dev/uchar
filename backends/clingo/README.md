@@ -75,11 +75,10 @@ spec bug.
     q > 0 dan k anders 0) in ((1,00 plus bel) plus p)` with q = -5,
     restpost leeg and p unbound answers leeg where ref faults at p.
     Where bel is the first thing the body evaluates, the branch moves
-    out of bel's value and the guard is exact. [S2] The branch hoist of
-    the Let lowering reads the branch's condition before the operand
-    beside the branch: `Let n = restpost in Let k = extra in (p plus
-    (als n > 0 dan k anders 0))` with restpost leeg and p unbound
-    answers leeg where ref faults at p. [S3] The intermediate pass
+    out of bel's value and the guard is exact. ([S2], the branch hoist
+    reading the branch's condition before the operand beside it, is
+    gone since fixronde 5: that operand's read has a second guard
+    without the arm's atoms.) [S3] The intermediate pass
     within one stratum (the ch. 6.1 residual of order-dependent
     transients, in fail-fast form). ref runs the forms of a stratum
     pass by pass until nothing changes, so a form that reads what a
