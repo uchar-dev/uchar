@@ -42,10 +42,10 @@ field — the silent wrong answer this document pins against. Both Drools
 branches did exactly that before the loader lowered the negation to the
 sister soort. The ASP backend, before it carried the leeg test and its
 negations in its shared condition translation, refused the document
-instead. The unnegated twin, the unbound written step and the refusal
-under a whole-period qualifier are pinned in the backends' own suites
-(`LeegNegatieWitnessTest`, `test_clingo.ml`), not here: a golden carries
-one expectation set, and ref refuses the whole-period form.
+instead. The unnegated twin and the unbound written step are pinned in the
+backends' own suites (`LeegNegatieWitnessTest`, `test_clingo.ml`), not
+here, because a golden carries one expectation set. The refusal under a
+whole-period qualifier is the red twin `corpus/rood/leegnegatie-heel-tijdvak`.
 
 No `bron.rgs`: RegelSpraak spells no "is niet leeg", and the frontend
 never writes `negatie` on these two soorten. The document is hand-written
