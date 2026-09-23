@@ -6740,6 +6740,25 @@ let () =
             (key = reader)
       | None -> check "AANTAL_GEVULDE: the emitted aggregate is unreadable" false)
 
+(* D9's two sides, the ones ref refuses in the same words: a value fold's set
+   source names an ATTRIBUTE of the element type, a count's source names the
+   counted ROLE. Crossed over, each would read nothing — a role name has no
+   val/3 fact to count, an attribute name is no relation — and answer a
+   silent 0 where ref faults, so both refuse by name. *)
+let () =
+  let ir = aantalgevulde_doc ~vondst_granulariteit:"" in
+  faults_with ~name:"AANTAL_GEVULDE over a role name refuses (D9)"
+    ~ir:
+      (vervang ir
+         ~waar:{|{ "node": "AttribuutRef", "attribuut": "gewicht", "objecttype": "Vondst",|}
+         ~door:{|{ "node": "AttribuutRef", "attribuut": "vondsten", "objecttype": "Jutter",|})
+    ~case_text:aantalgevulde_case
+    ~needle:"a role name is a count source only a count folds";
+  faults_with ~name:"AANTAL over an attribute name refuses (D9)"
+    ~ir:(vervang ir ~waar:{|"kind": "AANTAL_GEVULDE"|} ~door:{|"kind": "AANTAL"|})
+    ~case_text:aantalgevulde_case
+    ~needle:"a count over \"gewicht\", which is an attribute of \"Vondst\""
+
 (* ch. 3.4c's one exclusion, and the pin a red case rests on *)
 let () =
   let ir =

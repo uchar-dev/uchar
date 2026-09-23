@@ -1706,6 +1706,18 @@ let new_part ctx (ro : range_order) =
   ctx.part_serial <- ctx.part_serial + 1;
   { pt_id = ctx.part_serial; pt_order = ro; pt_parent = ro.ro_parent; pt_member = ro.ro_member }
 
+(* D8 (iii)/D9, ref's refusal word for word: the set source of a value fold
+   names an attribute read per contributor on the element type; a name that
+   is no attribute there — the role a count source names — would read no
+   member at all and answer a silent 0 or leeg, so it is refused by name *)
+let set_source_attribute ctx ~el a =
+  if Ir_v0.Checks.find_ci (objecttype ctx el).attributen a = None then
+    fault
+      "value aggregation over %S, which is no attribute of %S: a value fold reads an attribute \
+       per contributor, and a role name is a count source only a count folds (WF-093)"
+      a el;
+  a
+
 let lexeme_decimals lex =
   match String.index_opt lex '.' with
   | Some i -> String.length lex - i - 1
@@ -3311,8 +3323,18 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       fault
         "a bronPad is admissible only on the set source of a single-argument instance fold \
          (WF-102)"
-  | Functie { kind = Aantal; argumenten = [ Attribuut_ref { navigatie_bindingen = None; _ } ]; element_objecttype = Some el; bron_rol; bron_pad; filter; _ }
+  | Functie { kind = Aantal; argumenten = [ Attribuut_ref { attribuut; navigatie_bindingen = None; _ } ]; element_objecttype = Some el; bron_rol; bron_pad; filter; _ }
     when bron_rol <> None || bron_pad <> None ->
+      (* D9, ref's arm word for word: a count source names a role; a name that
+         is an attribute of the element type reads a value per member, which a
+         count does not fold *)
+      (match attribuut with
+      | Some a when Ir_v0.Checks.find_ci (objecttype ctx el).attributen a <> None ->
+          fault
+            "a count over %S, which is an attribute of %S: a count source names the counted \
+             role, and a value read per member is a value fold's source (WF-093)"
+            a el
+      | _ -> ());
       (* D8 (ii), the count source: the single argument of a count that
          carries a range names the counted role, and the count folds the
          INSTANCES the range reaches — the one-step role or the flat union
@@ -3362,7 +3384,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          type on the wire (corpus/golden/jutterswet-tempototaal pins both
          rows of that table side by side) — so a mirrored pair of arms
          could only drift. *)
-      let a = req "fold attribute" attribuut in
+      let a = set_source_attribute ctx ~el (req "fold attribute" attribuut) in
       (* THE ADDITIVE FOLD IS ARITHMETIC, so its members must be amounts.
          A DATE is not: this encoding gives it a day number (the only
          non-numeric datatype [decimals_of_datatype] hands a scale at all),
@@ -3849,7 +3871,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          of these two kinds reached no arm at all and the backend refused
          the expression kind, while ref answered: a live one-answers-one-
          refuses gap under a verifier-clean, frontend-emitted document. *)
-      let a = req "fold attribute" attribuut in
+      let a = set_source_attribute ctx ~el (req "fold attribute" attribuut) in
       (* a TEMPORAL element attribute has no defined moment to rank at, so
          ref refuses the form outright (ch. 3.6: only som and totaal carry
          the per-element timeline fold). This arm would rank the asOfDate
@@ -3920,7 +3942,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         argumenten = [ Attribuut_ref { attribuut; navigatie_bindingen = None; _ } ];
         element_objecttype = Some el; bron_rol; bron_pad; filter; _ }
     when bron_rol <> None || bron_pad <> None (* D8 (iii): the set source *) ->
-      let a = req "fold attribute" attribuut in
+      let a = set_source_attribute ctx ~el (req "fold attribute" attribuut) in
       (* the ch. 3.4c exclusion, on the TEMPORAL axis rather than on a value
          type: a set read of a time-dependent attribute folds twice, and only
          som and totaal define the first collapse. ref refuses the form by

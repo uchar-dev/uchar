@@ -2988,6 +2988,11 @@ let () =
   expect_fault_msg "WV-3.4c-kale-rolbron-faalt"
     (fun () -> ev w "J1" (vouw Aantal_gevulde [ telbron ] None None))
     "a role name is a count source only a count folds";
+  (* D9's other side: a count over a name that IS an attribute of the element
+     type reads values, which a count does not fold — refused by name *)
+  expect_fault_msg "WV-3.4c-telling-over-attribuut-faalt"
+    (fun () -> ev w "J1" (vouw Aantal [ setbron "gewicht" ] None None))
+    "a count over \"gewicht\", which is an attribute of \"Vondst\"";
   (* ch. 3.4c's ONE exclusion, and it is on the temporal axis rather than on
      a value type: a set read of a TIME-DEPENDENT attribute folds twice, and
      only som and totaal define the first collapse (ch. 3.6, §7.1). A count
