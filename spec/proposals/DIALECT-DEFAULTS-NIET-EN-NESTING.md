@@ -81,7 +81,7 @@ Every factual statement about a source carries one of four marks:
    executors [M, §2.3]. Measured first on two inputs (8dd05e25); the
    enumeration at the repair card found four of the sixteen input
    combinations. The repair (G1, §8.1: every nested justification
-   conjoined with its carrier's, `werkloos` included, nine cases) landed on
+   conjoined with its carrier's, `werkloos` included, ten cases) landed on
    2026-09-23 as a protected-path proposal, before the RegelSpraak twin.
 7. **Form 3 (input above computation) is split off** into a card of its
    own (§6): it is expressible today as program structure, the missing
@@ -193,8 +193,8 @@ The proposed decisions, one line each (full text in §10):
   cases (the anchor's four, probes A and B of §2.3, the input case of M9)
   passed in ref, clingo and the exec branch. Re-measured 2026-09-23 on the
   landed anchor (§8.1: conditions conjoined with `werkloos`, bezittelijk)
-  restructured to this shape: verifier PASS; all nine cases pass in ref and
-  clingo, `PLAYED 9` in the exec branch; the DRL-text branch refuses it on
+  restructured to this shape: verifier PASS; all ten cases pass in ref and
+  clingo, `PLAYED 10` in the exec branch; the DRL-text branch refuses it on
   its defaults sentence.
 
 ### 2.3 The anchor's corners
@@ -239,7 +239,7 @@ differs from the landed repair. [M] The landed repair conjoins at every
 nested level, the carrier's (itself conjoined) justification first, as one
 flat `ALLE`: einde `ALLE[W, T]`, herleving `ALLE[W, T, V]`, blokkade
 `ALLE[W, T, V, nieuw recht ontstaan, nieuw maandloon > inkomensgrens]`. It
-passes all nine cases of §8.1 in ref, clingo and the exec branch, the four
+passes all ten cases of §8.1 in ref, clingo and the exec branch, the four
 existing ones with their expected values unchanged. [I] Without the target
 characteristic in the input it gives `recht op uitkering` ⇔ W ∧ (¬T ∨ (V
 ∧ ¬N)).
@@ -766,7 +766,7 @@ facts:
   exceptions decided wrongly on four of the sixteen input combinations
   (two measured first, on 8dd05e25; four after the enumeration of §2.3).
   Written with the carriers' conditions at every nested level, `werkloos`
-  included, all nine cases of §8.1 pass; written with them but without
+  included, all ten cases of §8.1 pass; written with them but without
   `werkloos`, probe C stays wrong.
 - [I] At the first level the override reading is intended: an exception
   there may widen its base (`jutterswet-bergingsdrempel`: noodweer and
@@ -1012,9 +1012,9 @@ witnesses are frontend fixtures (JUnit, beside
 
 *Landed 2026-09-23 as a proposal branch the maintainer merges (card
 `anker-ww-herleving-dragervoorwaarde`, commits 560859e0 and a7e24b5c, the
-bezittelijk kind in 2f23e029). This section records the landed form; where
-it differs from the version first proposed here, the first version is
-named.*
+bezittelijk kind in 2f23e029, case10 in dc0361d7). This section records the
+landed form; where it differs from the version first proposed here, the
+first version is named.*
 
 - Every nested default's justification is one flat `ALLE` (one
   `Samengesteld`, no nested `ALLE`): its carrier's conjuncts first, in the
@@ -1027,7 +1027,7 @@ named.*
   structurally unchanged. *First proposed:* herleving and blokkade without
   `werkloos`, einde unchanged — that version answers probe C of §2.3
   against the statute.
-- Nine cases, five of them new, expected values from the statute reading
+- Ten cases, six of them new, expected values from the statute reading
   (hand computations in the anchor's NOTE; `inkomensgrens` 2100.00 in all):
 
 | Case | Input | `recht op uitkering` | Decided by |
@@ -1038,18 +1038,25 @@ named.*
 | `case7-invoer-staat-tegen-blokkade` | case3's facts plus `recht op uitkering` in the input | present | blokkade decides onwaar; the input stands |
 | `case8-niet-werkloos-boven-grens-vervallen` | probe C (case1 without werkloos) | absent | nothing |
 | `case9-geen-eindiging-wel-vervallen-en-nieuw-recht` | probe D (case5 plus omstandigheid vervallen) | present | grant (art. 15) |
+| `case10-nieuw-recht-onder-grens` | case3's facts with a nieuw maandloon of 2000.00, below the grens | present | herleving (art. 21-1) |
 
   The four corner cases also pin `inkomensgrens`, `verstreken periode` and
   `nieuwe maxdatum`. case7 is the first case to pin ch. 7.1's "not a
   retraction" on a characteristic (the 2026-08-21 card left that corner
   without a case) and pins only the characteristic and `consistent`.
+  case10 (fix round 3 of the card) pins the blokkade's own conjunct
+  `nieuw maandloon > inkomensgrens`: [M] a blokkade without it fails
+  case10 in ref, clingo and the exec branch, and before case10 no case
+  noticed its removal. Its other own conjunct, `nieuw recht ontstaan`,
+  stays unpinned: it is observable only with a nieuw maandloon above the
+  grens and no nieuw recht, an input without meaning in the casus.
   *First proposed:* three cases — `case5-herleving-zonder-einde` (probe
   A), `case6-blokkade-zonder-einde` (probe B) and `case7-invoer-blijft`
   on case4's facts; probes C and D were not yet known.
-- [M] No-op check: case5, case6, case8 and case9 refute a no-op run
+- [M] No-op check: case5, case6, case8, case9 and case10 refute a no-op run
   through their computed attributes. case7 survives it by construction —
   the standing is what it tests — and stands with its reason in the
-  survivor list of `scripts/check-noop.sh` (gate 7: 563 refuting, 37
+  survivor list of `scripts/check-noop.sh` (gate 7: 564 refuting, 37
   survivors; red without the entry). *First proposed:* no new entry, which
   held for a case4-based input case that also pinned `inkomensgrens`.
 - `recht op uitkering` is `BEZITTELIJK` in `kenmerkSoorten`, as first
@@ -1057,8 +1064,8 @@ named.*
   2f23e029) added it at the maintainer's request, so the twin can write
   `heeft (geen) recht op uitkering` and land byte-identically on the
   anchor. [M] The kind steers only that source spelling. With
-  `BIJVOEGLIJK` and with `BEZITTELIJK` the verifier passes, all nine cases
-  pass in ref and clingo, the exec branch plays 9, gate 12's pins stay
+  `BIJVOEGLIJK` and with `BEZITTELIJK` the verifier passes, all ten cases
+  pass in ref and clingo, the exec branch plays 10, gate 12's pins stay
   182 and 161, the ASP program clingo solves is byte-identical per case,
   and the Drools bean carries the same field (`rechtOpUitkering`,
   boolean). The Drools loader parses the table and no backend code reads
@@ -1066,10 +1073,10 @@ named.*
 - The NOTE gains the self-contained reading of ch. 7.9, the four corners
   of §2.3 with what the unconjoined tree answers on each, the reading of
   `werkloos` on which probe C rests, the reason for the bezittelijk kind,
-  and all nine hand computations.
+  and all ten hand computations.
 
-[M] The repaired tree passes all nine cases in ref, clingo and the Drools
-exec branch (`PLAYED 9`); the DRL-text branch keeps refusing the golden on
+[M] The repaired tree passes all ten cases in ref, clingo and the Drools
+exec branch (`PLAYED 10`); the DRL-text branch keeps refusing the golden on
 its defaults sentence, and gate 12's pins (played 182, DRL 161) do not
 move. Gate 13 does not probe this golden: its only unit, `dag`, declares no
 canonical and no factor, so there is nothing to twist.
@@ -1077,7 +1084,7 @@ canonical and no factor, so there is nothing to twist.
 *Consequence for G2 (§8.2):* the twin's wire must carry the same flat
 `ALLE` per nested default, carrier conjuncts first and `werkloos` included
 at einde, with `recht op uitkering` bezittelijk, and its cases are these
-nine. §8.2 gives the source in both spellings that decision 4d leaves
+ten. §8.2 gives the source in both spellings that decision 4d leaves
 open.
 
 ### 8.2 G2 — the RegelSpraak twin (required by the card)
@@ -1094,7 +1101,7 @@ hand anchor, and each difference classified as (i) dialect difference,
 *Updated 2026-09-23 (fix round 2 of card
 `anker-ww-herleving-dragervoorwaarde`): the source follows the landed
 anchor of §8.1 — `werkloos` in the conditions of einde, herleving and
-blokkade, `recht op uitkering` bezittelijk, nine cases. How the carrier
+blokkade, `recht op uitkering` bezittelijk, ten cases. How the carrier
 conjunction is SPELLED in the source is not settled: it depends on
 decision 4d, which the maintainer has yet to take. Both spellings follow;
 this plan chooses neither.*
@@ -1223,14 +1230,14 @@ Expected result of the diff:
 
 | Item | Class | Status |
 |---|---|---|
-| einde is a chain position above toekenning; the anchor nests it in toekenning's `excepties` | (i) — §5.2: inheritance-safe lowering, identical on every input | [M12] the twin's shape passes all nine cases on the landed conditions |
+| einde is a chain position above toekenning; the anchor nests it in toekenning's `excepties` | (i) — §5.2: inheritance-safe lowering, identical on every input | [M12] the twin's shape passes all ten cases on the landed conditions |
 | herleving and blokkade nested as in the anchor | — | identical after G1 |
 | group name `toekenning art 15` versus `recht op uitkering bij herleving`; `bron` texts | (i) | not compared (bron stripped) |
 | literal `0,8750` with 3 decimals (product 5) versus the anchor's `"0.8750"` with 4 (product 6) | (i) — the lexeme and a literal-typing detail; the result is rounded to 2 decimals | [M] measured on the probe |
 | unit `dag` with `canoniek: "dag"`, factor 1, `teken: "ONBEPAALD"` versus `null`/`null`/`null` | (i) — both spellings satisfy WF-092 | [M] measured on the probe |
 | `recht op uitkering` bezittelijk | none: the anchor is bezittelijk since G1 | — |
 
-Cases: the nine of G1, same inputs, same expectations. Gates: 2, 3, 4,
+Cases: the ten of G1, same inputs, same expectations. Gates: 2, 3, 4,
 5, 6, 7, 10 (the re-emission of `bron.rgs`), 12 and 13.
 
 ### 8.3 G3 and G4 — two further twins
@@ -1303,9 +1310,9 @@ Cases: the nine of G1, same inputs, same expectations. Gates: 2, 3, 4,
 ### 8.4 What the Drools branches carry
 
 - **Exec-model branch: everything needed, today.** [M8] the anchor played
-  4/4 on 8dd05e25 and plays 9/9 since its repair (§8.1); [M11] a
+  4/4 on 8dd05e25 and plays 10/10 since its repair (§8.1); [M11] a
   characteristic group-default with unordered exceptions and a conflict
-  plays 4/4; [M12] the twin's shape played 7/7 on 8dd05e25 and plays 9/9
+  plays 4/4; [M12] the twin's shape played 7/7 on 8dd05e25 and plays 10/10
   on the landed conditions. The branch lowers a
   defaults group to one reduce-rule whose walk recurses into nested groups
   and writes a characteristic only for a `true` decision
