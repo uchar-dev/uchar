@@ -105,9 +105,11 @@ EXCLUDE loader: form not carried by the v0 Drools backend: Predicaat.periode (�
 
 Daarom één regel in de uitsluitingslijst, direct onder die van de
 tweeling, met de categorie EXCLUDE, de meting op de oude jar en de
-grond. De gate controleert van die regel alleen de categorie. Sleutel
-en grond ("ref executes neither the leeg fold") bewaakt
-`LeegNegatieWitnessTest` (gecontroleerd: r. 129–130 van die test).
+grond. Het been controleert van die regel de categorie. Sleutel en
+grond ("ref executes neither the leeg fold") bewaakt
+`LeegNegatieWitnessTest` (r. 129–130), en die test draait in de
+bouwstap van gate 8 zelf, want het been herbouwt de jar met de
+JUnit-suite. Gemeten in fixronde 2, zie open punt 3.
 
 ### Wat het document voor ref en clingo toevoegt
 
@@ -171,8 +173,9 @@ carries it." is na deze landing onwaar. Vervangen door:
 `corpus/rood/leegtest-heel-tijdvak` (`negatie: false`, otherwise the
 negated twin's document and case) holds that refusal in all three
 executors: gate 8 pins the ch. 3.9 sentence in ref and the ASP backend
-and lists the case as a Drools loader EXCLUDE (`Predicaat.periode`; the
-leg checks the category, `LeegNegatieWitnessTest` the key). A jar from
+and lists the case as a Drools loader EXCLUDE (`Predicaat.periode`: the
+leg checks the category, and the backend's `LeegNegatieWitnessTest`,
+which gate 8 runs when it rebuilds the jar, the key and the ground). A jar from
 before the loader refusal played the document in both branches against
 the ch. 3.9 hand values, and a mutant that narrows the OCaml arms to the
 negated form passes the negated twin and fails this one."
@@ -214,15 +217,28 @@ Stand na fixronde 1: 1 en 2 afgehandeld, 3 gemeld en niet gekaart.
    `corpus/rood/leegnegatie-heel-tijdvak`, and for the unnegated test
    `corpus/rood/leegtest-heel-tijdvak`."
 3. **Gemeld, niet gekaart** (gatecontractbesluit, hoofdsessie
-   2026-09-23). Het Drools-been van gate 8 controleert bij een
-   uitsluiting alleen de categorie. Als `Predicaat.periode` morgen een
-   andere EXCLUDE wordt, bijvoorbeeld een transpiler-SKIP, blijft gate 8
-   groen; alleen de JUnit-getuige ziet het dan. Dat geldt voor alle 35
-   regels. Het voorstel is een optionele, machinaal getoetste sleutel
-   per regel (bijvoorbeeld een veld tussen categorie en reden, waarvan
-   de EXCLUDE-regel van DroolsRoodMain de tekst moet bevatten). Dat
-   verandert het contract van de gate, dus het is een besluit van de
-   maintainer.
+   2026-09-23). **Gecorrigeerd in fixronde 2 (lens).** Eerst stond
+   hier dat gate 8 groen blijft als `Predicaat.periode` een andere
+   EXCLUDE wordt, en dat alleen de JUnit-getuige dat ziet. Dat klopt
+   niet voor deze regel. Het been herbouwt de jar met `mvn -o package`,
+   dus met de JUnit-suite, en `LeegNegatieWitnessTest` r. 129 bewaakt
+   de sleutel. Gemeten op een /tmp-kopie van HEAD met de sleutel
+   veranderd in `Predicaat.kwalificatie`:
+
+   ```
+   [ERROR]   LeegNegatieWitnessTest.de_ongenegeerde_test_onder_geheel_periode_weigert_in_beide_takken:129 exec-model refuses whole-period LEEG: form not carried by the v0 Drools backend: Predicaat.kwalificatie (…) ==> expected: <true> but was: <false>
+   [ERROR] Tests run: 620, Failures: 1, Errors: 0, Skipped: 0
+   [INFO] BUILD FAILURE
+   ```
+
+   Gate 8 wordt dan rood in de bouwstap van het been. Het been bewaakt
+   dus de categorie, en de getuige in de bouwstap sleutel en grond. Wat
+   van het punt overblijft: een regel waarvan de weigering geen
+   JUnit-getuige heeft, wordt alleen op categorie bewaakt. Welke van
+   de andere regels dat zijn, is niet per regel gemeten. Het voorstel
+   (een optionele, machinaal getoetste sleutel per regel) blijft een
+   besluit van de maintainer, want het verandert het contract van de
+   gate.
 
 ### Fixronde 1 (hoofdsessie, 2026-09-23)
 
