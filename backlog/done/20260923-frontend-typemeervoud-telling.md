@@ -245,3 +245,123 @@ Aansluitend op het blok "**Follow-up (2026-09-23, card
 3. Een kaal rolwoord dat geen type noemt ("het aantal aanmelders", zonder
    anker) houdt de algemene zin; de ontbrekende verankering noemt die zin
    niet.
+
+## Vierde onderdeel (hoofdsessie, 2026-09-23): de venstergrens en WF-111's ⊑
+
+Opdracht van de hoofdsessie na de drie kaarten, als verbreding van
+may-touch binnen `frontends/regelspraak` (geen kaartje; eigen commit
+`8a4a8809`). Vastgelegd bij deze kaart omdat zij er het dichtst bij ligt:
+ook hier trekt de frontend een hek op dat een wireregel van 2026-09-23
+spiegelt. Aanleiding: de Drools-vouwtoets-kaart zag dat
+`Tijdrekening.periodeGrensLowerbaar` het objecttype van een venstergrens
+op identiteit vergelijkt, waar WF-111 `S ⊑ O` toelaat. Die helper staat
+in `frontends/regelspraak` (pakket `kern`) maar wordt alleen door de
+twee Drools-takken aangeroepen.
+
+### De meting (build vóór de fence, `028f4b19`; model met `Klipjutter is een Jutter`)
+
+    grens (subject: bound)                                   frontend            verifier
+    Klipjutter: vanaf zijn peildatum (geërfd)                schoon, op Klipjutter  PASS
+    Klipjutter: vanaf de peildatum van de Klipjutter         schoon, op Klipjutter  PASS
+    Klipjutter: vanaf zijn klipdatum / Jutter: zijn peildatum schoon                PASS
+    Klipjutter: vanaf de peildatum van de Jutter             [] geschreven, op Jutter  WF-053 (geen feittype)
+      idem, met een feittype Klipjutter–Jutter               [] geschreven, bindingen  WF-111 (genavigeerd)
+    Jutter: vanaf de klipdatum van de Klipjutter             [] geschreven          WF-111 + WF-053
+    Jutter: vanaf de peilparameter                           [] geschreven          WF-111
+    Jutter: vanaf de opendatum van zijn strandvak            [] geschreven          WF-111 (genavigeerd)
+    Jutter: vanaf zijn meldmoment (datum-tijd)               [] geschreven          WF-111 (dagprecisie)
+    Jutter: vanaf zijn peildatum plus 1 dg                   [] geschreven          WF-111 (berekend)
+    Jutter: vanaf zijn knipdatum (tijdlijn)                  [] geschreven          WF-111 (tijdsafhankelijk)
+    Jutter: vanaf dd. 1-7-2026 08:30:00.000                  [] geschreven          WF-111 (dagprecisie)
+    Jutter: van dd. 01-01-2024 tot de peilparameter          [] geschreven          WF-111 (tot-grens)
+    Jutter: vanaf dd. 01-01-2024 / tot en met zijn peildatum schoon                 PASS
+
+**De ⊑-vraag zelf: geen gat in de helper.** Deze frontend schrijft een
+eigen lezing, ook een geërfde, met het onderwerp als objecttype. Voor elk
+document dat hij maakt, geven identiteit en ⊑ dus hetzelfde antwoord, en
+leest `periodeGrensLowerbaar` de facetten door de keten (de bestaande
+`TijdrekeningTest`). Een grens met een ander objecttype zendt hij uit als
+navigatie, en de verifier weigert die (tabel). De helper is niet
+aangeraakt.
+
+**Wel een gat: de frontend had geen WF-111-hek.** Elke vorm die WF-111
+weigert, ging met `diagnostics: []` de schijf op, de subtyperichting
+("andersom") inbegrepen. Gedicht: `RuleChecker.periodeGrensFout`, een
+ERROR per grens die de vorm noemt, aangeroepen in `bouwPeriode` (beide
+schrijfwijzen: de losse periodevergelijking en de "het is de
+periode"-bullet). "Eigen" vergelijkt ook deze fence op identiteit, om de
+reden hierboven; met ⊑ zou hij de supertype-lezing doorlaten naar een
+verifier die haar weigert. `DIVERGENCES.md` kreeg een sectie "§8.4.3 A
+time window's bounds — narrowed to the wire's two shapes": de brontaal
+laat hier elke datumexpressie toe (§13.4.15.68), en de frontend kiest de
+twee vormen van de wire.
+
+### Rood-eerst en mutatie
+
+Getuige `PeriodegrensTest` (nieuw bestand): tien weigeringen, één per
+vorm plus de tot-grens, en zeven schone vormen.
+
+    tegen de oude RuleChecker (md5 b9e6b9626db152d022099131a727ae74):
+      17 tests, 7 successful, 10 failed — alle tien "kreeg: [] ==> expected: <1> but was: <0>"
+    na de fix:                                    17 successful
+    mutant M1 (fence uit):                        10 failed
+    mutant M2 (⊑ in plaats van identiteit):       1 failed (de supertype-lezing gaat door)
+    mutant M3 (dagprecisie uit):                  2 failed (datum-tijd-attribuut en -literaal)
+    mutant M4 (tijdsafhankelijkheid uit):         1 failed
+    elke mutant teruggezet met cp, cmp gelijk (md5 b304844d2b62d7692fea1d54529d0ca1)
+
+### Gates op `8a4a8809`, elk als losse aanroep
+
+Alle veertien PASS; de getallen zijn die van de derde kaart, behalve gate
+10: 448 JUnit (431 + 17), 70 rgs-goldens byte-identiek. Gate 11: 45 .rgs
+byte-identiek. Gate 12: gespeeld 182, DRL-tekst 161, JUnit 620. Geen bron
+in welke zone ook schrijft een venster met een geweigerde grens (28
+venstergrenzen over golden, rood, negatief en pariteit: 24 literalen, 3
+eigen attributen, 1 parameter in een negatief; geen `.rgs` met een
+periodevergelijking), dus niets beweegt. Het vendored slice beweegt:
+HERPIN.
+
+### Registervoorstel — `spec/CONSTRUCTS.md` rij 11
+
+Aansluitend op de WF-111-zinnen in de deltakolom:
+
+> **Producer side (2026-09-23, main-session follow-up after the card
+> `frontend-typemeervoud-telling`): the RegelSpraak frontend fences the
+> window bound to WF-111's two shapes.** §13.4.15.68 admits any date
+> expression as a bound, and the frontend built every one into a window:
+> a parameter, a navigated read, a datum-tijd, a computed date, a
+> time-dependent attribute and another type's attribute each reached disk
+> silently and were refused by the verifier. They are now an ERROR naming
+> the shape. "Own" is compared by identity with the subject, as the Drools
+> gate does: the frontend writes an own read, an inherited one included,
+> on the subject, and emits a read naming any other type, a supertype
+> included, as a navigation the verifier refuses. No document moves.
+
+### Open punten van dit onderdeel
+
+1. **Een splitsing in de wireregels, niet in de frontend (beschermd pad,
+   voor de hoofdsessie).** Handgeschreven, zonder bindingen: een
+   ongenavigeerde `AttribuutRef` met als objecttype een echt supertype van
+   het onderwerp, terwijl een feittype de twee types verbindt. De verifier
+   laat haar door (`verifier: PASS`) langs twee lezingen die elkaar
+   tegenspreken: WF-053 behandelt het naamverschil als navigatie per paar
+   en lost die op over het feittype, en WF-111's `is_sub` noemt dezelfde
+   knoop eigen. De uitvoerders splitsen, gemeten met een case waarin het
+   onderwerp en zijn begeleider verschillende peildata hebben: `ref` leest
+   de eigen datum van het onderwerp (PASS, en met de data omgedraaid
+   `MISMATCH: K1.premie = leeg`); clingo `TRANSLATION FAULT: the vanaf
+   bound of a period condition is neither a date literal nor an own scalar
+   date attribute of the subject …`; Drools exec `SKIP`, DRL-tekst `MARKER
+   … TODO periodevergelijking-grens`. Te beslissen: wat zo'n knoop
+   betekent (eigen, zoals WF-111 en `ref`; of navigatie, zoals WF-053,
+   clingo en Drools). Daarna WF-053/WF-111 en de uitvoerders gelijktrekken
+   en een negatief of golden voor de gekozen lezing maken.
+   `periodeGrensLowerbaar` is bewust niet naar ⊑ gezet: dat zou Drools
+   naast `ref` zetten en tegen WF-053 en clingo in.
+2. **Een supertypenaam als onderwerpverwijzing, algemeen.** "de bonus van
+   de Jutter" in een regel op Klipjutter (een waardepositie, geen venster)
+   wordt stil uitgezonden als off-subject-lezing op Jutter, en de verifier
+   weigert haar onder WF-053. Het subtypedialect (`DIVERGENCES.md` §5) zegt
+   niet of "de Jutter" het onderwerp kan aanduiden wanneer dat een
+   Klipjutter is. Buiten de vensterfence, die dit alleen voor grenzen met
+   een eigen zin weigert.
