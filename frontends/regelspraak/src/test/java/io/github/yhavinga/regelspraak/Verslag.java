@@ -10,8 +10,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * WF-113 read off an emitted document, the way a consumer reads it: (a) every diagnostic is a WARNING, and (b)
- * every {@code Onopgelost} node is accounted for — some WARNING's {@code message} contains that node's {@code bron}
- * verbatim. The check reads the JSON TEXT and not the model: the sweep that raises the WARNINGs walks the model, so
+ * every {@code Onopgelost} node is accounted for — its {@code bron} is neither null nor blank, and some WARNING's
+ * {@code message} contains it verbatim. The check reads the JSON TEXT and not the model: the sweep that raises the WARNINGs walks the model, so
  * a check over the model would share its blind spots, and a marker the emitter writes from a place the sweep does
  * not visit would pass unseen. The frontend links no JSON library (jar-only: ANTLR and JUnit), hence the small
  * reader below; it reads the JSON the emitter writes and fails on anything else.
@@ -29,10 +29,14 @@ final class Verslag {
             assertEquals("WARNING", d.get("severity"), () -> "WF-113 (a): de wire draagt alleen WARNING: " + d);
             meldingen.add((String) d.get("message"));
         }
-        for (String bron : markerBronnen(document))
+        for (String bron : markerBronnen(document)) {
+            // blank counts as absent: an empty bron is contained in every message, and a null one in none
+            assertTrue(bron != null && !bron.isBlank(),
+                    () -> "WF-113 (b): een marker zonder bron kan door geen WARNING verantwoord worden: " + bron);
             assertTrue(meldingen.stream().anyMatch(m -> m.contains(bron)),
                     () -> "WF-113 (b): geen WARNING citeert de bron van de marker letterlijk: '" + bron
                             + "'; de meldingen: " + meldingen);
+        }
     }
 
     /** The {@code bron} of every Onopgelost node in the document, in document order. */

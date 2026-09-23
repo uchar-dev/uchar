@@ -815,4 +815,36 @@ class IrEmitterTest {
             assertTrue(e.getMessage().contains("WF-113 (a)"), e::getMessage);
         }
     }
+
+    /** WF-113 (b) at the producer boundary: a marker is accounted for by a WARNING that quotes its {@code bron}
+     *  verbatim, so a marker whose bron is null or blank can be accounted for by nothing and the verifier refuses
+     *  the document. The frontend can build one ({@code DefinitionResolver.bron} gives an empty snippet for a
+     *  missing context or an empty match); the emitter refuses to write it, at either marker node, with a WARNING
+     *  on the model that a literal reading of an empty bron would count as its account. */
+    @Test void wf113b_de_emitter_schrijft_geen_marker_zonder_bron() {
+        for (Bron bron : new Bron[] { Bron.synthetisch(""), Bron.synthetisch("   "), Bron.synthetisch(null), null }) {
+            for (boolean conditie : new boolean[] { false, true }) {
+                RegelSpraakModel m = Resolver.resolve("""
+                    Objecttype de Jutter
+                        de vondstteller Numeriek (geheel getal);
+                        de jaarsom Numeriek (geheel getal);
+                    Regel jaarsom
+                        geldig altijd
+                            De jaarsom van een Jutter moet berekend worden als de vondstteller van de Jutter min 6.
+                    """);
+                assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnoses: " + m.diagnostics);
+                ResolvedRegel r = m.resolvedRegels.get(0);
+                m.resolvedRegels.set(0, conditie
+                        ? new ResolvedRegel(r.naam(), r.soort(), r.doel(), r.waarde(),
+                                new Conditie.Onopgelost(bron, "test"), r.geldigheid())
+                        : new ResolvedRegel(r.naam(), r.soort(), r.doel(),
+                                new Expr.Onopgelost(r.waarde().type(), bron, "test"), r.voorwaarde(), r.geldigheid()));
+                m.diagnostics.add(new Diagnostic(Severity.WARNING, "een melding", 1));
+                IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m),
+                        () -> "de emitter schreef een " + (conditie ? "conditie" : "expressie") + "marker met bron "
+                                + (bron == null ? null : "'" + bron.snippet() + "'"));
+                assertTrue(e.getMessage().contains("WF-113 (b)"), e::getMessage);
+            }
+        }
+    }
 }

@@ -85,6 +85,14 @@ class MarkerVerslagTest {
         assertThrows(AssertionError.class, () -> Verslag.verantwoord(andereBron), "(b): een melding over iets anders");
         String fout = document("null", "{\"node\": \"Diagnostic\", \"severity\": \"ERROR\", \"message\": \"x\", \"line\": 1}");
         assertThrows(AssertionError.class, () -> Verslag.verantwoord(fout), "(a): een ERROR op de wire");
+
+        // (b) counts a blank bron as absent: an empty one is contained in every message, so the WARNING beside it
+        // would account for it under a literal reading, and a null one is contained in none
+        String melding = "{\"node\": \"Diagnostic\", \"severity\": \"WARNING\", \"message\": \"iets\", \"line\": 1}";
+        for (String bron : new String[] { "\"\"", "\"   \"", "null" }) {
+            String zonderBron = document("{\"node\": \"Onopgelost\", \"bron\": " + bron + "}", melding);
+            assertThrows(AssertionError.class, () -> Verslag.verantwoord(zonderBron), "(b): een marker met bron " + bron);
+        }
     }
 
     // ---------------- the null-reden WARNING routes ----------------

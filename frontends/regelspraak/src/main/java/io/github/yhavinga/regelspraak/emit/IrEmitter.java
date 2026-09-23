@@ -1,5 +1,6 @@
 package io.github.yhavinga.regelspraak.emit;
 
+import io.github.yhavinga.regelspraak.ir.Bron;
 import io.github.yhavinga.regelspraak.ir.Conditie;
 import io.github.yhavinga.regelspraak.ir.Default;
 import io.github.yhavinga.regelspraak.ir.ExceptionGroup;
@@ -672,7 +673,7 @@ public final class IrEmitter {
             case Expr.Onopgelost o -> {
                 w.key("node").value("Onopgelost");
                 w.key("type"); datatype(o.type());
-                w.key("bron").value(o.bron().snippet());
+                w.key("bron").value(markerBron(o.bron()));
             }
         }
         w.endObject();
@@ -809,10 +810,22 @@ public final class IrEmitter {
             }
             case Conditie.Onopgelost o -> {
                 w.key("node").value("Onopgelost");
-                w.key("bron").value(o.bron().snippet());
+                w.key("bron").value(markerBron(o.bron()));
             }
         }
         w.endObject();
+    }
+
+    /** WF-113 (b): a marker is accounted for by a WARNING that quotes its bron verbatim. A null bron is quoted by
+     *  no message and an empty or blank one by every message, so neither accounts for anything and the verifier
+     *  refuses the document; the frontend can build one, since {@code DefinitionResolver.bron} gives an empty
+     *  snippet for a missing context or an empty match. */
+    private static String markerBron(Bron b) {
+        String s = b == null ? null : b.snippet();
+        if (s == null || s.isBlank())
+            throw new IllegalStateException("IrEmitter: WF-113 (b) — een Onopgelost-marker zonder bron ('" + s
+                    + "') kan door geen WARNING verantwoord worden");
+        return s;
     }
 
     private void geheelPeriode(Conditie.GeheelPeriode gp) {
