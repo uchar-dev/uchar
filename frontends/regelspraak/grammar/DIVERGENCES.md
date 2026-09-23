@@ -221,7 +221,9 @@ block's own head, citing §9.10 and this section, with two arms:
   would still take the member out of the rule forms, and the group would
   name nothing (WF-033). A decision table in the group stands for the rules
   of its rows ("Bergingspremie 1", …), which is what a block names as its
-  base; the table's own name names no rule. The arm speaks only where the
+  base; the table's own name names no rule. The group's own `leden` list
+  those rows too: until the same fix round it carried the table's name, and
+  the verifier refused every group holding a table under WF-033. The arm speaks only where the
   lift would happen: a base that resolves to no plain rule — a table's own
   name, an object creation — gets the lowering's "no base rule" refusal,
   which names the construct (fix round 2, 2026-09-23). A later head that

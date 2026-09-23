@@ -155,9 +155,11 @@ final class RuleChecker {
             int line = g.getStart().getLine();
             kopAnnotatie(g, "Regelgroep '" + DefinitionResolver.src(g.kaleNaam()) + "'", "§9.10", line);
             List<String> leden = new ArrayList<>();
+            // Members are RULE names (IR-SPEC ch. 3.9, WF-033). A decision table is no rule form: it stands for the
+            // rules of its rows, so those are what the group lists — the table's own name resolves to nothing.
             for (GroepLidContext lid : g.groepLid())
                 if (lid.regel() != null) leden.add(DefinitionResolver.src(lid.regel().regelNaam()));
-                else if (lid.beslistabel() != null) leden.add(DefinitionResolver.src(lid.beslistabel().beslistabelNaam()));
+                else if (lid.beslistabel() != null) leden.addAll(rijRegels.getOrDefault(lid.beslistabel(), List.of()));
             String naam = DefinitionResolver.src(g.kaleNaam());
             model.regelGroepen.add(new io.github.yhavinga.regelspraak.ir.ResolvedRegelGroep(naam, recursief, leden, bron(g.kaleNaam()), line));
             if (!recursief) continue;
