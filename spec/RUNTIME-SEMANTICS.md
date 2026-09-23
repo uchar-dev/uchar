@@ -4285,14 +4285,18 @@ Parameters and input-only nodes (nodes no form writes) contribute no
 edges.
 
 *Scope narrowing, recorded:* relation membership read by a *condition*
-(rollidmaatschap) is treated as input, and a **bindingless** fold or
-allocation keeps the population proxy — only reads that name the
-relation in a role binding, and the creation's own hops, carry
-relation-node edges (the creation-after-creation ordering demanded
-this; a bean-field-only v0 creation record carries no symbolic hops
-and stays on the bare population write, recorded with WF-028's
-uncheckable clause). Day-kind definitions read only input dates and
-contribute no edges.
+(rollidmaatschap) is treated as input. A **bindingless** allocation keeps
+the population proxy alone. A bindingless fold reads the population
+proxy too, and beside it the relation derived best-effort: for an
+instance fold, the fact type of the role its source names; for a
+quantifier fold (since 2026-09-23), the one connecting relation WF-048
+demands. A relation that cannot be derived contributes no edge, and the
+verifier reports it. Otherwise only reads that name the relation in a
+role binding, and the creation's own hops, carry relation-node edges
+(the creation-after-creation ordering demanded this; a bean-field-only v0
+creation record carries no symbolic hops and stays on the bare
+population write, recorded with WF-028's uncheckable clause). Day-kind
+definitions read only input dates and contribute no edges.
 
 *Navigated reads (ch. 5.8)* consume relation(each hop) — bound hops by
 their named fact types, bindingless hops by the WF-053 unique
