@@ -73,7 +73,10 @@ uitzonderingGroep     : UITZONDERINGEN ONGEORDEND COLON regel+ ;
 // Regelgroep), because `groepLid` only matches the rule alternatives — the extension is inert on any
 // non-extension document. The name is a `kaleNaam` (it stops at `is` and at the `Regel` keyword, so it
 // never swallows the marker or the first member). REGELGROEP is listed before `regel` in the document
-// alternation so a leading 'Regelgroep' opens a group, not a bare rule.
+// alternation so a leading 'Regelgroep' opens a group, not a bare rule. An extension block (`Uitzondering
+// op`, `Uitzonderingen ongeordend`) is no member either, and the resolver REFUSES one that stands directly
+// after a group's last member or whose base rule is a member (grammar/DIVERGENCES.md §4, "Interaction with
+// Regelgroep"): the group exists only to mark recursion, and without the refusal it ended there in silence.
 regelGroep : REGELGROEP kaleNaam ( IS RECURSIEF )? groepLid+ ;
 groepLid   : regel | beslistabel ;
 

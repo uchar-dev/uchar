@@ -193,17 +193,92 @@ final class RuleChecker {
     }
 
     /** §4 lower the extension blocks into {@link PrioritizedDefaults} nodes. Fails fast (a clear ERROR, and the block
-     *  stays un-lifted) on an unknown base, a target mismatch, an unsupported base kind, or a multi-version rule. */
+     *  stays un-lifted) on a block within a Regelgroep's scope, an unknown base, a target mismatch, an unsupported
+     *  base kind, or a multi-version rule. */
     private void defaults(RegelSpraakDocumentContext doc) {
-        ordeningsDefaults(doc);
-        groepsDefaults(doc);
+        java.util.Set<ParserRuleContext> geweigerd = regelgroepReikwijdte(doc);
+        ordeningsDefaults(doc, geweigerd);
+        groepsDefaults(doc, geweigerd);
+    }
+
+    /** §9.10 × §4 (maintainer decision 2026-09-23): an extension block within the scope of a Regelgroep is
+     *  refused, at the block's own head. The group exists only to mark recursion (§9.10), and {@code groepLid}
+     *  takes rules and decision tables only — so before this refusal a group ENDED SILENTLY at the first
+     *  extension block, every rule behind the block fell outside it without a word, and when the block's base was
+     *  a member the lift left the group naming no rule form, which the verifier then refused under WF-033 on the
+     *  group instead of on the block. Two arms, one ERROR per block naming every reason that holds:
+     *  <ul>
+     *  <li>POSITIONAL — the block stands directly after a group's last member, where the group would still read
+     *      on if the block were a rule. Keyed on "neither a definition nor a group" rather than on the extension
+     *      heads by name, so a head a later card adds is refused here by construction instead of reopening the
+     *      silent end;</li>
+     *  <li>MEMBERSHIP — the block's base rule is a group member, wherever the block stands. A later head that
+     *      names a base of its own has to join this arm by name.</li>
+     *  </ul>
+     *  A refused block stays un-lifted together with its whole base family, as every other refusal of this pass
+     *  leaves it. */
+    private java.util.Set<ParserRuleContext> regelgroepReikwijdte(RegelSpraakDocumentContext doc) {
+        Map<String, String> groepVanLid = new LinkedHashMap<>();
+        for (RegelGroepContext g : doc.regelGroep())
+            for (GroepLidContext lid : g.groepLid()) {
+                String naam = lid.regel() != null ? src(lid.regel().regelNaam())
+                        : lid.beslistabel() != null ? src(lid.beslistabel().beslistabelNaam()) : null;
+                if (naam != null) groepVanLid.putIfAbsent(naam, src(g.kaleNaam()));
+            }
+        java.util.Set<ParserRuleContext> geweigerd =
+                java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        ParseTree vorige = null;
+        for (ParseTree kind : doc.children == null ? List.<ParseTree>of() : doc.children) {
+            if (kind instanceof ParserRuleContext blok && !(kind instanceof DefinitieContext)
+                    && !(kind instanceof RegelGroepContext) && !(kind instanceof RegelContext)
+                    && !(kind instanceof BeslistabelContext)) {
+                List<String> redenen = new ArrayList<>();
+                String groep = null;
+                if (vorige instanceof RegelGroepContext g) {
+                    groep = src(g.kaleNaam());
+                    redenen.add("het staat direct na het laatste lid van regelgroep '" + groep + "', waar de groep "
+                            + "stil eindigt, zodat het blok en elke regel erna buiten de groep zouden vallen");
+                }
+                if (kind instanceof UitzonderingRegelContext u) {
+                    String basis = src(u.uitzonderingBasisNaam());
+                    String g = groepVanLid.get(basis);
+                    if (g != null) {
+                        if (groep == null) groep = g;
+                        redenen.add("zijn basisregel '" + basis + "' is lid van regelgroep '" + g + "', en het liften "
+                                + "naar een defaults-groep zou dat lid uit de regelvormen halen, zodat de groep naar "
+                                + "niets meer verwijst (WF-033)");
+                    }
+                }
+                if (!redenen.isEmpty()) {
+                    geweigerd.add(blok);
+                    model.diagnostics.add(new Diagnostic(Severity.ERROR, blokKop(blok) + ": een uitzonderingsblok "
+                            + "is in het dialect niet toegestaan binnen de reikwijdte van een regelgroep, noch met "
+                            + "een groepslid als basisregel — "
+                            + String.join("; ", redenen) + ". Een regelgroep bestaat alleen om recursie te "
+                            + "markeren (§9.10) en omvat alleen regels en beslistabellen; een defaults-blok "
+                            + "(dialect §4) hoort er niet in. Plaats het blok"
+                            + (kind instanceof UitzonderingRegelContext ? " en zijn basisregel" : "")
+                            + " buiten de groep, bijvoorbeeld vóór de kop 'Regelgroep " + groep + "'",
+                            blok.getStart().getLine()));
+                }
+            }
+            vorige = kind;
+        }
+        return geweigerd;
+    }
+
+    /** The head a refusal names an extension block by, in the spelling the other §4 refusals use. */
+    private static String blokKop(ParserRuleContext blok) {
+        if (blok instanceof UitzonderingRegelContext u) return "Uitzondering op '" + src(u.uitzonderingBasisNaam()) + "'";
+        if (blok instanceof UitzonderingGroepContext) return "Uitzonderingen ongeordend";
+        return blok.getStart().getText();
     }
 
     /** The ordered form: each base rule with one-or-more 'Uitzondering op &lt;base&gt;' blocks becomes ONE
      *  defaults group — the exception default(s) above the base default, descending priority. Later-written
      *  blocks stack HIGHER (PRIORITIZED-DEFAULTS-EVOLUTIE §4.2). The base rule and every exception leave
      *  resolvedRegels. */
-    private void ordeningsDefaults(RegelSpraakDocumentContext doc) {
+    private void ordeningsDefaults(RegelSpraakDocumentContext doc, java.util.Set<ParserRuleContext> geweigerd) {
         java.util.LinkedHashMap<String, List<UitzonderingRegelContext>> perBasis = new java.util.LinkedHashMap<>();
         for (UitzonderingRegelContext u : DefinitionResolver.alleUitzonderingen(doc))
             perBasis.computeIfAbsent(DefinitionResolver.src(u.uitzonderingBasisNaam()), k -> new ArrayList<>()).add(u);
@@ -211,6 +286,7 @@ final class RuleChecker {
         for (var en : perBasis.entrySet()) {
             String basisNaam = en.getKey();
             List<UitzonderingRegelContext> excepties = en.getValue();
+            if (excepties.stream().anyMatch(geweigerd::contains)) continue;   // refused at its head already
             int line = excepties.get(0).getStart().getLine();
 
             List<ResolvedRegel> basis = resolvedVan(basisNaam);
@@ -286,8 +362,9 @@ final class RuleChecker {
      *  groups (one per member) over ONE shared target — the §9.5 surface. Every sibling carries
      *  {@code ongeordend} (WF-050: two-or-more defaults groups on one target require it). All members leave
      *  resolvedRegels. */
-    private void groepsDefaults(RegelSpraakDocumentContext doc) {
+    private void groepsDefaults(RegelSpraakDocumentContext doc, java.util.Set<ParserRuleContext> geweigerd) {
         for (UitzonderingGroepContext g : DefinitionResolver.alleUitzonderingGroepen(doc)) {
+            if (geweigerd.contains(g)) continue;   // refused at its head already
             int line = g.getStart().getLine();
             List<ResolvedRegel> leden = new ArrayList<>();
             DefaultsDoel gedeeld = null;

@@ -111,7 +111,53 @@ prioritized-defaults anchors).
 - a base rule that is not a plain kenmerktoekenning/gelijkstelling (an
   initialisatie, or a verdeling/consistentie/objectcreatie/uniciteit);
 - a base rule or exception with more than one `geldig`-versie (not carried by
-  this first card).
+  this first card);
+- an extension block within the scope of a `Regelgroep`, or over a base rule
+  that is a group member (next subsection).
+
+### Interaction with `Regelgroep` (§9.10) — refused
+
+Maintainer decision 2026-09-23, option (a) of the card
+`frontend-regelgroep-sluit-bij-uitzondering`. A `Regelgroep` scopes the
+consecutive rules and decision tables behind its header and exists only to
+mark recursion (§9.10, prose-only in v2.3.0). `groepLid` takes no extension
+block, so until that day a group **ended silently** at the first extension
+block. Measured on the frontend before the refusal (the M5 document of
+`spec/proposals/DIALECT-DEFAULTS-NIET-EN-NESTING.md` §9.1): a group over a
+base rule, its `Uitzondering op` and a third rule emitted `leden` holding the
+base alone with `diagnostics: []`; the exception and the rule behind it fell
+outside the group without a word, and because the lowering lifted the base
+into a defaults group, the verifier then refused the document under WF-033 —
+on the group rather than on the block, and without the cause.
+
+The dialect does not admit the combination. Option (b) — a defaults group as
+a group member — would need WF-033 to accept one and a statement of what a
+defaults group inside a recursive group means: a spec question with three
+executors behind it, recorded and not taken. The refusal is one ERROR at the
+block's own head, citing §9.10 and this section, with two arms:
+
+- **positional** — the block stands directly after a group's last member,
+  where the group would read on if the block were a rule. The arm keys on
+  "neither a definition nor a group" rather than on the two heads by name,
+  so a head a later card adds (`Afwijking van`) is refused there by
+  construction instead of reopening the silent end;
+- **membership** — the block's base rule is a group member, wherever the
+  block stands. A definition that ends the group does not help: the lift
+  would still take the member out of the rule forms, and the group would
+  name nothing (WF-033). A later head that names a base of its own has to
+  join this arm by name.
+
+A block for which both hold gets one diagnostic naming both reasons, and a
+refused block stays un-lifted together with its whole base family, as the
+other refusals leave it. What stays clean, and is pinned as clean: a block
+before the group's header, and a block behind a definition that ends the
+group, each over a base outside the group. Two placements that were
+verifier-clean before are refused since — an `Uitzondering op` directly after
+a group whose members do not include its base, and an `Uitzonderingen
+ongeordend` block directly after a group — because at that position the rules
+behind the block would fall outside the group in silence. No source in the
+repository carries a `Regelgroep` at all, so nothing in the corpus moves.
+Witness: `RegelgroepUitzonderingTest`.
 
 ### Emission (v0-mirror invariant)
 
