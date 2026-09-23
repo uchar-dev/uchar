@@ -1,6 +1,6 @@
 # Golden corpus
 
-One directory per golden: `ir.json` (the `regelspraak-ir-v0` document),
+One directory per golden: `ir.json` (the `uchar-ir-v1` document),
 one or more `case*.json` files, a `NOTE.md` with the hand computation,
 and — where a frontend carries the form — a source file (`bron.rgs`,
 authored against the Jutterswet in `corpus/jutterswet/`; `bron.catala_en`;

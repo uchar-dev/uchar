@@ -15,3 +15,57 @@ These files are not required to validate against the schema (gate 2
 covers `corpus/golden/` only); they must stay *loadable* — a violation
 is a semantic defect in a structurally well-formed document, not a
 syntax error.
+
+## Vervallen bij de v1-migratie
+
+A witness whose rule the v1 migration takes away gets one of three stamps
+(decision V14 (a), `spec/proposals/V1-WIREMIGRATIE.md`): **herschreven**
+(rewritten on the rule that still holds), **vervangen** (replaced by a
+successor witness of a successor rule) or **verwijderd-met-reden** (removed,
+with the reason). This list names every one of them, per migration step, so a
+witness never leaves the corpus unrecorded. The floor `EXPECTED_MIN_NEGATIEF`
+in `scripts/check-verifier.sh` is a lower bound and did not have to move.
+
+### M1 — the container (2026-09-23)
+
+Measured before removal: `spec/proposals/v1-migratie/m1.py` refuses each of
+the 21 removed documents at exactly the field that made it a witness (the
+message is quoted per class below), so none of them has an M1 form that still
+carries its defect. Every other negatief migrated mechanically and is rejected
+on the rule its directory name declares, as before (gate 3).
+
+| directory | rule | delta | stamp | reason |
+| --- | --- | --- | --- | --- |
+| `wf094-zelfnaam-objecttype` | WF-094 | B2 | verwijderd-met-reden | the map key is gone; the node carries its one name, so there is no second spelling to disagree (m1.py: "self-name differs from its map key") |
+| `wf094-zelfnaam-parameter` | WF-094 | B2 | verwijderd-met-reden | idem |
+| `wf094-zelfnaam-eenheidstelsel` | WF-094 | B2 | verwijderd-met-reden | idem |
+| `wf094-zelfnaam-feittype` | WF-094 | B2 | verwijderd-met-reden | idem |
+| `wf094-zelfnaam-dimensie` | WF-094 | B2 | verwijderd-met-reden | idem |
+| `wf094-zelfnaam-null-objecttype` | WF-094 (d) | B2 | verwijderd-met-reden | `ObjectType.name` is a required string: an object type without a name cannot be written (m1.py: "self-name is null") |
+| `wf094-zelfnaam-null-parameter` | WF-094 (d) | B2 | verwijderd-met-reden | no map key is left to fall back on, so the node's `naam` is the declaration's only name; a null there is refused by the verifier's loader at load, without a WF id (see the note below) |
+| `wf094-zelfnaam-null-eenheidstelsel` | WF-094 (d) | B2 | verwijderd-met-reden | idem |
+| `wf094-zelfnaam-null-feittype` | WF-094 (d) | B2 | verwijderd-met-reden | idem |
+| `wf094-zelfnaam-null-dimensie` | WF-094 (d) | B2 | verwijderd-met-reden | idem |
+| `wf034-wees-attribuutmeervoud` | WF-034 (p) | B5 | verwijderd-met-reden | a facet is a field of its member's node, so a facet without a member cannot be written (m1.py: "key names no declared attribute") |
+| `wf034-wees-attribuutdimensies` | WF-034 (p) | B5 | verwijderd-met-reden | idem |
+| `wf034-wees-attribuutgranulariteit` | WF-034 (p) | B5 | verwijderd-met-reden | idem |
+| `wf034-wees-attribuuttijdlijnaantal` | WF-034 (p) | B5 | verwijderd-met-reden | idem |
+| `wf034-wees-attribuuttijdlijnnaam` | WF-034 (p) | B5 | verwijderd-met-reden | idem |
+| `wf034-wees-kenmerksoorten` | WF-034 (p) | B5 | verwijderd-met-reden | idem (m1.py: "key names no declared characteristic") |
+| `wf034-wees-kenmerkgranulariteit` | WF-034 (p) | B5 | verwijderd-met-reden | idem |
+| `wf034-wees-kenmerktijdlijnaantal` | WF-034 (p) | B5 | verwijderd-met-reden | idem |
+| `wf034-zijtabel-kapitalisatiewees` | WF-034 (p) | B5 | verwijderd-met-reden | the same class written with a recapitalised key; the key no longer exists, the facet hangs on the member it belongs to |
+| `wf059-attribuut-zonder-granulariteit` | WF-059 arm 3 | B5 | verwijderd-met-reden | `TimelineFacet.granularity` is a required, non-null enum: a timeline without a grid cannot be written (m1.py: "granularity null is not one of DAG/WEEK/MAAND/KWARTAAL/JAAR") |
+| `wf059-kenmerk-zonder-granulariteit` | WF-059 arm 2 | B5 | verwijderd-met-reden | idem, on a characteristic |
+| `wf059-attribute-without-datatype` | WF-059 arm 1 | B5 | herschreven | the rule holds; the document was rewritten by hand in the M1 shape (an Attribute node with `"datatype": null`, which the schema admits) and is still rejected on WF-059, not by a load error |
+
+The null half of WF-094 on the four nodes that keep their v0 shape at M1
+(`Parameter`, `Eenheidstelsel`, `Feittype`, `Dimensie`) is not unwritable: the
+schema keeps their `naam` typed `["string", "null"]` until the nodes' own
+migration step. A document with `"naam": null` on such a node in its model
+list validates and round-trips under gate 2 (measured 2026-09-23 on the four
+removed witnesses rewritten in the M1 shape). The shared OCaml loader
+(`spec/verifier/lib/loader.ml`, which `ref` and the ASP backend load through as
+well) refuses it with a load error naming the path, so the document cannot enter
+the golden or red corpus; it carries no WF id, so it has no negatief witness
+here.
