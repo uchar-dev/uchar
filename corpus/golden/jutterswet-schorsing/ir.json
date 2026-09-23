@@ -1,0 +1,129 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "aantal aangemelde vondsten",
+            "datatype": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "NIET_NEGATIEF",
+              "eenheid": null
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "recht op de penning",
+            "kind": "BEZITTELIJK"
+          },
+          {
+            "node": "Characteristic",
+            "name": "vergunning geschorst",
+            "kind": "BIJVOEGLIJK"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "dagsoortPerEenheid": {}
+  },
+  "rules": {
+    "resolvedRegels": [],
+    "resolvedDagsoorten": [],
+    "objectCreaties": [],
+    "verdelingen": [],
+    "consistenties": [],
+    "uniciteiten": [],
+    "uniciteitUnies": [],
+    "feitCreaties": [],
+    "resolvedStartpunten": [],
+    "regelGroepen": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "naam": "penningrecht art 3",
+        "onderwerp": "Jutter",
+        "kenmerk": "recht op de penning",
+        "defaults": [
+          {
+            "node": "Default",
+            "besluit": false,
+            "voorwaarde": {
+              "node": "Kenmerk",
+              "kenmerk": "vergunning geschorst",
+              "navigatie": null,
+              "negatie": false,
+              "eigenaar": null,
+              "periode": null,
+              "bron": "hij vergunning geschorst is"
+            },
+            "bron": "Jutterswet art. 4bis"
+          },
+          {
+            "node": "Default",
+            "besluit": true,
+            "voorwaarde": {
+              "node": "Vergelijking",
+              "op": "GROTER_OF_GELIJK",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "aantal aangemelde vondsten",
+                "objecttype": "Jutter",
+                "onderwerpBron": "zijn",
+                "navigatieRol": null,
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "NIET_NEGATIEF",
+                  "eenheid": null
+                },
+                "bron": "zijn aantal aangemelde vondsten",
+                "set": false,
+                "navigatiePad": []
+              },
+              "rechts": {
+                "node": "Literal",
+                "waarde": "12",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "12"
+              },
+              "periode": null,
+              "bron": "zijn aantal aangemelde vondsten groter of gelijk is aan 12"
+            },
+            "bron": "Jutterswet art. 3"
+          }
+        ],
+        "bron": "Jutterswet art. 3",
+        "geldigheid": {
+          "node": "Geldigheid",
+          "vanaf": null,
+          "tot": null
+        }
+      }
+    ]
+  },
+  "diagnostics": []
+}
