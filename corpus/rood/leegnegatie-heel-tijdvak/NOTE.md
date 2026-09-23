@@ -2,7 +2,9 @@
 
 A **negated** leeg test under the ch. 3.9 whole-period qualifier: "de
 lengte van de Schuit is gedurende het gehele jaar niet leeg". All three
-executors refuse it by name.
+executors refuse it by name. Its gevuld twin is
+`gevuldnegatie-heel-tijdvak`; with the unnegated `leegtest-heel-tijdvak`
+and `gevuldtest-heel-tijdvak`, the four close the square soort × negatie.
 
 ## The shape
 

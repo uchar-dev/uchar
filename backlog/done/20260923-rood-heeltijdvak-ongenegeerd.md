@@ -189,8 +189,14 @@ green copies of both cases, with the ch. 3.9 hand values as expected, in
 both branches. Two mutants of the OCaml arms show what each twin adds:
 an arm narrowed to the negated form passes the negated twin and fails
 both unnegated ones, and an arm narrowed to soort LEEG passes both leeg
-documents and fails the gevuld one. A negated gevuld test under the
-qualifier has no corpus case."
+documents and fails the gevuld one. The fourth twin,
+`corpus/rood/gevuldnegatie-heel-tijdvak` (GEVULD, `negatie: true`,
+refused by the Drools loader as `Predicaat.negatie` on the open
+threshold), closes the square soort × negatie: a mutant that exempts
+exactly that corner in the OCaml arms and in the Drools negated refusal
+leaves the other three documents and the backend's suite green and fails
+only this one, so for that corner the case is the only guard on the
+Drools refusal."
 
 Gecontroleerd tegen de nieuwe RUNTIME-SEMANTICS-rij (fixronde 1): die
 zegt "executed by no executor" en "gate 8 pins the OCaml sentence in

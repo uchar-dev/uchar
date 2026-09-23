@@ -3,9 +3,9 @@
 The unnegated **gevuld** test under the ch. 3.9 whole-period qualifier:
 "de lengte van de Schuit is gedurende het gehele jaar gevuld". All three
 executors refuse it by name. It is the gevuld twin of
-`leegtest-heel-tijdvak`. With `leegnegatie-heel-tijdvak`, the three red
-cases carry the negated leeg test, the unnegated leeg test and the
-unnegated gevuld test.
+`leegtest-heel-tijdvak`. With `leegnegatie-heel-tijdvak` and
+`gevuldnegatie-heel-tijdvak`, the four red cases close the square soort ×
+negatie: leeg and gevuld, each negated and unnegated.
 
 ## The shape
 
