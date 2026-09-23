@@ -135,8 +135,8 @@ gehaald, maar de DRL-pin beweegt zoals de hertriage voorspelde: 157 →
 159. Gate 12 staat daardoor rood met het script van main zolang het
 pin-diff hieronder niet landt (`scripts/` is beschermd pad). De andere
 dertien gates zijn groen. Volgens de opdracht is dit het stop-en-meldpunt.
-De kaart blijft daarom in `doing/`. De hoofdsessie verplaatst haar bij
-de landing, samen met het pin-diff.
+De kaart gaat naar `done/`; de hoofdsessie landt het pin-diff direct
+erna (zie onder).
 
 Per flank:
 
@@ -158,7 +158,10 @@ Per flank:
   binding (`corpus/rood/ambiguous-backlink`) faalt in exec bij het vuren.
   De DRL-tak kent geen foutregel-idioom en weigert het bij naam met
   dezelfde zin. Dat is een versmalling, geen stilte, en gate 8 draait
-  alleen exec.
+  alleen exec. Op een LEGE wereld (geen subject dat vuurt; gevonden in
+  de lensronde) faalt ref ook, maar speelt exec (PLAYED 1, de eigen
+  vastgelegde versmalling van exec, inhoudelijk fout tegenover ref). De
+  DRL-tak weigert daar, en is dus behoudender dan exec.
 - (2a) Naamdeling rol/lid: in deze kaart gedicht, aan beide zijden. Het
   voorwaartse geval speelde stil half, het terugwaartse (nieuw gemeten)
   sloeg het hele pakket neer zonder vorm te noemen. Beide weigeren nu
@@ -299,10 +302,18 @@ maintainer). Zo gedraaid; het past op main 8784d5e8:
  # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
 ```
 
-Nog open in dat script (niet in het diff): de klasse-(A)-kop noemt de
-achterstand van de DRL-tak op exec "23". Na deze kaart is die 21. Die
-zin telt de defaults-asymmetrie en geen kanaal, dus de gate beweegt er
-niet op. Bijwerken kan bij dezelfde landing.
+Het pin-diff landt de hoofdsessie als eigen commit op de branch, direct
+na de done-commit van deze kaart. In hetzelfde scriptblok hertelt zij de
+commentaren: "seventy-three of the seventy-six" wordt "seventy-one of
+the seventy-four", "NINE of the twelve" wordt "of the ten", in de
+klasse-(A)-kop 23 → 21 en 26 → 24, de verwijzing "below the THREE"
+vervalt, en de overlange nieuwe kopregel wordt gewrapt.
+
+Lensronde (slotronde, oordeel MERGEN): het verouderde commentaar in het
+kenmerkblok van `DrlTranspiler.objectCreatie` ("evaluates the value
+twice") beschrijft nu de `rsKenmerkWaarde`-aanroep. Het lege-wereldgeval
+van het ambigue paar staat hierboven bij de versmalling en in de
+registerrijtekst.
 
 Voorgestelde registerbijwerking (`spec/CONSTRUCTS.md`, hoofdsessie).
 Rij 21 ("Object creation") krijgt achteraan: "**Landed (2026-09-23,
@@ -318,8 +329,9 @@ characteristic initialisation faults (WF-027,
 `anchor/jutterswet-wachtersketen` and `synth2-budgetgrens-onder` play
 in both branches (180/159); the sweep is otherwise byte-identical.
 Narrowing, recorded: without a binding, an ambiguous pair is a fault at
-fire in the exec branch and a refusal by name in the DRL-text branch.
-Witness `DrlCreatieKoppelingWitnessTest`." De knooprij
+fire in the exec branch — which passes where no subject fires, where ref
+faults even on an empty world — and a refusal by name in the DRL-text
+branch, in either world. Witness `DrlCreatieKoppelingWitnessTest`." De knooprij
 `ResolvedObjectCreatie` krijgt: "back-link read off `verbindendeRol`
 by both Drools branches since 2026-09-23 (DRL-text; exec since
 2026-08-30)". PLAN.md: geen scopewijziging.

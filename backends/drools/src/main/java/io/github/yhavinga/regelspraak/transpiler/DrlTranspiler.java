@@ -1392,9 +1392,8 @@ public final class DrlTranspiler {
             // IS unset, so "leave it" is a skipped write. The ported production lowering wrote the value through
             // unconditionally, and a LEEG one then unboxed null into that field: a NullPointerException inside
             // the consequence, which takes the whole fireAllRules pass down (measured 2026-09-19 on the anchor
-            // rekenkamer-overzee and synth3-kamerheffing cases whose subject carries no mark). The guard is the
-            // file's own Objects.equals idiom, and it evaluates the value twice exactly as the regel() write
-            // guard does — value expressions are pure, so the second read costs only the reading.
+            // rekenkamer-overzee and synth3-kamerheffing cases whose subject carries no mark). The guard is one
+            // rsKenmerkWaarde call, which evaluates the value once and writes the literal true only when it holds.
             // Any value other than true, false or leeg is WF-027: ref faults on it and so does the exec branch, so
             // the helper throws rather than reading it as "unset" (an Objects.equals(v, true) guard did, silently).
             if (t.kenmerk() && !v.marker())
