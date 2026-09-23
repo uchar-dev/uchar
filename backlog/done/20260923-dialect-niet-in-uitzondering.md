@@ -97,15 +97,15 @@ de spec, de verifier, de uitvoerders.
 ## Result (2026-09-23)
 
 **Gebouwd in `card/dialect-niet-in-uitzondering` (worktree `wt/dialect1`,
-basis main 98d888ee), alle veertien gates groen op e6704bd5. Niet gepusht en
+basis main 98d888ee), alle veertien gates groen op 3106509f. Niet gepusht en
 niet gemerged: `scripts/check-drools.sh` is een beschermd pad, dus de tak is
-als geheel een voorstel.** Commits: `b5e0619e` (claim), `8868d701`
-(rood-eerst getuigen), `b2fa5abe` (grammatica en resolver), `6c2af050`
-(golden), `c706459e` (DIVERGENCES §4, javadoc), `23498818` (meldingen),
-`83b021a0` (gate-12-pins, **voorstel**), `4cbd373e`, `62905d78`,
-`ab0e64a2`, `bcef3dbd` en `e6704bd5` (reviewronde), `f360effd` (kaart naar
+als geheel een voorstel.** Commits: `6c93aea2` (claim), `fbd36b3e`
+(rood-eerst getuigen), `61d5bbd8` (grammatica en resolver), `65fe96f4`
+(golden), `04dc4b68` (DIVERGENCES §4, javadoc), `71122b49` (meldingen),
+`9f3c9be0` (gate-12-pins, **voorstel**), `f2d942c7`, `04728321`,
+`95c3ceb7`, `bed23e07` en `3106509f` (reviewronde), `0b74801c` (kaart naar
 `done/`). **De fixronde van 2026-09-24 staat onderaan** (sectie "Fixronde");
-haar gates draaiden op 1c16b130.
+haar gates draaiden op afd512c3.
 
 ### Wat er veranderde
 
@@ -139,7 +139,7 @@ haar gates draaiden op 1c16b130.
 
 ### Getuigen (`NietInUitzonderingTest`, 29 JUnit-tests)
 
-Rood-eerst op commit `8868d701`, tegen de ongewijzigde frontend: 18 van
+Rood-eerst op commit `fbd36b3e`, tegen de ongewijzigde frontend: 18 van
 de 21 toen geschreven tests faalden. Daarbij waren meting 1 ("schrijft een
 ander doel (Jutter.niet uitgesloten (kenmerk))"), M3 (vlak: geen
 diagnostiek) en M4 ("extraneous input 'een'"). Ook `testDocument` gaf
@@ -150,7 +150,7 @@ dat moet blijven:
 - `niet` in een attribuutnaam is geen ontkenning.
 
 De getuigen uit de reviewronde zijn apart rood gemeten. Met de huidige
-testklasse tegen de RuleChecker van `62905d78` (kopie buiten de repo)
+testklasse tegen de RuleChecker van `04728321` (kopie buiten de repo)
 falen 12 van de 29.
 
 Wat de tests pinnen:
@@ -221,7 +221,7 @@ art. 3 is. RUNTIME-SEMANTICS ch. 7.1 modelleert "evenmin" als een eigen
 doel; met één grond aan elke kant geven beide modellen hetzelfde
 antwoord. De NOTE zegt ook wat besluit 4(d) aan de wire zal veranderen.
 
-### Gates op e6704bd5 (elk los, na `eval $(opam env)`)
+### Gates op 3106509f (elk los, na `eval $(opam env)`)
 
 ```
 check-self-contained: PASS
@@ -295,7 +295,7 @@ uitkomsten.*
 
 ### Tweede lezer
 
-Een opus55-lezer (read-only) heeft de diff tot `62905d78` beoordeeld.
+Een opus55-lezer (read-only) heeft de diff tot `04728321` beoordeeld.
 Geen fout gevonden op drie punten:
 - de interne `onwaar`-waarde bereikt nooit zonder ERROR de wire;
 - een document zonder ontkenning verandert niet: de 71 goldens op 98d888ee
@@ -354,10 +354,10 @@ Zijn bevindingen en wat ermee gebeurde:
 
 ## Fixronde (2026-09-24)
 
-Aanleiding: de onafhankelijke lens op de exportkopie van e6704bd5. Eén
+Aanleiding: de onafhankelijke lens op de exportkopie van 3106509f. Eén
 punt blokkeerde; daarnaast kwam er advies. Alles is in deze kaart
-verwerkt, in kleine commits: `68459c41`, `5f7863f9`, `384a8924`,
-`564b9133` en `1c16b130`, plus de commit die dit Result bijwerkt. Niet
+verwerkt, in kleine commits: `64d6c6e6`, `0f2e92f7`, `1929a311`,
+`7dc0fdc0` en `afd512c3`, plus de commit die dit Result bijwerkt. Niet
 gepusht en niet gemerged.
 
 ### 1 (blokkerend) — de nooit-afleidende groep onder overerving
@@ -459,8 +459,8 @@ gepusht en niet gemerged.
 
 ### Rood-bewijs van de fixronde
 
-De eindstand van de testklasse (42 tests, stand 1c16b130) is gedraaid tegen
-de RuleChecker van f360effd, in een kopie buiten de repo: 10 van de 42
+De eindstand van de testklasse (42 tests, stand afd512c3) is gedraaid tegen
+de RuleChecker van 0b74801c, in een kopie buiten de repo: 10 van de 42
 falen. Het zijn precies de nieuwe getuigen:
 - punt 1: vier getuigen (beide groepsrichtingen, de gewone regel in de
   erflijn, de enkelvoudige groep);
@@ -471,9 +471,9 @@ falen. Het zijn precies de nieuwe getuigen:
 
 De overige nieuwe getuigen pinnen gedrag dat al klopte: verbatim-first in
 een uitzondering, het zustersubtype en het negatiewoord. Die slagen ook op
-f360effd.
+0b74801c.
 
-### Gates op 1c16b130 (elk los, na `eval $(opam env)`)
+### Gates op afd512c3 (elk los, na `eval $(opam env)`)
 
 ```
 check-self-contained: PASS
