@@ -10,7 +10,8 @@ import java.nio.file.Path;
  * gate classifies:
  *
  * <pre>
- *   FAULT &lt;text&gt;      exit 0   a genuine runtime fault at fire (the red-path fault — the gate matches the pinned fragment)
+ *   FAULT &lt;text&gt;      exit 0   a fault raised after the build — at fire, or a hard refusal while the case is read
+ *                              (a date lexeme that names no day); the gate matches the pinned fragment
  *   NOFAULT &lt;detail&gt;  exit 1   the case ran to a model — the backend does not enforce this red-path constraint
  *   EXCLUDE &lt;reason&gt;  exit 2   a form the v0 backend does not carry (loader refusal / marker / unsupported input)
  *   ERROR &lt;detail&gt;    exit 3   an unexpected fault (bad invocation, I/O)

@@ -316,14 +316,18 @@ public final class CaseRunner {
     // ---------------- the red path (corpus/rood, gate 8's Drools leg) ----------------
 
     /** What the v0 Drools backend OBSERVES when it replays one {@code expectedFault} case:
-     *  FAULT (a genuine runtime fault at fire, with the fault text ref/clingo pin against),
-     *  EXCLUDE (a form the backend does not carry, with the reason), or NOFAULT (the case ran to a
-     *  model — the backend does not enforce this red-path constraint, so its form is not Drools-carried). */
+     *  FAULT (a fault raised after the build — at fire, or a hard refusal while the case is read — with the
+     *  fault text ref/clingo pin against), EXCLUDE (a form the backend does not carry, with the reason), or
+     *  NOFAULT (the case ran to a model — the backend does not enforce this red-path constraint, so its form is
+     *  not Drools-carried). */
     public record RoodResult(String status, String detail) {}
 
-    /** Replay a single {@code corpus/rood} case and report what the backend observes. A fault the loader or a
-     *  case-input form raises before fire is an EXCLUDE (the form is not carried); a fault raised AT fire — a
-     *  division by zero, a fixpoint failure — is the FAULT this gate leg pins. */
+    /** Replay a single {@code corpus/rood} case and report what the backend observes. A form the backend does not
+     *  carry is an EXCLUDE: a loader refusal, or an {@link Excluded} from the build or from a case-input form. Any
+     *  other runtime exception raised after the build is the FAULT this gate leg pins — a fault AT fire (a division
+     *  by zero, a fixpoint failure), and equally a hard refusal while the case is read: a date lexeme that names
+     *  no day is a document defect to this backend, not a form it does not carry, so it lands here and not in
+     *  EXCLUDE (measured 2026-09-23 on corpus/rood/asofdate-kalender). */
     public static RoodResult runRood(Path irPath, Path casePath) {
         CaseRunner runner;
         try {
