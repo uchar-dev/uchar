@@ -459,9 +459,10 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
            The sister arm below already refuses the mirror-image mistake — a
            timeline on a non-temporal characteristic — and the two now cover
            the seam from both sides. The predicate is KEY EXISTENCE in
-           kenmerkGranulariteit, the same one the three clip readers use;
-           WF-059's second arm makes key and value coincide for any document
-           that passed the verifier. *)
+           [kenmerk_granulariteit], the same one the three clip readers use;
+           since M1 the key is a timeline facet on the characteristic, whose
+           granularity the loader requires, so key and value coincide for
+           every loaded document. *)
         if List.exists (fun (k, _) -> norm k = norm c) ot.kenmerk_granulariteit then
           fail
             "%s.%s: characteristic %S is declared time-dependent on %S, so it is delivered as a \
