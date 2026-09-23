@@ -13,7 +13,7 @@
   "properties": {
     "format": { "const": "uchar-case-v0" },
     "asOfDate": {
-      "description": "The single evaluation date (valuation = calculation = vintage selection); null for a time-free case.",
+      "description": "The single evaluation date (valuation = calculation = vintage selection); null for a time-free case. The pattern checks the field widths, not the calendar: '2026-02-30' matches it. The calendar is checked one layer deeper, by each executor's case reader, which refuses a lexeme that names no day when it reads the case (red witness: corpus/rood/asofdate-kalender).",
       "oneOf": [ { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" }, { "type": "null" } ]
     },
     "input": {
@@ -38,7 +38,7 @@
       "items": { "$ref": "#/$defs/expectation" }
     },
     "expectedFault": {
-      "description": "The red-path alternative to `expected` (corpus/rood): LOADING OR evaluation of this case MUST fail observably in every executor that carries its form — never a silent skip, never a model. A refusal by the case READER is as valid a red outcome as a fault at evaluation: an ambiguous role key, a link to an undeclared label and their kin are the same observable refusal one phase earlier, and an executor reads this field on its own, before it builds the world, so a fragment can pin either phase. Each field is a substring the executor's fault report must contain: `ref` against the reference interpreter's fault, `clingo` against the ASP runner's fault or UNSAT report, and the OPTIONAL `drools` against the Drools backend's fault-at-fire report. The `ref` and `clingo` fields are mandatory (both executors carry every red form). `drools` is present only where the v0 Drools backend carries the red-path form and faults at fire; where it does not — a form the loader/transpiler refuses, or a constraint the backend does not enforce — gate 8's Drools leg lists the case with a reason instead. A case carries exactly one of `expected` / `expectedFault`.",
+      "description": "The red-path alternative to `expected` (corpus/rood): LOADING OR evaluation of this case MUST fail observably in every executor that carries its form — never a silent skip, never a model. A refusal by the case READER is as valid a red outcome as a fault at evaluation: an ambiguous role key, a link to an undeclared label and their kin are the same observable refusal one phase earlier, and an executor reads this field on its own, before it builds the world, so a fragment can pin either phase. Each field is a substring the executor's fault report must contain: `ref` against the reference interpreter's fault, `clingo` against the ASP runner's fault or UNSAT report, and the OPTIONAL `drools` against the Drools backend's red-run fault report: a fault at fire, or a hard refusal while that run reads the case (a date lexeme that names no day). The `ref` and `clingo` fields are mandatory (both executors carry every red form). `drools` is present only where the v0 Drools backend carries the red-path form and faults on it; where it does not — a form the loader/transpiler refuses, or a constraint the backend does not enforce — gate 8's Drools leg lists the case with a reason instead. A case carries exactly one of `expected` / `expectedFault`.",
       "type": "object",
       "additionalProperties": false,
       "required": ["ref", "clingo"],
