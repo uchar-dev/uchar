@@ -280,6 +280,13 @@ type ctx = {
      is leeg, and its guard must not wait for the need's atoms. Nodes, not
      names: two reads of one parameter can sit on different paths *)
   mutable let_needs : (string * string list * expr list) list;
+  (* ch. 10.6: a Let's value is evaluated at the FIRST read of its binder, so a
+     parameter the value reads is reached exactly where the binder is read.
+     A binder whose value reads a parameter the case does not bind (directly,
+     or through another such binder) gets a DEMAND predicate, derived at every
+     read of the binder with that read's reach; the value's guards wait for
+     it. Binder (normalised) to (predicate, the Let's subject variable). *)
+  mutable demands : (string * (string * string)) list;
 }
 
 (* S ⊑ T, for the OCaml-side scans over case instances. The ASP side does
@@ -673,12 +680,13 @@ let unbound_param_guard ctx ~witness ~guard name =
    dropped: the barrier comes after the read, so the read happens even where
    the need is leeg. Captured as a closure, so a nested context can hand it on
    unchanged. *)
-let rule_reach ctx ~subject ~subject_ot =
+let rule_reach ?skip ctx ~subject ~subject_ot =
   let rg = ctx.rule_guard and needs = ctx.let_needs and outer = ctx.param_reach in
   fun (node : expr) ->
     let early =
       List.concat_map
-        (fun (_, va, nodes) -> if List.exists (fun n -> n == node) nodes then va else [])
+        (fun (b, va, nodes) ->
+          if Some b = skip || List.exists (fun n -> n == node) nodes then va else [])
         needs
     in
     (Printf.sprintf "isa(%s,%s)" subject (str subject_ot)
@@ -812,6 +820,92 @@ let cond_param_names c =
   List.filter_map
     (function Parameter_ref { parameter = Some p; _ } -> Some p | _ -> None)
     (fst (cond_nodes_before "" c))
+
+(* does evaluating [e] possibly read a node [hit] accepts? Everywhere: closed
+   bodies and the bodies of invoked functions included *)
+let expr_reaches ctx (hit : expr -> bool) (e : expr) : bool =
+  let rec x (e : expr) =
+    hit e
+    ||
+    let opt = function Some y -> x y | None -> false in
+    match e with
+    | Binair { links; rechts; _ } -> opt links || opt rechts
+    | Afgerond { basis; _ } -> opt basis
+    | Begrensd { basis; minimum; maximum; _ } -> opt basis || opt minimum || opt maximum
+    | Functie { argumenten; leegwaarde; filter; _ } ->
+        List.exists x argumenten || opt leegwaarde || (match filter with Some c -> co c | None -> false)
+    | Dimensie_cel { attribuut; _ } -> opt attribuut
+    | Temporal_read { basis; datum; _ } -> x basis || x datum
+    | Construct { argument; _ } -> opt argument
+    | Field_access { base; _ } -> x base
+    | Struct_literal { velden; _ } -> List.exists (fun (_, y) -> x y) velden
+    | List_literal { elements; _ } -> List.exists x elements
+    | Tekst_reeks { delen; _ } ->
+        List.exists (function Ingevoegd { expr = Some y } -> x y | _ -> false) delen
+    | If_then_else { condition; then_; else_; _ } -> co condition || x then_ || x else_
+    | Match { scrutinee; arms; _ } -> x scrutinee || List.exists (fun (_, _, b) -> x b) arms
+    | Let { value; body; _ } -> x value || x body
+    | Lambda { body; _ } -> x body
+    | Invoke { functie; arguments; _ } -> List.exists x arguments || named functie
+    | Fold { list; init; functie; _ } -> x list || x init || fn functie
+    | Map_list { list; functie; _ } -> x list || fn functie
+    | Filter_list { list; condition; _ } -> x list || co condition
+    | List_length { list; _ } -> x list
+    | Parameter_ref _ | Literal _ | Attribuut_ref _ | Variabele_ref _ | Constante _ | Binder_ref _
+    | Expr_onopgelost _ | Instance_set_union _ ->
+        false
+  and fn = function Fn_lambda { body; _ } -> x body | Fn_name n -> named n
+  and named n =
+    match List.find_opt (fun (d : function_def) -> norm d.fd_naam = norm n) ctx.doc.function_defs with
+    | Some d -> x d.fd_body
+    | None -> false
+  and co (c : conditie) =
+    let opt = function Some y -> x y | None -> false in
+    match c with
+    | Vergelijking { links; rechts; _ } -> opt links || opt rechts
+    | Predicaat { operand; _ } -> opt operand
+    | Periode_conditie { vanaf; tot; _ } -> opt vanaf || opt tot
+    | Samengesteld { onderdelen; _ } -> List.exists co onderdelen
+    | Kwantorvouw { kv_toets; kv_filter; _ } ->
+        (match kv_toets with Some t -> co t | None -> false)
+        || (match kv_filter with Some f -> co f | None -> false)
+    | Kenmerk_check _ | Rollidmaatschap _ | Verre_rollidmaatschap _ | Regelversie _
+    | Conditie_onopgelost _ ->
+        false
+  in
+  x e
+
+(* the demand a Let binder needs, if its value may read a parameter the case
+   does not bind or a binder that has a demand of its own ([ctx.demands]) *)
+let demand_for ctx ~subject (value : expr) : (string * string) option =
+  let hit = function
+    | Parameter_ref { parameter = Some p; _ } -> param_unbound ctx p
+    | Binder_ref { naam; _ } -> List.mem_assoc (norm naam) ctx.demands
+    | _ -> false
+  in
+  if expr_reaches ctx hit value then Some (fresh ctx "dmd", subject) else None
+
+(* translate a Let's value under its demand: every guard inside waits for the
+   binder's first read *)
+let under_demand ctx demand (f : unit -> 'a) : 'a =
+  match demand with
+  | None -> f ()
+  | Some (d, subj) ->
+      let saved = ctx.param_reach in
+      ctx.param_reach <- (fun node -> Printf.sprintf "%s(%s)" d subj :: saved node);
+      let r = f () in
+      ctx.param_reach <- saved;
+      r
+
+(* a read of a Let binder that has a demand: the demand holds wherever this
+   read is reached — the binder's own need excluded, for the read is what
+   evaluates it *)
+let note_binder_read ctx ~subject ~subject_ot (node : expr) naam =
+  match List.assoc_opt (norm naam) ctx.demands with
+  | None -> ()
+  | Some (d, subj) ->
+      emit ctx "%s(%s) :- %s." d subj
+        (String.concat ", " (rule_reach ~skip:(norm naam) ctx ~subject ~subject_ot node))
 
 (* the canonical role name: the plural for a to-many role, the singular
    otherwise — the same convention the case facts use *)
@@ -3980,7 +4074,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          declared scale; a Let binder additionally carries its self-contained
          helper atom (B3), so the value is bound wherever the read lands *)
       match List.assoc_opt (norm naam) ctx.binders with
-      | Some (atoms, var, scale) -> (atoms, var, scale)
+      | Some (atoms, var, scale) ->
+          note_binder_read ctx ~subject ~subject_ot e naam;
+          (atoms, var, scale)
       | None -> fault "unbound binder %S in the ASP translation (WF-064 should preclude this)" naam)
   | Let { binder; body; _ } when not (reads_binder binder body) ->
       (* ch. 10.6 clause 3: an UNREAD binder evaluates nothing. The value is
@@ -3999,15 +4095,22 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          value's and the body's, so the caller's rule body binds every variable
          it uses (and a coalescing position that swallows the read's own letN
          atom cannot swallow these). *)
-      let va, vt, vs = expr_term ctx ~subject ~subject_ot value in
+      let demand = demand_for ctx ~subject value in
+      let va, vt, vs = under_demand ctx demand (fun () -> expr_term ctx ~subject ~subject_ot value) in
       let saved_b = ctx.binders and saved_g = ctx.rule_guard and saved_n = ctx.let_needs in
+      let saved_d = ctx.demands in
       ctx.binders <- (norm binder, let_binder ctx ~subject ~subject_ot (va, vt, vs)) :: ctx.binders;
       ctx.rule_guard <- ctx.rule_guard @ va;
       ctx.let_needs <- (norm binder, va, early_nodes binder body) :: ctx.let_needs;
+      ctx.demands <-
+        (match demand with
+         | Some dm -> (norm binder, dm) :: ctx.demands
+         | None -> List.remove_assoc (norm binder) ctx.demands);
       let ba, bt, bs = expr_term ctx ~subject ~subject_ot body in
       ctx.binders <- saved_b;
       ctx.rule_guard <- saved_g;
       ctx.let_needs <- saved_n;
+      ctx.demands <- saved_d;
       (va @ ba, bt, bs)
   | Fold { typ; list; functie; init; _ } ->
       (* ch. 10.2: index recursion over the reified list (S15). The result is
@@ -6188,7 +6291,9 @@ and struct_base ctx ~subject ~subject_ot (e : expr) : string list * string =
       ([ Printf.sprintf "val(%s,%s,%s)" subject (str a) v ], v)
   | Binder_ref { naam; _ } -> (
       match List.assoc_opt (norm naam) ctx.binders with
-      | Some (atoms, var, _) -> (atoms, var)
+      | Some (atoms, var, _) ->
+          note_binder_read ctx ~subject ~subject_ot e naam;
+          (atoms, var)
       | None -> fault "unbound binder %S in a struct field access (WF-064 should preclude this)" naam)
   | Field_access { base; veld; _ } ->
       let batoms, bterm = struct_base ctx ~subject ~subject_ot base in
@@ -6857,12 +6962,20 @@ and money_mult_shape (basis : expr) : bool =
    at the READ (clause 2) — exactly as ref evaluates the Let body. *)
 and translate_money_mult ctx ~subject ~subject_ot ~basis : string list * string * int =
   let saved_b = ctx.binders and saved_g = ctx.rule_guard and saved_n = ctx.let_needs in
+  let saved_d = ctx.demands in
   let rec peel = function
     | Let { binder; body; _ } when not (reads_binder binder body) ->
         (* ch. 10.6 clause 3: an unread binder evaluates nothing *)
         peel body
     | Let { binder; value; body; _ } ->
-        let va, vt, vs = expr_term ctx ~subject ~subject_ot value in
+        let demand = demand_for ctx ~subject value in
+        let va, vt, vs =
+          under_demand ctx demand (fun () -> expr_term ctx ~subject ~subject_ot value)
+        in
+        ctx.demands <-
+          (match demand with
+           | Some dm -> (norm binder, dm) :: ctx.demands
+           | None -> List.remove_assoc (norm binder) ctx.demands);
         ctx.binders <- (norm binder, let_binder ctx ~subject ~subject_ot (va, vt, vs)) :: ctx.binders;
         (* the peeled value's atoms ride [rule_guard] into the product helper's
            own body (below): a coalescing operand swallows the read's letN atom,
@@ -6902,6 +7015,7 @@ and translate_money_mult ctx ~subject ~subject_ot ~basis : string list * string 
   ctx.binders <- saved_b;
   ctx.rule_guard <- saved_g;
   ctx.let_needs <- saved_n;
+  ctx.demands <- saved_d;
   ([ Printf.sprintf "%s(%s,%s)" p subject v ], v, 100)
 
 (* the money × rate cent product inside a CLOSED body (S15/S18(c)): the same
@@ -7164,15 +7278,22 @@ let rec value_branches ctx ~subject ~subject_ot (e : expr) : vbranch list =
          fact, and the body's branches ARE the Let's *)
       value_branches ctx ~subject ~subject_ot body
   | Let { binder; value; body; _ } ->
-      let va, vt, vs = expr_term ctx ~subject ~subject_ot value in
+      let demand = demand_for ctx ~subject value in
+      let va, vt, vs = under_demand ctx demand (fun () -> expr_term ctx ~subject ~subject_ot value) in
       let saved_b = ctx.binders and saved_g = ctx.rule_guard and saved_n = ctx.let_needs in
+      let saved_d = ctx.demands in
       ctx.binders <- (norm binder, let_binder ctx ~subject ~subject_ot (va, vt, vs)) :: ctx.binders;
       ctx.rule_guard <- ctx.rule_guard @ va;
       ctx.let_needs <- (norm binder, va, early_nodes binder body) :: ctx.let_needs;
+      ctx.demands <-
+        (match demand with
+         | Some dm -> (norm binder, dm) :: ctx.demands
+         | None -> List.remove_assoc (norm binder) ctx.demands);
       let branches = value_branches ctx ~subject ~subject_ot body in
       ctx.binders <- saved_b;
       ctx.rule_guard <- saved_g;
       ctx.let_needs <- saved_n;
+      ctx.demands <- saved_d;
       (* ch. 10.6 clause 2: the value atoms guard exactly the READING branches
          — a branch that never reads the binder survives a leeg value, which is
          where L parts company with the old strict lowering. The read set moves
@@ -9135,7 +9256,7 @@ let translate (doc : document) (case : Case.t) : string =
   let doc = Ir_v0.Desugar.document doc in
   let ctx =
     { doc; case; buf = Buffer.create 4096; fresh = 0; rule_guard = []; write_scale = 1;
-      rule_name = "?"; binders = []; param_reach = (fun _ -> []); let_needs = [] }
+      rule_name = "?"; binders = []; param_reach = (fun _ -> []); let_needs = []; demands = [] }
   in
   (* ch. 8.4: the shared session-start Parameterset coverage check —
      data-plane validation (like the shared case loader), run before a

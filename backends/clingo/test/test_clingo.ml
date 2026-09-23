@@ -8940,6 +8940,77 @@ let () =
   unbound_fires ~name:"Let: the Match arm reads p first (lz-m2)" ~ir:match_doc ~param:"p"
     ~case_text:(pf_case ~instances:[ j1 "Laag" ] leeg) ~silent:"heffing leeg"
 
+(* FIXRONDE 1, point 3: a Let's value is evaluated at the FIRST read of its
+   binder (ch. 10.6, call-by-need), so a parameter in the value is reached
+   exactly where the binder is read — not where the Let stands. restpost is
+   leeg: `Let a = p in Let b = restpost in (b plus a)` reads b first, the
+   barrier ends the Let, a is never read and ref plays. The same with the
+   value `p plus 1`, under an operator, in the taken arm of a branch, and
+   with a read of a inside a fold filter over an empty range. The controls
+   read a (b bound to inkomen, or a non-empty range) and ref faults. *)
+let () =
+  let p = pf_p "p" and restpost = pf_a "restpost" and inkomen = pf_a "inkomen" in
+  let ab ~a ~b = pf_let "a" a (pf_let "b" b (pf_bin "PLUS" (pf_b "b") (pf_b "a"))) in
+  let doc waarde = pf_doc ~parameters:[ pf_decl "p"; pf_decl "q" ] ~regels:[ pf_regel waarde ] () in
+  let leeg = [ pf_leeg (); pf_cons ] in
+  both_answer ~name:"Let, lazy: the value is read only after a leeg need (iv-c)"
+    ~ir:(doc (ab ~a:p ~b:restpost)) ~case_text:(pf_case leeg);
+  both_answer ~name:"Let, lazy: the value p plus 1, read only after a leeg need (iv-d)"
+    ~ir:(doc (ab ~a:(pf_bin "PLUS" p (pf_l "1")) ~b:restpost)) ~case_text:(pf_case leeg);
+  (* the leeg Let coalesces to 0 under the plus, so ref answers 2 *)
+  both_answer ~name:"Let, lazy: the same under an operator (lv-4)"
+    ~ir:(doc (pf_bin "PLUS" (ab ~a:(pf_bin "PLUS" p (pf_l "1")) ~b:restpost) (pf_l "2")))
+    ~case_text:(pf_case [ pf_is "2"; pf_cons ]);
+  both_answer ~name:"Let, lazy: the same in the taken arm of a branch (lv-2)"
+    ~ir:(doc (pf_ite (pf_cmp "GROTER" (pf_p "q") (pf_l "0")) (ab ~a:p ~b:restpost) (pf_l "0")))
+    ~case_text:(pf_case ~params:[ pf_bind "q" "5" ] leeg);
+  unbound_fires ~name:"Let: the value is read when the need is filled (control)"
+    ~ir:(doc (ab ~a:p ~b:inkomen)) ~param:"p" ~case_text:(pf_case [ pf_leeg (); pf_cons ])
+    ~silent:"heffing leeg";
+  (* lv-5: the binder read inside a fold's die/dat filter, per member *)
+  let werf = pf_ot ~naam:"Werf" ~meervoud:"Werven" (Printf.sprintf {|"bonus": %s|} pf_n0)
+  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" (Printf.sprintf {|"lengte": %s|} pf_n0) in
+  let ligplaats =
+    {|{ "ligplaats": { "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
+      { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] } }|}
+  in
+  let som =
+    Printf.sprintf
+      {|{ "node": "Functie", "kind": "SOM",
+        "argumenten": [ { "node": "AttribuutRef", "attribuut": "lengte", "objecttype": "Schuit",
+          "onderwerpBron": "alle schuiten", "navigatieRol": null, "type": %s,
+          "bron": "de lengte van alle schuiten", "set": true, "navigatiePad": [] } ],
+        "elementObjecttype": "Schuit", "leegwaarde": null, "filter": %s, "dimensieSelectie": null,
+        "type": %s, "bron": "de som", "granulariteit": null,
+        "bronRol": { "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" } }|}
+      pf_n0
+      (pf_cmp "GROTER" (pf_a ~ot:"Schuit" ~typ:pf_n0 "lengte")
+         (Printf.sprintf {|{ "node": "BinderRef", "name": "a", "type": %s, "bron": "de a" }|} pf_n0))
+      pf_n0
+  in
+  let lv5 =
+    pf_doc ~objecttypen:[ werf; schuit ] ~feittypen:ligplaats ~parameters:[ pf_decl ~typ:pf_n0 "p" ]
+      ~regels:
+        [ pf_regel ~ot:"Werf" ~doel:"bonus" ~typ:pf_n0
+            (Printf.sprintf {|{ "node": "Let", "type": %s, "binder": "a", "value": %s, "body": %s, "bron": "let a" }|}
+               pf_n0 (pf_p ~typ:pf_n0 "p") som) ]
+      ()
+  in
+  let inst label ot attrs roles =
+    Printf.sprintf {|{ "label": "%s", "objectType": "%s", "attributes": { %s }, "roles": { %s }, "characteristics": [] }|}
+      label ot attrs roles
+  in
+  both_answer ~name:"Let, lazy: the binder read in a fold filter over an empty range (lv-5)" ~ir:lv5
+    ~case_text:(pf_case ~instances:[ inst "W3" "Werf" "" "" ] [ pf_leeg ~label:"W3" ~attr:"bonus" (); pf_cons ]);
+  unbound_fires ~name:"Let: the binder read in a fold filter over a member (control)" ~ir:lv5 ~param:"p"
+    ~case_text:
+      (pf_case
+         ~instances:
+           [ inst "W1" "Werf" "" {|"schuiten": [ "S1" ]|}; inst "S1" "Schuit" {|"lengte": { "number": "8" }|} "" ]
+         [ pf_leeg ~label:"W1" ~attr:"bonus" (); pf_cons ])
+    ~silent:"bonus leeg: the filter never held"
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
