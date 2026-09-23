@@ -9320,6 +9320,82 @@ let () =
   unbound_fires ~name:"Let: the same with the inner binder renamed (sh-7b, control)" ~ir:sh7b ~param:"p"
     ~case_text:(pf_case ~instances:[ j1 [] ] leeg) ~silent:"heffing leeg"
 
+(* FIXRONDE 3, point 3: a Let in a CLOSED body is call-by-need too. The
+   lambda of a fold over J1's vangsten reads [Let k = p in match x
+   { Waardevol b -> acc plus (b plus k); Waardeloos -> acc }]: only the
+   Waardevol arm reads k, so over Waardeloos elements ref never evaluates p
+   and folds to 0,00. The value was translated at the Let, so its guard fired
+   for every element (and without the guard the Waardeloos branch carried the
+   value's param atom, which left the fold underived). Also through a chain
+   of Lets over the Match (cl-2) and through a branch inside the arm (cl-3). *)
+let () =
+  let vangst =
+    Printf.sprintf
+      {|{ "node": "SumType", "domain": "vangst", "constructors": [ { "name": "Waardevol", "payload": %s }, { "name": "Waardeloos", "payload": null } ] }|}
+      pf_n2
+  in
+  let lijst = Printf.sprintf {|{ "node": "ListType", "element": %s }|} vangst in
+  let jutter = pf_ot (Printf.sprintf {|"totaal": %s, "vangsten": %s|} pf_n2 lijst) in
+  let x = Printf.sprintf {|{ "node": "BinderRef", "name": "x", "type": %s, "bron": "de vangst" }|} vangst in
+  let match_ ~waardevol ~waardeloos =
+    Printf.sprintf
+      {|{ "node": "Match", "type": %s, "scrutinee": %s, "arms": [
+          { "constructor": "Waardevol", "binder": "b", "body": %s },
+          { "constructor": "Waardeloos", "binder": null, "body": %s } ], "bron": "match vangst" }|}
+      pf_n2 x waardevol waardeloos
+  in
+  let doc body =
+    pf_doc ~objecttypen:[ jutter ] ~domeinen:(Printf.sprintf {|"vangst": %s|} vangst)
+      ~parameters:[ pf_decl "p" ]
+      ~regels:
+        [ pf_regel ~doel:"totaal"
+            (Printf.sprintf
+               {|{ "node": "Fold", "type": %s, "list": %s,
+                   "function": { "node": "Lambda", "parameters": [ { "name": "acc", "datatype": %s }, { "name": "x", "datatype": %s } ],
+                     "body": %s, "bron": "de optelling" },
+                   "init": %s, "bron": "de vouw" }|}
+               pf_n2 (pf_a ~typ:lijst "vangsten") pf_n2 vangst body (pf_l "0.00")) ]
+      ()
+  in
+  let j1 items =
+    Printf.sprintf
+      {|{ "label": "J1", "objectType": "Jutter", "attributes": { "vangsten": { "list": [ %s ] } }, "roles": {}, "characteristics": [] }|}
+      (String.concat ", "
+         (List.map
+            (function
+              | Some v -> Printf.sprintf {|{ "constructor": "Waardevol", "payload": { "number": "%s" } }|} v
+              | None -> {|{ "constructor": "Waardeloos" }|})
+            items))
+  in
+  let totaal v = [ pf_is ~attr:"totaal" v; pf_cons ] and leeg = [ pf_leeg ~attr:"totaal" (); pf_cons ] in
+  let acc = pf_b "acc" and b = pf_b "b" and k = pf_b "k" and p = pf_p "p" in
+  let cl1 = doc (pf_let "k" p (match_ ~waardevol:(pf_bin "PLUS" acc (pf_bin "PLUS" b k)) ~waardeloos:acc)) in
+  both_answer ~name:"closed body, lazy: only the Waardevol arm reads k (cl-1)" ~ir:cl1
+    ~case_text:(pf_case ~instances:[ j1 [ None; None ] ] (totaal "0"));
+  unbound_fires ~name:"closed body: a Waardevol element reads k (cl-1, control)" ~ir:cl1 ~param:"p"
+    ~case_text:(pf_case ~instances:[ j1 [ None; Some "5.00" ] ] leeg) ~silent:"totaal leeg";
+  both_answer ~name:"closed body: the Let over the Match with p bound (cl-1, control)" ~ir:cl1
+    ~case_text:(pf_case ~params:[ pf_bind "p" "1.00" ] ~instances:[ j1 [ None; Some "5.00" ] ] (totaal "6"));
+  let cl2 =
+    doc
+      (pf_let "k" p
+         (pf_let "j" (pf_l "1.00")
+            (match_ ~waardevol:(pf_bin "PLUS" acc (pf_bin "PLUS" b (pf_bin "PLUS" k (pf_b "j")))) ~waardeloos:acc)))
+  in
+  both_answer ~name:"closed body, lazy: a chain of Lets over the Match (cl-2)" ~ir:cl2
+    ~case_text:(pf_case ~instances:[ j1 [ None ] ] (totaal "0"));
+  unbound_fires ~name:"closed body: the chain read by a Waardevol element (cl-2, control)" ~ir:cl2 ~param:"p"
+    ~case_text:(pf_case ~instances:[ j1 [ Some "5.00" ] ] leeg) ~silent:"totaal leeg";
+  let cl3 =
+    doc
+      (pf_let "k" p
+         (match_ ~waardevol:(pf_ite (pf_cmp "GROTER" b (pf_l "1.00")) (pf_bin "PLUS" acc k) acc) ~waardeloos:acc))
+  in
+  both_answer ~name:"closed body, lazy: the arm's branch that reads k is not taken (cl-3)" ~ir:cl3
+    ~case_text:(pf_case ~instances:[ j1 [ Some "0.50"; None ] ] (totaal "0"));
+  unbound_fires ~name:"closed body: the arm's branch that reads k is taken (cl-3, control)" ~ir:cl3 ~param:"p"
+    ~case_text:(pf_case ~instances:[ j1 [ Some "5.00" ] ] leeg) ~silent:"totaal leeg"
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

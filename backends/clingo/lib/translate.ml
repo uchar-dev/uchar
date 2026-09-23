@@ -2341,6 +2341,42 @@ let emit_kv_reach ctx ~reach ~subject ~subject_ot ~x ~join ~fatoms ~atoms ~kwant
   in
   emit ctx "%s(S,X) :- %s(S,X,K,H), %s(S,N), %s." reach b n still_open
 
+(* a chain of Lets over a Match in a closed body, as [body_branches] pushes it
+   into the arms: [Some (lets, scrutinee, arms)], the Lets outermost first, when
+   some Let's value may read a parameter the case does not bind, the scrutinee
+   reads none of the binders, and no name is bound twice — neither by two Lets
+   nor by a Let and an arm's payload — nor read by a value while an arm's
+   payload binds it, so that wrapping an arm in its Lets captures nothing. Any
+   other shape keeps each value at its Let. *)
+let closed_let_chain ctx (e : expr) =
+  let rec chain acc (e : expr) =
+    match e with
+    | Let { binder; value; body; typ; bron } -> chain ((binder, value, typ, bron) :: acc) body
+    | Match { scrutinee; arms; _ } when acc <> [] -> Some (List.rev acc, scrutinee, arms)
+    | _ -> None
+  in
+  match chain [] e with
+  | None -> None
+  | Some (lets, scrutinee, arms) ->
+      let names = List.map (fun (b, _, _, _) -> norm b) lets in
+      let payloads = List.filter_map (fun (_, b, _) -> Option.map norm b) arms in
+      let unbound = function
+        | Parameter_ref { parameter = Some p; _ } -> param_unbound ctx p
+        | _ -> false
+      in
+      if
+        List.exists (fun (_, v, _, _) -> expr_reaches ctx unbound v) lets
+        && (not (List.exists (fun (b, _, _, _) -> reads_binder b scrutinee) lets))
+        && List.length (List.sort_uniq compare names) = List.length names
+        && (not (List.exists (fun b -> List.mem b names) payloads))
+        && not
+             (List.exists
+                (fun (_, v, _, _) ->
+                  List.exists (fun b -> Ir_v0.Checks.mentions_binder b v) payloads)
+                lets)
+      then Some (lets, scrutinee, arms)
+      else None
+
 let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
   match let_into_arm e with
   | Some pushed -> expr_term ctx ~subject ~subject_ot pushed
@@ -6786,53 +6822,33 @@ and body_branches ctx ~guard_body ~witness (e : expr) : (string list * string * 
           (body_branches ctx ~guard_body ~witness e)
       in
       arm pos then_ @ arm neg else_
-  | Match { scrutinee; arms; _ } ->
-      (* the enumeration variant of the keuzetype family is carried at rule
-         level (translate_match, via the S2 symbolic operand) but not inside a
-         closed body: a closed body has no subject to read the val atom from,
-         and the S2 operand has no closed-body carrier. Fenced loudly here so
-         the reason names the shape rather than [sum_operand]'s sum wording
-         (S19; no corpus case). *)
-      (match Ir_v0.Checks.typ_of_expr scrutinee with
-      | Some (Enumeratie _) ->
-          fault
-            "an enumeration match inside a closed lambda/function body is not translated (the \
-             symbolic operand has no closed-body carrier; no corpus case)"
-      | _ -> ());
-      let sv = sum_operand ctx scrutinee in
-      let constructoren = sum_constructors (Ir_v0.Checks.typ_of_expr scrutinee) in
-      List.concat_map
-        (fun (ctor, binder, body) ->
-          let f = ctor_functor ctor in
-          let pattern, binding =
-            match (ctor_payload_datatype constructoren ctor, binder) with
-            | None, None -> (Printf.sprintf "%s = %s" sv f, None)
-            | Some d, Some b ->
-                let pv = fresh ctx "P" in
-                ( Printf.sprintf "%s = %s(%s)" sv f pv,
-                  Some (norm b, ([], pv, pow10 (decimals_of_datatype (Some d)))) )
-            | Some _, None -> fault "unary match arm %S lacks a binder (WF-063)" ctor
-            | None, Some _ -> fault "nullary match arm %S carries a binder (WF-063)" ctor
-          in
-          let saved = ctx.binders in
-          (match binding with Some b -> ctx.binders <- b :: ctx.binders | None -> ());
-          let branches =
-            body_branches ctx ~guard_body:(guard_body @ [ pattern ]) ~witness body
-          in
-          ctx.binders <- saved;
-          List.map (fun (g, t, s) -> (pattern :: g, t, s)) branches)
-        arms
+  | Match { scrutinee; arms; _ } -> match_branches ctx ~guard_body ~witness scrutinee arms
   | Let { binder; body; _ } when not (reads_binder binder body) ->
       (* ch. 10.6 clause 3: an unread binder evaluates nothing, closed body or
          not — no inlined value, no fence *)
       body_branches ctx ~guard_body ~witness body
+  | Let _ when closed_let_chain ctx e <> None -> (
+      (* ch. 10.6 call-by-need over a Match: a Let's value runs at the first
+         read of its binder, and when a chain of Lets stands over a Match whose
+         scrutinee reads none of them, the only reads are in the arms. A closed
+         body is leeg-free, so the one thing that can tell the value's place
+         apart is a fault in it — a parameter the case does not bind. Each arm
+         is therefore translated inside the Lets it reads and no others, under
+         that arm's pattern: the guard fires where such an arm is taken, and an
+         arm that never reads a binder derives without its value's atoms, as ref
+         folds it. Only for a chain with such a value, so a case that binds its
+         parameters translates as before. *)
+      match closed_let_chain ctx e with
+      | Some (lets, scrutinee, arms) -> match_branches ctx ~guard_body ~witness ~pending:lets scrutinee arms
+      | None -> assert false)
   | Let { binder; value; body; _ } ->
       (* a Let whose body still branches (an IfThenElse reducer, a Match under a
          Let): the value is inlined by the closed_term Let discipline, the binder
          bound with empty atoms, and the value's binding atoms thread into every
          branch's body. The per-branch barrier of ch. 10.6 has nothing to do
          here — a closed body is leeg-free (ch. 10.1), so a value that binds at
-         all binds on every branch. *)
+         all binds on every branch. The arm above is the exception, where the
+         value can fault. *)
       let va, vt, vs = closed_term ctx ~guard_body ~witness value in
       let saved = ctx.binders in
       ctx.binders <- (norm binder, ([], vt, vs)) :: ctx.binders;
@@ -6889,6 +6905,56 @@ and body_branches ctx ~guard_body ~witness (e : expr) : (string list * string * 
   | _ ->
       let a, t, s = closed_term ctx ~guard_body ~witness e in
       [ (a, t, s) ]
+
+(* the branches of a closed-body Match, one set per arm: the pattern joins the
+   scrutinee's term, a unary arm binds its payload. [pending] is the chain of
+   Lets standing over the Match ([closed_let_chain]), outermost first; each arm
+   is translated inside it, so a value lands only in the arms that read it. *)
+and match_branches ctx ~guard_body ~witness ?pending scrutinee arms =
+  (* the enumeration variant of the keuzetype family is carried at rule
+     level (translate_match, via the S2 symbolic operand) but not inside a
+     closed body: a closed body has no subject to read the val atom from,
+     and the S2 operand has no closed-body carrier. Fenced loudly here so
+     the reason names the shape rather than [sum_operand]'s sum wording
+     (S19; no corpus case). *)
+  (match Ir_v0.Checks.typ_of_expr scrutinee with
+  | Some (Enumeratie _) ->
+      fault
+        "an enumeration match inside a closed lambda/function body is not translated (the \
+         symbolic operand has no closed-body carrier; no corpus case)"
+  | _ -> ());
+  let sv = sum_operand ctx scrutinee in
+  let constructoren = sum_constructors (Ir_v0.Checks.typ_of_expr scrutinee) in
+  List.concat_map
+    (fun (ctor, binder, body) ->
+      let f = ctor_functor ctor in
+      let pattern, binding =
+        match (ctor_payload_datatype constructoren ctor, binder) with
+        | None, None -> (Printf.sprintf "%s = %s" sv f, None)
+        | Some d, Some b ->
+            let pv = fresh ctx "P" in
+            ( Printf.sprintf "%s = %s(%s)" sv f pv,
+              Some (norm b, ([], pv, pow10 (decimals_of_datatype (Some d)))) )
+        | Some _, None -> fault "unary match arm %S lacks a binder (WF-063)" ctor
+        | None, Some _ -> fault "nullary match arm %S carries a binder (WF-063)" ctor
+      in
+      let saved = ctx.binders in
+      (match binding with Some b -> ctx.binders <- b :: ctx.binders | None -> ());
+      let arm_guard = guard_body @ [ pattern ] in
+      let body =
+        match pending with
+        | None -> body
+        | Some lets ->
+            (* the whole chain around the arm: a Let the arm does not read drops
+               out again in [body_branches]'s unread-binder arm *)
+            List.fold_right
+              (fun (binder, value, typ, bron) acc -> Let { typ; binder; value; body = acc; bron })
+              lets body
+      in
+      let branches = body_branches ctx ~guard_body:arm_guard ~witness body in
+      ctx.binders <- saved;
+      List.map (fun (g, t, s) -> (pattern :: g, t, s)) branches)
+    arms
 
 (* an IfThenElse condition over bound terms → (binding atoms, positive
    builtin, complement builtin). Closed bodies read only bound terms, so the
