@@ -141,26 +141,6 @@
           "scrutinee": {
             "node": "BinderRef",
             "name": "a",
-            "type": {
-              "node": "SumType",
-              "domain": "aanspraak",
-              "constructors": [
-                {
-                  "name": "Erkend",
-                  "payload": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  }
-                },
-                {
-                  "name": "Vervallen",
-                  "payload": null
-                }
-              ]
-            },
             "bron": "de aanspraak"
           },
           "arms": [
@@ -170,13 +150,6 @@
               "body": {
                 "node": "BinderRef",
                 "name": "b",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                },
                 "bron": "het erkende bedrag"
               }
             },
@@ -213,18 +186,7 @@
           "node": "AttribuutRef",
           "attribuut": "erkende som",
           "objecttype": "Jutter",
-          "onderwerpBron": "De erkende som van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De erkende som van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De erkende som van een Jutter"
         },
         "waarde": {
           "node": "Fold",
@@ -251,34 +213,7 @@
               "node": "AttribuutRef",
               "attribuut": "aanspraken",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "ListType",
-                "element": {
-                  "node": "SumType",
-                  "domain": "aanspraak",
-                  "constructors": [
-                    {
-                      "name": "Erkend",
-                      "payload": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
-                      }
-                    },
-                    {
-                      "name": "Vervallen",
-                      "payload": null
-                    }
-                  ]
-                }
-              },
-              "bron": "zijn aanspraken",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn aanspraken"
             },
             "function": {
               "node": "Lambda",
@@ -321,26 +256,6 @@
                   {
                     "node": "BinderRef",
                     "name": "a",
-                    "type": {
-                      "node": "SumType",
-                      "domain": "aanspraak",
-                      "constructors": [
-                        {
-                          "name": "Erkend",
-                          "payload": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "NIET_NEGATIEF",
-                            "eenheid": null
-                          }
-                        },
-                        {
-                          "name": "Vervallen",
-                          "payload": null
-                        }
-                      ]
-                    },
                     "bron": "de aanspraak"
                   }
                 ],
@@ -380,25 +295,11 @@
               "links": {
                 "node": "BinderRef",
                 "name": "acc",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
                 "bron": "de opgetelde som"
               },
               "rechts": {
                 "node": "BinderRef",
                 "name": "x",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                },
                 "bron": "de aanspraakwaarde"
               },
               "type": {
@@ -441,18 +342,7 @@
           "node": "AttribuutRef",
           "attribuut": "aantal erkend",
           "objecttype": "Jutter",
-          "onderwerpBron": "Het aantal erkend van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het aantal erkend van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het aantal erkend van een Jutter"
         },
         "waarde": {
           "node": "ListLength",
@@ -492,34 +382,7 @@
               "node": "AttribuutRef",
               "attribuut": "aanspraken",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "ListType",
-                "element": {
-                  "node": "SumType",
-                  "domain": "aanspraak",
-                  "constructors": [
-                    {
-                      "name": "Erkend",
-                      "payload": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
-                      }
-                    },
-                    {
-                      "name": "Vervallen",
-                      "payload": null
-                    }
-                  ]
-                }
-              },
-              "bron": "zijn aanspraken",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn aanspraken"
             },
             "binder": "a",
             "condition": {
@@ -528,26 +391,6 @@
               "links": {
                 "node": "BinderRef",
                 "name": "a",
-                "type": {
-                  "node": "SumType",
-                  "domain": "aanspraak",
-                  "constructors": [
-                    {
-                      "name": "Erkend",
-                      "payload": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
-                      }
-                    },
-                    {
-                      "name": "Vervallen",
-                      "payload": null
-                    }
-                  ]
-                },
                 "bron": "de aanspraak"
               },
               "rechts": {

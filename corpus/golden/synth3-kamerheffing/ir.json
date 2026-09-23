@@ -119,18 +119,7 @@
           "node": "AttribuutRef",
           "attribuut": "heffing",
           "objecttype": "Kamer",
-          "onderwerpBron": "een Kamer",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De heffing van een grote Kamer",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De heffing van een grote Kamer"
         },
         "waarde": {
           "node": "Binair",
@@ -139,18 +128,7 @@
             "node": "AttribuutRef",
             "attribuut": "grondslag",
             "objecttype": "Kamer",
-            "onderwerpBron": "de Kamer",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "de grondslag van de Kamer",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de grondslag van de Kamer"
           },
           "rechts": {
             "node": "Literal",
@@ -176,7 +154,6 @@
         "voorwaarde": {
           "node": "Kenmerk",
           "kenmerk": "groot",
-          "navigatie": null,
           "negatie": false,
           "eigenaar": null,
           "periode": null,
@@ -196,40 +173,17 @@
           "node": "AttribuutRef",
           "attribuut": "heffing",
           "objecttype": "Kamer",
-          "onderwerpBron": "een Kamer",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De heffing van een gewone Kamer",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De heffing van een gewone Kamer"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "grondslag",
           "objecttype": "Kamer",
-          "onderwerpBron": "de Kamer",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "de grondslag van de Kamer",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de grondslag van de Kamer"
         },
         "voorwaarde": {
           "node": "Kenmerk",
           "kenmerk": "groot",
-          "navigatie": null,
           "negatie": true,
           "eigenaar": null,
           "periode": null,
@@ -249,35 +203,13 @@
           "node": "AttribuutRef",
           "attribuut": "heffing",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De heffing van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De heffing van een Jutter"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "heffing",
           "objecttype": "Kamer",
-          "onderwerpBron": "haar kamer",
-          "navigatieRol": "kamer",
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
           "bron": "de heffing van haar kamer",
-          "set": false,
-          "navigatiePad": [],
           "navigatieBindingen": [
             {
               "node": "RolBinding",
@@ -309,18 +241,7 @@
               "node": "AttribuutRef",
               "attribuut": "grondslag",
               "objecttype": "Jutter",
-              "onderwerpBron": "de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
-              "bron": "de grondslag van de Jutter",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de grondslag van de Jutter"
             },
             "kenmerk": false
           },
@@ -331,14 +252,7 @@
               "node": "AttribuutRef",
               "attribuut": "omvangrijk",
               "objecttype": "Jutter",
-              "onderwerpBron": "de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Booleaan"
-              },
-              "bron": "de omvangrijk van de Jutter",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de omvangrijk van de Jutter"
             },
             "kenmerk": true
           }

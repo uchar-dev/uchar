@@ -71,14 +71,7 @@
           "node": "AttribuutRef",
           "attribuut": "wachtsom",
           "objecttype": "Klipjutter",
-          "onderwerpBron": "een Klipjutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "De wachtsom van een Klipjutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De wachtsom van een Klipjutter"
         },
         "waarde": {
           "node": "Functie",
@@ -88,14 +81,7 @@
               "node": "AttribuutRef",
               "attribuut": "wachtvergoeding per maand",
               "objecttype": "Klipjutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumInDagen"
-              },
-              "bron": "zijn wachtvergoeding per maand",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn wachtvergoeding per maand"
             }
           ],
           "elementObjecttype": "Klipjutter",
@@ -103,7 +89,6 @@
           "filter": {
             "node": "Kenmerk",
             "kenmerk": "wachtplichtig",
-            "navigatie": null,
             "negatie": false,
             "eigenaar": null,
             "periode": null,

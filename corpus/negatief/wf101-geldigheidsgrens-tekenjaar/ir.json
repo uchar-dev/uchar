@@ -38,14 +38,7 @@
           "node": "AttribuutRef",
           "attribuut": "ijkdatum",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "De ijkdatum van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De ijkdatum van een Vondst"
         },
         "waarde": {
           "node": "Literal",

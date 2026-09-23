@@ -130,25 +130,7 @@
           "node": "AttribuutRef",
           "attribuut": "lichterloon",
           "objecttype": "Lichterbeurt",
-          "onderwerpBron": "een Lichterbeurt",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "EUR",
-              "stelsel": "Munt",
-              "canoniek": "EUR",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "Het lichterloon van een Lichterbeurt",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het lichterloon van een Lichterbeurt"
         },
         "waarde": {
           "node": "Let",
@@ -174,42 +156,13 @@
               "node": "AttribuutRef",
               "attribuut": "vrachttal",
               "objecttype": "Lichterbeurt",
-              "onderwerpBron": "de Lichterbeurt",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
-              "bron": "het vrachttal van de Lichterbeurt",
-              "set": false,
-              "navigatiePad": []
+              "bron": "het vrachttal van de Lichterbeurt"
             },
             "rechts": {
               "node": "AttribuutRef",
               "attribuut": "eenheidsloon",
               "objecttype": "Lichterbeurt",
-              "onderwerpBron": "de Lichterbeurt",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": {
-                  "node": "Eenheid",
-                  "afkorting": "EUR",
-                  "stelsel": "Munt",
-                  "canoniek": "EUR",
-                  "factorNaarCanoniek": 1,
-                  "noemer": null
-                }
-              },
-              "bron": "het eenheidsloon van de Lichterbeurt",
-              "set": false,
-              "navigatiePad": []
+              "bron": "het eenheidsloon van de Lichterbeurt"
             },
             "type": {
               "node": "Numeriek",
@@ -233,20 +186,6 @@
             "links": {
               "node": "BinderRef",
               "name": "grondloon",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": {
-                  "node": "Eenheid",
-                  "afkorting": "EUR",
-                  "stelsel": "Munt",
-                  "canoniek": "EUR",
-                  "factorNaarCanoniek": 1,
-                  "noemer": null
-                }
-              },
               "bron": "het grondloon"
             },
             "rechts": {
@@ -255,38 +194,13 @@
               "links": {
                 "node": "BinderRef",
                 "name": "grondloon",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": {
-                    "node": "Eenheid",
-                    "afkorting": "EUR",
-                    "stelsel": "Munt",
-                    "canoniek": "EUR",
-                    "factorNaarCanoniek": 1,
-                    "noemer": null
-                  }
-                },
                 "bron": "het grondloon"
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "spoedtal",
                 "objecttype": "Lichterbeurt",
-                "onderwerpBron": "de Lichterbeurt",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                },
-                "bron": "het spoedtal van de Lichterbeurt",
-                "set": false,
-                "navigatiePad": []
+                "bron": "het spoedtal van de Lichterbeurt"
               },
               "type": {
                 "node": "Numeriek",

@@ -170,38 +170,13 @@
           "node": "AttribuutRef",
           "attribuut": "risicotoeslag",
           "objecttype": "Wachter",
-          "onderwerpBron": "een Wachter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De risicotoeslag van een Wachter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De risicotoeslag van een Wachter"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "gevarenklasse",
           "objecttype": "Kustvak",
-          "onderwerpBron": "zijn post",
-          "navigatieRol": "post",
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
           "bron": "de gevarenklasse van het kustvak van zijn post",
-          "set": false,
-          "navigatiePad": [
-            "post",
-            "kustvak"
-          ],
           "navigatieBindingen": [
             {
               "node": "RolBinding",

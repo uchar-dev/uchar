@@ -89,18 +89,7 @@
           "node": "AttribuutRef",
           "attribuut": "heffing",
           "objecttype": "Jutter",
-          "onderwerpBron": "De heffing van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De heffing van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De heffing van een Jutter"
         },
         "waarde": {
           "node": "Let",
@@ -116,18 +105,7 @@
             "node": "AttribuutRef",
             "attribuut": "inkomen",
             "objecttype": "Jutter",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "zijn inkomen",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn inkomen"
           },
           "body": {
             "node": "Binair",
@@ -147,25 +125,11 @@
                 "links": {
                   "node": "BinderRef",
                   "name": "k",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  },
                   "bron": "de k"
                 },
                 "rechts": {
                   "node": "ParameterRef",
                   "parameter": "drempel",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
                   "bron": "de drempel"
                 },
                 "periode": null,
@@ -174,13 +138,6 @@
               "then": {
                 "node": "ParameterRef",
                 "parameter": "basisheffing",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
                 "bron": "de basisheffing"
               },
               "else": {
@@ -189,31 +146,13 @@
                 "links": {
                   "node": "BinderRef",
                   "name": "k",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  },
                   "bron": "de k"
                 },
                 "rechts": {
                   "node": "AttribuutRef",
                   "attribuut": "restpost",
                   "objecttype": "Jutter",
-                  "onderwerpBron": "zijn",
-                  "navigatieRol": null,
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  },
-                  "bron": "zijn restpost",
-                  "set": false,
-                  "navigatiePad": []
+                  "bron": "zijn restpost"
                 },
                 "type": {
                   "node": "Numeriek",
@@ -229,13 +168,6 @@
             "rechts": {
               "node": "ParameterRef",
               "parameter": "basisheffing",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
               "bron": "de basisheffing"
             },
             "type": {

@@ -119,18 +119,7 @@
           "node": "AttribuutRef",
           "attribuut": "prijsBenedenaf",
           "objecttype": "Veilingronde",
-          "onderwerpBron": "de Veilingronde",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De prijs benedenaf van een Veilingronde",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De prijs benedenaf van een Veilingronde"
         },
         "waarde": {
           "node": "Afgerond",
@@ -141,35 +130,13 @@
               "node": "AttribuutRef",
               "attribuut": "opbrengst",
               "objecttype": "Veilingronde",
-              "onderwerpBron": "de Veilingronde",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de opbrengst van de Veilingronde",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de opbrengst van de Veilingronde"
             },
             "rechts": {
               "node": "AttribuutRef",
               "attribuut": "kavels",
               "objecttype": "Veilingronde",
-              "onderwerpBron": "de Veilingronde",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de kavels van de Veilingronde",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de kavels van de Veilingronde"
             },
             "type": {
               "node": "Numeriek",
@@ -206,18 +173,7 @@
           "node": "AttribuutRef",
           "attribuut": "prijsBovenaf",
           "objecttype": "Veilingronde",
-          "onderwerpBron": "de Veilingronde",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De prijs bovenaf van een Veilingronde",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De prijs bovenaf van een Veilingronde"
         },
         "waarde": {
           "node": "Afgerond",
@@ -228,35 +184,13 @@
               "node": "AttribuutRef",
               "attribuut": "opbrengst",
               "objecttype": "Veilingronde",
-              "onderwerpBron": "de Veilingronde",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de opbrengst van de Veilingronde",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de opbrengst van de Veilingronde"
             },
             "rechts": {
               "node": "AttribuutRef",
               "attribuut": "kavels",
               "objecttype": "Veilingronde",
-              "onderwerpBron": "de Veilingronde",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de kavels van de Veilingronde",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de kavels van de Veilingronde"
             },
             "type": {
               "node": "Numeriek",
@@ -293,18 +227,7 @@
           "node": "AttribuutRef",
           "attribuut": "prijsRekenkundig",
           "objecttype": "Veilingronde",
-          "onderwerpBron": "de Veilingronde",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De prijs rekenkundig van een Veilingronde",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De prijs rekenkundig van een Veilingronde"
         },
         "waarde": {
           "node": "Afgerond",
@@ -315,35 +238,13 @@
               "node": "AttribuutRef",
               "attribuut": "opbrengst",
               "objecttype": "Veilingronde",
-              "onderwerpBron": "de Veilingronde",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de opbrengst van de Veilingronde",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de opbrengst van de Veilingronde"
             },
             "rechts": {
               "node": "AttribuutRef",
               "attribuut": "kavels",
               "objecttype": "Veilingronde",
-              "onderwerpBron": "de Veilingronde",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de kavels van de Veilingronde",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de kavels van de Veilingronde"
             },
             "type": {
               "node": "Numeriek",
@@ -380,18 +281,7 @@
           "node": "AttribuutRef",
           "attribuut": "prijsNaarNul",
           "objecttype": "Veilingronde",
-          "onderwerpBron": "de Veilingronde",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De prijs naar nul van een Veilingronde",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De prijs naar nul van een Veilingronde"
         },
         "waarde": {
           "node": "Afgerond",
@@ -402,35 +292,13 @@
               "node": "AttribuutRef",
               "attribuut": "opbrengst",
               "objecttype": "Veilingronde",
-              "onderwerpBron": "de Veilingronde",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de opbrengst van de Veilingronde",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de opbrengst van de Veilingronde"
             },
             "rechts": {
               "node": "AttribuutRef",
               "attribuut": "kavels",
               "objecttype": "Veilingronde",
-              "onderwerpBron": "de Veilingronde",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de kavels van de Veilingronde",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de kavels van de Veilingronde"
             },
             "type": {
               "node": "Numeriek",
@@ -467,18 +335,7 @@
           "node": "AttribuutRef",
           "attribuut": "prijsVanNul",
           "objecttype": "Veilingronde",
-          "onderwerpBron": "de Veilingronde",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De prijs van nul van een Veilingronde",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De prijs van nul van een Veilingronde"
         },
         "waarde": {
           "node": "Afgerond",
@@ -489,35 +346,13 @@
               "node": "AttribuutRef",
               "attribuut": "opbrengst",
               "objecttype": "Veilingronde",
-              "onderwerpBron": "de Veilingronde",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de opbrengst van de Veilingronde",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de opbrengst van de Veilingronde"
             },
             "rechts": {
               "node": "AttribuutRef",
               "attribuut": "kavels",
               "objecttype": "Veilingronde",
-              "onderwerpBron": "de Veilingronde",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de kavels van de Veilingronde",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de kavels van de Veilingronde"
             },
             "type": {
               "node": "Numeriek",
@@ -554,18 +389,7 @@
           "node": "AttribuutRef",
           "attribuut": "prijsFijn",
           "objecttype": "Veilingronde",
-          "onderwerpBron": "de Veilingronde",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 1,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De prijs fijn van een Veilingronde",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De prijs fijn van een Veilingronde"
         },
         "waarde": {
           "node": "Afgerond",
@@ -576,35 +400,13 @@
               "node": "AttribuutRef",
               "attribuut": "opbrengst",
               "objecttype": "Veilingronde",
-              "onderwerpBron": "de Veilingronde",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de opbrengst van de Veilingronde",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de opbrengst van de Veilingronde"
             },
             "rechts": {
               "node": "AttribuutRef",
               "attribuut": "kavels",
               "objecttype": "Veilingronde",
-              "onderwerpBron": "de Veilingronde",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de kavels van de Veilingronde",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de kavels van de Veilingronde"
             },
             "type": {
               "node": "Numeriek",

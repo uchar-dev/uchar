@@ -44,27 +44,13 @@
           "node": "AttribuutRef",
           "attribuut": "markering",
           "objecttype": "Jutter",
-          "onderwerpBron": "de Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "de markering van de Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de markering van de Jutter"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "penninggerechtigd",
           "objecttype": "Jutter",
-          "onderwerpBron": "de Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "de penninggerechtigd van de Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de penninggerechtigd van de Jutter"
         },
         "voorwaarde": null,
         "geldigheid": {

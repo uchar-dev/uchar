@@ -63,25 +63,7 @@
           "node": "AttribuutRef",
           "attribuut": "jutleeftijd",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": null,
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "jr",
-              "stelsel": null,
-              "canoniek": null,
-              "factorNaarCanoniek": null,
-              "noemer": null
-            }
-          },
-          "bron": "De jutleeftijd van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De jutleeftijd van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -91,27 +73,13 @@
               "node": "AttribuutRef",
               "attribuut": "geboortedatum",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumInDagen"
-              },
-              "bron": "zijn geboortedatum",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn geboortedatum"
             },
             {
               "node": "AttribuutRef",
               "attribuut": "stempelmoment",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumTijd"
-              },
-              "bron": "zijn stempelmoment",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn stempelmoment"
             }
           ],
           "elementObjecttype": null,

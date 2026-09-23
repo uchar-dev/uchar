@@ -131,8 +131,6 @@
         "naam": "leg toezicht vast",
         "anker": "Berger",
         "doel": "Berging",
-        "zetVeld": "toezichthouder",
-        "joinVeld": "toezichthouder",
         "tussenstappen": [],
         "voorwaarde": null,
         "geldigheid": {

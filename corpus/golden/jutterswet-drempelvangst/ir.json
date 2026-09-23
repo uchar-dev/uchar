@@ -95,18 +95,7 @@
           "node": "AttribuutRef",
           "attribuut": "drempelgewicht",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het drempelgewicht van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het drempelgewicht van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -116,18 +105,7 @@
               "node": "AttribuutRef",
               "attribuut": "gewicht",
               "objecttype": "Vondst",
-              "onderwerpBron": "alle vondsten van de Jutter die groter zijn dan de drempel",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "het gewicht van alle vondsten van de Jutter die groter zijn dan de drempel",
-              "set": true,
-              "navigatiePad": []
+              "bron": "het gewicht van alle vondsten van de Jutter die groter zijn dan de drempel"
             }
           ],
           "elementObjecttype": "Vondst",
@@ -150,18 +128,7 @@
               "node": "AttribuutRef",
               "attribuut": "gewicht",
               "objecttype": "Vondst",
-              "onderwerpBron": "",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "groter zijn dan de drempel",
-              "set": false,
-              "navigatiePad": []
+              "bron": "groter zijn dan de drempel"
             },
             "rechts": {
               "node": "Literal",
@@ -209,18 +176,7 @@
           "node": "AttribuutRef",
           "attribuut": "drempelaandeel",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het drempelaandeel van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het drempelaandeel van een Jutter"
         },
         "waarde": {
           "node": "Let",
@@ -236,18 +192,7 @@
             "node": "AttribuutRef",
             "attribuut": "drempelgewicht",
             "objecttype": "Jutter",
-            "onderwerpBron": "de Jutter",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "het drempelgewicht van de Jutter",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het drempelgewicht van de Jutter"
           },
           "body": {
             "node": "Binair",
@@ -255,25 +200,11 @@
             "links": {
               "node": "BinderRef",
               "name": "vangst",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
               "bron": "de vangst"
             },
             "rechts": {
               "node": "BinderRef",
               "name": "vangst",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
               "bron": "de vangst"
             },
             "type": {

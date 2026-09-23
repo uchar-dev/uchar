@@ -95,25 +95,7 @@
           "node": "AttribuutRef",
           "attribuut": "uurspanne",
           "objecttype": "Getijdenpaar",
-          "onderwerpBron": "een Getijdenpaar",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": null,
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "uur",
-              "stelsel": null,
-              "canoniek": null,
-              "factorNaarCanoniek": null,
-              "noemer": null
-            }
-          },
-          "bron": "De uurspanne van een Getijdenpaar",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De uurspanne van een Getijdenpaar"
         },
         "waarde": {
           "node": "Functie",
@@ -123,27 +105,13 @@
               "node": "AttribuutRef",
               "attribuut": "aankomst",
               "objecttype": "Getijdenpaar",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumTijd"
-              },
-              "bron": "zijn aankomst",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn aankomst"
             },
             {
               "node": "AttribuutRef",
               "attribuut": "vertrek",
               "objecttype": "Getijdenpaar",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumTijd"
-              },
-              "bron": "zijn vertrek",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn vertrek"
             }
           ],
           "elementObjecttype": null,
@@ -182,25 +150,7 @@
           "node": "AttribuutRef",
           "attribuut": "dagspanne",
           "objecttype": "Getijdenpaar",
-          "onderwerpBron": "een Getijdenpaar",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": null,
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "dagen",
-              "stelsel": null,
-              "canoniek": null,
-              "factorNaarCanoniek": null,
-              "noemer": null
-            }
-          },
-          "bron": "De dagspanne van een Getijdenpaar",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De dagspanne van een Getijdenpaar"
         },
         "waarde": {
           "node": "Functie",
@@ -210,27 +160,13 @@
               "node": "AttribuutRef",
               "attribuut": "aankomst",
               "objecttype": "Getijdenpaar",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumTijd"
-              },
-              "bron": "zijn aankomst",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn aankomst"
             },
             {
               "node": "AttribuutRef",
               "attribuut": "vertrek",
               "objecttype": "Getijdenpaar",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumTijd"
-              },
-              "bron": "zijn vertrek",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn vertrek"
             }
           ],
           "elementObjecttype": null,
@@ -269,14 +205,7 @@
           "node": "AttribuutRef",
           "attribuut": "hersteltijd",
           "objecttype": "Getijdenpaar",
-          "onderwerpBron": "een Getijdenpaar",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumTijd"
-          },
-          "bron": "De hersteltijd van een Getijdenpaar",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De hersteltijd van een Getijdenpaar"
         },
         "waarde": {
           "node": "Binair",
@@ -285,14 +214,7 @@
             "node": "AttribuutRef",
             "attribuut": "aankomst",
             "objecttype": "Getijdenpaar",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumTijd"
-            },
-            "bron": "zijn aankomst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn aankomst"
           },
           "rechts": {
             "node": "Literal",
@@ -333,14 +255,7 @@
           "node": "AttribuutRef",
           "attribuut": "ijkdatum",
           "objecttype": "Getijdenpaar",
-          "onderwerpBron": "een Getijdenpaar",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumTijd"
-          },
-          "bron": "De ijkdatum van een Getijdenpaar",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De ijkdatum van een Getijdenpaar"
         },
         "waarde": {
           "node": "Binair",
@@ -349,14 +264,7 @@
             "node": "AttribuutRef",
             "attribuut": "aankomst",
             "objecttype": "Getijdenpaar",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumTijd"
-            },
-            "bron": "zijn aankomst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn aankomst"
           },
           "rechts": {
             "node": "Literal",

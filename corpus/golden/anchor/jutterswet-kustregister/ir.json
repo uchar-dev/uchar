@@ -166,18 +166,7 @@
           "node": "AttribuutRef",
           "attribuut": "kavelaantal",
           "objecttype": "Gemeente",
-          "onderwerpBron": "een Gemeente",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het kavelaantal van een Gemeente",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het kavelaantal van een Gemeente"
         },
         "waarde": {
           "node": "Functie",
@@ -187,15 +176,7 @@
               "node": "AttribuutRef",
               "attribuut": "kavels",
               "objecttype": "Gemeente",
-              "onderwerpBron": "de Gemeente",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "role-count source"
-              },
-              "bron": "alle kavels van de Gemeente",
-              "set": false,
-              "navigatiePad": []
+              "bron": "alle kavels van de Gemeente"
             }
           ],
           "elementObjecttype": "Kavel",
@@ -237,7 +218,6 @@
         "sleutels": [
           "etiket"
         ],
-        "scopeVeld": "gemeente",
         "bron": "De etiket van alle Kavel van de gemeente moeten uniek zijn.",
         "geldigheid": {
           "node": "Geldigheid",
@@ -257,12 +237,16 @@
         "sleutels": [
           "sectiecode"
         ],
-        "scopeVeld": "gemeente",
         "bron": "De sectiecode van alle Kavel van de gemeente moeten uniek zijn.",
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,
           "tot": null
+        },
+        "scopeRol": {
+          "node": "RolBinding",
+          "feittype": "kavelindeling",
+          "rol": "gemeente"
         }
       }
     ],

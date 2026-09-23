@@ -63,14 +63,7 @@
               "node": "AttribuutRef",
               "attribuut": "vloototal",
               "objecttype": "Rederij",
-              "onderwerpBron": "de Rederij",
-              "navigatieRol": null,
-              "type": {
-                "node": "Booleaan"
-              },
-              "bron": "de vloototal van de Rederij",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de vloototal van de Rederij"
             },
             "kenmerk": true
           }

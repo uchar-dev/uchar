@@ -75,18 +75,7 @@
           "node": "AttribuutRef",
           "attribuut": "vangstsom",
           "objecttype": "Vangst",
-          "onderwerpBron": "De vangstsom van een Vangst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De vangstsom van een Vangst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De vangstsom van een Vangst"
         },
         "waarde": {
           "node": "Functie",
@@ -96,35 +85,13 @@
               "node": "AttribuutRef",
               "attribuut": "deelvangst",
               "objecttype": "Vangst",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "zijn deelvangst",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn deelvangst"
             },
             {
               "node": "AttribuutRef",
               "attribuut": "teller",
               "objecttype": "Vangst",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "zijn teller",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn teller"
             }
           ],
           "elementObjecttype": null,
@@ -135,35 +102,13 @@
               "node": "AttribuutRef",
               "attribuut": "teller",
               "objecttype": "Vangst",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "zijn teller",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn teller"
             },
             "rechts": {
               "node": "AttribuutRef",
               "attribuut": "noemer",
               "objecttype": "Vangst",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "zijn noemer",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn noemer"
             },
             "type": {
               "node": "Numeriek",

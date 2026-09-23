@@ -190,37 +190,7 @@
           "node": "AttribuutRef",
           "attribuut": "samenvatting",
           "objecttype": "Berging",
-          "onderwerpBron": null,
-          "navigatieRol": null,
-          "type": {
-            "node": "StructType",
-            "domain": "dossier",
-            "fields": [
-              {
-                "name": "waarde",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              },
-              {
-                "name": "telling",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              }
-            ]
-          },
-          "bron": null,
-          "set": false,
-          "navigatiePad": []
+          "bron": null
         },
         "waarde": {
           "node": "Functie",
@@ -230,37 +200,7 @@
               "node": "AttribuutRef",
               "attribuut": "kern",
               "objecttype": "Schuit",
-              "onderwerpBron": "de kern van alle schuiten van de Berging",
-              "navigatieRol": null,
-              "type": {
-                "node": "StructType",
-                "domain": "dossier",
-                "fields": [
-                  {
-                    "name": "waarde",
-                    "datatype": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
-                    }
-                  },
-                  {
-                    "name": "telling",
-                    "datatype": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
-                    }
-                  }
-                ]
-              },
-              "bron": "de kern van alle schuiten van de Berging",
-              "set": true,
-              "navigatiePad": []
+              "bron": "de kern van alle schuiten van de Berging"
             }
           ],
           "elementObjecttype": "Schuit",
@@ -316,18 +256,7 @@
           "node": "AttribuutRef",
           "attribuut": "tarief",
           "objecttype": "Berging",
-          "onderwerpBron": null,
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": null,
-          "set": false,
-          "navigatiePad": []
+          "bron": null
         },
         "waarde": {
           "node": "FieldAccess",
@@ -342,37 +271,7 @@
             "node": "AttribuutRef",
             "attribuut": "samenvatting",
             "objecttype": "Berging",
-            "onderwerpBron": null,
-            "navigatieRol": null,
-            "type": {
-              "node": "StructType",
-              "domain": "dossier",
-              "fields": [
-                {
-                  "name": "waarde",
-                  "datatype": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  }
-                },
-                {
-                  "name": "telling",
-                  "datatype": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  }
-                }
-              ]
-            },
-            "bron": null,
-            "set": false,
-            "navigatiePad": []
+            "bron": null
           },
           "field": "waarde",
           "bron": null

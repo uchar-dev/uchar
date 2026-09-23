@@ -95,35 +95,13 @@
           "node": "AttribuutRef",
           "attribuut": "vergoeding",
           "objecttype": "Strandvondst",
-          "onderwerpBron": "een Strandvondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "De vergoeding van een Strandvondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De vergoeding van een Strandvondst"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "grondwaarde",
           "objecttype": "Strandvondst",
-          "onderwerpBron": "zijn",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "zijn grondwaarde",
-          "set": false,
-          "navigatiePad": []
+          "bron": "zijn grondwaarde"
         },
         "voorwaarde": null,
         "geldigheid": {
@@ -140,18 +118,7 @@
           "node": "AttribuutRef",
           "attribuut": "toeslag",
           "objecttype": "Wrakstuk",
-          "onderwerpBron": "een Wrakstuk",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "De toeslag van een Wrakstuk",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De toeslag van een Wrakstuk"
         },
         "waarde": {
           "node": "Literal",
@@ -180,18 +147,7 @@
           "node": "AttribuutRef",
           "attribuut": "toeslag",
           "objecttype": "Drijfhout",
-          "onderwerpBron": "een Drijfhout",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "De toeslag van een Drijfhout",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De toeslag van een Drijfhout"
         },
         "waarde": {
           "node": "Literal",

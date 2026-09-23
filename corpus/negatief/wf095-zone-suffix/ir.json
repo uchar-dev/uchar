@@ -38,14 +38,7 @@
           "node": "AttribuutRef",
           "attribuut": "meldstip",
           "objecttype": "Aanmelding",
-          "onderwerpBron": "een Aanmelding",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumTijd"
-          },
-          "bron": "De meldstip van een Aanmelding",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De meldstip van een Aanmelding"
         },
         "waarde": {
           "node": "Literal",

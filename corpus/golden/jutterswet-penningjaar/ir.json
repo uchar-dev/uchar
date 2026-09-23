@@ -151,18 +151,7 @@
           "node": "AttribuutRef",
           "attribuut": "totaal aangemelde vondsten",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het totaal aangemelde vondsten van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het totaal aangemelde vondsten van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -172,18 +161,7 @@
               "node": "AttribuutRef",
               "attribuut": "aantal aangemelde vondsten",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
-              "bron": "zijn aantal aangemelde vondsten",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn aantal aangemelde vondsten"
             }
           ],
           "elementObjecttype": "Jutter",
@@ -215,14 +193,7 @@
           "node": "AttribuutRef",
           "attribuut": "penninggerechtigd",
           "objecttype": "Jutter",
-          "onderwerpBron": "Een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Jutter is penninggerechtigd",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Jutter is penninggerechtigd"
         },
         "waarde": {
           "node": "Literal",
@@ -239,29 +210,11 @@
             "node": "AttribuutRef",
             "attribuut": "totaal aangemelde vondsten",
             "objecttype": "Jutter",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "zijn totaal aangemelde vondsten",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn totaal aangemelde vondsten"
           },
           "rechts": {
             "node": "ParameterRef",
             "parameter": "vondstdrempel",
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
             "bron": "de vondstdrempel"
           },
           "periode": null,
@@ -281,14 +234,7 @@
           "node": "AttribuutRef",
           "attribuut": "aanmeldplichtig",
           "objecttype": "Jutter",
-          "onderwerpBron": "Een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Jutter is aanmeldplichtig",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Jutter is aanmeldplichtig"
         },
         "waarde": {
           "node": "Literal",
@@ -301,7 +247,6 @@
         "voorwaarde": {
           "node": "Kenmerk",
           "kenmerk": "penninggerechtigd",
-          "navigatie": null,
           "negatie": true,
           "eigenaar": null,
           "periode": null,

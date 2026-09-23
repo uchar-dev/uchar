@@ -90,18 +90,7 @@
           "node": "AttribuutRef",
           "attribuut": "penningtotaal",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het penningtotaal van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het penningtotaal van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -111,18 +100,7 @@
               "node": "AttribuutRef",
               "attribuut": "uitgereikt",
               "objecttype": "Penning",
-              "onderwerpBron": "alle penningen van de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "het uitgereikt van alle penningen van de Jutter",
-              "set": true,
-              "navigatiePad": []
+              "bron": "het uitgereikt van alle penningen van de Jutter"
             }
           ],
           "elementObjecttype": "Penning",

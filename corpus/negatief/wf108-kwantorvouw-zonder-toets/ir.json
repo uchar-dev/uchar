@@ -83,14 +83,7 @@
           "node": "AttribuutRef",
           "attribuut": "premiegerechtigd",
           "objecttype": "Bergingsploeg",
-          "onderwerpBron": "Een Bergingsploeg",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Bergingsploeg is premiegerechtigd",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Bergingsploeg is premiegerechtigd"
         },
         "waarde": {
           "node": "Literal",

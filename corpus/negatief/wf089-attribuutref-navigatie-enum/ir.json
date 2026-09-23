@@ -111,18 +111,7 @@
           "node": "AttribuutRef",
           "attribuut": "premie",
           "objecttype": "Schuit",
-          "onderwerpBron": "de premie",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de premie",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de premie"
         },
         "waarde": {
           "node": "Match",
@@ -137,22 +126,7 @@
             "node": "AttribuutRef",
             "attribuut": "vaarwater",
             "objecttype": "Werf",
-            "onderwerpBron": "de Schuit",
-            "navigatieRol": "Schuit",
-            "type": {
-              "node": "Enumeratie",
-              "domein": "Kust",
-              "waarden": [
-                "Noord",
-                "Zuid",
-                "West"
-              ]
-            },
             "bron": "de vaarwater",
-            "set": false,
-            "navigatiePad": [
-              "werf"
-            ],
             "navigatieBindingen": [
               {
                 "node": "RolBinding",

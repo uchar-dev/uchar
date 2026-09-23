@@ -64,18 +64,7 @@
           "node": "AttribuutRef",
           "attribuut": "wrakkenloon",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het wrakkenloon van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het wrakkenloon van een Jutter"
         },
         "waarde": {
           "node": "Binair",
@@ -84,18 +73,7 @@
             "node": "AttribuutRef",
             "attribuut": "wrakkental",
             "objecttype": "Jutter",
-            "onderwerpBron": "de Jutter",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "het wrakkental van de Jutter",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het wrakkental van de Jutter"
           },
           "rechts": {
             "node": "Literal",

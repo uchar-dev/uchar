@@ -203,25 +203,7 @@
           "node": "AttribuutRef",
           "attribuut": "toeslag",
           "objecttype": "Hoofdberger",
-          "onderwerpBron": "een Hoofdberger",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "EUR",
-              "stelsel": "Munt",
-              "canoniek": "EUR",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "De toeslag van een Hoofdberger",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De toeslag van een Hoofdberger"
         },
         "waarde": {
           "node": "Literal",
@@ -245,7 +227,6 @@
         "voorwaarde": {
           "node": "Kenmerk",
           "kenmerk": "gemachtigd",
-          "navigatie": null,
           "negatie": false,
           "eigenaar": null,
           "periode": null,

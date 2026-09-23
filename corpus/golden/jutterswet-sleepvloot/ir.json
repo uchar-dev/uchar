@@ -116,14 +116,7 @@
           "node": "AttribuutRef",
           "attribuut": "inzetbaar",
           "objecttype": "Sleepvloot",
-          "onderwerpBron": "Een Sleepvloot",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Sleepvloot is inzetbaar",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Sleepvloot is inzetbaar"
         },
         "waarde": {
           "node": "Literal",
@@ -146,18 +139,7 @@
               "node": "AttribuutRef",
               "attribuut": "sleeptijd",
               "objecttype": "Sleepboot",
-              "onderwerpBron": "ten minste 2 van de boten van de Sleepvloot",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de sleeptijd van ten minste 2 van de boten van de Sleepvloot",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de sleeptijd van ten minste 2 van de boten van de Sleepvloot"
             },
             "rechts": {
               "node": "Literal",
@@ -199,14 +181,7 @@
           "node": "AttribuutRef",
           "attribuut": "krap",
           "objecttype": "Sleepvloot",
-          "onderwerpBron": "Een Sleepvloot",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Sleepvloot is krap",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Sleepvloot is krap"
         },
         "waarde": {
           "node": "Literal",
@@ -229,18 +204,7 @@
               "node": "AttribuutRef",
               "attribuut": "sleeptijd",
               "objecttype": "Sleepboot",
-              "onderwerpBron": "ten hoogste 1 van de boten van de Sleepvloot",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de sleeptijd van ten hoogste 1 van de boten van de Sleepvloot",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de sleeptijd van ten hoogste 1 van de boten van de Sleepvloot"
             },
             "rechts": {
               "node": "Literal",
@@ -282,14 +246,7 @@
           "node": "AttribuutRef",
           "attribuut": "paraat",
           "objecttype": "Sleepvloot",
-          "onderwerpBron": "Een Sleepvloot",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Sleepvloot is paraat",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Sleepvloot is paraat"
         },
         "waarde": {
           "node": "Literal",
@@ -312,18 +269,7 @@
               "node": "AttribuutRef",
               "attribuut": "sleeptijd",
               "objecttype": "Sleepboot",
-              "onderwerpBron": "precies 1 van de boten van de Sleepvloot",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de sleeptijd van precies 1 van de boten van de Sleepvloot",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de sleeptijd van precies 1 van de boten van de Sleepvloot"
             },
             "rechts": {
               "node": "Literal",
@@ -365,14 +311,7 @@
           "node": "AttribuutRef",
           "attribuut": "geschikt",
           "objecttype": "Sleepvloot",
-          "onderwerpBron": "Een Sleepvloot",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Sleepvloot is geschikt",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Sleepvloot is geschikt"
         },
         "waarde": {
           "node": "Literal",
@@ -390,7 +329,6 @@
           "filter": {
             "node": "Kenmerk",
             "kenmerk": "gekeurd",
-            "navigatie": null,
             "negatie": false,
             "eigenaar": null,
             "periode": null,
@@ -403,18 +341,7 @@
               "node": "AttribuutRef",
               "attribuut": "sleeptijd",
               "objecttype": "Sleepboot",
-              "onderwerpBron": "ten minste 2 van de boten van de Sleepvloot die gekeurd zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de sleeptijd van ten minste 2 van de boten van de Sleepvloot die gekeurd zijn",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de sleeptijd van ten minste 2 van de boten van de Sleepvloot die gekeurd zijn"
             },
             "rechts": {
               "node": "Literal",
@@ -456,18 +383,7 @@
           "node": "AttribuutRef",
           "attribuut": "bootal",
           "objecttype": "Sleepvloot",
-          "onderwerpBron": "een Sleepvloot",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het bootal van een Sleepvloot",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het bootal van een Sleepvloot"
         },
         "waarde": {
           "node": "Functie",
@@ -477,15 +393,7 @@
               "node": "AttribuutRef",
               "attribuut": "boten",
               "objecttype": "Sleepvloot",
-              "onderwerpBron": "de Sleepvloot",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "boten van de Sleepvloot",
-              "set": false,
-              "navigatiePad": []
+              "bron": "boten van de Sleepvloot"
             }
           ],
           "elementObjecttype": "Sleepboot",

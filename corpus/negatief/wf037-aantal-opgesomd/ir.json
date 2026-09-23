@@ -111,18 +111,7 @@
           "node": "AttribuutRef",
           "attribuut": "aantal gewogen posten",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "Het aantal gewogen posten van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het aantal gewogen posten van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -132,49 +121,13 @@
               "node": "AttribuutRef",
               "attribuut": "gewogen vangst",
               "objecttype": "Jutter",
-              "onderwerpBron": "de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": {
-                  "node": "Eenheid",
-                  "afkorting": "kg",
-                  "stelsel": "Gewicht",
-                  "canoniek": "kg",
-                  "factorNaarCanoniek": 1,
-                  "noemer": null
-                }
-              },
-              "bron": "het gewogen vangst van de Jutter",
-              "set": false,
-              "navigatiePad": []
+              "bron": "het gewogen vangst van de Jutter"
             },
             {
               "node": "AttribuutRef",
               "attribuut": "gewogen bijvangst",
               "objecttype": "Jutter",
-              "onderwerpBron": "de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": {
-                  "node": "Eenheid",
-                  "afkorting": "kg",
-                  "stelsel": "Gewicht",
-                  "canoniek": "kg",
-                  "factorNaarCanoniek": 1,
-                  "noemer": null
-                }
-              },
-              "bron": "het gewogen bijvangst van de Jutter",
-              "set": false,
-              "navigatiePad": []
+              "bron": "het gewogen bijvangst van de Jutter"
             }
           ],
           "elementObjecttype": null,

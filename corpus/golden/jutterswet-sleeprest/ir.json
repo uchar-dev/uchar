@@ -104,25 +104,7 @@
           "node": "AttribuutRef",
           "attribuut": "resterende sleepafstand",
           "objecttype": "Berging",
-          "onderwerpBron": "een Berging",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "km",
-              "stelsel": "Afstand",
-              "canoniek": "m",
-              "factorNaarCanoniek": 1000,
-              "noemer": null
-            }
-          },
-          "bron": "De resterende sleepafstand van een Berging",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De resterende sleepafstand van een Berging"
         },
         "waarde": {
           "node": "Binair",
@@ -145,38 +127,13 @@
             "links": {
               "node": "ParameterRef",
               "parameter": "bergingsfactor",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
               "bron": "de bergingsfactor"
             },
             "rechts": {
               "node": "AttribuutRef",
               "attribuut": "sleepafstand",
               "objecttype": "Berging",
-              "onderwerpBron": "de Berging",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": {
-                  "node": "Eenheid",
-                  "afkorting": "km",
-                  "stelsel": "Afstand",
-                  "canoniek": "m",
-                  "factorNaarCanoniek": 1000,
-                  "noemer": null
-                }
-              },
-              "bron": "de sleepafstand van de Berging",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de sleepafstand van de Berging"
             },
             "type": {
               "node": "Numeriek",

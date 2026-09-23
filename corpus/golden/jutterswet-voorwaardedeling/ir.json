@@ -122,18 +122,7 @@
             "node": "AttribuutRef",
             "attribuut": "vrijgavescore",
             "objecttype": "Strandberging",
-            "onderwerpBron": "de strandberging",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de vrijgavescore van de strandberging",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de vrijgavescore van de strandberging"
           },
           "rechts": {
             "node": "Literal",

@@ -84,14 +84,7 @@
           "node": "AttribuutRef",
           "attribuut": "eerste vondstdag",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "De eerste vondstdag van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De eerste vondstdag van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -101,14 +94,7 @@
               "node": "AttribuutRef",
               "attribuut": "vondstdatum",
               "objecttype": "Vondst",
-              "onderwerpBron": "alle vondsten van de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumInDagen"
-              },
-              "bron": "de vondstdatum van alle vondsten van de Jutter",
-              "set": true,
-              "navigatiePad": []
+              "bron": "de vondstdatum van alle vondsten van de Jutter"
             }
           ],
           "elementObjecttype": "Vondst",
@@ -141,14 +127,7 @@
           "node": "AttribuutRef",
           "attribuut": "laatste vondstdag",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "De laatste vondstdag van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De laatste vondstdag van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -158,14 +137,7 @@
               "node": "AttribuutRef",
               "attribuut": "vondstdatum",
               "objecttype": "Vondst",
-              "onderwerpBron": "alle vondsten van de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumInDagen"
-              },
-              "bron": "de vondstdatum van alle vondsten van de Jutter",
-              "set": true,
-              "navigatiePad": []
+              "bron": "de vondstdatum van alle vondsten van de Jutter"
             }
           ],
           "elementObjecttype": "Vondst",

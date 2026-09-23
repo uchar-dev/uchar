@@ -63,7 +63,6 @@
             "voorwaarde": {
               "node": "Kenmerk",
               "kenmerk": "grondX",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,

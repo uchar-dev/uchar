@@ -65,14 +65,7 @@
           "node": "AttribuutRef",
           "attribuut": "afslag",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Tekst"
-          },
-          "bron": "De afslag van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De afslag van een Vondst"
         },
         "waarde": {
           "node": "Literal",
@@ -85,7 +78,6 @@
         "voorwaarde": {
           "node": "Kenmerk",
           "kenmerk": "gekeurd",
-          "navigatie": null,
           "negatie": false,
           "eigenaar": "Vondst",
           "periode": null,
@@ -105,14 +97,7 @@
           "node": "AttribuutRef",
           "attribuut": "keurstatus",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Tekst"
-          },
-          "bron": "De keurstatus van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De keurstatus van een Vondst"
         },
         "waarde": {
           "node": "Literal",
@@ -125,7 +110,6 @@
         "voorwaarde": {
           "node": "Kenmerk",
           "kenmerk": "gekeurd",
-          "navigatie": null,
           "negatie": true,
           "eigenaar": "Vondst",
           "periode": null,

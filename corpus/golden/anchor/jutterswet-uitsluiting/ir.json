@@ -56,14 +56,7 @@
           "node": "AttribuutRef",
           "attribuut": "penninggerechtigd",
           "objecttype": "Jutter",
-          "onderwerpBron": "Een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Jutter is penninggerechtigd",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Jutter is penninggerechtigd"
         },
         "waarde": {
           "node": "Literal",
@@ -76,7 +69,6 @@
         "voorwaarde": {
           "node": "Kenmerk",
           "kenmerk": "uitgesloten",
-          "navigatie": null,
           "negatie": true,
           "eigenaar": null,
           "periode": null,
@@ -116,7 +108,6 @@
                 {
                   "node": "Kenmerk",
                   "kenmerk": "vergunning geweigerd",
-                  "navigatie": null,
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
@@ -125,7 +116,6 @@
                 {
                   "node": "Kenmerk",
                   "kenmerk": "weigering herroepen",
-                  "navigatie": null,
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
@@ -134,7 +124,6 @@
                 {
                   "node": "Kenmerk",
                   "kenmerk": "herroeping vervallen",
-                  "navigatie": null,
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
@@ -156,7 +145,6 @@
                 {
                   "node": "Kenmerk",
                   "kenmerk": "vergunning geweigerd",
-                  "navigatie": null,
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
@@ -165,7 +153,6 @@
                 {
                   "node": "Kenmerk",
                   "kenmerk": "weigering herroepen",
-                  "navigatie": null,
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
@@ -182,7 +169,6 @@
             "voorwaarde": {
               "node": "Kenmerk",
               "kenmerk": "vergunning geweigerd",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,

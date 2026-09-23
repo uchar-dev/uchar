@@ -144,18 +144,7 @@
           "node": "AttribuutRef",
           "attribuut": "tarief",
           "objecttype": "Berging",
-          "onderwerpBron": null,
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": null,
-          "set": false,
-          "navigatiePad": []
+          "bron": null
         },
         "waarde": {
           "node": "FieldAccess",
@@ -172,67 +161,11 @@
               "node": "AttribuutRef",
               "attribuut": "kern",
               "objecttype": "Berging",
-              "onderwerpBron": "de kern",
-              "navigatieRol": null,
-              "type": {
-                "node": "StructType",
-                "domain": "dossier",
-                "fields": [
-                  {
-                    "name": "waarde",
-                    "datatype": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
-                    }
-                  },
-                  {
-                    "name": "telling",
-                    "datatype": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
-                    }
-                  }
-                ]
-              },
-              "bron": "de kern",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de kern"
             },
             "labels": [
               "voorjaar"
             ],
-            "type": {
-              "node": "StructType",
-              "domain": "logboek",
-              "fields": [
-                {
-                  "name": "bedrag",
-                  "datatype": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  }
-                },
-                {
-                  "name": "aantal",
-                  "datatype": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  }
-                }
-              ]
-            },
             "bron": "cel"
           },
           "field": "bedrag",

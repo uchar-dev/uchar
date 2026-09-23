@@ -65,7 +65,6 @@
             "voorwaarde": {
               "node": "Kenmerk",
               "kenmerk": "nx",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -84,7 +83,6 @@
                       "voorwaarde": {
                         "node": "Kenmerk",
                         "kenmerk": "ny",
-                        "navigatie": null,
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
@@ -104,7 +102,6 @@
                       "voorwaarde": {
                         "node": "Kenmerk",
                         "kenmerk": "nz",
-                        "navigatie": null,
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,

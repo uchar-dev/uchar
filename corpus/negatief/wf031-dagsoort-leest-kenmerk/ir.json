@@ -49,7 +49,6 @@
         "voorwaarde": {
           "node": "Kenmerk",
           "kenmerk": "penninggerechtigd",
-          "navigatie": null,
           "negatie": false,
           "eigenaar": "Jutter",
           "periode": null,

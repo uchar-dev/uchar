@@ -120,18 +120,7 @@
           "node": "AttribuutRef",
           "attribuut": "meldkrediet",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het meldkrediet van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het meldkrediet van een Jutter"
         },
         "waarde": {
           "node": "Binair",
@@ -140,18 +129,7 @@
             "node": "AttribuutRef",
             "attribuut": "strandtegoed",
             "objecttype": "Jutter",
-            "onderwerpBron": "de aanmelder",
-            "navigatieRol": "aanmelder",
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "het strandtegoed van de aanmelder",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het strandtegoed van de aanmelder"
           },
           "rechts": {
             "node": "Literal",
@@ -189,35 +167,13 @@
           "node": "AttribuutRef",
           "attribuut": "maatdeling",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De maatdeling van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De maatdeling van een Jutter"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "strandtegoed",
           "objecttype": "Jutter",
-          "onderwerpBron": "zijn strandmaat",
-          "navigatieRol": "strandmaat",
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
           "bron": "het strandtegoed van zijn strandmaat",
-          "set": false,
-          "navigatiePad": [],
           "navigatieBindingen": [
             {
               "node": "RolBinding",

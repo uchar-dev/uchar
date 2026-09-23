@@ -115,14 +115,7 @@
           "node": "AttribuutRef",
           "attribuut": "bewaargeld",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "Het bewaargeld van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het bewaargeld van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -132,14 +125,7 @@
               "node": "AttribuutRef",
               "attribuut": "bewaarvergoeding per maand",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumInDagen"
-              },
-              "bron": "zijn bewaarvergoeding per maand",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn bewaarvergoeding per maand"
             }
           ],
           "elementObjecttype": "Jutter",

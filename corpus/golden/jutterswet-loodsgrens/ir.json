@@ -118,14 +118,7 @@
           "node": "AttribuutRef",
           "attribuut": "bekwaam",
           "objecttype": "Loodspost",
-          "onderwerpBron": "Een Loodspost",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Loodspost is bekwaam",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Loodspost is bekwaam"
         },
         "waarde": {
           "node": "Literal",
@@ -147,29 +140,11 @@
               "node": "AttribuutRef",
               "attribuut": "ervaring",
               "objecttype": "Loods",
-              "onderwerpBron": "alle loodsen van de Loodspost",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de ervaring van alle loodsen van de Loodspost",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de ervaring van alle loodsen van de Loodspost"
             },
             "rechts": {
               "node": "ParameterRef",
               "parameter": "keurgrens",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
               "bron": "de keurgrens"
             },
             "periode": null,
@@ -196,14 +171,7 @@
           "node": "AttribuutRef",
           "attribuut": "onbekwaam",
           "objecttype": "Loodspost",
-          "onderwerpBron": "Een Loodspost",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Loodspost is onbekwaam",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Loodspost is onbekwaam"
         },
         "waarde": {
           "node": "Literal",
@@ -225,29 +193,11 @@
               "node": "AttribuutRef",
               "attribuut": "ervaring",
               "objecttype": "Loods",
-              "onderwerpBron": "geen van de loodsen van de Loodspost",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de ervaring van geen van de loodsen van de Loodspost",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de ervaring van geen van de loodsen van de Loodspost"
             },
             "rechts": {
               "node": "ParameterRef",
               "parameter": "keurgrens",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
               "bron": "de keurgrens"
             },
             "periode": null,
@@ -274,14 +224,7 @@
           "node": "AttribuutRef",
           "attribuut": "merendeels",
           "objecttype": "Loodspost",
-          "onderwerpBron": "Een Loodspost",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Loodspost is merendeels bekwaam",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Loodspost is merendeels bekwaam"
         },
         "waarde": {
           "node": "Literal",
@@ -304,29 +247,11 @@
               "node": "AttribuutRef",
               "attribuut": "ervaring",
               "objecttype": "Loods",
-              "onderwerpBron": "ten minste 2 van de loodsen van de Loodspost",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de ervaring van ten minste 2 van de loodsen van de Loodspost",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de ervaring van ten minste 2 van de loodsen van de Loodspost"
             },
             "rechts": {
               "node": "ParameterRef",
               "parameter": "keurgrens",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
               "bron": "de keurgrens"
             },
             "periode": null,
@@ -353,14 +278,7 @@
           "node": "AttribuutRef",
           "attribuut": "gangbaar",
           "objecttype": "Loodspost",
-          "onderwerpBron": "Een Loodspost",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Loodspost is gangbaar",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Loodspost is gangbaar"
         },
         "waarde": {
           "node": "Literal",
@@ -381,31 +299,13 @@
             "links": {
               "node": "ParameterRef",
               "parameter": "keurgrens",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
               "bron": "de keurgrens"
             },
             "rechts": {
               "node": "AttribuutRef",
               "attribuut": "ervaring",
               "objecttype": "Loods",
-              "onderwerpBron": "alle loodsen van de Loodspost",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de ervaring van alle loodsen van de Loodspost",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de ervaring van alle loodsen van de Loodspost"
             },
             "periode": null,
             "bron": "de keurgrens kleiner is dan de ervaring van alle loodsen van de Loodspost"
@@ -431,18 +331,7 @@
           "node": "AttribuutRef",
           "attribuut": "loodstal",
           "objecttype": "Loodspost",
-          "onderwerpBron": "een Loodspost",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het loodstal van een Loodspost",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het loodstal van een Loodspost"
         },
         "waarde": {
           "node": "Functie",
@@ -452,15 +341,7 @@
               "node": "AttribuutRef",
               "attribuut": "loodsen",
               "objecttype": "Loodspost",
-              "onderwerpBron": "de Loodspost",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "loodsen van de Loodspost",
-              "set": false,
-              "navigatiePad": []
+              "bron": "loodsen van de Loodspost"
             }
           ],
           "elementObjecttype": "Loods",

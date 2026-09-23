@@ -75,7 +75,6 @@
                 {
                   "node": "Kenmerk",
                   "kenmerk": "vergunning geweigerd",
-                  "navigatie": null,
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
@@ -84,7 +83,6 @@
                 {
                   "node": "Kenmerk",
                   "kenmerk": "weigering herroepen",
-                  "navigatie": null,
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
@@ -93,7 +91,6 @@
                 {
                   "node": "Kenmerk",
                   "kenmerk": "herroeping vervallen",
-                  "navigatie": null,
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
@@ -115,7 +112,6 @@
                 {
                   "node": "Kenmerk",
                   "kenmerk": "vergunning geweigerd",
-                  "navigatie": null,
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
@@ -124,7 +120,6 @@
                 {
                   "node": "Kenmerk",
                   "kenmerk": "weigering herroepen",
-                  "navigatie": null,
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
@@ -141,7 +136,6 @@
             "voorwaarde": {
               "node": "Kenmerk",
               "kenmerk": "vergunning geweigerd",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -174,7 +168,6 @@
                 {
                   "node": "Kenmerk",
                   "kenmerk": "vergunning geweigerd",
-                  "navigatie": null,
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
@@ -183,7 +176,6 @@
                 {
                   "node": "Kenmerk",
                   "kenmerk": "weigering herroepen",
-                  "navigatie": null,
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
@@ -192,7 +184,6 @@
                 {
                   "node": "Kenmerk",
                   "kenmerk": "herroeping vervallen",
-                  "navigatie": null,
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
@@ -214,7 +205,6 @@
                 {
                   "node": "Kenmerk",
                   "kenmerk": "vergunning geweigerd",
-                  "navigatie": null,
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
@@ -223,7 +213,6 @@
                 {
                   "node": "Kenmerk",
                   "kenmerk": "weigering herroepen",
-                  "navigatie": null,
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
@@ -240,7 +229,6 @@
             "voorwaarde": {
               "node": "Kenmerk",
               "kenmerk": "vergunning geweigerd",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,

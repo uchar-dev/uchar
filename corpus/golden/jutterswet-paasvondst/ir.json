@@ -71,18 +71,7 @@
           "node": "AttribuutRef",
           "attribuut": "vondstjaar",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": null,
-            "eenheid": null
-          },
-          "bron": "Het vondstjaar van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het vondstjaar van een Vondst"
         },
         "waarde": {
           "node": "Functie",
@@ -92,14 +81,7 @@
               "node": "AttribuutRef",
               "attribuut": "vondstdatum",
               "objecttype": "Vondst",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumInDagen"
-              },
-              "bron": "zijn vondstdatum",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn vondstdatum"
             }
           ],
           "elementObjecttype": null,
@@ -131,18 +113,7 @@
           "node": "AttribuutRef",
           "attribuut": "vondstdag",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": null,
-            "eenheid": null
-          },
-          "bron": "De vondstdag van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De vondstdag van een Vondst"
         },
         "waarde": {
           "node": "Functie",
@@ -152,14 +123,7 @@
               "node": "AttribuutRef",
               "attribuut": "vondstdatum",
               "objecttype": "Vondst",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumInDagen"
-              },
-              "bron": "zijn vondstdatum",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn vondstdatum"
             }
           ],
           "elementObjecttype": null,
@@ -191,14 +155,7 @@
           "node": "AttribuutRef",
           "attribuut": "zomervondst",
           "objecttype": "Vondst",
-          "onderwerpBron": "Een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vondst is zomervondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vondst is zomervondst"
         },
         "waarde": {
           "node": "Literal",
@@ -224,14 +181,7 @@
                     "node": "AttribuutRef",
                     "attribuut": "vondstdatum",
                     "objecttype": "Vondst",
-                    "onderwerpBron": "zijn",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "DatumInDagen"
-                    },
-                    "bron": "zijn vondstdatum",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "zijn vondstdatum"
                   }
                 ],
                 "elementObjecttype": null,
@@ -274,14 +224,7 @@
                     "node": "AttribuutRef",
                     "attribuut": "vondstdatum",
                     "objecttype": "Vondst",
-                    "onderwerpBron": "zijn",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "DatumInDagen"
-                    },
-                    "bron": "zijn vondstdatum",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "zijn vondstdatum"
                   }
                 ],
                 "elementObjecttype": null,
@@ -330,14 +273,7 @@
           "node": "AttribuutRef",
           "attribuut": "paasvondst",
           "objecttype": "Vondst",
-          "onderwerpBron": "Een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vondst is paasvondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vondst is paasvondst"
         },
         "waarde": {
           "node": "Literal",
@@ -354,14 +290,7 @@
             "node": "AttribuutRef",
             "attribuut": "vondstdatum",
             "objecttype": "Vondst",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumInDagen"
-            },
-            "bron": "zijn vondstdatum",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn vondstdatum"
           },
           "rechts": {
             "node": "Functie",
@@ -375,14 +304,7 @@
                     "node": "AttribuutRef",
                     "attribuut": "vondstdatum",
                     "objecttype": "Vondst",
-                    "onderwerpBron": "zijn",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "DatumInDagen"
-                    },
-                    "bron": "zijn vondstdatum",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "zijn vondstdatum"
                   }
                 ],
                 "elementObjecttype": null,

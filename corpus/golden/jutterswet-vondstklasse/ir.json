@@ -76,20 +76,7 @@
           "node": "AttribuutRef",
           "attribuut": "bestemming",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Enumeratie",
-            "domein": "Vondstklasse",
-            "waarden": [
-              "drijfgoed",
-              "strandgoed",
-              "wrakgoed"
-            ]
-          },
-          "bron": "De bestemming van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De bestemming van een Vondst"
         },
         "waarde": {
           "node": "Literal",
@@ -112,20 +99,7 @@
             "node": "AttribuutRef",
             "attribuut": "klasse",
             "objecttype": "Vondst",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Enumeratie",
-              "domein": "Vondstklasse",
-              "waarden": [
-                "drijfgoed",
-                "strandgoed",
-                "wrakgoed"
-              ]
-            },
-            "bron": "zijn klasse",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn klasse"
           },
           "rechts": {
             "node": "Literal",
@@ -158,39 +132,13 @@
           "node": "AttribuutRef",
           "attribuut": "bestemming",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Enumeratie",
-            "domein": "Vondstklasse",
-            "waarden": [
-              "drijfgoed",
-              "strandgoed",
-              "wrakgoed"
-            ]
-          },
-          "bron": "De bestemming van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De bestemming van een Vondst"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "klasse",
           "objecttype": "Vondst",
-          "onderwerpBron": "zijn",
-          "navigatieRol": null,
-          "type": {
-            "node": "Enumeratie",
-            "domein": "Vondstklasse",
-            "waarden": [
-              "drijfgoed",
-              "strandgoed",
-              "wrakgoed"
-            ]
-          },
-          "bron": "zijn klasse",
-          "set": false,
-          "navigatiePad": []
+          "bron": "zijn klasse"
         },
         "voorwaarde": {
           "node": "Vergelijking",
@@ -199,20 +147,7 @@
             "node": "AttribuutRef",
             "attribuut": "klasse",
             "objecttype": "Vondst",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Enumeratie",
-              "domein": "Vondstklasse",
-              "waarden": [
-                "drijfgoed",
-                "strandgoed",
-                "wrakgoed"
-              ]
-            },
-            "bron": "zijn klasse",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn klasse"
           },
           "rechts": {
             "node": "Literal",
@@ -245,14 +180,7 @@
           "node": "AttribuutRef",
           "attribuut": "bergingsplichtig",
           "objecttype": "Vondst",
-          "onderwerpBron": "Een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vondst is bergingsplichtig",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vondst is bergingsplichtig"
         },
         "waarde": {
           "node": "Literal",
@@ -269,20 +197,7 @@
             "node": "AttribuutRef",
             "attribuut": "bestemming",
             "objecttype": "Vondst",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Enumeratie",
-              "domein": "Vondstklasse",
-              "waarden": [
-                "drijfgoed",
-                "strandgoed",
-                "wrakgoed"
-              ]
-            },
-            "bron": "zijn bestemming",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn bestemming"
           },
           "rechts": {
             "node": "Literal",

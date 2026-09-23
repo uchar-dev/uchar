@@ -83,18 +83,7 @@
           "node": "AttribuutRef",
           "attribuut": "muntaantal",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "Het muntaantal van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het muntaantal van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -104,15 +93,7 @@
               "node": "AttribuutRef",
               "attribuut": "Munten",
               "objecttype": "Jutter",
-              "onderwerpBron": "de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "Munten van de Jutter",
-              "set": false,
-              "navigatiePad": []
+              "bron": "Munten van de Jutter"
             }
           ],
           "elementObjecttype": "Munt",
@@ -127,7 +108,12 @@
             "eenheid": null
           },
           "bron": "het aantal Munten van de Jutter",
-          "granulariteit": null
+          "granulariteit": null,
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "muntvondst",
+            "rol": "gevonden munt"
+          }
         },
         "voorwaarde": null,
         "geldigheid": {
@@ -144,18 +130,7 @@
           "node": "AttribuutRef",
           "attribuut": "gecontroleerde muntaantal",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "Het gecontroleerde muntaantal van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het gecontroleerde muntaantal van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -165,15 +140,7 @@
               "node": "AttribuutRef",
               "attribuut": "gevonden munten",
               "objecttype": "Jutter",
-              "onderwerpBron": "de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "gevonden munten van de Jutter",
-              "set": false,
-              "navigatiePad": []
+              "bron": "gevonden munten van de Jutter"
             }
           ],
           "elementObjecttype": "Munt",

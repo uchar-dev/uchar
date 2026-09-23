@@ -111,14 +111,7 @@
           "node": "AttribuutRef",
           "attribuut": "ervaren",
           "objecttype": "Schouwploeg",
-          "onderwerpBron": "Een Schouwploeg",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Schouwploeg is ervaren",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Schouwploeg is ervaren"
         },
         "waarde": {
           "node": "Literal",
@@ -140,18 +133,7 @@
               "node": "AttribuutRef",
               "attribuut": "dienstjaren",
               "objecttype": "Strandwacht",
-              "onderwerpBron": "alle wachten van de Schouwploeg",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de dienstjaren van alle wachten van de Schouwploeg",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de dienstjaren van alle wachten van de Schouwploeg"
             },
             "rechts": {
               "node": "Literal",
@@ -189,14 +171,7 @@
           "node": "AttribuutRef",
           "attribuut": "onervaren",
           "objecttype": "Schouwploeg",
-          "onderwerpBron": "Een Schouwploeg",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Schouwploeg is onervaren",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Schouwploeg is onervaren"
         },
         "waarde": {
           "node": "Literal",
@@ -218,18 +193,7 @@
               "node": "AttribuutRef",
               "attribuut": "dienstjaren",
               "objecttype": "Strandwacht",
-              "onderwerpBron": "geen van de wachten van de Schouwploeg",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de dienstjaren van geen van de wachten van de Schouwploeg",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de dienstjaren van geen van de wachten van de Schouwploeg"
             },
             "rechts": {
               "node": "Literal",
@@ -267,14 +231,7 @@
           "node": "AttribuutRef",
           "attribuut": "bevoegd",
           "objecttype": "Schouwploeg",
-          "onderwerpBron": "Een Schouwploeg",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Schouwploeg is bevoegd",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Schouwploeg is bevoegd"
         },
         "waarde": {
           "node": "Literal",
@@ -331,14 +288,7 @@
           "node": "AttribuutRef",
           "attribuut": "sluitend",
           "objecttype": "Schouwploeg",
-          "onderwerpBron": "Een Schouwploeg",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Schouwploeg is sluitend",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Schouwploeg is sluitend"
         },
         "waarde": {
           "node": "Literal",
@@ -356,7 +306,6 @@
           "toets": {
             "node": "Kenmerk",
             "kenmerk": "gediplomeerd",
-            "navigatie": null,
             "negatie": true,
             "eigenaar": null,
             "periode": null,
@@ -383,18 +332,7 @@
           "node": "AttribuutRef",
           "attribuut": "wachttal",
           "objecttype": "Schouwploeg",
-          "onderwerpBron": "een Schouwploeg",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het wachttal van een Schouwploeg",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het wachttal van een Schouwploeg"
         },
         "waarde": {
           "node": "Functie",
@@ -404,15 +342,7 @@
               "node": "AttribuutRef",
               "attribuut": "wachten",
               "objecttype": "Schouwploeg",
-              "onderwerpBron": "de Schouwploeg",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "wachten van de Schouwploeg",
-              "set": false,
-              "navigatiePad": []
+              "bron": "wachten van de Schouwploeg"
             }
           ],
           "elementObjecttype": "Strandwacht",

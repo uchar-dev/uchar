@@ -44,14 +44,7 @@
           "node": "AttribuutRef",
           "attribuut": "verjaard",
           "objecttype": "Vondst",
-          "onderwerpBron": "Een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vondst is verjaard",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vondst is verjaard"
         },
         "waarde": {
           "node": "Literal",

@@ -294,25 +294,7 @@
           "node": "AttribuutRef",
           "attribuut": "kopie",
           "objecttype": "Jutter",
-          "onderwerpBron": "de Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "kg",
-              "stelsel": "Gewicht",
-              "canoniek": "kg",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "De kopie van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De kopie van een Jutter"
         },
         "waarde": {
           "node": "Begrensd",
@@ -320,25 +302,7 @@
             "node": "AttribuutRef",
             "attribuut": "gewicht",
             "objecttype": "Jutter",
-            "onderwerpBron": "de Jutter",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "kg",
-                "stelsel": "Gewicht",
-                "canoniek": "kg",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "de gewicht van de Jutter",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de gewicht van de Jutter"
           },
           "minimum": {
             "node": "Literal",

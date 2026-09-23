@@ -59,14 +59,7 @@
           "node": "AttribuutRef",
           "attribuut": "eerstehoogwater",
           "objecttype": "Getijdendag",
-          "onderwerpBron": "een Getijdendag",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumTijd"
-          },
-          "bron": "Het eerstehoogwater van een Getijdendag",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het eerstehoogwater van een Getijdendag"
         },
         "waarde": {
           "node": "Functie",
@@ -76,27 +69,13 @@
               "node": "AttribuutRef",
               "attribuut": "ochtendhoogwater",
               "objecttype": "Getijdendag",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumTijd"
-              },
-              "bron": "zijn ochtendhoogwater",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn ochtendhoogwater"
             },
             {
               "node": "AttribuutRef",
               "attribuut": "avondhoogwater",
               "objecttype": "Getijdendag",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumTijd"
-              },
-              "bron": "zijn avondhoogwater",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn avondhoogwater"
             }
           ],
           "elementObjecttype": null,
@@ -124,14 +103,7 @@
           "node": "AttribuutRef",
           "attribuut": "laatstehoogwater",
           "objecttype": "Getijdendag",
-          "onderwerpBron": "een Getijdendag",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumTijd"
-          },
-          "bron": "Het laatstehoogwater van een Getijdendag",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het laatstehoogwater van een Getijdendag"
         },
         "waarde": {
           "node": "Functie",
@@ -141,27 +113,13 @@
               "node": "AttribuutRef",
               "attribuut": "ochtendhoogwater",
               "objecttype": "Getijdendag",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumTijd"
-              },
-              "bron": "zijn ochtendhoogwater",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn ochtendhoogwater"
             },
             {
               "node": "AttribuutRef",
               "attribuut": "avondhoogwater",
               "objecttype": "Getijdendag",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumTijd"
-              },
-              "bron": "zijn avondhoogwater",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn avondhoogwater"
             }
           ],
           "elementObjecttype": null,

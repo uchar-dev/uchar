@@ -130,37 +130,7 @@
           "node": "AttribuutRef",
           "attribuut": "staat",
           "objecttype": "Jutter",
-          "onderwerpBron": "De staat van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "StructType",
-            "domain": "staat",
-            "fields": [
-              {
-                "name": "omvang",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              },
-              {
-                "name": "waarde",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              }
-            ]
-          },
-          "bron": "De staat van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De staat van een Jutter"
         },
         "waarde": {
           "node": "StructLiteral",
@@ -197,18 +167,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "omvang",
                 "objecttype": "Jutter",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                },
-                "bron": "zijn omvang",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn omvang"
               }
             },
             {
@@ -217,18 +176,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "waarde",
                 "objecttype": "Jutter",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                },
-                "bron": "zijn waarde",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn waarde"
               }
             }
           ],
@@ -249,18 +197,7 @@
           "node": "AttribuutRef",
           "attribuut": "kernwaarde",
           "objecttype": "Jutter",
-          "onderwerpBron": "De kernwaarde van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "De kernwaarde van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De kernwaarde van een Jutter"
         },
         "waarde": {
           "node": "FieldAccess",
@@ -275,37 +212,7 @@
             "node": "AttribuutRef",
             "attribuut": "staat",
             "objecttype": "Jutter",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "StructType",
-              "domain": "staat",
-              "fields": [
-                {
-                  "name": "omvang",
-                  "datatype": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  }
-                },
-                {
-                  "name": "waarde",
-                  "datatype": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  }
-                }
-              ]
-            },
-            "bron": "zijn staat",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn staat"
           },
           "field": "waarde",
           "bron": "de waarde van zijn staat"
@@ -325,14 +232,7 @@
           "node": "AttribuutRef",
           "attribuut": "groot",
           "objecttype": "Jutter",
-          "onderwerpBron": "Een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Jutter is groot",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Jutter is groot"
         },
         "waarde": {
           "node": "Literal",
@@ -349,37 +249,7 @@
             "node": "AttribuutRef",
             "attribuut": "staat",
             "objecttype": "Jutter",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "StructType",
-              "domain": "staat",
-              "fields": [
-                {
-                  "name": "omvang",
-                  "datatype": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  }
-                },
-                {
-                  "name": "waarde",
-                  "datatype": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  }
-                }
-              ]
-            },
-            "bron": "zijn staat",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn staat"
           },
           "rechts": {
             "node": "StructLiteral",

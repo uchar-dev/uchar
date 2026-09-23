@@ -131,6 +131,11 @@
           "node": "Geldigheid",
           "vanaf": null,
           "tot": null
+        },
+        "verbindendeRol": {
+          "node": "RolBinding",
+          "feittype": "bergingsdeelname",
+          "rol": "berger"
         }
       }
     ],
@@ -154,7 +159,6 @@
             "voorwaarde": {
               "node": "Kenmerk",
               "kenmerk": "erkend",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -164,18 +168,7 @@
               "node": "AttribuutRef",
               "attribuut": "basisbedrag",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn basisbedrag",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "zijn basisbedrag",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn basisbedrag"
             },
             "bron": "voor een erkend jutter: het basisbedrag"
           },
@@ -185,7 +178,6 @@
             "voorwaarde": {
               "node": "Kenmerk",
               "kenmerk": "kandidaat",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -195,18 +187,7 @@
               "node": "AttribuutRef",
               "attribuut": "kandidaatbedrag",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn kandidaatbedrag",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "zijn kandidaatbedrag",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn kandidaatbedrag"
             },
             "bron": "voor een kandidaat: het kandidaatbedrag"
           },

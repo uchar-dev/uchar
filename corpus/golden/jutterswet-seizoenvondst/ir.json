@@ -114,25 +114,7 @@
           "node": "AttribuutRef",
           "attribuut": "voorjaarsgewicht",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "kg",
-              "stelsel": "Gewicht",
-              "canoniek": "kg",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "Het voorjaarsgewicht van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het voorjaarsgewicht van een Jutter"
         },
         "waarde": {
           "node": "DimensieCel",
@@ -140,43 +122,11 @@
             "node": "AttribuutRef",
             "attribuut": "vondstgewicht",
             "objecttype": "Jutter",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "kg",
-                "stelsel": "Gewicht",
-                "canoniek": "kg",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "zijn vondstgewicht in voorjaar",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn vondstgewicht in voorjaar"
           },
           "labels": [
             "voorjaar"
           ],
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "kg",
-              "stelsel": "Gewicht",
-              "canoniek": "kg",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
           "bron": "zijn vondstgewicht in voorjaar"
         },
         "voorwaarde": null,

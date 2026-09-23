@@ -121,18 +121,7 @@
           "node": "AttribuutRef",
           "attribuut": "bergloon",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het bergloon van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het bergloon van een Vondst"
         },
         "waarde": {
           "node": "Literal",
@@ -152,14 +141,7 @@
             "node": "AttribuutRef",
             "attribuut": "meldatum",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumTijd"
-            },
-            "bron": "de meldatum van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de meldatum van de Vondst"
           },
           "tot": null,
           "totInclusief": false,

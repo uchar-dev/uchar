@@ -82,18 +82,7 @@
           "node": "AttribuutRef",
           "attribuut": "aanslag",
           "objecttype": "Jutter",
-          "onderwerpBron": null,
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de aanslag",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de aanslag"
         },
         "waarde": {
           "node": "Let",
@@ -142,27 +131,7 @@
                   "node": "AttribuutRef",
                   "attribuut": "positie",
                   "objecttype": "Jutter",
-                  "onderwerpBron": null,
-                  "navigatieRol": null,
-                  "type": {
-                    "node": "StructType",
-                    "domain": "punt",
-                    "fields": [
-                      {
-                        "name": "bedrag",
-                        "datatype": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
-                        }
-                      }
-                    ]
-                  },
-                  "bron": "de positie",
-                  "set": false,
-                  "navigatiePad": []
+                  "bron": "de positie"
                 },
                 "field": "bedrag",
                 "bron": "het bedrag van de positie"

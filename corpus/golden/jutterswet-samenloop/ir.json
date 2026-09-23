@@ -95,7 +95,6 @@
                 {
                   "node": "Kenmerk",
                   "kenmerk": "berger",
-                  "navigatie": null,
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
@@ -104,7 +103,6 @@
                 {
                   "node": "Kenmerk",
                   "kenmerk": "wachter",
-                  "navigatie": null,
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
@@ -117,35 +115,13 @@
                     "node": "AttribuutRef",
                     "attribuut": "wachtgeld",
                     "objecttype": "Jutter",
-                    "onderwerpBron": "zijn wachtgeld",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "zijn wachtgeld",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "zijn wachtgeld"
                   },
                   "rechts": {
                     "node": "AttribuutRef",
                     "attribuut": "berggeld",
                     "objecttype": "Jutter",
-                    "onderwerpBron": "zijn berggeld",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "zijn berggeld",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "zijn berggeld"
                   },
                   "periode": null,
                   "bron": "zijn wachtgeld hoger is dan zijn berggeld"
@@ -157,18 +133,7 @@
               "node": "AttribuutRef",
               "attribuut": "wachtgeld",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn wachtgeld",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "zijn wachtgeld",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn wachtgeld"
             },
             "bron": "bij samenloop van beide aanspraken geldt de hoogste: het wachtgeld, indien dat hoger is dan het berggeld"
           },
@@ -178,7 +143,6 @@
             "voorwaarde": {
               "node": "Kenmerk",
               "kenmerk": "berger",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -188,18 +152,7 @@
               "node": "AttribuutRef",
               "attribuut": "berggeld",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn berggeld",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "zijn berggeld",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn berggeld"
             },
             "bron": "de berger heeft aanspraak op het berggeld"
           },
@@ -209,7 +162,6 @@
             "voorwaarde": {
               "node": "Kenmerk",
               "kenmerk": "wachter",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -219,18 +171,7 @@
               "node": "AttribuutRef",
               "attribuut": "wachtgeld",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn wachtgeld",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "zijn wachtgeld",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn wachtgeld"
             },
             "bron": "de wachter heeft aanspraak op het wachtgeld"
           }

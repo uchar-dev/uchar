@@ -56,18 +56,7 @@
           "node": "AttribuutRef",
           "attribuut": "heffing",
           "objecttype": "Jutter",
-          "onderwerpBron": "De heffing",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De heffing over de posten van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De heffing over de posten van een Jutter"
         },
         "waarde": {
           "node": "Let",
@@ -85,21 +74,7 @@
               "node": "AttribuutRef",
               "attribuut": "posten",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "ListType",
-                "element": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              },
-              "bron": "zijn posten",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn posten"
             },
             "bron": "het aantal posten"
           },
@@ -124,13 +99,6 @@
               "links": {
                 "node": "BinderRef",
                 "name": "aantal_posten",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
                 "bron": "aantal_posten"
               },
               "rechts": {
@@ -146,21 +114,7 @@
                   "node": "AttribuutRef",
                   "attribuut": "posten",
                   "objecttype": "Jutter",
-                  "onderwerpBron": "zijn",
-                  "navigatieRol": null,
-                  "type": {
-                    "node": "ListType",
-                    "element": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
-                    }
-                  },
-                  "bron": "zijn posten",
-                  "set": false,
-                  "navigatiePad": []
+                  "bron": "zijn posten"
                 },
                 "bron": "het aantal posten"
               },

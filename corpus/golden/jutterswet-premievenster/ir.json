@@ -121,18 +121,7 @@
           "node": "AttribuutRef",
           "attribuut": "basispremie",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De basispremie van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De basispremie van een Vondst"
         },
         "waarde": {
           "node": "Literal",
@@ -161,18 +150,7 @@
           "node": "AttribuutRef",
           "attribuut": "vondstpremie",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De vondstpremie van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De vondstpremie van een Vondst"
         },
         "waarde": {
           "node": "Literal",
@@ -221,18 +199,7 @@
           "node": "AttribuutRef",
           "attribuut": "naseizoenpremie",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De naseizoenpremie van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De naseizoenpremie van een Vondst"
         },
         "waarde": {
           "node": "Literal",
@@ -281,18 +248,7 @@
           "node": "AttribuutRef",
           "attribuut": "overgangspremie",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De overgangspremie van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De overgangspremie van een Vondst"
         },
         "waarde": {
           "node": "Literal",
@@ -334,18 +290,7 @@
           "node": "AttribuutRef",
           "attribuut": "aanlooppremie",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De aanlooppremie van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De aanlooppremie van een Vondst"
         },
         "waarde": {
           "node": "Literal",
@@ -387,18 +332,7 @@
           "node": "AttribuutRef",
           "attribuut": "bergloon",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het bergloon van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het bergloon van een Vondst"
         },
         "waarde": {
           "node": "Literal",
@@ -418,14 +352,7 @@
             "node": "AttribuutRef",
             "attribuut": "meldatum",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumInDagen"
-            },
-            "bron": "de meldatum van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de meldatum van de Vondst"
           },
           "tot": null,
           "totInclusief": false,
@@ -445,18 +372,7 @@
           "node": "AttribuutRef",
           "attribuut": "borgpremie",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De borgpremie van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De borgpremie van een Vondst"
         },
         "waarde": {
           "node": "Literal",
@@ -478,7 +394,6 @@
             {
               "node": "Kenmerk",
               "kenmerk": "geborgen",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,

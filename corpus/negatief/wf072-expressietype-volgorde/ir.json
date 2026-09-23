@@ -107,37 +107,7 @@
               "node": "AttribuutRef",
               "attribuut": "dossier",
               "objecttype": "Jutter",
-              "onderwerpBron": null,
-              "navigatieRol": null,
-              "type": {
-                "node": "StructType",
-                "domain": "dossier",
-                "fields": [
-                  {
-                    "name": "telling",
-                    "datatype": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
-                    }
-                  },
-                  {
-                    "name": "waarde",
-                    "datatype": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
-                    }
-                  }
-                ]
-              },
-              "bron": null,
-              "set": false,
-              "navigatiePad": []
+              "bron": null
             },
             "field": "waarde",
             "bron": null

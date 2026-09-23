@@ -119,25 +119,7 @@
           "node": "AttribuutRef",
           "attribuut": "schouwplicht",
           "objecttype": "Strandmeester",
-          "onderwerpBron": "een Strandmeester",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "schouwdagen",
-              "stelsel": null,
-              "canoniek": "schouwdagen",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "De schouwplicht van een Strandmeester",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De schouwplicht van een Strandmeester"
         },
         "waarde": {
           "node": "Binair",
@@ -146,49 +128,13 @@
             "node": "AttribuutRef",
             "attribuut": "vaste schouwlast",
             "objecttype": "Strandmeester",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "schouwdagen",
-                "stelsel": null,
-                "canoniek": "schouwdagen",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "zijn vaste schouwlast",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn vaste schouwlast"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "extra schouwlast",
             "objecttype": "Strandmeester",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "schouwdagen",
-                "stelsel": null,
-                "canoniek": "schouwdagen",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "zijn extra schouwlast",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn extra schouwlast"
           },
           "type": {
             "node": "Numeriek",
@@ -221,14 +167,7 @@
           "node": "AttribuutRef",
           "attribuut": "schouwvrij",
           "objecttype": "Strandmeester",
-          "onderwerpBron": "Een Strandmeester",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Strandmeester is schouwvrij",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Strandmeester is schouwvrij"
         },
         "waarde": {
           "node": "Literal",
@@ -245,43 +184,11 @@
             "node": "AttribuutRef",
             "attribuut": "schouwplicht",
             "objecttype": "Strandmeester",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "schouwdagen",
-                "stelsel": null,
-                "canoniek": "schouwdagen",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "zijn schouwplicht",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn schouwplicht"
           },
           "rechts": {
             "node": "ParameterRef",
             "parameter": "schouwdrempel",
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "schouwdagen",
-                "stelsel": null,
-                "canoniek": "schouwdagen",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
             "bron": "de schouwdrempel"
           },
           "periode": null,

@@ -79,18 +79,7 @@
           "node": "AttribuutRef",
           "attribuut": "tarief",
           "objecttype": "Berging",
-          "onderwerpBron": "de tarief",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de tarief",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de tarief"
         },
         "waarde": {
           "node": "Literal",
@@ -111,29 +100,7 @@
             "node": "AttribuutRef",
             "attribuut": "vaarwater",
             "objecttype": "Berging",
-            "onderwerpBron": "de vaarwater",
-            "navigatieRol": null,
-            "type": {
-              "node": "SumType",
-              "domain": "Vaarwater",
-              "constructors": [
-                {
-                  "name": "Wad",
-                  "payload": null
-                },
-                {
-                  "name": "Zeegat",
-                  "payload": null
-                },
-                {
-                  "name": "Ruimzee",
-                  "payload": null
-                }
-              ]
-            },
-            "bron": "de vaarwater",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de vaarwater"
           },
           "rechts": {
             "node": "Literal",

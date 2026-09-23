@@ -47,13 +47,6 @@
             {
               "node": "BinderRef",
               "name": "a",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
               "bron": null
             }
           ],
@@ -97,13 +90,6 @@
             {
               "node": "BinderRef",
               "name": "a",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
               "bron": null
             }
           ],

@@ -116,25 +116,7 @@
           "node": "AttribuutRef",
           "attribuut": "resultaat",
           "objecttype": "Vat",
-          "onderwerpBron": "het Vat",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "kg",
-              "stelsel": "Gewicht",
-              "canoniek": "kg",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "Het resultaat van een Vat",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het resultaat van een Vat"
         },
         "waarde": {
           "node": "Binair",
@@ -143,49 +125,13 @@
             "node": "AttribuutRef",
             "attribuut": "zwaar",
             "objecttype": "Vat",
-            "onderwerpBron": "het Vat",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "kg",
-                "stelsel": "Gewicht",
-                "canoniek": "kg",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "het zwaar van het Vat",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het zwaar van het Vat"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "lang",
             "objecttype": "Vat",
-            "onderwerpBron": "het Vat",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "m",
-                "stelsel": "Lengte",
-                "canoniek": "m",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "het lang van het Vat",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het lang van het Vat"
           },
           "type": {
             "node": "Numeriek",

@@ -49,14 +49,7 @@
           "node": "AttribuutRef",
           "attribuut": "tijdig",
           "objecttype": "Aanmelding",
-          "onderwerpBron": "Een Aanmelding",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Aanmelding is tijdig",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Aanmelding is tijdig"
         },
         "waarde": {
           "node": "Literal",
@@ -73,14 +66,7 @@
             "node": "AttribuutRef",
             "attribuut": "meldstip",
             "objecttype": "Aanmelding",
-            "onderwerpBron": "haar",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumTijd"
-            },
-            "bron": "haar meldstip",
-            "set": false,
-            "navigatiePad": []
+            "bron": "haar meldstip"
           },
           "rechts": {
             "node": "Literal",
@@ -107,14 +93,7 @@
           "node": "AttribuutRef",
           "attribuut": "verlaat",
           "objecttype": "Aanmelding",
-          "onderwerpBron": "Een Aanmelding",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Aanmelding is verlaat",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Aanmelding is verlaat"
         },
         "waarde": {
           "node": "Literal",
@@ -131,14 +110,7 @@
             "node": "AttribuutRef",
             "attribuut": "meldstip",
             "objecttype": "Aanmelding",
-            "onderwerpBron": "haar",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumTijd"
-            },
-            "bron": "haar meldstip",
-            "set": false,
-            "navigatiePad": []
+            "bron": "haar meldstip"
           },
           "rechts": {
             "node": "Literal",

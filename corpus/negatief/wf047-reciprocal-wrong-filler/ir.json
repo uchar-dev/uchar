@@ -65,18 +65,7 @@
           "node": "AttribuutRef",
           "attribuut": "telling",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "De telling van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De telling van een Vondst"
         },
         "waarde": {
           "node": "Functie",
@@ -86,15 +75,7 @@
               "node": "AttribuutRef",
               "attribuut": "maten",
               "objecttype": "Vondst",
-              "onderwerpBron": "de Vondst",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "maten van de Vondst",
-              "set": false,
-              "navigatiePad": []
+              "bron": "maten van de Vondst"
             }
           ],
           "elementObjecttype": "Vondst",

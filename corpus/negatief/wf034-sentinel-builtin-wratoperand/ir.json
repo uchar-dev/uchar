@@ -150,25 +150,7 @@
           "node": "AttribuutRef",
           "attribuut": "maatgevend gewicht",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "kg",
-              "stelsel": "Gewicht",
-              "canoniek": "kg",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "Het maatgevend gewicht van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het maatgevend gewicht van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -178,15 +160,7 @@
               "node": "AttribuutRef",
               "attribuut": "vondsten",
               "objecttype": "Jutter",
-              "onderwerpBron": "de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "vondsten van de Jutter",
-              "set": false,
-              "navigatiePad": []
+              "bron": "vondsten van de Jutter"
             }
           ],
           "elementObjecttype": "Vondst",
@@ -208,7 +182,12 @@
             }
           },
           "bron": "de absolute waarde van vondsten van de Jutter",
-          "granulariteit": null
+          "granulariteit": null,
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "vondstaanmelding",
+            "rol": "vondst"
+          }
         },
         "voorwaarde": null,
         "geldigheid": {

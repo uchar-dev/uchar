@@ -68,7 +68,6 @@
           "vondstnummer",
           "kavelnummer"
         ],
-        "scopeVeld": null,
         "bron": "De vondstnummers en kavelnummers van alle Strandvondsten moeten uniek zijn.",
         "geldigheid": {
           "node": "Geldigheid",

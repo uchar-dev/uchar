@@ -149,18 +149,7 @@
           "node": "AttribuutRef",
           "attribuut": "ligdeel",
           "objecttype": "Ligplaats",
-          "onderwerpBron": "de Ligplaats",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het ligdeel van een Ligplaats",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het ligdeel van een Ligplaats"
         },
         "waarde": {
           "node": "Functie",
@@ -170,18 +159,7 @@
               "node": "AttribuutRef",
               "attribuut": "jaarforfait",
               "objecttype": "Ligplaats",
-              "onderwerpBron": "de Ligplaats",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "haar jaarforfait",
-              "set": false,
-              "navigatiePad": []
+              "bron": "haar jaarforfait"
             }
           ],
           "elementObjecttype": null,
@@ -189,7 +167,6 @@
           "filter": {
             "node": "Kenmerk",
             "kenmerk": "bezet",
-            "navigatie": null,
             "negatie": false,
             "eigenaar": null,
             "periode": null,
@@ -221,18 +198,7 @@
           "node": "AttribuutRef",
           "attribuut": "heffingdeel",
           "objecttype": "Ligplaats",
-          "onderwerpBron": "de Ligplaats",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het heffingdeel van een Ligplaats",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het heffingdeel van een Ligplaats"
         },
         "waarde": {
           "node": "Functie",
@@ -242,18 +208,7 @@
               "node": "AttribuutRef",
               "attribuut": "staffelbasis",
               "objecttype": "Ligplaats",
-              "onderwerpBron": "de Ligplaats",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "haar staffelbasis",
-              "set": false,
-              "navigatiePad": []
+              "bron": "haar staffelbasis"
             }
           ],
           "elementObjecttype": null,
@@ -261,7 +216,6 @@
           "filter": {
             "node": "Kenmerk",
             "kenmerk": "bezet",
-            "navigatie": null,
             "negatie": false,
             "eigenaar": null,
             "periode": null,
@@ -293,18 +247,7 @@
           "node": "AttribuutRef",
           "attribuut": "toeslagdeel",
           "objecttype": "Ligplaats",
-          "onderwerpBron": "de Ligplaats",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het toeslagdeel van een Ligplaats",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het toeslagdeel van een Ligplaats"
         },
         "waarde": {
           "node": "Functie",
@@ -314,18 +257,7 @@
               "node": "AttribuutRef",
               "attribuut": "seizoenbasis",
               "objecttype": "Ligplaats",
-              "onderwerpBron": "de Ligplaats",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "haar seizoenbasis",
-              "set": false,
-              "navigatiePad": []
+              "bron": "haar seizoenbasis"
             }
           ],
           "elementObjecttype": null,
@@ -333,7 +265,6 @@
           "filter": {
             "node": "Kenmerk",
             "kenmerk": "bezet",
-            "navigatie": null,
             "negatie": false,
             "eigenaar": null,
             "periode": null,
@@ -357,18 +288,7 @@
             "node": "AttribuutRef",
             "attribuut": "lengte",
             "objecttype": "Ligplaats",
-            "onderwerpBron": "de Ligplaats",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de lengte van de Ligplaats",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de lengte van de Ligplaats"
           },
           "rechts": {
             "node": "Literal",

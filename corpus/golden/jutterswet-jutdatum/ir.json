@@ -61,14 +61,7 @@
           "node": "AttribuutRef",
           "attribuut": "midzomers",
           "objecttype": "Vondst",
-          "onderwerpBron": "Een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vondst is midzomers",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vondst is midzomers"
         },
         "waarde": {
           "node": "Literal",
@@ -85,14 +78,7 @@
             "node": "AttribuutRef",
             "attribuut": "vondstdatum",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumInDagen"
-            },
-            "bron": "de vondstdatum van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de vondstdatum van de Vondst"
           },
           "rechts": {
             "node": "Literal",
@@ -119,14 +105,7 @@
           "node": "AttribuutRef",
           "attribuut": "nagekomen",
           "objecttype": "Vondst",
-          "onderwerpBron": "Een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vondst is nagekomen",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vondst is nagekomen"
         },
         "waarde": {
           "node": "Literal",
@@ -143,14 +122,7 @@
             "node": "AttribuutRef",
             "attribuut": "vondstdatum",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumInDagen"
-            },
-            "bron": "de vondstdatum van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de vondstdatum van de Vondst"
           },
           "rechts": {
             "node": "Literal",
@@ -177,14 +149,7 @@
           "node": "AttribuutRef",
           "attribuut": "vroeg",
           "objecttype": "Vondst",
-          "onderwerpBron": "Een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vondst is vroeg",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vondst is vroeg"
         },
         "waarde": {
           "node": "Literal",
@@ -201,14 +166,7 @@
             "node": "AttribuutRef",
             "attribuut": "vondstdatum",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumInDagen"
-            },
-            "bron": "de vondstdatum van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de vondstdatum van de Vondst"
           },
           "rechts": {
             "node": "Literal",
@@ -235,27 +193,13 @@
           "node": "AttribuutRef",
           "attribuut": "keurdatum",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "De keurdatum van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De keurdatum van een Vondst"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "vondstdatum",
           "objecttype": "Vondst",
-          "onderwerpBron": "de Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "de vondstdatum van de Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de vondstdatum van de Vondst"
         },
         "voorwaarde": null,
         "geldigheid": {

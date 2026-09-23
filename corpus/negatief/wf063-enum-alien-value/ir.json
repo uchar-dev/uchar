@@ -68,18 +68,7 @@
           "node": "AttribuutRef",
           "attribuut": "waarde",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De waarde van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De waarde van een Vondst"
         },
         "waarde": {
           "node": "Match",
@@ -94,20 +83,7 @@
             "node": "AttribuutRef",
             "attribuut": "staat",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Enumeratie",
-              "domein": "keurklasse",
-              "waarden": [
-                "gaaf",
-                "beschadigd",
-                "wrakhout"
-              ]
-            },
-            "bron": "de staat van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de staat van de Vondst"
           },
           "arms": [
             {

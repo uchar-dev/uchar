@@ -56,14 +56,7 @@
           "node": "AttribuutRef",
           "attribuut": "sluitstip",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumTijd"
-          },
-          "bron": "De sluitstip van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De sluitstip van een Vondst"
         },
         "waarde": {
           "node": "Literal",
@@ -88,14 +81,7 @@
           "node": "AttribuutRef",
           "attribuut": "tijdig",
           "objecttype": "Vondst",
-          "onderwerpBron": "Een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vondst is tijdig",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vondst is tijdig"
         },
         "waarde": {
           "node": "Literal",
@@ -112,14 +98,7 @@
             "node": "AttribuutRef",
             "attribuut": "afgiftestip",
             "objecttype": "Vondst",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumTijd"
-            },
-            "bron": "zijn afgiftestip",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn afgiftestip"
           },
           "rechts": {
             "node": "Literal",
@@ -146,14 +125,7 @@
           "node": "AttribuutRef",
           "attribuut": "verlaat",
           "objecttype": "Vondst",
-          "onderwerpBron": "Een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vondst is verlaat",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vondst is verlaat"
         },
         "waarde": {
           "node": "Literal",
@@ -170,14 +142,7 @@
             "node": "AttribuutRef",
             "attribuut": "afgiftestip",
             "objecttype": "Vondst",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumTijd"
-            },
-            "bron": "zijn afgiftestip",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn afgiftestip"
           },
           "rechts": {
             "node": "Literal",

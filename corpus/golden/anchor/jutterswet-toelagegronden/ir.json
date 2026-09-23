@@ -88,7 +88,6 @@
             "voorwaarde": {
               "node": "Kenmerk",
               "kenmerk": "visser",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -130,7 +129,6 @@
             "voorwaarde": {
               "node": "Kenmerk",
               "kenmerk": "wachter",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -172,7 +170,6 @@
             "voorwaarde": {
               "node": "Kenmerk",
               "kenmerk": "duinwachter",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -213,7 +210,6 @@
             "voorwaarde": {
               "node": "Kenmerk",
               "kenmerk": "visser",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -242,7 +238,6 @@
             "voorwaarde": {
               "node": "Kenmerk",
               "kenmerk": "geschorst",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -271,7 +266,6 @@
             "voorwaarde": {
               "node": "Kenmerk",
               "kenmerk": "visser",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,

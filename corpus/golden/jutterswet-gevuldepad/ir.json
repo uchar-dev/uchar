@@ -154,18 +154,7 @@
           "node": "AttribuutRef",
           "attribuut": "aantal gevulde bergplaatsen",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "Het aantal gevulde bergplaatsen van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het aantal gevulde bergplaatsen van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -175,25 +164,7 @@
               "node": "AttribuutRef",
               "attribuut": "vangstgewicht",
               "objecttype": "Bergplaats",
-              "onderwerpBron": "alle losplaatsen van alle gevoerde boten van de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": {
-                  "node": "Eenheid",
-                  "afkorting": "kg",
-                  "stelsel": "Gewicht",
-                  "canoniek": "kg",
-                  "factorNaarCanoniek": 1,
-                  "noemer": null
-                }
-              },
-              "bron": "het vangstgewicht van alle losplaatsen van alle gevoerde boten van de Jutter",
-              "set": true,
-              "navigatiePad": []
+              "bron": "het vangstgewicht van alle losplaatsen van alle gevoerde boten van de Jutter"
             }
           ],
           "elementObjecttype": "Bergplaats",

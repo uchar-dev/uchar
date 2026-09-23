@@ -81,18 +81,7 @@
           "node": "AttribuutRef",
           "attribuut": "tarief",
           "objecttype": "Berging",
-          "onderwerpBron": "de tarief",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de tarief",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de tarief"
         },
         "waarde": {
           "node": "Match",
@@ -106,15 +95,6 @@
           "scrutinee": {
             "node": "ParameterRef",
             "parameter": "standaardvaarwater",
-            "type": {
-              "node": "Enumeratie",
-              "domein": "Kust",
-              "waarden": [
-                "Noord",
-                "Zuid",
-                "West"
-              ]
-            },
             "bron": "de standaardvaarwater"
           },
           "arms": [

@@ -294,17 +294,7 @@
           "node": "AttribuutRef",
           "attribuut": "aandeel",
           "objecttype": "Jutter",
-          "onderwerpBron": "de Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Percentage",
-            "geheel": false,
-            "decimalen": 2,
-            "eenheid": null
-          },
-          "bron": "De aandeel van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De aandeel van een Jutter"
         },
         "waarde": {
           "node": "Binair",
@@ -313,35 +303,13 @@
             "node": "AttribuutRef",
             "attribuut": "deel",
             "objecttype": "Jutter",
-            "onderwerpBron": "de Jutter",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de deel van de Jutter",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de deel van de Jutter"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "deel",
             "objecttype": "Jutter",
-            "onderwerpBron": "de Jutter",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de deel van de Jutter",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de deel van de Jutter"
           },
           "type": {
             "node": "Percentage",

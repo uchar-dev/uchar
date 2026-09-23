@@ -117,18 +117,7 @@
           "node": "AttribuutRef",
           "attribuut": "premie",
           "objecttype": "Schuit",
-          "onderwerpBron": "een Schuit",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De premie van een Schuit",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De premie van een Schuit"
         },
         "waarde": {
           "node": "Binair",
@@ -149,20 +138,7 @@
             "node": "AttribuutRef",
             "attribuut": "tarief",
             "objecttype": "Werf",
-            "onderwerpBron": "de Schuit",
-            "navigatieRol": "Schuit",
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
             "bron": "het tarief van de werf van de Schuit",
-            "set": false,
-            "navigatiePad": [
-              "werf"
-            ],
             "navigatieBindingen": [
               {
                 "node": "RolBinding",
@@ -195,18 +171,7 @@
           "node": "AttribuutRef",
           "attribuut": "product",
           "objecttype": "Schuit",
-          "onderwerpBron": "een Schuit",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het product van een Schuit",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het product van een Schuit"
         },
         "waarde": {
           "node": "Binair",
@@ -215,37 +180,13 @@
             "node": "AttribuutRef",
             "attribuut": "lengte",
             "objecttype": "Schuit",
-            "onderwerpBron": "de Schuit",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de lengte van de Schuit",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de lengte van de Schuit"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "tarief",
             "objecttype": "Werf",
-            "onderwerpBron": "de Schuit",
-            "navigatieRol": "Schuit",
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
             "bron": "het tarief van de werf van de Schuit",
-            "set": false,
-            "navigatiePad": [
-              "werf"
-            ],
             "navigatieBindingen": [
               {
                 "node": "RolBinding",
@@ -278,18 +219,7 @@
           "node": "AttribuutRef",
           "attribuut": "toeslag",
           "objecttype": "Schuit",
-          "onderwerpBron": "een Schuit",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De toeslag van een Schuit",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De toeslag van een Schuit"
         },
         "waarde": {
           "node": "Binair",
@@ -310,20 +240,7 @@
             "node": "AttribuutRef",
             "attribuut": "tarief",
             "objecttype": "Werf",
-            "onderwerpBron": "de Schuit",
-            "navigatieRol": "Schuit",
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
             "bron": "het tarief van de werf van de Schuit",
-            "set": false,
-            "navigatiePad": [
-              "werf"
-            ],
             "navigatieBindingen": [
               {
                 "node": "RolBinding",
@@ -348,18 +265,7 @@
             "node": "AttribuutRef",
             "attribuut": "lengte",
             "objecttype": "Schuit",
-            "onderwerpBron": "de Schuit",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de lengte van de Schuit",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de lengte van de Schuit"
           },
           "rechts": {
             "node": "Literal",

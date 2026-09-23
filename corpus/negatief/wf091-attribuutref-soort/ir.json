@@ -49,27 +49,13 @@
           "node": "AttribuutRef",
           "attribuut": "etiket",
           "objecttype": "Jutter",
-          "onderwerpBron": "de etiket van de Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Tekst"
-          },
-          "bron": "het etiket van de Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "het etiket van de Jutter"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "gewicht",
           "objecttype": "Jutter",
-          "onderwerpBron": "de gewicht van de Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Tekst"
-          },
-          "bron": "het gewicht van de Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "het gewicht van de Jutter"
         },
         "voorwaarde": null,
         "geldigheid": {

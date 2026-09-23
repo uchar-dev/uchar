@@ -90,18 +90,7 @@
           "node": "AttribuutRef",
           "attribuut": "hoogste",
           "objecttype": "Penningstaffel",
-          "onderwerpBron": "de hoogste",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de hoogste",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de hoogste"
         },
         "waarde": {
           "node": "Match",
@@ -138,21 +127,7 @@
               "node": "AttribuutRef",
               "attribuut": "bedragen",
               "objecttype": "Penningstaffel",
-              "onderwerpBron": "de bedragen",
-              "navigatieRol": null,
-              "type": {
-                "node": "ListType",
-                "element": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                }
-              },
-              "bron": "de bedragen",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de bedragen"
             },
             "function": {
               "node": "Lambda",
@@ -216,26 +191,6 @@
                 "scrutinee": {
                   "node": "BinderRef",
                   "name": "geaccumuleerde optie",
-                  "type": {
-                    "node": "SumType",
-                    "domain": "Optional",
-                    "constructors": [
-                      {
-                        "name": "Absent",
-                        "payload": null
-                      },
-                      {
-                        "name": "Present",
-                        "payload": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
-                        }
-                      }
-                    ]
-                  },
                   "bron": "geaccumuleerde optie"
                 },
                 "arms": [
@@ -268,13 +223,6 @@
                       "argument": {
                         "node": "BinderRef",
                         "name": "y",
-                        "type": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
-                        },
                         "bron": "y"
                       },
                       "bron": "Present"
@@ -321,25 +269,11 @@
                           "links": {
                             "node": "BinderRef",
                             "name": "x",
-                            "type": {
-                              "node": "Numeriek",
-                              "geheel": false,
-                              "decimalen": 2,
-                              "teken": "ONBEPAALD",
-                              "eenheid": null
-                            },
                             "bron": "x"
                           },
                           "rechts": {
                             "node": "BinderRef",
                             "name": "y",
-                            "type": {
-                              "node": "Numeriek",
-                              "geheel": false,
-                              "decimalen": 2,
-                              "teken": "ONBEPAALD",
-                              "eenheid": null
-                            },
                             "bron": "y"
                           },
                           "periode": null,
@@ -348,25 +282,11 @@
                         "then": {
                           "node": "BinderRef",
                           "name": "x",
-                          "type": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
-                          },
                           "bron": "x"
                         },
                         "else": {
                           "node": "BinderRef",
                           "name": "y",
-                          "type": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
-                          },
                           "bron": "y"
                         },
                         "bron": null
@@ -430,13 +350,6 @@
               "body": {
                 "node": "BinderRef",
                 "name": "x",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
                 "bron": "x"
               }
             }
@@ -458,18 +371,7 @@
           "node": "AttribuutRef",
           "attribuut": "totaal",
           "objecttype": "Penningstaffel",
-          "onderwerpBron": "de totaal",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de totaal",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de totaal"
         },
         "waarde": {
           "node": "Fold",
@@ -484,21 +386,7 @@
             "node": "AttribuutRef",
             "attribuut": "bedragen",
             "objecttype": "Penningstaffel",
-            "onderwerpBron": "de bedragen",
-            "navigatieRol": null,
-            "type": {
-              "node": "ListType",
-              "element": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              }
-            },
-            "bron": "de bedragen",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de bedragen"
           },
           "function": {
             "node": "Lambda",
@@ -530,25 +418,11 @@
               "links": {
                 "node": "BinderRef",
                 "name": "acc",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
                 "bron": "acc"
               },
               "rechts": {
                 "node": "BinderRef",
                 "name": "b",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
                 "bron": "b"
               },
               "type": {

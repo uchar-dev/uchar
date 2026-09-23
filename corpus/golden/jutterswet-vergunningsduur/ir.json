@@ -91,25 +91,7 @@
           "node": "AttribuutRef",
           "attribuut": "looptijd",
           "objecttype": "Bergingsvergunning",
-          "onderwerpBron": "een Bergingsvergunning",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "maand",
-              "stelsel": "Termijn",
-              "canoniek": "maand",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "De looptijd van een Bergingsvergunning",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De looptijd van een Bergingsvergunning"
         },
         "waarde": {
           "node": "Binair",
@@ -137,25 +119,7 @@
             "node": "AttribuutRef",
             "attribuut": "basisduur",
             "objecttype": "Bergingsvergunning",
-            "onderwerpBron": "de Bergingsvergunning",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "maand",
-                "stelsel": "Termijn",
-                "canoniek": "maand",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "de basisduur van de Bergingsvergunning",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de basisduur van de Bergingsvergunning"
           },
           "type": {
             "node": "Numeriek",

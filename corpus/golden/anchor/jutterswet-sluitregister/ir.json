@@ -64,14 +64,7 @@
           "node": "AttribuutRef",
           "attribuut": "sluitend",
           "objecttype": "Register",
-          "onderwerpBron": "Een Register",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Register is sluitend",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Register is sluitend"
         },
         "waarde": {
           "node": "Literal",
@@ -88,35 +81,13 @@
             "node": "AttribuutRef",
             "attribuut": "telling",
             "objecttype": "Register",
-            "onderwerpBron": "het Register",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "de telling van het Register",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de telling van het Register"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "opgave",
             "objecttype": "Register",
-            "onderwerpBron": "het Register",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "de opgave van het Register",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de opgave van het Register"
           },
           "periode": null,
           "bron": "zijn telling gelijk is aan zijn opgave"
@@ -135,14 +106,7 @@
           "node": "AttribuutRef",
           "attribuut": "afwijkend",
           "objecttype": "Register",
-          "onderwerpBron": "Een Register",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Register is afwijkend",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Register is afwijkend"
         },
         "waarde": {
           "node": "Literal",
@@ -159,35 +123,13 @@
             "node": "AttribuutRef",
             "attribuut": "telling",
             "objecttype": "Register",
-            "onderwerpBron": "het Register",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "de telling van het Register",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de telling van het Register"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "opgave",
             "objecttype": "Register",
-            "onderwerpBron": "het Register",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "de opgave van het Register",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de opgave van het Register"
           },
           "periode": null,
           "bron": "zijn telling ongelijk is aan zijn opgave"

@@ -130,18 +130,7 @@
           "node": "AttribuutRef",
           "attribuut": "stukprijs",
           "objecttype": "Kavel",
-          "onderwerpBron": "De stukprijs van een Kavel",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 5,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De stukprijs van een Kavel",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De stukprijs van een Kavel"
         },
         "waarde": {
           "node": "Binair",
@@ -150,35 +139,13 @@
             "node": "AttribuutRef",
             "attribuut": "opbrengst",
             "objecttype": "Kavel",
-            "onderwerpBron": "de Kavel",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de opbrengst van de Kavel",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de opbrengst van de Kavel"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "partijen",
             "objecttype": "Kavel",
-            "onderwerpBron": "de Kavel",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de partijen van de Kavel",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de partijen van de Kavel"
           },
           "type": {
             "node": "Numeriek",
@@ -204,18 +171,7 @@
           "node": "AttribuutRef",
           "attribuut": "oppervlakte",
           "objecttype": "Kavel",
-          "onderwerpBron": "De oppervlakte van een Kavel",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "De oppervlakte van een Kavel",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De oppervlakte van een Kavel"
         },
         "waarde": {
           "node": "Binair",
@@ -224,18 +180,7 @@
             "node": "AttribuutRef",
             "attribuut": "zijde",
             "objecttype": "Kavel",
-            "onderwerpBron": "de Kavel",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 1,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "de zijde van de Kavel",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de zijde van de Kavel"
           },
           "rechts": {
             "node": "Literal",
@@ -273,18 +218,7 @@
           "node": "AttribuutRef",
           "attribuut": "inhoud",
           "objecttype": "Kavel",
-          "onderwerpBron": "De inhoud van een Kavel",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "De inhoud van een Kavel",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De inhoud van een Kavel"
         },
         "waarde": {
           "node": "Binair",
@@ -293,18 +227,7 @@
             "node": "AttribuutRef",
             "attribuut": "ribbe",
             "objecttype": "Kavel",
-            "onderwerpBron": "de Kavel",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "de ribbe van de Kavel",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de ribbe van de Kavel"
           },
           "rechts": {
             "node": "Literal",
@@ -342,18 +265,7 @@
           "node": "AttribuutRef",
           "attribuut": "krimpmaat",
           "objecttype": "Kavel",
-          "onderwerpBron": "De krimpmaat van een Kavel",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De krimpmaat van een Kavel",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De krimpmaat van een Kavel"
         },
         "waarde": {
           "node": "Binair",
@@ -362,18 +274,7 @@
             "node": "AttribuutRef",
             "attribuut": "krimp",
             "objecttype": "Kavel",
-            "onderwerpBron": "de Kavel",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de krimp van de Kavel",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de krimp van de Kavel"
           },
           "rechts": {
             "node": "Literal",

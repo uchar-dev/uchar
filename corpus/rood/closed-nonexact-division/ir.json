@@ -58,18 +58,7 @@
           "node": "AttribuutRef",
           "attribuut": "quotientsom",
           "objecttype": "Deling",
-          "onderwerpBron": "Het quoti\u00ebntsom van een Deling",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het quoti\u00ebntsom van een Deling",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het quoti\u00ebntsom van een Deling"
         },
         "waarde": {
           "node": "Fold",
@@ -83,16 +72,6 @@
           "list": {
             "node": "ParameterRef",
             "parameter": "tellers",
-            "type": {
-              "node": "ListType",
-              "element": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              }
-            },
             "bron": "de tellers"
           },
           "function": {
@@ -125,13 +104,6 @@
               "links": {
                 "node": "BinderRef",
                 "name": "acc",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
                 "bron": "de opgetelde deling"
               },
               "rechts": {
@@ -140,13 +112,6 @@
                 "links": {
                   "node": "BinderRef",
                   "name": "x",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  },
                   "bron": "de teller"
                 },
                 "rechts": {

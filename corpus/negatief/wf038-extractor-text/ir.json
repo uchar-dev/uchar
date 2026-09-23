@@ -42,18 +42,7 @@
           "node": "AttribuutRef",
           "attribuut": "vondstjaar",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": null,
-            "eenheid": null
-          },
-          "bron": "Het vondstjaar van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het vondstjaar van een Vondst"
         },
         "waarde": {
           "node": "Functie",

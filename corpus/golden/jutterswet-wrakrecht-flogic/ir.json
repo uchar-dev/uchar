@@ -141,18 +141,7 @@
           "node": "AttribuutRef",
           "attribuut": "registratiekosten",
           "objecttype": "Strandrecht",
-          "onderwerpBron": "?S",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "?S.registratiekosten",
-          "set": false,
-          "navigatiePad": []
+          "bron": "?S.registratiekosten"
         },
         "waarde": {
           "node": "Literal",
@@ -181,18 +170,7 @@
           "node": "AttribuutRef",
           "attribuut": "uitkeringstotaal",
           "objecttype": "Kustgemeente",
-          "onderwerpBron": "?K",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "?K.uitkeringstotaal",
-          "set": false,
-          "navigatiePad": []
+          "bron": "?K.uitkeringstotaal"
         },
         "waarde": {
           "node": "Functie",
@@ -202,18 +180,7 @@
               "node": "AttribuutRef",
               "attribuut": "uitkering",
               "objecttype": "Strandrecht",
-              "onderwerpBron": "?K.'geregistreerde strandrechten'",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
-              "bron": "?K.'geregistreerde strandrechten'.uitkering",
-              "set": true,
-              "navigatiePad": []
+              "bron": "?K.'geregistreerde strandrechten'.uitkering"
             }
           ],
           "elementObjecttype": "Strandrecht",
@@ -261,18 +228,7 @@
           "node": "AttribuutRef",
           "attribuut": "registertal",
           "objecttype": "Kustgemeente",
-          "onderwerpBron": "?K",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "?K.registertal",
-          "set": false,
-          "navigatiePad": []
+          "bron": "?K.registertal"
         },
         "waarde": {
           "node": "Functie",
@@ -282,15 +238,7 @@
               "node": "AttribuutRef",
               "attribuut": "geregistreerde strandrechten",
               "objecttype": "Kustgemeente",
-              "onderwerpBron": "?K",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "?K.'geregistreerde strandrechten'",
-              "set": false,
-              "navigatiePad": []
+              "bron": "?K.'geregistreerde strandrechten'"
             }
           ],
           "elementObjecttype": "Strandrecht",
@@ -343,7 +291,6 @@
             "voorwaarde": {
               "node": "Kenmerk",
               "kenmerk": "betwist",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -377,18 +324,7 @@
               "node": "AttribuutRef",
               "attribuut": "grondslag",
               "objecttype": "Strandrecht",
-              "onderwerpBron": "?S",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
-              "bron": "?S.grondslag",
-              "set": false,
-              "navigatiePad": []
+              "bron": "?S.grondslag"
             },
             "bron": null
           }
@@ -417,18 +353,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "bergingsdiepte",
                 "objecttype": "Wrakrecht",
-                "onderwerpBron": "?W",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                },
-                "bron": "?W.bergingsdiepte",
-                "set": false,
-                "navigatiePad": []
+                "bron": "?W.bergingsdiepte"
               },
               "rechts": {
                 "node": "Literal",
@@ -476,18 +401,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "grondslag",
                 "objecttype": "Wrakrecht",
-                "onderwerpBron": "?W",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                },
-                "bron": "?W.grondslag",
-                "set": false,
-                "navigatiePad": []
+                "bron": "?W.grondslag"
               },
               "rechts": {
                 "node": "Literal",

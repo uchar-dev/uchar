@@ -49,14 +49,7 @@
           "node": "AttribuutRef",
           "attribuut": "etiket",
           "objecttype": "Jutter",
-          "onderwerpBron": "de Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Tekst"
-          },
-          "bron": "het etiket van de Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "het etiket van de Jutter"
         },
         "waarde": {
           "node": "Let",
@@ -68,25 +61,11 @@
             "node": "AttribuutRef",
             "attribuut": "basis",
             "objecttype": "Jutter",
-            "onderwerpBron": "de Jutter",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "de basis van de Jutter",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de basis van de Jutter"
           },
           "body": {
             "node": "BinderRef",
             "name": "b",
-            "type": {
-              "node": "Tekst"
-            },
             "bron": "de basis"
           },
           "bron": "de basis als etiket"

@@ -294,32 +294,7 @@
           "node": "AttribuutRef",
           "attribuut": "uittarief",
           "objecttype": "Jutter",
-          "onderwerpBron": "de Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "EUR",
-              "stelsel": "Munt",
-              "canoniek": "EUR",
-              "factorNaarCanoniek": 1,
-              "noemer": {
-                "node": "Eenheid",
-                "afkorting": "jr",
-                "stelsel": "Tijd",
-                "canoniek": "jr",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            }
-          },
-          "bron": "De uittarief van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De uittarief van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -329,63 +304,13 @@
               "node": "AttribuutRef",
               "attribuut": "tarief",
               "objecttype": "Jutter",
-              "onderwerpBron": "de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": {
-                  "node": "Eenheid",
-                  "afkorting": "EUR",
-                  "stelsel": "Munt",
-                  "canoniek": "EUR",
-                  "factorNaarCanoniek": 1,
-                  "noemer": {
-                    "node": "Eenheid",
-                    "afkorting": "jr",
-                    "stelsel": "Tijd",
-                    "canoniek": "jr",
-                    "factorNaarCanoniek": 1,
-                    "noemer": null
-                  }
-                }
-              },
-              "bron": "de tarief van de Jutter",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de tarief van de Jutter"
             },
             {
               "node": "AttribuutRef",
               "attribuut": "tarief",
               "objecttype": "Jutter",
-              "onderwerpBron": "de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": {
-                  "node": "Eenheid",
-                  "afkorting": "EUR",
-                  "stelsel": "Munt",
-                  "canoniek": "EUR",
-                  "factorNaarCanoniek": 1,
-                  "noemer": {
-                    "node": "Eenheid",
-                    "afkorting": "jr",
-                    "stelsel": "Tijd",
-                    "canoniek": "jr",
-                    "factorNaarCanoniek": 1,
-                    "noemer": null
-                  }
-                }
-              },
-              "bron": "de tarief van de Jutter",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de tarief van de Jutter"
             }
           ],
           "elementObjecttype": null,

@@ -94,18 +94,7 @@
           "node": "AttribuutRef",
           "attribuut": "aantal keurstukken",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "Het aantal keurstukken van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het aantal keurstukken van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -125,7 +114,6 @@
                   "filter": {
                     "node": "Kenmerk",
                     "kenmerk": "gemerkt",
-                    "navigatie": null,
                     "negatie": false,
                     "eigenaar": null,
                     "periode": null,
@@ -144,7 +132,6 @@
                   "filter": {
                     "node": "Kenmerk",
                     "kenmerk": "gekeurd",
-                    "navigatie": null,
                     "negatie": false,
                     "eigenaar": null,
                     "periode": null,
@@ -185,18 +172,7 @@
           "node": "AttribuutRef",
           "attribuut": "aantal gemelde stukken",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "Het aantal gemelde stukken van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het aantal gemelde stukken van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -216,7 +192,6 @@
                   "filter": {
                     "node": "Kenmerk",
                     "kenmerk": "gemerkt",
-                    "navigatie": null,
                     "negatie": false,
                     "eigenaar": null,
                     "periode": null,

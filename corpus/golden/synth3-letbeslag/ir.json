@@ -101,18 +101,7 @@
           "node": "AttribuutRef",
           "attribuut": "beslag",
           "objecttype": "Jutter",
-          "onderwerpBron": "Het beslag van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het beslag van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het beslag van een Jutter"
         },
         "waarde": {
           "node": "Let",
@@ -128,18 +117,7 @@
             "node": "AttribuutRef",
             "attribuut": "grondslag",
             "objecttype": "Jutter",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "zijn grondslag",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn grondslag"
           },
           "body": {
             "node": "Match",
@@ -154,31 +132,7 @@
               "node": "AttribuutRef",
               "attribuut": "regime",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "SumType",
-                "domain": "regime",
-                "constructors": [
-                  {
-                    "name": "Vast",
-                    "payload": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
-                    }
-                  },
-                  {
-                    "name": "Variabel",
-                    "payload": null
-                  }
-                ]
-              },
-              "bron": "zijn regime",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn regime"
             },
             "arms": [
               {
@@ -190,25 +144,11 @@
                   "links": {
                     "node": "BinderRef",
                     "name": "g",
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
-                    },
                     "bron": "de grondslag"
                   },
                   "rechts": {
                     "node": "BinderRef",
                     "name": "v",
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
-                    },
                     "bron": "het vaste bedrag"
                   },
                   "type": {
@@ -232,13 +172,6 @@
                     "links": {
                       "node": "BinderRef",
                       "name": "g",
-                      "type": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
-                      },
                       "bron": "de grondslag"
                     },
                     "rechts": {

@@ -119,14 +119,7 @@
           "node": "AttribuutRef",
           "attribuut": "uiterste bergingsdatum",
           "objecttype": "Bergingsploeg",
-          "onderwerpBron": "een Bergingsploeg",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "De uiterste bergingsdatum van een Bergingsploeg",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De uiterste bergingsdatum van een Bergingsploeg"
         },
         "waarde": {
           "node": "Binair",
@@ -135,38 +128,13 @@
             "node": "AttribuutRef",
             "attribuut": "meldingsdatum",
             "objecttype": "Bergingsploeg",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumInDagen"
-            },
-            "bron": "zijn meldingsdatum",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn meldingsdatum"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "bergingsbestek",
             "objecttype": "Bergingsploeg",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "springtijdagen",
-                "stelsel": null,
-                "canoniek": "springtijdagen",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "zijn bergingsbestek",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn bergingsbestek"
           },
           "type": {
             "node": "DatumInDagen"

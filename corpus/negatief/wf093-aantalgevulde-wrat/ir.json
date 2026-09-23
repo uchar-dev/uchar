@@ -125,18 +125,7 @@
           "node": "AttribuutRef",
           "attribuut": "aantal gevulde vondstgewichten",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "Het aantal gevulde vondstgewichten van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het aantal gevulde vondstgewichten van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -146,15 +135,7 @@
               "node": "AttribuutRef",
               "attribuut": "vondsten",
               "objecttype": "Jutter",
-              "onderwerpBron": "alle vondsten van de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": null
-              },
-              "bron": "de vondsten van de Jutter",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de vondsten van de Jutter"
             }
           ],
           "elementObjecttype": "Vondst",

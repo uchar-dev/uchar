@@ -89,18 +89,7 @@
           "node": "AttribuutRef",
           "attribuut": "heffing",
           "objecttype": "Jutter",
-          "onderwerpBron": "De heffing van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De heffing van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De heffing van een Jutter"
         },
         "waarde": {
           "node": "Let",
@@ -116,18 +105,7 @@
             "node": "AttribuutRef",
             "attribuut": "grondslag",
             "objecttype": "Jutter",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "zijn grondslag",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn grondslag"
           },
           "body": {
             "node": "Let",
@@ -143,18 +121,7 @@
               "node": "AttribuutRef",
               "attribuut": "opslag",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
-              "bron": "zijn opslag",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn opslag"
             },
             "body": {
               "node": "IfThenElse",
@@ -171,25 +138,11 @@
                 "links": {
                   "node": "BinderRef",
                   "name": "g",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  },
                   "bron": "de grondslag"
                 },
                 "rechts": {
                   "node": "ParameterRef",
                   "parameter": "drempel",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
                   "bron": "de drempel"
                 },
                 "periode": null,
@@ -198,13 +151,6 @@
               "then": {
                 "node": "ParameterRef",
                 "parameter": "basisheffing",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
                 "bron": "de basisheffing"
               },
               "else": {
@@ -213,25 +159,11 @@
                 "links": {
                   "node": "ParameterRef",
                   "parameter": "basisheffing",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
                   "bron": "de basisheffing"
                 },
                 "rechts": {
                   "node": "BinderRef",
                   "name": "o",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  },
                   "bron": "de opslag"
                 },
                 "type": {

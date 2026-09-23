@@ -88,7 +88,6 @@
             "voorwaarde": {
               "node": "Kenmerk",
               "kenmerk": "grondX",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -119,7 +118,6 @@
                       "voorwaarde": {
                         "node": "Kenmerk",
                         "kenmerk": "grondY",
-                        "navigatie": null,
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
@@ -151,7 +149,6 @@
                       "voorwaarde": {
                         "node": "Kenmerk",
                         "kenmerk": "grondZ",
-                        "navigatie": null,
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
@@ -183,7 +180,6 @@
                       "voorwaarde": {
                         "node": "Kenmerk",
                         "kenmerk": "grondW",
-                        "navigatie": null,
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
@@ -226,7 +222,6 @@
                       "voorwaarde": {
                         "node": "Kenmerk",
                         "kenmerk": "grondB1",
-                        "navigatie": null,
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
@@ -258,7 +253,6 @@
                       "voorwaarde": {
                         "node": "Kenmerk",
                         "kenmerk": "grondB2",
-                        "navigatie": null,
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,

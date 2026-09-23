@@ -106,14 +106,7 @@
           "node": "AttribuutRef",
           "attribuut": "premiewaardig",
           "objecttype": "Keurploeg",
-          "onderwerpBron": "Een Keurploeg",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Keurploeg is premiewaardig",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Keurploeg is premiewaardig"
         },
         "waarde": {
           "node": "Literal",
@@ -130,7 +123,6 @@
           "filter": {
             "node": "Kenmerk",
             "kenmerk": "stilliggend",
-            "navigatie": null,
             "negatie": false,
             "eigenaar": null,
             "periode": null,
@@ -143,18 +135,7 @@
               "node": "AttribuutRef",
               "attribuut": "keurvergoeding",
               "objecttype": "Keurmeester",
-              "onderwerpBron": "alle keurmeesters van de Keurploeg die aangemeld zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de keurvergoeding van alle keurmeesters van de Keurploeg die aangemeld zijn",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de keurvergoeding van alle keurmeesters van de Keurploeg die aangemeld zijn"
             },
             "rechts": {
               "node": "Literal",

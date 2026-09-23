@@ -62,19 +62,7 @@
             "node": "AttribuutRef",
             "attribuut": "keurstatus",
             "objecttype": "Vondst",
-            "onderwerpBron": null,
-            "navigatieRol": null,
-            "type": {
-              "node": "Enumeratie",
-              "domein": "keurstatus",
-              "waarden": [
-                "Gaaf",
-                "Beschadigd"
-              ]
-            },
-            "bron": null,
-            "set": false,
-            "navigatiePad": []
+            "bron": null
           },
           "rechts": {
             "node": "Construct",

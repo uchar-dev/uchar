@@ -69,14 +69,7 @@
           "node": "AttribuutRef",
           "attribuut": "sluimerend",
           "objecttype": "Seinpost",
-          "onderwerpBron": "Een Seinpost",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Seinpost is sluimerend",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Seinpost is sluimerend"
         },
         "waarde": {
           "node": "Literal",
@@ -94,7 +87,6 @@
             {
               "node": "Kenmerk",
               "kenmerk": "bemand",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -103,7 +95,6 @@
             {
               "node": "Kenmerk",
               "kenmerk": "verlicht",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -116,18 +107,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "meldingen",
                 "objecttype": "Seinpost",
-                "onderwerpBron": "de meldingen",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "de meldingen van de Seinpost",
-                "set": false,
-                "navigatiePad": []
+                "bron": "de meldingen van de Seinpost"
               },
               "rechts": {
                 "node": "Literal",
@@ -161,35 +141,13 @@
           "node": "AttribuutRef",
           "attribuut": "meldingsafschrift",
           "objecttype": "Seinpost",
-          "onderwerpBron": "een Seinpost",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het meldingsafschrift van een Seinpost",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het meldingsafschrift van een Seinpost"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "meldingen",
           "objecttype": "Seinpost",
-          "onderwerpBron": "de meldingen",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de meldingen van de Seinpost",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de meldingen van de Seinpost"
         },
         "voorwaarde": null,
         "geldigheid": {

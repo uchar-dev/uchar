@@ -55,31 +55,13 @@
           "node": "AttribuutRef",
           "attribuut": "huidig penningbedrag",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het huidig penningbedrag van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het huidig penningbedrag van een Jutter"
         },
         "waarde": {
           "node": "TemporalRead",
           "basis": {
             "node": "ParameterRef",
             "parameter": "penningbedrag",
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
             "bron": "het penningbedrag"
           },
           "datum": {

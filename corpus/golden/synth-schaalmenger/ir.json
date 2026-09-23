@@ -174,18 +174,7 @@
           "node": "AttribuutRef",
           "attribuut": "oppervlak",
           "objecttype": "Zeil",
-          "onderwerpBron": "het Zeil",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het oppervlak van een Zeil",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het oppervlak van een Zeil"
         },
         "waarde": {
           "node": "Binair",
@@ -194,35 +183,13 @@
             "node": "AttribuutRef",
             "attribuut": "hoogte",
             "objecttype": "Zeil",
-            "onderwerpBron": "het Zeil",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 1,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de hoogte van het Zeil",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de hoogte van het Zeil"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "breedte",
             "objecttype": "Zeil",
-            "onderwerpBron": "het Zeil",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 1,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de breedte van het Zeil",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de breedte van het Zeil"
           },
           "type": {
             "node": "Numeriek",
@@ -248,18 +215,7 @@
           "node": "AttribuutRef",
           "attribuut": "zoomlengte",
           "objecttype": "Zeil",
-          "onderwerpBron": "het Zeil",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 1,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De zoomlengte van een Zeil",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De zoomlengte van een Zeil"
         },
         "waarde": {
           "node": "Binair",
@@ -268,35 +224,13 @@
             "node": "AttribuutRef",
             "attribuut": "naadtoeslag",
             "objecttype": "Zeil",
-            "onderwerpBron": "het Zeil",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de naadtoeslag van het Zeil",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de naadtoeslag van het Zeil"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "basiszoom",
             "objecttype": "Zeil",
-            "onderwerpBron": "het Zeil",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 1,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de basiszoom van het Zeil",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de basiszoom van het Zeil"
           },
           "type": {
             "node": "Numeriek",
@@ -322,18 +256,7 @@
           "node": "AttribuutRef",
           "attribuut": "stukprijs",
           "objecttype": "Zeil",
-          "onderwerpBron": "het Zeil",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De stukprijs van een Zeil",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De stukprijs van een Zeil"
         },
         "waarde": {
           "node": "Binair",
@@ -342,35 +265,13 @@
             "node": "AttribuutRef",
             "attribuut": "materiaalkosten",
             "objecttype": "Zeil",
-            "onderwerpBron": "het Zeil",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de materiaalkosten van het Zeil",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de materiaalkosten van het Zeil"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "panelen",
             "objecttype": "Zeil",
-            "onderwerpBron": "het Zeil",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de panelen van het Zeil",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de panelen van het Zeil"
           },
           "type": {
             "node": "Numeriek",
@@ -396,18 +297,7 @@
           "node": "AttribuutRef",
           "attribuut": "restlengte",
           "objecttype": "Zeil",
-          "onderwerpBron": "het Zeil",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 1,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De restlengte van een Zeil",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De restlengte van een Zeil"
         },
         "waarde": {
           "node": "Binair",
@@ -416,18 +306,7 @@
             "node": "AttribuutRef",
             "attribuut": "rollengte",
             "objecttype": "Zeil",
-            "onderwerpBron": "het Zeil",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 1,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de rollengte van het Zeil",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de rollengte van het Zeil"
           },
           "rechts": {
             "node": "Binair",
@@ -436,35 +315,13 @@
               "node": "AttribuutRef",
               "attribuut": "baanlengte",
               "objecttype": "Zeil",
-              "onderwerpBron": "het Zeil",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 1,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de baanlengte van het Zeil",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de baanlengte van het Zeil"
             },
             "rechts": {
               "node": "AttribuutRef",
               "attribuut": "aantalBanen",
               "objecttype": "Zeil",
-              "onderwerpBron": "het Zeil",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "het aantalBanen van het Zeil",
-              "set": false,
-              "navigatiePad": []
+              "bron": "het aantalBanen van het Zeil"
             },
             "type": {
               "node": "Numeriek",

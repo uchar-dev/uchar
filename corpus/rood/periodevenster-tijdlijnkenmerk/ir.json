@@ -41,14 +41,7 @@
           "node": "AttribuutRef",
           "attribuut": "geborgen",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vondst is geborgen",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vondst is geborgen"
         },
         "waarde": {
           "node": "Literal",

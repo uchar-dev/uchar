@@ -77,18 +77,7 @@
             "node": "AttribuutRef",
             "attribuut": "uitkering",
             "objecttype": "Jutter",
-            "onderwerpBron": null,
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": null,
-            "set": false,
-            "navigatiePad": []
+            "bron": null
           },
           "rechts": {
             "node": "Let",
@@ -104,13 +93,6 @@
             "value": {
               "node": "ParameterRef",
               "parameter": "factor",
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
               "bron": "de factor"
             },
             "body": {
@@ -125,16 +107,6 @@
               "list": {
                 "node": "ParameterRef",
                 "parameter": "bedragen",
-                "type": {
-                  "node": "ListType",
-                  "element": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  }
-                },
                 "bron": "de bedragen"
               },
               "function": {
@@ -168,13 +140,6 @@
                   "links": {
                     "node": "BinderRef",
                     "name": "acc",
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
                     "bron": "de opgetelde waarde"
                   },
                   "rechts": {
@@ -183,25 +148,11 @@
                     "links": {
                       "node": "BinderRef",
                       "name": "x",
-                      "type": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
-                      },
                       "bron": "het bedrag"
                     },
                     "rechts": {
                       "node": "BinderRef",
                       "name": "f",
-                      "type": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
-                      },
                       "bron": "de factor"
                     },
                     "type": {

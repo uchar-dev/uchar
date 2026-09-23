@@ -100,18 +100,7 @@
           "node": "AttribuutRef",
           "attribuut": "quotum bij aanmelding",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het quotum bij aanmelding van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het quotum bij aanmelding van een Jutter"
         },
         "waarde": {
           "node": "TemporalRead",
@@ -119,31 +108,13 @@
             "node": "AttribuutRef",
             "attribuut": "vast quotum",
             "objecttype": "Jutter",
-            "onderwerpBron": "het vast quotum van de Jutter",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "zijn vast quotum",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn vast quotum"
           },
           "datum": {
             "node": "AttribuutRef",
             "attribuut": "aanmelddatum",
             "objecttype": "Jutter",
-            "onderwerpBron": "de aanmelddatum van de Jutter",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumInDagen"
-            },
-            "bron": "zijn aanmelddatum",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn aanmelddatum"
           },
           "type": {
             "node": "Numeriek",

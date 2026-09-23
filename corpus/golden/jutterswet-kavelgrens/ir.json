@@ -86,37 +86,13 @@
           "node": "AttribuutRef",
           "attribuut": "noordbuurbreedte",
           "objecttype": "Duinkavel",
-          "onderwerpBron": "een Duinkavel",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "De noordbuurbreedte van een Duinkavel",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De noordbuurbreedte van een Duinkavel"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "kavelbreedte",
           "objecttype": "Duinkavel",
-          "onderwerpBron": "het Duinkavel",
-          "navigatieRol": "Duinkavel",
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
           "bron": "de kavelbreedte van de noordbuur van het Duinkavel",
-          "set": false,
-          "navigatiePad": [
-            "noordbuur"
-          ],
           "navigatieBindingen": [
             {
               "node": "RolBinding",
@@ -140,37 +116,13 @@
           "node": "AttribuutRef",
           "attribuut": "zuidbuurbreedte",
           "objecttype": "Duinkavel",
-          "onderwerpBron": "een Duinkavel",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "De zuidbuurbreedte van een Duinkavel",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De zuidbuurbreedte van een Duinkavel"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "kavelbreedte",
           "objecttype": "Duinkavel",
-          "onderwerpBron": "het Duinkavel",
-          "navigatieRol": "Duinkavel",
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
           "bron": "de kavelbreedte van de zuidbuur van het Duinkavel",
-          "set": false,
-          "navigatiePad": [
-            "zuidbuur"
-          ],
           "navigatieBindingen": [
             {
               "node": "RolBinding",

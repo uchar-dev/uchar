@@ -73,7 +73,6 @@
             "voorwaarde": {
               "node": "Kenmerk",
               "kenmerk": "kustwacht",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -115,7 +114,6 @@
             "voorwaarde": {
               "node": "Kenmerk",
               "kenmerk": "havenmeester",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -157,7 +155,6 @@
             "voorwaarde": {
               "node": "Kenmerk",
               "kenmerk": "strandvoogd",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,

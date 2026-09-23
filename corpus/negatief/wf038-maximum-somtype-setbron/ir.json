@@ -132,31 +132,7 @@
           "node": "AttribuutRef",
           "attribuut": "bergstand",
           "objecttype": "Berging",
-          "onderwerpBron": "de bergstand",
-          "navigatieRol": null,
-          "type": {
-            "node": "SumType",
-            "domain": "stand",
-            "constructors": [
-              {
-                "name": "Geborgen",
-                "payload": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              },
-              {
-                "name": "Vermist",
-                "payload": null
-              }
-            ]
-          },
-          "bron": "de bergstand",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de bergstand"
         },
         "waarde": {
           "node": "Functie",
@@ -166,31 +142,7 @@
               "node": "AttribuutRef",
               "attribuut": "stand",
               "objecttype": "Schuit",
-              "onderwerpBron": "de stand van alle schuiten van de Berging",
-              "navigatieRol": null,
-              "type": {
-                "node": "SumType",
-                "domain": "stand",
-                "constructors": [
-                  {
-                    "name": "Geborgen",
-                    "payload": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
-                    }
-                  },
-                  {
-                    "name": "Vermist",
-                    "payload": null
-                  }
-                ]
-              },
-              "bron": "de stand van alle schuiten van de Berging",
-              "set": true,
-              "navigatiePad": []
+              "bron": "de stand van alle schuiten van de Berging"
             }
           ],
           "elementObjecttype": "Schuit",

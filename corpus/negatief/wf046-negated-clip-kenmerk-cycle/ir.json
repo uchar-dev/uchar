@@ -69,18 +69,7 @@
           "node": "AttribuutRef",
           "attribuut": "stilwachtsom",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De stilwachtsom van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De stilwachtsom van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -90,18 +79,7 @@
               "node": "AttribuutRef",
               "attribuut": "wachtvergoeding per maand",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "zijn wachtvergoeding per maand",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn wachtvergoeding per maand"
             }
           ],
           "elementObjecttype": "Jutter",
@@ -109,7 +87,6 @@
           "filter": {
             "node": "Kenmerk",
             "kenmerk": "aangesteld",
-            "navigatie": null,
             "negatie": true,
             "eigenaar": null,
             "periode": null,
@@ -141,14 +118,7 @@
           "node": "AttribuutRef",
           "attribuut": "aangesteld",
           "objecttype": "Jutter",
-          "onderwerpBron": "Een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Jutter is aangesteld",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Jutter is aangesteld"
         },
         "waarde": {
           "node": "Literal",
@@ -165,18 +135,7 @@
             "node": "AttribuutRef",
             "attribuut": "stilwachtsom",
             "objecttype": "Jutter",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "zijn stilwachtsom",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn stilwachtsom"
           },
           "rechts": {
             "node": "Literal",

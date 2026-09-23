@@ -132,25 +132,7 @@
           "node": "AttribuutRef",
           "attribuut": "zwaarste aanmelding",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "kg",
-              "stelsel": "Gewicht",
-              "canoniek": "kg",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "De zwaarste aanmelding van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De zwaarste aanmelding van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -160,15 +142,7 @@
               "node": "AttribuutRef",
               "attribuut": "gewicht",
               "objecttype": "Vondst",
-              "onderwerpBron": "alle vondsten van de aanmelder",
-              "navigatieRol": "aanmelder",
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "het gewicht van alle vondsten van de aanmelder",
-              "set": true,
-              "navigatiePad": []
+              "bron": "het gewicht van alle vondsten van de aanmelder"
             }
           ],
           "elementObjecttype": "Vondst",
@@ -190,7 +164,12 @@
             }
           },
           "bron": "het maximum van het gewicht van alle vondsten van de aanmelder",
-          "granulariteit": null
+          "granulariteit": null,
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "vondstaanmelding",
+            "rol": "vondst"
+          }
         },
         "voorwaarde": null,
         "geldigheid": {

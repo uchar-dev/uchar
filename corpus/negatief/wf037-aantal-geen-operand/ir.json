@@ -111,18 +111,7 @@
           "node": "AttribuutRef",
           "attribuut": "aantal gewogen posten",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "Het aantal gewogen posten van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het aantal gewogen posten van een Jutter"
         },
         "waarde": {
           "node": "Functie",

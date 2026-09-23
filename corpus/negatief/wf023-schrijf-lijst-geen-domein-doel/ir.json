@@ -141,21 +141,7 @@
           "node": "AttribuutRef",
           "attribuut": "bedragen",
           "objecttype": "Jutter",
-          "onderwerpBron": "de bedragen",
-          "navigatieRol": null,
-          "type": {
-            "node": "ListType",
-            "element": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            }
-          },
-          "bron": "de bedragen",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de bedragen"
         },
         "waarde": {
           "node": "ListLiteral",

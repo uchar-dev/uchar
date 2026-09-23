@@ -105,18 +105,7 @@
           "node": "AttribuutRef",
           "attribuut": "dieptetotaal",
           "objecttype": "Kustgemeente",
-          "onderwerpBron": "een Kustgemeente",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "Het dieptetotaal van een Kustgemeente",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het dieptetotaal van een Kustgemeente"
         },
         "waarde": {
           "node": "Functie",
@@ -126,18 +115,7 @@
               "node": "AttribuutRef",
               "attribuut": "bergingsdiepte",
               "objecttype": "Strandrecht",
-              "onderwerpBron": "alle geregistreerde strandrechten van de Kustgemeente",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
-              "bron": "de bergingsdiepte van alle geregistreerde strandrechten van de Kustgemeente",
-              "set": true,
-              "navigatiePad": []
+              "bron": "de bergingsdiepte van alle geregistreerde strandrechten van de Kustgemeente"
             }
           ],
           "elementObjecttype": "Strandrecht",

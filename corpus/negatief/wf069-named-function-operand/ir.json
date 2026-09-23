@@ -86,25 +86,11 @@
           "links": {
             "node": "BinderRef",
             "name": "acc",
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
             "bron": "de opgetelde som"
           },
           "rechts": {
             "node": "BinderRef",
             "name": "x",
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
             "bron": "het bedrag"
           },
           "type": {
@@ -130,18 +116,7 @@
           "node": "AttribuutRef",
           "attribuut": "totaal",
           "objecttype": "Jutter",
-          "onderwerpBron": "Het totaal van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het totaal van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het totaal van een Jutter"
         },
         "waarde": {
           "node": "Fold",
@@ -155,16 +130,6 @@
           "list": {
             "node": "ParameterRef",
             "parameter": "bedragen",
-            "type": {
-              "node": "ListType",
-              "element": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              }
-            },
             "bron": "de bedragen"
           },
           "function": "optellen",

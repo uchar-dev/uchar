@@ -126,31 +126,7 @@
           "node": "AttribuutRef",
           "attribuut": "bergstand",
           "objecttype": "Berging",
-          "onderwerpBron": "de bergstand",
-          "navigatieRol": null,
-          "type": {
-            "node": "SumType",
-            "domain": "stand",
-            "constructors": [
-              {
-                "name": "Geborgen",
-                "payload": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              },
-              {
-                "name": "Vermist",
-                "payload": null
-              }
-            ]
-          },
-          "bron": "de bergstand",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de bergstand"
         },
         "waarde": {
           "node": "Functie",
@@ -160,61 +136,13 @@
               "node": "AttribuutRef",
               "attribuut": "bakboordstand",
               "objecttype": "Berging",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "SumType",
-                "domain": "stand",
-                "constructors": [
-                  {
-                    "name": "Geborgen",
-                    "payload": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
-                    }
-                  },
-                  {
-                    "name": "Vermist",
-                    "payload": null
-                  }
-                ]
-              },
-              "bron": "zijn bakboordstand",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn bakboordstand"
             },
             {
               "node": "AttribuutRef",
               "attribuut": "stuurboordstand",
               "objecttype": "Berging",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "SumType",
-                "domain": "stand",
-                "constructors": [
-                  {
-                    "name": "Geborgen",
-                    "payload": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
-                    }
-                  },
-                  {
-                    "name": "Vermist",
-                    "payload": null
-                  }
-                ]
-              },
-              "bron": "zijn stuurboordstand",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn stuurboordstand"
             }
           ],
           "elementObjecttype": null,

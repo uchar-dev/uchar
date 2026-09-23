@@ -163,25 +163,7 @@
           "node": "AttribuutRef",
           "attribuut": "aangegeven gewicht",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "kg",
-              "stelsel": "Gewicht",
-              "canoniek": "kg",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "Het aangegeven gewicht van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het aangegeven gewicht van een Vondst"
         },
         "waarde": {
           "node": "Binair",
@@ -190,25 +172,7 @@
             "node": "AttribuutRef",
             "attribuut": "brutogewicht",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "kg",
-                "stelsel": "Gewicht",
-                "canoniek": "kg",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "het brutogewicht van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het brutogewicht van de Vondst"
           },
           "rechts": {
             "node": "Literal",
@@ -260,25 +224,7 @@
           "node": "AttribuutRef",
           "attribuut": "geborgen gewicht",
           "objecttype": "Munt",
-          "onderwerpBron": "een Munt",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "kg",
-              "stelsel": "Gewicht",
-              "canoniek": "kg",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "Het geborgen gewicht van een Munt",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het geborgen gewicht van een Munt"
         },
         "waarde": {
           "node": "Binair",
@@ -287,25 +233,7 @@
             "node": "AttribuutRef",
             "attribuut": "brutogewicht",
             "objecttype": "Munt",
-            "onderwerpBron": "de Munt",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "kg",
-                "stelsel": "Gewicht",
-                "canoniek": "kg",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "het brutogewicht van de Munt",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het brutogewicht van de Munt"
           },
           "rechts": {
             "node": "Literal",

@@ -55,14 +55,7 @@
           "node": "AttribuutRef",
           "attribuut": "status",
           "objecttype": "Bergingszaak",
-          "onderwerpBron": "een Bergingszaak",
-          "navigatieRol": null,
-          "type": {
-            "node": "Tekst"
-          },
-          "bron": "De status van een Bergingszaak",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De status van een Bergingszaak"
         },
         "waarde": {
           "node": "Literal",
@@ -80,7 +73,6 @@
             {
               "node": "Kenmerk",
               "kenmerk": "geclaimd",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -93,18 +85,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "bezwaren",
                 "objecttype": "Bergingszaak",
-                "onderwerpBron": "de bezwaren",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "de bezwaren van de Bergingszaak",
-                "set": false,
-                "navigatiePad": []
+                "bron": "de bezwaren van de Bergingszaak"
               },
               "rechts": {
                 "node": "Literal",
@@ -138,14 +119,7 @@
           "node": "AttribuutRef",
           "attribuut": "status",
           "objecttype": "Bergingszaak",
-          "onderwerpBron": "een Bergingszaak",
-          "navigatieRol": null,
-          "type": {
-            "node": "Tekst"
-          },
-          "bron": "De status van een Bergingszaak",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De status van een Bergingszaak"
         },
         "waarde": {
           "node": "Literal",
@@ -163,7 +137,6 @@
             {
               "node": "Kenmerk",
               "kenmerk": "geclaimd",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -176,18 +149,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "bezwaren",
                 "objecttype": "Bergingszaak",
-                "onderwerpBron": "de bezwaren",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "de bezwaren van de Bergingszaak",
-                "set": false,
-                "navigatiePad": []
+                "bron": "de bezwaren van de Bergingszaak"
               },
               "rechts": {
                 "node": "Literal",

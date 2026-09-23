@@ -122,14 +122,7 @@
           "node": "AttribuutRef",
           "attribuut": "paraat",
           "objecttype": "Reddingspost",
-          "onderwerpBron": "Een Reddingspost",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Reddingspost is paraat",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Reddingspost is paraat"
         },
         "waarde": {
           "node": "Literal",
@@ -156,18 +149,7 @@
                   "node": "AttribuutRef",
                   "attribuut": "dienstjaren",
                   "objecttype": "Redder",
-                  "onderwerpBron": "de redder",
-                  "navigatieRol": null,
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
-                  "bron": "zijn dienstjaren",
-                  "set": false,
-                  "navigatiePad": []
+                  "bron": "zijn dienstjaren"
                 },
                 "rechts": {
                   "node": "Literal",
@@ -187,7 +169,6 @@
               {
                 "node": "Kenmerk",
                 "kenmerk": "gediplomeerd",
-                "navigatie": null,
                 "negatie": false,
                 "eigenaar": null,
                 "periode": null,
@@ -217,14 +198,7 @@
           "node": "AttribuutRef",
           "attribuut": "geoefend",
           "objecttype": "Reddingspost",
-          "onderwerpBron": "Een Reddingspost",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Reddingspost is geoefend",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Reddingspost is geoefend"
         },
         "waarde": {
           "node": "Literal",
@@ -251,18 +225,7 @@
                   "node": "AttribuutRef",
                   "attribuut": "conditie",
                   "objecttype": "Redder",
-                  "onderwerpBron": "de redder",
-                  "navigatieRol": null,
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
-                  "bron": "zijn conditie",
-                  "set": false,
-                  "navigatiePad": []
+                  "bron": "zijn conditie"
                 },
                 "rechts": {
                   "node": "Literal",
@@ -287,7 +250,6 @@
                   {
                     "node": "Kenmerk",
                     "kenmerk": "gediplomeerd",
-                    "navigatie": null,
                     "negatie": false,
                     "eigenaar": null,
                     "periode": null,
@@ -300,18 +262,7 @@
                       "node": "AttribuutRef",
                       "attribuut": "dienstjaren",
                       "objecttype": "Redder",
-                      "onderwerpBron": "de redder",
-                      "navigatieRol": null,
-                      "type": {
-                        "node": "Numeriek",
-                        "geheel": true,
-                        "decimalen": 0,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
-                      },
-                      "bron": "zijn dienstjaren",
-                      "set": false,
-                      "navigatiePad": []
+                      "bron": "zijn dienstjaren"
                     },
                     "rechts": {
                       "node": "Literal",
@@ -355,14 +306,7 @@
           "node": "AttribuutRef",
           "attribuut": "stil",
           "objecttype": "Reddingspost",
-          "onderwerpBron": "Een Reddingspost",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Reddingspost is stil",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Reddingspost is stil"
         },
         "waarde": {
           "node": "Literal",
@@ -389,18 +333,7 @@
                   "node": "AttribuutRef",
                   "attribuut": "dienstjaren",
                   "objecttype": "Redder",
-                  "onderwerpBron": "de redder",
-                  "navigatieRol": null,
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
-                  "bron": "zijn dienstjaren",
-                  "set": false,
-                  "navigatiePad": []
+                  "bron": "zijn dienstjaren"
                 },
                 "rechts": {
                   "node": "Literal",
@@ -420,7 +353,6 @@
               {
                 "node": "Kenmerk",
                 "kenmerk": "gediplomeerd",
-                "navigatie": null,
                 "negatie": false,
                 "eigenaar": null,
                 "periode": null,
@@ -450,14 +382,7 @@
           "node": "AttribuutRef",
           "attribuut": "wisselend",
           "objecttype": "Reddingspost",
-          "onderwerpBron": "Een Reddingspost",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Reddingspost is wisselend",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Reddingspost is wisselend"
         },
         "waarde": {
           "node": "Literal",
@@ -480,7 +405,6 @@
               {
                 "node": "Kenmerk",
                 "kenmerk": "gediplomeerd",
-                "navigatie": null,
                 "negatie": false,
                 "eigenaar": null,
                 "periode": null,
@@ -493,18 +417,7 @@
                   "node": "AttribuutRef",
                   "attribuut": "conditie",
                   "objecttype": "Redder",
-                  "onderwerpBron": "de redder",
-                  "navigatieRol": null,
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
-                  "bron": "zijn conditie",
-                  "set": false,
-                  "navigatiePad": []
+                  "bron": "zijn conditie"
                 },
                 "rechts": {
                   "node": "Literal",
@@ -528,18 +441,7 @@
                   "node": "AttribuutRef",
                   "attribuut": "dienstjaren",
                   "objecttype": "Redder",
-                  "onderwerpBron": "de redder",
-                  "navigatieRol": null,
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
-                  "bron": "zijn dienstjaren",
-                  "set": false,
-                  "navigatiePad": []
+                  "bron": "zijn dienstjaren"
                 },
                 "rechts": {
                   "node": "Literal",
@@ -580,18 +482,7 @@
           "node": "AttribuutRef",
           "attribuut": "redderstal",
           "objecttype": "Reddingspost",
-          "onderwerpBron": "een Reddingspost",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het redderstal van een Reddingspost",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het redderstal van een Reddingspost"
         },
         "waarde": {
           "node": "Functie",
@@ -601,15 +492,7 @@
               "node": "AttribuutRef",
               "attribuut": "redders",
               "objecttype": "Reddingspost",
-              "onderwerpBron": "de Reddingspost",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "redders van de Reddingspost",
-              "set": false,
-              "navigatiePad": []
+              "bron": "redders van de Reddingspost"
             }
           ],
           "elementObjecttype": "Redder",

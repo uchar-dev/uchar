@@ -86,18 +86,7 @@
           "node": "AttribuutRef",
           "attribuut": "gelijkteken",
           "objecttype": "Randwacht",
-          "onderwerpBron": "een Randwacht",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het gelijkteken van een Randwacht",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het gelijkteken van een Randwacht"
         },
         "waarde": {
           "node": "Literal",
@@ -123,18 +112,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "ploegomvang",
                 "objecttype": "Randwacht",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "zijn ploegomvang",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn ploegomvang"
               },
               "rechts": {
                 "node": "Literal",
@@ -158,35 +136,13 @@
                 "node": "AttribuutRef",
                 "attribuut": "grootgetal",
                 "objecttype": "Randwacht",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "zijn grootgetal",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn grootgetal"
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "bedrag",
                 "objecttype": "Randwacht",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "zijn bedrag",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn bedrag"
               },
               "periode": null,
               "bron": "zijn grootgetal is gelijk aan zijn bedrag"
@@ -208,18 +164,7 @@
           "node": "AttribuutRef",
           "attribuut": "ordeteken",
           "objecttype": "Randwacht",
-          "onderwerpBron": "een Randwacht",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het ordeteken van een Randwacht",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het ordeteken van een Randwacht"
         },
         "waarde": {
           "node": "Literal",
@@ -245,18 +190,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "ploegomvang",
                 "objecttype": "Randwacht",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "zijn ploegomvang",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn ploegomvang"
               },
               "rechts": {
                 "node": "Literal",
@@ -280,35 +214,13 @@
                 "node": "AttribuutRef",
                 "attribuut": "grootgetal",
                 "objecttype": "Randwacht",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "zijn grootgetal",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn grootgetal"
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "bedrag",
                 "objecttype": "Randwacht",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "zijn bedrag",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn bedrag"
               },
               "periode": null,
               "bron": "zijn grootgetal is groter dan zijn bedrag"

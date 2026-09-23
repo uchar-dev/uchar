@@ -254,35 +254,13 @@
           "node": "AttribuutRef",
           "attribuut": "uitkijkbonus",
           "objecttype": "Wachter",
-          "onderwerpBron": "een Wachter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De uitkijkbonus van een Wachter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De uitkijkbonus van een Wachter"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "hoogte",
           "objecttype": "Post",
-          "onderwerpBron": "zijn post",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
           "bron": "de hoogte van zijn post",
-          "set": false,
-          "navigatiePad": [],
           "navigatieBindingen": [
             {
               "node": "RolBinding",
@@ -306,38 +284,13 @@
           "node": "AttribuutRef",
           "attribuut": "gevarenrang",
           "objecttype": "Wachter",
-          "onderwerpBron": "een Wachter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De gevarenrang van een Wachter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De gevarenrang van een Wachter"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "gevarenklasse",
           "objecttype": "Kustvak",
-          "onderwerpBron": "zijn post",
-          "navigatieRol": "post",
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
           "bron": "de gevarenklasse van het kustvak van zijn post",
-          "set": false,
-          "navigatiePad": [
-            "post",
-            "kustvak"
-          ],
           "navigatieBindingen": [
             {
               "node": "RolBinding",
@@ -366,14 +319,7 @@
           "node": "AttribuutRef",
           "attribuut": "seingerechtigd",
           "objecttype": "Wachter",
-          "onderwerpBron": "Een Wachter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Wachter is seingerechtigd",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Wachter is seingerechtigd"
         },
         "waarde": {
           "node": "Literal",
@@ -386,7 +332,6 @@
         "voorwaarde": {
           "node": "Kenmerk",
           "kenmerk": "risicopost",
-          "navigatie": "post",
           "negatie": false,
           "eigenaar": null,
           "periode": null,
@@ -411,18 +356,7 @@
           "node": "AttribuutRef",
           "attribuut": "seinaantal",
           "objecttype": "Post",
-          "onderwerpBron": "een Post",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het seinaantal van een Post",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het seinaantal van een Post"
         },
         "waarde": {
           "node": "Functie",
@@ -432,15 +366,7 @@
               "node": "AttribuutRef",
               "attribuut": "seinen",
               "objecttype": "Post",
-              "onderwerpBron": "de post",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "seinen van de post",
-              "set": false,
-              "navigatiePad": []
+              "bron": "seinen van de post"
             }
           ],
           "elementObjecttype": "Sein",
@@ -477,18 +403,7 @@
           "node": "AttribuutRef",
           "attribuut": "seingewicht",
           "objecttype": "Post",
-          "onderwerpBron": "een Post",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het seingewicht van een Post",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het seingewicht van een Post"
         },
         "waarde": {
           "node": "Functie",
@@ -498,18 +413,7 @@
               "node": "AttribuutRef",
               "attribuut": "gewicht",
               "objecttype": "Sein",
-              "onderwerpBron": "alle seinen van de post",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "het gewicht van alle seinen van de post",
-              "set": true,
-              "navigatiePad": []
+              "bron": "het gewicht van alle seinen van de post"
             }
           ],
           "elementObjecttype": "Sein",
@@ -557,18 +461,7 @@
           "node": "AttribuutRef",
           "attribuut": "vakseinaantal",
           "objecttype": "Kustvak",
-          "onderwerpBron": "een Kustvak",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het vakseinaantal van een Kustvak",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het vakseinaantal van een Kustvak"
         },
         "waarde": {
           "node": "Functie",
@@ -578,15 +471,7 @@
               "node": "AttribuutRef",
               "attribuut": "vakseinen",
               "objecttype": "Kustvak",
-              "onderwerpBron": "het kustvak",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "vakseinen van het kustvak",
-              "set": false,
-              "navigatiePad": []
+              "bron": "vakseinen van het kustvak"
             }
           ],
           "elementObjecttype": "Sein",
@@ -628,7 +513,6 @@
         "sleutels": [
           "wachtnummer"
         ],
-        "scopeVeld": "post",
         "bron": "De wachtnummer van alle Wachter van de post moeten uniek zijn.",
         "geldigheid": {
           "node": "Geldigheid",
@@ -649,14 +533,9 @@
         "naam": "vakbeseining door het kustvak",
         "anker": "Kustvak",
         "doel": "Sein",
-        "zetVeld": "seinvak",
-        "joinVeld": "post",
         "tussenstappen": [
           {
             "node": "Tussenstap",
-            "type": "Bestaatniet",
-            "veld": "kustvak",
-            "viaOuderVeld": false,
             "rolBinding": {
               "node": "RolBinding",
               "feittype": "kustligging",

@@ -95,18 +95,7 @@
           "node": "AttribuutRef",
           "attribuut": "vaarwatertarief",
           "objecttype": "Bergingstoeslag",
-          "onderwerpBron": "de vaarwatertarief",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de vaarwatertarief",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de vaarwatertarief"
         },
         "waarde": {
           "node": "Match",
@@ -121,20 +110,7 @@
             "node": "AttribuutRef",
             "attribuut": "vaarwater",
             "objecttype": "Bergingstoeslag",
-            "onderwerpBron": "de vaarwater",
-            "navigatieRol": null,
-            "type": {
-              "node": "Enumeratie",
-              "domein": "Vaarwater",
-              "waarden": [
-                "Wad",
-                "Zeegat",
-                "Ruimzee"
-              ]
-            },
-            "bron": "de vaarwater",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de vaarwater"
           },
           "arms": [
             {
@@ -203,18 +179,7 @@
           "node": "AttribuutRef",
           "attribuut": "bergingstoeslag",
           "objecttype": "Bergingstoeslag",
-          "onderwerpBron": "de bergingstoeslag",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de bergingstoeslag",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de bergingstoeslag"
         },
         "waarde": {
           "node": "Binair",
@@ -226,35 +191,13 @@
               "node": "AttribuutRef",
               "attribuut": "vaarwatertarief",
               "objecttype": "Bergingstoeslag",
-              "onderwerpBron": "de vaarwatertarief",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de vaarwatertarief",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de vaarwatertarief"
             },
             "rechts": {
               "node": "AttribuutRef",
               "attribuut": "geborgen_tonnage",
               "objecttype": "Bergingstoeslag",
-              "onderwerpBron": "de geborgen_tonnage",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de geborgen_tonnage",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de geborgen_tonnage"
             },
             "type": {
               "node": "Numeriek",
@@ -301,14 +244,7 @@
           "node": "AttribuutRef",
           "attribuut": "zeewaardige_berging",
           "objecttype": "Bergingstoeslag",
-          "onderwerpBron": "de zeewaardige_berging",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "de zeewaardige_berging",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de zeewaardige_berging"
         },
         "waarde": {
           "node": "Literal",
@@ -325,20 +261,7 @@
             "node": "AttribuutRef",
             "attribuut": "vaarwater",
             "objecttype": "Bergingstoeslag",
-            "onderwerpBron": "de vaarwater",
-            "navigatieRol": null,
-            "type": {
-              "node": "Enumeratie",
-              "domein": "Vaarwater",
-              "waarden": [
-                "Wad",
-                "Zeegat",
-                "Ruimzee"
-              ]
-            },
-            "bron": "de vaarwater",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de vaarwater"
           },
           "rechts": {
             "node": "Literal",

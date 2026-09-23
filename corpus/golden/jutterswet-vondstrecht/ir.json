@@ -126,25 +126,7 @@
           "node": "AttribuutRef",
           "attribuut": "vondstrecht",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "EUR",
-              "stelsel": "Munt",
-              "canoniek": "EUR",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "Het vondstrecht van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het vondstrecht van een Vondst"
         },
         "waarde": {
           "node": "Let",
@@ -167,25 +149,7 @@
             "node": "AttribuutRef",
             "attribuut": "meerprijs",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "de meerprijs van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de meerprijs van de Vondst"
           },
           "body": {
             "node": "Binair",
@@ -194,43 +158,11 @@
               "node": "AttribuutRef",
               "attribuut": "grondrecht",
               "objecttype": "Vondst",
-              "onderwerpBron": "de Vondst",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": {
-                  "node": "Eenheid",
-                  "afkorting": "EUR",
-                  "stelsel": "Munt",
-                  "canoniek": "EUR",
-                  "factorNaarCanoniek": 1,
-                  "noemer": null
-                }
-              },
-              "bron": "het grondrecht van de Vondst",
-              "set": false,
-              "navigatiePad": []
+              "bron": "het grondrecht van de Vondst"
             },
             "rechts": {
               "node": "BinderRef",
               "name": "toeslag",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": {
-                  "node": "Eenheid",
-                  "afkorting": "EUR",
-                  "stelsel": "Munt",
-                  "canoniek": "EUR",
-                  "factorNaarCanoniek": 1,
-                  "noemer": null
-                }
-              },
               "bron": "de toeslag"
             },
             "type": {

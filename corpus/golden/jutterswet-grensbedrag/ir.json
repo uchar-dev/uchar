@@ -75,18 +75,7 @@
           "node": "AttribuutRef",
           "attribuut": "ondergrens",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De ondergrens van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De ondergrens van een Jutter"
         },
         "waarde": {
           "node": "Begrensd",
@@ -94,18 +83,7 @@
             "node": "AttribuutRef",
             "attribuut": "ruwbedrag",
             "objecttype": "Jutter",
-            "onderwerpBron": "de Jutter",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "het ruwbedrag van de Jutter",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het ruwbedrag van de Jutter"
           },
           "minimum": {
             "node": "Literal",
@@ -144,18 +122,7 @@
           "node": "AttribuutRef",
           "attribuut": "bovengrens",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De bovengrens van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De bovengrens van een Jutter"
         },
         "waarde": {
           "node": "Begrensd",
@@ -163,18 +130,7 @@
             "node": "AttribuutRef",
             "attribuut": "ruwbedrag",
             "objecttype": "Jutter",
-            "onderwerpBron": "de Jutter",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "het ruwbedrag van de Jutter",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het ruwbedrag van de Jutter"
           },
           "minimum": null,
           "maximum": {
@@ -213,18 +169,7 @@
           "node": "AttribuutRef",
           "attribuut": "bandbreedte",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De bandbreedte van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De bandbreedte van een Jutter"
         },
         "waarde": {
           "node": "Begrensd",
@@ -232,18 +177,7 @@
             "node": "AttribuutRef",
             "attribuut": "ruwbedrag",
             "objecttype": "Jutter",
-            "onderwerpBron": "de Jutter",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "het ruwbedrag van de Jutter",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het ruwbedrag van de Jutter"
           },
           "minimum": {
             "node": "Literal",

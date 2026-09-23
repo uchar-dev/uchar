@@ -141,18 +141,7 @@
           "node": "AttribuutRef",
           "attribuut": "totaal",
           "objecttype": "Partij",
-          "onderwerpBron": "de Partij",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het totaal van een Partij",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het totaal van een Partij"
         },
         "waarde": {
           "node": "Binair",
@@ -166,35 +155,13 @@
                 "node": "AttribuutRef",
                 "attribuut": "vracht",
                 "objecttype": "Partij",
-                "onderwerpBron": "de Partij",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "de vracht van de Partij",
-                "set": false,
-                "navigatiePad": []
+                "bron": "de vracht van de Partij"
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "eenheden",
                 "objecttype": "Partij",
-                "onderwerpBron": "de Partij",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "de eenheden van de Partij",
-                "set": false,
-                "navigatiePad": []
+                "bron": "de eenheden van de Partij"
               },
               "type": {
                 "node": "Numeriek",
@@ -220,18 +187,7 @@
             "node": "AttribuutRef",
             "attribuut": "toeslag",
             "objecttype": "Partij",
-            "onderwerpBron": "de Partij",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de toeslag van de Partij",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de toeslag van de Partij"
           },
           "type": {
             "node": "Numeriek",
@@ -257,18 +213,7 @@
           "node": "AttribuutRef",
           "attribuut": "marge",
           "objecttype": "Partij",
-          "onderwerpBron": "de Partij",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 1,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De marge van een Partij",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De marge van een Partij"
         },
         "waarde": {
           "node": "Binair",
@@ -282,35 +227,13 @@
                 "node": "AttribuutRef",
                 "attribuut": "omzet",
                 "objecttype": "Partij",
-                "onderwerpBron": "de Partij",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "de omzet van de Partij",
-                "set": false,
-                "navigatiePad": []
+                "bron": "de omzet van de Partij"
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "posten",
                 "objecttype": "Partij",
-                "onderwerpBron": "de Partij",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "de posten van de Partij",
-                "set": false,
-                "navigatiePad": []
+                "bron": "de posten van de Partij"
               },
               "type": {
                 "node": "Numeriek",
@@ -336,18 +259,7 @@
             "node": "AttribuutRef",
             "attribuut": "aftrek",
             "objecttype": "Partij",
-            "onderwerpBron": "de Partij",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 1,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de aftrek van de Partij",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de aftrek van de Partij"
           },
           "type": {
             "node": "Numeriek",
@@ -373,18 +285,7 @@
           "node": "AttribuutRef",
           "attribuut": "premie",
           "objecttype": "Partij",
-          "onderwerpBron": "de Partij",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De premie van een Partij",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De premie van een Partij"
         },
         "waarde": {
           "node": "Binair",
@@ -413,18 +314,7 @@
               "node": "AttribuutRef",
               "attribuut": "grondslag",
               "objecttype": "Partij",
-              "onderwerpBron": "de Partij",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 1,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de grondslag van de Partij",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de grondslag van de Partij"
             },
             "modus": "NAAR_BENEDEN",
             "decimalen": 0,

@@ -101,18 +101,7 @@
           "node": "AttribuutRef",
           "attribuut": "aantal vrienden",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "Het aantal vrienden van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het aantal vrienden van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -122,15 +111,7 @@
               "node": "AttribuutRef",
               "attribuut": "vriend",
               "objecttype": "Jutter",
-              "onderwerpBron": "de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "vriend van de Jutter",
-              "set": false,
-              "navigatiePad": []
+              "bron": "vriend van de Jutter"
             }
           ],
           "elementObjecttype": "Vondst",
@@ -145,7 +126,12 @@
             "eenheid": null
           },
           "bron": "het aantal vriend van de Jutter",
-          "granulariteit": null
+          "granulariteit": null,
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "vondstband",
+            "rol": "vriend"
+          }
         },
         "voorwaarde": null,
         "geldigheid": {

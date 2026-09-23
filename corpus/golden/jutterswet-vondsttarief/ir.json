@@ -71,24 +71,7 @@
           "node": "AttribuutRef",
           "attribuut": "bergingstarief",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Percentage",
-            "geheel": true,
-            "decimalen": 0,
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "%",
-              "stelsel": null,
-              "canoniek": "%",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "Het bergingstarief van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het bergingstarief van een Vondst"
         },
         "waarde": {
           "node": "Literal",
@@ -123,14 +106,7 @@
           "node": "AttribuutRef",
           "attribuut": "standaardbelast",
           "objecttype": "Vondst",
-          "onderwerpBron": "Een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vondst is standaardbelast",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vondst is standaardbelast"
         },
         "waarde": {
           "node": "Literal",
@@ -147,24 +123,7 @@
             "node": "AttribuutRef",
             "attribuut": "vondsttarief",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Percentage",
-              "geheel": true,
-              "decimalen": 0,
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "%",
-                "stelsel": null,
-                "canoniek": "%",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "het vondsttarief van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het vondsttarief van de Vondst"
           },
           "rechts": {
             "node": "Literal",

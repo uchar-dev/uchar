@@ -261,18 +261,7 @@
           "node": "AttribuutRef",
           "attribuut": "laagste vondstgewicht",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "Het laagste vondstgewicht van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het laagste vondstgewicht van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -282,15 +271,7 @@
               "node": "AttribuutRef",
               "attribuut": "geborgen vondst",
               "objecttype": "Jutter",
-              "onderwerpBron": "de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "geborgen vondst van de Jutter",
-              "set": false,
-              "navigatiePad": []
+              "bron": "geborgen vondst van de Jutter"
             }
           ],
           "elementObjecttype": "Vondst",

@@ -180,18 +180,7 @@
           "node": "AttribuutRef",
           "attribuut": "heffing",
           "objecttype": "Vangst",
-          "onderwerpBron": null,
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": null,
-          "set": false,
-          "navigatiePad": []
+          "bron": null
         },
         "waarde": {
           "node": "Binair",
@@ -237,56 +226,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "waardering",
                 "objecttype": "Vangst",
-                "onderwerpBron": null,
-                "navigatieRol": null,
-                "type": {
-                  "node": "StructType",
-                  "domain": "waardering",
-                  "fields": [
-                    {
-                      "name": "toeslag",
-                      "datatype": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
-                      }
-                    },
-                    {
-                      "name": "kern",
-                      "datatype": {
-                        "node": "StructType",
-                        "domain": "kernwaarde",
-                        "fields": [
-                          {
-                            "name": "eenheden",
-                            "datatype": {
-                              "node": "Numeriek",
-                              "geheel": true,
-                              "decimalen": 0,
-                              "teken": "NIET_NEGATIEF",
-                              "eenheid": null
-                            }
-                          },
-                          {
-                            "name": "grondslag",
-                            "datatype": {
-                              "node": "Numeriek",
-                              "geheel": false,
-                              "decimalen": 2,
-                              "teken": "NIET_NEGATIEF",
-                              "eenheid": null
-                            }
-                          }
-                        ]
-                      }
-                    }
-                  ]
-                },
-                "bron": null,
-                "set": false,
-                "navigatiePad": []
+                "bron": null
               },
               "field": "kern",
               "bron": null
@@ -307,56 +247,7 @@
               "node": "AttribuutRef",
               "attribuut": "waardering",
               "objecttype": "Vangst",
-              "onderwerpBron": null,
-              "navigatieRol": null,
-              "type": {
-                "node": "StructType",
-                "domain": "waardering",
-                "fields": [
-                  {
-                    "name": "toeslag",
-                    "datatype": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
-                    }
-                  },
-                  {
-                    "name": "kern",
-                    "datatype": {
-                      "node": "StructType",
-                      "domain": "kernwaarde",
-                      "fields": [
-                        {
-                          "name": "eenheden",
-                          "datatype": {
-                            "node": "Numeriek",
-                            "geheel": true,
-                            "decimalen": 0,
-                            "teken": "NIET_NEGATIEF",
-                            "eenheid": null
-                          }
-                        },
-                        {
-                          "name": "grondslag",
-                          "datatype": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "NIET_NEGATIEF",
-                            "eenheid": null
-                          }
-                        }
-                      ]
-                    }
-                  }
-                ]
-              },
-              "bron": null,
-              "set": false,
-              "navigatiePad": []
+              "bron": null
             },
             "field": "toeslag",
             "bron": null
@@ -381,18 +272,7 @@
           "node": "AttribuutRef",
           "attribuut": "grondslagkopie",
           "objecttype": "Vangst",
-          "onderwerpBron": null,
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": null,
-          "set": false,
-          "navigatiePad": []
+          "bron": null
         },
         "waarde": {
           "node": "FieldAccess",
@@ -435,56 +315,7 @@
               "node": "AttribuutRef",
               "attribuut": "waardering",
               "objecttype": "Vangst",
-              "onderwerpBron": null,
-              "navigatieRol": null,
-              "type": {
-                "node": "StructType",
-                "domain": "waardering",
-                "fields": [
-                  {
-                    "name": "toeslag",
-                    "datatype": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
-                    }
-                  },
-                  {
-                    "name": "kern",
-                    "datatype": {
-                      "node": "StructType",
-                      "domain": "kernwaarde",
-                      "fields": [
-                        {
-                          "name": "eenheden",
-                          "datatype": {
-                            "node": "Numeriek",
-                            "geheel": true,
-                            "decimalen": 0,
-                            "teken": "NIET_NEGATIEF",
-                            "eenheid": null
-                          }
-                        },
-                        {
-                          "name": "grondslag",
-                          "datatype": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "NIET_NEGATIEF",
-                            "eenheid": null
-                          }
-                        }
-                      ]
-                    }
-                  }
-                ]
-              },
-              "bron": null,
-              "set": false,
-              "navigatiePad": []
+              "bron": null
             },
             "field": "kern",
             "bron": null

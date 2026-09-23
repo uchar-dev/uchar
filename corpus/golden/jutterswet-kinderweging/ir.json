@@ -75,18 +75,7 @@
           "node": "AttribuutRef",
           "attribuut": "factor",
           "objecttype": "Jutter",
-          "onderwerpBron": "De factor van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 4,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De factor van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De factor van een Jutter"
         },
         "waarde": {
           "node": "Binair",
@@ -110,18 +99,7 @@
               "node": "AttribuutRef",
               "attribuut": "kindertal",
               "objecttype": "Jutter",
-              "onderwerpBron": "de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
-              "bron": "het kindertal van de Jutter",
-              "set": false,
-              "navigatiePad": []
+              "bron": "het kindertal van de Jutter"
             },
             "rechts": {
               "node": "Literal",
@@ -168,18 +146,7 @@
           "node": "AttribuutRef",
           "attribuut": "gewogen",
           "objecttype": "Jutter",
-          "onderwerpBron": "Het gewogen inkomen van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het gewogen inkomen van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het gewogen inkomen van een Jutter"
         },
         "waarde": {
           "node": "Afgerond",
@@ -197,18 +164,7 @@
               "node": "AttribuutRef",
               "attribuut": "inkomen",
               "objecttype": "Jutter",
-              "onderwerpBron": "de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
-              "bron": "het inkomen van de Jutter",
-              "set": false,
-              "navigatiePad": []
+              "bron": "het inkomen van de Jutter"
             },
             "body": {
               "node": "Binair",
@@ -216,31 +172,13 @@
               "links": {
                 "node": "BinderRef",
                 "name": "ink2",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                },
                 "bron": "ink2"
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "factor",
                 "objecttype": "Jutter",
-                "onderwerpBron": "de Jutter",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 4,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "de factor van de Jutter",
-                "set": false,
-                "navigatiePad": []
+                "bron": "de factor van de Jutter"
               },
               "type": {
                 "node": "Numeriek",

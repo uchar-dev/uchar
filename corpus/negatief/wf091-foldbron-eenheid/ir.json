@@ -121,25 +121,7 @@
           "node": "AttribuutRef",
           "attribuut": "totaalgewicht",
           "objecttype": "Berging",
-          "onderwerpBron": "de totaalgewicht van de Berging",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "kg",
-              "stelsel": "Gewicht",
-              "canoniek": "kg",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "het totaalgewicht van de Berging",
-          "set": false,
-          "navigatiePad": []
+          "bron": "het totaalgewicht van de Berging"
         },
         "waarde": {
           "node": "Functie",
@@ -149,25 +131,7 @@
               "node": "AttribuutRef",
               "attribuut": "gewicht",
               "objecttype": "Schuit",
-              "onderwerpBron": "het gewicht van alle schuiten van de Berging",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": {
-                  "node": "Eenheid",
-                  "afkorting": "t",
-                  "stelsel": "Gewicht",
-                  "canoniek": "kg",
-                  "factorNaarCanoniek": 1000,
-                  "noemer": null
-                }
-              },
-              "bron": "het gewicht van alle schuiten van de Berging",
-              "set": true,
-              "navigatiePad": []
+              "bron": "het gewicht van alle schuiten van de Berging"
             }
           ],
           "elementObjecttype": "Schuit",

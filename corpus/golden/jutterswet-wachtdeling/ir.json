@@ -75,18 +75,7 @@
           "node": "AttribuutRef",
           "attribuut": "geenteken",
           "objecttype": "Wacht",
-          "onderwerpBron": "een Wacht",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het geenteken van een Wacht",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het geenteken van een Wacht"
         },
         "waarde": {
           "node": "Literal",
@@ -112,18 +101,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "ploegomvang",
                 "objecttype": "Wacht",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "zijn ploegomvang",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn ploegomvang"
               },
               "rechts": {
                 "node": "Literal",
@@ -152,35 +130,13 @@
                     "node": "AttribuutRef",
                     "attribuut": "vangstwaarde",
                     "objecttype": "Wacht",
-                    "onderwerpBron": "de Wacht",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "de vangstwaarde van de Wacht",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "de vangstwaarde van de Wacht"
                   },
                   "rechts": {
                     "node": "AttribuutRef",
                     "attribuut": "ploegomvang",
                     "objecttype": "Wacht",
-                    "onderwerpBron": "de Wacht",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "de ploegomvang van de Wacht",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "de ploegomvang van de Wacht"
                   },
                   "type": {
                     "node": "Numeriek",
@@ -234,18 +190,7 @@
           "node": "AttribuutRef",
           "attribuut": "minsteteken",
           "objecttype": "Wacht",
-          "onderwerpBron": "een Wacht",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het minsteteken van een Wacht",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het minsteteken van een Wacht"
         },
         "waarde": {
           "node": "Literal",
@@ -271,18 +216,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "ploegomvang",
                 "objecttype": "Wacht",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "zijn ploegomvang",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn ploegomvang"
               },
               "rechts": {
                 "node": "Literal",
@@ -311,35 +245,13 @@
                     "node": "AttribuutRef",
                     "attribuut": "vangstwaarde",
                     "objecttype": "Wacht",
-                    "onderwerpBron": "de Wacht",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "de vangstwaarde van de Wacht",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "de vangstwaarde van de Wacht"
                   },
                   "rechts": {
                     "node": "AttribuutRef",
                     "attribuut": "ploegomvang",
                     "objecttype": "Wacht",
-                    "onderwerpBron": "de Wacht",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "de ploegomvang van de Wacht",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "de ploegomvang van de Wacht"
                   },
                   "type": {
                     "node": "Numeriek",

@@ -75,18 +75,7 @@
           "node": "AttribuutRef",
           "attribuut": "vacuumteken",
           "objecttype": "Vacuumwacht",
-          "onderwerpBron": "een Vacuumwacht",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het vacuumteken van een Vacuumwacht",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het vacuumteken van een Vacuumwacht"
         },
         "waarde": {
           "node": "Literal",
@@ -117,35 +106,13 @@
                     "node": "AttribuutRef",
                     "attribuut": "vangstwaarde",
                     "objecttype": "Vacuumwacht",
-                    "onderwerpBron": "de Vacuumwacht",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "de vangstwaarde van de Vacuumwacht",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "de vangstwaarde van de Vacuumwacht"
                   },
                   "rechts": {
                     "node": "AttribuutRef",
                     "attribuut": "ploegomvang",
                     "objecttype": "Vacuumwacht",
-                    "onderwerpBron": "de Vacuumwacht",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "de ploegomvang van de Vacuumwacht",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "de ploegomvang van de Vacuumwacht"
                   },
                   "type": {
                     "node": "Numeriek",
@@ -189,18 +156,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "ploegomvang",
                 "objecttype": "Vacuumwacht",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "zijn ploegomvang",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn ploegomvang"
               },
               "rechts": {
                 "node": "Literal",
@@ -234,18 +190,7 @@
           "node": "AttribuutRef",
           "attribuut": "stopteken",
           "objecttype": "Vacuumwacht",
-          "onderwerpBron": "een Vacuumwacht",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het stopteken van een Vacuumwacht",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het stopteken van een Vacuumwacht"
         },
         "waarde": {
           "node": "Literal",
@@ -271,18 +216,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "ploegomvang",
                 "objecttype": "Vacuumwacht",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "zijn ploegomvang",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn ploegomvang"
               },
               "rechts": {
                 "node": "Literal",
@@ -306,18 +240,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "vangstwaarde",
                 "objecttype": "Vacuumwacht",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "zijn vangstwaarde",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn vangstwaarde"
               },
               "rechts": {
                 "node": "Literal",
@@ -346,35 +269,13 @@
                     "node": "AttribuutRef",
                     "attribuut": "vangstwaarde",
                     "objecttype": "Vacuumwacht",
-                    "onderwerpBron": "de Vacuumwacht",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "de vangstwaarde van de Vacuumwacht",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "de vangstwaarde van de Vacuumwacht"
                   },
                   "rechts": {
                     "node": "AttribuutRef",
                     "attribuut": "ploegomvang",
                     "objecttype": "Vacuumwacht",
-                    "onderwerpBron": "de Vacuumwacht",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "de ploegomvang van de Vacuumwacht",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "de ploegomvang van de Vacuumwacht"
                   },
                   "type": {
                     "node": "Numeriek",
@@ -418,18 +319,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "ploegomvang",
                 "objecttype": "Vacuumwacht",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "zijn ploegomvang",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn ploegomvang"
               },
               "rechts": {
                 "node": "Literal",

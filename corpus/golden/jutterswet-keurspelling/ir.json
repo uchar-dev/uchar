@@ -87,14 +87,7 @@
           "node": "AttribuutRef",
           "attribuut": "veilbaar",
           "objecttype": "Vondst",
-          "onderwerpBron": "Een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vondst is veilbaar",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vondst is veilbaar"
         },
         "waarde": {
           "node": "Literal",
@@ -111,20 +104,7 @@
             "node": "AttribuutRef",
             "attribuut": "staat",
             "objecttype": "Vondst",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Enumeratie",
-              "domein": "Keurklasse",
-              "waarden": [
-                "gaaf",
-                "beschadigd",
-                "wrakhout"
-              ]
-            },
-            "bron": "zijn staat",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn staat"
           },
           "rechts": {
             "node": "Literal",
@@ -157,14 +137,7 @@
           "node": "AttribuutRef",
           "attribuut": "afgekeurd",
           "objecttype": "Vondst",
-          "onderwerpBron": "Een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vondst is afgekeurd",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vondst is afgekeurd"
         },
         "waarde": {
           "node": "Literal",
@@ -181,20 +154,7 @@
             "node": "AttribuutRef",
             "attribuut": "staat",
             "objecttype": "Vondst",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Enumeratie",
-              "domein": "Keurklasse",
-              "waarden": [
-                "gaaf",
-                "beschadigd",
-                "wrakhout"
-              ]
-            },
-            "bron": "zijn staat",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn staat"
           },
           "rechts": {
             "node": "Literal",
@@ -227,14 +187,7 @@
           "node": "AttribuutRef",
           "attribuut": "bevestigd",
           "objecttype": "Vondst",
-          "onderwerpBron": "Een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vondst is bevestigd",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vondst is bevestigd"
         },
         "waarde": {
           "node": "Literal",
@@ -251,39 +204,13 @@
             "node": "AttribuutRef",
             "attribuut": "herkeuring",
             "objecttype": "Vondst",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Enumeratie",
-              "domein": "Keurklasse",
-              "waarden": [
-                "gaaf",
-                "beschadigd",
-                "wrakhout"
-              ]
-            },
-            "bron": "zijn herkeuring",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn herkeuring"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "staat",
             "objecttype": "Vondst",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Enumeratie",
-              "domein": "Keurklasse",
-              "waarden": [
-                "gaaf",
-                "beschadigd",
-                "wrakhout"
-              ]
-            },
-            "bron": "zijn staat",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn staat"
           },
           "periode": null,
           "bron": "zijn herkeuring gelijk is aan zijn staat"
@@ -310,20 +237,7 @@
             "node": "AttribuutRef",
             "attribuut": "staat",
             "objecttype": "Vondst",
-            "onderwerpBron": "een Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Enumeratie",
-              "domein": "Keurklasse",
-              "waarden": [
-                "gaaf",
-                "beschadigd",
-                "wrakhout"
-              ]
-            },
-            "bron": "De staat van een Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "De staat van een Vondst"
           },
           "rechts": {
             "node": "Literal",
@@ -361,39 +275,13 @@
             "node": "AttribuutRef",
             "attribuut": "herkeuring",
             "objecttype": "Vondst",
-            "onderwerpBron": "een Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Enumeratie",
-              "domein": "Keurklasse",
-              "waarden": [
-                "gaaf",
-                "beschadigd",
-                "wrakhout"
-              ]
-            },
-            "bron": "De herkeuring van een Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "De herkeuring van een Vondst"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "staat",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Enumeratie",
-              "domein": "Keurklasse",
-              "waarden": [
-                "gaaf",
-                "beschadigd",
-                "wrakhout"
-              ]
-            },
-            "bron": "de staat van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de staat van de Vondst"
           },
           "periode": null,
           "bron": "De herkeuring van een Vondst moet gelijk zijn aan de staat van de Vondst"
@@ -415,7 +303,6 @@
         "sleutels": [
           "staat"
         ],
-        "scopeVeld": null,
         "bron": "De staten van alle Vondsten moeten uniek zijn.",
         "geldigheid": {
           "node": "Geldigheid",

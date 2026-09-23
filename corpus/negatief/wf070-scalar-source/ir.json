@@ -84,25 +84,11 @@
                 "links": {
                   "node": "BinderRef",
                   "name": "acc",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
                   "bron": null
                 },
                 "rechts": {
                   "node": "BinderRef",
                   "name": "x",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
                   "bron": null
                 },
                 "type": {

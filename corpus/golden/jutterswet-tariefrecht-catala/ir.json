@@ -74,18 +74,7 @@
           "node": "AttribuutRef",
           "attribuut": "aanslag",
           "objecttype": "Penningplichtige",
-          "onderwerpBron": "de aanslag",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de aanslag",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de aanslag"
         },
         "waarde": {
           "node": "Let",
@@ -118,18 +107,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "kindertal",
                 "objecttype": "Penningplichtige",
-                "onderwerpBron": "de kindertal",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "de kindertal",
-                "set": false,
-                "navigatiePad": []
+                "bron": "de kindertal"
               },
               "type": {
                 "node": "Numeriek",
@@ -170,35 +148,13 @@
                   "node": "AttribuutRef",
                   "attribuut": "inkomen",
                   "objecttype": "Penningplichtige",
-                  "onderwerpBron": "de inkomen",
-                  "navigatieRol": null,
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
-                  "bron": "de inkomen",
-                  "set": false,
-                  "navigatiePad": []
+                  "bron": "de inkomen"
                 },
                 "rechts": {
                   "node": "AttribuutRef",
                   "attribuut": "tarief",
                   "objecttype": "Penningplichtige",
-                  "onderwerpBron": "de tarief",
-                  "navigatieRol": null,
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 4,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
-                  "bron": "de tarief",
-                  "set": false,
-                  "navigatiePad": []
+                  "bron": "de tarief"
                 },
                 "type": {
                   "node": "Numeriek",
@@ -235,25 +191,11 @@
                 "links": {
                   "node": "BinderRef",
                   "name": "aftrek",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
                   "bron": "aftrek"
                 },
                 "rechts": {
                   "node": "BinderRef",
                   "name": "belasting",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
                   "bron": "belasting"
                 },
                 "periode": null,
@@ -277,25 +219,11 @@
                 "links": {
                   "node": "BinderRef",
                   "name": "belasting",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
                   "bron": "belasting"
                 },
                 "rechts": {
                   "node": "BinderRef",
                   "name": "aftrek",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
                   "bron": "aftrek"
                 },
                 "type": {
@@ -348,18 +276,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "kindertal",
                 "objecttype": "Penningplichtige",
-                "onderwerpBron": "de kindertal",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "de kindertal",
-                "set": false,
-                "navigatiePad": []
+                "bron": "de kindertal"
               },
               "rechts": {
                 "node": "Literal",
@@ -405,18 +322,7 @@
                           "node": "AttribuutRef",
                           "attribuut": "kindertal",
                           "objecttype": "Penningplichtige",
-                          "onderwerpBron": "de kindertal",
-                          "navigatieRol": null,
-                          "type": {
-                            "node": "Numeriek",
-                            "geheel": true,
-                            "decimalen": 0,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
-                          },
-                          "bron": "de kindertal",
-                          "set": false,
-                          "navigatiePad": []
+                          "bron": "de kindertal"
                         },
                         "rechts": {
                           "node": "Literal",
@@ -463,18 +369,7 @@
                           "node": "AttribuutRef",
                           "attribuut": "inkomen",
                           "objecttype": "Penningplichtige",
-                          "onderwerpBron": "de inkomen",
-                          "navigatieRol": null,
-                          "type": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
-                          },
-                          "bron": "de inkomen",
-                          "set": false,
-                          "navigatiePad": []
+                          "bron": "de inkomen"
                         },
                         "rechts": {
                           "node": "Literal",

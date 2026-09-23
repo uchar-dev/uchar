@@ -82,20 +82,7 @@
           "node": "AttribuutRef",
           "attribuut": "aanlandkust",
           "objecttype": "Berging",
-          "onderwerpBron": "de aanlandkust",
-          "navigatieRol": null,
-          "type": {
-            "node": "Enumeratie",
-            "domein": "Kust",
-            "waarden": [
-              "Noord",
-              "Zuid",
-              "West"
-            ]
-          },
-          "bron": "de aanlandkust",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de aanlandkust"
         },
         "waarde": {
           "node": "Functie",
@@ -105,39 +92,13 @@
               "node": "AttribuutRef",
               "attribuut": "bakboordkust",
               "objecttype": "Berging",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Enumeratie",
-                "domein": "Kust",
-                "waarden": [
-                  "Noord",
-                  "Zuid",
-                  "West"
-                ]
-              },
-              "bron": "zijn bakboordkust",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn bakboordkust"
             },
             {
               "node": "AttribuutRef",
               "attribuut": "stuurboordkust",
               "objecttype": "Berging",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Enumeratie",
-                "domein": "Kust",
-                "waarden": [
-                  "Noord",
-                  "Zuid",
-                  "West"
-                ]
-              },
-              "bron": "zijn stuurboordkust",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn stuurboordkust"
             }
           ],
           "elementObjecttype": null,

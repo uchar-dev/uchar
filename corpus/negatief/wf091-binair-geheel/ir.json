@@ -294,18 +294,7 @@
           "node": "AttribuutRef",
           "attribuut": "uitaantal",
           "objecttype": "Jutter",
-          "onderwerpBron": "de Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De uitaantal van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De uitaantal van een Jutter"
         },
         "waarde": {
           "node": "Binair",
@@ -314,35 +303,13 @@
             "node": "AttribuutRef",
             "attribuut": "aantal",
             "objecttype": "Jutter",
-            "onderwerpBron": "de Jutter",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de aantal van de Jutter",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de aantal van de Jutter"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "ruim",
             "objecttype": "Jutter",
-            "onderwerpBron": "de Jutter",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de ruim van de Jutter",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de ruim van de Jutter"
           },
           "type": {
             "node": "Numeriek",

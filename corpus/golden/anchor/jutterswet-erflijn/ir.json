@@ -85,18 +85,7 @@
           "node": "AttribuutRef",
           "attribuut": "erfvolgeraantal",
           "objecttype": "Wachter",
-          "onderwerpBron": "een Wachter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het erfvolgeraantal van een Wachter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het erfvolgeraantal van een Wachter"
         },
         "waarde": {
           "node": "Functie",
@@ -106,15 +95,7 @@
               "node": "AttribuutRef",
               "attribuut": "erfvolgers",
               "objecttype": "Wachter",
-              "onderwerpBron": "de Wachter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "role-count source"
-              },
-              "bron": "alle erfvolgers van de Wachter",
-              "set": false,
-              "navigatiePad": []
+              "bron": "alle erfvolgers van de Wachter"
             }
           ],
           "elementObjecttype": "Wachter",
@@ -156,8 +137,6 @@
         "naam": "erf de directe opvolger",
         "anker": "Wachter",
         "doel": "Wachter",
-        "zetVeld": "erfvolger",
-        "joinVeld": "opvolger",
         "tussenstappen": [],
         "voorwaarde": null,
         "geldigheid": {
@@ -179,14 +158,9 @@
         "naam": "erf de lijn door",
         "anker": "Wachter",
         "doel": "Wachter",
-        "zetVeld": "erfvolger",
-        "joinVeld": "opvolger",
         "tussenstappen": [
           {
             "node": "Tussenstap",
-            "type": "Wachter",
-            "veld": "erfvolger",
-            "viaOuderVeld": false,
             "rolBinding": {
               "node": "RolBinding",
               "feittype": "erflijn",

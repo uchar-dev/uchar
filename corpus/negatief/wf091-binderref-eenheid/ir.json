@@ -91,25 +91,7 @@
           "node": "AttribuutRef",
           "attribuut": "kopie",
           "objecttype": "Jutter",
-          "onderwerpBron": "de kopie van de Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "kg",
-              "stelsel": "Gewicht",
-              "canoniek": "kg",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "de kopie van de Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de kopie van de Jutter"
         },
         "waarde": {
           "node": "Let",
@@ -132,43 +114,11 @@
             "node": "AttribuutRef",
             "attribuut": "gewicht",
             "objecttype": "Jutter",
-            "onderwerpBron": "de gewicht van de Jutter",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "kg",
-                "stelsel": "Gewicht",
-                "canoniek": "kg",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "het gewicht van de Jutter",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het gewicht van de Jutter"
           },
           "body": {
             "node": "BinderRef",
             "name": "b",
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "t",
-                "stelsel": "Gewicht",
-                "canoniek": "kg",
-                "factorNaarCanoniek": 1000,
-                "noemer": null
-              }
-            },
             "bron": "het gewicht"
           },
           "bron": "het gewicht als kopie"

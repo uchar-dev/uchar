@@ -101,18 +101,7 @@
           "node": "AttribuutRef",
           "attribuut": "borgdeel",
           "objecttype": "Jutter",
-          "onderwerpBron": "de Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het borgdeel",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het borgdeel"
         },
         "waarde": {
           "node": "Functie",
@@ -122,18 +111,7 @@
               "node": "AttribuutRef",
               "attribuut": "borgtarief",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "zijn borgtarief",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn borgtarief"
             }
           ],
           "elementObjecttype": null,
@@ -141,7 +119,6 @@
           "filter": {
             "node": "Kenmerk",
             "kenmerk": "borgplichtig",
-            "navigatie": null,
             "negatie": false,
             "eigenaar": null,
             "periode": null,
@@ -173,18 +150,7 @@
           "node": "AttribuutRef",
           "attribuut": "wachtsom",
           "objecttype": "Jutter",
-          "onderwerpBron": "de Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De wachtsom",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De wachtsom"
         },
         "waarde": {
           "node": "Functie",
@@ -194,18 +160,7 @@
               "node": "AttribuutRef",
               "attribuut": "bedrag",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "zijn bedrag",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn bedrag"
             }
           ],
           "elementObjecttype": "Jutter",
@@ -217,18 +172,7 @@
               "node": "AttribuutRef",
               "attribuut": "borgdeel",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "zijn borgdeel",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn borgdeel"
             },
             "rechts": {
               "node": "Literal",

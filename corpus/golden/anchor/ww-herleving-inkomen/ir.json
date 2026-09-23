@@ -142,18 +142,7 @@
           "node": "AttribuutRef",
           "attribuut": "inkomensgrens",
           "objecttype": "Werknemer",
-          "onderwerpBron": "De inkomensgrens van een Werknemer",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De inkomensgrens van een Werknemer",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De inkomensgrens van een Werknemer"
         },
         "waarde": {
           "node": "Afgerond",
@@ -164,18 +153,7 @@
               "node": "AttribuutRef",
               "attribuut": "maandloon",
               "objecttype": "Werknemer",
-              "onderwerpBron": "het maandloon van de Werknemer",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
-              "bron": "het maandloon van de Werknemer",
-              "set": false,
-              "navigatiePad": []
+              "bron": "het maandloon van de Werknemer"
             },
             "rechts": {
               "node": "Literal",
@@ -224,25 +202,7 @@
           "node": "AttribuutRef",
           "attribuut": "verstreken periode",
           "objecttype": "Werknemer",
-          "onderwerpBron": "De verstreken periode van een Werknemer",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": null,
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "dag",
-              "stelsel": null,
-              "canoniek": null,
-              "factorNaarCanoniek": null,
-              "noemer": null
-            }
-          },
-          "bron": "De verstreken periode van een Werknemer",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De verstreken periode van een Werknemer"
         },
         "waarde": {
           "node": "Functie",
@@ -252,27 +212,13 @@
               "node": "AttribuutRef",
               "attribuut": "eindigingsdatum",
               "objecttype": "Werknemer",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumInDagen"
-              },
-              "bron": "zijn eindigingsdatum",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn eindigingsdatum"
             },
             {
               "node": "AttribuutRef",
               "attribuut": "vervaldatum",
               "objecttype": "Werknemer",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumInDagen"
-              },
-              "bron": "zijn vervaldatum",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn vervaldatum"
             }
           ],
           "elementObjecttype": null,
@@ -311,14 +257,7 @@
           "node": "AttribuutRef",
           "attribuut": "nieuwe maxdatum",
           "objecttype": "Werknemer",
-          "onderwerpBron": "De nieuwe maxdatum van een Werknemer",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "De nieuwe maxdatum van een Werknemer",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De nieuwe maxdatum van een Werknemer"
         },
         "waarde": {
           "node": "Binair",
@@ -327,38 +266,13 @@
             "node": "AttribuutRef",
             "attribuut": "maxdatum",
             "objecttype": "Werknemer",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumInDagen"
-            },
-            "bron": "zijn maxdatum",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn maxdatum"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "verstreken periode",
             "objecttype": "Werknemer",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": null,
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "dag",
-                "stelsel": null,
-                "canoniek": null,
-                "factorNaarCanoniek": null,
-                "noemer": null
-              }
-            },
-            "bron": "zijn verstreken periode",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn verstreken periode"
           },
           "type": {
             "node": "DatumInDagen"
@@ -395,7 +309,6 @@
             "voorwaarde": {
               "node": "Kenmerk",
               "kenmerk": "werkloos",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -419,7 +332,6 @@
                           {
                             "node": "Kenmerk",
                             "kenmerk": "werkloos",
-                            "navigatie": null,
                             "negatie": false,
                             "eigenaar": null,
                             "periode": null,
@@ -432,35 +344,13 @@
                               "node": "AttribuutRef",
                               "attribuut": "maandinkomen",
                               "objecttype": "Werknemer",
-                              "onderwerpBron": "zijn maandinkomen",
-                              "navigatieRol": null,
-                              "type": {
-                                "node": "Numeriek",
-                                "geheel": false,
-                                "decimalen": 2,
-                                "teken": "NIET_NEGATIEF",
-                                "eenheid": null
-                              },
-                              "bron": "zijn maandinkomen",
-                              "set": false,
-                              "navigatiePad": []
+                              "bron": "zijn maandinkomen"
                             },
                             "rechts": {
                               "node": "AttribuutRef",
                               "attribuut": "inkomensgrens",
                               "objecttype": "Werknemer",
-                              "onderwerpBron": "zijn inkomensgrens",
-                              "navigatieRol": null,
-                              "type": {
-                                "node": "Numeriek",
-                                "geheel": false,
-                                "decimalen": 2,
-                                "teken": "ONBEPAALD",
-                                "eenheid": null
-                              },
-                              "bron": "zijn inkomensgrens",
-                              "set": false,
-                              "navigatiePad": []
+                              "bron": "zijn inkomensgrens"
                             },
                             "periode": null,
                             "bron": "zijn maandinkomen groter is dan zijn inkomensgrens"
@@ -486,7 +376,6 @@
                                     {
                                       "node": "Kenmerk",
                                       "kenmerk": "werkloos",
-                                      "navigatie": null,
                                       "negatie": false,
                                       "eigenaar": null,
                                       "periode": null,
@@ -499,35 +388,13 @@
                                         "node": "AttribuutRef",
                                         "attribuut": "maandinkomen",
                                         "objecttype": "Werknemer",
-                                        "onderwerpBron": "zijn maandinkomen",
-                                        "navigatieRol": null,
-                                        "type": {
-                                          "node": "Numeriek",
-                                          "geheel": false,
-                                          "decimalen": 2,
-                                          "teken": "NIET_NEGATIEF",
-                                          "eenheid": null
-                                        },
-                                        "bron": "zijn maandinkomen",
-                                        "set": false,
-                                        "navigatiePad": []
+                                        "bron": "zijn maandinkomen"
                                       },
                                       "rechts": {
                                         "node": "AttribuutRef",
                                         "attribuut": "inkomensgrens",
                                         "objecttype": "Werknemer",
-                                        "onderwerpBron": "zijn inkomensgrens",
-                                        "navigatieRol": null,
-                                        "type": {
-                                          "node": "Numeriek",
-                                          "geheel": false,
-                                          "decimalen": 2,
-                                          "teken": "ONBEPAALD",
-                                          "eenheid": null
-                                        },
-                                        "bron": "zijn inkomensgrens",
-                                        "set": false,
-                                        "navigatiePad": []
+                                        "bron": "zijn inkomensgrens"
                                       },
                                       "periode": null,
                                       "bron": "zijn maandinkomen groter is dan zijn inkomensgrens"
@@ -535,7 +402,6 @@
                                     {
                                       "node": "Kenmerk",
                                       "kenmerk": "omstandigheid vervallen",
-                                      "navigatie": null,
                                       "negatie": false,
                                       "eigenaar": null,
                                       "periode": null,
@@ -562,7 +428,6 @@
                                               {
                                                 "node": "Kenmerk",
                                                 "kenmerk": "werkloos",
-                                                "navigatie": null,
                                                 "negatie": false,
                                                 "eigenaar": null,
                                                 "periode": null,
@@ -575,35 +440,13 @@
                                                   "node": "AttribuutRef",
                                                   "attribuut": "maandinkomen",
                                                   "objecttype": "Werknemer",
-                                                  "onderwerpBron": "zijn maandinkomen",
-                                                  "navigatieRol": null,
-                                                  "type": {
-                                                    "node": "Numeriek",
-                                                    "geheel": false,
-                                                    "decimalen": 2,
-                                                    "teken": "NIET_NEGATIEF",
-                                                    "eenheid": null
-                                                  },
-                                                  "bron": "zijn maandinkomen",
-                                                  "set": false,
-                                                  "navigatiePad": []
+                                                  "bron": "zijn maandinkomen"
                                                 },
                                                 "rechts": {
                                                   "node": "AttribuutRef",
                                                   "attribuut": "inkomensgrens",
                                                   "objecttype": "Werknemer",
-                                                  "onderwerpBron": "zijn inkomensgrens",
-                                                  "navigatieRol": null,
-                                                  "type": {
-                                                    "node": "Numeriek",
-                                                    "geheel": false,
-                                                    "decimalen": 2,
-                                                    "teken": "ONBEPAALD",
-                                                    "eenheid": null
-                                                  },
-                                                  "bron": "zijn inkomensgrens",
-                                                  "set": false,
-                                                  "navigatiePad": []
+                                                  "bron": "zijn inkomensgrens"
                                                 },
                                                 "periode": null,
                                                 "bron": "zijn maandinkomen groter is dan zijn inkomensgrens"
@@ -611,7 +454,6 @@
                                               {
                                                 "node": "Kenmerk",
                                                 "kenmerk": "omstandigheid vervallen",
-                                                "navigatie": null,
                                                 "negatie": false,
                                                 "eigenaar": null,
                                                 "periode": null,
@@ -620,7 +462,6 @@
                                               {
                                                 "node": "Kenmerk",
                                                 "kenmerk": "nieuw recht ontstaan",
-                                                "navigatie": null,
                                                 "negatie": false,
                                                 "eigenaar": null,
                                                 "periode": null,
@@ -633,35 +474,13 @@
                                                   "node": "AttribuutRef",
                                                   "attribuut": "nieuw maandloon",
                                                   "objecttype": "Werknemer",
-                                                  "onderwerpBron": "zijn nieuw maandloon",
-                                                  "navigatieRol": null,
-                                                  "type": {
-                                                    "node": "Numeriek",
-                                                    "geheel": false,
-                                                    "decimalen": 2,
-                                                    "teken": "NIET_NEGATIEF",
-                                                    "eenheid": null
-                                                  },
-                                                  "bron": "zijn nieuw maandloon",
-                                                  "set": false,
-                                                  "navigatiePad": []
+                                                  "bron": "zijn nieuw maandloon"
                                                 },
                                                 "rechts": {
                                                   "node": "AttribuutRef",
                                                   "attribuut": "inkomensgrens",
                                                   "objecttype": "Werknemer",
-                                                  "onderwerpBron": "zijn inkomensgrens",
-                                                  "navigatieRol": null,
-                                                  "type": {
-                                                    "node": "Numeriek",
-                                                    "geheel": false,
-                                                    "decimalen": 2,
-                                                    "teken": "ONBEPAALD",
-                                                    "eenheid": null
-                                                  },
-                                                  "bron": "zijn inkomensgrens",
-                                                  "set": false,
-                                                  "navigatiePad": []
+                                                  "bron": "zijn inkomensgrens"
                                                 },
                                                 "periode": null,
                                                 "bron": "zijn nieuw maandloon groter is dan zijn inkomensgrens"

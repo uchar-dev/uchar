@@ -127,18 +127,7 @@
           "node": "AttribuutRef",
           "attribuut": "toezichtopbrengst",
           "objecttype": "Berger",
-          "onderwerpBron": "een Berger",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De toezichtopbrengst van een Berger",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De toezichtopbrengst van een Berger"
         },
         "waarde": {
           "node": "Functie",
@@ -148,18 +137,7 @@
               "node": "AttribuutRef",
               "attribuut": "opbrengst",
               "objecttype": "Berging",
-              "onderwerpBron": "alle bewaakte bergingen van de Berger",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de opbrengst van alle bewaakte bergingen van de Berger",
-              "set": true,
-              "navigatiePad": []
+              "bron": "de opbrengst van alle bewaakte bergingen van de Berger"
             }
           ],
           "elementObjecttype": "Berging",

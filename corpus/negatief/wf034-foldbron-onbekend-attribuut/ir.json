@@ -79,18 +79,7 @@
           "node": "AttribuutRef",
           "attribuut": "aantal maten",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "Het aantal maten van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het aantal maten van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -100,15 +89,7 @@
               "node": "AttribuutRef",
               "attribuut": "maten",
               "objecttype": "Jutter",
-              "onderwerpBron": "de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "maten van de Jutter",
-              "set": false,
-              "navigatiePad": []
+              "bron": "maten van de Jutter"
             }
           ],
           "elementObjecttype": "Jutter",
@@ -145,18 +126,7 @@
           "node": "AttribuutRef",
           "attribuut": "maatwaarde",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De maatwaarde van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De maatwaarde van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -166,18 +136,7 @@
               "node": "AttribuutRef",
               "attribuut": "bestaatniet",
               "objecttype": "Jutter",
-              "onderwerpBron": "alle maten van de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de vondstwaarde van alle maten van de Jutter",
-              "set": true,
-              "navigatiePad": []
+              "bron": "de vondstwaarde van alle maten van de Jutter"
             }
           ],
           "elementObjecttype": "Jutter",
@@ -203,7 +162,12 @@
             "eenheid": null
           },
           "bron": "de som van de vondstwaarde van alle maten van de Jutter of 0 als die er niet zijn",
-          "granulariteit": null
+          "granulariteit": null,
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "maatschap",
+            "rol": "maat"
+          }
         },
         "voorwaarde": null,
         "geldigheid": {

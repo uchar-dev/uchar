@@ -162,18 +162,7 @@
           "node": "AttribuutRef",
           "attribuut": "bergingsgewicht",
           "objecttype": "Gemeente",
-          "onderwerpBron": "een Gemeente",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het bergingsgewicht van een Gemeente",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het bergingsgewicht van een Gemeente"
         },
         "waarde": {
           "node": "Functie",
@@ -183,18 +172,7 @@
               "node": "AttribuutRef",
               "attribuut": "gewicht",
               "objecttype": "Vondst",
-              "onderwerpBron": "alle geborgen vondsten van de Gemeente",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "het gewicht van alle geborgen vondsten van de Gemeente",
-              "set": true,
-              "navigatiePad": []
+              "bron": "het gewicht van alle geborgen vondsten van de Gemeente"
             }
           ],
           "elementObjecttype": "Vondst",
@@ -242,18 +220,7 @@
           "node": "AttribuutRef",
           "attribuut": "bergingsaantal",
           "objecttype": "Gemeente",
-          "onderwerpBron": "een Gemeente",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "Het bergingsaantal van een Gemeente",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het bergingsaantal van een Gemeente"
         },
         "waarde": {
           "node": "Functie",
@@ -263,15 +230,7 @@
               "node": "AttribuutRef",
               "attribuut": "geborgen vondsten",
               "objecttype": "Gemeente",
-              "onderwerpBron": "de Gemeente",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "geborgen vondsten van de Gemeente",
-              "set": false,
-              "navigatiePad": []
+              "bron": "geborgen vondsten van de Gemeente"
             }
           ],
           "elementObjecttype": "Vondst",
@@ -308,18 +267,7 @@
           "node": "AttribuutRef",
           "attribuut": "aantal bergende gemeenten",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "Het aantal bergende gemeenten van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het aantal bergende gemeenten van een Vondst"
         },
         "waarde": {
           "node": "Functie",
@@ -329,15 +277,7 @@
               "node": "AttribuutRef",
               "attribuut": "bergende gemeente",
               "objecttype": "Vondst",
-              "onderwerpBron": "de Vondst",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "bergende gemeente van de Vondst",
-              "set": false,
-              "navigatiePad": []
+              "bron": "bergende gemeente van de Vondst"
             }
           ],
           "elementObjecttype": "Gemeente",
@@ -379,14 +319,9 @@
         "naam": "berging door de kustgemeente",
         "anker": "Gemeente",
         "doel": "Vondst",
-        "zetVeld": "bergende gemeente",
-        "joinVeld": "aangemelde vondst",
         "tussenstappen": [
           {
             "node": "Tussenstap",
-            "type": "Jutter",
-            "veld": "gemeente van inschrijving",
-            "viaOuderVeld": true,
             "rolBinding": {
               "node": "RolBinding",
               "feittype": "inschrijving",
@@ -397,7 +332,6 @@
         "voorwaarde": {
           "node": "Kenmerk",
           "kenmerk": "kustgemeente",
-          "navigatie": null,
           "negatie": false,
           "eigenaar": null,
           "periode": null,

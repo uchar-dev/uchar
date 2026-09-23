@@ -101,7 +101,6 @@
             "voorwaarde": {
               "node": "Kenmerk",
               "kenmerk": "betwist",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -143,7 +142,6 @@
             "voorwaarde": {
               "node": "Kenmerk",
               "kenmerk": "geborgen",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,

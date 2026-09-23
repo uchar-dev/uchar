@@ -102,14 +102,7 @@
           "node": "AttribuutRef",
           "attribuut": "streefdatum",
           "objecttype": "Havenmeester",
-          "onderwerpBron": "een Havenmeester",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "De streefdatum van een Havenmeester",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De streefdatum van een Havenmeester"
         },
         "waarde": {
           "node": "Binair",
@@ -118,38 +111,13 @@
             "node": "AttribuutRef",
             "attribuut": "aanvraagdatum",
             "objecttype": "Havenmeester",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumInDagen"
-            },
-            "bron": "zijn aanvraagdatum",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn aanvraagdatum"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "doorlooptijd",
             "objecttype": "Havenmeester",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "havendagen",
-                "stelsel": null,
-                "canoniek": "havendagen",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "zijn doorlooptijd",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn doorlooptijd"
           },
           "type": {
             "node": "DatumInDagen"
@@ -171,25 +139,7 @@
           "node": "AttribuutRef",
           "attribuut": "havenspanne",
           "objecttype": "Havenmeester",
-          "onderwerpBron": "een Havenmeester",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "havendagen",
-              "stelsel": null,
-              "canoniek": "havendagen",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "De havenspanne van een Havenmeester",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De havenspanne van een Havenmeester"
         },
         "waarde": {
           "node": "Functie",
@@ -199,27 +149,13 @@
               "node": "AttribuutRef",
               "attribuut": "aanvraagdatum",
               "objecttype": "Havenmeester",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumInDagen"
-              },
-              "bron": "zijn aanvraagdatum",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn aanvraagdatum"
             },
             {
               "node": "AttribuutRef",
               "attribuut": "sluitdatum",
               "objecttype": "Havenmeester",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumInDagen"
-              },
-              "bron": "zijn sluitdatum",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn sluitdatum"
             }
           ],
           "elementObjecttype": null,
@@ -274,9 +210,6 @@
               "rechts": {
                 "node": "ParameterRef",
                 "parameter": "openingsdatum",
-                "type": {
-                  "node": "DatumInDagen"
-                },
                 "bron": "de openingsdatum"
               },
               "periode": null,

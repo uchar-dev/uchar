@@ -135,18 +135,7 @@
           "node": "AttribuutRef",
           "attribuut": "aantalAfgekeurd",
           "objecttype": "Jutter",
-          "onderwerpBron": "Het aantalAfgekeurd van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het aantalAfgekeurd van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het aantalAfgekeurd van een Jutter"
         },
         "waarde": {
           "node": "ListLength",
@@ -196,44 +185,7 @@
               "node": "AttribuutRef",
               "attribuut": "keuringen",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "ListType",
-                "element": {
-                  "node": "SumType",
-                  "domain": "keuring",
-                  "constructors": [
-                    {
-                      "name": "Goedgekeurd",
-                      "payload": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
-                      }
-                    },
-                    {
-                      "name": "Afgekeurd",
-                      "payload": null
-                    },
-                    {
-                      "name": "Voorwaardelijk",
-                      "payload": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
-                      }
-                    }
-                  ]
-                }
-              },
-              "bron": "zijn keuringen",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn keuringen"
             },
             "binder": "k",
             "condition": {
@@ -242,36 +194,6 @@
               "links": {
                 "node": "BinderRef",
                 "name": "k",
-                "type": {
-                  "node": "SumType",
-                  "domain": "keuring",
-                  "constructors": [
-                    {
-                      "name": "Goedgekeurd",
-                      "payload": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
-                      }
-                    },
-                    {
-                      "name": "Afgekeurd",
-                      "payload": null
-                    },
-                    {
-                      "name": "Voorwaardelijk",
-                      "payload": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
-                      }
-                    }
-                  ]
-                },
                 "bron": "de keuring"
               },
               "rechts": {
@@ -332,18 +254,7 @@
           "node": "AttribuutRef",
           "attribuut": "aantalNietAfgekeurd",
           "objecttype": "Jutter",
-          "onderwerpBron": "Het aantalNietAfgekeurd van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het aantalNietAfgekeurd van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het aantalNietAfgekeurd van een Jutter"
         },
         "waarde": {
           "node": "ListLength",
@@ -393,44 +304,7 @@
               "node": "AttribuutRef",
               "attribuut": "keuringen",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "ListType",
-                "element": {
-                  "node": "SumType",
-                  "domain": "keuring",
-                  "constructors": [
-                    {
-                      "name": "Goedgekeurd",
-                      "payload": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
-                      }
-                    },
-                    {
-                      "name": "Afgekeurd",
-                      "payload": null
-                    },
-                    {
-                      "name": "Voorwaardelijk",
-                      "payload": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
-                      }
-                    }
-                  ]
-                }
-              },
-              "bron": "zijn keuringen",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn keuringen"
             },
             "binder": "k",
             "condition": {
@@ -439,36 +313,6 @@
               "links": {
                 "node": "BinderRef",
                 "name": "k",
-                "type": {
-                  "node": "SumType",
-                  "domain": "keuring",
-                  "constructors": [
-                    {
-                      "name": "Goedgekeurd",
-                      "payload": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
-                      }
-                    },
-                    {
-                      "name": "Afgekeurd",
-                      "payload": null
-                    },
-                    {
-                      "name": "Voorwaardelijk",
-                      "payload": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
-                      }
-                    }
-                  ]
-                },
                 "bron": "de keuring"
               },
               "rechts": {
@@ -529,18 +373,7 @@
           "node": "AttribuutRef",
           "attribuut": "totaalKeuringen",
           "objecttype": "Jutter",
-          "onderwerpBron": "Het totaalKeuringen van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het totaalKeuringen van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het totaalKeuringen van een Jutter"
         },
         "waarde": {
           "node": "ListLength",
@@ -555,44 +388,7 @@
             "node": "AttribuutRef",
             "attribuut": "keuringen",
             "objecttype": "Jutter",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "ListType",
-              "element": {
-                "node": "SumType",
-                "domain": "keuring",
-                "constructors": [
-                  {
-                    "name": "Goedgekeurd",
-                    "payload": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
-                    }
-                  },
-                  {
-                    "name": "Afgekeurd",
-                    "payload": null
-                  },
-                  {
-                    "name": "Voorwaardelijk",
-                    "payload": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
-                    }
-                  }
-                ]
-              }
-            },
-            "bron": "zijn keuringen",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn keuringen"
           },
           "bron": "het aantal keuringen"
         },

@@ -58,18 +58,7 @@
           "node": "AttribuutRef",
           "attribuut": "kwartheffing",
           "objecttype": "Jutter",
-          "onderwerpBron": "De kwartheffing van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De kwartheffing van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De kwartheffing van een Jutter"
         },
         "waarde": {
           "node": "Fold",
@@ -83,16 +72,6 @@
           "list": {
             "node": "ParameterRef",
             "parameter": "kindertallen",
-            "type": {
-              "node": "ListType",
-              "element": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              }
-            },
             "bron": "de kindertallen"
           },
           "function": {
@@ -125,13 +104,6 @@
               "links": {
                 "node": "BinderRef",
                 "name": "acc",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
                 "bron": "de opgetelde kwartheffing"
               },
               "rechts": {
@@ -140,13 +112,6 @@
                 "links": {
                   "node": "BinderRef",
                   "name": "x",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  },
                   "bron": "het kindertal"
                 },
                 "rechts": {

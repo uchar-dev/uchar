@@ -95,18 +95,7 @@
           "node": "AttribuutRef",
           "attribuut": "zwaarste",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het zwaarste van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het zwaarste van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -116,18 +105,7 @@
               "node": "AttribuutRef",
               "attribuut": "gewicht",
               "objecttype": "Vondst",
-              "onderwerpBron": "alle vondsten van de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "het gewicht van alle vondsten van de Jutter",
-              "set": true,
-              "navigatiePad": []
+              "bron": "het gewicht van alle vondsten van de Jutter"
             }
           ],
           "elementObjecttype": "Vondst",
@@ -164,18 +142,7 @@
           "node": "AttribuutRef",
           "attribuut": "lichtste",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het lichtste van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het lichtste van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -185,18 +152,7 @@
               "node": "AttribuutRef",
               "attribuut": "gewicht",
               "objecttype": "Vondst",
-              "onderwerpBron": "alle vondsten van de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "het gewicht van alle vondsten van de Jutter",
-              "set": true,
-              "navigatiePad": []
+              "bron": "het gewicht van alle vondsten van de Jutter"
             }
           ],
           "elementObjecttype": "Vondst",

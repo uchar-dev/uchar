@@ -105,40 +105,17 @@
           "node": "AttribuutRef",
           "attribuut": "toeslag",
           "objecttype": "Schuit",
-          "onderwerpBron": "een Schuit",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De toeslag van een Schuit",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De toeslag van een Schuit"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "lengte",
           "objecttype": "Schuit",
-          "onderwerpBron": "de Schuit",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de lengte van de Schuit",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de lengte van de Schuit"
         },
         "voorwaarde": {
           "node": "Kenmerk",
           "kenmerk": "bedrijvig",
-          "navigatie": "werf",
           "negatie": false,
           "eigenaar": null,
           "periode": {
@@ -146,7 +123,12 @@
             "jaar": true,
             "niet": false
           },
-          "bron": "de werf van de Schuit gedurende het gehele jaar bedrijvig is"
+          "bron": "de werf van de Schuit gedurende het gehele jaar bedrijvig is",
+          "navigatieBinding": {
+            "node": "RolBinding",
+            "feittype": "ligplaats",
+            "rol": "werf"
+          }
         },
         "geldigheid": {
           "node": "Geldigheid",
@@ -162,40 +144,17 @@
           "node": "AttribuutRef",
           "attribuut": "korting",
           "objecttype": "Schuit",
-          "onderwerpBron": "een Schuit",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De korting van een Schuit",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De korting van een Schuit"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "lengte",
           "objecttype": "Schuit",
-          "onderwerpBron": "de Schuit",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de lengte van de Schuit",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de lengte van de Schuit"
         },
         "voorwaarde": {
           "node": "Kenmerk",
           "kenmerk": "bedrijvig",
-          "navigatie": "werf",
           "negatie": false,
           "eigenaar": null,
           "periode": {
@@ -203,7 +162,12 @@
             "jaar": true,
             "niet": true
           },
-          "bron": "de werf van de Schuit niet gedurende het gehele jaar bedrijvig is"
+          "bron": "de werf van de Schuit niet gedurende het gehele jaar bedrijvig is",
+          "navigatieBinding": {
+            "node": "RolBinding",
+            "feittype": "ligplaats",
+            "rol": "werf"
+          }
         },
         "geldigheid": {
           "node": "Geldigheid",

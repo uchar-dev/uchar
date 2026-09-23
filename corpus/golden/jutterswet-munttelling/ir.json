@@ -164,18 +164,7 @@
           "node": "AttribuutRef",
           "attribuut": "aantal munten",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "Het aantal munten van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het aantal munten van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -185,15 +174,7 @@
               "node": "AttribuutRef",
               "attribuut": "vondsten",
               "objecttype": "Jutter",
-              "onderwerpBron": "de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "vondsten van de Jutter",
-              "set": false,
-              "navigatiePad": []
+              "bron": "vondsten van de Jutter"
             }
           ],
           "elementObjecttype": "Munt",
@@ -230,25 +211,7 @@
           "node": "AttribuutRef",
           "attribuut": "muntgewicht",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "kg",
-              "stelsel": "Gewicht",
-              "canoniek": "kg",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "Het muntgewicht van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het muntgewicht van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -258,25 +221,7 @@
               "node": "AttribuutRef",
               "attribuut": "gewicht",
               "objecttype": "Munt",
-              "onderwerpBron": "alle munten van de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": {
-                  "node": "Eenheid",
-                  "afkorting": "kg",
-                  "stelsel": "Gewicht",
-                  "canoniek": "kg",
-                  "factorNaarCanoniek": 1,
-                  "noemer": null
-                }
-              },
-              "bron": "het gewicht van alle munten van de Jutter",
-              "set": true,
-              "navigatiePad": []
+              "bron": "het gewicht van alle munten van de Jutter"
             }
           ],
           "elementObjecttype": "Munt",

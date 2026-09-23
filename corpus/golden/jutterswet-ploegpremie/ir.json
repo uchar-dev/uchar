@@ -100,14 +100,7 @@
           "node": "AttribuutRef",
           "attribuut": "premiegerechtigd",
           "objecttype": "Bergingsploeg",
-          "onderwerpBron": "Een Bergingsploeg",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Bergingsploeg is premiegerechtigd",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Bergingsploeg is premiegerechtigd"
         },
         "waarde": {
           "node": "Literal",
@@ -129,18 +122,7 @@
               "node": "AttribuutRef",
               "attribuut": "dagvergoeding",
               "objecttype": "Berger",
-              "onderwerpBron": "alle bergers van de Bergingsploeg",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de dagvergoeding van alle bergers van de Bergingsploeg",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de dagvergoeding van alle bergers van de Bergingsploeg"
             },
             "rechts": {
               "node": "Literal",
@@ -182,14 +164,7 @@
           "node": "AttribuutRef",
           "attribuut": "wisselvallig",
           "objecttype": "Bergingsploeg",
-          "onderwerpBron": "Een Bergingsploeg",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Bergingsploeg is wisselvallig",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Bergingsploeg is wisselvallig"
         },
         "waarde": {
           "node": "Literal",
@@ -211,18 +186,7 @@
               "node": "AttribuutRef",
               "attribuut": "dagvergoeding",
               "objecttype": "Berger",
-              "onderwerpBron": "geen van de bergers van de Bergingsploeg",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de dagvergoeding van geen van de bergers van de Bergingsploeg",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de dagvergoeding van geen van de bergers van de Bergingsploeg"
             },
             "rechts": {
               "node": "Literal",
@@ -264,18 +228,7 @@
           "node": "AttribuutRef",
           "attribuut": "bergertal",
           "objecttype": "Bergingsploeg",
-          "onderwerpBron": "een Bergingsploeg",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het bergertal van een Bergingsploeg",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het bergertal van een Bergingsploeg"
         },
         "waarde": {
           "node": "Functie",
@@ -285,15 +238,7 @@
               "node": "AttribuutRef",
               "attribuut": "bergers",
               "objecttype": "Bergingsploeg",
-              "onderwerpBron": "de Bergingsploeg",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "bergers van de Bergingsploeg",
-              "set": false,
-              "navigatiePad": []
+              "bron": "bergers van de Bergingsploeg"
             }
           ],
           "elementObjecttype": "Berger",

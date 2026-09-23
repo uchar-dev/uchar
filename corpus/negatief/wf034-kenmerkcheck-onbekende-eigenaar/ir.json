@@ -59,40 +59,17 @@
           "node": "AttribuutRef",
           "attribuut": "geschatte waarde",
           "objecttype": "Vondst",
-          "onderwerpBron": "De geschatte waarde van een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De geschatte waarde van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De geschatte waarde van een Vondst"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "taxatiewaarde",
           "objecttype": "Vondst",
-          "onderwerpBron": "de taxatiewaarde van de Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de taxatiewaarde van de Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de taxatiewaarde van de Vondst"
         },
         "voorwaarde": {
           "node": "Kenmerk",
           "kenmerk": "gemeld",
-          "navigatie": null,
           "negatie": false,
           "eigenaar": "Bestaatniet",
           "periode": null,

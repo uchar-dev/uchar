@@ -123,18 +123,7 @@
           "node": "AttribuutRef",
           "attribuut": "jaarpacht",
           "objecttype": "Strandpachter",
-          "onderwerpBron": "een Strandpachter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De jaarpacht van een Strandpachter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De jaarpacht van een Strandpachter"
         },
         "waarde": {
           "node": "Functie",
@@ -144,18 +133,7 @@
               "node": "AttribuutRef",
               "attribuut": "pachttarief",
               "objecttype": "Strandpachter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "zijn pachttarief",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn pachttarief"
             }
           ],
           "elementObjecttype": null,
@@ -163,7 +141,6 @@
           "filter": {
             "node": "Kenmerk",
             "kenmerk": "vergund",
-            "navigatie": null,
             "negatie": false,
             "eigenaar": null,
             "periode": null,
@@ -208,18 +185,7 @@
           "node": "AttribuutRef",
           "attribuut": "maandpacht",
           "objecttype": "Strandpachter",
-          "onderwerpBron": "een Strandpachter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De maandpacht van een Strandpachter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De maandpacht van een Strandpachter"
         },
         "waarde": {
           "node": "Functie",
@@ -229,18 +195,7 @@
               "node": "AttribuutRef",
               "attribuut": "pachttarief",
               "objecttype": "Strandpachter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "zijn pachttarief",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn pachttarief"
             }
           ],
           "elementObjecttype": null,
@@ -248,7 +203,6 @@
           "filter": {
             "node": "Kenmerk",
             "kenmerk": "vergund",
-            "navigatie": null,
             "negatie": false,
             "eigenaar": null,
             "periode": null,
@@ -300,18 +254,7 @@
           "node": "AttribuutRef",
           "attribuut": "zomerdagen",
           "objecttype": "Strandpachter",
-          "onderwerpBron": "een Strandpachter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "De zomerdagen van een Strandpachter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De zomerdagen van een Strandpachter"
         },
         "waarde": {
           "node": "Functie",
@@ -322,7 +265,6 @@
           "filter": {
             "node": "Kenmerk",
             "kenmerk": "aanwezig",
-            "navigatie": null,
             "negatie": false,
             "eigenaar": null,
             "periode": null,
@@ -345,14 +287,7 @@
             "node": "AttribuutRef",
             "attribuut": "ingangsdatum",
             "objecttype": "Strandpachter",
-            "onderwerpBron": "de Strandpachter",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumInDagen"
-            },
-            "bron": "de ingangsdatum van de Strandpachter",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de ingangsdatum van de Strandpachter"
           },
           "tot": {
             "node": "Literal",

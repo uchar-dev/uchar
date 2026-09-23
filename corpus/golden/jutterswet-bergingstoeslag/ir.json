@@ -94,18 +94,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "aantal geborgen wrakken",
                 "objecttype": "Jutter",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                },
-                "bron": "zijn aantal geborgen wrakken",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn aantal geborgen wrakken"
               },
               "rechts": {
                 "node": "Literal",
@@ -136,18 +125,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "bergingsgrondslag",
                 "objecttype": "Jutter",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                },
-                "bron": "zijn bergingsgrondslag",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn bergingsgrondslag"
               },
               "body": {
                 "node": "Binair",
@@ -155,13 +133,6 @@
                 "links": {
                   "node": "BinderRef",
                   "name": "bergingsgrond",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  },
                   "bron": "bergingsgrond"
                 },
                 "rechts": {
@@ -252,18 +223,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "bergingsgrondslag",
                 "objecttype": "Jutter",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                },
-                "bron": "zijn bergingsgrondslag",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn bergingsgrondslag"
               },
               "body": {
                 "node": "Literal",

@@ -139,35 +139,7 @@
           "node": "AttribuutRef",
           "attribuut": "meldpositie",
           "objecttype": "Jutter",
-          "onderwerpBron": "De meldpositie van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "SumType",
-            "domain": "meldstatus",
-            "constructors": [
-              {
-                "name": "Openstaand",
-                "payload": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                }
-              },
-              {
-                "name": "Vervuld",
-                "payload": null
-              },
-              {
-                "name": "Geschonden",
-                "payload": null
-              }
-            ]
-          },
-          "bron": "De meldpositie van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De meldpositie van een Jutter"
         },
         "waarde": {
           "node": "Fold",
@@ -198,29 +170,6 @@
           "list": {
             "node": "ParameterRef",
             "parameter": "meldreeks",
-            "type": {
-              "node": "ListType",
-              "element": {
-                "node": "SumType",
-                "domain": "gebeurtenis",
-                "constructors": [
-                  {
-                    "name": "Dagverloop",
-                    "payload": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    }
-                  },
-                  {
-                    "name": "Melding",
-                    "payload": null
-                  }
-                ]
-              }
-            },
             "bron": "de meldreeks"
           },
           "function": {
@@ -306,30 +255,6 @@
               "scrutinee": {
                 "node": "BinderRef",
                 "name": "stand",
-                "type": {
-                  "node": "SumType",
-                  "domain": "meldstatus",
-                  "constructors": [
-                    {
-                      "name": "Openstaand",
-                      "payload": {
-                        "node": "Numeriek",
-                        "geheel": true,
-                        "decimalen": 0,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
-                      }
-                    },
-                    {
-                      "name": "Vervuld",
-                      "payload": null
-                    },
-                    {
-                      "name": "Geschonden",
-                      "payload": null
-                    }
-                  ]
-                },
                 "bron": "de stand van de meldplicht"
               },
               "arms": [
@@ -365,26 +290,6 @@
                     "scrutinee": {
                       "node": "BinderRef",
                       "name": "gebeurtenis",
-                      "type": {
-                        "node": "SumType",
-                        "domain": "gebeurtenis",
-                        "constructors": [
-                          {
-                            "name": "Dagverloop",
-                            "payload": {
-                              "node": "Numeriek",
-                              "geheel": true,
-                              "decimalen": 0,
-                              "teken": "ONBEPAALD",
-                              "eenheid": null
-                            }
-                          },
-                          {
-                            "name": "Melding",
-                            "payload": null
-                          }
-                        ]
-                      },
                       "bron": "de gebeurtenis"
                     },
                     "arms": [
@@ -423,25 +328,11 @@
                             "links": {
                               "node": "BinderRef",
                               "name": "dagen",
-                              "type": {
-                                "node": "Numeriek",
-                                "geheel": true,
-                                "decimalen": 0,
-                                "teken": "ONBEPAALD",
-                                "eenheid": null
-                              },
                               "bron": "het aantal verstreken dagen"
                             },
                             "rechts": {
                               "node": "BinderRef",
                               "name": "resterend",
-                              "type": {
-                                "node": "Numeriek",
-                                "geheel": true,
-                                "decimalen": 0,
-                                "teken": "ONBEPAALD",
-                                "eenheid": null
-                              },
                               "bron": "de resterende termijn"
                             },
                             "periode": null,
@@ -480,25 +371,11 @@
                               "links": {
                                 "node": "BinderRef",
                                 "name": "resterend",
-                                "type": {
-                                  "node": "Numeriek",
-                                  "geheel": true,
-                                  "decimalen": 0,
-                                  "teken": "ONBEPAALD",
-                                  "eenheid": null
-                                },
                                 "bron": "de resterende termijn"
                               },
                               "rechts": {
                                 "node": "BinderRef",
                                 "name": "dagen",
-                                "type": {
-                                  "node": "Numeriek",
-                                  "geheel": true,
-                                  "decimalen": 0,
-                                  "teken": "ONBEPAALD",
-                                  "eenheid": null
-                                },
                                 "bron": "het aantal verstreken dagen"
                               },
                               "type": {

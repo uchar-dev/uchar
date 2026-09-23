@@ -103,14 +103,7 @@
           "node": "AttribuutRef",
           "attribuut": "peildatum",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "De peildatum van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De peildatum van een Vondst"
         },
         "waarde": {
           "node": "Functie",
@@ -120,25 +113,13 @@
               "node": "AttribuutRef",
               "attribuut": "vondstdatum",
               "objecttype": "Vondst",
-              "onderwerpBron": "haar",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumInDagen"
-              },
-              "bron": "haar vondstdatum",
-              "set": false,
-              "navigatiePad": []
+              "bron": "haar vondstdatum"
             },
             {
               "node": "AttribuutRef",
               "attribuut": "melddatum",
               "objecttype": "Vondst",
-              "onderwerpBron": "haar",
-              "navigatieRol": null,
-              "type": null,
-              "bron": "haar melddatum",
-              "set": false,
-              "navigatiePad": []
+              "bron": "haar melddatum"
             }
           ],
           "elementObjecttype": "Vondst",
@@ -166,14 +147,7 @@
           "node": "AttribuutRef",
           "attribuut": "sluitdatum",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "De sluitdatum van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De sluitdatum van een Vondst"
         },
         "waarde": {
           "node": "Functie",
@@ -183,27 +157,13 @@
               "node": "AttribuutRef",
               "attribuut": "vondstdatum",
               "objecttype": "Vondst",
-              "onderwerpBron": "haar",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumInDagen"
-              },
-              "bron": "haar vondstdatum",
-              "set": false,
-              "navigatiePad": []
+              "bron": "haar vondstdatum"
             },
             {
               "node": "AttribuutRef",
               "attribuut": "melddatum",
               "objecttype": "Vondst",
-              "onderwerpBron": "haar",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumInDagen"
-              },
-              "bron": "haar melddatum",
-              "set": false,
-              "navigatiePad": []
+              "bron": "haar melddatum"
             }
           ],
           "elementObjecttype": "Vondst",
@@ -231,18 +191,7 @@
           "node": "AttribuutRef",
           "attribuut": "laagloon",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": null,
-            "eenheid": null
-          },
-          "bron": "Het laagloon van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het laagloon van een Vondst"
         },
         "waarde": {
           "node": "Functie",
@@ -252,35 +201,13 @@
               "node": "AttribuutRef",
               "attribuut": "bergloon",
               "objecttype": "Vondst",
-              "onderwerpBron": "haar",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": null,
-                "eenheid": null
-              },
-              "bron": "haar bergloon",
-              "set": false,
-              "navigatiePad": []
+              "bron": "haar bergloon"
             },
             {
               "node": "AttribuutRef",
               "attribuut": "meldloon",
               "objecttype": "Vondst",
-              "onderwerpBron": "haar",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": null,
-                "eenheid": null
-              },
-              "bron": "haar meldloon",
-              "set": false,
-              "navigatiePad": []
+              "bron": "haar meldloon"
             }
           ],
           "elementObjecttype": "Vondst",
@@ -312,18 +239,7 @@
           "node": "AttribuutRef",
           "attribuut": "hoogloon",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": null,
-            "eenheid": null
-          },
-          "bron": "Het hoogloon van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het hoogloon van een Vondst"
         },
         "waarde": {
           "node": "Functie",
@@ -333,35 +249,13 @@
               "node": "AttribuutRef",
               "attribuut": "bergloon",
               "objecttype": "Vondst",
-              "onderwerpBron": "haar",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": null,
-                "eenheid": null
-              },
-              "bron": "haar bergloon",
-              "set": false,
-              "navigatiePad": []
+              "bron": "haar bergloon"
             },
             {
               "node": "AttribuutRef",
               "attribuut": "meldloon",
               "objecttype": "Vondst",
-              "onderwerpBron": "haar",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": null,
-                "eenheid": null
-              },
-              "bron": "haar meldloon",
-              "set": false,
-              "navigatiePad": []
+              "bron": "haar meldloon"
             }
           ],
           "elementObjecttype": "Vondst",

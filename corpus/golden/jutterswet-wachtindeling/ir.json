@@ -71,14 +71,7 @@
           "node": "AttribuutRef",
           "attribuut": "wachtdoend",
           "objecttype": "Jutter",
-          "onderwerpBron": "Een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Jutter is wachtdoend",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Jutter is wachtdoend"
         },
         "waarde": {
           "node": "Literal",
@@ -89,10 +82,10 @@
           "bron": "waar"
         },
         "voorwaarde": {
-          "node": "Rollidmaatschap",
-          "rol": "wachtjutter",
-          "anderTeFiller": "Wachtpost",
-          "negatie": false,
+          "node": "RoleMembership",
+          "factType": "wachtindeling",
+          "role": "wachtjutter",
+          "negated": false,
           "bron": "hij een wachtjutter is"
         },
         "geldigheid": {
@@ -109,14 +102,7 @@
           "node": "AttribuutRef",
           "attribuut": "vrijgesteld",
           "objecttype": "Jutter",
-          "onderwerpBron": "Een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Jutter is vrijgesteld",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Jutter is vrijgesteld"
         },
         "waarde": {
           "node": "Literal",
@@ -127,10 +113,10 @@
           "bron": "waar"
         },
         "voorwaarde": {
-          "node": "Rollidmaatschap",
-          "rol": "wachtjutter",
-          "anderTeFiller": "Wachtpost",
-          "negatie": true,
+          "node": "RoleMembership",
+          "factType": "wachtindeling",
+          "role": "wachtjutter",
+          "negated": true,
           "bron": "hij geen wachtjutter is"
         },
         "geldigheid": {

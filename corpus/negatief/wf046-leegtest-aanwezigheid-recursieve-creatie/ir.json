@@ -75,35 +75,13 @@
           "node": "AttribuutRef",
           "attribuut": "merk",
           "objecttype": "Wachter",
-          "onderwerpBron": "een Wachter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het merk van een Wachter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het merk van een Wachter"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "rang",
           "objecttype": "Wachter",
-          "onderwerpBron": "de Wachter",
-          "navigatieRol": "opvolger",
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
           "bron": "de rang van de opvolger van de Wachter",
-          "set": false,
-          "navigatiePad": [],
           "navigatieBindingen": [
             {
               "node": "RolBinding",
@@ -138,18 +116,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "rang",
                 "objecttype": "Wachter",
-                "onderwerpBron": "de Wachter",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "de rang van de Wachter",
-                "set": false,
-                "navigatiePad": []
+                "bron": "de rang van de Wachter"
               },
               "rechts": {
                 "node": "Literal",
@@ -187,18 +154,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "rang",
                 "objecttype": "Wachter",
-                "onderwerpBron": "de Wachter",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "de rang van de Wachter",
-                "set": false,
-                "navigatiePad": []
+                "bron": "de rang van de Wachter"
               },
               "rechts": {
                 "node": "Literal",
@@ -222,18 +178,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "merk",
                 "objecttype": "Wachter",
-                "onderwerpBron": "de Wachter",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "het merk van de Wachter",
-                "set": false,
-                "navigatiePad": []
+                "bron": "het merk van de Wachter"
               },
               "dagsoort": null,
               "negatie": true,

@@ -145,18 +145,7 @@
           "node": "AttribuutRef",
           "attribuut": "grensproduct",
           "objecttype": "Meting",
-          "onderwerpBron": "de Meting",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het grensproduct van een Meting",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het grensproduct van een Meting"
         },
         "waarde": {
           "node": "Binair",
@@ -165,35 +154,13 @@
             "node": "AttribuutRef",
             "attribuut": "factorEen",
             "objecttype": "Meting",
-            "onderwerpBron": "de Meting",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de factorEen van de Meting",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de factorEen van de Meting"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "factorTwee",
             "objecttype": "Meting",
-            "onderwerpBron": "de Meting",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de factorTwee van de Meting",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de factorTwee van de Meting"
           },
           "type": {
             "node": "Numeriek",
@@ -219,25 +186,7 @@
           "node": "AttribuutRef",
           "attribuut": "totaal",
           "objecttype": "Meting",
-          "onderwerpBron": "de Meting",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "cm",
-              "stelsel": "Lengte",
-              "canoniek": "cm",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "Het totaal van een Meting",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het totaal van een Meting"
         },
         "waarde": {
           "node": "Binair",
@@ -246,49 +195,13 @@
             "node": "AttribuutRef",
             "attribuut": "lengteA",
             "objecttype": "Meting",
-            "onderwerpBron": "de Meting",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "cm",
-                "stelsel": "Lengte",
-                "canoniek": "cm",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "de lengteA van de Meting",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de lengteA van de Meting"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "lengteB",
             "objecttype": "Meting",
-            "onderwerpBron": "de Meting",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "cm",
-                "stelsel": "Lengte",
-                "canoniek": "cm",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "de lengteB van de Meting",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de lengteB van de Meting"
           },
           "type": {
             "node": "Numeriek",
@@ -321,18 +234,7 @@
           "node": "AttribuutRef",
           "attribuut": "indicatie",
           "objecttype": "Meting",
-          "onderwerpBron": "de Meting",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De indicatie van een Meting",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De indicatie van een Meting"
         },
         "waarde": {
           "node": "Literal",
@@ -353,49 +255,13 @@
             "node": "AttribuutRef",
             "attribuut": "lengteA",
             "objecttype": "Meting",
-            "onderwerpBron": "de Meting",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "cm",
-                "stelsel": "Lengte",
-                "canoniek": "cm",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "de lengteA van de Meting",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de lengteA van de Meting"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "lengteB",
             "objecttype": "Meting",
-            "onderwerpBron": "de Meting",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "cm",
-                "stelsel": "Lengte",
-                "canoniek": "cm",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "de lengteB van de Meting",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de lengteB van de Meting"
           },
           "periode": null,
           "bron": "de lengteA van de Meting is groter of gelijk aan de lengteB van de Meting"

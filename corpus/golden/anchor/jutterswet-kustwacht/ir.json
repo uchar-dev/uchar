@@ -170,35 +170,13 @@
           "node": "AttribuutRef",
           "attribuut": "uitkijkbonus",
           "objecttype": "Wachter",
-          "onderwerpBron": "een Wachter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De uitkijkbonus van een Wachter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De uitkijkbonus van een Wachter"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "hoogte",
           "objecttype": "Post",
-          "onderwerpBron": "zijn post",
-          "navigatieRol": "post",
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
           "bron": "de hoogte van zijn post",
-          "set": false,
-          "navigatiePad": [],
           "navigatieBindingen": [
             {
               "node": "RolBinding",
@@ -222,38 +200,13 @@
           "node": "AttribuutRef",
           "attribuut": "risicotoeslag",
           "objecttype": "Wachter",
-          "onderwerpBron": "een Wachter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De risicotoeslag van een Wachter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De risicotoeslag van een Wachter"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "gevarenklasse",
           "objecttype": "Kustvak",
-          "onderwerpBron": "zijn post",
-          "navigatieRol": "post",
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
           "bron": "de gevarenklasse van het kustvak van zijn post",
-          "set": false,
-          "navigatiePad": [
-            "post",
-            "kustvak"
-          ],
           "navigatieBindingen": [
             {
               "node": "RolBinding",
@@ -282,35 +235,20 @@
           "node": "AttribuutRef",
           "attribuut": "vakklasse",
           "objecttype": "Post",
-          "onderwerpBron": "een Post",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De vakklasse van een Post",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De vakklasse van een Post"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "gevarenklasse",
           "objecttype": "Kustvak",
-          "onderwerpBron": "het Kustvak",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
           "bron": "de gevarenklasse van het Kustvak",
-          "set": false,
-          "navigatiePad": []
+          "navigatieBindingen": [
+            {
+              "node": "RolBinding",
+              "feittype": "kustligging",
+              "rol": "kustvak"
+            }
+          ]
         },
         "voorwaarde": null,
         "geldigheid": {
@@ -327,14 +265,7 @@
           "node": "AttribuutRef",
           "attribuut": "risicopost",
           "objecttype": "Post",
-          "onderwerpBron": "Een Post",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Post is risicopost",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Post is risicopost"
         },
         "waarde": {
           "node": "Literal",
@@ -347,7 +278,6 @@
         "voorwaarde": {
           "node": "Kenmerk",
           "kenmerk": "verraderlijk",
-          "navigatie": "kustvak",
           "negatie": false,
           "eigenaar": null,
           "periode": null,
@@ -372,14 +302,7 @@
           "node": "AttribuutRef",
           "attribuut": "gevarenwacht",
           "objecttype": "Wachter",
-          "onderwerpBron": "Een Wachter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Wachter is gevarenwacht",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Wachter is gevarenwacht"
         },
         "waarde": {
           "node": "Literal",
@@ -392,11 +315,15 @@
         "voorwaarde": {
           "node": "Kenmerk",
           "kenmerk": "risicopost",
-          "navigatie": "post",
           "negatie": false,
           "eigenaar": null,
           "periode": null,
-          "bron": "zijn post risicopost is"
+          "bron": "zijn post risicopost is",
+          "navigatieBinding": {
+            "node": "RolBinding",
+            "feittype": "postbezetting",
+            "rol": "post"
+          }
         },
         "geldigheid": {
           "node": "Geldigheid",
@@ -412,14 +339,7 @@
           "node": "AttribuutRef",
           "attribuut": "rustwacht",
           "objecttype": "Wachter",
-          "onderwerpBron": "Een Wachter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Wachter is rustwacht",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Wachter is rustwacht"
         },
         "waarde": {
           "node": "Literal",
@@ -432,7 +352,6 @@
         "voorwaarde": {
           "node": "Kenmerk",
           "kenmerk": "risicopost",
-          "navigatie": "post",
           "negatie": true,
           "eigenaar": null,
           "periode": null,

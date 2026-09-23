@@ -166,18 +166,7 @@
           "node": "AttribuutRef",
           "attribuut": "aantal aangemelde vondsten",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "Het aantal aangemelde vondsten van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het aantal aangemelde vondsten van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -187,15 +176,7 @@
               "node": "AttribuutRef",
               "attribuut": "vondsten",
               "objecttype": "Jutter",
-              "onderwerpBron": "de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "vondsten van de Jutter",
-              "set": false,
-              "navigatiePad": []
+              "bron": "vondsten van de Jutter"
             }
           ],
           "elementObjecttype": "Vondst",
@@ -232,18 +213,7 @@
           "node": "AttribuutRef",
           "attribuut": "aantal gevulde vindplaatsen",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "Het aantal gevulde vindplaatsen van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het aantal gevulde vindplaatsen van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -253,14 +223,7 @@
               "node": "AttribuutRef",
               "attribuut": "vindplaats",
               "objecttype": "Vondst",
-              "onderwerpBron": "alle vondsten van de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Tekst"
-              },
-              "bron": "de vindplaats van alle vondsten van de Jutter",
-              "set": true,
-              "navigatiePad": []
+              "bron": "de vindplaats van alle vondsten van de Jutter"
             }
           ],
           "elementObjecttype": "Vondst",
@@ -297,18 +260,7 @@
           "node": "AttribuutRef",
           "attribuut": "aantal gevulde vondstdagen",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "Het aantal gevulde vondstdagen van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het aantal gevulde vondstdagen van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -318,14 +270,7 @@
               "node": "AttribuutRef",
               "attribuut": "vondstdag",
               "objecttype": "Vondst",
-              "onderwerpBron": "alle vondsten van de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumInDagen"
-              },
-              "bron": "de vondstdag van alle vondsten van de Jutter",
-              "set": true,
-              "navigatiePad": []
+              "bron": "de vondstdag van alle vondsten van de Jutter"
             }
           ],
           "elementObjecttype": "Vondst",
@@ -362,18 +307,7 @@
           "node": "AttribuutRef",
           "attribuut": "aantal gevulde kustvakken",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "Het aantal gevulde kustvakken van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het aantal gevulde kustvakken van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -383,19 +317,7 @@
               "node": "AttribuutRef",
               "attribuut": "kustvak",
               "objecttype": "Vondst",
-              "onderwerpBron": "alle vondsten van de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Enumeratie",
-                "domein": "kustvak",
-                "waarden": [
-                  "noord",
-                  "zuid"
-                ]
-              },
-              "bron": "het kustvak van alle vondsten van de Jutter",
-              "set": true,
-              "navigatiePad": []
+              "bron": "het kustvak van alle vondsten van de Jutter"
             }
           ],
           "elementObjecttype": "Vondst",
@@ -432,18 +354,7 @@
           "node": "AttribuutRef",
           "attribuut": "aantal gevulde bergingsvlaggen",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "Het aantal gevulde bergingsvlaggen van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het aantal gevulde bergingsvlaggen van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -453,14 +364,7 @@
               "node": "AttribuutRef",
               "attribuut": "geborgen",
               "objecttype": "Vondst",
-              "onderwerpBron": "alle vondsten van de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Booleaan"
-              },
-              "bron": "geborgen van alle vondsten van de Jutter",
-              "set": true,
-              "navigatiePad": []
+              "bron": "geborgen van alle vondsten van de Jutter"
             }
           ],
           "elementObjecttype": "Vondst",

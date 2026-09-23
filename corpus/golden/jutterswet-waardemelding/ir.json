@@ -112,18 +112,7 @@
           "node": "AttribuutRef",
           "attribuut": "meldpremie",
           "objecttype": "Schuit",
-          "onderwerpBron": "een Schuit",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De meldpremie van een Schuit",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De meldpremie van een Schuit"
         },
         "waarde": {
           "node": "Literal",
@@ -144,18 +133,7 @@
             "node": "AttribuutRef",
             "attribuut": "lengte",
             "objecttype": "Schuit",
-            "onderwerpBron": "de Schuit",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de lengte van de Schuit",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de lengte van de Schuit"
           },
           "dagsoort": null,
           "negatie": true,
@@ -177,14 +155,7 @@
           "node": "AttribuutRef",
           "attribuut": "ongemeten",
           "objecttype": "Schuit",
-          "onderwerpBron": "Een Schuit",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Schuit is ongemeten",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Schuit is ongemeten"
         },
         "waarde": {
           "node": "Literal",
@@ -201,18 +172,7 @@
             "node": "AttribuutRef",
             "attribuut": "lengte",
             "objecttype": "Schuit",
-            "onderwerpBron": "de Schuit",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de lengte van de Schuit",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de lengte van de Schuit"
           },
           "dagsoort": null,
           "negatie": true,
@@ -234,18 +194,7 @@
           "node": "AttribuutRef",
           "attribuut": "werfpremie",
           "objecttype": "Schuit",
-          "onderwerpBron": "een Schuit",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De werfpremie van een Schuit",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De werfpremie van een Schuit"
         },
         "waarde": {
           "node": "Literal",
@@ -266,18 +215,7 @@
             "node": "AttribuutRef",
             "attribuut": "tarief",
             "objecttype": "Werf",
-            "onderwerpBron": "de Schuit",
-            "navigatieRol": "werf",
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
             "bron": "het tarief van de werf van de Schuit",
-            "set": false,
-            "navigatiePad": [],
             "navigatieBindingen": [
               {
                 "node": "RolBinding",

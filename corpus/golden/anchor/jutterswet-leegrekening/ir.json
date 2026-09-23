@@ -97,18 +97,7 @@
           "node": "AttribuutRef",
           "attribuut": "bruto",
           "objecttype": "Vondst",
-          "onderwerpBron": "de Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De bruto van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De bruto van een Vondst"
         },
         "waarde": {
           "node": "Binair",
@@ -117,18 +106,7 @@
             "node": "AttribuutRef",
             "attribuut": "gewicht",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "het gewicht",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het gewicht"
           },
           "rechts": {
             "node": "Literal",
@@ -166,18 +144,7 @@
           "node": "AttribuutRef",
           "attribuut": "marge",
           "objecttype": "Vondst",
-          "onderwerpBron": "de Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De marge van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De marge van een Vondst"
         },
         "waarde": {
           "node": "Binair",
@@ -186,35 +153,13 @@
             "node": "AttribuutRef",
             "attribuut": "gewicht",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "het gewicht",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het gewicht"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "korting",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de korting",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de korting"
           },
           "type": {
             "node": "Numeriek",
@@ -240,18 +185,7 @@
           "node": "AttribuutRef",
           "attribuut": "netto",
           "objecttype": "Vondst",
-          "onderwerpBron": "de Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De netto van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De netto van een Vondst"
         },
         "waarde": {
           "node": "Binair",
@@ -260,35 +194,13 @@
             "node": "AttribuutRef",
             "attribuut": "gewicht",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "het gewicht",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het gewicht"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "korting",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de korting",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de korting"
           },
           "type": {
             "node": "Numeriek",
@@ -314,18 +226,7 @@
           "node": "AttribuutRef",
           "attribuut": "som",
           "objecttype": "Vondst",
-          "onderwerpBron": "de Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De som van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De som van een Vondst"
         },
         "waarde": {
           "node": "Binair",
@@ -346,18 +247,7 @@
             "node": "AttribuutRef",
             "attribuut": "korting",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de korting",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de korting"
           },
           "type": {
             "node": "Numeriek",

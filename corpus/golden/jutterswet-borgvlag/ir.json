@@ -54,14 +54,7 @@
           "node": "AttribuutRef",
           "attribuut": "afgehandeld",
           "objecttype": "Berging",
-          "onderwerpBron": "Een Berging",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Berging is afgehandeld",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Berging is afgehandeld"
         },
         "waarde": {
           "node": "Literal",
@@ -78,14 +71,7 @@
             "node": "AttribuutRef",
             "attribuut": "geborgd",
             "objecttype": "Berging",
-            "onderwerpBron": "de Berging",
-            "navigatieRol": null,
-            "type": {
-              "node": "Booleaan"
-            },
-            "bron": "de geborgd van de Berging",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de geborgd van de Berging"
           },
           "rechts": {
             "node": "Literal",
@@ -112,14 +98,7 @@
           "node": "AttribuutRef",
           "attribuut": "openstaand",
           "objecttype": "Berging",
-          "onderwerpBron": "Een Berging",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Berging is openstaand",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Berging is openstaand"
         },
         "waarde": {
           "node": "Literal",
@@ -136,14 +115,7 @@
             "node": "AttribuutRef",
             "attribuut": "geborgd",
             "objecttype": "Berging",
-            "onderwerpBron": "de Berging",
-            "navigatieRol": null,
-            "type": {
-              "node": "Booleaan"
-            },
-            "bron": "de geborgd van de Berging",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de geborgd van de Berging"
           },
           "rechts": {
             "node": "Literal",
@@ -170,14 +142,7 @@
           "node": "AttribuutRef",
           "attribuut": "betwist",
           "objecttype": "Berging",
-          "onderwerpBron": "Een Berging",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Berging is betwist",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Berging is betwist"
         },
         "waarde": {
           "node": "Literal",
@@ -194,14 +159,7 @@
             "node": "AttribuutRef",
             "attribuut": "geborgd",
             "objecttype": "Berging",
-            "onderwerpBron": "de Berging",
-            "navigatieRol": null,
-            "type": {
-              "node": "Booleaan"
-            },
-            "bron": "de geborgd van de Berging",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de geborgd van de Berging"
           },
           "rechts": {
             "node": "Literal",

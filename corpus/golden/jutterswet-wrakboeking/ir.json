@@ -85,35 +85,13 @@
           "node": "AttribuutRef",
           "attribuut": "bergingsvergoeding",
           "objecttype": "Wrakrecht",
-          "onderwerpBron": "een Wrakrecht",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "de bergingsvergoeding van een Wrakrecht",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de bergingsvergoeding van een Wrakrecht"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "grondslag",
           "objecttype": "Wrakrecht",
-          "onderwerpBron": "zijn",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "zijn grondslag",
-          "set": false,
-          "navigatiePad": []
+          "bron": "zijn grondslag"
         },
         "voorwaarde": null,
         "geldigheid": {
@@ -138,18 +116,7 @@
               "node": "AttribuutRef",
               "attribuut": "bergingsvergoeding",
               "objecttype": "Wrakrecht",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
-              "bron": "zijn bergingsvergoeding",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn bergingsvergoeding"
             },
             "kenmerk": false
           }

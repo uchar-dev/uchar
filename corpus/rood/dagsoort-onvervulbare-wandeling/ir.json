@@ -68,14 +68,7 @@
           "node": "AttribuutRef",
           "attribuut": "vervaldatum",
           "objecttype": "Baken",
-          "onderwerpBron": "een Baken",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "De vervaldatum van een Baken",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De vervaldatum van een Baken"
         },
         "waarde": {
           "node": "Binair",
@@ -84,38 +77,13 @@
             "node": "AttribuutRef",
             "attribuut": "peildatum",
             "objecttype": "Baken",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumInDagen"
-            },
-            "bron": "zijn peildatum",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn peildatum"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "termijn",
             "objecttype": "Baken",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "nevelsdagen",
-                "stelsel": null,
-                "canoniek": "nevelsdagen",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "zijn termijn",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn termijn"
           },
           "type": {
             "node": "DatumInDagen"

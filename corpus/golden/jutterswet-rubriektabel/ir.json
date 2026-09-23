@@ -72,14 +72,7 @@
           "node": "AttribuutRef",
           "attribuut": "rubriek",
           "objecttype": "Aanspoelsel",
-          "onderwerpBron": "een Aanspoelsel",
-          "navigatieRol": null,
-          "type": {
-            "node": "Tekst"
-          },
-          "bron": "De rubriek van een Aanspoelsel",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De rubriek van een Aanspoelsel"
         },
         "waarde": {
           "node": "Literal",
@@ -101,14 +94,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "soort",
                 "objecttype": "Aanspoelsel",
-                "onderwerpBron": "de soort",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "de soort van het Aanspoelsel",
-                "set": false,
-                "navigatiePad": []
+                "bron": "de soort van het Aanspoelsel"
               },
               "rechts": {
                 "node": "Literal",
@@ -128,14 +114,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "soort",
                 "objecttype": "Aanspoelsel",
-                "onderwerpBron": "de soort",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "de soort van het Aanspoelsel",
-                "set": false,
-                "navigatiePad": []
+                "bron": "de soort van het Aanspoelsel"
               },
               "rechts": {
                 "node": "Literal",
@@ -165,14 +144,7 @@
           "node": "AttribuutRef",
           "attribuut": "rubriek",
           "objecttype": "Aanspoelsel",
-          "onderwerpBron": "een Aanspoelsel",
-          "navigatieRol": null,
-          "type": {
-            "node": "Tekst"
-          },
-          "bron": "De rubriek van een Aanspoelsel",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De rubriek van een Aanspoelsel"
         },
         "waarde": {
           "node": "Literal",
@@ -194,14 +166,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "soort",
                 "objecttype": "Aanspoelsel",
-                "onderwerpBron": "de soort",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "de soort van het Aanspoelsel",
-                "set": false,
-                "navigatiePad": []
+                "bron": "de soort van het Aanspoelsel"
               },
               "rechts": {
                 "node": "Literal",
@@ -221,14 +186,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "soort",
                 "objecttype": "Aanspoelsel",
-                "onderwerpBron": "de soort",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "de soort van het Aanspoelsel",
-                "set": false,
-                "navigatiePad": []
+                "bron": "de soort van het Aanspoelsel"
               },
               "rechts": {
                 "node": "Literal",
@@ -258,14 +216,7 @@
           "node": "AttribuutRef",
           "attribuut": "weegplichtig",
           "objecttype": "Aanspoelsel",
-          "onderwerpBron": "Een Aanspoelsel",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Aanspoelsel is weegplichtig",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Aanspoelsel is weegplichtig"
         },
         "waarde": {
           "node": "Literal",
@@ -283,7 +234,6 @@
             {
               "node": "Kenmerk",
               "kenmerk": "gekeurd",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -292,7 +242,6 @@
             {
               "node": "Kenmerk",
               "kenmerk": "geborgen",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -305,18 +254,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "stuks",
                 "objecttype": "Aanspoelsel",
-                "onderwerpBron": "het stuks",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "het stuks van het Aanspoelsel",
-                "set": false,
-                "navigatiePad": []
+                "bron": "het stuks van het Aanspoelsel"
               },
               "rechts": {
                 "node": "Literal",

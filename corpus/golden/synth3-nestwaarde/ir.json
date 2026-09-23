@@ -213,56 +213,7 @@
           "node": "AttribuutRef",
           "attribuut": "pakket",
           "objecttype": "Jutter",
-          "onderwerpBron": "Het pakket van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "StructType",
-            "domain": "buiten",
-            "fields": [
-              {
-                "name": "kern",
-                "datatype": {
-                  "node": "StructType",
-                  "domain": "binnen",
-                  "fields": [
-                    {
-                      "name": "stuks",
-                      "datatype": {
-                        "node": "Numeriek",
-                        "geheel": true,
-                        "decimalen": 0,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
-                      }
-                    },
-                    {
-                      "name": "prijs",
-                      "datatype": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
-                      }
-                    }
-                  ]
-                }
-              },
-              {
-                "name": "opslag",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              }
-            ]
-          },
-          "bron": "Het pakket van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het pakket van een Jutter"
         },
         "waarde": {
           "node": "StructLiteral",
@@ -349,18 +300,7 @@
                       "node": "AttribuutRef",
                       "attribuut": "stuks",
                       "objecttype": "Jutter",
-                      "onderwerpBron": "zijn",
-                      "navigatieRol": null,
-                      "type": {
-                        "node": "Numeriek",
-                        "geheel": true,
-                        "decimalen": 0,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
-                      },
-                      "bron": "zijn stuks",
-                      "set": false,
-                      "navigatiePad": []
+                      "bron": "zijn stuks"
                     }
                   },
                   {
@@ -369,18 +309,7 @@
                       "node": "AttribuutRef",
                       "attribuut": "prijs",
                       "objecttype": "Jutter",
-                      "onderwerpBron": "zijn",
-                      "navigatieRol": null,
-                      "type": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
-                      },
-                      "bron": "zijn prijs",
-                      "set": false,
-                      "navigatiePad": []
+                      "bron": "zijn prijs"
                     }
                   }
                 ],
@@ -393,18 +322,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "opslag",
                 "objecttype": "Jutter",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                },
-                "bron": "zijn opslag",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn opslag"
               }
             }
           ],
@@ -425,18 +343,7 @@
           "node": "AttribuutRef",
           "attribuut": "kernprijs",
           "objecttype": "Jutter",
-          "onderwerpBron": "De kernprijs van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "De kernprijs van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De kernprijs van een Jutter"
         },
         "waarde": {
           "node": "FieldAccess",
@@ -479,56 +386,7 @@
               "node": "AttribuutRef",
               "attribuut": "pakket",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "StructType",
-                "domain": "buiten",
-                "fields": [
-                  {
-                    "name": "kern",
-                    "datatype": {
-                      "node": "StructType",
-                      "domain": "binnen",
-                      "fields": [
-                        {
-                          "name": "stuks",
-                          "datatype": {
-                            "node": "Numeriek",
-                            "geheel": true,
-                            "decimalen": 0,
-                            "teken": "NIET_NEGATIEF",
-                            "eenheid": null
-                          }
-                        },
-                        {
-                          "name": "prijs",
-                          "datatype": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "NIET_NEGATIEF",
-                            "eenheid": null
-                          }
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "name": "opslag",
-                    "datatype": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
-                    }
-                  }
-                ]
-              },
-              "bron": "zijn pakket",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn pakket"
             },
             "field": "kern",
             "bron": "de kern van zijn pakket"
@@ -551,18 +409,7 @@
           "node": "AttribuutRef",
           "attribuut": "totaal",
           "objecttype": "Jutter",
-          "onderwerpBron": "Het totaal van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het totaal van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het totaal van een Jutter"
         },
         "waarde": {
           "node": "Binair",
@@ -608,56 +455,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "pakket",
                 "objecttype": "Jutter",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "StructType",
-                  "domain": "buiten",
-                  "fields": [
-                    {
-                      "name": "kern",
-                      "datatype": {
-                        "node": "StructType",
-                        "domain": "binnen",
-                        "fields": [
-                          {
-                            "name": "stuks",
-                            "datatype": {
-                              "node": "Numeriek",
-                              "geheel": true,
-                              "decimalen": 0,
-                              "teken": "NIET_NEGATIEF",
-                              "eenheid": null
-                            }
-                          },
-                          {
-                            "name": "prijs",
-                            "datatype": {
-                              "node": "Numeriek",
-                              "geheel": false,
-                              "decimalen": 2,
-                              "teken": "NIET_NEGATIEF",
-                              "eenheid": null
-                            }
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "name": "opslag",
-                      "datatype": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
-                      }
-                    }
-                  ]
-                },
-                "bron": "zijn pakket",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn pakket"
               },
               "field": "kern",
               "bron": "de kern van zijn pakket"
@@ -678,56 +476,7 @@
               "node": "AttribuutRef",
               "attribuut": "pakket",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "StructType",
-                "domain": "buiten",
-                "fields": [
-                  {
-                    "name": "kern",
-                    "datatype": {
-                      "node": "StructType",
-                      "domain": "binnen",
-                      "fields": [
-                        {
-                          "name": "stuks",
-                          "datatype": {
-                            "node": "Numeriek",
-                            "geheel": true,
-                            "decimalen": 0,
-                            "teken": "NIET_NEGATIEF",
-                            "eenheid": null
-                          }
-                        },
-                        {
-                          "name": "prijs",
-                          "datatype": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "NIET_NEGATIEF",
-                            "eenheid": null
-                          }
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "name": "opslag",
-                    "datatype": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
-                    }
-                  }
-                ]
-              },
-              "bron": "zijn pakket",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn pakket"
             },
             "field": "opslag",
             "bron": "de opslag van zijn pakket"

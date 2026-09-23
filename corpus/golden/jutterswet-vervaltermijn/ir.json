@@ -98,14 +98,7 @@
           "node": "AttribuutRef",
           "attribuut": "vervaldatum",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "De vervaldatum van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De vervaldatum van een Vondst"
         },
         "waarde": {
           "node": "Binair",
@@ -114,14 +107,7 @@
             "node": "AttribuutRef",
             "attribuut": "aangiftedatum",
             "objecttype": "Vondst",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumInDagen"
-            },
-            "bron": "zijn aangiftedatum",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn aangiftedatum"
           },
           "rechts": {
             "node": "Literal",
@@ -162,14 +148,7 @@
           "node": "AttribuutRef",
           "attribuut": "toetsdatum",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "De toetsdatum van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De toetsdatum van een Vondst"
         },
         "waarde": {
           "node": "Binair",
@@ -178,14 +157,7 @@
             "node": "AttribuutRef",
             "attribuut": "aangiftedatum",
             "objecttype": "Vondst",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumInDagen"
-            },
-            "bron": "zijn aangiftedatum",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn aangiftedatum"
           },
           "rechts": {
             "node": "Literal",
@@ -226,14 +198,7 @@
           "node": "AttribuutRef",
           "attribuut": "herinneringsdatum",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "De herinneringsdatum van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De herinneringsdatum van een Vondst"
         },
         "waarde": {
           "node": "Binair",
@@ -242,14 +207,7 @@
             "node": "AttribuutRef",
             "attribuut": "aangiftedatum",
             "objecttype": "Vondst",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumInDagen"
-            },
-            "bron": "zijn aangiftedatum",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn aangiftedatum"
           },
           "rechts": {
             "node": "Literal",
@@ -290,14 +248,7 @@
           "node": "AttribuutRef",
           "attribuut": "gedoogdatum",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "De gedoogdatum van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De gedoogdatum van een Vondst"
         },
         "waarde": {
           "node": "Binair",
@@ -306,38 +257,13 @@
             "node": "AttribuutRef",
             "attribuut": "aangiftedatum",
             "objecttype": "Vondst",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumInDagen"
-            },
-            "bron": "zijn aangiftedatum",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn aangiftedatum"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "uitsteldagen",
             "objecttype": "Vondst",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": null,
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "dagen",
-                "stelsel": null,
-                "canoniek": null,
-                "factorNaarCanoniek": null,
-                "noemer": null
-              }
-            },
-            "bron": "zijn uitsteldagen",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn uitsteldagen"
           },
           "type": {
             "node": "DatumInDagen"
@@ -359,14 +285,7 @@
           "node": "AttribuutRef",
           "attribuut": "respijtdatum",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "De respijtdatum van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De respijtdatum van een Vondst"
         },
         "waarde": {
           "node": "Binair",
@@ -375,14 +294,7 @@
             "node": "AttribuutRef",
             "attribuut": "aangiftedatum",
             "objecttype": "Vondst",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumInDagen"
-            },
-            "bron": "zijn aangiftedatum",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn aangiftedatum"
           },
           "rechts": {
             "node": "Literal",
@@ -423,14 +335,7 @@
           "node": "AttribuutRef",
           "attribuut": "opschortdatum",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "De opschortdatum van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De opschortdatum van een Vondst"
         },
         "waarde": {
           "node": "Binair",
@@ -439,14 +344,7 @@
             "node": "AttribuutRef",
             "attribuut": "aangiftedatum",
             "objecttype": "Vondst",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumInDagen"
-            },
-            "bron": "zijn aangiftedatum",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn aangiftedatum"
           },
           "rechts": {
             "node": "Literal",

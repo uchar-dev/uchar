@@ -127,18 +127,7 @@
           "node": "AttribuutRef",
           "attribuut": "som",
           "objecttype": "Jutter",
-          "onderwerpBron": "de som",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de som",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de som"
         },
         "waarde": {
           "node": "Fold",
@@ -165,38 +154,7 @@
               "node": "AttribuutRef",
               "attribuut": "aanspraken",
               "objecttype": "Jutter",
-              "onderwerpBron": "de aanspraken",
-              "navigatieRol": null,
-              "type": {
-                "node": "ListType",
-                "element": {
-                  "node": "SumType",
-                  "domain": "oordeel",
-                  "constructors": [
-                    {
-                      "name": "Goedgekeurd",
-                      "payload": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
-                      }
-                    },
-                    {
-                      "name": "Verworpen",
-                      "payload": null
-                    },
-                    {
-                      "name": "Uitgesteld",
-                      "payload": null
-                    }
-                  ]
-                }
-              },
-              "bron": "de aanspraken",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de aanspraken"
             },
             "function": {
               "node": "Lambda",
@@ -241,30 +199,6 @@
                 "scrutinee": {
                   "node": "BinderRef",
                   "name": "a",
-                  "type": {
-                    "node": "SumType",
-                    "domain": "oordeel",
-                    "constructors": [
-                      {
-                        "name": "Goedgekeurd",
-                        "payload": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "NIET_NEGATIEF",
-                          "eenheid": null
-                        }
-                      },
-                      {
-                        "name": "Verworpen",
-                        "payload": null
-                      },
-                      {
-                        "name": "Uitgesteld",
-                        "payload": null
-                      }
-                    ]
-                  },
                   "bron": "a"
                 },
                 "arms": [
@@ -277,13 +211,6 @@
                       "links": {
                         "node": "BinderRef",
                         "name": "bedrag",
-                        "type": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "NIET_NEGATIEF",
-                          "eenheid": null
-                        },
                         "bron": "bedrag"
                       },
                       "rechts": {
@@ -377,25 +304,11 @@
               "links": {
                 "node": "BinderRef",
                 "name": "acc",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
                 "bron": "acc"
               },
               "rechts": {
                 "node": "BinderRef",
                 "name": "x",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
                 "bron": "x"
               },
               "type": {

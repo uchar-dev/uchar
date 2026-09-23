@@ -52,18 +52,7 @@
           "node": "AttribuutRef",
           "attribuut": "a",
           "objecttype": "Ding",
-          "onderwerpBron": "een Ding",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de a van een Ding",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de a van een Ding"
         },
         "waarde": {
           "node": "Binair",
@@ -72,18 +61,7 @@
             "node": "AttribuutRef",
             "attribuut": "b",
             "objecttype": "Ding",
-            "onderwerpBron": "een Ding",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de b van het Ding",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de b van het Ding"
           },
           "rechts": {
             "node": "Literal",
@@ -121,18 +99,7 @@
           "node": "AttribuutRef",
           "attribuut": "b",
           "objecttype": "Ding",
-          "onderwerpBron": "een Ding",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de b van een Ding",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de b van een Ding"
         },
         "waarde": {
           "node": "Binair",
@@ -141,18 +108,7 @@
             "node": "AttribuutRef",
             "attribuut": "a",
             "objecttype": "Ding",
-            "onderwerpBron": "een Ding",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de a van het Ding",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de a van het Ding"
           },
           "rechts": {
             "node": "Literal",

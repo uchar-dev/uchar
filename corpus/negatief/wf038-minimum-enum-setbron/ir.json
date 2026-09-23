@@ -99,20 +99,7 @@
           "node": "AttribuutRef",
           "attribuut": "aanlandkust",
           "objecttype": "Berging",
-          "onderwerpBron": "de aanlandkust",
-          "navigatieRol": null,
-          "type": {
-            "node": "Enumeratie",
-            "domein": "Kust",
-            "waarden": [
-              "Noord",
-              "Zuid",
-              "West"
-            ]
-          },
-          "bron": "de aanlandkust",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de aanlandkust"
         },
         "waarde": {
           "node": "Functie",
@@ -122,20 +109,7 @@
               "node": "AttribuutRef",
               "attribuut": "kust",
               "objecttype": "Schuit",
-              "onderwerpBron": "de kust van alle schuiten van de Berging",
-              "navigatieRol": null,
-              "type": {
-                "node": "Enumeratie",
-                "domein": "Kust",
-                "waarden": [
-                  "Noord",
-                  "Zuid",
-                  "West"
-                ]
-              },
-              "bron": "de kust van alle schuiten van de Berging",
-              "set": true,
-              "navigatiePad": []
+              "bron": "de kust van alle schuiten van de Berging"
             }
           ],
           "elementObjecttype": "Schuit",

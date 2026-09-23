@@ -116,14 +116,7 @@
           "node": "AttribuutRef",
           "attribuut": "inzetbaar",
           "objecttype": "Reddingsvloot",
-          "onderwerpBron": "Een Reddingsvloot",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Reddingsvloot is inzetbaar",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Reddingsvloot is inzetbaar"
         },
         "waarde": {
           "node": "Literal",
@@ -146,18 +139,7 @@
               "node": "AttribuutRef",
               "attribuut": "vaartijd",
               "objecttype": "Reddingssloep",
-              "onderwerpBron": "ten minste 2 van de sloepen van de Reddingsvloot",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot"
             },
             "rechts": {
               "node": "Literal",
@@ -199,14 +181,7 @@
           "node": "AttribuutRef",
           "attribuut": "krap",
           "objecttype": "Reddingsvloot",
-          "onderwerpBron": "Een Reddingsvloot",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Reddingsvloot is krap",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Reddingsvloot is krap"
         },
         "waarde": {
           "node": "Literal",
@@ -229,18 +204,7 @@
               "node": "AttribuutRef",
               "attribuut": "vaartijd",
               "objecttype": "Reddingssloep",
-              "onderwerpBron": "ten hoogste 1 van de sloepen van de Reddingsvloot",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de vaartijd van ten hoogste 1 van de sloepen van de Reddingsvloot",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de vaartijd van ten hoogste 1 van de sloepen van de Reddingsvloot"
             },
             "rechts": {
               "node": "Literal",
@@ -282,14 +246,7 @@
           "node": "AttribuutRef",
           "attribuut": "paraat",
           "objecttype": "Reddingsvloot",
-          "onderwerpBron": "Een Reddingsvloot",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Reddingsvloot is paraat",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Reddingsvloot is paraat"
         },
         "waarde": {
           "node": "Literal",
@@ -312,18 +269,7 @@
               "node": "AttribuutRef",
               "attribuut": "vaartijd",
               "objecttype": "Reddingssloep",
-              "onderwerpBron": "precies 1 van de sloepen van de Reddingsvloot",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de vaartijd van precies 1 van de sloepen van de Reddingsvloot",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de vaartijd van precies 1 van de sloepen van de Reddingsvloot"
             },
             "rechts": {
               "node": "Literal",
@@ -365,14 +311,7 @@
           "node": "AttribuutRef",
           "attribuut": "geschikt",
           "objecttype": "Reddingsvloot",
-          "onderwerpBron": "Een Reddingsvloot",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Reddingsvloot is geschikt",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Reddingsvloot is geschikt"
         },
         "waarde": {
           "node": "Literal",
@@ -390,7 +329,6 @@
           "filter": {
             "node": "Kenmerk",
             "kenmerk": "gekeurd",
-            "navigatie": null,
             "negatie": false,
             "eigenaar": null,
             "periode": null,
@@ -403,18 +341,7 @@
               "node": "AttribuutRef",
               "attribuut": "vaartijd",
               "objecttype": "Reddingssloep",
-              "onderwerpBron": "ten minste 2 van de sloepen van de Reddingsvloot die gekeurd zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot die gekeurd zijn",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de vaartijd van ten minste 2 van de sloepen van de Reddingsvloot die gekeurd zijn"
             },
             "rechts": {
               "node": "Literal",
@@ -456,18 +383,7 @@
           "node": "AttribuutRef",
           "attribuut": "sloeptal",
           "objecttype": "Reddingsvloot",
-          "onderwerpBron": "een Reddingsvloot",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het sloeptal van een Reddingsvloot",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het sloeptal van een Reddingsvloot"
         },
         "waarde": {
           "node": "Functie",
@@ -477,15 +393,7 @@
               "node": "AttribuutRef",
               "attribuut": "sloepen",
               "objecttype": "Reddingsvloot",
-              "onderwerpBron": "de Reddingsvloot",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "sloepen van de Reddingsvloot",
-              "set": false,
-              "navigatiePad": []
+              "bron": "sloepen van de Reddingsvloot"
             }
           ],
           "elementObjecttype": "Reddingssloep",

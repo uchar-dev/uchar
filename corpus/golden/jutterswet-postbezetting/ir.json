@@ -90,14 +90,7 @@
           "node": "AttribuutRef",
           "attribuut": "bemand",
           "objecttype": "Wachtpost",
-          "onderwerpBron": "Een Wachtpost",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Wachtpost is bemand",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Wachtpost is bemand"
         },
         "waarde": {
           "node": "Literal",
@@ -108,10 +101,10 @@
           "bron": "waar"
         },
         "voorwaarde": {
-          "node": "VerreRollidmaatschap",
-          "filler": "Jutter",
-          "backref": "toegewezen wachtpost",
-          "negatie": false,
+          "node": "RoleMembership",
+          "factType": "wachtindeling",
+          "role": "toegewezen wachtpost",
+          "negated": false,
           "bron": "hij een wachtjutter heeft"
         },
         "geldigheid": {
@@ -128,14 +121,7 @@
           "node": "AttribuutRef",
           "attribuut": "onbemand",
           "objecttype": "Wachtpost",
-          "onderwerpBron": "Een Wachtpost",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Wachtpost is onbemand",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Wachtpost is onbemand"
         },
         "waarde": {
           "node": "Literal",
@@ -146,10 +132,10 @@
           "bron": "waar"
         },
         "voorwaarde": {
-          "node": "VerreRollidmaatschap",
-          "filler": "Jutter",
-          "backref": "toegewezen wachtpost",
-          "negatie": true,
+          "node": "RoleMembership",
+          "factType": "wachtindeling",
+          "role": "toegewezen wachtpost",
+          "negated": true,
           "bron": "hij geen wachtjutter heeft"
         },
         "geldigheid": {
@@ -166,14 +152,7 @@
           "node": "AttribuutRef",
           "attribuut": "strandbemand",
           "objecttype": "Wachtpost",
-          "onderwerpBron": "Een Wachtpost",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Wachtpost is strandbemand",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Wachtpost is strandbemand"
         },
         "waarde": {
           "node": "Literal",
@@ -184,10 +163,10 @@
           "bron": "waar"
         },
         "voorwaarde": {
-          "node": "VerreRollidmaatschap",
-          "filler": "Strandjutter",
-          "backref": "toegewezen wachtpost",
-          "negatie": false,
+          "node": "RoleMembership",
+          "factType": "wachtindeling",
+          "role": "toegewezen wachtpost",
+          "negated": false,
           "bron": "hij een strandjutter heeft"
         },
         "geldigheid": {
@@ -204,14 +183,7 @@
           "node": "AttribuutRef",
           "attribuut": "strandvrij",
           "objecttype": "Wachtpost",
-          "onderwerpBron": "Een Wachtpost",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Wachtpost is strandvrij",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Wachtpost is strandvrij"
         },
         "waarde": {
           "node": "Literal",
@@ -222,10 +194,10 @@
           "bron": "waar"
         },
         "voorwaarde": {
-          "node": "VerreRollidmaatschap",
-          "filler": "Strandjutter",
-          "backref": "toegewezen wachtpost",
-          "negatie": true,
+          "node": "RoleMembership",
+          "factType": "wachtindeling",
+          "role": "toegewezen wachtpost",
+          "negated": true,
           "bron": "hij geen strandjutter heeft"
         },
         "geldigheid": {

@@ -86,37 +86,13 @@
           "node": "AttribuutRef",
           "attribuut": "voorliggerrang",
           "objecttype": "Wachter",
-          "onderwerpBron": "een Wachter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "De voorliggerrang van een Wachter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De voorliggerrang van een Wachter"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "rangnummer",
           "objecttype": "Wachter",
-          "onderwerpBron": "de Wachter",
-          "navigatieRol": "Wachter",
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
           "bron": "het rangnummer van de voorligger van de Wachter",
-          "set": false,
-          "navigatiePad": [
-            "voorligger"
-          ],
           "navigatieBindingen": [
             {
               "node": "RolBinding",
@@ -140,18 +116,7 @@
           "node": "AttribuutRef",
           "attribuut": "opvolgeraantal",
           "objecttype": "Wachter",
-          "onderwerpBron": "een Wachter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "Het opvolgeraantal van een Wachter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het opvolgeraantal van een Wachter"
         },
         "waarde": {
           "node": "Functie",
@@ -161,15 +126,7 @@
               "node": "AttribuutRef",
               "attribuut": "opvolgers",
               "objecttype": "Wachter",
-              "onderwerpBron": "de Wachter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "opvolgers van de Wachter",
-              "set": false,
-              "navigatiePad": []
+              "bron": "opvolgers van de Wachter"
             }
           ],
           "elementObjecttype": "Wachter",

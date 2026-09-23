@@ -78,18 +78,7 @@
                           "node": "AttribuutRef",
                           "attribuut": "heffing",
                           "objecttype": "Jutter",
-                          "onderwerpBron": "zijn heffing",
-                          "navigatieRol": null,
-                          "type": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
-                          },
-                          "bron": "zijn heffing",
-                          "set": false,
-                          "navigatiePad": []
+                          "bron": "zijn heffing"
                         },
                         "dagsoort": null,
                         "negatie": false,

@@ -294,18 +294,7 @@
           "node": "AttribuutRef",
           "attribuut": "uitfijn",
           "objecttype": "Jutter",
-          "onderwerpBron": "de Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 4,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De uitfijn van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De uitfijn van een Jutter"
         },
         "waarde": {
           "node": "Afgerond",
@@ -313,18 +302,7 @@
             "node": "AttribuutRef",
             "attribuut": "fijn",
             "objecttype": "Jutter",
-            "onderwerpBron": "de Jutter",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 4,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de fijn van de Jutter",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de fijn van de Jutter"
           },
           "modus": "REKENKUNDIG",
           "decimalen": 0,

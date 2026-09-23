@@ -102,28 +102,6 @@
         "body": {
           "node": "BinderRef",
           "name": "melding",
-          "type": {
-            "node": "SumType",
-            "domain": "bergingsmelding",
-            "constructors": [
-              {
-                "name": "Gemeld",
-                "payload": {
-                  "node": "Enumeratie",
-                  "domein": "bergingsstatus",
-                  "waarden": [
-                    "Geborgen",
-                    "Vermist",
-                    "Verspoeld"
-                  ]
-                }
-              },
-              {
-                "name": "Ingetrokken",
-                "payload": null
-              }
-            ]
-          },
           "bron": "melding"
         },
         "bron": "Meldstand"

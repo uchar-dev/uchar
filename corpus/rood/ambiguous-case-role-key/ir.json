@@ -125,37 +125,13 @@
           "node": "AttribuutRef",
           "attribuut": "ligdiepte",
           "objecttype": "Schuit",
-          "onderwerpBron": "een Schuit",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "De ligdiepte van een Schuit",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De ligdiepte van een Schuit"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "draagvlak",
           "objecttype": "Ponton",
-          "onderwerpBron": "de Schuit",
-          "navigatieRol": "Schuit",
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
           "bron": "het draagvlak van de ligger van de Schuit",
-          "set": false,
-          "navigatiePad": [
-            "ligger"
-          ],
           "navigatieBindingen": [
             {
               "node": "RolBinding",

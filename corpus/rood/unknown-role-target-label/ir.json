@@ -84,18 +84,7 @@
           "node": "AttribuutRef",
           "attribuut": "liggertal",
           "objecttype": "Haven",
-          "onderwerpBron": "een Haven",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "Het liggertal van een Haven",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het liggertal van een Haven"
         },
         "waarde": {
           "node": "Functie",
@@ -105,15 +94,7 @@
               "node": "AttribuutRef",
               "attribuut": "ligger",
               "objecttype": "Haven",
-              "onderwerpBron": "de Haven",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "ligger van de Haven",
-              "set": false,
-              "navigatiePad": []
+              "bron": "ligger van de Haven"
             }
           ],
           "elementObjecttype": "Schuit",
@@ -128,7 +109,12 @@
             "eenheid": null
           },
           "bron": "het aantal ligger van de Haven",
-          "granulariteit": null
+          "granulariteit": null,
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "ligplaats",
+            "rol": "ligger"
+          }
         },
         "voorwaarde": null,
         "geldigheid": {

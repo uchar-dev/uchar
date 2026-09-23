@@ -132,18 +132,7 @@
           "node": "AttribuutRef",
           "attribuut": "heffing",
           "objecttype": "Rekenkamer",
-          "onderwerpBron": "de heffing",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de heffing",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de heffing"
         },
         "waarde": {
           "node": "Binair",
@@ -152,35 +141,13 @@
             "node": "AttribuutRef",
             "attribuut": "bergingswaarde",
             "objecttype": "Rekenkamer",
-            "onderwerpBron": "de bergingswaarde",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de bergingswaarde",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de bergingswaarde"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "aftrek",
             "objecttype": "Rekenkamer",
-            "onderwerpBron": "de aftrek",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de aftrek",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de aftrek"
           },
           "type": {
             "node": "Numeriek",
@@ -206,35 +173,13 @@
           "node": "AttribuutRef",
           "attribuut": "verschuldigd",
           "objecttype": "Bergingsaanslag",
-          "onderwerpBron": "de verschuldigd",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de verschuldigd",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de verschuldigd"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "heffing",
           "objecttype": "Rekenkamer",
-          "onderwerpBron": "de heffing van de rekenkamer",
-          "navigatieRol": "rekenkamer",
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
           "bron": "de heffing van de rekenkamer",
-          "set": false,
-          "navigatiePad": [],
           "navigatieBindingen": [
             {
               "node": "RolBinding",
@@ -266,18 +211,7 @@
               "node": "AttribuutRef",
               "attribuut": "bergingswaarde",
               "objecttype": "Bergingsaanslag",
-              "onderwerpBron": "de bergingswaarde",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de bergingswaarde",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de bergingswaarde"
             },
             "kenmerk": false
           }
@@ -316,7 +250,6 @@
             "voorwaarde": {
               "node": "Kenmerk",
               "kenmerk": "hardheid",
-              "navigatie": "rekenkamer_houder",
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -331,18 +264,7 @@
               "node": "AttribuutRef",
               "attribuut": "hardheidsaftrek",
               "objecttype": "Bergingsaanslag",
-              "onderwerpBron": "de hardheidsaftrek",
-              "navigatieRol": "rekenkamer_houder",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
               "bron": "de hardheidsaftrek",
-              "set": false,
-              "navigatiePad": [],
               "navigatieBindingen": [
                 {
                   "node": "RolBinding",

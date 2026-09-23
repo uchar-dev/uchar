@@ -91,18 +91,7 @@
           "node": "AttribuutRef",
           "attribuut": "klipteken",
           "objecttype": "Kustwacht",
-          "onderwerpBron": "een Kustwacht",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het klipteken van een Kustwacht",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het klipteken van een Kustwacht"
         },
         "waarde": {
           "node": "Literal",
@@ -128,18 +117,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "ploegomvang",
                 "objecttype": "Kustwacht",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "zijn ploegomvang",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn ploegomvang"
               },
               "rechts": {
                 "node": "Literal",
@@ -167,18 +145,7 @@
                     "node": "AttribuutRef",
                     "attribuut": "wachtvergoeding per maand",
                     "objecttype": "Kustwacht",
-                    "onderwerpBron": "zijn",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "zijn wachtvergoeding per maand",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "zijn wachtvergoeding per maand"
                   }
                 ],
                 "elementObjecttype": "Kustwacht",
@@ -190,18 +157,7 @@
                     "node": "AttribuutRef",
                     "attribuut": "wachtvergoeding per maand",
                     "objecttype": "Kustwacht",
-                    "onderwerpBron": "zijn",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "zijn wachtvergoeding per maand",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "zijn wachtvergoeding per maand"
                   },
                   "rechts": {
                     "node": "Literal",
@@ -261,18 +217,7 @@
           "node": "AttribuutRef",
           "attribuut": "randklipteken",
           "objecttype": "Kustwacht",
-          "onderwerpBron": "een Kustwacht",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het randklipteken van een Kustwacht",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het randklipteken van een Kustwacht"
         },
         "waarde": {
           "node": "Literal",
@@ -298,18 +243,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "ploegomvang",
                 "objecttype": "Kustwacht",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "zijn ploegomvang",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn ploegomvang"
               },
               "rechts": {
                 "node": "Literal",
@@ -337,18 +271,7 @@
                     "node": "AttribuutRef",
                     "attribuut": "wachtvergoeding per maand",
                     "objecttype": "Kustwacht",
-                    "onderwerpBron": "zijn",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "zijn wachtvergoeding per maand",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "zijn wachtvergoeding per maand"
                   }
                 ],
                 "elementObjecttype": "Kustwacht",
@@ -360,35 +283,13 @@
                     "node": "AttribuutRef",
                     "attribuut": "wachtvergoeding per maand",
                     "objecttype": "Kustwacht",
-                    "onderwerpBron": "zijn",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "zijn wachtvergoeding per maand",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "zijn wachtvergoeding per maand"
                   },
                   "rechts": {
                     "node": "AttribuutRef",
                     "attribuut": "drempelbedrag",
                     "objecttype": "Kustwacht",
-                    "onderwerpBron": "zijn",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "zijn drempelbedrag",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "zijn drempelbedrag"
                   },
                   "periode": null,
                   "bron": "gedurende de tijd dat zijn wachtvergoeding per maand groter is dan zijn drempelbedrag"

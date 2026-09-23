@@ -169,18 +169,7 @@
           "node": "AttribuutRef",
           "attribuut": "heffing",
           "objecttype": "Meting",
-          "onderwerpBron": "de Meting",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De heffing van een Meting",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De heffing van een Meting"
         },
         "waarde": {
           "node": "Binair",
@@ -192,35 +181,13 @@
               "node": "AttribuutRef",
               "attribuut": "grondslag",
               "objecttype": "Meting",
-              "onderwerpBron": "de Meting",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de grondslag van de Meting",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de grondslag van de Meting"
             },
             "rechts": {
               "node": "AttribuutRef",
               "attribuut": "factor",
               "objecttype": "Meting",
-              "onderwerpBron": "de Meting",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de factor van de Meting",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de factor van de Meting"
             },
             "type": {
               "node": "Numeriek",
@@ -235,18 +202,7 @@
             "node": "AttribuutRef",
             "attribuut": "korting",
             "objecttype": "Meting",
-            "onderwerpBron": "de Meting",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de korting van de Meting",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de korting van de Meting"
           },
           "type": {
             "node": "Numeriek",
@@ -272,18 +228,7 @@
           "node": "AttribuutRef",
           "attribuut": "rest",
           "objecttype": "Meting",
-          "onderwerpBron": "de Meting",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De rest van een Meting",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De rest van een Meting"
         },
         "waarde": {
           "node": "Binair",
@@ -292,18 +237,7 @@
             "node": "AttribuutRef",
             "attribuut": "aftrek",
             "objecttype": "Meting",
-            "onderwerpBron": "de Meting",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de aftrek van de Meting",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de aftrek van de Meting"
           },
           "rechts": {
             "node": "Binair",
@@ -312,35 +246,13 @@
               "node": "AttribuutRef",
               "attribuut": "tarief",
               "objecttype": "Meting",
-              "onderwerpBron": "de Meting",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "het tarief van de Meting",
-              "set": false,
-              "navigatiePad": []
+              "bron": "het tarief van de Meting"
             },
             "rechts": {
               "node": "AttribuutRef",
               "attribuut": "aantal",
               "objecttype": "Meting",
-              "onderwerpBron": "de Meting",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "het aantal van de Meting",
-              "set": false,
-              "navigatiePad": []
+              "bron": "het aantal van de Meting"
             },
             "type": {
               "node": "Numeriek",
@@ -375,18 +287,7 @@
           "node": "AttribuutRef",
           "attribuut": "uitkomst",
           "objecttype": "Meting",
-          "onderwerpBron": "de Meting",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De uitkomst van een Meting",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De uitkomst van een Meting"
         },
         "waarde": {
           "node": "Binair",
@@ -398,35 +299,13 @@
               "node": "AttribuutRef",
               "attribuut": "som",
               "objecttype": "Meting",
-              "onderwerpBron": "de Meting",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de som van de Meting",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de som van de Meting"
             },
             "rechts": {
               "node": "AttribuutRef",
               "attribuut": "deler",
               "objecttype": "Meting",
-              "onderwerpBron": "de Meting",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de deler van de Meting",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de deler van de Meting"
             },
             "type": {
               "node": "Numeriek",
@@ -441,18 +320,7 @@
             "node": "AttribuutRef",
             "attribuut": "toeslag",
             "objecttype": "Meting",
-            "onderwerpBron": "de Meting",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de toeslag van de Meting",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de toeslag van de Meting"
           },
           "type": {
             "node": "Numeriek",
@@ -466,7 +334,6 @@
         "voorwaarde": {
           "node": "Kenmerk",
           "kenmerk": "actief",
-          "navigatie": null,
           "negatie": false,
           "eigenaar": null,
           "periode": null,

@@ -89,7 +89,6 @@
             "voorwaarde": {
               "node": "Kenmerk",
               "kenmerk": "rechtA",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -102,18 +101,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "grondslag",
                 "objecttype": "Jutter",
-                "onderwerpBron": "de grondslag van de Jutter",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "de grondslag van de Jutter",
-                "set": false,
-                "navigatiePad": []
+                "bron": "de grondslag van de Jutter"
               },
               "rechts": {
                 "node": "Literal",
@@ -149,7 +137,6 @@
                       "voorwaarde": {
                         "node": "Kenmerk",
                         "kenmerk": "grondP",
-                        "navigatie": null,
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
@@ -162,18 +149,7 @@
                           "node": "AttribuutRef",
                           "attribuut": "grondslag",
                           "objecttype": "Jutter",
-                          "onderwerpBron": "de grondslag van de Jutter",
-                          "navigatieRol": null,
-                          "type": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
-                          },
-                          "bron": "de grondslag van de Jutter",
-                          "set": false,
-                          "navigatiePad": []
+                          "bron": "de grondslag van de Jutter"
                         },
                         "rechts": {
                           "node": "Literal",
@@ -210,7 +186,6 @@
                       "voorwaarde": {
                         "node": "Kenmerk",
                         "kenmerk": "grondQ",
-                        "navigatie": null,
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
@@ -223,18 +198,7 @@
                           "node": "AttribuutRef",
                           "attribuut": "grondslag",
                           "objecttype": "Jutter",
-                          "onderwerpBron": "de grondslag van de Jutter",
-                          "navigatieRol": null,
-                          "type": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
-                          },
-                          "bron": "de grondslag van de Jutter",
-                          "set": false,
-                          "navigatiePad": []
+                          "bron": "de grondslag van de Jutter"
                         },
                         "rechts": {
                           "node": "Literal",
@@ -271,7 +235,6 @@
                       "voorwaarde": {
                         "node": "Kenmerk",
                         "kenmerk": "grondR",
-                        "navigatie": null,
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
@@ -287,18 +250,7 @@
                             "node": "AttribuutRef",
                             "attribuut": "grondslag",
                             "objecttype": "Jutter",
-                            "onderwerpBron": "de grondslag van de Jutter",
-                            "navigatieRol": null,
-                            "type": {
-                              "node": "Numeriek",
-                              "geheel": false,
-                              "decimalen": 2,
-                              "teken": "ONBEPAALD",
-                              "eenheid": null
-                            },
-                            "bron": "de grondslag van de Jutter",
-                            "set": false,
-                            "navigatiePad": []
+                            "bron": "de grondslag van de Jutter"
                           },
                           "rechts": {
                             "node": "Literal",

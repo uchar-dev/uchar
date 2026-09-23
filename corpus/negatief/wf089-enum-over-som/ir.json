@@ -124,18 +124,7 @@
           "node": "AttribuutRef",
           "attribuut": "uitkering",
           "objecttype": "Jutter",
-          "onderwerpBron": "de uitkering",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de uitkering",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de uitkering"
         },
         "waarde": {
           "node": "Literal",
@@ -156,20 +145,7 @@
             "node": "AttribuutRef",
             "attribuut": "beschikking",
             "objecttype": "Jutter",
-            "onderwerpBron": "de beschikking",
-            "navigatieRol": null,
-            "type": {
-              "node": "Enumeratie",
-              "domein": "beschikking",
-              "waarden": [
-                "Toegekend",
-                "Afgewezen",
-                "Aangehouden"
-              ]
-            },
-            "bron": "de beschikking",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de beschikking"
           },
           "rechts": {
             "node": "Literal",

@@ -109,14 +109,7 @@
           "node": "AttribuutRef",
           "attribuut": "helder",
           "objecttype": "Vuurtoren",
-          "onderwerpBron": "?T",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "?T : helder",
-          "set": false,
-          "navigatiePad": []
+          "bron": "?T : helder"
         },
         "waarde": {
           "node": "Literal",
@@ -139,18 +132,7 @@
               "node": "AttribuutRef",
               "attribuut": "sterkte",
               "objecttype": "Lamp",
-              "onderwerpBron": "?V",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "?V.sterkte",
-              "set": false,
-              "navigatiePad": []
+              "bron": "?V.sterkte"
             },
             "rechts": {
               "node": "Literal",
@@ -188,14 +170,7 @@
           "node": "AttribuutRef",
           "attribuut": "zuinig",
           "objecttype": "Vuurtoren",
-          "onderwerpBron": "?T",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "?T : zuinig",
-          "set": false,
-          "navigatiePad": []
+          "bron": "?T : zuinig"
         },
         "waarde": {
           "node": "Literal",
@@ -218,18 +193,7 @@
               "node": "AttribuutRef",
               "attribuut": "sterkte",
               "objecttype": "Lamp",
-              "onderwerpBron": "?V",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "?V.sterkte",
-              "set": false,
-              "navigatiePad": []
+              "bron": "?V.sterkte"
             },
             "rechts": {
               "node": "Literal",
@@ -267,14 +231,7 @@
           "node": "AttribuutRef",
           "attribuut": "enkelvoudig",
           "objecttype": "Vuurtoren",
-          "onderwerpBron": "?T",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "?T : enkelvoudig",
-          "set": false,
-          "navigatiePad": []
+          "bron": "?T : enkelvoudig"
         },
         "waarde": {
           "node": "Literal",
@@ -297,18 +254,7 @@
               "node": "AttribuutRef",
               "attribuut": "sterkte",
               "objecttype": "Lamp",
-              "onderwerpBron": "?V",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "?V.sterkte",
-              "set": false,
-              "navigatiePad": []
+              "bron": "?V.sterkte"
             },
             "rechts": {
               "node": "Literal",
@@ -346,14 +292,7 @@
           "node": "AttribuutRef",
           "attribuut": "keurig",
           "objecttype": "Vuurtoren",
-          "onderwerpBron": "?T",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "?T : keurig",
-          "set": false,
-          "navigatiePad": []
+          "bron": "?T : keurig"
         },
         "waarde": {
           "node": "Literal",
@@ -371,7 +310,6 @@
           "filter": {
             "node": "Kenmerk",
             "kenmerk": "gekeurd",
-            "navigatie": null,
             "negatie": false,
             "eigenaar": null,
             "periode": null,
@@ -384,18 +322,7 @@
               "node": "AttribuutRef",
               "attribuut": "sterkte",
               "objecttype": "Lamp",
-              "onderwerpBron": "?V",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "?V.sterkte",
-              "set": false,
-              "navigatiePad": []
+              "bron": "?V.sterkte"
             },
             "rechts": {
               "node": "Literal",
@@ -433,18 +360,7 @@
           "node": "AttribuutRef",
           "attribuut": "lampental",
           "objecttype": "Vuurtoren",
-          "onderwerpBron": "?T",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "?T.lampental",
-          "set": false,
-          "navigatiePad": []
+          "bron": "?T.lampental"
         },
         "waarde": {
           "node": "Functie",
@@ -454,15 +370,7 @@
               "node": "AttribuutRef",
               "attribuut": "lampen",
               "objecttype": "Vuurtoren",
-              "onderwerpBron": "?T",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "?T.lampen",
-              "set": false,
-              "navigatiePad": []
+              "bron": "?T.lampen"
             }
           ],
           "elementObjecttype": "Lamp",

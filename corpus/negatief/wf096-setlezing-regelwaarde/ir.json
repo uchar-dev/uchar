@@ -132,49 +132,13 @@
           "node": "AttribuutRef",
           "attribuut": "maatgevend gewicht",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "kg",
-              "stelsel": "Gewicht",
-              "canoniek": "kg",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "Het maatgevend gewicht van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het maatgevend gewicht van een Jutter"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "gewicht",
           "objecttype": "Vondst",
-          "onderwerpBron": "alle vondsten van de Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "kg",
-              "stelsel": "Gewicht",
-              "canoniek": "kg",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
           "bron": "het gewicht van alle vondsten van de Jutter",
-          "set": true,
-          "navigatiePad": [],
           "navigatieBindingen": [
             {
               "node": "RolBinding",

@@ -48,18 +48,7 @@
           "node": "AttribuutRef",
           "attribuut": "premie",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De premie van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De premie van een Vondst"
         },
         "waarde": {
           "node": "Literal",
@@ -81,7 +70,6 @@
             {
               "node": "Kenmerk",
               "kenmerk": "geborgen",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,

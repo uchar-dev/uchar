@@ -71,14 +71,7 @@
           "node": "AttribuutRef",
           "attribuut": "gemengd",
           "objecttype": "Jutter",
-          "onderwerpBron": "Een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Jutter is gemengd",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Jutter is gemengd"
         },
         "waarde": {
           "node": "Literal",
@@ -94,23 +87,22 @@
           "drempel": 2,
           "onderdelen": [
             {
-              "node": "Rollidmaatschap",
-              "rol": "wachtjutter",
-              "anderTeFiller": "Wachtpost",
-              "negatie": false,
+              "node": "RoleMembership",
+              "factType": "wachtindeling",
+              "role": "wachtjutter",
+              "negated": false,
               "bron": "hij een wachtjutter is"
             },
             {
-              "node": "Rollidmaatschap",
-              "rol": "wachtjutter",
-              "anderTeFiller": "Wachtpost",
-              "negatie": true,
+              "node": "RoleMembership",
+              "factType": "wachtindeling",
+              "role": "wachtjutter",
+              "negated": true,
               "bron": "hij geen wachtjutter is"
             },
             {
               "node": "Kenmerk",
               "kenmerk": "actief",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,

@@ -58,18 +58,7 @@
           "node": "AttribuutRef",
           "attribuut": "saldo",
           "objecttype": "Jutter",
-          "onderwerpBron": null,
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": null,
-          "set": false,
-          "navigatiePad": []
+          "bron": null
         },
         "bron": null
       }

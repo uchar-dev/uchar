@@ -41,14 +41,7 @@
           "node": "AttribuutRef",
           "attribuut": "herleefd",
           "objecttype": "Recht",
-          "onderwerpBron": "Een Recht",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Recht is herleefd",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Recht is herleefd"
         },
         "waarde": {
           "node": "Literal",
@@ -61,7 +54,6 @@
         "voorwaarde": {
           "node": "Kenmerk",
           "kenmerk": "nieuw recht ontstaan",
-          "navigatie": null,
           "negatie": false,
           "eigenaar": null,
           "periode": null,

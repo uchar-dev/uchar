@@ -89,18 +89,7 @@
           "node": "AttribuutRef",
           "attribuut": "heffing",
           "objecttype": "Jutter",
-          "onderwerpBron": "De heffing van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De heffing van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De heffing van een Jutter"
         },
         "waarde": {
           "node": "Let",
@@ -116,18 +105,7 @@
             "node": "AttribuutRef",
             "attribuut": "inkomen",
             "objecttype": "Jutter",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "zijn inkomen",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn inkomen"
           },
           "body": {
             "node": "Let",
@@ -145,31 +123,13 @@
               "links": {
                 "node": "BinderRef",
                 "name": "k",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                },
                 "bron": "de k"
               },
               "rechts": {
                 "node": "AttribuutRef",
                 "attribuut": "restpost",
                 "objecttype": "Jutter",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                },
-                "bron": "zijn restpost",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn restpost"
               },
               "type": {
                 "node": "Numeriek",
@@ -193,13 +153,6 @@
               "value": {
                 "node": "BinderRef",
                 "name": "k",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                },
                 "bron": "de k"
               },
               "body": {
@@ -217,25 +170,11 @@
                   "links": {
                     "node": "BinderRef",
                     "name": "w",
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
-                    },
                     "bron": "de w"
                   },
                   "rechts": {
                     "node": "ParameterRef",
                     "parameter": "drempel",
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
                     "bron": "de drempel"
                   },
                   "periode": null,
@@ -256,13 +195,6 @@
                 "else": {
                   "node": "BinderRef",
                   "name": "z",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
                   "bron": "de z"
                 },
                 "bron": "boven de grens het een, daaronder het ander"

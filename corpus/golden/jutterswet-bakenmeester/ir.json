@@ -74,18 +74,7 @@
           "node": "AttribuutRef",
           "attribuut": "onderhoudsbijdrage",
           "objecttype": "Bakenmeester",
-          "onderwerpBron": "een Bakenmeester",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De onderhoudsbijdrage van een Bakenmeester",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De onderhoudsbijdrage van een Bakenmeester"
         },
         "waarde": {
           "node": "Functie",
@@ -95,18 +84,7 @@
               "node": "AttribuutRef",
               "attribuut": "onderhoudstarief",
               "objecttype": "Bakenmeester",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "zijn onderhoudstarief",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn onderhoudstarief"
             }
           ],
           "elementObjecttype": null,
@@ -114,7 +92,6 @@
           "filter": {
             "node": "Kenmerk",
             "kenmerk": "dienstdoend",
-            "navigatie": null,
             "negatie": false,
             "eigenaar": null,
             "periode": null,

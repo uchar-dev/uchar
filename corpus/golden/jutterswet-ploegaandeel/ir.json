@@ -64,18 +64,7 @@
           "node": "AttribuutRef",
           "attribuut": "bergingsaandeel",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het bergingsaandeel van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het bergingsaandeel van een Jutter"
         },
         "waarde": {
           "node": "Literal",
@@ -101,18 +90,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "ploegomvang",
                 "objecttype": "Jutter",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "zijn ploegomvang",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn ploegomvang"
               },
               "rechts": {
                 "node": "Literal",
@@ -141,35 +119,13 @@
                     "node": "AttribuutRef",
                     "attribuut": "vangstwaarde",
                     "objecttype": "Jutter",
-                    "onderwerpBron": "de Jutter",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "de vangstwaarde van de Jutter",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "de vangstwaarde van de Jutter"
                   },
                   "rechts": {
                     "node": "AttribuutRef",
                     "attribuut": "ploegomvang",
                     "objecttype": "Jutter",
-                    "onderwerpBron": "de Jutter",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "de ploegomvang van de Jutter",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "de ploegomvang van de Jutter"
                   },
                   "type": {
                     "node": "Numeriek",

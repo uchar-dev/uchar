@@ -91,25 +91,7 @@
           "node": "AttribuutRef",
           "attribuut": "sleeplengte",
           "objecttype": "Sleepbaan",
-          "onderwerpBron": "een Sleepbaan",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "m",
-              "stelsel": "Afstand",
-              "canoniek": "m",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "De sleeplengte van een Sleepbaan",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De sleeplengte van een Sleepbaan"
         },
         "waarde": {
           "node": "Binair",
@@ -137,25 +119,7 @@
             "node": "AttribuutRef",
             "attribuut": "aanloop",
             "objecttype": "Sleepbaan",
-            "onderwerpBron": "de Sleepbaan",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "m",
-                "stelsel": "Afstand",
-                "canoniek": "m",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "de aanloop van de Sleepbaan",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de aanloop van de Sleepbaan"
           },
           "type": {
             "node": "Numeriek",

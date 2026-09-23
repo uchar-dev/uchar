@@ -119,18 +119,7 @@
           "node": "AttribuutRef",
           "attribuut": "heffing",
           "objecttype": "Rekenkamer",
-          "onderwerpBron": "een Rekenkamer",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De heffing van een overzeese Rekenkamer",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De heffing van een overzeese Rekenkamer"
         },
         "waarde": {
           "node": "Binair",
@@ -139,18 +128,7 @@
             "node": "AttribuutRef",
             "attribuut": "grondslag",
             "objecttype": "Rekenkamer",
-            "onderwerpBron": "de Rekenkamer",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "de grondslag van de Rekenkamer",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de grondslag van de Rekenkamer"
           },
           "rechts": {
             "node": "Literal",
@@ -176,7 +154,6 @@
         "voorwaarde": {
           "node": "Kenmerk",
           "kenmerk": "overzees",
-          "navigatie": null,
           "negatie": false,
           "eigenaar": null,
           "periode": null,
@@ -196,40 +173,17 @@
           "node": "AttribuutRef",
           "attribuut": "heffing",
           "objecttype": "Rekenkamer",
-          "onderwerpBron": "een Rekenkamer",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De heffing van een gewone Rekenkamer",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De heffing van een gewone Rekenkamer"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "grondslag",
           "objecttype": "Rekenkamer",
-          "onderwerpBron": "de Rekenkamer",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "de grondslag van de Rekenkamer",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de grondslag van de Rekenkamer"
         },
         "voorwaarde": {
           "node": "Kenmerk",
           "kenmerk": "overzees",
-          "navigatie": null,
           "negatie": true,
           "eigenaar": null,
           "periode": null,
@@ -249,35 +203,13 @@
           "node": "AttribuutRef",
           "attribuut": "heffing",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De heffing van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De heffing van een Jutter"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "heffing",
           "objecttype": "Rekenkamer",
-          "onderwerpBron": "haar rekenkamer",
-          "navigatieRol": "rekenkamer",
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
           "bron": "de heffing van haar rekenkamer",
-          "set": false,
-          "navigatiePad": [],
           "navigatieBindingen": [
             {
               "node": "RolBinding",
@@ -309,18 +241,7 @@
               "node": "AttribuutRef",
               "attribuut": "grondslag",
               "objecttype": "Jutter",
-              "onderwerpBron": "de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
-              "bron": "de grondslag van de Jutter",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de grondslag van de Jutter"
             },
             "kenmerk": false
           },
@@ -331,14 +252,7 @@
               "node": "AttribuutRef",
               "attribuut": "overzees",
               "objecttype": "Jutter",
-              "onderwerpBron": "de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Booleaan"
-              },
-              "bron": "de overzees van de Jutter",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de overzees van de Jutter"
             },
             "kenmerk": true
           }

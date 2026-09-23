@@ -61,14 +61,7 @@
           "node": "AttribuutRef",
           "attribuut": "penninggerechtigd",
           "objecttype": "Jutter",
-          "onderwerpBron": "Een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Jutter is penninggerechtigd",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Jutter is penninggerechtigd"
         },
         "waarde": {
           "node": "Literal",

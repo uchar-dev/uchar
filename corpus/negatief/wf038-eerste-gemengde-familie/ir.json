@@ -55,14 +55,7 @@
           "node": "AttribuutRef",
           "attribuut": "peildatum",
           "objecttype": "Berging",
-          "onderwerpBron": "de peildatum",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "de peildatum",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de peildatum"
         },
         "waarde": {
           "node": "Functie",
@@ -72,31 +65,13 @@
               "node": "AttribuutRef",
               "attribuut": "sluitingsdag",
               "objecttype": "Berging",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumInDagen"
-              },
-              "bron": "zijn sluitingsdag",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn sluitingsdag"
             },
             {
               "node": "AttribuutRef",
               "attribuut": "volgnummer",
               "objecttype": "Berging",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "zijn volgnummer",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn volgnummer"
             }
           ],
           "elementObjecttype": null,

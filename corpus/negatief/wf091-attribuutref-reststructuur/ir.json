@@ -118,69 +118,13 @@
           "node": "AttribuutRef",
           "attribuut": "aanspraak",
           "objecttype": "Jutter",
-          "onderwerpBron": "de aanspraak van de Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "SumType",
-            "domain": "oordeel",
-            "constructors": [
-              {
-                "name": "Goedgekeurd",
-                "payload": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              },
-              {
-                "name": "Verworpen",
-                "payload": null
-              },
-              {
-                "name": "Uitgesteld",
-                "payload": null
-              }
-            ]
-          },
-          "bron": "de aanspraak van de Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de aanspraak van de Jutter"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "aanspraken",
           "objecttype": "Jutter",
-          "onderwerpBron": "de aanspraken van de Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "SumType",
-            "domain": "oordeel",
-            "constructors": [
-              {
-                "name": "Goedgekeurd",
-                "payload": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              },
-              {
-                "name": "Verworpen",
-                "payload": null
-              },
-              {
-                "name": "Uitgesteld",
-                "payload": null
-              }
-            ]
-          },
-          "bron": "de aanspraken van de Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de aanspraken van de Jutter"
         },
         "voorwaarde": null,
         "geldigheid": {

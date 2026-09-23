@@ -129,18 +129,7 @@
           "node": "AttribuutRef",
           "attribuut": "vakcijfer",
           "objecttype": "Schouwveld",
-          "onderwerpBron": "een Schouwveld",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het vakcijfer van een Schouwveld",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het vakcijfer van een Schouwveld"
         },
         "waarde": {
           "node": "DimensieCel",
@@ -148,29 +137,11 @@
             "node": "AttribuutRef",
             "attribuut": "opbrengst",
             "objecttype": "Schouwveld",
-            "onderwerpBron": "de opbrengst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de opbrengst in het voorjaar",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de opbrengst in het voorjaar"
           },
           "labels": [
             "voorjaar"
           ],
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
           "bron": "de opbrengst in het voorjaar"
         },
         "voorwaarde": null,
@@ -188,18 +159,7 @@
           "node": "AttribuutRef",
           "attribuut": "peiling",
           "objecttype": "Schouwveld",
-          "onderwerpBron": "een Schouwveld",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De peiling van een Schouwveld",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De peiling van een Schouwveld"
         },
         "waarde": {
           "node": "Literal",
@@ -221,7 +181,6 @@
             {
               "node": "Kenmerk",
               "kenmerk": "bewaakt",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -230,7 +189,6 @@
             {
               "node": "Kenmerk",
               "kenmerk": "omheind",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,

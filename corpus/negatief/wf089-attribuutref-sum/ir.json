@@ -124,18 +124,7 @@
           "node": "AttribuutRef",
           "attribuut": "uitkering",
           "objecttype": "Jutter",
-          "onderwerpBron": "de uitkering",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de uitkering",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de uitkering"
         },
         "waarde": {
           "node": "Match",
@@ -150,35 +139,7 @@
             "node": "AttribuutRef",
             "attribuut": "beschikking",
             "objecttype": "Jutter",
-            "onderwerpBron": "de beschikking",
-            "navigatieRol": null,
-            "type": {
-              "node": "SumType",
-              "domain": "oordeel",
-              "constructors": [
-                {
-                  "name": "Goedgekeurd",
-                  "payload": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  }
-                },
-                {
-                  "name": "Verworpen",
-                  "payload": null
-                },
-                {
-                  "name": "Uitgesteld",
-                  "payload": null
-                }
-              ]
-            },
-            "bron": "de beschikking",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de beschikking"
           },
           "arms": [
             {
@@ -190,13 +151,6 @@
                 "links": {
                   "node": "BinderRef",
                   "name": "bedrag",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  },
                   "bron": "bedrag"
                 },
                 "rechts": {

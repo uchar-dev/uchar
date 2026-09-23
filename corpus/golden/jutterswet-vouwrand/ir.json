@@ -75,18 +75,7 @@
           "node": "AttribuutRef",
           "attribuut": "vouwteken",
           "objecttype": "Randwacht",
-          "onderwerpBron": "een Randwacht",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het vouwteken van een Randwacht",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het vouwteken van een Randwacht"
         },
         "waarde": {
           "node": "Literal",
@@ -112,18 +101,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "ploegomvang",
                 "objecttype": "Randwacht",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "zijn ploegomvang",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn ploegomvang"
               },
               "rechts": {
                 "node": "Literal",
@@ -151,35 +129,13 @@
                     "node": "AttribuutRef",
                     "attribuut": "grootgetal",
                     "objecttype": "Randwacht",
-                    "onderwerpBron": "zijn",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "zijn grootgetal",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "zijn grootgetal"
                   },
                   {
                     "node": "AttribuutRef",
                     "attribuut": "bedrag",
                     "objecttype": "Randwacht",
-                    "onderwerpBron": "zijn",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "zijn bedrag",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "zijn bedrag"
                   }
                 ],
                 "elementObjecttype": null,

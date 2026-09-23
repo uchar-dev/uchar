@@ -52,14 +52,7 @@
           "node": "AttribuutRef",
           "attribuut": "toetsdatum",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "De toetsdatum van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De toetsdatum van een Vondst"
         },
         "waarde": {
           "node": "Binair",
@@ -68,27 +61,13 @@
             "node": "AttribuutRef",
             "attribuut": "aangiftedatum",
             "objecttype": "Vondst",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumInDagen"
-            },
-            "bron": "zijn aangiftedatum",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn aangiftedatum"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "tweededatum",
             "objecttype": "Vondst",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumInDagen"
-            },
-            "bron": "zijn tweededatum",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn tweededatum"
           },
           "type": {
             "node": "DatumInDagen"

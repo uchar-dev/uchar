@@ -108,18 +108,7 @@
           "node": "AttribuutRef",
           "attribuut": "penningrecht",
           "objecttype": "Penningbeschikking",
-          "onderwerpBron": "de penningrecht",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de penningrecht",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de penningrecht"
         },
         "waarde": {
           "node": "Match",
@@ -134,35 +123,7 @@
             "node": "AttribuutRef",
             "attribuut": "penningstatus",
             "objecttype": "Penningbeschikking",
-            "onderwerpBron": "de penningstatus",
-            "navigatieRol": null,
-            "type": {
-              "node": "SumType",
-              "domain": "Penningstatus",
-              "constructors": [
-                {
-                  "name": "Verleend",
-                  "payload": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  }
-                },
-                {
-                  "name": "Geweigerd",
-                  "payload": null
-                },
-                {
-                  "name": "Aangehouden",
-                  "payload": null
-                }
-              ]
-            },
-            "bron": "de penningstatus",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de penningstatus"
           },
           "arms": [
             {
@@ -174,13 +135,6 @@
                 "links": {
                   "node": "BinderRef",
                   "name": "bedrag",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
                   "bron": "bedrag"
                 },
                 "rechts": {
@@ -255,14 +209,7 @@
           "node": "AttribuutRef",
           "attribuut": "voorlopig",
           "objecttype": "Penningbeschikking",
-          "onderwerpBron": "de voorlopig",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "de voorlopig",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de voorlopig"
         },
         "waarde": {
           "node": "Literal",
@@ -279,35 +226,7 @@
             "node": "AttribuutRef",
             "attribuut": "penningstatus",
             "objecttype": "Penningbeschikking",
-            "onderwerpBron": "de penningstatus",
-            "navigatieRol": null,
-            "type": {
-              "node": "SumType",
-              "domain": "Penningstatus",
-              "constructors": [
-                {
-                  "name": "Verleend",
-                  "payload": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  }
-                },
-                {
-                  "name": "Geweigerd",
-                  "payload": null
-                },
-                {
-                  "name": "Aangehouden",
-                  "payload": null
-                }
-              ]
-            },
-            "bron": "de penningstatus",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de penningstatus"
           },
           "rechts": {
             "node": "Construct",
@@ -356,14 +275,7 @@
           "node": "AttribuutRef",
           "attribuut": "beslist",
           "objecttype": "Penningbeschikking",
-          "onderwerpBron": "de beslist",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "de beslist",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de beslist"
         },
         "waarde": {
           "node": "Literal",
@@ -380,35 +292,7 @@
             "node": "AttribuutRef",
             "attribuut": "penningstatus",
             "objecttype": "Penningbeschikking",
-            "onderwerpBron": "de penningstatus",
-            "navigatieRol": null,
-            "type": {
-              "node": "SumType",
-              "domain": "Penningstatus",
-              "constructors": [
-                {
-                  "name": "Verleend",
-                  "payload": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  }
-                },
-                {
-                  "name": "Geweigerd",
-                  "payload": null
-                },
-                {
-                  "name": "Aangehouden",
-                  "payload": null
-                }
-              ]
-            },
-            "bron": "de penningstatus",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de penningstatus"
           },
           "rechts": {
             "node": "Construct",

@@ -71,7 +71,6 @@
                 {
                   "node": "Kenmerk",
                   "kenmerk": "hardheid_toegepast",
-                  "navigatie": null,
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
@@ -84,18 +83,7 @@
                     "node": "AttribuutRef",
                     "attribuut": "aantal_aangemelde_vondsten",
                     "objecttype": "Penningrecht",
-                    "onderwerpBron": "de aantal_aangemelde_vondsten",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "de aantal_aangemelde_vondsten",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "de aantal_aangemelde_vondsten"
                   },
                   "rechts": {
                     "node": "Literal",
@@ -127,18 +115,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "aantal_aangemelde_vondsten",
                 "objecttype": "Penningrecht",
-                "onderwerpBron": "de aantal_aangemelde_vondsten",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "de aantal_aangemelde_vondsten",
-                "set": false,
-                "navigatiePad": []
+                "bron": "de aantal_aangemelde_vondsten"
               },
               "rechts": {
                 "node": "Literal",

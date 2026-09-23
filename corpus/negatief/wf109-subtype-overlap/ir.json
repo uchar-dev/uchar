@@ -147,18 +147,7 @@
           "node": "AttribuutRef",
           "attribuut": "seinaantal",
           "objecttype": "Post",
-          "onderwerpBron": "een Post",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het seinaantal van een Post",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het seinaantal van een Post"
         },
         "waarde": {
           "node": "Functie",
@@ -168,15 +157,7 @@
               "node": "AttribuutRef",
               "attribuut": "seinen",
               "objecttype": "Post",
-              "onderwerpBron": "de post",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "seinen van de post",
-              "set": false,
-              "navigatiePad": []
+              "bron": "seinen van de post"
             }
           ],
           "elementObjecttype": "Sein",
@@ -213,18 +194,7 @@
           "node": "AttribuutRef",
           "attribuut": "vakseinaantal",
           "objecttype": "Kustvak",
-          "onderwerpBron": "een Kustvak",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het vakseinaantal van een Kustvak",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het vakseinaantal van een Kustvak"
         },
         "waarde": {
           "node": "Functie",
@@ -234,15 +204,7 @@
               "node": "AttribuutRef",
               "attribuut": "vakseinen",
               "objecttype": "Kustvak",
-              "onderwerpBron": "het kustvak",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "vakseinen van het kustvak",
-              "set": false,
-              "navigatiePad": []
+              "bron": "vakseinen van het kustvak"
             }
           ],
           "elementObjecttype": "Sein",
@@ -284,14 +246,9 @@
         "naam": "vakbeseining door het kustvak",
         "anker": "Kustvak",
         "doel": "Sein",
-        "zetVeld": "seinvak",
-        "joinVeld": "seinpost",
         "tussenstappen": [
           {
             "node": "Tussenstap",
-            "type": "Post",
-            "veld": "kustvak",
-            "viaOuderVeld": false,
             "rolBinding": {
               "node": "RolBinding",
               "feittype": "kustligging",
@@ -302,7 +259,6 @@
         "voorwaarde": {
           "node": "Kenmerk",
           "kenmerk": "gehesen",
-          "navigatie": null,
           "negatie": false,
           "eigenaar": "Sein",
           "periode": null,

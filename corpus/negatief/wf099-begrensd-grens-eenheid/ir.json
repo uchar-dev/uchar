@@ -98,25 +98,7 @@
           "node": "AttribuutRef",
           "attribuut": "bandbreedte",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "EUR",
-              "stelsel": "Munt",
-              "canoniek": "EUR",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "De bandbreedte van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De bandbreedte van een Jutter"
         },
         "waarde": {
           "node": "Begrensd",
@@ -124,25 +106,7 @@
             "node": "AttribuutRef",
             "attribuut": "ruwbedrag",
             "objecttype": "Jutter",
-            "onderwerpBron": "de Jutter",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "het ruwbedrag van de Jutter",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het ruwbedrag van de Jutter"
           },
           "minimum": {
             "node": "Literal",

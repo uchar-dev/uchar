@@ -114,18 +114,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "rang",
                 "objecttype": "Wachter",
-                "onderwerpBron": "de Wachter",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "de rang van de Wachter",
-                "set": false,
-                "navigatiePad": []
+                "bron": "de rang van de Wachter"
               },
               "rechts": {
                 "node": "Literal",
@@ -154,18 +143,7 @@
                   "node": "AttribuutRef",
                   "attribuut": "nummer",
                   "objecttype": "Post",
-                  "onderwerpBron": "alle posten van de Wachter",
-                  "navigatieRol": null,
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
-                  "bron": "de nummer van alle posten van de Wachter",
-                  "set": false,
-                  "navigatiePad": []
+                  "bron": "de nummer van alle posten van de Wachter"
                 },
                 "rechts": {
                   "node": "Literal",
@@ -182,7 +160,12 @@
                 "periode": null,
                 "bron": "het nummer is groter dan 5"
               },
-              "bron": "alle posten van de Wachter hebben een nummer groter dan 5"
+              "bron": "alle posten van de Wachter hebben een nummer groter dan 5",
+              "bronRol": {
+                "node": "RolBinding",
+                "feittype": "bemanning",
+                "rol": "post"
+              }
             }
           ],
           "bron": "de rang van de Wachter is kleiner dan 5 en alle posten van de Wachter hebben een nummer groter dan 5"

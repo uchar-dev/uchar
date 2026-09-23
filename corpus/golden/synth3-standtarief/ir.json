@@ -121,18 +121,7 @@
           "node": "AttribuutRef",
           "attribuut": "tarief",
           "objecttype": "Jutter",
-          "onderwerpBron": "Het tarief van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het tarief van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het tarief van een Jutter"
         },
         "waarde": {
           "node": "Match",
@@ -147,41 +136,7 @@
             "node": "AttribuutRef",
             "attribuut": "stand",
             "objecttype": "Jutter",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "SumType",
-              "domain": "stand",
-              "constructors": [
-                {
-                  "name": "Geborgen",
-                  "payload": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  }
-                },
-                {
-                  "name": "Vermist",
-                  "payload": null
-                },
-                {
-                  "name": "Betwist",
-                  "payload": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  }
-                }
-              ]
-            },
-            "bron": "zijn stand",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn stand"
           },
           "arms": [
             {
@@ -193,13 +148,6 @@
                 "links": {
                   "node": "BinderRef",
                   "name": "w",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  },
                   "bron": "de geborgen waarde"
                 },
                 "rechts": {
@@ -252,29 +200,11 @@
                     "node": "AttribuutRef",
                     "attribuut": "grondslag",
                     "objecttype": "Jutter",
-                    "onderwerpBron": "zijn",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
-                    },
-                    "bron": "zijn grondslag",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "zijn grondslag"
                   },
                   "rechts": {
                     "node": "BinderRef",
                     "name": "a",
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
-                    },
                     "bron": "de betwiste noemer"
                   },
                   "type": {

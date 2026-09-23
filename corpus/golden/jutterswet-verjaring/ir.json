@@ -49,14 +49,7 @@
           "node": "AttribuutRef",
           "attribuut": "verjaard",
           "objecttype": "Jutter",
-          "onderwerpBron": "Een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Jutter is verjaard",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Jutter is verjaard"
         },
         "waarde": {
           "node": "Literal",
@@ -73,14 +66,7 @@
             "node": "AttribuutRef",
             "attribuut": "peildatum",
             "objecttype": "Jutter",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumInDagen"
-            },
-            "bron": "zijn peildatum",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn peildatum"
           },
           "rechts": {
             "node": "Literal",
@@ -107,14 +93,7 @@
           "node": "AttribuutRef",
           "attribuut": "actueel",
           "objecttype": "Jutter",
-          "onderwerpBron": "Een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Jutter is actueel",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Jutter is actueel"
         },
         "waarde": {
           "node": "Literal",
@@ -131,14 +110,7 @@
             "node": "AttribuutRef",
             "attribuut": "peildatum",
             "objecttype": "Jutter",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumInDagen"
-            },
-            "bron": "zijn peildatum",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn peildatum"
           },
           "rechts": {
             "node": "Literal",

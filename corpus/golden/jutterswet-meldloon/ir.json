@@ -126,25 +126,7 @@
           "node": "AttribuutRef",
           "attribuut": "meldloon",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "EUR",
-              "stelsel": "Munt",
-              "canoniek": "EUR",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "Het meldloon van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het meldloon van een Vondst"
         },
         "waarde": {
           "node": "Binair",
@@ -153,25 +135,7 @@
             "node": "AttribuutRef",
             "attribuut": "waarde",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "de waarde van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de waarde van de Vondst"
           },
           "rechts": {
             "node": "Literal",
@@ -223,25 +187,7 @@
           "node": "AttribuutRef",
           "attribuut": "nettoloon",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "EUR",
-              "stelsel": "Munt",
-              "canoniek": "EUR",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "Het nettoloon van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het nettoloon van een Vondst"
         },
         "waarde": {
           "node": "Binair",
@@ -250,25 +196,7 @@
             "node": "AttribuutRef",
             "attribuut": "meldloon",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "het meldloon van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het meldloon van de Vondst"
           },
           "rechts": {
             "node": "Literal",

@@ -114,31 +114,7 @@
           "node": "AttribuutRef",
           "attribuut": "uitkomst",
           "objecttype": "Jutter",
-          "onderwerpBron": "De uitkomst van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "SumType",
-            "domain": "besluit",
-            "constructors": [
-              {
-                "name": "Toegewezen",
-                "payload": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              },
-              {
-                "name": "Geweigerd",
-                "payload": null
-              }
-            ]
-          },
-          "bron": "De uitkomst van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De uitkomst van een Jutter"
         },
         "waarde": {
           "node": "Construct",
@@ -167,18 +143,7 @@
             "node": "AttribuutRef",
             "attribuut": "score",
             "objecttype": "Jutter",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "zijn score",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn score"
           },
           "bron": "toegewezen zijn score"
         },
@@ -189,29 +154,11 @@
             "node": "AttribuutRef",
             "attribuut": "score",
             "objecttype": "Jutter",
-            "onderwerpBron": "de",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "zijn score",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn score"
           },
           "rechts": {
             "node": "ParameterRef",
             "parameter": "drempel",
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
             "bron": "de drempel"
           },
           "periode": null,
@@ -231,31 +178,7 @@
           "node": "AttribuutRef",
           "attribuut": "uitkomst",
           "objecttype": "Jutter",
-          "onderwerpBron": "De uitkomst van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "SumType",
-            "domain": "besluit",
-            "constructors": [
-              {
-                "name": "Toegewezen",
-                "payload": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              },
-              {
-                "name": "Geweigerd",
-                "payload": null
-              }
-            ]
-          },
-          "bron": "De uitkomst van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De uitkomst van een Jutter"
         },
         "waarde": {
           "node": "Construct",
@@ -290,29 +213,11 @@
             "node": "AttribuutRef",
             "attribuut": "score",
             "objecttype": "Jutter",
-            "onderwerpBron": "de",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "zijn score",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn score"
           },
           "rechts": {
             "node": "ParameterRef",
             "parameter": "drempel",
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
             "bron": "de drempel"
           },
           "periode": null,
@@ -332,18 +237,7 @@
           "node": "AttribuutRef",
           "attribuut": "bedrag",
           "objecttype": "Jutter",
-          "onderwerpBron": "Het bedrag van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het bedrag van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het bedrag van een Jutter"
         },
         "waarde": {
           "node": "Match",
@@ -358,31 +252,7 @@
             "node": "AttribuutRef",
             "attribuut": "uitkomst",
             "objecttype": "Jutter",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "SumType",
-              "domain": "besluit",
-              "constructors": [
-                {
-                  "name": "Toegewezen",
-                  "payload": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  }
-                },
-                {
-                  "name": "Geweigerd",
-                  "payload": null
-                }
-              ]
-            },
-            "bron": "zijn uitkomst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn uitkomst"
           },
           "arms": [
             {
@@ -394,13 +264,6 @@
                 "links": {
                   "node": "BinderRef",
                   "name": "b",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  },
                   "bron": "het toegewezen bedrag"
                 },
                 "rechts": {

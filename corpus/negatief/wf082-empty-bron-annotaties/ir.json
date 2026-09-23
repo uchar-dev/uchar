@@ -75,18 +75,7 @@
           "node": "AttribuutRef",
           "attribuut": "jaarsom",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De jaarsom van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De jaarsom van een Jutter"
         },
         "waarde": {
           "node": "Binair",
@@ -95,35 +84,13 @@
             "node": "AttribuutRef",
             "attribuut": "drempeloverschot",
             "objecttype": "Jutter",
-            "onderwerpBron": "de Jutter",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "het drempeloverschot van de Jutter",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het drempeloverschot van de Jutter"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "hardheidsoverschot",
             "objecttype": "Jutter",
-            "onderwerpBron": "de Jutter",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "het hardheidsoverschot van de Jutter",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het hardheidsoverschot van de Jutter"
           },
           "type": {
             "node": "Numeriek",

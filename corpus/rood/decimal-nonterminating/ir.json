@@ -64,18 +64,7 @@
           "node": "AttribuutRef",
           "attribuut": "quotient",
           "objecttype": "Deling",
-          "onderwerpBron": "Het quotient van een Deling",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 4,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het quotient van een Deling",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het quotient van een Deling"
         },
         "waarde": {
           "node": "Binair",
@@ -84,35 +73,13 @@
             "node": "AttribuutRef",
             "attribuut": "teller",
             "objecttype": "Deling",
-            "onderwerpBron": "de Deling",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 4,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de teller van de Deling",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de teller van de Deling"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "noemer",
             "objecttype": "Deling",
-            "onderwerpBron": "de Deling",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 4,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de noemer van de Deling",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de noemer van de Deling"
           },
           "type": {
             "node": "Numeriek",

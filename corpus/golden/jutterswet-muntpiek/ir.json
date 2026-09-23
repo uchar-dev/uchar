@@ -117,18 +117,7 @@
           "node": "AttribuutRef",
           "attribuut": "laagste muntgewicht",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het laagste muntgewicht van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het laagste muntgewicht van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -138,18 +127,7 @@
               "node": "AttribuutRef",
               "attribuut": "gewicht",
               "objecttype": "Munt",
-              "onderwerpBron": "alle munten van de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "het gewicht van alle munten van de Jutter",
-              "set": true,
-              "navigatiePad": []
+              "bron": "het gewicht van alle munten van de Jutter"
             }
           ],
           "elementObjecttype": "Munt",
@@ -186,18 +164,7 @@
           "node": "AttribuutRef",
           "attribuut": "hoogste muntgewicht",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het hoogste muntgewicht van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het hoogste muntgewicht van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -207,18 +174,7 @@
               "node": "AttribuutRef",
               "attribuut": "gewicht",
               "objecttype": "Munt",
-              "onderwerpBron": "alle munten van de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "het gewicht van alle munten van de Jutter",
-              "set": true,
-              "navigatiePad": []
+              "bron": "het gewicht van alle munten van de Jutter"
             }
           ],
           "elementObjecttype": "Munt",

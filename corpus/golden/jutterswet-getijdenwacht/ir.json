@@ -107,18 +107,7 @@
           "node": "AttribuutRef",
           "attribuut": "wachtsom",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De wachtsom van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De wachtsom van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -128,18 +117,7 @@
               "node": "AttribuutRef",
               "attribuut": "wachtvergoeding per maand",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "zijn wachtvergoeding per maand",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn wachtvergoeding per maand"
             }
           ],
           "elementObjecttype": "Jutter",
@@ -147,7 +125,6 @@
           "filter": {
             "node": "Kenmerk",
             "kenmerk": "wachtplichtig",
-            "navigatie": null,
             "negatie": false,
             "eigenaar": null,
             "periode": null,
@@ -179,18 +156,7 @@
           "node": "AttribuutRef",
           "attribuut": "topsom",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De topsom van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De topsom van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -200,18 +166,7 @@
               "node": "AttribuutRef",
               "attribuut": "wachtvergoeding per maand",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "zijn wachtvergoeding per maand",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn wachtvergoeding per maand"
             }
           ],
           "elementObjecttype": "Jutter",
@@ -223,18 +178,7 @@
               "node": "AttribuutRef",
               "attribuut": "wachtvergoeding per maand",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "zijn wachtvergoeding per maand",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn wachtvergoeding per maand"
             },
             "rechts": {
               "node": "Literal",
@@ -277,18 +221,7 @@
           "node": "AttribuutRef",
           "attribuut": "premiesom",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De premiesom van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De premiesom van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -298,18 +231,7 @@
               "node": "AttribuutRef",
               "attribuut": "jaarpremie",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "zijn jaarpremie",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn jaarpremie"
             }
           ],
           "elementObjecttype": "Jutter",
@@ -317,7 +239,6 @@
           "filter": {
             "node": "Kenmerk",
             "kenmerk": "wachtplichtig",
-            "navigatie": null,
             "negatie": false,
             "eigenaar": null,
             "periode": null,

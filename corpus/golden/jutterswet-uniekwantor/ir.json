@@ -117,18 +117,7 @@
           "node": "AttribuutRef",
           "attribuut": "ongemerkt aantal",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "Het ongemerkt aantal van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het ongemerkt aantal van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -153,7 +142,6 @@
                       {
                         "node": "Kenmerk",
                         "kenmerk": "gemerkt",
-                        "navigatie": null,
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
@@ -180,7 +168,6 @@
                       {
                         "node": "Kenmerk",
                         "kenmerk": "gemerkt",
-                        "navigatie": null,
                         "negatie": false,
                         "eigenaar": null,
                         "periode": null,
@@ -224,14 +211,7 @@
           "node": "AttribuutRef",
           "attribuut": "alarmerend",
           "objecttype": "Jutter",
-          "onderwerpBron": "Een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Jutter is alarmerend",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Jutter is alarmerend"
         },
         "waarde": {
           "node": "Literal",
@@ -267,7 +247,6 @@
                         {
                           "node": "Kenmerk",
                           "kenmerk": "gemerkt",
-                          "navigatie": null,
                           "negatie": false,
                           "eigenaar": null,
                           "periode": null,
@@ -294,7 +273,6 @@
                         {
                           "node": "Kenmerk",
                           "kenmerk": "gemerkt",
-                          "navigatie": null,
                           "negatie": false,
                           "eigenaar": null,
                           "periode": null,
@@ -352,14 +330,7 @@
           "node": "AttribuutRef",
           "attribuut": "gemerkt",
           "objecttype": "Vondst",
-          "onderwerpBron": "Een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vondst is gemerkt",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vondst is gemerkt"
         },
         "waarde": {
           "node": "Literal",
@@ -376,18 +347,7 @@
             "node": "AttribuutRef",
             "attribuut": "gewicht",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "het gewicht van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het gewicht van de Vondst"
           },
           "rechts": {
             "node": "Literal",

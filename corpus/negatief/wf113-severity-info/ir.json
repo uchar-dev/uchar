@@ -44,14 +44,7 @@
           "node": "AttribuutRef",
           "attribuut": "verjaard",
           "objecttype": "Vondst",
-          "onderwerpBron": "Een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vondst is verjaard",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vondst is verjaard"
         },
         "waarde": {
           "node": "Literal",
@@ -68,14 +61,7 @@
             "node": "AttribuutRef",
             "attribuut": "vondstdag",
             "objecttype": "Vondst",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumInDagen"
-            },
-            "bron": "zijn vondstdag",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn vondstdag"
           },
           "rechts": {
             "node": "Literal",

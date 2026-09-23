@@ -125,18 +125,7 @@
           "node": "AttribuutRef",
           "attribuut": "vondstsom",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "De vondstsom van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De vondstsom van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -146,15 +135,7 @@
               "node": "AttribuutRef",
               "attribuut": "vondsten",
               "objecttype": "Jutter",
-              "onderwerpBron": "de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "vondsten van de Jutter",
-              "set": false,
-              "navigatiePad": []
+              "bron": "vondsten van de Jutter"
             }
           ],
           "elementObjecttype": "Vondst",

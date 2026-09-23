@@ -58,18 +58,7 @@
           "node": "AttribuutRef",
           "attribuut": "machttotaal",
           "objecttype": "Jutter",
-          "onderwerpBron": "Het machttotaal van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het machttotaal van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het machttotaal van een Jutter"
         },
         "waarde": {
           "node": "Fold",
@@ -83,16 +72,6 @@
           "list": {
             "node": "ParameterRef",
             "parameter": "kindertallen",
-            "type": {
-              "node": "ListType",
-              "element": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              }
-            },
             "bron": "de kindertallen"
           },
           "function": {
@@ -125,13 +104,6 @@
               "links": {
                 "node": "BinderRef",
                 "name": "acc",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
                 "bron": "het opgetelde punt"
               },
               "rechts": {
@@ -140,13 +112,6 @@
                 "links": {
                   "node": "BinderRef",
                   "name": "x",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  },
                   "bron": "het kindertal"
                 },
                 "rechts": {

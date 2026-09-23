@@ -225,18 +225,7 @@
           "node": "AttribuutRef",
           "attribuut": "liggertal",
           "objecttype": "Haven",
-          "onderwerpBron": "een Haven",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "Het liggertal van een Haven",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het liggertal van een Haven"
         },
         "waarde": {
           "node": "Functie",
@@ -246,15 +235,7 @@
               "node": "AttribuutRef",
               "attribuut": "liggers",
               "objecttype": "Haven",
-              "onderwerpBron": "de Haven",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "liggers van de Haven",
-              "set": false,
-              "navigatiePad": []
+              "bron": "liggers van de Haven"
             }
           ],
           "elementObjecttype": "Schuit",
@@ -291,18 +272,7 @@
           "node": "AttribuutRef",
           "attribuut": "wintertal",
           "objecttype": "Haven",
-          "onderwerpBron": "een Haven",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "Het wintertal van een Haven",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het wintertal van een Haven"
         },
         "waarde": {
           "node": "Functie",
@@ -312,15 +282,7 @@
               "node": "AttribuutRef",
               "attribuut": "winterschuiten",
               "objecttype": "Haven",
-              "onderwerpBron": "de Haven",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "winterschuiten van de Haven",
-              "set": false,
-              "navigatiePad": []
+              "bron": "winterschuiten van de Haven"
             }
           ],
           "elementObjecttype": "Schuit",
@@ -357,18 +319,7 @@
           "node": "AttribuutRef",
           "attribuut": "keurtal",
           "objecttype": "Haven",
-          "onderwerpBron": "een Haven",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "Het keurtal van een Haven",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het keurtal van een Haven"
         },
         "waarde": {
           "node": "Functie",
@@ -378,15 +329,7 @@
               "node": "AttribuutRef",
               "attribuut": "keurschuiten",
               "objecttype": "Haven",
-              "onderwerpBron": "de Haven",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "keurschuiten van de Haven",
-              "set": false,
-              "navigatiePad": []
+              "bron": "keurschuiten van de Haven"
             }
           ],
           "elementObjecttype": "Schuit",
@@ -423,37 +366,13 @@
           "node": "AttribuutRef",
           "attribuut": "ligprijs",
           "objecttype": "Schuit",
-          "onderwerpBron": "een Schuit",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "De ligprijs van een Schuit",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De ligprijs van een Schuit"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "kadegeld",
           "objecttype": "Haven",
-          "onderwerpBron": "de Schuit",
-          "navigatieRol": "Schuit",
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
           "bron": "het kadegeld van de winterhaven van de Schuit",
-          "set": false,
-          "navigatiePad": [
-            "winterhaven"
-          ],
           "navigatieBindingen": [
             {
               "node": "RolBinding",
@@ -465,7 +384,6 @@
         "voorwaarde": {
           "node": "Kenmerk",
           "kenmerk": "gekeurd",
-          "navigatie": null,
           "negatie": false,
           "eigenaar": null,
           "periode": null,
@@ -485,37 +403,13 @@
           "node": "AttribuutRef",
           "attribuut": "vlagprijs",
           "objecttype": "Schuit",
-          "onderwerpBron": "een Schuit",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "De vlagprijs van een Schuit",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De vlagprijs van een Schuit"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "kadegeld",
           "objecttype": "Haven",
-          "onderwerpBron": "de Schuit",
-          "navigatieRol": "Schuit",
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
           "bron": "het kadegeld van de vlaghaven van de Schuit",
-          "set": false,
-          "navigatiePad": [
-            "vlaghaven"
-          ],
           "navigatieBindingen": [
             {
               "node": "RolBinding",
@@ -539,37 +433,13 @@
           "node": "AttribuutRef",
           "attribuut": "vlaglengte",
           "objecttype": "Haven",
-          "onderwerpBron": "een Haven",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "De vlaglengte van een Haven",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De vlaglengte van een Haven"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "romplengte",
           "objecttype": "Schuit",
-          "onderwerpBron": "de Haven",
-          "navigatieRol": "Haven",
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
           "bron": "de romplengte van het vlaggenschip van de Haven",
-          "set": false,
-          "navigatiePad": [
-            "vlaggenschip"
-          ],
           "navigatieBindingen": [
             {
               "node": "RolBinding",
@@ -598,13 +468,10 @@
         "naam": "winterberging door de haven",
         "anker": "Haven",
         "doel": "Schuit",
-        "zetVeld": "winterhaven",
-        "joinVeld": "thuishaven",
         "tussenstappen": [],
         "voorwaarde": {
           "node": "Kenmerk",
           "kenmerk": "veilig",
-          "navigatie": null,
           "negatie": false,
           "eigenaar": null,
           "periode": null,
@@ -629,8 +496,6 @@
         "naam": "keurberging door de haven",
         "anker": "Haven",
         "doel": "Schuit",
-        "zetVeld": "keurhaven",
-        "joinVeld": "winterhaven",
         "tussenstappen": [],
         "voorwaarde": {
           "node": "Vergelijking",
@@ -639,18 +504,7 @@
             "node": "AttribuutRef",
             "attribuut": "kadegeld",
             "objecttype": "Haven",
-            "onderwerpBron": "de Haven",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "het kadegeld van de Haven",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het kadegeld van de Haven"
           },
           "rechts": {
             "node": "Literal",

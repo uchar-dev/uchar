@@ -106,14 +106,7 @@
           "node": "AttribuutRef",
           "attribuut": "premiewaardig",
           "objecttype": "Keurploeg",
-          "onderwerpBron": "Een Keurploeg",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Keurploeg is premiewaardig",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Keurploeg is premiewaardig"
         },
         "waarde": {
           "node": "Literal",
@@ -130,7 +123,6 @@
           "filter": {
             "node": "Kenmerk",
             "kenmerk": "aangemeld",
-            "navigatie": null,
             "negatie": false,
             "eigenaar": null,
             "periode": null,
@@ -143,18 +135,7 @@
               "node": "AttribuutRef",
               "attribuut": "keurvergoeding",
               "objecttype": "Keurmeester",
-              "onderwerpBron": "alle keurmeesters van de Keurploeg die aangemeld zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de keurvergoeding van alle keurmeesters van de Keurploeg die aangemeld zijn",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de keurvergoeding van alle keurmeesters van de Keurploeg die aangemeld zijn"
             },
             "rechts": {
               "node": "Literal",
@@ -196,14 +177,7 @@
           "node": "AttribuutRef",
           "attribuut": "stilliggend",
           "objecttype": "Keurploeg",
-          "onderwerpBron": "Een Keurploeg",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Keurploeg is stilliggend",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Keurploeg is stilliggend"
         },
         "waarde": {
           "node": "Literal",
@@ -220,7 +194,6 @@
           "filter": {
             "node": "Kenmerk",
             "kenmerk": "aangemeld",
-            "navigatie": null,
             "negatie": false,
             "eigenaar": null,
             "periode": null,
@@ -233,18 +206,7 @@
               "node": "AttribuutRef",
               "attribuut": "keurvergoeding",
               "objecttype": "Keurmeester",
-              "onderwerpBron": "geen van de keurmeesters van de Keurploeg die aangemeld zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de keurvergoeding van geen van de keurmeesters van de Keurploeg die aangemeld zijn",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de keurvergoeding van geen van de keurmeesters van de Keurploeg die aangemeld zijn"
             },
             "rechts": {
               "node": "Literal",
@@ -286,18 +248,7 @@
           "node": "AttribuutRef",
           "attribuut": "keurtal",
           "objecttype": "Keurploeg",
-          "onderwerpBron": "een Keurploeg",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het keurtal van een Keurploeg",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het keurtal van een Keurploeg"
         },
         "waarde": {
           "node": "Functie",
@@ -307,15 +258,7 @@
               "node": "AttribuutRef",
               "attribuut": "keurmeesters",
               "objecttype": "Keurploeg",
-              "onderwerpBron": "de Keurploeg",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "keurmeesters van de Keurploeg",
-              "set": false,
-              "navigatiePad": []
+              "bron": "keurmeesters van de Keurploeg"
             }
           ],
           "elementObjecttype": "Keurmeester",

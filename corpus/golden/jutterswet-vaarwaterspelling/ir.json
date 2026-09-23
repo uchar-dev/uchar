@@ -67,18 +67,7 @@
           "node": "AttribuutRef",
           "attribuut": "kadegeld",
           "objecttype": "Kadeplaats",
-          "onderwerpBron": "de kadegeld",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de kadegeld",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de kadegeld"
         },
         "waarde": {
           "node": "Match",
@@ -93,20 +82,7 @@
             "node": "AttribuutRef",
             "attribuut": "vaarwater",
             "objecttype": "Kadeplaats",
-            "onderwerpBron": "de vaarwater",
-            "navigatieRol": null,
-            "type": {
-              "node": "Enumeratie",
-              "domein": "VAARWATER",
-              "waarden": [
-                "Wad",
-                "Zeegat",
-                "Ruimzee"
-              ]
-            },
-            "bron": "de vaarwater",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de vaarwater"
           },
           "arms": [
             {

@@ -320,13 +320,6 @@
             "links": {
               "node": "BinderRef",
               "name": "kinderen",
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
               "bron": "kinderen"
             },
             "rechts": {
@@ -352,13 +345,6 @@
               "links": {
                 "node": "BinderRef",
                 "name": "vangst",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
                 "bron": "vangst"
               },
               "rechts": {
@@ -401,13 +387,6 @@
               "links": {
                 "node": "BinderRef",
                 "name": "vangst",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
                 "bron": "vangst"
               },
               "rechts": {
@@ -510,32 +489,6 @@
               "base": {
                 "node": "BinderRef",
                 "name": "jutter",
-                "type": {
-                  "node": "StructType",
-                  "domain": "Jutter",
-                  "fields": [
-                    {
-                      "name": "vangst",
-                      "datatype": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
-                      }
-                    },
-                    {
-                      "name": "kinderen",
-                      "datatype": {
-                        "node": "Numeriek",
-                        "geheel": true,
-                        "decimalen": 0,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
-                      }
-                    }
-                  ]
-                },
                 "bron": "jutter"
               },
               "field": "vangst",
@@ -553,32 +506,6 @@
               "base": {
                 "node": "BinderRef",
                 "name": "jutter",
-                "type": {
-                  "node": "StructType",
-                  "domain": "Jutter",
-                  "fields": [
-                    {
-                      "name": "vangst",
-                      "datatype": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
-                      }
-                    },
-                    {
-                      "name": "kinderen",
-                      "datatype": {
-                        "node": "Numeriek",
-                        "geheel": true,
-                        "decimalen": 0,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
-                      }
-                    }
-                  ]
-                },
                 "bron": "jutter"
               },
               "field": "kinderen",
@@ -677,32 +604,6 @@
                   "base": {
                     "node": "BinderRef",
                     "name": "jutter",
-                    "type": {
-                      "node": "StructType",
-                      "domain": "Jutter",
-                      "fields": [
-                        {
-                          "name": "vangst",
-                          "datatype": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
-                          }
-                        },
-                        {
-                          "name": "kinderen",
-                          "datatype": {
-                            "node": "Numeriek",
-                            "geheel": true,
-                            "decimalen": 0,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
-                          }
-                        }
-                      ]
-                    },
                     "bron": "jutter"
                   },
                   "field": "kinderen",
@@ -772,18 +673,7 @@
           "node": "AttribuutRef",
           "attribuut": "kamerbedrag",
           "objecttype": "JutterAandeel",
-          "onderwerpBron": "de kamerbedrag",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de kamerbedrag",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de kamerbedrag"
         },
         "waarde": {
           "node": "Afgerond",
@@ -833,37 +723,7 @@
                     "node": "AttribuutRef",
                     "attribuut": "jutter",
                     "objecttype": "JutterAandeel",
-                    "onderwerpBron": "de jutter",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "StructType",
-                      "domain": "Jutter",
-                      "fields": [
-                        {
-                          "name": "vangst",
-                          "datatype": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
-                          }
-                        },
-                        {
-                          "name": "kinderen",
-                          "datatype": {
-                            "node": "Numeriek",
-                            "geheel": true,
-                            "decimalen": 0,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
-                          }
-                        }
-                      ]
-                    },
-                    "bron": "de jutter",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "de jutter"
                   },
                   "field": "kinderen",
                   "bron": null
@@ -933,35 +793,13 @@
           "node": "AttribuutRef",
           "attribuut": "aftrek",
           "objecttype": "JutterAandeel",
-          "onderwerpBron": "de aftrek",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de aftrek",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de aftrek"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "bedrag",
           "objecttype": "Vangstheffing",
-          "onderwerpBron": "de bedrag van de heffing",
-          "navigatieRol": "heffing",
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
           "bron": "de bedrag van de heffing",
-          "set": false,
-          "navigatiePad": [],
           "navigatieBindingen": [
             {
               "node": "RolBinding",
@@ -985,18 +823,7 @@
           "node": "AttribuutRef",
           "attribuut": "totale_aftrek basis",
           "objecttype": "Kamerheffing",
-          "onderwerpBron": "de totale_aftrek basis",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de totale_aftrek basis",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de totale_aftrek basis"
         },
         "waarde": {
           "node": "Match",
@@ -1045,40 +872,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "jutters",
                 "objecttype": "Kamerheffing",
-                "onderwerpBron": "de jutters",
-                "navigatieRol": null,
-                "type": {
-                  "node": "ListType",
-                  "element": {
-                    "node": "StructType",
-                    "domain": "Jutter",
-                    "fields": [
-                      {
-                        "name": "vangst",
-                        "datatype": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
-                        }
-                      },
-                      {
-                        "name": "kinderen",
-                        "datatype": {
-                          "node": "Numeriek",
-                          "geheel": true,
-                          "decimalen": 0,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
-                        }
-                      }
-                    ]
-                  }
-                },
-                "bron": "de jutters",
-                "set": false,
-                "navigatiePad": []
+                "bron": "de jutters"
               },
               "function": {
                 "node": "Lambda",
@@ -1127,32 +921,6 @@
                     {
                       "node": "BinderRef",
                       "name": "jutter",
-                      "type": {
-                        "node": "StructType",
-                        "domain": "Jutter",
-                        "fields": [
-                          {
-                            "name": "vangst",
-                            "datatype": {
-                              "node": "Numeriek",
-                              "geheel": false,
-                              "decimalen": 2,
-                              "teken": "ONBEPAALD",
-                              "eenheid": null
-                            }
-                          },
-                          {
-                            "name": "kinderen",
-                            "datatype": {
-                              "node": "Numeriek",
-                              "geheel": true,
-                              "decimalen": 0,
-                              "teken": "ONBEPAALD",
-                              "eenheid": null
-                            }
-                          }
-                        ]
-                      },
                       "bron": "jutter"
                     }
                   ],
@@ -1224,26 +992,6 @@
                 "scrutinee": {
                   "node": "BinderRef",
                   "name": "geaccumuleerde optie",
-                  "type": {
-                    "node": "SumType",
-                    "domain": "Optional",
-                    "constructors": [
-                      {
-                        "name": "Absent",
-                        "payload": null
-                      },
-                      {
-                        "name": "Present",
-                        "payload": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
-                        }
-                      }
-                    ]
-                  },
                   "bron": "geaccumuleerde optie"
                 },
                 "arms": [
@@ -1276,13 +1024,6 @@
                       "argument": {
                         "node": "BinderRef",
                         "name": "sum2",
-                        "type": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
-                        },
                         "bron": "sum2"
                       },
                       "bron": "Present"
@@ -1320,25 +1061,11 @@
                         "links": {
                           "node": "BinderRef",
                           "name": "sum1",
-                          "type": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
-                          },
                           "bron": "sum1"
                         },
                         "rechts": {
                           "node": "BinderRef",
                           "name": "sum2",
-                          "type": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
-                          },
                           "bron": "sum2"
                         },
                         "type": {
@@ -1409,13 +1136,6 @@
               "body": {
                 "node": "BinderRef",
                 "name": "x",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
                 "bron": "x"
               }
             }
@@ -1437,18 +1157,7 @@
           "node": "AttribuutRef",
           "attribuut": "totale_aftrek begrensd",
           "objecttype": "Kamerheffing",
-          "onderwerpBron": "de totale_aftrek begrensd",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de totale_aftrek begrensd",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de totale_aftrek begrensd"
         },
         "waarde": {
           "node": "Let",
@@ -1486,18 +1195,7 @@
               "node": "AttribuutRef",
               "attribuut": "totale_aftrek basis",
               "objecttype": "Kamerheffing",
-              "onderwerpBron": "de totale_aftrek basis",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de totale_aftrek basis",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de totale_aftrek basis"
             },
             "body": {
               "node": "IfThenElse",
@@ -1514,25 +1212,11 @@
                 "links": {
                   "node": "BinderRef",
                   "name": "raw",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
                   "bron": "raw"
                 },
                 "rechts": {
                   "node": "BinderRef",
                   "name": "cap",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
                   "bron": "cap"
                 },
                 "periode": null,
@@ -1541,25 +1225,11 @@
               "then": {
                 "node": "BinderRef",
                 "name": "cap",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
                 "bron": "cap"
               },
               "else": {
                 "node": "BinderRef",
                 "name": "raw",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
                 "bron": "raw"
               },
               "bron": null
@@ -1583,18 +1253,7 @@
           "node": "AttribuutRef",
           "attribuut": "heffing basis",
           "objecttype": "Kamerheffing",
-          "onderwerpBron": "de heffing basis",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de heffing basis",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de heffing basis"
         },
         "waarde": {
           "node": "Match",
@@ -1643,40 +1302,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "jutters",
                 "objecttype": "Kamerheffing",
-                "onderwerpBron": "de jutters",
-                "navigatieRol": null,
-                "type": {
-                  "node": "ListType",
-                  "element": {
-                    "node": "StructType",
-                    "domain": "Jutter",
-                    "fields": [
-                      {
-                        "name": "vangst",
-                        "datatype": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
-                        }
-                      },
-                      {
-                        "name": "kinderen",
-                        "datatype": {
-                          "node": "Numeriek",
-                          "geheel": true,
-                          "decimalen": 0,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
-                        }
-                      }
-                    ]
-                  }
-                },
-                "bron": "de jutters",
-                "set": false,
-                "navigatiePad": []
+                "bron": "de jutters"
               },
               "function": {
                 "node": "Lambda",
@@ -1725,32 +1351,6 @@
                     {
                       "node": "BinderRef",
                       "name": "jutter",
-                      "type": {
-                        "node": "StructType",
-                        "domain": "Jutter",
-                        "fields": [
-                          {
-                            "name": "vangst",
-                            "datatype": {
-                              "node": "Numeriek",
-                              "geheel": false,
-                              "decimalen": 2,
-                              "teken": "ONBEPAALD",
-                              "eenheid": null
-                            }
-                          },
-                          {
-                            "name": "kinderen",
-                            "datatype": {
-                              "node": "Numeriek",
-                              "geheel": true,
-                              "decimalen": 0,
-                              "teken": "ONBEPAALD",
-                              "eenheid": null
-                            }
-                          }
-                        ]
-                      },
                       "bron": "jutter"
                     }
                   ],
@@ -1822,26 +1422,6 @@
                 "scrutinee": {
                   "node": "BinderRef",
                   "name": "geaccumuleerde optie",
-                  "type": {
-                    "node": "SumType",
-                    "domain": "Optional",
-                    "constructors": [
-                      {
-                        "name": "Absent",
-                        "payload": null
-                      },
-                      {
-                        "name": "Present",
-                        "payload": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
-                        }
-                      }
-                    ]
-                  },
                   "bron": "geaccumuleerde optie"
                 },
                 "arms": [
@@ -1874,13 +1454,6 @@
                       "argument": {
                         "node": "BinderRef",
                         "name": "sum2",
-                        "type": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "ONBEPAALD",
-                          "eenheid": null
-                        },
                         "bron": "sum2"
                       },
                       "bron": "Present"
@@ -1918,25 +1491,11 @@
                         "links": {
                           "node": "BinderRef",
                           "name": "sum1",
-                          "type": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
-                          },
                           "bron": "sum1"
                         },
                         "rechts": {
                           "node": "BinderRef",
                           "name": "sum2",
-                          "type": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "ONBEPAALD",
-                            "eenheid": null
-                          },
                           "bron": "sum2"
                         },
                         "type": {
@@ -2007,13 +1566,6 @@
               "body": {
                 "node": "BinderRef",
                 "name": "x",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
                 "bron": "x"
               }
             }
@@ -2035,18 +1587,7 @@
           "node": "AttribuutRef",
           "attribuut": "heffing na_aftrek",
           "objecttype": "Kamerheffing",
-          "onderwerpBron": "de heffing na_aftrek",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de heffing na_aftrek",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de heffing na_aftrek"
         },
         "waarde": {
           "node": "Let",
@@ -2062,18 +1603,7 @@
             "node": "AttribuutRef",
             "attribuut": "heffing basis",
             "objecttype": "Kamerheffing",
-            "onderwerpBron": "de heffing basis",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de heffing basis",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de heffing basis"
           },
           "body": {
             "node": "Let",
@@ -2089,18 +1619,7 @@
               "node": "AttribuutRef",
               "attribuut": "totale_aftrek begrensd",
               "objecttype": "Kamerheffing",
-              "onderwerpBron": "de totale_aftrek begrensd",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de totale_aftrek begrensd",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de totale_aftrek begrensd"
             },
             "body": {
               "node": "IfThenElse",
@@ -2117,25 +1636,11 @@
                 "links": {
                   "node": "BinderRef",
                   "name": "afgetrokken",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
                   "bron": "afgetrokken"
                 },
                 "rechts": {
                   "node": "BinderRef",
                   "name": "basis",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
                   "bron": "basis"
                 },
                 "periode": null,
@@ -2159,25 +1664,11 @@
                 "links": {
                   "node": "BinderRef",
                   "name": "basis",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
                   "bron": "basis"
                 },
                 "rechts": {
                   "node": "BinderRef",
                   "name": "afgetrokken",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
                   "bron": "afgetrokken"
                 },
                 "type": {
@@ -2227,37 +1718,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "jutter",
                 "objecttype": "JutterAandeel",
-                "onderwerpBron": "de jutter",
-                "navigatieRol": null,
-                "type": {
-                  "node": "StructType",
-                  "domain": "Jutter",
-                  "fields": [
-                    {
-                      "name": "vangst",
-                      "datatype": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
-                      }
-                    },
-                    {
-                      "name": "kinderen",
-                      "datatype": {
-                        "node": "Numeriek",
-                        "geheel": true,
-                        "decimalen": 0,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
-                      }
-                    }
-                  ]
-                },
-                "bron": "de jutter",
-                "set": false,
-                "navigatiePad": []
+                "bron": "de jutter"
               },
               "field": "vangst",
               "bron": null
@@ -2280,37 +1741,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "jutter",
                 "objecttype": "JutterAandeel",
-                "onderwerpBron": "de jutter",
-                "navigatieRol": null,
-                "type": {
-                  "node": "StructType",
-                  "domain": "Jutter",
-                  "fields": [
-                    {
-                      "name": "vangst",
-                      "datatype": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
-                      }
-                    },
-                    {
-                      "name": "kinderen",
-                      "datatype": {
-                        "node": "Numeriek",
-                        "geheel": true,
-                        "decimalen": 0,
-                        "teken": "ONBEPAALD",
-                        "eenheid": null
-                      }
-                    }
-                  ]
-                },
-                "bron": "de jutter",
-                "set": false,
-                "navigatiePad": []
+                "bron": "de jutter"
               },
               "field": "kinderen",
               "bron": null
@@ -2356,18 +1787,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "kinderen",
                 "objecttype": "Vangstheffing",
-                "onderwerpBron": "de kinderen",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "de kinderen",
-                "set": false,
-                "navigatiePad": []
+                "bron": "de kinderen"
               },
               "rechts": {
                 "node": "Literal",
@@ -2393,18 +1813,7 @@
                   "node": "AttribuutRef",
                   "attribuut": "vangst",
                   "objecttype": "Vangstheffing",
-                  "onderwerpBron": "de vangst",
-                  "navigatieRol": null,
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
-                  "bron": "de vangst",
-                  "set": false,
-                  "navigatiePad": []
+                  "bron": "de vangst"
                 },
                 "rechts": {
                   "node": "Literal",
@@ -2459,18 +1868,7 @@
                   "node": "AttribuutRef",
                   "attribuut": "vangst",
                   "objecttype": "Vangstheffing",
-                  "onderwerpBron": "de vangst",
-                  "navigatieRol": null,
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
-                  "bron": "de vangst",
-                  "set": false,
-                  "navigatiePad": []
+                  "bron": "de vangst"
                 },
                 "rechts": {
                   "node": "Literal",

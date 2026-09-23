@@ -97,18 +97,7 @@
           "node": "AttribuutRef",
           "attribuut": "hoogsteteken",
           "objecttype": "Seinwacht",
-          "onderwerpBron": "een Seinwacht",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het hoogsteteken van een Seinwacht",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het hoogsteteken van een Seinwacht"
         },
         "waarde": {
           "node": "Literal",
@@ -134,18 +123,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "ploegomvang",
                 "objecttype": "Seinwacht",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "zijn ploegomvang",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn ploegomvang"
               },
               "rechts": {
                 "node": "Literal",
@@ -169,18 +147,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "vangstwaarde",
                 "objecttype": "Seinwacht",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "zijn vangstwaarde",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn vangstwaarde"
               },
               "rechts": {
                 "node": "Literal",
@@ -209,35 +176,13 @@
                     "node": "AttribuutRef",
                     "attribuut": "vangstwaarde",
                     "objecttype": "Seinwacht",
-                    "onderwerpBron": "de Seinwacht",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "de vangstwaarde van de Seinwacht",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "de vangstwaarde van de Seinwacht"
                   },
                   "rechts": {
                     "node": "AttribuutRef",
                     "attribuut": "ploegomvang",
                     "objecttype": "Seinwacht",
-                    "onderwerpBron": "de Seinwacht",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "de ploegomvang van de Seinwacht",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "de ploegomvang van de Seinwacht"
                   },
                   "type": {
                     "node": "Numeriek",
@@ -291,18 +236,7 @@
           "node": "AttribuutRef",
           "attribuut": "preciesteken",
           "objecttype": "Seinwacht",
-          "onderwerpBron": "een Seinwacht",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het preciesteken van een Seinwacht",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het preciesteken van een Seinwacht"
         },
         "waarde": {
           "node": "Literal",
@@ -328,18 +262,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "ploegomvang",
                 "objecttype": "Seinwacht",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "zijn ploegomvang",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn ploegomvang"
               },
               "rechts": {
                 "node": "Literal",
@@ -363,18 +286,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "vangstwaarde",
                 "objecttype": "Seinwacht",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "zijn vangstwaarde",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn vangstwaarde"
               },
               "rechts": {
                 "node": "Literal",
@@ -403,35 +315,13 @@
                     "node": "AttribuutRef",
                     "attribuut": "vangstwaarde",
                     "objecttype": "Seinwacht",
-                    "onderwerpBron": "de Seinwacht",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "de vangstwaarde van de Seinwacht",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "de vangstwaarde van de Seinwacht"
                   },
                   "rechts": {
                     "node": "AttribuutRef",
                     "attribuut": "ploegomvang",
                     "objecttype": "Seinwacht",
-                    "onderwerpBron": "de Seinwacht",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "de ploegomvang van de Seinwacht",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "de ploegomvang van de Seinwacht"
                   },
                   "type": {
                     "node": "Numeriek",
@@ -485,18 +375,7 @@
           "node": "AttribuutRef",
           "attribuut": "minsteteken",
           "objecttype": "Seinwacht",
-          "onderwerpBron": "een Seinwacht",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het minsteteken van een Seinwacht",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het minsteteken van een Seinwacht"
         },
         "waarde": {
           "node": "Literal",
@@ -527,35 +406,13 @@
                     "node": "AttribuutRef",
                     "attribuut": "vangstwaarde",
                     "objecttype": "Seinwacht",
-                    "onderwerpBron": "de Seinwacht",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "de vangstwaarde van de Seinwacht",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "de vangstwaarde van de Seinwacht"
                   },
                   "rechts": {
                     "node": "AttribuutRef",
                     "attribuut": "ploegomvang",
                     "objecttype": "Seinwacht",
-                    "onderwerpBron": "de Seinwacht",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "de ploegomvang van de Seinwacht",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "de ploegomvang van de Seinwacht"
                   },
                   "type": {
                     "node": "Numeriek",
@@ -599,18 +456,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "ploegomvang",
                 "objecttype": "Seinwacht",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "zijn ploegomvang",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn ploegomvang"
               },
               "rechts": {
                 "node": "Literal",
@@ -644,18 +490,7 @@
           "node": "AttribuutRef",
           "attribuut": "randteken",
           "objecttype": "Seinwacht",
-          "onderwerpBron": "een Seinwacht",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het randteken van een Seinwacht",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het randteken van een Seinwacht"
         },
         "waarde": {
           "node": "Literal",
@@ -686,35 +521,13 @@
                     "node": "AttribuutRef",
                     "attribuut": "vangstwaarde",
                     "objecttype": "Seinwacht",
-                    "onderwerpBron": "de Seinwacht",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "de vangstwaarde van de Seinwacht",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "de vangstwaarde van de Seinwacht"
                   },
                   "rechts": {
                     "node": "AttribuutRef",
                     "attribuut": "ploegomvang",
                     "objecttype": "Seinwacht",
-                    "onderwerpBron": "de Seinwacht",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
-                    "bron": "de ploegomvang van de Seinwacht",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "de ploegomvang van de Seinwacht"
                   },
                   "type": {
                     "node": "Numeriek",
@@ -758,18 +571,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "ploegomvang",
                 "objecttype": "Seinwacht",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "zijn ploegomvang",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn ploegomvang"
               },
               "rechts": {
                 "node": "Literal",

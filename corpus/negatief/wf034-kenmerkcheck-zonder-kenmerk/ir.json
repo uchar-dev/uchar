@@ -51,14 +51,7 @@
           "node": "AttribuutRef",
           "attribuut": "gekeurd",
           "objecttype": "Vondst",
-          "onderwerpBron": "Een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vondst is gekeurd",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vondst is gekeurd"
         },
         "waarde": {
           "node": "Literal",
@@ -75,14 +68,7 @@
             "node": "AttribuutRef",
             "attribuut": "keurmerk",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Tekst"
-            },
-            "bron": "het keurmerk van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het keurmerk van de Vondst"
           },
           "rechts": {
             "node": "Literal",
@@ -109,14 +95,7 @@
           "node": "AttribuutRef",
           "attribuut": "afslag",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Tekst"
-          },
-          "bron": "De afslag van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De afslag van een Vondst"
         },
         "waarde": {
           "node": "Literal",
@@ -129,7 +108,6 @@
         "voorwaarde": {
           "node": "Kenmerk",
           "kenmerk": null,
-          "navigatie": null,
           "negatie": false,
           "eigenaar": null,
           "periode": null,

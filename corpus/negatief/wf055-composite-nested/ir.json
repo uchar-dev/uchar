@@ -79,18 +79,7 @@
           "node": "AttribuutRef",
           "attribuut": "dubbelwachtsom",
           "objecttype": "Jutter",
-          "onderwerpBron": "De dubbelwachtsom van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De dubbelwachtsom van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De dubbelwachtsom van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -100,18 +89,7 @@
               "node": "AttribuutRef",
               "attribuut": "wachtvergoeding per maand",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "zijn wachtvergoeding per maand",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn wachtvergoeding per maand"
             }
           ],
           "elementObjecttype": "Jutter",
@@ -124,7 +102,6 @@
               {
                 "node": "Kenmerk",
                 "kenmerk": "borgplichtig",
-                "navigatie": null,
                 "negatie": false,
                 "eigenaar": null,
                 "periode": null,
@@ -138,7 +115,6 @@
                   {
                     "node": "Kenmerk",
                     "kenmerk": "aangesteld",
-                    "navigatie": null,
                     "negatie": false,
                     "eigenaar": null,
                     "periode": null,

@@ -210,7 +210,6 @@
         "sleutels": [
           "rang"
         ],
-        "scopeVeld": "berging",
         "bron": "De rangen van alle Hoofdbergers van de berging moeten uniek zijn.",
         "geldigheid": {
           "node": "Geldigheid",

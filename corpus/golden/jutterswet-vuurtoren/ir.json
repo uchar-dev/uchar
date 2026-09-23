@@ -111,14 +111,7 @@
           "node": "AttribuutRef",
           "attribuut": "helder",
           "objecttype": "Vuurtoren",
-          "onderwerpBron": "Een Vuurtoren",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vuurtoren is helder",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vuurtoren is helder"
         },
         "waarde": {
           "node": "Literal",
@@ -141,18 +134,7 @@
               "node": "AttribuutRef",
               "attribuut": "sterkte",
               "objecttype": "Lamp",
-              "onderwerpBron": "ten minste 2 van de lampen van de Vuurtoren",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de sterkte van ten minste 2 van de lampen van de Vuurtoren",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de sterkte van ten minste 2 van de lampen van de Vuurtoren"
             },
             "rechts": {
               "node": "Literal",
@@ -190,14 +172,7 @@
           "node": "AttribuutRef",
           "attribuut": "zuinig",
           "objecttype": "Vuurtoren",
-          "onderwerpBron": "Een Vuurtoren",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vuurtoren is zuinig",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vuurtoren is zuinig"
         },
         "waarde": {
           "node": "Literal",
@@ -220,18 +195,7 @@
               "node": "AttribuutRef",
               "attribuut": "sterkte",
               "objecttype": "Lamp",
-              "onderwerpBron": "ten hoogste 1 van de lampen van de Vuurtoren",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de sterkte van ten hoogste 1 van de lampen van de Vuurtoren",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de sterkte van ten hoogste 1 van de lampen van de Vuurtoren"
             },
             "rechts": {
               "node": "Literal",
@@ -269,14 +233,7 @@
           "node": "AttribuutRef",
           "attribuut": "enkelvoudig",
           "objecttype": "Vuurtoren",
-          "onderwerpBron": "Een Vuurtoren",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vuurtoren is enkelvoudig",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vuurtoren is enkelvoudig"
         },
         "waarde": {
           "node": "Literal",
@@ -299,18 +256,7 @@
               "node": "AttribuutRef",
               "attribuut": "sterkte",
               "objecttype": "Lamp",
-              "onderwerpBron": "precies 1 van de lampen van de Vuurtoren",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de sterkte van precies 1 van de lampen van de Vuurtoren",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de sterkte van precies 1 van de lampen van de Vuurtoren"
             },
             "rechts": {
               "node": "Literal",
@@ -348,14 +294,7 @@
           "node": "AttribuutRef",
           "attribuut": "keurig",
           "objecttype": "Vuurtoren",
-          "onderwerpBron": "Een Vuurtoren",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vuurtoren is keurig",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vuurtoren is keurig"
         },
         "waarde": {
           "node": "Literal",
@@ -373,7 +312,6 @@
           "filter": {
             "node": "Kenmerk",
             "kenmerk": "gekeurd",
-            "navigatie": null,
             "negatie": false,
             "eigenaar": null,
             "periode": null,
@@ -386,18 +324,7 @@
               "node": "AttribuutRef",
               "attribuut": "sterkte",
               "objecttype": "Lamp",
-              "onderwerpBron": "ten minste 2 van de lampen van de Vuurtoren die gekeurd zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de sterkte van ten minste 2 van de lampen van de Vuurtoren die gekeurd zijn",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de sterkte van ten minste 2 van de lampen van de Vuurtoren die gekeurd zijn"
             },
             "rechts": {
               "node": "Literal",
@@ -435,18 +362,7 @@
           "node": "AttribuutRef",
           "attribuut": "lampental",
           "objecttype": "Vuurtoren",
-          "onderwerpBron": "een Vuurtoren",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het lampental van een Vuurtoren",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het lampental van een Vuurtoren"
         },
         "waarde": {
           "node": "Functie",
@@ -456,15 +372,7 @@
               "node": "AttribuutRef",
               "attribuut": "lampen",
               "objecttype": "Vuurtoren",
-              "onderwerpBron": "de Vuurtoren",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "lampen van de Vuurtoren",
-              "set": false,
-              "navigatiePad": []
+              "bron": "lampen van de Vuurtoren"
             }
           ],
           "elementObjecttype": "Lamp",

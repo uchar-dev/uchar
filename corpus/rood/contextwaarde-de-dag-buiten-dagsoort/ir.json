@@ -49,18 +49,7 @@
           "node": "AttribuutRef",
           "attribuut": "jaartal",
           "objecttype": "Baken",
-          "onderwerpBron": "een Baken",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het jaartal van een Baken",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het jaartal van een Baken"
         },
         "waarde": {
           "node": "Functie",

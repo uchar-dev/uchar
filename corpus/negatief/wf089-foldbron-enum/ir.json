@@ -122,20 +122,7 @@
           "node": "AttribuutRef",
           "attribuut": "vaarwater",
           "objecttype": "Berging",
-          "onderwerpBron": "de vaarwater",
-          "navigatieRol": null,
-          "type": {
-            "node": "Enumeratie",
-            "domein": "Vaarwater",
-            "waarden": [
-              "Wad",
-              "Zeegat",
-              "Ruimzee"
-            ]
-          },
-          "bron": "de vaarwater",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de vaarwater"
         },
         "waarde": {
           "node": "Functie",
@@ -145,20 +132,7 @@
               "node": "AttribuutRef",
               "attribuut": "kust",
               "objecttype": "Schuit",
-              "onderwerpBron": "de kust van alle schuiten van de Berging",
-              "navigatieRol": null,
-              "type": {
-                "node": "Enumeratie",
-                "domein": "Vaarwater",
-                "waarden": [
-                  "Wad",
-                  "Zeegat",
-                  "Ruimzee"
-                ]
-              },
-              "bron": "de kust van alle schuiten van de Berging",
-              "set": true,
-              "navigatiePad": []
+              "bron": "de kust van alle schuiten van de Berging"
             }
           ],
           "elementObjecttype": "Schuit",
@@ -197,18 +171,7 @@
           "node": "AttribuutRef",
           "attribuut": "tarief",
           "objecttype": "Berging",
-          "onderwerpBron": "de tarief",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de tarief",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de tarief"
         },
         "waarde": {
           "node": "Match",
@@ -223,20 +186,7 @@
             "node": "AttribuutRef",
             "attribuut": "vaarwater",
             "objecttype": "Berging",
-            "onderwerpBron": "de vaarwater",
-            "navigatieRol": null,
-            "type": {
-              "node": "Enumeratie",
-              "domein": "Vaarwater",
-              "waarden": [
-                "Wad",
-                "Zeegat",
-                "Ruimzee"
-              ]
-            },
-            "bron": "de vaarwater",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de vaarwater"
           },
           "arms": [
             {

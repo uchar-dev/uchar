@@ -64,27 +64,13 @@
             "node": "AttribuutRef",
             "attribuut": "aanmelddatum",
             "objecttype": "Vondst",
-            "onderwerpBron": "een Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumInDagen"
-            },
-            "bron": "De aanmelddatum van een Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "De aanmelddatum van een Vondst"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "vondstdag",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumTijd"
-            },
-            "bron": "de vondstdag van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de vondstdag van de Vondst"
           },
           "periode": null,
           "bron": "De aanmelddatum van een Vondst moet later of gelijk zijn aan de vondstdag van de Vondst"
@@ -106,7 +92,6 @@
         "sleutels": [
           "vondstnummer"
         ],
-        "scopeVeld": null,
         "bron": "De vondstnummers van alle Vondsten moeten uniek zijn.",
         "geldigheid": {
           "node": "Geldigheid",

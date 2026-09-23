@@ -90,18 +90,7 @@
           "node": "AttribuutRef",
           "attribuut": "heffing",
           "objecttype": "Jutter",
-          "onderwerpBron": "De heffing van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De heffing van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De heffing van een Jutter"
         },
         "waarde": {
           "node": "Let",
@@ -117,18 +106,7 @@
             "node": "AttribuutRef",
             "attribuut": "grondslag",
             "objecttype": "Jutter",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "zijn grondslag",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn grondslag"
           },
           "body": {
             "node": "Let",
@@ -146,25 +124,11 @@
               "links": {
                 "node": "BinderRef",
                 "name": "g",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                },
                 "bron": "de grondslag"
               },
               "rechts": {
                 "node": "ParameterRef",
                 "parameter": "tarief",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 3,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
                 "bron": "het tarief"
               },
               "type": {
@@ -191,13 +155,6 @@
                 "basis": {
                   "node": "BinderRef",
                   "name": "ruw",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 5,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
                   "bron": "de grondslag maal het tarief"
                 },
                 "modus": "REKENKUNDIG",
@@ -226,25 +183,11 @@
                   "links": {
                     "node": "BinderRef",
                     "name": "g",
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
-                    },
                     "bron": "de grondslag"
                   },
                   "rechts": {
                     "node": "ParameterRef",
                     "parameter": "drempel",
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
                     "bron": "de drempel"
                   },
                   "periode": null,
@@ -256,25 +199,11 @@
                   "links": {
                     "node": "ParameterRef",
                     "parameter": "basisheffing",
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
                     "bron": "de basisheffing"
                   },
                   "rechts": {
                     "node": "BinderRef",
                     "name": "volle",
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
                     "bron": "de volle heffing"
                   },
                   "type": {
@@ -289,13 +218,6 @@
                 "else": {
                   "node": "ParameterRef",
                   "parameter": "basisheffing",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "ONBEPAALD",
-                    "eenheid": null
-                  },
                   "bron": "de basisheffing"
                 },
                 "bron": "de basisheffing, verhoogd met de volle heffing zodra de drempel is overschreden"

@@ -126,18 +126,7 @@
           "node": "AttribuutRef",
           "attribuut": "bedrag",
           "objecttype": "Rekenkamer",
-          "onderwerpBron": "de bedrag",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de bedrag",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de bedrag"
         },
         "waarde": {
           "node": "Binair",
@@ -146,35 +135,13 @@
             "node": "AttribuutRef",
             "attribuut": "grondslag",
             "objecttype": "Rekenkamer",
-            "onderwerpBron": "de grondslag",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de grondslag",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de grondslag"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "aftrek",
             "objecttype": "Rekenkamer",
-            "onderwerpBron": "de aftrek",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de aftrek",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de aftrek"
           },
           "type": {
             "node": "Numeriek",
@@ -200,35 +167,13 @@
           "node": "AttribuutRef",
           "attribuut": "heffing",
           "objecttype": "Bergingsaanslag",
-          "onderwerpBron": "de heffing",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de heffing",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de heffing"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "bedrag",
           "objecttype": "Rekenkamer",
-          "onderwerpBron": "de bedrag van de rekenkamer",
-          "navigatieRol": "rekenkamer",
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
           "bron": "de bedrag van de rekenkamer",
-          "set": false,
-          "navigatiePad": [],
           "navigatieBindingen": [
             {
               "node": "RolBinding",
@@ -260,18 +205,7 @@
               "node": "AttribuutRef",
               "attribuut": "bergingswaarde",
               "objecttype": "Bergingsaanslag",
-              "onderwerpBron": "de bergingswaarde",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de bergingswaarde",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de bergingswaarde"
             },
             "kenmerk": false
           },
@@ -282,18 +216,7 @@
               "node": "AttribuutRef",
               "attribuut": "vindersaftrek",
               "objecttype": "Bergingsaanslag",
-              "onderwerpBron": "de vindersaftrek",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de vindersaftrek",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de vindersaftrek"
             },
             "kenmerk": false
           }

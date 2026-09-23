@@ -53,35 +53,13 @@
           "node": "AttribuutRef",
           "attribuut": "kopie",
           "objecttype": "Jutter",
-          "onderwerpBron": "de kopie van de Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "de kopie van de Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de kopie van de Jutter"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "gewicht",
           "objecttype": "Jutter",
-          "onderwerpBron": "de gewicht van de Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "het gewicht van de Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "het gewicht van de Jutter"
         },
         "voorwaarde": null,
         "geldigheid": {

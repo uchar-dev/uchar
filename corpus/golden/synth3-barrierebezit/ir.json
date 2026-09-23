@@ -53,18 +53,7 @@
           "node": "AttribuutRef",
           "attribuut": "heffing",
           "objecttype": "Jutter",
-          "onderwerpBron": "De heffing van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De heffing van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De heffing van een Jutter"
         },
         "waarde": {
           "node": "Let",
@@ -80,18 +69,7 @@
             "node": "AttribuutRef",
             "attribuut": "grondslag",
             "objecttype": "Jutter",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "zijn grondslag",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn grondslag"
           },
           "body": {
             "node": "Binair",
@@ -112,13 +90,6 @@
                 "links": {
                   "node": "BinderRef",
                   "name": "grondslag",
-                  "type": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  },
                   "bron": "de grondslag"
                 },
                 "rechts": {
@@ -145,13 +116,6 @@
               "body": {
                 "node": "BinderRef",
                 "name": "opgehoogd",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
                 "bron": "het opgehoogde"
               },
               "bron": "het opgehoogde is de grondslag plus 1,00"

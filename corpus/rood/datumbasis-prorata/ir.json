@@ -70,18 +70,7 @@
           "node": "AttribuutRef",
           "attribuut": "borgdeel",
           "objecttype": "Jutter",
-          "onderwerpBron": "de Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het borgdeel van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het borgdeel van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -91,14 +80,7 @@
               "node": "AttribuutRef",
               "attribuut": "borgtarief",
               "objecttype": "Jutter",
-              "onderwerpBron": "de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumInDagen"
-              },
-              "bron": "zijn borgtarief",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn borgtarief"
             }
           ],
           "elementObjecttype": null,
@@ -106,7 +88,6 @@
           "filter": {
             "node": "Kenmerk",
             "kenmerk": "borgplichtig",
-            "navigatie": null,
             "negatie": false,
             "eigenaar": null,
             "periode": null,

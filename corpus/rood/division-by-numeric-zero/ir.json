@@ -218,18 +218,7 @@
           "node": "AttribuutRef",
           "attribuut": "loon",
           "objecttype": "Vondst",
-          "onderwerpBron": "de Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het loon van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het loon van een Vondst"
         },
         "waarde": {
           "node": "Binair",
@@ -238,35 +227,13 @@
             "node": "AttribuutRef",
             "attribuut": "waardering",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de waardering van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de waardering van de Vondst"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "factor",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de factor van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de factor van de Vondst"
           },
           "type": {
             "node": "Numeriek",
@@ -292,18 +259,7 @@
           "node": "AttribuutRef",
           "attribuut": "vindersloon",
           "objecttype": "Vondst",
-          "onderwerpBron": "de Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het vindersloon van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het vindersloon van een Vondst"
         },
         "waarde": {
           "node": "Binair",
@@ -323,18 +279,7 @@
             "node": "AttribuutRef",
             "attribuut": "opbrengst",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de opbrengst van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de opbrengst van de Vondst"
           },
           "type": {
             "node": "Numeriek",
@@ -360,18 +305,7 @@
           "node": "AttribuutRef",
           "attribuut": "deel",
           "objecttype": "Vondst",
-          "onderwerpBron": "de Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het deel van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het deel van een Vondst"
         },
         "waarde": {
           "node": "Binair",
@@ -380,35 +314,13 @@
             "node": "AttribuutRef",
             "attribuut": "opbrengst",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de opbrengst van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de opbrengst van de Vondst"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "aandeel",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "het aandeel van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het aandeel van de Vondst"
           },
           "type": {
             "node": "Numeriek",
@@ -434,18 +346,7 @@
           "node": "AttribuutRef",
           "attribuut": "portie",
           "objecttype": "Vondst",
-          "onderwerpBron": "de Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De portie van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De portie van een Vondst"
         },
         "waarde": {
           "node": "Afgerond",
@@ -456,35 +357,13 @@
               "node": "AttribuutRef",
               "attribuut": "opbrengst",
               "objecttype": "Vondst",
-              "onderwerpBron": "de Vondst",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de opbrengst van de Vondst",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de opbrengst van de Vondst"
             },
             "rechts": {
               "node": "AttribuutRef",
               "attribuut": "weging",
               "objecttype": "Vondst",
-              "onderwerpBron": "de Vondst",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de weging van de Vondst",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de weging van de Vondst"
             },
             "type": {
               "node": "Numeriek",
@@ -521,18 +400,7 @@
           "node": "AttribuutRef",
           "attribuut": "bonus",
           "objecttype": "Vondst",
-          "onderwerpBron": "de Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De bonus van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De bonus van een Vondst"
         },
         "waarde": {
           "node": "Binair",
@@ -541,35 +409,13 @@
             "node": "AttribuutRef",
             "attribuut": "opbrengst",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de opbrengst van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de opbrengst van de Vondst"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "kaveldeel",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "het kaveldeel van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het kaveldeel van de Vondst"
           },
           "type": {
             "node": "Numeriek",
@@ -587,18 +433,7 @@
             "node": "AttribuutRef",
             "attribuut": "waardering",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de waardering van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de waardering van de Vondst"
           },
           "rechts": {
             "node": "Literal",
@@ -629,18 +464,7 @@
           "node": "AttribuutRef",
           "attribuut": "middenprijs",
           "objecttype": "Vondst",
-          "onderwerpBron": "de Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De middenprijs van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De middenprijs van een Vondst"
         },
         "waarde": {
           "node": "Binair",
@@ -649,35 +473,13 @@
             "node": "AttribuutRef",
             "attribuut": "koopsom",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de koopsom van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de koopsom van de Vondst"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "partijen",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de partijen van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de partijen van de Vondst"
           },
           "type": {
             "node": "Numeriek",
@@ -703,18 +505,7 @@
           "node": "AttribuutRef",
           "attribuut": "krimp",
           "objecttype": "Vondst",
-          "onderwerpBron": "de Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 1,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De krimp van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De krimp van een Vondst"
         },
         "waarde": {
           "node": "Binair",
@@ -723,35 +514,13 @@
             "node": "AttribuutRef",
             "attribuut": "spanwijdte",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 1,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de spanwijdte van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de spanwijdte van de Vondst"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "rek",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 1,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de rek van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de rek van de Vondst"
           },
           "type": {
             "node": "Numeriek",

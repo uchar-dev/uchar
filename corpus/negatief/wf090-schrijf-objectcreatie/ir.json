@@ -290,18 +290,7 @@
           "node": "AttribuutRef",
           "attribuut": "premie",
           "objecttype": "Jutter",
-          "onderwerpBron": null,
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": null,
-          "set": false,
-          "navigatiePad": []
+          "bron": null
         },
         "waarde": {
           "node": "Binair",
@@ -319,37 +308,7 @@
               "node": "AttribuutRef",
               "attribuut": "dossier",
               "objecttype": "Jutter",
-              "onderwerpBron": null,
-              "navigatieRol": null,
-              "type": {
-                "node": "StructType",
-                "domain": "dossier",
-                "fields": [
-                  {
-                    "name": "waarde",
-                    "datatype": {
-                      "node": "Numeriek",
-                      "geheel": false,
-                      "decimalen": 2,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
-                    }
-                  },
-                  {
-                    "name": "telling",
-                    "datatype": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "NIET_NEGATIEF",
-                      "eenheid": null
-                    }
-                  }
-                ]
-              },
-              "bron": null,
-              "set": false,
-              "navigatiePad": []
+              "bron": null
             },
             "field": "waarde",
             "bron": null
@@ -357,13 +316,6 @@
           "rechts": {
             "node": "ParameterRef",
             "parameter": "opslag",
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
             "bron": null
           },
           "type": {
@@ -382,37 +334,7 @@
             "node": "AttribuutRef",
             "attribuut": "dossier",
             "objecttype": "Jutter",
-            "onderwerpBron": null,
-            "navigatieRol": null,
-            "type": {
-              "node": "StructType",
-              "domain": "dossier",
-              "fields": [
-                {
-                  "name": "waarde",
-                  "datatype": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  }
-                },
-                {
-                  "name": "telling",
-                  "datatype": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  }
-                }
-              ]
-            },
-            "bron": null,
-            "set": false,
-            "navigatiePad": []
+            "bron": null
           },
           "dagsoort": null,
           "negatie": false,
@@ -430,18 +352,7 @@
           "node": "AttribuutRef",
           "attribuut": "totaalwaarde",
           "objecttype": "Jutter",
-          "onderwerpBron": null,
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": null,
-          "set": false,
-          "navigatiePad": []
+          "bron": null
         },
         "waarde": {
           "node": "Fold",
@@ -468,40 +379,7 @@
               "node": "AttribuutRef",
               "attribuut": "dossiers",
               "objecttype": "Jutter",
-              "onderwerpBron": null,
-              "navigatieRol": null,
-              "type": {
-                "node": "ListType",
-                "element": {
-                  "node": "StructType",
-                  "domain": "dossier",
-                  "fields": [
-                    {
-                      "name": "waarde",
-                      "datatype": {
-                        "node": "Numeriek",
-                        "geheel": false,
-                        "decimalen": 2,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
-                      }
-                    },
-                    {
-                      "name": "telling",
-                      "datatype": {
-                        "node": "Numeriek",
-                        "geheel": true,
-                        "decimalen": 0,
-                        "teken": "NIET_NEGATIEF",
-                        "eenheid": null
-                      }
-                    }
-                  ]
-                }
-              },
-              "bron": null,
-              "set": false,
-              "navigatiePad": []
+              "bron": null
             },
             "function": {
               "node": "Lambda",
@@ -548,32 +426,6 @@
                 "base": {
                   "node": "BinderRef",
                   "name": "d",
-                  "type": {
-                    "node": "StructType",
-                    "domain": "dossier",
-                    "fields": [
-                      {
-                        "name": "waarde",
-                        "datatype": {
-                          "node": "Numeriek",
-                          "geheel": false,
-                          "decimalen": 2,
-                          "teken": "NIET_NEGATIEF",
-                          "eenheid": null
-                        }
-                      },
-                      {
-                        "name": "telling",
-                        "datatype": {
-                          "node": "Numeriek",
-                          "geheel": true,
-                          "decimalen": 0,
-                          "teken": "NIET_NEGATIEF",
-                          "eenheid": null
-                        }
-                      }
-                    ]
-                  },
                   "bron": null
                 },
                 "field": "waarde",
@@ -613,25 +465,11 @@
               "links": {
                 "node": "BinderRef",
                 "name": "acc",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
                 "bron": null
               },
               "rechts": {
                 "node": "BinderRef",
                 "name": "x",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                },
                 "bron": null
               },
               "type": {
@@ -670,37 +508,7 @@
           "node": "AttribuutRef",
           "attribuut": "samenvatting",
           "objecttype": "Jutter",
-          "onderwerpBron": null,
-          "navigatieRol": null,
-          "type": {
-            "node": "StructType",
-            "domain": "dossier",
-            "fields": [
-              {
-                "name": "waarde",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              },
-              {
-                "name": "telling",
-                "datatype": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                }
-              }
-            ]
-          },
-          "bron": null,
-          "set": false,
-          "navigatiePad": []
+          "bron": null
         },
         "waarde": {
           "node": "StructLiteral",
@@ -737,18 +545,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "premie",
                 "objecttype": "Jutter",
-                "onderwerpBron": null,
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": null
-                },
-                "bron": null,
-                "set": false,
-                "navigatiePad": []
+                "bron": null
               }
             },
             {
@@ -766,40 +563,7 @@
                   "node": "AttribuutRef",
                   "attribuut": "dossiers",
                   "objecttype": "Jutter",
-                  "onderwerpBron": null,
-                  "navigatieRol": null,
-                  "type": {
-                    "node": "ListType",
-                    "element": {
-                      "node": "StructType",
-                      "domain": "dossier",
-                      "fields": [
-                        {
-                          "name": "waarde",
-                          "datatype": {
-                            "node": "Numeriek",
-                            "geheel": false,
-                            "decimalen": 2,
-                            "teken": "NIET_NEGATIEF",
-                            "eenheid": null
-                          }
-                        },
-                        {
-                          "name": "telling",
-                          "datatype": {
-                            "node": "Numeriek",
-                            "geheel": true,
-                            "decimalen": 0,
-                            "teken": "NIET_NEGATIEF",
-                            "eenheid": null
-                          }
-                        }
-                      ]
-                    }
-                  },
-                  "bron": null,
-                  "set": false,
-                  "navigatiePad": []
+                  "bron": null
                 },
                 "bron": null
               }
@@ -818,14 +582,7 @@
           "node": "AttribuutRef",
           "attribuut": "dubbel",
           "objecttype": "Jutter",
-          "onderwerpBron": null,
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": null,
-          "set": false,
-          "navigatiePad": []
+          "bron": null
         },
         "waarde": {
           "node": "Literal",
@@ -842,37 +599,7 @@
             "node": "AttribuutRef",
             "attribuut": "dossier",
             "objecttype": "Jutter",
-            "onderwerpBron": null,
-            "navigatieRol": null,
-            "type": {
-              "node": "StructType",
-              "domain": "dossier",
-              "fields": [
-                {
-                  "name": "waarde",
-                  "datatype": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  }
-                },
-                {
-                  "name": "telling",
-                  "datatype": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  }
-                }
-              ]
-            },
-            "bron": null,
-            "set": false,
-            "navigatiePad": []
+            "bron": null
           },
           "rechts": {
             "node": "StructLiteral",
@@ -949,14 +676,7 @@
           "node": "AttribuutRef",
           "attribuut": "afwijkend",
           "objecttype": "Jutter",
-          "onderwerpBron": null,
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": null,
-          "set": false,
-          "navigatiePad": []
+          "bron": null
         },
         "waarde": {
           "node": "Literal",
@@ -973,37 +693,7 @@
             "node": "AttribuutRef",
             "attribuut": "dossier",
             "objecttype": "Jutter",
-            "onderwerpBron": null,
-            "navigatieRol": null,
-            "type": {
-              "node": "StructType",
-              "domain": "dossier",
-              "fields": [
-                {
-                  "name": "waarde",
-                  "datatype": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  }
-                },
-                {
-                  "name": "telling",
-                  "datatype": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  }
-                }
-              ]
-            },
-            "bron": null,
-            "set": false,
-            "navigatiePad": []
+            "bron": null
           },
           "rechts": {
             "node": "StructLiteral",
@@ -1080,18 +770,7 @@
           "node": "AttribuutRef",
           "attribuut": "waardekopie",
           "objecttype": "Jutter",
-          "onderwerpBron": null,
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": null,
-          "set": false,
-          "navigatiePad": []
+          "bron": null
         },
         "waarde": {
           "node": "FieldAccess",
@@ -1106,37 +785,7 @@
             "node": "AttribuutRef",
             "attribuut": "dossier",
             "objecttype": "Jutter",
-            "onderwerpBron": null,
-            "navigatieRol": null,
-            "type": {
-              "node": "StructType",
-              "domain": "dossier",
-              "fields": [
-                {
-                  "name": "waarde",
-                  "datatype": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  }
-                },
-                {
-                  "name": "telling",
-                  "datatype": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  }
-                }
-              ]
-            },
-            "bron": null,
-            "set": false,
-            "navigatiePad": []
+            "bron": null
           },
           "field": "waarde",
           "bron": null
@@ -1152,18 +801,7 @@
           "node": "AttribuutRef",
           "attribuut": "kernwaarde",
           "objecttype": "Bundel",
-          "onderwerpBron": null,
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": null,
-          "set": false,
-          "navigatiePad": []
+          "bron": null
         },
         "waarde": {
           "node": "FieldAccess",
@@ -1178,37 +816,7 @@
             "node": "AttribuutRef",
             "attribuut": "kern",
             "objecttype": "Bundel",
-            "onderwerpBron": null,
-            "navigatieRol": null,
-            "type": {
-              "node": "StructType",
-              "domain": "dossier",
-              "fields": [
-                {
-                  "name": "waarde",
-                  "datatype": {
-                    "node": "Numeriek",
-                    "geheel": false,
-                    "decimalen": 2,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  }
-                },
-                {
-                  "name": "telling",
-                  "datatype": {
-                    "node": "Numeriek",
-                    "geheel": true,
-                    "decimalen": 0,
-                    "teken": "NIET_NEGATIEF",
-                    "eenheid": null
-                  }
-                }
-              ]
-            },
-            "bron": null,
-            "set": false,
-            "navigatiePad": []
+            "bron": null
           },
           "field": "waarde",
           "bron": null

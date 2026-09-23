@@ -59,40 +59,17 @@
           "node": "AttribuutRef",
           "attribuut": "waardering",
           "objecttype": "Jutter",
-          "onderwerpBron": "De waardering van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De waardering van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De waardering van een Jutter"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "basisbedrag",
           "objecttype": "Jutter",
-          "onderwerpBron": "zijn basisbedrag",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "zijn basisbedrag",
-          "set": false,
-          "navigatiePad": []
+          "bron": "zijn basisbedrag"
         },
         "voorwaarde": {
           "node": "Kenmerk",
           "kenmerk": "erkend",
-          "navigatie": null,
           "negatie": false,
           "eigenaar": null,
           "periode": null,
@@ -112,18 +89,7 @@
           "node": "AttribuutRef",
           "attribuut": "waardering",
           "objecttype": "Jutter",
-          "onderwerpBron": "De waardering van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De waardering van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De waardering van een Jutter"
         },
         "waarde": {
           "node": "Literal",

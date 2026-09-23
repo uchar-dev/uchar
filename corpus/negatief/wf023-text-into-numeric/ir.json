@@ -42,18 +42,7 @@
           "node": "AttribuutRef",
           "attribuut": "etiket",
           "objecttype": "Kavel",
-          "onderwerpBron": "een Kavel",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het etiket van een Kavel",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het etiket van een Kavel"
         },
         "waarde": {
           "node": "Literal",

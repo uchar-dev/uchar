@@ -97,7 +97,6 @@
         "sleutels": [
           "vondstnummer"
         ],
-        "scopeVeld": null,
         "bron": "De vondstnummers van alle Strandvondsten moeten uniek zijn.",
         "geldigheid": {
           "node": "Geldigheid",
@@ -112,7 +111,6 @@
         "sleutels": [
           "kavelnummer"
         ],
-        "scopeVeld": "kust",
         "bron": "De kavelnummers van alle Strandvondsten van de kust moeten uniek zijn.",
         "geldigheid": {
           "node": "Geldigheid",

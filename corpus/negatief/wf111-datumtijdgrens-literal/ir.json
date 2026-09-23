@@ -121,18 +121,7 @@
           "node": "AttribuutRef",
           "attribuut": "vondstpremie",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De vondstpremie van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De vondstpremie van een Vondst"
         },
         "waarde": {
           "node": "Literal",

@@ -90,18 +90,7 @@
           "node": "AttribuutRef",
           "attribuut": "tegenwachtsom",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De tegenwachtsom van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De tegenwachtsom van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -111,18 +100,7 @@
               "node": "AttribuutRef",
               "attribuut": "wachtvergoeding per maand",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "zijn wachtvergoeding per maand",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn wachtvergoeding per maand"
             }
           ],
           "elementObjecttype": "Jutter",
@@ -135,7 +113,6 @@
               {
                 "node": "Kenmerk",
                 "kenmerk": "borgplichtig",
-                "navigatie": null,
                 "negatie": false,
                 "eigenaar": "Jutter",
                 "periode": null,
@@ -144,7 +121,6 @@
               {
                 "node": "Kenmerk",
                 "kenmerk": "aangesteld",
-                "navigatie": null,
                 "negatie": true,
                 "eigenaar": null,
                 "periode": null,
@@ -179,18 +155,7 @@
           "node": "AttribuutRef",
           "attribuut": "stilwachtsom",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De stilwachtsom van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De stilwachtsom van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -200,18 +165,7 @@
               "node": "AttribuutRef",
               "attribuut": "wachtvergoeding per maand",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "zijn wachtvergoeding per maand",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn wachtvergoeding per maand"
             }
           ],
           "elementObjecttype": "Jutter",
@@ -219,7 +173,6 @@
           "filter": {
             "node": "Kenmerk",
             "kenmerk": "aangesteld",
-            "navigatie": null,
             "negatie": true,
             "eigenaar": null,
             "periode": null,

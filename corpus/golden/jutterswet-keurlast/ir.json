@@ -182,25 +182,7 @@
           "node": "AttribuutRef",
           "attribuut": "keurlast",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "EUR",
-              "stelsel": "Munt",
-              "canoniek": "EUR",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "De keurlast van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De keurlast van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -210,32 +192,7 @@
               "node": "AttribuutRef",
               "attribuut": "keurtarief",
               "objecttype": "Vondst",
-              "onderwerpBron": "alle vondsten van de Jutter die gekeurd zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": {
-                  "node": "Eenheid",
-                  "afkorting": "EUR",
-                  "stelsel": "Munt",
-                  "canoniek": "EUR",
-                  "factorNaarCanoniek": 1,
-                  "noemer": {
-                    "node": "Eenheid",
-                    "afkorting": "mnd",
-                    "stelsel": "Keurtijd",
-                    "canoniek": "mnd",
-                    "factorNaarCanoniek": 1,
-                    "noemer": null
-                  }
-                }
-              },
-              "bron": "het keurtarief van alle vondsten van de Jutter die gekeurd zijn",
-              "set": true,
-              "navigatiePad": []
+              "bron": "het keurtarief van alle vondsten van de Jutter die gekeurd zijn"
             }
           ],
           "elementObjecttype": "Vondst",
@@ -243,7 +200,6 @@
           "filter": {
             "node": "Kenmerk",
             "kenmerk": "gekeurd",
-            "navigatie": null,
             "negatie": false,
             "eigenaar": null,
             "periode": null,

@@ -75,14 +75,7 @@
           "node": "AttribuutRef",
           "attribuut": "sluittijdstip",
           "objecttype": "Getijpost",
-          "onderwerpBron": "een Getijpost",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumTijd"
-          },
-          "bron": "Het sluittijdstip van een Getijpost",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het sluittijdstip van een Getijpost"
         },
         "waarde": {
           "node": "Binair",
@@ -91,38 +84,13 @@
             "node": "AttribuutRef",
             "attribuut": "meldtijdstip",
             "objecttype": "Getijpost",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumTijd"
-            },
-            "bron": "zijn meldtijdstip",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn meldtijdstip"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "wachttermijn",
             "objecttype": "Getijpost",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "springtijdagen",
-                "stelsel": null,
-                "canoniek": "springtijdagen",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "zijn wachttermijn",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn wachttermijn"
           },
           "type": {
             "node": "DatumTijd"
@@ -144,14 +112,7 @@
           "node": "AttribuutRef",
           "attribuut": "openingstijdstip",
           "objecttype": "Getijpost",
-          "onderwerpBron": "een Getijpost",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumTijd"
-          },
-          "bron": "Het openingstijdstip van een Getijpost",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het openingstijdstip van een Getijpost"
         },
         "waarde": {
           "node": "Binair",
@@ -160,38 +121,13 @@
             "node": "AttribuutRef",
             "attribuut": "meldtijdstip",
             "objecttype": "Getijpost",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumTijd"
-            },
-            "bron": "zijn meldtijdstip",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn meldtijdstip"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "wachttermijn",
             "objecttype": "Getijpost",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "springtijdagen",
-                "stelsel": null,
-                "canoniek": "springtijdagen",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "zijn wachttermijn",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn wachttermijn"
           },
           "type": {
             "node": "DatumTijd"

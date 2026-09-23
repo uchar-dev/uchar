@@ -268,25 +268,7 @@
           "node": "AttribuutRef",
           "attribuut": "laagste vondstgewicht",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "kg",
-              "stelsel": "Gewicht",
-              "canoniek": "kg",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "Het laagste vondstgewicht van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het laagste vondstgewicht van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -296,25 +278,7 @@
               "node": "AttribuutRef",
               "attribuut": "gewicht",
               "objecttype": "Vondst",
-              "onderwerpBron": "alle geborgen vondsten van alle gevoerde boten van de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": {
-                  "node": "Eenheid",
-                  "afkorting": "kg",
-                  "stelsel": "Gewicht",
-                  "canoniek": "kg",
-                  "factorNaarCanoniek": 1,
-                  "noemer": null
-                }
-              },
-              "bron": "het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter",
-              "set": true,
-              "navigatiePad": []
+              "bron": "het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter"
             }
           ],
           "elementObjecttype": "Vondst",
@@ -365,25 +329,7 @@
           "node": "AttribuutRef",
           "attribuut": "totaal vondstgewicht",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "kg",
-              "stelsel": "Gewicht",
-              "canoniek": "kg",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "Het totaal vondstgewicht van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het totaal vondstgewicht van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -393,25 +339,7 @@
               "node": "AttribuutRef",
               "attribuut": "gewicht",
               "objecttype": "Vondst",
-              "onderwerpBron": "alle geborgen vondsten van alle gevoerde boten van de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": {
-                  "node": "Eenheid",
-                  "afkorting": "kg",
-                  "stelsel": "Gewicht",
-                  "canoniek": "kg",
-                  "factorNaarCanoniek": 1,
-                  "noemer": null
-                }
-              },
-              "bron": "het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter",
-              "set": true,
-              "navigatiePad": []
+              "bron": "het gewicht van alle geborgen vondsten van alle gevoerde boten van de Jutter"
             }
           ],
           "elementObjecttype": "Vondst",
@@ -473,25 +401,7 @@
           "node": "AttribuutRef",
           "attribuut": "laagste kistgewicht",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "kg",
-              "stelsel": "Gewicht",
-              "canoniek": "kg",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "Het laagste kistgewicht van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het laagste kistgewicht van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -501,25 +411,7 @@
               "node": "AttribuutRef",
               "attribuut": "inhoudsgewicht",
               "objecttype": "Kist",
-              "onderwerpBron": "alle ingepakte kisten van alle geborgen vondsten van alle gevoerde boten van de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": {
-                  "node": "Eenheid",
-                  "afkorting": "kg",
-                  "stelsel": "Gewicht",
-                  "canoniek": "kg",
-                  "factorNaarCanoniek": 1,
-                  "noemer": null
-                }
-              },
-              "bron": "het inhoudsgewicht van alle ingepakte kisten van alle geborgen vondsten van alle gevoerde boten van de Jutter",
-              "set": true,
-              "navigatiePad": []
+              "bron": "het inhoudsgewicht van alle ingepakte kisten van alle geborgen vondsten van alle gevoerde boten van de Jutter"
             }
           ],
           "elementObjecttype": "Kist",

@@ -62,18 +62,7 @@
           "node": "AttribuutRef",
           "attribuut": "uitkering",
           "objecttype": "Wrakrecht",
-          "onderwerpBron": "een Wrakrecht",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "de uitkering van een Wrakrecht",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de uitkering van een Wrakrecht"
         },
         "waarde": {
           "node": "Binair",
@@ -82,18 +71,7 @@
             "node": "AttribuutRef",
             "attribuut": "grondslag",
             "objecttype": "Wrakrecht",
-            "onderwerpBron": "een Wrakrecht",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "de grondslag van het Wrakrecht",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de grondslag van het Wrakrecht"
           },
           "rechts": {
             "node": "Literal",
@@ -131,18 +109,7 @@
           "node": "AttribuutRef",
           "attribuut": "grondslag",
           "objecttype": "Strandrecht",
-          "onderwerpBron": "een Strandrecht",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "de grondslag van een Strandrecht",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de grondslag van een Strandrecht"
         },
         "waarde": {
           "node": "Binair",
@@ -151,18 +118,7 @@
             "node": "AttribuutRef",
             "attribuut": "uitkering",
             "objecttype": "Strandrecht",
-            "onderwerpBron": "een Strandrecht",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "de uitkering van het Strandrecht",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de uitkering van het Strandrecht"
           },
           "rechts": {
             "node": "Literal",

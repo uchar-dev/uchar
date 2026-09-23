@@ -203,14 +203,7 @@
           "node": "AttribuutRef",
           "attribuut": "aanvoerplichtig",
           "objecttype": "Jutter",
-          "onderwerpBron": "Een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Jutter is aanvoerplichtig",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Jutter is aanvoerplichtig"
         },
         "waarde": {
           "node": "Literal",
@@ -227,43 +220,11 @@
             "node": "AttribuutRef",
             "attribuut": null,
             "objecttype": "Jutter",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "t",
-                "stelsel": "Gewicht",
-                "canoniek": "kg",
-                "factorNaarCanoniek": 1000,
-                "noemer": null
-              }
-            },
-            "bron": "zijn aangevoerd gewicht",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn aangevoerd gewicht"
           },
           "rechts": {
             "node": "ParameterRef",
             "parameter": "aanvoerdrempel",
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "kg",
-                "stelsel": "Gewicht",
-                "canoniek": "kg",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
             "bron": "de aanvoerdrempel"
           },
           "periode": null,
@@ -283,25 +244,7 @@
           "node": "AttribuutRef",
           "attribuut": "aanvoergeld",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "EUR",
-              "stelsel": "Munt",
-              "canoniek": "EUR",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "Het aanvoergeld van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het aanvoergeld van een Jutter"
         },
         "waarde": {
           "node": "Binair",
@@ -310,43 +253,11 @@
             "node": "AttribuutRef",
             "attribuut": "aanvoerwaarde",
             "objecttype": "Jutter",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "zijn aanvoerwaarde",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn aanvoerwaarde"
           },
           "rechts": {
             "node": "ParameterRef",
             "parameter": "aanvoertarief",
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "EUR",
-                "stelsel": "Munt",
-                "canoniek": "EUR",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
             "bron": "het aanvoertarief"
           },
           "type": {

@@ -254,25 +254,7 @@
           "node": "AttribuutRef",
           "attribuut": "ondergewicht",
           "objecttype": "Vangst",
-          "onderwerpBron": "een Vangst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "kg",
-              "stelsel": "Gewicht",
-              "canoniek": "kg",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "Het ondergewicht van een Vangst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het ondergewicht van een Vangst"
         },
         "waarde": {
           "node": "Begrensd",
@@ -280,25 +262,7 @@
             "node": "AttribuutRef",
             "attribuut": "ruwgewicht",
             "objecttype": "Vangst",
-            "onderwerpBron": "de Vangst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "kg",
-                "stelsel": "Gewicht",
-                "canoniek": "kg",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "het ruwgewicht van de Vangst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het ruwgewicht van de Vangst"
           },
           "minimum": {
             "node": "Literal",
@@ -351,49 +315,13 @@
           "node": "AttribuutRef",
           "attribuut": "spiegelgewicht",
           "objecttype": "Vangst",
-          "onderwerpBron": "een Vangst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "kg",
-              "stelsel": "Massa",
-              "canoniek": "kg",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "Het spiegelgewicht van een Vangst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het spiegelgewicht van een Vangst"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "ruwgewicht",
           "objecttype": "Vangst",
-          "onderwerpBron": "de Vangst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "kg",
-              "stelsel": "Gewicht",
-              "canoniek": "kg",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "het ruwgewicht van de Vangst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "het ruwgewicht van de Vangst"
         },
         "voorwaarde": null,
         "geldigheid": {
@@ -410,25 +338,7 @@
           "node": "AttribuutRef",
           "attribuut": "somgewicht",
           "objecttype": "Vangst",
-          "onderwerpBron": "een Vangst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "kg",
-              "stelsel": "Gewicht",
-              "canoniek": "kg",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "Het somgewicht van een Vangst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het somgewicht van een Vangst"
         },
         "waarde": {
           "node": "Binair",
@@ -437,49 +347,13 @@
             "node": "AttribuutRef",
             "attribuut": "ruwgewicht",
             "objecttype": "Vangst",
-            "onderwerpBron": "de Vangst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "kg",
-                "stelsel": "Gewicht",
-                "canoniek": "kg",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "het ruwgewicht van de Vangst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het ruwgewicht van de Vangst"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "spiegelgewicht",
             "objecttype": "Vangst",
-            "onderwerpBron": "de Vangst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "kg",
-                "stelsel": "Massa",
-                "canoniek": "kg",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "het spiegelgewicht van de Vangst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het spiegelgewicht van de Vangst"
           },
           "type": {
             "node": "Numeriek",
@@ -512,25 +386,7 @@
           "node": "AttribuutRef",
           "attribuut": "toeslaggewicht",
           "objecttype": "Vangst",
-          "onderwerpBron": "een Vangst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "kg",
-              "stelsel": "Gewicht",
-              "canoniek": "kg",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "Het toeslaggewicht van een Vangst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het toeslaggewicht van een Vangst"
         },
         "waarde": {
           "node": "Binair",
@@ -539,25 +395,7 @@
             "node": "AttribuutRef",
             "attribuut": "ruwgewicht",
             "objecttype": "Vangst",
-            "onderwerpBron": "de Vangst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "kg",
-                "stelsel": "Gewicht",
-                "canoniek": "kg",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "het ruwgewicht van de Vangst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het ruwgewicht van de Vangst"
           },
           "rechts": {
             "node": "Literal",
@@ -609,25 +447,7 @@
           "node": "AttribuutRef",
           "attribuut": "lastgewicht",
           "objecttype": "Vangst",
-          "onderwerpBron": "een Vangst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "kg",
-              "stelsel": "Massa",
-              "canoniek": "kg",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "Het lastgewicht van een Vangst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het lastgewicht van een Vangst"
         },
         "waarde": {
           "node": "Begrensd",
@@ -635,25 +455,7 @@
             "node": "AttribuutRef",
             "attribuut": "ruwgewicht",
             "objecttype": "Vangst",
-            "onderwerpBron": "de Vangst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "kg",
-                "stelsel": "Gewicht",
-                "canoniek": "kg",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "het ruwgewicht van de Vangst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het ruwgewicht van de Vangst"
           },
           "minimum": null,
           "maximum": {
@@ -706,49 +508,13 @@
           "node": "AttribuutRef",
           "attribuut": "keurgewicht",
           "objecttype": "Vangst",
-          "onderwerpBron": "een Vangst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "kg",
-              "stelsel": "Gewicht",
-              "canoniek": "kg",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "Het keurgewicht van een Vangst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het keurgewicht van een Vangst"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "ruwgewicht",
           "objecttype": "Vangst",
-          "onderwerpBron": "de Vangst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "kg",
-              "stelsel": "Gewicht",
-              "canoniek": "kg",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "het ruwgewicht van de Vangst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "het ruwgewicht van de Vangst"
         },
         "voorwaarde": {
           "node": "Vergelijking",
@@ -757,25 +523,7 @@
             "node": "AttribuutRef",
             "attribuut": "spiegelgewicht",
             "objecttype": "Vangst",
-            "onderwerpBron": "de Vangst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "kg",
-                "stelsel": "Massa",
-                "canoniek": "kg",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
-            "bron": "het spiegelgewicht van de Vangst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het spiegelgewicht van de Vangst"
           },
           "rechts": {
             "node": "Literal",

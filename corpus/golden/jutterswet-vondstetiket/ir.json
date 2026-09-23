@@ -63,14 +63,7 @@
           "node": "AttribuutRef",
           "attribuut": "erkend",
           "objecttype": "Vondst",
-          "onderwerpBron": "Een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vondst is erkend",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vondst is erkend"
         },
         "waarde": {
           "node": "Literal",
@@ -87,14 +80,7 @@
             "node": "AttribuutRef",
             "attribuut": "etiket",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Tekst"
-            },
-            "bron": "het etiket van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het etiket van de Vondst"
           },
           "rechts": {
             "node": "Literal",
@@ -121,14 +107,7 @@
           "node": "AttribuutRef",
           "attribuut": "omstreden",
           "objecttype": "Vondst",
-          "onderwerpBron": "Een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vondst is omstreden",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vondst is omstreden"
         },
         "waarde": {
           "node": "Literal",
@@ -145,14 +124,7 @@
             "node": "AttribuutRef",
             "attribuut": "etiket",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Tekst"
-            },
-            "bron": "het etiket van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het etiket van de Vondst"
           },
           "rechts": {
             "node": "Literal",
@@ -179,14 +151,7 @@
           "node": "AttribuutRef",
           "attribuut": "rubriek",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Tekst"
-          },
-          "bron": "De rubriek van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De rubriek van een Vondst"
         },
         "waarde": {
           "node": "Literal",
@@ -199,7 +164,6 @@
         "voorwaarde": {
           "node": "Kenmerk",
           "kenmerk": "erkend",
-          "navigatie": null,
           "negatie": false,
           "eigenaar": null,
           "periode": null,
@@ -219,27 +183,13 @@
           "node": "AttribuutRef",
           "attribuut": "afschrift",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Tekst"
-          },
-          "bron": "Het afschrift van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het afschrift van een Vondst"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "etiket",
           "objecttype": "Vondst",
-          "onderwerpBron": "de Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Tekst"
-          },
-          "bron": "het etiket van de Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "het etiket van de Vondst"
         },
         "voorwaarde": null,
         "geldigheid": {

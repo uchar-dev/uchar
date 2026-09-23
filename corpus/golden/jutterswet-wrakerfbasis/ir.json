@@ -68,18 +68,7 @@
           "node": "AttribuutRef",
           "attribuut": "uitkering",
           "objecttype": "Strandrecht",
-          "onderwerpBron": "een Strandrecht",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "De uitkering van een Strandrecht",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De uitkering van een Strandrecht"
         },
         "waarde": {
           "node": "Binair",
@@ -88,18 +77,7 @@
             "node": "AttribuutRef",
             "attribuut": "grondslag",
             "objecttype": "Strandrecht",
-            "onderwerpBron": "zijn",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": false,
-              "decimalen": 2,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": null
-            },
-            "bron": "zijn grondslag",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn grondslag"
           },
           "rechts": {
             "node": "Literal",
@@ -153,7 +131,6 @@
             "voorwaarde": {
               "node": "Kenmerk",
               "kenmerk": "betwist",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -187,18 +164,7 @@
               "node": "AttribuutRef",
               "attribuut": "grondslag",
               "objecttype": "Wrakrecht",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
-              "bron": "zijn grondslag",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn grondslag"
             },
             "bron": "de grondslag"
           }

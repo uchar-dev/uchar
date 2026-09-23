@@ -42,18 +42,7 @@
           "node": "AttribuutRef",
           "attribuut": "waardering",
           "objecttype": "Vondst",
-          "onderwerpBron": "een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De waardering van een Vondst",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De waardering van een Vondst"
         },
         "waarde": {
           "node": "Onopgelost",

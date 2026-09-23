@@ -74,18 +74,7 @@
           "node": "AttribuutRef",
           "attribuut": "borgdagen",
           "objecttype": "Jutter",
-          "onderwerpBron": "De borgdagen van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "De borgdagen van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De borgdagen van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -95,18 +84,7 @@
               "node": "AttribuutRef",
               "attribuut": "jaardagen",
               "objecttype": "Jutter",
-              "onderwerpBron": "zijn jaardagen",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": null
-              },
-              "bron": "zijn jaardagen",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn jaardagen"
             }
           ],
           "elementObjecttype": null,
@@ -114,7 +92,6 @@
           "filter": {
             "node": "Kenmerk",
             "kenmerk": "borgplichtig",
-            "navigatie": null,
             "negatie": false,
             "eigenaar": null,
             "periode": null,
@@ -146,18 +123,7 @@
           "node": "AttribuutRef",
           "attribuut": "jaardagen",
           "objecttype": "Jutter",
-          "onderwerpBron": "De jaardagen van een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": null
-          },
-          "bron": "De jaardagen van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De jaardagen van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -168,7 +134,6 @@
           "filter": {
             "node": "Kenmerk",
             "kenmerk": "borgplichtig",
-            "navigatie": null,
             "negatie": false,
             "eigenaar": null,
             "periode": null,

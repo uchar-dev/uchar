@@ -101,14 +101,7 @@
           "node": "AttribuutRef",
           "attribuut": "waardevol",
           "objecttype": "Vondst",
-          "onderwerpBron": "Een Vondst",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vondst is waardevol",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vondst is waardevol"
         },
         "waarde": {
           "node": "Literal",
@@ -125,18 +118,7 @@
             "node": "AttribuutRef",
             "attribuut": "gewicht",
             "objecttype": "Vondst",
-            "onderwerpBron": "de Vondst",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "het gewicht van de Vondst",
-            "set": false,
-            "navigatiePad": []
+            "bron": "het gewicht van de Vondst"
           },
           "rechts": {
             "node": "Literal",
@@ -167,18 +149,7 @@
           "node": "AttribuutRef",
           "attribuut": "zwaargewicht",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het zwaargewicht van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het zwaargewicht van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -188,18 +159,7 @@
               "node": "AttribuutRef",
               "attribuut": "gewicht",
               "objecttype": "Vondst",
-              "onderwerpBron": "alle vondsten van de Jutter die groter zijn dan 5",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "het gewicht van alle vondsten van de Jutter die groter zijn dan 5",
-              "set": true,
-              "navigatiePad": []
+              "bron": "het gewicht van alle vondsten van de Jutter die groter zijn dan 5"
             }
           ],
           "elementObjecttype": "Vondst",
@@ -222,18 +182,7 @@
               "node": "AttribuutRef",
               "attribuut": "gewicht",
               "objecttype": "Vondst",
-              "onderwerpBron": "",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "groter zijn dan 5",
-              "set": false,
-              "navigatiePad": []
+              "bron": "groter zijn dan 5"
             },
             "rechts": {
               "node": "Literal",
@@ -281,18 +230,7 @@
           "node": "AttribuutRef",
           "attribuut": "pronkstukaantal",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "Het pronkstukaantal van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het pronkstukaantal van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -302,15 +240,7 @@
               "node": "AttribuutRef",
               "attribuut": "vondsten",
               "objecttype": "Jutter",
-              "onderwerpBron": "de Jutter die waardevol zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "vondsten van de Jutter die waardevol zijn",
-              "set": false,
-              "navigatiePad": []
+              "bron": "vondsten van de Jutter die waardevol zijn"
             }
           ],
           "elementObjecttype": "Vondst",
@@ -318,7 +248,6 @@
           "filter": {
             "node": "Kenmerk",
             "kenmerk": "waardevol",
-            "navigatie": null,
             "negatie": false,
             "eigenaar": null,
             "periode": null,

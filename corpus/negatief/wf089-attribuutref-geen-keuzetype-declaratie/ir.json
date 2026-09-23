@@ -90,18 +90,7 @@
           "node": "AttribuutRef",
           "attribuut": "toeslag",
           "objecttype": "Berging",
-          "onderwerpBron": "de toeslag",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de toeslag",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de toeslag"
         },
         "waarde": {
           "node": "Match",
@@ -116,20 +105,7 @@
             "node": "AttribuutRef",
             "attribuut": "tarief",
             "objecttype": "Berging",
-            "onderwerpBron": "de tarief",
-            "navigatieRol": null,
-            "type": {
-              "node": "Enumeratie",
-              "domein": "Kust",
-              "waarden": [
-                "Noord",
-                "Zuid",
-                "West"
-              ]
-            },
-            "bron": "de tarief",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de tarief"
           },
           "arms": [
             {

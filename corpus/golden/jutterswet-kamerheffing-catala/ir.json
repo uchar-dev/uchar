@@ -103,13 +103,6 @@
           "links": {
             "node": "BinderRef",
             "name": "grondslag",
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
             "bron": "grondslag"
           },
           "rechts": {
@@ -147,18 +140,7 @@
           "node": "AttribuutRef",
           "attribuut": "bedrag",
           "objecttype": "Kamerbedrag",
-          "onderwerpBron": "de bedrag",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de bedrag",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de bedrag"
         },
         "waarde": {
           "node": "Binair",
@@ -167,18 +149,7 @@
             "node": "AttribuutRef",
             "attribuut": "grondslag",
             "objecttype": "Kamerbedrag",
-            "onderwerpBron": "de grondslag",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de grondslag",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de grondslag"
           },
           "rechts": {
             "node": "Literal",
@@ -216,18 +187,7 @@
           "node": "AttribuutRef",
           "attribuut": "heffing",
           "objecttype": "Kamerheffing",
-          "onderwerpBron": "de heffing",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de heffing",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de heffing"
         },
         "waarde": {
           "node": "Fold",
@@ -254,21 +214,7 @@
               "node": "AttribuutRef",
               "attribuut": "grondslagen",
               "objecttype": "Kamerheffing",
-              "onderwerpBron": "de grondslagen",
-              "navigatieRol": null,
-              "type": {
-                "node": "ListType",
-                "element": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                }
-              },
-              "bron": "de grondslagen",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de grondslagen"
             },
             "function": {
               "node": "Lambda",
@@ -298,13 +244,6 @@
                   {
                     "node": "BinderRef",
                     "name": "g",
-                    "type": {
-                      "node": "Numeriek",
-                      "geheel": true,
-                      "decimalen": 0,
-                      "teken": "ONBEPAALD",
-                      "eenheid": null
-                    },
                     "bron": "g"
                   }
                 ],
@@ -344,25 +283,11 @@
               "links": {
                 "node": "BinderRef",
                 "name": "acc",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
                 "bron": "acc"
               },
               "rechts": {
                 "node": "BinderRef",
                 "name": "b",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
                 "bron": "b"
               },
               "type": {

@@ -110,14 +110,7 @@
           "node": "AttribuutRef",
           "attribuut": "overzees",
           "objecttype": "Eigenaar",
-          "onderwerpBron": "de overzees",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "de overzees",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de overzees"
         },
         "waarde": {
           "node": "Literal",
@@ -134,18 +127,7 @@
             "node": "AttribuutRef",
             "attribuut": "registratiezone",
             "objecttype": "Eigenaar",
-            "onderwerpBron": "de registratiezone",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "de registratiezone",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de registratiezone"
           },
           "rechts": {
             "node": "Literal",
@@ -184,18 +166,7 @@
               "node": "AttribuutRef",
               "attribuut": "registratiezone",
               "objecttype": "Vondstaanslag",
-              "onderwerpBron": "de registratiezone",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de registratiezone",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de registratiezone"
             },
             "kenmerk": false
           }
@@ -234,7 +205,6 @@
             "voorwaarde": {
               "node": "Kenmerk",
               "kenmerk": "overzees",
-              "navigatie": "eigenaar",
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -252,18 +222,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "vondstwaarde",
                 "objecttype": "Vondstaanslag",
-                "onderwerpBron": "de vondstwaarde",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "de vondstwaarde",
-                "set": false,
-                "navigatiePad": []
+                "bron": "de vondstwaarde"
               },
               "rechts": {
                 "node": "Literal",
@@ -302,18 +261,7 @@
               "node": "AttribuutRef",
               "attribuut": "vondstwaarde",
               "objecttype": "Vondstaanslag",
-              "onderwerpBron": "de vondstwaarde",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de vondstwaarde",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de vondstwaarde"
             },
             "bron": "heffing"
           }

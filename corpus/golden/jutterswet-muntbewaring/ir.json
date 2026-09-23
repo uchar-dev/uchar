@@ -197,25 +197,7 @@
           "node": "AttribuutRef",
           "attribuut": "bewaarlast",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "EUR",
-              "stelsel": "Munt",
-              "canoniek": "EUR",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "De bewaarlast van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De bewaarlast van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -225,32 +207,7 @@
               "node": "AttribuutRef",
               "attribuut": "bewaartarief",
               "objecttype": "Munt",
-              "onderwerpBron": "alle munten van de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": {
-                  "node": "Eenheid",
-                  "afkorting": "EUR",
-                  "stelsel": "Munt",
-                  "canoniek": "EUR",
-                  "factorNaarCanoniek": 1,
-                  "noemer": {
-                    "node": "Eenheid",
-                    "afkorting": "mnd",
-                    "stelsel": "Bewaartijd",
-                    "canoniek": "mnd",
-                    "factorNaarCanoniek": 1,
-                    "noemer": null
-                  }
-                }
-              },
-              "bron": "het bewaartarief van alle munten van de Jutter",
-              "set": true,
-              "navigatiePad": []
+              "bron": "het bewaartarief van alle munten van de Jutter"
             }
           ],
           "elementObjecttype": "Munt",

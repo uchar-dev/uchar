@@ -287,25 +287,7 @@
           "node": "AttribuutRef",
           "attribuut": "bergloon",
           "objecttype": "Jutter",
-          "onderwerpBron": "een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "EUR",
-              "stelsel": "Munt",
-              "canoniek": "EUR",
-              "factorNaarCanoniek": 1,
-              "noemer": null
-            }
-          },
-          "bron": "Het bergloon van een Jutter",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het bergloon van een Jutter"
         },
         "waarde": {
           "node": "Functie",
@@ -315,25 +297,7 @@
               "node": "AttribuutRef",
               "attribuut": "kistgeld",
               "objecttype": "Jutter",
-              "onderwerpBron": "alle vondsten van de Jutter",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "ONBEPAALD",
-                "eenheid": {
-                  "node": "Eenheid",
-                  "afkorting": "EUR",
-                  "stelsel": "Munt",
-                  "canoniek": "EUR",
-                  "factorNaarCanoniek": 1,
-                  "noemer": null
-                }
-              },
-              "bron": "het kistgeld van alle vondsten van de Jutter",
-              "set": true,
-              "navigatiePad": []
+              "bron": "het kistgeld van alle vondsten van de Jutter"
             }
           ],
           "elementObjecttype": "Vondst",

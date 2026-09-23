@@ -77,7 +77,6 @@
             "voorwaarde": {
               "node": "Kenmerk",
               "kenmerk": "kustwacht",
-              "navigatie": null,
               "negatie": false,
               "eigenaar": null,
               "periode": null,

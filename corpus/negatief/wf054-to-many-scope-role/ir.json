@@ -139,12 +139,16 @@
         "sleutels": [
           "kavelaantal"
         ],
-        "scopeVeld": "kavels",
         "bron": "De kavelaantal van alle Gemeente van de kavels moeten uniek zijn.",
         "geldigheid": {
           "node": "Geldigheid",
           "vanaf": null,
           "tot": null
+        },
+        "scopeRol": {
+          "node": "RolBinding",
+          "feittype": "kavelindeling",
+          "rol": "kavel"
         }
       }
     ],

@@ -47,14 +47,7 @@
           "node": "AttribuutRef",
           "attribuut": "volwassen",
           "objecttype": "Persoon",
-          "onderwerpBron": "een Persoon",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Persoon is volwassen",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Persoon is volwassen"
         },
         "waarde": {
           "node": "Literal",
@@ -71,18 +64,7 @@
             "node": "AttribuutRef",
             "attribuut": "leeftijd",
             "objecttype": "Persoon",
-            "onderwerpBron": "een Persoon",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": null
-            },
-            "bron": "zijn leeftijd",
-            "set": false,
-            "navigatiePad": []
+            "bron": "zijn leeftijd"
           },
           "rechts": {
             "node": "Literal",
@@ -124,18 +106,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "leeftijd",
                 "objecttype": "Persoon",
-                "onderwerpBron": "een Persoon",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "zijn leeftijd",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn leeftijd"
               },
               "rechts": {
                 "node": "Literal",
@@ -164,7 +135,6 @@
         "voorwaarde": {
           "node": "Kenmerk",
           "kenmerk": "volwassen",
-          "navigatie": null,
           "negatie": true,
           "eigenaar": "Persoon",
           "periode": null,

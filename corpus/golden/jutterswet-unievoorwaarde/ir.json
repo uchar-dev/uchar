@@ -87,14 +87,7 @@
           "node": "AttribuutRef",
           "attribuut": "ruim voorzien",
           "objecttype": "Jutter",
-          "onderwerpBron": "Een Jutter",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Jutter is ruim voorzien",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Jutter is ruim voorzien"
         },
         "waarde": {
           "node": "Literal",
