@@ -1160,7 +1160,7 @@ while IFS= read -r ir; do
       # A crash at fire is NOT a value-divergence — it is a form the backend does not execute, which belongs in
       # the per-form auto-exclusion channel (a CaseRunner Excluded), never excused as a semantic ref/clingo delta.
       # So an ERROR always fails the gate, whether or not the golden is listed: it must be reclassified, not listed.
-      FAILED+=("$name :: $out  (a fault at fire is not a value-divergence — make it a per-form auto-exclusion)") ;;
+      case "$out" in "ERROR Documentfout:"*) FAILED+=("$name :: $out  (a malformed document: repair the document — never an exclusion)") ;; *) FAILED+=("$name :: $out  (a fault at fire is not a value-divergence — make it a per-form auto-exclusion)") ;; esac ;;
     *) FAILED+=("$name :: unexpected output: $out") ;;
   esac
 done < <(find corpus/golden -name ir.json | sort)
