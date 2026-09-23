@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://uchar.dev/schema/uchar-ir-v1.schema.json",
   "title": "uchar-ir-v1",
-  "description": "Structural schema for the 'uchar-ir-v1' format in its M1 shape (spec/proposals/V1-WIREMIGRATIE.md, section 7, step M1): the former 'regelspraak-ir-v0' dump of the reference frontend's fully resolved model with its CONTAINER restructured and nothing else. The root nests {format, model, rules, diagnostics} (decision V3 (b)): 'model' is the declaration set of IR-SPEC ch. 2, as lists in declaration order (WF-019), with no map keys; 'rules' carries the resolved rule lists under their v0 keys, in v0 order; 'diagnostics' is the producer's own account (WF-113). An ObjectType carries its members as Attribute and Characteristic nodes with their own facets (TimelineFacet), and a Domain wraps a name and a datatype that carries no self-name at the declaration position (domainDatatype). Every other node keeps its v0 name, field spellings and enum values until its own M step. Canonical key order is the 'properties' order of this schema: the migration script and every emitter write exactly that order, and every node the M1 step left untouched keeps the order its v0 emitter wrote. Every object is closed (additionalProperties:false) and lists every always-emitted key as required; node subtypes are discriminated on the 'node' field. Exception, by the decided wire-entry discipline (IR-SPEC, Method): extension fields carrying v1 deltas (verbindendeRol, bronRol, bronPad, the symbolic fact-creation fields, and bronAnnotaties \u2014 of these, bronPad is the multi-step fold-source range of IR-SPEC ch. 4.3 / WF-102, two or more RolBindings subject-outwards and mutually exclusive with bronRol, which is the one-step spelling of the same field; and bronAnnotaties carries the statute annotations on a resolved rule, when present a non-empty list of non-empty strings and absent otherwise) are optional, the datatype union admits the extension nodes SumType (the payload-carrying variant family, CONSTRUCTS row 36), ListType (the sequence type, CONSTRUCTS row 10) and StructType (the record datatype, spec/proposals/PHASE5C-TUTORIAL.md \u00a72), the expr union admits the extension nodes TemporalRead, Construct, Match, BinderRef, StructLiteral, FieldAccess, the row-10 fold family (ListLiteral, Lambda, IfThenElse, Invoke, Fold, MapList, FilterList, ListLength) and the value-level binding Let (spec/proposals/PHASE5C-TUTORIAL.md \u00a76), and the optional lists functionDefs (under 'model') and prioritizedDefaults (under 'rules') carry the named-logic and prioritized-defaults extensions, and a Default carries the optional excepties field \u2014 its nested exception groups (RUNTIME-SEMANTICS ch. 7.9) \u2014 the v0 emitter produces none of them EXCEPT Let and BinderRef, which the RegelSpraak frontend has emitted for a \u00a713.4.2.10 variabelendeel since the let-lowering card (2026-09-01); when present they are all written whole, never null. Wire epoch v0.10 (the rename epoch, 2026-08-29): the prioritized-defaults spellings (prioritizedDefaults/Default/ExceptionGroup and the defaults list) are the only valid ones; a file in the pre-rename spelling (see the formerly notes, IR-SPEC ch. 6.1 and RUNTIME-SEMANTICS ch. 7.1) fails loudly against the closed objects. Section citations (e.g. \u00a713.3.3) point into the source language spec by number only.",
+  "description": "Structural schema for the 'uchar-ir-v1' format in its L2 shape (spec/proposals/V1-WIREMIGRATIE.md, section 7, landings L1 and L2): the former 'regelspraak-ir-v0' dump of the reference frontend's fully resolved model with its CONTAINER restructured (L1) and its REFERENCE LAYER reduced to the symbolic form (L2), and nothing else. The root nests {format, model, rules, diagnostics} (decision V3 (b)): 'model' is the declaration set of IR-SPEC ch. 2, as lists in declaration order (WF-019), with no map keys; 'rules' carries the resolved rule lists under their v0 keys, in v0 order; 'diagnostics' is the producer's own account (WF-113). An ObjectType carries its members as Attribute and Characteristic nodes with their own facets (TimelineFacet), and a Domain wraps a name and a datatype that carries no self-name at the declaration position (domainDatatype). A reference carries only its symbolic form (L2): the five reference classes carry no type annotation, because the declaration is the one source; an attribute reference names its navigation by role bindings alone; the range of an instance fold, a quantifier fold and an allocation is written, never derived; one RoleMembership node names the fact type and the role the subject fills; a fact creation and a scoped uniqueness carry their symbolic fields alone; and Onbekend is no datatype. Every other node keeps its v0 name, field spellings and enum values until its own landing. Canonical key order is the 'properties' order of this schema: the migration script and every emitter write exactly that order, and every node L1 left untouched keeps the order its v0 emitter wrote, less the keys L2 removed. Every object is closed (additionalProperties:false) and lists every always-emitted key as required; node subtypes are discriminated on the 'node' field. Exception, by the decided wire-entry discipline (IR-SPEC, Method): extension fields carrying v1 deltas (verbindendeRol on an object creation, bronRol, bronPad, and bronAnnotaties \u2014 of these, bronPad is the multi-step fold-source range of IR-SPEC ch. 4.3 / WF-102, two or more RolBindings subject-outwards and mutually exclusive with bronRol, which is the one-step spelling of the same field; and bronAnnotaties carries the statute annotations on a resolved rule, when present a non-empty list of non-empty strings and absent otherwise) are optional where L2 makes none of them required (the allocation's verbindendeRol and the range of a fold and of a quantifier fold, under the conditions stated on those nodes), the datatype union admits the extension nodes SumType (the payload-carrying variant family, CONSTRUCTS row 36), ListType (the sequence type, CONSTRUCTS row 10) and StructType (the record datatype, spec/proposals/PHASE5C-TUTORIAL.md \u00a72), the expr union admits the extension nodes TemporalRead, Construct, Match, BinderRef, StructLiteral, FieldAccess, the row-10 fold family (ListLiteral, Lambda, IfThenElse, Invoke, Fold, MapList, FilterList, ListLength) and the value-level binding Let (spec/proposals/PHASE5C-TUTORIAL.md \u00a76), and the optional lists functionDefs (under 'model') and prioritizedDefaults (under 'rules') carry the named-logic and prioritized-defaults extensions, and a Default carries the optional excepties field \u2014 its nested exception groups (RUNTIME-SEMANTICS ch. 7.9) \u2014 the v0 emitter produces none of them EXCEPT Let and BinderRef, which the RegelSpraak frontend has emitted for a \u00a713.4.2.10 variabelendeel since the let-lowering card (2026-09-01); when present they are all written whole, never null. Wire epoch v0.10 (the rename epoch, 2026-08-29): the prioritized-defaults spellings (prioritizedDefaults/Default/ExceptionGroup and the defaults list) are the only valid ones; a file in the pre-rename spelling (see the formerly notes, IR-SPEC ch. 6.1 and RUNTIME-SEMANTICS ch. 7.1) fails loudly against the closed objects. Section citations (e.g. \u00a713.3.3) point into the source language spec by number only.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -343,25 +343,6 @@
         }
       }
     },
-    "Onbekend": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "node",
-        "reden"
-      ],
-      "properties": {
-        "node": {
-          "const": "Onbekend"
-        },
-        "reden": {
-          "type": [
-            "string",
-            "null"
-          ]
-        }
-      }
-    },
     "SumType": {
       "type": "object",
       "additionalProperties": false,
@@ -487,9 +468,6 @@
           "$ref": "#/$defs/Enumeratie"
         },
         {
-          "$ref": "#/$defs/Onbekend"
-        },
-        {
           "$ref": "#/$defs/SumType"
         },
         {
@@ -523,9 +501,6 @@
         },
         {
           "$ref": "#/$defs/DomainEnumeratie"
-        },
-        {
-          "$ref": "#/$defs/Onbekend"
         },
         {
           "$ref": "#/$defs/DomainSumType"
@@ -905,7 +880,55 @@
             "$ref": "#/$defs/RolBinding"
           }
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "elementObjecttype",
+              "kind",
+              "argumenten"
+            ],
+            "properties": {
+              "elementObjecttype": {
+                "type": "string"
+              },
+              "kind": {
+                "not": {
+                  "const": "TOTAAL"
+                }
+              },
+              "argumenten": {
+                "minItems": 1,
+                "maxItems": 1
+              }
+            }
+          },
+          "then": {
+            "oneOf": [
+              {
+                "required": [
+                  "bronRol"
+                ]
+              },
+              {
+                "required": [
+                  "bronPad"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "not": {
+            "required": [
+              "bronRol",
+              "bronPad"
+            ]
+          }
+        }
+      ],
+      "description": "A builtin or an aggregation (IR-SPEC ch. 4.3/4.6). The RANGE of an instance fold is written, never derived (B12, D7): with an elementObjecttype, exactly one argument and a kind other than TOTAAL, exactly one of bronRol (the one-step range) and bronPad (the multi-step range, WF-102) is present. A TOTAAL without either is the subject's own read over its own attribute (the verifier holds that it is, WF-083), and no fold carries both. With two or more arguments the node is the listed value fold, whose operands are ordinary reads: it has no range, whatever elementObjecttype it carries."
     },
     "Afgerond": {
       "type": "object",
@@ -1032,12 +1055,7 @@
         "node",
         "attribuut",
         "objecttype",
-        "onderwerpBron",
-        "navigatieRol",
-        "type",
-        "bron",
-        "set",
-        "navigatiePad"
+        "bron"
       ],
       "properties": {
         "node": {
@@ -1055,45 +1073,11 @@
             "null"
           ]
         },
-        "onderwerpBron": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "navigatieRol": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "type": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/datatype"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
         "bron": {
           "type": [
             "string",
             "null"
           ]
-        },
-        "set": {
-          "type": "boolean"
-        },
-        "navigatiePad": {
-          "type": "array",
-          "items": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
         },
         "navigatieBindingen": {
           "type": "array",
@@ -1101,7 +1085,7 @@
           "items": {
             "$ref": "#/$defs/RolBinding"
           },
-          "description": "Extension field (wire-entry discipline, IR-SPEC Method): the navigation hops as symbolic role bindings, subject-outward, one binding per hop — the bound role is the role the hop reaches (the far role). Written whole or not at all, never null."
+          "description": "The navigation hops as symbolic role bindings, subject-outward, one binding per hop — the bound role is the role the hop reaches (the far role). Present exactly when the reference reads off the subject: a reference without it is the subject's own read, whose objecttype is the subject type (WF-053); the zero-hop self-reference of IR-SPEC ch. 4.1a is such a read. Written whole or not at all, never null."
         }
       }
     },
@@ -1112,7 +1096,6 @@
         "node",
         "attribuut",
         "labels",
-        "type",
         "bron"
       ],
       "properties": {
@@ -1138,16 +1121,6 @@
             ]
           }
         },
-        "type": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/datatype"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
         "bron": {
           "type": [
             "string",
@@ -1162,7 +1135,6 @@
       "required": [
         "node",
         "parameter",
-        "type",
         "bron"
       ],
       "properties": {
@@ -1173,16 +1145,6 @@
           "type": [
             "string",
             "null"
-          ]
-        },
-        "type": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/datatype"
-            },
-            {
-              "type": "null"
-            }
           ]
         },
         "bron": {
@@ -1199,7 +1161,6 @@
       "required": [
         "node",
         "naam",
-        "type",
         "bron"
       ],
       "properties": {
@@ -1210,16 +1171,6 @@
           "type": [
             "string",
             "null"
-          ]
-        },
-        "type": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/datatype"
-            },
-            {
-              "type": "null"
-            }
           ]
         },
         "bron": {
@@ -1272,7 +1223,6 @@
       "additionalProperties": false,
       "required": [
         "node",
-        "type",
         "bron"
       ],
       "properties": {
@@ -1280,14 +1230,7 @@
           "const": "Onopgelost"
         },
         "type": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/datatype"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "$ref": "#/$defs/datatype"
         },
         "bron": {
           "type": [
@@ -1296,7 +1239,7 @@
           ]
         }
       },
-      "description": "An expression the resolver could not resolve; surfaces as an explicit marker."
+      "description": "An expression the resolver could not resolve; surfaces as an explicit marker. 'type' is optional: absent means the type is unknown, present it is a real datatype, never null."
     },
     "TemporalRead": {
       "type": "object",
@@ -1431,7 +1374,6 @@
       "required": [
         "node",
         "name",
-        "type",
         "bron"
       ],
       "properties": {
@@ -1441,9 +1383,6 @@
         "name": {
           "type": "string"
         },
-        "type": {
-          "$ref": "#/$defs/datatype"
-        },
         "bron": {
           "type": [
             "string",
@@ -1451,7 +1390,7 @@
           ]
         }
       },
-      "description": "Extension node (IR-SPEC Method; wire node BinderRef, EMITTER-PRODUCED since the let-lowering card, 2026-09-01): reads the nearest enclosing binder of its name \u2014 a match arm's, a lambda/function parameter, or a Let binder (CONSTRUCTS rows 36 and 24; spec/RUNTIME-SEMANTICS.md ch. 9.2 / ch. 10.6). The RegelSpraak emitter produces one for every read of a \u00a713.4.2.10 variabele in a rule's result part. Deliberately distinct from VariabeleRef, which since that card survives only as the residual marker for a variable the resolver could NOT bind (row 24). 'name' and 'type' are required and non-null."
+      "description": "Extension node (IR-SPEC Method; wire node BinderRef, EMITTER-PRODUCED since the let-lowering card, 2026-09-01): reads the nearest enclosing binder of its name \u2014 a match arm's, a lambda/function parameter, or a Let binder (CONSTRUCTS rows 36 and 24; spec/RUNTIME-SEMANTICS.md ch. 9.2 / ch. 10.6). The RegelSpraak emitter produces one for every read of a \u00a713.4.2.10 variabele in a rule's result part. Deliberately distinct from VariabeleRef, which since that card survives only as the residual marker for a variable the resolver could NOT bind (row 24). 'name' is required and non-null; the read carries no type of its own, the binder's declaration is the one source (B13)."
     },
     "StructLiteral": {
       "type": "object",
@@ -1882,14 +1821,7 @@
           ]
         },
         "sourceRole": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/RolBinding"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "$ref": "#/$defs/RolBinding"
         },
         "filter": {
           "anyOf": [
@@ -1908,7 +1840,7 @@
           ]
         }
       },
-      "description": "Extension node (IR-SPEC Method; wire node InstanceSetBranch): one selection of an InstanceSetUnion — an element type, the one-step relation the selection ranges over, and an optional die/dat subselection evaluated PER CONTRIBUTOR. 'elementType' and 'sourceRole' are carried nullable so a missing one is a WF-110 violation the verifier REPORTS with its rule, never a load failure. There is deliberately no path spelling here: the multi-step range under a count is WF-096/WF-102's meeting point and this node does not reopen it."
+      "description": "Extension node (IR-SPEC Method; wire node InstanceSetBranch): one selection of an InstanceSetUnion — an element type, the one-step relation the selection ranges over, and an optional die/dat subselection evaluated PER CONTRIBUTOR. 'elementType' is carried nullable so a missing one is a WF-110 violation the verifier REPORTS with its rule, never a load failure; 'sourceRole' is required and non-null, because the selection's relation is written and nothing derives it (B12). There is deliberately no path spelling here: the multi-step range under a count is WF-102's and this node does not reopen it."
     },
     "InstanceSetUnion": {
       "type": "object",
@@ -2293,7 +2225,6 @@
       "required": [
         "node",
         "kenmerk",
-        "navigatie",
         "negatie",
         "eigenaar",
         "periode",
@@ -2304,12 +2235,6 @@
           "const": "Kenmerk"
         },
         "kenmerk": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "navigatie": {
           "type": [
             "string",
             "null"
@@ -2342,37 +2267,31 @@
         },
         "navigatieBinding": {
           "$ref": "#/$defs/RolBinding",
-          "description": "Extension field (wire-entry discipline, IR-SPEC Method): the one navigation hop of a navigated characteristic check as a symbolic role binding — the bound role is the role the hop reaches. Written whole or not at all, never null."
+          "description": "The one navigation hop of a navigated characteristic check as a symbolic role binding — the bound role is the role the hop reaches, and the characteristic lives on the type it reaches. Absent: the check reads the subject itself (D53). Written whole or not at all, never null."
         }
       }
     },
-    "Rollidmaatschap": {
+    "RoleMembership": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
-        "rol",
-        "anderTeFiller",
-        "negatie",
+        "factType",
+        "role",
+        "negated",
         "bron"
       ],
       "properties": {
         "node": {
-          "const": "Rollidmaatschap"
+          "const": "RoleMembership"
         },
-        "rol": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "factType": {
+          "type": "string"
         },
-        "anderTeFiller": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "role": {
+          "type": "string"
         },
-        "negatie": {
+        "negated": {
           "type": "boolean"
         },
         "bron": {
@@ -2381,44 +2300,8 @@
             "null"
           ]
         }
-      }
-    },
-    "VerreRollidmaatschap": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "node",
-        "filler",
-        "backref",
-        "negatie",
-        "bron"
-      ],
-      "properties": {
-        "node": {
-          "const": "VerreRollidmaatschap"
-        },
-        "filler": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "backref": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "negatie": {
-          "type": "boolean"
-        },
-        "bron": {
-          "type": [
-            "string",
-            "null"
-          ]
-        }
-      }
+      },
+      "description": "The role check (IR-SPEC ch. 4.5): true iff a link of the declared fact type 'factType' exists in which the subject fills 'role', named by its declared name; 'negated': no such link exists. One node for both directions of the check (B9, D11); its key order is this 'properties' order."
     },
     "Periode": {
       "type": "object",
@@ -2573,7 +2456,7 @@
         },
         "bronRol": {
           "$ref": "#/$defs/RolBinding",
-          "description": "Extension field (wire-entry discipline, IR-SPEC Method): the one-step range — the connecting relation with the role whose filler instances the quantifier RANGES OVER bound. Spelled exactly as Functie.bronRol. Written whole or not at all, never null."
+          "description": "Extension field (wire-entry discipline, IR-SPEC Method): the one-step range — the connecting relation with the role whose filler instances the quantifier RANGES OVER bound. Spelled exactly as Functie.bronRol. Exactly one of bronRol and bronPad is present: the range is written, never derived (B12). Never null."
         },
         "bronPad": {
           "type": "array",
@@ -2611,6 +2494,20 @@
               ]
             }
           }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "bronRol"
+              ]
+            },
+            {
+              "required": [
+                "bronPad"
+              ]
+            }
+          ]
         }
       ],
       "description": "Extension node (IR-SPEC Method; wire node Kwantorvouw): the QUANTIFIER FOLD — first-order quantification of a condition over the members of a linked instance set (IR-SPEC ch. 4.5; RUNTIME-SEMANTICS ch. 3.9a). The first-order sibling of Samengesteld, which quantifies over PARTS of one subject; this one quantifies over INSTANCES, and takes its range fields from the instance fold (ch. 4.3) unchanged."
@@ -2678,10 +2575,7 @@
           "$ref": "#/$defs/Kenmerk"
         },
         {
-          "$ref": "#/$defs/Rollidmaatschap"
-        },
-        {
-          "$ref": "#/$defs/VerreRollidmaatschap"
+          "$ref": "#/$defs/RoleMembership"
         },
         {
           "$ref": "#/$defs/Periode"
@@ -3578,7 +3472,8 @@
         "groepeerAttribuut",
         "afnemend",
         "voorwaarde",
-        "geldigheid"
+        "geldigheid",
+        "verbindendeRol"
       ],
       "properties": {
         "node": {
@@ -3677,7 +3572,8 @@
           ]
         },
         "verbindendeRol": {
-          "$ref": "#/$defs/RolBinding"
+          "$ref": "#/$defs/RolBinding",
+          "description": "The recipient relation: the connecting fact type with the role the doelType instances fill bound. Required: the allocation's relation is written, never derived (B12, D7)."
         }
       }
     },
@@ -3748,7 +3644,6 @@
         "naam",
         "subject",
         "sleutels",
-        "scopeVeld",
         "bron",
         "geldigheid"
       ],
@@ -3777,12 +3672,6 @@
             ]
           }
         },
-        "scopeVeld": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
         "bron": {
           "type": [
             "string",
@@ -3801,7 +3690,7 @@
         },
         "scopeRol": {
           "$ref": "#/$defs/RolBinding",
-          "description": "Extension field (wire-entry discipline, IR-SPEC Method): the scope-parent role of a parent-scoped uniqueness, named symbolically — the bound role is the role the scope hop reaches (its filler is the scope parent); the written scopeVeld must denote it. Written whole or not at all, never null."
+          "description": "The scope-parent role of a parent-scoped uniqueness, named symbolically — the bound role is the role the scope hop reaches (its filler is the scope parent). Its presence IS the scoping: a uniqueness without it is unscoped (B8). Written whole or not at all, never null."
         }
       }
     },
@@ -3883,28 +3772,11 @@
       "additionalProperties": false,
       "required": [
         "node",
-        "type",
-        "veld",
-        "viaOuderVeld"
+        "rolBinding"
       ],
       "properties": {
         "node": {
           "const": "Tussenstap"
-        },
-        "type": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "veld": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "viaOuderVeld": {
-          "type": "boolean"
         },
         "rolBinding": {
           "$ref": "#/$defs/RolBinding"
@@ -3919,11 +3791,13 @@
         "naam",
         "anker",
         "doel",
-        "zetVeld",
-        "joinVeld",
         "tussenstappen",
         "voorwaarde",
-        "geldigheid"
+        "geldigheid",
+        "feittype",
+        "ankerRol",
+        "doelRol",
+        "joinRol"
       ],
       "properties": {
         "node": {
@@ -3942,18 +3816,6 @@
           ]
         },
         "doel": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "zetVeld": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "joinVeld": {
           "type": [
             "string",
             "null"
