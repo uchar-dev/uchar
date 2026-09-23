@@ -5,8 +5,9 @@
    its own way of calling it is how a suite comes to pin something the
    gate never runs. So the invocation lives here, in the library both
    consume, and the callers differ only in what they do with the result:
-   the runner diagnoses UNSAT against a case's expectedFault, the suite
-   checks a frame's expectations the way [ref_matches] checks ref's. *)
+   the runner matches an UNSAT diagnosis against a case's expectedFault, the
+   suite checks a frame's expectations the way [ref_matches] checks ref's.
+   The diagnosis itself lives here too ([diagnose]). *)
 
 let read_all ic =
   let b = Buffer.create 4096 in
@@ -30,3 +31,47 @@ let run_clingo text =
   let status = Unix.close_process_in ic in
   Sys.remove tmp;
   (out, status)
+
+(* the viol/2 witnesses of an UNSAT program: re-run with the global integrity
+   constraint stripped and the witnesses shown. Shared by the gate-6 runner,
+   whose report the red corpus pins, and the backend's suite, which reads the
+   same witnesses — one diagnosis, or the suite could pin a reason the gate
+   never prints. A witness string is rendered with gringo's string escapes
+   undone ([Model.unescape_str]), so a reason that quotes a declared name
+   reads as ref prints it; a reason without escapes — every one before the
+   shared parameter fail-fast — comes out byte for byte as before. *)
+let diagnose program =
+  let relaxed =
+    String.concat "\n"
+      (List.filter
+         (fun l -> String.trim l <> ":- viol(_,_).")
+         (String.split_on_char '\n' program))
+    ^ "\n#show viol/2.\n"
+  in
+  match run_clingo relaxed with
+  | out, Unix.WEXITED (10 | 30) -> (
+      try
+        match Yojson.Safe.from_string out with
+        | `Assoc kvs -> (
+            match List.assoc_opt "Call" kvs with
+            | Some (`List (call :: _)) -> (
+                match call with
+                | `Assoc ckvs -> (
+                    match List.assoc_opt "Witnesses" ckvs with
+                    | Some (`List (`Assoc wkvs :: _)) -> (
+                        match List.assoc_opt "Value" wkvs with
+                        | Some (`List atoms) ->
+                            List.filter_map
+                              (function
+                                | `String s
+                                  when String.length s >= 5 && String.sub s 0 5 = "viol(" ->
+                                    Some (Model.unescape_str s)
+                                | _ -> None)
+                              atoms
+                        | _ -> [])
+                    | _ -> [])
+                | _ -> [])
+            | _ -> [])
+        | _ -> []
+      with _ -> [])
+  | _ -> []

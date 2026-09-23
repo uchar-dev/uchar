@@ -7775,6 +7775,47 @@ let () =
         ~needle:"whole-period leeg/gevuld test is ch. 3.9 scope, not executed here")
     [ "LEEG"; "GEVULD" ]
 
+(* THE SHARED FAIL-FAST's two checks (card clingo-parameter-failfast): an
+   unbound parameter's frame, where ref must fault in its own words and
+   clingo's guard must fire with the same sentence in the diagnosed witness
+   (when clingo answers instead, the frame's rows say what it answered), and a
+   frame both executors must play alike. Defined here because the leeg arm's
+   unbound-parameter pins below use the first; the frames themselves close
+   this file. *)
+let pf_reason p = Printf.sprintf "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)" p
+
+let unbound_fires ~name ~ir ~case_text ~param ~silent =
+  let needle = pf_reason param in
+  let doc, case = load_pair ~ir ~case_text in
+  (match ref_report doc case with
+  | _ -> check (name ^ ": ref faults (it evaluated)") false
+  | exception Uchar_ref.Value.Fault m ->
+      check (name ^ ": ref faults (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle m));
+  let label = name ^ ": clingo fires the shared fail-fast" in
+  match translate doc case with
+  | exception Uchar_ref.Value.Fault m -> check (label ^ " (translation fault: " ^ m ^ ")") false
+  | program -> (
+      match Solve.run_clingo program with
+      | _, Unix.WEXITED 20 ->
+          let ws = Solve.diagnose program in
+          check
+            (label ^ " (" ^ String.concat "; " ws ^ ")")
+            (List.exists (fun w -> Uchar_ref.Case.contains ~needle w) ws)
+      | out, Unix.WEXITED (10 | 30) ->
+          let answered =
+            match Model.check doc case (Model.model_of_outf2 (Yojson.Safe.from_string out)) with
+            | [] -> "clingo answered " ^ silent
+            | ms -> "clingo answered: " ^ String.concat "; " ms
+          in
+          check (label ^ " (" ^ answered ^ ")") false
+      | _, Unix.WEXITED 127 -> check (label ^ " (clingo NOT FOUND on PATH)") false
+      | _, Unix.WEXITED c -> check (label ^ Printf.sprintf " (clingo exited %d)" c) false
+      | _, _ -> check (label ^ " (clingo killed)") false)
+
+let both_answer ~name ~ir ~case_text =
+  ref_matches ~name ~ir ~case_text;
+  clingo_matches ~name ~ir ~case_text
+
 (* FIXRONDE (lens, 2026-09-23). Four more positions and three refusals.
 
    The ASSERTION and the FOLD FILTER are positions the register text claims
@@ -7872,10 +7913,13 @@ let () =
       clingo_matches ~name ~ir ~case_text)
     [ ("LEEG on a bound parameter", false, []);
       ("LEEG negated on a bound parameter", true, schuiten) ];
+  (* since card clingo-parameter-failfast the refusal is the shared guard's,
+     in ref's words wherever the test is reached — no longer this arm's own
+     translation fault. The needle is the same sentence. *)
   List.iter
     (fun (name, negatie) ->
-      faults_with ~name ~ir:(param_doc ~negatie) ~case_text:(leeg_case [ {|{ "kind": "consistent" }|} ])
-        ~needle:{|parameter "drempel" is unbound in this case (binding is fail-fast, ch. 5.7)|})
+      unbound_fires ~name ~ir:(param_doc ~negatie) ~case_text:(leeg_case [ {|{ "kind": "consistent" }|} ])
+        ~param:"drempel" ~silent:"a leeg test over the absent parameter")
     [ ("LEEG on an unbound parameter", false); ("LEEG negated on an unbound parameter", true) ];
   (* the recursive creation group *)
   let r_ir ~rsoort ~csoort ~cneg =
@@ -7997,6 +8041,732 @@ let () =
       "validity gate: geldigheid.tot \"31-12-2026\" is not the ISO date lexeme yyyy-mm-dd \
        (malformed date lexeme \"31-12-2026\" (expected ISO yyyy-mm-dd))"
 
+(* THE SHARED FAIL-FAST (card clingo-parameter-failfast, 2026-09-23).
+
+   A parameter the case does not bind faults in ref at the read ("parameter …
+   is unbound in this case (binding is fail-fast, ch. 5.7)"). Here an absent
+   binding was an absent param/2 fact, so the join that read it failed and
+   the program ANSWERED: a leeg target, a false comparison, and through every
+   complement a definite answer where the arbiter has none. The leeg arm and
+   the day-kind table refused it on their own before this card; every other
+   position answered. Now every read carries one guard, in ref's words, that
+   fires where evaluation reaches the read and nowhere else (ch. 5.11).
+
+   Each position below is a pair. The BOUND twin plays in both executors on
+   hand-computed rows, so the position is carried and the refusal is about the
+   binding alone. The UNBOUND twin makes ref fault and clingo's guard fire;
+   its case rows pin what this translation answered BEFORE the guard existed
+   (checked when clingo answers instead, so a red run names the definite
+   answer and not merely "a model"). The LAZY frames are the other half: the
+   parameter is unbound but ref never reaches the read, and both executors
+   must answer the same rows — the guard may not fire there.
+
+   Base document: one Jutter J1 with inkomen 20,00 and a leeg restpost; the
+   bound parameter value is 10,00 unless a frame says otherwise. *)
+let pf_n2 =
+  {|{ "node": "Numeriek", "geheel": false, "decimalen": 2, "teken": "ONBEPAALD", "eenheid": null }|}
+
+let pf_n0 =
+  {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null }|}
+
+let pf_datum = {|{ "node": "DatumInDagen" }|}
+
+let pf_ot ?(naam = "Jutter") ?(meervoud = "Jutters") ?(granulariteit = "") ?(kenmerken = [])
+    attributen =
+  Printf.sprintf
+    {|"%s": { "node": "Objecttype", "naam": "%s", "attributen": { %s },
+      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": { %s },
+      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
+      "kenmerken": [ %s ], "kenmerkSoorten": { %s }, "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {}, "bezield": true, "meervoud": "%s" }|}
+    naam naam attributen granulariteit
+    (String.concat ", " (List.map (Printf.sprintf {|"%s"|}) kenmerken))
+    (String.concat ", " (List.map (Printf.sprintf {|"%s": "BIJVOEGLIJK"|}) kenmerken))
+    meervoud
+
+let pf_jutter = pf_ot (Printf.sprintf {|"inkomen": %s, "restpost": %s, "heffing": %s|} pf_n2 pf_n2 pf_n2)
+
+let pf_a ?(ot = "Jutter") ?(typ = pf_n2) n =
+  Printf.sprintf
+    {|{ "node": "AttribuutRef", "attribuut": "%s", "objecttype": "%s", "onderwerpBron": "zijn",
+        "navigatieRol": null, "type": %s, "bron": "zijn %s", "set": false, "navigatiePad": [] }|}
+    n ot typ n
+
+let pf_p ?(typ = pf_n2) n =
+  Printf.sprintf {|{ "node": "ParameterRef", "parameter": "%s", "type": %s, "bron": "de %s" }|} n typ n
+
+let pf_l ?(typ = pf_n2) w =
+  Printf.sprintf {|{ "node": "Literal", "waarde": "%s", "type": %s, "bron": "%s" }|} w typ w
+
+let pf_b n = Printf.sprintf {|{ "node": "BinderRef", "name": "%s", "type": %s, "bron": "de %s" }|} n pf_n2 n
+
+let pf_bin ?(typ = pf_n2) op l r =
+  Printf.sprintf {|{ "node": "Binair", "op": "%s", "links": %s, "rechts": %s, "type": %s, "bron": "%s" }|}
+    op l r typ op
+
+let pf_cmp op l r =
+  Printf.sprintf {|{ "node": "Vergelijking", "op": "%s", "links": %s, "rechts": %s, "periode": null, "bron": "%s" }|}
+    op l r op
+
+let pf_ite c t e =
+  Printf.sprintf {|{ "node": "IfThenElse", "type": %s, "condition": %s, "then": %s, "else": %s, "bron": "ite" }|}
+    pf_n2 c t e
+
+let pf_let b v body =
+  Printf.sprintf {|{ "node": "Let", "type": %s, "binder": "%s", "value": %s, "body": %s, "bron": "let %s" }|}
+    pf_n2 b v body b
+
+let pf_comp ?(drempel = 0) k parts =
+  Printf.sprintf {|{ "node": "Samengesteld", "kwantor": "%s", "drempel": %d, "onderdelen": [ %s ], "bron": "c" }|}
+    k drempel (String.concat ", " parts)
+
+let pf_decl ?(typ = pf_n2) n =
+  Printf.sprintf {|"%s": { "node": "Parameter", "naam": "%s", "datatype": %s, "granulariteit": null }|} n n typ
+
+let pf_regel ?(ot = "Jutter") ?(doel = "heffing") ?(typ = pf_n2) ?(soort = "BEREKENING")
+    ?(voorwaarde = "null") waarde =
+  let naam = doel ^ " van een " ^ String.lowercase_ascii ot in
+  ( naam,
+    Printf.sprintf
+      {|{ "node": "ResolvedRegel", "naam": "%s", "soort": "%s",
+      "doel": { "node": "AttribuutRef", "attribuut": "%s", "objecttype": "%s",
+        "onderwerpBron": "een %s", "navigatieRol": null, "type": %s, "bron": "De %s",
+        "set": false, "navigatiePad": [] },
+      "waarde": %s, "voorwaarde": %s,
+      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }|}
+      naam soort doel ot ot typ doel waarde voorwaarde )
+
+let pf_doc ?(objecttypen = [ pf_jutter ]) ?(feittypen = "{}") ?(parameters = []) ?(regels = [])
+    ?(consistenties = []) ?(defaults = []) ?(creaties = []) ?(feitcreaties = [])
+    ?(verdelingen = []) () =
+  Printf.sprintf
+    {|{ "formaat": "regelspraak-ir-v0", "objecttypen": { %s }, "domeinen": {},
+  "parameters": { %s }, "eenheidstelsels": {}, "feittypen": %s, "dimensies": {},
+  "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
+  "regels": [ %s ], "resolvedRegels": [ %s ], "resolvedDagsoorten": [],
+  "objectCreaties": [ %s ], "verdelingen": [ %s ], "consistenties": [ %s ],
+  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [ %s ], "resolvedStartpunten": [],
+  "regelGroepen": [], "diagnostics": []%s }|}
+    (String.concat ", " objecttypen) (String.concat ", " parameters) feittypen
+    (String.concat ", "
+       (List.map (fun (n, _) -> Printf.sprintf {|{ "node": "Regel", "naam": "%s", "soort": "regel" }|} n) regels))
+    (String.concat ", " (List.map snd regels))
+    (String.concat ", " creaties) (String.concat ", " verdelingen) (String.concat ", " consistenties)
+    (String.concat ", " feitcreaties)
+    (if defaults = [] then "" else Printf.sprintf {|, "prioritizedDefaults": [ %s ]|} (String.concat ", " defaults))
+
+let pf_j1 = {|{ "label": "J1", "objectType": "Jutter", "attributes": { "inkomen": { "number": "20" } }, "roles": {}, "characteristics": [] }|}
+
+let pf_case ?(params = []) ?(as_of = "null") ?(instances = [ pf_j1 ]) rows =
+  Printf.sprintf
+    {|{ "format": "uchar-case-v0", "asOfDate": %s,
+  "input": { "instances": [ %s ], "parameters": { %s } },
+  "expected": [ %s ] }|}
+    as_of (String.concat ", " instances) (String.concat ", " params) (String.concat ", " rows)
+
+let pf_bind ?(variant = "number") n v = Printf.sprintf {|"%s": { "%s": "%s" }|} n variant v
+
+let pf_is ?(label = "J1") ?(attr = "heffing") ?(variant = "number") v =
+  Printf.sprintf {|{ "kind": "attributeValue", "label": "%s", "attribute": "%s", "value": { "%s": "%s" } }|}
+    label attr variant v
+
+let pf_leeg ?(label = "J1") ?(attr = "heffing") () =
+  Printf.sprintf {|{ "kind": "attributeEmpty", "label": "%s", "attribute": "%s" }|} label attr
+
+let pf_cons = {|{ "kind": "consistent" }|}
+
+let pf_incons ?(label = "J1") rule =
+  Printf.sprintf {|{ "kind": "inconsistent", "rule": "%s", "label": "%s" }|} rule label
+
+(* one position: the bound twin plays, the unbound twin is refused in both *)
+let pf_position ~name ~ir ~param ?(value = "10") ?(others = []) ?instances ~bound ~silent_rows
+    ~silent () =
+  both_answer ~name:(name ^ ", bound") ~ir
+    ~case_text:(pf_case ?instances ~params:(pf_bind param value :: others) bound);
+  unbound_fires ~name:(name ^ ", unbound") ~ir
+    ~case_text:(pf_case ?instances ~params:others silent_rows) ~param ~silent
+
+(* the Jutter heffing rule over one value (and an optional condition) *)
+let pf_heffing ?voorwaarde ?(params = [ "p" ]) waarde =
+  pf_doc ~parameters:(List.map (fun p -> pf_decl p) params) ~regels:[ pf_regel ?voorwaarde waarde ] ()
+
+(* the value positions: J1 inkomen 20,00; the parameter [p] bound to 10,00 *)
+let () =
+  let inkomen = pf_a "inkomen" and p = pf_p "p" in
+  let pos name waarde ~bound ~silent_rows ~silent =
+    pf_position ~name ~ir:(pf_heffing waarde) ~param:"p" ~bound ~silent_rows ~silent ()
+  in
+  pos "value: a bare read" p ~bound:[ pf_is "10"; pf_cons ] ~silent_rows:[ pf_leeg (); pf_cons ]
+    ~silent:"heffing leeg";
+  pos "value: plus coalesces the absence to 0" (pf_bin "PLUS" inkomen p)
+    ~bound:[ pf_is "30"; pf_cons ] ~silent_rows:[ pf_is "20"; pf_cons ]
+    ~silent:"heffing 20,00: the absent parameter coalesced to 0";
+  pos "value: maal coalesces both operands" (pf_bin "MAAL" inkomen p)
+    ~bound:[ pf_is "200"; pf_cons ] ~silent_rows:[ pf_is "0"; pf_cons ] ~silent:"heffing 0,00";
+  pos "value: the divisor" (pf_bin "GEDEELD_DOOR" inkomen p)
+    ~bound:[ pf_is "2"; pf_cons ]
+    ~silent_rows:[ pf_leeg (); pf_incons "heffing van een jutter" ]
+    ~silent:"heffing leeg with a ch. 6.5 channel fact: a leeg divisor under a filled dividend";
+  pos "value: the dividend" (pf_bin "GEDEELD_DOOR" p inkomen)
+    ~bound:[ pf_is "0.5"; pf_cons ] ~silent_rows:[ pf_is "0"; pf_cons ]
+    ~silent:"heffing 0,00: a leeg dividend";
+  pos "value: a Let value" (pf_let "k" p (pf_bin "PLUS" (pf_b "k") (pf_l "1")))
+    ~bound:[ pf_is "11"; pf_cons ] ~silent_rows:[ pf_leeg (); pf_cons ] ~silent:"heffing leeg";
+  pos "value: an IfThenElse condition"
+    (pf_let "k" inkomen (pf_ite (pf_cmp "GROTER" (pf_b "k") p) (pf_l "1") (pf_l "2")))
+    ~bound:[ pf_is "1"; pf_cons ] ~silent_rows:[ pf_leeg (); pf_cons ] ~silent:"heffing leeg";
+  pos "value: the taken IfThenElse arm"
+    (pf_let "k" inkomen (pf_ite (pf_cmp "GROTER" (pf_b "k") (pf_l "10")) p (pf_l "0")))
+    ~bound:[ pf_is "10"; pf_cons ] ~silent_rows:[ pf_leeg (); pf_cons ] ~silent:"heffing leeg"
+
+(* the condition positions: heffing 5,00 where the condition holds *)
+let () =
+  let inkomen = pf_a "inkomen" and p = pf_p "p" in
+  let pos name voorwaarde ~bound ~silent_rows ~silent =
+    pf_position ~name ~ir:(pf_heffing ~voorwaarde (pf_l "5")) ~param:"p" ~bound ~silent_rows ~silent ()
+  in
+  pos "condition: an ordering" (pf_cmp "GROTER" inkomen p) ~bound:[ pf_is "5"; pf_cons ]
+    ~silent_rows:[ pf_leeg (); pf_cons ] ~silent:"heffing leeg";
+  pos "condition: a numeric ongelijk" (pf_cmp "ONGELIJK" inkomen p) ~bound:[ pf_is "5"; pf_cons ]
+    ~silent_rows:[ pf_is "5"; pf_cons ]
+    ~silent:"heffing 5,00: exactly one empty operand makes ongelijk waar (Tabel 44)";
+  pos "condition: the second member of ALLE"
+    (pf_comp "ALLE" [ pf_cmp "GROTER" inkomen (pf_l "0"); pf_cmp "GROTER" inkomen p ])
+    ~bound:[ pf_is "5"; pf_cons ] ~silent_rows:[ pf_leeg (); pf_cons ] ~silent:"heffing leeg";
+  pos "condition: GEEN" (pf_comp "GEEN" [ pf_cmp "GROTER" inkomen p ])
+    ~bound:[ pf_leeg (); pf_cons ] ~silent_rows:[ pf_is "5"; pf_cons ]
+    ~silent:"heffing 5,00: no member held, so GEEN did";
+  pos "condition: the first member of TEN MINSTE 1"
+    (pf_comp ~drempel:1 "TEN_MINSTE" [ pf_cmp "GROTER" inkomen p; pf_cmp "GROTER" inkomen (pf_l "100") ])
+    ~bound:[ pf_is "5"; pf_cons ] ~silent_rows:[ pf_leeg (); pf_cons ] ~silent:"heffing leeg";
+  (* the assertion: inkomen < p, so the bound twin holds at p = 100,00 *)
+  let assertie =
+    Printf.sprintf
+      {|{ "node": "ResolvedConsistentie", "naam": "inkomensgrens", "subject": "Jutter",
+      "assertie": %s, "bron": "c", "line": 1,
+      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }|}
+      (pf_cmp "KLEINER" inkomen p)
+  in
+  pf_position ~name:"condition: the assertion of a consistency check"
+    ~ir:(pf_doc ~parameters:[ pf_decl "p" ] ~consistenties:[ assertie ] ())
+    ~param:"p" ~value:"100" ~bound:[ pf_cons ] ~silent_rows:[ pf_incons "inkomensgrens" ]
+    ~silent:"inconsistent: the assertion's join failed, so it read as violated" ()
+
+(* ch. 10.6: a Let need ends the Let at the binder's FIRST read, so a parameter
+   read before it is reached whether or not the need is leeg — and one read
+   after it is not. restpost is leeg on J1 throughout. *)
+let () =
+  let p = pf_p "p" and k = pf_b "k" and restpost = pf_a "restpost" in
+  pf_position ~name:"Let: a parameter read before the binder"
+    ~ir:(pf_heffing (pf_let "k" restpost (pf_bin "PLUS" p k)))
+    ~param:"p" ~bound:[ pf_leeg (); pf_cons ] ~silent_rows:[ pf_leeg (); pf_cons ]
+    ~silent:"heffing leeg: the guard waited for the need" ();
+  pf_position ~name:"Let: a parameter in the condition before the binder"
+    ~ir:(pf_heffing (pf_let "k" restpost (pf_ite (pf_cmp "KLEINER" p k) (pf_l "1") (pf_l "2"))))
+    ~param:"p" ~bound:[ pf_leeg (); pf_cons ] ~silent_rows:[ pf_leeg (); pf_cons ]
+    ~silent:"heffing leeg: the guard waited for the need" ();
+  (* ((als q > 0 dan 0 anders k) plus p): at q = 5 the taken arm leaves k unread *)
+  let gemengd =
+    pf_doc ~parameters:[ pf_decl "p"; pf_decl "q" ]
+      ~regels:
+        [ pf_regel
+            (pf_let "k" restpost
+               (pf_bin "PLUS" (pf_ite (pf_cmp "GROTER" (pf_p "q") (pf_l "0")) (pf_l "0") k) p)) ]
+      ()
+  in
+  pf_position ~name:"Let: the taken arm leaves the binder unread" ~ir:gemengd ~param:"p"
+    ~others:[ pf_bind "q" "5" ] ~bound:[ pf_is "10"; pf_cons ] ~silent_rows:[ pf_is "0"; pf_cons ]
+    ~silent:"heffing 0,00: p coalesced on the arm that never reads k" ();
+  (* the lazy half of the same three shapes: the barrier comes first *)
+  both_answer ~name:"Let, lazy: the binder is read before the parameter"
+    ~ir:(pf_heffing (pf_let "k" restpost (pf_bin "PLUS" k p)))
+    ~case_text:(pf_case [ pf_leeg (); pf_cons ]);
+  both_answer ~name:"Let, lazy: the taken arm reads the leeg binder first" ~ir:gemengd
+    ~case_text:(pf_case ~params:[ pf_bind "q" "-5" ] [ pf_leeg (); pf_cons ])
+
+(* the lazy frames: [p] unbound, never read by ref — both executors answer *)
+let () =
+  let inkomen = pf_a "inkomen" and p = pf_p "p" in
+  let lazy_frame name ?(instances = [ pf_j1 ]) ?voorwaarde waarde rows =
+    both_answer ~name:("lazy: " ^ name) ~ir:(pf_heffing ?voorwaarde waarde)
+      ~case_text:(pf_case ~instances rows)
+  in
+  lazy_frame "the parameter sits in the untaken arm"
+    (pf_let "k" inkomen (pf_ite (pf_cmp "GROTER" (pf_b "k") (pf_l "10")) (pf_l "7") p))
+    [ pf_is "7"; pf_cons ];
+  lazy_frame "the rule's condition fails" ~voorwaarde:(pf_cmp "GROTER" inkomen (pf_l "100")) p
+    [ pf_leeg (); pf_cons ];
+  lazy_frame "ALLE stops at a failing member"
+    ~voorwaarde:(pf_comp "ALLE" [ pf_cmp "GROTER" inkomen (pf_l "100"); pf_cmp "GROTER" inkomen p ])
+    (pf_l "5") [ pf_leeg (); pf_cons ];
+  lazy_frame "GEEN stops at a holding member"
+    ~voorwaarde:(pf_comp "GEEN" [ pf_cmp "GROTER" inkomen (pf_l "0"); pf_cmp "GROTER" inkomen p ])
+    (pf_l "5") [ pf_leeg (); pf_cons ];
+  lazy_frame "TEN MINSTE 1 is settled by its first member"
+    ~voorwaarde:
+      (pf_comp ~drempel:1 "TEN_MINSTE" [ pf_cmp "GROTER" inkomen (pf_l "0"); pf_cmp "GROTER" inkomen p ])
+    (pf_l "5") [ pf_is "5"; pf_cons ];
+  lazy_frame "a Let need ends the Let before the parameter"
+    (pf_let "g" (pf_a "restpost") (pf_ite (pf_cmp "GROTER" (pf_b "g") p) (pf_l "1") (pf_l "2")))
+    [ pf_leeg (); pf_cons ];
+  lazy_frame "an unread binder" (pf_let "m" p (pf_l "5")) [ pf_is "5"; pf_cons ];
+  lazy_frame "a Let value read only in the untaken arm, under an operator"
+    (pf_let "m" p
+       (pf_bin "PLUS" (pf_ite (pf_cmp "GROTER" (pf_l "1") (pf_l "2")) (pf_b "m") (pf_l "0")) (pf_l "1")))
+    [ pf_is "1"; pf_cons ];
+  lazy_frame "no subject reaches the rule" ~instances:[] p [ pf_cons ]
+
+(* the member positions: a set fold's die/dat filter and a quantifier fold's
+   matrix are read per member of a subject's range, and only there. W1 holds
+   S1 (lengte 8) and S2 (no lengte), W2 holds S4 (no lengte); the bound
+   threshold is 6. *)
+let () =
+  let werf =
+    pf_ot ~naam:"Werf" ~meervoud:"Werven"
+      (Printf.sprintf {|"bonus": %s, "keur": %s|} pf_n0 pf_n0)
+  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" (Printf.sprintf {|"lengte": %s|} pf_n0) in
+  let ligplaats =
+    {|{ "ligplaats": { "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
+      { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] } }|}
+  in
+  let lengte = pf_a ~ot:"Schuit" ~typ:pf_n0 "lengte" and p = pf_p ~typ:pf_n0 "p" in
+  let bron_rol = {|{ "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" }|} in
+  let som =
+    Printf.sprintf
+      {|{ "node": "Functie", "kind": "SOM",
+        "argumenten": [ { "node": "AttribuutRef", "attribuut": "lengte", "objecttype": "Schuit",
+          "onderwerpBron": "alle schuiten", "navigatieRol": null, "type": %s,
+          "bron": "de lengte van alle schuiten", "set": true, "navigatiePad": [] } ],
+        "elementObjecttype": "Schuit", "leegwaarde": %s, "filter": %s, "dimensieSelectie": null,
+        "type": %s, "bron": "de som", "granulariteit": null, "bronRol": %s }|}
+      pf_n0 (pf_l ~typ:pf_n0 "0") (pf_cmp "GROTER" lengte p) pf_n0 bron_rol
+  in
+  let geen =
+    Printf.sprintf
+      {|{ "node": "Kwantorvouw", "kwantor": "GEEN", "elementObjecttype": "Schuit", "filter": null,
+        "toets": %s, "bron": "geen schuit", "bronRol": %s }|}
+      (pf_cmp "GROTER" lengte p) bron_rol
+  in
+  let doc regel =
+    pf_doc ~objecttypen:[ werf; schuit ] ~feittypen:ligplaats ~parameters:[ pf_decl ~typ:pf_n0 "p" ]
+      ~regels:[ regel ] ()
+  in
+  let som_doc = doc (pf_regel ~ot:"Werf" ~doel:"bonus" ~typ:pf_n0 som) in
+  let geen_doc = doc (pf_regel ~ot:"Werf" ~doel:"keur" ~typ:pf_n0 ~voorwaarde:geen (pf_l ~typ:pf_n0 "99")) in
+  let inst label ot attrs roles =
+    Printf.sprintf {|{ "label": "%s", "objectType": "%s", "attributes": { %s }, "roles": { %s }, "characteristics": [] }|}
+      label ot attrs roles
+  in
+  let schepen =
+    [ inst "W1" "Werf" "" {|"schuiten": [ "S1", "S2" ]|}; inst "W2" "Werf" "" {|"schuiten": [ "S4" ]|};
+      inst "S1" "Schuit" {|"lengte": { "number": "8" }|} ""; inst "S2" "Schuit" "" "";
+      inst "S4" "Schuit" "" "" ]
+  in
+  let rows attr w1 w2 =
+    List.map
+      (fun (l, v) -> match v with Some v -> pf_is ~label:l ~attr v | None -> pf_leeg ~label:l ~attr ())
+      [ ("W1", w1); ("W2", w2) ]
+    @ [ pf_cons ]
+  in
+  both_answer ~name:"member: a set fold's filter, bound" ~ir:som_doc
+    ~case_text:(pf_case ~instances:schepen ~params:[ pf_bind "p" "6" ] (rows "bonus" (Some "8") (Some "0")));
+  unbound_fires ~name:"member: a set fold's filter, unbound" ~ir:som_doc ~param:"p"
+    ~case_text:(pf_case ~instances:schepen (rows "bonus" (Some "0") (Some "0")))
+    ~silent:"bonus 0 on both werven: no member passed the filter";
+  both_answer ~name:"member: a quantifier fold's matrix, bound" ~ir:geen_doc
+    ~case_text:(pf_case ~instances:schepen ~params:[ pf_bind "p" "6" ] (rows "keur" None (Some "99")));
+  unbound_fires ~name:"member: a quantifier fold's matrix, unbound" ~ir:geen_doc ~param:"p"
+    ~case_text:(pf_case ~instances:schepen (rows "keur" (Some "99") (Some "99")))
+    ~silent:"keur 99 on both werven: no member satisfied the matrix, so GEEN held";
+  (* the lazy half: W3 holds no schuit, and S9 lies in no range at all, so ref
+     reads neither the filter nor the matrix. A guard keyed on the ELEMENT
+     type alone fired on S9 here; the range join is what keeps it silent. *)
+  let buiten =
+    [ inst "W3" "Werf" "" ""; inst "S9" "Schuit" {|"lengte": { "number": "8" }|} "" ]
+  in
+  both_answer ~name:"member, lazy: a set fold whose members lie in no range" ~ir:som_doc
+    ~case_text:(pf_case ~instances:buiten [ pf_is ~label:"W3" ~attr:"bonus" "0"; pf_cons ]);
+  both_answer ~name:"member, lazy: a quantifier fold whose members lie in no range" ~ir:geen_doc
+    ~case_text:(pf_case ~instances:buiten [ pf_is ~label:"W3" ~attr:"keur" "99"; pf_cons ])
+
+(* a closed body: a fold over a list PARAMETER whose lambda reads a scalar
+   one. The fold's facts are keyed by the list alone, so without the
+   subject's reach the guard fired wherever the list had an element. *)
+let () =
+  let lijst = Printf.sprintf {|{ "node": "ListType", "element": %s }|} pf_n2 in
+  let lambda body =
+    Printf.sprintf
+      {|{ "node": "Lambda", "parameters": [ { "name": "acc", "datatype": %s }, { "name": "x", "datatype": %s } ],
+        "body": %s, "bron": "de optelling" }|}
+      pf_n2 pf_n2 body
+  in
+  let fold ~init body =
+    Printf.sprintf
+      {|{ "node": "Fold", "type": %s, "list": %s, "function": %s, "init": %s, "bron": "de vouw" }|}
+      pf_n2 (pf_p ~typ:lijst "bedragen") (lambda body) init
+  in
+  let doc waarde =
+    pf_doc ~parameters:[ pf_decl ~typ:lijst "bedragen"; pf_decl "p" ] ~regels:[ pf_regel waarde ] ()
+  in
+  let bedragen items =
+    Printf.sprintf {|"bedragen": { "list": [ %s ] }|}
+      (String.concat ", " (List.map (Printf.sprintf {|{ "number": "%s" }|}) items))
+  in
+  let body_doc = doc (fold ~init:(pf_l "0.00") (pf_bin "PLUS" (pf_bin "PLUS" (pf_b "acc") (pf_b "x")) (pf_p "p"))) in
+  pf_position ~name:"closed body: the lambda of a fold over a list parameter" ~ir:body_doc ~param:"p"
+    ~others:[ bedragen [ "1.00"; "2.00" ] ] ~bound:[ pf_is "23"; pf_cons ]
+    ~silent_rows:[ pf_leeg (); pf_cons ] ~silent:"heffing leeg: the recursion stopped at the first element" ();
+  both_answer ~name:"closed body, lazy: the list is empty" ~ir:body_doc
+    ~case_text:(pf_case ~params:[ bedragen [] ] [ pf_is "0"; pf_cons ]);
+  both_answer ~name:"closed body, lazy: no subject reaches the fold" ~ir:body_doc
+    ~case_text:(pf_case ~instances:[] ~params:[ bedragen [ "1.00" ] ] [ pf_cons ]);
+  let init_doc = doc (fold ~init:(pf_p "p") (pf_bin "PLUS" (pf_b "acc") (pf_b "x"))) in
+  pf_position ~name:"closed body: the fold's init" ~ir:init_doc ~param:"p" ~value:"5"
+    ~others:[ bedragen [ "1.00"; "2.00" ] ] ~bound:[ pf_is "8"; pf_cons ]
+    ~silent_rows:[ pf_leeg (); pf_cons ] ~silent:"heffing leeg" ();
+  both_answer ~name:"closed body, lazy: no subject reaches the fold's init" ~ir:init_doc
+    ~case_text:(pf_case ~instances:[] ~params:[ bedragen [ "1.00" ] ] [ pf_cons ]);
+  (* a MapList body: each amount raised by [p] before the sum *)
+  let map_doc =
+    doc
+      (Printf.sprintf
+         {|{ "node": "Fold", "type": %s,
+             "list": { "node": "MapList", "type": %s, "list": %s,
+               "function": { "node": "Lambda", "parameters": [ { "name": "b", "datatype": %s } ],
+                 "body": %s, "bron": "de verhoging" }, "bron": "de verhoogde bedragen" },
+             "function": %s, "init": %s, "bron": "de vouw" }|}
+         pf_n2 lijst (pf_p ~typ:lijst "bedragen") pf_n2 (pf_bin "PLUS" (pf_b "b") (pf_p "p"))
+         (lambda (pf_bin "PLUS" (pf_b "acc") (pf_b "x")))
+         (pf_l "0.00"))
+  in
+  pf_position ~name:"closed body: a MapList body" ~ir:map_doc ~param:"p"
+    ~others:[ bedragen [ "1.00"; "2.00" ] ] ~bound:[ pf_is "23"; pf_cons ]
+    ~silent_rows:[ pf_is "0"; pf_cons ]
+    ~silent:"heffing 0,00: the mapped list kept its presence and lost its elements, so the fold summed nothing" ();
+  both_answer ~name:"closed body, lazy: no subject reaches the MapList" ~ir:map_doc
+    ~case_text:(pf_case ~instances:[] ~params:[ bedragen [ "1.00" ] ] [ pf_cons ])
+
+(* the temporal positions *)
+let () =
+  let dagen =
+    {|{ "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": null, "eenheid": { "node": "Eenheid",
+      "afkorting": "dagen", "stelsel": null, "canoniek": null, "factorNaarCanoniek": null, "noemer": null } }|}
+  in
+  (* datum plus a duration parameter: 10 januari plus 14 dagen *)
+  let datum_doc =
+    pf_doc
+      ~objecttypen:
+        [ pf_ot (Printf.sprintf {|"aangiftedatum": %s, "vervaldatum": %s|} pf_datum pf_datum) ]
+      ~parameters:[ pf_decl ~typ:dagen "termijn" ]
+      ~regels:
+        [ pf_regel ~doel:"vervaldatum" ~typ:pf_datum
+            (pf_bin ~typ:pf_datum "PLUS" (pf_a ~typ:pf_datum "aangiftedatum") (pf_p ~typ:dagen "termijn")) ]
+      ()
+  in
+  let j1_datum =
+    {|{ "label": "J1", "objectType": "Jutter", "attributes": { "aangiftedatum": { "date": "2026-01-10" } }, "roles": {}, "characteristics": [] }|}
+  in
+  both_answer ~name:"temporal: date plus a duration parameter, bound" ~ir:datum_doc
+    ~case_text:
+      (pf_case ~instances:[ j1_datum ] ~params:[ pf_bind "termijn" "14" ]
+         [ pf_is ~attr:"vervaldatum" ~variant:"date" "2026-01-24"; pf_cons ]);
+  unbound_fires ~name:"temporal: date plus a duration parameter, unbound" ~ir:datum_doc ~param:"termijn"
+    ~case_text:
+      (pf_case ~instances:[ j1_datum ] [ pf_is ~attr:"vervaldatum" ~variant:"date" "2026-01-10"; pf_cons ])
+    ~silent:"vervaldatum 2026-01-10: the absent duration coalesced to 0 days";
+  (* the tijdsduur from a date parameter: 1 januari to 31 januari is 30 days *)
+  let duur_doc =
+    pf_doc
+      ~objecttypen:[ pf_ot (Printf.sprintf {|"peildatum": %s, "looptijd": %s|} pf_datum dagen) ]
+      ~parameters:[ pf_decl ~typ:pf_datum "startdatum" ]
+      ~regels:
+        [ pf_regel ~doel:"looptijd" ~typ:dagen
+            (Printf.sprintf
+               {|{ "node": "Functie", "kind": "TIJDSDUUR", "argumenten": [ %s, %s ], "elementObjecttype": null,
+                   "leegwaarde": null, "filter": null, "dimensieSelectie": null, "type": %s,
+                   "bron": "de tijdsduur", "granulariteit": null }|}
+               (pf_p ~typ:pf_datum "startdatum") (pf_a ~typ:pf_datum "peildatum") dagen) ]
+      ()
+  in
+  let j1_peil =
+    {|{ "label": "J1", "objectType": "Jutter", "attributes": { "peildatum": { "date": "2026-01-31" } }, "roles": {}, "characteristics": [] }|}
+  in
+  both_answer ~name:"temporal: tijdsduur from a date parameter, bound" ~ir:duur_doc
+    ~case_text:
+      (pf_case ~instances:[ j1_peil ] ~params:[ pf_bind ~variant:"date" "startdatum" "2026-01-01" ]
+         [ pf_is ~attr:"looptijd" "30"; pf_cons ]);
+  unbound_fires ~name:"temporal: tijdsduur from a date parameter, unbound" ~ir:duur_doc ~param:"startdatum"
+    ~case_text:(pf_case ~instances:[ j1_peil ] [ pf_leeg ~attr:"looptijd" (); pf_cons ])
+    ~silent:"looptijd leeg";
+  (* the whole-period bound, NEGATED: 50 all year is above 40, so NIET makes
+     the bound twin false; unbound, no day satisfied, and NIET made it true *)
+  let met_parameter s =
+    replace ~tok:{|"domeinen": {}, "parameters": {}|}
+      ~by:({|"domeinen": {}, "parameters": { |} ^ pf_decl ~typ:kv_num0 "grens" ^ " }") s
+  in
+  let gp_ir =
+    met_parameter
+      (gpv_doc ~toets:(kv_geheel ~niet:"true" ~rechts:(pf_p ~typ:kv_num0 "grens") ()) ())
+  in
+  let gp_case ~bound ~waar =
+    let c = gpv_case ~tijdlijn:(heel_jaar "50") ~waar in
+    if bound then replace ~tok:{|"parameters": {}|} ~by:{|"parameters": { "grens": { "number": "40" } }|} c
+    else c
+  in
+  (* the same bound inside a quantifier fold's matrix: ALLE schuiten of W1
+     above the bound all year. The bound is read per MEMBER, so its guard is
+     keyed on the member, not on the per-segment helper's own subject *)
+  let kv_ir =
+    met_parameter (kv_doc ~toets:(kv_geheel ~rechts:(pf_p ~typ:kv_num0 "grens") ()) ())
+  in
+  let kv_bound ~bound ~waar =
+    let c = kv_case ~leden:[ ("S1", heel_jaar "50") ] ~waar () in
+    if bound then replace ~tok:{|"parameters": {}|} ~by:{|"parameters": { "grens": { "number": "40" } }|} c
+    else c
+  in
+  both_answer ~name:"temporal: a whole-period bound in a quantifier matrix, bound" ~ir:kv_ir
+    ~case_text:(kv_bound ~bound:true ~waar:true);
+  unbound_fires ~name:"temporal: a whole-period bound in a quantifier matrix, unbound" ~ir:kv_ir
+    ~param:"grens" ~case_text:(kv_bound ~bound:false ~waar:false)
+    ~silent:"keur leeg: the member's whole-period test failed, so ALLE did";
+  both_answer ~name:"temporal: a negated whole-period bound, bound" ~ir:gp_ir
+    ~case_text:(gp_case ~bound:true ~waar:false);
+  unbound_fires ~name:"temporal: a negated whole-period bound, unbound" ~ir:gp_ir ~param:"grens"
+    ~case_text:(gp_case ~bound:false ~waar:true)
+    ~silent:"toeslag 5: no day satisfied, so the NEGATED whole-period test held";
+  (* the gedurende clip's comparison bound: 12 months at 10, then 6 at 11 *)
+  let vergoeding = "wachtvergoeding per maand" in
+  let clip_ir =
+    pf_doc
+      ~objecttypen:
+        [ pf_ot ~granulariteit:(Printf.sprintf {|"%s": "MAAND"|} vergoeding)
+            (Printf.sprintf {|"%s": %s, "topsom": %s|} vergoeding pf_n0 pf_n0) ]
+      ~parameters:[ pf_decl ~typ:pf_n0 "klipgrens" ]
+      ~regels:
+        [ pf_regel ~doel:"topsom" ~typ:pf_n0 ~soort:"GELIJKSTELLING"
+            (Printf.sprintf
+               {|{ "node": "Functie", "kind": "TOTAAL", "argumenten": [ %s ], "elementObjecttype": "Jutter",
+                   "leegwaarde": null, "filter": %s, "dimensieSelectie": null, "type": %s,
+                   "bron": "het totaal gedurende de tijd dat", "granulariteit": null }|}
+               (pf_a ~typ:pf_n0 vergoeding)
+               (pf_cmp "GROTER" (pf_a ~typ:pf_n0 vergoeding) (pf_p ~typ:pf_n0 "klipgrens"))
+               pf_n0) ]
+      ()
+  in
+  let j1_klip =
+    Printf.sprintf
+      {|{ "label": "J1", "objectType": "Jutter", "attributes": { "%s": { "timeline": [
+        { "from": "2023-01-01", "to": "2024-01-01", "value": { "number": "10" } },
+        { "from": "2024-01-01", "to": "2024-07-01", "value": { "number": "11" } } ] } },
+        "roles": {}, "characteristics": [] }|}
+      vergoeding
+  in
+  both_answer ~name:"temporal: the gedurende clip's bound, bound" ~ir:clip_ir
+    ~case_text:
+      (pf_case ~instances:[ j1_klip ] ~params:[ pf_bind "klipgrens" "10" ]
+         [ pf_is ~attr:"topsom" "66"; pf_cons ]);
+  unbound_fires ~name:"temporal: the gedurende clip's bound, unbound" ~ir:clip_ir ~param:"klipgrens"
+    ~case_text:(pf_case ~instances:[ j1_klip ] [ pf_is ~attr:"topsom" "0"; pf_cons ])
+    ~silent:"topsom 0: no month passed the clip"
+
+(* the defaults: ref walks a chain in order and stops at the first default
+   that settles, and reads a consequence only under its holding
+   justification. Erkend decides basisbedrag, the second default decides its
+   own bedrag, the initialisation decides last. *)
+let () =
+  let jutter =
+    pf_ot ~kenmerken:[ "erkend"; "kandidaat" ]
+      (Printf.sprintf {|"basisbedrag": %s, "kandidaatbedrag": %s, "waardering": %s|} pf_n0 pf_n0 pf_n0)
+  in
+  let kenmerk k =
+    Printf.sprintf
+      {|{ "node": "Kenmerk", "kenmerk": "%s", "navigatie": null, "negatie": false, "eigenaar": null,
+          "periode": null, "bron": "hij %s is" }|}
+      k k
+  in
+  let default ?(init = false) voorwaarde consequentie =
+    Printf.sprintf
+      {|{ "node": "Default", "besluit": null, "voorwaarde": %s, "consequentie": %s,%s "bron": "d" }|}
+      voorwaarde consequentie
+      (if init then {| "initialisatie": true,|} else "")
+  in
+  let stack ~tweede ~init_waarde =
+    Printf.sprintf
+      {|{ "node": "PrioritizedDefaults", "naam": "waardering van een jutter", "onderwerp": "Jutter",
+          "kenmerk": null, "attribuut": "waardering", "defaults": [ %s, %s, %s ], "bron": "w",
+          "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }|}
+      (default (kenmerk "erkend") (pf_a ~typ:pf_n0 "basisbedrag"))
+      (default tweede (pf_a ~typ:pf_n0 "kandidaatbedrag"))
+      (default ~init:true "null" init_waarde)
+  in
+  let doc ~param ~tweede ~init_waarde =
+    pf_doc ~objecttypen:[ jutter ] ~parameters:[ pf_decl ~typ:pf_n0 param ]
+      ~defaults:[ stack ~tweede ~init_waarde ] ()
+  in
+  let jutter_case ?(chars = "") attrs =
+    Printf.sprintf
+      {|{ "label": "J1", "objectType": "Jutter", "attributes": { %s }, "roles": {}, "characteristics": [ %s ] }|}
+      attrs chars
+  in
+  let erkend = jutter_case ~chars:{|"erkend"|} {|"basisbedrag": { "number": "50" }|} in
+  (* the initialisation's consequence reads [standaard] *)
+  let gevolg = doc ~param:"standaard" ~tweede:(kenmerk "kandidaat") ~init_waarde:(pf_p ~typ:pf_n0 "standaard") in
+  pf_position ~name:"defaults: the deciding default's consequence" ~ir:gevolg ~param:"standaard"
+    ~value:"25" ~instances:[ jutter_case "" ] ~bound:[ pf_is ~attr:"waardering" "25"; pf_cons ]
+    ~silent_rows:[ pf_leeg ~attr:"waardering" (); pf_cons ] ~silent:"waardering leeg" ();
+  both_answer ~name:"defaults, lazy: a higher default decides before the consequence" ~ir:gevolg
+    ~case_text:(pf_case ~instances:[ erkend ] [ pf_is ~attr:"waardering" "50"; pf_cons ]);
+  (* the second default's justification reads [drempel]: kandidaatbedrag 30 *)
+  let rechtvaardiging =
+    doc ~param:"drempel"
+      ~tweede:(pf_cmp "GROTER" (pf_a ~typ:pf_n0 "kandidaatbedrag") (pf_p ~typ:pf_n0 "drempel"))
+      ~init_waarde:(pf_l ~typ:pf_n0 "25")
+  in
+  let kandidaat = jutter_case {|"kandidaatbedrag": { "number": "30" }|} in
+  both_answer ~name:"defaults: a justification, bound" ~ir:rechtvaardiging
+    ~case_text:
+      (pf_case ~instances:[ kandidaat ] ~params:[ pf_bind "drempel" "10" ]
+         [ pf_is ~attr:"waardering" "30"; pf_cons ]);
+  unbound_fires ~name:"defaults: a justification, unbound" ~ir:rechtvaardiging ~param:"drempel"
+    ~case_text:(pf_case ~instances:[ kandidaat ] [ pf_is ~attr:"waardering" "25"; pf_cons ])
+    ~silent:"waardering 25: the justification failed and the initialisation decided";
+  both_answer ~name:"defaults, lazy: a higher default decides before the justification"
+    ~ir:rechtvaardiging
+    ~case_text:(pf_case ~instances:[ erkend ] [ pf_is ~attr:"waardering" "50"; pf_cons ])
+
+(* an allocation's voorwaarde, read per source: 90 over three jutters *)
+let () =
+  let veiling =
+    pf_ot ~naam:"Strandveiling" ~meervoud:"Strandveilingen"
+      (Printf.sprintf {|"veilingopbrengst": %s, "veilingrestant": %s|} pf_n0 pf_n0)
+  and jutter = pf_ot (Printf.sprintf {|"veilingdeel": %s|} pf_n0) in
+  let feittypen =
+    {|{ "veilingdeelname": { "node": "Feittype", "naam": "veilingdeelname", "wederkerig": false, "rollen": [
+      { "node": "Rol", "naam": "strandveiling", "objecttypeNaam": "Strandveiling", "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "veilingjutter", "objecttypeNaam": "Jutter", "meervoud": "veilingjutters", "meervoudig": true } ] } }|}
+  in
+  let verdeling =
+    Printf.sprintf
+      {|{ "node": "ResolvedVerdeling", "naam": "verdeel de veilingopbrengst", "bronType": "Strandveiling",
+          "bronAttribuut": "veilingopbrengst", "doelType": "Jutter", "doelAttribuut": "veilingdeel",
+          "methode": "GELIJKE_DELEN", "ratoAttribuut": null, "maximumAttribuut": null,
+          "afrondingDecimalen": 0, "restantAttribuut": "veilingrestant", "groepeerAttribuut": null,
+          "afnemend": false, "voorwaarde": %s,
+          "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null },
+          "verbindendeRol": { "node": "RolBinding", "feittype": "veilingdeelname", "rol": "veilingjutter" } }|}
+      (pf_cmp "GROTER" (pf_a ~ot:"Strandveiling" ~typ:pf_n0 "veilingopbrengst") (pf_p ~typ:pf_n0 "minimum"))
+  in
+  let ir =
+    pf_doc ~objecttypen:[ veiling; jutter ] ~feittypen ~parameters:[ pf_decl ~typ:pf_n0 "minimum" ]
+      ~verdelingen:[ verdeling ] ()
+  in
+  let instances =
+    {|{ "label": "V1", "objectType": "Strandveiling", "attributes": { "veilingopbrengst": { "number": "90" } },
+        "roles": { "veilingjutters": [ "J1", "J2", "J3" ] }, "characteristics": [] }|}
+    :: List.map
+         (fun l -> Printf.sprintf {|{ "label": "%s", "objectType": "Jutter", "attributes": {}, "roles": {}, "characteristics": [] }|} l)
+         [ "J1"; "J2"; "J3" ]
+  in
+  let deel v =
+    List.map
+      (fun l -> match v with Some v -> pf_is ~label:l ~attr:"veilingdeel" v | None -> pf_leeg ~label:l ~attr:"veilingdeel" ())
+      [ "J1"; "J2"; "J3" ]
+  in
+  pf_position ~name:"allocation: the voorwaarde" ~ir ~param:"minimum" ~value:"0" ~instances
+    ~bound:(deel (Some "30") @ [ pf_is ~label:"V1" ~attr:"veilingrestant" "0"; pf_cons ])
+    ~silent_rows:(deel None @ [ pf_leeg ~label:"V1" ~attr:"veilingrestant" (); pf_cons ])
+    ~silent:"no shares at all: the source's voorwaarde failed" ()
+
+(* an object creation: the initialisation value is read only where the
+   creation fires. A Werf mints one Rapport; its keur reads the rapport's
+   bedrag back over the created role. *)
+let () =
+  let werf = pf_ot ~naam:"Werf" ~meervoud:"Werven" (Printf.sprintf {|"lengte": %s, "keur": %s|} pf_n2 pf_n2)
+  and rapport = pf_ot ~naam:"Rapport" ~meervoud:"Rapporten" (Printf.sprintf {|"bedrag": %s|} pf_n2) in
+  let keuring =
+    {|{ "keuring": { "node": "Feittype", "naam": "keuring", "wederkerig": false, "rollen": [
+      { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "rapport", "objecttypeNaam": "Rapport", "meervoud": null, "meervoudig": false } ] } }|}
+  in
+  let creatie ~voorwaarde waarde =
+    Printf.sprintf
+      {|{ "node": "ResolvedObjectCreatie", "naam": "keur een rapport", "nieuwType": "Rapport",
+          "subject": "Werf", "toekenningen": [ { "node": "Toekenning", "attribuut": "bedrag",
+          "waarde": %s, "kenmerk": false } ], "voorwaarde": %s,
+          "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null },
+          "verbindendeRol": { "node": "RolBinding", "feittype": "keuring", "rol": "rapport" } }|}
+      waarde voorwaarde
+  in
+  let terug =
+    pf_regel ~ot:"Werf" ~doel:"keur"
+      {|{ "node": "AttribuutRef", "attribuut": "bedrag", "objecttype": "Rapport", "onderwerpBron": "zijn rapport",
+          "navigatieRol": "rapport", "type": { "node": "Numeriek", "geheel": false, "decimalen": 2,
+          "teken": "ONBEPAALD", "eenheid": null }, "bron": "het bedrag van zijn rapport", "set": false,
+          "navigatiePad": [], "navigatieBindingen": [ { "node": "RolBinding", "feittype": "keuring", "rol": "rapport" } ] }|}
+  in
+  let doc ~param ~voorwaarde waarde =
+    pf_doc ~objecttypen:[ werf; rapport ] ~feittypen:keuring ~parameters:[ pf_decl param ]
+      ~regels:[ terug ] ~creaties:[ creatie ~voorwaarde waarde ] ()
+  in
+  let w1 =
+    {|{ "label": "W1", "objectType": "Werf", "attributes": { "lengte": { "number": "20" } }, "roles": {}, "characteristics": [] }|}
+  in
+  let keur v = [ (match v with Some v -> pf_is ~label:"W1" ~attr:"keur" v | None -> pf_leeg ~label:"W1" ~attr:"keur" ()); pf_cons ] in
+  pf_position ~name:"object creation: the initialisation value"
+    ~ir:(doc ~param:"keurtarief" ~voorwaarde:"null" (pf_p "keurtarief"))
+    ~param:"keurtarief" ~value:"7.50" ~instances:[ w1 ] ~bound:(keur (Some "7.5"))
+    ~silent_rows:(keur None) ~silent:"keur leeg: the rapport was minted without a bedrag" ();
+  pf_position ~name:"object creation: the voorwaarde"
+    ~ir:(doc ~param:"drempel" ~voorwaarde:(pf_cmp "GROTER" (pf_a ~ot:"Werf" "lengte") (pf_p "drempel")) (pf_l "5"))
+    ~param:"drempel" ~instances:[ w1 ] ~bound:(keur (Some "5")) ~silent_rows:(keur None)
+    ~silent:"keur leeg: no rapport was minted" ();
+  both_answer ~name:"object creation, lazy: the value of a creation that does not fire"
+    ~ir:
+      (doc ~param:"keurtarief"
+         ~voorwaarde:(pf_cmp "GROTER" (pf_a ~ot:"Werf" "lengte") (pf_l "100"))
+         (pf_p "keurtarief"))
+    ~case_text:(pf_case ~instances:[ w1 ] (keur None))
+
+
+(* the §7.1 horizon fence READS a die/dat filter at translation time, for a
+   member whose verdict the fold hangs on — golden jutterswet-keurlast's
+   document with the filter "gewicht > minimumgewicht". V1 (gewicht 10) has a
+   keurtarief timeline, 12 a month over three months; V2 (gewicht 1) has only
+   an asOfDate-bucket scalar and is exactly such a member. Bound at 5 the
+   filter drops V2 and J1's keurlast is 3 x 12 = 36. The fence evaluated the
+   filter without the case's parameters, so the BOUND parameter read as
+   unbound, V2 stayed a contributor, and the fence refused a document ref
+   plays. Unbound, the read happens in translation, so it refuses there, in
+   the shared sentence. *)
+let () =
+  let ir = {|{"formaat":"regelspraak-ir-v0","objecttypen":{"Jutter":{"node":"Objecttype","naam":"Jutter","attributen":{"keurlast":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null}}},"attribuutMeervoud":{},"attribuutDimensies":{},"attribuutGranulariteit":{},"attribuutTijdlijnAantal":{},"attribuutTijdlijnNaam":{},"kenmerken":[],"kenmerkSoorten":{},"kenmerkGranulariteit":{},"kenmerkTijdlijnAantal":{},"bezield":true,"meervoud":"Jutters"},"Vondst":{"node":"Objecttype","naam":"Vondst","attributen":{"keurtarief":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":{"node":"Eenheid","afkorting":"mnd","stelsel":"Keurtijd","canoniek":"mnd","factorNaarCanoniek":1,"noemer":null}}},"gewicht":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null}},"attribuutMeervoud":{"keurtarief":"keurtarieven"},"attribuutDimensies":{},"attribuutGranulariteit":{"keurtarief":"MAAND"},"attribuutTijdlijnAantal":{},"attribuutTijdlijnNaam":{},"kenmerken":["gekeurd"],"kenmerkSoorten":{"gekeurd":"BIJVOEGLIJK"},"kenmerkGranulariteit":{},"kenmerkTijdlijnAantal":{},"bezield":false,"meervoud":"Vondsten"}},"domeinen":{},"parameters":{"minimumgewicht":{"node":"Parameter","naam":"minimumgewicht","datatype":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null},"granulariteit":null}},"eenheidstelsels":{"Munt":{"node":"Eenheidstelsel","naam":"Munt","eenheden":{"EUR":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null},"€":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null}},"aliassen":{"euro":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null},"euros":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null}}},"Keurtijd":{"node":"Eenheidstelsel","naam":"Keurtijd","eenheden":{"mnd":{"node":"Eenheid","afkorting":"mnd","stelsel":"Keurtijd","canoniek":"mnd","factorNaarCanoniek":1,"noemer":null}},"aliassen":{"maand":{"node":"Eenheid","afkorting":"mnd","stelsel":"Keurtijd","canoniek":"mnd","factorNaarCanoniek":1,"noemer":null}}}},"feittypen":{"keuring":{"node":"Feittype","naam":"keuring","wederkerig":false,"rollen":[{"node":"Rol","naam":"keurende jutter","objecttypeNaam":"Jutter","meervoud":null,"meervoudig":false},{"node":"Rol","naam":"vondst","objecttypeNaam":"Vondst","meervoud":"vondsten","meervoudig":true}]}},"dimensies":{},"tijdlijnen":[],"dagsoorten":[],"dagsoortPerEenheid":{},"regels":[{"node":"Regel","naam":"keurlast van een jutter","soort":"regel"}],"resolvedRegels":[{"node":"ResolvedRegel","naam":"keurlast van een jutter","soort":"BEREKENING","doel":{"node":"AttribuutRef","attribuut":"keurlast","objecttype":"Jutter","onderwerpBron":"een Jutter","navigatieRol":null,"type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null}},"bron":"De keurlast van een Jutter","set":false,"navigatiePad":[]},"waarde":{"node":"Functie","kind":"TOTAAL","argumenten":[{"node":"AttribuutRef","attribuut":"keurtarief","objecttype":"Vondst","onderwerpBron":"alle vondsten van de Jutter die gekeurd zijn","navigatieRol":null,"type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":{"node":"Eenheid","afkorting":"mnd","stelsel":"Keurtijd","canoniek":"mnd","factorNaarCanoniek":1,"noemer":null}}},"bron":"het keurtarief van alle vondsten van de Jutter die gekeurd zijn","set":true,"navigatiePad":[]}],"elementObjecttype":"Vondst","leegwaarde":null,"filter":{"node":"Vergelijking","op":"GROTER","links":{"node":"AttribuutRef","attribuut":"gewicht","objecttype":"Vondst","onderwerpBron":"","navigatieRol":null,"type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null},"bron":"gewicht","set":false,"navigatiePad":[]},"rechts":{"node":"ParameterRef","parameter":"minimumgewicht","type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null},"bron":"het minimumgewicht"},"periode":null,"bron":"zwaarder dan het minimumgewicht"},"dimensieSelectie":null,"type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null}},"bron":"het totaal van het keurtarief van alle vondsten van de Jutter die gekeurd zijn","granulariteit":null,"bronRol":{"node":"RolBinding","feittype":"keuring","rol":"vondst"}},"voorwaarde":null,"geldigheid":{"node":"Geldigheid","vanaf":null,"tot":null}}],"resolvedDagsoorten":[],"objectCreaties":[],"verdelingen":[],"consistenties":[],"uniciteiten":[],"uniciteitUnies":[],"feitCreaties":[],"resolvedStartpunten":[],"regelGroepen":[],"diagnostics":[]}|} in
+  let case_text params rows =
+    Printf.sprintf
+      {|{ "format": "uchar-case-v0", "asOfDate": "2026-03-15", "input": { "instances": [
+      { "label": "J1", "objectType": "Jutter", "attributes": {}, "roles": { "vondsten": [ "V1", "V2" ] }, "characteristics": [] },
+      { "label": "V1", "objectType": "Vondst", "attributes": { "gewicht": { "number": "10" },
+        "keurtarief": { "timeline": [ { "from": "2026-01-01", "to": "2026-04-01", "value": { "number": "12" } } ] } },
+        "roles": {}, "characteristics": [] },
+      { "label": "V2", "objectType": "Vondst", "attributes": { "gewicht": { "number": "1" }, "keurtarief": { "number": "5" } },
+        "roles": {}, "characteristics": [] } ], "parameters": { %s } },
+  "expected": [ %s ] }|}
+      params (String.concat ", " rows)
+  in
+  both_answer ~name:"horizon fence: a bound parameter in the die/dat filter" ~ir
+    ~case_text:
+      (case_text {|"minimumgewicht": { "number": "5" }|}
+         [ pf_is ~attr:"keurlast" "36"; pf_cons ]);
+  let unbound = case_text "" [ pf_cons ] in
+  let needle = pf_reason "minimumgewicht" in
+  let doc, case = load_pair ~ir ~case_text:unbound in
+  (match ref_report doc case with
+  | _ -> check "horizon fence: an unbound parameter in the die/dat filter: ref faults (it evaluated)" false
+  | exception Uchar_ref.Value.Fault m ->
+      check ("horizon fence: an unbound parameter in the die/dat filter: ref faults (" ^ m ^ ")")
+        (Uchar_ref.Case.contains ~needle m));
+  faults_with ~name:"horizon fence: an unbound parameter in the die/dat filter, in translation" ~ir
+    ~case_text:unbound ~needle
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total

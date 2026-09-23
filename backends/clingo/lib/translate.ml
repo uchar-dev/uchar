@@ -251,6 +251,20 @@ type ctx = {
      for a Let binder, which reads through its self-contained helper so a
      bare value var is bound wherever it is used, B3) *)
   mutable binders : (string * (string list * string * int)) list;
+  (* what [rule_guard] leaves out of an UNBOUND parameter's guard ([rule_reach]):
+     per parameter name, the atoms that say evaluation reaches this read — the
+     enclosing subject and range join of a fold member or quantifier element,
+     the rule context of a closed body, the displacement and justification of a
+     default. Read by the shared fail-fast alone, and only for a parameter the
+     case does not bind, so every other fence keeps [rule_guard] as it was and
+     a case that binds its parameters translates byte for byte as before.
+     [fun _ -> []] at rule level. *)
+  mutable param_reach : string -> string list;
+  (* the Let needs [rule_guard] carries, each with the parameters its body may
+     read BEFORE the binder: ch. 10.6's barrier sits at the first read of the
+     binder, so an earlier read is reached whether or not the need is leeg,
+     and its guard must not wait for the need's atoms *)
+  mutable let_needs : (string list * string list) list;
 }
 
 (* S ⊑ T, for the OCaml-side scans over case instances. The ASP side does
@@ -593,72 +607,187 @@ let has_recursive_creation (doc : document) =
            g.leden)
     doc.regel_groepen
 
-(* the first scalar, non-granular parameter an expression reads that the case
-   does not bind — for the leeg/gevuld arm of [cond_atoms], where an unbound
-   parameter leaves the join unbound and the test would ANSWER (leeg: waar)
-   where ref faults (ch. 5.7, binding is fail-fast). A list-typed parameter is
-   exempt because ref reads its absence as leeg, which is what the unbound
-   join says too. The walk enters conditions nested in the expression and the
-   body of an invoked function (acyclic by WF-068), so it may refuse a
-   parameter ref would never reach on a lazy branch: loud, never wrong. *)
-let unbound_param_in ctx (e : expr) : string option =
-  let found = ref None in
-  let rec ex (e : expr) =
-    let opt = function Some x -> ex x | None -> () in
-    match e with
-    | Parameter_ref { parameter = Some p; _ } -> (
-        match Ir_v0.Checks.find_ci ctx.doc.parameters p with
-        | Some { par_granulariteit = None; par_datatype; _ }
-          when (match par_datatype with Some (List_type _) -> false | _ -> true)
-               && Eval.SMap.find_opt (norm p) ctx.case.params = None
-               && !found = None ->
-            found := Some p
-        | _ -> ())
-    | Binair { links; rechts; _ } -> opt links; opt rechts
-    | Afgerond { basis; _ } -> opt basis
-    | Begrensd { basis; minimum; maximum; _ } -> opt basis; opt minimum; opt maximum
-    | Functie { argumenten; leegwaarde; filter; _ } ->
-        List.iter ex argumenten;
-        opt leegwaarde;
-        (match filter with Some c -> co c | None -> ())
-    | If_then_else { condition; then_; else_; _ } -> co condition; ex then_; ex else_
-    | Let { value; body; _ } -> ex value; ex body
-    | Match { scrutinee; arms; _ } -> ex scrutinee; List.iter (fun (_, _, b) -> ex b) arms
-    | Construct { argument; _ } -> opt argument
-    | Field_access { base; _ } -> ex base
-    | Struct_literal { velden; _ } -> List.iter (fun (_, x) -> ex x) velden
-    | List_literal { elements; _ } -> List.iter ex elements
-    | Temporal_read { basis; datum; _ } -> ex basis; ex datum
-    | Fold { list; init; functie; _ } -> ex list; ex init; fn functie
-    | Map_list { list; functie; _ } -> ex list; fn functie
-    | List_length { list; _ } -> ex list
-    | Filter_list { list; condition; _ } -> ex list; co condition
-    | Invoke { functie; arguments; _ } -> List.iter ex arguments; named functie
-    | Tekst_reeks { delen; _ } ->
-        List.iter (function Ingevoegd { expr = Some x } -> ex x | _ -> ()) delen
-    | Dimensie_cel { attribuut; _ } -> opt attribuut
-    | _ -> ()
-  and fn = function Fn_lambda { body; _ } -> ex body | Fn_name n -> named n
-  and named n =
-    match
-      List.find_opt (fun (d : function_def) -> norm d.fd_naam = norm n) ctx.doc.function_defs
-    with
-    | Some d -> ex d.fd_body
-    | None -> ()
-  and co (c : conditie) =
-    let opt = function Some x -> ex x | None -> () in
-    match c with
-    | Vergelijking { links; rechts; _ } -> opt links; opt rechts
-    | Predicaat { operand; _ } -> opt operand
-    | Periode_conditie { vanaf; tot; _ } -> opt vanaf; opt tot
-    | Samengesteld { onderdelen; _ } -> List.iter co onderdelen
-    | Kwantorvouw { kv_toets; kv_filter; _ } ->
-        (match kv_toets with Some t -> co t | None -> ());
-        (match kv_filter with Some f -> co f | None -> ())
-    | _ -> ()
+(* ch. 5.7, binding is fail-fast: THE reading of a parameter the case does not
+   bind, shared by every position that reads a parameter's value. ref faults at
+   the read ("parameter … is unbound in this case"). Here an absent binding is
+   an absent param/2 fact, so the join that reads it fails and the program
+   ANSWERS instead: a leeg target, a false comparison, and through every
+   complement a definite answer where the arbiter has none — a negated test,
+   GEEN, ongelijk, a coalescing 0, a date shifted by nothing, a §9.5 deposit.
+
+   The decision mirrors ref's arm for arm: a declared, non-granular parameter
+   the case does not bind. A granular parameter has its own refusals in both
+   executors, and a list-typed one is exempt because ref reads its absence as
+   leeg, which is exactly what the absent lpres/1 fact says (ch. 10.5). *)
+let param_unbound ctx name =
+  match Ir_v0.Checks.find_ci ctx.doc.parameters name with
+  | Some { par_granulariteit = None; par_datatype = Some (List_type _); _ } -> false
+  | Some { par_granulariteit = None; _ } ->
+      Eval.SMap.find_opt (norm name) ctx.case.params = None
+  | _ -> false
+
+(* the one sentence, ref's own words, whichever phase carries it *)
+let unbound_param_reason name =
+  Printf.sprintf "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)" name
+
+(* The fail-fast fires where evaluation READS the parameter and nowhere else:
+   ch. 5.11 says an operand that is never reached raises no fault, and ref
+   reaches a read only down the taken branch, under a holding condition, inside
+   a composite whose outcome does not stand yet, per element of a list that has
+   elements, and in a default the walk gets to. Refusing in translation would
+   decline documents ref plays whenever the read sits behind one of those. So
+   the refusal is a viol/2 guard like every other fail-fast of this
+   translator, and [guard] is the body that says the read is reached; it is
+   only built for a parameter that is in fact unbound, so a bound read emits
+   nothing and costs nothing. The witness is the guard's subject, so the
+   diagnosis names who read it. *)
+let unbound_param_guard ctx ~witness ~guard name =
+  if param_unbound ctx name then
+    emit ctx "viol(%s,%s) :- %s." (quote (unbound_param_reason name)) witness
+      (String.concat ", " (guard ()))
+
+(* the reach of a read at [subject] in the current context: the subject, the
+   enclosing [rule_guard] (condition, composite prefix, taken arm or match
+   pattern, Let needs) and the extra [param_reach] of a nested context. A Let
+   need whose binder this parameter may be read before is dropped: the barrier
+   comes after the read, so the read happens even where the need is leeg.
+   Captured as a closure, so a nested context can hand it on unchanged. *)
+let rule_reach ctx ~subject ~subject_ot =
+  let rg = ctx.rule_guard and needs = ctx.let_needs and outer = ctx.param_reach in
+  fun name ->
+    let early =
+      List.concat_map
+        (fun (va, names) -> if List.exists (fun n -> norm n = norm name) names then va else [])
+        needs
+    in
+    (Printf.sprintf "isa(%s,%s)" subject (str subject_ot)
+     :: List.filter (fun a -> not (List.mem a early)) rg)
+    @ outer name
+
+(* an inner Let's binder, mapped to its value and the scope that value was
+   written in (see [params_before_binder]) *)
+type needs_env = Needs of (string * (expr * needs_env)) list
+
+(* ch. 5.11 and ch. 10.6: the parameters evaluating [e] may read BEFORE its
+   first read of binder [b], and whether it surely reads [b] at all. Wire
+   order, one branch of a choice, a composite that may stop after its first
+   member, a closed body that may never run, and call-by-need: an inner Let's
+   value runs at the first read of ITS binder, so [env] maps that binder to
+   the value, and reading it is reading the value there. Conservative in the
+   one direction that matters: a parameter that may come first on SOME path is
+   listed, and "surely" is claimed only where every path reads [b]. Listing
+   one too many makes its guard fire where ref met the barrier first — loud;
+   omitting one would let the program answer where ref faults. [b] = "" lists
+   every parameter. *)
+let rec params_before_binder ?(env = Needs []) b (e : expr) : string list * bool =
+  let go = params_before_binder ~env b in
+  let one = function Some x -> go x | None -> ([], false) in
+  let seq parts =
+    List.fold_left
+      (fun (acc, sure) part ->
+        if sure then (acc, true)
+        else
+          let ps, s = part () in
+          (acc @ ps, s))
+      ([], false) parts
   in
-  ex e;
-  !found
+  let all x = fst (params_before_binder "" x) in
+  let fn = function Fn_lambda { body; _ } -> all body | Fn_name _ -> [] in
+  match e with
+  | Parameter_ref { parameter = Some p; _ } -> ([ p ], false)
+  | Binder_ref { naam; _ } -> (
+      if b <> "" && norm naam = norm b then ([], true)
+      else
+        let (Needs bound) = env in
+        match List.assoc_opt (norm naam) bound with
+        | Some (value, venv) -> params_before_binder ~env:venv b value
+        | None -> ([], false))
+  | Binair { links; rechts; _ } -> seq [ (fun () -> one links); (fun () -> one rechts) ]
+  | Afgerond { basis; _ } -> one basis
+  | Begrensd { basis; minimum; maximum; _ } ->
+      seq [ (fun () -> one basis); (fun () -> one minimum); (fun () -> one maximum) ]
+  | Functie { argumenten; leegwaarde; filter; _ } ->
+      let ps, s = seq (List.map (fun a () -> go a) argumenten @ [ (fun () -> one leegwaarde) ]) in
+      if s then (ps, true)
+      else (ps @ (match filter with Some c -> fst (cond_params_before "" c) | None -> []), false)
+  | Dimensie_cel { attribuut; _ } -> one attribuut
+  | Temporal_read { basis; datum; _ } -> seq [ (fun () -> go datum); (fun () -> go basis) ]
+  | Construct { argument; _ } -> one argument
+  | Field_access { base; _ } -> go base
+  | Struct_literal { velden; _ } -> seq (List.map (fun (_, x) () -> go x) velden)
+  | List_literal { elements; _ } -> seq (List.map (fun x () -> go x) elements)
+  | Tekst_reeks { delen; _ } ->
+      seq
+        (List.filter_map
+           (function Ingevoegd { expr = Some x } -> Some (fun () -> go x) | _ -> None)
+           delen)
+  | If_then_else { condition; then_; else_; _ } ->
+      let pc, sc = cond_params_before ~env b condition in
+      if sc then (pc, true)
+      else
+        let pt, st = go then_ and pe, se = go else_ in
+        (pc @ pt @ pe, st && se)
+  | Match { scrutinee; arms; _ } ->
+      let ps, s = go scrutinee in
+      if s then (ps, true)
+      else
+        let arm_results = List.map (fun (_, _, body) -> go body) arms in
+        (ps @ List.concat_map fst arm_results, arm_results <> [] && List.for_all snd arm_results)
+  | Let { binder; value; body; _ } ->
+      if b <> "" && norm binder = norm b then (all value @ all body, false)
+      else
+        let (Needs bound) = env in
+        params_before_binder ~env:(Needs ((norm binder, (value, env)) :: bound)) b body
+  | Lambda { body; _ } -> (all body, false)
+  | Invoke { arguments; _ } ->
+      (* the arguments run first and bind the body's parameters; the body is
+         closed, so a document parameter it reads comes after them *)
+      seq (List.map (fun x () -> go x) arguments)
+  | Fold { list; init; functie; _ } ->
+      let ps, s = seq [ (fun () -> go list); (fun () -> go init) ] in
+      if s then (ps, true) else (ps @ fn functie, false)
+  | Map_list { list; functie; _ } ->
+      let ps, s = go list in
+      if s then (ps, true) else (ps @ fn functie, false)
+  | Filter_list { list; condition; _ } ->
+      let ps, s = go list in
+      if s then (ps, true) else (ps @ fst (cond_params_before "" condition), false)
+  | List_length { list; _ } -> go list
+  | Parameter_ref { parameter = None; _ }
+  | Literal _ | Attribuut_ref _ | Variabele_ref _ | Constante _ | Expr_onopgelost _
+  | Instance_set_union _ ->
+      ([], false)
+
+and cond_params_before ?(env = Needs []) b (c : conditie) : string list * bool =
+  let one = function Some x -> params_before_binder ~env b x | None -> ([], false) in
+  let pair x y =
+    let px, sx = one x in
+    if sx then (px, true)
+    else
+      let py, sy = one y in
+      (px @ py, sy)
+  in
+  match c with
+  | Vergelijking { links; rechts; _ } -> pair links rechts
+  | Predicaat { operand; _ } -> one operand
+  | Periode_conditie { vanaf; tot; _ } -> pair vanaf tot
+  | Samengesteld { onderdelen; _ } -> (
+      (* only the first member is surely read (ch. 5.10) *)
+      match onderdelen with
+      | [] -> ([], false)
+      | first :: rest ->
+          let p1, s1 = cond_params_before ~env b first in
+          if s1 then (p1, true)
+          else (p1 @ List.concat_map (fun m -> fst (cond_params_before ~env b m)) rest, false))
+  | Kwantorvouw { kv_toets; kv_filter; _ } ->
+      let opt = function Some x -> fst (cond_params_before "" x) | None -> [] in
+      (opt kv_filter @ opt kv_toets, false)
+  | Kenmerk_check _ | Rollidmaatschap _ | Verre_rollidmaatschap _ | Regelversie _
+  | Conditie_onopgelost _ ->
+      ([], false)
+
+(* the binder's early parameters, as [let_needs] stores them *)
+let early_params binder body = fst (params_before_binder binder body)
 
 (* the canonical role name: the plural for a to-many role, the singular
    otherwise — the same convention the case facts use *)
@@ -726,6 +855,21 @@ let source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x =
           (List.mapi (fun i rb -> (i, rb)) pad)
       in
       atoms @ scope
+
+(* A fold member or quantifier element [x] is read only for a subject whose
+   range holds it, so its reach adds that subject and the range join to what
+   the enclosing context already requires ([param_reach]). Without them the
+   shared fail-fast fired for every instance of the element type, members of
+   no range among them, and the enclosing [rule_guard] — which speaks of the
+   subject, not of [x] — had nothing to bind it. [join] is a thunk: it is
+   recomputed only when a parameter is in fact unbound. *)
+let with_member_reach ctx ~subject ~subject_ot ~join f =
+  let saved = ctx.param_reach in
+  ctx.param_reach <-
+    (fun name -> (Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: join ()) @ saved name);
+  let r = f () in
+  ctx.param_reach <- saved;
+  r
 
 let lexeme_decimals lex =
   match String.index_opt lex '.' with
@@ -1911,6 +2055,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       | Some p ->
           let d = decimals_of_datatype p.par_datatype in
           let v = fresh ctx "P" in
+          unbound_param_guard ctx ~witness:subject
+            ~guard:(fun () -> rule_reach ctx ~subject ~subject_ot name)
+            name;
           ([ Printf.sprintf "param(%s,%s)" (str name) v ], v, pow10 d)
       | None -> fault "unknown parameter %S" name)
   | Attribuut_ref
@@ -2077,7 +2224,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           let fatoms =
             match b.isb_filter with
             | None -> []
-            | Some c -> cond_atoms ctx ~subject:bx ~subject_ot:el c
+            | Some c ->
+                with_member_reach ctx ~subject ~subject_ot ~join:(fun () -> join) (fun () ->
+                    cond_atoms ctx ~subject:bx ~subject_ot:el c)
           in
           emit ctx "%s(%s,%s) :- %s." p subject bx
             (String.concat ", " ((base :: join) @ fatoms)))
@@ -2146,7 +2295,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let fatoms =
         match filter with
         | None -> []
-        | Some c -> cond_atoms ctx ~subject:x ~subject_ot:el c
+        | Some c ->
+            with_member_reach ctx ~subject ~subject_ot
+              ~join:(fun () -> source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad:None ~x)
+              (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el c)
       in
       let join = source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad:None ~x in
       ( [ Printf.sprintf "%s = #count { %s : %s }" v x (String.concat ", " (join @ fatoms)) ],
@@ -2246,15 +2398,24 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             | None -> false)
       in
       (* the connecting role: the node's explicit binding when present,
-         else derived the same way ref/ derives it *)
-      let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty } in
+         else derived the same way ref/ derives it. The environment carries
+         the case's parameters because the horizon fence below EVALUATES a
+         die/dat filter here: without them a bound parameter in that filter
+         read as unbound, the member stayed a contributor, and the fence
+         refused a document ref plays (measured 2026-09-23). *)
+      let env =
+        { Eval.doc = ctx.doc; params = ctx.case.params; param_tls = ctx.case.param_tls;
+          as_of = None; locals = Eval.SMap.empty }
+      in
       let v = fresh ctx "S" in
       let g = fresh ctx "G" and x = fresh ctx "X" in
       let join = source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x in
       let fatoms =
         match filter with
         | None -> []
-        | Some c -> cond_atoms ctx ~subject:x ~subject_ot:el c
+        | Some c ->
+            with_member_reach ctx ~subject ~subject_ot ~join:(fun () -> join) (fun () ->
+                cond_atoms ctx ~subject:x ~subject_ot:el c)
       in
       let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       let contrib_body, sum_shape =
@@ -2497,6 +2658,13 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                                answer (ch. 3.4a/3.6)"
                               a n who el)
                       names);
+                (* the filter is READ here, for a suspect whose verdict the
+                   fold hangs on, so a parameter the case does not bind
+                   refuses in the shared sentence, in the translation phase —
+                   the day-kind table's posture *)
+                (match List.find_opt (param_unbound ctx) (fst (cond_params_before "" c)) with
+                | Some p -> fault "%s" (unbound_param_reason p)
+                | None -> ());
                 fun (i : Uchar_ref.World.instance) ->
                   (* a filter that cannot be evaluated at all keeps the member:
                      the fence then fires, which is the conservative side —
@@ -2672,7 +2840,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let fatoms =
         match filter with
         | None -> []
-        | Some c -> cond_atoms ctx ~subject:x ~subject_ot:el c
+        | Some c ->
+            with_member_reach ctx ~subject ~subject_ot
+              ~join:(fun () -> source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x)
+              (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el c)
       in
       let contrib_body =
         source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x
@@ -2735,7 +2906,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let fatoms =
         match filter with
         | None -> []
-        | Some c -> cond_atoms ctx ~subject:x ~subject_ot:el c
+        | Some c ->
+            with_member_reach ctx ~subject ~subject_ot
+              ~join:(fun () -> source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x)
+              (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el c)
       in
       let contrib_body =
         source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x
@@ -3807,12 +3981,14 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          it uses (and a coalescing position that swallows the read's own letN
          atom cannot swallow these). *)
       let va, vt, vs = expr_term ctx ~subject ~subject_ot value in
-      let saved_b = ctx.binders and saved_g = ctx.rule_guard in
+      let saved_b = ctx.binders and saved_g = ctx.rule_guard and saved_n = ctx.let_needs in
       ctx.binders <- (norm binder, let_binder ctx ~subject ~subject_ot (va, vt, vs)) :: ctx.binders;
       ctx.rule_guard <- ctx.rule_guard @ va;
+      ctx.let_needs <- (va, early_params binder body) :: ctx.let_needs;
       let ba, bt, bs = expr_term ctx ~subject ~subject_ot body in
       ctx.binders <- saved_b;
       ctx.rule_guard <- saved_g;
+      ctx.let_needs <- saved_n;
       (va @ ba, bt, bs)
   | Fold { typ; list; functie; init; _ } ->
       (* ch. 10.2: index recursion over the reified list (S15). The result is
@@ -3882,7 +4058,17 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                list) keeps the subject in its id but has no corpus case";
           expr_term ctx ~subject ~subject_ot init
         end
-        else closed_term ctx ~guard_body:[ Printf.sprintf "lpres(%s)" lterm ] ~witness:lterm init
+        else begin
+          (* the closed init and body are keyed by the list alone, so the
+             subject and rule context of THIS fold ride the shared fail-fast's
+             reach: a parameter they read is reached only where a subject
+             reaches the fold *)
+          let saved_r = ctx.param_reach in
+          ctx.param_reach <- rule_reach ctx ~subject ~subject_ot;
+          let r = closed_term ctx ~guard_body:[ Printf.sprintf "lpres(%s)" lterm ] ~witness:lterm init in
+          ctx.param_reach <- saved_r;
+          r
+        end
       in
       if init_scale <> out_scale then
         fault "fold init scale %d does not match the fold's declared scale %d" init_scale out_scale;
@@ -3900,11 +4086,13 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let rec_body =
         [ Printf.sprintf "%s(%s,I-1,A)" fa lterm; Printf.sprintf "lelem(%s,I,V)" lterm ]
       in
-      let saved = ctx.binders in
+      let saved = ctx.binders and saved_r = ctx.param_reach in
       ctx.binders <-
         (norm accname, ([], "A", out_scale)) :: (norm xname, ([], "V", elem_scale)) :: ctx.binders;
+      ctx.param_reach <- rule_reach ctx ~subject ~subject_ot;
       let branches = body_branches ctx ~guard_body:rec_body ~witness:lterm body in
       ctx.binders <- saved;
+      ctx.param_reach <- saved_r;
       List.iter
         (fun (g, t, s) ->
           if s <> out_scale then
@@ -4369,7 +4557,7 @@ and translate_power ctx ~subject ~subject_ot ~links ~rechts =
    subject and the caller instantiates it. That is only sound while nothing
    inside the helper names the CALLER's subject variable — which is what the
    bound restriction below buys. *)
-and whole_period_fails ctx ~subject_ot ~op ~links ~rechts ~(gp : geheel_periode) : string =
+and whole_period_fails ctx ~subject ~subject_ot ~op ~links ~rechts ~(gp : geheel_periode) : string =
   (* a navigated or set timeline read is a different join than the one the
      helper makes (it reads the subject's OWN tl/5 facts), so it is refused
      by name rather than silently read off the wrong instance *)
@@ -4437,12 +4625,18 @@ and whole_period_fails ctx ~subject_ot ~op ~links ~rechts ~(gp : geheel_periode)
      param/2, keyed by name. Anything richer — an attribute read, an
      arithmetic composite, a fold — either names the caller's subject or
      deposits a range fence keyed on it, neither of which this rule can
-     carry, so it is refused by name. A LEEG parameter simply has no param/2
-     fact: the positive join fails, no day satisfies, and the test is false —
-     ch. 3.9's "a leeg bound makes the test false", for free. *)
+     carry, so it is refused by name. A bound parameter is never leeg (the
+     case reader admits no leeg parameter value), and one the case does not
+     bind is no leeg bound either: ref faults on it, and so does the shared
+     fail-fast its read carries here, where the join alone would have folded
+     no satisfying day into a false test — and, under `niet`, a true one. *)
   let batoms, bterm, sb =
     match bound with
-    | Literal _ | Parameter_ref _ -> expr_term ctx ~subject:"S" ~subject_ot bound
+    | Literal _ | Parameter_ref _ ->
+        (* subject-free atoms either way; the CALLER's subject is what the
+           shared fail-fast's guard needs, since the bound is read where the
+           comparison is — for this subject, inside its enclosing context *)
+        expr_term ctx ~subject ~subject_ot bound
     | _ ->
         fault
           "a whole-period comparison against a bound other than a literal or a scalar parameter \
@@ -4606,8 +4800,10 @@ and dk_value ctx ~stack ~day (e : expr) : Value.t =
               (* fail-fast, in ref's terms: a day-kind voorwaarde that reads a
                  parameter the case does not bind has no truth value, and
                  answering Empty here would make the table — and therefore
-                 every duration over it — a confident wrong answer *)
-              fault "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)" nm)
+                 every duration over it — a confident wrong answer. The shared
+                 sentence, in the translation phase: the table is EVALUATED
+                 here, before any rule body exists that could carry a guard. *)
+              fault "%s" (unbound_param_reason nm))
       | None -> fault "unknown parameter %S" nm)
   | Functie { kind = (Jaar_uit | Maand_uit | Dag_uit) as k; argumenten; filter = None; _ } -> (
       match dk_value ctx ~stack ~day (one "a date-part extractor" argumenten) with
@@ -5025,7 +5221,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
      "niet gedurende …" reads the failure atom itself, the plain form reads
      its negation. *)
   | Vergelijking { op; links; rechts; periode = Some gp; _ } ->
-      let p = whole_period_fails ctx ~subject_ot ~op ~links ~rechts ~gp in
+      let p = whole_period_fails ctx ~subject ~subject_ot ~op ~links ~rechts ~gp in
       [ (if gp.gp_niet then "" else "not ") ^ Printf.sprintf "%s(%s)" p subject ]
   (* ch. 3.9's remaining value test. A qualified leeg/gevuld predicate would
      otherwise fall through to the catch-all — loud, but under a message that
@@ -5642,8 +5838,11 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
         source_join ctx env ~subject ~subject_ot ~el ~bron_rol:kv_bron_rol ~bron_pad:kv_bron_pad
           ~x
       in
+      let member f = with_member_reach ctx ~subject ~subject_ot ~join:(fun () -> join) f in
       let fatoms =
-        match kv_filter with None -> [] | Some c -> cond_atoms ctx ~subject:x ~subject_ot:el c
+        match kv_filter with
+        | None -> []
+        | Some c -> member (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el c)
       in
       (match kv_kwantor with
       | Ten_minste | Ten_hoogste | Precies ->
@@ -5676,7 +5875,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
              Stratification is the witness route's argument unchanged — the
              helper is named after a counter that only grows, over a matrix
              translated before the name existed. *)
-          let atoms = cond_atoms ctx ~subject:x ~subject_ot:el toets in
+          let atoms = member (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el toets) in
           ctx.fresh <- ctx.fresh + 1;
           let p = Printf.sprintf "kvc%d" ctx.fresh in
           let h = fresh ctx "H" in
@@ -5695,7 +5894,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
         | Geen ->
             (* the witness IS the matrix: whatever cond_atoms carries, GEEN
                carries, because a satisfier is what it already derives *)
-            cond_atoms ctx ~subject:x ~subject_ot:el toets
+            member (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el toets)
         | _ ->
             (* ALLE needs the element's FAILURE, and ASP forms no complement of
                an arbitrary CONJUNCTION OF ATOMS — but it does form the
@@ -5717,7 +5916,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
                the whole-period matrix the body is itself `not gpvN(X)`, and
                `not kvsM(X)` over that is the same verdict the old
                special-cased arm read positively off `gpvN`. *)
-            let atoms = cond_atoms ctx ~subject:x ~subject_ot:el toets in
+            let atoms = member (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el toets) in
             ctx.fresh <- ctx.fresh + 1;
             let s = Printf.sprintf "kvs%d" ctx.fresh in
             emit ctx "%s(%s) :- %s." s x
@@ -5769,12 +5968,11 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
          ALLE-matrix reification is 20260923-clingo-alle-matrix-stratificatie.
 
          An unbound scalar parameter in the operand faults in ref (ch. 5.7);
-         here it would leave the join unbound and ANSWER — leeg waar, gevuld
-         onwaar. Both routes refuse it in ref's words. *)
+         the join alone would leave it unbound and ANSWER — leeg waar, gevuld
+         onwaar. The operand's own read carries the shared fail-fast guard
+         ([unbound_param_guard]), so both routes refuse it in ref's words
+         wherever the test is reached. *)
       let operand = req "Predicaat.operand" operand in
-      (match unbound_param_in ctx operand with
-       | Some p -> fault "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)" p
-       | None -> ());
       let atoms =
         if is_struct_operand (Some operand) then fst (struct_term ctx ~subject ~subject_ot operand)
         else
@@ -6175,10 +6373,14 @@ and list_source ctx ~subject ~subject_ot (e : expr) : string * int =
             fault "a named FunctionDef as a MapList operand is refused (WF-069: the operand must be an inline lambda)"
       in
       let base = [ Printf.sprintf "lelem(%s,I,V)" inner ] in
-      let saved = ctx.binders in
+      let saved = ctx.binders and saved_r = ctx.param_reach in
       ctx.binders <- (norm pname, ([], "V", inner_es)) :: ctx.binders;
+      (* the mapped body is keyed by the list alone, like a fold's closed body,
+         so the subject's reach rides the shared fail-fast here too *)
+      ctx.param_reach <- rule_reach ctx ~subject ~subject_ot;
       let branches = body_branches ctx ~guard_body:base ~witness:mapid body in
       ctx.binders <- saved;
+      ctx.param_reach <- saved_r;
       List.iter
         (fun (g, t, s) ->
           if s <> out_es then
@@ -6413,6 +6615,7 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
       | Some p ->
           let d = decimals_of_datatype p.par_datatype in
           let v = fresh ctx "P" in
+          unbound_param_guard ctx ~witness ~guard:(fun () -> guard_body @ ctx.param_reach name) name;
           ([ Printf.sprintf "param(%s,%s)" (str name) v ], v, pow10 d)
       | None -> fault "unknown parameter %S" name)
   | Binair { op = (Plus | Min) as op; links; rechts; _ } ->
@@ -6641,7 +6844,7 @@ and money_mult_shape (basis : expr) : bool =
    one is bound with its value's atoms riding [rule_guard], so the barrier sits
    at the READ (clause 2) — exactly as ref evaluates the Let body. *)
 and translate_money_mult ctx ~subject ~subject_ot ~basis : string list * string * int =
-  let saved_b = ctx.binders and saved_g = ctx.rule_guard in
+  let saved_b = ctx.binders and saved_g = ctx.rule_guard and saved_n = ctx.let_needs in
   let rec peel = function
     | Let { binder; body; _ } when not (reads_binder binder body) ->
         (* ch. 10.6 clause 3: an unread binder evaluates nothing *)
@@ -6653,6 +6856,7 @@ and translate_money_mult ctx ~subject ~subject_ot ~basis : string list * string 
            own body (below): a coalescing operand swallows the read's letN atom,
            so this is where the read-place barrier survives the money product *)
         ctx.rule_guard <- ctx.rule_guard @ va;
+        ctx.let_needs <- (va, early_params binder body) :: ctx.let_needs;
         peel body
     | Binair { op = Maal; links; rechts; _ } ->
         (req "money multiplication links" links, req "money multiplication rechts" rechts)
@@ -6685,6 +6889,7 @@ and translate_money_mult ctx ~subject ~subject_ot ~basis : string list * string 
   let v = fresh ctx "MM" in
   ctx.binders <- saved_b;
   ctx.rule_guard <- saved_g;
+  ctx.let_needs <- saved_n;
   ([ Printf.sprintf "%s(%s,%s)" p subject v ], v, 100)
 
 (* the money × rate cent product inside a CLOSED body (S15/S18(c)): the same
@@ -6948,12 +7153,14 @@ let rec value_branches ctx ~subject ~subject_ot (e : expr) : vbranch list =
       value_branches ctx ~subject ~subject_ot body
   | Let { binder; value; body; _ } ->
       let va, vt, vs = expr_term ctx ~subject ~subject_ot value in
-      let saved_b = ctx.binders and saved_g = ctx.rule_guard in
+      let saved_b = ctx.binders and saved_g = ctx.rule_guard and saved_n = ctx.let_needs in
       ctx.binders <- (norm binder, let_binder ctx ~subject ~subject_ot (va, vt, vs)) :: ctx.binders;
       ctx.rule_guard <- ctx.rule_guard @ va;
+      ctx.let_needs <- (va, early_params binder body) :: ctx.let_needs;
       let branches = value_branches ctx ~subject ~subject_ot body in
       ctx.binders <- saved_b;
       ctx.rule_guard <- saved_g;
+      ctx.let_needs <- saved_n;
       (* ch. 10.6 clause 2: the value atoms guard exactly the READING branches
          — a branch that never reads the binder survives a leeg value, which is
          where L parts company with the old strict lowering. The read set moves
@@ -7801,16 +8008,37 @@ let rec translate_chain ctx ~is_char ~subject ~subject_ot ~base ~path ~root
      the root/parent's `not cfl` reference raises no undefined-atom warning *)
   emit ctx "#defined %s/1." cfl;
   let stl n = Printf.sprintf "%s_stl%d" tag n in
+  (* the shared fail-fast's reach inside the chain (ch. 7.1/7.9): ref walks the
+     defaults in order and stops at the first that settles, so default [n] is
+     read only where no strictly-higher default of this chain settled, inside
+     the enclosing defaults' own waits *)
+  let reached n = outer_displaced @ List.init n (fun m -> Printf.sprintf "not %s(%s)" (stl m) subject) in
   let dec n = Printf.sprintf "%s_dec%d" tag n in
   let conf n = Printf.sprintf "%s_conf%d" tag n in
-  let own_just (r : default) =
+  let own_just n (r : default) =
     if r.default_initialisatie then (
       if not root then
         fault "an initialisation default inside an exception group is ill-formed (WF-075)";
       match has_input with
       | Some hi -> [ Printf.sprintf "not %s(%s)" hi subject ]
       | None -> fault "initialisation default on characteristic defaults")
-    else cond_atoms ctx ~subject ~subject_ot (req "default justification" r.default_voorwaarde)
+    else begin
+      (* the chain's own context, whatever position asks for the atoms: they
+         are asked for early, inside the consequence, when that consequence
+         reads a parameter the case does not bind (below) *)
+      let saved_r = ctx.param_reach and saved_g = ctx.rule_guard in
+      let saved_n = ctx.let_needs and saved_b = ctx.binders in
+      ctx.param_reach <- (fun _ -> base :: reached n);
+      ctx.rule_guard <- [];
+      ctx.let_needs <- [];
+      ctx.binders <- [];
+      let atoms = cond_atoms ctx ~subject ~subject_ot (req "default justification" r.default_voorwaarde) in
+      ctx.param_reach <- saved_r;
+      ctx.rule_guard <- saved_g;
+      ctx.let_needs <- saved_n;
+      ctx.binders <- saved_b;
+      atoms
+    end
   in
   (* a default's OWN decision (a plain default, an init default, or a form-a
      fall-back): on the attribute arm the consequence bindings sit in the
@@ -7821,15 +8049,23 @@ let rec translate_chain ctx ~is_char ~subject ~subject_ot ~base ~path ~root
     if is_char then
       let b = if req "default besluit" r.default_besluit then 1 else 0 in
       head_body ctx (Printf.sprintf "%s(%s,%d)" (dec n) subject b)
-        ((base :: own_just r) @ extra)
+        ((base :: own_just n r) @ extra)
     else
+      (* a consequence is read only under its holding justification. The
+         justification is translated AFTER the consequence, as it always was,
+         unless a parameter read inside the consequence needs its atoms first —
+         which happens only for a parameter the case does not bind *)
+      let just = lazy (own_just n r) in
+      let saved_r = ctx.param_reach in
+      ctx.param_reach <- (fun _ -> (base :: reached n) @ Lazy.force just @ extra);
       let bindings, term, scale =
         expr_term ctx ~subject ~subject_ot (req "default consequentie" r.default_consequentie)
       in
+      ctx.param_reach <- saved_r;
       if scale <> target_scale then
         fault "default value scale %d does not match target scale %d" scale target_scale;
       head_body ctx (Printf.sprintf "%s(%s,%s)" (dec n) subject term)
-        ((base :: own_just r) @ bindings @ extra)
+        ((base :: Lazy.force just) @ bindings @ extra)
   in
   List.iteri
     (fun n (r : default) ->
@@ -8885,7 +9121,7 @@ let translate (doc : document) (case : Case.t) : string =
   let doc = Ir_v0.Desugar.document doc in
   let ctx =
     { doc; case; buf = Buffer.create 4096; fresh = 0; rule_guard = []; write_scale = 1;
-      rule_name = "?"; binders = [] }
+      rule_name = "?"; binders = []; param_reach = (fun _ -> []); let_needs = [] }
   in
   (* ch. 8.4: the shared session-start Parameterset coverage check —
      data-plane validation (like the shared case loader), run before a

@@ -13,7 +13,11 @@ spec bug.
 - Instances are constants; a characteristic is `heeft(Inst, "naam")`; an
   attribute value is `val(Inst, "naam", V)`; a role link is
   `rol(Bron, "rolnaam", Doel)`; a parameter is `param("naam", V)`.
-  Names are normalised on both sides.
+  Names are normalised on both sides. A scalar parameter the case does
+  not bind has no fact, and binding is fail-fast (ch. 5.7): every read
+  of it carries one `viol/2` guard in ref's own words, whose body is
+  where evaluation reaches that read (ch. 5.11), so the program goes
+  UNSAT exactly where ref faults and answers where ref never reads it.
 - Exact arithmetic by declared-decimals integer scaling: a value of an
   attribute declared with d decimals is the integer value × 10^d;
   comparisons harmonise scales by multiplication. Clingo's integer

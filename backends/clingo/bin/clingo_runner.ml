@@ -17,43 +17,9 @@
    one source of truth, or the suite could pin what the gate never runs *)
 let run_clingo = Clingo_backend.Solve.run_clingo
 
-(* the viol/2 witnesses of an UNSAT program: re-run with the global
-   integrity constraint stripped and the witnesses shown *)
-let diagnose program =
-  let relaxed =
-    String.concat "\n"
-      (List.filter
-         (fun l -> String.trim l <> ":- viol(_,_).")
-         (String.split_on_char '\n' program))
-    ^ "\n#show viol/2.\n"
-  in
-  match run_clingo relaxed with
-  | out, Unix.WEXITED (10 | 30) -> (
-      try
-        match Yojson.Safe.from_string out with
-        | `Assoc kvs -> (
-            match List.assoc_opt "Call" kvs with
-            | Some (`List (call :: _)) -> (
-                match call with
-                | `Assoc ckvs -> (
-                    match List.assoc_opt "Witnesses" ckvs with
-                    | Some (`List (`Assoc wkvs :: _)) -> (
-                        match List.assoc_opt "Value" wkvs with
-                        | Some (`List atoms) ->
-                            List.filter_map
-                              (function
-                                | `String s
-                                  when String.length s >= 5 && String.sub s 0 5 = "viol(" ->
-                                    Some s
-                                | _ -> None)
-                              atoms
-                        | _ -> [])
-                    | _ -> [])
-                | _ -> [])
-            | _ -> [])
-        | _ -> []
-      with _ -> [])
-  | _ -> []
+(* the viol/2 witnesses of an UNSAT program, diagnosed in the library so the
+   backend's suite reads the very witnesses this report prints *)
+let diagnose = Clingo_backend.Solve.diagnose
 
 (* run clingo on [program]; [`Sat json] with the outf2 payload, or
    [`Unsat msg] with the diagnosed report the expectedFault fragment
