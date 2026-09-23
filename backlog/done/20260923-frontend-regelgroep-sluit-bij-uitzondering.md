@@ -320,3 +320,68 @@ Aanvulling op het registervoorstel voor rij 14, als laatste zin:
 > happen. The way out the refusal names now holds wherever the author
 > follows it: before the document's first group header, or behind a
 > definition that ends the group.
+
+### Fixronde 3 (2026-09-23, hoofdsessie; lensadviezen 2, 3 en 5)
+
+**Advies 2, `402dc130`: "geen basisregel" noemt de beslistabel.** Het
+register en dit Result zeiden dat die weigering de constructie noemt; voor
+een tabelnaam als basis klopte dat niet (`basisReden` kende geen
+beslistabel). De toelichting zegt nu dat de naam een beslistabel is, noemt
+haar rijen, en zegt waarom geen rij alleen de basis kan zijn: de rijen
+schrijven samen één doel. Rood-eerst tegen RuleChecker md5
+c534c7d2ad22fe21bdf9fdc41d0580de: 11 tests, 10 successful, 1 failed;
+mutant B (tabel niet genoemd) 1 failed; cmp-herstel (md5
+d0cd62b168c3443328bfc03788592618).
+
+**Advies 3, `d4a25506`: een tweede schrijver op het doel van een
+defaults-groep (WF-050).** Gemeten op de tip van fixronde 2 (`c8f32cd5`),
+zes plaatsingen:
+
+    plaatsing                                          frontend        verifier
+    Uitzondering op X, andere gewone regel op het doel [] geschreven   WF-050 (a rule also writes)
+    Uitzondering op een tabelrij, buiten een groep      [] geschreven   WF-050 (de andere rijen)
+    twee geordende families op één doel                [] geschreven   WF-050 (geen ongeordend-markering)
+    een familie naast een ongeordend blok              [] geschreven   WF-050 (idem)
+    een ongeordend blok naast een gewone regel         [] geschreven   WF-050 (a rule also writes)
+    twee ongeordende blokken op één doel               [] geschreven   PASS
+
+De lens vroeg om de eerste twee; de andere drie zijn dezelfde zin van
+WF-050 en gingen even stil de schijf op, dus het hek dekt ze mee.
+`RuleChecker.keurEnigeSchrijver` loopt na het liften per doel (sleutel:
+het gedeclareerde objecttype, zoals WF-050) en geeft per doel en clausule
+één ERROR die beide schrijvers noemt, op de kop van het blok dat de groep
+maakte. Een tabelrij wordt als rij van haar tabel genoemd. De laatste rij
+blijft schoon, want elke groep is ongeordend. Niet gemeten en niet
+gedekt: een verdeling of een objectcreatie-initialisatie als andere
+schrijver (WF-050 noemt ze ook).
+
+    getuige EnigeSchrijverTest, rood-eerst tegen RuleChecker md5
+      d0cd62b168c3443328bfc03788592618: 7 tests, 2 successful, 5 failed (elk "[]")
+    mutant U1 (clausule gewone regel uit):         3 failed
+    mutant U2 (clausule meerdere groepen uit):     2 failed
+    mutant U3 (ook ongeordende groepen geweigerd): 3 failed, waaronder
+                                                   DefaultsExtensieTest.ongeordende_groep_bouwt_zusterdefaults
+    teruggezet met cp, cmp gelijk (md5 35bd822b616e7e0bfdb64283a3c3d3c6)
+
+**Advies 5, `b488154b`: tabelrijen met één regelnaam.** Een rij heet naar
+de tabel en het nummer in haar eerste cel. Rijen zonder nummer (twee keer
+"Bonustabel") of met hetzelfde nummer (twee keer "Bonustabel 1") gingen
+stil de schijf op, waarna de verifier WF-020 en WF-021 gaf. Nu is het een
+ERROR die de dubbele naam noemt, en een groep met die tabel noemt elke naam
+één keer. Getuige `BeslistabelRijnaamTest`: rood-eerst tegen RuleChecker md5
+cf62a371afc2228c90825b2b9ca9b10c: 4 tests, 1 successful, 3 failed; mutant
+N1 (ERROR uit) 3 failed, mutant N2 (dubbel in de groep) 1 failed;
+cmp-herstel (md5 465e70c6186d2f99a71f856357f49077).
+
+Registervoorstel erbij, rij 8, als follow-up:
+
+> **The single writer, producer side (2026-09-23, card
+> `frontend-regelgroep-sluit-bij-uitzondering`, fix round 3).** The
+> RegelSpraak lowering built each defaults group from its own block and
+> never looked beside it, so a plain rule on the group's target — another
+> rule, or the other rows of a decision table when one row was the base —
+> and a second group on the target that was not declared unordered all
+> reached disk silently for WF-050 to refuse. The frontend now refuses each
+> by name, keyed on the declared object type as WF-050 is; two unordered
+> blocks on one target stay admitted. An allocation or an object-creation
+> initialisation as the other writer is not fenced.

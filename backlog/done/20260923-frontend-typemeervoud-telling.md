@@ -524,3 +524,67 @@ Registervoorstellen erbij:
    Jutter is onbekend.") gaat nog stil de wire op (verifier WF-022). Het
    hoort bij de dialectkaart dialect-niet-in-uitzondering, die de
    kenmerktoekenning herschrijft.
+
+### Fixronde 3 (2026-09-23, hoofdsessie; lensadviezen 1 en 4)
+
+**Advies 1, `97870509`: een geweigerd regeldoel in een extensieblok
+spreekt alleen.** Naast de juiste regeldoel-ERROR kwam de lift-ERROR "is
+geen kenmerktoekenning of gelijkstelling (bv. een initialisatie)" (een
+kenmerk op een genavigeerd onderwerp) of "schrijft een ander doel" (een
+attribuutdoel, een lid van een ongeordend blok). Het doelhek onthoudt nu de
+geweigerde regels, en de lowering slaat hun familie over. Rood-eerst tegen
+RuleChecker md5 d08cb8fed53f71a447411d028bf6e642: 13 tests, 10 successful,
+3 failed; mutanten S1, S2 en S3 (elk één sprong terug) elk 1 failed;
+cmp-herstel (md5 c534c7d2ad22fe21bdf9fdc41d0580de).
+
+**Advies 4, `e67fc386`: een regel die één cel van een dimensie toekent.**
+Gemeten wat de wire kent. Het doel van een regel is een
+attribuutverwijzing: WF-022 weigert elke andere knoop daar met "rule target
+is not an attribute reference". `DimensionCellRead` is volgens IR-SPEC ch.
+4.3 een lezing. De wire draagt dus geen celtoekenning, en de keuze is
+ERROR. Gemeten op `d4a25506`:
+
+    "De premie van een Jutter in voorjaar moet gesteld worden op 10"
+      doel AttribuutRef premie, onderwerpBron "een Jutter in voorjaar";
+      verifier PASS — het hele attribuut geschreven, een ander document
+    "De premie in voorjaar van een Jutter …"
+      ERROR, maar als ongedeclareerd attribuut, zonder de dimensie
+
+Beide weigeren nu met de cel erbij: attribuut, dimensie en label. Een
+cel lezen ("… op zijn premie in voorjaar") blijft schoon. Getuige
+`DimensieDoelTest`: rood-eerst tegen RuleChecker md5
+35bd822b616e7e0bfdb64283a3c3d3c6: 3 tests, 1 successful, 2 failed; mutant D1
+(cel na het onderwerp) en D2 (cel als naam) elk 1 failed; cmp-herstel (md5
+cde8e1d32467147d775628f7b552ca70, vóór een woordverfijning van de melding).
+
+### Gates na de rebase op main `9c3cf6ee`, elk als losse aanroep
+
+     1 check-self-contained     PASS
+     3 check-verifier           PASS  285 golden schoon; 454 negatief, vloer 350
+    10 check-regelspraak        PASS  492 JUnit, vloer 173; 70 rgs-goldens byte-identiek
+    11 check-toka-parity        PASS  45 .rgs byte-identiek; ref, clingo en Drools 29/29
+    12 check-drools             PASS  gespeeld 184 (pin), DRL-tekst 163 (pin), JUnit 653
+
+Main was intussen voorbij `47c7c45b` naar `9c3cf6ee` gegaan; `frontends/`
+was niet aangeraakt, en de rebase liep zonder conflict. `00cfc358` zet de
+hashes om.
+
+Registervoorstel erbij, rij 2, achter de regeldoelzin van fixronde 2:
+
+> A cell of a dimensioned attribute is no target either: the wire assigns
+> attributes, and the dimension-cell node is a read. "De premie van een
+> Jutter in voorjaar …" wrote the whole attribute, verifier-clean, and is
+> refused by name since fix round 3, with the cell named.
+
+### Open punten, bijgewerkt
+
+1. tot en met 4. Ongewijzigd.
+5. Nieuw, gemeten: een schrijfopdracht voor een HEEL gedimensioneerd
+   attribuut, zonder label ("De premie van een Jutter moet gesteld worden
+   op 10", premie gedimensioneerd met seizoen). De verifier laat haar
+   door. `ref` en clingo schrijven de waarde als scalar (PASS op een case
+   die 10 verwacht); de Drools exec-tak faalt bij het vuren
+   (`ClassCastException: Cannot cast java.math.BigDecimal to
+   java.util.Map`). Een normvraag voor de verifierlijn: is zo'n
+   schrijfopdracht welgevormd, en wat betekent zij? De frontend laat haar
+   door zolang de verifier dat doet.
