@@ -140,7 +140,9 @@ Het conjunct `nx` in de broer `ny` is op alle zestien invoeren (de acht
 combinaties, met en zonder `vrijgesteld` in de invoer) onwaarneembaar: 0
 verschillen tussen anker en mutant, in ref en clingo. Waar de mutant
 `onwaar` beslist, beslist het anker niets, en in geen van beide gevallen
-wordt er iets geschreven.
+wordt er iets geschreven. Omdat default 0 de enige default van de
+wortelketen is, verdringt het `onwaar`-besluit van de mutant ook niets
+(aangevuld in fixronde 1; zie open punt 3).
 
 **Gates**, elk als losse aanroep na `eval $(opam env)`, op 14e86186 (de
 inhoud van deze branch; deze laatste commit raakt alleen `backlog/`):
@@ -189,12 +191,20 @@ na de WW-ankerreparatie):
 > branch, with a contrast instance N (`nx`, `nz` → attributed) that makes
 > the case refute a do-nothing executor, so gate 7's survivor list is
 > untouched. The `nx` conjunct in the `ny` sibling is unobservable on every
-> input (a `false` decision writes nothing; measured over all sixteen
-> inputs) and stands because ch. 7.1 makes every nested layer
-> self-contained. RS ch. 7.9's table gains the case4 row. No wire, verifier
-> or executor change; the DRL-text branch keeps refusing the golden on its
-> defaults sentence. The attribute anchors `jutterswet-nestuitzondering` and
-> `-nestdiepte` keep the unconjoined form (no twin planned).
+> input, for three reasons: a `false` decision writes nothing and takes
+> nothing away, the `nz` sibling does not decide without `nx` (so no
+> conflict arises), and default 0 is the root chain's only default, so a
+> `false` decision displaces nothing (measured over all sixteen inputs; with
+> a lower root default `nw → attribute (true)` added, the difference shows
+> on `ny, nw` with and without `nz`, in ref and clingo; under option 7-ii of
+> card `kenmerkinvoer-en-invoer-boven-berekening` the first reason would
+> lapse). It stands because ch. 7.1 makes every nested layer
+> self-contained. RS ch. 7.9's description line names the conjunction
+> (`{ nx ∧ ny → …, nx ∧ nz → … }`) and its table gains the case4 row. No
+> wire, verifier or executor change; the DRL-text branch keeps refusing the
+> golden on its defaults sentence. The attribute anchors
+> `jutterswet-nestuitzondering` and `-nestdiepte` keep the unconjoined form
+> (no twin planned).
 
 Rij 8 zegt nu nog "Two points stay open for the maintainer: whether members
 of `Uitzonderingen ongeordend op X:` inherit X's condition, …". Volgens deze
@@ -220,20 +230,89 @@ bijwerken is werk voor de hoofdsessie.
    krijgen, beslist de maintainer als er een tweeling komt. Bij nestdiepte
    gaat het om twee niveaus: `grondQ` en `grondR` zouden `grondX` én
    `grondP` erven.
-2. *De beschrijvingsregel boven de tabel in ch. 7.9.* Die noemt de broers
-   nog alleen op hun eigen grond: "unordered exception groups `{ ny →
-   do-not-attribute (false), nz → attribute (true) }`". De kaart gaf mandaat
-   voor één rij; de nieuwe rij legt de conjunctie daarom zelf uit.
-   Voorgestelde tekst voor de regel, als de maintainer die wil: "`{ nx ∧ ny
-   → do-not-attribute (false), nx ∧ nz → attribute (true) }` — each
-   justification conjoins its carrier's `nx` (ch. 7.1)".
-3. *Wat geen gate bewaakt.* Het conjunct `nx` in de broer `ny` en de
-   volgorde met de drager voorop zijn onwaarneembaar (mutantmeting). Ze
-   worden alleen bewaakt door de review van het beschermde pad en, straks,
-   door de frontend-diff van de RegelSpraak-tweeling tegen dit anker. De
-   tweelingkaart moet daarom uitdrukkelijk de platte `ALLE` met `nx` voorop
-   in beide broers eisen. Een tweeling zonder het conjunct in `ny` haalt
-   alle vier de cases.
+2. *Gefixt in fixronde 1 (mandaat uitgebreid).* De beschrijvingsregel
+   boven de tabel in ch. 7.9 noemde de broers alleen op hun eigen grond;
+   zij luidt nu "`{ nx ∧ ny → do-not-attribute (false), nx ∧ nz → attribute
+   (true) }` — each justification conjoins its carrier's `nx` (ch. 7.1)"
+   (commit e0a488c1).
+3. *Wat geen gate bewaakt* (aangevuld in fixronde 1, lenspunt 5a). Het
+   conjunct `nx` in de broer `ny` (groep 0) en de volgorde met de drager
+   voorop zijn onwaarneembaar (mutantmeting). Geen gate bewaakt ze; alleen
+   de review van het beschermde pad doet dat, en straks de frontend-diff van
+   de RegelSpraak-tweeling tegen dit anker. Een tweeling zonder het
+   conjunct in `ny` haalt alle vier de cases, dus de tweelingkaart moet de
+   platte `ALLE` met `nx` voorop in beide broers uitdrukkelijk eisen. In
+   uitvoering kan het conjunct alleen gepind worden met een lagere
+   wortel-default. Gemeten met `waar als nw` (een nieuw kenmerk `nw`, beide
+   varianten `verifier: PASS`): anker en mutant verschillen op `{ny, nw}`
+   en `{ny, nz, nw}`, in ref en clingo (anker `oracle: PASS`, mutant
+   `MISMATCH: M lacks characteristic "vrijgesteld"`). Zo'n default verandert
+   de boom van het anker; of die er komt, beslist de maintainer.
 4. *Voor de tweelingkaart.* Het anker draagt nu vier cases, en case4 heeft
    drie instanties. Een tweeling die `nx` erft, komt nu op dit anker uit.
    Een tweeling die het niet erft, valt op case4 (M en O).
+5. *De `bron`-teksten in `ir.json`* (lenspunt 5b; bestond al vóór deze
+   kaart). De `bron` van de bundel is "art. 7: de vrijstelling met een
+   geneste uitzondering" (`ir.json` r. 156), terwijl art. 7 van de
+   Jutterswet over vondstdrempel en penningbedrag gaat
+   (`corpus/jutterswet/README.md` r. 45). De `bron`-spelling "hij nx heeft"
+   is die van een bezittelijk kenmerk, terwijl `nx`, `ny` en `nz` bijvoeglijk
+   zijn; de nieuwe `bron`-teksten van de conjuncties ("hij nx heeft en hij ny
+   heeft") nemen die spelling over. De tweelingkaart beslist de spelling.
+6. *Verouderde teksten buiten de may-touch-set* (lenspunt 5c; de
+   hoofdsessie doet ze bij de landing):
+   - `spec/CONSTRUCTS.md` r. 44 (rij 8): de erving door de leden van
+     `Uitzonderingen ongeordend op X:` staat daar nog als open punt (zie
+     hierboven);
+   - `spec/proposals/DIALECT-DEFAULTS-NIET-EN-NESTING.md` r. 1306 ("three
+     cases") en r. 1329–1333 (de erving "is open", de leden dragen alleen hun
+     eigen voorwaarde, "its three cases cannot tell the readings apart");
+   - `spec/ASP-TRANSLATION.md` r. 2022–2026: de beschrijving van het anker
+     noemt alleen case1 tot en met case3.
+
+**Fixronde 1 (hoofdsessie, 2026-09-23).** De lens keurde de wijziging van
+`ir.json`, de vier cases en de afwijking in case4 goed (handafleiding = ref
+= clingo op 80 van 80 metingen) en vond één blokkerend punt plus advies. Het
+mandaat is uitgebreid tot de beschrijvingsregel boven de tabel in ch. 7.9.
+Elk punt is een eigen commit:
+
+- **1 (blokkerend), e0a488c1 — RS ch. 7.9, de beschrijvingsregel.** Het
+  hoofd van de voorbeelden belooft de ankers woordelijk. De regel luidt nu
+  "`{ nx ∧ ny → do-not-attribute (false), nx ∧ nz → attribute (true) }` —
+  each justification conjoins its carrier's `nx` (ch. 7.1)".
+- **2, 719540a3 — RS ch. 7.9, de case4-rij.** "each exception group's
+  justification" wordt "the justification of each exception group's
+  default": een groep heeft volgens ch. 7.9 zelf geen rechtvaardiging.
+- **3, af00b36e — NOTE, het onwaarneembare conjunct.** De uitleg noemt nu
+  alle drie de redenen: een `onwaar`-besluit schrijft niets en neemt niets
+  weg; de broer `nz` beslist zonder `nx` niet; default 0 is de enige
+  default van de wortelketen, dus `onwaar` verdringt niets. Het verschil
+  staat nu precies omschreven: "waar `ny` geldt en `nx` ontbreekt". De
+  derde reden is zelf nagemeten (zie open punt 3). De NOTE noemt ook de
+  afhankelijkheid van optie (7-ii) van de kaart
+  kenmerkinvoer-en-invoer-boven-berekening: daaronder vervalt de eerste
+  reden, en `ny` met `vrijgesteld` in de invoer, met en zonder `nz`, zou
+  het verschil zichtbaar maken. Dat is een gevolgtrekking; geen uitvoerder
+  implementeert (7-ii). De alinea over de zes gelijke combinaties noemt
+  dezelfde derde reden, en de afgebroken regel is weg.
+- **4, b68a4e52 — NOTE, taal.** Een broer krijgt "zijn"/"hij" (r. 6–7, 68,
+  78, 187; r. 85 zat in punt 3). De overige "haar"/"zij" slaan op default
+  0, een groep, de markering of de case en blijven staan. Verder "het
+  geneste kenmerkdoel" en "Volgens ch. 7.9 beslissen de
+  uitzonderingsgroepen …", met de alinea opnieuw uitgezet.
+- **5** staat als open punten 3, 5 en 6 hierboven (niet gefixt).
+
+`ir.json` en de vier case-files zijn in deze ronde niet veranderd:
+`git diff ee21825f..HEAD` over de json-bestanden van het anker geeft 0
+regels. Deze ronde raakt alleen `NOTE.md` en `spec/RUNTIME-SEMANTICS.md`;
+dat is proza, en van de gates leest alleen gate 1 die bestanden. Gate 1, 2
+en 3 zijn opnieuw gedraaid, elk los na `eval $(opam env)`, op b68a4e52:
+
+```
+check-self-contained: PASS
+check-ir-schema: PASS (schema valid; 26 pattern self-test row(s); 22 shape self-test row(s); 286 file(s) validate and round-trip, floor 192)
+check-verifier: PASS (286 golden clean; 444 negatief rejected for their declared rule, floor 350)
+```
+
+De regels van gate 4 tot en met 14 hierboven (op 14e86186) gelden voor
+dezelfde `ir.json` en cases.
