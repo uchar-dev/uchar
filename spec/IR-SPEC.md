@@ -7775,6 +7775,23 @@ gate 12 cannot see them. The fix belongs to the backend: far-side
 reactivity for a condition or a named refusal, and a salience below the
 operand's writers for the order-dependent form.
 
+*Recorded flank, the ASP backend (measured 2026-09-23, open).* Its ALLE
+fold is a double negation (a helper for "some member fails the matrix",
+read under `not`). On a POSITIVE cycle through the matrix, which the
+quantifier-fold decision admits, that encoding has a second, self-supporting
+stable model where the graph mandates the least fixpoint. In the model of
+the golden `jutterswet-opvolgerquorum`, with W1 and W3 each leading the other
+and each carrying an input opvolger of rang 4, the document is
+verifier-clean, the reference interpreter answers merk 1 for both, and the
+ASP program has two models: merk 1 and 1, and merk 2 and 2 with both
+creations justifying each other. The runner happens to pick the first. The
+same holds for a positive characteristic read in the matrix ("alle
+ploegleden zijn actief", actief derived from the number of successors), a
+document the walk refused before the decision and admits after it. A
+TEN_MINSTE fold, encoded as a count, has one model on the same input. No
+corpus document has the shape. The fix belongs to the backend: a monotone
+encoding of the ALLE fold (a count) or a named refusal.
+
 ---
 
 ## 6. Defaults and defeasibility

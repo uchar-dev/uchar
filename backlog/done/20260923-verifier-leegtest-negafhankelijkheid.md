@@ -328,8 +328,19 @@ Zie open punt 4.
   als een complementvorm.
 - Wat deze arm niet sluit. Stand na fixronde 2: R5 (= s5, ALLE-vouw
   over een vergelijking) en s5b (GEEN-vouw) zijn nu WF-046 door het
-  kwantorbesluit. Een kvs-weigering in clingo is voor verifier-schone
-  invoer dus niet meer nodig; dezelfde faalsnelle herhaling dekt ze. Wat
+  kwantorbesluit, en dezelfde faalsnelle herhaling dekt ze. **Gecorrigeerd
+  in fixronde 3:** een kvs-weigering in clingo is NIET overbodig. De
+  ALLE-reïficatie (kvs, met dubbele `not`) heeft op een POSITIEVE cyclus
+  door de matrix, die het besluit toelaat, twee stabiele modellen.
+  Gemeten op het model van de golden, met W1 en W3 elk ploegleider van de
+  ander en elk met een opvolger van rang 4: de verifier geeft PASS, ref
+  en de runner merk 1/1, `clingo -n 0` `Models : 2`. Het tweede model
+  maakt beide aan (2/2) en steunt zichzelf. Met een kenmerk in de matrix
+  ("alle ploegleden zijn actief", actief = meer dan 1 opvolger) is het
+  document WF-046 op main en PASS op de tip, en weer 2 modellen. Onder
+  TEN_MINSTE (een #count) is er één model. Deze getuige gaat mee naar
+  `clingo-alle-matrix-stratificatie`: een monotone codering met telling,
+  of een benoemde weigering. De flank staat ook in IR-SPEC 5.5. Wat
   wel verifier-schoon en clingo UNSAT blijft: s1, s2, s3, s4, s6
   (propositionele GEEN) en s8 (tabel hierboven). Die zitten deels niet in
   een `not`-helper, maar in #count-aggregaten of in de ≠-codering. De
