@@ -59,6 +59,15 @@ DRL-text branch. The fold lives in the Drools runtime alone, and `ref`
 does not execute it, so no second executor could check that answer. The
 refusal brought Drools into line with the other two.
 
+For the two OCaml executors this is not a second copy of the twin. It
+holds the REACH of their named arms: an arm narrowed to the negated form
+still passes the twin and fails here. Measured on such a mutant, both
+arms given `negatie = true`: `ref` drops the qualifier, reads the
+operand as a scalar and faults on ch. 3.3 (`temporal attribute "lengte"
+in a scalar context is refused`), and the ASP backend falls through to
+its catch-all (`condition kind not translated`). Neither is the pinned
+sentence, so gate 8 fails on both executors.
+
 This document keeps all three refusals under the gate. If `ref` comes to
 execute the ch. 3.9 leeg/gevuld fold, its pin here fails and the Drools
 refusal loses the ground its sentence states; the ASP backend's pin fails
