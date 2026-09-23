@@ -3552,9 +3552,10 @@ let wf047_binding ctx at (rb : rol_binding) ~bound_filler ~other_filler =
    reached role) per step. Every binding resolves (WF-047's resolution: the
    declared role name binds), every hop's near side is filled by the type
    the walk stands at, and the walk lands on the endpoint. Used by the
-   WF-053 check, and best-effort (errors dropped) by the dependency graph.
-   Since L2 the bindings are the whole navigation (B11): a read without them
-   is the subject's own read, so there is nothing here to derive. *)
+   WF-053 check; the dependency graph reads the bindings' relations
+   directly. Since L2 the bindings are the whole navigation (B11): a read
+   without them is the subject's own read, so there is nothing here to
+   derive. *)
 let nav_hops ctx ~subject ~(bindings : rol_binding list) ~(endpoint : string option) :
     ((string * rol) list, string list) result =
   let filler (r : rol) = Option.value r.rol_objecttype_naam ~default:"" in
