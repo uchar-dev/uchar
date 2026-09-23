@@ -305,6 +305,30 @@ class NietInUitzonderingTest {
         assertTrue(m.diagnostics.get(0).message().contains("wordt nooit afgeleid"), m.diagnostics.get(0).message());
     }
 
+    @Test void twee_ongeordende_blokken_op_een_doel_waarvan_een_waar_beslist_waarschuwen_niet() {
+        // The warning is per TARGET: an all-negative block beside a block that decides 'waar' on the same
+        // characteristic leaves the characteristic derivable.
+        RegelSpraakModel m = Resolver.resolve(MODEL + """
+
+            Uitzonderingen ongeordend:
+            Regel niet uitgesloten bij schorsing
+                geldig altijd
+                    Een Jutter is niet uitgesloten
+                    indien hij geschorst is.
+
+            Objecttype de Strandvoogd (mv: Strandvoogden) (bezield)
+                is aangesteld kenmerk (bijvoeglijk);
+
+            Uitzonderingen ongeordend:
+            Regel uitgesloten bij weigering
+                geldig altijd
+                    Een Jutter is uitgesloten
+                    indien hij vergunning geweigerd is.
+            """);
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        assertEquals(2, m.prioritizedDefaults.size());
+    }
+
     // -------------------------------------------------------------------- the register lint (Tabel 16)
 
     @Test void is_geen_op_een_bezittelijk_kenmerk_krijgt_de_registerwaarschuwing() {
