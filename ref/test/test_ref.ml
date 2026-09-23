@@ -5838,7 +5838,30 @@ let () =
                  [ ("tarief", Some Ir_v0.Ast.Dag); ("ijkdag", Some Ir_v0.Ast.Maand) ] } )) ] }
   in
   weigert_tekst ~d:doc_dag "caselader-tijdlijn-dagrooster" (case_met "" "")
-    "V1.tarief: bucketing is defined for month and year only (ch. 3.2)";
+    "V1.tarief: the declared grid is DAG, which every day boundary sits on, yet this loader \
+     checks a timeline's grid through the calendar bucketing and v0 defines buckets for month \
+     and year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit, not as \
+     a defect of the case";
+  let doc_rooster g =
+    { doc with
+      objecttypen =
+        [ (let naam, o = vondst in
+           ( naam,
+             { o with
+               attribuut_granulariteit = [ ("tarief", Some g); ("ijkdag", Some Ir_v0.Ast.Maand) ] }
+           )) ] }
+  in
+  List.iter
+    (fun (naam, g, grid) ->
+      weigert_tekst ~d:(doc_rooster g) naam (case_met "" "")
+        (Printf.sprintf
+           "V1.tarief: the declared grid is %s, and v0 defines calendar buckets for month and \
+            year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12), so this loader has no %s \
+            grid to check the segment boundaries against: refused as a v0 limit, not as a defect \
+            of the case"
+           grid grid))
+    [ ("caselader-tijdlijn-weekrooster", Ir_v0.Ast.Week, "WEEK");
+      ("caselader-tijdlijn-kwartaalrooster", Ir_v0.Ast.Kwartaal, "KWARTAAL") ];
   (* the per-segment refusals beside the lexeme ones name their segment the
      same way; the two that compare segments with each other keep the
      timeline's own position *)

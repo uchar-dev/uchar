@@ -277,13 +277,34 @@ let timeline_of_json ?(allow_empty = false) ~at ~(gran : granulariteit) (decl : 
   let segs = list_ ~at:(child at "timeline") t in
   if segs = [] && not allow_empty then
     fail "%s: a timeline value carries at least one segment" at;
-  (* the grid is checked through the bucketing, which ch. 3.2 defines for
-     month and year only; on another declared grid its refusal belongs to
-     this timeline, at load, and not to an evaluation that never started *)
+  (* The grid is checked through the calendar bucketing, and v0 defines
+     buckets for month and year only (RUNTIME-SEMANTICS ch. 3.2; bucketing by
+     day, week or quarter is OPEN in ch. 3.12). A timeline on another declared
+     grid is therefore refused at load as a v0 limit, not as a defect of the
+     case, and the sentence says so: a day grid holds every boundary and is
+     refused all the same. Until 2026-09-23 the bucketing's own fault left the
+     loader here unconverted, as an evaluation fault without a position. *)
+  let geen_rooster grid =
+    fail
+      "%s: the declared grid is %s, and v0 defines calendar buckets for month and year only \
+       (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12), so this loader has no %s grid to check the \
+       segment boundaries against: refused as a v0 limit, not as a defect of the case"
+      at grid grid
+  in
   let aligned d =
-    match Timeline.bucket gran d with
-    | van, _ -> van = d
-    | exception Value.Fault why -> fail "%s: %s" at why
+    match gran with
+    | Maand | Jaar ->
+        let van, _ = Timeline.bucket gran d in
+        van = d
+    | Dag ->
+        fail
+          "%s: the declared grid is DAG, which every day boundary sits on, yet this loader checks \
+           a timeline's grid through the calendar bucketing and v0 defines buckets for month and \
+           year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit, not as \
+           a defect of the case"
+          at
+    | Week -> geen_rooster "WEEK"
+    | Kwartaal -> geen_rooster "KWARTAAL"
   in
   let parsed =
     List.mapi
