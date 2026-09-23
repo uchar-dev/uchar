@@ -124,6 +124,16 @@ public final class RegelSpraakRuntime {
         return java.util.Objects.equals(a, b);
     }
 
+    /** §13.4.6.4 kenmerkwaardetoekenning, RUNTIME-SEMANTICS ch. 5.5: whether the mark {@code attr} is SET on the
+     *  created object. True sets it; false or leeg leaves it unset (the closed-world reading of an absent
+     *  initialisation). Any other value is a WF-027 violation the verifier rejects and ref faults on at
+     *  evaluation, so it faults here too instead of reading as "unset" — the DRL-text branch calls this from the
+     *  consequence, with the exec branch's own sentence. */
+    public static boolean rsKenmerkWaarde(Object v, String attr) {
+        if (v == null || v instanceof Boolean) return Boolean.TRUE.equals(v);
+        throw new IllegalStateException("kenmerkinitialisatie van '" + attr + "' is niet booleaans: " + v + " (WF-027)");
+    }
+
     /** An enumeration value read as the DECLARED NAME it is: ref's {@code Checks.norm} through
      *  {@link io.github.yhavinga.regelspraak.transpiler.kern.Namen#norm}, the one definition the case comparator
      *  already reads it by. Both branches apply it to BOTH sides of every enumeration equality and of an enumeration
