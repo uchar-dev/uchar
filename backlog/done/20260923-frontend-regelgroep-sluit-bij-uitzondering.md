@@ -70,8 +70,11 @@ voor recursie) en dialect §4.
 
 Optie (a) uitgevoerd. Een extensieblok binnen de reikwijdte van een
 `Regelgroep`, of over een basisregel die groepslid is, krijgt één ERROR
-op zijn eigen kop. Geen welgevormd document verandert van emissie, geen
-corpusbron beweegt (geen `.rgs` in de repository draagt een
+op zijn eigen kop. Twee plaatsingen die verifier-schoon waren, worden
+daardoor nu geweigerd (§1, rij 3 en 4: een blok direct na de groep met
+de basis erbuiten, en een ongeordend blok direct na de groep); de twee
+andere plaatsingen van §1 gingen al als WF-033-document de schijf op.
+Geen corpusbron beweegt (geen `.rgs` in de repository draagt een
 `Regelgroep`), alle veertien gates groen. Dit is een HERPIN-kaart: het
 vendored frontend-slice beweegt.
 
