@@ -38,3 +38,30 @@ May touch: `frontends/regelspraak/**`; bij (b) `spec/IR-SPEC.md`,
 `spec/verifier/**`, `corpus/negatief/**` (**voorstel**); kaartverplaatsing.
 
 Niet in deze kaart: de dialectvormen zelf (eigen kaarten).
+
+## Claim (2026-09-23) — aangescherpte acceptatie
+
+Branch `card/frontend-trio` (drie frontendkaarten serieel, deze eerst),
+basis `main` `3a140fe4`.
+
+Maintainerkeuze, door de hoofdsessie genomen langs de aanbeveling:
+**optie (a), weigeren.** Een `Uitzondering op` (en de zusterkoppen
+`Uitzonderingen ongeordend`, straks `Afwijking van`) binnen de reikwijdte
+van een `Regelgroep` is in het dialect niet toegestaan; luide melding op
+de kop van het blok, met verwijzing naar §9.10 (de groep bestaat alleen
+voor recursie) en dialect §4.
+
+1. M5 reproduceren met `make ir` en de verifier: `leden` alleen de basis,
+   `diagnostics: []`, daarna WF-033.
+2. De reikwijdte meten, niet aannemen: welke plaatsingen van een
+   extensieblok rond een `Regelgroep` geven vandaag een stil
+   WF-033-document, en welke zijn welgevormd?
+3. Rood-eerst JUnit-getuige met het M5-document: precies één ERROR, op de
+   kopregel van het blok, met §9.10 en §4 erin; het document bereikt de
+   schijf niet. Tegenproeven voor de plaatsingen die schoon blijven.
+   Mutatieproef per weigerarm, met cmp-herstel.
+4. `DIVERGENCES.md` §4 en het `Regelgroep`-deel beschrijven de interactie.
+5. De werkbank-regelsets gemeten op de combinatie (open punt als zij haar
+   vragen).
+6. Gate 10 byte-identiek (70 rgs-goldens), alle veertien gates groen, elk
+   als losse aanroep.
