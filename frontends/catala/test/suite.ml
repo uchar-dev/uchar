@@ -252,17 +252,19 @@ let () =
      the emitted JSON is asserted directly, in both directions: an all-nullary
      enum is the Enumeratie domain and carries NO SumType/Construct anywhere,
      a payload-carrying enum keeps the row-36 SumType and never becomes an
-     Enumeratie. *)
+     Enumeratie. Since M1 the declaration carries its name once, as the
+     Domain wrapper's "name", and "domein" is left only at the reference
+     positions, so both are asserted. *)
   let wire =
     [ ("enum_nullair.catala_en",
-       [ "\"node\": \"Enumeratie\""; "\"domein\": \"Getijstand\"";
-         "\"constructor\": \"Doodtij\""; "\"binder\": null" ],
+       [ "\"node\": \"Enumeratie\""; "\"name\": \"Getijstand\"";
+         "\"domein\": \"Getijstand\""; "\"constructor\": \"Doodtij\""; "\"binder\": null" ],
        [ "SumType"; "Construct" ]);
       (* the same assertion at the rule's LOWER boundary — one constructor is
          still all-nullary, so still the Enumeratie domain and never a SumType *)
       ("enum_unit.catala_en",
-       [ "\"node\": \"Enumeratie\""; "\"domein\": \"Meldstatus\"";
-         "\"constructor\": \"Gemeld\""; "\"binder\": null" ],
+       [ "\"node\": \"Enumeratie\""; "\"name\": \"Meldstatus\"";
+         "\"domein\": \"Meldstatus\""; "\"constructor\": \"Gemeld\""; "\"binder\": null" ],
        [ "SumType"; "Construct" ]);
       ("enum.catala_en",
        [ "\"node\": \"SumType\""; "\"node\": \"Construct\"" ],
