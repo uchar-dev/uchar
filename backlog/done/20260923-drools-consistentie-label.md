@@ -70,7 +70,11 @@ feit op die ontvanger. Wanneer precies:
   met rato-gewicht, elke ontvanger met een leeg tiegewicht;
 - leeg of negatief maximum (`cap_floor`): gelijke delen en op volgorde,
   elke ontvanger; naar rato alleen voor gewogen ontvangers en alleen
-  als de gewichtsom ≠ 0 (anders `Nothing`, geen maximum gelezen);
+  als de gewichtsom ≠ 0 (anders `Nothing`, geen maximum gelezen).
+  De tak "gelijke delen en op volgorde, elke ontvanger" is alleen
+  bereikbaar voor op volgorde met tiegewicht: WF-025 staat een maximum
+  alleen toe naast een ratio-attribuut en verbiedt een gewicht bij
+  gelijke delen;
 - lege pot: op volgorde `Nothing` (geen fout), gelijke delen en naar
   rato een fault in ref, dus nooit een kanaalfeit;
 - zonder ontvangers of met een onwaar voorwaarde geen fout.
@@ -82,8 +86,9 @@ accumulate-som ≠ 0, en de idempotentie-guard keyt op regel × ontvanger.
 `DrlTranspiler` "(leeg gewicht)"/"(leeg of negatief maximum)" en
 `ExecModelTranspiler.existsFoutRegel` → `ontvangerFoutRegel`.
 
-**Corpusinventaris.** 62 `inconsistent`-verwachtingen in
-`corpus/golden`, op één na allemaal met regel plus label (wachtersketen
+**Corpusinventaris.** 60 `inconsistent`-verwachtingen in 42
+casusbestanden in `corpus/golden` (hergeteld na de lens; op de basis
+gelijk; eerder stond hier ten onrechte 62), op één na allemaal met regel plus label (wachtersketen
 case1 pint alleen de regel). Eén leunde op de zwakte:
 `jutterswet-rangmaximering` case2-nulgroep (`verdeel het penningbudget
 van een penningkas @ W5`).
@@ -92,13 +97,13 @@ van een penningkas @ W5`).
 exec- en `--drl`-regel):
 - basis db390c28: exec PLAYED 181, drl PLAYED 160; rangmaximering
   `PLAYED 2 | PLAYED 2` (vals groen, op de sleutel alleen);
-- na de labelfix (1ecef001): precies één regel anders, beide takken
+- na de labelfix (a2ca27ff): precies één regel anders, beide takken
   `FAIL case2-nulgroep.json: verwacht inconsistent (verdeel het
   penningbudget van een penningkas @ W5), niet gevonden onder verdeel
   het penningbudget van een penningkas @ K1`;
 - na de plaatsingsfix: `PLAYED 2 | PLAYED 2` (echt groen), de hele
   sweep `cmp`-identiek aan de basis. Alleen de rangmaximering-regel
-  bewoog, en die staat weer op de basiswaarde. De andere 61
+  bewoog, en die staat weer op de basiswaarde. De andere 59
   verwachtingen bewogen niet. Pins 181/160 onbewogen.
 
 **Rood-eerst, label** (`ConsistentieLabelWitnessTest`, fixture
@@ -123,8 +128,8 @@ rijen: rangmaximering case2 W5 plus de K1-pin rood; berging met H
 zonder gewicht en D maximum −5 ⇒ feit op H en D, niet op W of B1;
 naar rato met gewichtsom 0 en leeg maximum ⇒ consistent; op volgorde
 met lege pot ⇒ consistent). Elke rij eerst door ref en clingo gehaald:
-dezelfde uitslag. Met de plaatsing terug op de bron (mutant = HEAD
-1ecef001 van beide transpilers): `Tests run: 4, Failures: 4`, o.a.
+dezelfde uitslag. Met de plaatsing terug op de bron (mutant = beide
+transpilers van a2ca27ff): `Tests run: 4, Failures: 4`, o.a.
 `het_leeg_gewicht_landt_op_de_ontvanger:42 exec-model — … but was:
 <case: verwacht inconsistent (verdeel het penningbudget van een
 penningkas @ W5), niet gevonden onder verdeel het penningbudget van een
@@ -137,12 +142,36 @@ gewichtsom-poort ⇒ `een_nulgewichtsom_leest_geen_maximum:72 exec-model
 — … werkelijk inconsistent (verdeel de opbrengst van een berging @
 W)`. Beide hersteld, `cmp` identiek.
 
+**Joingetuige** (na de lens, die de join in beide takken weghaalde en
+alle getuigen plus dertien verdelingsgoldens groen zag blijven: elke
+fixture had één bron en alleen gekoppelde doelobjecten). Nieuwe rij
+`alleen_wat_de_join_bereikt_krijgt_een_fout`: berging B1 zoals in de
+golden, een tweede berging B2 met Berger Y zonder gewicht, en Berger X
+zonder gewicht en zonder berging. ref, clingo en beide takken: fout
+alleen op Y; een pin op X geeft in alle vier `… @ X … carries: … × Y`.
+Rood-eerst onder de joinmutant, per tak:
+- exec-model (`fj` → `true`): `[ERROR]
+  VerdelingsfoutOntvangerWitnessTest.alleen_wat_de_join_bereikt_krijgt_een_fout:89
+  exec-model — no error on the unlinked X ==> expected: not <null>`
+  (`Tests run: 5, Failures: 1`);
+- DRL-tekst (`j` weg uit beide ontvangerpatronen): `[ERROR]
+  VerdelingsfoutOntvangerWitnessTest.alleen_wat_de_join_bereikt_krijgt_een_fout:89
+  drl-tekst — no error on the unlinked X ==> expected: not <null>`
+  (`Tests run: 5, Failures: 1`).
+Beide hersteld, `cmp` identiek.
+
 **Onbekend label.** Een pin op een label zonder instantie faalt nu
 benoemd in beide takken (rij `een_onbekend_label_faalt_in_beide_takken`,
 toegevoegd aan de labelgetuige; de bestaande rijen zijn ongewijzigd).
 ref weigert dezelfde casus al bij het láden (`inconsistent expectation
 references unknown label`). Die strengere lijn blijft een normverschil
 met de Drools-runner.
+
+**Open: bestaand defect, niet van deze kaart.** De lens vond dat twee
+verdelingen over dezelfde ontvangers, met een leeg gewicht, in de
+DRL-tak een ConsequenceException geven ("cannot invoke method:
+setAandeel"), identiek op de basis. Kaart
+20260923-drl-verdeling-dubbelbezet (de hoofdsessie maakt hem aan).
 
 **Regelnaam-norm.** De runner vergelijkt de regelnaam byte-exact, ref
 na `norm` + `strip_version`. Geen corpuscasus raakt dat vandaag. Het
@@ -178,15 +207,31 @@ DRL-text branch, floor 13; 0 pinned survivors)`;
 14 `check-flogic: PASS — frontend suite green (130 checks, floor 81); 2
 flogic golden(s) …`.
 Na de gates is alleen de Javadoc van `CaseRunner.consistentie`
-bijgewerkt, zonder gedragswijziging.
+bijgewerkt, zonder gedragswijziging. Na de lensronde: de joingetuige
+toegevoegd (alleen testcode), daarna backend-JUnit-suite en gate 12
+opnieuw gedraaid: `mvn -o test` `Tests run: 613, Failures: 0,
+Errors: 0, Skipped: 0`, `BUILD SUCCESS`; `check-drools: PASS`, exit 0,
+`played 181`, `DRL-text branch played 160`, `JUnit 613 tests, floor
+239`.
 
-**Registerzin** voor `spec/CONSTRUCTS.md` rij 19 "Consistency rules"
-(§13.4.8, §9.5; de noderij `ResolvedConsistentie` verwijst ernaar):
-"Drools backend (2026-09-23): the case runner checks an `inconsistent`
-expectation's `label` against the channel fact's subject for every key
-kind, as ref does (before, only default-group keys were, and a
-rule-name pin passed on any fact from its rule); and both transpiler
-branches now deposit the §9.5 allocation error (empty weight; empty or
-negative maximum) on each offending recipient, rule × subject per
-ch. 5.6 and ch. 4.2/4.3, where they had laid it on the source —
-the divergence the unchecked label had masked."
+**Historie.** De branch is na de lens herbouwd (reset naar c8da25d4,
+cherry-picks): de labelcommit zonder "niet mergen" en met de juiste
+Javadoc. De eindboom vóór het joingetuigenwerk is byte-gelijk aan de
+vorige tip 70adbbde (tree f0fe21e2).
+
+**Registerzinnen**, apart te landen:
+
+- `spec/CONSTRUCTS.md` rij 19 "Consistency rules" (§13.4.8, §9.5; de
+  noderij `ResolvedConsistentie` verwijst ernaar): "Drools backend
+  (2026-09-23): the case runner checks an `inconsistent` expectation's
+  `label` against the channel fact's subject for every key kind, as ref
+  does; before, only default-group keys were, and a rule-name pin passed
+  on any fact from its rule."
+- `spec/CONSTRUCTS.md` rij 17 "Allocation": "Drools backend
+  (2026-09-23): both transpiler branches deposit the §9.5 allocation
+  error (empty weight; empty or negative maximum) on each offending
+  recipient the allocation's join reaches, rule × subject per ch. 5.6
+  and ch. 4.2/4.3, with ref's recipient set (an empty pot flags nothing;
+  under a proportional split a maximum is read only for a weighted
+  recipient of a non-zero weight sum); before, they laid it on the
+  source, once per source, which the unchecked label had masked."
