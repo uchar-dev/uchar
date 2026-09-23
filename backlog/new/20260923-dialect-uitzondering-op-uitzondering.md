@@ -91,7 +91,7 @@ Catala-frontend vertaalt vertakking onder de wortel al
   of (iii) stopt de kaart en gaat terug naar de maintainer. Groen in
   ref ≡ clingo ≡ Drools-exec: de tweeling van `anchor/ww-herleving-inkomen`
   (na de ankerkaart, die het kenmerk `recht op uitkering` bezittelijk
-  maakt; zeven cases), van `anchor/jutterswet-uitsluiting` (drie lagen,
+  maakt; tien cases (de ankerkaart voegde case5 t/m case10 toe)), van `anchor/jutterswet-uitsluiting` (drie lagen,
   ontkende middenlaag) en van `anchor/jutterswet-nestkenmerk` (ongeordende
   broers met een ontkend lid en het kenmerkconflict
   `Jutter.vrijgesteld/0`; diens `case1-y-wint` hoort met de reden van het
