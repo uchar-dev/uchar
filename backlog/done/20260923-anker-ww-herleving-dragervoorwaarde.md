@@ -460,3 +460,16 @@ bewerkte, ging die kaart hier mee.
   nu besloten — elk blok schrijft alleen zijn eigen voorwaarde en het
   frontend conjungeert. De eis aan de wire blijft dezelfde platte `ALLE`
   met de dragerconjuncten voorop.
+- *Gates na de eindrebase*, elk als losse aanroep op 9f2911ba (deze
+  laatste commit verandert alleen deze kaarttekst):
+
+  | gate | uitslag |
+  |---|---|
+  | 1 | PASS |
+  | 2 | PASS, 282 bestanden, round-trip (278 van deze branch plus 4 rode documenten van main) |
+  | 4 | PASS, 648 case-files |
+  | 5 | PASS, suite 806, 601 cases |
+  | 6 | PASS, suite 523, 601 cases |
+  | 7 | PASS, 564 weerleggen, 37 overlevers |
+  | 12 | PASS, played 182, DRL 161, JUnit 620 |
+  | 13 | PASS, 131 twists over 27 goldens, 128 replays |
