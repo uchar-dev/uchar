@@ -108,7 +108,8 @@ class RolveldlezerWitnessTest {
 
     // The §8.2 whole-period fold over a NAVIGATED SET (geheelPeriodeAlle) gets no gate and no witness, and the reason
     // is measured rather than assumed: every arm of it enters on a `set` reading, and WF-096 (2026-09-09) admits a
-    // set reading ONLY as the source of a single-argument instance fold. Built anyway and pushed through:
+    // set reading ONLY as the source of a single-argument instance fold. Built anyway and pushed through
+    // (2026-09-11, before M1; the verifier path reads /rules/resolvedRegels/0/voorwaarde/links since):
     //     verifier: WF-096 FAIL /resolvedRegels/0/voorwaarde/links: set reading at an ordinary read position
     //     ref     : EVALUATION FAULT: whole-period comparison is ch. 3 scope
     // The document a gate would protect is not well-formed, so the gate could carry no witness — the one thing this

@@ -151,7 +151,9 @@ class SetlezingZonderVouwTest {
     @Test void setlezing_als_objectcreatie_toekenning_wordt_benoemd() {
         // The §13.4.6.3 waardetoekenning is a generic expressie RHS and the third (and last) VALUE slot
         // this IR has — a live producer route of its own: before the check the verifier reported
-        // WF-096 FAIL /objectCreaties/0/toekenningen/0/waarde as the document's ONLY defect.
+        // WF-096 FAIL /objectCreaties/0/toekenningen/0/waarde as the document's ONLY defect (measured
+        // 2026-09-11, before M1; the verifier names that position /rules/objectCreaties/0/toekenningen/0/waarde
+        // since).
         assertEquals(List.of(MELDING), meldingen("""
                 Regel nieuw rapport
                     geldig altijd

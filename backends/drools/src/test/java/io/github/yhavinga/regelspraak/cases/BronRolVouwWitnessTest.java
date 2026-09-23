@@ -154,7 +154,8 @@ class BronRolVouwWitnessTest {
         // nothing but the by-pair search, which four feittypen make ambiguous. Neither branch may pick a
         // winner; each refuses in its own discipline (exec records a skip, the DRL text emits its marker).
         //
-        // The rest of the square refuses this document too, which is why no corpus golden can carry it:
+        // The rest of the square refuses this document too, which is why no corpus golden can carry it
+        // (measured 2026-09-19, before M1; the verifier path reads /rules/resolvedRegels/0/waarde since):
         //   verifier : WF-048 FAIL /resolvedRegels/0/waarde: bindingless instance fold: 4 fact types relate
         //              'Haven' to 'Schuit' — not uniquely derivable; name the connecting relation …
         //   ref      : EVALUATION FAULT: the connecting role from "Haven" to "Schuit" is ambiguous

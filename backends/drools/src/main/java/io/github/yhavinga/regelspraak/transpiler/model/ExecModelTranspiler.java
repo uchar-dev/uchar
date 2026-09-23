@@ -2927,7 +2927,8 @@ public final class ExecModelTranspiler {
         // well-formed document — measured 2026-09-11, not assumed. Every arm above enters on `a.set()`
         // (isTemporeelSet82), and WF-096 (2026-09-09) refuses a set reading at every position except the SOURCE of a
         // single-argument instance fold; a §8.2 comparison operand and a gevuld/leeg operand are ordinary read
-        // positions. Built anyway and pushed through the four executors, the shape reads:
+        // positions. Built anyway and pushed through the four executors, the shape reads (before M1; the verifier
+        // path reads /rules/resolvedRegels/0/voorwaarde/links since):
         //     verifier: WF-096 FAIL /resolvedRegels/0/voorwaarde/links: set reading at an ordinary read position
         //     ref     : EVALUATION FAULT: whole-period comparison is ch. 3 scope
         // so the document the gate would protect cannot exist. Adding one would be an unmeasurable branch; if WF-096
