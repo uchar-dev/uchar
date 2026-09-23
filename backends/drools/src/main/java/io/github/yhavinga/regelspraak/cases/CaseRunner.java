@@ -949,13 +949,13 @@ public final class CaseRunner {
 
     /** The §9.5 consistency check. A {@code consistent} expectation demands NO Inconsistentie fact at all
      *  (unchanged presence semantics). An {@code inconsistent} expectation is verified against the pinned §9.5
-     *  KEY (the {@code rule}) — a matching Inconsistentie fact must exist. For a DEFAULT-GROUP conflict key (ch. 7.2/7.9,
-     *  the {@code Onderwerp.doel[/path]} form whose prefix is a declared objecttype, e.g. {@code Jutter.heffing/0})
-     *  the pinned SUBJECT (the {@code label}) is verified too (ratified Q4) — sharpening the third leg's witness to
-     *  the exact path key ref/clingo pin. For a rule-name key (a consistentie/uniciteit/verdeling violation), only
-     *  the key is checked: the subject the exec-model attaches can legitimately differ from ref's (a pre-existing,
-     *  presence-witnessed divergence), so demanding the label there would break currently-played goldens. An
-     *  expectation carrying no rule falls back to bare presence. */
+     *  KEY (the {@code rule}) — a matching Inconsistentie fact must exist — and, when the expectation pins a
+     *  {@code label}, on that SUBJECT, for every key kind, as ref matches it ({@code ref/lib/case.ml}, the
+     *  {@code Inconsistent} arm: rule and exact subject label on the same fact). Until card drools-consistentie-label
+     *  (2026-09-23) the subject was checked only for a default-group conflict key and a rule-name key passed on any
+     *  fact from its rule, wherever it landed. That masked one real divergence: both transpilers laid the §9.5
+     *  allocation error on the source instead of each recipient ({@code jutterswet-rangmaximering}), fixed in the same
+     *  card. An expectation carrying no rule falls back to bare presence. */
     private String consistentie(KieSession sessie, boolean inconsistentVerwacht, JsonNode v) {
         List<Object> facts = new ArrayList<>();
         try {
@@ -969,20 +969,11 @@ public final class CaseRunner {
         if (facts.isEmpty())
             return "verwacht inconsistent" + sleutelTekst(rule, label) + ", werkelijk consistent";
         if (rule == null) return null;   // presence-only expectation, satisfied by any fact
-        boolean defaultsSleutel = isDefaultsSleutel(rule);
         for (Object f : facts) {
             if (!rule.equals(lees(f, "getRegel"))) continue;
-            if (!defaultsSleutel || label == null) return null;     // rule-name key: the key match suffices
-            if (label.equals(labelVanBean(lees(f, "getSubject")))) return null;
+            if (label == null || label.equals(labelVanBean(lees(f, "getSubject")))) return null;
         }
         return "verwacht inconsistent" + sleutelTekst(rule, label) + ", niet gevonden onder " + renderIncs(facts);
-    }
-
-    /** Whether a §9.5 key is a ch. 7.2/7.9 default-group conflict key — the {@code Onderwerp.doel[/path]} form whose
-     *  prefix before the first {@code .} is a declared objecttype. Rule-name keys (free Dutch phrases) never match. */
-    private boolean isDefaultsSleutel(String rule) {
-        int dot = rule.indexOf('.');
-        return dot > 0 && model.objecttypeOpNaam(rule.substring(0, dot)) != null;
     }
 
     private static String sleutelTekst(String rule, String label) {
