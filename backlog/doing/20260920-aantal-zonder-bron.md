@@ -97,3 +97,41 @@ route aanwijst.
 Out of scope: de opgesomde vorm zelf — geland 2026-09-20. De
 lijstwereld van ch. 4.8 als geheel; deze kaart raakt hem alleen als
 ARGUMENT van een telling.
+
+## Maintainersbesluit (2026-09-23)
+
+OPTIE (a) — één arm: een `AANTAL`-telling MOET een elementtype dragen;
+ariteit 0 en ariteit 1 zonder elementtype vallen onder één zin, letterlijk
+gespiegeld aan de tweede arm die `AANTAL_GEVULDE` sinds 2026-09-20 draagt
+('the filled count is an INSTANCE fold and MUST carry an element type').
+Motivering: de gevuldtelling-betekenis is per de besluiten van 2026-09-19
+(setbron) en 2026-09-20 (opgesomde vorm) al van `AANTAL` weggenomen en
+heeft met `AANTAL_GEVULDE` een eigen soort; een bronloze telling telt het
+OPERAND en niet de inhoud (de lijstliteraal-meting: antwoord 1 ongeacht de
+lijstinhoud, stil) — precies de verboden klasse; de kosten zijn nul
+documenten (alle 109 tellingen in de vier zones dragen een elementtype); en
+beide tellingsoorten krijgen zo dezelfde wet op dezelfde positie.
+
+## Claim (2026-09-23) — aangescherpte acceptatie
+
+Branch `card/aantal-zonder-bron`, basis `main` `91880111`.
+
+1. Hermeting van de vier-probe-tabel op de huidige stand, en de
+   AANTAL-sweep over golden + rood + negatief + pariteit opnieuw — er is
+   sinds 2026-09-20 veel geland (WF-110 de instance-set-unie onder meer).
+2. Spec-first: een WF-037-arm "een telling MOET een elementtype dragen"
+   (IR-SPEC-tekst + verifier-arm, beide VOORSTEL); het nummer motiveren.
+3. Rood-eerst, drie negatiefs: ariteit 0, ariteit 1 met een eigen lezing,
+   ariteit 1 met een `ListLiteral`; elk PASS onder de oude verifier (rc 0),
+   FAIL onder de nieuwe, met verifier-md5 vóór en na; een arm-exacte mutant
+   over golden + rood + negatief + pariteit.
+4. `ref`: de waardearm onder `Aantal` wordt onbereikbaar en weigert
+   benoemd (fail-fast, tweede verdedigingslinie); de zes
+   `WV-3.4a`-getuigen kantelen naar die weigering, rood-eerst gemeten
+   tegen de oude `eval.ml`.
+5. Clingo en beide Drools-takken ná de arm gemeten; `backends/**` niet
+   aangeraakt.
+6. De producentkant gemeten: kan `ExpressieBouwer` een telling zonder
+   elementtype emitteren, en langs welke zin — zo ja, dichten.
+7. Alle veertien poorten groen, elk als losse aanroep, tellingbewegingen
+   benoemd.
