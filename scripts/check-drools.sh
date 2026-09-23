@@ -806,7 +806,15 @@ EXPECTED_CHANNEL=(
 # now goes through Namen.bevatNaam / Namen.opNaam; the anker attempt lowers and both branches play
 # 2 / 0 / 2, ref's and clingo's pins. Measured over every golden in both branches before and after:
 # only this golden moved. EXPECTED_DRL_PLAYED moves by one as well.
-EXPECTED_PLAYED=182
+# 182 -> 183 (2026-09-23, card drools-venster-vouwtoets): jutterswet-wachtvenster, written for this
+# card. It carries a time window in the toets and in the filter of an ALLE quantifier fold and in the
+# filter of a count, each bounded by the member's own date. This branch refused all three: the fold's
+# matrix eval and the accumulate source had no route to the rekendatum, and the registration of that
+# global looked at conditions only, never at the filter inside a value. The window is now one reading
+# for every position, with the member as its subject. On the card's base jar this golden is EXCLUDE here
+# and PLAYED in the DRL-text branch; after the card both play 3 cases with ref's and clingo's values.
+# Measured over every golden in both branches before and after: no existing golden moved.
+EXPECTED_PLAYED=183
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1027,7 +1035,10 @@ DRL_CHANNEL=(
 # 160 -> 161 (2026-09-23, card drools-temporele-naamnorm): jutterswet-seinjaar. The temporal lookups
 # this branch shares the name contract for are the same; its anker attempt now lowers the guard, and
 # the MARKER the golden stood on in class (C) is gone. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=161
+# 161 -> 162 (2026-09-23, card drools-venster-vouwtoets): jutterswet-wachtvenster, new. This branch
+# carried all three window positions before the card; the golden enters its played set together with
+# the exec branch's. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=162
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
