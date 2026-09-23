@@ -1,11 +1,13 @@
 #!/bin/sh
 # The reference-type derivation harness (RUNTIME-SEMANTICS ch. 2.10, "the consumer clause").
 #
-# A v0 IR node repeats its type on the wire at positions where that type is a COPY of a
+# A v0 IR node repeated its type on the wire at positions where that type is a COPY of a
 # declaration — an AttribuutRef, a ParameterRef, a DimensieCel read, a binder read — or a
-# DERIVATION over its operands — an arithmetic node, a Let, a value aggregation. WF-091 makes
-# the copy mechanically true for the reference positions; nothing crosses the derived ones.
-# The clause says a consumer must read the SOURCE, not the repetition. This script is what
+# DERIVATION over its operands — an arithmetic node, a Let, a value aggregation. Since L2
+# (2026-09-24, B13) the reference positions write no type at all: a copy that cannot be written
+# cannot drift, and every consumer takes the type there from the declaration. What stays on the
+# wire is the DERIVED annotation, and the clause says a consumer must read the SOURCE — the
+# operands' declarations and the ch. 2.3/2.6 rules — not that repetition. This script is what
 # holds all three executors to it:
 #
 #   1. every corpus/golden/**/ir.json is copied into a temporary directory with a systematic
@@ -54,12 +56,13 @@
 # baseline is simply wrong in both runs. So its BASELINE is pinned here too, for exactly the goldens
 # this harness probes (the DRL_BASIS_UIT list below).
 #
-# Four twist classes are, for BOTH DROOLS legs, a no-op by construction: the Java IR records for
-# ParameterRef, DimensieCel, Afgerond and Begrensd DERIVE their type() (from the parameter's
-# declaration, from the inner reference, from the basis) and hold no wire annotation at all, so the
+# Two twist classes are, for BOTH DROOLS legs, a no-op by construction: the Java IR records for
+# Afgerond and Begrensd DERIVE their type() from the basis and hold no wire annotation at all, so the
 # graft cannot reach either of them — it still probes ref and clingo, which do read the wire there.
-# The Drools side of those four rests on the EffectieveEenheidWitnessTest witnesses, which build the
-# nodes directly. Said out loud so a green line is not read as coverage it has not got.
+# The Drools side of those two rests on the EffectieveEenheidWitnessTest witnesses, which build the
+# nodes directly. Said out loud so a green line is not read as coverage it has not got. (Until L2
+# ParameterRef and DimensieCel were two more such classes; since L2 they carry no annotation to
+# twist.)
 #
 # And the same honesty about HOW MUCH of the two Drools legs a green line covers. On the UNTOUCHED
 # corpus the derivation never disagrees with the annotation — WF-091 makes the repetition faithful,
@@ -137,13 +140,14 @@
 # eenheidstelsel) is left byte-identical, which is precisely what makes the derived answer the
 # right answer.
 #
-# Twisted positions (the class factor in brackets):
-#   reference positions — AttribuutRef [10] (bare, navigated, and the one a rule names as its
-#   doel), ParameterRef [100], DimensieCel [1000], BinderRef [10000];
-#   composite positions — Binair/{PLUS,MIN,VERMINDERD_MET,MAAL} [1e5], Let [1e6],
+# Twisted positions (the class factor in brackets): the composite positions —
+#   Binair/{PLUS,MIN,VERMINDERD_MET,MAAL} [1e5], Let [1e6],
 #   Functie/{SOM,TOTAAL,MINIMUM,MAXIMUM,EERSTE,LAATSTE} [1e7], Afgerond [1e8], Begrensd [1e9]
-#   (the ch. 4.10 Let/BinderRef nodes reach this backend as carriers, and their wire annotation
-#   is what the carrier holds).
+#   (the ch. 4.10 Let node reaches this backend as a carrier, and its wire annotation is what the
+#   carrier holds). Until L2 the reference positions were twisted too — AttribuutRef [10],
+#   ParameterRef [100], DimensieCel [1000], BinderRef [10000]; since L2 they write no type, so the
+#   table no longer names them (D21) and the factors above keep their v0 exponents, which leaves
+#   every composite twist byte-identical to what it was.
 # The factor stays per NODE KIND even though membership is per (node, op): a restatement boundary
 # sits between two node kinds, never between two operators of one kind, so splitting the factor as
 # well would buy nothing and would move the twist set the corpus already pins.
@@ -154,7 +158,10 @@
 #     executors read it, and must.
 #   - the DURATION operand of a date +/- duration Binair: ref (eval.ml) and the ASP translator
 #     both route the calendar unit off that operand's static type (WF-035). Twisting it would
-#     measure that routing, not a declaration reading.
+#     measure that routing, not a declaration reading. Which operand is the DATE is read the way
+#     the executors read it: off the node's own annotation, and — since a reference writes no
+#     type (L2) — off the declaration a reference names (attribute, parameter, dimension cell,
+#     binder in scope).
 #   - a TIJDSDUUR / ABSOLUTE_TIJDSDUUR Functie's own type: its unit is the OPERATOR's parameter
 #     ("de tijdsduur van A tot B in jaren", WF-038), not a derived result type.
 #
@@ -268,8 +275,7 @@ from decimal import Decimal
 
 # the position classes and their restatement-factor exponents (see the script header). The exponent
 # is per NODE KIND; MEMBERSHIP is per position class, which for Binair/Functie is finer (below).
-KLASSE = {"AttribuutRef": 1, "ParameterRef": 2, "DimensieCel": 3, "BinderRef": 4,
-          "Binair": 5, "Let": 6, "Functie": 7, "Afgerond": 8, "Begrensd": 9}
+KLASSE = {"Binair": 5, "Let": 6, "Functie": 7, "Afgerond": 8, "Begrensd": 9}
 # ch. 2.10 clause 2 splits Binair and Functie by OPERATOR, not by node: only these branches DERIVE a
 # result unit (an additive result carries the left unit / a unitless side adopts the other; a MAAL
 # cancels or forms the opaque product; §4.6 Eenheid1 hands a value aggregation its first operand's).
@@ -344,8 +350,46 @@ def verdraai(dt, exp):
     return uit, "%s %s->%s" % (dt.get("node"), dt["eenheid"].get("afkorting"), u["afkorting"])
 
 
-def datum_getypeerd(e):
-    return isinstance(e, dict) and isinstance(e.get("type"), dict) and e["type"].get("node") in DATUM
+# A reference writes no type since L2 (B13): whether an operand is a DATE is read off the
+# declaration it names, exactly as the executors read it (RUNTIME-SEMANTICS ch. 2.10). The other
+# nodes still carry their own annotation.
+DECL = {"attr": {}, "super": {}, "param": {}}
+
+
+def declaraties(doc):
+    model = doc.get("model", {})
+    for ot in model.get("objectTypes", []):
+        n = ot.get("name")
+        DECL["super"][n.lower()] = ot.get("supertype")
+        for a in ot.get("attributes", []):
+            DECL["attr"][(n.lower(), a.get("name", "").lower())] = a.get("datatype")
+    for p in model.get("parameters", []):
+        DECL["param"][(p.get("naam") or "").lower()] = p.get("datatype")
+
+
+def gedeclareerd(e, scope):
+    node = e.get("node")
+    if node == "AttribuutRef":
+        ot, a = (e.get("objecttype") or "").lower(), (e.get("attribuut") or "").lower()
+        while ot:
+            if (ot, a) in DECL["attr"]:
+                return DECL["attr"][(ot, a)]
+            ot = (DECL["super"].get(ot) or "").lower()
+        return None
+    if node == "ParameterRef":
+        return DECL["param"].get((e.get("parameter") or "").lower())
+    if node == "DimensieCel":
+        return gedeclareerd(e.get("attribuut") or {}, scope)
+    if node == "BinderRef":
+        return scope.get((e.get("name") or "").lower())
+    return e.get("type")
+
+
+def datum_getypeerd(e, scope):
+    if not isinstance(e, dict):
+        return False
+    t = gedeclareerd(e, scope)
+    return isinstance(t, dict) and t.get("node") in DATUM
 
 
 def eenheiddragend(dt):
@@ -353,10 +397,11 @@ def eenheiddragend(dt):
         and dt.get("eenheid") is not None
 
 
-def loop(x, telling, sla_eigen_over=False):
+def loop(x, telling, sla_eigen_over=False, scope=None):
+    scope = {} if scope is None else scope
     if isinstance(x, list):
         for v in x:
-            loop(v, telling)
+            loop(v, telling, scope=scope)
         return
     if not isinstance(x, dict):
         return
@@ -365,9 +410,9 @@ def loop(x, telling, sla_eigen_over=False):
     duur = None
     if node == "Binair" and x.get("op") in ("PLUS", "MIN", "VERMINDERD_MET"):
         l, r = x.get("links"), x.get("rechts")
-        if datum_getypeerd(l) and not datum_getypeerd(r):
+        if datum_getypeerd(l, scope) and not datum_getypeerd(r, scope):
             duur = r
-        elif datum_getypeerd(r) and not datum_getypeerd(l):
+        elif datum_getypeerd(r, scope) and not datum_getypeerd(l, scope):
             duur = l
     vrijgesteld = sla_eigen_over or node in UITZONDERING \
         or (node == "Functie" and x.get("kind") in GEEN_FUNCTIE)
@@ -391,10 +436,31 @@ def loop(x, telling, sla_eigen_over=False):
         if hoe:
             x["type"] = nieuw
             telling["treffers"].append(hoe)
+    # the binders a node opens are in scope of its body, with the type their binding declares
+    binnen = scope
+    if node == "Let":
+        binnen = dict(scope)
+        binnen[(x.get("binder") or "").lower()] = gedeclareerd(x.get("value") or {}, scope)
+    elif node in ("Lambda", "FunctionDef"):
+        binnen = {(p.get("name") or "").lower(): p.get("datatype") for p in x.get("parameters", [])}
     for k, v in list(x.items()):
         if k == "type":        # a DECLARATION never sits under an expression's own type
             continue
-        loop(v, telling, sla_eigen_over=(v is duur))
+        if node == "Match" and k == "arms":
+            # an arm binder carries its constructor's declared payload, off the scrutinee's type
+            st = gedeclareerd(x.get("scrutinee") or {}, scope)
+            ctors = {(c.get("name") or "").lower(): c.get("payload")
+                     for c in (st.get("constructors", []) if isinstance(st, dict) else [])}
+            for arm in v if isinstance(v, list) else []:
+                b = arm.get("binder") if isinstance(arm, dict) else None
+                armscope = dict(scope)
+                if b:
+                    armscope[b.lower()] = ctors.get((arm.get("constructor") or "").lower())
+                loop(arm, telling, scope=armscope)
+            continue
+        loop(v, telling, sla_eigen_over=(v is duur),
+             scope=binnen if (node == "Let" and k == "body") or node in ("Lambda", "FunctionDef")
+             else scope)
 
 
 def stukken(o):
@@ -437,6 +503,7 @@ def stukken(o):
 bron, doel, naam = sys.argv[1], sys.argv[2], sys.argv[3]
 with open(bron, encoding="utf-8") as fh:
     doc = json.load(fh, parse_int=RuweNum, parse_float=RuweNum)
+declaraties(doc)
 telling = {"treffers": [], "ongedekt": [], "vierde": [], "eenheid": 0, "vrijgesteld": 0,
            "zonderzusje": 0}
 loop(doc, telling)
@@ -489,7 +556,11 @@ basisvrij() {
 # still in place, and no other gate would see it. The DRL floor extends the "-eq 0" bottom below,
 # whose own comment records the measured mutant that dropped the leg from 9 played goldens to 0:
 # that mutant would today be caught at 8, not only at 0.
-EXPECTED_MIN_TWISTS=74      # 2026-09-10: measured 74 annotations twisted over 15 goldens
+EXPECTED_MIN_TWISTS=38      # 2026-09-24: measured 38 annotations twisted over 21 goldens. LOWERED
+                            # from 74 (2026-09-10) in the L2 commit that took the four reference
+                            # classes out of the twist table (D21): a reference writes no type since
+                            # B13, so there is nothing left to twist there; the composite twists
+                            # are untouched (same 38 before and after the table change)
 EXPECTED_MIN_DRL_PLAYED=13  # 2026-09-10: measured 13 goldens PLAYED by the DRL-text branch
 
 status=0
