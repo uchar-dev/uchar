@@ -3278,6 +3278,11 @@ public final class DrlTranspiler {
         if (a.set()) return null;
         RegelSpraakModel.Granulariteit g = a.objecttype().granulariteitLeden().get(a.attribuut());
         if (g == null) return null;   // not a temporal attribute -> fall through to the instance-accumulate / marker
+        // rsTijdTotaal scales each segment value into a BigDecimal; over a non-numeric declaration the emitted
+        // text did not COMPILE and took the whole file down unnamed. A per-form marker through the reason the
+        // set arm shares, asked before any of the own/navigated/clipped getters below is built.
+        String vw = io.github.yhavinga.regelspraak.transpiler.kern.Vouwwaarde.tijdlijnWeigering(f, a.objecttype(), a);
+        if (vw != null) return Frag.todo(vw, a.bron());
         // §13.3.6.7 a MULTI-period attribute ("voor elke 5 maanden") weights each tijdvak by the period count,
         // whose totaal semantics §7.1 does not work out — marker it rather than mis-count it as single-period.
         if (Tijdlijnen.meerPeriodiek(a.objecttype().tijdlijnAantalLeden(), a.attribuut()))

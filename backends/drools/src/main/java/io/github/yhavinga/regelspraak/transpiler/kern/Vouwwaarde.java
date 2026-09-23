@@ -79,6 +79,31 @@ public final class Vouwwaarde {
                 + " staat als tweede verdedigingslinie (§5.8.3)";
     }
 
+    /**
+     * Why the §7.1 TOTAAL over a TIMELINE (own, navigated or gedurende-clipped) cannot be folded, or null
+     * when it can — the timeline half of {@link #weigering}.
+     *
+     * <p>{@code rsTijdTotaal} multiplies each segment value by the grid periods it spans and returns a
+     * {@code BigDecimal}; over a non-numeric declaration the DRL-text branch emitted text that did not
+     * compile ("Unable to Analyse Expression if (rsTijdTotaal(…"), measured 2026-09-23 on a verifier-CLEAN
+     * document, which reaches a report as a whole-file compile refusal naming no form. {@code ref} faults
+     * on the multiplication itself, so no executor carries the form. The exec branch never reaches its
+     * own lowering with such a value: its case loader refuses a non-numeric segment before fire.
+     *
+     * @param ot  the declaring anchor the caller reads the granularity from
+     * @param arg the totalled timeline read
+     */
+    public static String tijdlijnWeigering(Expr.Functie f, Objecttype ot, Expr.AttribuutRef arg) {
+        if (arg == null || arg.attribuut() == null || ot == null) return null;
+        Datatype dt = declaratie(ot, arg.attribuut());
+        if (dt == null || dt.isGetalachtig()) return null;
+        return "vouw " + f.kind() + " over de tijdlijn '" + arg.attribuut() + "' van " + ot.naam
+                + ": de segmentwaarden zijn van type " + dt.naam() + " en niet getalachtig, terwijl de"
+                + " tijdlijnvouw elke segmentwaarde met haar aantal roosterperioden vermenigvuldigt."
+                + " Vermenigvuldigen is rekenkunde en alleen bedragen schalen; ref werpt op de"
+                + " vermenigvuldiging zelf een typefout. Geen enkele uitvoerder draagt deze vorm (§7.1/ch. 3.6)";
+    }
+
     /** The chain-closed declaration of {@code attr} on {@code ot}, asked through the shared name
      *  contract so a name written in another capitalisation resolves exactly as every reflective
      *  read of it does. */
