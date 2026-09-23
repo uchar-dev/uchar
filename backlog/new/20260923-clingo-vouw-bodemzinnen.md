@@ -11,11 +11,19 @@ benoemde arm hebben. De `Datum_in_dagen`-vormen kregen die arm bij de
 datumvouw-kaart (`refuse_date_timeline_total`); dit kaartje trekt de
 zusters gelijk.
 
+Aanvulling uit de datumvouw-lens (2026-09-23): ook MAXIMUM, MINIMUM,
+EERSTE, LAATSTE en SOM over de eigen datumtijdlijn zijn
+verifier-schoon en weigeren in ref én clingo uitsluitend met een
+bodemzin (clingo: "expression kind not translated (no corpus case
+exercises it)"). Geen fout getal, wel dezelfde onbenoemde klasse —
+meenemen in de meting.
+
 ## Acceptatie (bij oppakken aanscherpen)
 
-- (a) Meet per vorm (datum-tijd-tijdlijn, tekst-tijdlijn, en de
-  setbron-tegenhangers) de vijf uitvoerders; leg vast welke valdoorarm
-  vandaag vangt.
+- (a) Meet per vorm (datum-tijd-tijdlijn, tekst-tijdlijn, de
+  setbron-tegenhangers, en de vouwsoorten MAXIMUM/MINIMUM/EERSTE/
+  LAATSTE/SOM over de eigen datumtijdlijn) de vijf uitvoerders; leg
+  vast welke valdoorarm vandaag vangt.
 - (b) Elke vorm krijgt een benoemde, fase-dragende weigerzin die het
   construct en de namen noemt (huispatroon van
   `refuse_date_timeline_total`); rood-eerst met mutatieproef.
