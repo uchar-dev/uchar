@@ -4425,7 +4425,9 @@ does not exist.
 Evaluation by strata generalises ch. 5.3's single boundary: for k = 0,
 1, …, the forms of stratum ≤ k evaluate to their fixpoint before any
 form of stratum k + 1 fires. A negated characteristic, and since
-2026-09-23 a leeg/gevuld predicate, is then read only after every
+2026-09-23 a leeg/gevuld predicate and the negative parts of a quantifier
+fold (its range under every quantifier but *ten minste*, its matrix under
+*geen*, *ten hoogste* and *precies*), is then read only after every
 producer — and the producers' own input chains — have quiesced, so a
 monotone write cannot contradict it later; a channel
 test reads a complete channel for the named rule. v0's single boundary
