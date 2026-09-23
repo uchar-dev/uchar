@@ -49,7 +49,7 @@ import java.util.Map;
  *
  * <p><b>Refusal discipline.</b> Every wire form the v0 Drools backend does not carry is a LOUD, per-form
  * {@link Refusal} — never a silent skip. That covers a {@code format} other than {@code uchar-ir-v1}, the
- * model's {@code functionDefs} extension, and an unknown {@code node}
+ * model's {@code functionDefs} extension, an integer beyond a Java {@code int}, and an unknown {@code node}
  * discriminator inside the {@link Expr} / {@link Conditie} / {@link Datatype} sealed hierarchies
  * (a struct/list literal, a MapList/Invoke, …). The differential gate turns a Refusal into a
  * reason-carrying exclusion. A document that is not well-formed is no form at all: the container, the
@@ -365,13 +365,18 @@ public final class IrLoader {
         return uit;
     }
 
-    /** The period count, an integer as the OCaml loader's {@code int_} reads it: {@code "2"} and {@code 2.0} both
-     *  read as 2 under {@code asInt}, a raster the document did not write as a count. */
-    private static int telling(JsonNode facet, String pad) {
-        JsonNode c = facet.get("count");
-        if (c == null) throw new Documentfout(pad + "/count", "required field is absent");
-        if (!c.isIntegralNumber() || !c.canConvertToInt())
-            throw new Documentfout(pad + "/count", "expected an integer, got " + kort(c));
+    /** An integer field, as the OCaml loader's {@code int_} reads it: a JSON integer and nothing else, since
+     *  {@code "2"} and {@code 2.0} both read as 2 under {@code asInt}, a value the document did not write as an
+     *  integer. An integer beyond a Java {@code int} is well-formed (the OCaml loader reads it into its 63-bit
+     *  int) and this backend cannot hold it: a form not carried, so a {@link Refusal} under {@code vorm}. */
+    private static int geheel(JsonNode n, String pad, String veld, String vorm) {
+        JsonNode c = n.get(veld);
+        String p = pad + "/" + veld;
+        if (c == null) throw new Documentfout(p, "required field is absent");
+        if (!c.isIntegralNumber()) throw new Documentfout(p, "expected an integer, got " + kort(c));
+        if (!c.canConvertToInt())
+            throw new Refusal(vorm, c + " at '" + p + "' is outside this backend's integer range ["
+                    + Integer.MIN_VALUE + ", " + Integer.MAX_VALUE + "]");
         return c.intValue();
     }
 
@@ -564,7 +569,7 @@ public final class IrLoader {
                 velden(tl, tp, "TimelineFacet", List.of("node", "granularity", "count"), List.of("timelineName"));
                 ot.attribuutGranulariteit.put(lid,
                         enumOf(Granulariteit.class, tekst(tl, tp, "granularity"), tp + "/granularity"));
-                ot.attribuutTijdlijnAantal.put(lid, telling(tl, tp));
+                ot.attribuutTijdlijnAantal.put(lid, geheel(tl, tp, "count", "TimelineFacet.count"));
                 String tijdlijnNaam = optTekst(tl, tp, "timelineName");
                 if (tijdlijnNaam != null) ot.attribuutTijdlijnNaam.put(lid, tijdlijnNaam);
             }
@@ -583,7 +588,7 @@ public final class IrLoader {
                 velden(tl, tp, "TimelineFacet", List.of("node", "granularity", "count"), List.of());
                 ot.kenmerkGranulariteit.put(lid,
                         enumOf(Granulariteit.class, tekst(tl, tp, "granularity"), tp + "/granularity"));
-                ot.kenmerkTijdlijnAantal.put(lid, telling(tl, tp));
+                ot.kenmerkTijdlijnAantal.put(lid, geheel(tl, tp, "count", "TimelineFacet.count"));
             }
         });
         return ot;

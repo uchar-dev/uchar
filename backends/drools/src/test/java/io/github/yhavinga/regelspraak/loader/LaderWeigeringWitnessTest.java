@@ -180,6 +180,23 @@ class LaderWeigeringWitnessTest {
         }
     }
 
+    @Test void een_periodetelling_buiten_het_int_bereik_is_een_vorm_en_geen_documentfout() throws Exception {
+        // The boundary of the test above. 2147483648 and 3000000000 are integers: the schema admits them and the
+        // verifier, which reads into OCaml's native int, passes them. This backend holds a count in a Java int,
+        // so the document is a form it does not carry, and a Refusal says so. Until 2026-09-23 it was a document
+        // defect reading "expected an integer, got 3000000000", about a value that is one.
+        for (long telling : new long[] { 2_147_483_648L, 3_000_000_000L }) {
+            ObjectNode ir = golden(BAKENMEESTER);
+            String attr = lidPad(ir, "Bakenmeester", "attributes", "onderhoudstarief");
+            ((ObjectNode) IrPad.attribute(IrPad.objectType(ir, "Bakenmeester"), "onderhoudstarief").get("timeline"))
+                    .put("count", telling);
+            IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class, () -> IrLoader.loadAll(ir), "count " + telling);
+            assertEquals("TimelineFacet.count", r.form(), r.getMessage());
+            assertTrue(r.getMessage().contains("outside this backend's integer range"), r.getMessage());
+            assertTrue(r.getMessage().contains(telling + " at '" + attr + "/timeline/count'"), r.getMessage());
+        }
+    }
+
     @Test void een_tijdlijnfacet_zonder_granulariteit_weigert_bij_het_laden() throws Exception {
         // Until 2026-09-23 this was OverervingWeigeringWitnessTest's "de gedegenereerde variabele tijdlijn is het
         // gat dat werkelijk stil was": under v0 a tijdlijn declaration could carry `granulariteit: null`
