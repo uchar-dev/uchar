@@ -803,19 +803,19 @@ EXPECTED_PLAYED=180
 #   FAIL     printed — the golden loads, lowers and fires without faulting, and answers a WRONG VALUE
 #   ERROR    printed — the golden faults AT FIRE; a defect of this branch, not a semantic difference
 #   NOCASE   the sweep's own token, never printed by the branch: no case file, so no run at all
-# Why the reasons are grouped rather than written one by one: seventy-three of the seventy-six
+# Why the reasons are grouped rather than written one by one: seventy-one of the seventy-four
 # entries carry one of three class reasons, and a per-golden retelling of the same sentence would be
 # noise around the only thing that is compared, which is the CHANNEL. Each class is explained in the
 # comment that opens it; each golden still stands there BY NAME, which is what the stale guard needs.
 DRL_CHANNEL=(
   # (A) ch. 7 prioritizedDefaults — 25, and since the objectcreatie repair below the ONLY remaining
-  # reason of size for this count sitting 23 below the exec one: the exec branch grew a spec-ch.-7
+  # reason of size for this count sitting 21 below the exec one: the exec branch grew a spec-ch.-7
   # defaults lowering at the defaults-service card (2026-08-29) that the production toolchain does
   # not have, and DrlTranspiler never did. Every golden here refuses on that one sentence.
   # 23 of the 24 ARE that asymmetry — the exec branch plays them. anchor/jutterswet-toelagegronden
   # is NOT, and is named here so the class is not read as 24 exec-only players: the exec branch
   # refuses it too, on a different sentence (its kenmerk target shares its name with an attribute,
-  # a v0 bean-model limit), so it contributes nothing to the gap. The 23 is 26 exec-only players
+  # a v0 bean-model limit), so it contributes nothing to the gap. The 21 is 24 exec-only players
   # minus 3 goldens this branch plays and the exec one does not (anchor/jutterswet-vindersloon,
   # jutterswet-vondsttarief, synth2-afrondingscombinaties, all three a transpiler SKIP over there).
   "anchor/jutterswet-hardheid|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
@@ -884,8 +884,10 @@ DRL_CHANNEL=(
   "synth3-standtarief|EXCLUDE|loader Refusal: Datatype:SumType"
   "synth3-vangstsom|EXCLUDE|loader Refusal: Datatype:ListType"
   "synth3-vondststaat|EXCLUDE|loader Refusal: Datatype:StructType"
-  # (C) DrlTranspiler MARKERs — 12, this branch's own per-form refusals, each naming the rule it
-  # could not lower. Recounted 2026-09-23 (card drl-periode-zink): the list held 11 under a header of
+  # (C) DrlTranspiler MARKERs — 10, this branch's own per-form refusals, each naming the rule it
+  # could not lower. 12 -> 10 (2026-09-23, card drl-creatie-koppelloos): the two objectcreatie
+  # markers are gone, see EXPECTED_DRL_PLAYED.
+  # Recounted 2026-09-23 (card drl-periode-zink): the list held 11 under a header of
   # 12, because anchor/jutterswet-bergingstoezicht (the unresolved verdeling) left it at 156 -> 157
   # and the header did not follow; jutterswet-seinjaar, a NEW golden refused in both branches by one
   # sentence, makes it 12 again and moves neither played count. Recounted 2026-09-20 (card
@@ -894,31 +896,25 @@ DRL_CHANNEL=(
   # datum-setbron-breuk): jutterswet-vondstbereik, the
   # MINIMUM/MAXIMUM fold over a DATE set source, which this branch used to emit as DRL text that did
   # not compile — a whole-file refusal naming no form — and now markers by name out of the shared
-  # reason. NINE of the twelve are goldens the exec branch refuses too, on its own wording of the
+  # reason. NINE of the ten are goldens the exec branch refuses too, on its own wording of the
   # same limit (the many-to-many bean field, the qualified creation guard's doel attempt, the
   # consistency rule, the EERSTE fold over a set, the date-valued value fold, and the out-of-scope
   # condition — jutterswet-klipwacht, shared, not split).
-  # THREE are this branch alone, and the exec branch PLAYS all three:
-  #   anchor/jutterswet-wachtersketen (exec PLAYED 2), synth2-budgetgrens-onder (exec PLAYED 1) —
-  #     both an OBJECTCREATIE marker on the same unresolved back-link to Wachter. That is what is
-  #     LEFT of this branch's §13.4.6 gap: the SILENT half — four goldens that fired and answered
-  #     leeg, or faulted at fire — was a class of its own here until the creation lowering learned
-  #     ch. 5.5's two clauses (card drl-objectcreatie-defect, 2026-09-19), and those four now play.
-  #     What remains is the LOUD half, refused by name before anything fires: a different code path
-  #     (the rolNaarSubject == null route), and its own card.
+  # ONE is this branch alone, and the exec branch PLAYS it:
   #   jutterswet-vouwrand (exec PLAYED 1) — a TODO voorwaarde on a conjunction of comparisons.
+  # Until 2026-09-23 two more stood here, anchor/jutterswet-wachtersketen and
+  # synth2-budgetgrens-onder, an OBJECTCREATIE marker on the unresolved back-link to Wachter; they
+  # left with card drl-creatie-koppelloos (reason block at EXPECTED_DRL_PLAYED).
   "anchor/jutterswet-bootberging|EXCLUDE|MARKER regel: bronPad step Boot -> Vondst has no bean field — the middle relation is many-to-many (§13.3.9)"
   "anchor/jutterswet-erflijn|EXCLUDE|MARKER regel: aggregation join with both sides plural — neither end stores a bean field (§13.3.9)"
   "anchor/jutterswet-gemeenteberging|EXCLUDE|MARKER regel: aggregation join whose storage direction is the far side (§13.3.9)"
   "anchor/jutterswet-penninguitgifte|EXCLUDE|MARKER consistentie: unresolved consistency rule over every Penning"
-  "anchor/jutterswet-wachtersketen|EXCLUDE|MARKER objectcreatie: unresolved back-link to Wachter"
   "jutterswet-klipwacht|EXCLUDE|MARKER regel: TODO voorwaarde — the gedurende clip as a composite member"
   "jutterswet-muntketen|EXCLUDE|MARKER regel: bronPad step Boot -> Munt has no bean field — the same many-to-many middle relation"
   "jutterswet-seinjaar|EXCLUDE|MARKER feitcreatie: voorwaarde niet naar anker of doel te lowereren — gehele-periodekwalificatie: alleen de anker is gebonden (WF-109). Shared with the exec branch, one sentence (kern.Gastheer). Until card drl-periode-zink (2026-09-23) this branch PLAYED the golden by accident: its whole-period lowering reads the subject variable, which inside the doel pattern is the anker, and the anker carries a same-named timeline of the same type — on any other anker the same lowering failed the whole package at compile"
   "jutterswet-vondstbereik|EXCLUDE|MARKER regel: the MINIMUM/MAXIMUM fold over a DATE set source — the shared member-type reason, word for word the exec branch's (card datum-setbron-breuk, 2026-09-20). Its EERSTE/LAATSTE twin sits one line below and is refused one arm earlier, on the fold KIND rather than on the member type"
   "jutterswet-vondstvenster|EXCLUDE|MARKER regel: TODO aggregatie EERSTE over a set source"
   "jutterswet-vouwrand|EXCLUDE|MARKER regel: TODO voorwaarde — a conjunction of comparisons"
-  "synth2-budgetgrens-onder|EXCLUDE|MARKER objectcreatie: unresolved back-link to Wachter"
   # (D) The one value-divergence this branch SHARES with the exec branch — negation-as-failure is not
   # stratified, so a geen-<kenmerk> rule fires before the positive kenmerk is derived. The exec
   # branch's full reason is in EXCLUDE_KNOWN above; both branches inherit it from the ported runtime.
@@ -996,7 +992,14 @@ DRL_CHANNEL=(
 # EXPECTED_PLAYED above.
 # 156 -> 157 (2026-09-22, card p3-drools-verbindenderol-verdeling): anchor/jutterswet-bergingstoezicht.
 # The recipient join is the same shared derivation in this branch. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=157
+# 157 -> 159 (2026-09-23, card drl-creatie-koppelloos): anchor/jutterswet-wachtersketen and
+# synth2-budgetgrens-onder. Their creation runs over a SELF-TYPED pair (Wachter creates Wachter over
+# `opvolging`), where the type-pair derivation this branch used for the back-link answers nothing; the
+# lowering then emitted an insert with no link, and only the marker scan refused it. It now reads the
+# creation's verbindendeRol binding, as the exec branch has since 2026-08-30 and as ref does, and plays
+# both. Measured over every golden and rood document in both branches: the exec output and every
+# other document are byte-identical.
+EXPECTED_DRL_PLAYED=159
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
