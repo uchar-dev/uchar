@@ -58,7 +58,7 @@ in ch. 4.3, excepted). This document's own sections are cited as `ch. N`.*
   (ch. 6.1), the sum-type family — the `SumType` datatype
   (ch. 2.4) with the `Construct`/`Match`/`BinderRef` expression nodes
   (ch. 4.7) — and the fold family — the `ListType` datatype (ch. 2.4),
-  the `functionDefs` top-level list (ch. 2.11) and the
+  the `functionDefs` list under `model` (ch. 2.11; top-level until M1) and the
   `ListLiteral`/`Lambda`/`IfThenElse`/`Invoke`/`Fold`/`MapList`/
   `FilterList`/`ListLength` expression nodes (ch. 4.8) — both v1
   kernel extensions the emitter never produces
@@ -1646,7 +1646,7 @@ timeline name.
 ### 2.11 FunctionDef — named reusable logic
 
 `layer: core`; an **extension form** per the Method: an optional
-top-level list `functionDefs`, never emitter-produced (CONSTRUCTS
+list `functionDefs` under `model` (top-level until M1), never emitter-produced (CONSTRUCTS
 row 10 — this *is* DMN's Business Knowledge Model: named logic, bound
 and invoked by name; design `spec/proposals/PHASE5B-KERNEL.md` §3).
 
@@ -1784,9 +1784,11 @@ the literal true — mirrored.)
   escaper. The wire type stays nullable (`string?` on every named form) and
   the schema is not the enforcement layer: a nameless form is a well-formed
   document that this rule refuses, which is what gives it a witness.
-  **What this rule is NOT about.** Four other top-level arrays put a name on
-  this wire, and the boundary is drawn per array rather than left to be
-  inferred (each measured 2026-09-12 over the four zones):
+  **What this rule is NOT about.** Four other arrays put a name on this wire
+  (top-level arrays until M1; since M1 `resolvedDagsoorten` and `regelGroepen`
+  sit under `rules`, `tijdlijnen` is the model list `timelines`, and the
+  `regels` stubs left the wire), and the boundary is drawn per array rather
+  than left to be inferred (each measured 2026-09-12 over the four zones):
   - `resolvedDagsoorten` — a **day-kind definition**'s name is which day
     kind it defines and lives in the day-kind namespace, not the named
     forms', so its presence is **WF-031**'s clause, beside that rule's own
@@ -1802,11 +1804,12 @@ the literal true — mirrored.)
     group is inert rather than ambiguous, and refusing it would be a rule
     without a failure.
   - `regels` — the parse-stage `Regel` **shell index** (ch. 3.1's v0 wart),
-    which no check and no executor reads at all and which one frontend emits
-    empty by design. A nameless stub is verifier-clean and stays so, for the
-    same reason: it names nothing that anything looks up.
+    which no check and no executor read at all and which one frontend emitted
+    empty by design; it left the wire at M1 (ch. 3). A nameless stub was
+    verifier-clean and stayed so, for the same reason: it named nothing that
+    anything looked up.
 
-  Beside those four, `dagsoorten` is a list of bare strings rather than of
+  Beside those four, `dagsoorten` (the model list `dayKinds` since M1) is a list of bare strings rather than of
   nodes, and a `null` entry there is likewise admitted today — **stated as
   open rather than closed**: it is the day-kind namespace again, so it
   belongs with WF-031's family and not here, and no producer writes one.
@@ -7463,7 +7466,7 @@ under-determination is leeg (a tracked Catala deviation,
 pre-rename revisions — uses the old names throughout.*
 
 `layer: core`; an **extension form** per the Method: an optional
-top-level list `prioritizedDefaults` of `PrioritizedDefaults` nodes —
+list `prioritizedDefaults` under `rules` (top-level until M1) of `PrioritizedDefaults` nodes —
 never emitter-produced.
 
 | Field | Type | Meaning |
