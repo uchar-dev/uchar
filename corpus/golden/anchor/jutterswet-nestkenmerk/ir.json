@@ -82,13 +82,30 @@
                       "node": "Default",
                       "besluit": false,
                       "voorwaarde": {
-                        "node": "Kenmerk",
-                        "kenmerk": "ny",
-                        "navigatie": null,
-                        "negatie": false,
-                        "eigenaar": null,
-                        "periode": null,
-                        "bron": "hij ny heeft"
+                        "node": "Samengesteld",
+                        "kwantor": "ALLE",
+                        "drempel": 0,
+                        "onderdelen": [
+                          {
+                            "node": "Kenmerk",
+                            "kenmerk": "nx",
+                            "navigatie": null,
+                            "negatie": false,
+                            "eigenaar": null,
+                            "periode": null,
+                            "bron": "hij nx heeft"
+                          },
+                          {
+                            "node": "Kenmerk",
+                            "kenmerk": "ny",
+                            "navigatie": null,
+                            "negatie": false,
+                            "eigenaar": null,
+                            "periode": null,
+                            "bron": "hij ny heeft"
+                          }
+                        ],
+                        "bron": "hij nx heeft en hij ny heeft"
                       },
                       "bron": "ny"
                     }
@@ -102,13 +119,30 @@
                       "node": "Default",
                       "besluit": true,
                       "voorwaarde": {
-                        "node": "Kenmerk",
-                        "kenmerk": "nz",
-                        "navigatie": null,
-                        "negatie": false,
-                        "eigenaar": null,
-                        "periode": null,
-                        "bron": "hij nz heeft"
+                        "node": "Samengesteld",
+                        "kwantor": "ALLE",
+                        "drempel": 0,
+                        "onderdelen": [
+                          {
+                            "node": "Kenmerk",
+                            "kenmerk": "nx",
+                            "navigatie": null,
+                            "negatie": false,
+                            "eigenaar": null,
+                            "periode": null,
+                            "bron": "hij nx heeft"
+                          },
+                          {
+                            "node": "Kenmerk",
+                            "kenmerk": "nz",
+                            "navigatie": null,
+                            "negatie": false,
+                            "eigenaar": null,
+                            "periode": null,
+                            "bron": "hij nz heeft"
+                          }
+                        ],
+                        "bron": "hij nx heeft en hij nz heeft"
                       },
                       "bron": "nz"
                     }
