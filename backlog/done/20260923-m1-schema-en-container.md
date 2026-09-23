@@ -12,8 +12,8 @@ andere knopen, velden en waardespellingen blijven byte-voor-byte v0 tot hun
 eigen M-stap (M2–M8).
 
 Goal: één ff-landing waarna alle veertien gates groen zijn op de M1-vorm
-van de wire, alle 817 documenten (corpus/golden, corpus/negatief,
-corpus/rood, toka/) in die vorm staan, de drie emitters hem schrijven, de
+van de wire, alle 769 documenten (corpus/golden 237, corpus/negatief 454,
+corpus/rood 48, toka/ 30) in die vorm staan, de drie emitters hem schrijven, de
 vier consumenten hem lezen, en de toka-zone meeverhuist (maintainerbesluit
 2026-09-23: toka blijft tot v1 klaar is; gate 11 blijft in de set, de
 casus-dump wordt door de frontend opnieuw geëmitteerd, de 29 replay-slices
@@ -101,7 +101,7 @@ heel of niet geschreven.
   "plural"?: string,                                   // v0 meervoud; null → afwezig
   "attributes": [ { "node": "Attribute", "name": string, "datatype": Datatype,
                     "plural"?: string,                 // v0 attribuutMeervoud[name]; null/afwezig → afwezig
-                    "dimensions"?: [ string ],         // v0 attribuutDimensies[name]; leeg → afwezig
+                    "dimensions"?: [ string ],         // v0 attribuutDimensies[name]; minItems 1, een lege lijst wordt geweigerd (WF-004)
                     "timeline"?: { "node": "TimelineFacet",
                                    "granularity": "DAG"|"WEEK"|"MAAND"|"KWARTAAL"|"JAAR",   // v0-spelling tot M8
                                    "count": integer ≥ 1,                                  // v0 attribuutTijdlijnAantal[name]; afwezig → 1
@@ -111,7 +111,9 @@ heel of niet geschreven.
                          "timeline"?: TimelineFacet } ] }
 ```
 
-Een `timeline` staat er precies dan wanneer de v0-granulariteitskaart een
+Een kenmerkfacet draagt geen `timelineName` (v0 had geen kenmerk-naamkaart;
+de positie is gesloten, eigen def `CharacteristicTimelineFacet`). Een
+`timeline` staat er precies dan wanneer de v0-granulariteitskaart een
 sleutel voor het lid had (dat was al de temporaliteitsbeslissing van alle
 lezers, WF-059 armen 2/3). Een v0-waarde die de v1-vorm niet kan dragen —
 een `null` als attribuutnaam of kenmerknaam, een `null`-datatype buiten de
@@ -217,17 +219,18 @@ sluit met alle veertien groen op de samengevoegde branch, en:
   zelftestrijen van het script draaien op de v1-vorm; `EXPECTED_MIN_DOCS`
   blijft 192 (geen document verdwijnt uit golden/rood; de rood-zone krijgt
   er geen bij).
-- (c) Gate 3: 285 (+1 met de WF-113-golden) goldens en 48 rood-documenten
-  verifier-schoon; 433 − 0 + 5 = 438 negatiefs elk afgewezen op hun eigen
-  regel; de stempellijst in `corpus/negatief/README.md` noemt alle 21.
-- (d) Gate 4 ongewijzigd groen (656 case-files) — het casusformaat
+- (c) Gate 3: 237 (+1 met de WF-113-golden) goldens en 48 rood-documenten
+  verifier-schoon (286 bestanden); 454 − 21 + 10 wf113 + 1 wf004 = 444
+  negatiefs elk afgewezen op hun eigen regel; de stempellijst in
+  `corpus/negatief/README.md` noemt alle 21.
+- (d) Gate 4 ongewijzigd groen (658 case-files, +2 van de WF-113-golden) — het casusformaat
   verandert niet; als de gate tóch beweegt is dat een meting in het Result.
 - (e) Gates 5, 6, 7, 8: ref-suite ≥ 931, 608 (+ de nieuwe) replays, clingo
   523 / 608, noop 571 + 37, rood 48 / 96 (49 / 98 zodra
   `clingo-parameter-failfast` geland is en de branch erop is gerebased) —
   GEEN uitkomst beweegt: M1 verandert geen betekenis, dus elke pin van
   gates 5/6/12 is een gelijkheid vóór en na.
-- (f) Gate 9: 12 catala-goldens byte-identiek; gate 14: 1 flogic-golden
+- (f) Gate 9: 12 catala-goldens byte-identiek; gate 14: 2 flogic-goldens
   byte-identiek, suite ≥ 130; gate 10: 70 (+1) rgs-goldens byte-identiek,
   JUnit ≥ 492.
 - (g) Gate 11: casus-dump byte-identiek opnieuw geëmitteerd (45
@@ -336,3 +339,132 @@ M1 → geland met datum en hash; V12 aangevuld met het besluit van
 2026-09-23 (toka blijft tot v1 klaar is, gate 11 verhuist mee als
 regressiegate). `spec/proposals/V1-WIREMIGRATIE.md` §7 M-tabel: M1
 doorgestreept met verwijzing (bouwer A2 mag die ene regel zetten).
+
+## Result
+
+**Geland (L1 van de v1-klap, 2026-09-23/24; basis main 82c1f088, gerebased op 16234880; de landingscommit is deze kaartverplaatsing zelf).**
+Vier bouwers (A1 wire, A2 verifier/spec, B OCaml, C Java), één lensronde
+met negentien vondsten (vijf blokkerend), één fixronde in drie parallelle
+bouwers, herkeuring door dezelfde lens. Alle veertien gates groen op de
+unie; de branch stond op de main-tip, dus de unie-run is de main-run.
+
+**De wire.** `uchar-ir-v1`, root `{format, model, rules, diagnostics}`;
+de zes tabellen als lijsten in `model` (ch.-2-namen; `dagsoortPerEenheid`
+en `functionDefs` ongewijzigd erin); `rules` met de v0-sleutels verbatim;
+`ObjectType {node, name, supertype?, animate, plural?, attributes,
+characteristics}` met `Attribute {node, name, datatype, plural?,
+dimensions? (minItems 1), timeline?}`, `Characteristic {node, name, kind,
+timeline?}` (facet zonder `timelineName`: gesloten positie),
+`TimelineFacet {node, granularity, count, timelineName?}`; `Domain {node,
+name, datatype}` waarbij het datatype op de declaratiepositie geen
+zelfnaam draagt (`domainDatatype`-unie) en op referentieposities de
+domeinverwijzing van ch. 2.4 blijft; `naam` non-null op Parameter,
+Eenheidstelsel, Feittype en Dimensie; `regels`-stubs weg; `diagnostics`
+blijft met WF-113. Enum-waarden en alle andere knopen byte-voor-byte v0.
+Canonieke sleutelvolgorde = schema-`properties`-volgorde voor de M1-knopen
+(23 v0-erfenisknopen in handgeschreven goldens wijken af; gate 2 toetst de
+volgorde niet — open punt).
+
+**Migratie.** `spec/proposals/v1-migratie/m1.py` (`--all`, `--check`,
+`migrate_bytes`): 747 van 769 documenten mechanisch (golden 237, negatief
+432, rood 48, toka 30), idempotent, luid falend met JSON-pointer; de 22
+weigeringen waren de 21 stempelgetuigen plus `wf059-attribute-without-
+datatype` (met de hand herschreven, valt nog op WF-059). Onafhankelijke
+terugvouwing door de lens: 0 onverklaarde verschillen. Normalisaties:
+1140 stubs uit 565 documenten; `plural` afwezig bij null (103); `count` 1
+bij ontbrekende aantalkaart (111 + 46); `kind` ZELFSTANDIG (1); 30
+Numeriek-domeinen kregen hun sleutel als naam.
+
+**WF-113** (V2 (ii)): (a) alleen WARNING, niet-lege en niet-blanco
+`message`, `line` ≥ 0 (0 = geen bronpositie); (b) elke `Onopgelost` met
+niet-lege `bron` heeft een diagnostic waarvan de message die `bron`
+letterlijk bevat; (c) geen consument leest de lijst. Verifier op alle
+markerposities (lens: 101/101). Producent: `IrEmitter.emit` weigert elk
+model met een niet-WARNING (14 tests herschreven), marker-WARNINGs eindigen
+op de `bron`, JUnit-toets per markerroute (`Verslag`, `MarkerVerslagTest`);
+catala/flogic bouwen nooit een marker en weigeren nu luid wat ze niet
+schrijven. Golden `jutterswet-kaletabel` (WARNING uit een beslistabel met
+alleen een kop; speelt ref/clingo/Drools, pins 184/163 → 185/164);
+negatiefs `wf113-severity-error/-info/-null`, `-lege-message`,
+`-message-blanco`, `-marker-zonder-verslag`, `-verslag-noemt-marker-niet`,
+`-marker-bron-null`, `-marker-bron-leeg`, `-line-negatief`; de twee rode
+markerdocumenten dragen hun WARNING.
+
+**Stempels (V14 (a)), lijst in `corpus/negatief/README.md`:** 21 ×
+verwijderd-met-reden (WF-094 ×10, WF-034 (p) ×9, WF-059 armen 2/3 ×2 —
+alle in het schema onschrijfbaar), 1 × herschreven (WF-059 arm 1); erbij
+`wf004-lege-dimensielijst`. Negatief-stand 454 → 444; vloer 350 blijft.
+Verifieruitvoer van de 433 gemigreerde getuigen byte-gelijk vóór en na;
+geen getuige wisselde van regel of arm. WF-094, WF-034 (p) en WF-059
+armen 2/3 uit IR-SPEC en verifier (geschiedenisregels blijven).
+
+**Consumenten en emitters.** Gedeelde OCaml-lader (`spec/verifier/lib`,
+ook ref/clingo/flogic) op de M1-vorm; verifier-meldingen als M1-JSON-
+pointers (307 NOTE.md-citaten mee); Drools `IrLoader` strikt (`node`,
+exacte sleutels, null-optionelen geweigerd, JSON-typen, WF-001/002-
+naamsleutel, `Documentfout` met pointer, 31 laderweigeringsgetuigen), elke
+telling bewaard; catala- en flogic-emitters en `IrEmitter` schrijven de
+M1-vorm in canonieke volgorde; toka-casus her-emissie byte-identiek aan de
+mechanische migratie (README-divergentieregel M1); gate 13 ongewijzigd.
+
+**Gate-scripts (per regel):** `check-ir-schema.sh` r. 2 en 21 (SCHEMA →
+`uchar-ir-v1.schema.json`) + 22 vormzelftestrijen; `check-drools.sh`
+EXPECTED_PLAYED 184 → 185, EXPECTED_DRL_PLAYED 163 → 164 (de WF-113-golden).
+Buiten de may-touch, gemeld: `spec/RUNTIME-SEMANTICS.md` r. 3945 (alleen de
+schemabestandsnaam); `spec/proposals/PRIORITY-RELATION.md` r. 60.
+
+**Lens-herkeuring:** MERGEN; negen nieuwe adviespunten uit de fixronde in
+een C-naloop gesloten (supertype-opzoeking op naamidentiteit; `count` buiten
+het int-bereik als Refusal; emit-bewaking ook op INFO/null/blanco/`line` < 0;
+`Verslag` en emitter weigeren een marker met lege of null `bron`;
+`Documentfout`-plek op het ouderobject zoals de OCaml-lader; knoopcontrole
+op Diagnostic, datatype-`node`, `dayKinds`/`dagsoortPerEenheid`, `format` en
+`functionDefs` eerst op vorm; één normfunctie `Namen.norm`; gate 12 adviseert
+bij `Documentfout` "repair the document — never an exclusion",
+`scripts/check-drools.sh` r. 1163; regel 0 = "de producent meldt geen
+bronpositie", ook een frontend-WARNING zonder token).
+
+**Gates op de landing (alle veertien, elk los):** 1 PASS; 2 PASS 286
+bestanden, 26 + 22 zelftestrijen; 3 PASS 286 schoon / 444 negatiefs; 4 PASS
+658 case-files; 5 PASS ref-suite 932 / 610 replays; 6 PASS suite 523 / 610;
+7 PASS 573 + 37; 8 PASS 48 / 96; 9 PASS 207 / 12; 10 PASS 507 tests / 71
+goldens; 11 PASS 45 fragmenten, 27 tests, 29 slices, replay 29/29/29; 12
+PASS played 185, DRL 164, JUnit 679; 13 PASS 131 twists / 128 replays; 14
+PASS 135 / 2.
+
+**Correcties op de kaarttekst:** 769 documenten (niet 817; rood was dubbel
+geteld), 237 goldens (285 = golden + rood), gate 4 658 case-files (+2),
+26 zelftestrijen, 2 flogic-goldens; `dimensions` leeg wordt geweigerd, niet
+"afwezig".
+
+**Open punten (genummerd, hoofdsessie weegt ze bij L2–L5):**
+1. B3-namen: 26 echte regelnamen stonden alleen in de stubs (6 in 4
+   goldens, bijv. de naam van een uitzonderingsregel) — naam op `Default`
+   in L4? (normvraag, standaard: nee, `bron`-label volstaat).
+2. Sleutelvolgorde-toets in gate 2 vraagt eerst een besluit over de 23
+   v0-erfenisknopen (Default 10, PrioritizedDefaults 8, Functie 3,
+   Kwantorvouw 1, Let 1; 2 uit een producent).
+3. OCaml-bibliotheeknaam `uchar-ir-v0`/`Ir_v0` → L5.
+4. Vijf verifierpaden zijn nog geen pointer (`…/datatype/velden/<naam>`,
+   `…/parameters/<naam>`, een ontbrekend veld); vier NOTE-citaten bewust
+   niet; metingscitaten met v0-paden in IR-SPEC (WF-089, WF-100) als
+   geschiedenis.
+5. Misvormde knopen aan de regelkant blijven in Drools een Refusal
+   (EXCLUDE) tot hun eigen landing; `functionDefs`-weigeringstekst
+   ongewijzigd (drie goldens hangen eraan).
+6. Rood-document uit markerroute (c) niet gemaakt (Drools EXCLUDE → vraagt
+   een regel in de uitsluitlijst van `check-rood.sh`).
+7. `ref/lib/case.ml` 291–318 noemt v0 inhoudelijk (kalenderbuckets) en de
+   enumspelling tot L5.
+8. Dode/hulpcode: `Emissie.zonderFouten`-patroon in 11 frontendtests;
+   `MarkerVerslagTest` dwingt per familie, niet per plek.
+9. Testwijzigingen (gemeld, onder kaartmandaat): frontend 14 + 11 tests,
+   Drools 59 klassen mechanisch + 4 herschreven + 2 nieuwe klassen,
+   ref/clingo/catala/flogic-suites (embedded documenten, hulpen,
+   getuigen).
+10. Drools-lader één stap strenger dan de OCaml-lader: een Diagnostic met
+    null-ernst of null-melding is daar een laadfout waar de verifier hem
+    op WF-113 bij naam weigert; `isBlank()` telt ruimer dan `String.trim`;
+    een onbekend veld wordt op het veld gemeld (OCaml: het ouderobject);
+    `functionDefs` alleen op lijstvorm gecontroleerd; de tekst "unknown
+    model section" bewust ongewijzigd (drie goldens in de kanaallijsten).
