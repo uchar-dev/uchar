@@ -758,7 +758,10 @@ let unbound_param_order_reason name what =
    ([barred], [emit_barriers]) and a Let value's demand ([note_binder_read]).
    "Every allowed order" is decided per read: where two reads of one binder
    each cover some orders and together all, the refusal is named although
-   ref's words were due (README [N3]).
+   ref's words were due (README [N3]). And "some allowed order" is decided per
+   fold's range: two folds over one list each take an order of their own, so
+   a twin can join atoms that no single order makes true, and the refusal is
+   named where no allowed order reads the parameter (README [N4]).
 
    Where the body is not exact otherwise, it errs in one of two directions,
    each written at the place that builds it. Loud: the day-kind table and the

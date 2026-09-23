@@ -27,28 +27,37 @@ spec bug.
   words; a read that one allowed order reaches and another does not
   fires in a sentence that names the unnormed order, whichever order
   ref keeps (maintainer decision 2026-09-23); a read no allowed order
-  reaches fires nothing. That holds for a quantifier fold's matrix, for
-  a Let barrier in a part that runs member by member, and for the
-  value of a Let whose binder is read at such a place. For the Let
-  barrier the pass before a creation is one of the allowed orders: ref
-  runs a pass's rules before its creations, so the member a creation
-  adds is absent in that pass, and so is a barrier only that member
-  raises. `Let k = restpost in (som(bonus van werven die TEN MINSTE 1
-  schuiten [k > 0]) plus p)`, with one schuit created for each Werf and
-  restpost leeg, refuses in the named sentence where ref faults at p in
-  the pass before the creation. So the named refusal
-  also stands where ref plays: two creations of 8 and 3 for each Werf,
-  each behind a condition that holds, and `TEN MINSTE 1 [lengte > 5,
-  lengte > p]` over the schuiten — ref runs them in document order,
-  reads 8 and stops, and [3, 8] reads p [N1]; the same creations under
-  `Let k = restpost in som(lengte van schuiten die TEN MINSTE 1
-  [ALLE[lengte > 5, k > 0], lengte > p])`, where ref's barrier at 8
-  ends the Let [N2]. "Every allowed order" is decided per read, so
-  where two reads of one binder each cover some orders and together
-  all, the refusal is named although ref's words were due: two
-  quantifier folds over the same created 8 and 3 whose matrices read k
-  in opposite orders, under `Let k = p` [N3]. Where the guard is not
-  exact otherwise, it errs in one of two directions:
+  reaches fires nothing, but for [N4] below. That holds for a
+  quantifier fold's matrix, for a Let barrier in a part that runs
+  member by member, and for the value of a Let whose binder is read at
+  such a place. For the Let barrier the pass before a creation is one
+  of the allowed orders: ref runs a pass's rules before its creations,
+  so the member a creation adds is absent in that pass, and so is a
+  barrier only that member raises. `Let k = restpost in (som(bonus van
+  werven die TEN MINSTE 1 schuiten [k > 0]) plus p)`, with one schuit
+  created for each Werf and restpost leeg, refuses in the named
+  sentence where ref faults at p in the pass before the creation. So
+  the named refusal also stands where ref plays: two creations of 8
+  and 3 for each Werf, each behind a condition that holds, and `TEN
+  MINSTE 1 [lengte > 5, lengte > p]` over the schuiten — ref runs them
+  in document order, reads 8 and stops, and [3, 8] reads p [N1]; the
+  same creations under `Let k = restpost in som(lengte van schuiten
+  die TEN MINSTE 1 [ALLE[lengte > 5, k > 0], lengte > p])`, where
+  ref's barrier at 8 ends the Let [N2]. "Every allowed order" is
+  decided per read, so where two reads of one binder each cover some
+  orders and together all, the refusal is named although ref's words
+  were due: two quantifier folds over the same created 8 and 3 whose
+  matrices read k in opposite orders, under `Let k = p` [N3]. And
+  "some allowed order" is decided per fold: each fold's range has an
+  order model of its own, also where two folds range over the same
+  list, so a named twin can join an atom that holds in one order with
+  an atom that holds only in another. The refusal is then named where
+  no allowed order reads the parameter: `TEN MINSTE 1 schuiten [TEN
+  MINSTE 1 [lengte > 5, TEN MINSTE 1 van de schuiten van zijn werf
+  [TEN MINSTE 1 [lengte < 5, lengte > p]]]]` over a created 8 and 3,
+  where [8, 3] settles the outer fold at 8 and [3, 8] the inner one at
+  3 [N4]. Where the guard is not exact otherwise, it errs in one of
+  two directions:
   - Loud, a refusal where ref plays. [L1] The day-kind table and the
     §7.1 horizon fence read their parameter at translation and refuse
     there, also behind a rule condition that fails, where ref never

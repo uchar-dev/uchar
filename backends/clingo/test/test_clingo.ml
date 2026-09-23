@@ -10207,6 +10207,76 @@ let () =
              {|{ "label": "S1", "objectType": "Schuit", "attributes": { "lengte": { "number": "8" } }, "roles": {}, "characteristics": [] }|} ]
          rows)
 
+(* FIXRONDE 5, lens point 3 (README [N4]): each fold's range gets an order
+   model of its own, also where two folds range over the same list, so an
+   order-dependent atom of one fold and one of the other can each hold in an
+   order of their own while no single order makes both true. nr-1: keur 99
+   indien TEN MINSTE 1 schuiten [TEN MINSTE 1 [lengte > 5, TEN MINSTE 1 van de
+   schuiten van zijn werf [TEN MINSTE 1 [lengte < 5, lengte > p]]]] over a
+   created 8 and 3. In [8, 3] the outer fold settles at 8; in [3, 8] the inner
+   fold settles at 3; no order reads p, and ref plays. The twin that fires
+   joins "the outer fold reads 3 in some order" (3 before 8) with "the inner
+   fold reads 8 in some order" (8 before 3). With the two schuiten in the case,
+   in either order, both play. *)
+let () =
+  let werf = pf_ot ~naam:"Werf" ~meervoud:"Werven" (Printf.sprintf {|"keur": %s|} pf_n0)
+  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" (Printf.sprintf {|"lengte": %s|} pf_n0) in
+  let ligplaats =
+    {|{ "ligplaats": { "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
+      { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] } }|}
+  and schuiten = {|{ "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" }|}
+  and zijn_werf = {|{ "node": "RolBinding", "feittype": "ligplaats", "rol": "werf" }|} in
+  let lengte = pf_a ~ot:"Schuit" ~typ:pf_n0 "lengte" and lit v = pf_l ~typ:pf_n0 v in
+  let tm1 parts = pf_comp ~drempel:1 "TEN_MINSTE" parts in
+  let fold ~bron ~range toets =
+    Printf.sprintf
+      {|{ "node": "Kwantorvouw", "kwantor": "TEN_MINSTE", "drempel": 1, "elementObjecttype": "Schuit",
+        "filter": null, "toets": %s, "bron": "%s", %s }|}
+      toets bron range
+  in
+  let inner =
+    fold ~bron:"de schuiten van zijn werf"
+      ~range:(Printf.sprintf {|"bronPad": [ %s, %s ]|} zijn_werf schuiten)
+      (tm1 [ pf_cmp "KLEINER" lengte (lit "5"); pf_cmp "GROTER" lengte (pf_p ~typ:pf_n0 "p") ])
+  in
+  let outer =
+    fold ~bron:"de schuiten" ~range:(Printf.sprintf {|"bronRol": %s|} schuiten)
+      (tm1 [ pf_cmp "GROTER" lengte (lit "5"); inner ])
+  in
+  let creatie i v =
+    Printf.sprintf
+      {|{ "node": "ResolvedObjectCreatie", "naam": "maak schuit %d", "nieuwType": "Schuit", "subject": "Werf",
+          "toekenningen": [ { "node": "Toekenning", "attribuut": "lengte", "waarde": %s, "kenmerk": false } ],
+          "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null },
+          "verbindendeRol": %s }|}
+      i (lit v) schuiten
+  in
+  let doc creaties =
+    pf_doc ~objecttypen:[ werf; schuit ] ~feittypen:ligplaats ~parameters:[ pf_decl ~typ:pf_n0 "p" ]
+      ~regels:[ pf_regel ~ot:"Werf" ~doel:"keur" ~typ:pf_n0 ~voorwaarde:outer (lit "99") ]
+      ~creaties:(List.mapi creatie creaties) ()
+  in
+  let inst label ot attrs roles =
+    Printf.sprintf
+      {|{ "label": "%s", "objectType": "%s", "attributes": { %s }, "roles": { %s }, "characteristics": [] }|}
+      label ot attrs roles
+  in
+  let w1 order =
+    inst "W1" "Werf" ""
+      (if order = [] then ""
+       else Printf.sprintf {|"schuiten": [ %s ]|} (String.concat ", " (List.map (Printf.sprintf {|"S%s"|}) order)))
+    :: List.map (fun v -> inst ("S" ^ v) "Schuit" (Printf.sprintf {|"lengte": { "number": "%s" }|} v) "") order
+  in
+  let rows = [ pf_is ~label:"W1" ~attr:"keur" "99"; pf_cons ] in
+  named_refusal ~by:"the quantifier fold" ~ref_plays:true
+    ~name:(pinned "two folds over the same created 8 and 3 each take an order of their own, and no order reads p (nr-1)" "N4")
+    ~ir:(doc [ "8"; "3" ]) ~param:"p" ~case_text:(pf_case ~instances:(w1 []) rows);
+  both_answer ~name:"the same two folds over the case's 8 before 3 (nr-case-8-3, control)" ~ir:(doc [])
+    ~case_text:(pf_case ~instances:(w1 [ "8"; "3" ]) rows);
+  both_answer ~name:"the same two folds over the case's 3 before 8 (nr-case-3-8, control)" ~ir:(doc [])
+    ~case_text:(pf_case ~instances:(w1 [ "3"; "8" ]) rows)
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
