@@ -17,10 +17,10 @@ in tests.
 - `schema/`, `graaf/`, `engine/` — the fact-model contract + bean generation, the rule
   graph, and the fire-layer support (in-memory bean compiler, parameterset loader).
 - `loader/IrLoader.java` — **the heart**: the inverse of the frontend's `IrEmitter`. It
-  parses `regelspraak-ir-v0` JSON into the frontend IR record types the transpiler
-  consumes, with a **loud per-form `Refusal`** for every form the v0 backend does not
-  carry (a non-v0 `formaat`, an unknown top-level section, an unknown
-  `Expr`/`Conditie`/`Datatype` node — a v1 struct/list/Let/fold, …).
+  parses `uchar-ir-v1` JSON (the M1 shape) into the frontend IR record types the
+  transpiler consumes, with a **loud per-form `Refusal`** for every form the v0 backend
+  does not carry (another `format`, an unknown section of the root, the model or the
+  rules, an unknown `Expr`/`Conditie`/`Datatype` node — a v1 struct/list/Let/fold, …).
 - `cases/CaseRunner.java`, `cases/DroolsBackendMain.java` — the case runner and the
   jar-only CLI the gate drives.
 
