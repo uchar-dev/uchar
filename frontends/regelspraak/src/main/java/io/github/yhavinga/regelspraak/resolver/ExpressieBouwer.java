@@ -1696,12 +1696,59 @@ final class ExpressieBouwer {
     private String tellingBronFout(List<Expr> argumenten, FunctieAanroepContext f) {
         String botsing = aantalAttribuutBotsing(argumenten, f);
         if (botsing != null) return botsing;
+        String overType = tellingOverObjecttype(argumenten, f);
+        if (overType != null) return overType;
         String operand = argumenten.isEmpty() ? "geen operand" : "'" + bron(f).snippet() + "'";
         return "telling zonder bron: " + operand + " noemt geen instanties om te tellen — een "
                 + "telling vouwt de INSTANTIES van een onderwerpexpressie (§5.8.1, typeringen §4.11) "
                 + "en draagt daarom een elementtype; zonder elementtype telt zij haar OPERAND en niet "
                 + "een populatie. Een eigen waarde, een getal, een parameter of een lijst is geen "
                 + "bron (WF-037, IR-SPEC ch. 4.3, besluit 2026-09-23)";
+    }
+
+    /** "het aantal Vondsten": a count whose one operand names an OBJECT TYPE — by name or plural, bare, with an
+     *  article or with "alle" — and nothing it is counted from. The card frontend-typemeervoud-telling
+     *  (2026-09-23) answered the norm question NO: RegelSpraak v2.3.0 has no count over all instances of a type.
+     *  The count takes a plural subject expression (§5.8.1, typeringen §4.11), and §5.8 names the plural ones —
+     *  a concatenation, a selection whose object or role is plural, a subselection — each reached from the
+     *  rule's subject; an object type stands in an onderwerpketen only in the singular, as the universal
+     *  subject the rule binds per instance (§5.5.3, §13.4.1). The one document-wide range, "van alle
+     *  &lt;objecttype&gt;", is the uniqueness check's own subject expression (§8.1.6) and no aggregation operand.
+     *
+     *  <p>The refusal predates this sentence; what the sentence replaces is the generic one, which told an
+     *  author who named a population that the operand "names no instances". Only an operand that resolved to
+     *  NOTHING declared qualifies — a bare name kept as a {@link Expr.VariabeleRef}, or an unresolved one — so
+     *  a parameter, a "Daarbij geldt" variable or an attribute that shares a type's name is never re-read. The
+     *  way out is named from the rule's subject when exactly one role reaches the type from it
+     *  ({@link RegelSpraakModel#verbindendeRolBinding}); otherwise the sentence gives the general spelling.
+     *  Null when the operand names no type. */
+    private String tellingOverObjecttype(List<Expr> argumenten, FunctieAanroepContext f) {
+        if (!(f instanceof AantalFuncContext af) || argumenten.size() != 1) return null;
+        if (!(argumenten.get(0) instanceof Expr.VariabeleRef || argumenten.get(0) instanceof Expr.Onopgelost)) return null;
+        String operand = src(af.primaireExpressie(0)).replaceAll("^\\((.*)\\)$", "$1").trim();
+        String kern = operand.replaceFirst("(?i)^(de|het|een|alle)\\s+", "");
+        Objecttype type = MeervoudMatcher.vindObjecttype(model.objecttypen.values(), kern);
+        if (type == null) return null;
+        String uitweg = "";
+        RegelSpraakModel.RolBindingRef paar = model.verbindendeRolBinding(huidigSubject, type);
+        RegelSpraakModel.Feittype ft = paar == null ? null : model.feittypen.get(paar.feittype());
+        if (ft != null) {
+            String rol = paar.rol();
+            for (RegelSpraakModel.Rol r : ft.rollen)
+                if (r.naam().equals(paar.rol()) && r.meervoud() != null) rol = r.meervoud();
+            uitweg = " — vanaf " + huidigSubject.naam + " is dat de rol '" + rol + "' (feittype " + ft.naam + ")";
+        }
+        return "telling zonder bron, over een objecttype: '" + bron(f).snippet() + "' noemt het objecttype "
+                + type.naam + " zonder onderwerp waarvandaan het geteld wordt, en zou zo alle instanties van "
+                + type.naam + " in het document tellen — die telling kent de brontaal niet. RegelSpraak v2.3.0 "
+                + "telt de instanties van een meervoudige onderwerpexpressie (§5.8.1, typeringen §4.11), en "
+                + "meervoudig is alleen een concatenatie, een selectie met een meervoudig object of een "
+                + "meervoudige rol, of een subselectie (§5.8), steeds bereikt vanaf het onderwerp van de regel; "
+                + "een objecttype staat in een onderwerpketen alleen enkelvoudig, als universeel onderwerp dat "
+                + "per instantie bindt (§5.5.3, §13.4.1). De enige documentbrede reikwijdte, 'van alle "
+                + "<objecttype>', hoort bij de uniciteitscontrole (§8.1.6) en is geen aggregatie. Tel via een "
+                + "rol vanaf het onderwerp ('het aantal <rol> van <onderwerp>', §5.5.5)" + uitweg
+                + " (WF-037, IR-SPEC ch. 4.3)";
     }
 
     /** The source-less count whose words also spell a DECLARED attribute: "het aantal gewogen posten

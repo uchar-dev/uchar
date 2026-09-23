@@ -648,3 +648,41 @@ refusals, and the two counter-proofs). Measured red-first on the pre-card
 frontend (5b42e5b9): both of this card's golden sources — `jutterswet-vondstunie`
 and `jutterswet-keurunie` — were refused with the WF-037 arity ERROR and wrote
 nothing.
+
+### A type as the operand: no count over all instances (2026-09-23)
+
+`aantalFunc` takes any `primaireExpressie`, so "het aantal Vondsten" — an
+object type's plural with nothing it is counted from — parses as a count. The
+card `frontend-typemeervoud-telling` asked whether the source language knows a
+count over ALL instances of a type, and measured that it does not:
+
+- the count takes a plural subject expression (§5.8.1; typeringen §4.11 admits
+  subject expressions only), and §5.8 enumerates the plural ones — a
+  concatenation (§5.7), a selection whose object or role selector is plural
+  (§5.5.2, §5.5.5), a subselection (§5.6) — each reached from the rule's
+  subject;
+- an object type stands in an onderwerpketen only in the singular, behind an
+  article: as the universal subject the rule is applied to per instance, or as
+  a reference back to it (§5.5.1, §5.5.3, §13.4.1). Its plural has no place
+  there;
+- the only document-wide range over a type, "van alle <objecttype>", is the
+  uniqueness check's own subject expression (§8.1.6, its syntax in §9.5),
+  admitted in a single criterion of a consistency rule and nowhere as an
+  aggregation operand;
+- the reference toolchain has no lowering for the sentence either — its
+  resolver leaves it a marker and emits nothing without an explicit override —
+  and no count in the official casus of the repository's temporary parity zone
+  counts a type: its two count sentences count a role.
+
+So the form stays refused, and nothing reaches the wire. The refusal is older
+than the card (WF-037's source-less-count arm), but its sentence said that the
+operand "names no instances to count", which is untrue for an author who named
+a population. The sentence now states the norm and the way out — count through
+a role from the rule's subject, naming that role when exactly one reaches the
+type — for every spelling that reaches it: bare, with an article or "alle", the
+type's own name, the plural in lower case, in parentheses. Only an operand that
+resolved to nothing declared qualifies, so a parameter or a "Daarbij geldt"
+variable that shares a type's name keeps the generic sentence. A subselection
+over a bare type ("het aantal Vondsten die gewogen zijn") parses another way
+and is refused by the subselection fence of §5.6 with its own sentence.
+Witness: `TypemeervoudTellingTest`.
