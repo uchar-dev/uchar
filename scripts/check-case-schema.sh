@@ -50,9 +50,25 @@ while IFS= read -r f; do
 done < "$list"
 
 $RUN - "$SCHEMA" "$list" <<'PY' || status=1
-import sys, json
-from jsonschema import Draft202012Validator
-from jsonschema.exceptions import best_match, SchemaError
+import sys, json, re
+from jsonschema import Draft202012Validator, validators
+from jsonschema.exceptions import best_match, SchemaError, ValidationError
+
+# JSON Schema's `pattern` is an ECMA-262 regular expression, and there `$`
+# matches only at the end of the input. The stock validator runs Python's
+# re.search, whose `$` also matches before a final newline, so it admitted
+# "2026-03-10\n" for the date pattern, "5\n" for the number pattern and an
+# asOfDate with a trailing newline, all of which every case reader refuses
+# (measured 2026-09-23). Every pattern in the case schema is anchored at both
+# ends on every alternative, so a FULL match is what ECMA-262 asks of it; on
+# a pattern that is not anchored that way a full match is only ever stricter
+# than ECMA-262's search, never laxer, so this gate can fail loudly on such a
+# pattern but can never pass a value the schema refuses.
+def ecma_pattern(validator, pattern, instance, schema):
+    if validator.is_type(instance, "string") and re.fullmatch(pattern, instance) is None:
+        yield ValidationError("%r does not match %r" % (instance, pattern))
+
+CaseValidator = validators.extend(Draft202012Validator, {"pattern": ecma_pattern})
 
 schema_path, list_path = sys.argv[1], sys.argv[2]
 with open(list_path, encoding="utf-8") as fh:
@@ -65,7 +81,7 @@ except SchemaError as exc:
     sys.stderr.write("FAIL: %s is not a valid draft 2020-12 schema:\n  %s\n"
                      % (schema_path, exc.message))
     sys.exit(1)
-validator = Draft202012Validator(schema)
+validator = CaseValidator(schema)
 
 failed = 0
 for path in files:
