@@ -215,7 +215,7 @@ this card no such document reached a valid IR: it drew the target-mismatch ERROR
 or a syntax error, or it was emitted with a characteristic named `niet …` or
 `geen …` that its object type does not declare, which the verifier refuses
 (WF-022 on a flat rule, the defaults-target check on a group). The 71 `bron.rgs`
-goldens re-emit byte-identically
+goldens that existed before this card re-emit byte-identically
 (gate 10). The golden `jutterswet-schorsing` (Jutterswet art. 3 and 4bis) is the
 first whose source carries a negated exception.
 
