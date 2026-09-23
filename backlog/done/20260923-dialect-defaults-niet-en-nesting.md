@@ -375,6 +375,17 @@ genegeerde `_build/` van de OCaml-bouw.
 `-regelgroep-uitzondering-afsluiting`, `-bron-annotaties-defaults`,
 `-testdocument-uitzonderingsvormen`, `-keten-kale-regels-divergentie`.
 
+**Nawoord van de hoofdsessie (2026-09-23, bij de landing).** De maintainer
+sneed de vervolgkaarten zelf, in commit 85f58237 (acht kaarten in
+`backlog/new/`, met zijn besluiten 1–8 erin: anker-ww-herleving-dragervoorwaarde,
+dialect-niet-in-uitzondering, dialect-uitzondering-op-uitzondering,
+frontend-bron-annotatie-in-defaults, frontend-regelgroep-sluit-bij-uitzondering,
+kenmerkinvoer-en-invoer-boven-berekening,
+regelspraak-java-defaults-in-scenario-en-werkbank,
+verifier-supertype-dubbele-schrijver). De conceptkaarten hierboven zijn daarom
+bij de landing verwijderd; alleen `20260923-wf022-waardeclausule-getuige` bleef,
+omdat die geen tegenhanger heeft.
+
 **Registerzin voor `spec/CONSTRUCTS.md` rij 8** (de hoofdsessie landt hem):
 
 > **Dialect negation and nesting (proposed 2026-09-23,

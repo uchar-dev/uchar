@@ -1366,6 +1366,11 @@ eight are proposed and await the maintainer.**
 
 ## 11. Cards
 
+*Superseded at landing (2026-09-23): the maintainer cut the follow-up cards
+himself in commit 85f58237 — eight cards in `backlog/new/` carrying his
+decisions on 1–8. The drafts listed below were removed at landing; only
+`20260923-wf022-waardeclausule-getuige` survived, having no counterpart.*
+
 Build cards (concepts in `backlog/new/`, each opening with "wacht op de
 besluiten 1–8 van spec/proposals/DIALECT-DEFAULTS-NIET-EN-NESTING.md"):
 
