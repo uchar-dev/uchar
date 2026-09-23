@@ -7547,8 +7547,8 @@ whether it acted on the transient leeg (`RUNTIME-SEMANTICS.md` ch. 6.4).
 *Cost:* none in the corpus. Counted 2026-09-23 on the corpus of that day's
 main line, none of the 31 leeg/gevuld tests in 29 corpus documents reads a
 node that some form writes, so the rule turns no existing edge negative. No
-verdict moved in the golden (235), red (48) or negatief (441) zones, and
-the reference interpreter's replay of all 643 golden and red cases is
+verdict moved in the golden (236), red (48) or negatief (441) zones, and
+the reference interpreter's replay of all 652 golden and red cases is
 byte-identical.
 
 *Not covered, recorded open:* other conditions that hold on absence without a
@@ -7641,13 +7641,13 @@ one-generation progression that discharges strictness on an admissible
 cycle is unsound for every read whose truth can be lost, a growing value
 included (`RUNTIME-SEMANTICS.md` ch. 6.1).
 
-*Cost:* none. Over the 754 corpus and parity-zone documents that this card
-did not add, 58 read positions in 17 documents change kind against the
-leeg/gevuld rule alone (51 turn negative, and 7 characteristic reads in a
+*Cost:* none. Over the 755 corpus and parity-zone documents that this card
+did not add, 62 read positions in 18 documents change kind against the
+leeg/gevuld rule alone (54 turn negative, and 8 characteristic reads in a
 monotone part turn positive), and none of them has a writer. Against the
-main line both rules together change 78 positions in 34 documents, again
+main line both rules together change 82 positions in 35 documents, again
 none with a writer. No verdict moved, and the reference interpreter's
-replay of the 643 golden and red cases is byte-identical.
+replay of the 652 golden and red cases is byte-identical.
 
 **The WF-051 defaults fold.** A defaults group (ch. 6;
 `RUNTIME-SEMANTICS.md` ch. 7) folds into this graph as the writer of its
