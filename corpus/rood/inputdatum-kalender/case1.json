@@ -1,0 +1,20 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "P4", "objectType": "Bergingsploeg",
+        "attributes": { "meldingsdatum": { "date": "2026-02-30" } },
+        "roles": {}, "characteristics": [] },
+      { "label": "P5", "objectType": "Bergingsploeg",
+        "attributes": { "opleverdatum": { "date": "2026-04-20" }, "bergingsbestek": { "number": "2" } },
+        "roles": {}, "characteristics": [] }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "ref": "P4.meldingsdatum \"2026-02-30\" is not the uchar-case-v0 date lexeme yyyy-mm-dd (day out of range in date lexeme \"2026-02-30\")",
+    "clingo": "P4.meldingsdatum \"2026-02-30\" is not the uchar-case-v0 date lexeme yyyy-mm-dd (day out of range in date lexeme \"2026-02-30\")",
+    "drools": "malformed date '2026-02-30' on 'meldingsdatum': the field widths are right but the calendar is not"
+  }
+}
