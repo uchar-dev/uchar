@@ -1,5 +1,5 @@
 #!/bin/sh
-# Gate 2: IR JSON schema (spec/schema/regelspraak-ir-v0.schema.json).
+# Gate 2: IR JSON schema (spec/schema/uchar-ir-v1.schema.json).
 #
 # Four checks:
 #   1. the schema is itself a valid draft 2020-12 schema (metaschema);
@@ -18,7 +18,7 @@
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
 
-SCHEMA='spec/schema/regelspraak-ir-v0.schema.json'
+SCHEMA='spec/schema/uchar-ir-v1.schema.json'
 if [ ! -f "$SCHEMA" ]; then
     echo "FAIL: schema not found at $SCHEMA" >&2
     exit 2
