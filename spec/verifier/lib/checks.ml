@@ -4760,18 +4760,10 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          wearing a second claim; measured, it too was verifier-clean, and
          there all THREE executors refused it.
 
-         What it does not reach, and why: a count with fewer than two operands
-         and no element type. Arity 0 and arity 1 are no listed form — the
-         clause above is what makes ≥ 2 the listed shape — so they are a
-         different defect, a fold without a source, under a decision not yet
-         taken. Both are verifier-clean today and `ref` answers them; that is
-         recorded as an open flank rather than silently swept in here. Its
-         sharpest spelling is a single ListLiteral argument (ch. 4.8):
-         measured, `ref` answers 1 whether that list carries two elements or
-         NONE, because the arity-1 route counts the operand and not its
-         contents. The flank is a card of its own,
-         `backlog/new/20260920-aantal-zonder-bron.md`, so that closing it
-         cannot miss that spelling. *)
+         What it does not reach: a count with fewer than two operands and no
+         element type. Arity 0 and arity 1 are no listed form — the clause
+         above is what makes ≥ 2 the listed shape — so they are a different
+         defect, a fold without a source, and the next arm carries it. *)
       (* WF-110 (c), the count's own source beside a union (ch. 4.3,
          maintainer decision 2026-09-20). The union's selections carry the
          population and the relation, one per selection, so a source on the
@@ -4808,6 +4800,30 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                    meaning belongs to the filled count over its set source, never to this kind"
                   arity) ]
          else [])
+      (* WF-037, the count's source (IR-SPEC ch. 4.3, semantics
+         RUNTIME-SEMANTICS ch. 3.4a; maintainer decision 2026-09-23). A count
+         of ONE operand without an element type, or of none, is a fold with
+         no source: nothing names the instances it counts. Measured before
+         this arm: verifier-clean, `ref` answered — 0 or 1 on one own read,
+         0 on none, and 1 on a single ListLiteral whether that list carried
+         two elements or NONE, because it counted the operand and not its
+         contents — while clingo and both Drools branches refused. One sentence
+         for both arities, worded as the filled count's element-type arm below,
+         so the two counts carry one law at one position.
+
+         The union is the one exit, and not a loophole: WF-110 (c) FORBIDS an
+         element type beside an instance-set union, whose selections each carry
+         their own, so there the source is present and sits one node down.
+         Arity ≥ 2 is the listed-form arm above and is not reported twice. *)
+      @ (match f.kind, f.element_objecttype, f.argumenten with
+         | Aantal, None, [ Instance_set_union _ ] -> []
+         | Aantal, None, ([] | [ _ ]) ->
+             [ v "WF-037" at
+                 "the count is an INSTANCE fold and MUST carry an element type: without one its \
+                  argument is no fold source at all — and with no argument there is none — so \
+                  the count has no contributors to count, only its operand, whatever that \
+                  operand holds (ch. 4.3)" ]
+         | _ -> [])
       (* WF-037, the filled count's shape (IR-SPEC ch. 4.3, semantics
          RUNTIME-SEMANTICS ch. 3.4c). Two of the three arms are new of
          DIRECTION: everywhere else this rule forbids a facet or demands at
