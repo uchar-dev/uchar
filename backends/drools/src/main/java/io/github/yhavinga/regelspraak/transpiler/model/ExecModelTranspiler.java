@@ -6185,19 +6185,21 @@ public final class ExecModelTranspiler {
         if (v.restantAttribuut() != null)
             rules.add(restantRegel(v, join, rato, bronClass, doelClass));
         // §9.7.6 Tabel 19 Fouten: surface an empty weight (whenever a naar-rato split is present) or a leeg/negatief
-        // maximum at ANY recipient as a SEPARATE insert-only Inconsistentie companion (the value side already
-        // degrades a bad cap to uncapped via rsPlafond — never a negative share).
+        // maximum on each offending recipient as a SEPARATE insert-only Inconsistentie companion (the value side
+        // already degrades a bad cap to uncapped via rsPlafond — never a negative share). Under naar rato a cap is
+        // only read for a weighted recipient of a split whose weight sum is non-zero, as in ref.
         Class<?> incClass = inconsistentieClass();
         boolean tieNaarRato = rato || (opVolgorde && v.ratoAttribuut() != null);
         if (tieNaarRato && incClass != null) {
             String w = v.ratoAttribuut();
-            rules.add(existsFoutRegel(v.naam() + " (leeg gewicht)", v.naam(), bronClass, doelClass, join, incClass,
-                    d -> RegelSpraakRuntime.get(d, w) == null, v));
+            rules.add(ontvangerFoutRegel(v.naam() + " (leeg gewicht)", v.naam(), bronClass, doelClass, join, incClass,
+                    d -> RegelSpraakRuntime.get(d, w) == null, null, v));
         }
         if (v.maximumAttribuut() != null && incClass != null) {
             String mx = v.maximumAttribuut();
-            rules.add(existsFoutRegel(v.naam() + " (leeg of negatief maximum)", v.naam(), bronClass, doelClass, join, incClass,
-                    d -> { Object m = RegelSpraakRuntime.get(d, mx); return m == null || ((BigDecimal) m).signum() < 0; }, v));
+            rules.add(ontvangerFoutRegel(v.naam() + " (leeg of negatief maximum)", v.naam(), bronClass, doelClass, join, incClass,
+                    d -> { Object m = RegelSpraakRuntime.get(d, mx); return m == null || ((BigDecimal) m).signum() < 0; },
+                    rato ? v.ratoAttribuut() : null, v));
         }
         return rules;
     }
@@ -6323,28 +6325,53 @@ public final class ExecModelTranspiler {
     }
 
     /** §9.7.6 build a verdeling Fout companion: an insert-only rule (NO no-loop, idempotency-guarded) firing once per
-     *  source that has a recipient matching {@code recipientFout} (an empty weight, or a leeg/negatief maximum),
-     *  inserting an Inconsistentie carrying the verdeling's name. The distribution still runs (the §9.7.6 "degrade +
+     *  recipient matching {@code recipientFout} (an empty weight, or a leeg/negatief maximum), inserting an
+     *  Inconsistentie carrying the verdeling's name on THAT recipient — rule × subject, ch. 5.6, as ref and clingo key
+     *  it (RUNTIME-SEMANTICS ch. 4.2/4.3); until 2026-09-23 it landed on the source, once per bron. The recipient set is
+     *  ref's: an empty source amount flags nothing, and a non-null {@code gewogenAttr} (a naar-rato cap) restricts it
+     *  to weighted recipients of a split whose weight sum is non-zero. The distribution still runs (the §9.7.6 "degrade +
      *  flag" representation); this only surfaces the Fout. Mirrors the DRL "(leeg gewicht)"/"(leeg of negatief maximum)" rules. */
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private Rule existsFoutRegel(String compNaam, String hostNaam, Class<?> bronClass, Class<?> doelClass, String join,
-                                 Class<?> incClass, Predicate1<Object> recipientFout, ResolvedVerdeling v) {
+    private Rule ontvangerFoutRegel(String compNaam, String hostNaam, Class<?> bronClass, Class<?> doelClass, String join,
+                                    Class<?> incClass, Predicate1<Object> recipientFout, String gewogenAttr,
+                                    ResolvedVerdeling v) {
         seq = 0;
         String fqcn = FACTS + ".Inconsistentie";
+        String bronAttr = v.bronAttribuut();
         Variable srcVar = DSL.declarationOf(bronClass, "$src");
-        PatternDSL.PatternDef srcPat = geldigGuard(PatternDSL.pattern(srcVar), v.geldigheid());   // §4.2 window
+        PatternDSL.PatternDef srcPat = PatternDSL.pattern(srcVar)
+                .expr(nextId("fbnn"), (Predicate1) s -> RegelSpraakRuntime.get(s, bronAttr) != null);
+        srcPat = geldigGuard(srcPat, v.geldigheid());   // §4.2 window
         srcPat = gateVoorwaarde(srcPat, srcVar, v);   // §13.4.10 voorwaarde gate (whole family)
+        List<RuleItemBuilder<?>> items = new ArrayList<>();
+        items.add(srcPat);
+        if (gewogenAttr != null) {
+            Variable cVar = DSL.declarationOf(doelClass, "$c_" + (seq++));
+            Variable wVar = DSL.declarationOf(BigDecimal.class, "$w_" + (seq++));
+            PatternDSL.PatternDef accSrc = PatternDSL.pattern(cVar)
+                    .expr(nextId("fsj"), (Variable) srcVar, (Predicate2) (c, s) -> RegelSpraakRuntime.get(c, join) == s)
+                    .expr(nextId("fsw"), (Predicate1) c -> RegelSpraakRuntime.get(c, gewogenAttr) != null)
+                    .bind(wVar, (Function1) c -> RegelSpraakRuntime.get(c, gewogenAttr));
+            Variable sumVar = DSL.declarationOf(Object.class, "$sum_" + (seq++));
+            items.add(DSL.accumulate(accSrc, DSL.accFunction(accFn("BigDecimalSumAccumulateFunction"), wVar).as(sumVar)));
+            items.add(PatternDSL.pattern(sumVar).expr(nextId("fsnz"),
+                    (Predicate1) x -> x != null && ((BigDecimal) x).signum() != 0));
+        }
         Variable dVar = DSL.declarationOf(doelClass, "$d_" + (seq++));
         PatternDSL.PatternDef dPat = PatternDSL.pattern(dVar)
                 .expr(nextId("fj"), (Variable) srcVar, (Predicate2) (d, s) -> RegelSpraakRuntime.get(d, join) == s)
                 .expr(nextId("fp"), (Predicate1) recipientFout);
+        if (gewogenAttr != null)
+            dPat = dPat.expr(nextId("fw"), (Predicate1) d -> RegelSpraakRuntime.get(d, gewogenAttr) != null);
+        items.add(dPat);
         Variable incVar = DSL.declarationOf(incClass, "$inc_" + (seq++));
-        PatternDSL.PatternDef guard = PatternDSL.pattern(incVar)
+        items.add(DSL.not(PatternDSL.pattern(incVar)
                 .expr(nextId("ig"), (Predicate1) i -> hostNaam.equals(RegelSpraakRuntime.get(i, "regel")))
-                .expr(nextId("ig"), (Variable) srcVar, (Predicate2) (i, s) -> RegelSpraakRuntime.get(i, "subject") == s);
-        Block2<org.drools.model.Drools, Object> body = (drools, s) ->
-                drools.insert(RegelSpraakRuntime.newInconsistentie(fqcn, hostNaam, s));
-        return PatternDSL.rule(kop(compNaam)).build(srcPat, DSL.exists(dPat), DSL.not(guard), DSL.on(srcVar).execute(body));
+                .expr(nextId("ig"), (Variable) dVar, (Predicate2) (i, d) -> RegelSpraakRuntime.get(i, "subject") == d)));
+        Block2<org.drools.model.Drools, Object> body = (drools, d) ->
+                drools.insert(RegelSpraakRuntime.newInconsistentie(fqcn, hostNaam, d));
+        items.add(DSL.on(dVar).execute(body));
+        return PatternDSL.rule(kop(compNaam)).build(items.toArray(new RuleItemBuilder[0]));
     }
 
     /** The §9.7.5 recipient filter shared by the rest rule's {@code not} guard and its sum accumulate: the join,

@@ -42,6 +42,13 @@ class ConsistentieLabelWitnessTest {
                 "the rule fires, but on V2, not on the pinned V1");
     }
 
+    /** A label naming no instance fails as a mismatch in both branches. ref refuses the same case at LOAD
+     *  ({@code inconsistent expectation references unknown label}) — a stricter line this runner does not draw. */
+    @Test void een_onbekend_label_faalt_in_beide_takken() throws Exception {
+        BeideTakken.rood(IR, geval("V9", "V2"), "verwacht inconsistent (geen wrakhout ter keuring @ V9), niet gevonden onder",
+                "no instance V9 exists");
+    }
+
     private static JsonNode geval(String wrakhoutLabel, String herkeuringLabel) throws Exception {
         return JSON.readTree("""
                 {"format": "uchar-case-v0", "asOfDate": null,

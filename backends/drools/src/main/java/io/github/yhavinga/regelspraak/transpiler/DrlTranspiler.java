@@ -1220,33 +1220,42 @@ public final class DrlTranspiler {
                         + getter(v.bronAttribuut()) + "().subtract($uit) )\n    }\n")
                 .render());
         }
+        // §9.7.6 Tabel 19 Fouten, surfaced on the §9.5 channel by SEPARATE modify-free rules (a `not`/accumulate
+        // in the share rule would cancel its sibling recipient activations). The fact lands on each offending
+        // RECIPIENT — rule × subject, ch. 5.6 — as RUNTIME-SEMANTICS ch. 4.2/4.3 give it and ref and clingo
+        // deposit it; the rule header is suffixed for a unique DRL name while `regel` stays the verdeling's.
+        // The recipient set is ref's: an empty source amount distributes nothing and flags nothing, and under
+        // naar rato a cap is only read for a weighted recipient of a split whose weight sum is non-zero.
+        // Until 2026-09-23 both lay on the SOURCE, once per bron.
+        String srcFout = "$src : " + ident(bron.naam, true) + "( " + constraintMet(ident(v.bronAttribuut(), false)
+                + " != null", vw) + " )";
+        String doelP = ident(doel.naam, true);
         if (tieNaarRato) {
-            // §9.7.6 Tabel 19: surface the empty-weight Fout via the §9.5 Inconsistentie channel — a SEPARATE,
-            // modify-free rule (so it cannot cancel the distribution's recipient activations), bound to the
-            // bron as $subject, firing once per bron that has a weightless recipient. The header is suffixed for
-            // a unique DRL rule name; the Inconsistentie's `regel` field stays the logical verdeling name (as
-            // uniciteitUnie does), so the idempotency guard keys off it.
             String wNaam = ident(v.ratoAttribuut(), false);
             out.append(new Regel(v.naam() + " (leeg gewicht)")
-                .clausule(SUBJECT + " : " + ident(bron.naam, true) + "( " + constraintMet("", vw) + " )")
-                .clausule("exists " + ident(doel.naam, true) + "( " + ident(join, false) + " == " + SUBJECT
-                        + ", " + wNaam + " == null )")
+                .clausule(srcFout)
+                .clausule(SUBJECT + " : " + doelP + "( " + j + ", " + wNaam + " == null )")
                 .geldigheid(v.geldigheid())
                 .clausule(inconsistentieGuard(v.naam()))
                 .dan(inconsistentieDan(v.naam()))
                 .render());
         }
         if (v.maximumAttribuut() != null) {
-            // §9.7.6 Tabel 19: a LEEG or NEGATIVE maximum at ANY recipient makes the whole verdeling a Fout (the
-            // N.B. — one recipient suffices). Surfaced like the empty weight: a SEPARATE modify-free Inconsistentie
-            // rule. The value side already degrades a leeg/negative cap to uncapped (rsPlafond for naar rato,
-            // rsVerdeelOpVolgorde for op volgorde), so no negative share is produced — the same {degrade +
-            // Inconsistentie} fout representation as elsewhere.
+            // The value side already degrades a leeg/negative cap to uncapped (rsPlafond for naar rato,
+            // rsVerdeelOpVolgorde for op volgorde), so no negative share is produced.
             String mNaam = ident(v.maximumAttribuut(), false);
-            out.append(new Regel(v.naam() + " (leeg of negatief maximum)")
-                .clausule(SUBJECT + " : " + ident(bron.naam, true) + "( " + constraintMet("", vw) + " )")
-                .clausule("exists " + ident(doel.naam, true) + "( " + ident(join, false) + " == " + SUBJECT
-                        + ", " + mNaam + " == null || " + mNaam + ".signum() < 0 )")
+            Regel r = new Regel(v.naam() + " (leeg of negatief maximum)").clausule(srcFout);
+            String gewogen = "";
+            if (rato) {
+                String wNaam = ident(v.ratoAttribuut(), false);
+                gewogen = ", " + wNaam + " != null";
+                r.clausule("accumulate( $c : " + doelP + "( " + j + gewogen + " ) ; $sum : sum($c."
+                                + getter(v.ratoAttribuut()) + "()) )")
+                 .clausule("eval( $sum.signum() != 0 )");
+            }
+            out.append(r
+                .clausule(SUBJECT + " : " + doelP + "( " + j + gewogen + ", " + mNaam + " == null || " + mNaam
+                        + ".signum() < 0 )")
                 .geldigheid(v.geldigheid())
                 .clausule(inconsistentieGuard(v.naam()))
                 .dan(inconsistentieDan(v.naam()))
