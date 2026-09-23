@@ -1857,6 +1857,68 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
       assert false
   | _ -> Value.fault "function kind not implemented in this card"
 
+(* ch. 3.10's two bounds, read once for BOTH of the chapter's cases — the
+   scalar gate in [eval_cond] and the clip in [run_rule] — so the two can
+   never disagree about what a bound may be or what it reads. Each bound
+   comes back as [None] (absent: open), [Some None] (leeg: no day matches)
+   or [Some (Some day)].
+
+   What a bound may BE is WF-111 since 2026-09-23 (maintainer decision;
+   until then ch. 3.10's mirror note, backend maturity): a literal or the
+   subject's own scalar date attribute. The verifier refuses the rest, so
+   the refusal below is fail-fast on a non-conforming input — kept, word for
+   word the ASP backend's up to the phase, so the two executors carry one
+   set and the differential never arbitrates a form only one reads.
+
+   Both bounds are evaluated, vanaf before tot (ch. 5.11), and BEFORE any
+   verdict: the order is normative and a fault in either bound belongs to
+   it. *)
+and venster_grenzen env world (self : World.instance) ~err vanaf tot =
+  let bound side e =
+    (match e with
+     | Literal _ -> ()
+     | Attribuut_ref
+         { attribuut = Some a; objecttype = Some otn; navigatie_rol = None; navigatie_pad = [];
+           set = false; _ }
+       when isa env self.otype otn && not (Ir_v0.Checks.attr_temporal (objecttype env otn) a) ->
+         ()
+     | _ ->
+         (* the phase tail is load-bearing, the WF-044 sisters' pattern:
+            the ASP backend refuses the same bound in the same words and
+            a pin that stopped before the tail could not tell the two
+            phases apart, so a swap would pass unseen *)
+         Value.fault
+           "the %s bound of a period condition is neither a date literal nor an own scalar \
+            date attribute of the subject, the only two shapes WF-111 admits: the document is \
+            not well-formed. Declined at evaluation"
+           side);
+    eval_expr env world self ~err e
+  in
+  let v = match vanaf with Some e -> Some (bound "vanaf" e) | None -> None in
+  let t = match tot with Some e -> Some (bound "tot" e) | None -> None in
+  if v = None && t = None then
+    Value.fault "a period condition without any bound has no window to gate on (WF-042)";
+  let day = function
+    | None -> None (* an absent bound is open *)
+    | Some Value.Empty -> Some None (* a leeg bound never matches *)
+    | Some (Value.Date z) -> Some (Some z)
+    | Some other ->
+        Value.fault
+          "a period condition's bound is %s, which is not a day-precision date (WF-042, WF-111)"
+          (Value.to_string other)
+  in
+  (* both [day] calls can FAULT (a bound that is not a date), and OCaml
+     fixes no evaluation order inside a tuple — so they are forced into
+     ch. 5.11's order with a let, rather than left to the compiler. Not
+     reachable today (WF-111 admits no bound shape that can fault, so the
+     fault is a fail-fast belt), but it becomes the live question the day
+     the general date expression lands: that is the first bound shape that
+     can fault at evaluation, and then WHICH bound faults first is the
+     observable ch. 5.11 order. *)
+  let dv = day v in
+  let dt = day t in
+  (dv, dt)
+
 and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
   match c with
   | Vergelijking { op; links; rechts; periode = None; _ } ->
@@ -2289,62 +2351,12 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
          "tot en met" inclusive, an absent bound open, an UNSET evaluation
          date never matching, a LEEG bound never matching. The chapter's
          other case, the temporal target's clip, never reaches this arm:
-         [run_rule] refuses it by name before a subject is taken, because the
-         case distinction is on the rule's TARGET and a condition sees none.
-
-         What a bound may BE is WF-111 since 2026-09-23 (maintainer decision;
-         until then ch. 3.10's mirror note, backend maturity): a literal or the
-         subject's own scalar date attribute. The verifier refuses the rest, so
-         the refusal below is fail-fast on a non-conforming input — kept, word
-         for word the ASP backend's up to the phase, so the two executors carry
-         one set and the differential never arbitrates a form only one reads.
-
-         Both bounds are evaluated, vanaf before tot (ch. 5.11), and BEFORE
-         the verdict looks at the evaluation date: the order is normative and
-         a fault in either bound belongs to it, not to whether today happens
-         to fall inside. *)
-      let bound side e =
-        (match e with
-         | Literal _ -> ()
-         | Attribuut_ref
-             { attribuut = Some a; objecttype = Some otn; navigatie_rol = None; navigatie_pad = [];
-               set = false; _ }
-           when isa env self.otype otn && not (Ir_v0.Checks.attr_temporal (objecttype env otn) a) ->
-             ()
-         | _ ->
-             (* the phase tail is load-bearing, the WF-044 sisters' pattern:
-                the ASP backend refuses the same bound in the same words and
-                a pin that stopped before the tail could not tell the two
-                phases apart, so a swap would pass unseen *)
-             Value.fault
-               "the %s bound of a period condition is neither a date literal nor an own scalar \
-                date attribute of the subject, the only two shapes WF-111 admits: the document is \
-                not well-formed. Declined at evaluation"
-               side);
-        eval_expr env world self ~err e
-      in
-      let v = match vanaf with Some e -> Some (bound "vanaf" e) | None -> None in
-      let t = match tot with Some e -> Some (bound "tot" e) | None -> None in
-      if v = None && t = None then
-        Value.fault "a period condition without any bound has no window to gate on (WF-042)";
-      let day = function
-        | None -> None (* an absent bound is open *)
-        | Some Value.Empty -> Some None (* a leeg bound never matches *)
-        | Some (Value.Date z) -> Some (Some z)
-        | Some other ->
-            Value.fault "a period condition's bound is %s, which is not a day-precision date (WF-042, WF-111)"
-              (Value.to_string other)
-      in
-      (* both [day] calls can FAULT (a bound that is not a date), and OCaml
-         fixes no evaluation order inside a tuple — so they are forced into
-         ch. 5.11's order with a let, rather than left to the compiler. Not
-         reachable today (WF-042 refuses a non-date bound ahead of any
-         executor, so the fault is a fail-fast belt), but it becomes the
-         live question the day the general date expression lands: that is
-         the first bound shape that can fault at evaluation, and then WHICH
-         bound faults first is the observable ch. 5.11 order. *)
-      let dv = day v in
-      let dt = day t in
+         [run_rule] takes the window off the condition position before a
+         subject is taken, because the case distinction is on the rule's
+         TARGET and a condition sees none. The bounds are read by
+         [venster_grenzen], the one reader both cases share, and BEFORE the
+         verdict looks at the evaluation date. *)
+      let dv, dt = venster_grenzen env world self ~err vanaf tot in
       (match (env.as_of, dv, dt) with
        | None, _, _ -> false (* an unset evaluation date never matches *)
        | _, Some None, _ | _, _, Some None -> false
@@ -2447,7 +2459,17 @@ let over_subjects ?(exact = false) ?(behalve = []) env world ~otype ~rule body =
    must equal the node's. An absent base timeline or a condition
    without true periods writes the EMPTY timeline (v0: a null base
    yields the empty list — the target exists, with no segments). *)
-let run_pro_rata env w (self : World.instance) ~ot ~attr waarde =
+(* ch. 3.10's clip, applied to a producer's result before anything else
+   looks at it: [venster] is the subject's window as [lo, hi) in day
+   numbers, an open bound at the integer's end. The restriction cuts
+   segments and keeps their values — Timeline.clip does exactly that — and
+   an empty window (hi <= lo) leaves nothing. *)
+let clip_venster venster result =
+  match venster with
+  | None -> result
+  | Some (lo, hi) -> if hi <= lo then [] else Timeline.clip result [ (lo, hi) ]
+
+let run_pro_rata ?venster env w (self : World.instance) ~ot ~attr waarde =
   let ot_decl = objecttype env ot in
   match waarde with
   | Functie
@@ -2492,7 +2514,7 @@ let run_pro_rata env w (self : World.instance) ~ot ~attr waarde =
                case for more)"
       in
       let basis = Option.value (World.timeline self b) ~default:[] in
-      let result = Timeline.pro_rata g basis true_periods in
+      let result = clip_venster venster (Timeline.pro_rata g basis true_periods) in
       (* ch. 7.8, the timeline arm: on a standing temporal target the
          fold decides only when its result is gevuld — an empty result
          (the temporal leeg) writes nothing and a case-supplied input
@@ -2531,7 +2553,7 @@ let run_pro_rata env w (self : World.instance) ~ot ~attr waarde =
               "unsupported day-count condition shape (an own temporal characteristic; no corpus \
                case for more)"
       in
-      let result = Timeline.aantal_dagen_in g true_periods in
+      let result = clip_venster venster (Timeline.aantal_dagen_in g true_periods) in
       (* the ch. 7.8 timeline arm, as for pro-rata *)
       if
         result = []
@@ -2571,13 +2593,41 @@ let run_rule env world (r : resolved_regel) =
           | Some Kenmerktoekenning -> kenmerk_temporal (objecttype env ot) attr
           | _ -> temporal_target
         in
-        if doel_tijdlijn && Option.fold ~none:false ~some:bevat_periode r.rr_voorwaarde then
-          Value.fault
-            "a period condition on the temporal target %S is ch. 3.10's CLIP, not the \
-             evaluation-date gate: the window intersects the written timeline instead of deciding \
-             whether the rule applies, and that half of the chapter is not built. Declined at \
-             evaluation"
-            attr;
+        (* ch. 3.10's CLIP (built 2026-09-23): on a timeline target the window
+           is taken off the condition position — it gates nothing — and cuts
+           the producer's result per subject instead. Two positions stay
+           refused by name, both before any subject is taken: a
+           characteristic target, whose timeline this executor never writes
+           (ch. 3.11), and the window as a composite MEMBER, where the chapter
+           says nothing about what the other members do to a timeline. *)
+        let clip =
+          if doel_tijdlijn && Option.fold ~none:false ~some:bevat_periode r.rr_voorwaarde then
+            match (r.rr_soort, r.rr_voorwaarde) with
+            | Some Kenmerktoekenning, _ ->
+                Value.fault
+                  "a period condition on the temporal characteristic target %S is ch. 3.10's \
+                   CLIP over a characteristic timeline, and no temporal characteristic is written \
+                   here (ch. 3.11), so there is no timeline to cut. Declined at evaluation"
+                  attr
+            | _, Some (Periode_conditie { vanaf; tot; tot_inclusief; _ }) ->
+                Some (vanaf, tot, tot_inclusief)
+            | _ ->
+                Value.fault
+                  "a period condition inside a composite on the temporal target %S: ch. 3.10 \
+                   specifies the clip for the window as the rule's whole condition and says \
+                   nothing about what the other members do to a timeline. Declined at evaluation"
+                  attr
+          else None
+        in
+        (* the window for one subject: a leeg bound puts no day in it *)
+        let venster_van w self ~err (vanaf, tot, incl) =
+          match venster_grenzen env w self ~err vanaf tot with
+          | Some None, _ | _, Some None -> (0, 0)
+          | dv, dt ->
+              let lo = match dv with Some (Some z) -> z | _ -> min_int in
+              let hi = match dt with Some (Some z) -> if incl then z + 1 else z | _ -> max_int in
+              (lo, hi)
+        in
         (* ch. 3.11: the only implemented temporal write is the ch. 3.7
            pro-rata target; every other temporal target refuses — never
            silently coerce a scalar into a timeline *)
@@ -2605,7 +2655,10 @@ let run_rule env world (r : resolved_regel) =
         in
         over_subjects ~behalve env world ~otype:ot ~rule:(rule_name r) (fun w self err ->
             let fire =
-              match r.rr_voorwaarde with Some c -> eval_cond env w self ~err c | None -> true
+              match (clip, r.rr_voorwaarde) with
+              | Some _, _ -> true
+              | None, Some c -> eval_cond env w self ~err c
+              | None, None -> true
             in
             if not fire then (w, false)
             else
@@ -2616,7 +2669,8 @@ let run_rule env world (r : resolved_regel) =
                   | Value.Bool false -> (w, false)
                   | v -> Value.fault "characteristic value is not boolean: %s" (Value.to_string v))
               | Some (Gelijkstelling | Berekening) when temporal_target ->
-                  run_pro_rata env w self ~ot ~attr (req "waarde" r.waarde)
+                  let venster = Option.map (venster_van w self ~err) clip in
+                  run_pro_rata ?venster env w self ~ot ~attr (req "waarde" r.waarde)
               | Some (Gelijkstelling | Berekening) ->
                   let v = eval_expr env w self ~err (req "waarde" r.waarde) in
                   (* ch. 7.8: on a standing target — and on a ch. 7.7

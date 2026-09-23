@@ -3232,40 +3232,110 @@ let () =
   check "WV-3.10-de-blijft-gedragen" (gate (Some "2024-06-15") (samengesteld De 0) = true);
   check "WV-3.10-alle-poort-werkt-nog" (gate (Some "2025-01-01") (samengesteld Alle 0) = false)
 
-(* ch. 3.10's SECOND case: on a temporal target the window CLIPS the written
-   timeline instead of gating the rule. That half is not built, and the
-   refusal sits at the rule — the case distinction is on the target, which a
-   condition cannot see — so it must fire before the window is ever read. *)
+(* WV-3.10-clip: ch. 3.10's SECOND case, built 2026-09-23. On a temporal
+   target the window CLIPS the written timeline instead of gating the rule:
+   the worked example verbatim ({2024: 10, 2025: 12} yearly, window
+   [2025-01-01, open) -> {2025: 12}); the evaluation date plays no part; and
+   the clause the corpus cannot hold — a bound inside a bucket cuts the
+   segment and keeps its value — because the case format pins every expected
+   timeline to the declared grid. The corpus witness is
+   `corpus/golden/jutterswet-pachtvenster`.
+
+   Until that day this block pinned the REFUSAL of the attribute-target
+   clip; building the clip turned those two lines into the lines below. The
+   refusals that remain are decided at the rule, before a subject is taken:
+   the window as a composite MEMBER, and a CHARACTERISTIC target. *)
 let () =
   let datum : Ir_v0.Ast.datatype = Datum_in_dagen in
-  let doc =
+  let dag iso = match Value.date_of_iso iso with Value.Date d -> d | _ -> assert false in
+  let jaar = Some Ir_v0.Ast.Jaar in
+  let vondst =
+    let n, o = ot "Vondst" [ ("vergoeding", Some num0); ("tarief", Some num0) ] [ "actief" ] in
+    ( n,
+      { o with
+        attribuut_granulariteit = [ ("vergoeding", jaar); ("tarief", jaar) ];
+        kenmerk_granulariteit = [ ("actief", jaar) ] } )
+  in
+  let prorata : Ir_v0.Ast.expr =
+    Functie
+      { kind = Tijdsevenredig_deel; argumenten = [ aref "tarief" "Vondst" num0 ];
+        element_objecttype = None; leegwaarde = None;
+        filter =
+          Some
+            (Kenmerk_check
+               { kenmerk = Some "actief"; navigatie = None; negatie = false; eigenaar = None;
+                 periode = None; bron = None; navigatie_binding = None });
+        dimensie_selectie = None; typ = Some num0; bron = None; granulariteit = jaar;
+        bron_rol = None; bron_pad = None }
+  in
+  let venster ?vanaf ?tot ?(incl = false) () : Ir_v0.Ast.conditie =
+    Periode_conditie
+      { vanaf = Option.map (fun d -> litv d datum) vanaf;
+        tot = Option.map (fun d -> litv d datum) tot; tot_inclusief = incl; bron = None }
+  in
+  let doc cond =
     { empty_doc with
-      objecttypen =
-        [ (let n, o = ot "Vondst" [ ("vergoeding", Some num0) ] [] in
-           (n, { o with attribuut_tijdlijn_aantal = [ ("vergoeding", Some 1) ];
-                        attribuut_granulariteit = [ ("vergoeding", Some Ir_v0.Ast.Jaar) ] })) ];
+      objecttypen = [ vondst ];
       resolved_regels =
         [ rr "vergoeding van een vondst" Berekening
             (Some (aref "vergoeding" "Vondst" num0))
-            (Some (litv "10" num0))
-            (Some
-               (Periode_conditie
-                  { vanaf = Some (litv "2024-01-01" datum); tot = None; tot_inclusief = false;
-                    bron = None })) ] }
+            (Some prorata) (Some cond) ] }
   in
-  let w = World.add_instance World.empty (inst "V1" "Vondst" []) in
-  let env = { (env_of doc) with as_of = Some "2024-06-15" } in
-  expect_fault_msg "WV-3.10-tijdlijndoel-is-de-clip"
-    (fun () -> Eval.run_rule env w (List.hd doc.resolved_regels))
-    "is ch. 3.10's CLIP, not the evaluation-date gate";
-  expect_fault_msg "WV-3.10-tijdlijndoel-fasestaart"
-    (fun () -> Eval.run_rule env w (List.hd doc.resolved_regels))
+  let w =
+    World.add_instance World.empty
+      { (inst "V1" "Vondst" []) with
+        tls =
+          World.SMap.add "tarief"
+            [ { Timeline.s_van = dag "2024-01-01"; s_tot = dag "2025-01-01"; s_waarde = n "10" };
+              { s_van = dag "2025-01-01"; s_tot = dag "2026-01-01"; s_waarde = n "12" } ]
+            World.SMap.empty;
+        ctls = World.SMap.add "actief" [ (dag "2024-01-01", dag "2026-01-01") ] World.SMap.empty }
+  in
+  let geschreven ?as_of cond =
+    let d = doc cond in
+    let w', _ = Eval.run_rule { (env_of d) with as_of } w (List.hd d.resolved_regels) in
+    List.map
+      (fun (s : Timeline.segment) -> (s.s_van, s.s_tot, Value.to_string s.s_waarde))
+      (Option.value (World.timeline (World.get w' "V1") "vergoeding") ~default:[])
+  in
+  let seg van tot v = (dag van, dag tot, Value.to_string (n v)) in
+  (* the worked example, verbatim — and with no evaluation date at all *)
+  check "WV-3.10-clip-voorbeeld"
+    (geschreven (venster ~vanaf:"2025-01-01" ()) = [ seg "2025-01-01" "2026-01-01" "12" ]);
+  (* the evaluation date plays no part: one outside the window writes the
+     same timeline, where the scalar gate would have written nothing *)
+  check "WV-3.10-clip-evaluatiedatum-speelt-geen-rol"
+    (geschreven ~as_of:"2023-06-01" (venster ~vanaf:"2025-01-01" ())
+     = [ seg "2025-01-01" "2026-01-01" "12" ]);
+  (* the restriction cuts SEGMENTS and keeps VALUES: a window from mid-March
+     to the end of June ("tot en met", so the window ends 1 July) keeps
+     12 on the part of the 2025 bucket inside it, not 12 x 108/365 *)
+  check "WV-3.10-clip-knipt-segment-houdt-waarde"
+    (geschreven (venster ~vanaf:"2025-03-15" ~tot:"2025-06-30" ~incl:true ())
+     = [ seg "2025-03-15" "2025-07-01" "12" ]);
+  (* two cuts in one segment and one across a bucket wall *)
+  check "WV-3.10-clip-over-de-bucketwand"
+    (geschreven (venster ~vanaf:"2024-07-01" ~tot:"2025-04-01" ())
+     = [ seg "2024-07-01" "2025-01-01" "10"; seg "2025-01-01" "2025-04-01" "12" ]);
+  (* a window that misses the produced timeline leaves nothing of it *)
+  check "WV-3.10-clip-gemist" (geschreven (venster ~tot:"2024-01-01" ()) = []);
+  (* the window as a MEMBER of a composite on a temporal target stays
+     refused by name, with the phase tail the ASP backend's twin differs in *)
+  let lid =
+    Ir_v0.Ast.Samengesteld
+      { kwantor = Alle; drempel = 0; onderdelen = [ venster ~vanaf:"2025-01-01" () ]; bron = None }
+  in
+  expect_fault_msg "WV-3.10-clip-als-lid-geweigerd"
+    (fun () -> geschreven lid)
+    "inside a composite on the temporal target";
+  expect_fault_msg "WV-3.10-clip-als-lid-fasestaart" (fun () -> geschreven lid)
     "Declined at evaluation";
   (* the CHARACTERISTIC target, which declares its timeline in a different
      table (kenmerkGranulariteit). Reading the attribute table alone let this
      document through as a scalar target — measured 2026-09-20 in the ASP
      backend, which then PLAYED the gate on a timeline. Pinned here so the two
-     tables stay asked apart. *)
+     tables stay asked apart; the clip is refused on it because no temporal
+     characteristic is written (ch. 3.11). *)
   let kdoc =
     { empty_doc with
       objecttypen =
@@ -3275,16 +3345,13 @@ let () =
         [ rr "berging van een vondst" Kenmerktoekenning
             (Some (aref "geborgen" "Vondst" Booleaan))
             (Some (litv "waar" Booleaan))
-            (Some
-               (Periode_conditie
-                  { vanaf = Some (litv "2024-01-01" datum); tot = None; tot_inclusief = false;
-                    bron = None })) ] }
+            (Some (venster ~vanaf:"2024-01-01" ())) ] }
   in
   let kw = World.add_instance World.empty (inst "V1" "Vondst" []) in
   let kenv = { (env_of kdoc) with as_of = Some "2024-06-15" } in
   expect_fault_msg "WV-3.10-tijdlijnKENMERKdoel-is-de-clip"
     (fun () -> Eval.run_rule kenv kw (List.hd kdoc.resolved_regels))
-    "is ch. 3.10's CLIP, not the evaluation-date gate"
+    "is ch. 3.10's CLIP over a characteristic timeline"
 
 (* --- ch. 5.7a: what a supplied role link establishes -------------------- *)
 
