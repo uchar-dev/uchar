@@ -146,7 +146,14 @@ placement since, with no new wire field (card `frontend-bron-annotatie-in-defaul
   without inventing text ("art. 3 en 5"), so the group takes the text of the
   block it is named after;
 - several annotations on one block are joined with `"; "` in source order, and a
-  blank one is dropped, as the emitter drops it from `bronAnnotaties`;
+  blank one is dropped, as the emitter drops it from `bronAnnotaties`. The join
+  loses a distinction and cannot be undone: one annotation that itself contains
+  `"; "` reads exactly like two, and the wire already carries such a text (the
+  group citation of the golden `jutterswet-samenloop`), so a reader cannot
+  recover the list from a joined `bron`. Recorded, not repaired: `Default.bron`
+  and `PrioritizedDefaults.bron` are single strings, and keeping the list would
+  take a new wire field (option (b) of the proposal's §9.2, not taken). Where
+  the separate annotations matter, write one per block;
 - an unannotated block keeps `bron: null`: the three extension goldens carry no
   annotation and re-emit byte-identically;
 - the `Regel` stub a lifted rule leaves in `regels` is unchanged — `node`,
