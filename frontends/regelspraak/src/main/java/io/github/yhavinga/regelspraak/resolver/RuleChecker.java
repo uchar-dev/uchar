@@ -92,6 +92,7 @@ final class RuleChecker {
         // covers the lifted rules too — and covers them once.
         keurSetlezingen();
         keurDeelselecties(doc);
+        keurRegeldoelen();    // WF-022, before the lift: the lowering reads these targets as they are
         defaults(doc);        // §4 lift the base+exception families and unordered groups into PrioritizedDefaults nodes
         keurVensterposities(); // WF-112, over the conditions as emitted — after the lift, so defaults are covered
     }
@@ -286,6 +287,38 @@ final class RuleChecker {
     /** A rule's place in a Regelgroep: the group, and the decision table it is a row of (null for a plain
      *  rule member). */
     private record Lidmaatschap(String groep, String tabel) {}
+
+    /** WF-022, producer side (fix round 2, 2026-09-23): a rule writes a declared attribute or characteristic of
+     *  its OWN universal subject. The frontend builds a target on the subject only, so a sentence that names
+     *  another instance's attribute — "De vakpremie van het strandvak van een Jutter moet …" — came out as an
+     *  attribute named 'vakpremie van het strandvak' on Jutter: the name swallowed the navigation, the type
+     *  stayed unknown, and the document reached disk with {@code diagnostics: []} for the verifier to refuse
+     *  under WF-022 and WF-034. The same for an undeclared attribute, and for a characteristic whose subject is a
+     *  navigation, which resolves to no object type at all. Each is an ERROR now, naming the form. An undeclared
+     *  characteristic on a resolved subject is left to the dialect card for negated decisions ("is niet X"),
+     *  whose ground that is. */
+    private void keurRegeldoelen() {
+        for (ResolvedRegel r : model.resolvedRegels) {
+            if (!(r.doel() instanceof Expr.AttribuutRef a)) continue;
+            int line = a.bron() == null ? 0 : a.bron().line();
+            String geschreven = a.bron() == null ? a.attribuut() : a.bron().snippet();
+            String fout = null;
+            if (a.objecttype() == null)
+                fout = "het onderwerp '" + a.onderwerpBron() + "' lost niet op tot een objecttype: een regel schrijft "
+                        + "een attribuut of kenmerk van zijn eigen universele onderwerp ('een <Objecttype>'), en een "
+                        + "navigatie naar een ander exemplaar bouwt deze frontend niet als regeldoel";
+            else if (r.soort() != ResolvedRegel.Soort.KENMERKTOEKENNING && a.objecttype().attribuut(a.attribuut()) == null)
+                fout = a.attribuut().matches("(?i).*\\svan\\s.*")
+                        ? "het doel is een genavigeerde lezing: '" + a.attribuut() + "' is geen attribuut van "
+                                + a.objecttype().naam + " — de naam slokte de navigatie op. Een regel schrijft een "
+                                + "attribuut van zijn eigen universele onderwerp; schrijf de regel op het objecttype dat "
+                                + "het attribuut draagt ('De <attribuut> van een <Objecttype> …')"
+                        : "'" + a.attribuut() + "' is geen gedeclareerd attribuut van " + a.objecttype().naam;
+            if (fout != null)
+                model.diagnostics.add(new Diagnostic(Severity.ERROR, "regeldoel '" + geschreven + "': " + fout
+                        + " (WF-022, IR-SPEC ch. 3.1)", line));
+        }
+    }
 
     /** WF-112 (maintainer decision 2026-09-23), producer side: a time window never sits under 'geen van de' or
      *  a counting quantifier — as a member of such a composite at any depth, or in the filter or test of such a
@@ -1973,10 +2006,42 @@ final class RuleChecker {
         }
         // §13.4.13.1 / §8.4.3: a standalone periodevergelijking as the whole voorwaardendeel
         // ("… van dd. 1-1-2024 tot dd. 8-2-2025" directly after the resultaatdeel, no 'indien').
-        if (v.periodevergelijkingEnkelvoudig() != null) return bouwPeriode(v.periodevergelijkingEnkelvoudig());
+        if (v.periodevergelijkingEnkelvoudig() != null) {
+            if (volgtOpPeriodebullet(v.periodevergelijkingEnkelvoudig()))
+                model.diagnostics.add(new Diagnostic(Severity.ERROR,
+                        "periodevergelijking '" + src(v.periodevergelijkingEnkelvoudig()) + "' volgt op een laatste "
+                        + "bullet 'het is de periode' van een samengestelde deelselectie: de parser leest die bullet als "
+                        + "een kenmerk 'het is de periode' en haar grens als een venster op de hele regel — een ander "
+                        + "document dan er staat (§8.4.3). Schrijf het venster als voorwaardendeel van de regel ('… "
+                        + src(v.periodevergelijkingEnkelvoudig()) + "' achter het resultaatdeel: vóór die grens vuurt "
+                        + "de regel niet), of zet de periodebullet niet als laatste in de deelselectie (dan leest de "
+                        + "parser haar als lid van het filter)",
+                        v.getStart().getLine()));
+            return bouwPeriode(v.periodevergelijkingEnkelvoudig());
+        }
         return new Conditie.Onopgelost(bron(v),
                 "het voorwaardendeel heeft geen van de §13.4.13-vormen — geen samengestelde voorwaarde, geen "
                 + "elementaire voorwaarde met operator, geen regelpredicaat en geen periodevergelijking");
+    }
+
+    /** Whether the on-channel tokens right before {@code p} spell "het is de periode": the split measured in fix
+     *  round 2 (2026-09-23). A window bullet written as the LAST bullet of a compound subselection ends that
+     *  subselection at its words "het is de periode" (read as a characteristic of that name) and hands the bound
+     *  to the rule as its voorwaardendeel. Nothing else puts those four words directly before a rule-level
+     *  periodevergelijking. False without the main stream (a desugared table row lives in a stream of its own). */
+    private boolean volgtOpPeriodebullet(ParserRuleContext p) {
+        if (tokens == null || p.getStart() == null) return false;
+        int idx = p.getStart().getTokenIndex();
+        if (idx < 0 || idx >= tokens.size() || tokens.get(idx) != p.getStart()) return false;
+        int[] verwacht = {RegelSpraakLexer.PERIODE, RegelSpraakLexer.DE, RegelSpraakLexer.IS, RegelSpraakLexer.HET};
+        int k = 0;
+        for (int j = idx - 1; j >= 0 && k < verwacht.length; j--) {
+            Token t = tokens.get(j);
+            if (t.getChannel() != Token.DEFAULT_CHANNEL) continue;
+            if (t.getType() != verwacht[k]) return false;
+            k++;
+        }
+        return k == verwacht.length;
     }
 
     /** §13.4.15.68 / §8.4.3: a periodevergelijkingEnkelvoudig (vanaf / van…tot / van…tot en met / tot /

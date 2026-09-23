@@ -613,6 +613,33 @@ window, with an ERROR naming the quantifier. Under 'alle', or as the rule's own
 voorwaardendeel, the window stays admitted. No source in any zone writes the
 refused form. Witness: `VensterKwantorTest`.
 
+**A window bullet written last in a compound subselection** (same fix round).
+The grammar ends such a subselection at the bullet's words "het is de periode",
+reads them as a characteristic of that name (a marker), and takes the bound as
+the RULE's voorwaardendeel: a window on the whole rule, which is a different
+document from the one written, while the warnings name only the marker. The
+same bullet written earlier in the list is read as a window inside the filter.
+The frontend refuses the split with an ERROR at the rule; the grammar is not
+changed. Witness: `RegeldoelTest`.
+
+---
+
+## §13.4.4 A rule target is written on the subject — narrowed
+
+§13.4.4 gives a gelijkstelling an `<attribuutvanonderwerp>` target, whose
+onderwerpketen may run through roles ("De vakpremie van het strandvak van een
+Jutter …"). This frontend builds a target on the rule's universal subject only,
+and such a sentence used to come out as an attribute named "vakpremie van het
+strandvak" on Jutter — the name swallowed the navigation — reaching disk with
+`diagnostics: []` for the verifier to refuse under WF-022 and WF-034. An
+undeclared attribute target did the same, and so did a characteristic whose
+subject is a navigation, which resolves to no object type at all. Since fix
+round 2 (2026-09-23) each is an ERROR naming the form
+(`RuleChecker.keurRegeldoelen`). An undeclared characteristic on a resolved
+subject is not fenced here: that is the ground of the dialect card for negated
+decisions ("is niet X"). No source in any zone writes the refused forms.
+Witness: `RegeldoelTest`.
+
 ---
 
 ## §13.4.17.47 The count's operand list — an ACCEPTING superset, fenced in the resolver
