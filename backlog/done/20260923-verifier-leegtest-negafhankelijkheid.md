@@ -303,14 +303,31 @@ Zie open punt 4.
   recursive creation group") moeten dan naar de WF-046-zin. Corpuskosten:
   nul, want geen golden of rood draagt zowel een recursieve creatiegroep
   als een complementvorm.
-- Wat deze arm niet sluit. R5 (= s5, ALLE-vouw over een vergelijking)
-  blijft verifier-schoon en clingo UNSAT. Hetzelfde geldt voor s5b, s6,
-  s1, s2, s3, s4 en s8 (tabel hierboven). Die zitten deels niet in een
-  `not`-helper, maar in #count-aggregaten of in de ≠-codering. De
-  tweevormige ≠-variant splitst stil. Zolang punt 1 open is, heeft die
-  kaart voor deze vormen in documenten met een recursieve creatiegroep
-  een eigen benoemde weigering nodig. De rolcheck-klasse (punt 2) is
-  niet-recursief en valt buiten elke `has_recursive_creation`-grens.
+- Wat deze arm niet sluit. Stand na fixronde 2: R5 (= s5, ALLE-vouw
+  over een vergelijking) en s5b (GEEN-vouw) zijn nu WF-046 door het
+  kwantorbesluit. Een kvs-weigering in clingo is voor verifier-schone
+  invoer dus niet meer nodig; dezelfde faalsnelle herhaling dekt ze. Wat
+  wel verifier-schoon en clingo UNSAT blijft: s1, s2, s3, s4, s6
+  (propositionele GEEN) en s8 (tabel hierboven). Die zitten deels niet in
+  een `not`-helper, maar in #count-aggregaten of in de ≠-codering. De
+  tweevormige ≠-variant splitst stil. Zolang die klassen open zijn,
+  heeft de clingo-kaart voor deze vormen in documenten met een
+  recursieve creatiegroep een eigen benoemde weigering nodig. De
+  rolcheck-klasse (punt 2) is niet-recursief en valt buiten elke
+  `has_recursive_creation`-grens.
+- **Onware tekst na de landing** (fixronde 2, punt 4). Zodra deze kaart
+  landt, worden drie teksten in de clingo-zone onwaar: het commentaar in
+  `backends/clingo/lib/translate.ml` r. ~5757–5768 ("The helper is NOT
+  stratified by construction … the verifier counts no leeg/gevuld test
+  as a negative dependency edge …"), de zichtbare weigerzin r. ~5790
+  ("… WF-046 counts no leeg test as a negative edge, so a creation cycle
+  through it need not be stratified …"), en het commentaar in
+  `backends/clingo/test/test_clingo.ml` r. ~7745 ("… because WF-046
+  counts no leeg test as a negative edge"). De vervanging is voor de
+  clingo-kaart, na de landing: een faalsnelle
+  `Ir_v0.Checks.wf045_046 { doc }` aan het begin van `translate`, en de
+  R1/R3-pins naar de WF-046-zin. Deze kaart raakt `backends/clingo` niet
+  aan.
 
 ### Gates (elk los, na `eval $(opam env)`, op `95dabd4a`)
 
