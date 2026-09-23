@@ -8911,13 +8911,15 @@ let translate (doc : document) (case : Case.t) : string =
      reimplementation of the semantics rather than a second copy of the
      OCaml chain walk. The edge facts are emitted only where the document
      declares one, so a flat program is unchanged but for the identity
-     rule. *)
+     rule. The edge's name is the list entry's key, the one name an M1
+     object type has; the node's [ot_naam] only copies it, and a [None]
+     there must not drop the edge. *)
   emit ctx "isa(X,T) :- is_a(X,T).";
   List.iter
-    (fun (_, (ot : objecttype)) ->
-      match (ot.ot_naam, ot.ot_supertype) with
-      | Some n, Some s -> emit ctx "isa_sub(%s,%s)." (str n) (str s)
-      | _ -> ())
+    (fun (n, (ot : objecttype)) ->
+      match ot.ot_supertype with
+      | Some s -> emit ctx "isa_sub(%s,%s)." (str n) (str s)
+      | None -> ())
     doc.objecttypen;
   if List.exists (fun (_, (ot : objecttype)) -> ot.ot_supertype <> None) doc.objecttypen then
     emit ctx "isa(X,S) :- isa(X,S0), isa_sub(S0,S).";

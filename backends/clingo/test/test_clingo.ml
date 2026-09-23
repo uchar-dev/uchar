@@ -3364,6 +3364,34 @@ let () =
     ~case_text:(gastheer_case ~aantal:{|"1"|} ())
     ~needle:"reaches BOTH objects the fact creation binds"
 
+(* The supertype edge is keyed by the list entry's name: since M1 that key is
+   the object type's one name, which the loader also copies into [ot_naam].
+   Until 2026-09-23 the edge read [ot_naam] and, on [None], dropped itself
+   without a word, which leaves every subtype instance outside its
+   supertype's quantifying joins. A hand-built AST with that field blanked on
+   the subtype must still carry the edge. (Blanked on the supertype as well,
+   the verifier's chain walk, which finds a parent by its [ot_naam], stops
+   first and the translation faults on the host.) *)
+let () =
+  let doc, case =
+    load_pair
+      ~ir:(gastheer_doc ~extra_type:baken_type ~sein_eigen:(erft "Baken") ~eigenaar:{|"Baken"|} ())
+      ~case_text:(gastheer_case ~aantal:{|"1"|} ())
+  in
+  let naamloos =
+    { doc with
+      Ir_v0.Ast.objecttypen =
+        List.map
+          (fun (k, (ot : Ir_v0.Ast.objecttype)) ->
+            (k, if k = "Sein" then { ot with ot_naam = None } else ot))
+          doc.objecttypen }
+  in
+  let feit = Printf.sprintf "isa_sub(%s,%s)." (Translate.str "Sein") (Translate.str "Baken") in
+  let name = "the supertype edge " ^ feit ^ " comes from the list key, not from ot_naam" in
+  match translate naamloos case with
+  | program -> check name (Uchar_ref.Case.contains ~needle:feit program)
+  | exception Uchar_ref.Value.Fault m -> check (name ^ " (fault: " ^ m ^ ")") false
+
 (* ch. 3.9 — the §8.2 whole-period qualifier over a NAVIGATED characteristic.
 
    The RUNTIME-SEMANTICS ch. 3.9 worked-example table, pinned in BOTH
