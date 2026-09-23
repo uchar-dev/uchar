@@ -56,23 +56,34 @@ parameter, dan vuurt de garde in refs woorden; leest de ene toegestane
 volgorde hem wel en een andere niet, dan weigert clingo in een zin die de
 ongenormeerde volgorde noemt, ook waar ref speelt (maintainerbesluit
 2026-09-23, gehandhaafd in fixronde 4); leest geen enkele volgorde hem,
-dan vuurt er niets. Waar de garde verder niet exact is, wijkt ze af in
+dan vuurt er niets, behalve waar twee vouwen over één lijst elk een eigen
+volgordemodel hebben ([N4]). Voor een Let-barrière is sinds fixronde 5
+ook de pass vóór een creatie zo'n toegestane volgorde (besluit van de
+hoofdsessie): ref draait in elke pass eerst de regels en dan de creaties,
+dus in die pass ontbreekt het gecreëerde lid, en ook de barrière die
+alleen dat lid opwerpt. Waar de garde verder niet exact is, wijkt ze af in
 één van twee vastgelegde richtingen (zie "Twee richtingen" hieronder):
-luid, een weigering waar ref speelt, op één plaats (de lezing in de
-vertaling), en stil, een antwoord waar ref faalt, op twee (de
-Let-verlaging en haar takhoist). Elke post heeft een frame in de suite
-dat rood wordt zodra de post niet meer klopt. De eerste versie van dit
-Result schreef "speelt waar ref speelt" zonder uitzondering, de tweede
-"faalt waar ref faalt" zonder uitzondering, en de derde rekende op een
-model van refs volgorde dat over strata heen niet klopte. De lens
-weerlegde alle drie; de vier fixrondes hieronder leggen vast wat er
-gerepareerd is en wat niet. Gemeten op 88 corpusvarianten (88/88 in
-overeenstemming), op 66 proefdocumenten van de eerste ronde, 29 van de
-tweede fixronde, 54 van de derde, de 87 van de lens van ronde 3 en 19
-eigen van de vierde, en in de suite (899 checks). De corpusvertaling is
-byte-identiek aan main, op de twee rode cases van deze kaart na. De
-Drools-lijstregel voor gate 8 staat als voorstel in commit `89f4f660`
-(beschermd pad); daarmee is gate 8 groen (50 rode cases).
+luid, een weigering waar ref speelt, op twee plaatsen (de lezing in de
+vertaling, en de pass vóór een creatie in een regel die ch. 6.3 boven die
+creatie zet), en stil, een antwoord waar ref faalt, op twee (de
+Let-verlaging, en de tussentijdse pass binnen één stratum). De takhoist
+([S2] in fixronde 4) is sinds fixronde 5 exact. Elke post heeft een frame
+in de suite dat rood wordt zodra de post niet meer klopt. De eerste versie
+van dit Result schreef "speelt waar ref speelt" zonder uitzondering, de
+tweede "faalt waar ref faalt" zonder uitzondering, de derde rekende op een
+model van refs volgorde dat over strata heen niet klopte, en de vierde
+telde in de familie "in elke volgorde" een lezing door een gecreëerd lid
+mee en kende de tussentijdse pass niet. De lens weerlegde alle vier; de
+vijf fixrondes hieronder leggen vast wat er gerepareerd is en wat niet.
+Gemeten op 88 corpusvarianten (88/88 in overeenstemming), op 66
+proefdocumenten van de eerste ronde, 29 van de tweede fixronde, 54 van de
+derde, de 87 van de lens van ronde 3, 19 eigen van de vierde, de 145 van
+de lens van ronde 4 (haar 124, mijn 19 van de vierde en haar twee
+nr-case-controles) en 23 eigen van de vijfde, en in de suite (947
+checks). De corpusvertaling is byte-identiek aan main, op de twee rode
+cases van deze kaart na. De Drools-lijstregel voor gate 8 staat als
+voorstel in commit `89f4f660` (beschermd pad); daarmee is gate 8 groen
+(50 rode cases).
 
 Commits (hashes na de rebase op main `6e67ad8f`): `87313da5` (claim),
 `15eaffd4` (de gedeelde fail-fast met suite, README en de gedeelde
@@ -86,13 +97,17 @@ fixronde 1: `42588f6e`, `4578fea3`, `325568da`, fixronde 2: `bbdffca9`,
 (ledenvolgorde: barrière per lid en creatievolgorde), `5fc17565`
 (teksten), `b499f2d3` (Result), fixronde 4: `036508e4` (geen model van
 refs volgorde), `28b62345` (payloadhernoeming), `eb2adb45` (de tak uit
-een Let-waarde, en de vastgepinde afwijkingen), `dd1d36d3` (teksten), en
-de commit van dit Result.
+een Let-waarde, en de vastgepinde afwijkingen), `dd1d36d3` (teksten),
+`a51a3ebe` (Result), fixronde 5 (niet gerebased, basis blijft main
+`6e67ad8f`): `6a500c85` (de pass vóór een creatie), `cc0be1e2` ([S3]),
+`17863dc6` ([N4]), `865fe21e` (de takhoist), `cf084787` ([L1] voor de
+dagsoorttabel), `36f73e73` (README en commentaar: [S2] met een datum in
+plaats van het kaartwoord), en de commit van dit Result.
 
-### Twee richtingen (stand na fixronde 4)
+### Twee richtingen (stand na fixronde 5)
 
 Elke post draagt het label van haar post in `backends/clingo/README.md`
-en heeft één frame in de suite, `README [label]`, dat het huidige gedrag
+en heeft een frame in de suite, `README [label]`, dat het huidige gedrag
 pint en rood wordt zodra het verdwijnt (het overleverspatroon van gate
 7). Gemeten met ref en clingo op main `6e67ad8f` en op de tip.
 
@@ -113,14 +128,37 @@ Benoemd volgens het besluit (geen afwijking, wel gepind):
   leest p; ref faalt. clingo weigert benoemd, waar refs woorden passen:
   "elke toegestane volgorde" wordt per lezing beslist. Op main `PASS`, op
   `b499f2d3` UNSAT in refs woorden (via het oude model).
+- **[N4]**, de woorden en de uitkomst (fixronde 5, lenspunt 3): nr-1, W1
+  met twee creaties van 8 en 3 per werf, `keur 99 indien TEN MINSTE 1
+  schuiten [TEN MINSTE 1 [lengte > 5, TEN MINSTE 1 van de schuiten van
+  zijn werf [TEN MINSTE 1 [lengte < 5, lengte > p]]]]`. In [8, 3] sluit de
+  buitenste vouw bij 8, in [3, 8] de binnenste bij 3; geen volgorde leest
+  p en ref `PASS`. clingo weigert benoemd ("the quantifier fold"): de
+  tweeling voegt "de buitenste vouw leest 3 in een toegestane volgorde"
+  ([3, 8]) samen met "de binnenste leest 8 in een toegestane volgorde"
+  ([8, 3]). Dit is een weigering waar volgens het besluit niets hoort te
+  vuren; de post staat hier omdat de zin de ongenormeerde volgorde noemt.
+  Controles nr-case-8-3 en nr-case-3-8 (de twee schuiten in de case, in
+  beide volgordes): beide spelen. Op main `PASS`, op `a51a3ebe` benoemd.
 
 Luid, een weigering waar ref speelt:
 1. **[L1] De dagsoorttabel en het horizonhek** lezen hun parameter in de
    vertaling en weigeren daar, ook achter een regelconditie die faalt
-   (open punt 4). Getuige hf-cond, het horizonhekframe van de suite met
-   voorwaarde 1 > 2: ref `PASS` (keurlast leeg), clingo `TRANSLATION
-   FAULT: parameter "minimumgewicht" is unbound …` (main weigerde daar
-   al, met de hekzin).
+   (open punt 4). Getuigen hf-cond, het horizonhekframe van de suite met
+   voorwaarde 1 > 2, en sinds fixronde 5 dk-cond, de dagsoorttabel met
+   "de dag later is dan de grensdatum", grensdatum ongebonden en dezelfde
+   voorwaarde: ref `PASS` (keurlast en uitkomst leeg), clingo `TRANSLATION
+   FAULT: parameter "…" is unbound …` (main weigerde daar al, met de
+   hekzin en de tabelzin).
+2. **[L2] De pass vóór een creatie in een regel boven die creatie**
+   (fixronde 5, gevolg van punt 1). Een Let-barrière die alleen een
+   gecreëerd lid opwerpt, telt de pass vóór de creatie ook in een regel
+   die ch. 6.3 boven die creatie zet, waar ref zo'n pass niet heeft; de
+   vertaler kent de strata niet (open punt 13). Getuige tr-strat-1: W1,
+   één schuit van 8 per Werf, `bonus = Let k = restpost in (som(lengte
+   van schuiten die k > 0) plus p)` onder de conditie `ALLE schuiten
+   [lengte > 0]`, restpost leeg: ref `PASS` (bonus leeg), clingo weigert
+   benoemd ("the Let "k""). Op main en `a51a3ebe` `PASS`.
 
 De vroegere luide posten 2 (de creatievolgorde) en 3 (de Let-barrière
 per lid over gecreëerde leden) zijn sinds fixronde 4 het besluit zelf:
@@ -136,11 +174,26 @@ Stil, een antwoord waar ref faalt:
    heffing leeg, op de tip en op main. De getuige van fixronde 3, lz-v-ctl
    (`… in (bel plus p)`, bel het eerste wat het lichaam evalueert), is
    sinds fixronde 4 exact.
-2. **[S2] De takhoist van de Let-verlaging** leest de conditie van de tak
-   vóór de operand ernaast (open punt 11). Getuige hoist-ctl: `Let n =
-   restpost in Let k = extra in (p plus (als n > 0 dan k anders 0))`,
-   restpost leeg, extra 1, p ongebonden: ref faalt bij p, clingo antwoordt
-   heffing leeg, op de tip en op main.
+2. **[S3] De tussentijdse pass binnen één stratum** (fixronde 5, lenspunt
+   2; het residu van ch. 6.1 in fail-fast-vorm). ref draait de vormen van
+   een stratum pass voor pass; een vorm die leest wat een latere vorm van
+   hetzelfde stratum schrijft, ziet dat in de eerste pass leeg. Valt
+   daardoor een kortsluiting weg, dan leest ref de parameter en faalt,
+   terwijl het fixpunt hem niet leest; clingo antwoordt het fixpunt.
+   Getuige t1: `heffing = 5,00 indien TEN MINSTE 1 [a > 0, p > 0]`,
+   geschreven vóór `a = inkomen`, inkomen 20, p ongebonden: ref faalt,
+   clingo heffing 5,00; controle t1b (de schrijvende regel eerst): beide
+   5,00. De schrijver kan ook een creatie zijn, getuige tr-of-1: `keur =
+   99 indien TEN MINSTE 1 [TEN MINSTE 1 schuiten [lengte > 5], p > 0]`,
+   één schuit van 8 per Werf: ref faalt in de pass vóór de creatie,
+   clingo keur 99; controle tr-of-case (de schuit in de case): beide 99.
+   Op main, `a51a3ebe` en de tip gelijk. Voor een Let-barrière geeft die
+   pass sinds punt 1 de benoemde weigering; voor een kortsluiting blijft
+   ze stil (open punt 14).
+
+[S2], de takhoist die de conditie van de tak vóór de operand ernaast las,
+is sinds fixronde 5 exact (punt 4): hoist-ctl en h-diep weigeren in refs
+woorden.
 
 Vastgelegde beperking zonder parameter (README, "Recorded limitations"):
 - **[V1]** lz-m3-bound-laag: `Let k = restpost in ((match klasse: Hoog →
@@ -1154,6 +1207,263 @@ check-self-contained: PASS
 Gate 8's Drools-been: `check-rood: Drools leg PASS (11 fault-pinned, 39
 not-carried with reason)`.
 
+### Fixronde 5 (lensronde 4, 2026-09-23)
+
+De lens toetste de tip `a51a3ebe` met 143 proefdocumenten (124 eigen en
+mijn 19 van fixronde 4; daarna nog twee nr-case-controles) en twee
+prototypes in een kopie van `translate.ml`. Twee punten waren blokkerend,
+drie advies; de hoofdsessie besliste per punt, en per punt staat hieronder
+één commit. Niet gerebased (opdracht): main krijgt binnenkort de
+M1-landing (v1-wire), en de rebase met de migratie van de ingebedde
+v0-fixtures volgt in een eigen ronde. Mijn eigen proeven (23,
+verifier-schoon, onder /tmp) staan per punt. Elke proef is gedraaid met
+ref, met de clingo-runner van main `6e67ad8f` (md5 `e0b68c50…`), met die
+van `a51a3ebe` ("vorige", `61f5d515…`), met die van het lensprototype
+(`c8bc19dc…`) en met die van de tip (`4323a72e…`). "fout" is refs
+`EVALUATION FAULT: parameter "p" is unbound …`, "UNSAT" de garde in refs
+woorden, "benoemd" de zin van het besluit, "antwoordt" een model zonder
+garde.
+
+**Punt 1, de pass vóór een creatie (`6a500c85`), blokkerend.** De lens:
+in een document met creaties telde de familie "in elke toegestane
+volgorde" van `emit_barriers` (`…_c`) een lezing door een gecreëerd lid
+mee. ref draait in elke pass eerst de regels en dan de creaties
+(`eval.ml` ~3729-3796). In de pass vóór de creatie is het bereik leeg,
+is er geen barrière, en leest ref de parameter. Besluit van de
+hoofdsessie: die pass is de ontaarde volgorde waarin het lid ontbreekt,
+valt onder het maintainerbesluit over de creatievolgorde en wordt een
+benoemde weigering. Uitvoering volgens het lensprototype:
+`roN_q(P,X) :- roN_o(P,X,_)` in `use_ro` (alleen in een document met
+creaties: de leden die in elke pass in het bereik staan, de caselinks),
+en in de familie "in elke volgorde" per deel in de keten van de lezing
+het atoom `roN_q(ouder,lid)`: in de lezingen (`lbr…`) op elk niveau, in
+de regels per lid alleen op de niveaus onder de niveaus die de regel
+gelijkstelt aan het gardelid of daarvoor ordent (dat lid is via `roN_n`
+al een caselink). Eén uitbreiding op het prototype: ook de delen binnen
+een Let-waarde waarin de lezing staat, tellen mee (`read_places` geeft ze
+als vierde component). Het prototype miste tr-w-1 en tr-wm-1, een lezing
+van k in een somfilter binnen de waarde van j.
+
+| proef | vorm (restpost leeg, p ongebonden tenzij anders) | ref | main | vorige | prototype | tip |
+|---|---|---|---|---|---|---|
+| tr-cr-1 (lens) | H1, W1 (bonus 4), één schuit van 8 per Werf; `bonus = Let k = restpost in (som(bonus van werven die TEN MINSTE 1 schuiten [k > 0]) plus p)` | fout | speelt | speelt | benoemd | benoemd |
+| tr-case-1 (lens) | idem, de schuit in de case | speelt | speelt | speelt | speelt | speelt |
+| tr-cr-1-ctl (lens) | idem, restpost 1 | fout | antwoordt 4 | UNSAT | UNSAT | UNSAT |
+| tr-w-1 | W1, één schuit van 8; `Let k = restpost in Let j = (1 plus som(lengte van schuiten die k > 0)) in (j plus p)` | fout | speelt | speelt | **speelt** | benoemd |
+| tr-wm-1 | H1, W1; `Let k = restpost in Let j = (1 plus som(bonus van werven die TEN MINSTE 1 schuiten [k > 0])) in (j plus p)` | fout | speelt | speelt | **speelt** | benoemd |
+| tr-pm-1 | H1 met W1 (bonus 4) en W2 (bonus 5), een schuit van 8 voor een werf met bonus < 5; `Let k = restpost in som(bonus van werven die TEN MINSTE 1 [TEN MINSTE 1 schuiten [k > 0], ALLE [bonus > 4, bonus > p]])` | fout | speelt | speelt | benoemd | benoemd |
+| tr-pm2-1 | H1, W1; `… die TEN MINSTE 1 [TEN MINSTE 1 schuiten [k > 0], bonus > p]` | fout | speelt | speelt | benoemd | benoemd |
+| tr-same-1 | W1; `Let k = restpost in (som(lengte van schuiten die k > 0) plus p)` | fout | speelt | speelt | benoemd | benoemd |
+| tr-strat-1 | idem onder `ALLE schuiten [lengte > 0]` | speelt | speelt | speelt | benoemd | benoemd [L2] |
+
+De controles met de schuit in de case (tr-w-case, tr-wm-case, tr-pm-case,
+tr-pm2-case, tr-strat-case) spelen overal; die met restpost 1 (tr-w-ctl,
+tr-wm-ctl, tr-pm-ctl, tr-strat-ctl) zijn UNSAT op vorige, prototype en
+tip, en antwoorden op main. tr-pm2-ctl (restpost 1) is geen barrière maar
+een kortsluiting en valt onder [S3] (punt 2).
+
+Gevolg, vastgelegd als **[L2]**: tr-strat-1. De ALLE-conditie leest het
+bereik negatief, dus ch. 6.3 zet de regel boven de creatie, en ref heeft
+geen pass waarin de regel vóór de creatie draait: ref speelt. De vertaler
+kent de strata niet en weigert benoemd; het prototype doet hetzelfde.
+Geen van de 145 lensproeven heeft deze vorm (open punt 13).
+
+Frames: tr-cr-1, tr-w-1, tr-pm-1 en tr-pm2-1 als `named_refusal
+~ref_plays:false`, hun case-controles als `both_answer`, tr-cr-1-ctl en
+tr-w-ctl als `unbound_fires`, tr-strat-1 als `pinned_loud ~entry:"L2"`
+met tr-strat-case als `both_answer`. Rood eerst, de suite tegen de
+vertaler van `a51a3ebe`: `test_clingo: 915 checks, 3 FAILURES` (tr-cr-1
+en tr-w-1 "clingo answered the case's rows", [L2] "clingo no longer
+refuses"). Tegen het lensprototype: `2 FAILURES` (tr-w-1 "clingo
+answered the case's rows"; [S2] "the deviation is gone", zie punt 4).
+Mutatieproeven op de eindsuite (md5 van de mutant-`translate.ml`):
+M-lbr, `roN_q` uit de lezingen (`ac795023…`): `3 FAILURES` (tr-cr-1,
+tr-w-1, [L2]); M-inner, de delen binnen een Let-waarde uit
+(`21830930…`): `1 FAILURES` (tr-w-1); M-lvl, `roN_q` uit de regels per
+lid (`1b7fd163…`): `2 FAILURES` (tr-pm-1, tr-pm2-1); M-ir, alleen uit de
+regel voor hetzelfde lid op een eerdere plaats (`3bd5573a…`): `1
+FAILURES` (tr-pm2-1). Van de 145 lensproeven verandert door dit punt
+alleen tr-cr-1 (speelt → benoemd), zoals de lens met het prototype mat.
+Teksten: de README en het commentaar bij `use_ro`, `read_places` en
+`emit_barriers` noemen de pass vóór een creatie; de registerzin
+hieronder ook.
+
+**Punt 2, de tussentijdse pass binnen één stratum (`cc0be1e2`),
+blokkerend, geen code (besluit).** De lens: een vorm die leest wat een
+latere vorm van hetzelfde stratum schrijft, ziet dat in pass 1 leeg; valt
+daardoor een kortsluiting weg, dan leest ref de parameter en faalt,
+terwijl het fixpunt hem niet leest. Het is het residu van ch. 6.1
+("conditions on attribute-writing forms read positively here", met de
+meting "with the reader listed first") in fail-fast-vorm. Uitgevoerd:
+README-post [S3], twee `pinned_silent`-frames `README [S3]` (t1, en
+tr-of-1 met een creatie als schrijver) met hun controles als
+`both_answer` (t1b, tr-of-case), de zin in de registerzin en open punt
+14 met de normvraag. Metingen bij dit punt (proeven van de lens en
+eigen), elk op main, vorige, prototype en tip gelijk:
+
+| proef | vorm | ref | clingo |
+|---|---|---|---|
+| t1 (lens) | `heffing = 5,00 indien TEN MINSTE 1 [a > 0, p > 0]` vóór `a = inkomen`, inkomen 20 | fout | 5,00 |
+| t1b (lens) | de schrijvende regel eerst | 5,00 | 5,00 |
+| tr-of-1 | W1, één schuit van 8 per Werf; `keur = 99 indien TEN MINSTE 1 [TEN MINSTE 1 schuiten [lengte > 5], p > 0]` | fout | 99 |
+| tr-of-case | de schuit in de case | 99 | 99 |
+| tr-kv-1 | H1 met W1 (bonus 4, krijgt een schuit van 8) en W2 (bonus 5); `keur = 99 indien TEN MINSTE 1 werven [TEN MINSTE 1 [TEN MINSTE 1 schuiten [lengte > 5], ALLE [bonus > 4, bonus > p]]]` | fout | 99 |
+| tr-pm2-ctl | de vorm van tr-pm2-1 met restpost 1 | fout | bonus 4 |
+
+tr-kv-1 laat zien dat ook de vouw die bij een eerder lid sluit (`kvrN_o`,
+"gesloten bij het kleinste voorvoegsel") de waarheid van dat lid in het
+fixpunt neemt: in de pass vóór de creatie sluit W1 de vouw niet, en W2
+leest p. Voor een Let-barrière geeft die pass sinds punt 1 de benoemde
+weigering; voor een kortsluiting blijft ze stil. Een "in elke
+pass"-waarheid van vouwen over een groeiend bereik zou een tweede
+vertaling van elke conditie met zo'n vouw vragen; niet begrensd, en
+volgens het besluit geen code in deze kaart.
+
+**Punt 3, [N4] (`17863dc6`), advies.** De lens toonde [N3] omgekeerd:
+nr-1 (zie [N4] onder "Twee richtingen") weigert benoemd waar geen
+volgorde p leest.
+Uitgevoerd: de getagde post [N4] met nr-1 als `named_refusal
+~ref_plays:true` en de case-controles nr-case-8-3 en nr-case-3-8 als
+`both_answer`; de README-zin "a read no allowed order reaches fires
+nothing" noemt de uitzondering, de registerzin ook, en open punt 12 is
+bijgesteld. Gemeten of één gedeeld volgordemodel per lijst een begrensde
+fix is: nee. In het programma van nr-1 vuurt de tweeling
+`kvr15_o(X1,X6), kvr14_q(S,X1)` (één garde, twee ordeafhankelijke
+atomen, twee tweelingen). `kvr14` hoort bij bereik `ro1` (de schuiten van
+W1, via `bronRol`), `kvr15` bij `ro3` (de schuiten van de werf van X1,
+via `bronPad`). Beide relaties `ro1_n` en `ro3_n` zijn leeg op de
+gecreëerde leden, dus de twee modellen verschillen niet in hun relatie;
+een gedeelde relatie verandert niets. Wat verschilt, is de getuige:
+`kvr14_q(W1,3)` geldt in [3, 8], `kvr15_o(3,8)` in [8, 3], en elk atoom
+kiest zijn eigen getuige. Exact beslissen vraagt één getuige voor alle
+atomen van een tweelingregel over dezelfde lijst. Voor TEN MINSTE 1 is
+"open bij X" een verzameling voorrangsparen (X vóór elk lid waarvan de
+matrix geldt), waarvan de samenhang te toetsen is. Maar voor TEN MINSTE
+n > 1, TEN HOOGSTE en PRECIES is het een telling op het voorvoegsel, en
+de barrière- en vraagatomen zijn afgeleide predicaten waarvan de bodies
+zelf ordeafhankelijke atomen bevatten. Bovendien moet de vertaler dan
+bereiken herkennen die pas tijdens de uitvoering dezelfde lijst zijn (ro1
+en ro3 alleen als de werf van X1 W1 is; een meerstapsbereik is een
+vereniging). De exacte route is een keuze over de permutaties per lijst
+met een bestaansvraag (UNSAT als één volgorde p leest), en die verandert
+het model van de runner (één stabiel model, waartegen de verwachtingen
+getoetst worden). Daarom alleen de lijsten.
+
+**Punt 4, de takhoist (`865fe21e`), advies, besluit: bouwen.** Volgens
+lensprototype 1, maar met ctx-velden in plaats van globale refs:
+`ctx.hoisted` houdt per takknoop die de hoist bouwt (bij identiteit) de
+operanden die hij achter de conditie zette terwijl ref ze ervóór
+evalueert; doorgegeven in `one_of` (de operanden vóór de lezende operand
+plus die van het binnenste niveau), in de Let-distributie, in de
+waarde-arm en bij de omwikkeling in `let_into_arm` (`hoist_branch` en
+`let_into_arm` krijgen daarvoor `ctx`). `ctx.before_arm` houdt, zolang
+een arm van zo'n knoop vertaald wordt (`translate_ite`,
+`value_branches`), die operanden en de plaats van de armatomen in
+`rule_guard`. Een ongebonden parameterlezing in zo'n operand krijgt in
+`expr_term` een tweede garde zonder die armatomen. Eén afwijking van het
+prototype: de armatomen gaan eruit op hun plaats, niet op hun tekst. Een
+omsluitende tak over dezelfde binder draagt dezelfde atoomtekst
+(`letN(S,LB…)`), en het prototype liet dan de vergelijking van die tak
+zonder haar binder staan: clingo `error: unsafe variables in:` met
+`LB3>100` zonder het atoom van n, ook waar ref speelt (h-dubbel).
+
+| proef | vorm (extra 1, restpost leeg tenzij anders) | ref | main | vorige | prototype | tip |
+|---|---|---|---|---|---|---|
+| hoist-ctl | `Let n = restpost in Let k = extra in (p plus (als n > 0 dan k anders 0))` | fout | antwoordt | antwoordt | UNSAT | UNSAT |
+| h-diep (lens) | `… (1,00 plus (p plus (als n > 0 dan k anders 0)))` | fout | antwoordt | antwoordt | UNSAT | UNSAT |
+| h-samengesteld (lens) | `… ((p plus 1,00) plus (als …))` | fout | antwoordt | antwoordt | UNSAT | UNSAT |
+| h-voor-cond-q-pos (lens) | `… ((als q > 0 dan p anders 0) plus (als n > 0 dan k anders 0))`, q = 5 | fout | antwoordt | antwoordt | UNSAT | UNSAT |
+| h-voor-cond-q-neg (lens) | idem, q = -5 | speelt | speelt | speelt | speelt | speelt |
+| h-na-tak (lens) | `… ((als n > 0 dan k anders 0) plus p)` | speelt | speelt | speelt | speelt | speelt |
+| h-dubbel-5 | `… (als n > 1 dan (p plus (als n > 0 dan k anders 0)) anders 0)`, restpost 5 | fout | antwoordt 1,00 | UNSAT | **clingo-fout** | UNSAT |
+| h-dubbel-leeg | idem, restpost leeg | speelt | speelt | speelt | **clingo-fout** | speelt |
+| hoist-bound, hoist-rechts-bound, h-diep-gebonden, h-voor-cond-q-pos-gebonden, h-dubbel-5-gebonden | p gebonden | speelt | speelt | speelt | speelt | speelt |
+
+Het frame `README [S2]` werd rood zoals bedoeld (`937 checks, 1
+FAILURES`: "the deviation is gone") en is vervangen door `unbound_fires`
+op hoist-ctl en h-diep en `both_answer` op h-na-tak, plus `unbound_fires`
+op h-dubbel-5 en `both_answer` op h-dubbel-leeg. [S2] is uit de stille
+lijst van de README en uit open punt 11. Rood eerst, de eindsuite tegen
+de vertaler van `17863dc6`: `945 checks, 2 FAILURES` (hoist-ctl en
+h-diep, "clingo answered heffing leeg: the hoist put p behind the
+condition"). Mutatieproeven: M-text, de armatomen op tekst eruit zoals
+het prototype (`7d4401de…`): `2 FAILURES` (h-dubbel-5, h-dubbel-leeg,
+"clingo exited 65"); M-level, zonder de operanden van het binnenste
+niveau (`4667dcfc…`): `1 FAILURES` (h-diep). De gesloten lichamen
+(`body_branches`) dragen de tweede garde niet: een gesloten lichaam is
+leeg-vrij (ch. 10.1), dus de conditie kiest daar altijd een arm.
+
+**Punt 5, [L1] voor de dagsoorttabel (`cf084787`), advies.** Frame
+`pinned_loud ~entry:"L1"` dk-cond: het dagsoortdocument van de suite met
+"de dag later is dan de grensdatum", grensdatum ongebonden, en
+regelconditie 1 > 2. ref speelt (uitkomst leeg), clingo weigert in de
+vertaling met de gedeelde zin.
+
+**Suite** 899 → 947 checks. `dune test --force backends/clingo`:
+`test_clingo: 947 checks, 0 failures`.
+
+**Sweep.** Hetzelfde gereedschap als in (c), onder /tmp: de runner van
+main `6e67ad8f` (`e0b68c50…`) en die van de tip (`4323a72e…`) over alle
+658 corpuscases van de tip, met elk aan clingo gegeven programma bewaard.
+636 tegen 638 programma's. `diff -r` vindt alleen de twee rode
+aanvoergeld-cases, met één garderegel per programma, een waargenomen fout
+in plaats van een model en de diagnoseherhaling als extra programma,
+precies als in fixronde 4. Tussen de runners van `a51a3ebe` en de tip is
+elk corpusprogramma byte-identiek (na punt 1 en na punt 4 gemeten). De
+runner is die van `865fe21e`; `cf084787` raakt alleen de suite en
+`36f73e73` alleen tekst.
+
+**Classificatie van alle proeven** (145 van de lens: haar 124, mijn 19
+van fixronde 4 en haar twee nr-case-controles; 23 eigen van fixronde 5),
+op de tip, naar het frame dat hun uitkomst pint. Ten opzichte van
+`a51a3ebe` veranderen er vijf lensproeven: tr-cr-1 (speelt → benoemd) en
+hoist-ctl, h-diep, h-samengesteld en h-voor-cond-q-pos (antwoordt →
+UNSAT). Op alle 143 proeven van de lens geeft de tip dezelfde uitkomst als
+het lensprototype. Een permutatieproef (ref over elke documentvolgorde van
+de creaties) toetst bij de benoemde weigeringen of een volgorde p leest;
+waar ref de volgorde uit strata, feitcreaties of de pass vóór de creatie
+haalt, geeft die proef één uitkomst en is de proef op zich nagelopen.
+
+| frame | aantal | proeven |
+|---|---|---|
+| `unbound_fires` (fout, UNSAT) | 35 | cl-capture-w5, cl-ite-hoog-ctl, e1c-cond-8uit-3, e5b-twee-cr83-g3 (ook een benoemde tweeling), e6c-letlet-extraleeg-8-3, e7d-geen-al-3-8, e7e-alle-of-8-3, e7f-geen-al-8-3, e8a-filter-p-matrix-k-8-3, e8b-filter-p-matrix-k-3-8, fc-3-anker, h-diep, h-n-gevuld, h-rechts-ctl, h-samengesteld, h-voor-cond-q-pos, init-lijst-leeg, init-lijst-twee, lam-1-ctl, lam-2-fold-eerst, lz-m3-ctl-laag-ongebonden, lz-v-ctl, pred-gevuld-neg-bereikt, pred-leeg-bereikt, tr-cr-1-ctl, cl-capture-j-ctl, cl-shadow-j-ctl, hoist-ctl, lz-mv-ctl-laag, lz-pv-ctl, h-dubbel-5, tr-pm-ctl, tr-strat-ctl, tr-w-ctl, tr-wm-ctl |
+| `both_answer` (speelt, speelt) | 51 | cl-capture-ww, cl-capture-ww-gebonden, cl-dup-w5, cl-dup-ww, cl-ite-laag, cl-shadow-w5, cl-shadow-ww, e1d-cond-3uit-8, h-diep-gebonden, h-na-tak, h-voor-cond-q-neg, h-voor-cond-q-pos-gebonden, init-lijst-afwezig, keten-8-w-3-gebonden, lam-1-letbarriere, lb-3-8-3-gebonden, lz-v-bound, ms-feit-vooruit-gebonden, nr-3-gebonden, nr-case-3-8, nr-case-8-3, pm-case-3-8-gebonden, pm-case-8-3-gebonden, pred-leeg-onbereikt, stratum-8-w-3dd-gebonden, stratum-pm2-3-w-8dd-gebonden, stratum-pm2-8-w-3dd-gebonden, stratum-vraag-8-w-3dd-gebonden, t1b-of-schrijver-eerst, t1c-of-lezer-eerst-gebonden, t2b-filter-kenmerk-schrijver-eerst, t3-tak-lezer-eerst, t3b-tak-schrijver-eerst, t4b-geen-schrijver-eerst, td-1, tr-case-1, cl-capture-j5, cl-shadow-j5, disj-8-3-gebonden, hoist-bound, hoist-rechts-bound, lz-v-hoog, h-dubbel-5-gebonden, h-dubbel-leeg, tr-kv-case, tr-of-case, tr-pm-case, tr-pm2-case, tr-strat-case, tr-w-case, tr-wm-case |
+| `named_refusal ~ref_plays:false` (fout, benoemd), een volgorde | 19 | e1b-cond-3-8, e2b-nietlit-3-8, e4a-feit-lig-3-8, e4c-feit-case3-lig8, e5c-twee-cr38-g8, e5n-nest-3-8, e6b-letlet-3-8, e6e-letlet-extra1-3-8, e7b-geen-of-3-8, ijk-cr-3-8, keten-3-w-8, ms-feit-vooruit, stratum-8-w-3dd, stratum-alle-3-w-8dd, stratum-ctl-nietliteral, stratum-pm-8-w-3dd, stratum-pm2-8-w-3dd, stratum-vraag-8-w-3dd, td-3-3-8 |
+| idem, de pass vóór de creatie (punt 1) | 8 | tr-cr-1, tr-w-1, tr-wm-1, tr-pm-1, tr-pm2-1, tr-same-1, lb-1-8-3, lb-2-3-8 (de laatste twee ook een volgorde) |
+| idem, elke volgorde leest p ([N3]) | 1 | disj-8-3 |
+| `named_refusal ~ref_plays:true` (speelt, benoemd), een volgorde (het besluit) | 24 | e1a-cond-8-3, e2a-nietlit-8-3, e4b-feit-lig-8-3, e4d-feit-case8-lig3, e4e-feit-plus-cr-8-3, e5a-twee-cr83-g8, e5n-nest-3-8-casewerf8, e5n-nest-8-3, e6a-letlet-8-3, e6d-letlet-extra1-8-3, e7a-geen-of-8-3, e7c-alle-al-3-8, ijk-cr-8-3, keten-8-w-3, keten-8-w-3-met-w1, nr-2-een-volgorde, stratum-3-w-8dd, stratum-8-3dd-zonder-werfcreatie, stratum-alle-8-w-3dd, stratum-pm-8-3dd-zonder-werfcreatie, stratum-pm2-3-w-8dd, stratum-pm2-8-3dd-zonder-werfcreatie, stratum-vraag-8-3dd-zonder-werfcreatie, td-2-8-3 |
+| idem, geen volgorde leest p ([N4]) | 2 | nr-1-geen-volgorde, nr-1b-geen-volgorde-3-8 |
+| `pinned_loud ~entry:"L2"` (speelt, benoemd) | 1 | tr-strat-1 |
+| `pinned_silent ~entry:"S3"` (fout, antwoordt) | 6 | t1-of-lezer-eerst, t2-filter-kenmerk-lezer-eerst, t4-geen-lezer-eerst, tr-of-1, tr-kv-1, tr-pm2-ctl |
+| `pinned_silent ~entry:"S1"` | 2 | lz-lv-ctl, lz-av-ctl |
+| `pinned_value ~entry:"V1"` (speelt, antwoordt anders) | 3 | lz-m3-bound-laag, lz-m3-klasse-leeg, lz-mv-bound-laag |
+| `pinned_value ~entry:"V2"` | 3 | lz-lv-bound, lz-av-bound, lz-pv-bound |
+| ref wijkt af van de rijen (ch. 6.1-residu in waardevorm, open punt 10) | 2 | stratum-pm-8-w-3dd-gebonden (ref bonus 3), tr-cr-1-gebonden (ref bonus 1); clingo antwoordt het fixpunt |
+| vorm niet vertaald (bestaand, geen parametergarde): ref speelt | 2 | fn-1-letbarriere, fn-3-argument (`expression kind not translated`, een Invoke op regelniveau) |
+| idem, ref faalt | 1 | fn-1-ctl |
+| niet verifier-schoon (niet toelaatbaar) | 8 | e3a-recursief-8-3, e3b-recursief-3-8 (WF-033), fc-1-doel, fc-2-doel-geen-doelen (WF-053), fn-2-tak (WF-069), t5-tak-lezer-eerst, t5b-tak-schrijver-eerst, t5c-tak-lezer-eerst-gebonden (WF-077) |
+
+In de permutatieproef leest bij de 24 van het besluit in elke proef één
+documentvolgorde p en een andere niet, behalve bij e4b en e4d
+(feitcreaties: de volgorde van de gecreëerde links komt uit de join) en
+bij e5n-nest-3-8-casewerf8, stratum-3-w-8dd, stratum-alle-8-w-3dd en
+stratum-pm2-3-w-8dd (de volgorde komt uit de strata of de caselink gaat
+in ref altijd vóór): daar is de andere volgorde nagelopen en leest die
+p. nr-1 en nr-1b spelen in beide documentvolgordes, en ook in een
+volgorde met een van de twee leden afwezig leest geen vouw p.
+
+**Gates (fixronde 5, elk los na `eval $(opam env)`, op `cf084787` en opnieuw op `36f73e73`, met dezelfde regels).**
+```
+check-clingo: PASS (backend suite 947 checks, floor 83; 608 cases replay exactly through clingo — ref = clingo over the corpus)
+check-rood: PASS (50 red cases fault observably in ref and clingo, floor 26; 100 pinned fragments cite none of the 36 listed bottom sentences)
+check-oracle: PASS (ref suite 931 worked examples, floor 489; 608 cases replayed exactly, floor 427; NOT replayed, no case file yet: corpus/golden/jutterswet-seizoenvondst corpus/golden/jutterswet-vormenkabinet)
+check-noop: PASS (571 cases refute a do-nothing executor; 37 pinned survivors pin defeasible standing)
+check-verifier: PASS (286 golden clean; 454 negatief rejected for their declared rule, floor 350)
+check-self-contained: PASS
+```
+Gate 8's Drools-been: `check-rood: Drools leg PASS (11 fault-pinned, 39
+not-carried with reason)`.
+
 ### Registerzinnen (hoofdsessie, `spec/CONSTRUCTS.md`)
 
 Rij `ParameterRef`: voeg aan de laatste cel toe:
@@ -1175,22 +1485,32 @@ per stratum). A read that every allowed order reaches fires in ref's
 words; a read that one allowed order reaches and another does not fires
 in a sentence that names the unnormed order, also where ref's own order
 plays (maintainer decision 2026-09-23); a read that no allowed order
-reaches fires nothing. That holds for a quantifier fold's matrix, a Let
-barrier in a per-member part and the value of a Let whose binder is read
-at such a place. "Every allowed order" is decided per read, so two reads
-of one binder that each cover some orders and together all give the
-named sentence where ref's words were due. Where the guard is not exact
-otherwise it errs in one recorded direction. Loud, a refusal where ref
-plays: the day-kind table and the §7.1 horizon fence read at translation
-and refuse there, also behind a failing condition. Silent, an answer
-where ref faults: the Let lowering keeps a value behind an enclosing need
-on a path that does not read it, and the guard follows that lowering,
-which deviates without any parameter; and the lowering's branch hoist
-reads a condition before the operand beside the branch. A list-typed
-parameter reads leeg on absence in both. Red twin
-`corpus/rood/aanvoergeld-parameter-ongebonden` (value and condition
-position) pins the refusal in ref and clingo. The Drools backend still
-answers there (NOFAULT, listed in gate 8)."
+reaches fires nothing, except where two folds range over one list: each
+fold's range has an order model of its own, so a named twin can join
+atoms that no single order makes true, and the refusal is then named
+where no allowed order reads the parameter. That holds for a quantifier
+fold's matrix, a Let barrier in a per-member part and the value of a Let
+whose binder is read at such a place. For the Let barrier the pass
+before a creation is one of the allowed orders: ref runs a pass's rules
+before its creations, so in that pass the created member is absent, and
+so is a barrier only that member raises. "Every allowed order" is
+decided per read, so two reads of one binder that each cover some orders
+and together all give the named sentence where ref's words were due.
+Where the guard is not exact otherwise it errs in one recorded
+direction. Loud, a refusal where ref plays: the day-kind table and the
+§7.1 horizon fence read at translation and refuse there, also behind a
+failing condition; and a Let barrier that only a created member raises
+counts the pass before the creation also in a rule that ch. 6.3 puts
+above that creation, where ref has no such pass (the translator does not
+know the strata). Silent, an answer where ref faults: the Let lowering
+keeps a value behind an enclosing need on a path that does not read it,
+and the guard follows that lowering, which deviates without any
+parameter; and a read ref reaches only in a pass before a form of the
+same stratum has written what the read's short circuit depends on (ch.
+6.1, recorded residual). A list-typed parameter reads leeg on absence in
+both. Red twin `corpus/rood/aanvoergeld-parameter-ongebonden` (value and
+condition position) pins the refusal in ref and clingo. The Drools
+backend still answers there (NOFAULT, listed in gate 8)."
 
 Rij `— Predicaatsoort`: vervang "An unbound scalar parameter in the
 operand faults in ref's words." door "An unbound scalar parameter in the
@@ -1227,8 +1547,9 @@ recorded there)."
 4. **De dagsoorttabel en het horizonhek weigeren in de vertaling**, ook
    waar ref de lezing niet bereikt. Ze zijn gretig ten opzichte van de
    conditie van de regel. Dat was al zo en ze gebruiken nu wel de
-   gedeelde zin. Getuige hf-cond (fixronde 3): het horizonhekframe met
-   voorwaarde 1 > 2 geeft ref `PASS` en clingo een vertaalfout.
+   gedeelde zin. Getuigen hf-cond (fixronde 3) en dk-cond (fixronde 5):
+   het horizonhek en de dagsoorttabel met voorwaarde 1 > 2 geven ref
+   `PASS` en clingo een vertaalfout.
 5. **De Let-verlaging houdt een waarde achter een omsluitende behoefte**
    (bestond al, parametervrij; README [V1], [V2], en via de garde [S1]).
    De behoefte van een Let geldt voor zijn hele lichaam, behalve waar de
@@ -1278,7 +1599,11 @@ recorded there)."
    blijft dan de plaats van een gecreëerde link in een meerstapsbereik:
    ref zet haar achter de caselinks van haar eigen tussenschakel en vóór
    die van een latere. Sinds `811864c6` (WF-046: de kwantorvouw draait na
-   haar creaties) kan die plaats de uitkomst bepalen.
+   haar creaties) kan die plaats de uitkomst bepalen. Sinds fixronde 5
+   (besluit van de hoofdsessie) valt ook de pass vóór een creatie onder
+   het besluit, voor de Let-barrière: in die pass ontbreekt het
+   gecreëerde lid. Een norm per stratum zou ook [L2] opheffen (open punt
+   13).
 8. **Een Let-barrière in een deel per lid over leden van een creatie**
    (opgelost in fixronde 4). De barrière en de vraag van een Let-waarde
    hebben nu elk een tweede vorm ("mogelijk eerder" naast "zeker eerder",
@@ -1311,39 +1636,82 @@ recorded there)."
     Droogdok, D1 een Droogdok, p = 1): ref schrijft bonus 3, want het
     evalueert de somvouw in stratum 0, als D1 alleen de 3 heeft, en trekt
     niet terug; clingo schrijft leeg. Op main `6e67ad8f` en op de tip
-    gelijk.
-11. **De takhoist van de Let-verlaging leest de conditie vóór de operand
-    naast de tak** (bestond al; README [S2]). `W[als c dan P anders Q]`
-    wordt `als c dan W[P] anders W[Q]`; een operand die ref vóór de tak
-    evalueert, staat daarna achter de conditie. Leest die operand een
-    ongebonden parameter en leest de conditie een binder met een lege
-    behoefte, dan kiest de conditie geen arm en vuurt de garde nergens:
-    hoist-ctl (`Let n = restpost in Let k = extra in (p plus (als n > 0
-    dan k anders 0))`, restpost leeg, p ongebonden) geeft ref een fout bij
-    p en clingo heffing leeg, op main en op de tip. Gemeten met een
-    mutant die de hoist alleen toestaat waar de tak de eerste operand is
-    (in `one_of`: de lezende operand moet de eerste zijn): geen enkel
-    corpusprogramma verandert (0 van 638), hoist-ctl weigert dan in refs
-    woorden, maar hoist-rechts-bound (`Let k = extra in (p plus (als q > 0
-    dan k anders 0))`, extra leeg, q = -5, p = 10) gaat van 10,00 (ref en
-    tip) naar leeg: de behoefte van k staat dan weer op het hele lichaam
-    (de waardeafwijking van punt 5). De ruil is een stille garde tegen een
-    ontbrekende waarde; geen van beide is een verbetering zonder de ander.
-    De garde van zo'n operand ook op de plaats vóór de hoist schrijven
-    raakt alleen documenten met een ongebonden parameter, maar vraagt de
-    bereikbaarheid van een plaats die na de herschrijving niet meer
-    bestaat. Niet gebouwd; de hoofdsessie beslist.
+    gelijk. Een tweede getuige uit de lens van ronde 4, zonder
+    niet-monotone vouw: tr-cr-1-gebonden (de vorm van tr-cr-1 met p = 1):
+    ref schrijft bonus 1 in de pass vóór de creatie en trekt niet terug,
+    clingo leeg. Dat is de waardevorm van [S3] (open punt 14).
+11. **De takhoist van de Let-verlaging las de conditie vóór de operand
+    naast de tak** (bestond al; opgelost in fixronde 5, punt 4; README
+    [S2] is weg). `W[als c dan P anders Q]` wordt `als c dan W[P] anders
+    W[Q]`; een operand die ref vóór de tak evalueert, staat daarna achter
+    de conditie. Leest die operand een ongebonden parameter en leest de
+    conditie een binder met een lege behoefte, dan koos de conditie geen
+    arm en vuurde de garde nergens (hoist-ctl: ref fout, clingo heffing
+    leeg, op main en op `a51a3ebe`). De hoist onthoudt nu per takknoop die
+    hij bouwt welke operanden ref vóór de conditie leest (`ctx.hoisted`),
+    en een ongebonden parameterlezing daarin krijgt een tweede garde
+    zonder de atomen van de arm, weggenomen op hun plaats in `rule_guard`.
+    hoist-ctl, h-diep, h-samengesteld en h-voor-cond-q-pos weigeren in
+    refs woorden; h-na-tak, h-voor-cond-q-neg, hoist-rechts-bound en de
+    gebonden tweelingen spelen zoals voorheen; geen corpusprogramma
+    verandert. De gesloten lichamen dragen de tweede garde niet: ze zijn
+    leeg-vrij (ch. 10.1), dus de conditie kiest daar altijd een arm.
 12. **"Elke toegestane volgorde" wordt per lezing en per atoom beslist**
-    (fixronde 4; README [N3]). Twee lezingen van één binder die elk een
-    deel van de volgordes dekken en samen alle, geven de benoemde zin
-    waar refs woorden passen: disj-8-3 (twee kwantorvouwen over dezelfde
-    gecreëerde 8 en 3 onder `Let k = p`, de ene leest k als 3 eerst komt,
-    de andere als 8 eerst komt): ref faalt, clingo weigert benoemd. Beide
-    weigeren; alleen de woorden verschillen. Omgekeerd kan de conjunctie
-    van "in een toegestane volgorde" per atoom een volgorde veronderstellen
-    die als geheel niet bestaat; dan weigert clingo benoemd waar geen
-    volgorde de parameter leest. Dat is niet aangetoond: ik vond geen
-    document waarin twee ordeafhankelijke atomen van één garde tegengestelde
-    volgordes van hetzelfde bereik eisen. Exact beslissen vraagt de
-    volgordes als geheel (in ASP: een keuze over de permutaties van de
-    gecreëerde leden); niet gebouwd.
+    (fixronde 4; README [N3] en [N4]). Twee lezingen van één binder die
+    elk een deel van de volgordes dekken en samen alle, geven de benoemde
+    zin waar refs woorden passen: disj-8-3 (twee kwantorvouwen over
+    dezelfde gecreëerde 8 en 3 onder `Let k = p`, de ene leest k als 3
+    eerst komt, de andere als 8 eerst komt): ref faalt, clingo weigert
+    benoemd. Beide weigeren; alleen de woorden verschillen. Omgekeerd kan
+    de conjunctie van "in een toegestane volgorde" per atoom een volgorde
+    veronderstellen die als geheel niet bestaat; dan weigert clingo
+    benoemd waar geen volgorde de parameter leest. De lens toonde dat in
+    ronde 4 aan (nr-1, [N4]: twee vouwen over dezelfde lijst, elk met een
+    eigen volgordemodel; ref speelt, clingo weigert benoemd). Gemeten in
+    fixronde 5 (punt 3): één gedeeld volgordemodel per lijst is geen
+    begrensde fix. De relaties van de twee bereiken verschillen niet op de
+    gecreëerde leden; elk atoom kiest zijn eigen getuigevolgorde, en voor
+    tellende kwantoren en de afgeleide barrière- en vraagatomen is de
+    samenhang van die getuigen geen verzameling voorrangsparen. Exact
+    beslissen vraagt de volgordes als geheel (in ASP: een keuze over de
+    permutaties per lijst met een bestaansvraag, wat het model van de
+    runner verandert); niet gebouwd.
+13. **[L2]: de vertaler kent de strata niet** (fixronde 5, gevolg van punt
+    1). Een Let-barrière die alleen een gecreëerd lid opwerpt, telt de
+    pass vóór de creatie ook in een regel die ch. 6.3 boven die creatie
+    zet, waar ref zo'n pass niet heeft: tr-strat-1 (ALLE-conditie over de
+    schuiten, één schuit van 8 per Werf) geeft ref `PASS` en clingo de
+    benoemde weigering; op main en `a51a3ebe` speelden beide. Met de
+    strata in de vertaler (de dependency-vormen staan in
+    `Ir_v0.Checks.dep_forms`; ref rekent de strata zelf uit in
+    `eval.ml`) zou de aanwezigheid van zo'n lid gelden voor een vorm
+    strikt boven elke creatie die het bereik vult, en viel [L2] weg. Dat
+    raakt ook open punt 7 (een norm per stratum). Niet gebouwd: een eigen
+    stratificatie in de vertaler is werk van een andere orde; de
+    hoofdsessie beslist.
+14. **Normvraag: de tussentijdse pass binnen één stratum** (fixronde 5,
+    punt 2; README [S3]; het residu van ch. 6.1 in fail-fast-vorm). ref
+    draait de vormen van een stratum pass voor pass. Een vorm die leest
+    wat een latere vorm van hetzelfde stratum schrijft, ziet dat in de
+    eerste pass leeg; valt daardoor een kortsluiting weg, dan leest ref de
+    parameter en faalt. t1: `heffing = 5,00 indien TEN MINSTE 1 [a > 0,
+    p > 0]` vóór `a = inkomen`: ref fout, clingo 5,00; met de schrijvende
+    regel eerst (t1b) beide 5,00. De schrijver kan een creatie zijn
+    (tr-of-1, tr-kv-1, tr-pm2-ctl), en in waardevorm schrijft ref een
+    tussenwaarde die het niet terugtrekt (tr-cr-1-gebonden,
+    stratum-pm-8-w-3dd-gebonden; open punt 10). **Vraag voor de
+    maintainer, geen besluit:** is refs fout op zo'n tussentijdse lezing
+    het antwoord van de arbiter, of een defect van ref dat bij het residu
+    van ch. 6.1 hoort? Advies van de lens: het fixpunt van ch. 6.3 leest p
+    daar niet. Daarbij hoort een samenhangsvraag: voor een Let-barrière
+    maakt het besluit van fixronde 5 de pass vóór een creatie tot een
+    benoemde weigering, voor een kortsluiting (een samengestelde
+    conditie, of een vouw die bij een eerder lid sluit dankzij een geneste
+    vouw over gecreëerde leden) blijft die pass stil. Beide benoemd maken
+    vraagt een "in elke pass"-waarheid van elke vouw over een groeiend
+    bereik (niet begrensd); beide exact maken volgt uit het antwoord op de
+    normvraag.
+15. **Rebase volgt in een eigen ronde** (opdracht fixronde 5). De kaart
+    staat op main `6e67ad8f`. Main krijgt binnenkort de M1-landing
+    (v1-wire); de rebase migreert dan ook de ingebedde v0-fixtures van
+    `test_clingo.ml`.
