@@ -23,3 +23,21 @@ RegelSpraak-modellen gangbaar.
 - (c) Alle veertien gates groen; herpin bij frontend-beweging.
 
 May touch: `frontends/regelspraak/**`, kaartverplaatsing.
+
+## Claim (2026-09-23) — aangescherpte acceptatie
+
+Branch `card/frontend-aantal-attribuutnaam`, basis `main` `582e8f7e`.
+
+1. Reproductie met `make ir` op "het aantal gewogen posten van de
+   Jutter" (attribuut `aantal gewogen posten` gedeclareerd).
+2. Normmeting: de brontaal (spec v2.3.0, sectieverwijzingen) én de
+   toolchain (dezelfde zinnen door zijn resolver; het vendored model in
+   `toka/` op attribuutlezingen van een "aantal …"-naam). Het
+   gedeclareerde attribuut mag onder "het aantal" alleen winnen waar de
+   toolchain dat ook doet, niets breder; anders benoemt de foutzin de
+   botsing en de spelling die het attribuut wél leest.
+3. Rood-eerst getuige per spelling, een tegenproef dat de aangeraden
+   spelling het attribuut schoon leest, een tegenproef zonder
+   "aantal …"-attribuut; mutatieproef per voorwaarde.
+4. Gates 10 en 11 byte-identiek (verwacht: geen corpusdrager); alle
+   veertien gates groen, elk als losse aanroep; pins 181/160 bewegen niet.
