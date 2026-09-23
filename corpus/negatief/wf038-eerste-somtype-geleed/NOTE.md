@@ -5,9 +5,9 @@ two operands of the sum type `stand` (`Geborgen` carrying a number,
 `Vermist` carrying nothing). `SumType` is equality-only by the ch. 2.4
 orderability paragraph; a constructor tag has no least.
 
-    WF-038 FAIL /resolvedRegels/0/waarde/argumenten/0: operand of the
+    WF-038 FAIL /rules/resolvedRegels/0/waarde/argumenten/0: operand of the
     EERSTE ordering fold is sumtype, must be a number or a date
-    WF-038 FAIL /resolvedRegels/0/waarde/argumenten/1: operand of the
+    WF-038 FAIL /rules/resolvedRegels/0/waarde/argumenten/1: operand of the
     EERSTE ordering fold is sumtype, must be a number or a date
 
 Why it has to exist beside the enumeration cases: the sum type is the

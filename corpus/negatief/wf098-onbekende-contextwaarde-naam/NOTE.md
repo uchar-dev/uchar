@@ -2,7 +2,7 @@ Violates WF-098 (`spec/IR-SPEC.md` ch. 4.1): a **context value** whose `naam`
 is not one of the three admissible names — `de dagX` where the closed set holds
 `Rekendatum`, `Rekenjaar` and `de dag`.
 
-    WF-098 FAIL /resolvedDagsoorten/0/voorwaarde/onderdelen/0/links/naam:
+    WF-098 FAIL /rules/resolvedDagsoorten/0/voorwaarde/onderdelen/0/links/naam:
     context value 'de dagX' is not one of the three admissible names
     Rekendatum, Rekenjaar, de dag: the context-value name is a closed set,
     spelled byte for byte

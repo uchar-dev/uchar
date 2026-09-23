@@ -5,7 +5,7 @@ in the spelling that ALSO claims an instance source: an `AANTAL` carrying
 `elementObjecttype: "Vondst"` and, beside it, an operand list of two
 ordinary reads.
 
-    WF-037 FAIL /resolvedRegels/0/waarde: a count folds INSTANCES and has
+    WF-037 FAIL /rules/resolvedRegels/0/waarde: a count folds INSTANCES and has
     no LISTED form, and this node carries 2 operands: the source language
     spells a count over a subject expression alone (ch. 4.3), so there is
     no articulated operand list to admit — the only reading an operand

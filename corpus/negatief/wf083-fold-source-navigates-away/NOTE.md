@@ -19,7 +19,7 @@ instance-fold source shape`; the ASP backend faults `TRANSLATION FAULT:
 expression kind not translated`.
 
 Old verifier: `PASS` (the fold-source arm's silent fall-through admitted any
-`navigatieRol`). New verifier: `WF-083 FAIL /resolvedRegels/0/waarde/argumenten/0:
+`navigatieRol`). New verifier: `WF-083 FAIL /rules/resolvedRegels/0/waarde/argumenten/0:
 navigatieRol 'vondst' on a fold source does not denote the fold subject: no
 role named so (declared name or plural, ci) is filled by the fold subject
 'Jutter' itself — a fold source never navigates`.

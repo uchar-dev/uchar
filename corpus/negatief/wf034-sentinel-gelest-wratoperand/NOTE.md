@@ -8,7 +8,7 @@ in the `attribuut` slot, `set: false`, no `navigatieRol`, the unknown
 sentinel on its own `type`. The wart is the fold SOURCE's spelling; a listed
 value fold has no source, so there is nothing for it to be.
 
-    WF-034 FAIL /resolvedRegels/0/waarde/argumenten/1/type: unknown-type
+    WF-034 FAIL /rules/resolvedRegels/0/waarde/argumenten/1/type: unknown-type
     sentinel on a fold operand that is not a fold SOURCE: the sentinel is
     admissible on the single argument of an AGGREGATION alone (the v0 row-1
     wart, ch. 4.3) — with two or more arguments the node is the listed value

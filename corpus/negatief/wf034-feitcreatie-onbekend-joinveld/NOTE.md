@@ -2,7 +2,7 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): a **fact creation** (ch. 3.4)
 whose `joinVeld` — the bean field the final hop of the creation path is READ
 through — names a role *no declaration carries*.
 
-    WF-034 FAIL /feitCreaties/0/joinVeld: 'bestaatniet' is not a declared role
+    WF-034 FAIL /rules/feitCreaties/0/joinVeld: 'bestaatniet' is not a declared role
     of 'seinvoering': the final hop's bean field resolves against no
     declaration
 

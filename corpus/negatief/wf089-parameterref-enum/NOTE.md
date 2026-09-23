@@ -3,7 +3,7 @@ Violates WF-089 (`spec/IR-SPEC.md` ch. 2.4): a `ParameterRef` used as a
 while the parameter it reads, `standaardvaarwater`, is declared with the
 domain `Vaarwater`.
 
-    WF-089 FAIL /resolvedRegels/0/waarde/scrutinee/type: parameter reference
+    WF-089 FAIL /rules/resolvedRegels/0/waarde/scrutinee/type: parameter reference
     'standaardvaarwater' is typed with keuzetype domain 'Kust', but the
     declaration it reads from names domain 'Vaarwater'
 

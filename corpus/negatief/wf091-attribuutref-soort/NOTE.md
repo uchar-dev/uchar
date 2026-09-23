@@ -5,7 +5,7 @@ attribute, with a serialized `type {Tekst}`. It is written into
 into text and is satisfied — the target's declared datatype is what it
 crosses, never the reference's annotation.
 
-    WF-091 FAIL /resolvedRegels/0/waarde/type: soort mismatch: attribute
+    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: soort mismatch: attribute
     reference 'gewicht' is typed text, but the declaration it reads from
     is number
 

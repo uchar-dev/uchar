@@ -2,7 +2,7 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6 (s)): an entry of
 `dagsoortPerEenheid` whose **value** — the day kind the registered unit
 spelling stands for — names a day kind *`dagsoorten` does not declare*.
 
-    WF-034 FAIL /dagsoortPerEenheid/schouwdagen: day-kind unit 'schouwdagen'
+    WF-034 FAIL /model/dagsoortPerEenheid/schouwdagen: day-kind unit 'schouwdagen'
     names day kind 'havendag', which no declaration carries: the registry entry
     resolves against no day kind
 

@@ -6,7 +6,7 @@ operand of a `Binair` `PLUS`. An operand slot of a composite node wants one
 value exactly as a rule value does, and nothing in a `Binair` consumes a
 collection.
 
-    WF-096 FAIL /resolvedRegels/0/waarde/links: set reading at an ordinary
+    WF-096 FAIL /rules/resolvedRegels/0/waarde/links: set reading at an ordinary
     read position: a set reading names the members' values, one per member,
     and is admissible only as the SOURCE of a single-argument VALUE fold
     (ch. 4.3; a count folds the contributors, not their values) — here

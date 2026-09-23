@@ -7,7 +7,7 @@ its operands are ordinary reads evaluated one by one against the rule
 subject. The set reading is the SOURCE's field, so beside a second operand it
 is as ill-formed as it is anywhere else outside a fold.
 
-    WF-096 FAIL /resolvedRegels/0/waarde/argumenten/1: set reading on a fold
+    WF-096 FAIL /rules/resolvedRegels/0/waarde/argumenten/1: set reading on a fold
     operand that is not a VALUE fold's SOURCE: a set reading is admissible on
     the single argument of a value AGGREGATION alone (ch. 4.3) — with two or
     more arguments the node is the listed value fold, whose operands are

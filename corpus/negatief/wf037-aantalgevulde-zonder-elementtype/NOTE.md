@@ -4,7 +4,7 @@ Violates WF-037 (`spec/IR-SPEC.md` ch. 4.3, ch. 4.6) in the filled count's
 INSTANCE-FOLD arm: `AANTAL_GEVULDE` is an instance fold and must carry an
 element type, and this node carries none.
 
-    WF-037 FAIL /resolvedRegels/0/waarde: the filled count is an INSTANCE
+    WF-037 FAIL /rules/resolvedRegels/0/waarde: the filled count is an INSTANCE
     fold and MUST carry an element type: without one its argument is no
     fold source at all, and the count has no contributors whose values it
     could test for presence (ch. 4.3)

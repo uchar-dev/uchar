@@ -4,7 +4,7 @@ Violates WF-111's DAY-PRECISION clause (`spec/IR-SPEC.md` ch. 4.6): the
 window's bound is the subject's own scalar attribute, and that attribute is
 a `DatumTijd`.
 
-    WF-111 FAIL /resolvedRegels/0/voorwaarde/vanaf: the vanaf bound of a
+    WF-111 FAIL /rules/resolvedRegels/0/voorwaarde/vanaf: the vanaf bound of a
     time window is a datum-tijd: …
 
 Derived from `corpus/golden/jutterswet-premievenster/ir.json`. Only the

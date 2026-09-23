@@ -2,7 +2,7 @@ Violates WF-017 (`spec/IR-SPEC.md` ch. 2.9), arm (a): a KEY of
 `dagsoortPerEenheid` — a registered day-kind unit spelling — that is one of the
 eighteen built-in calendar unit names.
 
-    WF-017 FAIL /dagsoortPerEenheid/dagen: registered day-kind unit spelling
+    WF-017 FAIL /model/dagsoortPerEenheid/dagen: registered day-kind unit spelling
     'dagen' shadows a built-in calendar unit
 
 **Where the spellings live.** On the v0 wire a day kind's spellings sit in two

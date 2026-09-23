@@ -3,7 +3,7 @@
 Violates **WF-107** (`spec/IR-SPEC.md` ch. 3.1): the single `ResolvedRegel`
 carries `naam: null`. The document says nothing else wrong.
 
-    WF-107 FAIL /resolvedRegels/0/naam: form in resolvedRegels carries no
+    WF-107 FAIL /rules/resolvedRegels/0/naam: form in resolvedRegels carries no
     name (a named form's identity on this wire IS its name — ch. 8 groups
     versions by it, the ch. 5.1 dependency graph keys its channel node on it,
     and WF-020 keeps it unique)

@@ -2,7 +2,7 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): a near-side **role check**
 (ch. 5.8a) whose `anderTeFiller` names a type the subject is related to by *no
 declared fact type*.
 
-    WF-034 FAIL /resolvedRegels/0/voorwaarde/anderTeFiller: no fact type
+    WF-034 FAIL /rules/resolvedRegels/0/voorwaarde/anderTeFiller: no fact type
     relates the subject 'Jutter' to 'Bestaatniet': the role check's
     anderTeFiller resolves against no declaration
 

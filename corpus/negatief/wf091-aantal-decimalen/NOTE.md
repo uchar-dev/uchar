@@ -4,7 +4,7 @@ ch. 2.3 makes a count a whole, non-negative, unitless number, and unlike
 every other arm here that derivation reads no operand at all — a count's
 type is a constant of the operator.
 
-    WF-091 FAIL /resolvedRegels/0/waarde/type: decimals mismatch: the AANTAL
+    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: decimals mismatch: the AANTAL
     aggregation is typed 2 decimals, but the type a count derives is
     0 decimals
 

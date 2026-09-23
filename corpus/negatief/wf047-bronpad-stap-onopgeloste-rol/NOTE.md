@@ -3,7 +3,7 @@
 Violates **WF-047** (`spec/IR-SPEC.md` ch. 2.6) at a `bronPad` step: the step
 names a role the fact type does not declare.
 
-    WF-047 FAIL /resolvedRegels/0/waarde/bronPad/1: role binding names no
+    WF-047 FAIL /rules/resolvedRegels/0/waarde/bronPad/1: role binding names no
     declared role 'geborgen vondsten' of fact type 'berging' (the plural does
     not bind)
 

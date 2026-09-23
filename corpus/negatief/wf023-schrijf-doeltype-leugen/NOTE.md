@@ -7,7 +7,7 @@ each other and both lie about the declaration. The cross is against the
 target's DECLARED datatype (`resolved_attr_datatype`), so the lie does not
 help.
 
-    WF-023 FAIL /resolvedRegels/0: a value of the enumeration domain
+    WF-023 FAIL /rules/resolvedRegels/0: a value of the enumeration domain
     'Kust' is assigned to a target of the enumeration domain 'Vaarwater'
 
 Why it has to exist: the previous WF-023 compared the SERIALIZED target

@@ -3,7 +3,7 @@
 Violates WF-037 (`spec/IR-SPEC.md` ch. 4.3, ch. 4.6) in its `emptyFallback`
 clause — "sum only". An `AANTAL_GEVULDE` carries a `leegwaarde`.
 
-    WF-037 FAIL /resolvedRegels/0/waarde: empty-value fallback on a
+    WF-037 FAIL /rules/resolvedRegels/0/waarde: empty-value fallback on a
     non-sum aggregation
 
 **Nothing was widened to get this, and that is the point.** The fallback

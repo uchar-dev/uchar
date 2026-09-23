@@ -157,9 +157,9 @@ byte-exact one moved **0 of 555** documents and gate 3 stayed green. The words
 "trimmed and case-insensitive" in the rule were unfalsifiable. With these two
 entries the same mutant reports both of them here and takes **gate 3 down**:
 
-    WF-034 FAIL /dagsoortPerEenheid/schouwdag: day-kind unit 'schouwdag' names
+    WF-034 FAIL /model/dagsoortPerEenheid/schouwdag: day-kind unit 'schouwdag' names
     day kind 'SchouwDag', which no declaration carries: …
-    WF-034 FAIL /dagsoortPerEenheid/schouwdagen: day-kind unit 'schouwdagen'
+    WF-034 FAIL /model/dagsoortPerEenheid/schouwdagen: day-kind unit 'schouwdagen'
     names day kind '  schouwdag  ', which no declaration carries: …
 
 Re-measured 2026-09-19 over the golden, negatief and rood zones: the only
@@ -223,11 +223,11 @@ Measured 2026-09-10 over 585 documents (four zones plus the read-only parity
 zone):
 
 - arm (b) compared byte-exactly instead of under the ch. 2.1 identity reports
-  `/dagsoortPerEenheid/schouwdag` here and takes gate 3 down — but on the
+  `/model/dagsoortPerEenheid/schouwdag` here and takes gate 3 down — but on the
   document's PRE-CARD state too, since that entry came in with the WF-034
   section above;
 - arm (b) comparing against the FIRST declared day kind instead of the key's OWN
-  reports `/dagsoortPerEenheid/stormvloeddag` here, and is caught by
+  reports `/model/dagsoortPerEenheid/stormvloeddag` here, and is caught by
   `corpus/golden/jutterswet-schouwrooster` as well.
 
 The refusing side is pinned from the other end by

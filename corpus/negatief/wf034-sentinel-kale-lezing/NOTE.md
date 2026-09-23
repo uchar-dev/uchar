@@ -6,7 +6,7 @@ value of a computing rule. This is the position the expression walk's own
 type prologue has always covered; the three `wf034-sentinel-gelest*` siblings
 cover the position the fold-argument branch withheld from it.
 
-    WF-034 FAIL /resolvedRegels/0/waarde/type: unknown-type sentinel inside a
+    WF-034 FAIL /rules/resolvedRegels/0/waarde/type: unknown-type sentinel inside a
     structured node
 
 The document. One computing rule whose value is an `AttribuutRef` on the

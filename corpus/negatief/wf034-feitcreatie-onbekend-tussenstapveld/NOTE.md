@@ -2,7 +2,7 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): a **fact creation** (ch. 3.4)
 whose intermediate step is joined through a bean field naming a role *no
 declaration carries*.
 
-    WF-034 FAIL /feitCreaties/0/tussenstappen/0/veld: 'bestaatniet' is not a
+    WF-034 FAIL /rules/feitCreaties/0/tussenstappen/0/veld: 'bestaatniet' is not a
     declared role of 'kustligging': the hop's bean field resolves against no
     declaration
 

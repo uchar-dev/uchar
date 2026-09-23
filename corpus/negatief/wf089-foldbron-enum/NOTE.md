@@ -5,7 +5,7 @@ reference position: the `AttribuutRef` that feeds
 declared `Kust`. Here the fold node and its operand agree with each
 other; the lie sits one level down, in the reference.
 
-    WF-089 FAIL /resolvedRegels/0/waarde/argumenten/0/type: fold-source
+    WF-089 FAIL /rules/resolvedRegels/0/waarde/argumenten/0/type: fold-source
     attribute reference 'kust' is typed with keuzetype domain
     'Vaarwater', but the declaration it reads from names domain 'Kust'
 

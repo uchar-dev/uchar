@@ -6,7 +6,7 @@ n-decimal" — and it is exactly that facing precision the assignment gate
 reads. A rounding that claims not to have rounded is the ch. 2.4 gate's
 own blind spot.
 
-    WF-091 FAIL /resolvedRegels/0/waarde/type: decimals mismatch: the
+    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: decimals mismatch: the
     rounding is typed 4 decimals, but the type derived from its base and its
     decimal count is 0 decimals
 

@@ -5,7 +5,7 @@ Violates WF-089 (`spec/IR-SPEC.md` ch. 2.4): the sum-type twin of
 domain `oordeel` (`Goedgekeurd(bedrag)`, `Verworpen`, `Uitgesteld`) and
 the arms cover `oordeel` exactly.
 
-    WF-089 FAIL /resolvedRegels/0/waarde/scrutinee/type: attribute reference
+    WF-089 FAIL /rules/resolvedRegels/0/waarde/scrutinee/type: attribute reference
     'beschikking' is typed with keuzetype domain 'oordeel', but the
     declaration it reads from names domain 'beschikking'
 

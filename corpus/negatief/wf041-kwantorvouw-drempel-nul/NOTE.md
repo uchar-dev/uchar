@@ -22,5 +22,5 @@ deliberately schema-invalid as well. The negatief zone is gate 3's, not gate
 2's: a rule whose only enforcement were the schema would have no citable
 violation.
 
-Verifier: `WF-041 FAIL /resolvedRegels/0/voorwaarde/drempel: counting quantifier
+Verifier: `WF-041 FAIL /rules/resolvedRegels/0/voorwaarde/drempel: counting quantifier
 with threshold 0 < 1`.

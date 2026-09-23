@@ -2,7 +2,7 @@ Violates WF-023 (`spec/IR-SPEC.md` ch. 3.1) at its second write position
 on the FAMILY clause: the object creation initialises `vaarwater`
 (declared `Enumeratie` `Vaarwater`) with the numeric `Literal` `4`.
 
-    WF-023 FAIL /objectCreaties/0/toekenningen/0: a number value is
+    WF-023 FAIL /rules/objectCreaties/0/toekenningen/0: a number value is
     assigned to a enumeration target
 
 Why it has to exist: the object-creation member had NO value typing at all

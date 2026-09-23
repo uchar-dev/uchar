@@ -1,7 +1,7 @@
 Violates WF-007 (`spec/IR-SPEC.md` ch. 2.4): a whole number carrying 2
 decimals — no legal precision form — on a rule TARGET's `type`.
 
-    WF-007 FAIL /resolvedRegels/0/doel/type: whole number with 2 decimals:
+    WF-007 FAIL /rules/resolvedRegels/0/doel/type: whole number with 2 decimals:
     not one of the three precision forms
 
 Why it has to exist: WF-007 is a SHAPE law on a datatype — every `Number`
@@ -9,7 +9,7 @@ in the document, wherever it sits — but its two halves reached only the
 declarations (`wf007_model`: attribute, domain and parameter datatypes)
 and the types the expression walk enters (`walk_expr`'s type prologue).
 The target lvalue is WF-022's and the walk deliberately never enters it,
-so the form check never ran on `/resolvedRegels/*/doel/type`: measured on
+so the form check never ran on `/rules/resolvedRegels/*/doel/type`: measured on
 2026-09-03, the shape below is verifier-`PASS` while the identical form on
 any walked expression type is refused (`.../voorwaarde/rechts/type`,
 `WF-007 FAIL`). The clause added by card `20260903-wf007-schrijfdoel`
@@ -35,7 +35,7 @@ the wire and a nonsense datatype. That is not a corner: golden + rood carry
 covers and nothing covered before.
 
 A hand-broken variant of `corpus/golden/jutterswet-penningdrempel/ir.json`,
-one field deep: `/resolvedRegels/0/doel/type` — `{"node": "Booleaan"}` —
+one field deep: `/rules/resolvedRegels/0/doel/type` — `{"node": "Booleaan"}` —
 replaced by a `Numeriek` with `geheel: true` and `decimalen: 2`, which is
 schema-valid on the v0 wire and round-trips byte-identically.
 

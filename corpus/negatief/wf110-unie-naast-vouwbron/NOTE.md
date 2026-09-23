@@ -4,7 +4,7 @@ Violates WF-110 (`spec/IR-SPEC.md` ch. 4.3), the instance-set union — the
 §5.7 concatenation of subject expressions, landed 2026-09-20 as the source
 of an instance count. Clause (c): the count over a union names no source of its own.
 
-    WF-110 FAIL /resolvedRegels/0/waarde: a count over an instance-set
+    WF-110 FAIL /rules/resolvedRegels/0/waarde: a count over an instance-set
     union names no source of its own, and this node carries
     elementObjecttype: the union's selections carry the population, the
     relation and the subselection, one set per selection, so a source here
@@ -32,7 +32,7 @@ the witness a two-rule document.
 
 ## Rood-eerst, gemeten op dit document
 
-The pre-card verifier cannot LOAD it — `LOAD ERROR at /resolvedRegels/0/waarde/argumenten/0/node: unknown
+The pre-card verifier cannot LOAD it — `LOAD ERROR at /rules/resolvedRegels/0/waarde/argumenten/0/node: unknown
 expr node "InstanceSetUnion"` — because the node entered the wire with this
 card. So the honest red-first record is in two steps, both measured:
 

@@ -7,7 +7,7 @@ sits on the cell read's own `type`, which is a use site of the same
 declaration because a cell of a dimensioned attribute carries that
 attribute's datatype.
 
-    WF-091 FAIL /resolvedRegels/0/waarde/type: unit mismatch:
+    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: unit mismatch:
     dimension-cell read of 'kern' is typed 't' of system 'Gewicht' (factor
     1000 to 'kg'), but the declaration it reads from is 'kg' of system
     'Gewicht' (factor 1 to 'kg')

@@ -5,7 +5,7 @@ number from two numbers; the soort is what routes a consumer's scaling, so
 a percentage annotation over a plain sum is a factor-of-100 divergence
 waiting at the first consumer that honours it.
 
-    WF-091 FAIL /resolvedRegels/0/waarde/type: soort mismatch: the PLUS
+    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: soort mismatch: the PLUS
     composite is typed percentage, but the type derived from its operands is
     number
 

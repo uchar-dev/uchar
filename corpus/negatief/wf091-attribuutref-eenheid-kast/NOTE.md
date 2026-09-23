@@ -6,7 +6,7 @@ canonical `KG`. The conversion FACTOR is 1 on both sides, and every other
 facet agrees, so this document differs from its declaration in **case
 alone**.
 
-    WF-091 FAIL /resolvedRegels/0/waarde/type: unit mismatch: attribute
+    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: unit mismatch: attribute
     reference 'gewicht' is typed 'KG' of system 'GEWICHT' (factor 1 to
     'KG'), but the declaration it reads from is 'kg' of system 'Gewicht'
     (factor 1 to 'kg')

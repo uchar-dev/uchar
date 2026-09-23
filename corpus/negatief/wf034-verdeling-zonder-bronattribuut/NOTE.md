@@ -3,7 +3,7 @@ that names no source attribute. The amount an allocation distributes lives in
 `bronAttribuut` on the source type; with the field empty there is no
 declaration to read it from.
 
-    WF-034 FAIL /verdelingen/0/bronAttribuut: allocation without a source
+    WF-034 FAIL /rules/verdelingen/0/bronAttribuut: allocation without a source
     attribute: it resolves against no declaration
 
 Why this needs an arm of its own, away from the expression walk: an

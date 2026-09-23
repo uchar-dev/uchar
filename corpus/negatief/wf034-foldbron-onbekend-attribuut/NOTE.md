@@ -2,7 +2,7 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): a **fold source** outside the
 row-1 wart naming an attribute *no declaration carries*, admitted until now by
 the ch. 4.3 type-pair fallback applied beyond its scoping.
 
-    WF-034 FAIL /resolvedRegels/1/waarde/argumenten/0: 'bestaatniet' is not a
+    WF-034 FAIL /rules/resolvedRegels/1/waarde/argumenten/0: 'bestaatniet' is not a
     declared attribute of 'Jutter': outside the v0 instance-fold source (the
     unknown-typed row-1 wart) a fold-source argument is an ordinary attribute
     reference — the ch. 4.3 role-name exception and its type-pair fallback do

@@ -5,7 +5,7 @@ min/max at the **least** operand precision — the winner may be either
 operand, so only the floor is knowable — and claiming the higher one
 over-reports a precision the value need not have.
 
-    WF-091 FAIL /resolvedRegels/0/waarde/type: decimals mismatch: the MINIMUM
+    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: decimals mismatch: the MINIMUM
     aggregation is typed 4 decimals, but the type derived from its operands is
     2 decimals
 

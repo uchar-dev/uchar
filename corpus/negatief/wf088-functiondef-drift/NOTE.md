@@ -8,9 +8,9 @@ The declaring enumeration `bergingsstatus` has two values (`Geborgen`,
 them faithfully in `domeinen`, and the three use sites repeat a third
 value `Verspoeld` that no declaration has. The verifier reports:
 
-    WF-088 FAIL /functionDefs/0/parameters/melding
-    WF-088 FAIL /functionDefs/0/result
-    WF-088 FAIL /functionDefs/0/body/type
+    WF-088 FAIL /model/functionDefs/0/parameters/melding
+    WF-088 FAIL /model/functionDefs/0/result
+    WF-088 FAIL /model/functionDefs/0/body/type
 
 which is both halves of the rule at once — the model layer's `FunctionDef`
 arm (parameter and result) and the expression layer's type prologue (the
@@ -28,7 +28,7 @@ with it, which is what makes the recursion arm falsifiable rather than
 merely present.
 
 One incidental violation rides along, and it is structural rather than
-sloppy: `WF-060 /domeinen/bergingsmelding` fires because an enumeration is
+sloppy: `WF-060 /model/domains/1/datatype` fires because an enumeration is
 not an admissible sum-type payload. That fence is exactly why the
 recursion is described as belt-and-braces in the verifier — WF-060,
 WF-065 and WF-071 fence enumerations out of every nested position, so a

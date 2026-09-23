@@ -2,7 +2,7 @@ Violates WF-091 (`spec/IR-SPEC.md` ch. 4.1) on the `ParameterReference`
 arm, unit facet: the parameter `vondstdrempel` is declared in `kg` and the
 reference that reads it is typed in `t` (same canonical `kg`, factor 1000).
 
-    WF-091 FAIL /resolvedRegels/0/waarde/type: unit mismatch: parameter
+    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: unit mismatch: parameter
     reference 'vondstdrempel' is typed 't' of system 'Gewicht' (factor
     1000 to 'kg'), but the declaration it reads from is 'kg' of system
     'Gewicht' (factor 1 to 'kg')

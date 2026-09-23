@@ -8,7 +8,7 @@ PARAMETER. WF-042 alone accepts that, because a parameter of type
 
 Expected verifier report:
 
-    WF-111 FAIL /resolvedRegels/0/voorwaarde/vanaf: the vanaf bound of a
+    WF-111 FAIL /rules/resolvedRegels/0/voorwaarde/vanaf: the vanaf bound of a
     time window is the parameter 'peildatum' — …
 
 ## Where the rule comes from

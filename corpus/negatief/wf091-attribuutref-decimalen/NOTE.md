@@ -4,7 +4,7 @@ the reference that reads it is typed with none. No unit is involved on
 either side, so the unit facet is silent and the decimals facet carries
 the refusal alone.
 
-    WF-091 FAIL /resolvedRegels/0/waarde/type: decimals mismatch:
+    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: decimals mismatch:
     attribute reference 'gewicht' is typed 0 decimals, but the declaration
     it reads from is 2 decimals
 

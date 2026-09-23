@@ -5,7 +5,7 @@ Violates WF-091 (`spec/IR-SPEC.md` ch. 4.1) at a **composite** position,
 consumer honouring the annotation carries a per-year denominator into a
 value that no longer has one.
 
-    WF-091 FAIL /resolvedRegels/0/waarde/type: unit mismatch: the MAAL
+    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: unit mismatch: the MAAL
     composite is typed 'EUR' of system 'Munt' (factor 1 to 'EUR') per 'jr' of
     system 'Tijd' (factor 1 to 'jr'), but the type derived from its operands
     is 'EUR' of system 'Munt' (factor 1 to 'EUR')

@@ -2,7 +2,7 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): the v0 unknown-type sentinel on
 the **element of a `ListType` that is a `SumType` constructor payload**,
 inside the static type of a value node (ch. 4.7, ch. 2.4).
 
-    WF-034 FAIL /resolvedRegels/0/waarde/type: unknown-type sentinel on the
+    WF-034 FAIL /rules/resolvedRegels/0/waarde/type: unknown-type sentinel on the
     list element inside the payload of constructor 'Toegewezen'
 
 This is the **container half** of the descent `wf034-sentinel-sumtype-payload`

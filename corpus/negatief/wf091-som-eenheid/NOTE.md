@@ -3,7 +3,7 @@ Violates WF-091 (`spec/IR-SPEC.md` ch. 4.1) at a **composite** position,
 literal, annotated `t`. §4.6 *Eenheid1* gives a value aggregation its
 first operand's type, so the derivation is `kg`.
 
-    WF-091 FAIL /resolvedRegels/0/waarde/type: unit mismatch: the SOM
+    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: unit mismatch: the SOM
     aggregation is typed 't' of system 'Gewicht' (factor 1000 to 'kg'), but
     the type derived from its first operand is 'kg' of system 'Gewicht'
     (factor 1 to 'kg')

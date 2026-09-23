@@ -4,7 +4,7 @@ of its domain clause: the attribute `bedragen` of `Jutter` is declared
 oordeel` with two `Construct`s. The family clause is silent (list = list);
 only the value names a keuzetype domain.
 
-    WF-023 FAIL /resolvedRegels/0: a value of the sum-type domain 'oordeel'
+    WF-023 FAIL /rules/resolvedRegels/0: a value of the sum-type domain 'oordeel'
     is assigned to a list target naming no keuzetype domain
 
 Why it has to exist: the silent flank — no reader faults, nothing is

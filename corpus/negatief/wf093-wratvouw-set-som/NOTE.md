@@ -4,7 +4,7 @@ Violates WF-093 (`spec/IR-SPEC.md` ch. 4.3) in the **set** spelling of the
 row-1 wart — the spelling the WF-083 anchor move newly admitted, and the
 sharpest of the four: here one executor ANSWERS while the other two refuse.
 
-    WF-093 FAIL /resolvedRegels/0/waarde/argumenten/0: the v0 instance-fold
+    WF-093 FAIL /rules/resolvedRegels/0/waarde/argumenten/0: the v0 instance-fold
     source (the row-1 wart, spelled with the unknown sentinel on the
     argument's own type) is a COUNT source: a fold source whose own type is
     the unknown sentinel yields the linked instances, which only AANTAL

@@ -2,7 +2,7 @@ Violates WF-091 (`spec/IR-SPEC.md` ch. 4.1) on the `AttributeReference`
 arm, SIGN facet: `Jutter.gewicht` is declared `NIET_NEGATIEF` and the
 reference that reads it is typed `ONBEPAALD`. Every other facet agrees.
 
-    WF-091 FAIL /resolvedRegels/0/waarde/type: sign mismatch: attribute
+    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: sign mismatch: attribute
     reference 'gewicht' is typed ONBEPAALD, but the declaration it reads
     from is NIET_NEGATIEF
 

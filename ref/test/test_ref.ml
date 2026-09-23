@@ -1105,10 +1105,10 @@ let () =
   in
   expect_fault_msg "WV-6.4-g-r3-negatie-waar"
     (fun () -> run (doc ~in_creatie:(toets Gevuld true merk) ~in_regel:(toets Gevuld true opvolger_rang)))
-    "WF-046 at /objectCreaties/0: negative dependency edge on a cycle";
+    "WF-046 at /rules/objectCreaties/0: negative dependency edge on a cycle";
   expect_fault_msg "WV-6.4-g-r1-negatie-onwaar"
     (fun () -> run (doc ~in_creatie:(toets Leeg false merk) ~in_regel:(toets Gevuld false opvolger_rang)))
-    "WF-046 at /objectCreaties/0: negative dependency edge on a cycle"
+    "WF-046 at /rules/objectCreaties/0: negative dependency edge on a cycle"
 
 (* WV-7.9: nested exception groups (ch. 7.9) — the PHASE4-DEFAULTS §7
    spurious-conflict test at the unit level (b <- x, x <- {y, z}, hand-built

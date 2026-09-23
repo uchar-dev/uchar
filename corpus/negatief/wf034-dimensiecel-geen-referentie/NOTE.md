@@ -2,7 +2,7 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): a **dimension-cell read**
 (ch. 4.1) whose attribute position holds something that is not an attribute
 reference — here a numeric literal typed in the same unit as the cell.
 
-    WF-034 FAIL /resolvedRegels/0/waarde/attribuut: dimension-cell read whose
+    WF-034 FAIL /rules/resolvedRegels/0/waarde/attribuut: dimension-cell read whose
     attribute position is not an attribute reference: it resolves against no
     declaration
 
@@ -35,7 +35,7 @@ spelling (measured with the verifier of the day before this card):
 `corpus/negatief/wf091-dimensiecel-eenheid` is refused for a unit lie on the
 cell's own type —
 
-    WF-091 FAIL /resolvedRegels/0/waarde/type: unit mismatch: dimension-cell
+    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: unit mismatch: dimension-cell
     read of 'kern' is typed 't' of system 'Gewicht' (factor 1000 to 'kg'),
     but the declaration it reads from is 'kg' of system 'Gewicht' (factor 1
     to 'kg')

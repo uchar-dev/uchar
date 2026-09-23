@@ -4,7 +4,7 @@ Violates **WF-105** (`spec/IR-SPEC.md` ch. 2.2): `Wrakrecht` redeclares
 `grondslag`, which its chain already declares on `Strandrecht` — and with a
 different datatype, which is what makes the shadowing observable.
 
-    WF-105 FAIL /objecttypen/Wrakrecht/attributen/grondslag: attribute
+    WF-105 FAIL /model/objectTypes/1/attributes/0/datatype: attribute
     'grondslag' is already declared on 'Strandrecht' further up the chain: a
     subtype never redeclares an inherited name (one instance would carry two
     declarations of it)

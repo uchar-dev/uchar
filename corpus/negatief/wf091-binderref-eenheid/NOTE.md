@@ -4,7 +4,7 @@ attribute declared in `kg` — and the body reads `b` with a serialized
 `type` in `t` (the same canonical `kg`, factor 1000). The `Let` node type
 repeats the body type, so WF-076 is satisfied.
 
-    WF-091 FAIL /resolvedRegels/0/waarde/body/type: unit mismatch: binder
+    WF-091 FAIL /rules/resolvedRegels/0/waarde/body/type: unit mismatch: binder
     reference 'b' is typed 't' of system 'Gewicht' (factor 1000 to 'kg'),
     but the declaration it reads from is 'kg' of system 'Gewicht'
     (factor 1 to 'kg')

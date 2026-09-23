@@ -14,5 +14,5 @@ starts at `Berger` while its opposite role `ploeg` is filled by
 and it is informative: it shows the walk is checked step by step, not merely
 counted.
 
-Verifier: `WF-108 FAIL /resolvedRegels/0/voorwaarde/bronPad: bronPad beside
+Verifier: `WF-108 FAIL /rules/resolvedRegels/0/voorwaarde/bronPad: bronPad beside
 bronRol on a quantifier fold …` plus the connected-walk line on step 1.

@@ -2,7 +2,7 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): an **allocation** (ch. 3.2)
 whose source attribute is *present but blank*. The field is there, it is a
 string, and it names nothing.
 
-    WF-034 FAIL /verdelingen/0/bronAttribuut: bronAttribuut is present but
+    WF-034 FAIL /rules/verdelingen/0/bronAttribuut: bronAttribuut is present but
     empty: an attribute name that names nothing resolves against no
     declaration
 

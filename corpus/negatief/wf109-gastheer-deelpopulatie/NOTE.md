@@ -2,7 +2,7 @@ Violates WF-109 (`spec/IR-SPEC.md` ch. 4.6 (q2)) on its **partial-population
 flank**: the host names a STRICT SUBTYPE of the only object the position binds,
 so the reading would hold for some objects and fault for the rest.
 
-    WF-109 FAIL /resolvedRegels/0/voorwaarde/eigenaar: the characteristic check
+    WF-109 FAIL /rules/resolvedRegels/0/voorwaarde/eigenaar: the characteristic check
     is hosted on 'Strandvondst', which no object bound here IS: only SOME
     objects of the subject 'Vondst' are one, so the host would hold for some of
     them and fault for the rest

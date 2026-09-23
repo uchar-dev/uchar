@@ -4,7 +4,7 @@ Violates **WF-083 (c)** (`spec/IR-SPEC.md` ch. 4.3) at the position WF-102
 created: the fold source's `objecttype` names an INTERMEDIATE type of the
 range instead of the fold's anchor.
 
-    WF-083 FAIL /resolvedRegels/0/waarde/argumenten/0: fold-source objecttype
+    WF-083 FAIL /rules/resolvedRegels/0/waarde/argumenten/0: fold-source objecttype
     'Boot' is not the fold's anchor 'Vondst' (the set source reads each member
     of the elementObjecttype): the executors resolve 'gewicht' against the
     anchor, never against this annotation, so the two spellings name different

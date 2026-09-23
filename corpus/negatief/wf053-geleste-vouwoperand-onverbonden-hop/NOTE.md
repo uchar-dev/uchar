@@ -6,7 +6,7 @@ operand**: a `MAXIMUM` over two listed operands whose second operand reads
 relates the two types at all**. The hop names no route and none is
 derivable.
 
-    WF-053 FAIL /resolvedRegels/0/waarde/argumenten/1: bindingless
+    WF-053 FAIL /rules/resolvedRegels/0/waarde/argumenten/1: bindingless
     navigation: no fact type relates 'Vondst' to 'Baken'
 
 The document. Three object types — `Jutter`, `Vondst`, `Baken` — and one
@@ -27,8 +27,8 @@ in the whole IR whose hop resolved against nothing.
 The symmetry is exact — the same read, moved out of the fold, has always
 been rejected:
 
-    inside the fold  : WF-053 FAIL /resolvedRegels/0/waarde/argumenten/1
-    as the rule value: WF-053 FAIL /resolvedRegels/0/waarde
+    inside the fold  : WF-053 FAIL /rules/resolvedRegels/0/waarde/argumenten/1
+    as the rule value: WF-053 FAIL /rules/resolvedRegels/0/waarde
 
 same rule, same message, different path. A well-formedness rule that holds
 for a read and stops holding because the read is listed beside another one

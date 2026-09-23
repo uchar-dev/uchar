@@ -2,7 +2,7 @@ Violates WF-113 (b) (`spec/IR-SPEC.md` ch. 2): an `Onopgelost` marker whose
 `bron` is null, beside a second marker that the document's one `WARNING`
 accounts for.
 
-    WF-113 FAIL /resolvedRegels/0/voorwaarde: Onopgelost marker whose bron is null: no diagnostic message can contain it, so it cannot be accounted for
+    WF-113 FAIL /rules/resolvedRegels/0/voorwaarde: Onopgelost marker whose bron is null: no diagnostic message can contain it, so it cannot be accounted for
 
 A minimal hand-broken variant of `corpus/golden/jutterswet-vondstverjaring/ir.json`:
 both operands of the rule's comparison are replaced by EXPRESSION markers of

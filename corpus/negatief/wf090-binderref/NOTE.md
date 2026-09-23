@@ -6,7 +6,7 @@ list-typed source it maps), while the `BinderRef` reading it is typed
 against its binder in **soort** only — struct against struct — so the lie
 passed.
 
-    WF-090 FAIL /resolvedRegels/1/waarde/list/function/body/base/type:
+    WF-090 FAIL /rules/resolvedRegels/1/waarde/list/function/body/base/type:
     binder reference 'd' is typed with struct domain 'logboek', but the
     declaration it reads from names struct domain 'dossier'
 

@@ -4,7 +4,7 @@ facet: a `SOM` over `het gewicht van alle schuiten van de Berging` reads
 The aggregation's own node type is faithful (`kg`) and the target
 `Berging.totaalgewicht` is declared in `kg`, so WF-023 is satisfied.
 
-    WF-091 FAIL /resolvedRegels/0/waarde/argumenten/0/type: unit mismatch:
+    WF-091 FAIL /rules/resolvedRegels/0/waarde/argumenten/0/type: unit mismatch:
     fold-source attribute reference 'gewicht' is typed 't' of system
     'Gewicht' (factor 1000 to 'kg'), but the declaration it reads from is
     'kg' of system 'Gewicht' (factor 1 to 'kg')

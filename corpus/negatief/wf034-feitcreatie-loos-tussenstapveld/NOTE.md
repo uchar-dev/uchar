@@ -2,7 +2,7 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6 (m)): a **fact creation** (ch. 3.4)
 with an intermediate step whose `veld` is **absent** — the v0 bean field a
 bean-model executor navigates, left null.
 
-    WF-034 FAIL /feitCreaties/0/tussenstappen/0/veld: the hop's bean field is
+    WF-034 FAIL /rules/feitCreaties/0/tussenstappen/0/veld: the hop's bean field is
     absent: the v0 half of a fact creation is what a bean-model executor
     navigates and writes, and an absent field names nothing
 

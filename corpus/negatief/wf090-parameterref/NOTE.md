@@ -3,7 +3,7 @@ Violates WF-090 (`spec/IR-SPEC.md` ch. 2.4) on the READ side, the
 the struct domain `dossier`, the reference to it is typed `logboek`, and
 the `FieldAccess` over it reads `bedrag`.
 
-    WF-090 FAIL /resolvedRegels/5/waarde/base/type: parameter reference
+    WF-090 FAIL /rules/resolvedRegels/5/waarde/base/type: parameter reference
     'grondslag' is typed with struct domain 'logboek', but the declaration
     it reads from names struct domain 'dossier'
 

@@ -5,7 +5,7 @@ declared struct domain `logboek`, and the `FieldAccess` over it reads
 `bedrag` — a declared field of `logboek`, so WF-074 (which resolves the
 domain the BASE names) is satisfied.
 
-    WF-090 FAIL /resolvedRegels/5/waarde/base/type: attribute reference
+    WF-090 FAIL /rules/resolvedRegels/5/waarde/base/type: attribute reference
     'dossier' is typed with struct domain 'logboek', but the declaration it
     reads from names struct domain 'dossier'
 

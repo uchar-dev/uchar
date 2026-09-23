@@ -3,7 +3,7 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6 (t)): a **far-side role check**
 *wrong side* — the role the FILLER fills, not the one the subject fills — so
 the two fields resolve against no single declaration.
 
-    WF-034 FAIL /resolvedRegels/0/voorwaarde/backref: no declared fact type
+    WF-034 FAIL /rules/resolvedRegels/0/voorwaarde/backref: no declared fact type
     holds the subject 'Wachtpost' in a role named 'wachtjutter' with 'Jutter'
     at the other end: the far-side role check's filler and back-reference
     resolve against no single declaration

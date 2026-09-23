@@ -3,7 +3,7 @@
 Violates **WF-103** (`spec/IR-SPEC.md` ch. 2.2): `Wrakrecht` declares a
 supertype no declaration carries.
 
-    WF-103 FAIL /objecttypen/Wrakrecht/supertype: supertype 'Strandrecht' is
+    WF-103 FAIL /model/objectTypes/0/supertype: supertype 'Strandrecht' is
     not a declared object type: the chain ends at a name nothing declares, so
     no member resolves through it
 

@@ -9,7 +9,7 @@ second a point inside one, and no order runs between them. Neither side
 is wrong alone; their combination is, which is why the report sits at the
 comparison node and not at an operand.
 
-    WF-036 FAIL /consistenties/0/assertie: date ordering across two date
+    WF-036 FAIL /rules/consistenties/0/assertie: date ordering across two date
     precisions (day and millisecond), which share no order
 
 A minimal hand-broken variant of `corpus/golden/jutterswet-vondstnummer`

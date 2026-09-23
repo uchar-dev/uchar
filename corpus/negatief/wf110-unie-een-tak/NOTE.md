@@ -4,7 +4,7 @@ Violates WF-110 (`spec/IR-SPEC.md` ch. 4.3), the instance-set union — the
 §5.7 concatenation of subject expressions, landed 2026-09-20 as the source
 of an instance count. Clause (b): a union carries at least TWO selections.
 
-    WF-110 FAIL /resolvedRegels/0/waarde/argumenten/0: an instance-set
+    WF-110 FAIL /rules/resolvedRegels/0/waarde/argumenten/0: an instance-set
     union carries at least TWO selections and this one carries 1: a single
     selection IS the ordinary instance count, spelled with the fold's own
     elementObjecttype and bronRol, so one meaning keeps one spelling
@@ -28,7 +28,7 @@ form that already exists.
 
 ## Rood-eerst, gemeten op dit document
 
-The pre-card verifier cannot LOAD it — `LOAD ERROR at /resolvedRegels/0/waarde/argumenten/0/node: unknown
+The pre-card verifier cannot LOAD it — `LOAD ERROR at /rules/resolvedRegels/0/waarde/argumenten/0/node: unknown
 expr node "InstanceSetUnion"` — because the node entered the wire with this
 card. So the honest red-first record is in two steps, both measured:
 

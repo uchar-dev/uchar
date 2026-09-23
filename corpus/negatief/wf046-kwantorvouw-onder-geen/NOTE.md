@@ -14,7 +14,7 @@ TEN_MINSTE fold reads positively in both parts. Under the propositional
 GEEN it is negated, and a minted opvolger (rang of at least 2) falsifies the
 condition that minted it.
 
-    WF-046 FAIL /objectCreaties/0: negative dependency edge on a cycle: werf een opvolger reads what werf een opvolger produces while werf een opvolger is reachable from it (no strata exist)
+    WF-046 FAIL /rules/objectCreaties/0: negative dependency edge on a cycle: werf een opvolger reads what werf een opvolger produces while werf een opvolger is reachable from it (no strata exist)
 
 The case isolates that clause: ignore the enclosing context in the fold's
 arm and the document is clean (mutation Kh, measured 2026-09-23).

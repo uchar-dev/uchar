@@ -4,7 +4,7 @@ of the sum type `oordeel` and the reference that reads it is typed as the
 ELEMENT — the same sum type, one `ListType` layer short. Both inline copies
 repeat the domain declaration faithfully, so WF-061 has nothing to say.
 
-    WF-091 FAIL /resolvedRegels/0/waarde/type: residual structure
+    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: residual structure
     mismatch: attribute reference 'aanspraken' is typed sumtype 'oordeel'
     [Goedgekeurd of number(fractional, 2 decimals, NIET_NEGATIEF, no
     unit), Verworpen, Uitgesteld], but the declaration it reads from is

@@ -3,7 +3,7 @@
 Violates **WF-102 (d)** (`spec/IR-SPEC.md` ch. 4.3), the MIDDLE join: the
 second step does not start where the first one ends.
 
-    WF-102 FAIL /resolvedRegels/0/waarde/bronPad/1: the opposite role
+    WF-102 FAIL /rules/resolvedRegels/0/waarde/bronPad/1: the opposite role
     'verpakte vondst' fills 'Vondst', but this step starts at 'Boot' (the
     type the previous step reaches) — a bronPad is a connected walk
 

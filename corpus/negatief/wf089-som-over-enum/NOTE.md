@@ -4,7 +4,7 @@ declared `Enumeratie` of domain `Vaarwater`, and the comparison
 `vaarwater = Wad` types both the `AttribuutRef` and the `Literal` as a
 `SumType` of domain `Vaarwater` with three nullary constructors.
 
-    WF-089 FAIL /resolvedRegels/0/voorwaarde/links/type: attribute
+    WF-089 FAIL /rules/resolvedRegels/0/voorwaarde/links/type: attribute
     reference 'vaarwater' is typed as the sum-type domain 'Vaarwater', but
     the declaration it reads from is the enumeration domain 'Vaarwater'
     (one namespace: a domain has one variant)

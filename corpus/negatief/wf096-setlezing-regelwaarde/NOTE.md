@@ -6,7 +6,7 @@ reading names the members' values, one per member — a collection — and the
 only node that consumes a collection is the fold that owns the source. A
 rule value is a scalar write position: nothing here consumes the set.
 
-    WF-096 FAIL /resolvedRegels/0/waarde: set reading at an ordinary read
+    WF-096 FAIL /rules/resolvedRegels/0/waarde: set reading at an ordinary read
     position: a set reading names the members' values, one per member, and
     is admissible only as the SOURCE of a single-argument VALUE fold
     (ch. 4.3; a count folds the contributors, not their values) — here

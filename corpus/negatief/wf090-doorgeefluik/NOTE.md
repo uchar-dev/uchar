@@ -6,7 +6,7 @@ declares its own `type` to be `logboek`. The target attribute agrees with
 the fold node, so the write half is clean and the only defect is the
 claim.
 
-    WF-090 FAIL /resolvedRegels/0/waarde/type: the EERSTE aggregation is
+    WF-090 FAIL /rules/resolvedRegels/0/waarde/type: the EERSTE aggregation is
     typed with struct domain 'logboek', but operand 0 names struct domain
     'dossier'
 

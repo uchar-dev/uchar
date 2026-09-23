@@ -3,7 +3,7 @@
 Violates **WF-102 (b)** (`spec/IR-SPEC.md` ch. 4.3): a one-step range spelled
 as a path.
 
-    WF-102 FAIL /resolvedRegels/0/waarde/bronPad: a bronPad carries at least
+    WF-102 FAIL /rules/resolvedRegels/0/waarde/bronPad: a bronPad carries at least
     TWO steps, found 1 — the one-step range is spelled bronRol
 
 The one-step range already HAS a spelling — `bronRol` — which every existing

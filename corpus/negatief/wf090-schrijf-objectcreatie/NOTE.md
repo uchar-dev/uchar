@@ -5,7 +5,7 @@ domain `dossier`, with a `StructLiteral` of the second declared struct
 domain `logboek`. A rule on the created type reads `kern.waarde`
 faithfully.
 
-    WF-090 FAIL /objectCreaties/0/toekenningen/0: a value of the struct
+    WF-090 FAIL /rules/objectCreaties/0/toekenningen/0: a value of the struct
     domain 'logboek' is assigned to a target of the struct domain
     'dossier'
 

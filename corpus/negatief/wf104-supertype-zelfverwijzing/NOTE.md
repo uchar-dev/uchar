@@ -2,7 +2,7 @@
 
 Violates **WF-104** (`spec/IR-SPEC.md` ch. 2.2): `Wrakrecht` names itself.
 
-    WF-104 FAIL /objecttypen/Wrakrecht/supertype: supertype cycle (a type
+    WF-104 FAIL /model/objectTypes/0/supertype: supertype cycle (a type
     would be its own ancestor, so member resolution has no root to stop at):
     Wrakrecht -> Wrakrecht
 

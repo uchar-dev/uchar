@@ -24,7 +24,7 @@ verifier-clean only because the comparison is ci.
 
         FAIL: document corpus/golden/jutterswet-vaarwaterspelling/ir.json
         is not verifier-clean:
-        WF-089 FAIL /resolvedRegels/0/waarde/scrutinee/type: attribute
+        WF-089 FAIL /rules/resolvedRegels/0/waarde/scrutinee/type: attribute
         reference 'vaarwater' is typed as the enumeration domain
         'VAARWATER', but the declaration it reads from is the enumeration
         domain 'Vaarwater' (one namespace: a domain has one variant)

@@ -5,7 +5,7 @@ guard has the anker and the doel in scope and nothing else; this guard is
 hosted on `Post`, the intermediate step's type. Two patterns, a name for
 neither.
 
-    WF-109 FAIL /feitCreaties/0/voorwaarde/eigenaar: the characteristic check
+    WF-109 FAIL /rules/feitCreaties/0/voorwaarde/eigenaar: the characteristic check
     is hosted on 'Post', which no object bound here can be: this position binds
     the anker 'Kustvak' and the doel 'Sein'
 

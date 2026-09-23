@@ -10,9 +10,9 @@ field list is repeated exactly — same names, same datatypes, same order
 — so WF-072 is satisfied on its own terms; the only difference is the
 case of the domain NAME, at both halves of the identity rule:
 
-- the READ half, `/resolvedRegels/0/waarde/base/type`: the
+- the READ half, `/rules/resolvedRegels/0/waarde/base/type`: the
   `AttribuutRef` reading `dossier` is typed `DOSSIER`;
-- the WRITE half, `/resolvedRegels/1/waarde/type`: the `StructLiteral`
+- the WRITE half, `/rules/resolvedRegels/1/waarde/type`: the `StructLiteral`
   assigned into `spiegel` is typed `DOSSIER` while the target attribute
   declares `dossier`.
 
@@ -35,9 +35,9 @@ WF-089.
 
         FAIL: document corpus/golden/jutterswet-dossierspelling/ir.json
         is not verifier-clean:
-        WF-090 FAIL /resolvedRegels/1: a value of the struct domain
+        WF-090 FAIL /rules/resolvedRegels/1: a value of the struct domain
         'DOSSIER' is assigned to a target of the struct domain 'dossier'
-        WF-090 FAIL /resolvedRegels/0/waarde/base/type: attribute
+        WF-090 FAIL /rules/resolvedRegels/0/waarde/base/type: attribute
         reference 'dossier' is typed with struct domain 'DOSSIER', but
         the declaration it reads from names struct domain 'dossier'
 
@@ -56,11 +56,11 @@ What does NOT pin it, both variants measured under that same mutant:
   bases inside the `StructLiteral` still spell `dossier` and become the
   drifted use sites themselves:
 
-        WF-090 FAIL /resolvedRegels/1/waarde/fields/0/value/base/type:
+        WF-090 FAIL /rules/resolvedRegels/1/waarde/fields/0/value/base/type:
         attribute reference 'dossier' is typed with struct domain
         'dossier', but the declaration it reads from names struct domain
         'DOSSIER'
-        WF-090 FAIL /resolvedRegels/1/waarde/fields/1/value/base/type:
+        WF-090 FAIL /rules/resolvedRegels/1/waarde/fields/1/value/base/type:
         ... (idem)
 
 Only drift at a use site against an unchanged declaration pins the ci

@@ -5,7 +5,7 @@ Violates WF-089 (`spec/IR-SPEC.md` ch. 2.4): an `AttribuutRef` used as a
 `Ruimzee`). Both domains are declared and both inline copies repeat their
 declaration faithfully; only the reference reads from the wrong one.
 
-    WF-089 FAIL /resolvedRegels/0/waarde/scrutinee/type: attribute reference
+    WF-089 FAIL /rules/resolvedRegels/0/waarde/scrutinee/type: attribute reference
     'vaarwater' is typed with keuzetype domain 'Kust', but the declaration it
     reads from names domain 'Vaarwater'
 

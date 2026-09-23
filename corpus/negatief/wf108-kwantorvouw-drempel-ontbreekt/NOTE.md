@@ -25,6 +25,6 @@ The schema also refuses this document — its `if`/`then` on `kwantor` requires
 well. That is no substitute: the negatief zone is gate 3's, not gate 2's, and a
 rule whose only enforcement were the schema would have no citable violation.
 
-Verifier: `WF-108 FAIL /resolvedRegels/0/voorwaarde/drempel: counting quantifier
+Verifier: `WF-108 FAIL /rules/resolvedRegels/0/voorwaarde/drempel: counting quantifier
 fold without a drempel: the verdict compares the number of contributors
 satisfying the matrix with a threshold, and there is none to compare it with`.

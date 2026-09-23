@@ -4,7 +4,7 @@ Violates **WF-031** (`spec/IR-SPEC.md` ch. 3.7): the first day-kind
 definition carries `naam: null`, so it defines no day kind at all — while
 `schouwdag` is still declared and now has no definition.
 
-    WF-031 FAIL /resolvedDagsoorten/0: day-kind definition without a name;
+    WF-031 FAIL /rules/resolvedDagsoorten/0: day-kind definition without a name;
     it defines no declared day kind and is silently dead
 
 Same clause and same reason as the rule's bounded-window arm: a day-kind

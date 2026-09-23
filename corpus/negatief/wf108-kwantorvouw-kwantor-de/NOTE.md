@@ -16,6 +16,6 @@ deliberately schema-invalid as well — the negatief zone is gate 3's, not gate
 2's, and a rule whose only enforcement were the schema would have no citable
 violation.
 
-Verifier: `WF-108 FAIL /resolvedRegels/0/voorwaarde/kwantor: quantifier fold with
+Verifier: `WF-108 FAIL /rules/resolvedRegels/0/voorwaarde/kwantor: quantifier fold with
 kwantor DE: the bare definite is a description of ONE member, not a
 quantification over the set — a fold over it has no reading`.

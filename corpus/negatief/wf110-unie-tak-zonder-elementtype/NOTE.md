@@ -4,7 +4,7 @@ Violates WF-110 (`spec/IR-SPEC.md` ch. 4.3), the instance-set union — the
 §5.7 concatenation of subject expressions, landed 2026-09-20 as the source
 of an instance count. Clause (e): every selection names the population it ranges over.
 
-    WF-110 FAIL /resolvedRegels/0/waarde/argumenten/0/branches/1/elementType:
+    WF-110 FAIL /rules/resolvedRegels/0/waarde/argumenten/0/branches/1/elementType:
     an instance-set union's selection MUST name the population it ranges
     over (ch. 4.3)
 
@@ -25,7 +25,7 @@ selection with no `sourceRole` — is `wf110-unie-tak-zonder-bronrol`.
 
 ## Rood-eerst, gemeten op dit document
 
-The pre-card verifier cannot LOAD it — `LOAD ERROR at /resolvedRegels/0/waarde/argumenten/0/node: unknown
+The pre-card verifier cannot LOAD it — `LOAD ERROR at /rules/resolvedRegels/0/waarde/argumenten/0/node: unknown
 expr node "InstanceSetUnion"` — because the node entered the wire with this
 card. So the honest red-first record is in two steps, both measured:
 

@@ -1,7 +1,7 @@
 Violates WF-017 (`spec/IR-SPEC.md` ch. 2.9), arm (b): a DECLARED day-kind name
 occurs as a KEY of `dagsoortPerEenheid` and binds to a DIFFERENT day kind.
 
-    WF-017 FAIL /dagsoortPerEenheid/schouwdagen: declared day kind 'schouwdagen'
+    WF-017 FAIL /model/dagsoortPerEenheid/schouwdagen: declared day kind 'schouwdagen'
     is registered as a unit spelling of day kind 'schouwdag': its own spelling
     binds to another day kind
 

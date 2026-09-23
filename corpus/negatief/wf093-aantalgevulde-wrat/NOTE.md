@@ -3,7 +3,7 @@
 Violates WF-093 (`spec/IR-SPEC.md` ch. 4.3): the row-1 wart is a COUNT
 source, and an `AANTAL_GEVULDE` is not a count in the sense that rule means.
 
-    WF-093 FAIL /resolvedRegels/0/waarde/argumenten/0: the v0 instance-fold
+    WF-093 FAIL /rules/resolvedRegels/0/waarde/argumenten/0: the v0 instance-fold
     source (the row-1 wart, spelled with the unknown sentinel on the
     argument's own type) is a COUNT source: a fold source whose own type is
     the unknown sentinel yields the linked instances, which only AANTAL

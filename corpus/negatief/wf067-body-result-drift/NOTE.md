@@ -4,7 +4,7 @@ its body is a `Literal` `Noord` typed `Enumeratie` `Kust` — a second,
 internally consistent domain. The `Invoke` is truthful (typed `Vaarwater`,
 so WF-068 is clean) and feeds a `Match` whose arms cover `Vaarwater`.
 
-    WF-067 FAIL /functionDefs/0/body/type: the body is enumeration 'Kust',
+    WF-067 FAIL /model/functionDefs/0/body/type: the body is enumeration 'Kust',
     but the declared result is enumeration 'Vaarwater'
 
 Why it has to exist: found by probing for a route to ref's "no arm" fault

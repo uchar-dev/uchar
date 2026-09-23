@@ -5,7 +5,7 @@ Jutter` — an `AttribuutRef` whose own `type` faithfully names
 `beschikking` — and the body matches on `b` typed `oordeel`, with the
 arms covering `oordeel`.
 
-    WF-089 FAIL /resolvedRegels/0/waarde/body/scrutinee/type: binder
+    WF-089 FAIL /rules/resolvedRegels/0/waarde/body/scrutinee/type: binder
     reference 'b' is typed with keuzetype domain 'oordeel', but the
     declaration it reads from names domain 'beschikking'
 

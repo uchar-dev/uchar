@@ -5,7 +5,7 @@ attribute it claims to produce. The derived type of an additive node is a
 number (ch. 2.3 / ch. 2.6), which names no keuzetype domain, so the rule
 fires exactly as it does when only the declaration names one.
 
-    WF-089 FAIL /resolvedRegels/0/waarde/type: the PLUS composite is typed
+    WF-089 FAIL /rules/resolvedRegels/0/waarde/type: the PLUS composite is typed
     with keuzetype domain 'Vaarwater', but the type derived from its
     operands is number and names no keuzetype domain
 

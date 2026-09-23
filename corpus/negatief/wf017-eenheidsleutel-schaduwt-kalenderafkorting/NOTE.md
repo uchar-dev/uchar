@@ -2,7 +2,7 @@ Violates WF-017 (`spec/IR-SPEC.md` ch. 2.9), arm (a): a KEY of
 `dagsoortPerEenheid` that is one of the thirty spellings the normative calendar
 table of `RUNTIME-SEMANTICS.md` ch. 3.8 recognises — here the ABBREVIATION `wk`.
 
-    WF-017 FAIL /dagsoortPerEenheid/wk: registered day-kind unit spelling
+    WF-017 FAIL /model/dagsoortPerEenheid/wk: registered day-kind unit spelling
     'wk' shadows a built-in calendar unit
 
 **Why the abbreviation needs its own witness.** Until 2026-09-20 arm (a)

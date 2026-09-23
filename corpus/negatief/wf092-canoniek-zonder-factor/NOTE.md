@@ -4,11 +4,11 @@ half: the `Afstand` unit `km` names its canonical unit `m` and carries
 unchanged — the `m` unit, both declared attributes, the rule, the literal
 `2,5 km`. One field, at the three positions that same unit record occupies.
 
-    WF-092 FAIL /eenheidstelsels/Afstand/eenheden/km: unit 'km' names
+    WF-092 FAIL /model/unitSystems/0/eenheden/km: unit 'km' names
     canonical unit 'm' but carries no conversion factor into it: a
     half-filled conversion pair is not a unit (both fields, or neither)
-    WF-092 FAIL /resolvedRegels/0/waarde/type/eenheid: unit 'km' …
-    WF-092 FAIL /resolvedRegels/0/waarde/links/type/eenheid: unit 'km' …
+    WF-092 FAIL /rules/resolvedRegels/0/waarde/type/eenheid: unit 'km' …
+    WF-092 FAIL /rules/resolvedRegels/0/waarde/links/type/eenheid: unit 'km' …
 
 Why it has to exist: no neighbouring rule can reach this shape. WF-009 walks
 the declared systems, but it only tests a factor it FINDS (positivity) and a

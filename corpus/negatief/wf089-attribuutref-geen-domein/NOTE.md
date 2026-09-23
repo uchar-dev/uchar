@@ -5,7 +5,7 @@ all — and its value is assigned to the numeric attribute `tarief`. The
 rule fires whenever EITHER side names a keuzetype domain; here only the
 declaration does.
 
-    WF-089 FAIL /resolvedRegels/0/waarde/type: attribute reference
+    WF-089 FAIL /rules/resolvedRegels/0/waarde/type: attribute reference
     'vaarwater' is typed number, naming no keuzetype domain, but the
     declaration it reads from names domain 'Vaarwater'
 

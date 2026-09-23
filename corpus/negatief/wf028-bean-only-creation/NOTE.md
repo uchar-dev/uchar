@@ -2,7 +2,7 @@ Violates WF-028 (`spec/IR-SPEC.md` ch. 3.4): a **fact creation** carrying only
 the v0 bean fields — every symbolic key removed, so nothing on the wire says
 which relation is created.
 
-    WF-028 FAIL /feitCreaties/0: fact creation carries only bean fields; the
+    WF-028 FAIL /rules/feitCreaties/0: fact creation carries only bean fields; the
     symbolic form (ch. 3.4) is what executes, and nothing on the wire says
     which relation is created
 

@@ -14,7 +14,7 @@ successors satisfies the ALLE fold vacuously, the creation mints one of rang
 `opvolging` link the fold ranges over, so it reads its own product through
 the range.
 
-    WF-046 FAIL /objectCreaties/0: negative dependency edge on a cycle: werf de opvolger reads what werf de opvolger produces while werf de opvolger is reachable from it (no strata exist)
+    WF-046 FAIL /rules/objectCreaties/0: negative dependency edge on a cycle: werf de opvolger reads what werf de opvolger produces while werf de opvolger is reachable from it (no strata exist)
 
 The case isolates the range. Under ALLE the MATRIX is monotone and reads
 positively (the comparison of the successor's rang is stratum-strict and its

@@ -5,7 +5,7 @@ Match(tarief)` reads the NUMERIC attribute `tarief` of `Berging` through
 an `AttribuutRef` typed `Enumeratie` `Kust`, with arms `Noord`/`Zuid`/
 `West` (WF-063 is satisfied against `Kust`).
 
-    WF-089 FAIL /resolvedRegels/0/waarde/scrutinee/type: attribute
+    WF-089 FAIL /rules/resolvedRegels/0/waarde/scrutinee/type: attribute
     reference 'tarief' is typed with keuzetype domain 'Kust', but the
     declaration it reads from is number and names no keuzetype domain
 

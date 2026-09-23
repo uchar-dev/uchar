@@ -7,7 +7,7 @@ slot, under the unknown sentinel. A builtin has no fold source, so nothing
 here is the wart the ch. 4.3 exception admits; it is the wart's spelling in a
 position that cannot mean it.
 
-    WF-034 FAIL /resolvedRegels/0/waarde/argumenten/0/type: unknown-type
+    WF-034 FAIL /rules/resolvedRegels/0/waarde/argumenten/0/type: unknown-type
     sentinel on a fold operand that is not a fold SOURCE: the sentinel is
     admissible on the single argument of an AGGREGATION alone (the v0 row-1
     wart, ch. 4.3) — with two or more arguments the node is the listed value

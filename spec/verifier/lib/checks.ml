@@ -9,17 +9,48 @@
      article (the v0 identity rule of IR-SPEC ch. 2.8);
    - v0 flattens versioned forms into per-version entries whose names carry
      a " #i" suffix; version-aware checks group by the stripped name;
-   - a violation carries the WF id, the JSON-ish path, and a reason. The
-     path names a declaration by its v0 table and its name
-     (`/objecttypen/<name>/...`) and a rule form by its v0 list and index
-     (`/resolvedRegels/<i>/...`), as it did before M1 nested the root; the
-     loader's own errors carry JSON pointers into the M1 document. *)
+   - a violation carries the WF id, a path, and a reason. The path is a
+     JSON pointer into the M1 document down to the node that is at fault
+     (`/model/objectTypes/<i>/attributes/<j>/timeline/count`,
+     `/rules/resolvedRegels/<i>/voorwaarde`), as the loader's errors are;
+     below a node some checks add a segment of their own reading (a
+     struct field or a unit by its name). The checks themselves still
+     build the v0 spelling — a declaration by its v0 table and name
+     (`/objecttypen/<name>/...`), a rule form by its v0 list and index —
+     and [v] and [all] map it onto the M1 document (see [m1_root]). *)
 
 open Ast
 
 type violation = { wf : string; at : string; reason : string }
 
-let v wf at reason = { wf; at; reason }
+(* Since M1 the rule lists sit under "rules" and the model lists under
+   "model" (IR-SPEC ch. 2). The checks build their paths in the spelling
+   they had before the root nested, and every violation is mapped onto the
+   M1 document in two steps: [m1_root], here, moves a path under its new
+   parent and renames the model lists that carry no names; [m1_named], in
+   [all], needs the document, because it turns a declaration's name into
+   its list index and an object type's v0 facet table into the member
+   node. The v0 spelling stays inside this library on purpose: ref's
+   stratum lookup matches its own `/resolvedRegels/%d` against [df_at], the
+   dependency-graph path of a form, which never passes through [v]. *)
+let m1_rule_lists =
+  [ "resolvedRegels"; "resolvedDagsoorten"; "objectCreaties"; "verdelingen"; "consistenties";
+    "uniciteiten"; "uniciteitUnies"; "feitCreaties"; "resolvedStartpunten"; "regelGroepen";
+    "prioritizedDefaults" ]
+
+let m1_model_lists =
+  [ ("tijdlijnen", "timelines"); ("dagsoorten", "dayKinds");
+    ("dagsoortPerEenheid", "dagsoortPerEenheid"); ("functionDefs", "functionDefs") ]
+
+let m1_root at =
+  match String.split_on_char '/' at with
+  | "" :: root :: rest when List.mem root m1_rule_lists ->
+      String.concat "/" ("" :: "rules" :: root :: rest)
+  | "" :: root :: rest when List.mem_assoc root m1_model_lists ->
+      String.concat "/" ("" :: "model" :: List.assoc root m1_model_lists :: rest)
+  | _ -> at
+
+let v wf at reason = { wf; at = m1_root at; reason }
 
 (* --- name normalisation ------------------------------------------------- *)
 
@@ -10055,9 +10086,80 @@ let wf113 ctx =
           brons)
       (marker_positions ctx)
 
+(* The second step of the M1 path mapping ([m1_root] is the first): a
+   declaration in one of the six named model lists is addressed by its list
+   index, a domain by its datatype (the v0 map value), and an object type's
+   v0 facet table by the member node's field. A name resolves to the first
+   declaration whose name the rest of the path equals or continues with
+   "/", the longest such name winning, so a name with a space or a slash in
+   it is taken whole. A name that resolves to nothing — the checks build
+   these paths from declared names, so only an undeclared reference could —
+   leaves the pointer at the list. *)
+let m1_named (doc : document) at =
+  let starts ~pre s =
+    String.length s >= String.length pre && String.sub s 0 (String.length pre) = pre
+  in
+  let after n s = if n >= String.length s then "" else String.sub s n (String.length s - n) in
+  let pick names rest =
+    List.fold_left
+      (fun best (i, n) ->
+        if (rest = n || starts ~pre:(n ^ "/") rest)
+           && (match best with None -> true | Some (_, b) -> String.length n > String.length b)
+        then Some (i, n)
+        else best)
+      None
+      (List.mapi (fun i n -> (i, n)) names)
+  in
+  let tables =
+    [ ("objecttypen", "objectTypes", List.map fst doc.objecttypen);
+      ("feittypen", "factTypes", List.map fst doc.feittypen);
+      ("parameters", "parameters", List.map fst doc.parameters);
+      ("domeinen", "domains", List.map fst doc.domeinen);
+      ("eenheidstelsels", "unitSystems", List.map fst doc.eenheidstelsels);
+      ("dimensies", "dimensions", List.map fst doc.dimensies) ]
+  in
+  (* the v0 facet tables the checks still name: the member list the entry
+     became part of, and the field of the member node that holds it *)
+  let facets =
+    [ ("attributen", ("attributes", "/datatype"));
+      ("attribuutDimensies", ("attributes", "/dimensions"));
+      ("attribuutTijdlijnAantal", ("attributes", "/timeline/count"));
+      ("attribuutTijdlijnNaam", ("attributes", "/timeline/timelineName"));
+      ("kenmerken", ("characteristics", ""));
+      ("kenmerkTijdlijnAantal", ("characteristics", "/timeline/count")) ]
+  in
+  let member_tail (ot : objecttype) tail =
+    match String.split_on_char '/' tail with
+    | "" :: seg :: _ when List.mem_assoc seg facets -> (
+        let members, field = List.assoc seg facets in
+        let names =
+          if members = "attributes" then List.map fst ot.attributen else some_names ot.kenmerken
+        in
+        match if tail = "/" ^ seg then None else pick names (after (String.length seg + 2) tail) with
+        | Some (j, n) ->
+            Printf.sprintf "/%s/%d%s%s" members j field
+              (after (String.length seg + 2 + String.length n) tail)
+        | None -> "/" ^ members)
+    | _ -> tail
+  in
+  match List.find_opt (fun (v0, _, _) -> at = "/" ^ v0 || starts ~pre:("/" ^ v0 ^ "/") at) tables with
+  | None -> at
+  | Some (v0, m1, names) -> (
+      let base = "/model/" ^ m1 in
+      match if at = "/" ^ v0 then None else pick names (after (String.length v0 + 2) at) with
+      | None -> base
+      | Some (i, n) -> (
+          let decl = Printf.sprintf "%s/%d" base i in
+          let tail = after (String.length v0 + 2 + String.length n) at in
+          match v0 with
+          | "domeinen" -> decl ^ "/datatype" ^ tail
+          | "objecttypen" -> decl ^ member_tail (snd (List.nth doc.objecttypen i)) tail
+          | _ -> decl ^ tail))
+
 let all (doc : document) : violation list =
   let ctx = { doc } in
-  List.concat
+  List.map (fun x -> { x with at = m1_named doc x.at })
+  @@ List.concat
     [ wf001 ctx; wf002 ctx; wf103 ctx; wf104 ctx; wf105 ctx;
       wf003 ctx; wf004 ctx; wf005 ctx; wf006 ctx;
       wf007_model ctx; wf009 ctx; wf092 ctx; wf011 ctx; wf012 ctx; wf013 ctx; wf014 ctx;

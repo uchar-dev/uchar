@@ -8,7 +8,7 @@ element-type arm states. This is the arity-1 spelling with an ordinary own
 read: an `AANTAL` with no `elementObjecttype` and ONE argument that is no
 fold source.
 
-    WF-037 FAIL /resolvedRegels/0/waarde: the count is an INSTANCE fold and
+    WF-037 FAIL /rules/resolvedRegels/0/waarde: the count is an INSTANCE fold and
     MUST carry an element type: without one its argument is no fold source
     at all — and with no argument there is none — so the count has no
     contributors to count, only its operand, whatever that operand holds

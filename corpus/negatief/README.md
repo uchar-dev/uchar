@@ -16,6 +16,12 @@ covers `corpus/golden/` only); they must stay *loadable* — a violation
 is a semantic defect in a structurally well-formed document, not a
 syntax error.
 
+Paths in the notes are JSON pointers into the M1 document, the spelling the
+verifier reports since 2026-09-23 (`/model/objectTypes/<i>/...`,
+`/rules/resolvedRegels/<i>/...`). The citations were respelled when the
+verifier's paths moved, quotes of measurements taken on a document's v0 form
+included: the position cited is the same, only its spelling is the M1 one.
+
 ## Vervallen bij de v1-migratie
 
 A witness whose rule the v1 migration takes away gets one of three stamps

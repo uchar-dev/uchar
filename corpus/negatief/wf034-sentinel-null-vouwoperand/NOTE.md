@@ -10,7 +10,7 @@ fold-argument branch REPLACES that prologue, and when the seventh wave
 repeated the fence there it repeated only the spelled half; this document is
 the position that half left standing.
 
-    WF-034 FAIL /resolvedRegels/0/waarde/argumenten/1/type: value node without
+    WF-034 FAIL /rules/resolvedRegels/0/waarde/argumenten/1/type: value node without
     a static type
 
 The document. `corpus/golden/jutterswet-peildatum` verbatim, with ONE byte-level

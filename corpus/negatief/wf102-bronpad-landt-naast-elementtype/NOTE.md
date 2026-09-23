@@ -3,7 +3,7 @@
 Violates **WF-102 (d)** (`spec/IR-SPEC.md` ch. 4.3), the LANDING: the last
 step's bound role does not fill the element type.
 
-    WF-102 FAIL /resolvedRegels/0/waarde/bronPad/2: the last step's bound
+    WF-102 FAIL /rules/resolvedRegels/0/waarde/bronPad/2: the last step's bound
     role 'ingepakte kist' fills 'Kist', but the fold's elementObjecttype is
     'Vondst' — the path must land on the element type
 

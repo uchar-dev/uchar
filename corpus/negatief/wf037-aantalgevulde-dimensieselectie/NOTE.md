@@ -4,7 +4,7 @@ Violates WF-037 (`spec/IR-SPEC.md` ch. 4.3, ch. 4.6) in its
 `dimensionSelection` clause — "sum/min/max only". An `AANTAL_GEVULDE`
 carries one.
 
-    WF-037 FAIL /resolvedRegels/0/waarde: dimension selection on a kind
+    WF-037 FAIL /rules/resolvedRegels/0/waarde: dimension selection on a kind
     other than sum/min/max
 
 **Postponed, not rejected** — and the distinction is normative. The

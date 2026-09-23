@@ -2,7 +2,7 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): a rule **target** carrying no
 static type — the unspelled twin of the sentinel that
 `wf034-onbekend-regeldoel` pins, at the same position and for the same reason.
 
-    WF-034 FAIL /resolvedRegels/1/doel/type: rule target without a static type
+    WF-034 FAIL /rules/resolvedRegels/1/doel/type: rule target without a static type
 
 The expression walk refuses both spellings of the unknown type on every value
 node it enters (`unknown-type sentinel inside a structured node` and `value

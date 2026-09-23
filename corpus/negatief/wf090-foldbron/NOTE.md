@@ -6,7 +6,7 @@ with the struct domain `logboek`. The fold node and its operand agree with
 each other and the target agrees with the fold node; the lie sits one
 level down, in the reference.
 
-    WF-090 FAIL /resolvedRegels/0/waarde/argumenten/0/type: fold-source
+    WF-090 FAIL /rules/resolvedRegels/0/waarde/argumenten/0/type: fold-source
     attribute reference 'kern' is typed with struct domain 'dossier', but
     the declaration it reads from names struct domain 'logboek'
 

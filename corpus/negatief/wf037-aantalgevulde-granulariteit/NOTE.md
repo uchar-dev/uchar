@@ -5,7 +5,7 @@ clause — the facet belongs to the two bucketing builtins
 (tijdsevenredig-deel, aantal-dagen-in) and to nothing else. An
 `AANTAL_GEVULDE` carries one.
 
-    WF-037 FAIL /resolvedRegels/0/waarde: granularity facet on a
+    WF-037 FAIL /rules/resolvedRegels/0/waarde: granularity facet on a
     non-bucketing kind
 
 The granularity says which period grid a builtin buckets over. A filled

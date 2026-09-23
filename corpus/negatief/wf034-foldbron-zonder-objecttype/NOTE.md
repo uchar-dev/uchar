@@ -3,7 +3,7 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): a **fold-source**
 the attribute's value lives on (ch. 4.1a), so a source without one resolves
 against no declaration at all.
 
-    WF-034 FAIL /resolvedRegels/1/waarde/argumenten/0: attribute reference
+    WF-034 FAIL /rules/resolvedRegels/1/waarde/argumenten/0: attribute reference
     'gewicht' without an object type: it resolves against no declaration
 
 Why it has to exist *separately* from the sibling case
@@ -24,7 +24,7 @@ the source reads `Vondst.gewicht`, declared in `kg`, and is typed in `t`
 (same canonical unit, factor 1000 — the convertible class no compatibility
 cross reaches). With `objecttype` filled that lie is refused arm-exact:
 
-    WF-091 FAIL /resolvedRegels/1/waarde/argumenten/0/type: unit mismatch:
+    WF-091 FAIL /rules/resolvedRegels/1/waarde/argumenten/0/type: unit mismatch:
     fold-source attribute reference 'gewicht' is typed 't' of system
     'Gewicht' (factor 1000 to 'kg'), but the declaration it reads from is
     'kg' of system 'Gewicht' (factor 1 to 'kg')
@@ -65,7 +65,7 @@ the fold ROOT, which crosses the aggregation's own type against the type
 derived from operand 0 and needs no resolved declaration to do it. Measured
 with the arm removed:
 
-    WF-091 FAIL /resolvedRegels/1/waarde/type: unit mismatch: the SOM
+    WF-091 FAIL /rules/resolvedRegels/1/waarde/type: unit mismatch: the SOM
     aggregation is typed 'kg' of system 'Gewicht' (factor 1 to 'kg'), but the
     type derived from its first operand is 't' of system 'Gewicht' (factor
     1000 to 'kg')

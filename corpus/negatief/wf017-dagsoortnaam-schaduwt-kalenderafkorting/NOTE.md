@@ -3,10 +3,10 @@ kind in `dagsoorten` whose name is one of the thirty spellings the normative
 calendar table of `RUNTIME-SEMANTICS.md` ch. 3.8 recognises — here the
 ABBREVIATION `wk`.
 
-    WF-017 FAIL /dagsoorten: day-kind 'wk' shadows a built-in calendar unit
+    WF-017 FAIL /model/dayKinds: day-kind 'wk' shadows a built-in calendar unit
 
 **The flank sat in the whole rule, not only in arm (a).** The clause over
-`/dagsoorten` and the clause over the registry keys compared against the same
+`/model/dayKinds` and the clause over the registry keys compared against the same
 list, so widening one without the other would have left a day kind that is
 simply CALLED `wk` admissible while a registry key `wk` was refused — and the
 declared name is itself a registered spelling on any producer that registers the

@@ -6,7 +6,7 @@ assignment gate reads the value's declared precision, so a sum that claims
 fewer decimals than it has walks into a narrower target without the
 explicit rounding the gate exists to demand.
 
-    WF-091 FAIL /resolvedRegels/0/waarde/type: decimals mismatch: the PLUS
+    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: decimals mismatch: the PLUS
     composite is typed 2 decimals, but the type derived from its operands is
     4 decimals
 

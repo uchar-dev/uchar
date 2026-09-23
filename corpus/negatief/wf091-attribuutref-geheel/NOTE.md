@@ -4,7 +4,7 @@ false`, zero decimals — one of WF-007's three precision forms) and the
 reference that reads it is typed whole. Decimals agree, so the decimals
 facet is silent and wholeness carries the refusal alone.
 
-    WF-091 FAIL /resolvedRegels/0/waarde/type: wholeness mismatch:
+    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: wholeness mismatch:
     attribute reference 'gewicht' is typed whole, but the declaration it
     reads from is fractional
 

@@ -28,10 +28,10 @@ Measured on this document, both spellings of the verifier:
 
 ```
 scope removed (the whole "a fold source never navigates" family unscoped):
-    WF-053 FAIL /resolvedRegels/0/waarde/argumenten/1: navigation bindings
+    WF-053 FAIL /rules/resolvedRegels/0/waarde/argumenten/1: navigation bindings
                 on a fold source are ill-formed (the fold's relation is
                 bronRol)
-    WF-083 FAIL /resolvedRegels/0/waarde/argumenten/1: navigatieRol
+    WF-083 FAIL /rules/resolvedRegels/0/waarde/argumenten/1: navigatieRol
                 'bewarende jutter' on a fold source that is not the v0
                 instance-fold source …
 scope in place:  verifier PASS

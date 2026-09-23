@@ -2,7 +2,7 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6 (m)): a **fact creation** (ch. 3.4)
 whose `zetVeld` names the right role in the **wrong spelling** — `seinVak` for
 the declared `seinvak`.
 
-    WF-034 FAIL /feitCreaties/0/zetVeld: 'seinVak' is not the declared
+    WF-034 FAIL /rules/feitCreaties/0/zetVeld: 'seinVak' is not the declared
     spelling of the role 'seinvak' of 'vakbeseining': the created relation's
     bean field is a bean PROPERTY name, which is case-sensitive
 

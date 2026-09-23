@@ -20,7 +20,11 @@ The project is an OCaml dune build in two parts:
   `uchar-ir-v0`; renaming it is a change to every reader.
 - `bin/` — the `verifier` executable: `verifier <ir.json>` exits 0 when
   the document is well-formed, non-zero with one `WF-### FAIL <path>:
-  <reason>` line per violation otherwise.
+  <reason>` line per violation otherwise. `<path>` is a JSON pointer into
+  the M1 document (`/model/objectTypes/0/attributes/1/timeline/count`,
+  `/rules/resolvedRegels/2/voorwaarde`), as a load error's is; below a
+  node a check may add a segment of its own reading, such as a struct
+  field by its name.
 
 Which rules are implemented, and which are still open, is tracked in one
 place only: the WF index at the end of `spec/IR-SPEC.md`. Checks are

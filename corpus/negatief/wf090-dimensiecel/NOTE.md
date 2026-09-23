@@ -6,7 +6,7 @@ attribute `Berging.kern` (dimension `seizoen`, cell `voorjaar`) carries a
 that attribute's datatype, so the cell read's own `type` is a use site of
 the same declaration.
 
-    WF-090 FAIL /resolvedRegels/0/waarde/base/type: dimension-cell read of
+    WF-090 FAIL /rules/resolvedRegels/0/waarde/base/type: dimension-cell read of
     'kern' is typed with struct domain 'logboek', but the declaration it
     reads from names struct domain 'dossier'
 

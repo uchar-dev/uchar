@@ -3,7 +3,7 @@ whose `zetVeld` names the relation's **sister** role — a declared role, so the
 fifth wave's arm admits it, but not the role the v0 bean model stores the
 reference under.
 
-    WF-034 FAIL /feitCreaties/0/zetVeld: 'vaksein' is a to-many role of
+    WF-034 FAIL /rules/feitCreaties/0/zetVeld: 'vaksein' is a to-many role of
     'vakbeseining': the created relation's bean field names the side the v0
     bean model stores the reference under, so it must name 'seinvak'
 

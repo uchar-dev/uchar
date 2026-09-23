@@ -2,7 +2,7 @@ Violates WF-059 (`spec/IR-SPEC.md` ch. 2.2): a declared attribute carries no
 datatype — the Attribute node `vrij` of object type `Register` has
 `"datatype": null`.
 
-    WF-059 FAIL /objecttypen/Register/attributen/vrij: declared attribute carries no datatype
+    WF-059 FAIL /model/objectTypes/0/attributes/2/datatype: declared attribute carries no datatype
 
 A minimal hand-broken variant of the model of
 `corpus/golden/anchor/jutterswet-sluitregister/ir.json` (the object type only;

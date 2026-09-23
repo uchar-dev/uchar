@@ -2,7 +2,7 @@ Violates WF-113 (b) (`spec/IR-SPEC.md` ch. 2): an `Onopgelost` marker that no
 diagnostic accounts for — the document carries a marker and an empty
 `diagnostics` list.
 
-    WF-113 FAIL /resolvedRegels/0/voorwaarde: Onopgelost marker 'de verjaringsgrens' is not accounted for: no diagnostic message contains its bron verbatim
+    WF-113 FAIL /rules/resolvedRegels/0/voorwaarde: Onopgelost marker 'de verjaringsgrens' is not accounted for: no diagnostic message contains its bron verbatim
 
 A minimal hand-broken variant of `corpus/golden/jutterswet-vondstverjaring/ir.json`:
 the right-hand operand of the rule's comparison, the date literal

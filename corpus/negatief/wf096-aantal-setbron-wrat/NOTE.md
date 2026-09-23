@@ -4,7 +4,7 @@ Violates WF-096 (`spec/IR-SPEC.md` ch. 4.3) in the KIND half of 2026-09-19,
 second spelling: the row-1 wart — a count source written as the unknown
 sentinel on the argument's own `type` — carrying `set: true` beside it.
 
-    WF-096 FAIL /resolvedRegels/0/waarde/argumenten/0: set reading on a
+    WF-096 FAIL /rules/resolvedRegels/0/waarde/argumenten/0: set reading on a
     fold operand that is not a VALUE fold's SOURCE: a set reading is
     admissible on the single argument of a value AGGREGATION alone
     (ch. 4.3) — with two or more arguments the node is the listed value

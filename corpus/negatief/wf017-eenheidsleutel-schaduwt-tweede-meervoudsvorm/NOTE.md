@@ -3,7 +3,7 @@ Violates WF-017 (`spec/IR-SPEC.md` ch. 2.9), arm (a): a KEY of
 calendar table (`RUNTIME-SEMANTICS.md` ch. 3.8) — here `secondes`, which is
 neither an abbreviation nor the `-en` plural but a SECOND PLURAL FORM.
 
-    WF-017 FAIL /dagsoortPerEenheid/secondes: registered day-kind unit spelling
+    WF-017 FAIL /model/dagsoortPerEenheid/secondes: registered day-kind unit spelling
     'secondes' shadows a built-in calendar unit
 
 **Why this class is witnessed apart from the abbreviations.** Two of the twelve

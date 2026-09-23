@@ -1,7 +1,7 @@
 Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): a **fold-source**
 `AttributeReference` that names no attribute.
 
-    WF-034 FAIL /resolvedRegels/1/waarde/argumenten/0: attribute reference on
+    WF-034 FAIL /rules/resolvedRegels/1/waarde/argumenten/0: attribute reference on
     'Vondst' without an attribute name: it resolves against no declaration
 
 Why it exists separately from `wf034-attribuutref-zonder-attribuut`, which
@@ -65,7 +65,7 @@ ROOT, which crosses the aggregation's own type against the type derived from
 operand 0 and needs no resolved declaration to do it. Measured with the arm
 removed:
 
-    WF-091 FAIL /resolvedRegels/1/waarde/type: unit mismatch: the SOM
+    WF-091 FAIL /rules/resolvedRegels/1/waarde/type: unit mismatch: the SOM
     aggregation is typed 'kg' of system 'Gewicht' (factor 1 to 'kg'), but the
     type derived from its first operand is 't' of system 'Gewicht' (factor
     1000 to 'kg')

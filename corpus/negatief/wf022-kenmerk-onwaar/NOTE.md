@@ -9,7 +9,7 @@ The document is the one proposed in
 one rule whose condition is `nieuw recht ontstaan`. The verifier rejects it
 on this clause and on nothing else:
 
-    WF-022 FAIL /resolvedRegels/0/waarde: characteristic target's value must be the boolean constant true
+    WF-022 FAIL /rules/resolvedRegels/0/waarde: characteristic target's value must be the boolean constant true
 
 The older negatief `wf022-target-unresolvable` violates the first clause
 only (the target does not resolve), so until this case nothing failed when

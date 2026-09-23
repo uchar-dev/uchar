@@ -6,7 +6,7 @@ SUBJECT, so its `objecttype` must name the subject. Here it names another
 declared type, and the annotation and the declaration the executors actually
 consult come apart.
 
-    WF-083 FAIL /resolvedRegels/0/waarde/argumenten/0: fold-source objecttype
+    WF-083 FAIL /rules/resolvedRegels/0/waarde/argumenten/0: fold-source objecttype
     'Jutter' is not the fold's anchor 'Vondst' (a non-set fold source is read
     on the fold subject): the executors resolve 'bewaarvergoeding per maand'
     against the anchor, never against this annotation, so the two spellings

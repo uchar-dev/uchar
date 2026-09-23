@@ -4,7 +4,7 @@ in the third **rule kind**: an `INITIALISATIE` rule writes the `Literal`
 A second rule reads `vaarwater` faithfully through a `Match`. The
 document is `wf023-schrijf-enum-domein` with the rule kind swapped.
 
-    WF-023 FAIL /resolvedRegels/0: a value of the enumeration domain
+    WF-023 FAIL /rules/resolvedRegels/0: a value of the enumeration domain
     'Kust' is assigned to a target of the enumeration domain 'Vaarwater'
 
 Why it has to exist: write position 1 admits `GELIJKSTELLING`,

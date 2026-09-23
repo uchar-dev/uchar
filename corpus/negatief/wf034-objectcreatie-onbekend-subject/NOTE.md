@@ -2,7 +2,7 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): an **object creation** (ch. 5.5)
 whose `subject` — the object type the creation runs over — names a type *no
 declaration carries*.
 
-    WF-034 FAIL /objectCreaties/1/subject: object creation's subject type
+    WF-034 FAIL /rules/objectCreaties/1/subject: object creation's subject type
     'Bestaatniet' is not declared: the creation resolves against no
     declaration
 

@@ -2,7 +2,7 @@ Violates WF-109 (`spec/IR-SPEC.md` ch. 4.6 (q2)) on the **ambiguity by
 population overlap** — the flank the rule was blind to until 2026-09-19 and
 the reason the hit test is no longer a plain `⊑` count.
 
-    WF-109 FAIL /feitCreaties/0/voorwaarde/eigenaar: the characteristic check
+    WF-109 FAIL /rules/feitCreaties/0/voorwaarde/eigenaar: the characteristic check
     is hosted on 'Sein', which the doel 'Sein' is — but so can the anker
     'Kustvak' be, because the model declares a type below both: the host names
     one object on paper and two at run time

@@ -6,7 +6,7 @@ half: a set source reads each member of the `elementObjecttype`, so its
 instead, and the attribute it spells is declared there and nowhere near the
 members being folded.
 
-    WF-083 FAIL /resolvedRegels/0/waarde/argumenten/0: fold-source objecttype
+    WF-083 FAIL /rules/resolvedRegels/0/waarde/argumenten/0: fold-source objecttype
     'Jutter' is not the fold's anchor 'Vondst' (the set source reads each
     member of the elementObjecttype): the executors resolve 'kistgeld'
     against the anchor, never against this annotation, so the two spellings

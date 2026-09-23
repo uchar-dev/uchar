@@ -2,7 +2,7 @@ Violates WF-098 (`spec/IR-SPEC.md` ch. 4.1): a **context value** spelled
 `rekendatum` where the closed set holds `Rekendatum`. One capital, one
 character — the name is admissible up to case and inadmissible on the wire.
 
-    WF-098 FAIL /resolvedRegels/0/waarde/datum/naam: context value
+    WF-098 FAIL /rules/resolvedRegels/0/waarde/datum/naam: context value
     'rekendatum' is not one of the three admissible names Rekendatum,
     Rekenjaar, de dag: the context-value name is a closed set, spelled byte
     for byte

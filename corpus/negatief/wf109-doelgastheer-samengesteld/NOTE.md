@@ -4,7 +4,7 @@ doel host sits inside a composite, one conjunct beside an anker-hosted one, and
 at that nested position the anker is the only object bound — so `Sein` names
 nothing.
 
-    WF-109 FAIL /feitCreaties/0/voorwaarde/onderdelen/0/eigenaar: the
+    WF-109 FAIL /rules/feitCreaties/0/voorwaarde/onderdelen/0/eigenaar: the
     characteristic check is hosted on 'Sein', which no object bound here can be:
     this position binds the subject 'Kustvak'
 

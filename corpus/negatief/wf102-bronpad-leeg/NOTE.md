@@ -3,7 +3,7 @@
 Violates **WF-102 (b)** (`spec/IR-SPEC.md` ch. 4.3): the range is present
 and empty.
 
-    WF-102 FAIL /resolvedRegels/0/waarde/bronPad: a bronPad carries at least
+    WF-102 FAIL /rules/resolvedRegels/0/waarde/bronPad: a bronPad carries at least
     TWO steps, found 0 — the one-step range is spelled bronRol
 
 The empty list is not "no range": it is a stated range that reaches nothing,

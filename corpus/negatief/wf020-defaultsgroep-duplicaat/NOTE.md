@@ -3,7 +3,7 @@
 Violates **WF-020** (`spec/IR-SPEC.md` ch. 3.1): both `PrioritizedDefaults`
 groups are named `uitkering bij betwisting`.
 
-    WF-020 FAIL /prioritizedDefaults/0: duplicate name 'uitkering bij
+    WF-020 FAIL /rules/prioritizedDefaults/0: duplicate name 'uitkering bij
     betwisting' in prioritizedDefaults
 
 The WITHIN-ARRAY shape, which falls independently of the cross-kind one

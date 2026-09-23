@@ -6,7 +6,7 @@ carries an `elementObjecttype`. A builtin has no fold source — nothing about i
 is the ch. 4.3 row-1 wart — so the operand is an ordinary read and the sentinel
 is as ill-formed there as at any other read.
 
-    WF-034 FAIL /resolvedRegels/0/waarde/argumenten/0/type: unknown-type
+    WF-034 FAIL /rules/resolvedRegels/0/waarde/argumenten/0/type: unknown-type
     sentinel on a fold operand that is not a fold SOURCE: the sentinel is
     admissible on the single argument of an AGGREGATION alone (the v0 row-1
     wart, ch. 4.3) — with two or more arguments the node is the listed value

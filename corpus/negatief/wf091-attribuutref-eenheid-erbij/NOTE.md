@@ -5,7 +5,7 @@ the reference that reads it is typed in `kg`. The target `kopie` is
 declared in `kg` and the value's type is `kg`, so WF-023's unit clause is
 satisfied.
 
-    WF-091 FAIL /resolvedRegels/0/waarde/type: unit mismatch: attribute
+    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: unit mismatch: attribute
     reference 'gewicht' is typed 'kg' of system 'Gewicht' (factor 1 to
     'kg'), but the declaration it reads from is no unit
 

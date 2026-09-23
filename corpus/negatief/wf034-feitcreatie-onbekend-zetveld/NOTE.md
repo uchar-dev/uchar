@@ -2,7 +2,7 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): a **fact creation** (ch. 3.4)
 whose `zetVeld` — the bean field the creation WRITES — names a role *no
 declaration carries*.
 
-    WF-034 FAIL /feitCreaties/0/zetVeld: 'bestaatniet' is not a declared role
+    WF-034 FAIL /rules/feitCreaties/0/zetVeld: 'bestaatniet' is not a declared role
     of 'vakbeseining': the created relation's bean field resolves against no
     declaration
 

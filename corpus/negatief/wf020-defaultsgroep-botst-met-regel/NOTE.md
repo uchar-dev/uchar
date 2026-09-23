@@ -4,7 +4,7 @@ Violates **WF-020** (`spec/IR-SPEC.md` ch. 3.1): the `PrioritizedDefaults`
 group is named `penninggerechtigd tenzij uitgesloten`, which is already the
 name of the `ResolvedRegel` in the same document.
 
-    WF-020 FAIL /prioritizedDefaults/0: name 'penninggerechtigd tenzij
+    WF-020 FAIL /rules/prioritizedDefaults/0: name 'penninggerechtigd tenzij
     uitgesloten' collides with 'penninggerechtigd tenzij uitgesloten' in
     resolvedRegels (unique across all named forms)
 

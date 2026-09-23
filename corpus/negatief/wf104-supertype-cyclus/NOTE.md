@@ -3,7 +3,7 @@
 Violates **WF-104** (`spec/IR-SPEC.md` ch. 2.2): `Strandrecht` and
 `Wrakrecht` name each other as supertype.
 
-    WF-104 FAIL /objecttypen/Strandrecht/supertype: supertype cycle (a type
+    WF-104 FAIL /model/objectTypes/0/supertype: supertype cycle (a type
     would be its own ancestor, so member resolution has no root to stop at):
     Strandrecht -> Wrakrecht -> Strandrecht
 

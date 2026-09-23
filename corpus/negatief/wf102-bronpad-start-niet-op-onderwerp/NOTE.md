@@ -3,7 +3,7 @@
 Violates **WF-102 (d)** (`spec/IR-SPEC.md` ch. 4.3), the FIRST join: the path
 does not start at the fold subject.
 
-    WF-102 FAIL /resolvedRegels/0/waarde/bronPad/0: the opposite role
+    WF-102 FAIL /rules/resolvedRegels/0/waarde/bronPad/0: the opposite role
     'bergende boot' fills 'Boot', but this step starts at 'Jutter' (the fold
     subject) — a bronPad is a connected walk
 

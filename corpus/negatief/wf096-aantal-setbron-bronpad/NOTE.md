@@ -7,7 +7,7 @@ WF-102) instead of a one-step `bronRol`. It is the form
 the union counts ELEMENTS, never intermediate instances" — and after this
 narrowing no `AANTAL` FOLD can carry that clause.
 
-    WF-096 FAIL /resolvedRegels/0/waarde/argumenten/0: set reading on a
+    WF-096 FAIL /rules/resolvedRegels/0/waarde/argumenten/0: set reading on a
     fold operand that is not a VALUE fold's SOURCE: a set reading is
     admissible on the single argument of a value AGGREGATION alone
     (ch. 4.3) — with two or more arguments the node is the listed value

@@ -14,5 +14,5 @@ The positive twin is `corpus/golden/jutterswet-keurploeg`, whose filter reads
 `aangemeld` — a characteristic of the Keurmeester — and plays in all three
 executors.
 
-Verifier: `WF-034 FAIL /resolvedRegels/0/voorwaarde/filter: 'stilliggend' is
+Verifier: `WF-034 FAIL /rules/resolvedRegels/0/voorwaarde/filter: 'stilliggend' is
 not a declared characteristic of 'Keurmeester'`.

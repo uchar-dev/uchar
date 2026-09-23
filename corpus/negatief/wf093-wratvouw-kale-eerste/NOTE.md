@@ -5,7 +5,7 @@ source, and this document makes it the source of an `EERSTE` — the
 POSITIONAL half of the value folds, where the arithmetic sibling
 (`wf093-wratvouw-kale-som`) is the other.
 
-    WF-093 FAIL /resolvedRegels/0/waarde/argumenten/0: the v0 instance-fold
+    WF-093 FAIL /rules/resolvedRegels/0/waarde/argumenten/0: the v0 instance-fold
     source (the row-1 wart, spelled with the unknown sentinel on the
     argument's own type) is a COUNT source: a fold source whose own type is
     the unknown sentinel yields the linked instances, which only AANTAL

@@ -9,5 +9,5 @@ reference interpreter refuses the same document with the same reason if it is
 ever reached in evaluation (`quantifier fold without a toets … (WF-108)`), the
 house second line of defence.
 
-Verifier: `WF-108 FAIL /resolvedRegels/0/voorwaarde/toets: quantifier fold
+Verifier: `WF-108 FAIL /rules/resolvedRegels/0/voorwaarde/toets: quantifier fold
 without a toets: the matrix is what every contributor must satisfy …`.

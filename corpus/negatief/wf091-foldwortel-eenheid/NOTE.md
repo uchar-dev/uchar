@@ -4,7 +4,7 @@ Violates WF-091 (`spec/IR-SPEC.md` ch. 4.1) at a **composite** position,
 derives `kg` — the winning contributor's unit IS the node's unit — but the
 fold root is annotated `t` (same canonical, factor 1000).
 
-    WF-091 FAIL /resolvedRegels/0/waarde/type: unit mismatch: the MAXIMUM
+    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: unit mismatch: the MAXIMUM
     aggregation is typed 't' of system 'Gewicht' (factor 1000 to 'kg'), but
     the type derived from its operands is 'kg' of system 'Gewicht'
     (factor 1 to 'kg')

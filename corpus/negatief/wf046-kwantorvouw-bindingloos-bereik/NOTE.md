@@ -13,7 +13,7 @@ Post, and the creation writes that relation through its back-link and gives
 the new Post nummer 1. The Wachter without posten satisfies the ALLE fold
 vacuously, and the Post it mints falsifies it.
 
-    WF-046 FAIL /objectCreaties/0: negative dependency edge on a cycle: richt een post in reads what richt een post in produces while richt een post in is reachable from it (no strata exist)
+    WF-046 FAIL /rules/objectCreaties/0: negative dependency edge on a cycle: richt een post in reads what richt een post in produces while richt een post in is reachable from it (no strata exist)
 
 Until 2026-09-23 the dependency walk drew no range edge at all for a
 bindingless fold: the arm read only a bound role or path. It now reads the

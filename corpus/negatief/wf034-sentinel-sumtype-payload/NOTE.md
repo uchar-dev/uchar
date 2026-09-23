@@ -1,7 +1,7 @@
 Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): the v0 unknown-type sentinel on a
 `SumType` **constructor payload**, inside the static type of a value node.
 
-    WF-034 FAIL /resolvedRegels/0/waarde/type: unknown-type sentinel on the
+    WF-034 FAIL /rules/resolvedRegels/0/waarde/type: unknown-type sentinel on the
     payload of constructor 'Toegewezen'
 
 Why the existing sentinel fence missed it: that fence is a match on the node's

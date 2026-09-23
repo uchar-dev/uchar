@@ -6,7 +6,7 @@ declaration. A cell of a dimensioned attribute carries that attribute's
 datatype, so the cell read's own `type` is a use site of the same
 declaration.
 
-    WF-089 FAIL /resolvedRegels/0/waarde/scrutinee/type: dimension-cell read
+    WF-089 FAIL /rules/resolvedRegels/0/waarde/scrutinee/type: dimension-cell read
     of 'vaarwater' is typed with keuzetype domain 'Kust', but the
     declaration it reads from names domain 'Vaarwater'
 

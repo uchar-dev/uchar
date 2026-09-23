@@ -5,7 +5,7 @@ the element domain drifts, the list wrapper hides it. The lambda parameter
 and the binder inside agree with the reference (`oordeel`), and the match
 arms cover `oordeel`, so every structural check along the way passes.
 
-    WF-089 FAIL /resolvedRegels/0/waarde/list/list/type: attribute reference
+    WF-089 FAIL /rules/resolvedRegels/0/waarde/list/list/type: attribute reference
     'aanspraken' is typed with keuzetype domain 'oordeel', but the
     declaration it reads from names domain 'beschikking'
 

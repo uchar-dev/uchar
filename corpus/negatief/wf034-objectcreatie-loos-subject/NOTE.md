@@ -1,7 +1,7 @@
 Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6 (n), its empty half): an **object
 creation** (ch. 5.5) with **no** `subject` at all.
 
-    WF-034 FAIL /objectCreaties/1/subject: object creation without a subject:
+    WF-034 FAIL /rules/objectCreaties/1/subject: object creation without a subject:
     the population it runs over, and the type its member values evaluate on,
     resolve against no declaration
 

@@ -3,7 +3,7 @@ that names no target attribute. `doelAttribuut` is where every recipient's
 share is written; with the field empty the write resolves against no
 declaration.
 
-    WF-034 FAIL /verdelingen/0/doelAttribuut: allocation without a target
+    WF-034 FAIL /rules/verdelingen/0/doelAttribuut: allocation without a target
     attribute: it resolves against no declaration
 
 It exists separately from its `bronAttribuut` sibling for the reason the

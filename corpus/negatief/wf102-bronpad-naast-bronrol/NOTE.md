@@ -3,7 +3,7 @@
 Violates **WF-102 (a)** (`spec/IR-SPEC.md` ch. 4.3): a fold source carries
 `bronPad` AND `bronRol`.
 
-    WF-102 FAIL /resolvedRegels/0/waarde/bronPad: bronPad beside bronRol:
+    WF-102 FAIL /rules/resolvedRegels/0/waarde/bronPad: bronPad beside bronRol:
     the one-step range IS bronRol, so the two fields are mutually exclusive
 
 The document is `corpus/golden/anchor/jutterswet-bootberging` reduced to its

@@ -8,7 +8,7 @@ operand reads a member attribute of another type (`set: true`,
 calls the set source when it stands alone. Beside a second operand it is not
 a source at all, and the sentinel is as ill-formed here as at any other read.
 
-    WF-034 FAIL /resolvedRegels/0/waarde/argumenten/1/type: unknown-type
+    WF-034 FAIL /rules/resolvedRegels/0/waarde/argumenten/1/type: unknown-type
     sentinel on a fold operand that is not a fold SOURCE: the sentinel is
     admissible on the single argument of an AGGREGATION alone (the v0 row-1
     wart, ch. 4.3) — with two or more arguments the node is the listed value

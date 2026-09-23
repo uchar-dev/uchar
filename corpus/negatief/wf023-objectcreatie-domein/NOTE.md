@@ -4,7 +4,7 @@ a `Berging` for each `Jutter` and initialises `vaarwater` (declared
 `Vaarwater`) with a `Literal` `Noord` of domain `Kust`. A rule reads the
 created object's `vaarwater` faithfully.
 
-    WF-023 FAIL /objectCreaties/0/toekenningen/0: a value of the
+    WF-023 FAIL /rules/objectCreaties/0/toekenningen/0: a value of the
     enumeration domain 'Kust' is assigned to a target of the enumeration
     domain 'Vaarwater'
 

@@ -3,7 +3,7 @@ a `SumType` constructor payload that is reached **through a container** — the
 outer payload is a `ListType` whose element is a second sum type, and the
 sentinel sits on that inner sum's payload (ch. 4.7, ch. 2.4).
 
-    WF-034 FAIL /resolvedRegels/0/waarde/type: unknown-type sentinel on the
+    WF-034 FAIL /rules/resolvedRegels/0/waarde/type: unknown-type sentinel on the
     payload of constructor 'Toegewezen'
 
 Why this is a third case and not a repeat of the other two: the payload

@@ -5,7 +5,7 @@ parameter and the `BinderRef` in its body agree with that claim, so the
 document is internally consistent everywhere except at the declaration
 boundary, and WF-078's soort cross (struct against struct) sees nothing.
 
-    WF-090 FAIL /resolvedRegels/1/waarde/list/list/type: attribute
+    WF-090 FAIL /rules/resolvedRegels/1/waarde/list/list/type: attribute
     reference 'dossiers' is typed with struct domain 'logboek', but the
     declaration it reads from names struct domain 'dossier'
 

@@ -1,7 +1,7 @@
 Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): the v0 `Onbekend` unknown-type
 sentinel on a rule TARGET's `type`.
 
-    WF-034 FAIL /resolvedRegels/1/doel/type: unknown-type sentinel on a
+    WF-034 FAIL /rules/resolvedRegels/1/doel/type: unknown-type sentinel on a
     rule target
 
 Why it has to exist: the target's `type` was the last place the sentinel
@@ -37,7 +37,7 @@ is carried by zero documents outside this witness (152 golden + 22 rood +
 measured), so the widening cannot over-reject.
 
 A hand-broken variant of `corpus/golden/jutterswet-aanvoergeld/ir.json`:
-`/resolvedRegels/1/doel/type` — declared `Numeriek`, 2 decimals, `EUR` —
+`/rules/resolvedRegels/1/doel/type` — declared `Numeriek`, 2 decimals, `EUR` —
 replaced by `{"node": "Onbekend", "reden": "niet opgelost"}`, which is
 schema-valid on the v0 wire.
 

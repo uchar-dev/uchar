@@ -5,7 +5,7 @@ in the one shape where the anchor of that clause is observable: the written
 role is tested against the type the executors read it on — the fold
 **subject** — and not against the operand's own `objecttype`.
 
-    WF-083 FAIL /resolvedRegels/0/waarde/argumenten/0: navigatieRol 'vondst'
+    WF-083 FAIL /rules/resolvedRegels/0/waarde/argumenten/0: navigatieRol 'vondst'
     on a fold source does not denote the fold subject: no role named so
     (declared name or plural, ci) is filled by the fold subject 'Jutter'
     itself — a fold source never navigates

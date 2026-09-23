@@ -12,7 +12,7 @@ Wachter is kleiner dan 5 en ten hoogste 1 ploeglid van de Wachter heeft een
 merk groter dan 0". The range is the input-only `ploeg` relation; the
 matrix reads the merk the rule derives from the creation's own product.
 
-    WF-046 FAIL /objectCreaties/0: negative dependency edge on a cycle: werf een opvolger reads what merk van een wachter produces while merk van een wachter is reachable from it (no strata exist)
+    WF-046 FAIL /rules/objectCreaties/0: negative dependency edge on a cycle: werf een opvolger reads what merk van een wachter produces while merk van een wachter is reachable from it (no strata exist)
 
 The case isolates that clause: read the TEN_HOOGSTE matrix positively and
 the document is clean (mutation Kl, measured 2026-09-23).

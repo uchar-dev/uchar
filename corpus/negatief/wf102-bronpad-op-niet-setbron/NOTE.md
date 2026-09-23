@@ -3,7 +3,7 @@
 Violates **WF-102 (c)** (`spec/IR-SPEC.md` ch. 4.3): a `bronPad` on a source
 that is not the SET source.
 
-    WF-102 FAIL /resolvedRegels/0/waarde/bronPad: a bronPad is admissible
+    WF-102 FAIL /rules/resolvedRegels/0/waarde/bronPad: a bronPad is admissible
     only on the SET source of a single-argument instance fold — the position
     bronRol stands at
 

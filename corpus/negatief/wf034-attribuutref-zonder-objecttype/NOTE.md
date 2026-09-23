@@ -3,7 +3,7 @@ names no object type. `objecttype` is the endpoint the attribute's value
 lives on (ch. 4.1a), so a reference without one resolves against no
 declaration at all.
 
-    WF-034 FAIL /resolvedRegels/0/voorwaarde/links: attribute reference
+    WF-034 FAIL /rules/resolvedRegels/0/voorwaarde/links: attribute reference
     'aangevoerd gewicht' without an object type: it resolves against no
     declaration
 

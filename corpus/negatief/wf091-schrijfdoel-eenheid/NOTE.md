@@ -5,7 +5,7 @@ serialized `type` says `t`. The value written is a faithful reference to
 crosses the value against the target's DECLARED datatype and never looks
 at the target's own annotation.
 
-    WF-091 FAIL /resolvedRegels/0/doel/type: unit mismatch: rule target
+    WF-091 FAIL /rules/resolvedRegels/0/doel/type: unit mismatch: rule target
     'kopie' is typed 't' of system 'Gewicht' (factor 1000 to 'kg'), but
     the attribute declaration it writes is 'kg' of system 'Gewicht'
     (factor 1 to 'kg')

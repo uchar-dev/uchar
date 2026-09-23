@@ -6,7 +6,7 @@ ch. 6.2): `uitkering` is computed from `grondslag` and `grondslag` from
 is invisible only because the two rules SPELL their owner differently — one
 anchors at `Wrakrecht`, the other at `Strandrecht`.
 
-    WF-045 FAIL /resolvedRegels/0: dependency cycle through no recursive
+    WF-045 FAIL /rules/resolvedRegels/0: dependency cycle through no recursive
     creation: bereken de uitkering van een wrakrecht -> bereken de
     grondslag van een strandrecht -> bereken de uitkering van een
     wrakrecht

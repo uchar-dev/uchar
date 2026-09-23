@@ -7,7 +7,7 @@ This is the first of the two subforms the decision of 2026-09-06 takes
 together: the sentinel over a read that DOES resolve, v0's failed typing of a
 real attribute.
 
-    WF-034 FAIL /resolvedRegels/0/waarde/argumenten/1/type: unknown-type
+    WF-034 FAIL /rules/resolvedRegels/0/waarde/argumenten/1/type: unknown-type
     sentinel on a fold operand that is not a fold SOURCE: the sentinel is
     admissible on the single argument of an AGGREGATION alone (the v0 row-1
     wart, ch. 4.3) — with two or more arguments the node is the listed value

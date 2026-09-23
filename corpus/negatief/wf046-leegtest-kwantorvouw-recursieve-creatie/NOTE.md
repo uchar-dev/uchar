@@ -13,7 +13,7 @@ LEEG test on the member's rang. The creation writes the successor's rang, and
 its own condition reads that rang under the test, so the creation depends
 negatively on itself.
 
-    WF-046 FAIL /objectCreaties/0: negative dependency edge on a cycle: werf de opvolger reads what werf de opvolger produces while werf de opvolger is reachable from it (no strata exist)
+    WF-046 FAIL /rules/objectCreaties/0: negative dependency edge on a cycle: werf de opvolger reads what werf de opvolger produces while werf de opvolger is reachable from it (no strata exist)
 
 Measured before the arm (2026-09-23), with one input Wachter W1 of rang 1.
 The verifier said `verifier: PASS`. The reference interpreter minted W1 to

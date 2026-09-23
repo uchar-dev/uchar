@@ -6,7 +6,7 @@ agrees — same soort, no domain, two decimals, not whole, `NIET_NEGATIEF`
 — so only the unit differs, and the two units are **convertible**, which
 is the whole point of the case.
 
-    WF-091 FAIL /resolvedRegels/0/waarde/type: unit mismatch: attribute
+    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: unit mismatch: attribute
     reference 'gewicht' is typed 't' of system 'Gewicht' (factor 1000 to
     'kg'), but the declaration it reads from is 'kg' of system 'Gewicht'
     (factor 1 to 'kg')

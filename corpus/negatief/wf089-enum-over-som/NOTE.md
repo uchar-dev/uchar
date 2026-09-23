@@ -6,7 +6,7 @@ Afgewezen` types both the `AttribuutRef` and the `Literal` as
 variant. `domeinen` is one namespace, so a domain has one variant and the
 reference lies.
 
-    WF-089 FAIL /resolvedRegels/0/voorwaarde/links/type: attribute
+    WF-089 FAIL /rules/resolvedRegels/0/voorwaarde/links/type: attribute
     reference 'beschikking' is typed as the enumeration domain
     'beschikking', but the declaration it reads from is the sum-type
     domain 'beschikking' (one namespace: a domain has one variant)

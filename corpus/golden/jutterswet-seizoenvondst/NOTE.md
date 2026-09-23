@@ -42,7 +42,7 @@ type is retyped `t` (canonical `kg`, factor 1000) while the declaration
 and the inner reference stay `kg`:
 
 ```
-WF-091 FAIL /resolvedRegels/0/waarde/type: unit mismatch: dimension-cell
+WF-091 FAIL /rules/resolvedRegels/0/waarde/type: unit mismatch: dimension-cell
   read of 'vondstgewicht' is typed 't' of system 'Gewicht' (factor 1000
   to 'kg'), but the declaration it reads from is 'kg' of system 'Gewicht'
   (factor 1 to 'kg')

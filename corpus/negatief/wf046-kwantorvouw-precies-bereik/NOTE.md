@@ -12,7 +12,7 @@ kleur ongelijk aan 7". `kleur` is input only; the range is the `opvolging`
 relation that the creation fills, and every minted opvolger counts (a leeg
 kleur is ongelijk aan 7).
 
-    WF-046 FAIL /objectCreaties/0: negative dependency edge on a cycle: werf een opvolger reads what werf een opvolger produces while werf een opvolger is reachable from it (no strata exist)
+    WF-046 FAIL /rules/objectCreaties/0: negative dependency edge on a cycle: werf een opvolger reads what werf een opvolger produces while werf een opvolger is reachable from it (no strata exist)
 
 The case isolates that clause: read the PRECIES range positively and the
 document is clean (mutation Kk, measured 2026-09-23).

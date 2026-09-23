@@ -4,7 +4,7 @@ has none. `Jutter.gewicht` is declared in `kg`; the reference that reads it
 is typed as a bare number. The target `kopie` is declared unitless and the
 value's type is unitless too, so WF-023's unit clause is satisfied.
 
-    WF-091 FAIL /resolvedRegels/0/waarde/type: unit mismatch: attribute
+    WF-091 FAIL /rules/resolvedRegels/0/waarde/type: unit mismatch: attribute
     reference 'gewicht' is typed no unit, but the declaration it reads
     from is 'kg' of system 'Gewicht' (factor 1 to 'kg')
 

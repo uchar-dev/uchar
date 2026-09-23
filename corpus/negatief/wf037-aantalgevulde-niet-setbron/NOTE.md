@@ -4,7 +4,7 @@ Violates WF-037 (`spec/IR-SPEC.md` ch. 4.3, ch. 4.6) in the filled count's
 SET-SOURCE arm: the single argument of an `AANTAL_GEVULDE` must be a set
 reading, and this one is an ordinary read of the subject's own attribute.
 
-    WF-037 FAIL /resolvedRegels/0/waarde: the filled count's single
+    WF-037 FAIL /rules/resolvedRegels/0/waarde: the filled count's single
     argument MUST be a set reading: this kind reads a VALUE per
     contributor, so its source is the set source (ch. 4.3, `set: true`) —
     a non-set source is the subject's own read, whose filled count is 0 or

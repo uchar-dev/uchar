@@ -7,7 +7,7 @@ through the `werf` role (`objecttype Werf`, `navigatieRol Schuit`,
 `navigatiePad [werf]`, a bound hop on `ligplaats/werf`), and the reference
 is typed `Enumeratie` `Kust`, with arms `Noord`/`Zuid`/`West`.
 
-    WF-089 FAIL /resolvedRegels/0/waarde/scrutinee/type: attribute
+    WF-089 FAIL /rules/resolvedRegels/0/waarde/scrutinee/type: attribute
     reference 'vaarwater' is typed with keuzetype domain 'Kust', but the
     declaration it reads from names domain 'Vaarwater'
 

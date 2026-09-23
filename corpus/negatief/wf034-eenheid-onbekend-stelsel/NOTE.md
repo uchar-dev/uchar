@@ -1,7 +1,7 @@
 Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6 (r)): a **unit** whose `stelsel` —
 the unit system it belongs to — names a system *no declaration carries*.
 
-    WF-034 FAIL /objecttypen/Sleepbaan/attributen/aanloop/eenheid/stelsel: unit
+    WF-034 FAIL /model/objectTypes/0/attributes/0/datatype/eenheid/stelsel: unit
     'm' declares unit system 'Afstandt', which no declaration carries: the unit
     resolves against no conversion table
 

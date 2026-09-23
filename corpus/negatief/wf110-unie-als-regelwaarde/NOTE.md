@@ -4,7 +4,7 @@ Violates WF-110 (`spec/IR-SPEC.md` ch. 4.3), the instance-set union — the
 §5.7 concatenation of subject expressions, landed 2026-09-20 as the source
 of an instance count. Clause (a), at the sharpest position: the whole rule value.
 
-    WF-110 FAIL /resolvedRegels/0/waarde: an instance-set union stands
+    WF-110 FAIL /rules/resolvedRegels/0/waarde: an instance-set union stands
     where nothing consumes it: the union of subject expressions denotes a
     set of INSTANCES, and the one node that folds instances is the instance
     count — so this node is admissible as the SINGLE argument of an AANTAL
@@ -24,7 +24,7 @@ node.
 
 ## Rood-eerst, gemeten op dit document
 
-The pre-card verifier cannot LOAD it — `LOAD ERROR at /resolvedRegels/0/waarde/node: unknown
+The pre-card verifier cannot LOAD it — `LOAD ERROR at /rules/resolvedRegels/0/waarde/node: unknown
 expr node "InstanceSetUnion"` — because the node entered the wire with this
 card. So the honest red-first record is in two steps, both measured:
 

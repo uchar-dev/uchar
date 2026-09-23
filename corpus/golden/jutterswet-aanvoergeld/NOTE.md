@@ -40,7 +40,7 @@ way round on a mutated copy of this same `ir.json`: retyping the
 declaration stays `kg` is refused, arm-exact:
 
 ```
-WF-091 FAIL /resolvedRegels/0/voorwaarde/rechts/type: unit mismatch:
+WF-091 FAIL /rules/resolvedRegels/0/voorwaarde/rechts/type: unit mismatch:
   parameter reference 'aanvoerdrempel' is typed 't' of system 'Gewicht'
   (factor 1000 to 'kg'), but the declaration it reads from is 'kg' of
   system 'Gewicht' (factor 1 to 'kg')

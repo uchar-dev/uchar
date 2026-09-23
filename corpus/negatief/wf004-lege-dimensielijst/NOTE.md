@@ -1,7 +1,7 @@
 Violates WF-004 (`spec/IR-SPEC.md` ch. 2.2): an attribute whose `dimensions`
 list is present and empty.
 
-    WF-004 FAIL /objecttypen/Jutter/attribuutDimensies/aantal aangemelde vondsten: dimensioned attribute with an empty dimension list
+    WF-004 FAIL /model/objectTypes/0/attributes/0/dimensions: dimensioned attribute with an empty dimension list
 
 A minimal hand-broken variant of `corpus/golden/jutterswet-penningdrempel/ir.json`:
 the golden unchanged, except that its one attribute, `aantal aangemelde

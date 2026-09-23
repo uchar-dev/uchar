@@ -1,7 +1,7 @@
 Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6 (o), its empty half): a near-side
 **role check** (ch. 5.8a) with **no** `anderTeFiller` at all.
 
-    WF-034 FAIL /resolvedRegels/0/voorwaarde/anderTeFiller: role check without
+    WF-034 FAIL /rules/resolvedRegels/0/voorwaarde/anderTeFiller: role check without
     an anderTeFiller: the connecting role is derived from that type and from
     nothing else, so the check resolves against no declaration
 

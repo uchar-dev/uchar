@@ -6,7 +6,7 @@ WF-093's pair (a single argument under any folding kind) down to the six
 VALUE folds alone. This is the form the decision was taken about: a count
 whose single argument is a set reading of an element attribute.
 
-    WF-096 FAIL /resolvedRegels/0/waarde/argumenten/0: set reading on a
+    WF-096 FAIL /rules/resolvedRegels/0/waarde/argumenten/0: set reading on a
     fold operand that is not a VALUE fold's SOURCE: a set reading is
     admissible on the single argument of a value AGGREGATION alone
     (ch. 4.3) — with two or more arguments the node is the listed value

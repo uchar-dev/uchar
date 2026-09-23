@@ -17,7 +17,7 @@ nothing at all. The allocation went out with `doelType: null` and
 `doelAttribuut` stuck on the written plural, which `WF-034` refuses:
 
 ```
-WF-034 FAIL /verdelingen/0/doelType: allocation without a target object type:
+WF-034 FAIL /rules/verdelingen/0/doelType: allocation without a target object type:
 it resolves against no declaration
 ```
 

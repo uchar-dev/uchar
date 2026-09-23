@@ -2,7 +2,7 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): a **fold source** outside the
 row-1 wart naming a **declared role** instead of an attribute — the other
 branch of the ch. 4.3 exception applied beyond its scoping.
 
-    WF-034 FAIL /resolvedRegels/1/waarde/argumenten/0: 'vondsten' is not a
+    WF-034 FAIL /rules/resolvedRegels/1/waarde/argumenten/0: 'vondsten' is not a
     declared attribute of 'Vondst': outside the v0 instance-fold source (the
     unknown-typed row-1 wart) a fold-source argument is an ordinary attribute
     reference — the ch. 4.3 role-name exception and its type-pair fallback do

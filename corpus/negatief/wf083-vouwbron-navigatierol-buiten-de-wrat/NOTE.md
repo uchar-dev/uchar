@@ -6,7 +6,7 @@ instance-fold source. The written role is that wart's presentation of the
 fold subject and nothing else; on any other fold source it claims a
 navigation a fold source never performs.
 
-    WF-083 FAIL /resolvedRegels/0/waarde/argumenten/0: navigatieRol
+    WF-083 FAIL /rules/resolvedRegels/0/waarde/argumenten/0: navigatieRol
     'bewarende jutter' on a fold source that is not the v0 instance-fold
     source (the unknown-typed row-1 wart): the written role is that wart's
     presentation of the fold subject and nothing else — on any other fold

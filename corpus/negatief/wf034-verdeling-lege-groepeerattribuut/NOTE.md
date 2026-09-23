@@ -1,7 +1,7 @@
 Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): an **allocation** (ch. 3.2)
 whose ordering key is *present but blank*.
 
-    WF-034 FAIL /verdelingen/0/groepeerAttribuut: groepeerAttribuut is present
+    WF-034 FAIL /rules/verdelingen/0/groepeerAttribuut: groepeerAttribuut is present
     but empty: an attribute name that names nothing resolves against no
     declaration
 

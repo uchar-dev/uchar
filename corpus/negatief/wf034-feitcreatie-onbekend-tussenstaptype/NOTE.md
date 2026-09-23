@@ -2,7 +2,7 @@ Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6): a **fact creation** (ch. 3.4)
 whose intermediate step names an object **type** that is not the type its own
 hop reaches.
 
-    WF-034 FAIL /feitCreaties/0/tussenstappen/0/type: the hop over
+    WF-034 FAIL /rules/feitCreaties/0/tussenstappen/0/type: the hop over
     'kustligging' reaches 'Post', but the intermediate bean type names
     'Bestaatniet'
 
