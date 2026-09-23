@@ -222,9 +222,10 @@ eigen onderwerp van de vorm (ongenavigeerd, geen setlezing, `S ⊑ O`), en
 heeft dagprecisie. Een positie zonder onderwerp (een dagsoortdefinitie)
 laat dus alleen de literal toe. De volle grens-expressie staat als OPEN
 wirebesluit in ch. 3.12, met de motivering van het besluit.
-**Eigen technische toevoeging, ter beoordeling:** de dagprecisieclausule.
-Beide OCaml-uitvoerders weigeren een datum-tijdgrens al, en ch. 3.10
-spreekt alleen over kalenderdagen. Het besluit noemde de precisie niet.
+De dagprecisieclausule was een eigen toevoeging. Ze is bij de merge
+**overgenomen als maintainerbesluit** (zie de fixronde). De oorspronkelijke
+reden die ik gaf, "beide OCaml-uitvoerders weigeren een datum-tijdgrens
+al", was een halve claim: `ref` weigerde alleen een GEVULDE waarde.
 
 Verifier-arm `wf111_bound` in `spec/verifier/lib/checks.ml`
 (**voorstel**). Passerende golden: `jutterswet-premievenster` (vier
@@ -249,10 +250,16 @@ bewust geen code met ref gedeeld. Passerende golden: premievenster's
 `corpus/negatief/wf112-periodevenster-tellende-kwantor`, dezelfde
 procedure.
 
-**De kwantorvouwmeting.** Gemeten op `jutterswet-schouwploeg`: de toets
-van *bevoegd* vervangen door het kale venster, en apart door
-`ALLE[gediplomeerd; venster]`, telkens onder alle vijf de kwantoren (case1,
-asOfDate 2024-06-15):
+**De kwantorvouwmeting.** Gemeten op varianten van
+`jutterswet-schouwploeg`. In de regel *bevoegd bij diploma* is de toets
+vervangen door het kale venster [2024-01-01, 2025-01-01), en apart door
+`ALLE[gediplomeerd; venster]`, telkens onder alle vijf de kwantoren (drempel
+1 voor de tellende). De case is een voor de meting aangepaste kopie van
+`case1-allen-ervaren` (S1 met twee gediplomeerde wachten), met asOfDate
+2024-06-15 in plaats van null, en een tweede kopie met asOfDate null voor
+de tijdvrije proef. De verwachtingen van die case gelden voor de
+OORSPRONKELIJKE golden, dus een FAIL in de tabel betekent dat de tak een
+antwoord gaf en niet dat hij weigerde:
 
 | kwantor | oude verifier | nieuwe verifier | ref / clingo | exec-model | DRL-tekst |
 |---|---|---|---|---|---|
@@ -282,8 +289,12 @@ daarmee een echt gat en herformuleert geen bestaande weigering.
     arm WF-112 uit:  FAIL: negatief case corpus/negatief/wf112-periodevenster-tellende-kwantor/ir.json passed the verifier (must violate WF-112)
     beide teruggedraaid, cmp ok
 
-Corpusbrede nulmeting van de nieuwe verifier: alleen deze twee documenten
-raken WF-111/112 (golden, rood en toka doorzocht).
+Corpusbrede nulmeting van de nieuwe verifier over golden, rood en toka:
+alleen deze twee documenten raken WF-111/112. **Correctie (fixronde):** de
+negatief-zone was niet doorzocht. Daar citeert
+`corpus/negatief/wf034-wees-attribuutdimensies` nu óók WF-112 (een venster
+onder een tellende kwantor in de vormenkabinet-afleiding). Het verdict
+WF-034 blijft; de NOTE vermeldt de tweede regel.
 
 De weigerarmen van `ref` en clingo blijven staan als faalsnel-hek achter de
 verifier. Hun zin citeert nu WF-111/112. De suitegetuigen roepen eval en
@@ -379,12 +390,10 @@ die van gate 3 (350) hoefden niet bij.
 
 ### Open punten en kaartvoorstellen
 
-1. **Een gesneden bucket kan geen corpusverwachting zijn.**
-   `uchar-case-v0.schema.json` (`timelineValue`) legt ook een verwachte
-   tijdlijn op het raster. De clausule "snijdt segmenten, houdt waarden"
-   is daarom alleen suite-gepind. Maintainerbesluit nodig: óf het schema
-   laat verwachtingen van het raster af (schema en `ref/lib/case.ml`), óf
-   v1 eist voor een clip grenzen op het raster van het doel (een WF-regel).
+1. **Een gesneden bucket kan geen corpusverwachting zijn.** Verwerkt in
+   de fixronde als OPEN-rij in ch. 3.12: een corpusdrager voor een gesneden
+   bucket vergt dat het case-schema verwachtingen van het raster aflaat.
+   Tot dan staat de snijclausule in de suites van beide OCaml-uitvoerders.
 2. **Het venster als lid van een samenstelling op een tijdlijndoel.** OPEN
    en benoemd geweigerd. ch. 3.10 zegt niet wat de andere leden dan doen.
 3. **Drools (kaartvoorstel, `backends/drools` viel buiten het mandaat).**
@@ -402,33 +411,127 @@ die van gate 3 (350) hoefden niet bij.
 
 ### Registervoorstel `spec/CONSTRUCTS.md` (niet aangeraakt; de hoofdsessie landt)
 
-Aan **rij 11** toe te voegen, achteraan:
+Bijgesteld in de fixronde: het voorstel voor rij 29 vervalt (die rij
+draagt geen §8.4.3-clipdelta), en de tekst voor rij 11 is in het
+Nederlands, de stijl van de recente landingen in die rij. Aan **rij 11**
+toe te voegen, achteraan:
 
-*"**Decided and landed (2026-09-23, card `tijdvenster-conditie-normeren`,
-maintainer decisions of that day):** the §8.4.3 period condition's two
-remaining halves. (1) BOUND SHAPE — WF-111: a bound is a date literal or a
-scalar date attribute of the form's own subject, un-navigated, of day
-precision; the general date expression is an OPEN wire decision
-(RUNTIME-SEMANTICS ch. 3.12). Negatief `wf111-periodegrens-parameterdatum`
-(until then red case `periodegrens-parameterdatum`). (2) POSITION — WF-112:
-a window never sits under GEEN or a counting quantifier, as a composite
-member at any depth or inside a quantifier fold's filter or test; negatief
-`wf112-periodevenster-tellende-kwantor` (until then red). Measured that day:
-the Drools DRL-text branch answered a window inside a fold under all five
-quantifiers, the complement included, so the rule closes a live divergence.
-(3) The CLIP on a temporal attribute target (RUNTIME-SEMANTICS ch. 3.10's
-second case, the row-11/29 delta) is executed by `ref` and the ASP backend
-over the ch. 3.7 pro-rata and ch. 3.8 day-count producers: the evaluation
-date plays no part, segments are cut and values kept, an empty or leeg
-window writes the empty timeline; golden `jutterswet-pachtvenster`, refused
-by name in both Drools branches. Still refused by name: the window as a
-composite member on a temporal target (OPEN) and a temporal characteristic
-target (red case `periodevenster-tijdlijnkenmerk`; no temporal
-characteristic is written, ch. 3.11). The segment-cutting clause is
-suite-witnessed only: the case format pins expected timelines to the
-declared grid."*
+*"**Beslist en geland (2026-09-23, kaart `tijdvenster-conditie-normeren`,
+maintainerbesluiten van die dag):** de twee resterende helften van de
+§8.4.3-periodeconditie en de clip. (1) GRENSVORM — WF-111: een grens is een
+datumliteral of een scalair datumattribuut van het eigen onderwerp,
+ongenavigeerd, van dagprecisie. De dagprecisie dicht een gemeten splitsing:
+een LEGE datum-tijdgrens speelde in `ref` en werd in clingo statisch
+geweigerd. De volle grens-expressie is een OPEN wirebesluit
+(RUNTIME-SEMANTICS ch. 3.12). Negatieven `wf111-periodegrens-parameterdatum`
+(tot die dag de rode getuige), `wf111-datumtijdgrens-attribuut` en
+`wf111-datumtijdgrens-literal`. (2) POSITIE — WF-112: een venster staat
+nooit onder GEEN of een tellende kwantor, als samenstellingslid op elke
+diepte of in filter en toets van een kwantorvouw. Negatieven
+`wf112-periodevenster-tellende-kwantor` (tot die dag rood),
+`wf112-venster-in-alle-binnen-geen` en `wf112-venster-in-geen-vouw`. Die
+dag gemeten: de Drools-DRL-tak beantwoordde een venster in een vouw onder
+alle vijf kwantoren, het complement incluis; de regel dicht die
+divergentie. Een venster in een ALLE-vouwfilter blijft OPEN zonder
+verruiming: de drie uitvoerders die het dragen antwoorden consistent
+vacuüm-waar. (3) De CLIP op een temporeel attribuutdoel (ch. 3.10's tweede
+geval, de delta van deze rij) wordt uitgevoerd door `ref` en de
+ASP-backend over de ch. 3.7-pro-rata en de ch. 3.8-dagtelling: de
+evaluatiedatum doet niet mee, segmenten worden gesneden en waarden
+blijven, een leeg venster schrijft de lege tijdlijn. Golden
+`jutterswet-pachtvenster` voor de rastergevallen, en de snijclausule
+suite-gepind in beide uitvoerders. Een corpusdrager voor een gesneden
+bucket is OPEN, want het case-schema legt verwachtingen op het raster.
+Beide Drools-takken weigeren de clip bij naam. Blijvend bij naam
+geweigerd: het venster als samenstellingslid op een tijdlijndoel (OPEN) en
+een tijdlijnkenmerkdoel (rood `periodevenster-tijdlijnkenmerk`, ch. 3.11)."*
 
-Aan **rij 29** (die de §8.4.3-clipdelta met rij 11 deelt), achteraan:
+## Fixronde 2026-09-23 (lens: EERST FIXEN)
 
-*"The §8.4.3 clip half of this row's delta is executed since 2026-09-23
-(see row 11)."*
+De lens bevestigde de kern. Ze vond vier blokkeringen en gaf adviezen.
+Twee maintainerbesluiten zijn verbatim verwerkt.
+
+**Maintainerbesluit A (dagprecisie):** "De dagprecisieclausule van WF-111
+is overgenomen als maintainerbesluit 2026-09-23 bij de merge van deze
+kaart. De dragende motivering is de latente splitsing die de lens mat: op
+de basis speelde een LEGE datum-tijdattribuutgrens in ref (matcht nooit,
+dynamisch vangnet) terwijl clingo hem statisch weigerde — ref ≠ clingo op
+een verifier-schoon document; WF-111's dagprecisie dicht die splitsing
+statisch voor alle uitvoerders." Die motivering staat nu in de
+WF-111-tekst, in ch. 3.10 en in het verifier-commentaar. De halve claim is
+gecorrigeerd.
+
+**Maintainerbesluit B (vouwfilter onder ALLE):** "OPEN, geen
+WF-112-verruiming: ref, clingo en de DRL-tak antwoorden consistent
+vacuüm-waar op een venster in een ALLE-vouwfilter in een tijdvrije sessie
+— geen onbenoemde complement-lezing, dus geen weigergrond; de exec-SKIP is
+de kanaalasymmetrie van kaart 20260923-drools-venster-vouwtoets."
+Vastgelegd als OPEN-rij in ch. 3.12.
+
+**B1, corpusclaims.** ch. 3.10 zegt niet langer dat de golden elke
+clausule pint. De rastergevallen zijn corpus-gepind, de snijclausule
+suite-gepind (ref `WV-3.10-clip-knipt-segment-houdt-waarde` en
+`WV-3.10-clip-dagtelling-31-gesneden-op-de-vijfde`, plus de
+clingo-`tl/5`-check). De ch. 3.12-rij is bijgewerkt, er is een OPEN-rij
+voor het schemabesluit, en open punt 1 en de rij-11-tekst zijn aangepast.
+
+**B2, de evaluatiedatum bij clingo.** Rood-eerst: de mutant "clingo poort
+de clip bij een gezette evaluatiedatum" liet golden én suite groen:
+
+    clingo: PASS (4 expectations)     case1
+    clingo: PASS (7 expectations)     case2
+    test_clingo: 484 checks, 0 failures
+
+Nieuwe `case3-evaluatiedatum-buiten-elk-venster` (de invoer van case1,
+asOfDate 2023-06-01, dezelfde verwachtingen, handberekening in de NOTE).
+Onder dezelfde mutant:
+
+    MISMATCH: P1.jaarpacht timeline = (empty), expected [20089,20454)=12
+    MISMATCH: P1.maandpacht timeline = (empty), expected [20148,20179)=1200 [20179,20209)=1200
+    MISMATCH: P1.zomerdagen timeline = (empty), expected [20270,20301)=31 [20301,20332)=31
+
+Teruggedraaid (cmp ok). Daarna: ref `oracle: PASS (4 expectations)`,
+clingo `clingo: PASS (4 expectations)`.
+
+**B3, de hekken van clingo buiten het venster.** Rood-eerst als suitecheck
+(`actief` ook in januari 2024, venster vanaf 2025-01-01, verwacht
+{2025: 12}):
+
+    ref:    pass
+    FAIL ch3.10 het pro-rata-hek geldt alleen binnen het venster: clingo pins the values (UNSATISFIABLE — a fail-fast guard fired)
+    test_clingo: 484 checks, 1 FAILURES
+
+Fix: `venster_overlap`. Het bucket overlapt het venster (`N > vanaf`,
+`B < tot`, met de grensatomen) en die voorwaarde staat nu op alle drie de
+viol-hekken van pro-rata en op het telhek van de dagtelling. Daarna
+`test_clingo: 484 checks, 0 failures`. De dagtelling had hetzelfde gat
+bij het telhek; dat is in dezelfde ingreep gedicht. Om de proef mogelijk
+te maken is het kenmerk van het testdocument `clip_doc` maand-granulair
+geworden: een januari-periode ligt niet op een jaarraster.
+
+**B4, een negatief per arm.** Vier nieuwe negatieven, elk rood-eerst
+(oude verifier `verifier: PASS`, nieuwe verifier FAIL op de eigen regel):
+`wf112-venster-in-geen-vouw` (de vouwarm; dit is het document dat de
+DRL-tak beantwoordde), `wf112-venster-in-alle-binnen-geen` (de diepe
+wandeling), `wf111-datumtijdgrens-attribuut` en
+`wf111-datumtijdgrens-literal` (de dagprecisie, beide armen van de
+clausule). De mutatieproeven zijn herhaald, gate 3 per mutant, elk
+teruggedraaid met cmp ok:
+
+    WF-111 vormarm uit        → FAIL wf111-datumtijdgrens-attribuut, wf111-datumtijdgrens-literal, wf111-periodegrens-parameterdatum passed the verifier
+    WF-111 dagprecisie uit    → FAIL wf111-datumtijdgrens-attribuut, wf111-datumtijdgrens-literal passed the verifier
+    WF-112 samenstelling uit  → FAIL wf112-periodevenster-tellende-kwantor, wf112-venster-in-alle-binnen-geen passed the verifier
+    WF-112 vouwarm uit        → FAIL wf112-venster-in-geen-vouw passed the verifier
+    WF-112 diepe wandeling uit→ FAIL wf112-venster-in-alle-binnen-geen passed the verifier
+
+**Adviezen.** (2) nulmeting gecorrigeerd, en de wf034-NOTE vermeldt de
+tweede regel (gemeld mandaat). (4) WF-042 noemt nu dat WF-111 ook de
+precisie vastlegt. (5) het rij-29-voorstel is vervallen, de rij-11-tekst
+is Nederlands. (6) het spec-voorbeeld "maanddagtelling 31 gesneden op de
+vijfde" is woordelijk een ref-suitecheck. (7) de vouwmeting is
+gepreciseerd.
+
+Tellingen na de fixronde: gate 3 negatief 433 → **437**; gate 2 en gate 3
+golden 276 (onveranderd, case3 voegt geen document toe); gate 4 635 →
+**636**; gate 5 WV 785 → **786**, cases 593 → **594**; gate 6 suite 482 →
+**484**, cases **594**; gate 7 557 → **558**; gate 8 ongewijzigd (42 rood, 84 fragmenten). Gate-12-kanaallijsten ongewijzigd, dus gate 12 is niet opnieuw gedraaid.
