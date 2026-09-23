@@ -66,7 +66,7 @@ root, `model`, `rules`, `ObjectType`, `Attribute`, `Characteristic`,
 that gate 2's round-trip and the byte-identical re-emission gates (9, 10, 11,
 14) prove one and the same form. A node carried over unchanged from v0 keeps
 the order its producer wrote, byte for byte until its own M step; measured
-2026-09-23, 23 of the 12748 node objects in `corpus/golden` and `corpus/rood`
+2026-09-23, 23 of the 12768 node objects in `corpus/golden` and `corpus/rood`
 deviate from their definition's `properties` order (kinds `Default`,
 `PrioritizedDefaults`, `Functie`, `Kwantorvouw`, `Let`). Gate 2 does not check
 key order: its round-trip preserves the order of the document it reads.
@@ -170,9 +170,15 @@ changes nothing.
 
 ## Gate: `../../scripts/check-ir-schema.sh`
 
-The repo's second CI gate. It performs three checks:
+The repo's second CI gate. It performs three checks, and two self-tests:
 
 1. **Metaschema** — the schema is itself a valid draft 2020-12 schema.
+   - **Self-tests** — what the schema refuses by itself has no corpus witness
+     (golden and rood must validate, negatief is not validated here), so it is
+     held against the schema directly, in both polarities: the date patterns
+     against a lexeme table, and the positions the M1 shape closes against one
+     small valid M1 document with one mutation per row. The rows that must
+     pass pin the three admissions above.
 2. **Validation** — every `corpus/golden/**/ir.json` validates against the
    schema. The file count is reported; an empty corpus passes and says so.
 3. **Round-trip** — each such file is parsed (preserving the original number

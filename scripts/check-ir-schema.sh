@@ -1,12 +1,14 @@
 #!/bin/sh
 # Gate 2: IR JSON schema (spec/schema/uchar-ir-v1.schema.json).
 #
-# Four checks:
+# Five checks:
 #   1. the schema is itself a valid draft 2020-12 schema (metaschema);
 #  1b. the schema's patterns are held against a fixed lexeme table, in both
 #      polarities, with no corpus document involved — without it, deleting a
 #      pattern is a silent green (measured 2026-09-11). A clamp fails when a
 #      pattern appears at a position the table does not carry;
+#  1c. the positions the M1 shape closes by schema alone are held the same way:
+#      one small valid M1 document, one mutation per row, in both polarities;
 #   2. every corpus/golden/**/ir.json validates against it;
 #   3. every such file round-trips: parsed with raw number lexemes preserved and
 #      re-emitted canonically, the output is byte-identical to the input (this is
@@ -190,6 +192,136 @@ if selftest_bad:
     sys.exit(1)
 n_selftest = 2 * len(BOUND_LEXEMES)
 
+# --- check 1c: the M1 shape self-test (card M1, 2026-09-23) -------------------------------------
+# M1 closes a set of positions by SCHEMA alone: the v0 root keys and format name, the two refused
+# severities, a facet without a grid or a count, an untagged characteristic, a self-name at a
+# domain's declaration position, a null name on a model-list declaration, a null where an optional
+# field is written whole or not at all, a v0 side-map on an ObjectType, a timeline name on a
+# characteristic's facet, an empty dimension list. As with the patterns, no corpus document can
+# witness such a refusal (golden and rood must validate; negatief is never validated here), so each
+# is held against the schema itself: one small valid M1 document, one mutation per row. The rows
+# that must PASS pin the deliberate admissions of spec/schema/README.md: where a value's refusal is
+# a verifier rule with its own negatief witness, the schema admits the value so that the witness
+# stays a document the schema admits.
+def _m1_base():
+    num = {"node": "Numeriek", "geheel": True, "decimalen": 0, "teken": "ONBEPAALD",
+           "eenheid": None}
+    return {
+        "format": "uchar-ir-v1",
+        "model": {
+            "objectTypes": [{
+                "node": "ObjectType", "name": "Jutter", "animate": True, "plural": "Jutters",
+                "attributes": [{
+                    "node": "Attribute", "name": "vondstwaarde", "datatype": dict(num),
+                    "timeline": {"node": "TimelineFacet", "granularity": "JAAR", "count": 1,
+                                 "timelineName": "penningjaar"}}],
+                "characteristics": [{
+                    "node": "Characteristic", "name": "aangemeld", "kind": "BIJVOEGLIJK",
+                    "timeline": {"node": "TimelineFacet", "granularity": "MAAND", "count": 1}}]}],
+            "factTypes": [],
+            "parameters": [{"node": "Parameter", "naam": "vondstdrempel", "datatype": dict(num),
+                            "granulariteit": None}],
+            "domains": [{"node": "Domain", "name": "Vondstsoort",
+                         "datatype": {"node": "Enumeratie", "waarden": ["hout", "touw"]}}],
+            "unitSystems": [],
+            "dimensions": [],
+            "timelines": [{"node": "Tijdlijn", "naam": "penningjaar", "variabelStartpunt": False,
+                           "granulariteit": "JAAR", "aantal": 1}],
+            "dayKinds": [],
+            "dagsoortPerEenheid": {},
+        },
+        "rules": {k: [] for k in schema["properties"]["rules"]["required"]},
+        "diagnostics": [{"node": "Diagnostic", "severity": "WARNING",
+                         "message": "beslistabel 'Vondstsoorten' heeft geen tabelinhoud "
+                                    "(alleen een kop)",
+                         "line": 3}],
+    }
+
+
+def _ot(d):
+    return d["model"]["objectTypes"][0]
+
+
+def _attr(d):
+    return _ot(d)["attributes"][0]
+
+
+def _char(d):
+    return _ot(d)["characteristics"][0]
+
+
+def _diag(d):
+    return d["diagnostics"][0]
+
+
+# (row, mutation of the base document, must the schema accept it, why this row is here)
+M1_SHAPE_ROWS = [
+    ("the base document", lambda d: None, True,
+     "the M1 shape itself, with a WARNING and a timeline name on an ATTRIBUTE's facet"),
+    ("TimelineFacet.count = 0", lambda d: _attr(d)["timeline"].update(count=0), True,
+     "count >= 1 is WF-005, a verifier check with its own negatief witness"),
+    ("Diagnostic.line = -1", lambda d: _diag(d).update(line=-1), True,
+     "line >= 0 is WF-113 (a), a verifier check with its own negatief witness"),
+    ("Attribute.datatype = null", lambda d: _attr(d).update(datatype=None), True,
+     "a datatype-less attribute is WF-059's, a verifier check with its own negatief witness"),
+    ("root carries 'regels'", lambda d: d.update(regels=[]), False,
+     "B3: the inert v0 stubs left the wire, as a key and as an empty list"),
+    ("root carries 'formaat'", lambda d: d.update(formaat="regelspraak-ir-v0"), False,
+     "the v0 format key: the root is {format, model, rules, diagnostics}"),
+    ("format = 'regelspraak-ir-v0'", lambda d: d.update(format="regelspraak-ir-v0"), False,
+     "B1: the format has one name"),
+    ("Diagnostic.severity = 'ERROR'", lambda d: _diag(d).update(severity="ERROR"), False,
+     "WF-113 (a): an ERROR means the producer refused to write the document"),
+    ("Diagnostic.severity = 'INFO'", lambda d: _diag(d).update(severity="INFO"), False,
+     "WF-113 (a): INFO is not a wire severity"),
+    ("Diagnostic.severity = null", lambda d: _diag(d).update(severity=None), False,
+     "WF-113 (a): WARNING is the one wire severity"),
+    ("attribute facet granularity = null",
+     lambda d: _attr(d)["timeline"].update(granularity=None), False,
+     "a facet without a grid cannot be written (WF-059 arms 2 and 3 left with the side-maps)"),
+    ("characteristic facet without granularity",
+     lambda d: _char(d)["timeline"].pop("granularity"), False,
+     "a facet without a grid cannot be written, absent or null"),
+    ("attribute facet without count", lambda d: _attr(d)["timeline"].pop("count"), False,
+     "count is always written; a single-period facet writes 1"),
+    ("Characteristic without kind", lambda d: _char(d).pop("kind"), False,
+     "kind is always written; an untagged v0 characteristic migrates as ZELFSTANDIG"),
+    ("Domain's Enumeratie carries 'domein'",
+     lambda d: d["model"]["domains"][0]["datatype"].update(domein="Vondstsoort"), False,
+     "B2: at the declaration position the Domain wrapper's name is the one spelling"),
+    ("Parameter.naam = null", lambda d: d["model"]["parameters"][0].update(naam=None), False,
+     "B2: with the map key gone, naam is the declaration's only name"),
+    ("ObjectType.plural = null", lambda d: _ot(d).update(plural=None), False,
+     "absent is the one spelling of 'no plural declared'"),
+    ("Attribute.plural = null", lambda d: _attr(d).update(plural=None), False,
+     "absent is the one spelling of 'no plural declared'"),
+    ("ObjectType.supertype = null", lambda d: _ot(d).update(supertype=None), False,
+     "an extension field is written whole or not at all"),
+    ("ObjectType carries the v0 side-map 'attribuutMeervoud'",
+     lambda d: _ot(d).update(attribuutMeervoud={}), False,
+     "B5: the eight side-maps are member facets, so a facet without a member cannot be written"),
+    ("characteristic facet carries timelineName",
+     lambda d: _char(d)["timeline"].update(timelineName="penningjaar"), False,
+     "v0 recorded no timeline name for a characteristic, and M1 keeps the position closed"),
+    ("Attribute.dimensions = []", lambda d: _attr(d).update(dimensions=[]), False,
+     "absent is the one spelling of a scalar attribute (WF-004)"),
+]
+
+shape_bad = 0
+for row, mutate, want_ok, why in M1_SHAPE_ROWS:
+    probe = _m1_base()
+    mutate(probe)
+    got_ok = not list(validator.iter_errors(probe))
+    if got_ok != want_ok:
+        shape_bad += 1
+        sys.stderr.write("FAIL: shape self-test, %s: schema %s it, expected %s\n  %s\n"
+                         % (row, "accepts" if got_ok else "refuses",
+                            "accept" if want_ok else "refuse", why))
+if shape_bad:
+    sys.stderr.write("check-ir-schema: FAIL (%d shape self-test row(s) bad)\n" % shape_bad)
+    sys.exit(1)
+n_shape = len(M1_SHAPE_ROWS)
+
 
 # NOTE: gate 9 (scripts/check-catala.sh) executes the slice of this
 # script from the RawNum class definition up to the roundtrip
@@ -316,11 +448,11 @@ if mode == "corpus" and n < floor:
 
 # Only reachable while no floor is pinned yet (floor 0) — the genuinely empty corpus.
 if mode == "corpus" and n == 0:
-    print("check-ir-schema: schema valid; %d pattern self-test row(s); "
-          "0 corpus files (corpus not yet populated)" % n_selftest)
+    print("check-ir-schema: schema valid; %d pattern self-test row(s); %d shape self-test "
+          "row(s); 0 corpus files (corpus not yet populated)" % (n_selftest, n_shape))
     sys.exit(0)
 
-print("check-ir-schema: PASS (schema valid; %d pattern self-test row(s); "
-      "%d file(s) validate and round-trip, floor %d)" % (n_selftest, n, floor))
+print("check-ir-schema: PASS (schema valid; %d pattern self-test row(s); %d shape self-test "
+      "row(s); %d file(s) validate and round-trip, floor %d)" % (n_selftest, n_shape, n, floor))
 sys.exit(0)
 PY
