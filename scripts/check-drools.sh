@@ -901,21 +901,25 @@ DRL_CHANNEL=(
   "synth3-vangstsom|EXCLUDE|loader Refusal: Datatype:ListType"
   "synth3-vondststaat|EXCLUDE|loader Refusal: Datatype:StructType"
   # (C) DrlTranspiler MARKERs — 10, this branch's own per-form refusals, each naming the rule it
-  # could not lower. 11 -> 10 (2026-09-23, card drools-temporele-naamnorm): jutterswet-seinjaar
-  # plays, see EXPECTED_DRL_PLAYED. 12 -> 10 (2026-09-23, card drl-creatie-koppelloos): the two objectcreatie
-  # markers are gone, see EXPECTED_DRL_PLAYED. 10 -> 11 the same day (card
-  # tijdvenster-conditie-normeren): jutterswet-pachtvenster, the ch. 3.10 clip on a temporal target,
-  # a NEW golden refused in both branches by name, so neither played count moves.
+  # could not lower. The count's history, oldest first:
+  # Recounted 2026-09-20 (card drools-enumlabel-lezer) against the exec sweep, and the class header
+  # was carrying 12 over a list of 13: the v8-enum-emitter addition had not been counted. It went
+  # 11 -> 12 the same day (card datum-setbron-breuk): jutterswet-vondstbereik, the
+  # MINIMUM/MAXIMUM fold over a DATE set source, which this branch used to emit as DRL text that did
+  # not compile — a whole-file refusal naming no form — and now markers by name out of the shared
+  # reason.
   # Recounted 2026-09-23 (card drl-periode-zink): the list held 11 under a header of
   # 12, because anchor/jutterswet-bergingstoezicht (the unresolved verdeling) left it at 156 -> 157
   # and the header did not follow; jutterswet-seinjaar, a NEW golden refused in both branches by one
-  # sentence, makes it 12 again and moves neither played count. Recounted 2026-09-20 (card
-  # drools-enumlabel-lezer) against the exec sweep, and the class header was carrying 12 over a list
-  # of 13: the v8-enum-emitter addition had not been counted. It went 11 -> 12 the same day (card
-  # datum-setbron-breuk): jutterswet-vondstbereik, the
-  # MINIMUM/MAXIMUM fold over a DATE set source, which this branch used to emit as DRL text that did
-  # not compile — a whole-file refusal naming no form — and now markers by name out of the shared
-  # reason. NINE of the ten are goldens the exec branch refuses too, on its own wording of the
+  # sentence, makes it 12 again and moves neither played count.
+  # 12 -> 10 (2026-09-23, card drl-creatie-koppelloos): the two objectcreatie markers are gone, see
+  # EXPECTED_DRL_PLAYED.
+  # 10 -> 11 the same day (card tijdvenster-conditie-normeren): jutterswet-pachtvenster, the ch. 3.10
+  # clip on a temporal target, a NEW golden refused in both branches by name, so neither played count
+  # moves.
+  # 11 -> 10 the same day (card drools-temporele-naamnorm): jutterswet-seinjaar plays, see
+  # EXPECTED_DRL_PLAYED.
+  # NINE of the ten are goldens the exec branch refuses too, on its own wording of the
   # same limit (the many-to-many bean field, the
   # consistency rule, the EERSTE fold over a set, the date-valued value fold, the §8.4.3 clip on a
   # temporal target, and the out-of-scope condition — jutterswet-klipwacht, shared, not split).
