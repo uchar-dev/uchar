@@ -335,18 +335,28 @@ fi
 
 # --- the Drools leg (decision V3-b, 2026-08-27) -----------------------------------------------
 # The Drools backend CONSUMES the uchar IR (loads ir.json off the wire). For each rood case it
-# either observes a genuine runtime fault AT FIRE — the FAULT this leg pins, its
-# `expectedFault.drools` fragment in the report — or it does not carry the red-path form (an
-# EXCLUDE from the loader/transpiler, or a NOFAULT where the backend does not enforce the
-# constraint and runs to a model). A carried form pins a fragment; a not-carried form is listed
-# below with a reason. The exclusion list is stale-guarded: a listed case that now FAULTS, or is
-# gone, fails the gate; a case that is neither pinned nor listed fails the gate (completeness).
-# FAULT reaches one step before fire, measured 2026-09-23 (asofdate-kalender): the red run reads
-# the case inside the same guard as fire, so a HARD refusal while it reads — a date lexeme that
-# names no day — reports FAULT too. The backend treats such a lexeme as a document defect, never
-# as a form it does not carry, and its sentence names position and lexeme, so the leg pins it like
-# any other. Read "a genuine fault at fire" in the reasons below as that class: what the backend
-# raises against the case itself, as opposed to an EXCLUDE, a form it does not carry.
+# either reports a FAULT — the report this leg matches the case's `expectedFault.drools` fragment
+# against — or it does not carry the red-path form (an EXCLUDE from the loader/transpiler, or a
+# NOFAULT where the backend does not enforce the constraint and runs to a model). A carried form
+# pins a fragment; a not-carried form is listed below with a reason. The exclusion list is
+# stale-guarded: a listed case that now FAULTS, or is gone, fails the gate; a case that is neither
+# pinned nor listed fails the gate (completeness).
+#
+# HOW THE RED RUN CLASSIFIES: by exception TYPE, never by phase, and so since the leg landed
+# (e1f779aa, 2026-08-27). A loader refusal, or an `Excluded` from the build or from the case
+# reader, is EXCLUDE; an I/O failure, or any other exception while the IR is loaded and the
+# KieBase built, is ERROR; ANY other runtime exception after the build is FAULT — at fire, and
+# equally while the case is read, a crash included. So FAULT does not separate a fault at fire
+# from a refusal of the case, and a case defect lands on either side: measured 2026-09-23 on the
+# vensterheffing document, an undeclared attribute and a role link to an unknown label are
+# EXCLUDEs, while meldwaarde written as {"boolean": true} gives "FAULT IllegalArgumentException:
+# argument type mismatch" and an undeclared characteristic gives "FAULT RuntimeException: kon
+# setter setVerzonnen(boolean) niet aanroepen …". Hence the PIN RULE: a `drools` fragment cites
+# the backend's OWN sentence, one that names position and lexeme (asofdate-kalender: "malformed
+# date '2026-02-30' on 'asOfDate': the field widths are right but the calendar is not"), and never
+# platform text — a JDK exception message, or the parse message the backend appends in
+# parentheses. A pin on platform text pins a crash: this leg accepted a trial red case pinned on
+# "argument type mismatch" (lens, 2026-09-23). The rule is a review rule; nothing below checks it.
 #
 # Conditional on a JDK + python3 (gate-9 pattern for the RUNNER: skip loudly where java is
 # absent; the ref/clingo legs above remain the CI blocker). WITHIN the leg, mvn is a hard
@@ -445,8 +455,10 @@ EOF
             frag=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("expectedFault",{}).get("drools",""))' "$case")
             reason=$(awk -F'|' -v n="$name" '$1==n {i=index($0,"|"); print substr($0,i+1); exit}' "$excl")
             # DroolsRoodMain prints exactly one status line (FAULT|NOFAULT|EXCLUDE|ERROR <detail>) last on
-            # stdout; the leg classifies on that STATUS TOKEN, never the bare exit code, so an ERROR (a backend
-            # crash) can never be swallowed as a not-carried outcome and a listed reason's category is checked.
+            # stdout; the leg classifies on that STATUS TOKEN, never the bare exit code, so an ERROR (an I/O
+            # failure, or a crash while the IR is loaded and the KieBase built) can never be swallowed as a
+            # not-carried outcome and a listed reason's category is checked. A crash AFTER the build is a FAULT
+            # (head of this leg): a listed case that shows one fails as stale, and a pin may not match it.
             out=$(java -cp "$JAR" "$MAIN" "$ir" "$case" 2>/dev/null | tail -1)
             tok=${out%% *}
             if [ -n "$frag" ]; then
@@ -454,9 +466,9 @@ EOF
                     echo "FAIL: $name carries a drools fragment AND sits in the Drools exclusion list — drop the static entry" >&2
                     status=1
                 fi
-                # a carried case MUST be a genuine FAULT (at fire, or a hard refusal while the case is read — see
-                # the head of this leg) whose report contains the pinned fragment; any other token (NOFAULT /
-                # EXCLUDE / a crash ERROR) is a regression, never a pass.
+                # a carried case MUST be a FAULT whose report contains the pinned fragment, the backend's own
+                # sentence and never platform text (head of this leg); any other token (NOFAULT / EXCLUDE /
+                # ERROR) is a regression, never a pass.
                 case "$tok" in
                     FAULT)
                         case "$out" in
