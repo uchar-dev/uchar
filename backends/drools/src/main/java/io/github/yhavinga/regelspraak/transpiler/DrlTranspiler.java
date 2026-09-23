@@ -1599,7 +1599,8 @@ public final class DrlTranspiler {
         Objecttype anker = fc.anker(), doel = fc.doel();
         // §13.4.7 `naam` is the FIFTH wire-nullable position of this construct — ["string","null"] AND required,
         // like the four below — and NO well-formedness rule covers it: WF-034 gates zetVeld, joinVeld and the
-        // tussenstappen, and WF-094 clause (d) gates the five KEYED tables, while feitCreaties is a LIST.
+        // tussenstappen, and WF-094 clause (d) gated the five KEYED tables (until M1, which made them lists whose
+        // naam the schema holds non-null), while feitCreaties is a LIST.
         // Measured 2026-09-11 on jutterswet-postwacht with naam null: verifier PASS, ref PASS (10 expectations),
         // clingo PASS (10), exec PLAYED — it hands the null straight to the rule header and the creation still
         // fires (the case OBSERVES it: V1.vakseinaantal counts the created relation, 2, and a 2->99 probe fails
