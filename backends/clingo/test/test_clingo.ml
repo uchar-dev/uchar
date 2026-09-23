@@ -10571,6 +10571,85 @@ let () =
     ~needle:
       {|parameter "p" is unbound in this case, and whether the composite condition "c" reads it depends on the order of the members a creation adds|}
 
+(* FIXRONDE 7, README [L2] for the forms ch. 6.1 reads strictly (the lens of
+   round 6, its probes P6a, P11 and P13). A form with irrevocable writes
+   stands strictly above what produces its reads (ch. 6.1), and ref checks a
+   consistency only at the fixpoint of its stratum, so ref has no pass before
+   the creation there and plays. The short circuit is tr-of-1's, TEN MINSTE 1
+   [TEN MINSTE 1 schuiten [lengte > 5], p > 0], with one schuit of 8 created
+   for each Werf: as the condition of a creation that makes a rapport for
+   each Werf, written before the schuit's (P6a); as a consistency assertion
+   (P11); and as the condition of a characteristic assignment (P13). The
+   translator counts the pass before the creation and refuses in the named
+   sentence *)
+let () =
+  let n0 = pf_n0 in
+  let lit v = pf_l ~typ:n0 v in
+  let werf = pf_ot ~naam:"Werf" ~meervoud:"Werven" ~kenmerken:[ "goed" ] [ ("keur", n0) ]
+  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" [ ("lengte", n0) ]
+  and rapport = pf_ot ~naam:"Rapport" ~meervoud:"Rapporten" [ ("bedrag", n0) ] in
+  let feittypen =
+    {|{ "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
+      { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] },
+      { "node": "Feittype", "naam": "keuring", "wederkerig": false, "rollen": [
+      { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "rapport", "objecttypeNaam": "Rapport", "meervoud": null, "meervoudig": false } ] }|}
+  in
+  let fold =
+    Printf.sprintf
+      {|{ "node": "Kwantorvouw", "kwantor": "TEN_MINSTE", "drempel": 1, "elementObjecttype": "Schuit",
+        "filter": null, "toets": %s, "bron": "de schuiten",
+        "bronRol": { "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" } }|}
+      (pf_cmp "GROTER" (pf_a ~ot:"Schuit" ~typ:n0 "lengte") (lit "5"))
+  in
+  let of_ = pf_comp ~drempel:1 "TEN_MINSTE" [ fold; pf_cmp "GROTER" (pf_p ~typ:n0 "p") (lit "0") ] in
+  let maak ~naam ~nieuw ~attr ~waarde ~voorwaarde rol =
+    Printf.sprintf
+      {|{ "node": "ResolvedObjectCreatie", "naam": "%s", "nieuwType": "%s", "subject": "Werf",
+          "toekenningen": [ { "node": "Toekenning", "attribuut": "%s", "waarde": %s, "kenmerk": false } ],
+          "voorwaarde": %s, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null },
+          "verbindendeRol": { "node": "RolBinding", "feittype": "%s", "rol": "%s" } }|}
+      naam nieuw attr (lit waarde) voorwaarde (fst rol) (snd rol)
+  in
+  let acht = maak ~naam:"maak schuit" ~nieuw:"Schuit" ~attr:"lengte" ~waarde:"8" ~voorwaarde:"null" ("ligplaats", "schuit") in
+  let doc ?(regels = []) ?(consistenties = []) creaties =
+    pf_doc ~objecttypen:[ werf; schuit; rapport ] ~feittypen ~parameters:[ pf_decl ~typ:n0 "p" ] ~regels
+      ~consistenties ~creaties ()
+  in
+  let w1 rows =
+    pf_case
+      ~instances:[ {|{ "label": "W1", "objectType": "Werf", "attributes": {}, "roles": {}, "characteristics": [] }|} ]
+      rows
+  in
+  let needle =
+    {|parameter "p" is unbound in this case, and whether the composite condition "c" reads it depends on the order of the members a creation adds|}
+  in
+  pinned_loud ~entry:"L2" ~name:"the condition of a creation stands strictly above the schuit's creation (P6a)"
+    ~ir:
+      (doc
+         [ maak ~naam:"maak rapport" ~nieuw:"Rapport" ~attr:"bedrag" ~waarde:"5" ~voorwaarde:of_
+             ("keuring", "rapport");
+           acht ])
+    ~case_text:(w1 [ pf_cons ]) ~needle;
+  let assertie =
+    Printf.sprintf
+      {|{ "node": "ResolvedConsistentie", "naam": "keurcheck", "subject": "Werf", "assertie": %s,
+          "bron": "keurcheck", "line": 1, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }|}
+      of_
+  in
+  pinned_loud ~entry:"L2" ~name:"a consistency assertion is checked at the fixpoint of its stratum (P11)"
+    ~ir:(doc ~consistenties:[ assertie ] [ acht ]) ~case_text:(w1 [ pf_cons ]) ~needle;
+  let booleaan = {|{ "node": "Booleaan" }|} in
+  let goed =
+    pf_regel ~ot:"Werf" ~doel:"goed" ~typ:booleaan ~soort:"KENMERKTOEKENNING" ~voorwaarde:of_
+      (pf_l ~typ:booleaan "waar")
+  in
+  pinned_loud ~entry:"L2" ~name:"a characteristic assignment stands strictly above the schuit's creation (P13)"
+    ~ir:(doc ~regels:[ goed ] [ acht ])
+    ~case_text:(w1 [ {|{ "kind": "characteristicPresent", "label": "W1", "characteristic": "goed" }|}; pf_cons ])
+    ~needle
+
 (* FIXRONDE 5, lens point 3 (README [N4]): each fold's range gets an order
    model of its own, also where two folds range over the same list, so an
    order-dependent atom of one fold and one of the other can each hold in an

@@ -76,22 +76,27 @@ spec bug.
   - Loud, a refusal where ref plays. [L1] The day-kind table and the
     §7.1 horizon fence read their parameter at translation and refuse
     there, also behind a rule condition that fails, where ref never
-    reads it. [L2] A Let barrier that only a created member raises,
-    or a short circuit that only a created member settles, counts the
-    pass before the creation also where ref has no such pass for the
-    read: in a rule that ch. 6.3 puts above that creation, or at a
-    member ref makes only after the members that settle its short
-    circuit; the translator knows neither the strata nor the order of
-    ref's passes. `Let k = restpost in (som(lengte van schuiten die
-    k > 0) plus p)` under the condition `ALLE schuiten [lengte > 0]`,
-    with one schuit of 8 created for each Werf and restpost leeg: ref
-    answers leeg, clingo refuses in the named sentence; the same
-    condition before `TEN MINSTE 1 [TEN MINSTE 1 schuiten [lengte > 5],
-    p > 0]` likewise. And a rapport made for each Werf once it has a
-    schuit of more than 5, with `keur = 99 indien TEN MINSTE 1 [TEN
-    MINSTE 1 schuiten van zijn werf [lengte > 5], p > 0]`: ref makes
-    the rapport after the schuit and never reads p, clingo refuses in
-    the named sentence.
+    reads it. [L2] A Let barrier that only a created member raises, or a
+    short circuit that only a created member settles, counts the pass
+    before the creation also where ref has no such pass for the read: in a
+    form that ch. 6.1/6.3 puts above that creation (a rule, the condition
+    of a creation or fact creation, a consistency assertion), or at a
+    member ref makes only after the members that settle its short circuit;
+    the translator knows neither the strata nor the order of ref's passes.
+    `Let k = restpost in (som(lengte van schuiten die k > 0) plus p)`
+    under the condition `ALLE schuiten [lengte > 0]`, with one schuit of 8
+    created for each Werf and restpost leeg: ref answers leeg, clingo
+    refuses in the named sentence; the same condition before `TEN MINSTE 1
+    [TEN MINSTE 1 schuiten [lengte > 5], p > 0]` likewise. Ch. 6.1 puts a
+    form with irrevocable writes strictly above what produces its reads,
+    and ref checks a consistency only at the fixpoint of its stratum, so
+    that same short circuit refuses in the named sentence where ref plays
+    also as the condition of a creation, as a consistency assertion and as
+    the condition of a characteristic assignment. And a rapport made for
+    each Werf once it has a schuit of more than 5, with `keur = 99 indien
+    TEN MINSTE 1 [TEN MINSTE 1 schuiten van zijn werf [lengte > 5], p >
+    0]`: ref makes the rapport after the schuit and never reads p, clingo
+    refuses in the named sentence.
   - Silent, an answer where ref faults. [S1] The Let lowering keeps a
     value behind an enclosing need on a path that does not read it, and
     the guard follows the lowering: `Let k = restpost in Let bel = (als

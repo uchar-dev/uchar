@@ -878,9 +878,11 @@ let unbound_param_order_reason name what =
    horizon fence read in translation and refuse there, reached or not (README
    [L1]); and a Let barrier that only a created member raises, or a short
    circuit that only a created member settles, counts the pass before the
-   creation also where ref has no such pass for the read: ch. 6.3 puts the
-   rule above the creation, or ref makes the read's own member only after the
-   members that settle it ([emit_barriers], [pre_sensitive], README [L2]).
+   creation also where ref has no such pass for the read: ch. 6.1/6.3 puts the
+   form above the creation (a rule, the condition of a creation or fact
+   creation, a consistency assertion), or ref makes the read's own member only
+   after the members that settle it ([emit_barriers], [pre_sensitive], README
+   [L2]).
    Silent: the Let lowering keeps a value behind an enclosing need on a path
    that does not read it, and the guard follows the lowering ([reach_at],
    README [S1]); and the guard is read at the fixpoint, so a read ref reaches
