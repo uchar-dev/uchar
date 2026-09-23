@@ -649,6 +649,22 @@ class NietInUitzonderingTest {
         assertEquals(zinsregel, m.diagnostics.get(0).line());
     }
 
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "Een Jutter heeft recht op de penning | Een Jutter heeft niet recht op de penning | recht op de penning",
+            "Een Jutter is uitgesloten            | Een Jutter is geen uitgesloten           | uitgesloten"
+    })
+    void het_negatiewoord_wordt_zoals_in_een_voorwaarde_niet_tegen_de_soort_getoetst(String basis, String uitzondering,
+                                                                                   String kenmerk) {
+        // The Tabel 16 lint checks the VERB against the kind, not niet versus geen — in a condition as in a result.
+        // Both spellings lower to 'onwaar' without a message, as 'hij heeft niet …' and 'hij is geen …' do in a
+        // condition.
+        RegelSpraakModel m = Resolver.resolve(familie(basis, uitzondering));
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        assertEquals(kenmerk, m.prioritizedDefaults.get(0).kenmerk());
+        assertEquals(List.of(Boolean.FALSE, Boolean.TRUE), besluiten(m.prioritizedDefaults.get(0)));
+    }
+
     // -------------------------------------------------------------------- the scenario layer parses the blocks
 
     @Test void een_testdocument_aanvaardt_de_uitzonderingsvormen() {
