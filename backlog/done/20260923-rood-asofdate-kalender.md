@@ -56,6 +56,27 @@ onder).
 
 ### Waarom 2026-02-30
 
+Het sterkste argument (lensadvies, fixronde 2): alleen dit lexeem pint
+de maandlengtetabel. Vóór 6ff39603 antwoordde de oude lader ook op
+`2026-13-01` stil (gemeten op een variant van dit document: oud ref en
+oud clingo `PASS (3 expectations)` met beide velden leeg). Een mutant
+van de gedeelde datumlezer die de dag tegen 31 toetst in plaats van
+tegen de maandlengte, laat `2026-02-30` door en weigert `2026-13-01`
+nog steeds:
+
+```
+== mutant E1, asofdate-kalender (2026-02-30)
+EXPECTED FAULT DID NOT OCCUR: evaluation succeeded
+EXPECTED FAULT DID NOT OCCUR: clingo found a model
+== mutant E1, variant 2026-13-01
+oracle: expected fault observed at load (asOfDate "2026-13-01" is not the uchar-case-v0 date lexeme yyyy-mm-dd (month out of range in date lexeme "2026-13-01"))
+clingo: expected fault observed at load (asOfDate "2026-13-01" is not the uchar-case-v0 date lexeme yyyy-mm-dd (month out of range in date lexeme "2026-13-01"))
+```
+
+De maandgrens en de schrikkelregel pint dit document niet; die staan
+alleen in de ref-suite (`WV-3.10-caselader-weigert-maand-13-asofdate`,
+`WV-3.10-caselader-weigert-29-februari-asofdate`).
+
 Februari heeft in geen enkel jaar een dertigste dag, dus de
 handcontrole heeft geen schrikkeljaarregel nodig. Als string ligt het
 lexeem tussen 2026-02-28 en 2026-03-01, dus een lezer die de string
@@ -92,7 +113,8 @@ clingo: expected fault observed at load (asOfDate "2026-02-30" is not the uchar-
 ```
 
 De pin voor ref en clingo is de volle laderzin, met de eigen reden van
-de lezer, want die reden is de kalenderhelft. Het is één lezer die twee
+de lezer, want die reden ("day out of range") is de maandlengtetoets
+waarvoor dit document er is. Het is één lezer die twee
 keer gezien wordt: een regressiehek, geen differentiaal. `ref
 --bodemzin`: `PINS 2`, geen HIT. Afgestemd met de parallelle
 caselabel-kaart (alleen gelezen, niets aangeraakt): die veralgemeent
@@ -246,13 +268,17 @@ vegen alleen `corpus/golden`, dus de pins bewogen niet.
 refuses a non-date `asOfDate` at load; witnessed in both suites with a
 mutation per position;" invoegen:
 
-"the calendar half of that load refusal is pinned corpus-wide since card
-`rood-asofdate-kalender` (2026-09-23) by red case
+"the month-length check of that load refusal is pinned corpus-wide since
+card `rood-asofdate-kalender` (2026-09-23) by red case
 `corpus/rood/asofdate-kalender` (the vensterheffing document, asOfDate
 `2026-02-30`, which the case-schema pattern admits): ref and the ASP
 backend refuse it at load, and the Drools red runner refuses it with its
-own sentence; before 2026-09-23 ref and the ASP backend answered the 2026
-window in silence (vensterheffing 125, overgangsheffing leeg);"
+own sentence; a reader that checks the day against 31 instead of the
+length of its month admits the lexeme and fails the case (measured),
+while the month range and the leap rule stay pinned in ref's suite
+alone; before 6ff39603 (card `ref-geldigheid-datumlezing`) ref and the
+ASP backend answered the 2026 window in silence (vensterheffing 125,
+overgangsheffing leeg);"
 
 ### Open punten
 

@@ -24,8 +24,20 @@ It checks the field widths and not the calendar. Measured against the
 schema with the validator gate 4 uses: a day-first `30-02-2026`, a
 short `2026-2-3` and a signed `+02026-02-28` are rejected, while
 `2026-13-01`, `2026-00-10`, `2026-04-31`, `2025-02-29` and `2026-02-30`
-are all admitted. This case takes `2026-02-30`, for three reasons.
+are all admitted. This case takes `2026-02-30`, for four reasons.
 
+- It is the lexeme that pins the month-length table. Before 6ff39603
+  (card ref-geldigheid-datumlezing) the shared reader answered
+  `2026-13-01` in silence as well, so either lexeme would have been red
+  first. But a reader that checks the day against 31 instead of against
+  the length of its month still refuses `2026-13-01` and admits
+  `2026-02-30`. Measured on that mutant (`d > 31` for
+  `d > days_in_month` in the shared date reader): on this document `ref`
+  reported `EXPECTED FAULT DID NOT OCCUR: evaluation succeeded` and the
+  ASP runner `EXPECTED FAULT DID NOT OCCUR: clingo found a model`, while
+  a `2026-13-01` variant was still refused at load in both. What this
+  case does not pin is the month range and the leap rule; `ref`'s own
+  suite pins those (`2026-13-01`, `2025-02-29`).
 - February has no 30th day in any year, so the hand check needs no
   leap-year rule.
 - As a string the lexeme sorts between 2026-02-28 and 2026-03-01. A
@@ -44,10 +56,10 @@ are all admitted. This case takes `2026-02-30`, for three reasons.
   and refuses a lexeme that names no day: `CASE ERROR: asOfDate
   "2026-02-30" is not the uchar-case-v0 date lexeme yyyy-mm-dd (day out
   of range in date lexeme "2026-02-30")`. Both pins are that whole
-  sentence, including the reader's own reason, because the reason is the
-  calendar half this case exists for. As with every load fault in this
-  zone, the two pins are one reader seen twice: a regression fence, not
-  a differential.
+  sentence, including the reader's own reason, because that reason, "day
+  out of range", is the month-length check this case exists for. As
+  with every load fault in this zone, the two pins are one reader seen
+  twice: a regression fence, not a differential.
 - The Drools backend reads `asOfDate` with its own strict reader and
   refuses it: `malformed date '2026-02-30' on 'asOfDate': the field
   widths are right but the calendar is not`, followed by the Java
