@@ -552,43 +552,41 @@ class CompanionPadWitnessTest {
     }
 
     /** The one Jutter every model here uses, carrying every attribute any flank reads. */
-    private static final String ATTRIBUTEN =
-            ("\"a\":%s,\"inkomen\":%s,\"deler\":%s,\"tweede\":%s,\"leegding\":%s,\"saldo\":%s,\"nul\":%s,"
-                    + "\"kindertal\":%s,\"uit\":%s,\"toeslag\":%s")
-                    .formatted(pos(2), pos(2), pos(2), pos(2), pos(2), num(2), pos(2), GEHEEL_POS, num(4), num(4));
+    private static final String ATTRIBUTEN = String.join(",", attribuut("a", pos(2)), attribuut("inkomen", pos(2)),
+            attribuut("deler", pos(2)), attribuut("tweede", pos(2)), attribuut("leegding", pos(2)),
+            attribuut("saldo", num(2)), attribuut("nul", pos(2)), attribuut("kindertal", GEHEEL_POS),
+            attribuut("uit", num(4)), attribuut("toeslag", num(4)));
+
+    private static String attribuut(String naam, String datatype) {
+        return "{\"node\":\"Attribute\",\"name\":\"%s\",\"datatype\":%s}".formatted(naam, datatype);
+    }
 
     /** A one-objecttype document over {@code Jutter}; {@code parameters} and {@code prioritizedDefaults} are
      *  spliced verbatim (empty for the plain shapes). */
-    private static String model(String[] regelNamen, String[] regels, String parameters, String prioritizedDefaults) {
-        StringBuilder namen = new StringBuilder();
-        for (String n : regelNamen) {
-            if (namen.length() > 0) namen.append(',');
-            namen.append("{\"node\":\"Regel\",\"naam\":\"%s\",\"soort\":\"regel\"}".formatted(n));
-        }
-        return ("{\"formaat\":\"regelspraak-ir-v0\","
-                + "\"objecttypen\":{\"Jutter\":{\"node\":\"Objecttype\",\"naam\":\"Jutter\",\"attributen\":{%s},"
-                + "\"attribuutMeervoud\":{},\"attribuutDimensies\":{},\"attribuutGranulariteit\":{},"
-                + "\"attribuutTijdlijnAantal\":{},\"attribuutTijdlijnNaam\":{},\"kenmerken\":[],\"kenmerkSoorten\":{},"
-                + "\"kenmerkGranulariteit\":{},\"kenmerkTijdlijnAantal\":{},\"bezield\":true,\"meervoud\":\"Jutters\"}},"
-                + "\"domeinen\":{},\"parameters\":{%s},\"eenheidstelsels\":{},\"feittypen\":{},\"dimensies\":{},"
-                + "\"tijdlijnen\":[],\"dagsoorten\":[],\"dagsoortPerEenheid\":{},\"regels\":[%s],\"resolvedRegels\":[%s],"
+    private static String model(String[] regels, String parameters, String prioritizedDefaults) {
+        return ("{\"format\":\"uchar-ir-v1\",\"model\":{"
+                + "\"objectTypes\":[{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\","
+                + "\"attributes\":[%s],\"characteristics\":[]}],"
+                + "\"factTypes\":[],\"parameters\":[%s],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],"
+                + "\"timelines\":[],\"dayKinds\":[],\"dagsoortPerEenheid\":{}},"
+                + "\"rules\":{\"resolvedRegels\":[%s],"
                 + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
                 + "\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
-                + "\"regelGroepen\":[],\"diagnostics\":[]%s}")
-                .formatted(ATTRIBUTEN, parameters, namen, String.join(",", regels), prioritizedDefaults);
+                + "\"regelGroepen\":[]%s},\"diagnostics\":[]}")
+                .formatted(ATTRIBUTEN, parameters, String.join(",", regels), prioritizedDefaults);
     }
 
     /** {@link #model} with the kenmerk {@code vermist} declared (BIJVOEGLIJK) — the §9.2 forcing idiom of (r). */
-    private static String modelK(String[] regelNamen, String[] regels) {
-        return model(regelNamen, regels, "", "")
-                .replace("\"kenmerken\":[],\"kenmerkSoorten\":{}", "\"kenmerken\":[\"vermist\"],\"kenmerkSoorten\":{\"vermist\":\"BIJVOEGLIJK\"}");
+    private static String modelK(String[] regels) {
+        return model(regels, "", "")
+                .replace("\"characteristics\":[]",
+                        "\"characteristics\":[{\"node\":\"Characteristic\",\"name\":\"vermist\",\"kind\":\"BIJVOEGLIJK\"}]");
     }
 
     /** "uit van een jutter" over the given value. */
     private static String uitModel(String waarde) { return uitModel(waarde, ""); }
     private static String uitModel(String waarde, String parameters) {
-        return model(new String[]{"uit van een jutter"},
-                new String[]{regel("uit van een jutter", attr("uit", num(4)), waarde)}, parameters, "");
+        return model(new String[]{regel("uit van een jutter", attr("uit", num(4)), waarde)}, parameters, "");
     }
 
     // ---------------- the models (each ref-replayed before its values were pinned) ----------------
@@ -722,8 +720,7 @@ class CompanionPadWitnessTest {
         String body = tak
                 ? ite(verg("GROTER", bref("d", pos(2)), lit("1", GEHEEL_POS)), DELING, ZEVEN, num(4))
                 : binair("PLUS", bref("d", pos(2)), DELING, num(4));
-        return modelK(new String[]{"vermissing van een jutter", "deler van een jutter", "uit van een jutter"},
-                new String[]{
+        return modelK(new String[]{
                         regel("vermissing van een jutter", "KENMERKTOEKENNING", vermistDoel, waar,
                                 verg("GROTER", attr("inkomen"), lit("999999.00", pos(2)))),
                         regel("deler van een jutter", "BEREKENING", attr("deler"), lit("2.00", pos(2)), nietVermist),
@@ -755,7 +752,7 @@ class CompanionPadWitnessTest {
     private static String parameterModel() {
         String body = binair("PLUS", DELING, param("grondslag", GEHEEL_POS), num(4));
         return uitModel(let("d", attr("deler"), body, num(4)),
-                "\"grondslag\":{\"node\":\"Parameter\",\"naam\":\"grondslag\",\"datatype\":%s,\"granulariteit\":null}"
+                "{\"node\":\"Parameter\",\"naam\":\"grondslag\",\"datatype\":%s,\"granulariteit\":null}"
                         .formatted(GEHEEL_POS));
     }
 
@@ -769,6 +766,6 @@ class CompanionPadWitnessTest {
                 + "\"bron\":\"toeslag\",\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}")
                 .formatted(verg("GROTER_OF_GELIJK", attr("kindertal", GEHEEL_POS), lit("2", GEHEEL_POS)),
                         consequentie, ALTIJD, lit("0.0000", num(4)));
-        return model(new String[]{}, new String[]{}, "", ",\"prioritizedDefaults\":[" + groep + "]");
+        return model(new String[]{}, "", ",\"prioritizedDefaults\":[" + groep + "]");
     }
 }

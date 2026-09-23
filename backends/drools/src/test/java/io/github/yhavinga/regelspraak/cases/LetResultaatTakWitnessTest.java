@@ -521,6 +521,10 @@ class LetResultaatTakWitnessTest {
                 .formatted(op, links, rechts, op.toLowerCase());
     }
 
+    private static String attribuut(String naam, String datatype) {
+        return "{\"node\":\"Attribute\",\"name\":\"%s\",\"datatype\":%s}".formatted(naam, datatype);
+    }
+
     private static String regel(String naam, String doel, String waarde, String voorwaarde) {
         return ("{\"node\":\"ResolvedRegel\",\"naam\":\"%s\",\"soort\":\"BEREKENING\",\"doel\":%s,\"waarde\":%s,"
                 + "\"voorwaarde\":%s,\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}")
@@ -551,20 +555,16 @@ class LetResultaatTakWitnessTest {
                                 ite(verg("KLEINER", bref("k", NN), lit("99.00", 2, false)), z,
                                         lit("0.00", 2, false), ONBEPAALD)),
                         ONBEPAALD), ONBEPAALD);
-        return ("{\"formaat\":\"regelspraak-ir-v0\","
-                + "\"objecttypen\":{\"Jutter\":{\"node\":\"Objecttype\",\"naam\":\"Jutter\","
-                + "\"attributen\":{\"inkomen\":%s,\"dubbelgarde\":%s},"
-                + "\"attribuutMeervoud\":{},\"attribuutDimensies\":{},\"attribuutGranulariteit\":{},"
-                + "\"attribuutTijdlijnAantal\":{},\"attribuutTijdlijnNaam\":{},\"kenmerken\":[],\"kenmerkSoorten\":{},"
-                + "\"kenmerkGranulariteit\":{},\"kenmerkTijdlijnAantal\":{},\"bezield\":true,\"meervoud\":\"Jutters\"}},"
-                + "\"domeinen\":{},\"parameters\":{},\"eenheidstelsels\":{},\"feittypen\":{},\"dimensies\":{},"
-                + "\"tijdlijnen\":[],\"dagsoorten\":[],\"dagsoortPerEenheid\":{},"
-                + "\"regels\":[{\"node\":\"Regel\",\"naam\":\"dubbelgarde van een jutter\",\"soort\":\"regel\"}],"
-                + "\"resolvedRegels\":[%s],"
+        return ("{\"format\":\"uchar-ir-v1\",\"model\":{"
+                + "\"objectTypes\":[{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\","
+                + "\"attributes\":[%s,%s],\"characteristics\":[]}],"
+                + "\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],"
+                + "\"timelines\":[],\"dayKinds\":[],\"dagsoortPerEenheid\":{}},"
+                + "\"rules\":{\"resolvedRegels\":[%s],"
                 + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
                 + "\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
-                + "\"regelGroepen\":[],\"diagnostics\":[]}")
-                .formatted(num(2, false, NN), num(2, false, ONBEPAALD),
+                + "\"regelGroepen\":[]},\"diagnostics\":[]}")
+                .formatted(attribuut("inkomen", num(2, false, NN)), attribuut("dubbelgarde", num(2, false, ONBEPAALD)),
                         regel("dubbelgarde van een jutter", attr("dubbelgarde", 2, false, ONBEPAALD), w, "null"));
     }
 
@@ -669,33 +669,31 @@ class LetResultaatTakWitnessTest {
                          bref("z", ONBEPAALD), ONBEPAALD), ONBEPAALD), ONBEPAALD), "null"},
         };
 
-        StringBuilder namen = new StringBuilder(), regels = new StringBuilder();
+        StringBuilder regels = new StringBuilder();
         for (String[] r : rs) {
-            if (namen.length() > 0) { namen.append(','); regels.append(','); }
-            namen.append("{\"node\":\"Regel\",\"naam\":\"%s\",\"soort\":\"regel\"}".formatted(r[0]));
+            if (regels.length() > 0) regels.append(',');
             regels.append(regel(r[0], r[1], r[2], r[3]));
         }
-        StringBuilder attributen = new StringBuilder(
-                ("\"inkomen\":%s,\"teller\":%s,\"deler\":%s,\"staffel\":%s,\"heffingsdeler\":%s,"
-                 + "\"beschermdeler\":%s,\"takdeler\":%s,\"takopslaggrond\":%s,\"nuldeler\":%s,\"gatdeler\":%s")
-                        .formatted(num(2, false, NN), num(2, false, NN), num(0, true, NN), num(0, true, NN),
-                                num(0, true, NN), num(0, true, NN), num(0, true, NN), num(2, false, NN),
-                                num(0, true, NN), num(0, true, NN)));
+        StringBuilder attributen = new StringBuilder(String.join(",",
+                attribuut("inkomen", num(2, false, NN)), attribuut("teller", num(2, false, NN)),
+                attribuut("deler", num(0, true, NN)), attribuut("staffel", num(0, true, NN)),
+                attribuut("heffingsdeler", num(0, true, NN)), attribuut("beschermdeler", num(0, true, NN)),
+                attribuut("takdeler", num(0, true, NN)), attribuut("takopslaggrond", num(2, false, NN)),
+                attribuut("nuldeler", num(0, true, NN)), attribuut("gatdeler", num(0, true, NN))));
         for (String naam : new String[]{"aandeel", "gestaffeld", "quotient", "garde", "metlet", "zonderlet",
                                         "dubbelop", "schaduw", "zusters", "premie", "heffing", "bescherm",
                                         "tak", "takdeling", "takopslag", "takketen", "sprong", "takgat"})
-            attributen.append(",\"%s\":%s".formatted(naam, num(2, false, ONBEPAALD)));
+            attributen.append(',').append(attribuut(naam, num(2, false, ONBEPAALD)));
 
-        return ("{\"formaat\":\"regelspraak-ir-v0\","
-                + "\"objecttypen\":{\"Jutter\":{\"node\":\"Objecttype\",\"naam\":\"Jutter\",\"attributen\":{%s},"
-                + "\"attribuutMeervoud\":{},\"attribuutDimensies\":{},\"attribuutGranulariteit\":{},"
-                + "\"attribuutTijdlijnAantal\":{},\"attribuutTijdlijnNaam\":{},\"kenmerken\":[],\"kenmerkSoorten\":{},"
-                + "\"kenmerkGranulariteit\":{},\"kenmerkTijdlijnAantal\":{},\"bezield\":true,\"meervoud\":\"Jutters\"}},"
-                + "\"domeinen\":{},\"parameters\":{},\"eenheidstelsels\":{},\"feittypen\":{},\"dimensies\":{},"
-                + "\"tijdlijnen\":[],\"dagsoorten\":[],\"dagsoortPerEenheid\":{},\"regels\":[%s],\"resolvedRegels\":[%s],"
+        return ("{\"format\":\"uchar-ir-v1\",\"model\":{"
+                + "\"objectTypes\":[{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\","
+                + "\"attributes\":[%s],\"characteristics\":[]}],"
+                + "\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],"
+                + "\"timelines\":[],\"dayKinds\":[],\"dagsoortPerEenheid\":{}},"
+                + "\"rules\":{\"resolvedRegels\":[%s],"
                 + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
                 + "\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
-                + "\"regelGroepen\":[],\"diagnostics\":[]}")
-                .formatted(attributen, namen, regels);
+                + "\"regelGroepen\":[]},\"diagnostics\":[]}")
+                .formatted(attributen, regels);
     }
 }

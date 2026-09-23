@@ -96,7 +96,7 @@ class CreatieguardPositieWitnessTest {
     /** The golden's document with its creation guard replaced by {@code guard}. */
     private Path document(String guard) throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(BAKENSEIN.resolve("ir.json")));
-        ((ObjectNode) doc.withArray("feitCreaties").get(0)).set("voorwaarde", JSON.readTree(guard));
+        ((ObjectNode) IrPad.rulesLijst(doc, "feitCreaties").get(0)).set("voorwaarde", JSON.readTree(guard));
         Path p = tmp.resolve("creatieguard-" + (n++) + ".json");
         Files.writeString(p, doc.toPrettyString());
         return p;

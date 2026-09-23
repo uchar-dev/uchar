@@ -75,7 +75,7 @@ class KenmerkwaardeWitnessTest {
     /** The negatief's document with the attribution's value set to {@code waarde}. */
     private static String document(String waarde) throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(NEGATIEF));
-        ((ObjectNode) doc.withArray("resolvedRegels").get(0).get("waarde")).put("waarde", waarde).put("bron", waarde);
+        ((ObjectNode) IrPad.rulesLijst(doc, "resolvedRegels").get(0).get("waarde")).put("waarde", waarde).put("bron", waarde);
         return doc.toPrettyString();
     }
 

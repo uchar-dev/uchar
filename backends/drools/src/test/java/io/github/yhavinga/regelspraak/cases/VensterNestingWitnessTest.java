@@ -173,7 +173,7 @@ class VensterNestingWitnessTest {
     /** The golden's document with the voorwaarde of "bevoegd bij diploma" replaced by {@code voorwaarde}. */
     private Path document(String voorwaarde) throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(SCHOUWPLOEG.resolve("ir.json")));
-        for (JsonNode r : doc.withArray("resolvedRegels"))
+        for (JsonNode r : IrPad.rulesLijst(doc, "resolvedRegels"))
             if ("bevoegd bij diploma".equals(r.path("naam").asText()))
                 ((ObjectNode) r).set("voorwaarde", JSON.readTree(voorwaarde));
         return schrijf(doc);
@@ -182,13 +182,13 @@ class VensterNestingWitnessTest {
     /** {@code ir} with a Brevet that the Strandwacht holds, to-many, carrying an afgifte date. */
     private Path metBrevet(Path ir) throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(ir));
-        ObjectNode brevet = ((ObjectNode) doc.get("objecttypen").get("Strandwacht")).deepCopy();
-        brevet.put("naam", "Brevet").put("bezield", false).put("meervoud", "Brevetten");
-        brevet.set("attributen", JSON.readTree("{ \"afgifte\": " + DATUM + " }"));
-        brevet.set("kenmerken", JSON.createArrayNode());
-        brevet.set("kenmerkSoorten", JSON.createObjectNode());
-        ((ObjectNode) doc.get("objecttypen")).set("Brevet", brevet);
-        ((ObjectNode) doc.get("feittypen")).set("brevethouding", JSON.readTree("""
+        ObjectNode brevet = IrPad.objectType(doc, "Strandwacht").deepCopy();
+        brevet.put("name", "Brevet").put("animate", false).put("plural", "Brevetten");
+        brevet.set("attributes", JSON.readTree(
+                "[ { \"node\": \"Attribute\", \"name\": \"afgifte\", \"datatype\": " + DATUM + " } ]"));
+        brevet.set("characteristics", JSON.createArrayNode());
+        IrPad.modelLijst(doc, "objectTypes").add(brevet);
+        IrPad.modelLijst(doc, "factTypes").add(JSON.readTree("""
                 { "node": "Feittype", "naam": "brevethouding", "wederkerig": false, "rollen": [
                     { "node": "Rol", "naam": "houder", "objecttypeNaam": "Strandwacht", "meervoud": null, "meervoudig": false },
                     { "node": "Rol", "naam": "brevet", "objecttypeNaam": "Brevet", "meervoud": "brevetten", "meervoudig": true } ] }"""));
@@ -198,7 +198,7 @@ class VensterNestingWitnessTest {
     /** {@code ir} with a date parameter {@code peildatum}. */
     private Path metPeildatum(Path ir) throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(ir));
-        ((ObjectNode) doc.get("parameters")).set("peildatum", JSON.readTree(
+        IrPad.modelLijst(doc, "parameters").add(JSON.readTree(
                 "{ \"node\": \"Parameter\", \"naam\": \"peildatum\", \"datatype\": " + DATUM + ", \"granulariteit\": null }"));
         return schrijf(doc);
     }

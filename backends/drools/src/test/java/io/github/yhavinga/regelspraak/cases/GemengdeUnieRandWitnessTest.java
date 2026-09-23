@@ -84,9 +84,9 @@ class GemengdeUnieRandWitnessTest {
         // union and two sources that is 2 binders and 4 matches — a count, because the sibling source spells
         // the key as declared and would keep the bare "contains" green on its own.
         String drl = drl(bewerk(NUMMERREGISTER, o -> {
-            ((ObjectNode) o.get("uniciteitUnies").get(0).get("bronnen").get(0))
+            ((ObjectNode) o.get("rules").get("uniciteitUnies").get(0).get("bronnen").get(0))
                     .set("sleutels", JSON.createArrayNode().add("vondstNummer"));
-            ((ArrayNode) o.get("uniciteitUnies")).remove(1);
+            ((ArrayNode) o.get("rules").get("uniciteitUnies")).remove(1);
         }));
         assertEquals(2, tel(drl, "$k0 : vondstnummer != null"),
                 "both source rules bind the declared field: " + drl);
@@ -100,8 +100,8 @@ class GemengdeUnieRandWitnessTest {
     /** {@code vondstnummer} temporal on Strandvondst, SCALAR on Wrakvondst: the cross-source mixed key. The
      *  document stays verifier-clean (measured 2026-09-03) — each source declares its own key list. */
     private static Path gemengdeUnie() throws Exception {
-        return bewerk(NUMMERREGISTER, o -> ((ObjectNode) o.get("objecttypen").get("Wrakvondst")
-                .get("attribuutGranulariteit")).remove("vondstnummer"));
+        return bewerk(NUMMERREGISTER, o -> IrPad.attribute(IrPad.objectType(o, "Wrakvondst"), "vondstnummer")
+                .remove("timeline"));
     }
 
     /** A corpus {@code ir.json} with one authored edit, written to a temp file — the corpus file itself is

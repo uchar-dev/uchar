@@ -69,7 +69,7 @@ class SleutelconventieWitnessTest {
         // clingo agrees. Before the convention was pulled straight the backend answered "consistent":
         // "Vondstnummer" missed the granulariteit map, the scalar branch compared two List<Segment> with
         // equals, and a Segment carries no equals — so not even the instance's own key matched itself.
-        Path ir = metSleutels(STRANDREGISTER, o -> ((ObjectNode) o.get("uniciteiten").get(0))
+        Path ir = metSleutels(STRANDREGISTER, o -> ((ObjectNode) o.get("rules").get("uniciteiten").get(0))
                 .set("sleutels", JSON.createArrayNode().add("Vondstnummer")));
         assertEquals(Set.of("eenmalig nummer @ S1", "eenmalig nummer @ S2"),
                 vlaggen(ir, tweeStrandvondsten()),
@@ -91,7 +91,7 @@ class SleutelconventieWitnessTest {
         // play the mis-read source still counts ITSELF (equals on the identical list object) and the sum
         // crosses 1 anyway, so the gap hides. ref, measured on this model: PASS (2 expectations); clingo
         // agrees. Before the fix the backend answered "consistent".
-        Path ir = metSleutels(NUMMERREGISTER, o -> ((ObjectNode) o.get("uniciteitUnies").get(0)
+        Path ir = metSleutels(NUMMERREGISTER, o -> ((ObjectNode) o.get("rules").get("uniciteitUnies").get(0)
                 .get("bronnen").get(0)).set("sleutels", JSON.createArrayNode().add("Vondstnummer")));
         assertEquals(Set.of("eenmalig vondstnummer @ S1", "eenmalig vondstnummer @ S2"),
                 vlaggen(ir, tweeStrandvondsten()),
@@ -111,7 +111,7 @@ class SleutelconventieWitnessTest {
         // mis-capitalised component invisible, so a two-temporal key list read as one and ran on. ref on this
         // model: "EVALUATION FAULT: a uniqueness key list carries at most one temporal key component (…)";
         // clingo raises the same wording at translation.
-        Path ir = metSleutels(TWEE_TEMPOREEL, o -> ((ObjectNode) o.get("uniciteiten").get(0))
+        Path ir = metSleutels(TWEE_TEMPOREEL, o -> ((ObjectNode) o.get("rules").get("uniciteiten").get(0))
                 .set("sleutels", JSON.createArrayNode().add("Vondstnummer").add("kavelnummer")));
         Throwable t = assertThrows(RuntimeException.class, () -> vlaggen(ir, tweeTemporeleSleutels()));
         assertTrue(oorzaakKeten(t).contains(TE_VEEL),
@@ -175,7 +175,7 @@ class SleutelconventieWitnessTest {
         // the DRL back-end is the golden-text twin; it is not fired by any gate, so its two key sites have no
         // behavioural witness — only the emitted text can say which join it chose. An exact-match temporality
         // test rendered "vondstnummer == $k0", the List-identity compare that never fires.
-        Path ir = metSleutels(STRANDREGISTER, o -> ((ObjectNode) o.get("uniciteiten").get(0))
+        Path ir = metSleutels(STRANDREGISTER, o -> ((ObjectNode) o.get("rules").get("uniciteiten").get(0))
                 .set("sleutels", JSON.createArrayNode().add("Vondstnummer")));
         String drl = drl(ir);
         assertTrue(drl.contains("rsOoitBotst(vondstnummer, $k0)"), drl);
@@ -187,7 +187,7 @@ class SleutelconventieWitnessTest {
         // mis-capitalised source turns the whole union MIXED (one arm rendering rsOoitBevat, the other a
         // scalar ==) where both sources are in truth temporal. Mutation-checked: without this arm a
         // containsKey restored at that one site survives every other witness here.
-        Path ir = metSleutels(NUMMERREGISTER, o -> ((ObjectNode) o.get("uniciteitUnies").get(0)
+        Path ir = metSleutels(NUMMERREGISTER, o -> ((ObjectNode) o.get("rules").get("uniciteitUnies").get(0)
                 .get("bronnen").get(0)).set("sleutels", JSON.createArrayNode().add("Vondstnummer")));
         String drl = drl(ir);
         assertTrue(!drl.contains("rsOoitBevat"), "both sources are temporal — no mixed arm may appear: " + drl);
@@ -214,8 +214,8 @@ class SleutelconventieWitnessTest {
     /** {@code vondstnummer} temporal on Strandvondst, SCALAR on Wrakvondst: the cross-source mixed key. The
      *  document stays verifier-clean (measured 2026-09-03) — each source declares its own key list. */
     private static Path gemengdeUnie() throws Exception {
-        return metSleutels(NUMMERREGISTER, o -> ((ObjectNode) o.get("objecttypen").get("Wrakvondst")
-                .get("attribuutGranulariteit")).remove("vondstnummer"));
+        return metSleutels(NUMMERREGISTER, o -> IrPad.attribute(IrPad.objectType(o, "Wrakvondst"), "vondstnummer")
+                .remove("timeline"));
     }
 
     /** A corpus {@code ir.json} with one authored edit, written to a temp file — the corpus file itself is

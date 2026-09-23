@@ -117,7 +117,7 @@ class BonenveldWitnessTest {
         // side the frontend picks for an objectcreatie-placed link; the only other witness sits in the temporary
         // parity zone. Verifier-clean, ref PASS.
         ObjectNode ir = lees(POSTWACHT);
-        for (JsonNode r : ir.get("feittypen").get("kustligging").get("rollen"))
+        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "kustligging").get("rollen"))
             if (r.get("naam").asText().equals("post")) ((ObjectNode) r).put("meervoudig", false).putNull("meervoud");
         ObjectNode c = (ObjectNode) casus(POSTWACHT, "case");
         for (JsonNode i : c.get("input").get("instances")) {
@@ -144,7 +144,7 @@ class BonenveldWitnessTest {
         // wijkindeling relates Kavel and Gemeente a second time; no case fills it, so no Kavel has that scope
         // and none participates
         ObjectNode ir = lees(KUSTREGISTER);
-        ((ObjectNode) ir.get("feittypen")).set("wijkindeling", feittype("wijkindeling",
+        IrPad.modelLijst(ir, "factTypes").add(feittype("wijkindeling",
                 "wijkgemeente", "Gemeente", false, "wijkkavel", "Kavel", true));
         kaveletiket(ir).set("scopeRol", binding("wijkindeling", "wijkgemeente"));
         BeideTakken.rood(tijdelijk("scope-binding", ir), casus(KUSTREGISTER, "case3"), "werkelijk consistent",
@@ -160,7 +160,7 @@ class BonenveldWitnessTest {
         fc.remove("zetVeld");
         fc.remove("joinVeld");
         for (JsonNode t : fc.get("tussenstappen")) ((ObjectNode) t).remove(java.util.List.of("veld", "viaOuderVeld", "type"));
-        for (JsonNode u : ir.get("uniciteiten")) if (u.hasNonNull("scopeRol")) ((ObjectNode) u).remove("scopeVeld");
+        for (JsonNode u : ir.get("rules").get("uniciteiten")) if (u.hasNonNull("scopeRol")) ((ObjectNode) u).remove("scopeVeld");
         BeideTakken.groen(tijdelijk("zonder-bonen", ir), casus(POSTWACHT, "case"), "plays on the bindings alone");
     }
 
@@ -187,7 +187,7 @@ class BonenveldWitnessTest {
     /** postwacht with a second Kustvak-Post relation, so Post also carries a {@code reservevak} field. */
     private static ObjectNode postwachtMetReserve() throws Exception {
         ObjectNode ir = lees(POSTWACHT);
-        ((ObjectNode) ir.get("feittypen")).set("reserveligging", feittype("reserveligging",
+        IrPad.modelLijst(ir, "factTypes").add(feittype("reserveligging",
                 "reservevak", "Kustvak", false, "reservepost", "Post", true));
         return ir;
     }
@@ -199,13 +199,13 @@ class BonenveldWitnessTest {
     }
 
     private static ObjectNode creatie(ObjectNode ir, int i, String feittype) {
-        ObjectNode fc = (ObjectNode) ir.get("feitCreaties").get(i);
+        ObjectNode fc = (ObjectNode) ir.get("rules").get("feitCreaties").get(i);
         if (feittype != null) assertTrue(fc.get("feittype").asText().equals(feittype), fc.toString());
         return fc;
     }
 
     private static ObjectNode kaveletiket(ObjectNode ir) {
-        for (JsonNode u : ir.get("uniciteiten"))
+        for (JsonNode u : ir.get("rules").get("uniciteiten"))
             if (u.get("naam").asText().equals("eenmalig kaveletiket")) return (ObjectNode) u;
         throw new AssertionError("kustregister carries no 'eenmalig kaveletiket'");
     }

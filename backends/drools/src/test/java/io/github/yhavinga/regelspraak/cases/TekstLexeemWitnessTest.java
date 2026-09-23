@@ -276,7 +276,7 @@ class TekstLexeemWitnessTest {
         return tmp;
     }
 
-    private static ObjectNode regel(ObjectNode ir, int i) { return (ObjectNode) ir.get("resolvedRegels").get(i); }
+    private static ObjectNode regel(ObjectNode ir, int i) { return (ObjectNode) ir.get("rules").get("resolvedRegels").get(i); }
 
     /** The golden's OWN `het keurmerk van de Vondst` reference, so every fixture asks about the same member and the
      *  only thing that varies between them is the literal's lexeme. */

@@ -69,8 +69,9 @@ class MeerPeriodiekePoortWitnessTest {
     /** A §7.1 "het totaal van" over a temporal attribute, no clip. One case, both branches PLAYED. */
     private static final String TEMPOTOTAAL = "jutterswet-tempototaal";
     /** A §8.2 whole-period comparison over the MAAND-granular {@code keurvergoeding}, quantified over a navigated
-     *  set. It carries NO {@code attribuutTijdlijnAantal} entry, so {@link #metAantal} writes the explicit 1 the
-     *  §8.2 test below needs — the count table is the probe's, not the corpus's. */
+     *  set. Its facet's count 1 never reaches the model's count table (the loader keeps a count only when it is not
+     *  1), so the §8.2 test below writes the explicit 1 into the loaded table itself — the entry is the probe's,
+     *  not the corpus's. */
     private static final String KEURPLOEG = "jutterswet-keurploeg";
 
     // ---------------- the predicate itself ----------------
@@ -98,7 +99,7 @@ class MeerPeriodiekePoortWitnessTest {
         //     Drools DRL-tekst  : EXCLUDE drl-transpiler MARKER: regel: toeslag van een schuit — TODO §8.2
         //                         gehele-periode: de werf van de Schuit gedurende het gehele jaar bedrijvig is
         // One key, one value, no semantic difference, two executors fewer.
-        beideTakkenSpelen(metAantal(GEHELEJAARKENMERK, "Werf", "kenmerkTijdlijnAantal", "bedrijvig", 1),
+        beideTakkenSpelen(metAantal(GEHELEJAARKENMERK, "Werf", "characteristics", "bedrijvig", 1),
                 GEHELEJAARKENMERK, 4);
     }
 
@@ -109,7 +110,7 @@ class MeerPeriodiekePoortWitnessTest {
         //                         toekenning buiten Phase-F scope)
         //     Drools DRL-tekst  : EXCLUDE drl-transpiler MARKER: regel: borgdeel van een jutter — TODO temporele
         //                         toekenning
-        beideTakkenSpelen(metAantal(CLIPPRORATA, "Jutter", "kenmerkTijdlijnAantal", "borgplichtig", 1),
+        beideTakkenSpelen(metAantal(CLIPPRORATA, "Jutter", "characteristics", "borgplichtig", 1),
                 CLIPPRORATA, 1);
     }
 
@@ -123,7 +124,7 @@ class MeerPeriodiekePoortWitnessTest {
         //     Drools DRL-tekst  : EXCLUDE drl-transpiler MARKER: regel: borgdeel van een jutter — TODO meer-periodieke
         //                         temporele toekenning (§13.3.6.7)
         // The same injection also crosses the §7.1 "het totaal van zijn borgdeel" fold in the second rule.
-        beideTakkenSpelen(metAantal(CLIPPRORATA, "Jutter", "attribuutTijdlijnAantal", "borgdeel", 1),
+        beideTakkenSpelen(metAantal(CLIPPRORATA, "Jutter", "attributes", "borgdeel", 1),
                 CLIPPRORATA, 1);
     }
 
@@ -133,7 +134,7 @@ class MeerPeriodiekePoortWitnessTest {
         //                         toekenning buiten Phase-F scope)
         //     Drools DRL-tekst  : EXCLUDE drl-transpiler MARKER: regel: borgdeel van een jutter — TODO temporele
         //                         toekenning
-        beideTakkenSpelen(metAantal(CLIPPRORATA, "Jutter", "attribuutTijdlijnAantal", "borgtarief", 1),
+        beideTakkenSpelen(metAantal(CLIPPRORATA, "Jutter", "attributes", "borgtarief", 1),
                 CLIPPRORATA, 1);
     }
 
@@ -144,7 +145,7 @@ class MeerPeriodiekePoortWitnessTest {
         //                         buiten Phase-C scope)
         //     Drools DRL-tekst  : EXCLUDE drl-transpiler MARKER: regel: bewaargeld van een jutter — TODO totaal van
         //                         een meer-periodieke tijdreeks (§13.3.6.7, voor elke <n> maanden)
-        beideTakkenSpelen(metAantal(TEMPOTOTAAL, "Jutter", "attribuutTijdlijnAantal", "bewaarvergoeding per maand", 1),
+        beideTakkenSpelen(metAantal(TEMPOTOTAAL, "Jutter", "attributes", "bewaarvergoeding per maand", 1),
                 TEMPOTOTAAL, 1);
     }
 
@@ -158,17 +159,24 @@ class MeerPeriodiekePoortWitnessTest {
         // the table at all). The SET gates (isTemporeelSetAttribuut/isTemporeelSet82) are reached by no corpus
         // document: every §8.2 operand in golden carries set:false (re-measured 2026-09-19).
         // Verdict compared byte for byte on the DRL text and construct for construct on both coverage manifests.
-        Path zonder = ir(KEURPLOEG);
-        Path met = metAantal(KEURPLOEG, "Keurmeester", "attribuutTijdlijnAantal", "keurvergoeding", 1);
-        String drl = drlTekst(zonder);
+        // Since M1 every facet writes its count, and the loader keeps a count in the model's table only when it is
+        // not 1: no wire document can land the explicit 1 there any more. The probe writes it into the loaded table,
+        // where the v0 wire used to land it, and asserts the table had no entry of its own — otherwise both sides
+        // would be the same document.
+        Path keurploeg = ir(KEURPLOEG);
+        java.util.function.Consumer<RegelSpraakModel> zonder = m -> { };
+        java.util.function.Consumer<RegelSpraakModel> met = m -> assertEquals(null,
+                m.objecttypen.get("Keurmeester").attribuutTijdlijnAantal.put("keurvergoeding", 1),
+                "de geladen teltabel draagt zelf geen sleutel voor keurvergoeding");
+        String drl = drlTekst(keurploeg, zonder);
         // The guard that keeps this witness from emptying silently: it pins that the document under probe still
         // EMITS the construct being gated. This test once stood on jutterswet-vormenkabinet and went trivially true
         // when that cabinet shrank (2026-09-19) and stopped reading its temporal attribute at all — no gate saw it.
         assertTrue(drl.contains("rsGeheelPeriode"),
                 "het probe-document moet de §8.2-vergelijking nog emitteren, anders is de gelijkheid hieronder leeg");
-        assertEquals(drl, drlTekst(met),
+        assertEquals(drl, drlTekst(keurploeg, met),
                 "de §8.2-vergelijking leest het periodeaantal niet — de DRL is identiek met en zonder de sleutel");
-        assertEquals(dekking(zonder), dekking(met),
+        assertEquals(dekking(keurploeg, zonder), dekking(keurploeg, met),
                 "en de exec-model-dekking eveneens");
     }
 
@@ -177,13 +185,13 @@ class MeerPeriodiekePoortWitnessTest {
     @Test void een_echt_raster_blijft_geweigerd() throws Exception {
         // Without this, deleting the gate outright would satisfy every test above. A count of TWO is a §13.3.6.7
         // multi-period raster whose producer semantics no branch carries, and BOTH must keep refusing it by name.
-        Path kenmerk = metAantal(GEHELEJAARKENMERK, "Werf", "kenmerkTijdlijnAantal", "bedrijvig", 2);
+        Path kenmerk = metAantal(GEHELEJAARKENMERK, "Werf", "characteristics", "bedrijvig", 2);
         assertTrue(execReden(kenmerk, GEHELEJAARKENMERK).contains("voorwaarde buiten Phase-B scope"),
                 execReden(kenmerk, GEHELEJAARKENMERK));
         assertTrue(drlReden(kenmerk, GEHELEJAARKENMERK).contains("§8.2 gehele-periode"),
                 drlReden(kenmerk, GEHELEJAARKENMERK));
 
-        Path attribuut = metAantal(CLIPPRORATA, "Jutter", "attribuutTijdlijnAantal", "borgdeel", 2);
+        Path attribuut = metAantal(CLIPPRORATA, "Jutter", "attributes", "borgdeel", 2);
         assertTrue(execReden(attribuut, CLIPPRORATA).contains("meer-periodieke temporele doel — §13.3.6.7"),
                 execReden(attribuut, CLIPPRORATA));
         assertTrue(drlReden(attribuut, CLIPPRORATA).contains("meer-periodieke temporele toekenning (§13.3.6.7)"),
@@ -245,10 +253,18 @@ class MeerPeriodiekePoortWitnessTest {
         return uit;
     }
 
-    /** The golden's ir.json with ONE per-member count entry written explicitly. */
-    private static Path metAantal(String golden, String objecttype, String tabel, String lid, int aantal) throws Exception {
+    /** The golden's ir.json with ONE member's period count written explicitly on its timeline facet; {@code leden}
+     *  names the member list, {@code attributes} or {@code characteristics}. */
+    private static Path metAantal(String golden, String objecttype, String leden, String lid, int aantal) throws Exception {
         ObjectNode d = (ObjectNode) JSON.readTree(Files.readString(ir(golden)));
-        ((ObjectNode) d.get("objecttypen").get(objecttype).get(tabel)).put(lid, aantal);
+        ObjectNode ot = IrPad.objectType(d, objecttype);
+        ObjectNode member = switch (leden) {
+            case "attributes" -> IrPad.attribute(ot, lid);
+            case "characteristics" -> IrPad.characteristic(ot, lid);
+            default -> throw new IllegalArgumentException("no member list '" + leden + "'");
+        };
+        assertTrue(member.path("timeline").isObject(), golden + ": " + objecttype + "." + lid + " carries a timeline facet");
+        ((ObjectNode) member.get("timeline")).put("count", aantal);
         return tijdelijk(golden + "-" + lid + "-" + aantal, d);
     }
 
@@ -259,15 +275,20 @@ class MeerPeriodiekePoortWitnessTest {
         return tmp;
     }
 
-    /** The DRL TEXT the classic branch emits for a document — no case, no fire. */
-    private static String drlTekst(Path irPath) throws Exception {
-        return DrlTranspiler.build(IrLoader.load(JSON.readTree(Files.readString(irPath)))).drl();
+    /** The DRL TEXT the classic branch emits for a document — no case, no fire; {@code ingreep} edits the loaded
+     *  model first. */
+    private static String drlTekst(Path irPath, java.util.function.Consumer<RegelSpraakModel> ingreep) throws Exception {
+        RegelSpraakModel model = IrLoader.load(JSON.readTree(Files.readString(irPath)));
+        ingreep.accept(model);
+        return DrlTranspiler.build(model).drl();
     }
 
-    /** The exec-model branch's coverage manifest for a document, as comparable text. */
-    private static List<String> dekking(Path irPath) throws Exception {
+    /** The exec-model branch's coverage manifest for a document, as comparable text; {@code ingreep} edits the
+     *  loaded model first. */
+    private static List<String> dekking(Path irPath, java.util.function.Consumer<RegelSpraakModel> ingreep) throws Exception {
         IrLoader.Loaded loaded = IrLoader.loadAll(JSON.readTree(Files.readString(irPath)));
         RegelSpraakModel model = loaded.model();
+        ingreep.accept(model);
         ClassLoader cl = BeanCompiler.compileer(FactModelGenerator.genereer(model));
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);

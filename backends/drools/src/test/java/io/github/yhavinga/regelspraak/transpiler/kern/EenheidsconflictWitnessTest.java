@@ -355,7 +355,7 @@ class EenheidsconflictWitnessTest {
         JsonNode kopie = ir.deepCopy();
         String naam = vergelekenParameter(kopie);
         if (naam == null) return null;
-        JsonNode p = kopie.path("parameters").get(naam);
+        JsonNode p = zoekLid(kopie.path("model").path("parameters"), "naam", naam);
         return p == null ? null : metNoemer(kopie, (ObjectNode) p.get("datatype"));
     }
 
@@ -389,7 +389,9 @@ class EenheidsconflictWitnessTest {
         if (ref == null || !"ParameterRef".equals(ref.path("node").asText())) return null;
         String naam = ref.path("parameter").asText(null);
         if (naam == null) return null;
-        JsonNode e = ir.path("parameters").path(naam).path("datatype").path("eenheid");
+        JsonNode p = zoekLid(ir.path("model").path("parameters"), "naam", naam);
+        if (p == null) return null;
+        JsonNode e = p.path("datatype").path("eenheid");
         return e.isObject() && e.path("noemer").isNull() ? naam : null;
     }
 
@@ -423,7 +425,7 @@ class EenheidsconflictWitnessTest {
     /** The FIRST rule whose value is an additive join of two attribute reads that BOTH resolve to a unit-bearing
      *  declaration. Deterministic: rules are visited in document order and the first hit wins. */
     private static JsonNode additieveRegel(JsonNode ir) {
-        JsonNode regels = ir.get("resolvedRegels");
+        JsonNode regels = ir.path("rules").get("resolvedRegels");
         if (regels == null) return null;
         for (JsonNode r : regels) {
             JsonNode w = r.get("waarde");
@@ -438,11 +440,20 @@ class EenheidsconflictWitnessTest {
     /** The DECLARATION an {@code AttribuutRef} reads from, when it carries a unit; else null. */
     private static ObjectNode declaratieVan(JsonNode ir, JsonNode ref) {
         if (ref == null || !"AttribuutRef".equals(ref.path("node").asText())) return null;
-        JsonNode ot = ir.path("objecttypen").get(ref.path("objecttype").asText(""));
+        JsonNode ot = zoekLid(ir.path("model").path("objectTypes"), "name", ref.path("objecttype").asText(""));
         if (ot == null) return null;
-        JsonNode attr = ot.path("attributen").get(ref.path("attribuut").asText(""));
+        JsonNode lid = zoekLid(ot.path("attributes"), "name", ref.path("attribuut").asText(""));
+        JsonNode attr = lid == null ? null : lid.get("datatype");
         if (attr == null || attr.path("eenheid").isMissingNode() || attr.path("eenheid").isNull()) return null;
         return (ObjectNode) attr;
+    }
+
+    /** The entry of a declaration list whose {@code naamVeld} is {@code naam}, or null. A miss is an answer here,
+     *  not a fault: it means "this golden does not carry the shape" (an inherited attribute, say), the same null
+     *  the v0 map lookup gave. */
+    private static JsonNode zoekLid(JsonNode lijst, String naamVeld, String naam) {
+        for (JsonNode n : lijst) if (naam.equals(n.path(naamVeld).asText(null))) return n;
+        return null;
     }
 
     // ---------------- driving the two branches ----------------

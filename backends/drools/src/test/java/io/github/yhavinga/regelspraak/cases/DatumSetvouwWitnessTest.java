@@ -146,7 +146,7 @@ class DatumSetvouwWitnessTest {
      *  the member and the fold all stay `Datum in dagen`. */
     private static ObjectNode metKind(String golden, String kind) throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(golden)));
-        for (JsonNode r : ir.get("resolvedRegels")) ((ObjectNode) r.get("waarde")).put("kind", kind);
+        for (JsonNode r : ir.get("rules").get("resolvedRegels")) ((ObjectNode) r.get("waarde")).put("kind", kind);
         return ir;
     }
 
@@ -158,13 +158,13 @@ class DatumSetvouwWitnessTest {
     private static ObjectNode alsTekst(String golden, String kind) throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(golden)));
         if (kind != null)
-            for (JsonNode r : ir.get("resolvedRegels")) ((ObjectNode) r.get("waarde")).put("kind", kind);
+            for (JsonNode r : ir.get("rules").get("resolvedRegels")) ((ObjectNode) r.get("waarde")).put("kind", kind);
         ObjectNode tekst = JSON.createObjectNode().put("node", "Tekst");
-        ObjectNode jutter = (ObjectNode) ir.get("objecttypen").get("Jutter").get("attributen");
-        jutter.set("vroegste vondstdag", tekst);
-        jutter.set("jongste vondstdag", tekst);
-        ((ObjectNode) ir.get("objecttypen").get("Vondst").get("attributen")).set("vondstdatum", tekst);
-        for (JsonNode r : ir.get("resolvedRegels")) {
+        ObjectNode jutter = IrPad.objectType(ir, "Jutter");
+        IrPad.attribute(jutter, "vroegste vondstdag").set("datatype", tekst);
+        IrPad.attribute(jutter, "jongste vondstdag").set("datatype", tekst);
+        IrPad.attribute(IrPad.objectType(ir, "Vondst"), "vondstdatum").set("datatype", tekst);
+        for (JsonNode r : ir.get("rules").get("resolvedRegels")) {
             ((ObjectNode) r.get("doel")).set("type", tekst);
             ObjectNode w = (ObjectNode) r.get("waarde");
             w.set("type", tekst);

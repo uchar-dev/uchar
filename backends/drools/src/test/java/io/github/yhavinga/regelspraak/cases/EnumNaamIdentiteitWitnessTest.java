@@ -82,47 +82,42 @@ class EnumNaamIdentiteitWitnessTest {
      */
     @Test void de_genavigeerde_en_de_parameterarm_lezen_een_naam() throws Exception {
         ObjectNode ir = golden();
-        ObjectNode vondst = (ObjectNode) ir.get("objecttypen").get("Vondst");
-        JsonNode keurtype = vondst.get("attributen").get("staat");
+        ObjectNode vondst = IrPad.objectType(ir, "Vondst");
+        JsonNode keurtype = IrPad.attribute(vondst, "staat").get("datatype");
 
         ObjectNode kavel = vondst.deepCopy();
-        kavel.put("naam", "Kavel").put("meervoud", "Kavels");
-        kavel.putObject("attributen").set("keur", keurtype.deepCopy());
-        kavel.putObject("attribuutMeervoud");
-        kavel.putArray("kenmerken");
-        kavel.putObject("kenmerkSoorten");
-        ((ObjectNode) ir.get("objecttypen")).set("Kavel", kavel);
+        kavel.put("name", "Kavel").put("plural", "Kavels");
+        kavel.putArray("attributes");
+        IrPad.addAttribute(kavel, "keur", keurtype.deepCopy());
+        kavel.putArray("characteristics");
+        IrPad.modelLijst(ir, "objectTypes").add(kavel);
 
-        ArrayNode kenmerken = vondst.putArray("kenmerken");
-        ObjectNode soorten = vondst.putObject("kenmerkSoorten");
-        for (String k : List.of("kavelgaaf", "kavelongaaf", "normconform")) {
-            kenmerken.add(k);
-            soorten.put(k, "BIJVOEGLIJK");
-        }
-        ((ObjectNode) ir.get("feittypen")).set("kavelindeling", JSON.readTree("""
+        ArrayNode kenmerken = vondst.putArray("characteristics");
+        for (String k : List.of("kavelgaaf", "kavelongaaf", "normconform"))
+            kenmerken.addObject().put("node", "Characteristic").put("name", k).put("kind", "BIJVOEGLIJK");
+        IrPad.modelLijst(ir, "factTypes").add(JSON.readTree("""
                 {"node": "Feittype", "naam": "kavelindeling", "wederkerig": false, "rollen": [
                   {"node": "Rol", "naam": "kavel", "objecttypeNaam": "Kavel", "meervoud": null, "meervoudig": false},
                   {"node": "Rol", "naam": "vondst", "objecttypeNaam": "Vondst", "meervoud": "vondsten", "meervoudig": true}]}
                 """));
-        ObjectNode param = ((ObjectNode) ir.get("parameters")).putObject("keurnorm");
+        ObjectNode param = IrPad.modelLijst(ir, "parameters").addObject();
         param.put("node", "Parameter").put("naam", "keurnorm");
         param.set("datatype", keurtype.deepCopy());
         param.putNull("granulariteit");
 
         ObjectNode staat = eigenStaat(ir);   // before the rules below replace the golden's own
-        ArrayNode regels = ir.putArray("regels");
-        ArrayNode resolved = ir.putArray("resolvedRegels");
-        resolved.add(kenmerkRegel(regels, "keur van de kavel", "kavelgaaf", "GELIJK",
+        ArrayNode resolved = IrPad.rules(ir).putArray("resolvedRegels");
+        resolved.add(kenmerkRegel("keur van de kavel", "kavelgaaf", "GELIJK",
                 navigeerdeKeur(keurtype), literal(keurtype, "gaaf")));
-        resolved.add(kenmerkRegel(regels, "ongave kavel", "kavelongaaf", "ONGELIJK",
+        resolved.add(kenmerkRegel("ongave kavel", "kavelongaaf", "ONGELIJK",
                 navigeerdeKeur(keurtype), literal(keurtype, "gaaf")));
         ObjectNode normRef = JSON.createObjectNode();
         normRef.put("node", "ParameterRef").put("parameter", "keurnorm").put("bron", "de keurnorm");
         normRef.set("type", keurtype.deepCopy());
-        resolved.add(kenmerkRegel(regels, "keurnorm gehaald", "normconform", "GELIJK",
+        resolved.add(kenmerkRegel("keurnorm gehaald", "normconform", "GELIJK",
                 staat, normRef));
-        ir.putArray("consistenties");
-        ir.putArray("uniciteiten");
+        IrPad.rules(ir).putArray("consistenties");
+        IrPad.rules(ir).putArray("uniciteiten");
 
         Path doc = schrijf(ir, "genavigeerd-en-parameter.json");
         JsonNode c = JSON.readTree("""
@@ -148,9 +143,9 @@ class EnumNaamIdentiteitWitnessTest {
      */
     @Test void de_uniesleutel_is_een_naam() throws Exception {
         ObjectNode ir = golden();
-        ir.putArray("consistenties");
-        ir.putArray("uniciteiten");
-        ir.set("uniciteitUnies", JSON.readTree("""
+        IrPad.rules(ir).putArray("consistenties");
+        IrPad.rules(ir).putArray("uniciteiten");
+        IrPad.rules(ir).set("uniciteitUnies", JSON.readTree("""
                 [{"node": "ResolvedUniciteitUnie", "naam": "eenmalig keuroordeel", "bronnen": [
                    {"node": "Bron", "type": "Vondst", "sleutels": ["staat"]},
                    {"node": "Bron", "type": "Vondst", "sleutels": ["herkeuring"]}],
@@ -181,10 +176,10 @@ class EnumNaamIdentiteitWitnessTest {
      */
     @Test void een_tekstvergelijking_blijft_exact() throws Exception {
         ObjectNode ir = golden();
-        naarTekst(ir.get("objecttypen"));
-        naarTekst(ir.get("resolvedRegels"));
-        naarTekst(ir.get("consistenties"));
-        ir.putObject("domeinen");
+        naarTekst(IrPad.modelLijst(ir, "objectTypes"));
+        naarTekst(IrPad.rulesLijst(ir, "resolvedRegels"));
+        naarTekst(IrPad.rulesLijst(ir, "consistenties"));
+        IrPad.model(ir).putArray("domains");
         assertFalse(ir.toString().contains("Enumeratie"), "de variant hoort geen enumeratie meer te dragen");
         Path doc = schrijf(ir, "tekst.json");
         BeideTakken.groen(doc, JSON.readTree("""
@@ -250,14 +245,12 @@ class EnumNaamIdentiteitWitnessTest {
 
     /** "zijn staat", lifted from the golden's own first rule so its shape is the emitter's. */
     private static ObjectNode eigenStaat(ObjectNode ir) {
-        return (ObjectNode) ir.get("resolvedRegels").get(0).get("voorwaarde").get("links").deepCopy();
+        return (ObjectNode) ir.get("rules").get("resolvedRegels").get(0).get("voorwaarde").get("links").deepCopy();
     }
 
-    /** A KENMERKTOEKENNING "Een Vondst is {@code kenmerk} indien {@code links op rechts}", registered in
-     *  {@code regels} as well. */
-    private static ObjectNode kenmerkRegel(ArrayNode regels, String naam, String kenmerk, String op,
+    /** A KENMERKTOEKENNING "Een Vondst is {@code kenmerk} indien {@code links op rechts}". */
+    private static ObjectNode kenmerkRegel(String naam, String kenmerk, String op,
                                            JsonNode links, JsonNode rechts) throws Exception {
-        regels.addObject().put("node", "Regel").put("naam", naam).put("soort", "regel");
         ObjectNode r = (ObjectNode) JSON.readTree("""
                 {"node": "ResolvedRegel", "soort": "KENMERKTOEKENNING",
                  "doel": {"node": "AttribuutRef", "objecttype": "Vondst", "onderwerpBron": "Een Vondst",

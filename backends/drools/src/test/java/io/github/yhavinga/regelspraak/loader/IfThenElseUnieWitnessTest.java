@@ -157,24 +157,23 @@ class IfThenElseUnieWitnessTest {
     }
 
     private static String doc(String waarde) {
-        String attributen = "\"grondslag\":%s,\"laag\":%s,\"hoog\":%s,\"uit\":%s"
+        String attributen = ("{\"node\":\"Attribute\",\"name\":\"grondslag\",\"datatype\":%s},"
+                + "{\"node\":\"Attribute\",\"name\":\"laag\",\"datatype\":%s},"
+                + "{\"node\":\"Attribute\",\"name\":\"hoog\",\"datatype\":%s},"
+                + "{\"node\":\"Attribute\",\"name\":\"uit\",\"datatype\":%s}")
                 .formatted(num(2), num(2), num(2), num(2));
-        String objecttype = ("\"Jutter\":{\"node\":\"Objecttype\",\"naam\":\"Jutter\",\"attributen\":{%s},"
-                + "\"attribuutMeervoud\":{},\"attribuutDimensies\":{},\"attribuutGranulariteit\":{},"
-                + "\"attribuutTijdlijnAantal\":{},\"attribuutTijdlijnNaam\":{},\"kenmerken\":[],"
-                + "\"kenmerkSoorten\":{},\"kenmerkGranulariteit\":{},\"kenmerkTijdlijnAantal\":{},"
-                + "\"bezield\":true,\"meervoud\":\"Jutters\"}").formatted(attributen);
+        String objecttype = ("{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\","
+                + "\"attributes\":[%s],\"characteristics\":[]}").formatted(attributen);
         String regel = ("{\"node\":\"ResolvedRegel\",\"naam\":\"uit van een jutter\",\"soort\":\"BEREKENING\","
                 + "\"doel\":%s,\"waarde\":%s,\"voorwaarde\":null,"
                 + "\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}")
                 .formatted(attr("uit", num(2)), waarde);
-        return ("{\"formaat\":\"regelspraak-ir-v0\",\"objecttypen\":{%s},"
-                + "\"domeinen\":{},\"parameters\":{},\"eenheidstelsels\":{},\"feittypen\":{},\"dimensies\":{},"
-                + "\"tijdlijnen\":[],\"dagsoorten\":[],\"dagsoortPerEenheid\":{},"
-                + "\"regels\":[{\"node\":\"Regel\",\"naam\":\"uit van een jutter\",\"soort\":\"regel\"}],"
-                + "\"resolvedRegels\":[%s],\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],"
+        return ("{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":[%s],"
+                + "\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],"
+                + "\"timelines\":[],\"dayKinds\":[],\"dagsoortPerEenheid\":{}},"
+                + "\"rules\":{\"resolvedRegels\":[%s],\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],"
                 + "\"consistenties\":[],\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],"
-                + "\"resolvedStartpunten\":[],\"regelGroepen\":[],\"diagnostics\":[]}")
+                + "\"resolvedStartpunten\":[],\"regelGroepen\":[]},\"diagnostics\":[]}")
                 .formatted(objecttype, regel);
     }
 }

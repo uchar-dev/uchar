@@ -229,7 +229,7 @@ class IrWireDatumWitnessTest {
         // would otherwise never be exercised and could silently degrade to a bare "geldigheid.vanaf" that
         // locates nothing. The refusal names the node kind instead, and still names the bound.
         JsonNode root = wire(VENSTER);
-        JsonNode regel = root.path("resolvedRegels").path(0);
+        JsonNode regel = root.path("rules").path("resolvedRegels").path(0);
         ((ObjectNode) regel).putNull("naam");
         ((ObjectNode) regel.path("geldigheid")).put("vanaf", "+012026-01-01");
 
@@ -286,7 +286,7 @@ class IrWireDatumWitnessTest {
     /** {@link #VENSTER} with one bound of its first rule version replaced, loaded. */
     private static Geldigheid grensGelezen(String grens, String lexeem) throws Exception {
         JsonNode root = wire(VENSTER);
-        JsonNode g = root.path("resolvedRegels").path(0).path("geldigheid");
+        JsonNode g = root.path("rules").path("resolvedRegels").path(0).path("geldigheid");
         assertTrue(g.isObject(), "the twisted rule version carries a Geldigheid node");
         ((ObjectNode) g).put(grens, lexeem);
         return venster(IrLoader.load(root));

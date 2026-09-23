@@ -197,23 +197,26 @@ class LetBehoefteWitnessTest {
     }
 
     /** A one-objecttype document over {@code Jutter}. */
-    private static String model(String attributen, String[] regelNamen, String[] regels) {
-        StringBuilder namen = new StringBuilder();
-        for (String n : regelNamen) {
-            if (namen.length() > 0) namen.append(',');
-            namen.append("{\"node\":\"Regel\",\"naam\":\"%s\",\"soort\":\"regel\"}".formatted(n));
-        }
-        return ("{\"formaat\":\"regelspraak-ir-v0\","
-                + "\"objecttypen\":{\"Jutter\":{\"node\":\"Objecttype\",\"naam\":\"Jutter\",\"attributen\":{%s},"
-                + "\"attribuutMeervoud\":{},\"attribuutDimensies\":{},\"attribuutGranulariteit\":{},"
-                + "\"attribuutTijdlijnAantal\":{},\"attribuutTijdlijnNaam\":{},\"kenmerken\":[],\"kenmerkSoorten\":{},"
-                + "\"kenmerkGranulariteit\":{},\"kenmerkTijdlijnAantal\":{},\"bezield\":true,\"meervoud\":\"Jutters\"}},"
-                + "\"domeinen\":{},\"parameters\":{},\"eenheidstelsels\":{},\"feittypen\":{},\"dimensies\":{},"
-                + "\"tijdlijnen\":[],\"dagsoorten\":[],\"dagsoortPerEenheid\":{},\"regels\":[%s],\"resolvedRegels\":[%s],"
+    private static String model(String attributen, String[] regels) {
+        return ("{\"format\":\"uchar-ir-v1\",\"model\":{"
+                + "\"objectTypes\":[{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\","
+                + "\"attributes\":[%s],\"characteristics\":[]}],"
+                + "\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],"
+                + "\"timelines\":[],\"dayKinds\":[],\"dagsoortPerEenheid\":{}},"
+                + "\"rules\":{\"resolvedRegels\":[%s],"
                 + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
                 + "\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
-                + "\"regelGroepen\":[],\"diagnostics\":[]}")
-                .formatted(attributen, namen, String.join(",", regels));
+                + "\"regelGroepen\":[]},\"diagnostics\":[]}")
+                .formatted(attributen, String.join(",", regels));
+    }
+
+    /** The {@code attributes} list of {@code Jutter}, from alternating name / datatype arguments. */
+    private static String attributen(String... naamEnType) {
+        if (naamEnType.length % 2 != 0) throw new IllegalArgumentException("a name without a datatype");
+        java.util.StringJoiner lijst = new java.util.StringJoiner(",");
+        for (int i = 0; i < naamEnType.length; i += 2)
+            lijst.add("{\"node\":\"Attribute\",\"name\":\"%s\",\"datatype\":%s}".formatted(naamEnType[i], naamEnType[i + 1]));
+        return lijst.toString();
     }
 
     // ---------------- the models (each ref-replayed before its values were pinned) ----------------
@@ -222,8 +225,7 @@ class LetBehoefteWitnessTest {
     private static String nulDelingModel(boolean gelezen) {
         String deling = binair("GEDEELD_DOOR", lit("100.00", num(2)), lit("0.00", num(2)), num(2));
         String body = gelezen ? bref("q", num(2)) : lit("42.00", num(2));
-        return model("\"uitkomst\":%s".formatted(num(2)),
-                new String[]{"uitkomst van een jutter"},
+        return model(attributen("uitkomst", num(2)),
                 new String[]{regel("uitkomst van een jutter", attr("uitkomst", num(2)),
                         let("q", deling, body, num(2)))});
     }
@@ -238,9 +240,7 @@ class LetBehoefteWitnessTest {
                         binair("MAAL", bref("x", num(2)), lit("2.00", num(2)), num(2)),
                         num(2)),
                 num(2));
-        return model("\"kindertal\":%s,\"leegwaarde\":%s,\"uitkomst\":%s"
-                        .formatted(GEHEEL_POS, num(2), num(2)),
-                new String[]{"uitkomst van een jutter"},
+        return model(attributen("kindertal", GEHEEL_POS, "leegwaarde", num(2), "uitkomst", num(2)),
                 new String[]{regel("uitkomst van een jutter", attr("uitkomst", num(2)),
                         let("k", attr("kindertal", GEHEEL_POS), binnen, num(2)))});
     }
@@ -248,9 +248,7 @@ class LetBehoefteWitnessTest {
     /** ch. 10.6 clause 1: one §6.5-depositing need, read twice and read once, on one subject. */
     private static String behoefteModel() {
         String deling = binair("GEDEELD_DOOR", attr("grondslag", num(2)), attr("deler", num(2)), num(2));
-        return model("\"grondslag\":%s,\"deler\":%s,\"tweemaal\":%s,\"eenmaal\":%s"
-                        .formatted(num(2), num(2), num(2), num(2)),
-                new String[]{"tweemaal van een jutter", "eenmaal van een jutter"},
+        return model(attributen("grondslag", num(2), "deler", num(2), "tweemaal", num(2), "eenmaal", num(2)),
                 new String[]{
                         regel("tweemaal van een jutter", attr("tweemaal", num(2)),
                                 let("q", deling, binair("PLUS", bref("q", num(2)), bref("q", num(2)), num(2)), num(2))),

@@ -333,6 +333,8 @@ class LetDragerWandelingWitnessTest {
             "{\"node\":\"AttribuutRef\",\"attribuut\":\"vermist\",\"objecttype\":\"Jutter\","
                     + "\"onderwerpBron\":\"Een Jutter\",\"navigatieRol\":null,\"type\":" + BOOLEAAN + ","
                     + "\"bron\":\"Een Jutter is vermist\",\"set\":false,\"navigatiePad\":[]}";
+    private static final String VERMIST_KENMERK =
+            "{\"node\":\"Characteristic\",\"name\":\"vermist\",\"kind\":\"BIJVOEGLIJK\"}";
     private static final String WAAR =
             "{\"node\":\"Literal\",\"waarde\":\"waar\",\"type\":" + BOOLEAAN + ",\"bron\":\"waar\"}";
 
@@ -345,32 +347,32 @@ class LetDragerWandelingWitnessTest {
                 .formatted(naam, soort, doel, waarde, voorwaarde);
     }
 
-    private static String objecttype(String naam, String meervoud, String attributen,
-            String kenmerken, String kenmerkSoorten) {
-        return ("\"%s\":{\"node\":\"Objecttype\",\"naam\":\"%s\",\"attributen\":{%s},"
-                + "\"attribuutMeervoud\":{},\"attribuutDimensies\":{},\"attribuutGranulariteit\":{},"
-                + "\"attribuutTijdlijnAantal\":{},\"attribuutTijdlijnNaam\":{},\"kenmerken\":[%s],"
-                + "\"kenmerkSoorten\":{%s},\"kenmerkGranulariteit\":{},\"kenmerkTijdlijnAantal\":{},"
-                + "\"bezield\":true,\"meervoud\":\"%s\"}")
-                .formatted(naam, naam, attributen, kenmerken, kenmerkSoorten, meervoud);
+    private static String objecttype(String naam, String meervoud, String attributes, String characteristics) {
+        return ("{\"node\":\"ObjectType\",\"name\":\"%s\",\"animate\":true,\"plural\":\"%s\","
+                + "\"attributes\":[%s],\"characteristics\":[%s]}")
+                .formatted(naam, meervoud, attributes, characteristics);
     }
 
-    /** One document. {@code regelNamen} is the declaration list beside {@code regels} (the resolved bodies);
-     *  {@code prioritizedDefaults} is appended verbatim (empty for the flat v0 shape). */
+    /** The {@code attributes} list of an object type, from alternating name / datatype arguments. */
+    private static String attributen(String... naamEnType) {
+        if (naamEnType.length % 2 != 0) throw new IllegalArgumentException("a name without a datatype");
+        java.util.StringJoiner lijst = new java.util.StringJoiner(",");
+        for (int i = 0; i < naamEnType.length; i += 2)
+            lijst.add("{\"node\":\"Attribute\",\"name\":\"%s\",\"datatype\":%s}".formatted(naamEnType[i], naamEnType[i + 1]));
+        return lijst.toString();
+    }
+
+    /** One document. {@code regels} are the resolved bodies; {@code prioritizedDefaults} is appended verbatim to
+     *  the rules section (empty for the flat v0 shape). */
     private static String doc(String objecttypen, String feittypen, String eenheidstelsels,
-            String[] regelNamen, String[] regels, String prioritizedDefaults) {
-        StringBuilder namen = new StringBuilder();
-        for (String n : regelNamen) {
-            if (namen.length() > 0) namen.append(',');
-            namen.append("{\"node\":\"Regel\",\"naam\":\"%s\",\"soort\":\"regel\"}".formatted(n));
-        }
-        return ("{\"formaat\":\"regelspraak-ir-v0\",\"objecttypen\":{%s},"
-                + "\"domeinen\":{},\"parameters\":{},\"eenheidstelsels\":{%s},\"feittypen\":{%s},\"dimensies\":{},"
-                + "\"tijdlijnen\":[],\"dagsoorten\":[],\"dagsoortPerEenheid\":{},\"regels\":[%s],"
+            String[] regels, String prioritizedDefaults) {
+        return ("{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":[%s],\"factTypes\":[%s],\"parameters\":[],"
+                + "\"domains\":[],\"unitSystems\":[%s],\"dimensions\":[],\"timelines\":[],\"dayKinds\":[],"
+                + "\"dagsoortPerEenheid\":{}},\"rules\":{"
                 + "\"resolvedRegels\":[%s],\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],"
                 + "\"consistenties\":[],\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],"
-                + "\"resolvedStartpunten\":[],\"regelGroepen\":[],\"diagnostics\":[]%s}")
-                .formatted(objecttypen, eenheidstelsels, feittypen, namen, String.join(",", regels),
+                + "\"resolvedStartpunten\":[],\"regelGroepen\":[]%s},\"diagnostics\":[]}")
+                .formatted(objecttypen, feittypen, eenheidstelsels, String.join(",", regels),
                         prioritizedDefaults);
     }
 
@@ -394,14 +396,13 @@ class LetDragerWandelingWitnessTest {
     private static String kruisEenheidModel() {
         String meter = num(0, true, "NIET_NEGATIEF", eenheid("m", 1));
         String kilometer = num(0, true, "NIET_NEGATIEF", eenheid("km", 1000));
-        String stelsel = "\"Afstand\":{\"node\":\"Eenheidstelsel\",\"naam\":\"Afstand\",\"eenheden\":{"
+        String stelsel = "{\"node\":\"Eenheidstelsel\",\"naam\":\"Afstand\",\"eenheden\":{"
                 + "\"m\":" + eenheid("m", 1) + ",\"km\":" + eenheid("km", 1000) + "},\"aliassen\":{}}";
         String waarde = let("a", attr("Baan", "aanloop", meter),
                 ite(verg("GROTER", bref("a", meter), lit("1", kilometer)),
                         lit("1.00", num(2)), lit("2.00", num(2)), num(2)), num(2));
-        return doc(objecttype("Baan", "Baans", "\"aanloop\":%s,\"uit\":%s".formatted(meter, num(2)), "", ""),
+        return doc(objecttype("Baan", "Baans", attributen("aanloop", meter, "uit", num(2)), ""),
                 "", stelsel,
-                new String[]{"uit van een baan"},
                 new String[]{regel("uit van een baan", attr("Baan", "uit", num(2)), waarde)},
                 "");
     }
@@ -411,24 +412,22 @@ class LetDragerWandelingWitnessTest {
         String consequentie = let("d", attr("Jutter", "deler", pos(2)),
                 binair("GEDEELD_DOOR", attr("Jutter", "inkomen", pos(2)), bref("d", pos(2)), num(4)), num(4));
         return doc(objecttype("Jutter", "Jutters",
-                        "\"kindertal\":%s,\"inkomen\":%s,\"deler\":%s,\"toeslag\":%s"
-                                .formatted(GEHEEL_POS, pos(2), pos(2), num(4)), "", ""),
-                "", "", new String[]{}, new String[]{},
+                        attributen("kindertal", GEHEEL_POS, "inkomen", pos(2), "deler", pos(2), "toeslag", num(4)), ""),
+                "", "", new String[]{},
                 ",\"prioritizedDefaults\":[" + defaultsGroep(consequentie, lit("0.0000", num(4)), false) + "]");
     }
 
     /** A Let over a NAVIGATED read of an attribute whose producer is forced to fire last. */
     private static String verreReactiviteitModel() {
         String ver = navAttr("Jutter", "afgeleid", num(4), "strandmaatschap", "strandmaat");
-        String feittype = "\"strandmaatschap\":{\"node\":\"Feittype\",\"naam\":\"strandmaatschap\","
+        String feittype = "{\"node\":\"Feittype\",\"naam\":\"strandmaatschap\","
                 + "\"wederkerig\":true,\"rollen\":[{\"node\":\"Rol\",\"naam\":\"strandmaat\","
                 + "\"objecttypeNaam\":\"Jutter\",\"meervoud\":\"strandmaten\",\"meervoudig\":false}]}";
         String uit = let("k", ver, binair("MAAL", bref("k", num(4)), lit("2.00", num(2)), num(6)), num(6));
         return doc(objecttype("Jutter", "Jutters",
-                        "\"strandtegoed\":%s,\"afgeleid\":%s,\"uit\":%s".formatted(pos(2), num(4), num(6)),
-                        "\"vermist\"", "\"vermist\":\"BIJVOEGLIJK\""),
+                        attributen("strandtegoed", pos(2), "afgeleid", num(4), "uit", num(6)),
+                        VERMIST_KENMERK),
                 feittype, "",
-                new String[]{"vermissing van een jutter", "afgeleid van een jutter", "uit van een jutter"},
                 new String[]{
                         // never true on this input — its only job is to BE a producer of `vermist`
                         regel("vermissing van een jutter", "KENMERKTOEKENNING", VERMIST_DOEL, WAAR,
@@ -448,11 +447,9 @@ class LetDragerWandelingWitnessTest {
                 + defaultsGroep(letLees, lit("0.00", num(2)), true) + ","
                 + defaultsGroep(lit("200.00", num(2)), lit("0.00", num(2)), true) + "]";
         return doc(objecttype("Jutter", "Jutters",
-                        "\"kindertal\":%s,\"basis\":%s,\"grondslag\":%s,\"toeslag\":%s"
-                                .formatted(GEHEEL_POS, pos(2), num(2), num(2)),
-                        "\"vermist\"", "\"vermist\":\"BIJVOEGLIJK\""),
+                        attributen("kindertal", GEHEEL_POS, "basis", pos(2), "grondslag", num(2), "toeslag", num(2)),
+                        VERMIST_KENMERK),
                 "", "",
-                new String[]{"vermissing van een jutter", "grondslag van een jutter"},
                 new String[]{
                         regel("vermissing van een jutter", "KENMERKTOEKENNING", VERMIST_DOEL, WAAR,
                                 verg("GROTER", attr("Jutter", "basis", pos(2)), lit("999999.00", num(2)))),
@@ -468,9 +465,8 @@ class LetDragerWandelingWitnessTest {
                 attr("Jutter", "deler", pos(2)), num(4));
         String waarde = achterLet ? let("t", deling, bref("t", num(4)), num(4)) : deling;
         return doc(objecttype("Jutter", "Jutters",
-                        "\"inkomen\":%s,\"deler\":%s,\"uit\":%s".formatted(pos(2), pos(2), num(4)), "", ""),
-                "", "", new String[]{"uit van een jutter"},
-                new String[]{regel("uit van een jutter", attr("Jutter", "uit", num(4)), waarde)}, "");
+                        attributen("inkomen", pos(2), "deler", pos(2), "uit", num(4)), ""),
+                "", "", new String[]{regel("uit van een jutter", attr("Jutter", "uit", num(4)), waarde)}, "");
     }
 
     /** §6.6: "de wortel van het saldo", bare or behind a Let. */
@@ -478,9 +474,8 @@ class LetDragerWandelingWitnessTest {
         String w = wortel(attr("Jutter", "saldo", num(2)), num(4));
         String waarde = achterLet ? let("t", w, bref("t", num(4)), num(4)) : w;
         return doc(objecttype("Jutter", "Jutters",
-                        "\"saldo\":%s,\"uit\":%s".formatted(num(2), num(4)), "", ""),
-                "", "", new String[]{"uit van een jutter"},
-                new String[]{regel("uit van een jutter", attr("Jutter", "uit", num(4)), waarde)}, "");
+                        attributen("saldo", num(2), "uit", num(4)), ""),
+                "", "", new String[]{regel("uit van een jutter", attr("Jutter", "uit", num(4)), waarde)}, "");
     }
 
     /** ch. 10.2: a §6.5 division in the branch the condition does NOT take — the IfThenElse bare as the rule
@@ -493,10 +488,8 @@ class LetDragerWandelingWitnessTest {
                 deling, lit("7.0000", num(4)), num(4));
         String waarde = inLetBody ? let("a", attr("Jutter", "a", pos(2)), keuze, num(4)) : keuze;
         return doc(objecttype("Jutter", "Jutters",
-                        "\"a\":%s,\"inkomen\":%s,\"deler\":%s,\"uit\":%s"
-                                .formatted(pos(2), pos(2), pos(2), num(4)), "", ""),
-                "", "", new String[]{"uit van een jutter"},
-                new String[]{regel("uit van een jutter", attr("Jutter", "uit", num(4)), waarde)}, "");
+                        attributen("a", pos(2), "inkomen", pos(2), "deler", pos(2), "uit", num(4)), ""),
+                "", "", new String[]{regel("uit van een jutter", attr("Jutter", "uit", num(4)), waarde)}, "");
     }
 
     /** ch. 10.6: the same §6.5 division, bare or as the BODY of a Let whose leeg value is never read (so the
@@ -508,10 +501,8 @@ class LetDragerWandelingWitnessTest {
                 ? let("d", attr("Jutter", "deler", pos(2)), deling, num(4))
                 : deling;
         return doc(objecttype("Jutter", "Jutters",
-                        "\"inkomen\":%s,\"deler\":%s,\"tweede\":%s,\"uit\":%s"
-                                .formatted(pos(2), pos(2), pos(2), num(4)), "", ""),
-                "", "", new String[]{"uit van een jutter"},
-                new String[]{regel("uit van een jutter", attr("Jutter", "uit", num(4)), waarde)}, "");
+                        attributen("inkomen", pos(2), "deler", pos(2), "tweede", pos(2), "uit", num(4)), ""),
+                "", "", new String[]{regel("uit van een jutter", attr("Jutter", "uit", num(4)), waarde)}, "");
     }
 
     /** ch. 10.6 clause 2: the same division, but the body reads the leeg binder FIRST — the barrier is raised at
@@ -522,10 +513,8 @@ class LetDragerWandelingWitnessTest {
         String waarde = let("d", attr("Jutter", "deler", pos(2)),
                 binair("PLUS", bref("d", pos(2)), deling, num(4)), num(4));
         return doc(objecttype("Jutter", "Jutters",
-                        "\"inkomen\":%s,\"deler\":%s,\"tweede\":%s,\"uit\":%s"
-                                .formatted(pos(2), pos(2), pos(2), num(4)), "", ""),
-                "", "", new String[]{"uit van een jutter"},
-                new String[]{regel("uit van een jutter", attr("Jutter", "uit", num(4)), waarde)}, "");
+                        attributen("inkomen", pos(2), "deler", pos(2), "tweede", pos(2), "uit", num(4)), ""),
+                "", "", new String[]{regel("uit van een jutter", attr("Jutter", "uit", num(4)), waarde)}, "");
     }
 
     /** A non-terminating division as the LEFT operand of a rule's voorwaarde, bare or behind a Let. */
@@ -535,9 +524,8 @@ class LetDragerWandelingWitnessTest {
         String conditie = verg("GROTER", links,
                 binair("PLUS", attr("Jutter", "b", pos(2)), lit("0.00", num(2)), num(6)));
         return doc(objecttype("Jutter", "Jutters",
-                        "\"a\":%s,\"b\":%s,\"uit\":%s".formatted(pos(2), pos(2), num(2)), "", ""),
-                "", "", new String[]{"uit van een jutter"},
-                new String[]{regel("uit van een jutter", "BEREKENING", attr("Jutter", "uit", num(2)),
+                        attributen("a", pos(2), "b", pos(2), "uit", num(2)), ""),
+                "", "", new String[]{regel("uit van een jutter", "BEREKENING", attr("Jutter", "uit", num(2)),
                         lit("1.00", num(2)), conditie)}, "");
     }
 }

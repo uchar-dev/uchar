@@ -91,7 +91,7 @@ class TemporeleSetvouwBereikWitnessTest {
         // document outright — "WF-048 FAIL … 2 fact types relate 'Jutter' to 'Vondst' — not uniquely derivable"
         // — so it is not merely unplayed here, it is ill-formed everywhere.)
         ObjectNode ir = herhaaldPaar();
-        ((ObjectNode) ir.get("resolvedRegels").get(0).get("waarde")).remove("bronRol");
+        ((ObjectNode) ir.get("rules").get("resolvedRegels").get(0).get("waarde")).remove("bronRol");
         Path p = tijdelijk("setvouw-geen-binding", ir);
         JsonNode c = JSON.readTree(ZAAK);
         for (boolean viaDrl : new boolean[] { false, true }) {
@@ -110,12 +110,12 @@ class TemporeleSetvouwBereikWitnessTest {
      *  ever asked). */
     private static ObjectNode setvouw() throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(TEMPOVOUW)));
-        ObjectNode jutter = (ObjectNode) ir.get("objecttypen").get("Jutter");
-        jutter.putObject("attribuutGranulariteit").put("bewaarlast", "MAAND");
-        jutter.putObject("attribuutMeervoud").put("bewaarlast", "bewaarlasten");
-        ((ObjectNode) jutter.get("attributen")).set("bewaarlast", eur());
-        ((ObjectNode) ir.get("objecttypen").get("Vondst").get("attributen")).set("bewaartarief", eur());
-        ObjectNode r = (ObjectNode) ir.get("resolvedRegels").get(0);
+        ObjectNode bewaarlast = IrPad.attribute(IrPad.objectType(ir, "Jutter"), "bewaarlast");
+        IrPad.timeline(bewaarlast, "MAAND");
+        bewaarlast.put("plural", "bewaarlasten");
+        bewaarlast.set("datatype", eur());
+        IrPad.attribute(IrPad.objectType(ir, "Vondst"), "bewaartarief").set("datatype", eur());
+        ObjectNode r = (ObjectNode) ir.get("rules").get("resolvedRegels").get(0);
         ((ObjectNode) r.get("doel")).set("type", eur());
         ObjectNode w = (ObjectNode) r.get("waarde");
         w.put("kind", "SOM").put("bron", "de som van het bewaartarief van alle vondsten van de Jutter");
@@ -128,7 +128,7 @@ class TemporeleSetvouwBereikWitnessTest {
      *  by-pair search ambiguous while the wire binding stays exact. */
     private static ObjectNode herhaaldPaar() throws Exception {
         ObjectNode ir = setvouw();
-        ObjectNode ft = ((ObjectNode) ir.get("feittypen")).putObject("keurbewaring");
+        ObjectNode ft = IrPad.modelLijst(ir, "factTypes").addObject();
         ft.put("node", "Feittype").put("naam", "keurbewaring").put("wederkerig", false);
         ft.putArray("rollen")
           .add(rol("keurende jutter", "Jutter", null, false))

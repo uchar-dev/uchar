@@ -134,7 +134,7 @@ class DatumLexeemWitnessTest {
         com.fasterxml.jackson.databind.node.ObjectNode doc =
                 (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(golden.resolve("ir.json").toFile());
         com.fasterxml.jackson.databind.node.ObjectNode tot =
-                (com.fasterxml.jackson.databind.node.ObjectNode) doc.path("resolvedRegels").path(1).path("voorwaarde").path("tot");
+                (com.fasterxml.jackson.databind.node.ObjectNode) doc.path("rules").path("resolvedRegels").path(1).path("voorwaarde").path("tot");
         assertEquals("2025-01-01", tot.path("waarde").asText(), "the bound this pin twists");
         tot.put("waarde", "2025-01-2026");
         String ir = JSON.writeValueAsString(doc);
@@ -190,9 +190,9 @@ class DatumLexeemWitnessTest {
             """;
 
     private static String waardeModel(String lexeem) {
-        return MODEL_KOP.formatted("\"peildag\": { \"node\": \"DatumInDagen\" }") + """
-                  "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
-                  "regels": [ { "node": "Regel", "naam": "Peildag", "soort": "regel" } ],
+        return MODEL_KOP.formatted("{ \"node\": \"Attribute\", \"name\": \"peildag\", \"datatype\": { \"node\": \"DatumInDagen\" } }") + """
+                  "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {} },
+                "rules": {
                   "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "Peildag", "soort": "GELIJKSTELLING",
                     "doel": { "node": "AttribuutRef", "attribuut": "peildag", "objecttype": "Vondst",
                       "onderwerpBron": "een Vondst", "navigatieRol": null, "type": { "node": "DatumInDagen" },
@@ -205,9 +205,9 @@ class DatumLexeemWitnessTest {
     }
 
     private static String dagsoortModel(String lexeem) {
-        return MODEL_KOP.formatted("\"vondstdag\": { \"node\": \"DatumInDagen\" }") + """
-                  "tijdlijnen": [], "dagsoorten": [ "peildag" ], "dagsoortPerEenheid": {},
-                  "regels": [ { "node": "Regel", "naam": "Kenmerktoekenning verjaard", "soort": "regel" } ],
+        return MODEL_KOP.formatted("{ \"node\": \"Attribute\", \"name\": \"vondstdag\", \"datatype\": { \"node\": \"DatumInDagen\" } }") + """
+                  "timelines": [], "dayKinds": [ "peildag" ], "dagsoortPerEenheid": {} },
+                "rules": {
                   "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "Kenmerktoekenning verjaard",
                     "soort": "KENMERKTOEKENNING",
                     "doel": { "node": "AttribuutRef", "attribuut": "verjaard", "objecttype": "Vondst",
@@ -231,21 +231,19 @@ class DatumLexeemWitnessTest {
     }
 
     private static final String MODEL_KOP = """
-            { "formaat": "regelspraak-ir-v0",
-              "objecttypen": { "Vondst": { "node": "Objecttype", "naam": "Vondst",
-                "attributen": { %s },
-                "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-                "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-                "kenmerken": [ "verjaard" ], "kenmerkSoorten": { "verjaard": "BIJVOEGLIJK" },
-                "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
-                "bezield": false, "meervoud": "Vondsten" } },
-              "domeinen": {}, "parameters": {}, "eenheidstelsels": {}, "feittypen": {}, "dimensies": {},
+            { "format": "uchar-ir-v1",
+              "model": {
+                "objectTypes": [ { "node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten",
+                  "attributes": [ %s ],
+                  "characteristics": [ { "node": "Characteristic", "name": "verjaard", "kind": "BIJVOEGLIJK" } ] } ],
+                "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
             """;
 
     private static final String MODEL_STAART = """
-              "objectCreaties": [], "verdelingen": [], "consistenties": [],
-              "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-              "regelGroepen": [], "diagnostics": [] }
+                "objectCreaties": [], "verdelingen": [], "consistenties": [],
+                "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+                "regelGroepen": [] },
+              "diagnostics": [] }
             """;
 
     // ---------------- helpers ----------------
@@ -277,17 +275,14 @@ class DatumLexeemWitnessTest {
      *  carrying {@code lexeem} — the only thing that varies here. */
     private static String model(String lexeem) {
         return """
-                { "formaat": "regelspraak-ir-v0",
-                  "objecttypen": { "Vondst": { "node": "Objecttype", "naam": "Vondst",
-                    "attributen": { "vondstdag": { "node": "DatumInDagen" } },
-                    "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-                    "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-                    "kenmerken": [ "verjaard" ], "kenmerkSoorten": { "verjaard": "BIJVOEGLIJK" },
-                    "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
-                    "bezield": false, "meervoud": "Vondsten" } },
-                  "domeinen": {}, "parameters": {}, "eenheidstelsels": {}, "feittypen": {}, "dimensies": {},
-                  "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
-                  "regels": [ { "node": "Regel", "naam": "Kenmerktoekenning verjaard", "soort": "regel" } ],
+                { "format": "uchar-ir-v1",
+                  "model": {
+                    "objectTypes": [ { "node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten",
+                      "attributes": [ { "node": "Attribute", "name": "vondstdag", "datatype": { "node": "DatumInDagen" } } ],
+                      "characteristics": [ { "node": "Characteristic", "name": "verjaard", "kind": "BIJVOEGLIJK" } ] } ],
+                    "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
+                    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {} },
+                  "rules": {
                   "resolvedRegels": [ { "node": "ResolvedRegel", "naam": "Kenmerktoekenning verjaard",
                     "soort": "KENMERKTOEKENNING",
                     "doel": { "node": "AttribuutRef", "attribuut": "verjaard", "objecttype": "Vondst",
@@ -304,7 +299,8 @@ class DatumLexeemWitnessTest {
                     "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
                   "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
                   "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-                  "regelGroepen": [], "diagnostics": [] }
+                  "regelGroepen": [] },
+                  "diagnostics": [] }
                 """.formatted(lexeem);
     }
 }
