@@ -1215,18 +1215,7 @@
           "node": "AttribuutRef",
           "attribuut": "woonregio factor",
           "objecttype": "Natuurlijk persoon",
-          "onderwerpBron": "een Natuurlijk persoon",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de woonregio factor van een Natuurlijk persoon",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de woonregio factor van een Natuurlijk persoon"
         },
         "waarde": {
           "node": "Literal",
@@ -1252,14 +1241,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "woonprovincie",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "zijn woonprovincie",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn woonprovincie"
               },
               "rechts": {
                 "node": "Literal",
@@ -1279,14 +1261,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "woonprovincie",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "zijn woonprovincie",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn woonprovincie"
               },
               "rechts": {
                 "node": "Literal",
@@ -1306,14 +1281,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "woonprovincie",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "zijn woonprovincie",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn woonprovincie"
               },
               "rechts": {
                 "node": "Literal",
@@ -1333,14 +1301,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "woonprovincie",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "zijn woonprovincie",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn woonprovincie"
               },
               "rechts": {
                 "node": "Literal",
@@ -1360,14 +1321,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "woonprovincie",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "zijn woonprovincie",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn woonprovincie"
               },
               "rechts": {
                 "node": "Literal",
@@ -1397,18 +1351,7 @@
           "node": "AttribuutRef",
           "attribuut": "woonregio factor",
           "objecttype": "Natuurlijk persoon",
-          "onderwerpBron": "een Natuurlijk persoon",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de woonregio factor van een Natuurlijk persoon",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de woonregio factor van een Natuurlijk persoon"
         },
         "waarde": {
           "node": "Literal",
@@ -1434,14 +1377,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "woonprovincie",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "zijn woonprovincie",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn woonprovincie"
               },
               "rechts": {
                 "node": "Literal",
@@ -1461,14 +1397,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "woonprovincie",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "zijn woonprovincie",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn woonprovincie"
               },
               "rechts": {
                 "node": "Literal",
@@ -1488,14 +1417,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "woonprovincie",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "zijn woonprovincie",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn woonprovincie"
               },
               "rechts": {
                 "node": "Literal",
@@ -1515,14 +1437,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "woonprovincie",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "zijn woonprovincie",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn woonprovincie"
               },
               "rechts": {
                 "node": "Literal",
@@ -1552,18 +1467,7 @@
           "node": "AttribuutRef",
           "attribuut": "woonregio factor",
           "objecttype": "Natuurlijk persoon",
-          "onderwerpBron": "een Natuurlijk persoon",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de woonregio factor van een Natuurlijk persoon",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de woonregio factor van een Natuurlijk persoon"
         },
         "waarde": {
           "node": "Literal",
@@ -1589,14 +1493,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "woonprovincie",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "zijn woonprovincie",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn woonprovincie"
               },
               "rechts": {
                 "node": "Literal",
@@ -1616,14 +1513,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "woonprovincie",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "zijn woonprovincie",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn woonprovincie"
               },
               "rechts": {
                 "node": "Literal",
@@ -1643,14 +1533,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "woonprovincie",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "zijn woonprovincie",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn woonprovincie"
               },
               "rechts": {
                 "node": "Literal",

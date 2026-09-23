@@ -1229,15 +1229,7 @@
                     "node": "AttribuutRef",
                     "attribuut": "passagiers",
                     "objecttype": "Vlucht",
-                    "onderwerpBron": "de Vlucht",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Onbekend",
-                      "reden": "niet opgelost"
-                    },
-                    "bron": "passagiers van de Vlucht",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "passagiers van de Vlucht"
                   }
                 ],
                 "elementObjecttype": "Natuurlijk persoon",
@@ -1252,18 +1244,16 @@
                   "eenheid": null
                 },
                 "bron": "het aantal passagiers van de Vlucht",
-                "granulariteit": null
+                "granulariteit": null,
+                "bronRol": {
+                  "node": "RolBinding",
+                  "feittype": "Vlucht van natuurlijke personen",
+                  "rol": "passagier"
+                }
               },
               "rechts": {
                 "node": "ParameterRef",
                 "parameter": "aantal treinmiles per passagier voor contingent",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "POSITIEF",
-                  "eenheid": null
-                },
                 "bron": "het aantal treinmiles per passagier voor contingent"
               },
               "type": {

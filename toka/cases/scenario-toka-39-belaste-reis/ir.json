@@ -1215,14 +1215,7 @@
           "node": "AttribuutRef",
           "attribuut": "belaste reis",
           "objecttype": "Vlucht",
-          "onderwerpBron": "Een Vlucht",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vlucht is een belaste reis",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vlucht is een belaste reis"
         },
         "waarde": {
           "node": "Literal",
@@ -1239,14 +1232,7 @@
             "node": "AttribuutRef",
             "attribuut": "bereikbaar per trein",
             "objecttype": "Vlucht",
-            "onderwerpBron": "de vlucht",
-            "navigatieRol": null,
-            "type": {
-              "node": "Booleaan"
-            },
-            "bron": "bereikbaar per trein van de vlucht",
-            "set": false,
-            "navigatiePad": []
+            "bron": "bereikbaar per trein van de vlucht"
           },
           "rechts": {
             "node": "Literal",

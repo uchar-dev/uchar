@@ -1215,14 +1215,7 @@
           "node": "AttribuutRef",
           "attribuut": "reis met paaskorting",
           "objecttype": "Vlucht",
-          "onderwerpBron": "Een Vlucht",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vlucht is een reis met paaskorting",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vlucht is een reis met paaskorting"
         },
         "waarde": {
           "node": "Literal",
@@ -1239,14 +1232,7 @@
             "node": "AttribuutRef",
             "attribuut": "vluchtdatum",
             "objecttype": "Vlucht",
-            "onderwerpBron": "de Vlucht",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumInDagen"
-            },
-            "bron": "de vluchtdatum van de Vlucht",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de vluchtdatum van de Vlucht"
           },
           "rechts": {
             "node": "Functie",
@@ -1260,14 +1246,7 @@
                     "node": "AttribuutRef",
                     "attribuut": "vluchtdatum",
                     "objecttype": "Vlucht",
-                    "onderwerpBron": "de Vlucht",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "DatumInDagen"
-                    },
-                    "bron": "de vluchtdatum van de Vlucht",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "de vluchtdatum van de Vlucht"
                   }
                 ],
                 "elementObjecttype": null,

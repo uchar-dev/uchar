@@ -1215,25 +1215,7 @@
           "node": "AttribuutRef",
           "attribuut": "leeftijd van de oudste passagier",
           "objecttype": "Vlucht",
-          "onderwerpBron": "een reis",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "jr",
-              "stelsel": "Tijd",
-              "canoniek": "mnd",
-              "factorNaarCanoniek": 12,
-              "noemer": null
-            }
-          },
-          "bron": "De leeftijd van de oudste passagier van een reis",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De leeftijd van de oudste passagier van een reis"
         },
         "waarde": {
           "node": "Functie",
@@ -1243,25 +1225,7 @@
               "node": "AttribuutRef",
               "attribuut": "leeftijd",
               "objecttype": "Natuurlijk persoon",
-              "onderwerpBron": "alle passagiers van de reis",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": {
-                  "node": "Eenheid",
-                  "afkorting": "jr",
-                  "stelsel": "Tijd",
-                  "canoniek": "mnd",
-                  "factorNaarCanoniek": 12,
-                  "noemer": null
-                }
-              },
-              "bron": "de leeftijden van alle passagiers van de reis",
-              "set": true,
-              "navigatiePad": []
+              "bron": "de leeftijden van alle passagiers van de reis"
             }
           ],
           "elementObjecttype": "Natuurlijk persoon",

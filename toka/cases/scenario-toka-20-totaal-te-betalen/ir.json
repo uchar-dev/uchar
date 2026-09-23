@@ -1215,18 +1215,7 @@
           "node": "AttribuutRef",
           "attribuut": "totaal te betalen belasting",
           "objecttype": "Vlucht",
-          "onderwerpBron": "een reis",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De totaal te betalen belasting van een reis",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De totaal te betalen belasting van een reis"
         },
         "waarde": {
           "node": "Functie",
@@ -1236,18 +1225,7 @@
               "node": "AttribuutRef",
               "attribuut": "te betalen belasting",
               "objecttype": "Natuurlijk persoon",
-              "onderwerpBron": "alle passagiers van de reis",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de te betalen belasting van alle passagiers van de reis",
-              "set": true,
-              "navigatiePad": []
+              "bron": "de te betalen belasting van alle passagiers van de reis"
             }
           ],
           "elementObjecttype": "Natuurlijk persoon",

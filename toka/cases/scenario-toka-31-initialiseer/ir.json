@@ -1215,29 +1215,11 @@
           "node": "AttribuutRef",
           "attribuut": "te betalen belasting",
           "objecttype": "Natuurlijk persoon",
-          "onderwerpBron": "een passagier",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De te betalen belasting van een passagier",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De te betalen belasting van een passagier"
         },
         "waarde": {
           "node": "ParameterRef",
           "parameter": "initiele belasting",
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
           "bron": "de initiele belasting"
         },
         "voorwaarde": null,

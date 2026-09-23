@@ -1215,14 +1215,7 @@
           "node": "AttribuutRef",
           "attribuut": "passagier van 18 tot en met 24 jaar",
           "objecttype": "Natuurlijk persoon",
-          "onderwerpBron": "Een Natuurlijk persoon",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Natuurlijk persoon is een passagier van 18 tot en met 24 jaar",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Natuurlijk persoon is een passagier van 18 tot en met 24 jaar"
         },
         "waarde": {
           "node": "Literal",
@@ -1244,43 +1237,11 @@
                 "node": "AttribuutRef",
                 "attribuut": "leeftijd",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": {
-                    "node": "Eenheid",
-                    "afkorting": "jr",
-                    "stelsel": "Tijd",
-                    "canoniek": "mnd",
-                    "factorNaarCanoniek": 12,
-                    "noemer": null
-                  }
-                },
-                "bron": "zijn leeftijd",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn leeftijd"
               },
               "rechts": {
                 "node": "ParameterRef",
                 "parameter": "volwassenleeftijd",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": {
-                    "node": "Eenheid",
-                    "afkorting": "jr",
-                    "stelsel": "Tijd",
-                    "canoniek": "mnd",
-                    "factorNaarCanoniek": 12,
-                    "noemer": null
-                  }
-                },
                 "bron": "de volwassenleeftijd"
               },
               "periode": null,
@@ -1293,25 +1254,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "leeftijd",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": {
-                    "node": "Eenheid",
-                    "afkorting": "jr",
-                    "stelsel": "Tijd",
-                    "canoniek": "mnd",
-                    "factorNaarCanoniek": 12,
-                    "noemer": null
-                  }
-                },
-                "bron": "zijn leeftijd",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn leeftijd"
               },
               "rechts": {
                 "node": "Literal",
@@ -1336,10 +1279,10 @@
               "bron": "zijn leeftijd is kleiner of gelijk aan 24 jr"
             },
             {
-              "node": "Rollidmaatschap",
-              "rol": "passagier",
-              "anderTeFiller": "Vlucht",
-              "negatie": false,
+              "node": "RoleMembership",
+              "factType": "Vlucht van natuurlijke personen",
+              "role": "passagier",
+              "negated": false,
               "bron": "hij is een passagier"
             }
           ],

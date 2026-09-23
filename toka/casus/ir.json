@@ -1176,25 +1176,7 @@
           "node": "AttribuutRef",
           "attribuut": "leeftijd",
           "objecttype": "Natuurlijk persoon",
-          "onderwerpBron": "een Natuurlijk persoon",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "jr",
-              "stelsel": "Tijd",
-              "canoniek": "mnd",
-              "factorNaarCanoniek": 12,
-              "noemer": null
-            }
-          },
-          "bron": "De leeftijd van een Natuurlijk persoon",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De leeftijd van een Natuurlijk persoon"
         },
         "waarde": {
           "node": "Functie",
@@ -1204,27 +1186,13 @@
               "node": "AttribuutRef",
               "attribuut": "geboortedatum",
               "objecttype": "Natuurlijk persoon",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumInDagen"
-              },
-              "bron": "zijn geboortedatum",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn geboortedatum"
             },
             {
               "node": "AttribuutRef",
               "attribuut": "vluchtdatum",
               "objecttype": "Vlucht",
-              "onderwerpBron": "zijn reis",
-              "navigatieRol": "reis",
-              "type": {
-                "node": "DatumInDagen"
-              },
               "bron": "de vluchtdatum van zijn reis",
-              "set": false,
-              "navigatiePad": [],
               "navigatieBindingen": [
                 {
                   "node": "RolBinding",
@@ -1270,14 +1238,7 @@
           "node": "AttribuutRef",
           "attribuut": "minderjarig",
           "objecttype": "Natuurlijk persoon",
-          "onderwerpBron": "Een Natuurlijk persoon",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Natuurlijk persoon is minderjarig",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Natuurlijk persoon is minderjarig"
         },
         "waarde": {
           "node": "Literal",
@@ -1298,27 +1259,13 @@
                 "node": "AttribuutRef",
                 "attribuut": "geboortedatum",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "DatumInDagen"
-                },
-                "bron": "zijn geboortedatum",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn geboortedatum"
               },
               {
                 "node": "AttribuutRef",
                 "attribuut": "vluchtdatum",
                 "objecttype": "Vlucht",
-                "onderwerpBron": "zijn reis",
-                "navigatieRol": "reis",
-                "type": {
-                  "node": "DatumInDagen"
-                },
                 "bron": "de vluchtdatum van zijn reis",
-                "set": false,
-                "navigatiePad": [],
                 "navigatieBindingen": [
                   {
                     "node": "RolBinding",
@@ -1352,20 +1299,6 @@
           "rechts": {
             "node": "ParameterRef",
             "parameter": "volwassenleeftijd",
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "NIET_NEGATIEF",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "jr",
-                "stelsel": "Tijd",
-                "canoniek": "mnd",
-                "factorNaarCanoniek": 12,
-                "noemer": null
-              }
-            },
             "bron": "de volwassenleeftijd"
           },
           "periode": null,
@@ -1385,18 +1318,7 @@
           "node": "AttribuutRef",
           "attribuut": "hoeveelheid passagiers",
           "objecttype": "Vlucht",
-          "onderwerpBron": "een reis",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De hoeveelheid passagiers van een reis",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De hoeveelheid passagiers van een reis"
         },
         "waarde": {
           "node": "Functie",
@@ -1406,15 +1328,7 @@
               "node": "AttribuutRef",
               "attribuut": "passagiers",
               "objecttype": "Vlucht",
-              "onderwerpBron": "de reis",
-              "navigatieRol": "reis",
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "passagiers van de reis",
-              "set": false,
-              "navigatiePad": []
+              "bron": "passagiers van de reis"
             }
           ],
           "elementObjecttype": "Natuurlijk persoon",
@@ -1429,7 +1343,12 @@
             "eenheid": null
           },
           "bron": "het aantal passagiers van de reis",
-          "granulariteit": null
+          "granulariteit": null,
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "Vlucht van natuurlijke personen",
+            "rol": "passagier"
+          }
         },
         "voorwaarde": null,
         "geldigheid": {
@@ -1446,18 +1365,7 @@
           "node": "AttribuutRef",
           "attribuut": "totaal te betalen belasting",
           "objecttype": "Vlucht",
-          "onderwerpBron": "een reis",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De totaal te betalen belasting van een reis",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De totaal te betalen belasting van een reis"
         },
         "waarde": {
           "node": "Functie",
@@ -1467,18 +1375,7 @@
               "node": "AttribuutRef",
               "attribuut": "te betalen belasting",
               "objecttype": "Natuurlijk persoon",
-              "onderwerpBron": "alle passagiers van de reis",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": false,
-                "decimalen": 2,
-                "teken": "ONBEPAALD",
-                "eenheid": null
-              },
-              "bron": "de te betalen belasting van alle passagiers van de reis",
-              "set": true,
-              "navigatiePad": []
+              "bron": "de te betalen belasting van alle passagiers van de reis"
             }
           ],
           "elementObjecttype": "Natuurlijk persoon",
@@ -1515,25 +1412,7 @@
           "node": "AttribuutRef",
           "attribuut": "leeftijd van de oudste passagier",
           "objecttype": "Vlucht",
-          "onderwerpBron": "een reis",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "jr",
-              "stelsel": "Tijd",
-              "canoniek": "mnd",
-              "factorNaarCanoniek": 12,
-              "noemer": null
-            }
-          },
-          "bron": "De leeftijd van de oudste passagier van een reis",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De leeftijd van de oudste passagier van een reis"
         },
         "waarde": {
           "node": "Functie",
@@ -1543,25 +1422,7 @@
               "node": "AttribuutRef",
               "attribuut": "leeftijd",
               "objecttype": "Natuurlijk persoon",
-              "onderwerpBron": "alle passagiers van de reis",
-              "navigatieRol": null,
-              "type": {
-                "node": "Numeriek",
-                "geheel": true,
-                "decimalen": 0,
-                "teken": "NIET_NEGATIEF",
-                "eenheid": {
-                  "node": "Eenheid",
-                  "afkorting": "jr",
-                  "stelsel": "Tijd",
-                  "canoniek": "mnd",
-                  "factorNaarCanoniek": 12,
-                  "noemer": null
-                }
-              },
-              "bron": "de leeftijden van alle passagiers van de reis",
-              "set": true,
-              "navigatiePad": []
+              "bron": "de leeftijden van alle passagiers van de reis"
             }
           ],
           "elementObjecttype": "Natuurlijk persoon",
@@ -1605,14 +1466,7 @@
           "node": "AttribuutRef",
           "attribuut": "datum-tijd voor het berekenen van de belasting op basis van afstand",
           "objecttype": "Vlucht",
-          "onderwerpBron": "een vlucht",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumTijd"
-          },
-          "bron": "De datum-tijd voor het berekenen van de belasting op basis van afstand van een vlucht",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De datum-tijd voor het berekenen van de belasting op basis van afstand van een vlucht"
         },
         "waarde": {
           "node": "Functie",
@@ -1622,28 +1476,13 @@
               "node": "AttribuutRef",
               "attribuut": "verwachte datum-tijd van vertrek",
               "objecttype": "Vlucht",
-              "onderwerpBron": "de vlucht",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumTijd"
-              },
-              "bron": "de verwachte datum-tijd van vertrek van de vlucht",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de verwachte datum-tijd van vertrek van de vlucht"
             },
             {
               "node": "AttribuutRef",
               "attribuut": "daadwerkelijke datum-tijd van vertrek",
               "objecttype": "Vlucht",
-              "onderwerpBron": "de vlucht",
-              "navigatieRol": null,
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "de daadwerkelijke datum-tijd van vertrek van de vlucht",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de daadwerkelijke datum-tijd van vertrek van de vlucht"
             }
           ],
           "elementObjecttype": "Vlucht",
@@ -1671,18 +1510,7 @@
           "node": "AttribuutRef",
           "attribuut": "te betalen belasting",
           "objecttype": "Natuurlijk persoon",
-          "onderwerpBron": "een passagier",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De te betalen belasting van een passagier",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De te betalen belasting van een passagier"
         },
         "waarde": {
           "node": "Afgerond",
@@ -1695,29 +1523,11 @@
                 "node": "AttribuutRef",
                 "attribuut": "belasting op basis van afstand",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "zijn belasting op basis van afstand",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn belasting op basis van afstand"
               },
               "rechts": {
                 "node": "ParameterRef",
                 "parameter": "korting bij gebruik niet-fossiele brandstof",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
                 "bron": "de korting bij gebruik niet-fossiele brandstof"
               },
               "type": {
@@ -1784,14 +1594,7 @@
           "node": "AttribuutRef",
           "attribuut": "verwachte datum-tijd van aankomst",
           "objecttype": "Vlucht",
-          "onderwerpBron": "een vlucht",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumTijd"
-          },
-          "bron": "De verwachte datum-tijd van aankomst van een vlucht",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De verwachte datum-tijd van aankomst van een vlucht"
         },
         "waarde": {
           "node": "Binair",
@@ -1800,38 +1603,13 @@
             "node": "AttribuutRef",
             "attribuut": "verwachte Datum-tijd van vertrek",
             "objecttype": "Vlucht",
-            "onderwerpBron": "de Vlucht",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumTijd"
-            },
-            "bron": "de verwachte Datum-tijd van vertrek van de Vlucht",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de verwachte Datum-tijd van vertrek van de Vlucht"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "verwachte duur",
             "objecttype": "Vlucht",
-            "onderwerpBron": "de vlucht",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "minuut",
-                "stelsel": "Tijd",
-                "canoniek": "dg",
-                "factorNaarCanoniek": 0.0006944444444444446388888888888889,
-                "noemer": null
-              }
-            },
-            "bron": "de verwachte duur van de vlucht",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de verwachte duur van de vlucht"
           },
           "type": {
             "node": "DatumTijd"
@@ -1853,14 +1631,7 @@
           "node": "AttribuutRef",
           "attribuut": "in het hoogseizoen",
           "objecttype": "Vlucht",
-          "onderwerpBron": "Een Vlucht",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vlucht is in het hoogseizoen",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vlucht is in het hoogseizoen"
         },
         "waarde": {
           "node": "Literal",
@@ -1886,14 +1657,7 @@
                     "node": "AttribuutRef",
                     "attribuut": "vluchtdatum",
                     "objecttype": "Vlucht",
-                    "onderwerpBron": "de Vlucht",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "DatumInDagen"
-                    },
-                    "bron": "de vluchtdatum van de Vlucht",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "de vluchtdatum van de Vlucht"
                   }
                 ],
                 "elementObjecttype": null,
@@ -1936,14 +1700,7 @@
                     "node": "AttribuutRef",
                     "attribuut": "vluchtdatum",
                     "objecttype": "Vlucht",
-                    "onderwerpBron": "de Vlucht",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "DatumInDagen"
-                    },
-                    "bron": "de vluchtdatum van de Vlucht",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "de vluchtdatum van de Vlucht"
                   }
                 ],
                 "elementObjecttype": null,
@@ -1986,14 +1743,7 @@
                     "node": "AttribuutRef",
                     "attribuut": "vluchtdatum",
                     "objecttype": "Vlucht",
-                    "onderwerpBron": "de Vlucht",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "DatumInDagen"
-                    },
-                    "bron": "de vluchtdatum van de Vlucht",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "de vluchtdatum van de Vlucht"
                   }
                 ],
                 "elementObjecttype": null,
@@ -2042,14 +1792,7 @@
           "node": "AttribuutRef",
           "attribuut": "reis met paaskorting",
           "objecttype": "Vlucht",
-          "onderwerpBron": "Een Vlucht",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vlucht is een reis met paaskorting",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vlucht is een reis met paaskorting"
         },
         "waarde": {
           "node": "Literal",
@@ -2066,14 +1809,7 @@
             "node": "AttribuutRef",
             "attribuut": "vluchtdatum",
             "objecttype": "Vlucht",
-            "onderwerpBron": "de Vlucht",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumInDagen"
-            },
-            "bron": "de vluchtdatum van de Vlucht",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de vluchtdatum van de Vlucht"
           },
           "rechts": {
             "node": "Functie",
@@ -2087,14 +1823,7 @@
                     "node": "AttribuutRef",
                     "attribuut": "vluchtdatum",
                     "objecttype": "Vlucht",
-                    "onderwerpBron": "de Vlucht",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "DatumInDagen"
-                    },
-                    "bron": "de vluchtdatum van de Vlucht",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "de vluchtdatum van de Vlucht"
                   }
                 ],
                 "elementObjecttype": null,
@@ -2139,29 +1868,11 @@
           "node": "AttribuutRef",
           "attribuut": "te betalen belasting",
           "objecttype": "Natuurlijk persoon",
-          "onderwerpBron": "een passagier",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De te betalen belasting van een passagier",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De te betalen belasting van een passagier"
         },
         "waarde": {
           "node": "ParameterRef",
           "parameter": "initiele belasting",
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
           "bron": "de initiele belasting"
         },
         "voorwaarde": null,
@@ -2179,14 +1890,7 @@
           "node": "AttribuutRef",
           "attribuut": "belaste reis",
           "objecttype": "Vlucht",
-          "onderwerpBron": "Een Vlucht",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Vlucht is een belaste reis",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Vlucht is een belaste reis"
         },
         "waarde": {
           "node": "Literal",
@@ -2203,14 +1907,7 @@
             "node": "AttribuutRef",
             "attribuut": "bereikbaar per trein",
             "objecttype": "Vlucht",
-            "onderwerpBron": "de vlucht",
-            "navigatieRol": null,
-            "type": {
-              "node": "Booleaan"
-            },
-            "bron": "bereikbaar per trein van de vlucht",
-            "set": false,
-            "navigatiePad": []
+            "bron": "bereikbaar per trein van de vlucht"
           },
           "rechts": {
             "node": "Literal",
@@ -2237,14 +1934,7 @@
           "node": "AttribuutRef",
           "attribuut": "recht op duurzaamheidskorting",
           "objecttype": "Natuurlijk persoon",
-          "onderwerpBron": "Een passagier",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een passagier heeft recht op duurzaamheidskorting",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een passagier heeft recht op duurzaamheidskorting"
         },
         "waarde": {
           "node": "Literal",
@@ -2262,7 +1952,6 @@
             {
               "node": "Kenmerk",
               "kenmerk": "duurzaam",
-              "navigatie": "reis",
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -2280,25 +1969,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "afstand tot bestemming",
                 "objecttype": "Vlucht",
-                "onderwerpBron": "zijn reis",
-                "navigatieRol": "reis",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": {
-                    "node": "Eenheid",
-                    "afkorting": "km",
-                    "stelsel": "afstand",
-                    "canoniek": "m",
-                    "factorNaarCanoniek": 1000,
-                    "noemer": null
-                  }
-                },
                 "bron": "de afstand tot bestemming in kilometers van zijn reis",
-                "set": false,
-                "navigatiePad": [],
                 "navigatieBindingen": [
                   {
                     "node": "RolBinding",
@@ -2310,20 +1981,6 @@
               "rechts": {
                 "node": "ParameterRef",
                 "parameter": "duurzaamheidskorting minimale afstand",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": {
-                    "node": "Eenheid",
-                    "afkorting": "km",
-                    "stelsel": "afstand",
-                    "canoniek": "m",
-                    "factorNaarCanoniek": 1000,
-                    "noemer": null
-                  }
-                },
                 "bron": "de duurzaamheidskorting minimale afstand"
               },
               "periode": null,
@@ -2336,43 +1993,11 @@
                 "node": "AttribuutRef",
                 "attribuut": "leeftijd",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": {
-                    "node": "Eenheid",
-                    "afkorting": "jr",
-                    "stelsel": "Tijd",
-                    "canoniek": "mnd",
-                    "factorNaarCanoniek": 12,
-                    "noemer": null
-                  }
-                },
-                "bron": "zijn leeftijd",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn leeftijd"
               },
               "rechts": {
                 "node": "ParameterRef",
                 "parameter": "pensioenleeftijd",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": {
-                    "node": "Eenheid",
-                    "afkorting": "jr",
-                    "stelsel": "Tijd",
-                    "canoniek": "mnd",
-                    "factorNaarCanoniek": 12,
-                    "noemer": null
-                  }
-                },
                 "bron": "de pensioenleeftijd"
               },
               "periode": null,
@@ -2395,14 +2020,7 @@
           "node": "AttribuutRef",
           "attribuut": "recht op duurzaamheidskorting",
           "objecttype": "Natuurlijk persoon",
-          "onderwerpBron": "Een passagier",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een passagier heeft recht op duurzaamheidskorting",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een passagier heeft recht op duurzaamheidskorting"
         },
         "waarde": {
           "node": "Literal",
@@ -2420,7 +2038,6 @@
             {
               "node": "Kenmerk",
               "kenmerk": "duurzaam",
-              "navigatie": "reis",
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -2438,25 +2055,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "afstand tot bestemming",
                 "objecttype": "Vlucht",
-                "onderwerpBron": "zijn reis",
-                "navigatieRol": "reis",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": {
-                    "node": "Eenheid",
-                    "afkorting": "km",
-                    "stelsel": "afstand",
-                    "canoniek": "m",
-                    "factorNaarCanoniek": 1000,
-                    "noemer": null
-                  }
-                },
                 "bron": "de afstand tot bestemming in kilometers van zijn reis",
-                "set": false,
-                "navigatiePad": [],
                 "navigatieBindingen": [
                   {
                     "node": "RolBinding",
@@ -2468,20 +2067,6 @@
               "rechts": {
                 "node": "ParameterRef",
                 "parameter": "duurzaamheidskorting minimale afstand",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": {
-                    "node": "Eenheid",
-                    "afkorting": "km",
-                    "stelsel": "afstand",
-                    "canoniek": "m",
-                    "factorNaarCanoniek": 1000,
-                    "noemer": null
-                  }
-                },
                 "bron": "de duurzaamheidskorting minimale afstand"
               },
               "periode": null,
@@ -2499,7 +2084,6 @@
                 {
                   "node": "Kenmerk",
                   "kenmerk": "passagier van 18 tot en met 24 jaar",
-                  "navigatie": null,
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
@@ -2508,7 +2092,6 @@
                 {
                   "node": "Kenmerk",
                   "kenmerk": "passagier van 25 tot en met 64 jaar",
-                  "navigatie": null,
                   "negatie": false,
                   "eigenaar": null,
                   "periode": null,
@@ -2534,14 +2117,7 @@
           "node": "AttribuutRef",
           "attribuut": "passagier van 18 tot en met 24 jaar",
           "objecttype": "Natuurlijk persoon",
-          "onderwerpBron": "Een Natuurlijk persoon",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een Natuurlijk persoon is een passagier van 18 tot en met 24 jaar",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een Natuurlijk persoon is een passagier van 18 tot en met 24 jaar"
         },
         "waarde": {
           "node": "Literal",
@@ -2563,43 +2139,11 @@
                 "node": "AttribuutRef",
                 "attribuut": "leeftijd",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": {
-                    "node": "Eenheid",
-                    "afkorting": "jr",
-                    "stelsel": "Tijd",
-                    "canoniek": "mnd",
-                    "factorNaarCanoniek": 12,
-                    "noemer": null
-                  }
-                },
-                "bron": "zijn leeftijd",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn leeftijd"
               },
               "rechts": {
                 "node": "ParameterRef",
                 "parameter": "volwassenleeftijd",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": {
-                    "node": "Eenheid",
-                    "afkorting": "jr",
-                    "stelsel": "Tijd",
-                    "canoniek": "mnd",
-                    "factorNaarCanoniek": 12,
-                    "noemer": null
-                  }
-                },
                 "bron": "de volwassenleeftijd"
               },
               "periode": null,
@@ -2612,25 +2156,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "leeftijd",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": {
-                    "node": "Eenheid",
-                    "afkorting": "jr",
-                    "stelsel": "Tijd",
-                    "canoniek": "mnd",
-                    "factorNaarCanoniek": 12,
-                    "noemer": null
-                  }
-                },
-                "bron": "zijn leeftijd",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn leeftijd"
               },
               "rechts": {
                 "node": "Literal",
@@ -2655,10 +2181,10 @@
               "bron": "zijn leeftijd is kleiner of gelijk aan 24 jr"
             },
             {
-              "node": "Rollidmaatschap",
-              "rol": "passagier",
-              "anderTeFiller": "Vlucht",
-              "negatie": false,
+              "node": "RoleMembership",
+              "factType": "Vlucht van natuurlijke personen",
+              "role": "passagier",
+              "negated": false,
               "bron": "hij is een passagier"
             }
           ],
@@ -2678,28 +2204,13 @@
           "node": "AttribuutRef",
           "attribuut": "startpunt variabele periode van 3 maanden",
           "objecttype": "Vlucht",
-          "onderwerpBron": "een reis",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "Het startpunt van een variabele periode van 3 maanden voor een reis wordt bepaald door de datum van vertrek van de reis",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het startpunt van een variabele periode van 3 maanden voor een reis wordt bepaald door de datum van vertrek van de reis"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "datum van vertrek",
           "objecttype": "Vlucht",
-          "onderwerpBron": "de reis",
-          "navigatieRol": "reis",
-          "type": {
-            "node": "Onbekend",
-            "reden": "niet opgelost"
-          },
-          "bron": "de datum van vertrek van de reis",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de datum van vertrek van de reis"
         },
         "voorwaarde": null,
         "geldigheid": {
@@ -2716,14 +2227,7 @@
           "node": "AttribuutRef",
           "attribuut": "startpunt variabele periode van 3 maanden",
           "objecttype": "Vlucht",
-          "onderwerpBron": "een reis",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "Het startpunt van een variabele periode van 3 maanden voor een reis wordt bepaald door de datum van vertrek van de reis min de STANDAARDTERMIJN VOOR RESERVERING",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het startpunt van een variabele periode van 3 maanden voor een reis wordt bepaald door de datum van vertrek van de reis min de STANDAARDTERMIJN VOOR RESERVERING"
         },
         "waarde": {
           "node": "Binair",
@@ -2732,39 +2236,14 @@
             "node": "AttribuutRef",
             "attribuut": "datum van vertrek",
             "objecttype": "Vlucht",
-            "onderwerpBron": "de reis",
-            "navigatieRol": "reis",
-            "type": {
-              "node": "Onbekend",
-              "reden": "niet opgelost"
-            },
-            "bron": "de datum van vertrek van de reis",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de datum van vertrek van de reis"
           },
           "rechts": {
             "node": "ParameterRef",
             "parameter": "STANDAARDTERMIJN VOOR RESERVERING",
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "mnd",
-                "stelsel": "Tijd",
-                "canoniek": "mnd",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
             "bron": "de STANDAARDTERMIJN VOOR RESERVERING"
           },
-          "type": {
-            "node": "Onbekend",
-            "reden": "operand"
-          },
+          "type": null,
           "bron": "de datum van vertrek van de reis min de STANDAARDTERMIJN VOOR RESERVERING"
         },
         "voorwaarde": null,
@@ -2782,18 +2261,7 @@
           "node": "AttribuutRef",
           "attribuut": "woonregio factor",
           "objecttype": "Natuurlijk persoon",
-          "onderwerpBron": "een Natuurlijk persoon",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de woonregio factor van een Natuurlijk persoon",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de woonregio factor van een Natuurlijk persoon"
         },
         "waarde": {
           "node": "Literal",
@@ -2819,14 +2287,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "woonprovincie",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "zijn woonprovincie",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn woonprovincie"
               },
               "rechts": {
                 "node": "Literal",
@@ -2846,14 +2307,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "woonprovincie",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "zijn woonprovincie",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn woonprovincie"
               },
               "rechts": {
                 "node": "Literal",
@@ -2873,14 +2327,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "woonprovincie",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "zijn woonprovincie",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn woonprovincie"
               },
               "rechts": {
                 "node": "Literal",
@@ -2900,14 +2347,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "woonprovincie",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "zijn woonprovincie",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn woonprovincie"
               },
               "rechts": {
                 "node": "Literal",
@@ -2927,14 +2367,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "woonprovincie",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "zijn woonprovincie",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn woonprovincie"
               },
               "rechts": {
                 "node": "Literal",
@@ -2964,18 +2397,7 @@
           "node": "AttribuutRef",
           "attribuut": "woonregio factor",
           "objecttype": "Natuurlijk persoon",
-          "onderwerpBron": "een Natuurlijk persoon",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de woonregio factor van een Natuurlijk persoon",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de woonregio factor van een Natuurlijk persoon"
         },
         "waarde": {
           "node": "Literal",
@@ -3001,14 +2423,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "woonprovincie",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "zijn woonprovincie",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn woonprovincie"
               },
               "rechts": {
                 "node": "Literal",
@@ -3028,14 +2443,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "woonprovincie",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "zijn woonprovincie",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn woonprovincie"
               },
               "rechts": {
                 "node": "Literal",
@@ -3055,14 +2463,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "woonprovincie",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "zijn woonprovincie",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn woonprovincie"
               },
               "rechts": {
                 "node": "Literal",
@@ -3082,14 +2483,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "woonprovincie",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "zijn woonprovincie",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn woonprovincie"
               },
               "rechts": {
                 "node": "Literal",
@@ -3119,18 +2513,7 @@
           "node": "AttribuutRef",
           "attribuut": "woonregio factor",
           "objecttype": "Natuurlijk persoon",
-          "onderwerpBron": "een Natuurlijk persoon",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "de woonregio factor van een Natuurlijk persoon",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de woonregio factor van een Natuurlijk persoon"
         },
         "waarde": {
           "node": "Literal",
@@ -3156,14 +2539,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "woonprovincie",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "zijn woonprovincie",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn woonprovincie"
               },
               "rechts": {
                 "node": "Literal",
@@ -3183,14 +2559,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "woonprovincie",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "zijn woonprovincie",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn woonprovincie"
               },
               "rechts": {
                 "node": "Literal",
@@ -3210,14 +2579,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "woonprovincie",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Tekst"
-                },
-                "bron": "zijn woonprovincie",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn woonprovincie"
               },
               "rechts": {
                 "node": "Literal",
@@ -3423,15 +2785,7 @@
                     "node": "AttribuutRef",
                     "attribuut": "passagiers",
                     "objecttype": "Vlucht",
-                    "onderwerpBron": "de Vlucht",
-                    "navigatieRol": null,
-                    "type": {
-                      "node": "Onbekend",
-                      "reden": "niet opgelost"
-                    },
-                    "bron": "passagiers van de Vlucht",
-                    "set": false,
-                    "navigatiePad": []
+                    "bron": "passagiers van de Vlucht"
                   }
                 ],
                 "elementObjecttype": "Natuurlijk persoon",
@@ -3446,18 +2800,16 @@
                   "eenheid": null
                 },
                 "bron": "het aantal passagiers van de Vlucht",
-                "granulariteit": null
+                "granulariteit": null,
+                "bronRol": {
+                  "node": "RolBinding",
+                  "feittype": "Vlucht van natuurlijke personen",
+                  "rol": "passagier"
+                }
               },
               "rechts": {
                 "node": "ParameterRef",
                 "parameter": "aantal treinmiles per passagier voor contingent",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "POSITIEF",
-                  "eenheid": null
-                },
                 "bron": "het aantal treinmiles per passagier voor contingent"
               },
               "type": {
@@ -3650,41 +3002,13 @@
             "node": "AttribuutRef",
             "attribuut": "luchthaven van vertrek",
             "objecttype": "Vlucht",
-            "onderwerpBron": "een vlucht",
-            "navigatieRol": null,
-            "type": {
-              "node": "Enumeratie",
-              "domein": "Luchthavens",
-              "waarden": [
-                "Amsterdam Schiphol",
-                "Groningen Eelde",
-                "Parijs Charles de Gaulle",
-                "Londen Heathrow"
-              ]
-            },
-            "bron": "De luchthaven van vertrek van een vlucht",
-            "set": false,
-            "navigatiePad": []
+            "bron": "De luchthaven van vertrek van een vlucht"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "luchthaven van bestemming",
             "objecttype": "Vlucht",
-            "onderwerpBron": "de vlucht",
-            "navigatieRol": null,
-            "type": {
-              "node": "Enumeratie",
-              "domein": "Luchthavens",
-              "waarden": [
-                "Amsterdam Schiphol",
-                "Groningen Eelde",
-                "Parijs Charles de Gaulle",
-                "Londen Heathrow"
-              ]
-            },
-            "bron": "de luchthaven van bestemming van de vlucht",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de luchthaven van bestemming van de vlucht"
           },
           "periode": null,
           "bron": "De luchthaven van vertrek van een vlucht moet ongelijk zijn aan de luchthaven van bestemming van de vlucht"
@@ -3706,14 +3030,9 @@
         "naam": "passagier met recht op treinmiles",
         "anker": "Contingent treinmiles",
         "doel": "Natuurlijk persoon",
-        "zetVeld": "te verdelen contingent treinmiles",
-        "joinVeld": "reis",
         "tussenstappen": [
           {
             "node": "Tussenstap",
-            "type": "Vlucht",
-            "veld": "reis met treinmiles",
-            "viaOuderVeld": true,
             "rolBinding": {
               "node": "RolBinding",
               "feittype": "reis met contingent treinmiles",

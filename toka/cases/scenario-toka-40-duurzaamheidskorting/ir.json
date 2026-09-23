@@ -1215,14 +1215,7 @@
           "node": "AttribuutRef",
           "attribuut": "recht op duurzaamheidskorting",
           "objecttype": "Natuurlijk persoon",
-          "onderwerpBron": "Een passagier",
-          "navigatieRol": null,
-          "type": {
-            "node": "Booleaan"
-          },
-          "bron": "Een passagier heeft recht op duurzaamheidskorting",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Een passagier heeft recht op duurzaamheidskorting"
         },
         "waarde": {
           "node": "Literal",
@@ -1240,7 +1233,6 @@
             {
               "node": "Kenmerk",
               "kenmerk": "duurzaam",
-              "navigatie": "reis",
               "negatie": false,
               "eigenaar": null,
               "periode": null,
@@ -1258,25 +1250,7 @@
                 "node": "AttribuutRef",
                 "attribuut": "afstand tot bestemming",
                 "objecttype": "Vlucht",
-                "onderwerpBron": "zijn reis",
-                "navigatieRol": "reis",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": {
-                    "node": "Eenheid",
-                    "afkorting": "km",
-                    "stelsel": "afstand",
-                    "canoniek": "m",
-                    "factorNaarCanoniek": 1000,
-                    "noemer": null
-                  }
-                },
                 "bron": "de afstand tot bestemming in kilometers van zijn reis",
-                "set": false,
-                "navigatiePad": [],
                 "navigatieBindingen": [
                   {
                     "node": "RolBinding",
@@ -1288,20 +1262,6 @@
               "rechts": {
                 "node": "ParameterRef",
                 "parameter": "duurzaamheidskorting minimale afstand",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": {
-                    "node": "Eenheid",
-                    "afkorting": "km",
-                    "stelsel": "afstand",
-                    "canoniek": "m",
-                    "factorNaarCanoniek": 1000,
-                    "noemer": null
-                  }
-                },
                 "bron": "de duurzaamheidskorting minimale afstand"
               },
               "periode": null,
@@ -1314,43 +1274,11 @@
                 "node": "AttribuutRef",
                 "attribuut": "leeftijd",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "NIET_NEGATIEF",
-                  "eenheid": {
-                    "node": "Eenheid",
-                    "afkorting": "jr",
-                    "stelsel": "Tijd",
-                    "canoniek": "mnd",
-                    "factorNaarCanoniek": 12,
-                    "noemer": null
-                  }
-                },
-                "bron": "zijn leeftijd",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn leeftijd"
               },
               "rechts": {
                 "node": "ParameterRef",
                 "parameter": "pensioenleeftijd",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": true,
-                  "decimalen": 0,
-                  "teken": "ONBEPAALD",
-                  "eenheid": {
-                    "node": "Eenheid",
-                    "afkorting": "jr",
-                    "stelsel": "Tijd",
-                    "canoniek": "mnd",
-                    "factorNaarCanoniek": 12,
-                    "noemer": null
-                  }
-                },
                 "bron": "de pensioenleeftijd"
               },
               "periode": null,

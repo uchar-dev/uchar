@@ -1222,14 +1222,7 @@
           "node": "AttribuutRef",
           "attribuut": "startpunt variabele periode van 3 maanden",
           "objecttype": "Vlucht",
-          "onderwerpBron": "een reis",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "Het startpunt van een variabele periode van 3 maanden voor een reis wordt bepaald door de datum van vertrek van de reis min de STANDAARDTERMIJN VOOR RESERVERING",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het startpunt van een variabele periode van 3 maanden voor een reis wordt bepaald door de datum van vertrek van de reis min de STANDAARDTERMIJN VOOR RESERVERING"
         },
         "waarde": {
           "node": "Binair",
@@ -1238,32 +1231,11 @@
             "node": "AttribuutRef",
             "attribuut": "datum van vertrek",
             "objecttype": "Vlucht",
-            "onderwerpBron": "de reis",
-            "navigatieRol": "reis",
-            "type": {
-              "node": "DatumInDagen"
-            },
-            "bron": "de datum van vertrek van de reis",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de datum van vertrek van de reis"
           },
           "rechts": {
             "node": "ParameterRef",
             "parameter": "STANDAARDTERMIJN VOOR RESERVERING",
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "mnd",
-                "stelsel": "Tijd",
-                "canoniek": "mnd",
-                "factorNaarCanoniek": 1,
-                "noemer": null
-              }
-            },
             "bron": "de STANDAARDTERMIJN VOOR RESERVERING"
           },
           "type": {

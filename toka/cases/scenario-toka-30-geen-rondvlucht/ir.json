@@ -1222,41 +1222,13 @@
             "node": "AttribuutRef",
             "attribuut": "luchthaven van vertrek",
             "objecttype": "Vlucht",
-            "onderwerpBron": "een vlucht",
-            "navigatieRol": null,
-            "type": {
-              "node": "Enumeratie",
-              "domein": "Luchthavens",
-              "waarden": [
-                "Amsterdam Schiphol",
-                "Groningen Eelde",
-                "Parijs Charles de Gaulle",
-                "Londen Heathrow"
-              ]
-            },
-            "bron": "De luchthaven van vertrek van een vlucht",
-            "set": false,
-            "navigatiePad": []
+            "bron": "De luchthaven van vertrek van een vlucht"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "luchthaven van bestemming",
             "objecttype": "Vlucht",
-            "onderwerpBron": "de vlucht",
-            "navigatieRol": null,
-            "type": {
-              "node": "Enumeratie",
-              "domein": "Luchthavens",
-              "waarden": [
-                "Amsterdam Schiphol",
-                "Groningen Eelde",
-                "Parijs Charles de Gaulle",
-                "Londen Heathrow"
-              ]
-            },
-            "bron": "de luchthaven van bestemming van de vlucht",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de luchthaven van bestemming van de vlucht"
           },
           "periode": null,
           "bron": "De luchthaven van vertrek van een vlucht moet ongelijk zijn aan de luchthaven van bestemming van de vlucht"

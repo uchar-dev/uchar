@@ -1215,14 +1215,7 @@
           "node": "AttribuutRef",
           "attribuut": "verwachte datum-tijd van aankomst",
           "objecttype": "Vlucht",
-          "onderwerpBron": "een vlucht",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumTijd"
-          },
-          "bron": "De verwachte datum-tijd van aankomst van een vlucht",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De verwachte datum-tijd van aankomst van een vlucht"
         },
         "waarde": {
           "node": "Binair",
@@ -1231,38 +1224,13 @@
             "node": "AttribuutRef",
             "attribuut": "verwachte Datum-tijd van vertrek",
             "objecttype": "Vlucht",
-            "onderwerpBron": "de Vlucht",
-            "navigatieRol": null,
-            "type": {
-              "node": "DatumTijd"
-            },
-            "bron": "de verwachte Datum-tijd van vertrek van de Vlucht",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de verwachte Datum-tijd van vertrek van de Vlucht"
           },
           "rechts": {
             "node": "AttribuutRef",
             "attribuut": "verwachte duur",
             "objecttype": "Vlucht",
-            "onderwerpBron": "de vlucht",
-            "navigatieRol": null,
-            "type": {
-              "node": "Numeriek",
-              "geheel": true,
-              "decimalen": 0,
-              "teken": "ONBEPAALD",
-              "eenheid": {
-                "node": "Eenheid",
-                "afkorting": "minuut",
-                "stelsel": "Tijd",
-                "canoniek": "dg",
-                "factorNaarCanoniek": 0.0006944444444444446388888888888889,
-                "noemer": null
-              }
-            },
-            "bron": "de verwachte duur van de vlucht",
-            "set": false,
-            "navigatiePad": []
+            "bron": "de verwachte duur van de vlucht"
           },
           "type": {
             "node": "DatumTijd"

@@ -1215,14 +1215,7 @@
           "node": "AttribuutRef",
           "attribuut": "datum-tijd voor het berekenen van de belasting op basis van afstand",
           "objecttype": "Vlucht",
-          "onderwerpBron": "een vlucht",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumTijd"
-          },
-          "bron": "De datum-tijd voor het berekenen van de belasting op basis van afstand van een vlucht",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De datum-tijd voor het berekenen van de belasting op basis van afstand van een vlucht"
         },
         "waarde": {
           "node": "Functie",
@@ -1232,27 +1225,13 @@
               "node": "AttribuutRef",
               "attribuut": "verwachte datum-tijd van vertrek",
               "objecttype": "Vlucht",
-              "onderwerpBron": "de vlucht",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumTijd"
-              },
-              "bron": "de verwachte datum-tijd van vertrek van de vlucht",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de verwachte datum-tijd van vertrek van de vlucht"
             },
             {
               "node": "AttribuutRef",
               "attribuut": "daadwerkelijke datum-tijd van vertrek",
               "objecttype": "Vlucht",
-              "onderwerpBron": "de vlucht",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumTijd"
-              },
-              "bron": "de daadwerkelijke datum-tijd van vertrek van de vlucht",
-              "set": false,
-              "navigatiePad": []
+              "bron": "de daadwerkelijke datum-tijd van vertrek van de vlucht"
             }
           ],
           "elementObjecttype": "Vlucht",

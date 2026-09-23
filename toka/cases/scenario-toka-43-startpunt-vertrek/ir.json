@@ -1222,27 +1222,13 @@
           "node": "AttribuutRef",
           "attribuut": "startpunt variabele periode van 3 maanden",
           "objecttype": "Vlucht",
-          "onderwerpBron": "een reis",
-          "navigatieRol": null,
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "Het startpunt van een variabele periode van 3 maanden voor een reis wordt bepaald door de datum van vertrek van de reis",
-          "set": false,
-          "navigatiePad": []
+          "bron": "Het startpunt van een variabele periode van 3 maanden voor een reis wordt bepaald door de datum van vertrek van de reis"
         },
         "waarde": {
           "node": "AttribuutRef",
           "attribuut": "datum van vertrek",
           "objecttype": "Vlucht",
-          "onderwerpBron": "de reis",
-          "navigatieRol": "reis",
-          "type": {
-            "node": "DatumInDagen"
-          },
-          "bron": "de datum van vertrek van de reis",
-          "set": false,
-          "navigatiePad": []
+          "bron": "de datum van vertrek van de reis"
         },
         "voorwaarde": null,
         "geldigheid": {

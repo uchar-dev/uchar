@@ -1215,25 +1215,7 @@
           "node": "AttribuutRef",
           "attribuut": "leeftijd",
           "objecttype": "Natuurlijk persoon",
-          "onderwerpBron": "een Natuurlijk persoon",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "NIET_NEGATIEF",
-            "eenheid": {
-              "node": "Eenheid",
-              "afkorting": "jr",
-              "stelsel": "Tijd",
-              "canoniek": "mnd",
-              "factorNaarCanoniek": 12,
-              "noemer": null
-            }
-          },
-          "bron": "De leeftijd van een Natuurlijk persoon",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De leeftijd van een Natuurlijk persoon"
         },
         "waarde": {
           "node": "Functie",
@@ -1243,27 +1225,13 @@
               "node": "AttribuutRef",
               "attribuut": "geboortedatum",
               "objecttype": "Natuurlijk persoon",
-              "onderwerpBron": "zijn",
-              "navigatieRol": null,
-              "type": {
-                "node": "DatumInDagen"
-              },
-              "bron": "zijn geboortedatum",
-              "set": false,
-              "navigatiePad": []
+              "bron": "zijn geboortedatum"
             },
             {
               "node": "AttribuutRef",
               "attribuut": "vluchtdatum",
               "objecttype": "Vlucht",
-              "onderwerpBron": "zijn reis",
-              "navigatieRol": "reis",
-              "type": {
-                "node": "DatumInDagen"
-              },
               "bron": "de vluchtdatum van zijn reis",
-              "set": false,
-              "navigatiePad": [],
               "navigatieBindingen": [
                 {
                   "node": "RolBinding",

@@ -1215,18 +1215,7 @@
           "node": "AttribuutRef",
           "attribuut": "te betalen belasting",
           "objecttype": "Natuurlijk persoon",
-          "onderwerpBron": "een passagier",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": false,
-            "decimalen": 2,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De te betalen belasting van een passagier",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De te betalen belasting van een passagier"
         },
         "waarde": {
           "node": "Afgerond",
@@ -1239,29 +1228,11 @@
                 "node": "AttribuutRef",
                 "attribuut": "belasting op basis van afstand",
                 "objecttype": "Natuurlijk persoon",
-                "onderwerpBron": "zijn",
-                "navigatieRol": null,
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
-                "bron": "zijn belasting op basis van afstand",
-                "set": false,
-                "navigatiePad": []
+                "bron": "zijn belasting op basis van afstand"
               },
               "rechts": {
                 "node": "ParameterRef",
                 "parameter": "korting bij gebruik niet-fossiele brandstof",
-                "type": {
-                  "node": "Numeriek",
-                  "geheel": false,
-                  "decimalen": 2,
-                  "teken": "ONBEPAALD",
-                  "eenheid": null
-                },
                 "bron": "de korting bij gebruik niet-fossiele brandstof"
               },
               "type": {

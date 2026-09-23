@@ -1215,18 +1215,7 @@
           "node": "AttribuutRef",
           "attribuut": "hoeveelheid passagiers",
           "objecttype": "Vlucht",
-          "onderwerpBron": "een reis",
-          "navigatieRol": null,
-          "type": {
-            "node": "Numeriek",
-            "geheel": true,
-            "decimalen": 0,
-            "teken": "ONBEPAALD",
-            "eenheid": null
-          },
-          "bron": "De hoeveelheid passagiers van een reis",
-          "set": false,
-          "navigatiePad": []
+          "bron": "De hoeveelheid passagiers van een reis"
         },
         "waarde": {
           "node": "Functie",
@@ -1236,15 +1225,7 @@
               "node": "AttribuutRef",
               "attribuut": "passagiers",
               "objecttype": "Vlucht",
-              "onderwerpBron": "de reis",
-              "navigatieRol": "reis",
-              "type": {
-                "node": "Onbekend",
-                "reden": "niet opgelost"
-              },
-              "bron": "passagiers van de reis",
-              "set": false,
-              "navigatiePad": []
+              "bron": "passagiers van de reis"
             }
           ],
           "elementObjecttype": "Natuurlijk persoon",
@@ -1259,7 +1240,12 @@
             "eenheid": null
           },
           "bron": "het aantal passagiers van de reis",
-          "granulariteit": null
+          "granulariteit": null,
+          "bronRol": {
+            "node": "RolBinding",
+            "feittype": "Vlucht van natuurlijke personen",
+            "rol": "passagier"
+          }
         },
         "voorwaarde": null,
         "geldigheid": {
