@@ -814,7 +814,18 @@ EXPECTED_CHANNEL=(
 # for every position, with the member as its subject. On the card's base jar this golden is EXCLUDE here
 # and PLAYED in the DRL-text branch; after the card both play 3 cases with ref's and clingo's values.
 # Measured over every golden in both branches before and after: no existing golden moved.
-EXPECTED_PLAYED=183
+# 183 -> 184 (2026-09-23, card verifier-leegtest-negafhankelijkheid, second fix round):
+# jutterswet-opvolgerquorum, the monotone half of the quantifier-fold stratification rule (IR-SPEC
+# ch. 5.2, maintainer decision of that date). A recursive creation mints a Wachter's opvolger under a
+# TEN_MINSTE fold over the opvolgers it mints itself and an ALLE fold whose matrix reads a merk that the
+# cycle derives. The verifier reads both as positive edges, so the cycle through the recursive creation
+# stays admissible, and a mutant that reads either part negatively refuses this golden. ref and the ASP
+# backend agree on all four cases (one stable model each). No source file of this backend changed: both
+# branches played the four cases on the first run, PLAYED 4 each, measured with this gate's own jar.
+# EXPECTED_DRL_PLAYED moves by one as well. The pin is the sum 182 + jutterswet-wachtvenster (card
+# drools-venster-vouwtoets, the block above) + jutterswet-opvolgerquorum = 184; the two cards landed in
+# that order.
+EXPECTED_PLAYED=184
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1038,7 +1049,11 @@ DRL_CHANNEL=(
 # 161 -> 162 (2026-09-23, card drools-venster-vouwtoets): jutterswet-wachtvenster, new. This branch
 # carried all three window positions before the card; the golden enters its played set together with
 # the exec branch's. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=162
+# 162 -> 163 (2026-09-23, card verifier-leegtest-negafhankelijkheid, second fix round):
+# jutterswet-opvolgerquorum. This branch plays the same four cases with no change of its own, PLAYED 4.
+# The pin is the sum 161 + jutterswet-wachtvenster + jutterswet-opvolgerquorum = 163. Reason block at
+# EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=163
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
