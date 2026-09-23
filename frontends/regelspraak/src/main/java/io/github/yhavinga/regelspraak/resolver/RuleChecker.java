@@ -217,7 +217,74 @@ final class RuleChecker {
         java.util.Set<ParserRuleContext> geweigerd = regelgroepReikwijdte(doc);
         ordeningsDefaults(doc, geweigerd);
         groepsDefaults(doc, geweigerd);
+        keurVlakkeOntkenningen(doc);   // before the single-writer check: a refused negation is no second writer
         keurEnigeSchrijver();
+        keurNooitAfleidend();
+    }
+
+    /** Dialect §4, form 1 (maintainer decision 2, 2026-09-23): a negated kenmerktoekenning stands only in a rule that
+     *  becomes a default — the body of an 'Uitzondering op', a member of 'Uitzonderingen ongeordend', or the base of
+     *  an 'Uitzondering op' chain. What still carries the negation after the lift is a plain Regel, and there it has
+     *  no reading: without a priority it is either inert under the closed world (§9.2: an unattributed
+     *  characteristic is false) or, beside a positive rule, a conflict nothing decides. Before this check it went to
+     *  disk as a characteristic named "niet …" with no diagnostic, for the verifier to refuse under WF-022. A rule
+     *  written in an extension block that stayed un-lifted was refused by that block's own check, which speaks
+     *  alone. */
+    private void keurVlakkeOntkenningen(RegelSpraakDocumentContext doc) {
+        java.util.Set<String> inBlok = new java.util.HashSet<>();
+        for (UitzonderingRegelContext u : DefinitionResolver.alleUitzonderingen(doc)) {
+            inBlok.add(src(u.uitzonderingBasisNaam()));
+            inBlok.add(src(u.regelNaam()));
+        }
+        for (UitzonderingGroepContext g : DefinitionResolver.alleUitzonderingGroepen(doc))
+            for (RegelContext lid : g.regel()) inBlok.add(src(lid.regelNaam()));
+        for (ResolvedRegel r : model.resolvedRegels) {
+            if (!ontkend(r) || geweigerdeDoelen.contains(r)) continue;
+            if (inBlok.stream().anyMatch(n -> r.naam().equals(n) || r.naam().startsWith(n + " #"))) continue;
+            geweigerdeDoelen.add(r);
+            Expr.AttribuutRef doel = (Expr.AttribuutRef) r.doel();
+            model.diagnostics.add(new Diagnostic(Severity.ERROR, "regel '" + r.naam() + "': een gewone regel kan een "
+                    + "kenmerk niet ontkennen — zonder toekenning is '" + doel.attribuut() + "' al onwaar (§9.2), "
+                    + "en de wire kent op een kenmerk alleen de toekenning 'waar' (WF-022). Een ontkenning ('is niet', "
+                    + "'heeft geen', 'is geen', 'is niet een') staat alleen in een regel die een default wordt: het "
+                    + "lichaam van een 'Uitzondering op', een lid van 'Uitzonderingen ongeordend', of de basisregel van "
+                    + "een 'Uitzondering op'-keten (dialect §4)", doel.bron() == null ? 0 : doel.bron().line()));
+        }
+    }
+
+    /** Dialect §4, form 1 (maintainer decision 2, 2026-09-23): a characteristic target on which every default of
+     *  every defaults group decides 'onwaar' never derives anything — a false decision writes nothing, so the
+     *  characteristic comes from the input alone. That is well-formed (it means "never", and the wire admits it), so
+     *  it is no error; but it is most likely not what the author meant, so the RuleChecker warns, once per target:
+     *  an unordered block spreads one target over sibling groups, and a sibling that decides 'onwaar' beside one
+     *  that decides 'waar' derives plenty. */
+    private void keurNooitAfleidend() {
+        Map<String, List<PrioritizedDefaults>> perDoel = new LinkedHashMap<>();
+        for (PrioritizedDefaults pd : model.prioritizedDefaults)
+            if (pd.isKenmerk())
+                perDoel.computeIfAbsent(doelSleutel(pd.onderwerp(), true, pd.doel()), k -> new ArrayList<>()).add(pd);
+        for (List<PrioritizedDefaults> groepen : perDoel.values()) {
+            if (groepen.stream().anyMatch(pd -> beslistWaar(pd.defaults()))) continue;
+            PrioritizedDefaults eerste = groepen.get(0);
+            Herkomst h = pdHerkomst.getOrDefault(eerste, new Herkomst(0, "defaults-groep"));
+            model.diagnostics.add(new Diagnostic(Severity.WARNING, h.kop() + ": het kenmerk " + eerste.onderwerp() + "."
+                    + eerste.doel() + " leidt nooit iets af — elke default van "
+                    + opsomming(groepen.stream().map(PrioritizedDefaults::naam).toList()) + " beslist 'onwaar', en "
+                    + "een besluit 'onwaar' schrijft niets, dus het kenmerk komt alleen uit de invoer. Welgevormd, maar "
+                    + "gelijk aan geen regel; schrijf de uitzondering die 'waar' beslist, of laat de groep weg "
+                    + "(dialect §4)", h.line()));
+        }
+    }
+
+    /** Whether some default in {@code defaults}, nested exception groups included, decides 'waar'. */
+    private static boolean beslistWaar(List<Default> defaults) {
+        if (defaults == null) return false;
+        for (Default d : defaults) {
+            if (Boolean.TRUE.equals(d.besluit())) return true;
+            if (d.excepties() != null)
+                for (var groep : d.excepties().leden()) if (beslistWaar(groep.defaults())) return true;
+        }
+        return false;
     }
 
     /** WF-050's single writer, producer side (fix round 3, 2026-09-23): a target with a defaults group has no
@@ -362,8 +429,9 @@ final class RuleChecker {
      *  stayed unknown, and the document reached disk with {@code diagnostics: []} for the verifier to refuse
      *  under WF-022 and WF-034. The same for an undeclared attribute, and for a characteristic whose subject is a
      *  navigation, which resolves to no object type at all. Each is an ERROR now, naming the form. An undeclared
-     *  characteristic on a resolved subject is left to the dialect card for negated decisions ("is niet X"),
-     *  whose ground that is. */
+     *  characteristic on a resolved subject is not judged here: a negated one ("is niet X" with X undeclared) is
+     *  refused where the name is read ({@link #kenmerk}, dialect §4), and a positive one still reaches the
+     *  verifier's WF-022 — no card has taken that one yet. */
     private void keurRegeldoelen() {
         for (ResolvedRegel r : model.resolvedRegels) {
             if (!(r.doel() instanceof Expr.AttribuutRef a)) continue;
@@ -697,9 +765,10 @@ final class RuleChecker {
                 ongeordend, defaults, bron, g);
     }
 
-    /** One default from a resolved flat rule: on characteristic defaults a §9.2-monotone kenmerktoekenning
-     *  always decides {@code true} (RegelSpraak cannot withdraw a characteristic); on attribute defaults the
-     *  default's value is the rule's resolved value expression. The justification is the rule's condition.
+    /** One default from a resolved flat rule: on characteristic defaults a kenmerktoekenning decides {@code true},
+     *  and a negated one (dialect §4, form 1: {@link #ONTKEND}) decides {@code false} — which writes nothing, so
+     *  §9.2's monotone writes and ch. 5.3 hold; on attribute defaults the default's value is the rule's resolved
+     *  value expression. The justification is the rule's condition.
      *  The rule's {@code // Bron:} annotation becomes the default's {@code bron}: lifting takes the rule out of
      *  resolvedRegels, and its {@code bronAnnotaties} with it, so this is the one place the citation can
      *  survive — and since every lifted rule becomes a default HERE, a nested exception inherits the placement
@@ -708,7 +777,7 @@ final class RuleChecker {
         Conditie rechtvaardiging = r.voorwaarde() != null ? r.voorwaarde() : ALTIJD;
         String bron = annotatieTekst(r.bronAnnotaties());
         return kenmerk
-                ? new Default(Boolean.TRUE, rechtvaardiging, null, false, null, bron)
+                ? new Default(!ontkend(r), rechtvaardiging, null, false, null, bron)
                 : new Default(null, rechtvaardiging, r.waarde(), false, null, bron);
     }
 
@@ -1953,14 +2022,78 @@ final class RuleChecker {
     }
 
     /** §13.4.5 kenmerktoekenning: the subject acquires a kenmerk (a boolean property).
-     *  Modelled as setting that boolean attribute to true. */
+     *  Modelled as setting that boolean attribute to true.
+     *
+     *  <p>Dialect §4, form 1 (maintainer decisions 1–3, 2026-09-23): a negated decision — 'is niet X', 'heeft geen
+     *  X', 'is geen X', 'is niet een X' — is read the way the condition side reads a kenmerkcheck
+     *  ({@link #kenmerkConditie}): the WHOLE written name first, so a declared characteristic whose name begins with
+     *  niet/geen binds itself; only a name that binds nothing is read as niet/geen plus the rest. A negated rule
+     *  writes the de-negated characteristic with {@link #ONTKEND} as its value. The defaults lowering turns that into
+     *  besluit false ({@link #defaultVan}); a plain rule that still carries it after the lift is refused
+     *  ({@link #keurVlakkeOntkenningen}), so the marker never reaches the wire. A negation whose rest names no
+     *  declared characteristic is refused here. A positive name keeps its written spelling without a lookup, as
+     *  before, so no document without a negation changes. */
     private void kenmerk(String naam, KenmerkToekenningContext kt, Conditie voorwaarde, Geldigheid geldigheid) {
         Objecttype subject = bouwer.objecttypeVanKeten(kt.onderwerpKeten());
-        String kenmerk = src(kt.kaleNaam()).replaceFirst("^(?i)(de|het|een)\\s+", "");
+        String geschreven = src(kt.kaleNaam());
+        String kenmerk = geschreven.replaceFirst("^(?i)(de|het|een)\\s+", "");
+        boolean ontkend = false;
+        String zonderKenmerk = null;   // the refusal of a negation that names no declared characteristic
+        if (subject != null && kt.NIET() != null) {
+            // 'is niet een X': the grammar carries the negation, so X itself must bind.
+            String g = KenmerkMatcher.vind(subject, geschreven);
+            if (g == null) g = KenmerkMatcher.vind(subject, kenmerk);
+            if (g != null) {
+                kenmerk = g;
+                ontkend = true;
+                keurNegatieSoort(subject, new Conditie.Kenmerk(g, null, true, bron(kt)), false);
+            } else zonderKenmerk = ontkenningZonderKenmerk(naam, subject, "niet een " + kenmerk, kenmerk, false);
+        } else if (subject != null) {
+            boolean heeft = kt.HEEFT() != null;
+            Conditie c = kenmerkConditie(subject, geschreven, null, heeft, bron(kt));
+            if (c instanceof Conditie.Kenmerk k && k.negatie()) {
+                kenmerk = k.kenmerk();
+                ontkend = true;
+                keurNegatieSoort(subject, k, heeft);
+            } else if (c == null && kenmerk.matches("(?i)(niet|geen)\\s+\\S.*"))
+                zonderKenmerk = ontkenningZonderKenmerk(naam, subject, kenmerk,
+                        kenmerk.replaceFirst("^(?i)(niet|geen)\\s+", ""), true);
+        }
         Expr doel = new Expr.AttribuutRef(kenmerk, subject, src(kt.onderwerpKeten()),
                 null, new Datatype.Booleaan(), bron(kt));
-        Expr waarde = new Expr.Literal("waar", new Datatype.Booleaan(), Bron.synthetisch("waar"));
-        model.resolvedRegels.add(new ResolvedRegel(naam, ResolvedRegel.Soort.KENMERKTOEKENNING, doel, waarde, voorwaarde, geldigheid, huidigeBronAnnotaties));
+        Expr waarde = ontkend ? ONTKEND : new Expr.Literal("waar", new Datatype.Booleaan(), Bron.synthetisch("waar"));
+        ResolvedRegel r = new ResolvedRegel(naam, ResolvedRegel.Soort.KENMERKTOEKENNING, doel, waarde, voorwaarde,
+                geldigheid, huidigeBronAnnotaties);
+        model.resolvedRegels.add(r);
+        if (zonderKenmerk != null) {
+            // Kept in resolvedRegels and marked refused, so the defaults lowering skips its family instead of
+            // adding "schrijft een ander doel" about a target the author never meant.
+            geweigerdeDoelen.add(r);
+            model.diagnostics.add(new Diagnostic(Severity.ERROR, zonderKenmerk, kt.getStart().getLine()));
+        }
+    }
+
+    /** The value a negated kenmerktoekenning carries between its resolution and the defaults lowering (dialect §4,
+     *  form 1). WF-022 admits only the constant true on a characteristic target, so a rule carrying this value never
+     *  reaches the wire: the lowering turns it into besluit false, and {@link #keurVlakkeOntkenningen} refuses a plain
+     *  rule that still carries it. */
+    private static final Expr ONTKEND = new Expr.Literal("onwaar", new Datatype.Booleaan(), Bron.synthetisch("onwaar"));
+
+    /** Whether {@code r} is a negated kenmerktoekenning — the {@link #ONTKEND} value, matched on content so a copy
+     *  of the rule record keeps it. A positive kenmerktoekenning always carries the synthetic "waar". */
+    private static boolean ontkend(ResolvedRegel r) {
+        return r.soort() == ResolvedRegel.Soort.KENMERKTOEKENNING && r.waarde() instanceof Expr.Literal l
+                && "onwaar".equals(l.waarde());
+    }
+
+    /** The refusal of a negation whose rest names no characteristic the subject declares (dialect §4, form 1). The
+     *  author wrote a negation, so the message names the rest; with {@code heelNaamOok} the whole name was tried
+     *  first and binds nothing either — the verbatim-first reading the condition side has. */
+    private static String ontkenningZonderKenmerk(String regel, Objecttype subject, String geschreven, String rest,
+                                                  boolean heelNaamOok) {
+        return "regel '" + regel + "': '" + geschreven + "' ontkent geen kenmerk van " + subject.naam + " — '" + rest
+                + "' is niet gedeclareerd" + (heelNaamOok ? ", en '" + geschreven + "' evenmin" : "")
+                + ". Een ontkende kenmerkbeslissing ontkent een gedeclareerd kenmerk (§3.5, dialect §4)";
     }
 
     /** §9.9/§13.4.12 startpuntbepaling: "Het startpunt van <tijdlijn> voor <onderwerp> wordt bepaald
