@@ -4435,10 +4435,12 @@ many strata as the chain is deep.
   shape (the creation mints a successor while "het merk is leeg", and
   the rule that writes merk = 1 reads the successor's rang under
   "gevuld"), the R3 shape spelled with `negated: true` (both tests "niet
-  gevuld") and a presence-true test alone ("het merk is niet leeg") —
+  gevuld"), a presence-true test alone ("het merk is niet leeg") and
+  the test as the matrix of an ALLE fold over the minted successors —
   negatief cases `wf046-leegtest-recursieve-creatie`,
-  `wf046-leegtest-negatie-recursieve-creatie` and
-  `wf046-leegtest-aanwezigheid-recursieve-creatie`. `ref/` re-runs the
+  `wf046-leegtest-negatie-recursieve-creatie`,
+  `wf046-leegtest-aanwezigheid-recursieve-creatie` and
+  `wf046-leegtest-kwantorvouw-recursieve-creatie`. `ref/` re-runs the
   check and refuses R1 and R3 with the WF-046 report (WV-6.4-g). Before
   the rule it answered them: R1 with a chain of five whose creations
   are each justified by a leeg merk the final world fills (the ASP
