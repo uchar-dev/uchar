@@ -96,14 +96,16 @@ the channel are matched version-stripped by both executors' checkers
 ch. 8.2 gates it at runtime against the session's `asOfDate`). One
 case, one program also fixes the evaluation date: the case's
 `asOfDate` is a translation-time constant, so ref's *runtime* gate is
-decided at translation, decision for decision (`applies`, the literal
-mirror of ref's `applies` in `ref/lib/eval.ml`). A rule, a defaults
+decided at translation, decision for decision (`applies`, which since
+2026-09-23 calls ref's `Eval.window_admits` — one shared gate). A rule, a defaults
 member, an object creation or a fact creation whose window excludes
 the date **does not apply**: nothing of it is emitted — no head, no
 helper predicate, no `viol/2` fence (ref never evaluates an excluded
 form, so a zero divisor or range hazard inside one must not fault
-here either). Window bounds compare as ISO strings, both ends
-inclusive, exactly as ref compares them; a *bounded* window in a
+here either). Window bounds are read through the strict date
+reader and compared as day numbers, both ends inclusive, by ref's own
+gate; a non-date bound faults naming position and lexeme, and a
+non-date `asOfDate` is refused by the shared case loader; a *bounded* window in a
 time-free session (`asOfDate` null) faults with ref's own reason
 (`a validity-bounded form needs an evaluation date; this session is
 time-free`), so the two executors refuse identically. Windowed forms
