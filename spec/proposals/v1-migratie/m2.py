@@ -30,6 +30,11 @@ range names the bound role, by declared name or declared plural (D8 (ii), WF-047
 Where it names neither that role nor a member of the element type, the declared name
 of the bound role is written in its place; the written spelling stays in `bron`.
 
+A role check keeps its filler class (U12): where the type a role check names for the
+other end of the relation is a strict subtype of that role's declared filler type,
+RoleMembership carries it as `counterpartType`; where it is the declared type itself,
+the field stays absent.
+
 Loud by construction: an L1 value the L2 shape cannot carry fails the document with
 its file name and the JSON pointer into the L1 input; nothing is repaired. A failing
 document is left untouched. A document already in the L2 shape is left untouched as
@@ -71,7 +76,8 @@ DERIVED_TYPE_NODES = ('Binair', 'Functie', 'Afgerond', 'Begrensd')
 
 COUNT_NAMES = ('vouwbindingen', 'kwantorbindingen', 'verdelingsrollen', 'navigatiebindingen',
                'eigen lezingen', 'rollidmaatschappen', 'scopes', 'kenmerkhops', 'referentietypes',
-               'sentinels', 'onopgelost-typen', 'afgeleide typen null', 'telbronnamen')
+               'sentinels', 'onopgelost-typen', 'afgeleide typen null', 'telbronnamen',
+               'vullersklassen')
 
 _ASCII_LOWER = {c: c + 32 for c in range(ord('A'), ord('Z') + 1)}
 
@@ -467,10 +473,13 @@ class Migration:
         otn, nr = a.get('objecttype'), a.get('navigatieRol')
         pad = a.get('navigatiePad') if isinstance(a.get('navigatiePad'), list) else []
         bound = 'navigatieBindingen' in a
+        l1 = any(k in a for k in ATTR_REF_DROPPED)
         self.drop_ref_fields(a)
         self.children(a, p, subject)
         written = nr is not None or bool(pad)
-        if bound:
+        if bound or not l1:
+            # a reference in the L2 shape: without bindings it is the subject's own read (D10),
+            # whatever its objecttype says, and that is the verifier's to judge, not a derivation
             return a
         if not isinstance(otn, str):
             if written:
@@ -706,11 +715,32 @@ class Migration:
         self.children(v, p, subject)
         return v
 
-    def membership(self, p, subject, fact_type, role, negated, bron):
+    def counterpart(self, p, written, other):
+        """U12: the type the role check names for the other end, kept where it narrows the
+           other role's declared filler type. The derivation already demands written ⊑ declared
+           (the role's filler test); anything else is refused, never widened silently."""
+        declared = other.get('objecttypeNaam')
+        if not isinstance(declared, str):
+            self.fail(p, 'the other role of the derived fact type declares no filler type')
+            return None, False
+        if norm(written) == norm(declared):
+            return None, True
+        if not self.m.is_sub(written, declared):
+            self.fail(p, 'the role check names %s for the other end, which is no subtype of that '
+                      'role\'s declared filler type %s' % (json.dumps(written), json.dumps(declared)))
+            return None, False
+        self.counts['vullersklassen'] += 1
+        return self.m.declared(written).get('name'), True
+
+    def membership(self, p, subject, fact_type, role, counterpart, negated, bron):
         self.counts['rollidmaatschappen'] += 1
         self.changed = True
-        return {'node': 'RoleMembership', 'factType': fact_type, 'role': role,
-                'negated': negated, 'bron': bron}
+        node = {'node': 'RoleMembership', 'factType': fact_type, 'role': role}
+        if counterpart is not None:
+            node['counterpartType'] = counterpart
+        node['negated'] = negated
+        node['bron'] = bron
+        return node
 
     def rollidmaatschap(self, v, p, subject):
         """The near-side check: checks.ml WF-034 (o) — the one fact type between the subject and
@@ -740,7 +770,11 @@ class Migration:
         if not isinstance(near.get('naam'), str):
             self.fail(p, 'the derived role of fact type %s has no declared name' % json.dumps(fn))
             return v
-        return self.membership(p, subject, fn, near['naam'], v.get('negatie'), v.get('bron'))
+        far = cands[0][1]
+        ct, ok = self.counterpart(p + ptr('anderTeFiller'), f, far)
+        if not ok:
+            return v
+        return self.membership(p, subject, fn, near['naam'], ct, v.get('negatie'), v.get('bron'))
 
     def verre_rollidmaatschap(self, v, p, subject):
         """The far-side check: checks.ml WF-034 (t) — the fact type where filler and backref meet
@@ -761,11 +795,14 @@ class Migration:
                       % (len(cands), json.dumps(subject), json.dumps(f), json.dumps(b),
                          show_cands([(fn, sr) for fn, sr, _ in cands])))
             return v
-        fn, sr, _ = cands[0]
+        fn, sr, far = cands[0]
         if not isinstance(sr.get('naam'), str):
             self.fail(p, 'the derived role of fact type %s has no declared name' % json.dumps(fn))
             return v
-        return self.membership(p, subject, fn, sr['naam'], v.get('negatie'), v.get('bron'))
+        ct, ok = self.counterpart(p + ptr('filler'), f, far)
+        if not ok:
+            return v
+        return self.membership(p, subject, fn, sr['naam'], ct, v.get('negatie'), v.get('bron'))
 
     def composite(self, v, p, subject):
         self.derived_type(v, p)
