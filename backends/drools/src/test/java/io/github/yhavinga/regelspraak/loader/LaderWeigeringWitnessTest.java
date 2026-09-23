@@ -211,6 +211,18 @@ class LaderWeigeringWitnessTest {
         weigert(ir, kenmerk + "/timeline/count");
     }
 
+    @Test void een_tijdlijnnaam_op_een_kenmerkfacet_weigert() throws Exception {
+        // The schema gives a characteristic's facet no timelineName (its own CharacteristicTimelineFacet
+        // definition): riding a named tijdlijn is an attribute's form (§13.3.6.9). Read leniently the field was
+        // dropped without a word; the OCaml loader refuses it as an unknown field, and so does this one.
+        ObjectNode ir = golden(BAKENMEESTER);
+        String kenmerk = lidPad(ir, "Bakenmeester", "characteristics", "dienstdoend");
+        ((ObjectNode) IrPad.characteristic(IrPad.objectType(ir, "Bakenmeester"), "dienstdoend").get("timeline"))
+                .put("timelineName", "boekjaar");
+        IrLoader.Documentfout e = weigert(ir, kenmerk + "/timeline/timelineName");
+        assertTrue(e.getMessage().contains("unknown field"), e.getMessage());
+    }
+
     @Test void een_kenmerk_zonder_soort_of_met_een_onbekende_soort_weigert() throws Exception {
         ObjectNode ir = golden(BAKENMEESTER);
         String kenmerk = lidPad(ir, "Bakenmeester", "characteristics", "dienstdoend");
