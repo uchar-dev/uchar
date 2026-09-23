@@ -337,8 +337,8 @@ overgangsheffing leeg);"
 
 ### Open punten
 
-Stand na fixronde 1: 1, 2 en 4 afgehandeld; 3 gaat naar de lopende
-Drools-lijn.
+Stand na fixronde 2: 1, 2 en 4 afgehandeld; 3 en 5 gaan naar de
+lopende Drools-lijn.
 
 1. **Afgehandeld in `e61e6d18` (voorstel).**
    `spec/schema/uchar-case-v0.schema.json`, beschrijving van
@@ -387,6 +387,48 @@ Drools-lijn.
    shape test and cannot check the calendar: '2026-02-30' matches here
    and is refused one step later, by every executor's case reader at
    load (red witness `corpus/rood/asofdate-kalender`)."
+
+5. **Naar de lopende Drools-lijn, samen met punt 3** (lensadvies,
+   fixronde 2 punt 8; geen kaartje). De Drools-caselezer behandelt
+   casegebreken op drie manieren: als `Excluded` (een vorm die de backend
+   niet draagt), als naamloze crash, of als benoemde weigering. De rode
+   run deelt in naar uitzonderingstype, dus het eerste wordt EXCLUDE, en
+   het tweede en het derde worden FAULT. ref en clingo weigeren elk van
+   deze gebreken bij het laden met een benoemde `CASE ERROR`. Gemeten op
+   2026-09-23 met de huidige jar, telkens één gebrek in een case op het
+   vensterheffing-document (DroolsRoodMain; ref ter vergelijking):
+
+   ```
+   === meldwaarde als {"boolean": true}
+   drools: FAULT IllegalArgumentException: argument type mismatch
+   ref:    CASE ERROR: M1.meldwaarde: value variant "boolean" does not match the declared datatype
+   === kenmerk "verzonnen" niet gedeclareerd
+   drools: FAULT RuntimeException: kon setter setVerzonnen(boolean) niet aanroepen op Vondstmelding <- NoSuchMethodException: io.github.yhavinga.regelspraak.facts.Vondstmelding.setVerzonnen(boolean)
+   ref:    CASE ERROR: characteristic "verzonnen" is not declared on "Vondstmelding"
+   === attribuut "verzonnen" niet gedeclareerd
+   drools: EXCLUDE case sets undeclared attribute 'verzonnen' on Vondstmelding
+   ref:    CASE ERROR: attribute "verzonnen" is not declared on "Vondstmelding"
+   === rolsleutel "melder" (niet gedeclareerd) naar label X9 (onbekend)
+   drools: EXCLUDE role 'melder' names unknown label X9
+   ref:    CASE ERROR: role key "melder" does not resolve to a declared role opposite "Vondstmelding"
+   === asOfDate 2026-02-30 (dit document)
+   drools: FAULT IllegalArgumentException: malformed date '2026-02-30' on 'asOfDate': the field widths are right but the calendar is not (Text '2026-02-30' could not be parsed: Invalid date 'FEBRUARY 30')
+   === corpus/rood/unknown-role-target-label
+   drools: EXCLUDE role 'liggers' names unknown label S9
+   ```
+
+   Drie dingen vallen op. Twee casegebreken geven een FAULT zonder eigen
+   zin, alleen platformtekst; een pin daarop zou een crash pinnen (zie de
+   pinregel in de kop van het Drools-been van gate 8). Twee andere
+   gebreken worden gemeld als een vorm die de backend niet draagt,
+   terwijl het documentgebreken zijn. En bij een onbekende rolsleutel
+   noemt de Drools-melding het label en niet de sleutel. De
+   datumlezer laat zien hoe het wel kan: een benoemde weigering met
+   positie en lexeem, als documentgebrek (`IllegalArgumentException`),
+   nooit als `Excluded`. Voorstel voor de Drools-lijn: behandel elk
+   casegebrek zo. Samen met punt 3 (het ERROR-token in de replay-runner)
+   geeft dat één regel: een casegebrek is een benoemde weigering,
+   in de rode run en in de replay.
 
 ### Fixronde 1 (hoofdsessie, 2026-09-23)
 
