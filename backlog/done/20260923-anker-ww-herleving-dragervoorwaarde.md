@@ -221,7 +221,9 @@ golden, zelfde kanalen.
 > a characteristic target: a `besluit: false` leaves an input-set target
 > characteristic standing (ch. 7.1, "not a retraction"; case7, a
 > reason-carrying gate-7 survivor until card
-> `kenmerkinvoer-en-invoer-boven-berekening` decides otherwise). The target
+> `kenmerkinvoer-en-invoer-boven-berekening` decides otherwise), and a sixth
+> pins the blokkade's own `nieuw maandloon > inkomensgrens` conjunct (case10,
+> case3 with the new right's maandloon below the grens). The target
 > characteristic is marked bezittelijk, the spelling its RegelSpraak twin
 > writes (`heeft (geen) recht op uitkering`); measured, no executor reads
 > the kind. No wire, verifier or executor change; the DRL-text branch keeps
@@ -286,6 +288,11 @@ golden, zelfde kanalen.
    grens). De maintainer bevestigt of verwerpt haar; verwerpt hij haar, dan
    vervalt case8 en is het `werkloos`-conjunct een ontwerpkeuze zonder
    getuige.
+6. Het eigen conjunct `nieuw recht ontstaan` van de blokkade pint geen case,
+   ook na case10 niet (gemeten: een blokkade zonder dat conjunct haalt alle
+   tien cases). Het is alleen waarneembaar met een nieuw maandloon boven de
+   grens zonder nieuw recht, een invoer die in de casus niets betekent. De
+   NOTE zegt dat; een case ervoor is niet toegevoegd.
 
 **Fixronde 1 (hoofdsessie, 2026-09-23).** Verbreding van de may-touch-set,
 op voorstelmandaat: `spec/proposals/DIALECT-DEFAULTS-NIET-EN-NESTING.md`,
@@ -351,3 +358,76 @@ Alle veertien gates opnieuw groen op de inhoud van deze ronde. Gate 1, 2, 3
 en 12 draaiden na item 1; gate 4 tot en met 11, 13 en 14 draaiden erna. Item
 2 raakt alleen het voorstel, buiten elke gatezone; gate 1 is daarna
 opnieuw gedraaid: PASS.
+
+**Fixronde 3 (hoofdsessie, 2026-09-23; oordeel van de lens: mergen, alle
+42 verwachtingen met de hand nagerekend).** Zes adviezen, elk een eigen
+commit, plus één gevolgcommit op het voorstel. Volgorde van de commits: 1,
+3, 4, 2, gevolg, 5, 6, zodat de telling in de tekst van item 2 al klopt met
+case10.
+
+- **1, fde99eb5 — NOTE, case7:** de verwachting is voorlopig. Ch. 7.8 zegt
+  niets over een kenmerkdoel in de richting onwaar; optie 7-i van de kaart
+  kenmerkinvoer-en-invoer-boven-berekening legt het gedrag vast, optie 7-ii
+  laat de verwachting omslaan.
+- **3, 5f03089a — NOTE, case6 en case8:** hun data horen bij een recht dat
+  onder de grondslaglezing nooit ontstond. Ze staan er bewust (case8 is
+  case1 met één verschil) en zijn geen bewijs dat er een recht was.
+- **4, dc0361d7 — `case10-nieuw-recht-onder-grens`:** de feiten van case3
+  met een nieuw maandloon van 2000,00. Handwaarden: aanwezig (de herleving
+  beslist); `inkomensgrens` 2100,00; `verstreken periode` 92; `nieuwe
+  maxdatum` 2026-01-15; consistent. Handberekening in de NOTE.
+  - Rood-eerst op een mutant zonder `nieuw maandloon > inkomensgrens` in de
+    blokkade, letterlijk:
+    - ref: `MISMATCH: W10 lacks characteristic "recht op uitkering"`
+    - clingo: dezelfde regel
+    - exec: `FAIL case10-nieuw-recht-onder-grens.json: kenmerk recht op
+      uitkering: verwacht aanwezig, werkelijk afwezig`
+  - Op het anker: ref `oracle: PASS (5 expectations)`, clingo `clingo: PASS
+    (5 expectations)`, exec `PLAYED 1`; alle tien samen: exec `PLAYED 10`,
+    DRL `EXCLUDE`.
+  - Geen overlever: `--noop` geeft exit 1 met vier MISMATCH-regels.
+  - De soortmeting is over tien cases herhaald: met `BIJVOEGLIJK` en
+    `BEZITTELIJK` dezelfde uitkomsten (exec `PLAYED 10`), en het
+    ASP-programma van case10 is byte-identiek.
+- **2, 7ed47b0e — `check-noop.sh`, alleen tekst (voorstel):** de reden van
+  case7 zegt nu "as long as the card … does not choose its option 7-ii". Met
+  case10 zijn er negen broercases.
+- **Gevolg, 8934fb59 — voorstel:** de tellingen staan op tien en case10 staat
+  in de tabel van §8.1. De ketenvorm van de tweeling is opnieuw gemeten:
+  verifier PASS, ref en clingo 10/10, exec `PLAYED 10`, DRL `EXCLUDE`.
+- **5, 43b76b45 — open punt 2:** de mutantmeting, met één correctie op de
+  lens: gate 2 bewaakt de vier onwaarneembare conjuncten niet.
+- **6, e1e4f9ea — open punt 1:** gecorrigeerd.
+
+**Mutantmeting.** Elk conjunct apart weggehaald, tien cases; ref en clingo
+geven overal dezelfde uitkomst.
+
+| Mutant | Welke cases vallen |
+|---|---|
+| einde zonder W | geen |
+| einde zonder T | case2, case5, case9 |
+| herleving zonder W | case8 |
+| herleving zonder T | geen |
+| herleving zonder V | case4 |
+| blokkade zonder W | geen |
+| blokkade zonder T | case9 |
+| blokkade zonder V | geen |
+| blokkade zonder `nieuw recht ontstaan` | geen |
+| blokkade zonder `nieuw maandloon > inkomensgrens` | case10 |
+
+De vier mutanten die een onwaarneembaar dragerconjunct weghalen, zijn
+schema-geldig en canoniek (round-trip identiek) en krijgen van de verifier
+PASS.
+
+**Gates**, elk als losse aanroep op e1e4f9ea:
+
+| gate | uitslag |
+|---|---|
+| 2 | PASS, 278 bestanden, round-trip |
+| 4 | PASS, 644 case-files |
+| 5 | PASS, suite 806, 601 cases |
+| 6 | PASS, suite 523, 601 cases |
+| 7 | PASS, 564 weerleggen, 37 overlevers |
+| 12 | PASS, played 182, DRL 161, JUnit 620 |
+| 13 | PASS, 131 twists over 27 goldens, 128 replays |
+| 1 | PASS |
