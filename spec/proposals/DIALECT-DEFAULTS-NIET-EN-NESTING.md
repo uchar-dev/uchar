@@ -7,8 +7,12 @@ deliverable of the research card
 question — why RegelSpraak (and RuleSpeak) know no "niet &lt;kenmerk&gt;" —
 works out dialect forms 1 and 2, splits form 3 off into a card of its own,
 lists the well-formedness coverage, gives a golden plan, and ends in §10
-with a proposed answer to each of the card's decisions 1–8. **Every
-decision in this document is proposed — it awaits the maintainer.**
+with an answer to each of the card's decisions 1–8. **The decisions are
+taken (2026-09-23, §10). The maintainer decided points 2 and 4(d)
+otherwise than first proposed here, and confirmed that the anchor's nested
+justifications carry the whole chain below them. Those three stand here as
+decided, with the first proposals named as rejected alternatives (card
+`voorstel-niet-en-nesting-besluiten`).**
 Nothing here changes `IR-SPEC.md`, `RUNTIME-SEMANTICS.md`, the schema, the
 verifier, an executor, a frontend, a gate script or the corpus.
 Repository claims carry file:line at `main` 8dd05e25. The measurements
@@ -96,17 +100,18 @@ Every factual statement about a source carries one of four marks:
    and the Drools exec branch find no fixpoint, clingo gives two values,
    and the DRL-text branch answers by source order.
 
-The proposed decisions, one line each (full text in §10):
+The decisions, one line each (full text in §10). Decided 2026-09-23;
+points 2 and 4 otherwise than first proposed here:
 
-| # | Question (card) | Proposed |
+| # | Question (card) | Decided |
 |---|---|---|
 | 1 | Is "niet" in an exception legitimate? | Yes: it keeps §3.5/§9.2's closed world and ch. 5.3's monotone writes; it extends a departure from SBVR/RuleSpeak that `Uitzondering op` already made |
-| 2 | Where may "niet" stand? | Only in blocks the extension headers open (an `Uitzondering op` body, a member of `Uitzonderingen ongeordend`); never in a plain `Regel`, never in a base |
+| 2 | Where may "niet" stand? | In every rule that becomes a default: an `Uitzondering op` body, a member of `Uitzonderingen ongeordend`, and the base of an `Uitzondering op` chain; never in a plain `Regel` that becomes no default; a group that never derives anything gets a warning. *First proposed:* never in a base |
 | 3 | Spelling per kind | bijvoeglijk `is niet X`, bezittelijk `heeft geen X`, zelfstandig `is geen X` (and `is niet een X`) — the spellings conditions already accept, resolved by the same verbatim-first matcher; targeted messages replace measurement 1's |
-| 4 | Nesting | Same header `Uitzondering op <naam>`; later written = higher; no depth bound; justifications self-contained (the author writes the carrier's condition), with a warning when a nested exception omits it |
+| 4 | Nesting | Same header `Uitzondering op <naam>`; later written = higher; no depth bound; `Uitzondering op X` is restrictive — the frontend conjoins X's (itself conjoined) justification with the exception's own condition, at every level including the first; a widening deviation is written `Afwijking van X` with its own condition only. *First proposed:* justifications written out by the author, with a warning when a nested exception omits its carrier's condition |
 | 5 | Nested exception under an inherited exception | Refused; the expressible form is a subtype-own exception with the combined condition |
 | 6 | `Uitzonderingen ongeordend` under an exception | Yes, as `Uitzonderingen ongeordend op <naam>:`; under an exception it becomes that exception's `excepties`, under a base a group-default directly above the base |
-| 7 | Form 3 | A card of its own; §6 gives the directions for it |
+| 7 | Form 3 | A card of its own (`kenmerkinvoer-en-invoer-boven-berekening`); §6's directions are input to it, not decided |
 | 8 | Follow-up work in regelspraak-java | Cards of their own there; the grammar part of `testDocument` lands with the uchar frontend card |
 
 ## 2. What was measured
@@ -248,11 +253,12 @@ characteristic in the input it gives `recht op uitkering` ⇔ W ∧ (¬T ∨ (V
 eerste lid, onderdeel a of c, is geëindigd"), lid 2 does not ("Het recht
 herleeft niet indien"), and art. 20 lid 1 presupposes an existing right
 ("Het recht op uitkering eindigt"): statute drafting mixes both styles, so
-a model has to decide per exception what the text presupposes. §5.4 turns
-this into decision 4 for the dialect. For the anchor's wire the
-maintainer's card settled it: levels 2 to 4 each conjoin with their
-carrier, the first nested level (einde, on the grant's `werkloos`)
-included. C's statute reading rests on reading `werkloos` as the ground of
+a model has to decide per exception what the text presupposes. §5.4
+records decision 4(d) for the dialect: `Uitzondering op` is restrictive at
+every level (decided 2026-09-23). For the anchor's wire the maintainer's
+card settled it, and the decision question of 2026-09-23 confirmed it:
+levels 2 to 4 each conjoin with their carrier, the first nested level
+(einde, on the grant's `werkloos`) included. C's statute reading rests on reading `werkloos` as the ground of
 art. 15 at the moment the right arose — the reading case4 already relied on
 (werkloos together with an income above the grens) and that the anchor's
 NOTE now states.
@@ -613,24 +619,36 @@ of a rule is the simplest thing to teach: whatever an author may test as
 
 ### 4.2 Where a negative decision may stand (decision 2)
 
-- **Admitted:** the body of an `Uitzondering op` block, and a member of an
-  `Uitzonderingen ongeordend` group (with or without `op <naam>`, §5.6).
-  In an unordered group a negative member never changes the outcome by
-  itself — where it alone decides, nothing is written, as where nothing
-  decides — but a negative and a positive member that both apply give the
+*Decided 2026-09-23: the base of an `Uitzondering op` chain is admitted
+(first proposed: refused).*
+
+- **Admitted:** the body of an `Uitzondering op` block, a member of an
+  `Uitzonderingen ongeordend` group (with or without `op <naam>`, §5.6),
+  and the base of an `Uitzondering op` chain. In an unordered group a
+  negative member never changes the outcome by itself — where it alone
+  decides, nothing is written, as where nothing decides — but a negative
+  and a positive member that both apply give the
   ch. 7.2 conflict: no write and one §9.5 fact. [I] That makes the
   characteristic conflict, today hand-authored only
   (`anchor/jutterswet-toelagegronden`), writable from source, and it
   replaces the sentence of `DIVERGENCES.md:101-103` ("a genuine §9.5
-  conflict is only expressible on an attribute target").
-- **Refused:** a plain `Regel` outside the extension, and the base of an
-  `Uitzondering op` (which is a plain `Regel` the extension names). A
-  negative plain rule is inert under the closed world or, beside a
-  positive rule, a conflict without a priority (§3.1); a negative base is
-  the lowest default and decides nothing observable (the Catala
-  penningrecht base is the inert example). §9.2 thus keeps holding for
-  every `Regel`, and the divergence from the arbiter stays inside the
-  blocks whose headers announce it.
+  conflict is only expressible on an attribute target"). A negative base
+  is the lowest default: under the closed world it decides `onwaar` and
+  writes nothing, so the outcome does not change. What it buys is that the
+  author can write the statute ("herleeft niet, tenzij …") and that the
+  exceptions hang on a named base without an invented positive rule —
+  Catala's `definition x equals false` (the penningrecht base is the inert
+  example).
+- **Warned:** a defaults group in which every default decides `onwaar`
+  derives nothing on any input. It is well-formed — it means "never" — so
+  it is no error, but the RuleChecker warns (F9 in §7.4).
+- **Refused:** a plain `Regel` that becomes no default. A negative plain
+  rule is inert under the closed world or, beside a positive rule, a
+  conflict without a priority (§3.1). §9.2 thus keeps holding for every
+  plain `Regel`, and the divergence from the arbiter stays inside the
+  extension: the blocks whose headers announce it and the bases they name.
+- *Rejected (first proposed here):* refusing the base as well, so that §9.2
+  would hold for every `Regel`, a base included.
 
 ### 4.3 Grammar impact on the rule level
 
@@ -664,9 +682,11 @@ of a rule is the simplest thing to teach: whatever an author may test as
 2. `defaultVan` (`:344-351`) maps the polarity to `besluit: false`
    instead of always `Boolean.TRUE`.
 3. A check after the lift refuses every rule that still carries the
-   negative marker — a plain `Regel` or a base — with the targeted
-   messages of §4.5. The frontend then refuses a flat negative attribution
-   itself, citing §9.2 and WF-022, instead of emitting it (M3).
+   negative marker — a plain `Regel` that became no default; a base is
+   admitted (decision 2) — with the targeted message of §4.5. The frontend
+   then refuses a flat negative attribution itself, citing §9.2 and
+   WF-022, instead of emitting it (M3). A group in which every default
+   decides `onwaar` gets a WARNING (F9).
 4. `groepsDefaults` (`:285-329`) admits negative members.
 5. Target equality (`DefaultsDoel.gelijk`, `:189-193`) compares the
    de-negated target, so `niet herleefd` and `herleefd` are one target.
@@ -685,8 +705,8 @@ of a rule is the simplest thing to teach: whatever an author may test as
 |---|---|---|
 | `is niet X` in an `Uitzondering op`, X declared | ERROR "schrijft een ander doel (Recht.niet herleefd (kenmerk))" (M1) | no message; `besluit: false` |
 | `is niet X` in an `Uitzondering op`, X not declared | the same misleading ERROR | ERROR "uitzondering '&lt;naam&gt;': 'niet X' ontkent geen kenmerk van Recht — 'X' is niet gedeclareerd (§3.5)" |
-| `is niet X` in a plain `Regel` | no diagnostic; IR on disk; verifier WF-022 FAIL on target 'niet X' (M3) | ERROR "regel '&lt;naam&gt;': een kenmerktoekenning kan niet ontkennen — zonder toekenning is 'X' al onwaar (§9.2, WF-022); een ontkenning staat in een 'Uitzondering op'-blok of in een 'Uitzonderingen ongeordend'-groep" |
-| `is niet X` in a base | as for a plain `Regel` | ERROR "Uitzondering op '&lt;basis&gt;': de basisregel ontkent 'X' — een basis kent toe (§9.2); schrijf de toekenning als basis en de ontkenning als uitzondering" |
+| `is niet X` in a plain `Regel` | no diagnostic; IR on disk; verifier WF-022 FAIL on target 'niet X' (M3) | ERROR "regel '&lt;naam&gt;': een kenmerktoekenning kan niet ontkennen — zonder toekenning is 'X' al onwaar (§9.2, WF-022); een ontkenning staat in een 'Uitzondering op'-blok, in een 'Uitzonderingen ongeordend'-groep of in de basis van een 'Uitzondering op'-keten" |
+| `is niet X` in a base | as for a plain `Regel` | no message; `besluit: false` on the base (decision 2, decided 2026-09-23; first proposed: an ERROR "de basisregel ontkent"); a group whose every default decides `onwaar` gets the WARNING of F9 |
 | `is niet een X` | syntax error "extraneous input 'een'" (M4) | parses; then as the rows above |
 | `Uitzondering op <naam van een uitzondering>` | ERROR "geen basisregel met die naam gevonden — de basis moet een gewone platte regel … zijn" (M2) | no message; nesting (§5) |
 | `Uitzondering op <onbekende naam>` | the same ERROR | ERROR "Uitzondering op '&lt;naam&gt;': geen regel of uitzondering met die naam gevonden" |
@@ -715,6 +735,15 @@ first build card, a carrier that has both ordered children and an
 | `Uitzonderingen ongeordend op E1:` with members `U1`, `U2` | `E1.excepties = {ongeordend: true, leden: [ExceptionGroup [U1], ExceptionGroup [U2]]}` |
 | `Uitzonderingen ongeordend op B:` with members `U1`, `U2` | a group-default directly above `B`: chain `[…, {excepties: {ongeordend: true, leden: [[U1], [U2]]}}, B]` |
 | any deeper level | the same rules, recursively |
+
+Under decision 4(d) (§5.4, decided) the shapes above do not change; what
+changes is the justification on the wire: every `Uitzondering op` block
+carries its carrier's conjoined justification followed by its own
+condition, flattened into one `ALLE`. An `Afwijking van <basis>: <naam>`
+block lowers as a first-level `Uitzondering op` does — a chain position
+above the base — with its own condition only (`jutterswet-bergingsdrempel`,
+whose `ir.json` stays byte-identical). Whether `Afwijking van` may also
+name an exception is left to the build card.
 
 **Why the first level stays a chain.** [P, own spec] RUNTIME-SEMANTICS
 ch. 7.10 defines the base as the lowest ordinary default that decides
@@ -751,6 +780,13 @@ cases in all three executors.
 
 ### 5.4 The carrier's justification (decision 4, last question)
 
+*Decided 2026-09-23 (the maintainer's decision question, on the research
+report outside the repository,
+`../research/dialect-defaults-niet-en-nesting/onderzoek-niet-in-uitzonderingen.md`
+§8.2 and §9; card `voorstel-niet-en-nesting-besluiten`): option (D) below.
+This section first proposed (A); (A), (B) and (C) stay as rejected
+alternatives.*
+
 Does a nested exception implicitly carry its carrier's condition? The
 facts:
 
@@ -772,13 +808,32 @@ facts:
   there may widen its base (`jutterswet-bergingsdrempel`: noodweer and
   eight wrecks against a base of twenty; art. 5 Jutterswet: "zes" in place
   of "twaalf"), so conjoining the base's condition there would switch the
-  exception off.
+  exception off. The decision answers this with a separate header for the
+  widening case, not with an unconjoined first level.
 
-Three options:
+Four options:
 
-- **(A) Self-contained, written by the author, with a lint** —
-  proposed. The dialect emits exactly the condition written, at every
-  level. The RuleChecker WARNS when a nested exception's condition does not
+- **(D) A restrictive `Uitzondering op`, with `Afwijking van` for
+  widenings — decided.** The frontend conjoins X's justification — itself
+  already conjoined, so the whole chain below X — with the exception's own
+  condition, at every level, the first included, and emits one flat
+  `ALLE`, carrier conjuncts first (the landed anchor's wire, §8.1). A
+  deviation that widens its base (hardship: "als ware twaalf vervangen door
+  zes") is not an exception but a deviation, written `Afwijking van X:
+  <naam>` with its own condition only; `jutterswet-bergingsdrempel`
+  (noodweer with "≥ 8" above "≥ 20") becomes one, its `ir.json`
+  byte-identical. *Reasons (the decision's):* ch. 7.1 prescribes the
+  conjunction; no formalism lets an exception inherit its base's condition
+  — Catala measurably does not (T4) — so it has to be written somewhere,
+  and the frontend is where that happens mechanically and visibly on the
+  wire; the legal meaning of an exception is restrictive; corner B of the
+  anchor (§2.3) is the silent error of the other choice. [I] (D) accepts
+  the cost (B) is faulted for below — a source that says less than its
+  wire — but at every level alike, so one header keeps one meaning.
+- **(A) Self-contained, written by the author, with a lint** — first
+  proposed here; rejected. The dialect emits exactly the condition
+  written, at every level. The RuleChecker WARNS when a nested exception's
+  condition does not
   contain every conjunct of its carrier's condition (flattened `ALLE`
   members, compared without `bron`): "uitzondering 'F' op 'X' herhaalt de
   voorwaarde van 'X' niet (ontbreekt: …) — zij beslist dan ook waar 'X'
@@ -788,23 +843,22 @@ Three options:
   source. The cost is repetition, which ordinary RegelSpraak factoring
   absorbs: a derived characteristic ("is herleefbaar geëindigd") can carry
   a carrier's condition once.
-- **(B) Implicit for nested levels** — the frontend conjoins the
+- **(B) Implicit for nested levels** — rejected. The frontend conjoins the
   carrier's effective condition into every exception on an exception,
   never at the first level. Closest to ch. 7.1's wording and to how
   statute text presupposes its scope ("Het recht herleeft niet indien");
   but one header then means two things depending on what it names, and a
   source that says less than its wire is exactly the hidden semantics Ross
   rejects (§3.2).
-- **(C) An explicit scope keyword** — for instance `Uitzondering binnen
-  <naam>: <naam>`, which conjoins the named rule's effective condition at
-  any level, beside `Uitzondering op` (self-contained, as today). Explicit
-  and uniform; it costs a second header and its own inertness
-  measurement. The best alternative if the maintainer weighs
-  statute-shaped sources above a single header.
+- **(C) An explicit scope keyword** — rejected. For instance
+  `Uitzondering binnen <naam>: <naam>`, which conjoins the named rule's
+  effective condition at any level, beside `Uitzondering op`
+  (self-contained, as today). Explicit and uniform; it costs a second
+  header and its own inertness measurement. (D) is (C) turned around: the
+  existing header conjoins, and the new one, `Afwijking van`, does not.
 
-Whatever the choice, the anchor needs the repair of §8.1: its corners are
-wrong under every option, because its wire is self-contained by
-definition.
+The anchor carries the repair of §8.1 (landed); its wire is
+self-contained by definition, so it is the same under every option.
 
 ### 5.5 Inheritance (decision 5)
 
@@ -840,16 +894,21 @@ lid 1, and onderdelen a and b of lid 2 as parallel grounds within lid 2.
 
 - **Grammar:** nothing for nesting — the header exists. One optional part
   for decision 6: `uitzonderingGroep : UITZONDERINGEN ONGEORDEND ( OP
-  uitzonderingBasisNaam )? COLON regel+ ;`, over existing tokens.
-  [I] Inert: `Uitzonderingen ongeordend op` does not parse today.
+  uitzonderingBasisNaam )? COLON regel+ ;`, and for decision 4(d) a
+  header `Afwijking van <naam>: <naam>`; the build card makes both
+  whole-phrase header tokens (`UITZONDERINGEN ONGEORDEND OP`,
+  `AFWIJKING_VAN`) on the pattern of `UITZONDERING_OP`. [I] Inert:
+  neither `Uitzonderingen ongeordend op` nor `Afwijking van` parses today.
 - **RuleChecker:** `ordeningsDefaults` (`RuleChecker.java:206-283`)
   becomes a tree build — resolve every block first, build the parent map,
   refuse cycles with their path, check target, window and version per
   edge, build defaults bottom-up, and remove the lifted rules from
   `resolvedRegels` only at the end (removing them per base, as now, is
   what turns M2's lookup into "not found"). `groepsDefaults` handles the
-  `op <naam>` form. The scope lint of §5.4 (A) and the inheritance refusal
-  of §5.5 are new checks.
+  `op <naam>` form. New are the conjunction of §5.4 (D) — the carrier's
+  justification first, flattened into one `ALLE` — the `Afwijking van`
+  header and the inheritance refusal of §5.5; the scope lint of the
+  rejected option (A) is not built.
 - **DIVERGENCES.md:** the limitation "Exception-on-exception … is not
   authored from source in this card" (`:129-130`) is replaced by the
   lowering table of §5.2, the order and depth rules, the chosen reading of
@@ -947,11 +1006,14 @@ anchors and the Catala plugin already produce.
 - *A characteristic group must contain a `besluit: true`.* An all-false
   group derives nothing on every input: inert, not ill-formed, and no
   executor disagrees on it (the Catala plugin emits an inert false base).
-  At most a frontend lint.
+  At most a frontend warning — decided: the RuleChecker warns (decision 2,
+  F9).
 - *A depth bound.* No principled number (§5.3).
 - *A nested exception's condition implies its carrier's.* Undecidable in
-  general and contrary to the self-contained reading of ch. 7.9; a
-  frontend lint instead (§5.4 (A)).
+  general and contrary to the self-contained reading of ch. 7.9. Under
+  decision 4(d) the frontend conjoins the carrier's condition itself, so
+  the wire satisfies it by construction; the lint of the rejected option
+  (A) lapses.
 - *No nested exception under an inherited exception.* Unwritable on the
   wire — a subtype's group cannot address a default of the supertype's
   group — so it is a frontend refusal, as WF-106 is a refusal without a
@@ -998,13 +1060,15 @@ witnesses are frontend fixtures (JUnit, beside
 | Id | Source (abridged) | Expected fragment |
 |---|---|---|
 | F1 | `Regel geen herleving … Een Recht is niet herleefd indien …` | ERROR "een kenmerktoekenning kan niet ontkennen" |
-| F2 | `Regel stilte … Een Recht is niet herleefd …` plus `Uitzondering op stilte: … Een Recht is herleefd …` | ERROR "de basisregel ontkent" |
+| F2 | *withdrawn (decision 2, decided 2026-09-23: a negated base is admitted).* First proposed: `Regel stilte … Een Recht is niet herleefd …` plus `Uitzondering op stilte: … Een Recht is herleefd …` | — (first proposed: ERROR "de basisregel ontkent") |
 | F3 | in an `Uitzondering op`: `Een Recht is niet vervallen` with `vervallen` undeclared | ERROR "ontkent geen kenmerk van Recht" |
 | F4 | `Uitzondering op B: A` and `Uitzondering op A: B` | ERROR "kring in de uitzonderingsboom: A → B → A" |
 | F5 | an `Uitzondering op <uitzondering van Strandrecht>` whose sentence is about a `Wrakrecht` | ERROR "een subtype bewerkt geen geërfde uitzondering" |
 | F6 | one carrier with an `Uitzondering op X` child and an `Uitzonderingen ongeordend op X:` group | ERROR naming both children (first card) |
-| F7 | a nested exception without its carrier's conjuncts (under §5.4 (A)) | WARNING "herhaalt de voorwaarde van" |
+| F7 | *withdrawn (decision 4(d), decided 2026-09-23: the frontend conjoins the carrier's condition itself).* First proposed: a nested exception without its carrier's conjuncts (under the rejected §5.4 (A)) | — (first proposed: WARNING "herhaalt de voorwaarde van") |
 | F8 | `is geen` on a bezittelijk characteristic | WARNING "Tabel 16 vereist 'heeft'" (the existing lint) |
+| F9 | a defaults group in which every default decides `onwaar` — for instance a negated base whose exceptions all decide `onwaar` as well | WARNING; the build card chooses the fragment (the group never derives anything; decision 2) |
+| F10 | `Afwijking van <onbekende naam>: <naam>` | ERROR naming the unknown carrier; the build card chooses the fragment (decision 4(d)) |
 
 ## 8. Golden plan
 
@@ -1026,7 +1090,9 @@ first version is named.*
   `Default.excepties`; outside these three justifications `ir.json` is
   structurally unchanged. *First proposed:* herleving and blokkade without
   `werkloos`, einde unchanged — that version answers probe C of §2.3
-  against the statute.
+  against the statute. Confirmed by the maintainer on 2026-09-23 (decision
+  question): the nested justifications carry the whole chain below them,
+  `werkloos` included.
 - Ten cases, six of them new, expected values from the statute reading
   (hand computations in the anchor's NOTE; `inkomensgrens` 2100.00 in all):
 
@@ -1084,8 +1150,7 @@ canonical and no factor, so there is nothing to twist.
 *Consequence for G2 (§8.2):* the twin's wire must carry the same flat
 `ALLE` per nested default, carrier conjuncts first and `werkloos` included
 at einde, with `recht op uitkering` bezittelijk, and its cases are these
-ten. §8.2 gives the source in both spellings that decision 4d leaves
-open.
+ten. §8.2 gives the source in the spelling decision 4(d) fixes.
 
 ### 8.2 G2 — the RegelSpraak twin (required by the card)
 
@@ -1098,16 +1163,15 @@ sorted, the same cases with the same absolute expectations as the (repaired)
 hand anchor, and each difference classified as (i) dialect difference,
 (ii) IR design flaw or (iii) frontend defect.
 
-*Updated 2026-09-23 (fix round 2 of card
-`anker-ww-herleving-dragervoorwaarde`): the source follows the landed
-anchor of §8.1 — `werkloos` in the conditions of einde, herleving and
-blokkade, `recht op uitkering` bezittelijk, ten cases. How the carrier
-conjunction is SPELLED in the source is not settled: it depends on
-decision 4d, which the maintainer has yet to take. Both spellings follow;
-this plan chooses neither.*
+*Updated 2026-09-23 (card `anker-ww-herleving-dragervoorwaarde`, fix
+rounds 2 and 4; card `voorstel-niet-en-nesting-besluiten`): the source
+follows the landed anchor of §8.1 — `werkloos` in the conditions of einde,
+herleving and blokkade, `recht op uitkering` bezittelijk, ten cases — in
+the spelling decision 4(d) fixes: each block writes its own condition, and
+the restrictive `Uitzondering op` supplies its carrier's.*
 
-Source (`bron.rgs`) under decisions 1–3 as proposed. The declarations, the
-base rule and the three rekenregels are the same under either spelling:
+Source (`bron.rgs`) under the decisions of 2026-09-23 (§10) — the
+declarations, the base rule and the three rekenregels:
 
 ```
 Objecttype de Werknemer (mv: Werknemers) (bezield)
@@ -1144,52 +1208,10 @@ Regel nieuwe maxdatum bij herleving
         De nieuwe maxdatum van een Werknemer moet berekend worden als zijn maxdatum plus zijn verstreken periode.
 ```
 
-The three `Uitzondering op` blocks, in two spellings. Both must lower to
-the landed wire: per nested default one flat `ALLE`, the carrier's
-conjuncts first in the carrier's order, then the block's own — so a
-frontend that conjoins flattens.
-
-*Spelling 1 — the carrier conjunction written out per exception* (§5.4
-option (A)): each block writes its carrier's conditions and then its own,
-and the frontend emits exactly what is written.
-
-```
-// Bron: WW art. 20 lid 1 onderdeel c
-Uitzondering op toekenning art 15: einde art 20 lid 1 c
-    geldig altijd
-        Een Werknemer heeft geen recht op uitkering
-        indien hij aan alle volgende voorwaarden voldoet:
-        - hij is werkloos
-        - zijn maandinkomen is groter dan zijn inkomensgrens.
-
-// Bron: WW art. 21 lid 1
-Uitzondering op einde art 20 lid 1 c: herleving art 21 lid 1
-    geldig altijd
-        Een Werknemer heeft recht op uitkering
-        indien hij aan alle volgende voorwaarden voldoet:
-        - hij is werkloos
-        - zijn maandinkomen is groter dan zijn inkomensgrens
-        - hij is omstandigheid vervallen.
-
-// Bron: WW art. 21 lid 2 onderdeel a
-Uitzondering op herleving art 21 lid 1: blokkade art 21 lid 2 a
-    geldig altijd
-        Een Werknemer heeft geen recht op uitkering
-        indien hij aan alle volgende voorwaarden voldoet:
-        - hij is werkloos
-        - zijn maandinkomen is groter dan zijn inkomensgrens
-        - hij is omstandigheid vervallen
-        - hij is nieuw recht ontstaan
-        - zijn nieuw maandloon is groter dan zijn inkomensgrens.
-```
-
-*Spelling 2 — the carrier conjunction implicit in a restrictive
-`Uitzondering op`* (the reading the build card
-dialect-uitzondering-op-uitzondering writes as its decision 4d): the
-frontend conjoins the carrier's already conjoined justification with the
-block's own condition at every level, the first one included, and an
-exception that widens its base is written `Afwijking van <naam>: <naam>`
-with its own condition only. Each block writes only its own condition:
+The three `Uitzondering op` blocks. Under decision 4(d) each block writes
+its own condition only; the frontend conjoins the carrier's justification,
+the first level included, and flattens the result into one `ALLE`,
+carrier conjuncts first in the carrier's order — the landed wire of §8.1:
 
 ```
 // Bron: WW art. 20 lid 1 onderdeel c
@@ -1213,18 +1235,18 @@ Uitzondering op herleving art 21 lid 1: blokkade art 21 lid 2 a
         - zijn nieuw maandloon is groter dan zijn inkomensgrens.
 ```
 
-[I] What differs between the two: under spelling 1 the source repeats
-every carrier condition and the `werkloos` of einde is written by the
-author; under spelling 2 the source says less than its wire, the frontend
-supplies `werkloos` at einde (the "ook aan de wortel" of that card), and
-`jutterswet-bergingsdrempel` moves to `Afwijking van`. The anchor's
-expectations and the twin's wire are the same under both.
+[I] The source says less than its wire: the frontend supplies `werkloos`
+at einde (the first level included) and the carrier conditions at
+herleving and blokkade. *Rejected alternative (first proposed, §5.4
+(A)):* each block writes its carrier's conditions out and the frontend
+emits exactly what is written — einde `werkloos` and T, herleving
+`werkloos`, T and V, blokkade all five.
 
 [M] The declarations, the three rekenregels, the bezittelijk attribution
-and the four-part condition already resolve on the current frontend (a
-probe without the exception blocks, 8dd05e25); only the three `Uitzondering
-op` blocks need the build card. [I] Spelling 1's two-, three- and
-five-part conditions use the same list form.
+and the list form of a composite condition (a four-part one on the probe)
+already resolve on the current frontend (a probe without the exception
+blocks, 8dd05e25); only the three `Uitzondering op` blocks need the build
+card.
 
 Expected result of the diff:
 
@@ -1258,17 +1280,12 @@ Cases: the ten of G1, same inputs, same expectations. Gates: 2, 3, 4,
   Uitzondering op uitsluiting van het penningrecht: herroepen weigering
       geldig altijd
           Een Jutter is niet uitgesloten
-          indien hij aan alle volgende voorwaarden voldoet:
-          - hij is vergunning geweigerd
-          - hij is weigering herroepen.
+          indien hij weigering herroepen is.
 
   Uitzondering op herroepen weigering: vervallen herroeping
       geldig altijd
           Een Jutter is uitgesloten
-          indien hij aan alle volgende voorwaarden voldoet:
-          - hij is vergunning geweigerd
-          - hij is weigering herroepen
-          - hij is herroeping vervallen.
+          indien hij herroeping vervallen is.
 
   Regel penninggerechtigd tenzij uitgesloten
       geldig altijd
@@ -1276,8 +1293,14 @@ Cases: the ten of G1, same inputs, same expectations. Gates: 2, 3, 4,
           indien hij niet uitgesloten is.
   ```
 
-  Expected diff: the third layer nested in the second versus the anchor's
-  flat chain — (i), identical order.
+  Each block writes its own condition only (decision 4(d)); the frontend
+  conjoins the carrier's, so the wire carries the anchor's cumulative
+  conditions — `ALLE[vergunning geweigerd, weigering herroepen]` and
+  `ALLE[vergunning geweigerd, weigering herroepen, herroeping vervallen]`,
+  carrier conjuncts first. *Rejected (first proposed):* the conditions
+  written out cumulatively in the source. Expected diff: the third layer
+  nested in the second versus the anchor's flat chain — (i), identical
+  order.
 - **G4, `jutterswet-nestkenmerk-rgs`** — unordered exceptions on a base,
   one of them negative, with the nested characteristic conflict. Diff
   partner: `anchor/jutterswet-nestkenmerk` (three cases). Declarations:
@@ -1303,7 +1326,13 @@ Cases: the ten of G1, same inputs, same expectations. Gates: 2, 3, 4,
 
   Expected diff: a group-default above the base versus the anchor's
   form-a base — (i), same decisions and the same conflict key
-  `Jutter.vrijgesteld/0` ([M11] on the analogous probe). The twin's
+  `Jutter.vrijgesteld/0` ([M11] on the analogous probe). *Not decided:*
+  decision 4(d) is written for `Uitzondering op`; whether the members of an
+  `Uitzonderingen ongeordend op X:` group also inherit X's condition is
+  open. The anchor's members carry their own condition only, and its three
+  cases cannot tell the readings apart: [M] with `nz` and without `nx` the
+  anchor answers present in ref, clingo and the exec branch; [I] a twin
+  whose members inherit `nx` would answer absent there. The twin's
   `case1-y-wint` survives a no-op run as the anchor's does and joins the
   survivor list of `scripts/check-noop.sh` with the anchor's reason.
 
@@ -1425,12 +1454,19 @@ these two writers survive into one instance's effective stack?" — here
 they do), correcting the comment. (a) follows the inheritance mandate;
 (b) is the smaller fail-fast step.
 
-## 10. Proposed decisions
+## 10. Decisions
 
-Each item states the proposal, the reason and the alternatives. **All
-eight are proposed and await the maintainer.**
+Each item states the proposal, the reason and the alternatives. **Decided
+2026-09-23**: the cards of commit 85f58237 and the maintainer's decision
+question of that day, on the recommendations of the research report
+outside the repository
+(`../research/dialect-defaults-niet-en-nesting/onderzoek-niet-in-uitzonderingen.md`
+§9). Points 1, 3, 4(a)–(c), 5, 6 and 8 as proposed; point 7 as a card of
+its own; points 2 and 4(d) otherwise, recorded below with the first
+proposal as the rejected alternative (card
+`voorstel-niet-en-nesting-besluiten`).
 
-1. **The research outcome — proposed — awaits the maintainer.** "Niet" in
+1. **The research outcome — decided as proposed.** "Niet" in
    an exception is a legitimate uchar-dialect extension and collides with
    no RegelSpraak design principle the project wants to keep. Kept: the
    closed world of RegelSpraak §3.5/§9.2 (an unattributed characteristic
@@ -1448,21 +1484,28 @@ eight are proposed and await the maintainer.**
    card's measurement 4 — it works, but it hides the statute's structure
    in a helper characteristic and in conjuncts, and it keeps the two target
    kinds asymmetric; (c) admit "niet" everywhere — decision 2.
-2. **The reach — proposed — awaits the maintainer.** Only in blocks an
-   extension header opens: an `Uitzondering op` body, a member of
-   `Uitzonderingen ongeordend` (with or without `op <naam>`). Refused with
-   a targeted message in a plain `Regel` and in a base. *Reasons:* inside
-   the extension there is one writer with a priority, or a declared
-   conflict channel; outside there is neither; §9.2 keeps holding for
-   every `Regel`, so the divergence stays inside blocks whose header
-   announces it; the Catala frontend draws the same line.
+2. **The reach — decided 2026-09-23, otherwise than first proposed.** In
+   every rule that becomes a default: an `Uitzondering op` body, a member
+   of `Uitzonderingen ongeordend` (with or without `op <naam>`), and the
+   base of an `Uitzondering op` chain. Refused with a targeted message in a
+   plain `Regel` that becomes no default. A group in which every default
+   decides `onwaar` derives nothing — well-formed, it means "never" — and
+   gets a RuleChecker WARNING (F9). *Reasons:* under the closed world a
+   negated base decides `onwaar` and writes nothing, so the outcome does not
+   change; what it buys is that the author can write the statute ("herleeft
+   niet, tenzij …") and that the exceptions hang on a named base without an
+   invented positive rule (Catala's `definition x equals false`). Outside
+   the extension there is no writer with a priority, so §9.2 keeps holding
+   for every plain `Regel`. *Rejected (first proposed here):* the base
+   refused as well — only in blocks an extension header opens, so that §9.2
+   would hold for every `Regel`, a base included.
    *Alternatives:* (b) a plain negative `Regel` as an unordered sibling of
    the positive rules on its target, with ch. 7.2 conflicts — Catala's own
    reading (Z1), but one sentence would change the meaning of the other
    plain rules on that target, and it contradicts §9.2 in the core
    construct; (c) only in `Uitzondering op` bodies — smaller, and the
    characteristic conflict stays hand-authored only.
-3. **The spelling — proposed — awaits the maintainer.** The table of
+3. **The spelling — decided as proposed.** The table of
    §4.1; resolution by the condition side's verbatim-first matcher; `is
    niet een X` admitted through one grammar alternative; the register lint
    as a WARNING; the messages of §4.5 replace measurement 1's.
@@ -1472,21 +1515,31 @@ eight are proposed and await the maintainer.**
    to `is geen` — no grammar change, but conditions and results would
    differ; (c) one spelling, `niet`, for every kind — ungrammatical for a
    bezittelijk characteristic.
-4. **Nesting — proposed — awaits the maintainer.** (a) *Form:* the
-   existing header `Uitzondering op <naam>`, whose name may denote a base
-   or an exception. (b) *Order:* among the children of one carrier the
-   later-written block ranks higher, at every level. (c) *Depth:* no
-   bound. (d) *The carrier's justification:* option (A) of §5.4 —
-   self-contained, written by the author, with the WARNING lint.
-   *Lowering:* §5.2 — the first level a chain position, deeper levels
-   `Default.excepties`. *Reasons:* §5.1–5.4; the anchor's corners show
-   both that authors expect a scope and that the wire does not supply it;
-   (A) keeps one meaning per header and equals Catala. *Alternatives:* for
-   (d) (B) implicit conjunction at nested levels and (C) an explicit
-   `Uitzondering binnen <naam>` header (§5.4); for (b) statute order; for
-   (c) a bound; for the lowering, nesting the first level too — rejected
-   on inheritance (§5.2).
-5. **Inheritance — proposed — awaits the maintainer.** A nested exception
+4. **Nesting — (a)–(c) decided as proposed; (d) decided 2026-09-23,
+   otherwise than first proposed.** (a) *Form:* the existing header
+   `Uitzondering op <naam>`, whose name may denote a base or an exception.
+   (b) *Order:* among the children of one carrier the later-written block
+   ranks higher, at every level. (c) *Depth:* no bound. (d) *The carrier's
+   justification:* option (D) of §5.4 — `Uitzondering op X` is
+   restrictive: the frontend conjoins X's (itself conjoined) justification
+   with the exception's own condition, at every level including the
+   first, flattened into one `ALLE` with the carrier's conjuncts first; a
+   deviation that widens its base is written `Afwijking van X: <naam>`
+   with its own condition only (`jutterswet-bergingsdrempel` becomes one,
+   its `ir.json` byte-identical). *Lowering:* §5.2 — the first level a
+   chain position, deeper levels `Default.excepties`. *Reasons for (d):*
+   ch. 7.1 prescribes the conjunction; no formalism lets an exception
+   inherit the condition (Catala does not, T4), so it has to be written
+   somewhere, and the frontend does it mechanically and visibly on the
+   wire; the legal meaning of an exception is restrictive; the anchor's
+   corner B is the silent error of the other choice. *Rejected for (d):*
+   (A), self-contained conditions written by the author with the warning
+   F7 (first proposed here); (B) implicit conjunction at nested levels
+   only; (C) an explicit `Uitzondering binnen <naam>` header (§5.4).
+   *Alternatives* for (b) statute order; for (c) a bound; for the
+   lowering, nesting the first level too — rejected on inheritance
+   (§5.2).
+5. **Inheritance — decided as proposed.** A nested exception
    under an inherited exception is refused, the message naming the
    expressible form (§5.5). *Reasons:* a subtype never edits an inherited
    exception, and the wire cannot address one. *Alternatives:* (b) copy
@@ -1494,8 +1547,8 @@ eight are proposed and await the maintainer.**
    under it — an implicit copy that also moves the exception into the
    subtype-own block; (c) allow editing inherited exceptions — reopens
    PRIORITY-RELATION decision 1.
-6. **Unordered exceptions under a rule — proposed — awaits the
-   maintainer.** `Uitzonderingen ongeordend op <naam>:`, under an
+6. **Unordered exceptions under a rule — decided as proposed.**
+   `Uitzonderingen ongeordend op <naam>:`, under an
    exception and under a base, lowered as in §5.2; a carrier with both
    ordered and unordered children is refused in the first card.
    *Reasons:* art. 21 lid 2 and lid 3 are parallel grounds; the IR and
@@ -1505,7 +1558,10 @@ eight are proposed and await the maintainer.**
    current scope; (c) no unordered nesting; for mixed children, the
    group-default at its writing position in the carrier's child chain
    (recorded, not proposed).
-7. **Form 3 — proposed — awaits the maintainer.** A card of its own,
+7. **Form 3 — decided: a card of its own,**
+   `20260923-kenmerkinvoer-en-invoer-boven-berekening`, which weighs its
+   own options (7-i to 7-iii); the directions this proposal gave are
+   input to that card, not decided. First proposed here: a card
    `20260923-invoer-boven-berekening`, with §6's directions: per target;
    sugar over the hardship pattern first; the deciding block's name as the
    explanation; a materialised computed value plus a consistency rule for
@@ -1513,7 +1569,7 @@ eight are proposed and await the maintainer.**
    this card's build cards — it would mix a semantic axis into a
    frontend-only change; (c) no surface at all — §6's pattern stays the
    route.
-8. **regelspraak-java — proposed — awaits the maintainer.** Cards of
+8. **regelspraak-java — decided as proposed.** Cards of
    their own there: the pin-bump that vendors the new frontend (its
    exec-model transpiler already lowers `besluit` and nested `excepties`,
    `ExecModelTranspiler.compileDefault`), and the scenario, graph and
@@ -1582,8 +1638,8 @@ Byproduct cards, one per byproduct of the card:
   without the `besluit` key was refused by the verifier, ref and clingo
   ("missing field 'besluit'") and accepted by the Drools loader; with the
   key present (`null`, as the anchors write it) all four agree.
-- *The one decision with a real trade-off* is 4(d); G1 is needed under all
-  three of its options.
+- *The one decision with a real trade-off* was 4(d); it is decided
+  (§10), and G1, needed under every option, has landed (§8.1).
 
 ## Sources
 
