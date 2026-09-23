@@ -5793,6 +5793,11 @@ let () =
       ("attribuut-getal-plusteken", "gewicht", "+5", "V1.gewicht");
       ("attribuut-getal-tekst", "gewicht", "abc", "V1.gewicht");
       ("attribuut-getal-noemer-nul", "gewicht", "1/0", "V1.gewicht");
+      (* the numerator half of the rational branch: without its own check a
+         decimal or empty numerator passed the fence and escaped the loader
+         as an evaluation fault (lens mutant, 2026-09-23) *)
+      ("attribuut-getal-teller-decimaal", "gewicht", "1.5/2", "V1.gewicht");
+      ("attribuut-getal-teller-leeg", "gewicht", "-/3", "V1.gewicht");
       ("attribuuttijdlijn-waarde-getal-komma", "tarief-waarde", "12,5", "V1.tarief.timeline[0].value");
       ("parameter-getal-noemer-voorloopnul", "heffing", "3/04", "parameter heffing");
       ("verwachte-waarde-getal-exponent", "verwacht-gewicht", "1.25E1", "expected V1.gewicht") ];
