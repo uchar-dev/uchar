@@ -3942,7 +3942,7 @@ outcome writes nothing and retracts nothing (ch. 5.6).
 
 **Wire order** is the order the node declares its operands in: for a
 list-valued slot the list's own order, for named slots the order the
-**schema** gives them — `spec/schema/regelspraak-ir-v0.schema.json`,
+**schema** gives them — `spec/schema/uchar-ir-v1.schema.json`,
 `$defs/Begrensd` (`node`, `basis`, `minimum`, `maximum`), `$defs/Functie`
 (`argumenten` before `leegwaarde`), `$defs/Fold` (`list` before `init`).
 For the tijdsduur family the slot is a list: argument 0 is `van`,
