@@ -723,9 +723,24 @@ public final class IrLoader {
 
     private ResolvedRegel resolvedRegel(JsonNode n) {
         List<String> bronAnnotaties = n.has("bronAnnotaties") ? stringList(n.get("bronAnnotaties")) : List.of();
-        return new ResolvedRegel(text(n, "naam"), enumOf(ResolvedRegel.Soort.class, text(n, "soort")),
+        ResolvedRegel r = new ResolvedRegel(text(n, "naam"), enumOf(ResolvedRegel.Soort.class, text(n, "soort")),
                 expr(n.get("doel")), expr(n.get("waarde")), conditie(n.get("voorwaarde")),
                 geldigheid(n), bronAnnotaties);
+        // WF-022's value clause: a characteristic attribution writes the boolean constant true. Neither branch
+        // reads the value — the exec-model one writes true whatever it says, the DRL-text one writes what it
+        // says — so on an `onwaar` (measured 2026-09-23 on the negatief wf022-kenmerk-onwaar, verifier bypassed)
+        // they gave opposite answers where the ASP backend refuses. Refused here, once for both branches.
+        if (r.soort() == ResolvedRegel.Soort.KENMERKTOEKENNING
+                && !(r.waarde() instanceof Expr.Literal l && "waar".equals(l.waarde())
+                     && l.type() instanceof Datatype.Booleaan)) {
+            String doel = r.doel() instanceof Expr.AttribuutRef a ? "'" + a.attribuut() + "'" : "zijn doel";
+            String waarde = r.waarde() instanceof Expr.Literal l ? "'" + l.waarde() + "'"
+                    : r.waarde() == null ? "geen waarde" : "een " + r.waarde().getClass().getSimpleName();
+            throw new Refusal("ResolvedRegel.waarde", "de kenmerktoekenning '" + r.naam() + "' kent het kenmerk "
+                    + doel + " " + waarde + " toe; WF-022 eist de booleaanse constante waar, en een negatief besluit"
+                    + " over een kenmerk bestaat alleen in een defaultsgroep");
+        }
+        return r;
     }
 
     private ResolvedObjectCreatie objectCreatie(JsonNode n) {
