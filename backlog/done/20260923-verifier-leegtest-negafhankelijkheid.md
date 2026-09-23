@@ -417,7 +417,7 @@ kwantorvouw-recursieve-creatie}` and
 `wf046-kwantorvouw-{alle-bereik, geen-vergelijking, geen-matrix,
 bindingloos-bereik, tenhoogste-bereik, precies-bereik, tenhoogste-matrix,
 precies-matrix, onder-geen}`, one per clause. Corpus cost zero, counted
-on the 753 documents the card did not add: none of the 31 leeg/gevuld
+on the 754 documents the card did not add: none of the 31 leeg/gevuld
 tests reads a written node, and none of the 78 read positions that
 change kind has a writer. Recorded open: the other
 absence-true conditions (RUNTIME-SEMANTICS ch. 6.1) and the Drools flank
@@ -671,8 +671,14 @@ adviezen. Elk punt staat in een eigen commit.
 
 Gerebased op main `a1b9daf0`, zonder conflicten. Main voegde vier rode
 documenten en een negatief toe en veranderde van de executors alleen de
-Drools-caserunner; ref, verifier en clingo zijn ongewijzigd. Opnieuw
-geteld op de 753 documenten die deze kaart niet toevoegde:
+Drools-caserunner. Tijdens deze ronde schoof main door naar `ad9bac27`,
+omdat de parallelle ref-kaart (caselaag) landde met wijzigingen in
+`ref/lib/case.ml`, `ref/lib/eval.ml` en `ref/test/test_ref.ml` en met één
+rood document meer. Daarom is een tweede keer gerebased, ook zonder
+conflicten, en is alles opnieuw gemeten. De ref-suite telt nu 931 (die van
+main plus mijn vier), het nieuwe rode document `inputdatum-kalender` is
+verifier-schoon, en de tellingen hieronder gelden op `ad9bac27`. Geteld
+op de 754 documenten die deze kaart niet toevoegde:
 - 31 leeg/gevuld-tests in 29 documenten (GEVULD negatie:false 25, LEEG¬
   3, GEVULD¬ 2, LEEG 1). Geen daarvan leest een geschreven knoop.
 - Leesposten die van soort veranderen, zonder één echte kant: main →
@@ -680,10 +686,10 @@ geteld op de 753 documenten die deze kaart niet toevoegde:
   documenten (51 strict → neg, 7 neg → pos); main → tip 78 posten in 34
   documenten. Het echte kant-geval uit de vorige telling zat in een
   eigen negatief en telt nu niet mee.
-- Oordelen main → tip over de 753: identiek (golden 235, rood 47,
+- Oordelen main → tip over de 754: identiek (golden 235, rood 48,
   negatief 441, toka 30).
-- ref-sweep main → tip over de 642 bestaande golden- en rood-cases:
-  `cmp` identiek.
+- ref-sweep main (`ad9bac27`, opnieuw gebouwd) → tip over de 643
+  bestaande golden- en rood-cases: `cmp` identiek.
 De tellingen in IR-SPEC 5.2 en de WF-indexrij zijn bijgewerkt.
 
 ### Punt 1: vijf ongepinde kwantorclausules (blokkerend)
