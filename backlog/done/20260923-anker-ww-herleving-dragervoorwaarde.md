@@ -72,7 +72,7 @@ Niet in deze kaart: het dialect, de spec, de uitvoerders; de betekenis van
 Geland op de kaartbranch als **voorstel** (beschermde paden, de maintainer
 merget): `corpus/golden/anchor/ww-herleving-inkomen/` (`ir.json`, `NOTE.md`,
 vijf nieuwe cases) en `scripts/check-noop.sh` (één overleversregel). Commits:
-848c6ebb (claim), 560859e0 (het werk), en deze. De vier bestaande case-files
+c8fcace1 (claim), a853cb80 (het werk), en deze. De vier bestaande case-files
 zijn byte-ongewijzigd; buiten de drie geneste voorwaarden is `ir.json`
 structureel identiek aan 3a140fe4; de wetteksten en de rekenregels in de
 NOTE zijn byte-identiek.
@@ -184,7 +184,7 @@ de 36 bestaande regels, proza voor de reviewer. case5, case6, case8 en case9
 weerleggen de no-op-uitvoerder zelf (hun afgeleide attributen).
 
 **Gates**, elk als losse aanroep in de worktree; vóór = 3a140fe4, na =
-560859e0. Alle veertien groen, vóór en na.
+a853cb80. Alle veertien groen, vóór en na.
 
 | gate | vóór | na |
 |---|---|---|
@@ -275,10 +275,10 @@ golden, zelfde kanalen.
    - De kaarttekst bijwerken is werk voor de hoofdsessie.
 3. *Gefixt in fixronde 2.* Het voorstel `DIALECT-DEFAULTS-NIET-EN-NESTING.md`
    volgt het gelande anker nu overal: §2.3 en §8.1 sinds fixronde 1, en §1
-   punt 6, §2.2 M12, §5.4, §8.2 en §8.4 sinds fixronde 2 (commit 3737e8da,
+   punt 6, §2.2 M12, §5.4, §8.2 en §8.4 sinds fixronde 2 (commit 451d9b0c,
    zie hieronder).
 4. *Gefixt in fixronde 2.* `recht op uitkering` is `BEZITTELIJK` in
-   `kenmerkSoorten` (commit 2f23e029, op verzoek van de maintainer). De
+   `kenmerkSoorten` (commit 00096a8d, op verzoek van de maintainer). De
    tweeling schrijft "heeft (geen) recht op uitkering" en moet byte-identiek
    op dit anker uitkomen. De soort stuurt alleen die bronspelling; geen
    uitvoerder leest haar (meting hieronder).
@@ -312,7 +312,7 @@ Anker, NOTE en `check-noop.sh` zijn niet aangeraakt. Gate 1 opnieuw: PASS.
 
 **Fixronde 2 (hoofdsessie, 2026-09-23).** Twee items, elk een eigen commit.
 
-*Item 1, commit 2f23e029: `recht op uitkering` wordt `BEZITTELIJK`* (mandaat
+*Item 1, commit 00096a8d: `recht op uitkering` wordt `BEZITTELIJK`* (mandaat
 voor `ir.json` en NOTE). Eén waarde in `kenmerkSoorten`. De NOTE zegt nu
 waarom (de tweeling) en dat de soort alleen de bronspelling stuurt: `heeft
 (geen) recht op uitkering` in plaats van `is (niet) recht op uitkering`.
@@ -338,7 +338,7 @@ Gemeten vóór (`BIJVOEGLIJK`) en na (`BEZITTELIJK`):
   played 182 en DRL 161 (JUnit 620). case1–case4 zijn byte-ongewijzigd
   tegenover 3a140fe4.
 
-*Item 2, commit 3737e8da: de overige verouderde plaatsen in het voorstel.*
+*Item 2, commit 451d9b0c: de overige verouderde plaatsen in het voorstel.*
 - §1 punt 6, M12, §5.4 en §8.4 staan nu als gedateerde metingen (8dd05e25)
   naast de gelande stand: vier verschilpunten, negen cases, PLAYED 9.
 - M12 is opnieuw gemeten op het gelande anker, omgebouwd naar de ketenvorm
@@ -365,14 +365,14 @@ commit, plus één gevolgcommit op het voorstel. Volgorde van de commits: 1,
 3, 4, 2, gevolg, 5, 6, zodat de telling in de tekst van item 2 al klopt met
 case10.
 
-- **1, fde99eb5 — NOTE, case7:** de verwachting is voorlopig. Ch. 7.8 zegt
+- **1, 8cd8c33a — NOTE, case7:** de verwachting is voorlopig. Ch. 7.8 zegt
   niets over een kenmerkdoel in de richting onwaar; optie 7-i van de kaart
   kenmerkinvoer-en-invoer-boven-berekening legt het gedrag vast, optie 7-ii
   laat de verwachting omslaan.
-- **3, 5f03089a — NOTE, case6 en case8:** hun data horen bij een recht dat
+- **3, e2584049 — NOTE, case6 en case8:** hun data horen bij een recht dat
   onder de grondslaglezing nooit ontstond. Ze staan er bewust (case8 is
   case1 met één verschil) en zijn geen bewijs dat er een recht was.
-- **4, dc0361d7 — `case10-nieuw-recht-onder-grens`:** de feiten van case3
+- **4, 079a3d1f — `case10-nieuw-recht-onder-grens`:** de feiten van case3
   met een nieuw maandloon van 2000,00. Handwaarden: aanwezig (de herleving
   beslist); `inkomensgrens` 2100,00; `verstreken periode` 92; `nieuwe
   maxdatum` 2026-01-15; consistent. Handberekening in de NOTE.
@@ -389,15 +389,15 @@ case10.
   - De soortmeting is over tien cases herhaald: met `BIJVOEGLIJK` en
     `BEZITTELIJK` dezelfde uitkomsten (exec `PLAYED 10`), en het
     ASP-programma van case10 is byte-identiek.
-- **2, 7ed47b0e — `check-noop.sh`, alleen tekst (voorstel):** de reden van
+- **2, cc75db02 — `check-noop.sh`, alleen tekst (voorstel):** de reden van
   case7 zegt nu "as long as the card … does not choose its option 7-ii". Met
   case10 zijn er negen broercases.
-- **Gevolg, 8934fb59 — voorstel:** de tellingen staan op tien en case10 staat
+- **Gevolg, 58027408 — voorstel:** de tellingen staan op tien en case10 staat
   in de tabel van §8.1. De ketenvorm van de tweeling is opnieuw gemeten:
   verifier PASS, ref en clingo 10/10, exec `PLAYED 10`, DRL `EXCLUDE`.
-- **5, 43b76b45 — open punt 2:** de mutantmeting, met één correctie op de
+- **5, c13f98f2 — open punt 2:** de mutantmeting, met één correctie op de
   lens: gate 2 bewaakt de vier onwaarneembare conjuncten niet.
-- **6, e1e4f9ea — open punt 1:** gecorrigeerd.
+- **6, 2f576806 — open punt 1:** gecorrigeerd.
 
 **Mutantmeting.** Elk conjunct apart weggehaald, tien cases; ref en clingo
 geven overal dezelfde uitkomst.
@@ -419,7 +419,8 @@ De vier mutanten die een onwaarneembaar dragerconjunct weghalen, zijn
 schema-geldig en canoniek (round-trip identiek) en krijgen van de verifier
 PASS.
 
-**Gates**, elk als losse aanroep op e1e4f9ea:
+**Gates**, elk als losse aanroep, gemeten vóór de rebase op e7e9e178 (de
+commit heet nu 2f576806):
 
 | gate | uitslag |
 |---|---|
