@@ -33,7 +33,7 @@ does not translate is stated there, never silently absent.
 ### S1. Program shape and conventions
 
 One case, one ASP program, one stable model. The translation of a
-`regelspraak-ir-v0` document plus a `uchar-case-v0` case is a single
+`uchar-ir-v1` document plus a `uchar-case-v0` case is a single
 ASP-Core-2 program; WF-045/046 make every admissible document
 stratifiable, so the program has exactly one stable model and the
 model checker (`backends/clingo/lib/model.ml`) *faults* on anything

@@ -51,6 +51,16 @@ Wat de toets eist, en waarom:
    letterlijk blijft kloppen met IR-SPEC; botsingen tellen alleen levende
    namen, want een hernoeming raakt een gelande naam niet meer. De nieuwe
    namen die een M-stap schrijft, krijgen hun eigen rij (meestal identiteit).
+8. De landingen zijn geteld. Per M-stap noemt `geland_telling` hoeveel
+   doelgroepen die stap draagt: een groep telt mee als zij of haar rij
+   `geland` draagt (de naam verdween), of als haar noot "geland M<n>" zegt
+   (een levende naam die de stap schreef of liet staan). De toets telt zelf
+   en eist gelijkheid, in beide richtingen: een weggehaalde of ontmerkte
+   landing en een ongetelde nieuwe falen allebei. Een levende gelande groep
+   heeft bovendien een doel: herkomst `vervalt` of `gat` faalt, want de naam
+   staat op de wire. Zonder dit bleven twee mutaties stil groen (gemeten
+   2026-09-23): een gelande rij weghalen, en diagnostics/severity/line terug
+   op `vervalt` zetten.
 
 Bekende grenzen — wat de toets NIET waarmaakt, zodat de hernoeming (M8) er
 niet meer vertrouwen in legt dan dit:
@@ -272,6 +282,31 @@ def main():
             for g in r.get("doel", []):
                 if g.get("geland") and "knopen" not in g:
                     fout("%s `%s`: een gelande groep noemt zijn `knopen`" % (soort, r["v0"]))
+
+    # 8. de landingen geteld, in beide richtingen
+    telling = collections.Counter()
+    for soort in ("knopen", "properties"):
+        for r in tabel[soort]:
+            for g in r.get("doel", []):
+                w = g.get("geland") or r.get("geland")
+                if not w:
+                    m = re.search(r"\bgeland (M[1-8])\b", g.get("noot") or "")
+                    if m:
+                        w = m.group(1)
+                        if g.get("herkomst") in ("vervalt", "gat") or g.get("v1") is None:
+                            fout("%s `%s`: de noot zegt geland %s, dus de naam staat op de wire, "
+                                 "maar de groep heeft herkomst %r en doel %r"
+                                 % (soort, r["v0"], w, g.get("herkomst"), g.get("v1")))
+                if isinstance(w, str) and GELAND.fullmatch(w):
+                    telling[w] += 1
+    verwacht = tabel.get("geland_telling")
+    if not isinstance(verwacht, dict):
+        fout("`geland_telling` ontbreekt of is geen object {M-stap: aantal doelgroepen}")
+    else:
+        for w in sorted(set(verwacht) | set(telling)):
+            if verwacht.get(w) != telling.get(w):
+                fout("`geland_telling` noemt %s doelgroep(en) geland bij %s, de tabel draagt er %d"
+                     % (verwacht.get(w), w, telling.get(w, 0)))
 
     # 1. totaliteit (een gelande rij omgekeerd: hij staat niet meer in het schema)
     for soort, rijen, schemaset in (("knoop", tabel["knopen"], s_knopen),
@@ -522,7 +557,8 @@ def main():
     gelande = collections.Counter(
         w for s_ in ("knopen", "properties") for r in tabel[s_]
         for w in [r.get("geland")] + [g.get("geland") for g in r["doel"]] if w)
-    print("geland (rijen en groepen per M-stap): %s" % dict(sorted(gelande.items())))
+    print("geland (rijen en groepen per M-stap): %s; geland_telling (doelgroepen): %s"
+          % (dict(sorted(gelande.items())), dict(sorted(telling.items()))))
     if bevindingen:
         for b in bevindingen:
             print("FAIL %s" % b, file=sys.stderr)
