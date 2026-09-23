@@ -1227,7 +1227,7 @@
                 "argumenten": [
                   {
                     "node": "AttribuutRef",
-                    "attribuut": "passagiers",
+                    "attribuut": "passagier",
                     "objecttype": "Vlucht",
                     "bron": "passagiers van de Vlucht"
                   }
