@@ -424,20 +424,14 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
               | Some (Some gran) ->
                   (attrs, SMap.add (norm name) (timeline_of_json ~at ~gran decl t) tls)
               | Some None ->
-                  (* The KEY is present, so the document declares this attribute
-                     time-dependent — every other reader (the verifier's
-                     attr_temporal, this interpreter's evaluator, the ASP
-                     translator) already treats it as such. Only the grid is
-                     missing. Until 2026-09-10 this fell into the arm below and
-                     was refused as "non-temporal", contradicting the document
-                     that produced it. The schema enum and WF-059's third arm
-                     now shut the shape on the wire, so only a hand-built
-                     document reaches here — and it must be told the real
-                     reason. *)
-                  fail
-                    "%s: the attribute is declared time-dependent but its granularity is null: \
-                     the timeline has no grid to sit on (WF-059)"
-                    at
+                  (* An internal invariant, not a load error: since M1 the
+                     loader reads a timeline facet's granularity as a required
+                     value, so no document it loads reaches this arm. *)
+                  invalid_arg
+                    (Printf.sprintf
+                       "Case: %s: a time-dependent attribute without a granularity, which the \
+                        loader refuses since M1; this document was not built by the loader"
+                       at)
               | None -> fail "%s: a timeline value on a non-temporal attribute" at)
             | None -> (SMap.add (norm name) (value_of_json ~at decl vj) attrs, tls))
         | None -> fail "attribute %S is not declared on %S" name otype_name)
@@ -514,21 +508,13 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
               with
               | Some (_, Some g) -> g
               | Some (_, None) ->
-                  (* The KEY is present, so the document declares this
-                     characteristic time-dependent — the verifier's WF-055 clip
-                     check, this interpreter's evaluator and the ASP translator
-                     all read that key and nothing else. Only the grid is
-                     missing. Until 2026-09-11 this fell into the arm below and
-                     was refused as "non-temporal", contradicting the document
-                     that produced it — the same fold the attribute arm above
-                     carried until 2026-09-10. The schema enum and WF-059's
-                     second arm shut the shape on the wire, so only a hand-built
-                     document reaches here, and it must be told the real
-                     reason. *)
-                  fail
-                    "%s.%s: the characteristic is declared time-dependent but its granularity is \
-                     null: the timeline has no grid to sit on (WF-059)"
-                    label cname
+                  (* the internal invariant of the attribute arm above *)
+                  invalid_arg
+                    (Printf.sprintf
+                       "Case: %s.%s: a time-dependent characteristic without a granularity, \
+                        which the loader refuses since M1; this document was not built by the \
+                        loader"
+                       label cname)
               | None ->
                   fail "%s.%s: a characteristic timeline on a non-temporal characteristic"
                     label cname
@@ -715,7 +701,15 @@ let load_expectation (doc : document) (world : World.t) ~at (j : Yojson.Safe.t) 
       let gran =
         match Ir_v0.Checks.find_ci ot.attribuut_granulariteit attr with
         | Some (Some g) -> g
-        | _ -> fail "expected timeline on %S, which declares no granularity" attr
+        | Some None ->
+            (* the internal invariant of the input arms above *)
+            invalid_arg
+              (Printf.sprintf
+                 "Case: expected timeline on %S: a time-dependent attribute without a \
+                  granularity, which the loader refuses since M1; this document was not built \
+                  by the loader"
+                 attr)
+        | None -> fail "expected timeline on %S, which declares no granularity" attr
       in
       Attribute_timeline
         {
