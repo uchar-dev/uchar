@@ -855,15 +855,17 @@ EXPECTED_PLAYED=186
 # noise around the only thing that is compared, which is the CHANNEL. Each class is explained in the
 # comment that opens it; each golden still stands there BY NAME, which is what the stale guard needs.
 DRL_CHANNEL=(
-  # (A) ch. 7 prioritizedDefaults — 26, and since the objectcreatie repair below the ONLY remaining
-  # reason of size for this count sitting 22 below the exec one: the exec branch grew a spec-ch.-7
-  # defaults lowering at the defaults-service card (2026-08-29) that the production toolchain does
-  # not have, and DrlTranspiler never did. Every golden here refuses on that one sentence.
-  # 24 of the 25 ARE that asymmetry — the exec branch plays them. anchor/jutterswet-toelagegronden
-  # is NOT, and is named here so the class is not read as 25 exec-only players: the exec branch
-  # refuses it too, on a different sentence (its kenmerk target shares its name with an attribute,
-  # a v0 bean-model limit), so it contributes nothing to the gap. The 22 is 25 exec-only players
-  # minus 3 goldens this branch plays and the exec one does not (anchor/jutterswet-vindersloon,
+  # (A) ch. 7 prioritizedDefaults — 26 lines, and since the objectcreatie repair below the ONLY
+  # remaining reason of size for this count sitting 22 below the exec one: the exec branch grew a
+  # spec-ch.-7 defaults lowering at the defaults-service card (2026-08-29) that the production
+  # toolchain does not have, and DrlTranspiler never did. 25 of the 26 lines refuse on that one
+  # sentence; the 26th, jutterswet-havenrooster, is a MARKER that stands here in name order and that
+  # the header counts since 2026-09-22. 24 of those 25 ARE that asymmetry — the exec branch plays
+  # them. anchor/jutterswet-toelagegronden is NOT, and is named here so the class is not read as 25
+  # exec-only players: the exec branch refuses it too, on a different sentence (its kenmerk target
+  # shares its name with an attribute, a v0 bean-model limit), so it contributes nothing to the gap.
+  # The 22 is 25 exec-only players — those 24 and jutterswet-vouwrand of class (C) — minus 3 goldens
+  # this branch plays and the exec one does not (anchor/jutterswet-vindersloon,
   # jutterswet-vondsttarief, synth2-afrondingscombinaties, all three a transpiler SKIP over there).
   "anchor/jutterswet-hardheid|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestdiepte|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
