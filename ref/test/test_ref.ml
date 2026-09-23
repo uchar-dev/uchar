@@ -6168,6 +6168,13 @@ let () =
   weigert "WF-022-kenmerk-berekend-weigert"
     (aref "actief" "Recht" Ir_v0.Ast.Booleaan)
     (zin "a computed value");
+  (* both halves of the constant, each on its own: the lexeme waar with
+     another type, and the type Booleaan with another spelling (lens
+     mutants MW3 and MW4 dropped one half each and the suite stayed green) *)
+  weigert "WF-022-kenmerk-waar-als-tekst-weigert" (litv "waar" Ir_v0.Ast.Tekst)
+    (zin {|the literal "waar" typed Tekst|});
+  weigert "WF-022-kenmerk-hoofdletter-weigert" (litv "Waar" Ir_v0.Ast.Booleaan)
+    (zin {|the literal "Waar" typed Booleaan|});
   (* the control: the constant itself still attributes, on the condition *)
   let w = Eval.evaluate (env_of (doc (litv "waar" Ir_v0.Ast.Booleaan))) wereld in
   check "WF-022-kenmerk-waar-kent-toe"
