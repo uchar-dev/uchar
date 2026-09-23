@@ -44,8 +44,11 @@ sister soort. The ASP backend, before it carried the leeg test and its
 negations in its shared condition translation, refused the document
 instead. The unnegated twin and the unbound written step are pinned in the
 backends' own suites (`LeegNegatieWitnessTest`, `test_clingo.ml`), not
-here, because a golden carries one expectation set. The refusal under a
-whole-period qualifier is the red twin `corpus/rood/leegnegatie-heel-tijdvak`.
+here, because a golden carries one expectation set. Under a whole-period
+qualifier the test is refused, and two red cases hold that refusal:
+`corpus/rood/leegnegatie-heel-tijdvak` for the negated test, whose
+threshold is not normed, and `corpus/rood/leegtest-heel-tijdvak` for the
+unnegated one, which ch. 3.9 norms and no executor runs.
 
 No `bron.rgs`: RegelSpraak spells no "is niet leeg", and the frontend
 never writes `negatie` on these two soorten. The document is hand-written
