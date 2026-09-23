@@ -312,3 +312,81 @@ Wat nog uitgezocht moet worden:
 May touch: `spec/proposals/**` (het nieuwe voorstel), `backlog/**` (deze
 kaart verplaatsen en de vervolgkaarten). Niet in deze kaart: grammatica,
 frontend, verifier, `spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md`.
+
+## Result (2026-09-23)
+
+Geleverd: `spec/proposals/DIALECT-DEFAULTS-NIET-EN-NESTING.md` (Engels,
+met markering citaat/parafrase/gevolgtrekking/meting), tien conceptkaarten
+in `backlog/new/`, geen code. Alle besluiten 1–8 staan er als voorstel in;
+ze wachten op de maintainer.
+
+**Wat het onderzoek vond.**
+
+- (a) RegelSpraak noemt één reden (§9.2: gesloten wereld). Twee andere zijn
+  even structureel maar staan nergens: zonder voorrang is een negatieve
+  naast een positieve toekenning een onbeslisbaar conflict (de
+  SBVR/RuleSpeak-afkomst van §2.1), en de uitvoering is monotoon zonder
+  terugtrekking (de Drools-backend gebruikt geen truth maintenance; de
+  stratificatie leunt op "a missed positive is recoverable; a consumed
+  negation is not"). Binnen een defaults-groep geldt geen van de drie.
+  Tegenover een invoerkenmerk betekent "niet": niet toekennen, niet
+  intrekken — gemeten in ref, clingo en Drools-exec.
+- (b) RuleSpeak kent "must not" en (Ross 2010) "is never considered",
+  SBVR kent logische negatie en "it is prohibited/impossible that", maar
+  geen van beide kent voorrang: uitzonderingen worden weggeherformuleerd
+  (SBVR 1.5 §16.3.2–16.3.3, Ross 2009 wijst een prioriteitsschema expliciet
+  af). De Nederlandse RuleSpeak (2009) heeft geen negatieve afleidingsvorm.
+- (c) Catala heeft precies de gezochte combinatie: `condition` met default
+  false plus `not fulfilled`, structurele voorrang, fatale botsing —
+  gemeten met catala 1.2.1 (ook: geneste uitzonderingen dragen de
+  voorwaarde van hun drager níet mee).
+- (d) Ch. 5.3 blijft heel: besluit false schrijft niets (ref eval.ml:3165,
+  clingo translate.ml:8063, Drools exec :7649), de groep beslist na al haar
+  lezingen (WF-051).
+- Draad, verifier en drie uitvoerders dragen beide vormen al; het werk is
+  frontendwerk; geen nieuwe WF-regel. Wel een getuigegat: de waardeclausule
+  van WF-022 heeft een verifiercheck maar geen eigen negatief.
+- Bevinding in het handanker `ww-herleving-inkomen`: de geneste
+  rechtvaardigingen missen de voorwaarde van hun drager, waardoor het anker
+  op twee niet geraakte invoeren tegen art. 21 in beslist (in alle drie de
+  uitvoerders gelijk). Met de dragervoorwaarden erin slagen alle zeven
+  proefcases (4 bestaande + 2 hoeken + de invoercase).
+- Bijvangst 4 heeft een oorzaak: het WF-079-commentaar (checks.ml:8899)
+  veronderstelt dat de kale subtype-regel de supertype-regel vervangt, maar
+  ch. 7.10 vouwt alleen als de keten een defaults-groep heeft. Gemeten:
+  verifier PASS, ref en Drools-exec geen fixpunt, clingo twee waarden,
+  DRL-tekst volgt de bronvolgorde.
+
+**Wat niet gevonden of niet gedaan is.** De pagina van het Regelregister
+over RuleSpeak was onbereikbaar (DNS). Geen Nederlandse tegenhanger van
+"is never considered", geen bespreking van ontkende definities bij Ross
+(2006), geen voorrangsmechanisme in SBVR. De tweede en derde reden van (a)
+zijn gevolgtrekkingen. De scenarioharnas en graaf van regelspraak-java zijn
+gelezen, niet gedraaid. Alleen gate 1 is gedraaid (PASS); de overige
+poorten niet — er is geen code, corpus of script gewijzigd. De metingen
+draaiden op kopieën buiten de repo; in de worktree staat alleen de
+genegeerde `_build/` van de OCaml-bouw.
+
+**Conceptkaarten** (`backlog/new/`): bouwkaarten
+`20260923-dialect-niet-nesting-frontend`, `-dialect-niet-nesting-goldens`,
+`-anker-ww-herleving-hoeken` (beschermd pad), `-wf022-waardeclausule-getuige`,
+`-regelspraak-java-dialect-pinbump` (hoort in regelspraak-java),
+`-invoer-boven-berekening` (vorm 3); bijvangstkaarten
+`-regelgroep-uitzondering-afsluiting`, `-bron-annotaties-defaults`,
+`-testdocument-uitzonderingsvormen`, `-keten-kale-regels-divergentie`.
+
+**Registerzin voor `spec/CONSTRUCTS.md` rij 8** (de hoofdsessie landt hem):
+
+> **Dialect negation and nesting (proposed 2026-09-23,
+> `spec/proposals/DIALECT-DEFAULTS-NIET-EN-NESTING.md`; awaits decisions
+> 1–8):** an `Uitzondering op` block may decide `niet`/`geen` — lowered to
+> `besluit: false`, a displacement that writes nothing, so ch. 5.3's
+> monotone regime and an input-set characteristic stay untouched — and may
+> name another exception, lowered into that exception's
+> `Default.excepties` while first-level exceptions stay chain positions so
+> that ch. 7.10's base override keeps them; `Uitzonderingen ongeordend op
+> <naam>:` adds unordered exceptions under a rule; a plain `Regel` still
+> cannot negate (§9.2, refused by the frontend, WF-022 on the wire); no
+> wire change and no new WF rule, the witnesses being RegelSpraak twins of
+> `anchor/ww-herleving-inkomen`, `anchor/jutterswet-uitsluiting` and
+> `anchor/jutterswet-nestkenmerk`.
