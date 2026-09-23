@@ -102,6 +102,51 @@ prioritized-defaults anchors).
   assignment is monotone `waar`, a genuine §9.5 conflict is only expressible on
   an **attribute** target.
 
+### `// Bron:` annotations of lifted rules
+
+A lifted rule leaves `resolvedRegels`, and with it the `bronAnnotaties` list
+that carries its `// Bron:` annotation on a flat rule. Until 2026-09-23 the
+lowering also set `bron: null` on every defaults group and every default, so
+each annotation on an extension block vanished. Measured on the frontend before
+the change (the M6 document of `spec/proposals/DIALECT-DEFAULTS-NIET-EN-NESTING.md`
+§9.2: an annotated base and its annotated exception): neither annotation text
+occurred anywhere in the IR, with `diagnostics: []` and a verifier PASS. The
+placement since, with no new wire field (card `frontend-bron-annotatie-in-defaults`):
+
+- a lifted rule's annotation lands in the `Default.bron` of the default it
+  becomes: the exception's on the exception default, the base's on the base
+  default, an unordered member's on its sibling group's single default;
+- the group's `PrioritizedDefaults.bron` carries the annotation of the rule the
+  group is named after: the base of an ordered family, the member itself for an
+  unordered sibling. The base's text therefore stands twice, on the group and
+  on the lowest default. The hand-written defaults anchors decided this: in
+  every one of them each default, the lowest included, carries its own
+  provenance beside the group's (`anchor/ww-herleving-inkomen`: the group
+  "art. 15 tot en met 21: …", its base default "art. 15: …"). Writing the base's
+  text on the group alone would give the base default a shape no anchor has,
+  and it would lose the per-default citation the statute trace hangs on. The
+  anchors' group-level citation is an umbrella the frontend cannot write
+  without inventing text ("art. 3 en 5"), so the group takes the text of the
+  block it is named after;
+- several annotations on one block are joined with `"; "` in source order, and a
+  blank one is dropped, as the emitter drops it from `bronAnnotaties`;
+- an unannotated block keeps `bron: null`: the three extension goldens carry no
+  annotation and re-emit byte-identically;
+- the `Regel` stub a lifted rule leaves in `regels` is unchanged — `node`,
+  `naam`, `soort`, and no `bron`, which the schema does not admit there;
+- nesting: when exception-on-exception lands, a nested block's annotation
+  lands on its own default inside the `ExceptionGroup`. Every lifted rule
+  becomes a default in one place (`RuleChecker.defaultVan`), so the nested
+  lowering inherits the placement; what `ExceptionGroup.bron` itself carries is
+  that card's decision;
+- an annotation written above the `Uitzonderingen ongeordend:` header belongs
+  to no rule — an annotation belongs to the rule directly below it, and the
+  header is none — so it reaches no default and no group. It used to vanish
+  without a word; it now draws a WARNING that names it, instead of being hung
+  on a member the author did not choose.
+
+Witness: `DefaultsBronAnnotatieTest`.
+
 ### Fail-fast refusals (resolver, loud diagnostics)
 
 - an `Uitzondering op` naming a base rule that does not exist;

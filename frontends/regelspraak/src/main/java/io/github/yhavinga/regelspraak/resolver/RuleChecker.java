@@ -348,7 +348,8 @@ final class RuleChecker {
 
             List<Default> defaults = new ArrayList<>(excDefaults);
             defaults.add(defaultVan(basisRegel, doel.kenmerk()));
-            model.prioritizedDefaults.add(defaultsVan(basisNaam, doel, false, defaults, basisRegel.geldigheid()));
+            model.prioritizedDefaults.add(defaultsVan(basisNaam, doel, false, defaults, basisRegel.geldigheid(),
+                    annotatieTekst(basisRegel.bronAnnotaties())));
 
             model.resolvedRegels.remove(basisRegel);
             for (UitzonderingRegelContext u : excepties) {
@@ -366,6 +367,7 @@ final class RuleChecker {
         for (UitzonderingGroepContext g : DefinitionResolver.alleUitzonderingGroepen(doc)) {
             if (geweigerd.contains(g)) continue;   // refused at its head already
             int line = g.getStart().getLine();
+            kopAnnotatie(g, line);
             List<ResolvedRegel> leden = new ArrayList<>();
             DefaultsDoel gedeeld = null;
             boolean fout = false;
@@ -399,30 +401,57 @@ final class RuleChecker {
             if (fout || gedeeld == null) continue;
             for (ResolvedRegel r : leden) {
                 model.prioritizedDefaults.add(defaultsVan(r.naam(), gedeeld, true,
-                        List.of(defaultVan(r, gedeeld.kenmerk())), r.geldigheid()));
+                        List.of(defaultVan(r, gedeeld.kenmerk())), r.geldigheid(), annotatieTekst(r.bronAnnotaties())));
                 model.resolvedRegels.remove(r);
             }
         }
     }
 
     /** Assemble a {@link PrioritizedDefaults} group for target {@code doel}: kenmerk XOR attribuut per WF-050,
-     *  no per-group bron (a frontend defaults group carries no statute annotation of its own), the
-     *  base/member's geldigheid faithfully. */
-    private PrioritizedDefaults defaultsVan(String naam, DefaultsDoel doel, boolean ongeordend, List<Default> defaults, Geldigheid g) {
+     *  the base/member's geldigheid faithfully, and as {@code bron} the statute annotation of the rule the group
+     *  is named after — the base of an ordered family, the member itself for an unordered sibling. */
+    private PrioritizedDefaults defaultsVan(String naam, DefaultsDoel doel, boolean ongeordend, List<Default> defaults,
+                                            Geldigheid g, String bron) {
         return new PrioritizedDefaults(naam, doel.onderwerp().naam,
                 doel.kenmerk() ? doel.naam() : null, doel.kenmerk() ? null : doel.naam(),
-                ongeordend, defaults, null, g);
+                ongeordend, defaults, bron, g);
     }
 
     /** One default from a resolved flat rule: on characteristic defaults a §9.2-monotone kenmerktoekenning
      *  always decides {@code true} (RegelSpraak cannot withdraw a characteristic); on attribute defaults the
-     *  default's value is the rule's resolved value expression. The justification is the rule's condition. No
-     *  per-default bron. */
+     *  default's value is the rule's resolved value expression. The justification is the rule's condition.
+     *  The rule's {@code // Bron:} annotation becomes the default's {@code bron}: lifting takes the rule out of
+     *  resolvedRegels, and its {@code bronAnnotaties} with it, so this is the one place the citation can
+     *  survive — and since every lifted rule becomes a default HERE, a nested exception inherits the placement
+     *  by construction. */
     private Default defaultVan(ResolvedRegel r, boolean kenmerk) {
         Conditie rechtvaardiging = r.voorwaarde() != null ? r.voorwaarde() : ALTIJD;
+        String bron = annotatieTekst(r.bronAnnotaties());
         return kenmerk
-                ? new Default(Boolean.TRUE, rechtvaardiging, null, false, null, null)
-                : new Default(null, rechtvaardiging, r.waarde(), false, null, null);
+                ? new Default(Boolean.TRUE, rechtvaardiging, null, false, null, bron)
+                : new Default(null, rechtvaardiging, r.waarde(), false, null, bron);
+    }
+
+    /** The annotations of one block as the single string a {@code bron} field holds: the non-blank entries in
+     *  source order joined with "; ", or null when there are none — so an unannotated block keeps the
+     *  {@code bron: null} every defaults golden without annotations carries. A blank entry is dropped as the
+     *  emitter drops it from {@code bronAnnotaties}: it cites nothing. */
+    private static String annotatieTekst(List<String> annotaties) {
+        List<String> gevuld = annotaties.stream().map(String::trim).filter(s -> !s.isEmpty()).toList();
+        return gevuld.isEmpty() ? null : String.join("; ", gevuld);
+    }
+
+    /** A {@code // Bron:} annotation written above an 'Uitzonderingen ongeordend:' header belongs to no rule —
+     *  an annotation travels with the rule directly below it, and the header is none — so it reaches no default
+     *  and no group. It used to vanish without a word; the WARNING says where the citation has to go. Not an
+     *  ERROR: the document is sound, only the citation is lost. */
+    private void kopAnnotatie(UitzonderingGroepContext g, int line) {
+        String kop = annotatieTekst(bronAnnotaties(g));
+        if (kop == null) return;
+        model.diagnostics.add(new Diagnostic(Severity.WARNING,
+                "Uitzonderingen ongeordend: de // Bron:-annotatie '" + kop + "' boven de kop hoort bij geen regel — "
+                + "een annotatie hoort bij de regel direct eronder, en de kop is geen regel — en komt daarom niet op "
+                + "de wire. Zet haar boven het lid of de leden waarvoor zij geldt (dialect §4)", line));
     }
 
     /** The vacuously true justification. WF-050 requires EVERY non-initialisation default to carry one,
