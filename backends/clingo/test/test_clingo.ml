@@ -9011,6 +9011,109 @@ let () =
          [ pf_leeg ~label:"W1" ~attr:"bonus" (); pf_cons ])
     ~silent:"bonus leeg: the filter never held"
 
+(* FIXRONDE 2, point 2: a quantifier fold's matrix short-circuits (ch. 3.9a).
+   The contributors are settled in full first; the matrix is then read in the
+   contributors' own order and stops at the first member after which the
+   outcome stands, by ch. 5.10's trigger table. Three of its rows fire on the
+   EMPTY prefix: at-least and exactly over fewer contributors than the
+   threshold are onwaar having read nothing, and at-most over at most the
+   threshold is waar having read nothing. A member the fold never reaches
+   raises no fault, so an unbound parameter in its matrix must not fire the
+   guard there. The order is ref's own: a to-many list the case writes keeps
+   its written order, a list the loader materialises from the members' side
+   takes ascending label order (ch. 5.7a). Werf W1, schuiten S1 (lengte 8)
+   and S2 (lengte 3); every matrix reads the unbound p. *)
+let () =
+  let werf = pf_ot ~naam:"Werf" ~meervoud:"Werven" (Printf.sprintf {|"keur": %s|} pf_n0)
+  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" (Printf.sprintf {|"lengte": %s|} pf_n0) in
+  let ligplaats =
+    {|{ "ligplaats": { "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
+      { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] } }|}
+  in
+  let lengte = pf_a ~ot:"Schuit" ~typ:pf_n0 "lengte" and p = pf_p ~typ:pf_n0 "p" in
+  let gt l r = pf_cmp "GROTER" l r and vijf = pf_l ~typ:pf_n0 "5" in
+  let kv ?drempel kwantor toets =
+    Printf.sprintf
+      {|{ "node": "Kwantorvouw", "kwantor": "%s"%s, "elementObjecttype": "Schuit", "filter": null,
+        "toets": %s, "bron": "de schuiten",
+        "bronRol": { "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" } }|}
+      kwantor
+      (match drempel with Some d -> Printf.sprintf {|, "drempel": %d|} d | None -> "")
+      toets
+  in
+  let doc voorwaarde =
+    pf_doc ~objecttypen:[ werf; schuit ] ~feittypen:ligplaats ~parameters:[ pf_decl ~typ:pf_n0 "p" ]
+      ~regels:[ pf_regel ~ot:"Werf" ~doel:"keur" ~typ:pf_n0 ~voorwaarde (pf_l ~typ:pf_n0 "99") ]
+      ()
+  in
+  let inst label ot attrs roles =
+    Printf.sprintf
+      {|{ "label": "%s", "objectType": "%s", "attributes": { %s }, "roles": { %s }, "characteristics": [] }|}
+      label ot attrs roles
+  in
+  let lengte_is v = Printf.sprintf {|"lengte": { "number": "%s" }|} v in
+  (* W1 writes its schuiten in [order] *)
+  let werven order =
+    inst "W1" "Werf" ""
+      (Printf.sprintf {|"schuiten": [ %s ]|}
+         (String.concat ", " (List.map (Printf.sprintf {|"%s"|}) order)))
+    :: List.map (fun s -> inst s "Schuit" (lengte_is (if s = "S1" then "8" else "3")) "") order
+  in
+  let keur v =
+    [ (match v with
+      | Some v -> pf_is ~label:"W1" ~attr:"keur" v
+      | None -> pf_leeg ~label:"W1" ~attr:"keur" ());
+      pf_cons ]
+  in
+  let tel kwantor d = doc (kv ~drempel:d kwantor (gt lengte p)) in
+  both_answer ~name:"quantifier fold, lazy: at-least 2 over one member reads nothing (q-a)"
+    ~ir:(tel "TEN_MINSTE" 2) ~case_text:(pf_case ~instances:(werven [ "S1" ]) (keur None));
+  both_answer ~name:"quantifier fold, lazy: at-most 1 over one member reads nothing (q-b)"
+    ~ir:(tel "TEN_HOOGSTE" 1) ~case_text:(pf_case ~instances:(werven [ "S1" ]) (keur (Some "99")));
+  both_answer ~name:"quantifier fold, lazy: exactly 2 over one member reads nothing (q-c)"
+    ~ir:(tel "PRECIES" 2) ~case_text:(pf_case ~instances:(werven [ "S1" ]) (keur None));
+  unbound_fires ~name:"quantifier fold: at-least 2 over two members reads the first (control)"
+    ~ir:(tel "TEN_MINSTE" 2) ~param:"p" ~case_text:(pf_case ~instances:(werven [ "S1"; "S2" ]) (keur None))
+    ~silent:"keur leeg: no member satisfied the matrix";
+  unbound_fires ~name:"quantifier fold: at-most 1 over two members reads the first (control)"
+    ~ir:(tel "TEN_HOOGSTE" 1) ~param:"p"
+    ~case_text:(pf_case ~instances:(werven [ "S1"; "S2" ]) (keur (Some "99")))
+    ~silent:"keur 99: no member satisfied the matrix, so at most one did";
+  (* ALLE stops at the first member whose matrix fails: S2's lengte 3 fails
+     the composite's first part, so its p is never read either *)
+  let alle = doc (kv "ALLE" (pf_comp "ALLE" [ gt lengte vijf; gt lengte p ])) in
+  both_answer ~name:"quantifier fold, lazy: ALLE stops at S2 before S1 is read (i-h)" ~ir:alle
+    ~case_text:(pf_case ~instances:(werven [ "S2"; "S1" ]) (keur None));
+  unbound_fires ~name:"quantifier fold: ALLE reads S1 first (control)" ~ir:alle ~param:"p"
+    ~case_text:(pf_case ~instances:(werven [ "S1"; "S2" ]) (keur None))
+    ~silent:"keur leeg: S1's matrix failed its join";
+  (* GEEN and at-least 1 stop at the first member whose matrix holds; the
+     matrix is an or whose first part S1 satisfies without reading p *)
+  let of_ = pf_comp ~drempel:1 "TEN_MINSTE" [ gt lengte vijf; gt lengte p ] in
+  let geen = doc (kv "GEEN" of_) and minst = doc (kv ~drempel:1 "TEN_MINSTE" of_) in
+  both_answer ~name:"quantifier fold, lazy: GEEN stops at S1 before S2 is read (i-f)" ~ir:geen
+    ~case_text:(pf_case ~instances:(werven [ "S1"; "S2" ]) (keur None));
+  unbound_fires ~name:"quantifier fold: GEEN reads S2 first (control)" ~ir:geen ~param:"p"
+    ~case_text:(pf_case ~instances:(werven [ "S2"; "S1" ]) (keur None))
+    ~silent:"keur leeg: S1 held, so GEEN failed";
+  both_answer ~name:"quantifier fold, lazy: at-least 1 stops at S1 before S2 is read (q-d)"
+    ~ir:minst ~case_text:(pf_case ~instances:(werven [ "S1"; "S2" ]) (keur (Some "99")));
+  unbound_fires ~name:"quantifier fold: at-least 1 reads S2 first (control)" ~ir:minst ~param:"p"
+    ~case_text:(pf_case ~instances:(werven [ "S2"; "S1" ]) (keur (Some "99")))
+    ~silent:"keur 99: S1 held";
+  (* a materialised list: the schuiten name their werf, and the loader lists
+     W1's schuiten by ascending label whatever order the case writes them in *)
+  let gematerialiseerd schuiten =
+    inst "W1" "Werf" "" ""
+    :: List.map (fun (l, v) -> inst l "Schuit" (lengte_is v) {|"werf": [ "W1" ]|}) schuiten
+  in
+  both_answer ~name:"quantifier fold, lazy: the materialised order reads A3 first (i-h, labels)"
+    ~ir:alle ~case_text:(pf_case ~instances:(gematerialiseerd [ ("B8", "8"); ("A3", "3") ]) (keur None));
+  unbound_fires ~name:"quantifier fold: the materialised order reads A8 first (control)" ~ir:alle
+    ~param:"p" ~case_text:(pf_case ~instances:(gematerialiseerd [ ("B3", "3"); ("A8", "8") ]) (keur None))
+    ~silent:"keur leeg: A8's matrix failed its join"
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

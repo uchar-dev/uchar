@@ -2142,6 +2142,63 @@ let emit_value_days ctx ~p ~attr ~sat =
   rules "t" "_" "";
   rules "g" "V" (String.concat "" (List.map (fun a -> ", " ^ a) sat))
 
+(* ch. 3.9a, the quantifier fold's short circuit, for the unbound-parameter
+   guard in its matrix. ref settles the contributors first and then reads the
+   matrix member by member in the contributors' own order, stopping at the
+   first member after which ch. 5.10's trigger table says the outcome stands —
+   the empty prefix included, where at-least and exactly over too few
+   contributors, and at-most over few enough, read nothing at all. The fold's
+   verdict never needs this (the triggers never change a truth value); what it
+   changes is which matrix reads happen, and therefore where a parameter the
+   case does not bind faults. [reach](S,X) says that member X of S is read.
+
+   The order is ref's: [order] carries, per subject in the case, its members
+   as ref's own fold walk lists them — a list the case writes in its written
+   order, a materialised one by ascending label (ch. 5.7a). The count before
+   X is taken over contributors only, so the filter keeps that order exactly.
+   A member without an order fact entered the range at run time, through a
+   creation, and ref appends such links after the case's own: before a
+   case-supplied member of a one-step range there are only case-supplied
+   ones, which is exact. Among themselves created links follow ref's creation
+   order, which this program does not have, so a created member counts every
+   other contributor as read before it, and a multi-step range — where a
+   created intermediate link can put its members between the case's —
+   counts every created contributor as read before a case-supplied one. Both
+   take the largest prefix any creation order can give, so the guard fires
+   only where every order reaches the member: never where ref plays, but it
+   can stay silent there where one creation order reaches it and another
+   does not. Stratified by construction: the helpers read the matrix and the
+   range, and only the guard reads them. *)
+let emit_kv_reach ctx ~reach ~subject ~subject_ot ~x ~join ~fatoms ~atoms ~kwantor ~drempel
+    ~multi_step ~order =
+  let m = reach ^ "_m" and h = reach ^ "_h" and o = reach ^ "_o" in
+  let q = reach ^ "_q" and n = reach ^ "_n" and b = reach ^ "_b" in
+  let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
+  emit ctx "%s(%s,%s) :- %s." m subject x (String.concat ", " ((base :: join) @ fatoms));
+  emit ctx "%s(%s,%s) :- %s." h subject x
+    (String.concat ", " (Printf.sprintf "%s(%s,%s)" m subject x :: atoms));
+  List.iter (fun (s, e, i) -> emit ctx "%s(%s,%s,%d)." o (str_raw s) (str_raw e) i) order;
+  emit ctx "%s(S,X) :- %s(S,X,_)." q o;
+  emit ctx "%s(S,N) :- isa(S,%s), N = #count{ X : %s(S,X) }." n (str subject_ot) m;
+  let created p = if multi_step then Printf.sprintf "; Y : %s(S,Y), not %s(S,Y)" p q else "" in
+  emit ctx
+    "%s(S,X,K,H) :- %s(S,X), %s(S,X,I), K = #count{ Y : %s(S,Y), %s(S,Y,J), J < I%s }, H = \
+     #count{ Y : %s(S,Y), %s(S,Y,J), J < I%s }."
+    b m o m o (created m) h o (created h);
+  emit ctx
+    "%s(S,X,K,H) :- %s(S,X), not %s(S,X), K = #count{ Y : %s(S,Y), Y != X }, H = #count{ Y : \
+     %s(S,Y), Y != X }."
+    b m q m h;
+  let still_open =
+    match kwantor with
+    | Alle | De -> "H == K"
+    | Geen -> "H == 0"
+    | Ten_minste -> Printf.sprintf "H < %d, H + N - K >= %d" drempel drempel
+    | Ten_hoogste -> Printf.sprintf "H <= %d, H + N - K > %d" drempel drempel
+    | Precies -> Printf.sprintf "H <= %d, H + N - K >= %d" drempel drempel
+  in
+  emit ctx "%s(S,X) :- %s(S,X,K,H), %s(S,N), %s." reach b n still_open
+
 let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
   match let_into_arm e with
   | Some pushed -> expr_term ctx ~subject ~subject_ot pushed
@@ -5962,6 +6019,41 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
         | None -> []
         | Some c -> member (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el c)
       in
+      (* the filter is read for every member in range, the matrix only while
+         the fold's outcome is still open ([emit_kv_reach]). The guard in the
+         matrix waits for that; the helpers exist only once such a guard asks,
+         so a case that binds its parameters translates as before *)
+      let reach = ref None in
+      let reached () =
+        match !reach with
+        | Some r -> r
+        | None ->
+            let r = fresh ctx "kvr" in
+            reach := Some r;
+            r
+      in
+      let atoms =
+        with_member_reach ctx ~subject ~subject_ot
+          ~join:(fun () -> join @ [ Printf.sprintf "%s(%s,%s)" (reached ()) subject x ])
+          (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el toets)
+      in
+      (match !reach with
+      | None -> ()
+      | Some r ->
+          let order =
+            Eval.SMap.fold
+              (fun _ (i : Uchar_ref.World.instance) acc ->
+                if isa ctx i.otype subject_ot then
+                  List.mapi
+                    (fun k (mi : Uchar_ref.World.instance) -> (i.label, mi.label, k))
+                    (Eval.fold_members ?binding:kv_bron_rol ?path:kv_bron_pad env ctx.case.world i
+                       ~element:el)
+                  @ acc
+                else acc)
+              ctx.case.world.instances []
+          in
+          emit_kv_reach ctx ~reach:r ~subject ~subject_ot ~x ~join ~fatoms ~atoms
+            ~kwantor:kv_kwantor ~drempel ~multi_step:(kv_bron_pad <> None) ~order);
       (match kv_kwantor with
       | Ten_minste | Ten_hoogste | Precies ->
           (* the COUNTING quantifiers (ch. 3.9a): the verdict is a number,
@@ -5993,7 +6085,6 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
              Stratification is the witness route's argument unchanged — the
              helper is named after a counter that only grows, over a matrix
              translated before the name existed. *)
-          let atoms = member (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el toets) in
           ctx.fresh <- ctx.fresh + 1;
           let p = Printf.sprintf "kvc%d" ctx.fresh in
           let h = fresh ctx "H" in
@@ -6012,7 +6103,7 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
         | Geen ->
             (* the witness IS the matrix: whatever cond_atoms carries, GEEN
                carries, because a satisfier is what it already derives *)
-            member (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el toets)
+            atoms
         | _ ->
             (* ALLE needs the element's FAILURE, and ASP forms no complement of
                an arbitrary CONJUNCTION OF ATOMS — but it does form the
@@ -6034,7 +6125,6 @@ and cond_atoms ctx ~subject ~subject_ot (c : conditie) : string list =
                the whole-period matrix the body is itself `not gpvN(X)`, and
                `not kvsM(X)` over that is the same verdict the old
                special-cased arm read positively off `gpvN`. *)
-            let atoms = member (fun () -> cond_atoms ctx ~subject:x ~subject_ot:el toets) in
             ctx.fresh <- ctx.fresh + 1;
             let s = Printf.sprintf "kvs%d" ctx.fresh in
             emit ctx "%s(%s) :- %s." s x
