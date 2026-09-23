@@ -63,3 +63,10 @@ across the eight because the key is a carried identity, not a matching site.
 The witness for that flank is
 `corpus/negatief/wf034-zijtabel-kapitalisatiewees`, on the most heavily
 case-sensitively read of the characteristic tables.
+
+**A second, incidental report since 2026-09-23.** The document also
+reports `WF-112 FAIL /resolvedRegels/3/voorwaarde`, because it carries a
+time window under a quantifier that WF-112 (the window's position, a
+maintainer decision of that day) makes ill-formed. The verdict this
+directory declares is still WF-034 and is unchanged. The second line is
+true, so it stays and is not engineered away.
