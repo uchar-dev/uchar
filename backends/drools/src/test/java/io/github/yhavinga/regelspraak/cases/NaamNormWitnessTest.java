@@ -89,6 +89,8 @@ class NaamNormWitnessTest {
         // key read temporal, the join called rsOoitBotst on a BigDecimal bean member and the replay died:
         //   ERROR ConstraintEvaluationException — cause: "rsOoitWaarden: een temporele sleutel moet een
         //   List<Segment> zijn, kreeg java.math.BigDecimal"
+        // Re-measured 2026-09-23 on the M1 form (see granulariteitOnder), with S1 and S2 expected flagged:
+        // verifier PASS, ref and clingo PASS (2 expectations), both Drools branches PLAYED 1.
         assertEquals(Set.of("eenmalig nummer @ S1", "eenmalig nummer @ S2"),
                 vlaggen(diakriet(), scalairGeval("coördinaat", "7", "7")),
                 "ref folds A-Z only, so the granulariteit under another diacritic case is another name");
@@ -96,7 +98,12 @@ class NaamNormWitnessTest {
 
     @Test void een_newline_in_een_naam_is_geen_scheidingsteken() throws Exception {
         // the same boundary on the whitespace axis: the attribute is declared "vondst nummer", the
-        // granulariteit is keyed "vondst\nnummer". ref: PASS (2 expectations); clingo agrees.
+        // granulariteit is keyed "vondst\nnummer". ref: PASS (2 expectations); clingo agrees. Re-measured
+        // 2026-09-23 on the M1 form: ref and clingo PASS (2 expectations), both Drools branches PLAYED 1 — but
+        // the VERIFIER now rejects the document, WF-057 FAIL: the attribute name "vondst\nnummer" carries a
+        // control character. Under v0 the newline sat in a side-map key; since M1 it is a declared name, which
+        // WF-057 reads. No gate brings this shape to an executor any more, so the test pins this backend's
+        // norm on its own, where ref draws the same boundary.
         assertEquals(Set.of("eenmalig nummer @ S1", "eenmalig nummer @ S2"),
                 vlaggen(newline(), scalairGeval("vondst nummer", "7", "7")),
                 "a newline inside a name does not collapse, so the two names are not the same name");
@@ -106,7 +113,8 @@ class NaamNormWitnessTest {
         // key list ["coördinaat", "kavelnummer"] where only kavelnummer is temporal to ref: ONE temporal
         // component, so the shape is valid. ref, measured: "oracle: PASS (1 expectations)" — consistent
         // (the tuples (7,3) and (9,3) differ); clingo agrees. A wider norm counted two and raised the ch. 5.9
-        // form fault on a shape all three executors accept.
+        // form fault on a shape all three executors accept. Re-measured 2026-09-23 on the M1 form: verifier
+        // PASS, ref and clingo PASS (1 expectations), both Drools branches PLAYED 1.
         assertEquals(Set.of(), vlaggen(ariteit(), gemengdeSleutelGeval()),
                 "the guard must count the temporal components ref counts, not one more");
     }
@@ -218,7 +226,8 @@ class NaamNormWitnessTest {
      *  the tests above were taken on that form. Since M1 a facet hangs on its member, so {@code spelling} is
      *  declared as a second attribute carrying the JAAR facet: the facet names the key sites look up are the
      *  same as before ({@code spelling} and kavelnummer), and the declared member stays FIRST, so the bean's one
-     *  property for the identifier both spellings share is still the scalar one (the first derivation wins). */
+     *  property for the identifier both spellings share is still the scalar one (the first derivation wins). The
+     *  tests quote their re-measurement on this form beside the v0 one (2026-09-23). */
     private static void granulariteitOnder(ObjectNode ir, String gedeclareerd, String spelling) {
         ObjectNode ot = IrPad.objectType(ir, "Strandvondst");
         ObjectNode lid = IrPad.attribute(ot, gedeclareerd);
