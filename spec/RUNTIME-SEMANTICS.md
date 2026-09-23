@@ -2568,10 +2568,14 @@ inclusive, `tot` exclusive, "tot en met" inclusive; an absent bound is
 open; an unset evaluation date never matches; a leeg bound never matches.
 Worked example: window [2024-01-01, 2025-01-01), evaluation date
 2024-12-31 → applies; 2025-01-01 → does not; the "tot en met 2024-12-31"
-form still applies on 2024-12-31. *v0 mirror note (backend maturity, not
-IR scope):* v0's backends lower only literal or own-scalar-attribute
-bounds and refuse the rest, and refuse the condition under counting
-quantifiers; the IR admits any date expression (WF-042).
+form still applies on 2024-12-31. *Well-formedness (maintainer decision
+2026-09-23):* a bound is a date literal or the subject's own scalar date
+attribute, of day precision (`IR-SPEC.md` WF-111), and the window never
+sits under `GEEN` or a counting quantifier (WF-112). Both rules promote
+what used to be a v0 mirror note about backend maturity: v0's backends
+lower only those two bound shapes and refuse the condition under counting
+quantifiers, while v0's IR admits any date expression (WF-042). The
+general date expression is an OPEN wire decision (ch. 3.12).
 **Executed since 2026-09-20** by all four executors — the six clauses and
 this worked example are pinned case by case in
 `corpus/golden/jutterswet-premievenster`, and the example runs verbatim in
@@ -2583,13 +2587,14 @@ hide that:
 |---|---|
 | as a rule's whole condition | executed by all four (five rules in the golden, one per spelling) |
 | as a member of an `ALLE` or `DE` composite | executed by all four (the golden's `borgpremie`) |
-| under `GEEN` or a counting quantifier | REFUSED by all four — the mirror note's second bound; red case `corpus/rood/periodevenster-tellende-kwantor` |
+| under `GEEN` or a counting quantifier | ill-formed since 2026-09-23 (WF-112; negatief `wf112-periodevenster-tellende-kwantor`). Before that all four executors refused it, and their refusals remain as fail-fast checks. The rule reaches into a quantifier fold's `filter` and `toets` too: measured that day, the Drools DRL-text branch answered the fold under all five quantifiers, the complement included |
 
-Both bound shapes the mirror note carries are executed (a date literal and
-the subject's own scalar date attribute); the wider date expression WF-042
-admits is refused BY NAME in the two OCaml executors, with the phase in
-the sentence, and `corpus/rood/periodegrens-parameterdatum` is that
-refusal's witness — all four executors decline the form there.
+Both bound shapes WF-111 admits are executed (a date literal and the
+subject's own scalar date attribute). Any other bound is ill-formed:
+`corpus/negatief/wf111-periodegrens-parameterdatum`, a date parameter, was
+until 2026-09-23 the red witness that all four executors refused. The two
+OCaml executors keep their refusal by name, with the phase in the sentence,
+as a fail-fast check on input that has not been verified.
 
 **Temporal target — the clip (v1 semantics, delta).** When the rule's
 target is time-dependent, gating all-or-nothing on the evaluation date is
@@ -2702,9 +2707,9 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 | Scalar broadcast into timeline arithmetic / unconditional temporal characteristic | refused (mirrored); OPEN — both need a time domain for unbounded segments |
 | min/max/eerste/laatste over timelines | refused (mirrored); OPEN — the two readings (per-period vs over-time) must be defined apart |
 | §8.4.3 period condition on a **scalar** target | **specified and executed, ch. 3.10** — all four executors since 2026-09-20, witness `corpus/golden/jutterswet-premievenster` (six clauses; as a rule's whole condition and as an ALLE/DE composite member) |
-| §8.4.3 period condition under a counting quantifier | refused by name in all four executors (the mirror note's second bound; red case `periodevenster-tellende-kwantor`) — OPEN, backend maturity |
+| §8.4.3 period condition under `GEEN` or a counting quantifier | **ill-formed (WF-112, maintainer decision 2026-09-23)**: the window gates the rule, and no reading is specified for its complemented or counted verdict (the time-free session is where the two readings part). Covers a quantifier fold's `filter` and `toets` too. Negatief `wf112-periodevenster-tellende-kwantor`; the executors' refusals remain as fail-fast checks |
 | §8.4.3 period condition on a temporal target | **specified (delta): the clip, ch. 3.10**; NOT executed — all four executors refuse it by name, the two OCaml ones at the rule; red case `periodevenster-tijdlijnkenmerk`, attribute and characteristic targets alike |
-| A period-condition bound other than a literal or an own scalar attribute | refused by name in all four executors (red case `periodegrens-parameterdatum`); the IR admits any date expression (WF-042), so this is backend maturity — OPEN |
+| A period-condition bound other than a literal or an own scalar attribute | **ill-formed (WF-111, maintainer decision 2026-09-23)**; negatief `wf111-periodegrens-parameterdatum`. The general date expression (a parameter, a navigated read, arithmetic) is an **OPEN wire decision**: no corpus document asks for it, and a bound not tied to the subject gives the ASP encoding no fault atom to attach to. A v1 card that takes it on moves WF-111 and gives ch. 5.11's `vanaf`-before-`tot` order its first witness |
 | Negated temporal-characteristic condition | **specified (delta) within a clipped span, ch. 3.11**; unbounded complement OPEN; the navigated case stays refused/OPEN — as a WRITE producer only; the navigated whole-period READ is the row below |
 | Version-validity window on a temporal write | OPEN — the ch. 8 axis decision |
 | Date-valued whole-period comparison | refused (mirrored) |
@@ -3942,7 +3947,7 @@ rather than by a node name it does not have.
 |------|--------------------|---------|-----------------|
 | `Binair` (all operators) | `links`, `rechts` | **visible** | `links`, then `rechts` |
 | `Vergelijking` | `links`, `rechts` | **visible** | `links`, then `rechts` |
-| `Periode` (the period condition) | `vanaf`, `tot` | **visible** | `vanaf`, then `tot`; an absent bound evaluates nothing, and BOTH bounds are read before the evaluation date decides. *Carried by both OCaml executors since 2026-09-20 (ch. 3.10); the order is stated and not yet witnessed by a case, because a window whose bounds are a literal or an own attribute has no fault position to order* |
+| `Periode` (the period condition) | `vanaf`, `tot` | **visible** | `vanaf`, then `tot`; an absent bound evaluates nothing, and BOTH bounds are read before the evaluation date decides. *Carried by both OCaml executors since 2026-09-20 (ch. 3.10); the order is stated and not yet witnessed by a case, because the two bound shapes WF-111 admits — a literal and an own attribute — have no fault position to order* |
 | `Begrensd` | `basis`, `minimum`, `maximum` | **visible** | `basis`, then `minimum`, then `maximum`; an absent bound evaluates nothing |
 | tijdsduur / absolute tijdsduur | argument 0 (`van`), argument 1 (`tot`) | **visible** | `van`, then `tot` |
 | `datum met` / `datum-tijd met` | the `argumenten` list (WF-037 leaves its arity open) | **visible** | argument order. *ref declines the form; the order is stated, not yet exercised* |
@@ -4138,7 +4143,7 @@ what reaches the rows a barrier cannot, because a closed fold body
 | `MapList` element order | `ref/` `WV-5.11-maplist-…` (pair) |
 | `FilterList` element order | `ref/` `WV-5.11-filterlist-…` (pair) |
 | `datum met` / `datum-tijd met` | **none** — the reference interpreter declines the form, so there is nothing to run. The order is stated for the consumer that carries it first, and lands with it |
-| `Periode` `vanaf` before `tot` | **none yet** — the form is carried since 2026-09-20 (ch. 3.10, golden `jutterswet-premievenster`), but the two bound shapes it carries are a literal and an own scalar attribute, and neither can fault. A witness lands with the general date expression, which is the first bound that can |
+| `Periode` `vanaf` before `tot` | **none yet** — the form is carried since 2026-09-20 (ch. 3.10, golden `jutterswet-premievenster`), but the two bound shapes WF-111 admits are a literal and an own scalar attribute, and neither can fault. A witness lands with the general date expression, which is the first bound that can and an OPEN wire decision (ch. 3.12) |
 
 ---
 
