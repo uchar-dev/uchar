@@ -59,8 +59,10 @@ sits in, which would make this document play in both bean-model branches, or
 refuse the doel attempt of a qualified guard. Measured on the routes that reach
 that attempt, rewiring gave the doel reading on every one of them, and on the
 verifier-clean ones that is the wrong object: the guard is about the anker. The
-fence also lives in `ref` and the ASP backend (`guard_on_doel` refuses a doel
-host under a qualifier), so lifting it takes all four executors. Both Drools
+fence also lives in `ref` and the ASP backend: `guard_on_doel` matches only an
+unqualified check, so both read a qualified guard on the anker, never on the
+doel, and on this document the host check refuses it after that (the WF-100
+sentence). Lifting the fence takes all four executors. Both Drools
 branches now refuse the doel attempt of a qualified guard by name, and on this
 document they answer
 

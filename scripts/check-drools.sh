@@ -884,20 +884,20 @@ DRL_CHANNEL=(
   "synth3-standtarief|EXCLUDE|loader Refusal: Datatype:SumType"
   "synth3-vangstsom|EXCLUDE|loader Refusal: Datatype:ListType"
   "synth3-vondststaat|EXCLUDE|loader Refusal: Datatype:StructType"
-  # (C) DrlTranspiler MARKERs — 12. Recounted 2026-09-23 (card drl-periode-zink): the list held 11 under
-  # a header of 12, because anchor/jutterswet-bergingstoezicht (the unresolved verdeling) left it at
-  # 156 -> 157 and the header did not follow; jutterswet-seinjaar, a NEW golden refused in both
-  # branches by one sentence, makes it 12 again and moves neither played count. This
-  # branch's own per-form refusals, each naming the rule it
-  # could not lower. Recounted 2026-09-20 (card drools-enumlabel-lezer) against the exec sweep, and
-  # the class header was carrying 12 over a list of 13: the v8-enum-emitter addition had not been
-  # counted. It went 11 -> 12 the same day (card datum-setbron-breuk): jutterswet-vondstbereik, the
+  # (C) DrlTranspiler MARKERs — 12, this branch's own per-form refusals, each naming the rule it
+  # could not lower. Recounted 2026-09-23 (card drl-periode-zink): the list held 11 under a header of
+  # 12, because anchor/jutterswet-bergingstoezicht (the unresolved verdeling) left it at 156 -> 157
+  # and the header did not follow; jutterswet-seinjaar, a NEW golden refused in both branches by one
+  # sentence, makes it 12 again and moves neither played count. Recounted 2026-09-20 (card
+  # drools-enumlabel-lezer) against the exec sweep, and the class header was carrying 12 over a list
+  # of 13: the v8-enum-emitter addition had not been counted. It went 11 -> 12 the same day (card
+  # datum-setbron-breuk): jutterswet-vondstbereik, the
   # MINIMUM/MAXIMUM fold over a DATE set source, which this branch used to emit as DRL text that did
   # not compile — a whole-file refusal naming no form — and now markers by name out of the shared
   # reason. NINE of the twelve are goldens the exec branch refuses too, on its own wording of the
-  # same limit (the many-to-many bean field, the qualified creation guard's doel attempt, the consistency rule, the
-  # EERSTE fold over a set, the date-valued value fold, and the out-of-scope condition —
-  # jutterswet-klipwacht, shared, not split).
+  # same limit (the many-to-many bean field, the qualified creation guard's doel attempt, the
+  # consistency rule, the EERSTE fold over a set, the date-valued value fold, and the out-of-scope
+  # condition — jutterswet-klipwacht, shared, not split).
   # THREE are this branch alone, and the exec branch PLAYS all three:
   #   anchor/jutterswet-wachtersketen (exec PLAYED 2), synth2-budgetgrens-onder (exec PLAYED 1) —
   #     both an OBJECTCREATIE marker on the same unresolved back-link to Wachter. That is what is

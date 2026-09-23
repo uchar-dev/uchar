@@ -181,8 +181,10 @@ precies mat is nergens vastgelegd.
 > (sleutel = anker, geen gastheer) en zeggen `ref` en clingo 0, de fix zegt
 > 1; op R12 gaat de guard over het vlagsein van de anker, niet over de eigen
 > seinhoogte van het doel. De enige vorm waarop de doellezing de juiste is
-> (R1, de gastheer op het doel) staat achter het derde WF-109-hek, dat ook in
-> `ref` en clingo woont (`guard_on_doel`). Een fix zou dus een zichtbare
+> (R1, de gastheer op het doel) staat achter het derde WF-109-hek, en `ref`
+> en clingo lezen een gekwalificeerde guard altijd op de anker, nooit op het
+> doel (`guard_on_doel` matcht alleen `periode = None`; op R1 weigert daarna
+> de gastheercheck met de WF-100-zin). Een fix zou dus een zichtbare
 > compilerfout vervangen door een stil fout antwoord op verifier-schone
 > documenten, en de vorm die hij wél goed zou lezen is van de wire. Daarom de
 > weigering: kleiner, en de enige die op de gemeten routes waar is.
@@ -197,8 +199,9 @@ een stil verkeerd getal (verifier-schoon, 1 tegen `ref`/clingo 0).
 ### (c) Het WF-109-hek: blijft
 
 Het valt alleen als alle vier de uitvoerders een gekwalificeerde doelgastheer
-dragen. `ref/` (`guard_on_doel`) en `backends/clingo/` houden het hek zelf
-vast en liggen buiten deze kaart; en (b) leert dat geen enkele verifier-schone
+dragen. `ref/` en `backends/clingo/` lezen een gekwalificeerde guard altijd
+op de anker, nooit op het doel (`guard_on_doel` matcht alleen
+`periode = None`), en liggen buiten deze kaart; en (b) leert dat geen enkele verifier-schone
 route de doellezing vraagt. `corpus/negatief/wf109-doelgastheer-periode/NOTE.md`
 legt dat nu vast, met de nieuwe Drools-uitkomst. Geen wijziging in
 `spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md` of `spec/verifier/`.
@@ -259,10 +262,24 @@ bewegen niet: de golden is nieuw en speelt in geen van beide takken.
 - De genavigeerde §8.2-vergelijking (R10, R13): verifier-schoon, beide
   Drools-takken spelen haar, `ref` en clingo weigeren. De bekende rest van de
   §8.2-familie ("the navigated form is untouched"), buiten scope.
+- **Dezelfde zink op een andere positie (lensvondst, slotronde):** een
+  heelperiode-kwalificatie in het FILTER van een AANTAL ("het aantal posten …
+  die gedurende het gehele jaar bemand zijn" > 0) is verifier-schoon, `ref`
+  en clingo PASS 0, exec speelt correct, maar de DRL-tekst-tak zinkt
+  pakketbreed (`Unable to Analyse Expression rsGeheelPeriode($subject.getBemand(), …)`),
+  als creatie-guard én in een gewone rekenregel. Het zit in de accumulate van
+  de ANKERpoging, buiten de ene positie van deze kaart. De hoofdsessie maakt er
+  kaart `20260923-drl-aantal-filter-zink` van.
 - De scalaire tegenhanger van R12 (zelfde document zonder kwalificatie) is
   gemeten: verifier PASS, `ref`/clingo PASS (0), beide Drools-takken weigeren
   bij naam. Geen open punt.
 
-### Registerrij (voorstel, Engels) — `spec/CONSTRUCTS.md` rij 29 (Whole-period qualifier), kruisverwijzing rij 22 (Fact creation)
+### Registerrijen (voorstel, Engels)
+
+Rij 22 (Fact creation), kruisverwijzing, toe te voegen aan het eind van de wijzigingskolom:
+
+> **Whole-period guard (2026-09-23, card drl-periode-zink):** a creation guard carrying a whole-period qualifier is tried on the anker only; both Drools branches refuse its doel attempt per construct, by name — see row 29.
+
+Rij 29 (Whole-period qualifier):
 
 > **Fact-creation guard, doel attempt (2026-09-23, card drl-periode-zink):** under a whole-period qualifier a creation guard binds the anker only (WF-109's third fence), and both Drools branches now refuse the DOEL attempt of such a guard by name ("voorwaarde niet naar anker of doel te lowereren — gehele-periodekwalificatie: alleen de anker is gebonden (WF-109)"), one sentence shared through `kern.Gastheer`. Before, the DRL-text branch lowered it with the whole-period call wired to `$subject` — the anker inside the `$doel` pattern — and either failed the whole package at compile or read the anker by accident, and the exec branch read the doel. Measured on two verifier-clean routes (a case-variant characteristic name, a role name displaced by a member): a rewired lowering reads the doel on both, which is the wrong object, so the fence stays and the form is a refusal, not a fix. Witness: `corpus/golden/jutterswet-seinjaar` (ref = clingo 2 / 0 / 2; both Drools branches refuse, pinned by name in gate 12) and `HeelperiodeDoelpogingWitnessTest`.
