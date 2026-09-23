@@ -91,7 +91,7 @@
           "argumenten": [
             {
               "node": "AttribuutRef",
-              "attribuut": "Munten",
+              "attribuut": "gevonden munt",
               "objecttype": "Jutter",
               "bron": "Munten van de Jutter"
             }

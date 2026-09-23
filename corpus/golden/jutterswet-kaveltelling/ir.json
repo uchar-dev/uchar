@@ -120,7 +120,7 @@
           "argumenten": [
             {
               "node": "AttribuutRef",
-              "attribuut": "duinkavels",
+              "attribuut": "duinkavel",
               "objecttype": "Jutter",
               "bron": "duinkavels van de Jutter"
             }
