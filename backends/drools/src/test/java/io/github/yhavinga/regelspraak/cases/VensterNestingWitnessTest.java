@@ -16,8 +16,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * WF-112 positions NESTED inside a position WF-112 admits — a GEEN fold or a GEEN composite as a member of an
  * ALLE or DE composite, a GEEN composite in the filter of an aggregation that sits in an operand, a GEEN fold
- * in the toets of an ALLE fold. Both branches refuse every one of them by name, and name the position that is
- * ill-formed rather than the node around it.
+ * in the toets of an ALLE fold — and the bound shape WF-111 refuses, in the toets and the filter of a fold.
+ * Both branches refuse every one of them by name, and name the position that is ill-formed rather than the
+ * node around it.
  *
  * <p><b>Why.</b> Measured 2026-09-23 on documents built exactly as below (the lens round of card
  * drools-venster-vouwtoets). The exec-model branch named WF-112 at all five composite nestings; the DRL-text
@@ -25,8 +26,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * put its own generic marker over a member's reason. On the card's base the same branch PLAYED the two nestings
  * of a GEEN fold in an ALLE and in a DE composite, with the complement in a time-free session: the flank was
  * closed by the card's fold refusal, but under a name that said nothing. The fold's frame also named the OUTER
- * fold's element type for a GEEN fold nested in its toets, and called every fold "§8.2", also one whose matrix
- * carries no whole-period qualifier.
+ * fold's element type for a GEEN fold nested in its toets, and a WF-111 bound in a fold was reported as "een
+ * matrixvorm die deze tak niet IN het elementpatroon kan schrijven (Periode)" although this branch writes
+ * windows there; the bound is what it cannot write.
  *
  * <p>The documents are {@code corpus/golden/jutterswet-schouwploeg} with the voorwaarde of "bevoegd bij diploma"
  * replaced; the nested fold adds a {@code Brevet} the Strandwacht holds. The case is the golden's own first
@@ -41,6 +43,8 @@ class VensterNestingWitnessTest {
 
     private static final String IN_GEEN_VOUW = "periodevenster in de toets van een kwantorvouw onder GEEN over Strandwacht (WF-112)";
     private static final String IN_GEEN_SAMENSTELLING = "periodevenster in een GEEN-samenstelling (WF-112)";
+    private static final String GRENSVORM = "een periodevenster met een grens die geen datumliteral en geen eigen"
+            + " scalair datumattribuut van het element is (WF-111)";
 
     @TempDir Path tmp;
 
@@ -83,10 +87,13 @@ class VensterNestingWitnessTest {
                     (viaDrl ? "drl-tekst" : "exec-model") + " kadert de weigering niet als de buitenste vouw");
     }
 
-    /** The DRL-text frame calls a fold "§8.2" only where its matrix is the §8.2 whole-period form: this one
-     *  (a fold whose toets bound this branch cannot write) is a ch. 3.9a fold over a window. */
-    @Test void het_kader_noemt_geen_paragraaf_8_2_zonder_heelperiodematrix() throws Exception {
+    /** WF-111 in a fold: a date PARAMETER as the bound, in the toets and in the filter. The refusal names the
+     *  bound, and the DRL-text frame no longer calls a fold over a non-§8.2 matrix a §8.2 fold. */
+    @Test void een_parametergrens_in_toets_en_filter_van_een_vouw_noemt_de_grens() throws Exception {
         Path toets = metPeildatum(document(vouw("ALLE", "Strandwacht", WACHT, null, PARAMETERVENSTER)));
+        BeideTakken.geweigerd(toets, casus(), GRENSVORM, "de parametergrens in de toets");
+        BeideTakken.geweigerd(metPeildatum(document(vouw("ALLE", "Strandwacht", WACHT, PARAMETERVENSTER, GEDIPLOMEERD))),
+                casus(), GRENSVORM, "de parametergrens in het filter");
         assertFalse(weigering(toets, true).contains("§8.2"), "geen §8.2-kader om een vouw zonder heelperiodematrix");
     }
 
@@ -128,6 +135,9 @@ class VensterNestingWitnessTest {
     private static final String NIET_ERVAREN = """
             { "node": "Kenmerk", "kenmerk": "ervaren", "navigatie": null, "negatie": true, "eigenaar": null,
               "periode": null, "bron": "hij niet ervaren is" }""";
+    private static final String GEDIPLOMEERD = """
+            { "node": "Kenmerk", "kenmerk": "gediplomeerd", "navigatie": null, "negatie": false, "eigenaar": null,
+              "periode": null, "bron": "hij gediplomeerd is" }""";
 
     private static String samen(String kwantor, String... delen) {
         return "{ \"node\": \"Samengesteld\", \"kwantor\": \"" + kwantor + "\", \"drempel\": 0, \"onderdelen\": [ "

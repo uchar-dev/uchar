@@ -3111,9 +3111,7 @@ public final class ExecModelTranspiler {
             if (rekendatumGlobal == null)   // defensive: heeftTijdgebonden registers it wherever a window can sit
                 return Matrix.nee("een periodevenster zonder rekendatum-global");
             Predicate2<Object, Object> venster = vensterToets(per, elem);
-            if (venster == null)
-                return Matrix.nee("een periodevenster met een grens die geen datumliteral en geen eigen scalair"
-                        + " datumattribuut van het element is (§8.4.3)");
+            if (venster == null) return Matrix.nee(Vensterpositie.GRENSVORM);
             return new Matrix(null, true, (e, gv, rd) -> venster.test(e, rd), null);
         }
         // §8.1.1 the bound written on the LEFT ("de keurgrens kleiner is dan zijn ervaring"): swap the operands
@@ -3195,6 +3193,10 @@ public final class ExecModelTranspiler {
             return kvSkip(kv, "een meerstaps bereik (WF-108 (c)); de accumulate-source draagt één join-rol");
         Objecttype elem = kv.elementObjecttype();
         if (elem == null) return kvSkip(kv, "onopgelost elementObjecttype");
+        // WF-111, the DRL-text branch's twin: a window this arm declines in the filter or the toets is declined
+        // for its bound, and the refusal names that instead of the generic filter or matrix note.
+        if (Vensterpositie.ondraagbareGrens(kv.filter(), elem) || Vensterpositie.ondraagbareGrens(kv.toets(), elem))
+            return kvSkip(kv, Vensterpositie.GRENSVORM);
         Class<?> elemClass = factClass(elem);
         if (elemClass == null) return kvSkip(kv, "geen fact-class voor elementtype " + elem.naam);
         if (kv.toets() == null) return kvSkip(kv, "een kwantorvouw zonder matrix (WF-108 (d))");

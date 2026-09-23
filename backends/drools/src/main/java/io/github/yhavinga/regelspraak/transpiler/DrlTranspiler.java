@@ -5015,6 +5015,11 @@ public final class DrlTranspiler {
             return kvMarker(kv, "een meerstaps bereik (WF-108 (c)); het elementpatroon draagt één joinconstraint");
         Objecttype elem = kv.elementObjecttype();
         if (elem == null) return kvMarker(kv, "onopgelost elementObjecttype");
+        // WF-111: this branch writes a window in the filter and the toets, so a window it declines there is
+        // declined for its BOUND, and the refusal says so rather than naming the node class (it said "een
+        // matrixvorm die deze tak niet IN het elementpatroon kan schrijven (Periode)" until 2026-09-23).
+        if (Vensterpositie.ondraagbareGrens(kv.filter(), elem) || Vensterpositie.ondraagbareGrens(kv.toets(), elem))
+            return kvMarker(kv, Vensterpositie.GRENSVORM);
         // §13.3.9 STORAGE DIRECTION, the question scope() asks for an aggregation join: the role the SUBJECT
         // plays is read as a FIELD ON THE ELEMENT, and a resolved role is not yet a bean field.
         String rol = model.verbindendeRol(elem, subject);
