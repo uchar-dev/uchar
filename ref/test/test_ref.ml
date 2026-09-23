@@ -3353,6 +3353,59 @@ let () =
     (fun () -> Eval.run_rule kenv kw (List.hd kdoc.resolved_regels))
     "is ch. 3.10's CLIP over a characteristic timeline"
 
+(* WV-3.10-clip-dagtelling: ch. 3.10's sentence for the segment-cutting
+   clause, verbatim — "A monthly day count of 31 cut at the fifth of the
+   month still reads 31 on the days that remain." The corpus cannot hold it
+   (the case format pins expected timelines to the grid), so it is pinned
+   here, at the level the chapter states it. *)
+let () =
+  let dag iso = match Value.date_of_iso iso with Value.Date d -> d | _ -> assert false in
+  let maand = Some Ir_v0.Ast.Maand in
+  let vondst =
+    let n, o = ot "Vondst" [ ("zomerdagen", Some num0) ] [ "aanwezig" ] in
+    ( n,
+      { o with
+        attribuut_granulariteit = [ ("zomerdagen", maand) ];
+        kenmerk_granulariteit = [ ("aanwezig", maand) ] } )
+  in
+  let dagen : Ir_v0.Ast.expr =
+    Functie
+      { kind = Aantal_dagen_in; argumenten = []; element_objecttype = None; leegwaarde = None;
+        filter =
+          Some
+            (Kenmerk_check
+               { kenmerk = Some "aanwezig"; navigatie = None; negatie = false; eigenaar = None;
+                 periode = None; bron = None; navigatie_binding = None });
+        dimensie_selectie = None; typ = Some num0; bron = None; granulariteit = maand;
+        bron_rol = None; bron_pad = None }
+  in
+  let venster : Ir_v0.Ast.conditie =
+    Periode_conditie
+      { vanaf = Some (litv "2025-07-05" Datum_in_dagen); tot = None; tot_inclusief = false;
+        bron = None }
+  in
+  let doc =
+    { empty_doc with
+      objecttypen = [ vondst ];
+      resolved_regels =
+        [ rr "zomerdagen van een vondst" Gelijkstelling
+            (Some (aref "zomerdagen" "Vondst" num0))
+            (Some dagen) (Some venster) ] }
+  in
+  let w =
+    World.add_instance World.empty
+      { (inst "V1" "Vondst" []) with
+        ctls = World.SMap.add "aanwezig" [ (dag "2025-07-01", dag "2025-08-01") ] World.SMap.empty }
+  in
+  let w', _ = Eval.run_rule (env_of doc) w (List.hd doc.resolved_regels) in
+  let tl =
+    List.map
+      (fun (s : Timeline.segment) -> (s.s_van, s.s_tot, Value.to_string s.s_waarde))
+      (Option.value (World.timeline (World.get w' "V1") "zomerdagen") ~default:[])
+  in
+  check "WV-3.10-clip-dagtelling-31-gesneden-op-de-vijfde"
+    (tl = [ (dag "2025-07-05", dag "2025-08-01", Value.to_string (n "31")) ])
+
 (* --- ch. 5.7a: what a supplied role link establishes -------------------- *)
 
 (* WV-5.7a: the `jutterswet-ketenband` worked example, verbatim (the

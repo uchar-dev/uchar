@@ -51,6 +51,17 @@ moment, and the clip has no counterpart to it.
   targets are empty. A scalar gate would have fired `maandpacht` on
   2025-03-20 and written P3's twelve 2024 months. The clip writes none.
 
+`case3-evaluatiedatum-buiten-elk-venster` has case 1's input and
+evaluation date **2023-06-01**, before every window. Hand computation: the
+clip does not look at the evaluation date, so the written timelines are
+case 1's, cell for cell: `jaarpacht` {2025: 12}, `maandpacht` March and
+April 12, `zomerdagen` July and August 31. A scalar gate on 2023-06-01 would
+have written none of the three. Case 1 has no evaluation date and case 3
+has one outside every window, so between them they pin "the evaluation date
+plays no part" from both sides. Added 2026-09-23 after a lens finding:
+without it, an ASP translation that gated the clipped rule on a SET
+evaluation date stayed green in both golden and suite.
+
 ## What the corpus cannot carry
 
 The clip cuts SEGMENTS and keeps their VALUES: a bound inside a bucket
@@ -60,12 +71,16 @@ cannot state such an expectation, because
 ones included, to the declaration's granularity grid. So every bound in
 this document lies on the grid. Each OCaml executor's own suite pins the
 clause with a bound in mid-March: `ref` as
-`WV-3.10-clip-knipt-segment-houdt-waarde`, the ASP backend by reading the
-`tl/5` atoms from its stable model.
+`WV-3.10-clip-knipt-segment-houdt-waarde` (and ch. 3.10's day-count
+sentence verbatim, `WV-3.10-clip-dagtelling-31-gesneden-op-de-vijfde`), the
+ASP backend by reading the `tl/5` atoms from its stable model. Whether a
+cut bucket may ever become a corpus expectation is OPEN (ch. 3.12): it
+needs the case schema to release expected timelines from the grid.
 
 ## Executors
 
-`ref` and the ASP backend replay both cases (4 and 7 expectations). Both
+`ref` and the ASP backend replay all three cases (4, 7 and 4
+expectations). Both
 Drools branches refuse the clip by name before fire. The exec-model branch
 reports `transpiler SKIP … periodevergelijking op tijdsafhankelijk doel —
 §8.4.3 clip`, the DRL-text branch `MARKER … TODO periodevergelijking op een
