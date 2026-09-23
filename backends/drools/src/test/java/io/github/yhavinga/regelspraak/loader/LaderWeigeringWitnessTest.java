@@ -51,6 +51,12 @@ class LaderWeigeringWitnessTest {
     private static final String ERFWACHT = "jutterswet-erfwacht";
     /** The Enumeratie domain Vondstklasse. Three cases, both branches PLAYED. */
     private static final String VONDSTKLASSE = "jutterswet-vondstklasse";
+    /** The kernel anchor of inheritance: Strandrecht -&gt; Wrakrecht plus an aggregating Kustgemeente. */
+    private static final String KETEN = "anchor/jutterswet-strandrechtketen";
+    /** One parameter, vondstdrempel. One case, both branches PLAYED. */
+    private static final String PENNINGDREMPEL = "jutterswet-penningdrempel";
+    /** Carries the model's functionDefs extension: EXCLUDE in both branches, by a loader Refusal. */
+    private static final String KAMERHEFFING = "jutterswet-kamerheffing-catala";
 
     // ---------------- the node and its fields ----------------
 
@@ -174,6 +180,72 @@ class LaderWeigeringWitnessTest {
         }
     }
 
+    @Test void een_tijdlijnfacet_zonder_granulariteit_weigert_bij_het_laden() throws Exception {
+        // Until 2026-09-23 this was OverervingWeigeringWitnessTest's "de gedegenereerde variabele tijdlijn is het
+        // gat dat werkelijk stil was": under v0 a tijdlijn declaration could carry `granulariteit: null`
+        // (schema-legal), WF-005 then compared None with None, and an attribute riding that named tijdlijn needed
+        // NO granularity entry — the silent §9.9 hole the narrowed inheritance guard closed (measured then, probe
+        // p1cv: verifier PASS, merge base PLAYED 4). M1 made the shape unwritable: a member rides a named tijdlijn
+        // only through a TimelineFacet, and the facet requires its granularity. What is left to pin is this
+        // loader's refusal of the grid-less facet, instead of letting the member in as temporal with a null grid.
+        // The old fixture's startpuntbepaling is gone: the facet is refused while the object types are read,
+        // before any rule is.
+        ObjectNode ir = golden(KETEN);
+        IrPad.modelLijst(ir, "timelines").add(JSON.createObjectNode().put("node", "Tijdlijn").put("naam", "boekjaar")
+                .put("variabelStartpunt", true).putNull("granulariteit").put("aantal", 1));
+        ObjectNode peilwaarde = IrPad.addAttribute(IrPad.objectType(ir, "Strandrecht"), "peilwaarde",
+                JSON.createObjectNode().put("node", "Numeriek").put("geheel", true).put("decimalen", 0)
+                        .put("teken", "NIET_NEGATIEF").putNull("eenheid"));
+        peilwaarde.putObject("timeline").put("node", "TimelineFacet").put("count", 1).put("timelineName", "boekjaar");
+        IrLoader.Documentfout e = weigert(ir, lidPad(ir, "Strandrecht", "attributes", "peilwaarde")
+                + "/timeline/granularity");
+        assertTrue(e.getMessage().contains("required field is absent"), e.getMessage());
+    }
+
+    @Test void een_tijdlijnfacet_zonder_telling_weigert() throws Exception {
+        // the characteristic's facet, the second of the two places a facet is read
+        ObjectNode ir = golden(BAKENMEESTER);
+        String kenmerk = lidPad(ir, "Bakenmeester", "characteristics", "dienstdoend");
+        ((ObjectNode) IrPad.characteristic(IrPad.objectType(ir, "Bakenmeester"), "dienstdoend").get("timeline"))
+                .remove("count");
+        weigert(ir, kenmerk + "/timeline/count");
+    }
+
+    @Test void een_kenmerk_zonder_soort_of_met_een_onbekende_soort_weigert() throws Exception {
+        ObjectNode ir = golden(BAKENMEESTER);
+        String kenmerk = lidPad(ir, "Bakenmeester", "characteristics", "dienstdoend");
+        IrPad.characteristic(IrPad.objectType(ir, "Bakenmeester"), "dienstdoend").remove("kind");
+        weigert(ir, kenmerk + "/kind");
+
+        // the v0 spelling of the value stays until M8, and its lower-case twin is no member
+        ir = golden(BAKENMEESTER);
+        IrPad.characteristic(IrPad.objectType(ir, "Bakenmeester"), "dienstdoend").put("kind", "bijvoeglijk");
+        IrLoader.Documentfout e = weigert(ir, kenmerk + "/kind");
+        assertTrue(e.getMessage().contains("'bijvoeglijk'") && e.getMessage().contains("BIJVOEGLIJK"), e.getMessage());
+    }
+
+    @Test void een_onbekende_sectie_weigert_en_functionDefs_blijft_een_vorm() throws Exception {
+        // the v0 rule stubs (delta B3), a v0 model table name, a misspelt rules list: each was an "unknown
+        // section" Refusal, the auto-excluded channel; each is a defect of the document
+        ObjectNode ir = golden(BAKENMEESTER);
+        ir.putArray("regels");
+        weigert(ir, "/regels");
+
+        ir = golden(BAKENMEESTER);
+        IrPad.model(ir).putObject("objecttypen");
+        weigert(ir, "/model/objecttypen");
+
+        ir = golden(BAKENMEESTER);
+        IrPad.rules(ir).putArray("prioritizedDefault");
+        weigert(ir, "/rules/prioritizedDefault");
+
+        // The boundary: functionDefs is an extension the schema admits and this backend does not carry — a
+        // form, so it stays a Refusal and its goldens stay in the reasoned EXCLUDE channel.
+        JsonNode catala = JSON.readTree(Files.readString(CORPUS.resolve(KAMERHEFFING).resolve("ir.json")));
+        IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class, () -> IrLoader.loadAll(catala));
+        assertEquals("functionDefs", r.form(), r.getMessage());
+    }
+
     // ---------------- names ----------------
 
     @Test void een_exact_dubbel_kenmerk_weigert() throws Exception {
@@ -196,6 +268,26 @@ class LaderWeigeringWitnessTest {
         lijst.add(kopie);
         IrLoader.Documentfout e = weigert(ir, "/model/objectTypes/" + (lijst.size() - 1) + "/name");
         assertTrue(e.getMessage().contains("'Bakenmeester'"), "de melding noemt de eerste spelling: " + e.getMessage());
+    }
+
+    @Test void namen_botsen_onder_de_naamidentiteit_van_de_verifier() throws Exception {
+        // WF-001 on a list whose node kept its v0 shape: a difference in case makes no second name (checks.ml
+        // norm), and the exact-key table would have kept both
+        ObjectNode ir = golden(PENNINGDREMPEL);
+        ArrayNode parameters = IrPad.modelLijst(ir, "parameters");
+        parameters.add(IrPad.declaratie(ir, "parameters", "vondstdrempel").deepCopy().put("naam", "Vondstdrempel"));
+        IrLoader.Documentfout e = weigert(ir, "/model/parameters/" + (parameters.size() - 1) + "/naam");
+        assertTrue(e.getMessage().contains("WF-001"), e.getMessage());
+
+        // WF-002 on attributes, which the loader compared exactly before: neither case nor a run of spaces makes
+        // a second name
+        ir = golden(ERFWACHT);
+        ObjectNode ot = IrPad.objectType(ir, "Jutter");
+        ArrayNode attributen = (ArrayNode) ot.get("attributes");
+        attributen.add(IrPad.attribute(ot, "wachtvergoeding per maand").deepCopy()
+                .put("name", "Wachtvergoeding  per maand"));
+        e = weigert(ir, objectTypePad(ir, "Jutter") + "/attributes/" + (attributen.size() - 1) + "/name");
+        assertTrue(e.getMessage().contains("WF-002"), e.getMessage());
     }
 
     // ---------------- the domain ----------------

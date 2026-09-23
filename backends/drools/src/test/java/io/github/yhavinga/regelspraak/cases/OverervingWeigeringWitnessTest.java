@@ -56,7 +56,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * FREES the fixed-startpunt shape (base EXCLUDE, head PLAYED) and CATCHES two the broad one let through
  * silently — a determination on an ancestor (base PLAYED 4, the one non-degenerate hole) and the
  * degenerate {@code granulariteit: null} tijdlijn on which WF-005 demands no granularity facet at all
- * (base PLAYED 4). The unknown supertype and the cycle stay a last line behind WF-103/WF-104: the
+ * (base PLAYED 4). M1 made that degenerate shape unwritable — a TimelineFacet requires its granularity — so
+ * its witness left this class on 2026-09-23 and stands in {@code loader.LaderWeigeringWitnessTest} as what it
+ * pins now, a loader refusal of a grid-less facet. The unknown supertype and the cycle stay a last line
+ * behind WF-103/WF-104: the
  * verifier rejects both at the document, and a loader that walked a cycle would hang instead of
  * reporting.
  *
@@ -256,7 +259,8 @@ class OverervingWeigeringWitnessTest {
         // Measured (probe p1a): verifier PASS; on the merge base this was EXCLUDE anyway, caught by the
         // WITHDRAWN broad refusal — WF-005 forces the granularity facet to match the declaration, so a
         // named tijdlijn on verifier-clean input carries a granularity and the old test saw it. This
-        // shape is therefore RESIDUE, not a newly-closed hole; the hole is the degenerate twin below.
+        // shape is therefore RESIDUE, not a newly-closed hole; the hole was the degenerate twin, which M1
+        // made unwritable (its witness is now a loader refusal in loader.LaderWeigeringWitnessTest).
         ObjectNode ir = goldenIr(KETEN);
         benoemdeTijdlijn(ir, /*variabelStartpunt=*/true, /*granulariteit=*/"JAAR");
         startpuntOp(ir, "Kustgemeente");
@@ -264,26 +268,6 @@ class OverervingWeigeringWitnessTest {
                 () -> IrLoader.loadAll(JSON.readTree(Files.readString(model("keten-variabele-tijdlijn", ir)))));
         assertTrue(r.getMessage().contains("riding a NAMED tijdlijn with a VARIABEL STARTPUNT"), r.getMessage());
         assertTrue(r.getMessage().contains("keys on the DECLARED subject name"), r.getMessage());
-    }
-
-    @Test void de_gedegenereerde_variabele_tijdlijn_is_het_gat_dat_werkelijk_stil_was() throws Exception {
-        // Site (a)'s degenerate twin, and the reason the narrowed guard reached FURTHER than the broad
-        // one it replaced. In v0 a tijdlijn declaration could carry `granulariteit: null` (schema-legal),
-        // and WF-005 then compared None with None, so the attribute needed NO granularity entry — which is
-        // exactly what the withdrawn refusal tested for. Measured then (probe p1cv): verifier PASS, and on
-        // the merge base PLAYED 4. Silently: the bucketing was skipped and nothing said so.
-        //
-        // Since M1 the shape cannot be written: a member rides a named tijdlijn only through a
-        // TimelineFacet, and the schema requires its granularity, so this is the one fixture here that is
-        // NOT verifier-clean — no gate lets it reach an executor. What the test pins now is that the
-        // loader refuses the grid-less facet by name instead of letting the member in as temporal with a
-        // null grid, which would reopen the silent gap by another door.
-        ObjectNode ir = goldenIr(KETEN);
-        benoemdeTijdlijn(ir, /*variabelStartpunt=*/true, /*granulariteit=*/null);
-        startpuntOp(ir, "Kustgemeente");
-        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
-                () -> IrLoader.loadAll(JSON.readTree(Files.readString(model("keten-nulgranulariteit", ir)))));
-        assertTrue(e.plek().endsWith("/timeline/granularity"), e.getMessage());
     }
 
     @Test void een_geerfde_tijdlijn_met_VAST_startpunt_laadt_gewoon() throws Exception {
@@ -359,22 +343,13 @@ class OverervingWeigeringWitnessTest {
     }
 
     /** Declare tijdlijn `boekjaar` and hang a new SUPERTYPE attribute `peilwaarde` on it, with the
-     *  granularity facet WF-005 demands (the declaration's own, or none when the declaration carries
-     *  none). This is the whole §13.3.6.9 shape, verifier-clean by construction rather than by luck —
-     *  except the "none" case since M1: a TimelineFacet requires a granularity, so the name-only facet
-     *  written for it is one the schema refuses, and only the loader still reads it. */
+     *  granularity facet WF-005 demands (the declaration's own). This is the whole §13.3.6.9 shape,
+     *  verifier-clean by construction rather than by luck. */
     private static void benoemdeTijdlijn(ObjectNode ir, boolean variabelStartpunt, String granulariteit) {
-        ObjectNode tl = JSON.createObjectNode().put("node", "Tijdlijn").put("naam", "boekjaar")
-                .put("variabelStartpunt", variabelStartpunt);
-        if (granulariteit == null) tl.putNull("granulariteit"); else tl.put("granulariteit", granulariteit);
-        tl.put("aantal", 1);
-        IrPad.modelLijst(ir, "timelines").add(tl);
+        IrPad.modelLijst(ir, "timelines").add(JSON.createObjectNode().put("node", "Tijdlijn").put("naam", "boekjaar")
+                .put("variabelStartpunt", variabelStartpunt).put("granulariteit", granulariteit).put("aantal", 1));
         ObjectNode peilwaarde = IrPad.addAttribute(IrPad.objectType(ir, "Strandrecht"), "peilwaarde", getal());
-        if (granulariteit != null)                                    // WF-005: adoption must be total
-            IrPad.timeline(peilwaarde, granulariteit).put("timelineName", "boekjaar");
-        else
-            peilwaarde.putObject("timeline").put("node", "TimelineFacet").put("count", 1)
-                    .put("timelineName", "boekjaar");
+        IrPad.timeline(peilwaarde, granulariteit).put("timelineName", "boekjaar");   // WF-005: adoption must be total
     }
 
     /** The tijdlijn declaration alone, variable-start — for site (b), where no attribute rides it. */
