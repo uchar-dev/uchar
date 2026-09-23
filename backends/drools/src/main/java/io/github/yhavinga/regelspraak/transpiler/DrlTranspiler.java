@@ -701,7 +701,12 @@ public final class DrlTranspiler {
                     + " (operand onresolveerbaar of geen getrouwe negatie); de regel controleert niets",
                     c.line());
             if (!model.diagnostics.contains(w)) model.diagnostics.add(w);
-            rule.clausule("// onopgelost consistentieregel: " + commentVeilig(c.bron().snippet())).clausule("eval(true)");
+            // A window under GEEN or a counting quantifier is WF-112's position, not an assertion this branch
+            // merely cannot negate — name it, in the sentence the exec-model branch gives.
+            String vensterWeigering = Vensterpositie.weigering(c.assertie());
+            rule.clausule("// onopgelost consistentieregel"
+                    + (vensterWeigering == null ? "" : " (" + commentVeilig(vensterWeigering) + ")")
+                    + ": " + commentVeilig(c.bron().snippet())).clausule("eval(true)");
             out.append(rule.render());
             return;
         }
@@ -891,6 +896,14 @@ public final class DrlTranspiler {
                 schendingen.add(d);
             }
             return schendingen.isEmpty() ? null : "(" + String.join(" || ", schendingen) + ")";
+        }
+        // ch. 3.10 a window criterium: violated where the window does not match. The window is total — an unset
+        // rekendatum or a leeg bound puts the day outside it — so the plain negation of its constraint is exact.
+        // Under GEEN or a counting quantifier it never gets here: that composite has no arm above, and the caller
+        // names WF-112 for it.
+        if (assertie instanceof Conditie.Periode per) {
+            Frag venster = conditie(acc, per, subject);
+            return venster.marker() ? null : "!( " + venster.text() + " )";
         }
         // §8.2 a whole-period-qualified criterium ("X moet gedurende het gehele jaar gelijk zijn aan Y"): the
         // criterium is satisfied iff rsGeheelPeriode(...) holds, so the VIOLATION is its negation — the same boolean
@@ -1656,6 +1669,16 @@ public final class DrlTranspiler {
                 // doel attempt here sank the package at compile or read the anker from the doel's pattern. Under
                 // the qualifier the doel is not a bound object anyway (WF-109), so refuse by name before trying.
                 noFire = "eval( false ) /* TODO " + Gastheer.DOELPOGING_GEHEELPERIODE + " — regel inert i.p.v. over-creatie */";
+            } else if (Vensterpositie.weigering(fc.voorwaarde()) != null) {
+                // WF-112's composite arm: both attempts refuse the window under GEEN or a counting quantifier, and
+                // the refusal says so by name rather than as a guard that lowered to neither side.
+                noFire = "eval( false ) /* TODO " + Vensterpositie.weigering(fc.voorwaarde())
+                        + " — regel inert i.p.v. over-creatie */";
+            } else if (Gastheer.doelgastheerBuitenBereik(fc.voorwaarde(), doel)) {
+                // WF-109's first two doel fences. conditieInline below WOULD carry a composite on the $doel
+                // pattern — measured, it played a guard whose checks were all hosted on the doel's supertype — but
+                // inside a composite or behind a hop the doel is not a bound object, so it must not be tried.
+                noFire = "eval( false ) /* TODO " + Gastheer.DOELPOGING_GENEST + " — regel inert i.p.v. over-creatie */";
             } else {
                 Acc doelAcc = new Acc();                       // the failed anker attempt is simply abandoned
                 Frag opDoel = conditieInline(doelAcc, fc.voorwaarde(), doel, true);

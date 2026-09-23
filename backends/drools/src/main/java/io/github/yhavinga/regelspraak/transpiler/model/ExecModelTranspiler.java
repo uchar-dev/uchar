@@ -5603,8 +5603,14 @@ public final class ExecModelTranspiler {
         Variable sVar = DSL.declarationOf(factClass, "$subject");
         PatternDSL.PatternDef pattern;
         Predicate1<Object> schending = schending(c.assertie(), subject);
+        Predicate2<Object, Object> vensterSchending = schending == null ? schendingMetVenster(c.assertie(), subject) : null;
         if (schending != null) {
             pattern = PatternDSL.pattern(sVar).expr(nextId("schending"), (Predicate1) schending);
+        } else if (vensterSchending != null) {
+            // ch. 3.10: a window in the assertion reads the rekendatum, which rides as a pattern variable exactly as
+            // it does on a rule's condition.
+            pattern = PatternDSL.pattern(sVar).expr(nextId("schending"), (Variable) rekendatumGlobal,
+                    (Predicate2) vensterSchending);
         } else {
             // §9.5 a vs-PARAMETER assertie ("X moet kleiner zijn dan de <parameter>") needs the global bound as a
             // pattern variable (a 2-var expr) — schending returns a fact-only Predicate1, so it cannot carry it.
@@ -5799,7 +5805,34 @@ public final class ExecModelTranspiler {
     /** Why a §9.5 assertie did not lower: the generic Phase-D scope note, SHARPENED for the AANTAL shapes, whose
      *  refusal is a §13.3.9 bean-MODEL limit rather than an arm nobody has built yet — the difference matters to
      *  whoever reads the gate's exclusion line and decides what to card next. */
+    /** The §9.5 violation of an assertion that carries a ch. 3.10 window, as a (subject, rekendatum) test: a bare
+     *  window is violated where it does not match — the window is total, so that is its plain negation, and an
+     *  unset rekendatum or a leeg bound leaves the day outside it — and an ALLE assertion is violated where ANY of
+     *  its criteria is, the window-free ones through {@link #schending}. null outside that shape: under GEEN or a
+     *  counting quantifier the window is WF-112's position and the caller refuses it by name. */
+    private Predicate2<Object, Object> schendingMetVenster(Conditie assertie, Objecttype subject) {
+        if (rekendatumGlobal == null || !Conditie.bevatPeriode(assertie)) return null;
+        if (assertie instanceof Conditie.Periode per) {
+            Predicate2<Object, Object> venster = vensterToets(per, subject);
+            return venster == null ? null : (s, rd) -> !venster.test(s, rd);
+        }
+        if (assertie instanceof Conditie.Samengesteld s && s.kwantor() == Conditie.Kwantor.ALLE) {
+            List<Predicate2<Object, Object>> schendingen = new ArrayList<>();
+            for (Conditie deel : s.onderdelen()) {
+                Predicate1<Object> zonder = Conditie.bevatPeriode(deel) ? null : schending(deel, subject);
+                Predicate2<Object, Object> met = zonder != null ? (o, rd) -> zonder.test(o)
+                        : schendingMetVenster(deel, subject);
+                if (met == null) return null;
+                schendingen.add(met);
+            }
+            return (o, rd) -> { for (Predicate2<Object, Object> sp : schendingen) if (sp.test(o, rd)) return true; return false; };
+        }
+        return null;
+    }
+
     private String schendingReden(Conditie assertie, Objecttype subject) {
+        String vensterWeigering = Vensterpositie.weigering(assertie);
+        if (vensterWeigering != null) return vensterWeigering;
         if (assertie instanceof Conditie.Vergelijking v && v.links() instanceof Expr.Functie af
                 && af.kind() == Expr.FunctieKind.AANTAL) {
             String reden = toOneAantalReader(af, subject).reden();
@@ -6855,6 +6888,13 @@ public final class ExecModelTranspiler {
                 io.github.yhavinga.regelspraak.ir.Bron gb = fc.voorwaarde().bron();
                 String snip = gb == null ? null : gb.snippet();
                 return skip("feitcreatie (" + Gastheer.DOELPOGING_GEHEELPERIODE
+                        + (snip == null || snip.isBlank() ? "" : ": " + snip) + "): " + fc.naam());
+            } else if (Gastheer.doelgastheerBuitenBereik(fc.voorwaarde(), doel)) {
+                // WF-109's first two doel fences, in the sentence the DRL-text branch gives: this branch has no
+                // composite or navigated route on the doel either, but refused the form only generically.
+                io.github.yhavinga.regelspraak.ir.Bron gb = fc.voorwaarde().bron();
+                String snip = gb == null ? null : gb.snippet();
+                return skip("feitcreatie (" + Gastheer.DOELPOGING_GENEST
                         + (snip == null || snip.isBlank() ? "" : ": " + snip) + "): " + fc.naam());
             } else {
                 doelGuard = leafPredicate(fc.voorwaarde(), doel);   // a fact-only predicate on the doel

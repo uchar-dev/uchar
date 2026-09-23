@@ -45,6 +45,28 @@ public final class Gastheer {
         return !draagtGeheelPeriode(c);
     }
 
+    /** The reason both branches give when a creation guard names the doel as host where WF-109 does not bind it. */
+    public static final String DOELPOGING_GENEST =
+            "voorwaarde niet naar anker of doel te lowereren — doelgastheer binnen een samengestelde of genavigeerde"
+            + " voorwaarde: alleen de anker is gebonden (WF-109)";
+
+    /** WF-109's first two doel fences: the doel is a bound object only where the check hosted on it IS the whole
+     *  guard and does not navigate (the third fence, the whole-period qualifier, is {@link #doelpogingToegestaan}'s).
+     *  True when the guard names a host the doel satisfies anywhere else — inside a composite at any depth, or on a
+     *  navigating check. Measured 2026-09-23: a composite whose checks were all hosted on the doel's supertype was
+     *  refused by the verifier, {@code ref}, clingo and the exec-model branch, and PLAYED by the DRL-text branch,
+     *  which inlines a composite on the doel pattern. */
+    public static boolean doelgastheerBuitenBereik(Conditie guard, Objecttype doel) {
+        if (guard instanceof Conditie.Kenmerk k && k.navigatie() == null) return false;
+        return noemtDoelgastheer(guard, doel);
+    }
+
+    private static boolean noemtDoelgastheer(Conditie c, Objecttype doel) {
+        if (c instanceof Conditie.Kenmerk k) return k.eigenaar() != null && hostOp(k, doel);
+        if (c instanceof Conditie.Samengesteld s) return s.onderdelen().stream().anyMatch(d -> noemtDoelgastheer(d, doel));
+        return false;
+    }
+
     private static boolean draagtGeheelPeriode(Conditie c) {
         if (c instanceof Conditie.Vergelijking v) return v.periode() != null;
         if (c instanceof Conditie.Predicaat p) return p.periode() != null;
