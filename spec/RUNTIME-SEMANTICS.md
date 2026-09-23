@@ -553,11 +553,14 @@ within the existing bound, the sum exact.)
 
 ### 2.10 The consumer clause — where a type annotation is not the source
 
-A v0 node carries its result type on the wire at every position. At a
-**reference** position that type is a *copy* of a declaration; at a
+A v0 node carried its result type on the wire at every position. At a
+**reference** position that type was a *copy* of a declaration; at a
 **composite** position it is a *derivation* over the node's operands.
-Neither is a source, and at those two the consumer must not read it. The
-clause is scoped, not absolute: there are **named positions** — three where
+Neither is a source. Since L2 (2026-09-24, B13) the copy is gone: the five
+reference classes carry no type of their own, so at a reference position
+there is no annotation to read and the declaration is the one source. At a
+composite position the annotation stays on the wire, and the consumer must
+not read it. The clause is scoped, not absolute: there are **named positions** — three where
 the annotation genuinely *is* the source, and a fourth where v0 states no
 rule to put in its place — and they are listed below rather than left to a
 consumer's discretion. Everywhere else a consumer of the IR derives the
@@ -565,13 +568,17 @@ unit, the soort and the precision it computes with:
 
 1. **Reference positions** — an `AttribuutRef` (bare, navigated, or the one
    a rule names as its `doel`), a `ParameterRef`, a `DimensieCel` read, a
-   `BinderRef` — take unit, soort and precision from the **declaration**
-   the reference names: the object type's declared attribute datatype, the
-   parameter's declared datatype, the attribute's element datatype, the
-   binding `Let`'s value. `IR-SPEC.md` WF-091 makes the repetition
-   mechanically faithful, so on a verifier-clean document the two agree —
-   which is exactly why reading the repetition is *invisibly* wrong when
-   they do not.
+   `BinderRef`, a `VariabeleRef` — take unit, soort and precision from the
+   **declaration** the reference names: the object type's declared
+   attribute datatype, the parameter's declared datatype, the attribute's
+   element datatype, the binder's declaration (a `Let`'s value, a match
+   arm's payload, a lambda or function parameter). Since L2 that is the
+   only place they can take it from: the wire carries no type on these
+   nodes (`IR-SPEC.md` ch. 4.1), and a loader refuses one by name. Until
+   L2 each carried a copy, which WF-091's reference arms held faithful,
+   so on a verifier-clean document the two agreed — which is exactly why
+   reading the copy was *invisibly* wrong when they did not, and why the
+   copy left the wire rather than stay crossed.
 2. **Composite positions** — an arithmetic node, a `Let`, a value
    aggregation, a rounding, a clamp — take the **effective** type computed
    from those declarations through the ch. 2.3 precision table and the
@@ -671,17 +678,19 @@ the outcome they produce on the untouched one. Its reason-carrying survivor
 list is empty: measured 2026-09-04, all three are indifferent over 46 unit
 annotations in ten goldens. The harness twists the **unit** facet only, and
 says at its head why the other two facets are not machine-checked this way:
-a soort lie is a different document (WF-078/WF-091 cross it in the
-verifier, and `ref` legitimately routes ch. 1.2d and date arithmetic on the
-static soort), and a precision lie collides with the ASP integer encoding
-above.
+a soort lie is a different document (WF-091 crosses it in the verifier at
+the derived positions, and `ref` legitimately routes ch. 1.2d and date
+arithmetic on the static soort), and a precision lie collides with the ASP
+integer encoding above. Since L2 the reference positions carry no
+annotation to twist, so the harness twists the derived positions alone.
 
 Soort and precision are no less normative here, but the two clauses hold
 them in different ways, and the difference is not a detail. **Clause 1**
-(reference positions) is crossed in full: WF-091's identity engine compares
-soort, domain, unit, decimals, wholeness and sign against the declaration,
-facet by facet, so a lie there is a *rejected document* rather than a
-divergent answer. **Clause 2** (composite positions) is, since the
+(reference positions) cannot be lied about since L2: there is no copy on
+the wire. Until L2 it was crossed in full — WF-091's identity engine
+compared soort, domain, unit, decimals, wholeness and sign against the
+declaration, facet by facet, so a lie there was a *rejected document*
+rather than a divergent answer. **Clause 2** (composite positions) is, since the
 derivation law landed (2026-09-04), derived and machine-checked for
 soort, domain, unit, decimals and wholeness at eleven composite
 positions — `IR-SPEC.md` WF-091's DERIVED ARMS, each crossing the
@@ -2816,16 +2825,16 @@ plain `Berger` on one `Berger`-typed role → **500, 500, leeg**, rest
 **1** (unfiltered it would read 333/333/333, rest 2).
 **Decided (2026-08-16, WF-047/048):** the connecting relation
 is named explicitly — the `connectingRole` binding of `IR-SPEC.md`
-ch. 3.2 (v0 wire `verbindendeRol`, an extension field), the same
-symbolic-role move as `CONSTRUCTS.md` rows 4/22; executors consume the
-binding when present. *v0 mirror note:* a bindingless form derives the
-relation as the unique fact type relating `targetType` to `sourceType`
-— admissible only while that derivation is unique (WF-048; v0 refused
-the non-unique case as marker/skip, and the executors fault on it). In
-v1 the binding is required and the derivation retires. The reciprocal
-shape (one role relating a type to itself, WF-011/013) participates in
-both routes: its single role is bound and opposite at once, and it
-counts as the connecting candidate for a self-typed pair. That a
+ch. 3.2 (wire `verbindendeRol`), the same symbolic-role move as
+`CONSTRUCTS.md` rows 4/22. **Landed L2 (2026-09-24, B12):** the binding is
+required, and executors consume it and nothing else: there is no
+derivation to fall back on, so an allocation without it does not load.
+*History until L2:* a bindingless form derived the relation as the unique
+fact type relating `targetType` to `sourceType` — admissible only while
+that derivation was unique (WF-048; v0 refused the non-unique case as
+marker/skip, and the executors faulted on it). The reciprocal shape (one
+role relating a type to itself, WF-011/013) is bound like any other: its
+single role is bound and opposite at once. That a
 reciprocal relation entry holds in **both directions** — the pinned
 runtime writes both to-one legs, so navigation never reads a spuriously
 empty side — is no peculiarity of allocation: it is the reciprocal case
