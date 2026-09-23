@@ -381,9 +381,11 @@ class Migration:
 
     def uniciteit(self, v, p, subject):
         # checks.ml wf054: the scope role, bound or derived from the written scope field by name
-        sv, has_rol = v.get('scopeVeld'), 'scopeRol' in v
+        l1, sv, has_rol = 'scopeVeld' in v, v.get('scopeVeld'), 'scopeRol' in v
         self.drop(v, ('scopeVeld',))
-        if sv is None:
+        if not l1:
+            pass
+        elif sv is None:
             if has_rol:
                 self.fail(p + ptr('scopeRol'), 'a scope binding on an unscoped uniqueness: in the '
                           'L2 shape scopeRol IS the scoping, so this uniqueness has no L2 spelling')
@@ -552,9 +554,14 @@ class Migration:
         single = len(args) == 1
         shape = None
         if isinstance(el, str) and single and is_node(args[0], 'AttribuutRef'):
-            wart = is_node(args[0].get('type'), 'Onbekend')
-            # checks.ml fold_source: the set reading or the sentinel-typed count source
-            shape = 'instances' if (args[0].get('set') is True or wart) else 'own'
+            a0 = args[0]
+            if 'set' in a0 or 'type' in a0:
+                # checks.ml fold_source: the set reading or the sentinel-typed count source
+                shape = 'instances' if (a0.get('set') is True or
+                                        is_node(a0.get('type'), 'Onbekend')) else 'own'
+            else:
+                # an argument in the L2 shape: the range, present or absent, is the reading (D8)
+                shape = 'l2'
         for i, a in enumerate(args):
             ap = p + ptr('argumenten', i)
             if isinstance(el, str) and is_node(a, 'AttribuutRef'):
@@ -626,9 +633,11 @@ class Migration:
     # --- conditions ------------------------------------------------------------------------------
     def kenmerk(self, v, p, subject):
         # D53, checks.ml walk_cond's Kenmerk arm: one hop, derived by the written name
-        nav, has_b = v.get('navigatie'), 'navigatieBinding' in v
+        l1, nav, has_b = 'navigatie' in v, v.get('navigatie'), 'navigatieBinding' in v
         self.drop(v, ('navigatie',))
-        if nav is None:
+        if not l1:
+            pass
+        elif nav is None:
             if has_b:
                 self.fail(p + ptr('navigatieBinding'), 'a navigation binding on a characteristic '
                           'check that does not navigate: in the L2 shape the binding IS the hop, '
