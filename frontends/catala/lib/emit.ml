@@ -1,4 +1,4 @@
-(* Serialiser: Ir_v0.Ast values -> regelspraak-ir-v0 wire JSON.
+(* Serialiser: Ir_v0.Ast values -> uchar-ir-v1 wire JSON, in its M1 shape.
 
    ARCHITECTURE. The plugin builds typed [Ir_v0.Ast] values and hands
    them to exactly one serialiser — this module — so schema conformity is
@@ -280,21 +280,90 @@ and conditie (c : conditie) : json =
 let geldigheid (g : geldigheid) : json =
   node "Geldigheid" [ ("vanaf", so g.geld_vanaf); ("tot", so g.geld_tot) ]
 
-let objecttype (o : objecttype) : json =
-  node "Objecttype"
-    [ ("naam", so o.ot_naam);
-      ("attributen", map_ (opt datatype) o.attributen);
-      ("attribuutMeervoud", map_ so o.attribuut_meervoud);
-      ("attribuutDimensies", map_ str_opt_list o.attribuut_dimensies);
-      ("attribuutGranulariteit", map_ (fun _ -> `Null) o.attribuut_granulariteit);
-      ("attribuutTijdlijnAantal", map_ io o.attribuut_tijdlijn_aantal);
-      ("attribuutTijdlijnNaam", map_ so o.attribuut_tijdlijn_naam);
-      ("kenmerken", str_opt_list o.kenmerken);
-      ("kenmerkSoorten",
-       map_ (opt (fun k -> s (kenmerk_soort_s k))) o.kenmerk_soorten);
-      ("kenmerkGranulariteit", map_ (fun _ -> `Null) o.kenmerk_granulariteit);
-      ("kenmerkTijdlijnAantal", map_ io o.kenmerk_tijdlijn_aantal);
-      ("bezield", b o.bezield); ("meervoud", so o.meervoud) ]
+(* A list entry of the M1 model carries its name once, on its node, so the
+   in-memory map key and the node's own name must be one spelling; two
+   spellings have no rule for choosing, so a mismatch refuses. *)
+let named what key (naam : string option) =
+  if naam <> Some key then
+    failwith
+      (Printf.sprintf "Emit: %s %S carries the name %s; the uchar-ir-v1 list entry has one" what
+         key (match naam with None -> "null" | Some n -> Printf.sprintf "%S" n))
+
+(* ObjectType with its members as nodes (IR-SPEC ch. 2.2). The translator
+   fills no member facet: no plural, dimension or timeline table. A filled
+   one refuses rather than being written in a guessed form, which also
+   retires the old constant-null granularity branch. *)
+let objecttype (key, (o : objecttype)) : json =
+  named "object type" key o.ot_naam;
+  let unfilled table = function
+    | [] -> ()
+    | _ -> failwith (Printf.sprintf "Emit: object type %S fills %s, which the plugin never builds" key table)
+  in
+  unfilled "attribuutMeervoud" o.attribuut_meervoud;
+  unfilled "attribuutDimensies" o.attribuut_dimensies;
+  unfilled "attribuutGranulariteit" o.attribuut_granulariteit;
+  unfilled "attribuutTijdlijnAantal" o.attribuut_tijdlijn_aantal;
+  unfilled "attribuutTijdlijnNaam" o.attribuut_tijdlijn_naam;
+  unfilled "kenmerkGranulariteit" o.kenmerk_granulariteit;
+  unfilled "kenmerkTijdlijnAantal" o.kenmerk_tijdlijn_aantal;
+  let kenmerken =
+    List.map
+      (function
+        | Some k -> k
+        | None -> failwith (Printf.sprintf "Emit: object type %S declares a null characteristic" key))
+      o.kenmerken
+  in
+  List.iter
+    (fun (k, _) ->
+      if not (List.mem k kenmerken) then
+        failwith (Printf.sprintf "Emit: object type %S tags %S, which it does not declare" key k))
+    o.kenmerk_soorten;
+  let supertype = match o.ot_supertype with None -> [] | Some p -> [ ("supertype", s p) ] in
+  let plural = match o.meervoud with None -> [] | Some p -> [ ("plural", s p) ] in
+  node "ObjectType"
+    ([ ("name", s key) ] @ supertype @ [ ("animate", b o.bezield) ] @ plural
+    @ [ ("attributes",
+         `List
+           (List.map
+              (fun (a, dt) -> node "Attribute" [ ("name", s a); ("datatype", opt datatype dt) ])
+              o.attributen));
+        ("characteristics",
+         `List
+           (List.map
+              (fun k ->
+                (* untagged is nominal (ch. 2.2) *)
+                let kind =
+                  match List.assoc_opt k o.kenmerk_soorten with
+                  | Some (Some soort) -> soort
+                  | Some None | None -> Zelfstandig
+                in
+                node "Characteristic" [ ("name", s k); ("kind", s (kenmerk_soort_s kind)) ])
+              kenmerken)) ])
+
+(* Domain (IR-SPEC ch. 2.3): the name is written here, so the datatype at
+   this declaration position drops the self-name it carries at every
+   reference position. *)
+let domain (key, (d : datatype option)) : json =
+  let dt =
+    match d with
+    | Some dt -> dt
+    | None -> failwith (Printf.sprintf "Emit: domain %S has no datatype" key)
+  in
+  let self_name =
+    match dt with
+    | Enumeratie { domein; _ } -> Some ("domein", domein)
+    | Sum_type { domein; _ } | Struct_type { domein; _ } -> Some ("domain", Some domein)
+    | _ -> None
+  in
+  let body =
+    match (self_name, datatype dt) with
+    | None, j -> j
+    | Some (field, naam), `Assoc kvs ->
+        named "domain" key naam;
+        `Assoc (List.filter (fun (k, _) -> k <> field) kvs)
+    | Some _, _ -> failwith (Printf.sprintf "Emit: domain %S did not serialise as an object" key)
+  in
+  node "Domain" [ ("name", s key); ("datatype", body) ]
 
 let resolved_regel (r : resolved_regel) : json =
   node "ResolvedRegel"
@@ -393,37 +462,51 @@ let function_def (fd : function_def) : json =
       ("result", datatype fd.fd_result); ("body", expr fd.fd_body);
       ("bron", so fd.fd_bron) ]
 
+(* The M1 container (decision V3 (b)): the declaration set under "model", the
+   rule lists under "rules" with their v0 keys, in the schema's property
+   order. functionDefs is an extension list, written only when non-empty;
+   prioritizedDefaults is written whole, as it always was. The plugin
+   builds no parameter, unit system, dimension, timeline, day kind or
+   diagnostic, so those lists are empty; no Onopgelost is ever built
+   either, so no diagnostic has anything to account for (WF-113). *)
 let document (d : document) : json =
-  (* functionDefs is an extension top-level key, written only when non-empty —
-     the optional-field pattern the loader admits for prioritizedDefaults. *)
   let function_defs =
     match d.function_defs with [] -> [] | fds -> [ ("functionDefs", `List (List.map function_def fds)) ]
   in
   `Assoc
-    (function_defs
-    @ [ ("formaat", `String "regelspraak-ir-v0");
-      ("objecttypen", map_ objecttype d.objecttypen);
-      ("domeinen", map_ (opt datatype) d.domeinen);
-      ("parameters", `Assoc []);
-      ("eenheidstelsels", `Assoc []);
-      ("feittypen", map_ feittype d.feittypen);
-      ("dimensies", `Assoc []);
-      ("tijdlijnen", `List []);
-      ("dagsoorten", `List []);
-      ("dagsoortPerEenheid", `Assoc []);
-      ("regels", `List []);
-      ("resolvedRegels", `List (List.map resolved_regel d.resolved_regels));
-      ("resolvedDagsoorten", `List []);
-      ("objectCreaties", `List (List.map resolved_object_creatie d.object_creaties));
-      ("verdelingen", `List []);
-      ("consistenties", `List (List.map resolved_consistentie d.consistenties));
-      ("uniciteiten", `List []);
-      ("uniciteitUnies", `List []);
-      ("feitCreaties", `List []);
-      ("resolvedStartpunten", `List []);
-      ("regelGroepen", `List []);
-      ("diagnostics", `List []);
-      ("prioritizedDefaults", `List (List.map prioritized_defaults d.prioritized_defaults)) ])
+    [ ("format", `String "uchar-ir-v1");
+      ("model",
+       `Assoc
+         ([ ("objectTypes", `List (List.map objecttype d.objecttypen));
+            ("factTypes",
+             `List
+               (List.map
+                  (fun (key, (ft : feittype)) ->
+                    named "fact type" key ft.ft_naam;
+                    feittype ft)
+                  d.feittypen));
+            ("parameters", `List []);
+            ("domains", `List (List.map domain d.domeinen));
+            ("unitSystems", `List []);
+            ("dimensions", `List []);
+            ("timelines", `List []);
+            ("dayKinds", `List []);
+            ("dagsoortPerEenheid", `Assoc []) ]
+         @ function_defs));
+      ("rules",
+       `Assoc
+         [ ("resolvedRegels", `List (List.map resolved_regel d.resolved_regels));
+           ("resolvedDagsoorten", `List []);
+           ("objectCreaties", `List (List.map resolved_object_creatie d.object_creaties));
+           ("verdelingen", `List []);
+           ("consistenties", `List (List.map resolved_consistentie d.consistenties));
+           ("uniciteiten", `List []);
+           ("uniciteitUnies", `List []);
+           ("feitCreaties", `List []);
+           ("resolvedStartpunten", `List []);
+           ("regelGroepen", `List []);
+           ("prioritizedDefaults", `List (List.map prioritized_defaults d.prioritized_defaults)) ]);
+      ("diagnostics", `List []) ]
 
 let to_string (d : document) : string = Yojson.Safe.pretty_to_string (document d) ^ "\n"
 

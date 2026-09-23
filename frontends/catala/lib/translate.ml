@@ -1,4 +1,4 @@
-(* Catala scopelang -> regelspraak-ir-v0, the 5a skeleton.
+(* Catala scopelang -> uchar-ir-v1, the 5a skeleton.
 
    Attachment point (PHASE5-CATALA §2, decision 1): the scopelang->dcalc
    boundary. [Driver.Passes.scopelang] runs surface -> desugared ->
