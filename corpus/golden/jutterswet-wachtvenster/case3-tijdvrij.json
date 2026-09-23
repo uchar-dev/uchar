@@ -1,0 +1,241 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Schouwploeg",
+        "attributes": {
+          "aanstelling": {
+            "date": "2025-06-01"
+          }
+        },
+        "roles": {
+          "wachten": [
+            "W1",
+            "W2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S2",
+        "objectType": "Schouwploeg",
+        "attributes": {
+          "aanstelling": {
+            "date": "2020-01-01"
+          }
+        },
+        "roles": {
+          "wachten": [
+            "W3",
+            "W4"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S3",
+        "objectType": "Schouwploeg",
+        "attributes": {},
+        "roles": {
+          "wachten": [
+            "W5",
+            "W6"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S4",
+        "objectType": "Schouwploeg",
+        "attributes": {
+          "aanstelling": {
+            "date": "2020-01-01"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W1",
+        "objectType": "Strandwacht",
+        "attributes": {
+          "aanstelling": {
+            "date": "2023-01-01"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gediplomeerd"
+        ]
+      },
+      {
+        "label": "W2",
+        "objectType": "Strandwacht",
+        "attributes": {
+          "aanstelling": {
+            "date": "2024-06-15"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W3",
+        "objectType": "Strandwacht",
+        "attributes": {
+          "aanstelling": {
+            "date": "2024-09-01"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W4",
+        "objectType": "Strandwacht",
+        "attributes": {
+          "aanstelling": {
+            "date": "2023-01-01"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gediplomeerd"
+        ]
+      },
+      {
+        "label": "W5",
+        "objectType": "Strandwacht",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W6",
+        "objectType": "Strandwacht",
+        "attributes": {
+          "aanstelling": {
+            "date": "2023-01-01"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gediplomeerd"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "S1",
+      "characteristic": "paraat"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "S1",
+      "characteristic": "bevoegd"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "dienstwachttal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "wachttal",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "S2",
+      "characteristic": "paraat"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "S2",
+      "characteristic": "bevoegd"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S2",
+      "attribute": "dienstwachttal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S2",
+      "attribute": "wachttal",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "S3",
+      "characteristic": "paraat"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "S3",
+      "characteristic": "bevoegd"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S3",
+      "attribute": "dienstwachttal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S3",
+      "attribute": "wachttal",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "S4",
+      "characteristic": "paraat"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "S4",
+      "characteristic": "bevoegd"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S4",
+      "attribute": "dienstwachttal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S4",
+      "attribute": "wachttal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
