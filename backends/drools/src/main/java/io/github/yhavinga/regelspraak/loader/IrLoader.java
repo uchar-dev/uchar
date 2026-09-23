@@ -258,6 +258,19 @@ public final class IrLoader {
         return naam;
     }
 
+    /** A field the member nodes always carry: its absence would enter the model as a null (a temporal member
+     *  without a grid, a characteristic without a kind) where the v0 side-maps had no way to say that. */
+    private static String verplicht(JsonNode n, String veld) {
+        String v = text(n, veld);
+        if (v == null) throw new Refusal(text(n, "node") + "." + veld, "a required field is absent");
+        return v;
+    }
+
+    private static int telling(JsonNode facet) {
+        if (!facet.hasNonNull("count")) throw new Refusal("TimelineFacet.count", "a required field is absent");
+        return facet.get("count").asInt();
+    }
+
     private static <V> void eenmaal(Map<String, V> tabel, String naam, V waarde) {
         if (tabel.putIfAbsent(naam, waarde) != null)
             throw new Refusal("declaration", "the name '" + naam + "' is declared twice");
@@ -388,19 +401,19 @@ public final class IrLoader {
             if (a.has("dimensions")) ot.attribuutDimensies.put(lid, stringList(a.get("dimensions")));
             JsonNode tl = a.get("timeline");
             if (tl != null && !tl.isNull()) {
-                ot.attribuutGranulariteit.put(lid, enumOf(Granulariteit.class, text(tl, "granularity")));
-                if (intOf(tl, "count") != 1) ot.attribuutTijdlijnAantal.put(lid, intOf(tl, "count"));
+                ot.attribuutGranulariteit.put(lid, enumOf(Granulariteit.class, verplicht(tl, "granularity")));
+                if (telling(tl) != 1) ot.attribuutTijdlijnAantal.put(lid, telling(tl));
                 if (text(tl, "timelineName") != null) ot.attribuutTijdlijnNaam.put(lid, text(tl, "timelineName"));
             }
         });
         forEach(n.get("characteristics"), c -> {
             String lid = naam(c, "name");
             ot.kenmerken.add(lid);
-            ot.kenmerkSoorten.put(lid, enumOf(KenmerkSoort.class, text(c, "kind")));
+            ot.kenmerkSoorten.put(lid, enumOf(KenmerkSoort.class, verplicht(c, "kind")));
             JsonNode tl = c.get("timeline");
             if (tl != null && !tl.isNull()) {
-                ot.kenmerkGranulariteit.put(lid, enumOf(Granulariteit.class, text(tl, "granularity")));
-                if (intOf(tl, "count") != 1) ot.kenmerkTijdlijnAantal.put(lid, intOf(tl, "count"));
+                ot.kenmerkGranulariteit.put(lid, enumOf(Granulariteit.class, verplicht(tl, "granularity")));
+                if (telling(tl) != 1) ot.kenmerkTijdlijnAantal.put(lid, telling(tl));
             }
         });
         return ot;
