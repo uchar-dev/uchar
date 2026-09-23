@@ -542,16 +542,21 @@ let kenmerk_temporal ctx ~otype ~kenmerk =
 
 (* ch. 3.10's v0 mirror note carries TWO bounds on the window and this is the
    second: v0's backends "refuse the condition under counting quantifiers".
-   Measured 2026-09-20, one verifier-clean document per quantifier: the
-   DRL-text branch names this very limit ("periodevergelijking onder een
-   tellende kwantor") under GEEN, TEN_MINSTE, TEN_HOOGSTE and PRECIES, the
-   exec branch drops the rule there, and both PLAY under ALLE and DE. The
-   refused reading is not a near miss — under GEEN the window's verdict is
-   COMPLEMENTED, so a time-free session, where ch. 3.10 says the window never
-   matches, would make the composite true and fire the rule. Word for word
-   ref's sentence up to the phase, as the other ch. 3.10 refusals are. Since
-   2026-09-23 the position is WF-112 and the verifier refuses the document;
-   this stays as the fail-fast belt on non-conforming input. *)
+   Measured 2026-09-20, one verifier-clean document per quantifier, before
+   card drools-venster-vouwtoets (2026-09-23): the DRL-text branch then named
+   this limit in words of its own ("periodevergelijking onder een tellende
+   kwantor") under GEEN, TEN_MINSTE, TEN_HOOGSTE and PRECIES, the exec branch
+   dropped the rule there, and both played under ALLE and DE. Since that card
+   both Drools branches play the window under ALLE, the exec branch now also
+   inside a quantifier fold's toets and filter, and both refuse every WF-112
+   position themselves, by name, in one shared sentence that names the
+   construct, the quantifier and WF-112. The refused reading is not a near
+   miss — under GEEN the window's verdict is COMPLEMENTED, so a time-free
+   session, where ch. 3.10 says the window never matches, would make the
+   composite true and fire the rule. Word for word ref's sentence up to the
+   phase, as the other ch. 3.10 refusals are. Since 2026-09-23 the position
+   is WF-112 and the verifier refuses the document; this stays as the
+   fail-fast belt on non-conforming input. *)
 let periode_onder_telkwantor (kwantor : kwantor) (parts : conditie list) =
   match kwantor with
   | Alle | De -> ()
