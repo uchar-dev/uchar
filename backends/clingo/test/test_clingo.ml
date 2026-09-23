@@ -8136,18 +8136,18 @@ let pf_regel ?(ot = "Jutter") ?(doel = "heffing") ?(typ = pf_n2) ?(soort = "BERE
       "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }|}
       naam soort doel ot ot typ doel waarde voorwaarde )
 
-let pf_doc ?(objecttypen = [ pf_jutter ]) ?(feittypen = "{}") ?(parameters = []) ?(regels = [])
-    ?(consistenties = []) ?(defaults = []) ?(creaties = []) ?(feitcreaties = [])
+let pf_doc ?(objecttypen = [ pf_jutter ]) ?(domeinen = "") ?(feittypen = "{}") ?(parameters = [])
+    ?(regels = []) ?(consistenties = []) ?(defaults = []) ?(creaties = []) ?(feitcreaties = [])
     ?(verdelingen = []) () =
   Printf.sprintf
-    {|{ "formaat": "regelspraak-ir-v0", "objecttypen": { %s }, "domeinen": {},
+    {|{ "formaat": "regelspraak-ir-v0", "objecttypen": { %s }, "domeinen": { %s },
   "parameters": { %s }, "eenheidstelsels": {}, "feittypen": %s, "dimensies": {},
   "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
   "regels": [ %s ], "resolvedRegels": [ %s ], "resolvedDagsoorten": [],
   "objectCreaties": [ %s ], "verdelingen": [ %s ], "consistenties": [ %s ],
   "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [ %s ], "resolvedStartpunten": [],
   "regelGroepen": [], "diagnostics": []%s }|}
-    (String.concat ", " objecttypen) (String.concat ", " parameters) feittypen
+    (String.concat ", " objecttypen) domeinen (String.concat ", " parameters) feittypen
     (String.concat ", "
        (List.map (fun (n, _) -> Printf.sprintf {|{ "node": "Regel", "naam": "%s", "soort": "regel" }|} n) regels))
     (String.concat ", " (List.map snd regels))
@@ -8887,6 +8887,58 @@ let () =
   unbound_fires ~name:"defaults: the form-a justification of a characteristic when no exception decides"
     ~ir:di ~param:"p" ~case_text:(pf_case ~instances:[ zonder ] (bevoegd false))
     ~silent:"bevoegd absent: the justification failed"
+
+(* FIXRONDE 1, point 4: which Let needs a parameter's guard waits for is a
+   property of the PATH to the read, not of the parameter's name. Both arms
+   below read k, so the rewrite does not move the Let into one arm; in one arm
+   p is read before k, in the other after. With k leeg (restpost), the arm
+   that reads k first ends the Let before p (ch. 10.6) and ref plays; the arm
+   that reads p first faults. The same with the branch under an operator, and
+   with a Match over an enumeration. *)
+let () =
+  let p = pf_p "p" and k = pf_b "k" and restpost = pf_a "restpost" in
+  let q_gt_0 = pf_cmp "GROTER" (pf_p "q") (pf_l "0") in
+  let twee_armen = pf_ite q_gt_0 (pf_bin "PLUS" p k) (pf_bin "PLUS" k p) in
+  let doc waarde =
+    pf_doc ~parameters:[ pf_decl "p"; pf_decl "q" ] ~regels:[ pf_regel (pf_let "k" restpost waarde) ] ()
+  in
+  let leeg = [ pf_leeg (); pf_cons ] in
+  let q v = [ pf_bind "q" v ] in
+  both_answer ~name:"Let, lazy: both arms read k, the taken one first (lz-1)" ~ir:(doc twee_armen)
+    ~case_text:(pf_case ~params:(q "-5") leeg);
+  unbound_fires ~name:"Let: both arms read k, the taken one reads p first (lz-2)" ~ir:(doc twee_armen)
+    ~param:"p" ~case_text:(pf_case ~params:(q "5") leeg) ~silent:"heffing leeg";
+  both_answer ~name:"Let, lazy: the same branch under an operator (lz-3)"
+    ~ir:(doc (pf_bin "PLUS" twee_armen (pf_l "1")))
+    ~case_text:(pf_case ~params:(q "-5") leeg);
+  (* the Match: klasse Hoog reads k first, Laag reads p first *)
+  let klasse = {|{ "node": "Enumeratie", "domein": "Klasse", "waarden": [ "Hoog", "Laag" ] }|} in
+  let jutter =
+    pf_ot (Printf.sprintf {|"klasse": %s, "restpost": %s, "heffing": %s|} klasse pf_n2 pf_n2)
+  in
+  let match_doc =
+    pf_doc ~objecttypen:[ jutter ] ~domeinen:({|"Klasse": |} ^ klasse)
+      ~parameters:[ pf_decl "p" ]
+      ~regels:
+        [ pf_regel
+            (pf_let "k" restpost
+               (Printf.sprintf
+                  {|{ "node": "Match", "type": %s, "scrutinee": %s,
+                      "arms": [ { "constructor": "Hoog", "binder": null, "body": %s },
+                                { "constructor": "Laag", "binder": null, "body": %s } ],
+                      "bron": "match klasse" }|}
+                  pf_n2 (pf_a ~typ:klasse "klasse") (pf_bin "PLUS" k p) (pf_bin "PLUS" p k))) ]
+      ()
+  in
+  let j1 v =
+    Printf.sprintf
+      {|{ "label": "J1", "objectType": "Jutter", "attributes": { "klasse": { "enumeration": "%s" } }, "roles": {}, "characteristics": [] }|}
+      v
+  in
+  both_answer ~name:"Let, lazy: the Match arm reads k first (lz-m1)" ~ir:match_doc
+    ~case_text:(pf_case ~instances:[ j1 "Hoog" ] leeg);
+  unbound_fires ~name:"Let: the Match arm reads p first (lz-m2)" ~ir:match_doc ~param:"p"
+    ~case_text:(pf_case ~instances:[ j1 "Laag" ] leeg) ~silent:"heffing leeg"
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
