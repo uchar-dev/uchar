@@ -1,6 +1,6 @@
 # backends/clingo — the ASP backend
 
-The second executor: a systematic translator from `regelspraak-ir-v0`
+The second executor: a systematic translator from `uchar-ir-v1`
 documents plus `uchar-case-v0` cases to ASP-Core-2, run by clingo. With
 it the differential is real: gate 6 (`scripts/check-clingo.sh`) demands
 that clingo's stable model matches the same absolute expectations gate 5

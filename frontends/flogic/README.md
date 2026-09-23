@@ -1,7 +1,7 @@
 # `frontends/flogic` — a minimal F-logic frontend for the uchar IR
 
 A second source language for the same kernel: an F-logic program in, a
-`regelspraak-ir-v0` document out. Its point is not coverage but
+`uchar-ir-v1` document out. Its point is not coverage but
 **independence** — object-type subtyping, characteristics, fact types,
 defaults groups and aggregations reach the wire from a language that has
 none of RegelSpraak's grammar, and the resulting IR must be the same IR.

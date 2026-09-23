@@ -1,6 +1,6 @@
 # ref/ — the reference interpreter
 
-A small, slow, readable tree-walker over `regelspraak-ir-v0` documents:
+A small, slow, readable tree-walker over `uchar-ir-v1` documents:
 the executable definition of `spec/RUNTIME-SEMANTICS.md`, on the
 WebAssembly model. It shares no code with any production runtime; it
 reuses exactly one library from this repository — the typed loader of
