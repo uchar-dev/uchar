@@ -66,7 +66,7 @@ Every row was re-measured on this branch for this card.
 |---|---|
 | `ObjectType` carries no parent: `name`, `animate`, `plural`, `attributes`, `characteristics` | `IR-SPEC.md` ch. 2.2 |
 | the verifier's AST record has 13 fields, none of them a parent | `spec/verifier/lib/ast.ml:302–316` |
-| the wire node `Objecttype` is **closed** (`additionalProperties: false`) with 14 required keys | `spec/schema/regelspraak-ir-v0.schema.json` |
+| the wire node `Objecttype` is **closed** (`additionalProperties: false`) with 14 required keys | `spec/schema/uchar-ir-v1.schema.json` (then the v0 schema; since M1 the node is `ObjectType`, still closed, with 5 required keys) |
 | `ref/` compares the type name **literally** in at least eleven places, not one: `of_type`, the case loader's instance, role-filler and expectation arms, the navigation endpoint, the channel's declaration lookup and four name guards | `ref/lib/world.ml:52–57`; `ref/lib/case.ml:277–281, 535, 554, 569, 576, 600`; `ref/lib/eval.ml:480, 627, 803, 1108, 1159, 2508` |
 | the instance record holds `otype : string` — one name, no chain | `ref/lib/world.ml:15–29` |
 | clingo emits `is_a(Label,"Type")` as a **fact** at one site and joins on it everywhere else: 52 lines / 53 occurrences of `is_a(`, of which 2 are comments and 1 is the fact emitter — **49 lines / 50 occurrences** are join sites | `backends/clingo/lib/translate.ml`; emitter at `:6457`, comments at `:1256` and `:3818` |

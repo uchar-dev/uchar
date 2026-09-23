@@ -1,17 +1,23 @@
 # IR verifier
 
 Machine enforcement of the well-formedness rules (`WF-###`) of
-`spec/IR-SPEC.md`, over IR documents in the `regelspraak-ir-v0` wire
-format (`spec/schema/regelspraak-ir-v0.schema.json`).
+`spec/IR-SPEC.md`, over IR documents in the `uchar-ir-v1` wire format, in
+its M1 shape (`spec/schema/uchar-ir-v1.schema.json`).
 
 The project is an OCaml dune build in two parts:
 
 - `lib/` — a typed AST of the wire format (`ast.ml`) with a strict
   loader (`loader.ml`, yojson-based: unknown or missing fields are load
   errors, never silently dropped) and the WF checks (`checks.ml`). The
-  library exists to be reused: the Phase-2 reference interpreter (`ref/`)
-  links the same AST and loader, so spec and interpreter cannot drift
-  apart at the parsing layer.
+  library exists to be reused: the Phase-2 reference interpreter (`ref/`),
+  the ASP backend and the two OCaml frontends link the same AST, and the
+  first two the same loader, so spec and executors cannot drift apart at
+  the parsing layer. Since M1 the AST keeps the in-memory shape its readers
+  were written against: the model lists as name-keyed association lists,
+  and an object type's members as name-keyed facet tables that the loader
+  builds from the Attribute, Characteristic and TimelineFacet nodes (the
+  header of `ast.ml` says what that implies). The library is still named
+  `uchar-ir-v0`; renaming it is a change to every reader.
 - `bin/` — the `verifier` executable: `verifier <ir.json>` exits 0 when
   the document is well-formed, non-zero with one `WF-### FAIL <path>:
   <reason>` line per violation otherwise.

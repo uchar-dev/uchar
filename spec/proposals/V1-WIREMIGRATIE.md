@@ -2256,7 +2256,7 @@ codestuk raakt en de gates er per familie iets van merken:
 
 | # | Kaart | Deltas | Gates die bewegen |
 |---|---|---|---|
-| M1 | **Het schema en de container** | B1, B2, B3, B4, B5 | 2 (schema-id + `EXPECTED_MIN_DOCS`), 3 (19 getuigen), 4 |
+| M1 | ~~**Het schema en de container**~~ — **geland (L1)** — zie `backlog/done/20260923-m1-schema-en-container.md` | B1, B2, B3, B4, B5 | 2 (schema-id + `EXPECTED_MIN_DOCS`), 3 (19 getuigen), 4 |
 | M2 | **De spiegelbagage eruit** | B7, B8, B9, B11, B12 (**B10 eruit**, 2026-09-19: hij is geen spiegelbagage maar betekenis, en hernoemt bij M8) | 3 (~30 getuigen), 5, 6, 12 |
 | M3 | **De typeannotatie** | B13, B16 | 3 (72 getuigen: 57 identiteitsfamilie + 15 sentinel), **13** — zie **V15** |
 | M4 | **Het typesysteem** | B14, B15, B17 (i), B18 | 2, 3, 5, 6, 12 |

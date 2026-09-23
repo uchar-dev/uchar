@@ -405,7 +405,7 @@
           }
         }
       },
-      "description": "Extension node (IR-SPEC Method; wire node SumType, never emitter-produced): the payload-carrying variant family of CONSTRUCTS row 36 — a declared, nominal sum type hosted by 'domeinen' and repeated whole at every use site. Each constructor carries a 'name' and either one 'payload' datatype (unary) or null (nullary). See spec/IR-SPEC.md ch. 2.4 (WF-060/061)."
+      "description": "Extension node (IR-SPEC Method; wire node SumType, never emitter-produced): the payload-carrying variant family of CONSTRUCTS row 36 — a declared, nominal sum type, declared as a Domain in 'model.domains' (there without its 'domain' self-name: DomainSumType) and repeated whole at every use site. Each constructor carries a 'name' and either one 'payload' datatype (unary) or null (nullary). See spec/IR-SPEC.md ch. 2.4 (WF-060/061)."
     },
     "ListType": {
       "type": "object",
@@ -460,7 +460,7 @@
           }
         }
       },
-      "description": "Extension node (IR-SPEC Method; wire node StructType, never emitter-produced): the record datatype of the Phase-5c core (spec/proposals/PHASE5C-TUTORIAL.md §2) — a declared, nominal record hosted by 'domeinen' and repeated whole at every use site, exactly the SumType/ListType landing pattern. Each field carries a 'name' and a non-null 'datatype' (a number, day-precision date, sum type or struct type — WF-071). See spec/IR-SPEC.md ch. 2.4 (WF-071/072)."
+      "description": "Extension node (IR-SPEC Method; wire node StructType, never emitter-produced): the record datatype of the Phase-5c core (spec/proposals/PHASE5C-TUTORIAL.md §2) — a declared, nominal record, declared as a Domain in 'model.domains' (there without its 'domain' self-name: DomainStructType) and repeated whole at every use site, exactly the SumType/ListType landing pattern. Each field carries a 'name' and a non-null 'datatype' (a number, day-precision date, sum type or struct type — WF-071). See spec/IR-SPEC.md ch. 2.4 (WF-071/072)."
     },
     "datatype": {
       "description": "A RegelSpraak datatype (\u00a713.3.3), discriminated on 'node'.",
@@ -1974,7 +1974,7 @@
           ]
         }
       },
-      "description": "Extension node (IR-SPEC Method; wire node FunctionDef, never emitter-produced): named reusable logic — DMN's Business Knowledge Model (CONSTRUCTS row 10; spec/IR-SPEC.md ch. 2.11). Carried by the optional top-level 'functionDefs' list. Ci-unique names, typed unique parameters, a resolvable 'result', a closed 'body', and an acyclic invocation graph: WF-067."
+      "description": "Extension node (IR-SPEC Method; wire node FunctionDef, never emitter-produced): named reusable logic — DMN's Business Knowledge Model (CONSTRUCTS row 10; spec/IR-SPEC.md ch. 2.11). Carried by the optional 'functionDefs' list under 'model'. Ci-unique names, typed unique parameters, a resolvable 'result', a closed 'body', and an acyclic invocation graph: WF-067."
     },
     "expr": {
       "description": "A resolved expression (\u00a713.4), discriminated on 'node'.",

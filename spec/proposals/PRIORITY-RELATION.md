@@ -57,7 +57,7 @@ FAIL: /tmp/c2-red/ir.json
 check-ir-schema: FAIL (1 of 1 file(s) bad)
 ```
 
-The top level of `regelspraak-ir-v0.schema.json` is
+The top level of `uchar-ir-v1.schema.json` is
 `additionalProperties: false`; no slot on the wire, no node in the
 verifier's AST, no vocabulary anywhere in `spec/schema/` or
 `spec/verifier/lib/` (grep for superiority/salience/priority terms:
