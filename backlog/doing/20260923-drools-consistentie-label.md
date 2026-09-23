@@ -22,3 +22,19 @@ zwakte leunen.
 
 May touch: `backends/drools/**`, kaartverplaatsing. NB: serieel met
 andere Drools-kaarten.
+
+## Aangescherpt bij de claim (2026-09-23)
+
+- (a0) Meet eerst hoe ref sleutel en label vergelijkt
+  (`ref/lib/case.ml`) en inventariseer de corpuscasussen met een
+  regelnaam-sleutel plus label. Leunt er een op de zwakte (faalt hij
+  onder de strikte vergelijking), dan is dat een corpusvondst: benoemen
+  en stoppen, maintainerbesluit.
+- (a) Rood-eerst in de JUnit-suite: een getuige met twee
+  consistentieregels waarvan de verkeerde (op een ander onderwerp)
+  vuurt, eerst groen-ten-onrechte in beide takken op de basis gezien.
+- (b) Label vergeleken voor elke sleutel zoals ref (subject-label
+  exact); de mismatch noemt het gepinde label en wat het kanaal draagt.
+- (c) Sweep beide takken voor/na cmp-identiek; veertien gates groen,
+  elk los aangeroepen; pins 181/160 onbewogen. Mutatieproef: vergelijking
+  weer uit ⇒ getuige groen-ten-onrechte ⇒ herstel.
