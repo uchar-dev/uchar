@@ -3,8 +3,8 @@
 Het handanker van RUNTIME-SEMANTICS ch. 7.9 voor een kenmerkdoel. Eén
 defaults-bundel op het kenmerk `vrijgesteld` van `Jutter`: default 0 kent
 toe op `nx` en draagt twee ongeordende uitzonderingsgroepen, de broers `ny`
-(niet toekennen) en `nz` (toekennen). Elke broer draagt naast haar eigen
-voorwaarde die van haar drager. Vier cases: één waarop één broer beslist
+(niet toekennen) en `nz` (toekennen). Elke broer draagt naast zijn eigen
+voorwaarde die van zijn drager. Vier cases: één waarop één broer beslist
 (case1), één waarop de broers verschillend beslissen (case2), één waarop
 default 0 terugvalt op haar eigen besluit (case3), en één met drie
 instanties die de dragervoorwaarde pint (case4). Handgeschreven, met
@@ -19,7 +19,7 @@ kenmerken: de invoerkenmerken `nx`, `ny` en `nz`, en het doelkenmerk
 `vrijgesteld`. Er zijn geen gewone regels; de defaults-bundel `vrijstelling
 van een jutter` is de enige schrijver van `vrijgesteld`.
 
-### De defaults (het genest kenmerkdoel `vrijgesteld`)
+### De defaults (het geneste kenmerkdoel `vrijgesteld`)
 
 Default 0 is een form-a-default: een eigen besluit plus een `excepties` met
 twee leden, gemarkeerd `ongeordend`. De voorwaarde van elke broer is één
@@ -44,10 +44,10 @@ en legt één feit in het kanaal het conflict vast, met de sleutel
 `onwaar`-besluit schrijft ook niets: het kenmerk blijft dan afwezig, tenzij
 de invoer het zet (ch. 7.1, "not a retraction").
 
-**De dragervoorwaarde.** Ch. 7.9 beslist de uitzonderingsgroepen van een
-default vóór en los van diens eigen rechtvaardiging: een groep die beslist,
-levert het besluit van haar drager, ook waar de voorwaarde van die drager
-niet geldt. Ch. 7.1 schrijft daarom voor dat een geneste laag een
+**De dragervoorwaarde.** Volgens ch. 7.9 beslissen de uitzonderingsgroepen
+van een default vóór en los van diens eigen rechtvaardiging: een groep die
+beslist, levert het besluit van haar drager, ook waar de voorwaarde van die
+drager niet geldt. Ch. 7.1 schrijft daarom voor dat een geneste laag een
 zelfstandige rechtvaardiging krijgt door conjunctie met die van de
 omhullende laag, en zo staat het hier op de wire, in dezelfde vorm als in
 het anker `ww-herleving-inkomen`. Dat geldt voor de leden van een
@@ -65,7 +65,7 @@ vrijgesteld aanwezig              ⇔  X ∧ ¬Y
 conflict Jutter.vrijgesteld/0     ⇔  X ∧ Y ∧ Z
 ```
 
-Een boom waarin elke broer alleen haar eigen voorwaarde draagt, beslist op
+Een boom waarin elke broer alleen zijn eigen voorwaarde draagt, beslist op
 twee van de acht combinaties van X, Y en Z anders; op beide ontbreekt X.
 Elk van die twee is een instantie van case4:
 
@@ -75,7 +75,7 @@ Elk van die twee is een instantie van case4:
 | ¬X, Y, Z | afwezig, inconsistent `Jutter.vrijgesteld/0` — de broers beslissen `onwaar` en `waar` | afwezig, consistent — niets beslist | case4, instantie O |
 
 Op de zes andere combinaties geven beide bomen dezelfde uitkomst. Met X
-geldt de conjunctie van een broer precies als haar eigen voorwaarde geldt.
+geldt de conjunctie van een broer precies als zijn eigen voorwaarde geldt.
 Zonder X beslist in deze boom niets; in de boom zonder dragervoorwaarden
 beslist bij Y zonder Z alleen de broer `ny`, met `onwaar`. Dat besluit
 schrijft niets, en omdat default 0 de enige default van de wortelketen is,
@@ -184,7 +184,7 @@ van de drie legt een feit in het kanaal.
 
 - **M**, invoer `nz`. Broer `nz` eist `nx` en `nz`; `nx` ontbreekt → beslist
   niet. Broer `ny` beslist niet, en default 0 zelf ook niet (`nx`
-  ontbreekt). Niets beslist: `vrijgesteld` **afwezig**. Met alleen haar
+  ontbreekt). Niets beslist: `vrijgesteld` **afwezig**. Met alleen zijn
   eigen voorwaarde zou de broer `nz` hier `waar` beslissen, en dat zou het
   besluit van default 0 zijn: aanwezig.
 - **N**, invoer `nx`, `nz`. Broer `nz`: `nx` en `nz` gelden → `waar`; broer
