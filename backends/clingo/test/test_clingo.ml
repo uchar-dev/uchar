@@ -9219,6 +9219,59 @@ let () =
   both_answer ~name:"Let, lazy: the value reads k, which ends the Let before p (control)" ~ir:s
     ~case_text:(pf_case ~instances:[ j1 ~extra:"1" None ] leeg)
 
+(* FIXRONDE 2, point 4, per member: a Let binder read in a set fold's die/dat
+   filter "(k plus lengte) groter dan p", so k before p, member by member.
+   With the need leeg the first member's filter reads k, the barrier ends the
+   Let and p is never read; with the need filled p is read and ref faults. *)
+let () =
+  let werf =
+    pf_ot ~naam:"Werf" ~meervoud:"Werven" (Printf.sprintf {|"bonus": %s, "restpost": %s|} pf_n0 pf_n0)
+  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" (Printf.sprintf {|"lengte": %s|} pf_n0) in
+  let ligplaats =
+    {|{ "ligplaats": { "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
+      { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] } }|}
+  in
+  let lengte = pf_a ~ot:"Schuit" ~typ:pf_n0 "lengte" in
+  let k = Printf.sprintf {|{ "node": "BinderRef", "name": "k", "type": %s, "bron": "de k" }|} pf_n0 in
+  let filter = pf_cmp "GROTER" (pf_bin ~typ:pf_n0 "PLUS" k lengte) (pf_p ~typ:pf_n0 "p") in
+  let som =
+    Printf.sprintf
+      {|{ "node": "Functie", "kind": "SOM",
+        "argumenten": [ { "node": "AttribuutRef", "attribuut": "lengte", "objecttype": "Schuit",
+          "onderwerpBron": "alle schuiten", "navigatieRol": null, "type": %s,
+          "bron": "de lengte van alle schuiten", "set": true, "navigatiePad": [] } ],
+        "elementObjecttype": "Schuit", "leegwaarde": null, "filter": %s, "dimensieSelectie": null,
+        "type": %s, "bron": "de som", "granulariteit": null,
+        "bronRol": { "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" } }|}
+      pf_n0 filter pf_n0
+  in
+  let ir =
+    pf_doc ~objecttypen:[ werf; schuit ] ~feittypen:ligplaats ~parameters:[ pf_decl ~typ:pf_n0 "p" ]
+      ~regels:
+        [ pf_regel ~ot:"Werf" ~doel:"bonus" ~typ:pf_n0
+            (Printf.sprintf
+               {|{ "node": "Let", "type": %s, "binder": "k", "value": %s, "body": %s, "bron": "let k" }|}
+               pf_n0 (pf_a ~ot:"Werf" ~typ:pf_n0 "restpost") som) ]
+      ()
+  in
+  let inst label ot attrs roles =
+    Printf.sprintf
+      {|{ "label": "%s", "objectType": "%s", "attributes": { %s }, "roles": { %s }, "characteristics": [] }|}
+      label ot attrs roles
+  in
+  let werven restpost =
+    [ inst "W1" "Werf" restpost {|"schuiten": [ "S1", "S2" ]|};
+      inst "S1" "Schuit" {|"lengte": { "number": "8" }|} "";
+      inst "S2" "Schuit" {|"lengte": { "number": "3" }|} "" ]
+  in
+  let bonus_leeg = [ pf_leeg ~label:"W1" ~attr:"bonus" (); pf_cons ] in
+  both_answer ~name:"Let, lazy: each member's filter reads k before p (per member)" ~ir
+    ~case_text:(pf_case ~instances:(werven "") bonus_leeg);
+  unbound_fires ~name:"Let: each member's filter reads a filled k, then p (control)" ~ir
+    ~param:"p" ~case_text:(pf_case ~instances:(werven {|"restpost": { "number": "1" }|}) bonus_leeg)
+    ~silent:"bonus leeg: no member passed the filter"
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

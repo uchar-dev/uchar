@@ -241,12 +241,12 @@ type let_info = {
   li_outer : let_info list; (* those Lets, innermost first *)
   li_subject : string;
   li_ot : string;
-  li_order : (expr * (int * int * bool)) list Lazy.t; (* [let_order] of the body *)
+  li_order : (expr * (int * bool)) list Lazy.t; (* [let_order] of the body *)
   mutable li_va : string list; (* the need's atoms, once the value is translated *)
   mutable li_entry : (string list * string * int) option; (* its [binders] entry *)
   mutable li_demand : string option; (* the demand atom, when the value has one *)
   mutable li_reads : (expr * site) list; (* every read of the binder, latest first *)
-  mutable li_asks : (int * int) list; (* the places guards asked about *)
+  mutable li_asks : int list; (* the places guards asked about *)
 }
 
 (* where a node is translated: what [reach_at] needs of the context *)
@@ -703,24 +703,15 @@ let unbound_param_guard ctx ~witness ~guard name =
       (String.concat ", " (guard ()))
 
 (* ch. 5.11's evaluation order, as ref walks an expression: [visit] sees every
-   node as it COMPLETES (a composite after its operands) with the span it lies
-   in. A span is a per-member part — the filter and arguments of a set fold,
-   the filter of a quantifier fold, its matrix — whose nodes run once per
-   member, interleaved, so two nodes in one span are not ordered against each
-   other; 0 is no span, and a span inside a span is the outer one. A closed
+   node as it COMPLETES, a composite after its operands. A per-member part —
+   the filter and arguments of a set fold, the filter and the matrix of a
+   quantifier fold — is walked once, in the order one member runs it: the
+   filter before the arguments, the whole filter before the matrix. A closed
    body is not walked: its reads answer to the node that hosts it, which is.
    The value of a Let is walked only where [value] says so, at the Let. *)
-let walk_order ~(value : string -> expr -> bool) (visit : expr -> int -> unit) =
-  let spans = ref 0 in
-  let span g =
-    if g > 0 then g
-    else begin
-      incr spans;
-      !spans
-    end
-  in
-  let rec x g (e : expr) =
-    let opt = function Some y -> x g y | None -> () in
+let walk_order ~(value : string -> expr -> bool) (visit : expr -> unit) =
+  let rec x (e : expr) =
+    let opt = function Some y -> x y | None -> () in
     (match e with
     | Binair { links; rechts; _ } ->
         opt links;
@@ -730,42 +721,41 @@ let walk_order ~(value : string -> expr -> bool) (visit : expr -> int -> unit) =
         opt basis;
         opt minimum;
         opt maximum
-    | Functie { argumenten; leegwaarde; filter; element_objecttype; _ } ->
-        let gm = if filter <> None || element_objecttype <> None then span g else g in
-        (match filter with Some c -> cond gm c | None -> ());
-        List.iter (x gm) argumenten;
+    | Functie { argumenten; leegwaarde; filter; _ } ->
+        (match filter with Some c -> cond c | None -> ());
+        List.iter x argumenten;
         opt leegwaarde
     | Dimensie_cel { attribuut; _ } -> opt attribuut
     | Temporal_read { basis; datum; _ } ->
-        x g datum;
-        x g basis
+        x datum;
+        x basis
     | Construct { argument; _ } -> opt argument
-    | Field_access { base; _ } -> x g base
-    | Struct_literal { velden; _ } -> List.iter (fun (_, y) -> x g y) velden
-    | List_literal { elements; _ } -> List.iter (x g) elements
+    | Field_access { base; _ } -> x base
+    | Struct_literal { velden; _ } -> List.iter (fun (_, y) -> x y) velden
+    | List_literal { elements; _ } -> List.iter x elements
     | Tekst_reeks { delen; _ } ->
-        List.iter (function Ingevoegd { expr = Some y } -> x g y | _ -> ()) delen
+        List.iter (function Ingevoegd { expr = Some y } -> x y | _ -> ()) delen
     | If_then_else { condition; then_; else_; _ } ->
-        cond g condition;
-        x g then_;
-        x g else_
+        cond condition;
+        x then_;
+        x else_
     | Match { scrutinee; arms; _ } ->
-        x g scrutinee;
-        List.iter (fun (_, _, b) -> x g b) arms
+        x scrutinee;
+        List.iter (fun (_, _, b) -> x b) arms
     | Let { binder; value = v; body; _ } ->
-        if value binder body then x g v;
-        x g body
-    | Invoke { arguments; _ } -> List.iter (x g) arguments
+        if value binder body then x v;
+        x body
+    | Invoke { arguments; _ } -> List.iter x arguments
     | Fold { list; init; _ } ->
-        x g list;
-        x g init
-    | Map_list { list; _ } | Filter_list { list; _ } | List_length { list; _ } -> x g list
+        x list;
+        x init
+    | Map_list { list; _ } | Filter_list { list; _ } | List_length { list; _ } -> x list
     | Lambda _ | Parameter_ref _ | Literal _ | Attribuut_ref _ | Variabele_ref _ | Constante _
     | Binder_ref _ | Expr_onopgelost _ | Instance_set_union _ ->
         ());
-    visit e g
-  and cond g (c : conditie) =
-    let opt = function Some y -> x g y | None -> () in
+    visit e
+  and cond (c : conditie) =
+    let opt = function Some y -> x y | None -> () in
     match c with
     | Vergelijking { links; rechts; _ } ->
         opt links;
@@ -774,24 +764,24 @@ let walk_order ~(value : string -> expr -> bool) (visit : expr -> int -> unit) =
     | Periode_conditie { vanaf; tot; _ } ->
         opt vanaf;
         opt tot
-    | Samengesteld { onderdelen; _ } -> List.iter (cond g) onderdelen
+    | Samengesteld { onderdelen; _ } -> List.iter cond onderdelen
     | Kwantorvouw { kv_filter; kv_toets; _ } ->
-        (match kv_filter with Some f -> cond (span g) f | None -> ());
-        (match kv_toets with Some t -> cond (span g) t | None -> ())
+        (match kv_filter with Some f -> cond f | None -> ());
+        (match kv_toets with Some t -> cond t | None -> ())
     | Kenmerk_check _ | Rollidmaatschap _ | Verre_rollidmaatschap _ | Regelversie _
     | Conditie_onopgelost _ ->
         ()
   in
-  (x 0, cond 0)
+  (x, cond)
 
-(* the places of a Let's body: node -> (index, span, shared). The value of a
-   nested Let has no place here — ch. 10.6 evaluates it at the first read of
-   its binder, which [read_places] finds. A node the document shares, met
-   twice, keeps its last place and says so; the list is latest first. *)
-let let_order (body : expr) : (expr * (int * int * bool)) list =
+(* the places of a Let's body: node -> (index, shared). The value of a nested
+   Let has no place here — ch. 10.6 evaluates it at the first read of its
+   binder, which [read_places] finds. A node the document shares, met twice,
+   keeps its last place and says so; the list is latest first. *)
+let let_order (body : expr) : (expr * (int * bool)) list =
   let acc = ref [] and next = ref 0 in
-  let visit e g =
-    acc := (e, (!next, g, List.exists (fun (n, _) -> n == e) !acc)) :: !acc;
+  let visit e =
+    acc := (e, (!next, List.exists (fun (n, _) -> n == e) !acc)) :: !acc;
     incr next
   in
   fst (walk_order ~value:(fun _ _ -> false) visit) body;
@@ -803,33 +793,33 @@ let cond_param_names c =
   snd
     (walk_order
        ~value:(fun b body -> Ir_v0.Checks.mentions_binder b body)
-       (fun e _ -> match e with Parameter_ref { parameter = Some p; _ } -> names := p :: !names | _ -> ()))
+       (fun e -> match e with Parameter_ref { parameter = Some p; _ } -> names := p :: !names | _ -> ()))
     c;
   List.rev !names
 
 (* the place of [node] in [li]'s body; a shared node has none *)
 let let_place li node =
   match List.find_opt (fun (n, _) -> n == node) (Lazy.force li.li_order) with
-  | Some (_, (i, g, false)) -> Some (i, g)
-  | Some (_, (_, _, true)) | None -> None
+  | Some (_, (i, false)) -> Some i
+  | Some (_, (_, true)) | None -> None
 
 (* the same for a read of the binder, where a shared node takes its last place:
    a read counted later suppresses fewer guards *)
 let read_place li node =
   match List.find_opt (fun (n, _) -> n == node) (Lazy.force li.li_order) with
-  | Some (_, (i, g, _)) -> Some (i, g)
+  | Some (_, (i, _)) -> Some i
   | None -> None
 
 let site ctx ~subject ~subject_ot =
   { si_subject = subject; si_ot = subject_ot; si_guard = ctx.rule_guard; si_needs = ctx.let_needs;
     si_value_of = ctx.value_of; si_outer = ctx.param_reach }
 
-(* the barrier atom of [li] for a node at place (i, g): "a read of the binder
-   came before, on the path taken, and found the need leeg". Registers the
-   place, so [emit_barriers] writes its rule. *)
-let barred li (i, g) =
-  if not (List.mem (i, g) li.li_asks) then li.li_asks <- (i, g) :: li.li_asks;
-  Printf.sprintf "not lbb%d(%s,%d,%d)" li.li_id li.li_subject i g
+(* the barrier atom of [li] for a node at place [i]: "a read of the binder came
+   before, on the path taken, and found the need leeg". Registers the place,
+   so [emit_barriers] writes its rule. *)
+let barred li i =
+  if not (List.mem i li.li_asks) then li.li_asks <- i :: li.li_asks;
+  Printf.sprintf "not lbb%d(%s,%d)" li.li_id li.li_subject i
 
 (* the reach of [node] at site [s]: the subject, the enclosing [rule_guard]
    (condition, composite prefix, taken arm or match pattern) and the extra
@@ -883,42 +873,39 @@ let rule_reach ?skip ctx ~subject ~subject_ot =
    its own reach within the value. *)
 let rec read_places ctx li ~skip (node, (s : site)) =
   match read_place li node with
-  | Some (i, g) -> [ (i, g, reach_at ctx ~skip ~cut:li s node) ]
+  | Some i -> [ (i, reach_at ctx ~skip ~cut:li s node) ]
   | None -> (
       match s.si_value_of with
       | Some m when List.memq li m.li_outer ->
           let within = reach_at ctx ~skip ~cut:li s node in
           List.concat_map
-            (fun r ->
-              List.map (fun (i, g, a) -> (i, g, a @ within)) (read_places ctx li ~skip:m.li_binder r))
+            (fun r -> List.map (fun (i, a) -> (i, a @ within)) (read_places ctx li ~skip:m.li_binder r))
             (List.rev m.li_reads)
       | _ -> [])
 
 (* ch. 10.6's barrier, for the guards that asked ([barred]): per Let, its need,
    the places its binder is read with their reach, and per asked place "an
-   earlier read found the need leeg". Two nodes in one span are not ordered,
-   so an earlier read counts only outside the asking node's span — the guard
-   then fires where ref may have met the barrier first: loud. Lets are taken
-   shallow first, because a barrier rule asks only about Lets nested deeper,
-   so every place is asked before its Let is written. Only guards ask, so a
-   case that binds its parameters writes none of this. *)
+   earlier read found the need leeg". A per-member part is ordered as one
+   member runs it, so a read that only a later member reaches counts as if it
+   came before a parameter the first member reads: there the guard stays
+   silent where ref faults. Lets are taken shallow first, because a barrier
+   rule asks only about Lets nested deeper, so every place is asked before its
+   Let is written. Only guards ask, so a case that binds its parameters
+   writes none of this. *)
 let emit_barriers ctx =
   List.iter
     (fun li ->
       if li.li_asks <> [] then begin
         let base = Printf.sprintf "isa(%s,%s)" li.li_subject (str li.li_ot) in
-        emit ctx "#defined lbr%d/3." li.li_id;
+        emit ctx "#defined lbr%d/2." li.li_id;
         emit ctx "lbn%d(%s) :- %s." li.li_id li.li_subject (String.concat ", " (base :: li.li_va));
         List.iter
-          (fun (i, g, atoms) ->
-            emit ctx "lbr%d(%s,%d,%d) :- %s." li.li_id li.li_subject i g (String.concat ", " atoms))
+          (fun (i, atoms) ->
+            emit ctx "lbr%d(%s,%d) :- %s." li.li_id li.li_subject i (String.concat ", " atoms))
           (List.concat_map (read_places ctx li ~skip:li.li_binder) (List.rev li.li_reads));
         List.iter
-          (fun (i, g) ->
-            emit ctx "lbb%d(S,%d,%d) :- lbr%d(S,I,G), I < %d%s, not lbn%d(S)." li.li_id i g li.li_id
-              i
-              (if g > 0 then Printf.sprintf ", G != %d" g else "")
-              li.li_id)
+          (fun i ->
+            emit ctx "lbb%d(S,%d) :- lbr%d(S,I), I < %d, not lbn%d(S)." li.li_id i li.li_id i li.li_id)
           (List.rev li.li_asks)
       end)
     (List.stable_sort (fun a b -> compare a.li_depth b.li_depth) (List.rev ctx.lets))
