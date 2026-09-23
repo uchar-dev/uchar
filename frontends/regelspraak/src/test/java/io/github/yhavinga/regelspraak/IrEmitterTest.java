@@ -591,6 +591,40 @@ class IrEmitterTest {
                 () -> "de hele letketen moet het domein van het schrijfdoel dragen:\n" + c);
     }
 
+    @Test void het_domein_draagt_zijn_naam_op_de_wrapper_en_de_referentie_houdt_hem() {
+        // M1 (delta B2, IR-SPEC ch. 2.3): the Domain wrapper writes the name once, so the Enumeratie at the
+        // declaration position carries no domein; at a reference position domein is the domain reference
+        // and stays.
+        String c = emitCompact(enumBron(""));
+        assertTrue(c.contains("\"domains\":[{\"node\":\"Domain\",\"name\":\"Keurklasse\","
+                        + "\"datatype\":{\"node\":\"Enumeratie\",\"waarden\":[\"gaaf\",\"beschadigd\"]}}]"),
+                () -> "de declaratiepositie hoort geen zelfnaam te dragen:\n" + c);
+        assertTrue(c.contains("{\"node\":\"Attribute\",\"name\":\"staat\",\"datatype\":{\"node\":\"Enumeratie\","
+                        + "\"domein\":\"Keurklasse\","),
+                () -> "de referentiepositie houdt haar domeinverwijzing:\n" + c);
+    }
+
+    @Test void een_ongelabeld_kenmerk_is_zelfstandig_en_een_zijkaart_zonder_lid_wordt_geweigerd() {
+        // The model keeps its member-keyed side-maps; the wire carries the facets on the member nodes, so
+        // what those nodes cannot carry is refused instead of dropped.
+        RegelSpraakModel m = Resolver.resolve(enumBron(""));
+        assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
+        var vondst = m.objecttypen.get("Vondst");
+        vondst.kenmerkSoorten.remove("veilbaar");
+        String c = IrEmitter.emit(m).replaceAll("\\s+", "");
+        assertTrue(c.contains("{\"node\":\"Characteristic\",\"name\":\"veilbaar\",\"kind\":\"ZELFSTANDIG\"}"),
+                () -> "een kenmerk zonder soort is zelfstandig (ch. 2.2):\n" + c);
+
+        vondst.attribuutMeervoud.put("gewicht", "gewichten");
+        IllegalStateException wees = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
+        assertTrue(wees.getMessage().contains("Vondst.attribuutMeervoud"), wees::getMessage);
+        vondst.attribuutMeervoud.remove("gewicht");
+
+        vondst.attribuutTijdlijnAantal.put("staat", 2);
+        IllegalStateException zonderRaster = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
+        assertTrue(zonderRaster.getMessage().contains("Vondst.attribuutTijdlijnAantal"), zonderRaster::getMessage);
+    }
+
     @Test void enum_literal_zonder_domeincontext_blijft_een_luide_marker() {
         // The fail-fast half of the rule: where NEITHER a write target nor a comparison sibling names
         // an Enumeratie, the frontend has no domain to derive and emits the honest marker rather than
