@@ -6934,6 +6934,26 @@ let fitted ctx ~subject ~what ~body term scale target =
    empty window of ch. 3.10. On a standing temporal target the effect atom
    rides the same bodies, so the case input stands exactly when no clipped
    segment was derived (ch. 7.8), as for any producer. *)
+(* the bucket [B, N) overlaps the subject's window: the atoms every FENCE of
+   a clipped producer carries. A bucket outside the window is never written,
+   so a range or exactness fence on it guards nothing — ref computes the
+   exact rational there and clips it away. Without these atoms clingo went
+   UNSAT on a non-exact bucket no one writes (lens finding 2026-09-23). A
+   leeg own-attribute bound binds no val atom, so the fences stay silent
+   exactly where nothing is written. *)
+let venster_overlap ctx ~subject ~ot clip =
+  match clip with
+  | None -> []
+  | Some (vanaf, tot, incl) ->
+      let v, t = venster_grenzen ctx ~subject ~subject_ot:ot vanaf tot in
+      (match v with None -> [] | Some (atoms, l) -> atoms @ [ Printf.sprintf "N > %s" l ])
+      @
+      match t with
+      | None -> []
+      | Some (atoms, h) ->
+          let h = if incl then Printf.sprintf "(%s+1)" h else h in
+          atoms @ [ Printf.sprintf "B < %s" h ]
+
 let schrijf_segment ctx ~subject ~ot ~a ~clip ~p ~value ~body =
   let heads =
     match clip with
@@ -7038,6 +7058,7 @@ let translate_pro_rata ?clip ctx ~subject ~ot ~a ~cond ~b ~k ~(g : granulariteit
         Printf.sprintf "TD = #sum { D,KV,KT : %s_d(S,B,KV,KT,D) }" p;
         "TD > 0";
         Printf.sprintf "tl(S,%s,BV,BT,W), BV <= B, B < BT" (str b) ]
+    @ venster_overlap ctx ~subject ~ot clip
   in
   (* the wrap fence: |W×TD×kn| ≤ 2^31 with TD ≤ 366 per bucket, and the
      #sum's contributors (D ≤ 366) count-bounded like every sum *)
@@ -7048,7 +7069,9 @@ let translate_pro_rata ?clip ctx ~subject ~ot ~a ~cond ~b ~k ~(g : granulariteit
   emit ctx
     "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",S) :- %s, \
      46340 < #count { KV,KT : %s_d(S,B,KV,KT,_) }."
-    (String.concat ", " ((base :: ctx.rule_guard) @ cond @ [ Printf.sprintf "%s_b(B,_,_)" p ]))
+    (String.concat ", "
+       ((base :: ctx.rule_guard) @ cond
+        @ (Printf.sprintf "%s_b(B,N,_)" p :: venster_overlap ctx ~subject ~ot clip)))
     p;
   emit ctx
     "viol(\"non-exact pro-rata part (an explicit rounding is mandated before precision is \
@@ -7095,11 +7118,14 @@ let translate_aantal_dagen ?clip ctx ~subject ~ot ~a ~cond ~k ~(g : granularitei
     @ [ Printf.sprintf "%s_b(B,N,_)" p;
         Printf.sprintf "TD = #sum { D,KV,KT : %s_d(S,B,KV,KT,D) }" p;
         "TD > 0" ]
+    @ venster_overlap ctx ~subject ~ot clip
   in
   emit ctx
     "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",S) :- %s, \
      46340 < #count { KV,KT : %s_d(S,B,KV,KT,_) }."
-    (String.concat ", " ((base :: ctx.rule_guard) @ cond @ [ Printf.sprintf "%s_b(B,_,_)" p ]))
+    (String.concat ", "
+       ((base :: ctx.rule_guard) @ cond
+        @ (Printf.sprintf "%s_b(B,N,_)" p :: venster_overlap ctx ~subject ~ot clip)))
     p;
   (* the ch. 7.8 timeline arm, as for pro-rata *)
   schrijf_segment ctx ~subject ~ot ~a ~clip ~p ~value:vterm ~body

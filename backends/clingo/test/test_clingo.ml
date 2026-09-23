@@ -7229,7 +7229,7 @@ let clip_doc voorwaarde =
     "attribuutGranulariteit": { "vergoeding": "JAAR", "tarief": "JAAR" },
     "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
     "kenmerken": [ "actief" ], "kenmerkSoorten": { "actief": "BIJVOEGLIJK" },
-    "kenmerkGranulariteit": { "actief": "JAAR" },
+    "kenmerkGranulariteit": { "actief": "MAAND" },
     "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Vondsten" } },
   "domeinen": {}, "parameters": {},
   "eenheidstelsels": {}, "feittypen": {}, "dimensies": {}, "tijdlijnen": [],
@@ -7306,6 +7306,39 @@ let () =
         (segs = [ (dag "2025-03-15", dag "2025-07-01", 12) ])
   | Error m -> check (name ^ " (" ^ m ^ ")") false
   | exception Uchar_ref.Value.Fault m -> check (name ^ " (fout: " ^ m ^ ")") false);
+  (* de HEKKEN van de producent worden mee geknipt. Met `actief` ook in
+     januari 2024 is het 2024-deel 10 x 31/366, niet exact; die bucket valt
+     buiten het venster [2025-01-01, open) en wordt nooit geschreven. ref
+     rekent het exacte rationale getal en knipt het weg; zonder de
+     vensterbody op de viol-regels werd clingo hier UNSAT op een segment dat
+     niemand schrijft (lensvondst 2026-09-23). *)
+  let buiten_venster_case =
+    {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+    { "label": "V1", "objectType": "Vondst",
+      "attributes": { "tarief": { "timeline": [
+        { "from": "2024-01-01", "to": "2025-01-01", "value": { "number": "10" } },
+        { "from": "2025-01-01", "to": "2026-01-01", "value": { "number": "12" } } ] } },
+      "roles": {}, "characteristics": [],
+      "characteristicTimelines": { "actief": [ { "from": "2024-01-01", "to": "2024-02-01" },
+                                               { "from": "2025-01-01", "to": "2026-01-01" } ] } } ],
+    "parameters": {} },
+  "expected": [ { "kind": "attributeTimeline", "label": "V1", "attribute": "vergoeding",
+                  "timeline": [ { "from": "2025-01-01", "to": "2026-01-01", "value": { "number": "12" } } ] },
+                { "kind": "consistent" } ]
+}
+|}
+  in
+  let vanaf_2025 =
+    {|{ "node": "Periode",
+        "vanaf": { "node": "Literal", "waarde": "2025-01-01",
+                   "type": { "node": "DatumInDagen" }, "bron": "1 januari 2025" },
+        "tot": null, "totInclusief": false, "bron": "vanaf 1 januari 2025" }|}
+  in
+  ref_matches ~name:"ch3.10 een niet-exacte bucket buiten het venster wordt weggeknipt"
+    ~ir:(clip_doc vanaf_2025) ~case_text:buiten_venster_case;
+  clingo_matches ~name:"ch3.10 het pro-rata-hek geldt alleen binnen het venster"
+    ~ir:(clip_doc vanaf_2025) ~case_text:buiten_venster_case;
   let lid = {|{ "node": "Samengesteld", "kwantor": "ALLE", "drempel": 0, "onderdelen": [ |}
             ^ clip_venster ^ {| ], "bron": "alle" }|} in
   faults_with ~name:"ch3.10 het venster als lid op een tijdlijndoel blijft geweigerd"
