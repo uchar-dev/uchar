@@ -1,0 +1,360 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Strandpachter": {
+      "node": "Objecttype",
+      "naam": "Strandpachter",
+      "attributen": {
+        "pachttarief": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "jaarpacht": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "maandpacht": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "zomerdagen": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "ingangsdatum": {
+          "node": "DatumInDagen"
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {
+        "pachttarief": "JAAR",
+        "jaarpacht": "JAAR",
+        "maandpacht": "MAAND",
+        "zomerdagen": "MAAND"
+      },
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [
+        "vergund",
+        "aanwezig"
+      ],
+      "kenmerkSoorten": {
+        "vergund": "BIJVOEGLIJK",
+        "aanwezig": "BIJVOEGLIJK"
+      },
+      "kenmerkGranulariteit": {
+        "vergund": "MAAND",
+        "aanwezig": "MAAND"
+      },
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Strandpachters"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {},
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "jaarpacht van een strandpachter",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "maandpacht van een strandpachter",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "zomerdagen van een strandpachter",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "jaarpacht van een strandpachter",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "jaarpacht",
+        "objecttype": "Strandpachter",
+        "onderwerpBron": "een Strandpachter",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "De jaarpacht van een Strandpachter",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "TIJDSEVENREDIG_DEEL",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "pachttarief",
+            "objecttype": "Strandpachter",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "zijn pachttarief",
+            "set": false,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": null,
+        "leegwaarde": null,
+        "filter": {
+          "node": "Kenmerk",
+          "kenmerk": "vergund",
+          "navigatie": null,
+          "negatie": false,
+          "eigenaar": null,
+          "periode": null,
+          "bron": "gedurende de tijd dat hij vergund is"
+        },
+        "dimensieSelectie": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "het tijdsevenredig deel per jaar van zijn pachttarief gedurende de tijd dat hij vergund is",
+        "granulariteit": "JAAR"
+      },
+      "voorwaarde": {
+        "node": "Periode",
+        "vanaf": {
+          "node": "Literal",
+          "waarde": "2025-01-01",
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "1 januari 2025"
+        },
+        "tot": null,
+        "totInclusief": false,
+        "bron": "vanaf 1 januari 2025"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "maandpacht van een strandpachter",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "maandpacht",
+        "objecttype": "Strandpachter",
+        "onderwerpBron": "een Strandpachter",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "De maandpacht van een Strandpachter",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "TIJDSEVENREDIG_DEEL",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "pachttarief",
+            "objecttype": "Strandpachter",
+            "onderwerpBron": "zijn",
+            "navigatieRol": null,
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "zijn pachttarief",
+            "set": false,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": null,
+        "leegwaarde": null,
+        "filter": {
+          "node": "Kenmerk",
+          "kenmerk": "vergund",
+          "navigatie": null,
+          "negatie": false,
+          "eigenaar": null,
+          "periode": null,
+          "bron": "gedurende de tijd dat hij vergund is"
+        },
+        "dimensieSelectie": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": false,
+          "decimalen": 2,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "het tijdsevenredig deel per maand van zijn pachttarief gedurende de tijd dat hij vergund is",
+        "granulariteit": "MAAND"
+      },
+      "voorwaarde": {
+        "node": "Periode",
+        "vanaf": {
+          "node": "Literal",
+          "waarde": "2025-03-01",
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "1 maart 2025"
+        },
+        "tot": {
+          "node": "Literal",
+          "waarde": "2025-04-30",
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "30 april 2025"
+        },
+        "totInclusief": true,
+        "bron": "van 1 maart 2025 tot en met 30 april 2025"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    },
+    {
+      "node": "ResolvedRegel",
+      "naam": "zomerdagen van een strandpachter",
+      "soort": "GELIJKSTELLING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "zomerdagen",
+        "objecttype": "Strandpachter",
+        "onderwerpBron": "een Strandpachter",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "De zomerdagen van een Strandpachter",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "AANTAL_DAGEN_IN",
+        "argumenten": [],
+        "elementObjecttype": null,
+        "leegwaarde": null,
+        "filter": {
+          "node": "Kenmerk",
+          "kenmerk": "aanwezig",
+          "navigatie": null,
+          "negatie": false,
+          "eigenaar": null,
+          "periode": null,
+          "bron": "gedurende de tijd dat hij aanwezig is"
+        },
+        "dimensieSelectie": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "granulariteit": "MAAND",
+        "bron": "het aantal dagen in de maand dat hij aanwezig is"
+      },
+      "voorwaarde": {
+        "node": "Periode",
+        "vanaf": {
+          "node": "AttribuutRef",
+          "attribuut": "ingangsdatum",
+          "objecttype": "Strandpachter",
+          "onderwerpBron": "de Strandpachter",
+          "navigatieRol": null,
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "de ingangsdatum van de Strandpachter",
+          "set": false,
+          "navigatiePad": []
+        },
+        "tot": {
+          "node": "Literal",
+          "waarde": "2025-09-01",
+          "type": {
+            "node": "DatumInDagen"
+          },
+          "bron": "1 september 2025"
+        },
+        "totInclusief": false,
+        "bron": "vanaf de ingangsdatum van de Strandpachter tot 1 september 2025"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [],
+  "diagnostics": []
+}

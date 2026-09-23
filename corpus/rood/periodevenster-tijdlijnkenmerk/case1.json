@@ -14,7 +14,7 @@
     "parameters": {}
   },
   "expectedFault": {
-    "ref": "is ch. 3.10's CLIP, not the evaluation-date gate: the window intersects the written timeline instead of deciding whether the rule applies, and that half of the chapter is not built. Declined at evaluation",
-    "clingo": "is ch. 3.10's CLIP, not the evaluation-date gate: the window intersects the written timeline instead of deciding whether the rule applies, and that half of the chapter is not built. Declined in translation"
+    "ref": "is ch. 3.10's CLIP over a characteristic timeline, and no temporal characteristic is written here (ch. 3.11), so there is no timeline to cut. Declined at evaluation",
+    "clingo": "is ch. 3.10's CLIP over a characteristic timeline, and no temporal characteristic is written here (ch. 3.11), so there is no timeline to cut. Declined in translation"
   }
 }

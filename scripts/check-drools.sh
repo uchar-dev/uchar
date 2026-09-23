@@ -241,6 +241,7 @@ EXPECTED_CHANNEL=(
   "jutterswet-muntketen|EXCLUDE|transpiler SKIP: the same many-to-many 'berging' as bootberging above, and the same deeper refusal since 2026-09-18 — NOT the subtype landing it was written for, which the walk does carry (BronpadKetenWitnessTest pins a strict-subtype landing, both branches). The one-step narrowing IS played here, by jutterswet-munttelling and jutterswet-muntpiek"
   "jutterswet-meldplichtspoor|EXCLUDE|loader Refusal: Datatype:SumType"
   "jutterswet-meldtermijnen|EXCLUDE|loader Refusal: Datatype:ListType"
+  "jutterswet-pachtvenster|EXCLUDE|transpiler SKIP: regel 'jaarpacht van een strandpachter' — periodevergelijking op tijdsafhankelijk doel (§8.4.3 clip). The clip is built in ref and clingo since 2026-09-23 (card tijdvenster-conditie-normeren, RUNTIME-SEMANTICS ch. 3.10); this branch refuses the form by name, one phase before fire"
   "jutterswet-penningbeschikking-catala|EXCLUDE|loader Refusal: Datatype:SumType"
   "jutterswet-penningstaffel-catala|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-postenheffing|EXCLUDE|loader Refusal: Datatype:ListType"
@@ -884,9 +885,11 @@ DRL_CHANNEL=(
   "synth3-standtarief|EXCLUDE|loader Refusal: Datatype:SumType"
   "synth3-vangstsom|EXCLUDE|loader Refusal: Datatype:ListType"
   "synth3-vondststaat|EXCLUDE|loader Refusal: Datatype:StructType"
-  # (C) DrlTranspiler MARKERs — 10, this branch's own per-form refusals, each naming the rule it
+  # (C) DrlTranspiler MARKERs — 11, this branch's own per-form refusals, each naming the rule it
   # could not lower. 12 -> 10 (2026-09-23, card drl-creatie-koppelloos): the two objectcreatie
-  # markers are gone, see EXPECTED_DRL_PLAYED.
+  # markers are gone, see EXPECTED_DRL_PLAYED. 10 -> 11 the same day (card
+  # tijdvenster-conditie-normeren): jutterswet-pachtvenster, the ch. 3.10 clip on a temporal target,
+  # a NEW golden refused in both branches by name, so neither played count moves.
   # Recounted 2026-09-23 (card drl-periode-zink): the list held 11 under a header of
   # 12, because anchor/jutterswet-bergingstoezicht (the unresolved verdeling) left it at 156 -> 157
   # and the header did not follow; jutterswet-seinjaar, a NEW golden refused in both branches by one
@@ -896,10 +899,10 @@ DRL_CHANNEL=(
   # datum-setbron-breuk): jutterswet-vondstbereik, the
   # MINIMUM/MAXIMUM fold over a DATE set source, which this branch used to emit as DRL text that did
   # not compile — a whole-file refusal naming no form — and now markers by name out of the shared
-  # reason. NINE of the ten are goldens the exec branch refuses too, on its own wording of the
+  # reason. TEN of the eleven are goldens the exec branch refuses too, on its own wording of the
   # same limit (the many-to-many bean field, the qualified creation guard's doel attempt, the
-  # consistency rule, the EERSTE fold over a set, the date-valued value fold, and the out-of-scope
-  # condition — jutterswet-klipwacht, shared, not split).
+  # consistency rule, the EERSTE fold over a set, the date-valued value fold, the §8.4.3 clip on a
+  # temporal target, and the out-of-scope condition — jutterswet-klipwacht, shared, not split).
   # ONE is this branch alone, and the exec branch PLAYS it:
   #   jutterswet-vouwrand (exec PLAYED 1) — a TODO voorwaarde on a conjunction of comparisons.
   # Until 2026-09-23 two more stood here, anchor/jutterswet-wachtersketen and
@@ -911,6 +914,7 @@ DRL_CHANNEL=(
   "anchor/jutterswet-penninguitgifte|EXCLUDE|MARKER consistentie: unresolved consistency rule over every Penning"
   "jutterswet-klipwacht|EXCLUDE|MARKER regel: TODO voorwaarde — the gedurende clip as a composite member"
   "jutterswet-muntketen|EXCLUDE|MARKER regel: bronPad step Boot -> Munt has no bean field — the same many-to-many middle relation"
+  "jutterswet-pachtvenster|EXCLUDE|MARKER regel: TODO periodevergelijking op een tijdsafhankelijk doel (§8.4.3) — the ch. 3.10 clip, built in ref and clingo since 2026-09-23; shared with the exec branch, each in its own words"
   "jutterswet-seinjaar|EXCLUDE|MARKER feitcreatie: voorwaarde niet naar anker of doel te lowereren — gehele-periodekwalificatie: alleen de anker is gebonden (WF-109). Shared with the exec branch, one sentence (kern.Gastheer). Until card drl-periode-zink (2026-09-23) this branch PLAYED the golden by accident: its whole-period lowering reads the subject variable, which inside the doel pattern is the anker, and the anker carries a same-named timeline of the same type — on any other anker the same lowering failed the whole package at compile"
   "jutterswet-vondstbereik|EXCLUDE|MARKER regel: the MINIMUM/MAXIMUM fold over a DATE set source — the shared member-type reason, word for word the exec branch's (card datum-setbron-breuk, 2026-09-20). Its EERSTE/LAATSTE twin sits one line below and is refused one arm earlier, on the fold KIND rather than on the member type"
   "jutterswet-vondstvenster|EXCLUDE|MARKER regel: TODO aggregatie EERSTE over a set source"

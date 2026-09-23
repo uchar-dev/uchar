@@ -144,3 +144,66 @@ Acceptatie, aangescherpt:
   de kwantorVOUW-meting vastgelegd, met de keuze of dezelfde arm hem dekt.
 - De gate-8-telling en de Drools-uitsluitingslijst bewegen mee
   (**voorstel**); alle veertien gates groen, elk los gedraaid.
+
+## Handberekening van de clip-golden, vóór de eerste run (2026-09-23)
+
+Golden `corpus/golden/jutterswet-pachtvenster`: een `Strandpachter` met een
+jaarlijks `pachttarief`, twee maand-granulaire tijdlijnkenmerken
+(`vergund`, `aanwezig`) en een scalaire `ingangsdatum`. Drie temporele
+regels, elk met het venster als HELE voorwaarde en zonder geldigheid (de
+één-as-beslissing blijft onaangeroerd):
+
+| regel | producent | venster |
+|---|---|---|
+| `jaarpacht` (JAAR, geheel) | tijdsevenredig deel per jaar van het pachttarief gedurende `vergund` | `vanaf 1 januari 2025` (open boven) |
+| `maandpacht` (MAAND, 2 dec.) | tijdsevenredig deel per maand, idem | `van 15 maart 2025 tot en met 30 april 2025` |
+| `zomerdagen` (MAAND, geheel) | aantal dagen in de maand dat hij `aanwezig` is | `vanaf de ingangsdatum tot 1 september 2025` |
+
+`case1-voorbeeld` (asOfDate **null**), P1: tarief 2024 = 10, 2025 = 12;
+vergund [2024-01-01, 2026-01-01); aanwezig [2025-06-20, 2025-09-10);
+ingangsdatum 2025-07-05.
+
+- jaarpacht ongeknipt {2024: 10, 2025: 12} → **{[2025-01-01, 2026-01-01): 12}**
+  — het worked example van ch. 3.10 letterlijk.
+- maandpacht ongeknipt: 24 maandsegmenten (2024 elk 10, 2025 elk 12) →
+  **[2025-03-15, 2025-04-01): 12; [2025-04-01, 2025-05-01): 12** — het
+  maartsegment wordt gesneden en houdt zijn waarde, "tot en met 30 april"
+  loopt tot 1 mei.
+- zomerdagen ongeknipt: juni 11, juli 31, augustus 31, september 9 →
+  venster [2025-07-05, 2025-09-01) → **[2025-07-05, 2025-08-01): 31;
+  [2025-08-01, 2025-09-01): 31** — eigen-attribuutgrens, de 31 wordt niet
+  herteld tot 27, september valt weg (`tot` exclusief).
+
+`case2-lege-en-gemiste-vensters` (asOfDate **2025-03-20**, BINNEN het
+maandpachtvenster), twee pachters:
+
+- P2: tarief 2025 = 365; vergund [2025-01-01, 2025-04-16) (105 dagen in
+  2025: 31 + 28 + 31 + 15); aanwezig [2025-06-01, 2025-07-01); GEEN
+  ingangsdatum.
+  - jaarpacht 365 × 105/365 = **{[2025-01-01, 2026-01-01): 105}**
+  - maandpacht ongeknipt jan/feb/mrt 365, apr 365 × 15/30 = 182,5 →
+    **[2025-03-15, 2025-04-01): 365; [2025-04-01, 2025-05-01): 182.5**
+  - zomerdagen: lege grens → **leeg** (ongeknipt zou het juni 30 zijn)
+- P3: tarief 2024 = 10; vergund [2024-01-01, 2025-01-01); aanwezig
+  [2025-06-01, 2025-07-01); ingangsdatum 2025-10-01.
+  - jaarpacht ongeknipt {2024: 10} → **leeg** (de gat-helft van het
+    worked example)
+  - maandpacht ongeknipt 2024 elk 10 → **leeg**. Een scalaire poort had
+    hier op 2025-03-20 gevuurd en de 2024-maanden geschreven.
+  - zomerdagen: venster [2025-10-01, 2025-09-01) heeft geen dag → **leeg**
+
+**Bijstelling na de eerste run (2026-09-23, eerlijk vastgelegd).** De eerste
+versie hierboven had twee grenzen midden in een maand (15 maart,
+ingangsdatum 5 juli). ref's case-lezer weigerde de verwachting al bij het
+laden: `segment boundaries must sit on the declared granularity grid`. Het
+case-formaat legt dat vast in `spec/schema/uchar-case-v0.schema.json`
+(`timelineValue`: "aligned to the declaration's granularity grid"), voor
+invoer én verwachting, en dat pad valt buiten het mandaat van deze kaart.
+Een gesneden bucket is dus niet als corpusverwachting uit te drukken. De
+golden gebruikt daarom grenzen op het raster: maandpacht **van 1 maart tot
+en met 30 april 2025** (P1: [03-01, 04-01): 12; [04-01, 05-01): 12. P2:
+[03-01, 04-01): 365; [04-01, 05-01): 182.5), en P1's ingangsdatum is
+**2025-07-01** (zomerdagen [07-01, 08-01): 31; [08-01, 09-01): 31). De
+clausule "de restrictie snijdt segmenten en houdt hun waarde" staat in de
+eigen suite van beide OCaml-uitvoerders, met een grens midden in een maand.
+Het open punt voor het schema staat in het Result.

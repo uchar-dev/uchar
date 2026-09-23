@@ -1,0 +1,142 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2025-03-20",
+  "input": {
+    "instances": [
+      {
+        "label": "P2",
+        "objectType": "Strandpachter",
+        "attributes": {
+          "pachttarief": {
+            "timeline": [
+              {
+                "from": "2025-01-01",
+                "to": "2026-01-01",
+                "value": {
+                  "number": "365"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "vergund": [
+            {
+              "from": "2025-01-01",
+              "to": "2025-04-16"
+            }
+          ],
+          "aanwezig": [
+            {
+              "from": "2025-06-01",
+              "to": "2025-07-01"
+            }
+          ]
+        }
+      },
+      {
+        "label": "P3",
+        "objectType": "Strandpachter",
+        "attributes": {
+          "pachttarief": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2025-01-01",
+                "value": {
+                  "number": "10"
+                }
+              }
+            ]
+          },
+          "ingangsdatum": {
+            "date": "2025-10-01"
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "vergund": [
+            {
+              "from": "2024-01-01",
+              "to": "2025-01-01"
+            }
+          ],
+          "aanwezig": [
+            {
+              "from": "2025-06-01",
+              "to": "2025-07-01"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "P2",
+      "attribute": "jaarpacht",
+      "timeline": [
+        {
+          "from": "2025-01-01",
+          "to": "2026-01-01",
+          "value": {
+            "number": "105"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "P2",
+      "attribute": "maandpacht",
+      "timeline": [
+        {
+          "from": "2025-03-01",
+          "to": "2025-04-01",
+          "value": {
+            "number": "365"
+          }
+        },
+        {
+          "from": "2025-04-01",
+          "to": "2025-05-01",
+          "value": {
+            "number": "182.5"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "P2",
+      "attribute": "zomerdagen",
+      "timeline": []
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "P3",
+      "attribute": "jaarpacht",
+      "timeline": []
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "P3",
+      "attribute": "maandpacht",
+      "timeline": []
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "P3",
+      "attribute": "zomerdagen",
+      "timeline": []
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

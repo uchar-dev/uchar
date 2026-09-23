@@ -71,8 +71,9 @@ ill-formed until it is taken; its failing witness is
 window's POSITION: `borgpremie`'s `ALLE` member is WF-112's passing golden,
 and the window under `GEEN` is `corpus/negatief/wf112-periodevenster-tellende-kwantor`.
 
-The chapter's SECOND case — a period condition on a TEMPORAL target,
-where the window clips the written timeline instead of gating the rule —
-is not built. Both executors refuse it by name at the rule, before the
-window is read, because the case distinction is on the target and a
-condition cannot see one. Each executor's own suite carries that refusal.
+The chapter's SECOND case is a period condition on a TEMPORAL target,
+where the window clips the written timeline instead of gating the rule.
+It has been built since 2026-09-23 and has its own golden,
+`corpus/golden/jutterswet-pachtvenster`. The two OCaml executors decide
+between the cases at the rule, before the window is read, because the
+distinction is made on the target and a condition cannot see the target.
