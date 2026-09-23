@@ -756,12 +756,17 @@ let unbound_param_order_reason name what =
    no allowed order reads it, nothing fires. Three kinds of atom have the two
    forms: a quantifier fold's matrix reach ([emit_kv_reach]), a Let barrier
    ([barred], [emit_barriers]) and a Let value's demand ([note_binder_read]).
+   "Every allowed order" is decided per read: where two reads of one binder
+   each cover some orders and together all, the refusal is named although
+   ref's words were due (README [N3]).
 
    Where the body is not exact otherwise, it errs in one of two directions,
    each written at the place that builds it. Loud: the day-kind table and the
-   horizon fence read in translation and refuse there, reached or not.
-   Silent: the Let lowering keeps a value behind an enclosing need on a path
-   that does not read it, and the guard follows the lowering ([reach_at]). *)
+   horizon fence read in translation and refuse there, reached or not (README
+   [L1]). Silent: the Let lowering keeps a value behind an enclosing need on a
+   path that does not read it, and the guard follows the lowering ([reach_at],
+   README [S1]); and the branch hoist reads a condition before the operand
+   beside the branch ([hoist_branch], README [S2]). *)
 let unbound_param_guard ctx ~witness ~guard name =
   if param_unbound ctx name then begin
     let body = guard () in
@@ -2222,9 +2227,13 @@ let rec reads_first b (e : expr) : bool =
    §9.5 fact is keyed by (rule × subject) and collapses, and a `viol/2` witness
    makes the program UNSAT whichever copy fires. What the hoist DOES move is
    the ch.-5.11 position of the condition relative to those siblings — it is
-   now read first. In this lowering that is below the resolution of the
-   encoding, which models order as guarding and not as stopping; it is recorded
-   rather than claimed away.
+   now read first. For values that is below the resolution of the encoding,
+   which models order as guarding and not as stopping. For the unbound-
+   parameter guard it is not: a sibling read before the branch now waits for
+   the condition, and a condition that reads a binder whose need is leeg
+   decides no arm, so `p plus (als n > 0 dan k anders 0)` with n leeg and p
+   unbound answers where ref faults at p (README [S2], recorded rather than
+   claimed away).
 
    A NESTED `Let` between the outer one and the branch node distributes the same
    way, and for the same reason: `Let b = v in (als c dan P anders Q)` becomes
