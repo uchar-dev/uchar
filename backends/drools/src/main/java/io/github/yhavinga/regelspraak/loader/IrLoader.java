@@ -61,30 +61,22 @@ import java.util.Map;
  * severity and message must be strings, as the schema types them, where the OCaml loader admits a null so that
  * WF-113 can name it. Every datatype, at any position, carries its discriminator.
  *
- * <p><b>Authority.</b> The v0 BEAN fields are authoritative: where the emitter also writes a symbolic
- * extension that is a record field (a feitcreatie's {@code feittype/ankerRol/doelRol/joinRol}, a
- * uniciteit's {@code scopeRol}, a tussenstap's {@code rolBinding}) it is reconstructed faithfully; where
- * the extension is purely emitter-derived and NOT a record field (an AttribuutRef's
- * {@code navigatieBindingen}, a Functie's {@code bronRol}, a Kenmerk's {@code navigatieBinding}) it is
- * ignored — the transpiler re-derives it from the model. The
- * additive {@code bronAnnotaties} provenance field is carried through.
- *
- * <p>FOUR extensions escape that dichotomy. The navigation bindings (an AttribuutRef's
- * {@code navigatieBindingen}, a Kenmerk's {@code navigatieBinding}) are read into
- * {@link Loaded#navigatieBindingen()} and DECIDE a bound navigation in both transpiler branches
- * (V1-WIREMIGRATIE P1): the written {@code navigatieRol}/{@code navigatiePad} they would otherwise be
- * re-derived from are v0 fields migration step B11 removes. A verdeling's {@code verbindendeRol} is read into
- * {@link Loaded#rolBindingen()} and DECIDES the recipient join in both branches (V1-WIREMIGRATIE P3): the
- * type-pair derivation it replaces is ambiguous on a repeated pair, and migration step B12 retires it. The
- * other two, below, are read because the model cannot always re-derive them.
- *
- * <p>Those two: both because the model cannot ALWAYS re-derive them: an
- * OBJECTCREATIE's {@code verbindendeRol} (IR-SPEC ch. 3.3, which RUNTIME-SEMANTICS ch. 5.5 makes AUTHORITATIVE)
- * and an aggregation {@link Expr.Functie}'s {@code bronRol}. On a SELF-TYPED role pair — two same-typed sibling
- * roles of one fact type — the by-pair search is ambiguous by construction and the symbolic binding is the only
- * route there is. Their records belong to the vendored frontend slice (extending them would drag a re-vendor +
- * pin bump through the toolchain), so both ride BESIDE the model in {@link Loaded#rolBindingen()} — the same
- * side-channel shape {@code prioritizedDefaults} already uses.
+ * <p><b>The reference layer (L2 of the v1 wire migration).</b> A reference to a declared thing carries its
+ * symbolic form only, and the bindings are the one source of every relation this backend walks: the navigation of
+ * a read ({@code navigatieBindingen}) and of a characteristic check ({@code navigatieBinding}), the range of a
+ * fold ({@code bronRol}, {@code bronPad}) and of a quantifier fold, the recipient join of a verdeling and the
+ * back-link of an objectcreatie ({@code verbindendeRol}), a union selection's {@code sourceRole}, a role check's
+ * {@code factType}/{@code role}, a creation's symbolic block and a uniqueness scope's {@code scopeRol}. A
+ * reference node's type is the declaration's (IR-SPEC ch. 2.10), never an annotation. The nodes L2 changed —
+ * the five reference nodes, {@code RoleMembership}, {@code Kenmerk}, {@code Onopgelost}, the creation with its
+ * steps and the uniqueness — are read as strictly as the M1 nodes, with their exact keys and a JSON pointer: a
+ * field the L2 shape does not have is an unknown field, a binding the shape requires is a missing field, and an
+ * {@code Onbekend} datatype or a role check of the L1 shape is an unknown node — each a {@link Documentfout}.
+ * The frontend records this loader fills keep their v0 components (they are the vendored slice the toolchain
+ * compiles); what the wire no longer carries is filled with {@code null}, {@code false} or an empty list, and
+ * what the records have no component for rides BESIDE the model in {@link Loaded} — the same side-channel
+ * shape {@code prioritizedDefaults} already uses. The additive {@code bronAnnotaties} provenance field is
+ * carried through.
  */
 public final class IrLoader {
 
@@ -141,6 +133,9 @@ public final class IrLoader {
      *  is a RECORD with VALUE equality, so two structurally identical nodes in one document would collapse into
      *  one entry and the second would silently inherit the first's binding. */
     private final Map<Object, RolBindingRef> rolBindingen = new java.util.IdentityHashMap<>();
+    /** The JSON pointer of every object and array in the document, by IDENTITY (a Jackson container is a distinct
+     *  instance per position), so a node read without a path can still be refused at its place. */
+    private final Map<JsonNode, String> paden = new java.util.IdentityHashMap<>();
     /** ch. 4.10: every {@link Expr.Let} this document carries, in parse order — see {@link Loaded#lets()}. */
     private final List<Expr.Let> lets = new ArrayList<>();
     /** ch. 4.3 / WF-102: the fold-source RANGE as a path, per {@link Expr.Functie} node — see
@@ -158,7 +153,7 @@ public final class IrLoader {
      *  extensions belong to a VENDORED slice the toolchain consumes at a pin, so they cannot grow a field here.
      *  A consumer that needs them reads them from here (see {@link #loadAll}).
      *
-     *  @param rolBindingen the symbolic (feittype, rol) binding per loaded IR NODE, by IDENTITY. Three node kinds
+     *  @param rolBindingen the symbolic (feittype, rol) binding per loaded IR NODE, by IDENTITY. Four node kinds
      *         carry one:
      *         <ul>
      *           <li>a {@link ResolvedObjectCreatie} — IR-SPEC ch. 3.3 {@code verbindendeRol}, naming the role the
@@ -174,6 +169,11 @@ public final class IrLoader {
      *               (V1-WIREMIGRATIE P3), as {@code run_verdeling} lets it decide in ref; only a bindingless
      *               verdeling, which WF-048 admits while the type pair is unique, is still derived from the
      *               pair.</li>
+     *           <li>a {@link Conditie.Rollidmaatschap} — the IR-SPEC ch. 4.5 {@code RoleMembership}, whose binding is its
+     *               {@code factType} and the {@code role} the SUBJECT plays. The record is the carrier: its
+     *               {@code rol} is that role and its other-end slot holds the {@code counterpartType} narrowing or
+     *               null (see {@link #tegenpartij}). Where the reference sits — on the subject or on the far end —
+     *               is the transpilers' storage question.</li>
      *         </ul>
      *         In every case the SIBLING role — the one the anchor (subject) plays — is the bean field on the other
      *         end. Absent for a node whose wire record carries no binding; the by-pair derivation then stands.
@@ -193,8 +193,7 @@ public final class IrLoader {
      *         ({@code navigatieBindingen}, one binding per hop, subject-outward) and per navigated
      *         {@link Conditie.Kenmerk} ({@code navigatieBinding}, a one-hop list), by IDENTITY, verbatim off the
      *         wire. Where a node carries one it decides the walk in both transpiler branches; a node without one
-     *         is the bindingless form WF-053 also admits, and only there is the walk derived from the written
-     *         step. */
+     *         is the subject's own read (or the element's, inside a fold's filter). */
     public record Loaded(RegelSpraakModel model, List<PrioritizedDefaults> prioritizedDefaults,
                          Map<Object, RolBindingRef> rolBindingen, List<Expr.Let> lets,
                          Map<Object, List<RolBindingRef>> bronPaden,
@@ -217,8 +216,17 @@ public final class IrLoader {
         return new Loaded(model, l.prioritizedDefaults, l.rolBindingen, l.lets, l.bronPaden, l.navigatieBindingen);
     }
 
+    /** The IR-SPEC ch. 4.5 other-end narrowing of a loaded {@code RoleMembership}: the type the filler of the other
+     *  role must belong to, or null when the check does not narrow it (the role's declared filler). The loader
+     *  keeps it in the record slot the near-side check always used for the other end (D6), and this is the one
+     *  place that knows so. */
+    public static Objecttype tegenpartij(Conditie.Rollidmaatschap r) {
+        return r.anderTeFiller();
+    }
+
     private RegelSpraakModel model(JsonNode root) {
         if (root == null || !root.isObject()) throw new Documentfout("", "expected an object, got " + kort(root));
+        wijsPadenToe(root, "");
         // another format is a form this backend does not carry, whatever else that document holds; an absent or
         // non-string format is a defect of this one
         String format = tekst(root, "", "format");
@@ -317,6 +325,26 @@ public final class IrLoader {
         for (String k : optioneel)
             if (n.has(k) && n.get(k).isNull())
                 throw new Documentfout(pad + "/" + k, "an optional field is written whole or not at all, and null is neither");
+    }
+
+    /** Record the JSON pointer of every container below {@code n} (RFC 6901: '~' and '/' in a key escaped). */
+    private void wijsPadenToe(JsonNode n, String pad) {
+        if (n == null) return;
+        if (n.isObject()) {
+            paden.put(n, pad);
+            for (Map.Entry<String, JsonNode> e : n.properties())
+                wijsPadenToe(e.getValue(), pad + "/" + e.getKey().replace("~", "~0").replace("/", "~1"));
+        } else if (n.isArray()) {
+            paden.put(n, pad);
+            for (int i = 0; i < n.size(); i++) wijsPadenToe(n.get(i), pad + "/" + i);
+        }
+    }
+
+    /** The pointer of a container this document holds. */
+    private String padVan(JsonNode n) {
+        String p = paden.get(n);
+        if (p == null) throw new IllegalStateException("IrLoader: a node outside the document it is reading: " + kort(n));
+        return p;
     }
 
     /** An absent field, named at the object {@code pad} that lacks it, as the OCaml loader's {@code field} names it:
@@ -652,8 +680,7 @@ public final class IrLoader {
             Map.entry("Tekst", List.of("node")),
             Map.entry("Booleaan", List.of("node")),
             Map.entry("DatumInDagen", List.of("node")),
-            Map.entry("DatumTijd", List.of("node")),
-            Map.entry("Onbekend", List.of("node", "reden")));
+            Map.entry("DatumTijd", List.of("node")));
 
     private Parameter parameter(String pad, JsonNode n) {
         return new Parameter(naam(n, pad, "naam"), datatype(n.get("datatype"), pad + "/datatype"),
@@ -712,7 +739,10 @@ public final class IrLoader {
             case "DatumInDagen" -> new Datatype.DatumInDagen();
             case "DatumTijd" -> new Datatype.DatumTijd();
             case "Enumeratie" -> new Datatype.Enumeratie(text(n, "domein"), stringList(n.get("waarden")));
-            case "Onbekend" -> new Datatype.Onbekend(text(n, "reden"));
+            // IR-SPEC ch. 2.4: the datatype union has no member for an unknown type — a marker leaves its type
+            // out and a derived position the producer could not type is null — so this node is no form at all
+            case "Onbekend" -> throw new Documentfout(pad == null ? padVan(n) : pad,
+                    "unknown datatype node \"Onbekend\": uchar-ir-v1 has no datatype for an unknown type");
             default -> throw new Refusal("Datatype:" + node, "unknown datatype node");
         };
     }
@@ -763,68 +793,85 @@ public final class IrLoader {
                         ot(text(n, "elementObjecttype")), expr(n.get("leegwaarde")), conditie(n.get("filter")),
                         dimensieSelectie(n.get("dimensieSelectie")), datatype(n.get("type")), bron(n),
                         enumOf(Granulariteit.class, n, "granulariteit"));
+                // IR-SPEC ch. 4.3: the range of a fold over ONE source is one field with two spellings, and a fold
+                // with an element type and a kind other than TOTAAL carries it — without it the argument is the
+                // subject's own attribute and the fold folds something the sentence did not name. Both spellings at
+                // once, or either written as null, is no document.
+                String p = padVan(n);
+                bereikVelden(n, p);
+                boolean eenBron = n.hasNonNull("elementObjecttype") && args.size() == 1;
+                if (eenBron && fk != Expr.FunctieKind.TOTAAL && !n.has("bronRol") && !n.has("bronPad"))
+                    throw new Documentfout(p, "missing field 'bronRol' (a " + fk + " over one source with an element"
+                            + " type carries its range, as bronRol or bronPad)");
                 // IR-SPEC ch. 4.3 / WF-102: a MULTI-STEP fold-source range. Read VERBATIM — the full ordered list
                 // of RolBinding steps, nothing derived from the presentation strings and nothing re-derived from
                 // the endpoint type PAIR. That is the whole point of the field: a by-pair search binds a
                 // coincidental DIRECT relation between subject and element type and folds the WRONG set, which is
                 // exactly what this executor did when the field was dropped (measured on jutterswet-vondstketen:
-                // 5,00 where the sentence says 3,00, with ref and clingo answering 3,00). The three SHAPE arms
-                // below are refused BY NAME here rather than downstream, for ref's reason: a document that reaches
-                // an executor without passing the verifier must fail naming the shape it violates instead of being
-                // read as the one-step form with the range dropped. Arm (a) comes FIRST so a document carrying
-                // both spellings is named for carrying both. The MODEL-relative arms (a step that does not join,
-                // a landing beside the element type, a hop the beans carry no field for) belong to the walk and
-                // are per-form refusals in the transpilers, which know the fold SUBJECT this node does not.
-                List<RolBindingRef> pad = null;
-                if (n.hasNonNull("bronPad")) {
-                    if (n.hasNonNull("bronRol"))
-                        throw new Refusal("Functie.bronPad",
-                                "a bronPad beside a bronRol: the one-step range IS bronRol (WF-102 (a))");
-                    pad = new ArrayList<>();
-                    for (JsonNode s : n.get("bronPad")) pad.add(rolBinding(s));
+                // 5,00 where the sentence says 3,00, with ref and clingo answering 3,00). The two SHAPE arms below
+                // are refused BY NAME here rather than downstream, for ref's reason. The MODEL-relative arms (a
+                // step that does not join, a landing beside the element type, a hop the beans carry no field for)
+                // belong to the walk and are per-form refusals in the transpilers, which know the fold SUBJECT this
+                // node does not.
+                if (n.has("bronPad")) {
+                    List<RolBindingRef> pad = rolBindingLijst(n, p, "bronPad");
                     if (pad.size() < 2)
                         throw new Refusal("Functie.bronPad", "a bronPad carries at least TWO steps, found "
                                 + pad.size() + " — the one-step range is spelled bronRol (WF-102 (b))");
                     if (!isLedenVouwbron(n))
-                        throw new Refusal("Functie.bronPad", "a bronPad is admissible only on the SET source of a"
+                        throw new Refusal("Functie.bronPad", "a bronPad is admissible only on the SOURCE of a"
                                 + " single-argument instance fold — the position bronRol stands at (WF-102 (c))");
                     bronPaden.put(f, List.copyOf(pad));
                 }
-                // the aggregation's symbolic bronRol — see Loaded#rolBindingen. It stays OUT of the record (that
-                // one is vendored) and the transpiler still re-derives the join by pair FIRST; the binding is the
-                // fallback for the pair no by-pair search can disambiguate, a SELF-TYPED one.
-                RolBindingRef br = rolBinding(n.get("bronRol"));
+                // the one-step range — see Loaded#rolBindingen. It stays OUT of the record (that one is vendored).
+                RolBindingRef br = rolBinding(n, p, "bronRol");
                 if (br != null) rolBindingen.put(f, br);
                 yield f;
             }
             case "Afgerond" -> new Expr.Afgerond(expr(n.get("basis")),
                     enumOf(Expr.AfrondModus.class, n, "modus"), intOf(n, "decimalen"), bron(n));
             case "Begrensd" -> new Expr.Begrensd(expr(n.get("basis")), expr(n.get("minimum")), expr(n.get("maximum")), bron(n));
+            // IR-SPEC ch. 4.1/4.1a: the reference nodes carry no type (the declaration is the one source) and a read
+            // carries no written navigation; the record's components for both stay empty
             case "AttribuutRef" -> {
+                String p = padVan(n);
+                velden(n, p, "AttribuutRef", List.of("node", "attribuut", "objecttype", "bron"),
+                        List.of("navigatieBindingen"));
                 Expr.AttribuutRef a = new Expr.AttribuutRef(text(n, "attribuut"), ot(text(n, "objecttype")),
-                        text(n, "onderwerpBron"), text(n, "navigatieRol"), datatype(n.get("type")), bron(n),
-                        bool(n, "set"), stringList(n.get("navigatiePad")));
-                JsonNode nb = n.get("navigatieBindingen");
-                if (nb != null) {
-                    // written whole or not at all, never null, never empty (IR-SPEC ch. 4.1a): a malformed list
-                    // is refused by name rather than read as the bindingless form, which would re-derive the walk
-                    if (!nb.isArray() || nb.isEmpty())
-                        throw new Refusal("AttribuutRef.navigatieBindingen", "malformed: a navigatieBindingen field is a"
-                                + " non-empty list of RolBindings, never null (IR-SPEC ch. 4.1a)");
-                    List<RolBindingRef> stappen = new ArrayList<>();
-                    for (JsonNode s : nb) stappen.add(navigatieStap("AttribuutRef.navigatieBindingen", s));
+                        null, null, null, bron(n), false, List.of());
+                if (n.has("navigatieBindingen")) {
+                    // written whole or not at all, never empty (IR-SPEC ch. 4.1a): an empty list would read as the
+                    // subject's own attribute
+                    List<RolBindingRef> stappen = rolBindingLijst(n, p, "navigatieBindingen");
+                    if (stappen.isEmpty())
+                        throw new Documentfout(p + "/navigatieBindingen", "an empty navigation: a read without"
+                                + " bindings leaves the field out");
                     navigatieBindingen.put(a, List.copyOf(stappen));
                 }
                 yield a;
             }
-            case "DimensieCel" -> new Expr.DimensieCel((Expr.AttribuutRef) expr(n.get("attribuut")),
-                    stringList(n.get("labels")), bron(n));
-            case "ParameterRef" -> new Expr.ParameterRef(param(text(n, "parameter")), bron(n));
-            case "VariabeleRef" -> new Expr.VariabeleRef(text(n, "naam"), datatype(n.get("type")), bron(n));
+            case "DimensieCel" -> {
+                velden(n, padVan(n), "DimensieCel", List.of("node", "attribuut", "labels", "bron"), List.of());
+                yield new Expr.DimensieCel((Expr.AttribuutRef) expr(n.get("attribuut")), stringList(n.get("labels")),
+                        bron(n));
+            }
+            case "ParameterRef" -> {
+                velden(n, padVan(n), "ParameterRef", List.of("node", "parameter", "bron"), List.of());
+                yield new Expr.ParameterRef(param(text(n, "parameter")), bron(n));
+            }
+            case "VariabeleRef" -> {
+                velden(n, padVan(n), "VariabeleRef", List.of("node", "naam", "bron"), List.of());
+                yield new Expr.VariabeleRef(text(n, "naam"), null, bron(n));
+            }
             case "Constante" -> new Expr.Constante(text(n, "naam"), datatype(n.get("type")), bron(n));
             // reden null: it is the FRONTEND's own field (the WARNING it raises over a surviving marker)
-            // and the v0 wire carries no such key, so a marker read off the wire has none to recover.
-            case "Onopgelost" -> new Expr.Onopgelost(datatype(n.get("type")), bron(n), null);
+            // and the wire carries no such key, so a marker read off the wire has none to recover. IR-SPEC
+            // ch. 4.4: an absent type is an unknown one, and the record holds null for it.
+            case "Onopgelost" -> {
+                String p = padVan(n);
+                velden(n, p, "Onopgelost", List.of("node", "bron"), List.of("type"));
+                yield new Expr.Onopgelost(n.has("type") ? datatype(n.get("type"), p + "/type") : null, bron(n), null);
+            }
             // IR-SPEC ch. 4.10 the Let cluster — all three are ORDINARY union nodes, built straight into the tree
             // with nothing riding beside them. Note the wire's field names: a BinderRef's is "name", an
             // IfThenElse's are "condition"/"then"/"else" — the condition reuses the ordinary conditie union.
@@ -833,9 +880,10 @@ public final class IrLoader {
                     verplicht("Let", "value", expr(n.get("value"))),
                     verplicht("Let", "body", expr(n.get("body"))),
                     verplicht("Let", "type", datatype(n.get("type"))), bron(n)));
-            case "BinderRef" -> new Expr.BinderRef(
-                    verplicht("BinderRef", "name", text(n, "name")),
-                    verplicht("BinderRef", "type", datatype(n.get("type"))), bron(n));
+            case "BinderRef" -> {
+                velden(n, padVan(n), "BinderRef", List.of("node", "name", "bron"), List.of());
+                yield new Expr.BinderRef(verplicht("BinderRef", "name", text(n, "name")), null, bron(n));
+            }
             case "IfThenElse" -> new Expr.IfThenElse(
                     verplicht("IfThenElse", "condition", conditie(n.get("condition"))),
                     verplicht("IfThenElse", "then", expr(n.get("then"))),
@@ -853,7 +901,11 @@ public final class IrLoader {
                 forEach(n.get("branches"), b -> {
                     RegelSpraakModel.Objecttype el = verplicht("InstanceSetBranch", "elementType",
                             ot(text(b, "elementType")));
-                    RolBindingRef rb = verplicht("InstanceSetBranch", "sourceRole", rolBinding(b.get("sourceRole")));
+                    // IR-SPEC ch. 4.3: every selection names its relation; nothing derives a missing one
+                    String bp = padVan(b);
+                    if (!b.has("sourceRole")) throw ontbreekt(bp, "sourceRole");
+                    RolBindingRef rb = rolBinding(b, bp, "sourceRole");
+                    if (rb == null) throw new Documentfout(bp + "/sourceRole", "expected a RolBinding, got null");
                     takken.add(new Expr.InstanceSetUnion.Tak(el, rb, conditie(b.get("filter")), bron(b)));
                 });
                 if (takken.size() < 2)
@@ -877,20 +929,24 @@ public final class IrLoader {
         return waarde;
     }
 
-    /** WF-102 (c): is this {@code Functie} node the SET source of a single-argument instance fold — the one
-     *  position {@code bronRol} stands at, and hence the only one a RANGE applies to? Asked of the RAW node, in
-     *  the verifier's own terms: a declared {@code elementObjecttype} plus exactly one argument that is a plain
-     *  set-reading AttribuutRef. The other fold-source shapes hand the fold something else entirely — the temporal
-     *  total reads the SUBJECT's own timeline, the row-1 wart hands it the subject's linked instances — so a range
-     *  does not apply to them and a document that writes one there is refused rather than half-read. */
+    /** WF-102 (c): is this {@code Functie} node a single-argument instance fold — the one position a range stands
+     *  at? Asked of the RAW node: a declared {@code elementObjecttype} plus exactly one argument that is a read
+     *  carrying no navigation of its own (IR-SPEC ch. 4.3: with a range, that argument IS the source). */
     private static boolean isLedenVouwbron(JsonNode n) {
         if (!n.hasNonNull("elementObjecttype")) return false;
         JsonNode args = n.get("argumenten");
         if (args == null || !args.isArray() || args.size() != 1) return false;
         JsonNode a = args.get(0);
-        return "AttribuutRef".equals(text(a, "node")) && bool(a, "set")
-                && !a.hasNonNull("navigatieRol")
-                && (!a.hasNonNull("navigatiePad") || a.get("navigatiePad").isEmpty());
+        return "AttribuutRef".equals(text(a, "node")) && !a.has("navigatieBindingen");
+    }
+
+    /** The two range spellings are one field (IR-SPEC ch. 4.3, WF-102 (a)): never both, and never written null. */
+    private static void bereikVelden(JsonNode n, String p) {
+        for (String veld : List.of("bronRol", "bronPad"))
+            if (n.has(veld) && n.get(veld).isNull())
+                throw new Documentfout(p + "/" + veld, "an optional field is written whole or not at all, and null is neither");
+        if (n.has("bronRol") && n.has("bronPad"))
+            throw new Documentfout(p + "/bronPad", "a range is bronRol or bronPad, never both (WF-102 (a))");
     }
 
     /** Index one {@link Expr.Let} (see {@link Loaded#lets()}) and return it — the node itself goes into the tree. */
@@ -922,24 +978,35 @@ public final class IrLoader {
             case "Vergelijking" -> new Conditie.Vergelijking(enumOf(Conditie.Operator.class, n, "op"),
                     expr(n.get("links")), expr(n.get("rechts")), geheelPeriode(n.get("periode")), bron(n));
             case "Predicaat" -> predicaat(n);
+            // IR-SPEC ch. 4.5: the binding IS the hop — a check without one tests the subject's own kenmerk
             case "Kenmerk" -> {
-                Conditie.Kenmerk k = new Conditie.Kenmerk(text(n, "kenmerk"), text(n, "navigatie"), bool(n, "negatie"),
+                String p = padVan(n);
+                velden(n, p, "Kenmerk", List.of("node", "kenmerk", "negatie", "eigenaar", "periode", "bron"),
+                        List.of("navigatieBinding"));
+                Conditie.Kenmerk k = new Conditie.Kenmerk(text(n, "kenmerk"), null, bool(n, "negatie"),
                         ot(text(n, "eigenaar")), geheelPeriode(n.get("periode")), bron(n));
-                if (n.has("navigatieBinding")) {
-                    // shape before meaning: a null or incomplete binding is malformed whatever the check does
-                    RolBindingRef nb = navigatieStap("Kenmerk.navigatieBinding", n.get("navigatieBinding"));
-                    // ref faults on the same shape: a binding on a check that does not navigate (WF-053)
-                    if (k.navigatie() == null)
-                        throw new Refusal("Kenmerk.navigatieBinding",
-                                "a navigation binding on a characteristic check that does not navigate (WF-053)");
-                    navigatieBindingen.put(k, List.of(nb));
-                }
+                RolBindingRef nb = rolBinding(n, p, "navigatieBinding");
+                if (nb != null) navigatieBindingen.put(k, List.of(nb));
                 yield k;
             }
-            case "Rollidmaatschap" -> new Conditie.Rollidmaatschap(text(n, "rol"), ot(text(n, "anderTeFiller")),
-                    bron(n), bool(n, "negatie"));
-            case "VerreRollidmaatschap" -> new Conditie.VerreRollidmaatschap(ot(text(n, "filler")),
-                    text(n, "backref"), bool(n, "negatie"), bron(n));
+            // IR-SPEC ch. 4.5: one node for the role check — the fact type, the role the SUBJECT plays in it, and the
+            // narrowing of the other end where there is one. The record is the carrier (see Loaded#rolBindingen).
+            case "RoleMembership" -> {
+                String p = padVan(n);
+                velden(n, p, "RoleMembership", List.of("node", "factType", "role", "negated", "bron"),
+                        List.of("counterpartType"));
+                String tegenpartij = optTekst(n, p, "counterpartType");
+                Objecttype ander = tegenpartij == null ? null : ot(tegenpartij);
+                if (tegenpartij != null && ander == null)
+                    throw new Documentfout(p + "/counterpartType", "'" + tegenpartij + "' is not a declared object type");
+                Conditie.Rollidmaatschap r = new Conditie.Rollidmaatschap(tekst(n, p, "role"), ander, bron(n),
+                        waarheid(n, p, "negated"));
+                rolBindingen.put(r, new RolBindingRef(tekst(n, p, "factType"), r.rol()));
+                yield r;
+            }
+            // the two role checks of the L1 shape, which RoleMembership replaced: nodes this format no longer has
+            case "Rollidmaatschap", "VerreRollidmaatschap" -> throw new Documentfout(padVan(n) + "/node",
+                    "unknown condition node \"" + node + "\": uchar-ir-v1 spells a role check as RoleMembership");
             case "Periode" -> new Conditie.Periode(expr(n.get("vanaf")), expr(n.get("tot")), bool(n, "totInclusief"), bron(n));
             case "Samengesteld" -> {
                 List<Conditie> delen = new ArrayList<>();
@@ -958,9 +1025,17 @@ public final class IrLoader {
                 // bind a coincidental DIRECT subject-to-element relation and quantify over the WRONG set while the
                 // OCaml executors quantify over the right one. A named per-form Refusal puts the golden in gate 12's
                 // channel floor by reason instead.
-                if (n.hasNonNull("bronPad"))
+                // IR-SPEC ch. 4.5: the range is required, one field with two spellings
+                String p = padVan(n);
+                bereikVelden(n, p);
+                if (!n.has("bronRol") && !n.has("bronPad"))
+                    throw new Documentfout(p, "missing field 'bronRol' (a quantifier fold carries its range, as bronRol"
+                            + " or bronPad)");
+                if (n.has("bronPad")) {
+                    rolBindingLijst(n, p, "bronPad");   // its shape first: a malformed path is no document
                     throw new Refusal("Kwantorvouw.bronPad",
                             "a multi-step quantifier range (WF-108 (c)); the accumulate source carries one join role");
+                }
                 // WF-108 (a): ALLE, GEEN and the three COUNTING quantors are the admitted forms. DE shares
                 // Samengesteld's enum and is refused BY NAME — the bare definite describes one member, and reading
                 // it as a forall is the misreading this node exists to prevent. An unknown token never reaches
@@ -983,7 +1058,7 @@ public final class IrLoader {
                 yield new Conditie.Kwantorvouw(kw, telt ? intOf(n, "drempel") : 0,
                         ot(text(n, "elementObjecttype")),
                         conditie(n.get("filter")), conditie(n.get("toets")),
-                        rolBinding(n.get("bronRol")), List.of(), bron(n));
+                        rolBinding(n, p, "bronRol"), List.of(), bron(n));
             }
             case "Regelversie" -> new Conditie.Regelversie(text(n, "regel"), bool(n, "inconsistent"), bron(n));
             case "Onopgelost" -> new Conditie.Onopgelost(bron(n), null);   // frontend-internal field, absent from the wire
@@ -1061,10 +1136,9 @@ public final class IrLoader {
                 ot(text(n, "subject")), tk, conditie(n.get("voorwaarde")), geldigheid(n));
         // IR-SPEC ch. 3.3: the symbolic verbindendeRol is NOT a field of the (vendored, pinned)
         // ResolvedObjectCreatie record, so it cannot be reconstructed INTO the model the way a feitcreatie's
-        // joinRol can. It is not emitter-derived either — ch. 5.5 makes it AUTHORITATIVE (the reference
-        // interpreter lets it win over the type-pair derivation, and it is the only route for a self-typed
-        // pair) — so it rides BESIDE the model instead of being dropped by the authority paragraph above.
-        RolBindingRef vr = rolBinding(n.get("verbindendeRol"));
+        // joinRol can. ch. 5.5 makes it AUTHORITATIVE (the reference interpreter lets it win over the type-pair
+        // derivation, and it is the only route for a self-typed pair), so it rides BESIDE the model.
+        RolBindingRef vr = rolBinding(n, padVan(n), "verbindendeRol");
         if (vr != null) rolBindingen.put(oc, vr);
         return oc;
     }
@@ -1076,10 +1150,13 @@ public final class IrLoader {
                 text(n, "maximumAttribuut"), integerOf(n, "afrondingDecimalen"), text(n, "restantAttribuut"),
                 text(n, "groepeerAttribuut"), bool(n, "afnemend"), conditie(n.get("voorwaarde")),
                 geldigheid(n));
-        // IR-SPEC ch. 3.2: the recipient role binding decides the join (P3). Not a field of the vendored
+        // IR-SPEC ch. 3.2: the recipient role binding IS the join, and it is required. Not a field of the vendored
         // record, so it rides beside the model like the objectcreatie's; see Loaded#rolBindingen.
-        RolBindingRef vr = rolBinding(n.get("verbindendeRol"));
-        if (vr != null) rolBindingen.put(v, vr);
+        String p = padVan(n);
+        if (!n.has("verbindendeRol")) throw ontbreekt(p, "verbindendeRol");
+        RolBindingRef vr = rolBinding(n, p, "verbindendeRol");
+        if (vr == null) throw new Documentfout(p + "/verbindendeRol", "expected a RolBinding, got null");
+        rolBindingen.put(v, vr);
         return v;
     }
 
@@ -1088,9 +1165,13 @@ public final class IrLoader {
                 bron(n), intOf(n, "line"), geldigheid(n));
     }
 
+    /** IR-SPEC ch. 3.6: {@code scopeRol} IS the scoping; the record's field-name component stays empty. */
     private ResolvedUniciteit uniciteit(JsonNode n) {
+        String p = padVan(n);
+        velden(n, p, "ResolvedUniciteit", List.of("node", "naam", "subject", "sleutels", "bron", "geldigheid"),
+                List.of("scopeRol"));
         return new ResolvedUniciteit(text(n, "naam"), ot(text(n, "subject")), stringList(n.get("sleutels")),
-                text(n, "scopeVeld"), bron(n), geldigheid(n), rolBinding(n.get("scopeRol")));
+                null, bron(n), geldigheid(n), rolBinding(n, p, "scopeRol"));
     }
 
     private ResolvedUniciteitUnie uniciteitUnie(JsonNode n) {
@@ -1100,36 +1181,45 @@ public final class IrLoader {
         return new ResolvedUniciteitUnie(text(n, "naam"), bronnen, bron(n), geldigheid(n));
     }
 
+    /** IR-SPEC ch. 3.4: the creation IS its symbolic block — the created relation, both ends, the join, and one
+     *  binding per step — and each part is required. The record's bean-field components stay empty; the
+     *  transpilers derive the fields from the bindings ({@code FactModelGenerator.creatievelden}). */
     private ResolvedFeitCreatie feitCreatie(JsonNode n) {
+        String p = padVan(n);
+        velden(n, p, "ResolvedFeitCreatie", List.of("node", "naam", "anker", "doel", "tussenstappen", "voorwaarde",
+                "geldigheid", "feittype", "ankerRol", "doelRol", "joinRol"), List.of());
         List<ResolvedFeitCreatie.Tussenstap> ts = new ArrayList<>();
-        forEach(n.get("tussenstappen"), t -> ts.add(new ResolvedFeitCreatie.Tussenstap(
-                ot(text(t, "type")), text(t, "veld"), bool(t, "viaOuderVeld"), rolBinding(t.get("rolBinding")))));
-        if (n.has("feittype") && !n.get("feittype").isNull()) {
-            return new ResolvedFeitCreatie(text(n, "naam"), ot(text(n, "anker")), ot(text(n, "doel")),
-                    text(n, "zetVeld"), text(n, "joinVeld"), ts, conditie(n.get("voorwaarde")),
-                    geldigheid(n), text(n, "feittype"), text(n, "ankerRol"), text(n, "doelRol"),
-                    rolBinding(n.get("joinRol")));
-        }
+        lijst(n, p, "tussenstappen", (sp, t) -> {
+            velden(t, sp, "Tussenstap", List.of("node", "rolBinding"), List.of());
+            RolBindingRef rb = rolBinding(t, sp, "rolBinding");
+            if (rb == null) throw new Documentfout(sp + "/rolBinding", "expected a RolBinding, got null");
+            ts.add(new ResolvedFeitCreatie.Tussenstap(null, null, false, rb));
+        });
+        RolBindingRef join = rolBinding(n, p, "joinRol");
+        if (join == null) throw new Documentfout(p + "/joinRol", "expected a RolBinding, got null");
         return new ResolvedFeitCreatie(text(n, "naam"), ot(text(n, "anker")), ot(text(n, "doel")),
-                text(n, "zetVeld"), text(n, "joinVeld"), ts, conditie(n.get("voorwaarde")),
-                geldigheid(n));
+                null, null, ts, conditie(n.get("voorwaarde")), geldigheid(n),
+                tekst(n, p, "feittype"), tekst(n, p, "ankerRol"), tekst(n, p, "doelRol"), join);
     }
 
-    /** One navigation hop off the wire, refused BY NAME when malformed — null, not a RolBinding object, or without a
-     *  string {@code feittype} / {@code rol}. The verifier and ref reject the same document at load naming the field;
-     *  read leniently it would surface only as an unresolved-navigation skip in the transpiler, far from its cause. */
-    private static RolBindingRef navigatieStap(String vorm, JsonNode s) {
-        if (s == null || !s.isObject() || !"RolBinding".equals(text(s, "node")))
-            throw new Refusal(vorm, "malformed: each navigation hop is a RolBinding object, never null");
-        for (String veld : new String[] { "feittype", "rol" })
-            if (!s.hasNonNull(veld) || !s.get(veld).isTextual())
-                throw new Refusal(vorm, "malformed RolBinding: missing required field '" + veld + "'");
-        return new RolBindingRef(s.get("feittype").asText(), s.get("rol").asText());
-    }
-
-    private RolBindingRef rolBinding(JsonNode n) {
+    /** The RolBinding field {@code veld} of the object at {@code pad}: absent or null is null (the caller decides
+     *  whether that is allowed), anything else is a {@code RolBinding} object with exactly its two string fields. */
+    private static RolBindingRef rolBinding(JsonNode ouder, String pad, String veld) {
+        JsonNode n = ouder.get(veld);
         if (n == null || n.isNull()) return null;
-        return new RolBindingRef(text(n, "feittype"), text(n, "rol"));
+        return rolBindingOp(n, pad + "/" + veld);
+    }
+
+    private static RolBindingRef rolBindingOp(JsonNode n, String pad) {
+        velden(n, pad, "RolBinding", List.of("node", "feittype", "rol"), List.of());
+        return new RolBindingRef(tekst(n, pad, "feittype"), tekst(n, pad, "rol"));
+    }
+
+    /** A list of RolBindings at field {@code veld} of the object at {@code pad}. */
+    private static List<RolBindingRef> rolBindingLijst(JsonNode ouder, String pad, String veld) {
+        List<RolBindingRef> uit = new ArrayList<>();
+        lijst(ouder, pad, veld, (sp, s) -> uit.add(rolBindingOp(s, sp)));
+        return uit;
     }
 
     /** The validity window of {@code eigenaar} — read from ITS node, not from a detached child, so a
