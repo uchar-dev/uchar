@@ -7646,6 +7646,18 @@ never played mis-stratified. A backend realising a **coarser**
 stratification than the graph mandates without refusing the uncovered forms
 is non-conforming.
 
+*Recorded flank (measured 2026-09-23, open):* that guard does not reach the
+leeg/gevuld test. On a document where a leeg test reads an attribute that
+another rule derives and the reader precedes the writer, both Drools
+branches act on the transient leeg: an attribute reader wrote 1 and a
+characteristic reader attributed its characteristic, where `ref/` and
+`backends/clingo` answer leeg and absent. With the writer first, both
+branches agree with them. For the characteristic reader the edge was already
+stratum-strict before this date; for the attribute reader it became negative
+with the leeg/gevuld decision (ch. 5.2). No corpus document has the shape,
+so gate 12 cannot see it. The fix is a salience below the operand's writers
+or a named refusal, and it belongs to the backend.
+
 ---
 
 ## 6. Defaults and defeasibility
