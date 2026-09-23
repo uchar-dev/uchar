@@ -14,7 +14,7 @@
      (`/model/objectTypes/<i>/attributes/<j>/timeline/count`,
      `/rules/resolvedRegels/<i>/voorwaarde`), as the loader's errors are;
      below a node some checks add a segment of their own reading (a
-     struct field or a unit by its name). The checks themselves still
+     struct field or a function parameter by its name). The checks still
      build the v0 spelling — a declaration by its v0 table and name
      (`/objecttypen/<name>/...`), a rule form by its v0 list and index —
      and [v] and [all] map it onto the M1 document (see [m1_root]). *)
