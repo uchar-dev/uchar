@@ -5187,8 +5187,9 @@ default 1 = a group-default carrying the unordered base group
 
 *Characteristic target* — `jutterswet-nestkenmerk`, `Jutter.vrijgesteld`.
 One defaults group: default 0 = form-a `nx → attribute (besluit true)` with
-unordered exception groups `{ ny → do-not-attribute (false), nz → attribute
-(true) }`.
+unordered exception groups `{ nx ∧ ny → do-not-attribute (false), nx ∧ nz →
+attribute (true) }` — each justification conjoins its carrier's `nx`
+(ch. 7.1).
 
 | Case | Input characteristics | `vrijgesteld` | Channel |
 |---|---|---|---|
