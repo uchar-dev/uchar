@@ -351,7 +351,9 @@ negatie-recursieve-creatie, aanwezigheid-recursieve-creatie,
 kwantorvouw-recursieve-creatie}`. Corpus cost zero: none of the 28
 leeg/gevuld tests reads a written node. Recorded open: the other
 absence-true conditions (RUNTIME-SEMANTICS ch. 6.1) and the Drools flank
-on a leeg reader that precedes its operand's writer (IR-SPEC ch. 5.5)."
+(IR-SPEC ch. 5.5): both branches act on a transient leeg when an own-operand
+or filter reader precedes the writer of what it tests, and a navigated read
+in a condition does not react to a later far-side write in either order."
 
 Rij `— Predicaatsoort`: vervang de zinnen van "That matches ref only in
 a document WITHOUT a recursive creation group." tot en met "…
@@ -395,11 +397,24 @@ niet aangeraakt.
    recursie. ref maakt één keer, clingo is UNSAT. Het is een normvraag
    over de vastgelegde versmalling "relation membership read by a
    condition is input".
-3. **Drools-flank** (vastgelegd in IR-SPEC 5.5). Beide takken handelen
-   op een tijdelijke leegte als een leeg-lezer vóór de schrijver van
-   zijn afgeleide operand staat. Voor de kenmerklezer gold dat al vóór
-   deze kaart. Nodig: een saliency onder de schrijvers of een benoemde
-   weigering, in `backends/drools`.
+3. **Drools-flank** (vastgelegd in IR-SPEC 5.5, in fixronde 2
+   herschreven na de lens en opnieuw gemeten met de gate-12-jar, beide
+   takken). Twee vormen. (i) Een EIGEN operand, en een vouwfilter of
+   kwantorfilter in een voorwaarde: volgorde-afhankelijk. Met de lezer
+   vóór de schrijver schrijft een attribuutlezer 1 en kent een
+   kenmerklezer toe, terwijl ref en clingo leeg en afwezig geven; met de
+   schrijver voorop PLAYED. Een vouw in de WAARDE van een regel wordt
+   opnieuw geëvalueerd en speelt in beide volgordes. (ii) Een
+   GENAVIGEERDE operand in een voorwaarde: volgorde-onafhankelijk. In
+   beide volgordes geeft "de a van het ding is leeg" b = 1 waar ref en
+   clingo leeg geven, en "… gevuld is" en "… groter dan 3" geven leeg waar
+   ref en clingo 1 geven. De oorzaak: een genavigeerde lezing in een
+   VOORWAARDE reageert in geen van beide takken op een latere schrijfactie
+   aan de verre kant. `navReactiviteit` wordt alleen op `r.waarde()`
+   toegepast (DrlTranspiler r. ~1920, ExecModelTranspiler r. ~686). Een
+   saliency alleen dekt dit dus niet. Vorm (ii) is ouder dan het
+   leeg-besluit en raakt elke genavigeerde voorwaarde, ook een
+   vergelijking. Voor de kenmerklezer gold (i) al vóór deze kaart.
 4. **ref-gedrag buiten het corpus.** "Geen gedragswijziging in ref"
    geldt voor de code en voor het corpus (`cmp` identiek). Via de
    gedeelde graaf verandert wel: R1/R3 worden geweigerd, en een
@@ -411,3 +426,9 @@ niet aangeraakt.
    Staat de lezer daarin vóór zijn schrijver, dan stuit gate 12 op punt
    3 tot de Drools-kant is gedicht.
 6. De clingo-versmalling: overdracht hierboven, geen kaart.
+7. **Voor de Drools-lijn, niet in deze kaart** (`scripts/check-drools.sh`
+   is de zone van een parallelle Drools-kaart): reactiviteit aan de verre
+   kant voor voorwaarden of een benoemde weigering, een saliency onder de
+   schrijvers van de operand voor vorm (i), en een golden met de
+   WV-6.4-f-vorm plus de genavigeerde variant in de
+   value-divergence-lijst van gate 12.

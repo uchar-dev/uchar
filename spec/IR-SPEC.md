@@ -7651,17 +7651,36 @@ never played mis-stratified. A backend realising a **coarser**
 stratification than the graph mandates without refusing the uncovered forms
 is non-conforming.
 
-*Recorded flank (measured 2026-09-23, open):* that guard does not reach the
-leeg/gevuld test. On a document where a leeg test reads an attribute that
-another rule derives and the reader precedes the writer, both Drools
-branches act on the transient leeg: an attribute reader wrote 1 and a
-characteristic reader attributed its characteristic, where `ref/` and
-`backends/clingo` answer leeg and absent. With the writer first, both
-branches agree with them. For the characteristic reader the edge was already
-stratum-strict before this date; for the attribute reader it became negative
-with the leeg/gevuld decision (ch. 5.2). No corpus document has the shape,
-so gate 12 cannot see it. The fix is a salience below the operand's writers
-or a named refusal, and it belongs to the backend.
+*Recorded flank (measured 2026-09-23 with the gate-12 jar, both branches,
+open).* That guard does not reach the leeg/gevuld test, and the divergence
+has two forms.
+
+- On the subject's OWN operand, and in a fold filter or a quantifier filter
+  inside a condition, it depends on the document order. With the reader
+  before the rule that derives the tested attribute, both Drools branches
+  act on the transient leeg: an attribute reader writes 1 and a
+  characteristic reader attributes its characteristic, where `ref/` and
+  `backends/clingo` answer leeg and absent. With the writer first, both
+  branches agree with them. (A fold in a rule's VALUE is re-evaluated and
+  agrees in either order.)
+- On a NAVIGATED operand in a condition it does not depend on the order.
+  With a rule deriving the far side's attribute, both branches answer as if
+  that attribute were never written, in either order: "de a van het ding is
+  leeg" yields 1 where `ref/` and `backends/clingo` give leeg, and the
+  presence tests "… is gevuld" and "… is groter dan 3" yield leeg where
+  they give 1. The cause is not the order: a navigated read in a rule's
+  CONDITION does not react to a later write on the far side in either
+  branch, because the backend gives that far-side reactivity to a rule's
+  value and not to its condition. A salience alone therefore does not cover
+  it, and this form predates the leeg/gevuld decision and reaches any
+  navigated condition, a comparison included.
+
+For the own characteristic reader the edge was already stratum-strict before
+this date; for the own attribute reader it became negative with the
+leeg/gevuld decision (ch. 5.2). No corpus document has either shape, so
+gate 12 cannot see them. The fix belongs to the backend: far-side
+reactivity for a condition or a named refusal, and a salience below the
+operand's writers for the order-dependent form.
 
 ---
 
