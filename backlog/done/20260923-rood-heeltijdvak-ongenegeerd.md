@@ -187,17 +187,18 @@ and the ASP backend and lists each case as a Drools loader EXCLUDE
 `LeegNegatieWitnessTest`, which gate 8 runs when it rebuilds the jar,
 the key and the ground). A jar from before the loader refusal played
 green copies of both cases, with the ch. 3.9 hand values as expected, in
-both branches. Two mutants of the OCaml arms show what each twin adds:
-an arm narrowed to the negated form passes the negated twin and fails
-both unnegated ones, and an arm narrowed to soort LEEG passes both leeg
-documents and fails the gevuld one. The fourth twin,
-`corpus/rood/gevuldnegatie-heel-tijdvak` (GEVULD, `negatie: true`,
-refused by the Drools loader as `Predicaat.negatie` on the open
-threshold), closes the square soort × negatie: a mutant that exempts
-exactly that corner in the OCaml arms and in the Drools negated refusal
-leaves the other three documents and the backend's suite green and fails
-only this one, so for that corner the case is the only guard on the
-Drools refusal."
+both branches. Three mutants of the OCaml arms, each measured on all
+four documents, show what the documents add: an arm narrowed to the
+negated form passes both negated documents and fails both unnegated
+ones; an arm narrowed to soort LEEG passes both leeg documents and fails
+both gevuld ones; and an arm that exempts exactly (GEVULD, negated)
+fails only the fourth twin, `corpus/rood/gevuldnegatie-heel-tijdvak`
+(GEVULD, `negatie: true`, refused by the Drools loader as
+`Predicaat.negatie` on the open threshold), which closes the square
+soort × negatie. Applied to the Drools negated refusal as well, that
+last mutant leaves the backend's suite green and turns only that case to
+NOFAULT, so for that corner the case is the only guard on the Drools
+refusal."
 
 Gecontroleerd tegen de nieuwe RUNTIME-SEMANTICS-rij (fixronde 1): die
 zegt "executed by no executor" en "gate 8 pins the OCaml sentence in
