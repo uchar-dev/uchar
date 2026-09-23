@@ -432,3 +432,138 @@ niet aangeraakt.
    schrijvers van de operand voor vorm (i), en een golden met de
    WV-6.4-f-vorm plus de genavigeerde variant in de
    value-divergence-lijst van gate 12.
+
+## Fixronde 2 (2026-09-23)
+
+De branch is eerst op main `3a140fe4` gerebased, zonder conflicten. Elk
+punt van de lens staat in een eigen commit.
+
+### Punt 2: kwantorvouw onder de arm (maintainerbesluit)
+
+Het besluit, letterlijk:
+
+> de kwantorklassen komen nu onder de arm, met deze lezing — het BEREIK
+> van een kwantorvouw is een negatieve kant onder ALLE, GEEN, TEN_HOOGSTE
+> en PRECIES (de uitkomst kan verloren gaan als het bereik groeit; onder
+> TEN_MINSTE niet); de MATRIX, vergelijkingen inbegrepen, is alleen
+> negatief onder GEEN, TEN_HOOGSTE en PRECIES (onder TEN_MINSTE en ALLE is
+> de uitkomst monotoon in de matrix).
+
+De motivering, letterlijk:
+
+> jouw variant zette `neg` voor ELKE kwantor door naar filter én matrix,
+> en de lens vond de tegengetuige — een recursieve creatie onder "rang < 5
+> en ten minste 1 opvolger heeft rang > 3", waar ref en clingo het eens
+> zijn (niets gemaakt, bij rang 1 en bij rang 4), de tip PASS geeft en de
+> variant WF-046: een onterechte weigering.
+
+In IR-SPEC ch. 5.2 staan beide als letterlijke Engelse weergave in een
+blokcitaat, en WF-046 in ch. 4.6, de negative-opsomming en de
+WF-indexrij noemen de regel.
+
+**De arm** (`dep_cond`, Kwantorvouw-tak). `range_neg = neg ||
+kwantor <> TEN_MINSTE`, `matrix_neg = neg || not (kwantor ∈ {TEN_MINSTE,
+ALLE})`. Een negatief deel maakt ELKE lezing eronder negatief, dus ook
+vergelijkingen en positieve kenmerken. In een monotoon deel houdt een
+lezing haar eigen soort: een genegeerd kenmerk, een leeg-test en een
+kanaaltest blijven negatief. Twee lezingen van mij, benoemd:
+- Het bereik omvat de `filter`. IR-SPEC ch. 4.5 noemt reach en filter
+  samen de bereikvelden van de vouw, en een lid dat nieuw door het filter
+  komt, vergroot het bereik zoals een nieuwe link.
+- Bijvangst in hetzelfde mechanisme: een BINDINGLOZE kwantorvouw (geen
+  bronRol, geen bronPad) trok tot nu toe helemaal geen bereikkant. Hij
+  leest nu de ene verbindende relatie die WF-048 eist, plus de
+  elementpopulatie (de proxy die een bindingloze instantievouw ook
+  houdt). In het corpus komt geen bindingloze kwantorvouw voor.
+
+Gevolg voor bestaande lezingen: een positief kenmerk in de matrix van een
+ALLE-vouw, of in een deel van een TEN_MINSTE-vouw, is nu positief waar het
+eerst negatief werd gelezen.
+
+**Getuigen.** De lens rekende op s5, s5b en "s6 (GEEN-kwantorvouw)". Mijn
+s6 was de propositionele GEEN (Samengesteld). Die valt volgens dezelfde
+opdracht buiten deze kaart, en de kwantorvouw-arm vangt hem ook niet, dus
+een negatief daarvan zou gate 3 rood maken. Ik heb de derde getuige
+daarom zo gekozen dat hij de GEEN-matrix isoleert. Samen met de
+bindingloze getuige zijn het er vier (gate 3: 448, niet 447):
+- `wf046-kwantorvouw-alle-bereik` (s5, de R5-vorm): ALLE over de eigen
+  opvolgers, "rang > 5". Alleen het bereik weigert.
+- `wf046-kwantorvouw-geen-vergelijking` (s5b): GEEN, "rang > 0". Bereik
+  én matrix.
+- `wf046-kwantorvouw-geen-matrix`: GEEN over een invoerrelatie (`ploeg`)
+  met matrix "merk > 0", waarbij merk (= aantal opvolgers) van de cyclus
+  komt. Alleen de matrix weigert. Vóór de arm splitsten de executors
+  zonder te falen: ref merk(W1) = 1, clingo 0 (één model).
+- `wf046-kwantorvouw-bindingloos-bereik`: een ALLE-vouw zonder bronRol
+  over de posten die de creatie zelf maakt.
+
+Vóór de arm gaven alle vier `verifier: PASS`. ref maakte een keten (of
+één Post) op een vacue of verloren uitkomst, en clingo was UNSAT, behalve
+bij `geen-matrix`, waar de splitsing stil was.
+
+**Golden** `corpus/golden/jutterswet-opvolgerquorum`, onder mandaat van
+de hoofdsessie (corpus/golden stond buiten de oorspronkelijke zone). Eén
+recursieve creatie onder "rang < 5, ten minste 1 opvolger heeft rang > 3
+en alle ploegleden hebben merk > 1", en merk = aantal opvolgers. Vier
+cases met handberekening in de NOTE. case1 is de tegengetuige van de lens
+(W1 rang 1, W2 rang 4, niets gemaakt, merk 0/0). case2: het bereik van de
+TEN_MINSTE-vouw groeit onder de creatie en de uitkomst blijft staan
+(merk(W1) = 2). case3: de ALLE-matrix blokkeert (merk 1/0/0). case4: de
+ALLE-matrix wordt waar doordat een andere creatie vuurt (merk(W1) = 2,
+merk(W3) = 2). 15 verwachtingen. ref en clingo slagen op alle vier, het
+ASP-programma heeft per case precies één model, en `--noop` wordt in
+elke case weerlegd. Beide Drools-takken: `PLAYED 4`.
+
+**Rood eerst** (gate 3 met de arm van de vorige tip):
+```
+FAIL: negatief case corpus/negatief/wf046-kwantorvouw-alle-bereik/ir.json passed the verifier (must violate WF-046):
+FAIL: negatief case corpus/negatief/wf046-kwantorvouw-bindingloos-bereik/ir.json passed the verifier (must violate WF-046):
+FAIL: negatief case corpus/negatief/wf046-kwantorvouw-geen-matrix/ir.json passed the verifier (must violate WF-046):
+FAIL: negatief case corpus/negatief/wf046-kwantorvouw-geen-vergelijking/ir.json passed the verifier (must violate WF-046):
+exit=1
+```
+De golden is onder de vorige tip en onder main schoon, en onder mijn
+oude variant (`neg` voor elke kwantor naar filter en matrix) WF-046.
+
+**Mutanten.** Elk gebouwd, door gate 3 gehaald en daarna teruggezet;
+`cmp` telkens identiek:
+- Ka, bereik ook onder TEN_MINSTE negatief: exit 1, de golden geweigerd
+  (`werf een opvolger reads what werf een opvolger produces …`).
+- Kb, matrix ook onder TEN_MINSTE negatief: exit 1, de golden.
+- Kc, matrix ook onder ALLE negatief: exit 1, de golden (`werf een
+  opvolger reads what merk van een wachter produces …`).
+- Kd, matrix onder elke kwantor negatief: exit 1, de golden.
+- Ke, bereik positief onder ALLE: exit 1, `alle-bereik` en
+  `bindingloos-bereik` doorgelaten.
+- Kf, matrix positief onder GEEN: exit 1, `geen-matrix` doorgelaten.
+- Kg, geen bindingloos bereik: exit 1, `bindingloos-bereik` doorgelaten.
+
+**Kantencensus**, opnieuw en nu over alle leesposten (ook zonder
+schrijver), vorige tip tegen nieuwe arm, over de 752 documenten van vóór
+deze ronde: 59 leesposten in 18 documenten veranderen van soort. 52
+worden negatief, en 7 kenmerklezingen in een monotoon deel worden
+positief. Er verschijnt of verdwijnt geen post. Van die 59 heeft er
+precies één een schrijver: het bereik `rel:opvolging` in
+`wf046-leegtest-kwantorvouw-recursieve-creatie` (strict → neg), een
+negatief die via zijn leeg-matrix al geweigerd werd. Buiten de negatiefs
+van deze kaart dus nul echte kanten. Main tegen de nieuwe arm, zelfde
+752: 84 posten in 35 documenten, 9 echte kanten, alle negen in de
+negatiefs van deze kaart. Verifier-oordelen main → nieuw: alleen de
+toevoegingen (golden schoon, acht negatiefs WF-046). ref-sweep over de
+638 bestaande golden- en rood-cases: `cmp` identiek aan main.
+
+**Pinvoorstel voor `scripts/check-drools.sh`** (niet aangeraakt; zone van
+een parallelle Drools-kaart). De golden speelt in beide takken, dus
+`EXPECTED_PLAYED` 182 → 183 en `EXPECTED_DRL_PLAYED` 161 → 162, met een
+redenregel ("jutterswet-opvolgerquorum, kwantorvouw-stratificatie,
+2026-09-23"). Er is geen kanaallijstregel nodig, want de golden speelt.
+
+**Wat buiten blijft.** ≠ met één lege operand, numerieke = met twee lege,
+AANTAL = 0, AANTAL_GEVULDE = 0, propositionele GEEN en coalescerende
+rekenkunde. Ze vallen onder het oudere restpunt "conditions on
+attribute-writing forms read positively": gemeten, want met de lezer
+voorop laten ze ref ook BUITEN een cyclus volgorde-afhankelijk ("b = 1
+indien de a van het ding ongelijk is aan 5" en "b = 1 indien het aantal
+dingen waarvan a > 0 gelijk is aan 0": ref b = 1, clingo leeg; met de
+schrijver voorop allebei leeg). Dat staat in de restpuntalinea van RS 6.1
+en in de notitie in `ref/lib/eval.ml`.

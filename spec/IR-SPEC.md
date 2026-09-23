@@ -7052,9 +7052,11 @@ ch. 3.12), and it belongs to whoever measures it.
 - **WF-046** No dependency cycle — including a WF-045-admissible one —
   may carry a negative edge (a negated or negation-quantified
   characteristic read, every read under a leeg/gevuld test in either
-  polarity, or a regelversie channel test): evaluation strata MUST exist
-  (ch. 5.2, 5.3; operational reading `RUNTIME-SEMANTICS.md` ch. 6.3). v0's
-  single agenda boundary is the two-stratum special case.
+  polarity, every read in the range of a quantifier fold under *all*,
+  *none*, *at-most* or *exactly* and in its matrix under *none*, *at-most*
+  or *exactly*, or a regelversie channel test): evaluation strata MUST
+  exist (ch. 5.2, 5.3; operational reading `RUNTIME-SEMANTICS.md` ch. 6.3).
+  v0's single agenda boundary is the two-stratum special case.
 
 ### 4.7 Sum-type expressions — Construct, Match, BinderRef
 
@@ -7483,10 +7485,12 @@ to every form that **reads** it — in one of three kinds:
 - **negative**: a negated characteristic read, a characteristic read under
   a negation-like quantifier (*geen*, *ten hoogste*, *precies* — their
   truth can be lost by a later monotone write), every read under a
-  leeg/gevuld test in either polarity (*2026-09-23*, below), or a channel
-  test (regelversie). **Once negative, conservatively negative** — a double
-  negation does not cancel. A negative edge is stratum-strict *and*
-  forbidden on any cycle (WF-046).
+  leeg/gevuld test in either polarity (*2026-09-23*, below), every read in
+  the range of a quantifier fold under *all*, *none*, *at-most* or
+  *exactly* and in its matrix under *none*, *at-most* or *exactly*
+  (*2026-09-23*, below), or a channel test (regelversie). **Once negative,
+  conservatively negative** — a double negation does not cancel. A negative
+  edge is stratum-strict *and* forbidden on any cycle (WF-046).
 
 **The leeg/gevuld test is a negative edge** *(maintainer decision
 2026-09-23, card `verifier-leegtest-negafhankelijkheid`)*. The decision, in
@@ -7549,12 +7553,71 @@ turns no existing edge negative. No verdict moved in the golden (235), red
 *Not covered, recorded open:* other conditions that hold on absence without a
 `negated` field keep their positive or stratum-strict reading: an inequality
 with one leeg operand, a numeric equality of two leeg operands, a count or a
-filled-value count tested against zero, a quantifier fold under *all* or
-*none* over a comparison, a propositional *none* over a comparison, and an
-ordering over arithmetic that coalesces leeg to 0. On an admissible creation
-cycle each of them was measured verifier-clean with the executors split
+filled-value count tested against zero, a propositional *none* over a
+comparison, and an ordering over arithmetic that coalesces leeg to 0. On an
+admissible creation cycle each of them was measured verifier-clean with the
+executors split, and off a cycle each leaves the reference interpreter
+order-dependent in the condition of an attribute-writing form
 (`RUNTIME-SEMANTICS.md` ch. 6.1, recorded residuals). This decision does not
-cover them.
+cover them. The quantifier fold over a comparison, first measured in the
+same round, is covered by the decision that follows.
+
+**The quantifier fold's range and matrix** *(maintainer decision 2026-09-23,
+same card, second fix round)*. The decision, in full:
+
+> The quantifier classes now come under the arm, with this reading: the
+> RANGE of a quantifier fold is a negative edge under ALLE, GEEN,
+> TEN_HOOGSTE and PRECIES (the outcome can be lost as the range grows; not
+> under TEN_MINSTE); the MATRIX, comparisons included, is negative only
+> under GEEN, TEN_HOOGSTE and PRECIES (under TEN_MINSTE and ALLE the
+> outcome is monotone in the matrix). Motivation: the builder's variant
+> carried `neg` through to filter and matrix for EVERY quantifier, and the
+> lens found the counter-witness — a recursive creation under "rang < 5 en
+> ten minste 1 opvolger heeft rang > 3", on which ref and clingo agree
+> (nothing minted, at rang 1 and at rang 4), the tip passes and the
+> variant gives WF-046: an unjustified refusal.
+
+How it reads in the walk. The range is the reach (`sourceRole` or
+`sourcePath`) together with the `filter`: those are the fold's range fields
+in ch. 4.5, and a member that newly passes the filter joins the range the
+way a new link does. A bindingless fold has no written reach; its range is
+the one connecting relation WF-048 demands, read as that relation plus the
+element population, the proxy a bindingless instance fold keeps
+(`RUNTIME-SEMANTICS.md` ch. 6.1). Before this date the walk drew no range
+edge at all for such a fold. "Negative" means every read under the part,
+comparisons and positive characteristic reads included. In a monotone part a
+read keeps its own kind, so a negated characteristic, a leeg/gevuld test and
+a channel test stay negative there, and a positive characteristic read in a
+monotone part (the matrix of an *all* fold, either part of an *at-least*
+fold) is now positive where the walk used to read it negatively. A fold
+under an enclosing negation-like composite is negative in both parts.
+
+The witnesses. `corpus/negatief/wf046-kwantorvouw-alle-bereik` is an ALLE
+fold over the successors a recursive creation mints (the R5 shape): its
+matrix is monotone, so the range alone refuses it.
+`wf046-kwantorvouw-geen-vergelijking` is the GEEN twin, where range and
+matrix both close the cycle. In `wf046-kwantorvouw-geen-matrix` the GEEN
+fold ranges over an input relation and its matrix reads a merk the cycle
+derives, so the matrix alone refuses it; before the rule the executors split
+there without failing. `wf046-kwantorvouw-bindingloos-bereik` is a
+bindingless ALLE fold. The clean witness is the golden
+`corpus/golden/jutterswet-opvolgerquorum`: the counter-witness above as its
+first case, a TEN_MINSTE fold whose range grows under the creation without
+losing the verdict, and an ALLE fold whose matrix turns true when another
+creation fires. The reference interpreter, the ASP backend and both Drools
+branches agree on all four of its cases. Each clause has a mutation that
+fails gate 3 on its own witness (measured 2026-09-23): the range positive
+under *all*, the matrix positive under *none*, no bindingless reach, and in
+the other direction the range negative under *at-least*, or the matrix
+negative under *at-least* or *all*, each of which refuses the golden.
+
+*Cost:* none. Over the 752 corpus and parity-zone documents that existed
+before this round, 59 read positions in 18 documents change kind (52 turn
+negative, and 7 characteristic reads in a monotone part turn positive), and
+exactly one of them has a writer: the range of the fold in
+`wf046-leegtest-kwantorvouw-recursieve-creatie`, a negatief already refused
+through its leeg test. No verdict moved, and the reference interpreter's
+replay of the 638 golden and red cases is byte-identical.
 
 **The WF-051 defaults fold.** A defaults group (ch. 6;
 `RUNTIME-SEMANTICS.md` ch. 7) folds into this graph as the writer of its
@@ -7928,7 +7991,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-043 | whole-period qualifier only on a time-dependent operand | gate 3 | `jutterswet-keurploeg` (whole-year over the MAAND-granular keurvergoeding) + `jutterswet-sleepvloot` (the negated one) | `wf043-wholeperiod-nontemporal` |
 | WF-044 | (consumer) Unresolved surfaces, never silently lowered | behavioural — gate 8 (`scripts/check-rood.sh`): the two mandatory executors (`expectedFault.{ref, clingo}`) must both fault, fragment-pinned. The additive `expectedFault.drools` leg (decision V3-b) pins a Drools fault only where the v0 backend carries the red-path form; where it does not, the gate lists the case with a reason (a reason-carrying exclusion list, stale-guarded) — Onopgelost is such a case (its reaching rule does not lower: a transpiler SKIP leaves the value out of scope), so it is listed, never Drools-fragment-pinned | `corpus/rood/wf044-onopgelost-reached` (the red witness: ref faults the evaluation, the ASP backend the translation; the Drools leg lists it — the marker's rule never fires) | n/a (the marker is legal wire content; the fence is behavioural, not well-formedness) |
 | WF-045 | dependency graph acyclic (creation recursion excepted) — over the CHAIN-CLOSED node identity of ch. 5.1 since *2026-09-12*, and the three write positions do NOT close alike: a population write closes upward, a member write by a form that ITERATES a type closes over the ⊑-comparable types in both directions, a member write by an OBJECT CREATION closes upward only (it fills the one instance it mints, and creation is not polymorphic), and reads stay literal. Until then both keyed on the written type name alone, which made the rule's promise false of every model with a supertype: the two witnesses below were verifier-clean and diverged in the reference interpreter, which is the last line of defence and reports `no fixpoint within 100 passes` — loud, but naming neither the rule nor the type. The boundary is measured and narrow: a subtype creation is not itself refused (the mirror creation, from subtype subject to supertype, and a creation sideways into a chain both stay clean, as does either inside a guarded recursive group), and two INCOMPARABLE subtypes stay two nodes. Cost: none, and not vacuously so — counted 2026-09-12, the closure widens a write in **9** corpus documents and not one of them gains a cycle, and a tenth — `jutterswet-wrakboeking` — exists precisely because the closure must NOT widen there (gate 3: 209 verifier-clean documents before, 210 after, the one arrival being that witness; gate 11's parity zone unchanged) | gate 3 | `jutterswet-vondsttelling`; the chain-closed reading's own clean witnesses are `anchor/jutterswet-strandrechtketen` and `golden/jutterswet-wrakrecht`, which write ONE inherited attribute from BOTH spellings (a rule at the ancestor, defaults groups at each), `golden/jutterswet-hoofdberging`, whose allocation writes an inherited target attribute from the subtype, `golden/jutterswet-zustervondst`, where a write at the parent reaches TWO incomparable children and they still do not reach each other, and `golden/jutterswet-wrakboeking`, the creation arm's own witness — a creation that mints its own SUPERTYPE and fills an inherited attribute, which the both-directions reading turns into a WF-045 refusal on a model with no cycle in it (measured 2026-09-12, both readings, with ref declining and clingo answering under the wrong one), replayed by gates 5, 6 and 12 | `wf045-cyclic-attribute-dependency` (one type, one spelling) + `wf045-subtypecreatie-cyclus` (the population arm) + `wf045-erfattribuut-spelling-cyclus` (the member arm) — the three fall independently: a graph keyed on the written name catches only the first |
-| WF-046 | no negative edge on a dependency cycle (strata exist); since *2026-09-23* every read under a leeg/gevuld test is a negative edge, in both polarities (ch. 5.2) | gate 3 | `jutterswet-penningjaar` (the negated aanmeldplichtig reading — a negative edge, verifier-clean, oracle-replayed); the leeg/gevuld reading has no golden whose test reads a written node (counted 2026-09-23: none of 28), so its clean witness is the reference interpreter's WV-6.4-f (a leeg test in an attribute rule on a derived attribute, off any cycle, answering alike in both rule orders) | `wf046-negated-read-in-recursive-cycle` + `wf046-leegtest-recursieve-creatie` (`negated: false`) + `wf046-leegtest-negatie-recursieve-creatie` (`negated: true`) + `wf046-leegtest-aanwezigheid-recursieve-creatie` (a presence-true test alone: the both-polarities clause) + `wf046-leegtest-kwantorvouw-recursieve-creatie` (the test as a quantifier fold's matrix) |
+| WF-046 | no negative edge on a dependency cycle (strata exist); since *2026-09-23* every read under a leeg/gevuld test is a negative edge, in both polarities, and so is every read in a quantifier fold's range under all/none/at-most/exactly and in its matrix under none/at-most/exactly (ch. 5.2) | gate 3 | `jutterswet-penningjaar` (the negated aanmeldplichtig reading — a negative edge, verifier-clean, oracle-replayed); `jutterswet-opvolgerquorum` (the monotone parts of the quantifier fold — an at-least range and matrix and an all matrix — on a recursive creation cycle, verifier-clean, replayed by gates 5, 6 and 12); the leeg/gevuld reading has no golden whose test reads a written node (counted 2026-09-23: none of 28), so its clean witness is the reference interpreter's WV-6.4-f (a leeg test in an attribute rule on a derived attribute, off any cycle, answering alike in both rule orders) | `wf046-negated-read-in-recursive-cycle` + `wf046-leegtest-recursieve-creatie` (`negated: false`) + `wf046-leegtest-negatie-recursieve-creatie` (`negated: true`) + `wf046-leegtest-aanwezigheid-recursieve-creatie` (a presence-true test alone: the both-polarities clause) + `wf046-leegtest-kwantorvouw-recursieve-creatie` (the test as a quantifier fold's matrix) + `wf046-kwantorvouw-alle-bereik` (the all range) + `wf046-kwantorvouw-geen-vergelijking` (none, range and matrix) + `wf046-kwantorvouw-geen-matrix` (the none matrix alone) + `wf046-kwantorvouw-bindingloos-bereik` (a bindingless range) |
 | WF-047 | role binding resolves; fillers agree with the use site; written source denotes the bound role | gate 3 | `anchor/jutterswet-bergingstoezicht` (two fact types over one pair; allocation and fold bound, replayed by gates 5–6) + `anchor/jutterswet-maatschap` (the reciprocal binding: bound = opposite) + `anchor/jutterswet-wachtersketen` (the creation back-link binding) | `wf047-dangling-role-binding` (resolution) + `wf047-bound-role-fills-source` (filler agreement) + `wf047-reciprocal-wrong-filler` (the single-role filler clause) + `wf047-creation-binding-wrong-filler` (the creation site) |
 | WF-048 | bindingless allocation/instance fold: connecting relation uniquely derivable | gate 3 (contexts with a statically known fold subject; a subjectless context — none exists in v0 dumps, whose folds sit under a typed rule target — is left to the executors' runtime fault) | `jutterswet-berging` + `jutterswet-vondsttelling` (bindingless, uniquely derivable) + `anchor/jutterswet-maatschap` (bindingless over a reciprocal relation) | `wf048-ambiguous-connecting-relation` |
 | WF-049 | temporal read: basis temporal (attribute/granular parameter), day-precision date, element type | gate 3 | `anchor/jutterswet-aanmeldquotum` (attribute + parameter reads; hit, gap→leeg, empty date→leeg; replayed by gates 5–6) | `wf049-read-of-nontemporal` (basis) + `wf049-read-at-datetime` (date operand) + `wf049-type-not-element` (element type) |

@@ -1,0 +1,391 @@
+{
+  "formaat": "regelspraak-ir-v0",
+  "objecttypen": {
+    "Wachter": {
+      "node": "Objecttype",
+      "naam": "Wachter",
+      "attributen": {
+        "rang": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "merk": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        }
+      },
+      "attribuutMeervoud": {},
+      "attribuutDimensies": {},
+      "attribuutGranulariteit": {},
+      "attribuutTijdlijnAantal": {},
+      "attribuutTijdlijnNaam": {},
+      "kenmerken": [],
+      "kenmerkSoorten": {},
+      "kenmerkGranulariteit": {},
+      "kenmerkTijdlijnAantal": {},
+      "bezield": true,
+      "meervoud": "Wachters"
+    }
+  },
+  "domeinen": {},
+  "parameters": {},
+  "eenheidstelsels": {},
+  "feittypen": {
+    "opvolging": {
+      "node": "Feittype",
+      "naam": "opvolging",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "voorganger",
+          "objecttypeNaam": "Wachter",
+          "meervoud": null,
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "opvolger",
+          "objecttypeNaam": "Wachter",
+          "meervoud": "opvolgers",
+          "meervoudig": true
+        }
+      ]
+    },
+    "ploeg": {
+      "node": "Feittype",
+      "naam": "ploeg",
+      "wederkerig": false,
+      "rollen": [
+        {
+          "node": "Rol",
+          "naam": "ploegleider",
+          "objecttypeNaam": "Wachter",
+          "meervoud": null,
+          "meervoudig": false
+        },
+        {
+          "node": "Rol",
+          "naam": "ploeglid",
+          "objecttypeNaam": "Wachter",
+          "meervoud": "ploegleden",
+          "meervoudig": true
+        }
+      ]
+    }
+  },
+  "dimensies": {},
+  "tijdlijnen": [],
+  "dagsoorten": [],
+  "dagsoortPerEenheid": {},
+  "regels": [
+    {
+      "node": "Regel",
+      "naam": "werf een opvolger",
+      "soort": "regel"
+    },
+    {
+      "node": "Regel",
+      "naam": "merk van een wachter",
+      "soort": "regel"
+    }
+  ],
+  "resolvedRegels": [
+    {
+      "node": "ResolvedRegel",
+      "naam": "merk van een wachter",
+      "soort": "BEREKENING",
+      "doel": {
+        "node": "AttribuutRef",
+        "attribuut": "merk",
+        "objecttype": "Wachter",
+        "onderwerpBron": "een Wachter",
+        "navigatieRol": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "ONBEPAALD",
+          "eenheid": null
+        },
+        "bron": "Het merk van een Wachter",
+        "set": false,
+        "navigatiePad": []
+      },
+      "waarde": {
+        "node": "Functie",
+        "kind": "AANTAL",
+        "argumenten": [
+          {
+            "node": "AttribuutRef",
+            "attribuut": "opvolgers",
+            "objecttype": "Wachter",
+            "onderwerpBron": "de Wachter",
+            "navigatieRol": null,
+            "type": {
+              "node": "Onbekend",
+              "reden": "niet opgelost"
+            },
+            "bron": "opvolgers van de Wachter",
+            "set": false,
+            "navigatiePad": []
+          }
+        ],
+        "elementObjecttype": "Wachter",
+        "leegwaarde": null,
+        "filter": null,
+        "dimensieSelectie": null,
+        "type": {
+          "node": "Numeriek",
+          "geheel": true,
+          "decimalen": 0,
+          "teken": "NIET_NEGATIEF",
+          "eenheid": null
+        },
+        "bron": "het aantal opvolgers van de Wachter",
+        "granulariteit": null,
+        "bronRol": {
+          "node": "RolBinding",
+          "feittype": "opvolging",
+          "rol": "opvolger"
+        }
+      },
+      "voorwaarde": null,
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      }
+    }
+  ],
+  "resolvedDagsoorten": [],
+  "objectCreaties": [
+    {
+      "node": "ResolvedObjectCreatie",
+      "naam": "werf een opvolger",
+      "nieuwType": "Wachter",
+      "subject": "Wachter",
+      "toekenningen": [
+        {
+          "node": "Toekenning",
+          "attribuut": "rang",
+          "waarde": {
+            "node": "Binair",
+            "op": "PLUS",
+            "links": {
+              "node": "AttribuutRef",
+              "attribuut": "rang",
+              "objecttype": "Wachter",
+              "onderwerpBron": "de Wachter",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "de rang van de Wachter",
+              "set": false,
+              "navigatiePad": []
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "1",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "1"
+            },
+            "type": {
+              "node": "Numeriek",
+              "geheel": true,
+              "decimalen": 0,
+              "teken": "ONBEPAALD",
+              "eenheid": null
+            },
+            "bron": "de rang van de Wachter plus 1"
+          },
+          "kenmerk": false
+        }
+      ],
+      "voorwaarde": {
+        "node": "Samengesteld",
+        "kwantor": "ALLE",
+        "drempel": 0,
+        "onderdelen": [
+          {
+            "node": "Vergelijking",
+            "op": "KLEINER",
+            "links": {
+              "node": "AttribuutRef",
+              "attribuut": "rang",
+              "objecttype": "Wachter",
+              "onderwerpBron": "de Wachter",
+              "navigatieRol": null,
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "de rang van de Wachter",
+              "set": false,
+              "navigatiePad": []
+            },
+            "rechts": {
+              "node": "Literal",
+              "waarde": "5",
+              "type": {
+                "node": "Numeriek",
+                "geheel": true,
+                "decimalen": 0,
+                "teken": "ONBEPAALD",
+                "eenheid": null
+              },
+              "bron": "5"
+            },
+            "periode": null,
+            "bron": "de rang van de Wachter is kleiner dan 5"
+          },
+          {
+            "node": "Kwantorvouw",
+            "kwantor": "TEN_MINSTE",
+            "elementObjecttype": "Wachter",
+            "filter": null,
+            "toets": {
+              "node": "Vergelijking",
+              "op": "GROTER",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "rang",
+                "objecttype": "Wachter",
+                "onderwerpBron": "alle opvolgers van de Wachter",
+                "navigatieRol": null,
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "de rang van alle opvolgers van de Wachter",
+                "set": false,
+                "navigatiePad": []
+              },
+              "rechts": {
+                "node": "Literal",
+                "waarde": "3",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "3"
+              },
+              "periode": null,
+              "bron": "de rang is groter dan 3"
+            },
+            "bron": "ten minste 1 opvolger van de Wachter heeft een rang groter dan 3",
+            "drempel": 1,
+            "bronRol": {
+              "node": "RolBinding",
+              "feittype": "opvolging",
+              "rol": "opvolger"
+            }
+          },
+          {
+            "node": "Kwantorvouw",
+            "kwantor": "ALLE",
+            "elementObjecttype": "Wachter",
+            "filter": null,
+            "toets": {
+              "node": "Vergelijking",
+              "op": "GROTER",
+              "links": {
+                "node": "AttribuutRef",
+                "attribuut": "merk",
+                "objecttype": "Wachter",
+                "onderwerpBron": "alle ploegleden van de Wachter",
+                "navigatieRol": null,
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "de merk van alle ploegleden van de Wachter",
+                "set": false,
+                "navigatiePad": []
+              },
+              "rechts": {
+                "node": "Literal",
+                "waarde": "1",
+                "type": {
+                  "node": "Numeriek",
+                  "geheel": true,
+                  "decimalen": 0,
+                  "teken": "ONBEPAALD",
+                  "eenheid": null
+                },
+                "bron": "1"
+              },
+              "periode": null,
+              "bron": "het merk is groter dan 1"
+            },
+            "bron": "alle ploegleden van de Wachter hebben een merk groter dan 1",
+            "bronRol": {
+              "node": "RolBinding",
+              "feittype": "ploeg",
+              "rol": "ploeglid"
+            }
+          }
+        ],
+        "bron": "de rang van de Wachter is kleiner dan 5, ten minste 1 opvolger van de Wachter heeft een rang groter dan 3 en alle ploegleden van de Wachter hebben een merk groter dan 1"
+      },
+      "geldigheid": {
+        "node": "Geldigheid",
+        "vanaf": null,
+        "tot": null
+      },
+      "verbindendeRol": {
+        "node": "RolBinding",
+        "feittype": "opvolging",
+        "rol": "opvolger"
+      }
+    }
+  ],
+  "verdelingen": [],
+  "consistenties": [],
+  "uniciteiten": [],
+  "uniciteitUnies": [],
+  "feitCreaties": [],
+  "resolvedStartpunten": [],
+  "regelGroepen": [
+    {
+      "node": "ResolvedRegelGroep",
+      "naam": "estafette",
+      "recursief": true,
+      "leden": [
+        "werf een opvolger"
+      ],
+      "bron": null,
+      "line": 1
+    }
+  ],
+  "diagnostics": []
+}

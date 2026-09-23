@@ -4273,11 +4273,13 @@ every form that reads it — in three kinds:
 - **negative**: a negated characteristic read, a characteristic read
   under a negation-like quantifier (*geen*, *ten hoogste*, *precies* —
   their truth can be lost by a later monotone write), every read under a
-  leeg/gevuld predicate in either polarity (since 2026-09-23; the
-  maintainer decision is quoted in `IR-SPEC.md` ch. 5.2), or a channel test
-  (regelversie, ch. 5.6). Once negative, conservatively negative — a
-  double negation does not cancel. Negative edges are stratum-strict
-  *and* forbidden on any cycle (WF-046).
+  leeg/gevuld predicate in either polarity, every read in the range of a
+  quantifier fold (ch. 3.9a) under *alle*, *geen*, *ten hoogste* or
+  *precies* and in its matrix under *geen*, *ten hoogste* or *precies*
+  (both since 2026-09-23; the maintainer decisions are quoted in
+  `IR-SPEC.md` ch. 5.2), or a channel test (regelversie, ch. 5.6). Once
+  negative, conservatively negative — a double negation does not cancel.
+  Negative edges are stratum-strict *and* forbidden on any cycle (WF-046).
 
 Parameters and input-only nodes (nodes no form writes) contribute no
 edges.
@@ -4312,17 +4314,18 @@ and §9.5 deposits from arithmetic transients within a stratum persist
 ch. 7.
 
 *Recorded residual — conditions that hold on absence (measured
-2026-09-23, open).* The leeg/gevuld predicate is not the only condition
-that is true while its operand is absent and can turn false once the
-operand arrives. The others carry no `negated` field and keep their
-positive or stratum-strict reading, and on a WF-045-admissible creation
-cycle that reading is unsound in the way the leeg/gevuld decision records.
-Measured on one shape: a recursive creation "werf de opvolger" whose
-condition is "de rang van de Wachter is kleiner dan 5 en X", with X reading
-the successor that the creation itself mints, and one input Wachter W1 of
-rang 1. Every document in the table is verifier-clean. In every row the
-reference interpreter mints W1 to W5, each creation justified by an X that
-the next generation falsifies, and the ASP backend finds no stable model:
+2026-09-23, open).* The leeg/gevuld predicate and the quantifier fold are
+not the only conditions that are true while an operand is absent and can
+turn false once it arrives. The others carry no `negated` field and keep
+their positive or stratum-strict reading, and on a WF-045-admissible
+creation cycle that reading is unsound in the way the leeg/gevuld decision
+records. Measured on one shape: a recursive creation "werf de opvolger"
+whose condition is "de rang van de Wachter is kleiner dan 5 en X", with X
+reading the successor that the creation itself mints, and one input
+Wachter W1 of rang 1. Every document in the table is verifier-clean. In
+every row the reference interpreter mints W1 to W5, each creation justified
+by an X that the next generation falsifies, and the ASP backend finds no
+stable model:
 
 | X | why it holds on absence |
 |---|---|
@@ -4330,15 +4333,27 @@ the next generation falsifies, and the ASP backend finds no stable model:
 | de rang van de opvolger is gelijk aan het merk (merk leeg) | two leeg numeric operands are equal (ch. 1.2) |
 | het aantal opvolgers is gelijk aan 0 | a count over nothing is 0 |
 | het aantal gevulde rangen van alle opvolgers is gelijk aan 0 | idem (ch. 3.4c) |
-| ALLE opvolgers hebben een rang groter dan 5 (quantifier fold) | vacuous truth over an empty range |
-| GEEN van de opvolgers heeft een rang groter dan 0 (quantifier fold) | idem |
 | geen van: de rang van de opvolger is groter dan 0 (composite) | a leeg operand makes the member false |
 | de rang van de opvolger plus 0 is kleiner dan 1 | plus coalesces leeg to 0 (ch. 1.2) |
 
-The control is the same shape with X = "de rang van de opvolger is leeg":
-the reference interpreter mints the same chain, the ASP backend refuses the
-form by name, and WF-046 refuses the document since 2026-09-23. The
-two-form shape splits silently rather than loudly. With "het merk is
+The controls are the same shape with X = "de rang van de opvolger is leeg"
+and with X a quantifier fold over the successors under *alle* or *geen*
+("alle opvolgers hebben een rang groter dan 5", "geen van de opvolgers heeft
+een rang groter dan 0"): the reference interpreter mints the same chain,
+and WF-046 refuses those documents since 2026-09-23 (`IR-SPEC.md` ch. 5.2).
+
+The same classes also leave the reference interpreter order-dependent OFF
+a cycle, and that is the older residual above ("conditions on
+attribute-writing forms read positively here"). Measured on a Houder with
+one Ding whose a (5) another rule derives: with the reader listed first,
+"b = 1 indien de a van het ding ongelijk is aan 5" and "b = 1 indien het
+aantal dingen waarvan de a groter is dan 0 gelijk is aan 0" each give b = 1
+in the reference interpreter, which acted on the transient leeg and keeps
+its write, while the ASP backend answers leeg; with the writer first both
+answer leeg. The leeg/gevuld test is out of that residual because its reads
+are negative edges, which order the reader above the writer.
+
+The two-form shape splits silently rather than loudly. With "het merk is
 ongelijk aan 1" in the creation and a rule writing merk = 1 when "de rang
 van de opvolger is ongelijk aan 2", the reference interpreter answers
 merk(W1) = 1, the ASP backend has two stable models, and its runner picks
@@ -4447,6 +4462,32 @@ many strata as the chain is deep.
   are each justified by a leeg merk the final world fills (the ASP
   reading has no stable model), R3 with merk(W1) = 1 (the ASP reading
   has five stable models).
+  So, too, is a recursive creation guarded by a quantifier fold whose
+  range grows under the creation, under *alle* or *geen*, or whose
+  matrix the cycle derives, under *geen* (`IR-SPEC.md` ch. 5.2):
+  "alle opvolgers hebben een rang groter dan 5" and "geen van de
+  opvolgers heeft een rang groter dan 0" over the successors it mints,
+  "geen van de ploegleden heeft een merk groter dan 0" with merk derived
+  from the minted successors, and the same ALLE fold with no bound role
+  — negatief cases `wf046-kwantorvouw-alle-bereik`,
+  `wf046-kwantorvouw-geen-vergelijking`, `wf046-kwantorvouw-geen-matrix`
+  and `wf046-kwantorvouw-bindingloos-bereik`. Before the rule the first,
+  second and fourth minted a chain in the reference interpreter where
+  the ASP reading has no stable model; the third split the two
+  executors without either failing (the reference interpreter minted for
+  W1, the ASP backend did not).
+- Well-formed, the monotone parts of the same fold on the same kind of
+  cycle (golden `jutterswet-opvolgerquorum`): the creation mints while
+  "ten minste 1 opvolger heeft een rang groter dan 3" and "alle
+  ploegleden hebben een merk groter dan 1", with merk the number of a
+  Wachter's successors. W1 (rang 1) with an input opvolger of rang 4
+  mints one successor and keeps its verdict as the range grows: merk(W1)
+  = 2. Add a ploeglid W3 without successors and W1's ALLE fails: merk(W1)
+  = 1. Give W3 an input opvolger of rang 4 and W3 mints first, its merk
+  becomes 2, and then W1's ALLE holds and W1 mints: merk(W1) = 2,
+  merk(W3) = 2. With no links at all (W1 of rang 1, W2 of rang 4)
+  nothing is minted: merk 0 and 0, the counter-witness to reading the
+  matrix negatively under every quantifier.
 
 ---
 

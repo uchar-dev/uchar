@@ -7474,8 +7474,11 @@ let expression_layer ctx =
    Nodes: attribute, characteristic, channel (rule name), population
    (object type), identified up to normalisation. Edges run producer ->
    consumer; a negated/negation-quantified characteristic read, every
-   read under a leeg/gevuld test (either polarity, since 2026-09-23) and
-   a regelversie channel test are negative edges. WF-045: the graph minus
+   read under a leeg/gevuld test (either polarity, since 2026-09-23),
+   every read in a quantifier fold's range under ALLE/GEEN/TEN_HOOGSTE/
+   PRECIES and in its matrix under GEEN/TEN_HOOGSTE/PRECIES (since
+   2026-09-23) and a regelversie channel test are negative edges.
+   WF-045: the graph minus
    the creation members of recursive rule groups is acyclic.
    WF-046: no cycle in the full graph carries a negative edge.
    Recorded narrowings (ch. 6.1): relation membership CONDITION reads
@@ -7783,11 +7786,13 @@ and dep_cond ctx ~subject ~neg acc (c : conditie) =
      the test reads the absence of the link as well. The arm reaches the
      test in every position the walk visits (a rule or creation condition,
      an assertion, a fold filter, a quantifier matrix, a composite member).
-     It covers these two kinds and nothing more. Other conditions that hold
-     on absence without a `negatie` field (a comparison against leeg, a
-     count tested against zero, the ALLE fold's vacuous truth) keep their
-     positive or stratum-strict reading here. They were measured on the
-     same cycle shape and are recorded as open, not decided. *)
+     It covers these two kinds and nothing more. The quantifier fold has
+     its own arm below. Other conditions that hold on absence without a
+     `negatie` field (a comparison against leeg, a count tested against
+     zero, a propositional GEEN over a comparison, arithmetic that
+     coalesces leeg to 0) keep their positive or stratum-strict reading
+     here. They were measured on the same cycle shape and are recorded as
+     open, not decided. *)
   | Predicaat { soort = Leeg | Gevuld; operand; _ } ->
       List.map (fun (node, _) -> (node, Dep_neg)) (dep_opt ctx ~subject [] operand) @ acc
   | Predicaat { operand; _ } -> dep_opt ctx ~subject acc operand
@@ -7837,36 +7842,65 @@ and dep_cond ctx ~subject ~neg acc (c : conditie) =
         | De | Alle | Ten_minste -> neg
       in
       List.fold_left (fun acc c -> dep_cond ctx ~subject ~neg:neg' acc c) acc onderdelen
-  (* the quantifier fold (ch. 3.9a): the RANGE relation is read positively,
-     and the filter and the matrix are walked with [neg] set, so every
-     CHARACTERISTIC read under them is negative. The quantifier is a fold
-     with conjunction, so a member that fails decides the verdict the way a
-     negated read does, and GEEN is the negation outright; that is ch. 6.1's
-     "once negative, conservatively negative" at the one place this node
-     introduces. The flag reaches characteristic reads only, as it does
-     under the propositional GEEN above: an attribute COMPARED in the matrix
-     stays positive or stratum-strict, because ch. 5.2 defines the negative
-     kind per read (a characteristic, a leeg/gevuld test, a channel test)
-     and not per context. A leeg/gevuld test in the matrix is negative on
-     its own arm. Measured 2026-09-23: an ALLE fold over a comparison on an
-     admissible recursive creation cycle is verifier-clean. That residual is
-     recorded as open, not closed here. *)
+  (* the quantifier fold (ch. 3.9a), maintainer decision 2026-09-23: the
+     RANGE is a negative edge under ALLE, GEEN, TEN_HOOGSTE and PRECIES,
+     because the verdict can be lost when the range grows; under TEN_MINSTE
+     it cannot, and the range reads positively. The MATRIX, comparisons
+     included, is negative only under GEEN, TEN_HOOGSTE and PRECIES; under
+     TEN_MINSTE and ALLE the verdict is monotone in the matrix. The range
+     is the reach (the bound role or path) and the filter, which are the
+     fold's range fields in ch. 4.5: a member that newly passes the filter
+     joins the range. Under a negative context both follow the context, so
+     a fold under a negation-like composite stays negative throughout.
+
+     Negative here means EVERY read under that part, comparisons and
+     positive characteristics included, not only the characteristic reads
+     the [neg] flag reaches elsewhere. Reads that are negative on their own
+     (a negated characteristic, a leeg/gevuld test, a channel test) stay
+     negative in a monotone part too.
+
+     Why not simply the context for every quantifier: a variant that walked
+     filter and matrix negatively under ALL five quantifiers refused a
+     recursive creation under "rang < 5 en ten minste 1 opvolger heeft
+     rang > 3", on which ref and clingo agree (nothing is minted, at rang 1
+     and at rang 4). That document is the golden
+     corpus/golden/jutterswet-opvolgerquorum; the negative witnesses are
+     corpus/negatief/wf046-kwantorvouw-*.
+
+     A BINDINGLESS fold (no bronRol, no bronPad: the range is the one
+     connecting relation WF-048 demands) drew no range edge at all before;
+     it now reads that relation and, as a bindingless instance fold does
+     (ch. 6.1's recorded narrowing), the element population. *)
   | Kwantorvouw { kv_kwantor; kv_element_objecttype; kv_filter; kv_toets; kv_bron_rol; kv_bron_pad; _ }
     ->
-      ignore kv_kwantor;
-      ignore kv_element_objecttype;
-      let acc =
-        List.fold_left
-          (fun acc rb -> (n_rel rb.rb_feittype, Dep_pos) :: acc)
-          acc
-          ((match kv_bron_rol with Some rb -> [ rb ] | None -> [])
-          @ Option.value kv_bron_pad ~default:[])
+      let range_neg = neg || kv_kwantor <> Ten_minste in
+      let matrix_neg = neg || not (kv_kwantor = Ten_minste || kv_kwantor = Alle) in
+      let reach =
+        match (kv_bron_rol, kv_bron_pad) with
+        | None, None ->
+            (match kv_element_objecttype with Some el -> [ n_pop el ] | None -> [])
+            @ (match (subject, kv_element_objecttype) with
+               | Some st, Some el -> (
+                   match connecting_candidates ctx ~from_type:st ~to_type:el with
+                   | [ fn ] -> [ n_rel fn ]
+                   | _ -> [])
+               | _ -> [])
+        | _ ->
+            List.map
+              (fun (rb : rol_binding) -> n_rel rb.rb_feittype)
+              ((match kv_bron_rol with Some rb -> [ rb ] | None -> [])
+              @ Option.value kv_bron_pad ~default:[])
       in
-      let sub acc = function
-        | Some c -> dep_cond ctx ~subject:kv_element_objecttype ~neg:true acc c
-        | None -> acc
+      let part ~negative = function
+        | Some c ->
+            let reads = dep_cond ctx ~subject:kv_element_objecttype ~neg:negative [] c in
+            if negative then List.map (fun (node, _) -> (node, Dep_neg)) reads else reads
+        | None -> []
       in
-      sub (sub acc kv_filter) kv_toets
+      List.map (fun node -> (node, if range_neg then Dep_neg else Dep_pos)) reach
+      @ part ~negative:range_neg kv_filter
+      @ part ~negative:matrix_neg kv_toets
+      @ acc
   | Regelversie { regel = Some r; _ } -> (n_chan r, Dep_neg) :: acc
   | Regelversie _ -> acc
   | Conditie_onopgelost _ -> acc
