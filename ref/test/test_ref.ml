@@ -5578,12 +5578,13 @@ let () =
    TRANSLATION FAULT, with no field in it — measured on
    jutterswet-bergingsklok), a dateTime refusal named no field, and a number
    went through the IR literal grammar (WF-081) instead of the case wire's:
-   "1,000" loaded as 1 without a word. Gate 4's schema keeps these lexemes
-   out of the corpus files, except the calendar half ("2026-02-30" passes
-   the date pattern, an hour 24 the dateTime one), so the positions are
-   pinned here, through the loader both executors share. The WHOLE sentence
-   is pinned per position. The asOfDate sentence these share their shape
-   with is pinned above, by the WV-3.10-caselader examples. *)
+   "1,000" loaded as 1 without a word. Gate 4 checks the lexical pattern
+   only: the calendar half passes it ("2026-02-30" the date pattern, an hour
+   24 the dateTime one), and a validator that reads `$` the Python way also
+   lets a trailing newline through. So the positions are pinned here,
+   through the loader both executors share. The WHOLE sentence is pinned per
+   position. The asOfDate sentence these share their shape with is pinned
+   above, by the WV-3.10-caselader examples. *)
 let () =
   let datum : Ir_v0.Ast.datatype = Datum_in_dagen in
   let bedrag : Ir_v0.Ast.datatype =

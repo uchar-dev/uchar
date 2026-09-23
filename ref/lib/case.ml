@@ -133,7 +133,9 @@ let datetime_at ~at s =
     fail "%s %S is not the uchar-case-v0 dateTime lexeme yyyy-mm-ddThh:mm:ss[.fff] (%s)" at s why
 
 (* The `number` lexeme of uchar-case-v0 is the case schema's pattern,
-   -?[0-9]+(\.[0-9]+)? or -?[0-9]+/[1-9][0-9]*, matched whole. That is
+   -?[0-9]+(\.[0-9]+)? or -?[0-9]+/[1-9][0-9]*, and this fence matches it
+   whole: no character before or after it gets through, a final newline
+   included, which a validator reading `$` the Python way admits. That is
    narrower than the IR literal grammar [Value.q_of_lexeme] reads (WF-081
    admits the Dutch decimal comma and a bare leading '.'). Read through
    q_of_lexeme alone, a case carrying "1,000" loaded as 1 where the Drools
