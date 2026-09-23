@@ -79,6 +79,70 @@ let ms_of_datetime s =
   | Ok ms -> ms
   | Error why -> fail "malformed dateTime %S (%s)" s why
 
+(* --- lexemes, read at load and refused by position ---------------------- *)
+
+(* Every date, dateTime and number lexeme a case carries is read here, at
+   load, and one its reader refuses is a CASE error naming the position, the
+   lexeme and the reason: exit 2 in both runners, before either executor
+   runs. One template per kind, `<position> "<lexeme>" is not the
+   uchar-case-v0 <kind> lexeme <form>`, with the reader's own refusal in
+   brackets where the reader gives one.
+
+   Until 2026-09-23 the date reader's Value.Fault, the EVALUATION exception,
+   went straight through the loader. A day-first input date reached the ref
+   runner as "EVALUATION FAULT: malformed date lexeme" and the ASP runner as
+   "TRANSLATION FAULT", exit 1, with neither the field nor the load phase in
+   it (measured on jutterswet-bergingsklok). The "malformed from/to date"
+   arms the timeline readers held behind that reader matched a RESULT the
+   reader never returns, so they never fired. And a red case could not pin
+   such a refusal at all, because both runners' load arm matches case errors
+   only. asOfDate got this sentence earlier the same day (card
+   ref-geldigheid-datumlezing); every date position now speaks it through
+   the same template, so the two cannot drift apart. *)
+let date_at ~at s =
+  try Value.date_of_iso s
+  with Value.Fault why -> fail "%s %S is not the uchar-case-v0 date lexeme yyyy-mm-dd (%s)" at s why
+
+(* a period or segment boundary, as its day number *)
+let day_at ~at s = match date_at ~at s with Value.Date d -> d | _ -> assert false
+
+let datetime_at ~at s =
+  try Value.Date_time (ms_of_datetime s)
+  with Error why ->
+    fail "%s %S is not the uchar-case-v0 dateTime lexeme yyyy-mm-ddThh:mm:ss[.fff] (%s)" at s why
+
+(* The `number` lexeme of uchar-case-v0 is the case schema's pattern,
+   -?[0-9]+(\.[0-9]+)? or -?[0-9]+/[1-9][0-9]*, matched whole. That is
+   narrower than the IR literal grammar [Value.q_of_lexeme] reads (WF-081
+   admits the Dutch decimal comma and a bare leading '.'). Read through
+   q_of_lexeme alone, a case carrying "1,000" loaded as 1 where the Drools
+   case reader refuses it, and ".5" loaded as 0.5, both without a word; gate
+   4's schema was the only reason neither showed. The fence is held here, as
+   the date and dateTime fences are held by their readers, so a case that
+   reaches the loader another way is refused instead of read by the other
+   wire's grammar. Every lexeme it admits, q_of_lexeme reads without a
+   fault: the zero denominator is outside the fence. *)
+let number_at ~at s =
+  let digits d = d <> "" && String.for_all (fun c -> c >= '0' && c <= '9') d in
+  let body = if String.length s > 0 && s.[0] = '-' then String.sub s 1 (String.length s - 1) else s in
+  let whole =
+    match String.index_opt body '/' with
+    | Some i ->
+        let num = String.sub body 0 i and den = String.sub body (i + 1) (String.length body - i - 1) in
+        digits num && digits den && den.[0] <> '0'
+    | None -> (
+        match String.split_on_char '.' body with
+        | [ n ] -> digits n
+        | [ n; f ] -> digits n && digits f
+        | _ -> false)
+  in
+  if not whole then
+    fail
+      "%s %S is not the uchar-case-v0 number lexeme [-]digits[.digits] or [-]digits/digits, the \
+       denominator without a leading 0"
+      at s;
+  Value.q_of_lexeme s
+
 let rec value_of_json ~at (decl : datatype option) (j : Yojson.Safe.t) : Value.t =
   let kvs = obj j in
   match List.assoc_opt "constructor" kvs with
@@ -88,15 +152,15 @@ let rec value_of_json ~at (decl : datatype option) (j : Yojson.Safe.t) : Value.t
   match (variant, decl) with
   | "number", Some (Numeriek { eenheid; _ } | Percentage { eenheid; _ }) ->
       let u = match eenheid with Some e -> Value.Unit e | None -> Value.Unitless in
-      Value.Num (Value.q_of_lexeme (str v), u)
+      Value.Num (number_at ~at (str v), u)
   (* WF-059 backstop: a value against a datatype-less declaration would
      split the executors (ref would read a bare unitless number where
      the integer-scaling translation cannot scale) — the shared loader
      refuses it in both, last-line behind the verifier's rejection *)
   | "number", None ->
       fail "%s: a value against a declaration without a datatype (WF-059 for attributes, WF-018 for parameters)" at
-  | "date", Some Datum_in_dagen -> Value.date_of_iso (str v)
-  | "dateTime", Some Datum_tijd -> Value.Date_time (ms_of_datetime (str v))
+  | "date", Some Datum_in_dagen -> date_at ~at (str v)
+  | "dateTime", Some Datum_tijd -> datetime_at ~at (str v)
   | "boolean", Some Booleaan -> (
       match v with `Bool b -> Value.Bool b | _ -> fail "%s: malformed boolean" at)
   | "text", Some Tekst -> Value.Text (str v)
@@ -193,25 +257,32 @@ let timeline_of_json ?(allow_empty = false) ~at ~(gran : granulariteit) (decl : 
   in
   if segs = [] && not allow_empty then
     fail "%s: a timeline value carries at least one segment" at;
-  let day_of ~what sj =
-    match Value.date_of_iso (str sj) with
-    | Value.Date d -> d
-    | _ -> fail "%s: malformed %s date" at what
-  in
+  (* the grid is checked through the bucketing, which ch. 3.2 defines for
+     month and year only; on another declared grid its refusal belongs to
+     this timeline, at load, and not to an evaluation that never started *)
   let aligned d =
-    let van, _ = Timeline.bucket gran d in
-    van = d
+    match Timeline.bucket gran d with
+    | van, _ -> van = d
+    | exception Value.Fault why -> fail "%s: %s" at why
   in
   let parsed =
-    List.map
-      (fun sj ->
+    List.mapi
+      (fun i sj ->
         let kvs = obj sj in
-        let van = day_of ~what:"from" (field kvs "from") in
-        let tot = day_of ~what:"to" (field kvs "to") in
-        if tot <= van then fail "%s: segment 'to' must lie after 'from'" at;
+        let grens what =
+          day_at ~at:(Printf.sprintf "%s.timeline[%d].%s" at i what) (str (field kvs what))
+        in
+        let van = grens "from" in
+        let tot = grens "to" in
+        if tot <= van then fail "%s.timeline[%d]: segment 'to' must lie after 'from'" at i;
         if not (aligned van && aligned tot) then
-          fail "%s: segment boundaries must sit on the declared granularity grid" at;
-        { Timeline.s_van = van; s_tot = tot; s_waarde = value_of_json ~at decl (field kvs "value") })
+          fail "%s.timeline[%d]: segment boundaries must sit on the declared granularity grid" at i;
+        {
+          Timeline.s_van = van;
+          s_tot = tot;
+          s_waarde =
+            value_of_json ~at:(Printf.sprintf "%s.timeline[%d].value" at i) decl (field kvs "value");
+        })
       segs
   in
   let rec check_order = function
@@ -412,11 +483,6 @@ let load_instance (doc : document) (j : Yojson.Safe.t) : World.instance =
             in
             ignore gran;
             let at = label ^ "." ^ cname in
-            let day_of ~what sj =
-              match Value.date_of_iso (str sj) with
-              | Value.Date d -> d
-              | _ -> fail "%s: malformed %s date" at what
-            in
             (* true periods are DAY-precise regardless of the declared
                granularity — the pinned runtime accepts a mid-month
                boundary on a month-granular characteristic (the ch. 3.7
@@ -425,12 +491,15 @@ let load_instance (doc : document) (j : Yojson.Safe.t) : World.instance =
             let periods =
               match pj with
               | `List l ->
-                  List.map
-                    (fun sj ->
+                  List.mapi
+                    (fun i sj ->
                       let skvs = obj sj in
-                      let van = day_of ~what:"from" (field skvs "from") in
-                      let tot = day_of ~what:"to" (field skvs "to") in
-                      if tot <= van then fail "%s: period 'to' must lie after 'from'" at;
+                      let grens what =
+                        day_at ~at:(Printf.sprintf "%s[%d].%s" at i what) (str (field skvs what))
+                      in
+                      let van = grens "from" in
+                      let tot = grens "to" in
+                      if tot <= van then fail "%s[%d]: period 'to' must lie after 'from'" at i;
                       (van, tot))
                     l
               | _ -> fail "%s: expected a list of periods" at
@@ -729,20 +798,27 @@ let load_file (doc : document) path : t =
   let as_of =
     match field kvs "asOfDate" with
     | `Null -> None
-    | `String s -> (
+    | `String s ->
         (* read here, at load, so a non-date is refused before any
            reader downstream sees it; the schema pattern alone admits
            "2026-13-01" *)
-        match Value.date_of_iso s with
-        | _ -> Some s
-        | exception Value.Fault why ->
-            fail "asOfDate %S is not the uchar-case-v0 date lexeme yyyy-mm-dd (%s)" s why)
+        ignore (date_at ~at:"asOfDate" s);
+        Some s
     | _ -> fail "malformed asOfDate"
   in
   let input = obj (field kvs "input") in
   let world =
     match field input "instances" with
-    | `List l -> List.fold_left (fun w ij -> World.add_instance w (load_instance doc ij)) World.empty l
+    | `List l ->
+        List.fold_left
+          (fun (w : World.t) ij ->
+            let i = load_instance doc ij in
+            (* label uniqueness is this loader's cross-check (see the header);
+               left to the world's own guard it surfaced as an evaluation
+               fault, exit 1, from a case that never got to evaluation *)
+            if SMap.mem i.label w.instances then fail "duplicate instance label %S" i.label;
+            World.add_instance w i)
+          World.empty l
     | _ -> fail "instances: expected a list"
   in
   let world = materialise_relations doc world in

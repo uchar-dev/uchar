@@ -2384,13 +2384,16 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
        | None, _, _ -> false (* an unset evaluation date never matches *)
        | _, Some None, _ | _, _, Some None -> false
        | Some d, v, t -> (
+           (* the reader returns a Date or raises its own fault, so a
+              "malformed asOfDate" arm here never fired (removed
+              2026-09-23); a case's non-date asOfDate is refused at load *)
            match Value.date_of_iso d with
            | Value.Date today ->
                (match v with Some (Some z) -> z <= today | _ -> true)
                && (match t with
                    | Some (Some z) -> if tot_inclusief then today <= z else today < z
                    | _ -> true)
-           | _ -> Value.fault "malformed asOfDate %S" d))
+           | _ -> assert false))
   | Conditie_onopgelost _ -> Value.fault "Onopgelost condition reached in evaluation (WF-044)"
 
 (* --- day kinds as duration units (ch. 3.7/3.8) --------------------------

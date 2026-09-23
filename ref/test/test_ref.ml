@@ -5569,6 +5569,279 @@ let () =
       (* the pattern-admitted calendar hole: 29 February outside a leap year *)
       ("WV-3.10-caselader-weigert-29-februari-asofdate", "2025-02-29", dag "2025-02-29") ]
 
+(* The case loader's lexeme refusals: every date, dateTime and number lexeme
+   a case carries is read AT LOAD, and a lexeme the reader refuses is a
+   Case.Error naming the position, the lexeme and the reason — the runners
+   print it as CASE ERROR, exit 2, before either executor runs. Until
+   2026-09-23 the date reader's Value.Fault passed the loader unconverted
+   (the runners called a day-first input date an EVALUATION FAULT, clingo a
+   TRANSLATION FAULT, with no field in it — measured on
+   jutterswet-bergingsklok), a dateTime refusal named no field, and a number
+   went through the IR literal grammar (WF-081) instead of the case wire's:
+   "1,000" loaded as 1 without a word. Gate 4's schema keeps these lexemes
+   out of the corpus files, except the calendar half ("2026-02-30" passes
+   the date pattern, an hour 24 the dateTime one), so the positions are
+   pinned here, through the loader both executors share. The WHOLE sentence
+   is pinned per position. The asOfDate sentence these share their shape
+   with is pinned above, by the WV-3.10-caselader examples. *)
+let () =
+  let datum : Ir_v0.Ast.datatype = Datum_in_dagen in
+  let bedrag : Ir_v0.Ast.datatype =
+    Numeriek { geheel = false; decimalen = 2; teken = None; eenheid = None }
+  in
+  let vondst =
+    let naam, o =
+      ot "Vondst"
+        [ ("vondstdag", Some datum); ("meldstip", Some Ir_v0.Ast.Datum_tijd);
+          ("vangstdagen", Some (Ir_v0.Ast.List_type { element = datum }));
+          ("dossier", Some (Ir_v0.Ast.Struct_type { domein = "Dossier"; velden = [ ("peildag", datum) ] }));
+          ( "status",
+            Some
+              (Ir_v0.Ast.Sum_type
+                 { domein = "Vondststatus"; constructoren = [ ("Gepland", Some datum); ("Open", None) ] }) );
+          ("gewicht", Some bedrag); ("tarief", Some bedrag); ("ijkdag", Some datum) ]
+        [ "dienstdoend" ]
+    in
+    ( naam,
+      { o with
+        attribuut_granulariteit = [ ("tarief", Some Ir_v0.Ast.Maand); ("ijkdag", Some Ir_v0.Ast.Maand) ];
+        kenmerk_granulariteit = [ ("dienstdoend", Some Ir_v0.Ast.Dag) ] } )
+  in
+  let par naam dt gran =
+    (naam, { Ir_v0.Ast.par_naam = Some naam; par_datatype = Some dt; par_granulariteit = gran })
+  in
+  let doc =
+    { empty_doc with
+      objecttypen = [ vondst ];
+      parameters =
+        [ par "peildatum" datum None; par "peilstip" Ir_v0.Ast.Datum_tijd None; par "heffing" bedrag None;
+          par "tariefreeks" bedrag (Some Ir_v0.Ast.Jaar); par "ijkreeks" datum (Some Ir_v0.Ast.Jaar) ] }
+  in
+  (* one lexeme per {slot}; every position a lexeme can sit in, once *)
+  let sjabloon =
+    {|{ "format": "uchar-case-v0", "asOfDate": "2026-06-01",
+  "input": {
+    "instances": [ { "label": "V1", "objectType": "Vondst",
+      "attributes": {
+        "vondstdag": { "date": "{vondstdag}" },
+        "meldstip": { "dateTime": "{meldstip}" },
+        "vangstdagen": { "list": [ { "date": "2026-03-09" }, { "date": "{vangstdag}" } ] },
+        "dossier": { "struct": { "peildag": { "date": "{peildag}" } } },
+        "status": { "constructor": "Gepland", "payload": { "date": "{gepland}" } },
+        "gewicht": { "number": "{gewicht}" },
+        "tarief": { "timeline": [
+          { "from": "{tarief-van}", "to": "2026-02-01", "value": { "number": "{tarief-waarde}" } },
+          { "from": "2026-02-01", "to": "{tarief-tot}", "value": { "number": "6" } } ] },
+        "ijkdag": { "timeline": [
+          { "from": "2026-01-01", "to": "2026-02-01", "value": { "date": "{ijkdag-waarde}" } } ] } },
+      "roles": {}, "characteristics": [],
+      "characteristicTimelines": { "dienstdoend": [
+        { "from": "2026-01-01", "to": "2026-02-01" },
+        { "from": "{dienst-van}", "to": "{dienst-tot}" } ] } } ],
+    "parameters": {
+      "peildatum": { "date": "{peildatum}" },
+      "peilstip": { "dateTime": "{peilstip}" },
+      "heffing": { "number": "{heffing}" },
+      "tariefreeks": { "timeline": [
+        { "from": "{reeks-van}", "to": "{reeks-tot}", "value": { "number": "7" } } ] },
+      "ijkreeks": { "timeline": [
+        { "from": "2026-01-01", "to": "2027-01-01", "value": { "date": "{ijkreeks-waarde}" } } ] } } },
+  "expected": [
+    { "kind": "attributeValue", "label": "V1", "attribute": "vondstdag",
+      "value": { "date": "{verwacht-vondstdag}" } },
+    { "kind": "attributeValue", "label": "V1", "attribute": "meldstip",
+      "value": { "dateTime": "{verwacht-meldstip}" } },
+    { "kind": "attributeValue", "label": "V1", "attribute": "gewicht",
+      "value": { "number": "{verwacht-gewicht}" } },
+    { "kind": "attributeTimeline", "label": "V1", "attribute": "tarief", "timeline": [
+      { "from": "{verwacht-van}", "to": "{verwacht-tot}", "value": { "number": "5" } } ] },
+    { "kind": "consistent" } ] }|}
+  in
+  let canoniek =
+    [ ("vondstdag", "2026-03-10"); ("meldstip", "2026-03-10T09:00:00"); ("vangstdag", "2026-03-11");
+      ("peildag", "2026-03-10"); ("gepland", "2026-03-10"); ("gewicht", "-12.50");
+      ("tarief-van", "2026-01-01"); ("tarief-waarde", "5"); ("tarief-tot", "2026-03-01");
+      ("ijkdag-waarde", "2026-01-15"); ("dienst-van", "2026-03-01"); ("dienst-tot", "2026-04-16");
+      ("peildatum", "2026-03-10"); ("peilstip", "2026-03-10T09:00:00.250"); ("heffing", "3/4");
+      ("reeks-van", "2026-01-01"); ("reeks-tot", "2027-01-01"); ("ijkreeks-waarde", "2026-01-15");
+      ("verwacht-vondstdag", "2026-03-10"); ("verwacht-meldstip", "2026-03-10T09:00:00");
+      ("verwacht-gewicht", "12.50"); ("verwacht-van", "2026-01-01"); ("verwacht-tot", "2026-02-01") ]
+  in
+  let vervang ~sub ~door s =
+    let b = Buffer.create (String.length s) and n = String.length sub in
+    let rec go i =
+      if i > String.length s - n then Buffer.add_string b (String.sub s i (String.length s - i))
+      else if String.sub s i n = sub then (Buffer.add_string b door; go (i + n))
+      else (Buffer.add_char b s.[i]; go (i + 1))
+    in
+    go 0;
+    Buffer.contents b
+  in
+  let case_met slot lex =
+    if slot <> "" && not (List.mem_assoc slot canoniek) then invalid_arg ("unknown slot " ^ slot);
+    List.fold_left
+      (fun t (k, v) -> vervang ~sub:("{" ^ k ^ "}") ~door:(if k = slot then lex else v) t)
+      sjabloon canoniek
+  in
+  let laad_in d tekst =
+    let f = Filename.temp_file "ref-caselexeem" ".case.json" in
+    let oc = open_out f in
+    output_string oc tekst;
+    close_out oc;
+    let r =
+      match Case.load_file d f with
+      | c -> `Geladen c
+      | exception Case.Error m -> `Geweigerd m
+      | exception Value.Fault m -> `Fault m
+    in
+    Sys.remove f;
+    r
+  in
+  let laad = laad_in doc in
+  let weigert_tekst ?(d = doc) naam tekst verwacht =
+    match laad_in d tekst with
+    | `Geweigerd m -> check (naam ^ " (got: " ^ m ^ ")") (m = verwacht)
+    | `Fault m -> check (naam ^ " (escaped the loader as Value.Fault: " ^ m ^ ")") false
+    | `Geladen _ -> check (naam ^ " (loaded)") false
+  in
+  let weigert naam slot lex verwacht = weigert_tekst naam (case_met slot lex) verwacht in
+  (* the over-rejection guard: every canonical form loads and reads as written *)
+  (match laad (case_met "" "") with
+  | `Geladen c ->
+      let v1 = World.get c.world "V1" in
+      check "caselader-lexeem-canoniek-laadt" true;
+      check "caselader-lexeem-canoniek-datum"
+        (World.attr v1 "vondstdag" = Value.date_of_iso "2026-03-10");
+      check "caselader-lexeem-canoniek-negatief-decimaal"
+        (match World.attr v1 "gewicht" with Value.Num (x, _) -> Q.equal x (q "-25/2") | _ -> false);
+      check "caselader-lexeem-canoniek-breuk"
+        (match World.SMap.find_opt "heffing" c.params with
+         | Some (Value.Num (x, _)) -> Q.equal x (q "3/4")
+         | _ -> false);
+      check "caselader-lexeem-canoniek-datumtijd"
+        (World.SMap.find_opt "peilstip" c.params
+        = Some (Value.Date_time (Case.ms_of_datetime "2026-03-10T09:00:00.250")))
+  | `Geweigerd m -> check ("caselader-lexeem-canoniek-laadt (refused: " ^ m ^ ")") false
+  | `Fault m -> check ("caselader-lexeem-canoniek-laadt (fault: " ^ m ^ ")") false);
+  let d at lex why =
+    Printf.sprintf "%s %S is not the uchar-case-v0 date lexeme yyyy-mm-dd (%s)" at lex why
+  in
+  let vorm lex = Printf.sprintf "malformed date lexeme %S (expected ISO yyyy-mm-dd)" lex in
+  let maand lex = Printf.sprintf "month out of range in date lexeme %S" lex in
+  let dag lex = Printf.sprintf "day out of range in date lexeme %S" lex in
+  let dm = "10-03-2026" in
+  (* date: every position, day-first *)
+  List.iter
+    (fun (naam, slot, at) -> weigert ("caselader-lexeem-" ^ naam) slot dm (d at dm (vorm dm)))
+    [ ("attribuut-datum", "vondstdag", "V1.vondstdag");
+      ("lijstelement-datum", "vangstdag", "V1.vangstdagen[1]");
+      ("structveld-datum", "peildag", "V1.dossier.peildag");
+      ("constructorpayload-datum", "gepland", "V1.status");
+      ("attribuuttijdlijn-van", "tarief-van", "V1.tarief.timeline[0].from");
+      ("attribuuttijdlijn-tot", "tarief-tot", "V1.tarief.timeline[1].to");
+      ("attribuuttijdlijn-waarde-datum", "ijkdag-waarde", "V1.ijkdag.timeline[0].value");
+      ("kenmerktijdlijn-van", "dienst-van", "V1.dienstdoend[1].from");
+      ("kenmerktijdlijn-tot", "dienst-tot", "V1.dienstdoend[1].to");
+      ("parameter-datum", "peildatum", "parameter peildatum");
+      ("parametertijdlijn-van", "reeks-van", "parameter tariefreeks.timeline[0].from");
+      ("parametertijdlijn-tot", "reeks-tot", "parameter tariefreeks.timeline[0].to");
+      ("parametertijdlijn-waarde-datum", "ijkreeks-waarde", "parameter ijkreeks.timeline[0].value");
+      ("verwachte-waarde-datum", "verwacht-vondstdag", "expected V1.vondstdag");
+      ("verwachte-tijdlijn-van", "verwacht-van", "expected V1.tarief.timeline[0].from");
+      ("verwachte-tijdlijn-tot", "verwacht-tot", "expected V1.tarief.timeline[0].to") ];
+  (* the calendar half, which the case schema's pattern lets through: the
+     reader's own reason rides along whatever it is *)
+  weigert "caselader-lexeem-attribuut-datum-30-februari" "vondstdag" "2026-02-30"
+    (d "V1.vondstdag" "2026-02-30" (dag "2026-02-30"));
+  weigert "caselader-lexeem-attribuuttijdlijn-van-maand-13" "tarief-van" "2026-13-01"
+    (d "V1.tarief.timeline[0].from" "2026-13-01" (maand "2026-13-01"));
+  (* dateTime: the reader's refusal names the grammar position, the loader
+     adds the case position *)
+  let dt at lex =
+    Printf.sprintf
+      "%s %S is not the uchar-case-v0 dateTime lexeme yyyy-mm-ddThh:mm:ss[.fff] (malformed dateTime \
+       %S (at offset 10: expected 'T'))"
+      at lex lex
+  in
+  let spatie = "2026-03-10 09:00:00" in
+  List.iter
+    (fun (naam, slot, at) -> weigert ("caselader-lexeem-" ^ naam) slot spatie (dt at spatie))
+    [ ("attribuut-datumtijd", "meldstip", "V1.meldstip");
+      ("parameter-datumtijd", "peilstip", "parameter peilstip");
+      ("verwachte-waarde-datumtijd", "verwacht-meldstip", "expected V1.meldstip") ];
+  (* the clock half, which the dateTime pattern lets through *)
+  weigert "caselader-lexeem-attribuut-datumtijd-uur-24" "meldstip" "2026-03-10T24:00:00"
+    (Printf.sprintf
+       "V1.meldstip %S is not the uchar-case-v0 dateTime lexeme yyyy-mm-ddThh:mm:ss[.fff] (malformed \
+        dateTime %S (hour 24 is out of range))"
+       "2026-03-10T24:00:00" "2026-03-10T24:00:00");
+  (* number: the case wire's own grammar, not the IR literal's. "1,000" read
+     as 1 (WF-081's decimal comma) and ".5" as 0.5, both silently; "1/0" and
+     "abc" escaped the loader as evaluation faults *)
+  let g at lex =
+    Printf.sprintf
+      "%s %S is not the uchar-case-v0 number lexeme [-]digits[.digits] or [-]digits/digits, the \
+       denominator without a leading 0"
+      at lex
+  in
+  List.iter
+    (fun (naam, slot, lex, at) -> weigert ("caselader-lexeem-" ^ naam) slot lex (g at lex))
+    [ ("attribuut-getal-komma", "gewicht", "1,000", "V1.gewicht");
+      ("attribuut-getal-kale-punt", "gewicht", ".5", "V1.gewicht");
+      ("attribuut-getal-exponent", "gewicht", "1E3", "V1.gewicht");
+      ("attribuut-getal-plusteken", "gewicht", "+5", "V1.gewicht");
+      ("attribuut-getal-tekst", "gewicht", "abc", "V1.gewicht");
+      ("attribuut-getal-noemer-nul", "gewicht", "1/0", "V1.gewicht");
+      ("attribuuttijdlijn-waarde-getal-komma", "tarief-waarde", "12,5", "V1.tarief.timeline[0].value");
+      ("parameter-getal-noemer-voorloopnul", "heffing", "3/04", "parameter heffing");
+      ("verwachte-waarde-getal-exponent", "verwacht-gewicht", "1.25E1", "expected V1.gewicht") ];
+  (* The two other load-time refusals that left the loader as a Value.Fault
+     (measured 2026-09-23, both runners exit 1): label uniqueness, which the
+     loader's header claims as its own cross-check but left to the world's
+     evaluation-time guard, and the grid check of a timeline on a declared
+     grid other than month or year, which runs through the bucketing (ch.
+     3.2 defines it for those two only). Both are load refusals, so both
+     are case errors, the second by position. *)
+  let tweemaal =
+    (* the canonical case with its one instance written twice: the array
+       after "instances", closed by the bracket that matches it (no string
+       in the template carries a bracket) *)
+    let t = case_met "" "" in
+    let sleutel = {|"instances": [|} in
+    let rec vind i = if String.sub t i (String.length sleutel) = sleutel then i else vind (i + 1) in
+    let open_ = vind 0 + String.length sleutel - 1 in
+    let rec sluit i diepte =
+      match t.[i] with
+      | '[' | '{' -> sluit (i + 1) (diepte + 1)
+      | ']' | '}' -> if diepte = 1 then i else sluit (i + 1) (diepte - 1)
+      | _ -> sluit (i + 1) diepte
+    in
+    let eind = sluit open_ 0 in
+    let v1 = String.sub t (open_ + 1) (eind - open_ - 1) in
+    String.sub t 0 (open_ + 1) ^ v1 ^ ", " ^ v1 ^ String.sub t eind (String.length t - eind)
+  in
+  weigert_tekst "caselader-dubbel-label" tweemaal "duplicate instance label \"V1\"";
+  let doc_dag =
+    { doc with
+      objecttypen =
+        [ (let naam, o = vondst in
+           ( naam,
+             { o with
+               attribuut_granulariteit =
+                 [ ("tarief", Some Ir_v0.Ast.Dag); ("ijkdag", Some Ir_v0.Ast.Maand) ] } )) ] }
+  in
+  weigert_tekst ~d:doc_dag "caselader-tijdlijn-dagrooster" (case_met "" "")
+    "V1.tarief: bucketing is defined for month and year only (ch. 3.2)";
+  (* the per-segment refusals beside the lexeme ones name their segment the
+     same way; the two that compare segments with each other keep the
+     timeline's own position *)
+  weigert "caselader-segment-tot-niet-na-van" "tarief-tot" "2026-02-01"
+    "V1.tarief.timeline[1]: segment 'to' must lie after 'from'";
+  weigert "caselader-segment-buiten-rooster" "tarief-van" "2026-01-15"
+    "V1.tarief.timeline[0]: segment boundaries must sit on the declared granularity grid";
+  weigert "caselader-periode-tot-niet-na-van" "dienst-tot" "2026-03-01"
+    "V1.dienstdoend[1]: period 'to' must lie after 'from'"
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;
