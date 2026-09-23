@@ -690,12 +690,19 @@ public final class IrLoader {
      *  unanswered: ch. 3.9 gives the leeg test the touched-days threshold and every other test days(B), and which
      *  of the two a NEGATED leeg test takes is fixed nowhere — under days(B) the swap would be exact, under
      *  touched days it would not. ref faults on every whole-period leeg/gevuld test, so this backend refuses the
-     *  negated one by name rather than pick a threshold the norm has not chosen. */
+     *  negated one by name rather than pick a threshold the norm has not chosen.
+     *
+     *  <p>The UNNEGATED whole-period leeg/gevuld test is normed (touched days for leeg, days(B) for gevuld), but
+     *  ref faults on it and the ASP backend refuses it in ref's words, so no executor pins what an answer should
+     *  be; both branches used to play it. It is refused here too, under its own key, until ref executes the fold. */
     private Conditie.Predicaat predicaat(JsonNode n) {
         Conditie.Predicaatsoort soort = enumOf(Conditie.Predicaatsoort.class, text(n, "soort"));
         boolean negatie = bool(n, "negatie");
         Conditie.GeheelPeriode periode = geheelPeriode(n.get("periode"));
         boolean leegOfGevuld = soort == Conditie.Predicaatsoort.LEEG || soort == Conditie.Predicaatsoort.GEVULD;
+        if (leegOfGevuld && periode != null && !negatie)
+            throw new Refusal("Predicaat.periode",
+                    "a leeg/gevuld test under a whole-period qualifier (ch. 3.9): ref executes neither the leeg fold (touched days) nor the gevuld fold (days(B)), so this backend does not answer the form either");
         if (leegOfGevuld && negatie) {
             if (periode != null)
                 throw new Refusal("Predicaat.negatie",

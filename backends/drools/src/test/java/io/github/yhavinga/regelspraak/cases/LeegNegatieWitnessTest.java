@@ -32,7 +32,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p><b>The fixture is a corpus golden</b>, {@code corpus/golden/jutterswet-waardemelding}, read from there. It
  * lived in this suite's resources until the ASP backend carried the three forms it faulted on ({@code condition
  * kind not translated}; card clingo-leeg-negatie, 2026-09-23). Gates 5, 6 and 12 now replay the document itself;
- * this class keeps what the golden cannot say: the unbound step, the mirrored unnegated twin, and the refusal.
+ * this class keeps what the golden cannot say: the unbound step, the mirrored unnegated twin, and the two
+ * whole-period refusals (negated and unnegated).
  *
  * <p><b>Hand computation</b> ({@code jutterswet-waardemelding/case.json}): W1 has tarief 312, W2 none. S1 (lengte 8, werf W1),
  * S2 (no lengte, werf W1), S3 (lengte 5, no werf), S4 (no lengte, werf W2). meldpremie = 40 iff lengte is niet
@@ -98,6 +99,37 @@ class LeegNegatieWitnessTest {
             assertTrue(e.getMessage().contains("Predicaat.negatie"), e.getMessage());
             assertTrue(e.getMessage().contains("threshold of the negated test is not normed"), e.getMessage());
         }
+    }
+
+    /** The UNNEGATED leeg and gevuld tests under the same qualifier, with and without the qualifier's own
+     *  {@code niet}. ch. 3.9 norms both (touched days for leeg, days(B) for gevuld), but ref faults on every
+     *  whole-period leeg/gevuld test and the ASP backend refuses it in ref's words. Before this refusal both
+     *  branches PLAYED all four variants (measured 2026-09-23, card drools-heeltijdvak-leegtest): an answer where
+     *  the other two executors refuse by name, with nothing to check it against. */
+    @Test void de_ongenegeerde_test_onder_geheel_periode_weigert_in_beide_takken() throws Exception {
+        for (String soort : new String[] { "LEEG", "GEVULD" })
+            for (boolean niet : new boolean[] { false, true }) {
+                ObjectNode ir = ir();
+                ((ObjectNode) ir.get("objecttypen").get("Schuit").get("attribuutGranulariteit")).put("lengte", "MAAND");
+                for (String veld : new String[] { "regels", "resolvedRegels" })
+                    ir.set(veld, JSON.createArrayNode().add(ir.get(veld).get(0)));
+                ObjectNode vw = (ObjectNode) ir.get("resolvedRegels").get(0).get("voorwaarde");
+                vw.put("soort", soort).put("negatie", false);
+                vw.putObject("periode").put("node", "GeheelPeriode").put("jaar", true).put("niet", niet);
+                Path p = tijdelijk(ir);
+                ObjectNode c = (ObjectNode) geval();
+                for (JsonNode inst : c.get("input").get("instances"))
+                    if (inst.get("attributes").has("lengte"))
+                        ((ObjectNode) inst.get("attributes")).set("lengte", JSON.readTree(
+                                "{\"timeline\":[{\"from\":\"2025-01-01\",\"to\":\"2026-01-01\",\"value\":{\"number\":\"8\"}}]}"));
+                for (boolean viaDrl : new boolean[] { false, true }) {
+                    String wat = (viaDrl ? "drl-tekst" : "exec-model") + " refuses whole-period " + soort
+                            + (niet ? " (niet gedurende)" : "");
+                    IrLoader.Refusal e = assertThrows(IrLoader.Refusal.class, () -> CaseRunner.speelCase(p, c, viaDrl), wat);
+                    assertTrue(e.getMessage().contains("Predicaat.periode"), wat + ": " + e.getMessage());
+                    assertTrue(e.getMessage().contains("ref executes neither the leeg fold"), wat + ": " + e.getMessage());
+                }
+            }
     }
 
     // ---------------- fixtures ----------------
