@@ -6,8 +6,12 @@ import io.github.yhavinga.regelspraak.ir.Conditie;
 import io.github.yhavinga.regelspraak.ir.Expr;
 import io.github.yhavinga.regelspraak.ir.ResolvedRegel;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
+import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Diagnostic;
+import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Severity;
 import io.github.yhavinga.regelspraak.resolver.Resolver;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -777,5 +781,38 @@ class IrEmitterTest {
                         "de emitter schrijft deze vorm niet; hij weigert haar");
         assertTrue(geweigerd.getMessage().contains("never emitter-produced"),
                 () -> "de weigering noemt de reden: " + geweigerd.getMessage());
+    }
+
+    /** WF-113 (a) at the producer boundary: the wire carries a diagnostic only as a WARNING whose message is
+     *  neither empty nor blank and whose line is at least 0, and the verifier refuses every other shape. The
+     *  resolver writes none of the twisted diagnostics below, so each is grafted onto a resolver-built model;
+     *  that the emitter refuses them by itself is the claim. Until 2026-09-23 nothing pinned INFO or a null
+     *  severity (a guard narrowed to ERROR kept the suite green), and a blank message or line -1 was written. */
+    @Test void wf113a_de_emitter_schrijft_alleen_wat_de_verifier_als_diagnose_aanneemt() {
+        String bron = """
+            Objecttype de Jutter
+                de vondstteller Numeriek (geheel getal);
+            """;
+        RegelSpraakModel goed = Resolver.resolve(bron);
+        assertTrue(goed.diagnostics.isEmpty(), () -> "onverwachte diagnoses: " + goed.diagnostics);
+        goed.diagnostics.add(new Diagnostic(Severity.WARNING, "een melding", 0));
+        String c = IrEmitter.emit(goed).replaceAll("\\s+", "");
+        assertTrue(c.contains("\"diagnostics\":[{\"node\":\"Diagnostic\",\"severity\":\"WARNING\","
+                        + "\"message\":\"eenmelding\",\"line\":0}]"),
+                () -> "een WARNING met een melding op regel 0 hoort geschreven te worden:\n" + c);
+
+        for (Diagnostic d : List.of(
+                new Diagnostic(Severity.INFO, "een melding", 1),
+                new Diagnostic(null, "een melding", 1),
+                new Diagnostic(Severity.WARNING, "", 1),
+                new Diagnostic(Severity.WARNING, "   ", 1),
+                new Diagnostic(Severity.WARNING, null, 1),
+                new Diagnostic(Severity.WARNING, "een melding", -1))) {
+            RegelSpraakModel m = Resolver.resolve(bron);
+            m.diagnostics.add(d);
+            IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m),
+                    () -> "de emitter schreef " + d);
+            assertTrue(e.getMessage().contains("WF-113 (a)"), e::getMessage);
+        }
     }
 }

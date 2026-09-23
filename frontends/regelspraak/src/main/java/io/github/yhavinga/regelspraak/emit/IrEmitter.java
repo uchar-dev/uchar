@@ -82,12 +82,14 @@ public final class IrEmitter {
         if (!weigeringen.isEmpty())
             throw new IllegalStateException("de wire kan dit model niet dragen: " + weigeringen);
         // WF-113 (a): an ERROR means the producer refused the document, so a model that carries one has no
-        // document to write; checked here and not only in irModus, so no emission route bypasses it
+        // document to write; checked here and not only in irModus, so no emission route bypasses it. The
+        // message and line clauses are the verifier's too: a document carrying either would be refused there.
         List<Diagnostic> nietWire = m.diagnostics.stream()
-                .filter(d -> d.severity() != RegelSpraakModel.Severity.WARNING).toList();
+                .filter(d -> d.severity() != RegelSpraakModel.Severity.WARNING
+                        || d.message() == null || d.message().isBlank() || d.line() < 0).toList();
         if (!nietWire.isEmpty())
-            throw new IllegalStateException("IrEmitter: WF-113 (a) — de wire draagt alleen WARNING; dit model draagt "
-                    + nietWire);
+            throw new IllegalStateException("IrEmitter: WF-113 (a) — de wire draagt alleen een WARNING met een "
+                    + "melding die niet leeg of blanco is en een regel ≥ 0; dit model draagt " + nietWire);
         IrEmitter e = new IrEmitter();
         e.model(m);
         e.w.sb.append('\n');
