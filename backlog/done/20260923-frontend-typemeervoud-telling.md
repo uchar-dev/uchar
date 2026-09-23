@@ -378,3 +378,36 @@ verifier-supertype-dubbele-schrijver. De kleinere open punten van de
 branch zijn in deze ronde gesloten: zie de Results van de kaarten
 frontend-regelgroep-sluit-bij-uitzondering en
 frontend-bron-annotatie-in-defaults.
+
+### Fixronde 2 (2026-09-23): open normpunt en herpinnotitie (lensadvies 9 en 1)
+
+**Open normpunt 3 van het vierde onderdeel: is "scalar" in WF-111 ook
+"niet gedimensioneerd"?** Gemeten op de frontend van deze branch: een
+kale lezing van een eigen gedimensioneerd datumattribuut als venstergrens
+("vanaf zijn peildatum", met `de peildatum Datum in dagen gedimensioneerd
+met seizoen`) gaat als `AttribuutRef` op het onderwerp de schijf op. De
+WF-111-fence laat haar door, en de verifier ook (`verifier: PASS`). WF-111
+noemt alleen "scalar (non-time-dependent)", en de verifier toetst alleen
+tijdsafhankelijkheid. Op een case zonder invoer:
+
+    ref    : MISMATCH: J1.premie = leeg, expected 10
+    clingo : MISMATCH: J1.premie is underived (leeg), expected 10
+    Drools : exec SKIP (voorwaarde buiten Phase-B scope);
+             DRL-tekst MARKER TODO periodevergelijking-grens 'zijn peildatum'
+
+Drools weigert elk gedimensioneerd attribuut als grens
+(`Tijdrekening.periodeGrensLowerbaar` eist `dimensiesVan(...).isEmpty()`).
+`ref` en clingo lezen leeg, en het casusformaat kent geen celinvoer, dus
+wat zij met een gevulde cel zouden doen is op de wire niet te toetsen.
+Te beslissen voor de verifier- en speclijn: telt een gedimensioneerd
+attribuut in WF-111 als niet-scalair (en dan weigeren alle lezers, met
+een negatief), of is de kale lezing van een gedimensioneerd attribuut
+elders al ongeldig (WF-040 pint alleen `DimensionCellRead`)? De frontend
+volgt het besluit; tot dan laat zij door wat de verifier doorlaat.
+
+**Voor de herpin (hoofdsessie).** In regelspraak-java verwacht
+`RuleCheckTest.periodevergelijking_met_parametergrens_blijft_eerlijke_marker`
+dat "vanaf de PEILDATUM" (een parametergrens) zonder fouten resolvet. Sinds
+de WF-111-fence van deze branch (`8a4a8809`) is een parametergrens een
+ERROR. Die test kantelt dus bij de herpin, naar dezelfde weigering die de
+verifier al gaf.
