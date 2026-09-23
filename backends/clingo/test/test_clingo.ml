@@ -8134,20 +8134,27 @@ let pf_n0 =
 
 let pf_datum = {|{ "node": "DatumInDagen" }|}
 
-let pf_ot ?(naam = "Jutter") ?(meervoud = "Jutters") ?(granulariteit = "") ?(kenmerken = [])
+let pf_ot ?(naam = "Jutter") ?(meervoud = "Jutters") ?(granulariteit = []) ?(kenmerken = [])
     attributen =
+  let attribute (a, datatype) =
+    match List.assoc_opt a granulariteit with
+    | None -> attribuut a datatype
+    | Some g ->
+        Printf.sprintf
+          {|{ "node": "Attribute", "name": "%s", "datatype": %s,
+              "timeline": { "node": "TimelineFacet", "granularity": "%s", "count": 1 } }|}
+          a datatype g
+  in
   Printf.sprintf
-    {|"%s": { "node": "Objecttype", "naam": "%s", "attributen": { %s },
-      "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": { %s },
-      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-      "kenmerken": [ %s ], "kenmerkSoorten": { %s }, "kenmerkGranulariteit": {},
-      "kenmerkTijdlijnAantal": {}, "bezield": true, "meervoud": "%s" }|}
-    naam naam attributen granulariteit
-    (String.concat ", " (List.map (Printf.sprintf {|"%s"|}) kenmerken))
-    (String.concat ", " (List.map (Printf.sprintf {|"%s": "BIJVOEGLIJK"|}) kenmerken))
-    meervoud
+    {|{ "node": "ObjectType", "name": "%s", "animate": true, "plural": "%s",
+      "attributes": [ %s ],
+      "characteristics": [ %s ] }|}
+    naam meervoud
+    (String.concat ", " (List.map attribute attributen))
+    (String.concat ", "
+       (List.map (Printf.sprintf {|{ "node": "Characteristic", "name": "%s", "kind": "BIJVOEGLIJK" }|}) kenmerken))
 
-let pf_jutter = pf_ot (Printf.sprintf {|"inkomen": %s, "restpost": %s, "heffing": %s|} pf_n2 pf_n2 pf_n2)
+let pf_jutter = pf_ot [ ("inkomen", pf_n2); ("restpost", pf_n2); ("heffing", pf_n2) ]
 
 let pf_a ?(ot = "Jutter") ?(typ = pf_n2) n =
   Printf.sprintf
@@ -8184,7 +8191,7 @@ let pf_comp ?(drempel = 0) k parts =
     k drempel (String.concat ", " parts)
 
 let pf_decl ?(typ = pf_n2) n =
-  Printf.sprintf {|"%s": { "node": "Parameter", "naam": "%s", "datatype": %s, "granulariteit": null }|} n n typ
+  Printf.sprintf {|{ "node": "Parameter", "naam": "%s", "datatype": %s, "granulariteit": null }|} n typ
 
 let pf_regel ?(ot = "Jutter") ?(doel = "heffing") ?(typ = pf_n2) ?(soort = "BEREKENING")
     ?(voorwaarde = "null") waarde =
@@ -8199,20 +8206,18 @@ let pf_regel ?(ot = "Jutter") ?(doel = "heffing") ?(typ = pf_n2) ?(soort = "BERE
       "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }|}
       naam soort doel ot ot typ doel waarde voorwaarde )
 
-let pf_doc ?(objecttypen = [ pf_jutter ]) ?(domeinen = "") ?(feittypen = "{}") ?(parameters = [])
+let pf_doc ?(objecttypen = [ pf_jutter ]) ?(domeinen = "") ?(feittypen = "") ?(parameters = [])
     ?(regels = []) ?(consistenties = []) ?(defaults = []) ?(creaties = []) ?(feitcreaties = [])
     ?(verdelingen = []) () =
   Printf.sprintf
-    {|{ "formaat": "regelspraak-ir-v0", "objecttypen": { %s }, "domeinen": { %s },
-  "parameters": { %s }, "eenheidstelsels": {}, "feittypen": %s, "dimensies": {},
-  "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
-  "regels": [ %s ], "resolvedRegels": [ %s ], "resolvedDagsoorten": [],
-  "objectCreaties": [ %s ], "verdelingen": [ %s ], "consistenties": [ %s ],
-  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [ %s ], "resolvedStartpunten": [],
-  "regelGroepen": [], "diagnostics": []%s }|}
-    (String.concat ", " objecttypen) domeinen (String.concat ", " parameters) feittypen
-    (String.concat ", "
-       (List.map (fun (n, _) -> Printf.sprintf {|{ "node": "Regel", "naam": "%s", "soort": "regel" }|} n) regels))
+    {|{ "format": "uchar-ir-v1",
+  "model": { "objectTypes": [ %s ], "factTypes": [ %s ], "parameters": [ %s ], "domains": [ %s ],
+    "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {} },
+  "rules": { "resolvedRegels": [ %s ], "resolvedDagsoorten": [], "objectCreaties": [ %s ],
+    "verdelingen": [ %s ], "consistenties": [ %s ], "uniciteiten": [], "uniciteitUnies": [],
+    "feitCreaties": [ %s ], "resolvedStartpunten": [], "regelGroepen": []%s },
+  "diagnostics": [] }|}
+    (String.concat ", " objecttypen) feittypen (String.concat ", " parameters) domeinen
     (String.concat ", " (List.map snd regels))
     (String.concat ", " creaties) (String.concat ", " verdelingen) (String.concat ", " consistenties)
     (String.concat ", " feitcreaties)
@@ -8386,12 +8391,12 @@ let () =
 let () =
   let werf =
     pf_ot ~naam:"Werf" ~meervoud:"Werven"
-      (Printf.sprintf {|"bonus": %s, "keur": %s|} pf_n0 pf_n0)
-  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" (Printf.sprintf {|"lengte": %s|} pf_n0) in
+      [ ("bonus", pf_n0); ("keur", pf_n0) ]
+  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" [ ("lengte", pf_n0) ] in
   let ligplaats =
-    {|{ "ligplaats": { "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
+    {|{ "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
       { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
-      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] } }|}
+      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] }|}
   in
   let lengte = pf_a ~ot:"Schuit" ~typ:pf_n0 "lengte" and p = pf_p ~typ:pf_n0 "p" in
   let bron_rol = {|{ "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" }|} in
@@ -8520,7 +8525,7 @@ let () =
   let datum_doc =
     pf_doc
       ~objecttypen:
-        [ pf_ot (Printf.sprintf {|"aangiftedatum": %s, "vervaldatum": %s|} pf_datum pf_datum) ]
+        [ pf_ot [ ("aangiftedatum", pf_datum); ("vervaldatum", pf_datum) ] ]
       ~parameters:[ pf_decl ~typ:dagen "termijn" ]
       ~regels:
         [ pf_regel ~doel:"vervaldatum" ~typ:pf_datum
@@ -8541,7 +8546,7 @@ let () =
   (* the tijdsduur from a date parameter: 1 januari to 31 januari is 30 days *)
   let duur_doc =
     pf_doc
-      ~objecttypen:[ pf_ot (Printf.sprintf {|"peildatum": %s, "looptijd": %s|} pf_datum dagen) ]
+      ~objecttypen:[ pf_ot [ ("peildatum", pf_datum); ("looptijd", dagen) ] ]
       ~parameters:[ pf_decl ~typ:pf_datum "startdatum" ]
       ~regels:
         [ pf_regel ~doel:"looptijd" ~typ:dagen
@@ -8565,8 +8570,8 @@ let () =
   (* the whole-period bound, NEGATED: 50 all year is above 40, so NIET makes
      the bound twin false; unbound, no day satisfied, and NIET made it true *)
   let met_parameter s =
-    replace ~tok:{|"domeinen": {}, "parameters": {}|}
-      ~by:({|"domeinen": {}, "parameters": { |} ^ pf_decl ~typ:kv_num0 "grens" ^ " }") s
+    replace ~tok:{|"parameters": [], "domains": []|}
+      ~by:({|"parameters": [ |} ^ pf_decl ~typ:kv_num0 "grens" ^ {| ], "domains": []|}) s
   in
   let gp_ir =
     met_parameter
@@ -8603,8 +8608,7 @@ let () =
   let clip_ir =
     pf_doc
       ~objecttypen:
-        [ pf_ot ~granulariteit:(Printf.sprintf {|"%s": "MAAND"|} vergoeding)
-            (Printf.sprintf {|"%s": %s, "topsom": %s|} vergoeding pf_n0 pf_n0) ]
+        [ pf_ot ~granulariteit:[ (vergoeding, "MAAND") ] [ (vergoeding, pf_n0); ("topsom", pf_n0) ] ]
       ~parameters:[ pf_decl ~typ:pf_n0 "klipgrens" ]
       ~regels:
         [ pf_regel ~doel:"topsom" ~typ:pf_n0 ~soort:"GELIJKSTELLING"
@@ -8640,7 +8644,7 @@ let () =
 let () =
   let jutter =
     pf_ot ~kenmerken:[ "erkend"; "kandidaat" ]
-      (Printf.sprintf {|"basisbedrag": %s, "kandidaatbedrag": %s, "waardering": %s|} pf_n0 pf_n0 pf_n0)
+      [ ("basisbedrag", pf_n0); ("kandidaatbedrag", pf_n0); ("waardering", pf_n0) ]
   in
   let kenmerk k =
     Printf.sprintf
@@ -8702,12 +8706,12 @@ let () =
 let () =
   let veiling =
     pf_ot ~naam:"Strandveiling" ~meervoud:"Strandveilingen"
-      (Printf.sprintf {|"veilingopbrengst": %s, "veilingrestant": %s|} pf_n0 pf_n0)
-  and jutter = pf_ot (Printf.sprintf {|"veilingdeel": %s|} pf_n0) in
+      [ ("veilingopbrengst", pf_n0); ("veilingrestant", pf_n0) ]
+  and jutter = pf_ot [ ("veilingdeel", pf_n0) ] in
   let feittypen =
-    {|{ "veilingdeelname": { "node": "Feittype", "naam": "veilingdeelname", "wederkerig": false, "rollen": [
+    {|{ "node": "Feittype", "naam": "veilingdeelname", "wederkerig": false, "rollen": [
       { "node": "Rol", "naam": "strandveiling", "objecttypeNaam": "Strandveiling", "meervoud": null, "meervoudig": false },
-      { "node": "Rol", "naam": "veilingjutter", "objecttypeNaam": "Jutter", "meervoud": "veilingjutters", "meervoudig": true } ] } }|}
+      { "node": "Rol", "naam": "veilingjutter", "objecttypeNaam": "Jutter", "meervoud": "veilingjutters", "meervoudig": true } ] }|}
   in
   let verdeling =
     Printf.sprintf
@@ -8745,12 +8749,12 @@ let () =
    creation fires. A Werf mints one Rapport; its keur reads the rapport's
    bedrag back over the created role. *)
 let () =
-  let werf = pf_ot ~naam:"Werf" ~meervoud:"Werven" (Printf.sprintf {|"lengte": %s, "keur": %s|} pf_n2 pf_n2)
-  and rapport = pf_ot ~naam:"Rapport" ~meervoud:"Rapporten" (Printf.sprintf {|"bedrag": %s|} pf_n2) in
+  let werf = pf_ot ~naam:"Werf" ~meervoud:"Werven" [ ("lengte", pf_n2); ("keur", pf_n2) ]
+  and rapport = pf_ot ~naam:"Rapport" ~meervoud:"Rapporten" [ ("bedrag", pf_n2) ] in
   let keuring =
-    {|{ "keuring": { "node": "Feittype", "naam": "keuring", "wederkerig": false, "rollen": [
+    {|{ "node": "Feittype", "naam": "keuring", "wederkerig": false, "rollen": [
       { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
-      { "node": "Rol", "naam": "rapport", "objecttypeNaam": "Rapport", "meervoud": null, "meervoudig": false } ] } }|}
+      { "node": "Rol", "naam": "rapport", "objecttypeNaam": "Rapport", "meervoud": null, "meervoudig": false } ] }|}
   in
   let creatie ~voorwaarde waarde =
     Printf.sprintf
@@ -8803,7 +8807,7 @@ let () =
    plays. Unbound, the read happens in translation, so it refuses there, in
    the shared sentence. *)
 let () =
-  let ir = {|{"formaat":"regelspraak-ir-v0","objecttypen":{"Jutter":{"node":"Objecttype","naam":"Jutter","attributen":{"keurlast":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null}}},"attribuutMeervoud":{},"attribuutDimensies":{},"attribuutGranulariteit":{},"attribuutTijdlijnAantal":{},"attribuutTijdlijnNaam":{},"kenmerken":[],"kenmerkSoorten":{},"kenmerkGranulariteit":{},"kenmerkTijdlijnAantal":{},"bezield":true,"meervoud":"Jutters"},"Vondst":{"node":"Objecttype","naam":"Vondst","attributen":{"keurtarief":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":{"node":"Eenheid","afkorting":"mnd","stelsel":"Keurtijd","canoniek":"mnd","factorNaarCanoniek":1,"noemer":null}}},"gewicht":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null}},"attribuutMeervoud":{"keurtarief":"keurtarieven"},"attribuutDimensies":{},"attribuutGranulariteit":{"keurtarief":"MAAND"},"attribuutTijdlijnAantal":{},"attribuutTijdlijnNaam":{},"kenmerken":["gekeurd"],"kenmerkSoorten":{"gekeurd":"BIJVOEGLIJK"},"kenmerkGranulariteit":{},"kenmerkTijdlijnAantal":{},"bezield":false,"meervoud":"Vondsten"}},"domeinen":{},"parameters":{"minimumgewicht":{"node":"Parameter","naam":"minimumgewicht","datatype":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null},"granulariteit":null}},"eenheidstelsels":{"Munt":{"node":"Eenheidstelsel","naam":"Munt","eenheden":{"EUR":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null},"€":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null}},"aliassen":{"euro":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null},"euros":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null}}},"Keurtijd":{"node":"Eenheidstelsel","naam":"Keurtijd","eenheden":{"mnd":{"node":"Eenheid","afkorting":"mnd","stelsel":"Keurtijd","canoniek":"mnd","factorNaarCanoniek":1,"noemer":null}},"aliassen":{"maand":{"node":"Eenheid","afkorting":"mnd","stelsel":"Keurtijd","canoniek":"mnd","factorNaarCanoniek":1,"noemer":null}}}},"feittypen":{"keuring":{"node":"Feittype","naam":"keuring","wederkerig":false,"rollen":[{"node":"Rol","naam":"keurende jutter","objecttypeNaam":"Jutter","meervoud":null,"meervoudig":false},{"node":"Rol","naam":"vondst","objecttypeNaam":"Vondst","meervoud":"vondsten","meervoudig":true}]}},"dimensies":{},"tijdlijnen":[],"dagsoorten":[],"dagsoortPerEenheid":{},"regels":[{"node":"Regel","naam":"keurlast van een jutter","soort":"regel"}],"resolvedRegels":[{"node":"ResolvedRegel","naam":"keurlast van een jutter","soort":"BEREKENING","doel":{"node":"AttribuutRef","attribuut":"keurlast","objecttype":"Jutter","onderwerpBron":"een Jutter","navigatieRol":null,"type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null}},"bron":"De keurlast van een Jutter","set":false,"navigatiePad":[]},"waarde":{"node":"Functie","kind":"TOTAAL","argumenten":[{"node":"AttribuutRef","attribuut":"keurtarief","objecttype":"Vondst","onderwerpBron":"alle vondsten van de Jutter die gekeurd zijn","navigatieRol":null,"type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":{"node":"Eenheid","afkorting":"mnd","stelsel":"Keurtijd","canoniek":"mnd","factorNaarCanoniek":1,"noemer":null}}},"bron":"het keurtarief van alle vondsten van de Jutter die gekeurd zijn","set":true,"navigatiePad":[]}],"elementObjecttype":"Vondst","leegwaarde":null,"filter":{"node":"Vergelijking","op":"GROTER","links":{"node":"AttribuutRef","attribuut":"gewicht","objecttype":"Vondst","onderwerpBron":"","navigatieRol":null,"type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null},"bron":"gewicht","set":false,"navigatiePad":[]},"rechts":{"node":"ParameterRef","parameter":"minimumgewicht","type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null},"bron":"het minimumgewicht"},"periode":null,"bron":"zwaarder dan het minimumgewicht"},"dimensieSelectie":null,"type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null}},"bron":"het totaal van het keurtarief van alle vondsten van de Jutter die gekeurd zijn","granulariteit":null,"bronRol":{"node":"RolBinding","feittype":"keuring","rol":"vondst"}},"voorwaarde":null,"geldigheid":{"node":"Geldigheid","vanaf":null,"tot":null}}],"resolvedDagsoorten":[],"objectCreaties":[],"verdelingen":[],"consistenties":[],"uniciteiten":[],"uniciteitUnies":[],"feitCreaties":[],"resolvedStartpunten":[],"regelGroepen":[],"diagnostics":[]}|} in
+  let ir = {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[{"node":"Attribute","name":"keurlast","datatype":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null}}}],"characteristics":[]},{"node":"ObjectType","name":"Vondst","animate":false,"plural":"Vondsten","attributes":[{"node":"Attribute","name":"keurtarief","datatype":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":{"node":"Eenheid","afkorting":"mnd","stelsel":"Keurtijd","canoniek":"mnd","factorNaarCanoniek":1,"noemer":null}}},"plural":"keurtarieven","timeline":{"node":"TimelineFacet","granularity":"MAAND","count":1}},{"node":"Attribute","name":"gewicht","datatype":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null}}],"characteristics":[{"node":"Characteristic","name":"gekeurd","kind":"BIJVOEGLIJK"}]}],"factTypes":[{"node":"Feittype","naam":"keuring","wederkerig":false,"rollen":[{"node":"Rol","naam":"keurende jutter","objecttypeNaam":"Jutter","meervoud":null,"meervoudig":false},{"node":"Rol","naam":"vondst","objecttypeNaam":"Vondst","meervoud":"vondsten","meervoudig":true}]}],"parameters":[{"node":"Parameter","naam":"minimumgewicht","datatype":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null},"granulariteit":null}],"domains":[],"unitSystems":[{"node":"Eenheidstelsel","naam":"Munt","eenheden":{"EUR":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null},"€":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null}},"aliassen":{"euro":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null},"euros":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null}}},{"node":"Eenheidstelsel","naam":"Keurtijd","eenheden":{"mnd":{"node":"Eenheid","afkorting":"mnd","stelsel":"Keurtijd","canoniek":"mnd","factorNaarCanoniek":1,"noemer":null}},"aliassen":{"maand":{"node":"Eenheid","afkorting":"mnd","stelsel":"Keurtijd","canoniek":"mnd","factorNaarCanoniek":1,"noemer":null}}}],"dimensions":[],"timelines":[],"dayKinds":[],"dagsoortPerEenheid":{}},"rules":{"resolvedRegels":[{"node":"ResolvedRegel","naam":"keurlast van een jutter","soort":"BEREKENING","doel":{"node":"AttribuutRef","attribuut":"keurlast","objecttype":"Jutter","onderwerpBron":"een Jutter","navigatieRol":null,"type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null}},"bron":"De keurlast van een Jutter","set":false,"navigatiePad":[]},"waarde":{"node":"Functie","kind":"TOTAAL","argumenten":[{"node":"AttribuutRef","attribuut":"keurtarief","objecttype":"Vondst","onderwerpBron":"alle vondsten van de Jutter die gekeurd zijn","navigatieRol":null,"type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":{"node":"Eenheid","afkorting":"mnd","stelsel":"Keurtijd","canoniek":"mnd","factorNaarCanoniek":1,"noemer":null}}},"bron":"het keurtarief van alle vondsten van de Jutter die gekeurd zijn","set":true,"navigatiePad":[]}],"elementObjecttype":"Vondst","leegwaarde":null,"filter":{"node":"Vergelijking","op":"GROTER","links":{"node":"AttribuutRef","attribuut":"gewicht","objecttype":"Vondst","onderwerpBron":"","navigatieRol":null,"type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null},"bron":"gewicht","set":false,"navigatiePad":[]},"rechts":{"node":"ParameterRef","parameter":"minimumgewicht","type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":null},"bron":"het minimumgewicht"},"periode":null,"bron":"zwaarder dan het minimumgewicht"},"dimensieSelectie":null,"type":{"node":"Numeriek","geheel":true,"decimalen":0,"teken":"ONBEPAALD","eenheid":{"node":"Eenheid","afkorting":"EUR","stelsel":"Munt","canoniek":"EUR","factorNaarCanoniek":1,"noemer":null}},"bron":"het totaal van het keurtarief van alle vondsten van de Jutter die gekeurd zijn","granulariteit":null,"bronRol":{"node":"RolBinding","feittype":"keuring","rol":"vondst"}},"voorwaarde":null,"geldigheid":{"node":"Geldigheid","vanaf":null,"tot":null}}],"resolvedDagsoorten":[],"objectCreaties":[],"verdelingen":[],"consistenties":[],"uniciteiten":[],"uniciteitUnies":[],"feitCreaties":[],"resolvedStartpunten":[],"regelGroepen":[]},"diagnostics":[]}|} in
   let case_text params rows =
     Printf.sprintf
       {|{ "format": "uchar-case-v0", "asOfDate": "2026-03-15", "input": { "instances": [
@@ -8847,7 +8851,7 @@ let () =
 let () =
   let ir =
     pf_doc
-      ~objecttypen:[ pf_ot (Printf.sprintf {|"datum": %s, "heffing": %s|} pf_datum pf_n2) ]
+      ~objecttypen:[ pf_ot [ ("datum", pf_datum); ("heffing", pf_n2) ] ]
       ~regels:
         [ pf_regel ~voorwaarde:(pf_cmp "LATER" (pf_a ~typ:pf_datum "datum") (pf_l ~typ:pf_datum "2026-13-40"))
             (pf_l "5") ]
@@ -8879,7 +8883,7 @@ let () =
 let () =
   let jutter =
     pf_ot ~kenmerken:[ "grondY"; "erkend"; "bevoegd" ]
-      (Printf.sprintf {|"inkomen": %s, "basisbedrag": %s, "waardering": %s|} pf_n0 pf_n0 pf_n0)
+      [ ("inkomen", pf_n0); ("basisbedrag", pf_n0); ("waardering", pf_n0) ]
   in
   let kenmerk k =
     Printf.sprintf
@@ -8986,10 +8990,12 @@ let () =
   (* the Match: klasse Hoog reads k first, Laag reads p first *)
   let klasse = {|{ "node": "Enumeratie", "domein": "Klasse", "waarden": [ "Hoog", "Laag" ] }|} in
   let jutter =
-    pf_ot (Printf.sprintf {|"klasse": %s, "restpost": %s, "heffing": %s|} klasse pf_n2 pf_n2)
+    pf_ot [ ("klasse", klasse); ("restpost", pf_n2); ("heffing", pf_n2) ]
   in
   let match_doc =
-    pf_doc ~objecttypen:[ jutter ] ~domeinen:({|"Klasse": |} ^ klasse)
+    pf_doc ~objecttypen:[ jutter ] ~domeinen:
+        {|{ "node": "Domain", "name": "Klasse",
+        "datatype": { "node": "Enumeratie", "waarden": [ "Hoog", "Laag" ] } }|}
       ~parameters:[ pf_decl "p" ]
       ~regels:
         [ pf_regel
@@ -9040,12 +9046,12 @@ let () =
     ~ir:(doc (ab ~a:p ~b:inkomen)) ~param:"p" ~case_text:(pf_case [ pf_leeg (); pf_cons ])
     ~silent:"heffing leeg";
   (* lv-5: the binder read inside a fold's die/dat filter, per member *)
-  let werf = pf_ot ~naam:"Werf" ~meervoud:"Werven" (Printf.sprintf {|"bonus": %s|} pf_n0)
-  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" (Printf.sprintf {|"lengte": %s|} pf_n0) in
+  let werf = pf_ot ~naam:"Werf" ~meervoud:"Werven" [ ("bonus", pf_n0) ]
+  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" [ ("lengte", pf_n0) ] in
   let ligplaats =
-    {|{ "ligplaats": { "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
+    {|{ "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
       { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
-      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] } }|}
+      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] }|}
   in
   let som =
     Printf.sprintf
@@ -9096,12 +9102,12 @@ let () =
    takes ascending label order (ch. 5.7a). Werf W1, schuiten S1 (lengte 8)
    and S2 (lengte 3); every matrix reads the unbound p. *)
 let () =
-  let werf = pf_ot ~naam:"Werf" ~meervoud:"Werven" (Printf.sprintf {|"keur": %s|} pf_n0)
-  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" (Printf.sprintf {|"lengte": %s|} pf_n0) in
+  let werf = pf_ot ~naam:"Werf" ~meervoud:"Werven" [ ("keur", pf_n0) ]
+  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" [ ("lengte", pf_n0) ] in
   let ligplaats =
-    {|{ "ligplaats": { "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
+    {|{ "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
       { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
-      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] } }|}
+      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] }|}
   in
   let lengte = pf_a ~ot:"Schuit" ~typ:pf_n0 "lengte" and p = pf_p ~typ:pf_n0 "p" in
   let gt l r = pf_cmp "GROTER" l r and vijf = pf_l ~typ:pf_n0 "5" in
@@ -9202,13 +9208,14 @@ let () =
   let p = pf_p "p" and k = pf_b "k" and restpost = pf_a "restpost" in
   let jutter =
     pf_ot
-      (Printf.sprintf {|"inkomen": %s, "restpost": %s, "extra": %s, "heffing": %s, "klasse": %s|}
-         pf_n2 pf_n2 pf_n2 pf_n2
-         {|{ "node": "Enumeratie", "domein": "Klasse", "waarden": [ "Hoog", "Laag" ] }|})
+      [ ("inkomen", pf_n2); ("restpost", pf_n2); ("extra", pf_n2); ("heffing", pf_n2);
+        ("klasse", {|{ "node": "Enumeratie", "domein": "Klasse", "waarden": [ "Hoog", "Laag" ] }|}) ]
   in
   let doc waarde =
     pf_doc ~objecttypen:[ jutter ]
-      ~domeinen:{|"Klasse": { "node": "Enumeratie", "domein": "Klasse", "waarden": [ "Hoog", "Laag" ] }|}
+      ~domeinen:
+        {|{ "node": "Domain", "name": "Klasse",
+        "datatype": { "node": "Enumeratie", "waarden": [ "Hoog", "Laag" ] } }|}
       ~parameters:[ pf_decl "p"; pf_decl "q" ] ~regels:[ pf_regel waarde ] ()
   in
   let j1 ?(extra = "") klasse =
@@ -9352,12 +9359,12 @@ let () =
    Let and p is never read; with the need filled p is read and ref faults. *)
 let () =
   let werf =
-    pf_ot ~naam:"Werf" ~meervoud:"Werven" (Printf.sprintf {|"bonus": %s, "restpost": %s|} pf_n0 pf_n0)
-  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" (Printf.sprintf {|"lengte": %s|} pf_n0) in
+    pf_ot ~naam:"Werf" ~meervoud:"Werven" [ ("bonus", pf_n0); ("restpost", pf_n0) ]
+  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" [ ("lengte", pf_n0) ] in
   let ligplaats =
-    {|{ "ligplaats": { "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
+    {|{ "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
       { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
-      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] } }|}
+      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] }|}
   in
   let lengte = pf_a ~ot:"Schuit" ~typ:pf_n0 "lengte" in
   let k = Printf.sprintf {|{ "node": "BinderRef", "name": "k", "type": %s, "bron": "de k" }|} pf_n0 in
@@ -9412,7 +9419,7 @@ let () =
 let () =
   let p = pf_p "p" and k = pf_b "k" and restpost = pf_a "restpost" in
   let jutter =
-    pf_ot (Printf.sprintf {|"inkomen": %s, "restpost": %s, "extra": %s, "heffing": %s|} pf_n2 pf_n2 pf_n2 pf_n2)
+    pf_ot [ ("inkomen", pf_n2); ("restpost", pf_n2); ("extra", pf_n2); ("heffing", pf_n2) ]
   in
   let doc waarde = pf_doc ~objecttypen:[ jutter ] ~parameters:[ pf_decl "p" ] ~regels:[ pf_regel waarde ] () in
   let j1 attrs =
@@ -9455,13 +9462,14 @@ let () =
    value's param atom, which left the fold underived). Also through a chain
    of Lets over the Match (cl-2) and through a branch inside the arm (cl-3). *)
 let () =
-  let vangst =
+  let constructors =
     Printf.sprintf
-      {|{ "node": "SumType", "domain": "vangst", "constructors": [ { "name": "Waardevol", "payload": %s }, { "name": "Waardeloos", "payload": null } ] }|}
+      {|"constructors": [ { "name": "Waardevol", "payload": %s }, { "name": "Waardeloos", "payload": null } ]|}
       pf_n2
   in
+  let vangst = Printf.sprintf {|{ "node": "SumType", "domain": "vangst", %s }|} constructors in
   let lijst = Printf.sprintf {|{ "node": "ListType", "element": %s }|} vangst in
-  let jutter = pf_ot (Printf.sprintf {|"totaal": %s, "vangsten": %s|} pf_n2 lijst) in
+  let jutter = pf_ot [ ("totaal", pf_n2); ("vangsten", lijst) ] in
   let x = Printf.sprintf {|{ "node": "BinderRef", "name": "x", "type": %s, "bron": "de vangst" }|} vangst in
   let match_on binder ~waardevol ~waardeloos =
     Printf.sprintf
@@ -9472,7 +9480,9 @@ let () =
   in
   let match_ = match_on "b" in
   let doc body =
-    pf_doc ~objecttypen:[ jutter ] ~domeinen:(Printf.sprintf {|"vangst": %s|} vangst)
+    pf_doc ~objecttypen:[ jutter ] ~domeinen:
+        (Printf.sprintf {|{ "node": "Domain", "name": "vangst", "datatype": { "node": "SumType", %s } }|}
+           constructors)
       ~parameters:[ pf_decl "p" ]
       ~regels:
         [ pf_regel ~doel:"totaal"
@@ -9569,16 +9579,16 @@ let () =
    ladingen inside the set fold's filter. *)
 let () =
   let werf =
-    pf_ot ~naam:"Werf" ~meervoud:"Werven" (Printf.sprintf {|"bonus": %s, "restpost": %s|} pf_n0 pf_n0)
-  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" (Printf.sprintf {|"lengte": %s|} pf_n0)
-  and lading = pf_ot ~naam:"Lading" ~meervoud:"Ladingen" (Printf.sprintf {|"gewicht": %s|} pf_n0) in
+    pf_ot ~naam:"Werf" ~meervoud:"Werven" [ ("bonus", pf_n0); ("restpost", pf_n0) ]
+  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" [ ("lengte", pf_n0) ]
+  and lading = pf_ot ~naam:"Lading" ~meervoud:"Ladingen" [ ("gewicht", pf_n0) ] in
   let feittypen =
-    {|{ "ligplaats": { "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
+    {|{ "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
       { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
       { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] },
-      "lading": { "node": "Feittype", "naam": "lading", "wederkerig": false, "rollen": [
+      { "node": "Feittype", "naam": "lading", "wederkerig": false, "rollen": [
       { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": null, "meervoudig": false },
-      { "node": "Rol", "naam": "lading", "objecttypeNaam": "Lading", "meervoud": "ladingen", "meervoudig": true } ] } }|}
+      { "node": "Rol", "naam": "lading", "objecttypeNaam": "Lading", "meervoud": "ladingen", "meervoudig": true } ] }|}
   in
   let lengte = pf_a ~ot:"Schuit" ~typ:pf_n0 "lengte" and gewicht = pf_a ~ot:"Lading" ~typ:pf_n0 "gewicht" in
   let p = pf_p ~typ:pf_n0 "p" and vijf = pf_l ~typ:pf_n0 "5" and nul = pf_l ~typ:pf_n0 "0" in
@@ -9719,15 +9729,15 @@ let named_refusal ~by ~ref_plays ~name ~ir ~case_text ~param =
 let order_named = named_refusal ~by:"the quantifier fold" ~ref_plays:false
 
 let () =
-  let werf = pf_ot ~naam:"Werf" ~meervoud:"Werven" (Printf.sprintf {|"keur": %s|} pf_n0)
-  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" (Printf.sprintf {|"lengte": %s|} pf_n0)
-  and haven = pf_ot ~naam:"Haven" ~meervoud:"Havens" (Printf.sprintf {|"keur": %s|} pf_n0) in
+  let werf = pf_ot ~naam:"Werf" ~meervoud:"Werven" [ ("keur", pf_n0) ]
+  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" [ ("lengte", pf_n0) ]
+  and haven = pf_ot ~naam:"Haven" ~meervoud:"Havens" [ ("keur", pf_n0) ] in
   let ligplaats =
-    {|"ligplaats": { "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
+    {|{ "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
       { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
       { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] }|}
   and havenwerf =
-    {|"havenwerf": { "node": "Feittype", "naam": "havenwerf", "wederkerig": false, "rollen": [
+    {|{ "node": "Feittype", "naam": "havenwerf", "wederkerig": false, "rollen": [
       { "node": "Rol", "naam": "haven", "objecttypeNaam": "Haven", "meervoud": null, "meervoudig": false },
       { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": "werven", "meervoudig": true } ] }|}
   in
@@ -9755,7 +9765,7 @@ let () =
           "verbindendeRol": %s }|}
       i (pf_l ~typ:pf_n0 v) schuiten
   in
-  let doc ?(ot = "Werf") ?(feittypen = "{ " ^ ligplaats ^ " }") ~creaties voorwaarde =
+  let doc ?(ot = "Werf") ?(feittypen = ligplaats) ~creaties voorwaarde =
     pf_doc ~objecttypen:[ haven; werf; schuit ] ~feittypen ~parameters:[ pf_decl ~typ:pf_n0 "p" ]
       ~regels:[ pf_regel ~ot ~doel:"keur" ~typ:pf_n0 ~voorwaarde (pf_l ~typ:pf_n0 "99") ]
       ~creaties:(List.mapi creatie creaties) ()
@@ -9794,7 +9804,7 @@ let () =
   order_named ~name:"created members: ALLE over 8 then 3 reads p at 8 (mx-alle_new8-new3)"
     ~ir:(doc ~creaties:[ "8"; "3" ] alle) ~param:"p" ~case_text:(pf_case ~instances:(w1 ()) (keur None));
   let ms kwantor ?drempel creaties =
-    doc ~ot:"Haven" ~feittypen:("{ " ^ ligplaats ^ ", " ^ havenwerf ^ " }") ~creaties
+    doc ~ot:"Haven" ~feittypen:(ligplaats ^ ", " ^ havenwerf) ~creaties
       (kv ?drempel ~pad:() kwantor of_)
   in
   let haven_case =
@@ -9821,21 +9831,21 @@ let () =
    member, and the demand of a Let value read in a matrix. c0 mints a schuit
    for each Werf, c1 a werf for each Haven, c2 a schuit for each Droogdok. *)
 let () =
-  let haven = pf_ot ~naam:"Haven" ~meervoud:"Havens" (Printf.sprintf {|"keur": %s, "bonus": %s|} pf_n0 pf_n0)
+  let haven = pf_ot ~naam:"Haven" ~meervoud:"Havens" [ ("keur", pf_n0); ("bonus", pf_n0) ]
   and werf =
     pf_ot ~naam:"Werf" ~meervoud:"Werven"
-      (Printf.sprintf {|"keur": %s, "bonus": %s, "restpost": %s|} pf_n0 pf_n0 pf_n0)
+      [ ("keur", pf_n0); ("bonus", pf_n0); ("restpost", pf_n0) ]
   and droogdok =
-    replace_first ~needle:{|"bezield": true|} ~by:{|"supertype": "Werf", "bezield": true|}
-      (pf_ot ~naam:"Droogdok" ~meervoud:"Droogdokken" "")
-  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" (Printf.sprintf {|"lengte": %s|} pf_n0) in
+    replace_first ~needle:{|"animate": true|} ~by:{|"supertype": "Werf", "animate": true|}
+      (pf_ot ~naam:"Droogdok" ~meervoud:"Droogdokken" [])
+  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" [ ("lengte", pf_n0) ] in
   let feittypen =
-    {|{ "ligplaats": { "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
+    {|{ "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
       { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
       { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] },
-      "havenwerf": { "node": "Feittype", "naam": "havenwerf", "wederkerig": false, "rollen": [
+      { "node": "Feittype", "naam": "havenwerf", "wederkerig": false, "rollen": [
       { "node": "Rol", "naam": "haven", "objecttypeNaam": "Haven", "meervoud": null, "meervoudig": false },
-      { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": "werven", "meervoudig": true } ] } }|}
+      { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": "werven", "meervoudig": true } ] }|}
   in
   let schuiten = {|{ "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" }|}
   and werven = {|{ "node": "RolBinding", "feittype": "havenwerf", "rol": "werf" }|} in
@@ -10012,16 +10022,16 @@ let () =
    [L2]). *)
 let () =
   let n0 = pf_n0 in
-  let haven = pf_ot ~naam:"Haven" ~meervoud:"Havens" (Printf.sprintf {|"bonus": %s, "restpost": %s|} n0 n0)
-  and werf = pf_ot ~naam:"Werf" ~meervoud:"Werven" (Printf.sprintf {|"bonus": %s, "restpost": %s|} n0 n0)
-  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" (Printf.sprintf {|"lengte": %s|} n0) in
+  let haven = pf_ot ~naam:"Haven" ~meervoud:"Havens" [ ("bonus", n0); ("restpost", n0) ]
+  and werf = pf_ot ~naam:"Werf" ~meervoud:"Werven" [ ("bonus", n0); ("restpost", n0) ]
+  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" [ ("lengte", n0) ] in
   let feittypen =
-    {|{ "ligplaats": { "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
+    {|{ "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
       { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
       { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] },
-      "havenwerf": { "node": "Feittype", "naam": "havenwerf", "wederkerig": false, "rollen": [
+      { "node": "Feittype", "naam": "havenwerf", "wederkerig": false, "rollen": [
       { "node": "Rol", "naam": "haven", "objecttypeNaam": "Haven", "meervoud": null, "meervoudig": false },
-      { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": "werven", "meervoudig": true } ] } }|}
+      { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": "werven", "meervoudig": true } ] }|}
   in
   let schuiten = {|{ "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" }|}
   and werven = {|{ "node": "RolBinding", "feittype": "havenwerf", "rol": "werf" }|} in
@@ -10171,7 +10181,7 @@ let () =
    created for each Werf. With the writer first, or the schuit in the case,
    both answer. *)
 let () =
-  let jutter = pf_ot (Printf.sprintf {|"inkomen": %s, "a": %s, "heffing": %s|} pf_n2 pf_n2 pf_n2) in
+  let jutter = pf_ot [ ("inkomen", pf_n2); ("a", pf_n2); ("heffing", pf_n2) ] in
   let heffing =
     pf_regel
       ~voorwaarde:
@@ -10185,12 +10195,12 @@ let () =
     ~ir:(t1 [ heffing; a ]) ~param:"p" ~case_text:(pf_case rows);
   both_answer ~name:"the writer before the reader: a > 0 settles the condition in the first pass (t1b, control)"
     ~ir:(t1 [ a; heffing ]) ~case_text:(pf_case rows);
-  let werf = pf_ot ~naam:"Werf" ~meervoud:"Werven" (Printf.sprintf {|"keur": %s|} pf_n0)
-  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" (Printf.sprintf {|"lengte": %s|} pf_n0) in
+  let werf = pf_ot ~naam:"Werf" ~meervoud:"Werven" [ ("keur", pf_n0) ]
+  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" [ ("lengte", pf_n0) ] in
   let ligplaats =
-    {|{ "ligplaats": { "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
+    {|{ "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
       { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
-      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] } }|}
+      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] }|}
   and schuiten = {|{ "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" }|} in
   let lit v = pf_l ~typ:pf_n0 v in
   let fold =
@@ -10241,12 +10251,12 @@ let () =
    fold reads 8 in some order" (8 before 3). With the two schuiten in the case,
    in either order, both play. *)
 let () =
-  let werf = pf_ot ~naam:"Werf" ~meervoud:"Werven" (Printf.sprintf {|"keur": %s|} pf_n0)
-  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" (Printf.sprintf {|"lengte": %s|} pf_n0) in
+  let werf = pf_ot ~naam:"Werf" ~meervoud:"Werven" [ ("keur", pf_n0) ]
+  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" [ ("lengte", pf_n0) ] in
   let ligplaats =
-    {|{ "ligplaats": { "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
+    {|{ "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
       { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
-      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] } }|}
+      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] }|}
   and schuiten = {|{ "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" }|}
   and zijn_werf = {|{ "node": "RolBinding", "feittype": "ligplaats", "rol": "werf" }|} in
   let lengte = pf_a ~ot:"Schuit" ~typ:pf_n0 "lengte" and lit v = pf_l ~typ:pf_n0 v in
@@ -10315,7 +10325,7 @@ let () =
                "periode": null, "bron": "de dag later is dan de grensdatum" }|}
            de_dag)
       ~parameters:
-        {|"grensdatum": { "node": "Parameter", "naam": "grensdatum",
+        {|{ "node": "Parameter", "naam": "grensdatum",
             "datatype": { "node": "DatumInDagen" }, "granulariteit": null }|}
       ~waarde:(stap ()) ()
     |> replace_first ~needle:{|"voorwaarde": null,|}
