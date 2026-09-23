@@ -796,7 +796,8 @@ EXPECTED_CHANNEL=(
 # have carried it since card drools-leeg-negatie, where the loader lowers the negation to the sister
 # soort; the document lived as the fixture of LeegNegatieWitnessTest because the ASP backend faulted on
 # it. That backend now carries the leeg test and both negations, so the fixture moved to the corpus.
-# Nothing in this backend changed.
+# No source file of this backend changed; its LeegNegatieWitnessTest now reads the golden instead of
+# a resource copy.
 EXPECTED_PLAYED=181
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
