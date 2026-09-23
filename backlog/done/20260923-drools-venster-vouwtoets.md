@@ -49,18 +49,26 @@ andere Drools-kaarten.
 - **Weigering.** Beide takken weigeren elke WF-112-positie zelf, met één
   gedeelde zin die construct, kwantor en WF-112 noemt.
 
-## Result (2026-09-23, branch card/drools-venster-vouwtoets)
+## Result (2026-09-23, branch card/drools-venster-vouwtoets; eerste oplevering 08469603, fixronde 1 bea46cf1, fixronde 2 6f885ced)
 
 Beide flanken zijn dicht. De exec-tak speelt het venster in toets en filter
-van een `ALLE`-vouw met de waarden van `ref`. Dat geldt ook voor het venster
-in het die/dat-filter van een aggregatie: bijvangst in hetzelfde mechanisme,
-zie de may-touch-verbreding. Beide Drools-takken weigeren de gemeten
-WF-112-posities (in de vouw, als regelvoorwaarde en in een aggregatiefilter)
-zelf, bij naam, met één gedeelde zin. Geen golden draagt een van deze vormen,
-dus geen corpuskanaal bewoog en `scripts/check-drools.sh` is niet aangeraakt.
-Alle veertien gates zijn groen.
+van een `ALLE`-vouw met de waarden van `ref`; dat geldt ook voor het venster
+in het die/dat-filter van een aggregatie en, sinds fixronde 1, voor het
+venster als `ALLE`-lid van een consistentie-assertie (daar speelt nu ook de
+DRL-tak). Beide Drools-takken weigeren elke gemeten WF-112-positie zelf, bij
+naam, met één gedeelde zin uit `kern.Vensterpositie`: in de vouw, als
+regelvoorwaarde, in een aggregatiefilter, in een consistentie-assertie en in
+een creatieguard, ook genest in een `ALLE`- of `DE`-samenstelling. Golden
+`corpus/golden/jutterswet-wachtvenster` pint de drie vouw- en aggregatieposities;
+gate 12 gaat van 182 naar 183 en van 161 naar 162 (beschermd-pad-voorstel).
+Bijvangst, ook gedicht: de loader weigert een kenmerktoekenning met `onwaar`
+(WF-022), en beide takken weigeren een doelgastheer binnen een samenstelling
+of achter een hop (WF-109), waar de DRL-tak de samengestelde vorm speelde. Alle veertien gates
+zijn groen.
 
-### (a) Reproductie, vijf uitvoerders per flank
+### Eerste oplevering (tip 08469603)
+
+#### (a) Reproductie, vijf uitvoerders per flank
 
 Proefdocumenten zijn gebouwd uit `jutterswet-schouwploeg`. Er is telkens één
 regel gehouden, met `aanstelling` (DatumInDagen) op `Strandwacht` én op
@@ -98,7 +106,7 @@ FAULT: …`, exec `EXCLUDE … een conditie van soort Periode`, drl **`PLAYED 1`
 Na: exec en drl allebei `EXCLUDE … periodevenster in filter of toets van een
 kwantorvouw onder GEEN (WF-112): …`.
 
-### (b) Keuze: bedraden in de exec-tak, weigeren in beide takken
+#### (b) Keuze: bedraden in de exec-tak, weigeren in beide takken
 
 **Het onderwerp is gemeten, niet aangenomen.** In de toets zou een lezing
 van de PLOEGdatum {S2, S4, S6} geven (met de hand berekend). `ref`, clingo en
@@ -139,7 +147,7 @@ met de tijdvrije case 1 `PLAYED 1`, dus het complement. Ook alle zestien
 cellen van de proefdocumenten (toets en filter, vier kwantoren, binnen en
 tijdvrij) gaven `PLAYED 1` op de naïeve verwachting.
 
-### Rood-eerst (letterlijk)
+#### Rood-eerst (letterlijk)
 
 Getuige `backends/drools/src/test/java/…/cases/VensterVouwWitnessTest.java`,
 14 rijen. Tegen de transpilers van main 8dd05e25 (`git show`, daarna
@@ -163,7 +171,7 @@ de DRL-weigering nog niet (toen 9 rijen).
 Na de wijziging: `Tests run: 14, Failures: 0, Errors: 0`. Backendsuite 634
 tests (620 + 14), 0 failures, 0 skipped.
 
-### Mutatieproeven
+#### Mutatieproeven
 
 Elke mutant is één letterlijke vervanging. Daarna liep de getuigeklasse, en
 het bestand ging met `cp` terug, `cmp` identiek (voor elke mutant
@@ -194,7 +202,7 @@ onderscheidde een weggelaten venster niet van een toegepast venster, omdat
 elke wacht buiten het venster gediplomeerd was. Daarom is S6 toegevoegd, met
 een wacht buiten het venster die de toets niet haalt (commit 49ef51f6).
 
-### (c) Corpussweep beide takken, vóór en na
+#### (c) Corpussweep beide takken, vóór en na
 
 235 goldens, elk door exec en drl: de jar van main 8dd05e25 tegen de jar van
 de eindcode 57e9fe4f. **Byte-identiek**, 470 statusregels (`diff` leeg). Dat
@@ -211,7 +219,7 @@ Gate 12 en 13 lopen niet over negatieven, en de Drools-poot van gate 8 raakt
 er geen. **Pinsom vooraf voorspeld: 0 bij `EXPECTED_PLAYED` en 0 bij
 `EXPECTED_DRL_PLAYED`. Zo gemeten. Geen voorstel voor `scripts/check-drools.sh`.**
 
-### (d) Gates, elk los na `eval $(opam env)`, op de eindstand 57e9fe4f
+#### (d) Gates, elk los na `eval $(opam env)`, op de eindstand 57e9fe4f
 
 1 self-contained PASS · 2 ir-schema PASS (278 bestanden, vloer 192) ·
 3 verifier PASS (278 golden schoon, 440 negatief) · 4 case-schema PASS (638) ·
@@ -224,84 +232,309 @@ pin, kanaalvloeren 53 en 74, JUnit 634, DRL-sweep 195 s) · 13 reftype PASS
 (131 verdraaiingen over 27 goldens, 128 replays, 25 DRL-gespeeld) · 14 flogic
 PASS (130 checks, 2 goldens).
 
-### May-touch-verbreding (maintaineraanwijzing 2026-09-23: bijvangst in hetzelfde mechanisme meteen meenemen)
+### Fixronde 1 (hoofdsessie, 2026-09-23)
 
-Alles bleef binnen `backends/drools/**`. De kaarttekst ging alleen over de
-vouwTOETS. Verbreed is dit:
+Vijf punten van de hoofdsessie en één extra item van de rood-kaart, elk een
+eigen commit.
 
-1. het vouwFILTER: toets en filter krijgen dezelfde rekendatumbinding, en
-   maintainerbesluit B wijst die asymmetrie aan deze kaart toe;
-2. het die/dat-filter van een AGGREGATIE, in een waarde en als operand van
-   een voorwaarde. Dat is hetzelfde `filterSource` en dezelfde registratie,
-   bij het bouwen gemeten als dezelfde asymmetrie. `ref`, clingo en de
-   DRL-tak telden; de exec-tak weigerde. Tabel hierboven.
-3. de samenstellingsarm van WF-112 (als regelvoorwaarde, en als
-   aggregatiefilter in een waarde of in een operand van een voorwaarde) noemt
-   nu in beide takken de regel;
-4. één nieuwe kernklasse (`transpiler/kern/Vensterpositie.java`) en één
-   nieuwe getuige.
+#### (1) Golden `jutterswet-wachtvenster` en de pins (c86c57b5, ac1e71e4)
 
-De getuige leest twee corpusnegatieven alleen-lezen, naar het voorbeeld van
-`HeelperiodeDoelpogingWitnessTest` met `wf109-doelgastheer-periode`.
+Handgeschreven IR, gebouwd naar het model van `jutterswet-schouwploeg`:
+`paraat` (venster in de toets van een `ALLE`-vouw), `bevoegd` (venster in het
+filter, toets `gediplomeerd`), `dienstwachttal` (venster in het filter van een
+`AANTAL`) en `wachttal` als controle. De grens is de eigen `aanstelling` van de
+wacht; elke ploeg heeft een gelijknamige eigen datum aan de andere kant van de
+evaluatiedatum. Geen `bron.rgs`: de frontend emitteert geen van de drie
+posities, gemeten met `make ir` (venster als gekwantificeerd predicaat:
+`syntaxfout: mismatched input 'het' expecting {'..', BULLET, '-'}`; venster in
+de vouwsubselectie: geweigerd, "de 'die/dat'-deelselectie … wordt niet
+omgezet en zou stil wegvallen"; venster in de subselectie van een telling:
+`Onopgelost`). De NOTE draagt de handberekening, vóór de eerste run gemaakt, en
+een tabel van zes verkeerde lezingen met de cel waar elk afwijkt.
+
+- ref en clingo: `PASS (17 expectations)` in alle drie de cases bij de eerste
+  run; verifier `PASS`; gate-2-roundtrip byte-identiek; nietsdoener
+  weerlegd in elke case (`MISMATCH: S1 lacks characteristic "paraat"` resp.
+  `"bevoegd"`).
+- Rood-eerst op de jar van main 8dd05e25:
+
+      exec: EXCLUDE transpiler SKIP: regel: paraat bij aanstelling — kwantorvouw ALLE over Strandwacht (een niet-temporele matrix die de per-subject bladvertaling niet draagt: een conditie van soort Periode): alle wachten van de Schouwploeg vanaf hun aanstelling in dienst zijn; regel (voorwaarde buiten Phase-B scope): paraat bij aanstelling
+      drl:  PLAYED 3
+
+  Na: beide takken `PLAYED 3`.
+- Pinsom vooraf voorspeld 182 → 183 en 161 → 162; gemeten: gate 12 `played 183`
+  en `DRL-text branch played 162`. Geen bestaand golden bewoog (sweep hieronder).
+- Mutatieproef op golden-niveau, exec-jar met de mutant, teruggezet met `cmp`:
+  toetsvenster altijd waar → `FAIL case1-medio-2024.json: kenmerk paraat:
+  verwacht afwezig, werkelijk aanwezig; …`; filtervenster laat iedereen door →
+  `FAIL case1-medio-2024.json: kenmerk bevoegd: verwacht aanwezig, werkelijk
+  afwezig; attribuut dienstwachttal: verwacht 1, werkelijk 2; …`.
+
+#### (2) RUNTIME-SEMANTICS, voorstel (bea46cf1)
+
+ch. 3.10, tabel "the window sits": een rij voor toets en filter van een
+`ALLE`-vouw en het aggregatiefilter (met de golden), het `ALLE`-lid van een
+consistentie-assertie erbij (JUnit-getuige, geen golden), en in de GEEN-rij de
+weigeringen van beide Drools-takken bij naam. ch. 3.12: de rij over het
+vouwfilter zegt niet langer dat de exec-SKIP een asymmetrie is, maar dat alle
+vier gelijk antwoorden (de golden pint de vacuüm-lezing in `case3-tijdvrij`);
+de WF-112-rij noemt de weigeringen van beide takken bij naam.
+
+#### (3) De NOTE van het negatief (df9588ff)
+
+`corpus/negatief/wf112-venster-in-geen-vouw/NOTE.md`: een alinea dat beide
+Drools-takken het document sinds deze kaart zelf weigeren, met de case waarop
+dat gemeten is. Het document zelf is ongewijzigd.
+
+#### (4) WF-112 in een consistentie-assertie en in de doelpoging van een feitcreatie (b16429dd)
+
+Gemeten op documenten uit `jutterswet-premievenster` (assertie) en
+`jutterswet-bakensein` (guard; anker `Kustvak`, doel `Sein` ⊑ `Baken`):
+
+| vorm | verifier | ref | clingo | exec voor | drl voor | exec na | drl na |
+|---|---|---|---|---|---|---|---|
+| assertie `ALLE[geborgen, venster]` | PASS | PASS | PASS | EXCL "schending buiten Phase-D scope" | EXCL "onopgelost consistentieregel" | zie noot | zie noot |
+| assertie venster vanaf eigen `meldatum`; `ALLE[meldatum gevuld, venster]` | PASS | PASS | PASS | EXCL (idem) | EXCL (idem) | PLAYED | PLAYED |
+| assertie `GEEN[…, venster]`, `TEN_MINSTE 1[…]` | WF-112 | fout | fout | EXCL, algemeen | EXCL, algemeen | EXCL WF-112 | EXCL WF-112 |
+| guard `GEEN[gehesen, venster]` | WF-112 | fout | fout | EXCL, algemeen | EXCL "voorwaarde niet naar anker of doel …" | EXCL WF-112 | EXCL WF-112 |
+| guard `ALLE[gehesen (anker), venster]` (controle) | PASS | 2 / 0 | 2 / 0 | PLAYED | PLAYED | PLAYED | PLAYED |
+| guard `ALLE[gehesen host Baken, idem]` | WF-109 | fout | fout | EXCL, algemeen | **PLAYED 1** | EXCL WF-109 | EXCL WF-109 |
+| negatieven `wf109-doelgastheer-samengesteld`, `-genavigeerd` | WF-109 | fout | fout | EXCL, algemeen | EXCL, algemeen | EXCL WF-109 | EXCL WF-109 |
+
+Noot: een kenmerk als criterium in een assertie draagt de DRL-tak helemaal
+niet, ook zonder venster (gate 12 pint dat al voor
+`anchor/jutterswet-penninguitgifte`); de getuige gebruikt daarom "de meldatum
+is gevuld" naast het venster. Niet gewijzigd.
+
+Gedicht: het venster als (lid van een `ALLE`-)assertie in beide takken, via de
+gedeelde vensterlezing en als schending de ontkenning; WF-112 bij naam in de
+assertie (beide takken) en in de guard (DRL); het WF-109-hek voor een
+doelgastheer binnen een samenstelling of achter een hop in beide takken,
+één zin in `kern.Gastheer` (`DOELPOGING_GENEST`). Getuigen
+`VensterAssertieWitnessTest` (3) en `CreatieguardPositieWitnessTest` (4),
+handverwachtingen gelijk in ref en clingo. Rood-eerst tegen de bronnen van
+vóór de commit: `Tests run: 7, Failures: 4, Errors: 2` (alleen de controlerij
+groen). Mutanten, elk teruggezet met `cmp`: A1 exec-vensterroute uit (2
+errors), A2 DRL-vensterarm uit (2 errors), A3 exec-assertienaam uit (1), A4
+DRL-assertienaam uit (1), A5 exec-schending zonder negatie (2, op waarde:
+`verwacht consistent, werkelijk inconsistent`), G1 DRL-guardnaam uit (1), G2
+WF-109-hek uit in beide (2), G3 alleen in DRL uit (2, waarvan één `Expected
+…Excluded to be thrown, but nothing was thrown` — de DRL-tak speelt weer).
+
+#### WF-022: een kenmerktoekenning met `onwaar` (330b219a)
+
+Op het negatief `wf022-kenmerk-onwaar` van de rood-kaart (inline kopie; het
+staat nog niet op deze basis), zonder verifier, met R1 `nieuw recht
+ontstaan` en R2 zonder:
+
+    verifier: WF-022 FAIL /resolvedRegels/0/waarde: characteristic target's value must be the boolean constant true
+    ref:      oracle: PASS (3 expectations)
+    clingo:   TRANSLATION FAULT: characteristic attribution with a non-waar value
+    voor exec: FAIL case1.json: kenmerk herleefd: verwacht afwezig, werkelijk aanwezig
+    voor drl:  PLAYED 1
+    na exec en drl: EXCLUDE loader: form not carried by the v0 Drools backend: ResolvedRegel.waarde (de kenmerktoekenning 'geen herleving' kent het kenmerk 'herleefd' 'onwaar' toe; WF-022 eist de booleaanse constante waar, en een negatief besluit over een kenmerk bestaat alleen in een defaultsgroep)
+
+De weigering zit in de loader, die beide takken delen. Getuige
+`KenmerkwaardeWitnessTest` (2 rijen, de tweede speelt dezelfde regel met
+`waar` in beide takken). Rood-eerst: `Tests run: 2, Failures: 1 …
+exec-model hoort de waarde onwaar te weigeren, niet te spelen: Result[status=FAIL,
+… caseFailures=[casus.json: kenmerk herleefd: verwacht afwezig, werkelijk
+aanwezig] …]`. Mutant W1 (weigering uit): dezelfde failure; teruggezet, `cmp`
+identiek. Scan: 748 documenten in corpus en `toka/`, 233
+kenmerktoekenningen, alle 233 `Literal waar/Booleaan`.
+
+#### (5) Open punten 3 en 6
+
+Blijven open, zie de lijst onderaan (de hoofdsessie geeft ze door aan de
+ref-, clingo- en frontendkaarten).
+
+#### Gates op de tip van fixronde 1 (bea46cf1), elk los
+
+1 self-contained PASS · 2 ir-schema PASS (279 bestanden) · 3 verifier PASS (279
+golden schoon, 440 negatief) · 4 case-schema PASS (641) · 5 oracle PASS (806
+voorbeelden, 598 cases) · 6 clingo PASS (523 checks, 598 cases) · 7 noop PASS
+(562 + 36) · 8 rood PASS (43, Drools-poot 9 + 34) · 9 catala PASS (201, 12) ·
+10 regelspraak PASS (409, 70) · 11 toka-parity PASS (29/29/29) · 12 drools
+PASS (played 183 = pin, DRL 162 = pin, JUnit 643) · 13 reftype PASS (131
+verdraaiingen, 128 replays, 25 DRL-gespeeld) · 14 flogic PASS (130, 2).
+
+### Fixronde 2 (lens: MERGEN, met adviezen; elk een eigen commit)
+
+#### Advies 1 — WF-112 bij naam op geneste posities in de DRL-tak (748d3126)
+
+Gemeten op de vijf lensdocumenten (uit `jutterswet-schouwploeg`, regel
+*bevoegd bij diploma*, tijdvrij):
+
+| document | verifier | ref / clingo | main exec | main drl | na fixronde 1 exec | na fixronde 1 drl | nu, beide takken |
+|---|---|---|---|---|---|---|---|
+| `ALLE[ervaren, GEEN-vouw(venster)]` | WF-112 | fout / fout | EXCL "soort Periode" | **PLAYED 1** | EXCL WF-112 | EXCL "TODO voorwaarde" | EXCL WF-112 |
+| `DE[ervaren, GEEN-vouw(venster)]` | WF-112 | fout / fout | EXCL "soort Periode" | **PLAYED 1** | EXCL WF-112 | EXCL "TODO voorwaarde" | EXCL WF-112 |
+| `ALLE[ervaren, GEEN[venster]]` | WF-112 | fout / fout | EXCL algemeen | EXCL algemeen | EXCL WF-112 | EXCL "TODO voorwaarde" | EXCL WF-112 |
+| `ALLE[niet ervaren, SOM(… die GEEN[venster]) > 3]` | WF-112 | PASS¹ / fout | EXCL algemeen | EXCL algemeen | EXCL WF-112 | EXCL "TODO voorwaarde" | EXCL WF-112 |
+| `GEEN[SOM(… die GEEN[venster]) > 3]` | WF-112 | fout / fout | EXCL algemeen | EXCL "aggregatie-bullet onder tellende kwantor" | EXCL WF-112 | idem | EXCL WF-112 |
+
+¹ ref antwoordt hier (het `niet ervaren`-lid beslist de `ALLE` voordat het
+tweede lid gelezen wordt, ch. 5.10); de verifier en clingo weigeren. Buiten deze
+kaart; genoteerd bij de open punten.
+
+Oorzaak: de samenstellingsarm van de DRL-tak vroeg `Vensterpositie` alleen
+bij een niet-conjunctieve kwantor, en een `ALLE`/`DE`-samenstelling zette dan
+haar eigen marker over de reden van het lid. Nu vraagt de arm het bij elke
+samenstelling, en `Vensterpositie` gaat ook in de operanden om daar
+samenstellingen in aggregatiefilters te vinden (niet om een venster in een
+operand zelf te tellen; zo doet de verifier het ook). Getuige
+`VensterNestingWitnessTest`. Rood-eerst tegen de bronnen van bea46cf1:
+`Tests run: 4, Failures: 4` (alle vier `drl-tekst names …: drl-transpiler
+MARKER: … TODO voorwaarde: de volgende voorwaarden`).
+
+#### Advies 2 — de gesloten flank benoemd
+
+Een GEEN-vouw met een venster als LID van een `ALLE`- of `DE`-samenstelling
+beantwoordde de DRL-tak op main met `PLAYED 1`, in een tijdvrije sessie het
+complement (de eerste twee rijen hierboven). Gesloten door de vouwweigering
+van de eerste oplevering, sinds advies 1 ook bij naam; getuigerijen
+`een_geen_vouw_in_een_alle_samenstelling_…` en `…_de_samenstelling_…`.
+
+#### Advies 3 — registertekst rij 11 in het Nederlands
+
+Zie de registerzinnen onderaan.
+
+#### Advies 4 — de weigerzin noemt de positie (dd6907f2)
+
+De zin noemt nu welke positie ("de toets", "het filter", "het filter en de
+toets"), de kwantor en het elementtype van de vouw die misvormd is. Voor het
+filter luidt de reden "het venster kiest de leden waarover de kwantor telt of
+ontkent" in plaats van de toetsreden. De weigering staat niet meer in het
+kader van de vouw die haar vond: een GEEN-vouw over `Brevet` in de toets van
+een ALLE-vouw over `Strandwacht` heet nu "… onder GEEN over Brevet (WF-112)"
+zonder "ALLE over Strandwacht" eromheen. Het DRL-kader zegt "§8.2
+kwantorvouw" alleen nog bij een heelperiodematrix. Mijn eigen getuigen van
+deze kaart volgen de nieuwe zin (`VensterVouwWitnessTest`: twee fragmenten;
+geen bestaande test van vóór de kaart geraakt). Rood-eerst tegen de bronnen
+van 748d3126: `Tests run: 20, Failures: 6`.
+
+#### Advies 5 (lensadvies 6) — bestaande asymmetrieën, gemeten
+
+Documenten uit `jutterswet-schouwploeg` met een `Brevet` dat de wacht draagt
+(to-many), gedateerd 2024-06-15; per vorm een controle zonder venster:
+
+| vorm | verifier | ref / clingo | exec | drl | controle zonder venster | oordeel |
+|---|---|---|---|---|---|---|
+| geneste vouw, venster in de binnenste toets | PASS | PASS / PASS | EXCL "conditie van soort Kwantorvouw" | EXCL matrixvorm (Kwantorvouw) | idem geweigerd | structureel: geneste vouwen niet gedragen |
+| `AANTAL` met vensterfilter in een vouwtoets | PASS | PASS / PASS | EXCL "vergelijking van een AANTAL-functie …" | EXCL matrixvorm (Vergelijking) | ook met kenmerkfilter en zonder filter geweigerd | structureel: aggregatie in een vouwtoets niet gedragen |
+| GEEN-vouw over zo'n `AANTAL` | PASS | PASS / PASS | idem | idem | idem | structureel, zelfde grond |
+| assertie met een vouw (venster als toets) | PASS | PASS / PASS | EXCL "schending buiten Phase-D scope" | EXCL "onopgelost consistentieregel" | vouw met kenmerktoets ook geweigerd | structureel: vouw in een assertie niet gedragen |
+| assertie met `AANTAL` met vensterfilter | PASS | PASS / PASS | EXCL "AANTAL-assertie buiten Phase-D scope" | EXCL "onopgelost consistentieregel" | met kenmerkfilter en zonder filter ook geweigerd | structureel: telling over een meervoudige rol in een assertie niet gedragen |
+| assertie met een WF-112-vouw | WF-112 | fout / fout | EXCL WF-112 | EXCL WF-112 | — | gedicht in fixronde 1 |
+
+Geen van de vijf asymmetrieën hangt aan het venster: de controle zonder
+venster wordt telkens even hard geweigerd. Benoemd, niet gedicht.
+
+#### Advies 6 (lensadvies 8) — de WF-111-zin in een vouw (6f885ced)
+
+Een venster dat een tak in toets of filter van een vouw weigert, weigert hij
+nu om de grens: beide takken zeggen "een periodevenster met een grens die geen
+datumliteral en geen eigen scalair datumattribuut van het element is
+(WF-111)" (`Vensterpositie.GRENSVORM`, getest met een datumparameter als
+grens). Voorheen DRL "een matrixvorm die deze tak niet IN het elementpatroon
+kan schrijven (Periode)" en exec bij het filter alleen "een die/dat-subselectie
+die deze tak niet op de source kan binden". Rood-eerst tegen de bronnen van
+dd6907f2: `Tests run: 6, Failures: 1` (de exec-filterregel).
+
+#### Advies 7 (lensadvies 5) — open normpunt
+
+Zie open punt 7.
+
+#### Mutaties fixronde 2 (op de eindstand, elk teruggezet met `cmp`)
+
+N1 DRL-samenstellingsarm alleen bij niet-ALLE/DE → 4 failures; N2
+`Vensterpositie` niet in operanden → 1; N3 DRL-vouwweigering weer in het kader
+van de buitenste vouw → 1 ("kadert de weigering niet als de buitenste vouw");
+N4 filterreden gelijk aan de toetsreden → 1; N5 DRL-grensweigering uit → 1; N6
+DRL-kader altijd §8.2 → 1; N7 exec-grensweigering uit → 1.
+
+#### Corpussweep en gates na fixronde 2
+
+Sweep over alle goldens, beide takken, jar van de eindstand tegen die van main
+8dd05e25: de 470 bestaande statusregels byte-identiek; de nieuwe golden
+`PLAYED 3` in beide takken. Backendsuite 649 tests, 0 failures, 0 skipped.
+Gates los op 6f885ced: 1 PASS · 8 rood PASS (43, Drools-poot 9 + 34) · 11
+toka-parity PASS (29/29/29) · 12 drools PASS (played 183 = pin, DRL 162 = pin,
+JUnit 649) · 13 reftype PASS (131, 128, 25). De overige gates liepen groen op
+bea46cf1; fixronde 2 raakte alleen `backends/drools/**` en deze kaart.
+
+### May-touch-verbreding
+
+Binnen `backends/drools/**` (maintaineraanwijzing: bijvangst in dezelfde zone
+meteen meenemen): het vouwfilter, het aggregatiefilter, het venster in een
+consistentie-assertie, de WF-112-naam op elke positie en in elke nesting, de
+WF-111-zin in een vouw, het WF-109-doelhek (DRL speelde het), de WF-022-weigering
+in de loader; nieuwe kernklasse `transpiler/kern/Vensterpositie.java` en vijf
+nieuwe getuigen (`VensterVouwWitnessTest`, `VensterAssertieWitnessTest`,
+`CreatieguardPositieWitnessTest`, `VensterNestingWitnessTest`,
+`KenmerkwaardeWitnessTest`). Buiten `backends/drools/**`, onder het mandaat van
+fixronde 1: `corpus/golden/jutterswet-wachtvenster/**`, de NOTE van
+`corpus/negatief/wf112-venster-in-geen-vouw`, en als voorstellen
+`scripts/check-drools.sh` en `spec/RUNTIME-SEMANTICS.md`. De getuigen lezen
+corpusdocumenten alleen-lezen.
 
 ### Beschermd-pad-voorstellen
 
-Geen. `scripts/check-drools.sh` is niet gewijzigd, want geen pin of kanaallijst
-bewoog. Wat de spec over deze posities zegt, staat hieronder als tekst bij de
-open punten. `spec/**` valt buiten mijn zone.
+- `scripts/check-drools.sh` (ac1e71e4): `EXPECTED_PLAYED` 182 → 183 en
+  `EXPECTED_DRL_PLAYED` 161 → 162, elk met redenblok; verder niets.
+- `spec/RUNTIME-SEMANTICS.md` (bea46cf1): ch. 3.10, tabel "the window sits";
+  ch. 3.12, de rijen over WF-112 en over het vouwfilter.
 
-### Registerzinnen (Engels, voor `spec/CONSTRUCTS.md`; niet aangeraakt)
+### Registerzinnen (voor `spec/CONSTRUCTS.md`; niet aangeraakt)
 
-Rij 40 (Quantifier fold), achteraan toe te voegen:
+Rij 40 (Quantifier fold), achteraan, Engels zoals de rij:
 
-> **Time window inside the fold (2026-09-23, card `drools-venster-vouwtoets`):** a ch. 3.10 window in the `toets` or the `filter` of an `ALLE` fold is carried by both Drools branches with the reference interpreter's values, and so is a window in an aggregation's die/dat filter. The exec-model branch now reads every such window through the test a rule-level window uses, with the element as the subject: an attribute bound is read on each contributor, which was measured against a same-named date on the fold's own subject that would give other verdicts. The evaluation date is bound as a pattern variable of the matrix eval, or of the accumulate source for a filter. Under `GEEN` and the counting quantifiers both branches refuse the window by name, in filter and toets and at any depth, with one shared sentence that cites WF-112 (`kern.Vensterpositie`). Before, the DRL-text branch lowered it under all five quantifiers and answered the complement under `GEEN` in a time-free session for any document that did not go through the verifier. The composite arm of WF-112, as a rule condition and inside an aggregation filter (in a value or in a condition operand), now cites the rule in both branches as well. Witness `VensterVouwWitnessTest` (14 rows, red first), which also replays the corpus negatives `wf112-venster-in-geen-vouw` and `wf112-periodevenster-tellende-kwantor` without the verifier. No golden carries these forms, so no gate-12 pin moved.
+> **Time window inside the fold (2026-09-23, card `drools-venster-vouwtoets`):** a ch. 3.10 window in the `toets` or the `filter` of an `ALLE` fold is carried by both Drools branches with the reference interpreter's values, and so is a window in an aggregation's die/dat filter. The exec-model branch reads every such window through the test a rule-level window uses, with the element as the subject: an attribute bound is read on each contributor, measured against a same-named date on the fold's own subject that would give other verdicts. Golden `corpus/golden/jutterswet-wachtvenster` pins the three positions in all four executors (gate 12: 182 → 183, 161 → 162). Under `GEEN` and the counting quantifiers both branches refuse the window by name, at every position and nesting WF-112 names, with one shared sentence (`kern.Vensterpositie`) that names the position, the quantifier and the element type of the fold that is ill-formed; a bound WF-111 refuses is named as such. Before, the DRL-text branch lowered the window under all five quantifiers and answered the complement under `GEEN` in a time-free session, also for a `GEEN` fold nested in an `ALLE` or `DE` composite. Witnesses `VensterVouwWitnessTest` and `VensterNestingWitnessTest`. Measured and left as named asymmetries: a nested fold, an aggregation in a fold's toets, and a fold or a to-many count in a consistency assertion are refused by both Drools branches with or without a window.
 
 Rij 11, achter de WF-112-zin "Een venster in een ALLE-vouwfilter blijft OPEN
 zonder verruiming: de drie uitvoerders die het dragen antwoorden consistent
-vacuüm-waar." als volgende zin:
+vacuüm-waar." als volgende zin, Nederlands zoals de recente landingen in die
+rij:
 
-> Since card `drools-venster-vouwtoets` (2026-09-23) all four executors carry that filter position, the `ALLE` fold's toets beside it, and a window in an aggregation's filter; the OPEN concerns the norm, not the executors. Both Drools branches refuse the WF-112 positions in the fold, in a rule condition and in an aggregation filter themselves, by name — see row 40.
+> Sinds kaart `drools-venster-vouwtoets` (2026-09-23) dragen alle vier de uitvoerders die filterpositie, de toets van een ALLE-vouw ernaast, een venster in het filter van een aggregatie en een venster als ALLE-lid van een consistentie-assertie; golden `jutterswet-wachtvenster` pint de vouw- en aggregatieposities, en het OPEN geldt de norm, niet de uitvoerders. Beide Drools-takken weigeren elke WF-112-positie zelf, bij naam, ook genest in een ALLE- of DE-samenstelling — zie rij 40.
+
+Rij 2 (Assignment rules), achteraan, Engels:
+
+> **Characteristic value (2026-09-23, card `drools-venster-vouwtoets`):** the Drools loader refuses a `KENMERKTOEKENNING` whose value is not the boolean constant `waar` (WF-022), by name, for both branches. Measured on the negatief `wf022-kenmerk-onwaar` with the verifier bypassed: the exec-model branch wrote the characteristic present, the DRL-text branch left it absent, the ASP backend refused. All 233 characteristic attributions in the corpus and the parity zone write `waar`. Witness `KenmerkwaardeWitnessTest`.
+
+Rij 22 (Fact creation), achteraan, Engels:
+
+> **Nested doel host (2026-09-23, card `drools-venster-vouwtoets`):** both Drools branches refuse the doel attempt of a creation guard that names a host the doel satisfies inside a composite or on a navigating check — WF-109's first two doel fences — by name, one sentence in `kern.Gastheer`. The DRL-text branch played such a composite on the doel pattern where the verifier, `ref`, clingo and the exec-model branch refuse it. Witness `CreatieguardPositieWitnessTest`.
 
 ### Open punten
 
-1. **Geen golden voor het venster in een `ALLE`-vouw of een aggregatiefilter.**
-   Alle vier de uitvoerders dragen deze posities nu, maar alleen de
-   JUnit-getuige pint ze. Een golden zou gate 12 laten tellen:
-   `EXPECTED_PLAYED` +1 en `EXPECTED_DRL_PLAYED` +1, als beide takken hem
-   spelen. `corpus/**` valt buiten deze kaart. Een handberekende opzet (S1..S6,
-   W1..W8, evaluatiedatum 2024-06-15 en tijdvrij) staat in de javadoc van de
-   getuige.
-2. **Spec-tekst die achterloopt (beschermd, voor de hoofdsessie).**
-   (a) RUNTIME-SEMANTICS ch. 3.12, rij "A time window inside the `filter` of
-   an `ALLE` quantifier fold": de zin "The Drools exec-model branch's SKIP
-   there is a channel asymmetry (card `20260923-drools-venster-vouwtoets`)"
-   klopt niet meer. Voorstel: "Since 2026-09-23 (card
-   `drools-venster-vouwtoets`) the Drools exec-model branch carries it too,
-   so all four executors answer it alike (witness `VensterVouwWitnessTest`;
-   no golden)."
-   (b) ch. 3.10, de tabel "the window sits": twee rijen, "in the `toets` or
-   `filter` of an `ALLE` quantifier fold" en "in an aggregation's die/dat
-   filter", elk "executed by all four since 2026-09-23 (the Drools exec-model
-   branch since card `drools-venster-vouwtoets`); no golden, witness
-   `VensterVouwWitnessTest`". In de GEEN-rij na "their refusals remain as
-   fail-fast checks": "— both Drools branches included since the same card,
-   by name".
-3. **Aanhalingen in andere zones.** `ref/lib/eval.ml` (r. 208) en
+1. **Aanhalingen in andere zones** (was 3). `ref/lib/eval.ml` (r. 208) en
    `backends/clingo/lib/translate.ml` (r. 519) citeren de oude DRL-zin
    "periodevergelijking onder een tellende kwantor" als meting van
-   2026-09-20. Als meting blijft dat waar, maar de tak zegt nu "periodevenster
-   in een GEEN-samenstelling (WF-112): …". Dat zijn zones van parallelle
-   kaarten; ik heb ze niet aangeraakt.
-4. **De NOTE van `corpus/negatief/wf112-venster-in-geen-vouw`** zegt dat de
-   DRL-tak dit document beantwoordde. Dat is als geschiedenis waar. Een zin
-   "since card drools-venster-vouwtoets both Drools branches refuse it by
-   name" hoort bij de negatief-zone van de parallelle verifier-normkaart;
-   niet aangeraakt.
-5. **Niet gemeten: de samenstellingsarm van WF-112 op de overige posities**,
-   zoals een consistentie-assertie en de doelpoging van een feitcreatie. Of
-   beide takken daar weigeren, en met welke reden, is niet vastgesteld.
-6. **Niet gemeten: `Tijdrekening.periodeGrensLowerbaar`** (frontend-kern)
-   vergelijkt het objecttype van een attribuutgrens op identiteit, waar WF-111
-   `S ⊑ O` toelaat. Voor een bijdrager van een subtype werkt de lezing, want
-   de getter is geërfd. Een grens die op een supertype van het elementtype is
-   gedeclareerd, heb ik niet gemeten. Dat is de frontendzone.
+   2026-09-20. Als meting blijft dat waar; de takken zeggen nu
+   "periodevenster in … (WF-112): …". Voor de lopende ref- en clingokaarten.
+2. **`Tijdrekening.periodeGrensLowerbaar`** (was 6; frontend-kern) vergelijkt
+   het objecttype van een attribuutgrens op identiteit, waar WF-111 `S ⊑ O`
+   toelaat. Voor een bijdrager van een subtype werkt de lezing (de getter is
+   geërfd); een grens die op een supertype van het elementtype is
+   gedeclareerd, is niet gemeten. Voor de frontendkaart.
+3. **De genoemde asymmetrieën van advies 5**: geneste vouwen, een aggregatie
+   in een vouwtoets, een vouw of een telling over een meervoudige rol in een
+   assertie. Structureel, niet aan het venster gebonden; elk een eigen
+   uitbreiding van de Drools-takken.
+4. **Een kenmerk als assertiecriterium in de DRL-tak**: niet gedragen, ook
+   zonder venster (gate 12 pint het al voor `anchor/jutterswet-penninguitgifte`).
+5. **`ALLE[niet ervaren, SOM(… die GEEN[venster]) > 3]`**: verifier WF-112 en
+   clingo weigeren, `ref` antwoordt (kortsluiting vóór het tweede lid). Een
+   `ref`-vraag over fail-fast bij een WF-112-positie in een niet gelezen lid;
+   voor de ref-kaart.
+6. **WF-112's samenstellingsarm op de overige posities** (verdeling, objectcreatie,
+   uniciteit): niet gemeten.
+7. **Normpunt, het expressieniveau-broertje van maintainerbesluit B.**
+   `GEEN[SOM(dienstjaren | venster) > 3]`, een venster als het filter van een
+   aggregatie die onder GEEN staat, is verifier-schoon: noch de WF-112-wandeling
+   van de verifier noch `Vensterpositie` gaat expressies in om daar een venster
+   te tellen. Alle vier de uitvoerders antwoorden gelijk (gedateerd
+   {P1, P4, P5, P6}, tijdvrij iedereen bevoegd, gemeten door de lens); de
+   exec-tak speelt dit sinds deze kaart. Of het venster in een operand onder
+   een tellende kwantor valt, is een normvraag voor de spec-lijn.
