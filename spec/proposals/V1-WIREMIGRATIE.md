@@ -2133,6 +2133,17 @@ project elders mechanisch afvangt.
 
 **BESLIST (2026-09-19, maintainer): EIGEN BESLUIT, een vierde route: TOKA blijft behouden als PRIVATE GEDRAGSacceptatieset, niet als wire-pariteitsset. Bij v1 vervalt de bytevergelijking en worden geen v1-IR-dumps gepind; de `.rgs`-bronnen lopen in de test via de actuele RegelSpraak-frontend en tijdelijk uchar-IR naar Drools, en alleen de oorspronkelijke absolute casusverwachtingen worden gecontroleerd. Vóór de publieke flip verhuist het materiaal naar `regelspraak-werkbank` of een aparte private testrepository en wordt het inclusief geschiedenis uit uchar verwijderd. Bestaande holdouts blijven naam- en redendragend.**
 
+**Aanvulling (2026-09-23, maintainer):** de zone blijft tot v1 helemaal klaar
+is, dus door alle landingen van §7 heen. Gate 11 verhuist per landing mee —
+de casus-dump wordt door de frontend opnieuw geëmitteerd, de replay-slices
+gaan mechanisch mee met het migratiescript van de landing, en de
+divergentielijst in `toka/README.md` krijgt per landing haar regel — en is
+daarmee vanaf L1 een regressiegate ("frontend ≡ de vastgelegde toestand"),
+geen toolchain-pariteitsgate meer. P11 (zone weg + geschiedenisherschrijving)
+wordt pas bij de publieke flip uitgevoerd; de "vierde route" hierboven — de
+gedragsacceptatieset zonder gepinde v1-dumps — is de eindvorm bij die flip,
+niet de vorm tijdens de klap.
+
 **Wat er op het spel staat.** Gate 11 vergelijkt uchar's eigen frontend tegen
 `toka/casus/ir.json` — een dump die **één keer met de originele toolchain** is
 geëmitteerd. Dat is het enige directe byte-anker dat uchar tegen de
@@ -2263,6 +2274,24 @@ op een kaart waar niets anders tegelijk beweegt.
 M8 staat achteraan en is bewust puur mechanisch: als M1–M7 geland zijn is de
 hernoeming een tabelvervanging plus een regeneratie, en dan is de
 round-trip-eigenschap van gate 2 het bewijs.
+
+**Samengevoegde landingen (maintainerbesluit 2026-09-23).** Acht kaarten
+zijn acht regeneraties, acht lensrondes en acht herpins van de toolchain; de
+maintainer heeft de snede tot VIJF landingen samengevoegd. De M-labels blijven
+de namen van de deltafamilies (M8 blijft "de hernoeming"), de landing zegt
+welke families samen landen:
+
+| Landing | Draagt | Deltas | Waarom samen |
+|---|---|---|---|
+| L1 | M1 | B1–B5, plus V3 (de geneste root) | de container; loopt (`backlog/doing/20260923-m1-schema-en-container.md`, kaart op main `82c1f088`) |
+| L2 | M2 + M3 | B7, B8, B9, B11, B12, B13, B16 | beide herschrijven `AttribuutRef` (B11 de navigatievelden, B13 de `type`-annotatie), en beide zijn na P1–P3 en gate 13 vooral verwijderen-met-getuige: ~30 + 72 negatiefs in één stempelronde; V15 (gate 13 herzien) hoort erbij |
+| L3 | M4 | B14, B15, B17 (i), B18 | het typesysteem alleen: de landing die het meest waarschijnlijk waarden van gates 5/6/12 beweegt, en die wil je los zien |
+| L4 | M5 + M6 | B19, B20, B21, B27, B28, B22 a/b/c, B23, B24, B25 | B21 (de `Functie`-splitsing) is al een expressieknoop in de regellaagkaart; de regel- en expressieknopen worden door dezelfde lezers en vertalers in één beweging herschreven, en B22 (getypeerde literalen) heeft L3's typen nodig |
+| L5 | M7 + M8 | B26, B6, B10 | beide mechanisch; M7 blijft de nulmeting, als EERSTE commit van de kaart met een eigen gate-run waarin gates 5/6/12 niet mogen bewegen — zonder eigen regeneratie en herpin |
+
+Per landing geldt de boekhouding hieronder één keer; de toolchainstappen
+T1–T4 (§ Fase 3) volgen per landing, niet per familie. Wat de proposal
+hieronder "M-kaart" noemt, leest sindsdien als "landing".
 
 **Wat elke M-kaart in elk geval moet doen** — dit is de terugkerende
 boekhouding, niet per kaart opnieuw te bedenken:

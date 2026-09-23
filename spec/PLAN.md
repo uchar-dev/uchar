@@ -708,6 +708,24 @@ the git history; the flip now additionally requires removing the zone
 and rewriting history (filter-repo or a fresh public copy) — recorded in
 `CLAUDE.md` with the zone's charter.
 
+
+New in v5. (11) **Decided (2026-09-23):** the v1 wire migration
+(`proposals/V1-WIREMIGRATIE.md`; all seventeen of its questions decided
+2026-09-19) lands in FIVE landings instead of the eight M-cards the
+proposal sliced (its §7): L1 = M1, the container (card
+`backlog/doing/20260923-m1-schema-en-container.md`, in flight); L2 =
+M2+M3, the reference layer (bindings authoritative, bean fields and the
+reference `type` annotation off the wire, gate 13 revised per V15); L3 =
+M4, the type system alone, because it is the landing most likely to move
+gates 5/6/12 and that movement must be seen on its own; L4 = M5+M6, the
+rule and expression layer; L5 = M7+M8, the source record and the rename,
+with M7 kept as the null measurement in the card's first commit. Each
+landing regenerates every corpus zone and the toka zone, holds all
+fourteen gates green, and is followed by a toolchain re-pin. The `toka/`
+zone stays through the whole migration — decision 10's precondition is
+amended in timing only: gate 11 becomes a per-landing regression gate,
+and P11 (zone removal plus history rewrite) executes at the public flip.
+
 ## 10. Rough effort
 
 Phase 0 in weeks; Phases 1+2 together a few months of serious work; Phases 3
