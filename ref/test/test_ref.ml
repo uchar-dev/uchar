@@ -3061,29 +3061,26 @@ let () =
                  isb_bron = None } ]))
     "carries no sourceRole"
 
-(* WV-3.4a-opgesomd: the LISTED count, and why this evaluator's arm for it
-   stays where it is.
+(* WV-3.4a-opgesomd: a count handed VALUES instead of instances, and why this
+   evaluator now refuses it by name.
 
-   Since 2026-09-20 WF-037 refuses an AANTAL carrying two or more operands:
-   a count folds INSTANCES (ch. 3.4a) and the source language spells no
-   operand list for it. The arm under `Aantal` that answers such a node —
-   `agg_aantal (filled vs)`, a count of the FILLED operands — is therefore
-   out of reach through a well-formed document. It STAYS, as the second line
-   of defence, and the first three lines below are what that choice means
-   made checkable: handed the refused form directly the evaluator still
-   answers, and answers what it always answered.
-
-   It is not dead code either, and that is measured rather than assumed. The
-   wire rule reads two or more, so a count with ONE operand and no element
-   type — or with none at all — stays well-formed and reaches the same arm.
-   Those two shapes are an open flank of the same class (this evaluator
-   answers them, clingo and both Drools branches refuse them) and the 2026-
-   09-20 route does not cover them, because neither is a LISTED form. The
-   last three lines pin them, so that deciding them has to move this witness
-   rather than pass underneath it.
+   Every shape that reaches the value arm under `Aantal` is fenced on the
+   wire: the listed operand list of two or more by WF-037 (2026-09-20), the
+   count of ONE operand or none without an element type by WF-037
+   (2026-09-23), and the set source by WF-096 (2026-09-19). Until 2026-09-23
+   the arm answered — the count of the FILLED operands, 1 on one filled own
+   read, 0 on none — and these six lines pinned that answer, the last three
+   as the open flank a well-formed document still reached. The flank is
+   closed now, so the arm is out of reach through any well-formed document,
+   and a second line that answers a form nobody may write answers silently.
+   It refuses instead, and these lines pin the refusal at every arity the
+   wire refuses: two operands, one, none. The fragment is the construct
+   named, not the position, so it witnesses this arm and no other.
 
    The operands are the SUBJECT's own reads, which is the whole of the form:
-   V5 carries a gewicht and no vindplaats, V6 carries both, V7 neither. *)
+   V5 carries a gewicht and no vindplaats, V6 carries both, V7 neither — the
+   three subjects that told the filled-count answer apart, kept so that a
+   return to it fails here on the first line. *)
 let () =
   let num2kg : Ir_v0.Ast.datatype =
     Numeriek
@@ -3112,18 +3109,26 @@ let () =
   let gewicht = aref "gewicht" "Vondst" num2kg in
   let vindplaats = aref "vindplaats" "Vondst" Tekst in
   let ev label e = Eval.eval_expr env w (World.get w label) ~err:no_err e in
-  (* the refused form: two operands, one of them leeg. The answer is the
-     count of the FILLED ones — the reading the set-source decision of
-     2026-09-19 took off the wire under this same kind, and the reason the
-     listed spelling followed it *)
-  expect_num "WV-3.4a-opgesomd-tweede-linie" (ev "V5" (opgesomd [ gewicht; vindplaats ])) "1";
-  expect_num "WV-3.4a-opgesomd-alles-gevuld" (ev "V6" (opgesomd [ gewicht; vindplaats ])) "2";
-  expect_num "WV-3.4a-opgesomd-alles-leeg" (ev "V7" (opgesomd [ gewicht; vindplaats ])) "0";
-  (* the open flank the arm is still REACHED through: the wire rule stops at
-     two, so these three documents are well-formed today *)
-  expect_num "WV-3.4a-eenoperand-gevuld" (ev "V5" (opgesomd [ gewicht ])) "1";
-  expect_num "WV-3.4a-eenoperand-leeg" (ev "V7" (opgesomd [ gewicht ])) "0";
-  expect_num "WV-3.4a-geen-operand" (ev "V5" (opgesomd [])) "0"
+  let hint = "a count folds INSTANCES and this node hands it" in
+  (* the listed form, two operands (WF-037, 2026-09-20) *)
+  expect_fault_msg "WV-3.4a-opgesomd-tweede-linie"
+    (fun () -> ev "V5" (opgesomd [ gewicht; vindplaats ])) hint;
+  expect_fault_msg "WV-3.4a-opgesomd-alles-gevuld"
+    (fun () -> ev "V6" (opgesomd [ gewicht; vindplaats ])) hint;
+  expect_fault_msg "WV-3.4a-opgesomd-alles-leeg"
+    (fun () -> ev "V7" (opgesomd [ gewicht; vindplaats ])) hint;
+  (* the count without a source, one operand or none (WF-037, 2026-09-23) —
+     the flank these three pinned open until that date *)
+  expect_fault_msg "WV-3.4a-eenoperand-gevuld" (fun () -> ev "V5" (opgesomd [ gewicht ])) hint;
+  expect_fault_msg "WV-3.4a-eenoperand-leeg" (fun () -> ev "V7" (opgesomd [ gewicht ])) hint;
+  expect_fault_msg "WV-3.4a-geen-operand" (fun () -> ev "V5" (opgesomd [])) hint;
+  (* the spelling that SHOWED the defect: one list literal. Until 2026-09-23
+     both answered 1 — the operand counted, never its contents *)
+  let lijst : Ir_v0.Ast.datatype = List_type { element = num0 } in
+  let lijstlit elements : Ir_v0.Ast.expr = List_literal { typ = Some lijst; elements; bron = None } in
+  expect_fault_msg "WV-3.4a-lijstliteraal-twee"
+    (fun () -> ev "V5" (opgesomd [ lijstlit [ litv "1" num0; litv "2" num0 ] ])) hint;
+  expect_fault_msg "WV-3.4a-lijstliteraal-leeg" (fun () -> ev "V5" (opgesomd [ lijstlit [] ])) hint
 
 (* --- ch. 3.10: the period condition's evaluation-date gate -------------- *)
 
