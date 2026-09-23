@@ -178,31 +178,25 @@ class VouwfilterStratumAnalyseTest {
 
     /** Jutter + Vondst, one relation, and the rules handed in. */
     private static String model(String... regels) {
-        String ot = "\"Jutter\":{\"node\":\"Objecttype\",\"naam\":\"Jutter\",\"attributen\":{},"
-                + "\"attribuutMeervoud\":{},\"attribuutDimensies\":{},\"attribuutGranulariteit\":{},"
-                + "\"attribuutTijdlijnAantal\":{},\"attribuutTijdlijnNaam\":{},"
-                + "\"kenmerken\":[\"druk\",\"gemerkt\"],"
-                + "\"kenmerkSoorten\":{\"druk\":\"BIJVOEGLIJK\",\"gemerkt\":\"BIJVOEGLIJK\"},"
-                + "\"kenmerkGranulariteit\":{},\"kenmerkTijdlijnAantal\":{},\"bezield\":true,"
-                + "\"meervoud\":\"Jutters\"},"
-                + "\"Vondst\":{\"node\":\"Objecttype\",\"naam\":\"Vondst\",\"attributen\":{},"
-                + "\"attribuutMeervoud\":{},\"attribuutDimensies\":{},\"attribuutGranulariteit\":{},"
-                + "\"attribuutTijdlijnAantal\":{},\"attribuutTijdlijnNaam\":{},"
-                + "\"kenmerken\":[\"gemerkt\",\"kaal\"],"
-                + "\"kenmerkSoorten\":{\"gemerkt\":\"BIJVOEGLIJK\",\"kaal\":\"BIJVOEGLIJK\"},"
-                + "\"kenmerkGranulariteit\":{},\"kenmerkTijdlijnAantal\":{},\"bezield\":false,"
-                + "\"meervoud\":\"Vondsten\"}";
-        String ft = "\"vondstaanmelding\":{\"node\":\"Feittype\",\"naam\":\"vondstaanmelding\","
+        String ot = "{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\","
+                + "\"attributes\":[],"
+                + "\"characteristics\":[{\"node\":\"Characteristic\",\"name\":\"druk\",\"kind\":\"BIJVOEGLIJK\"},"
+                + "{\"node\":\"Characteristic\",\"name\":\"gemerkt\",\"kind\":\"BIJVOEGLIJK\"}]},"
+                + "{\"node\":\"ObjectType\",\"name\":\"Vondst\",\"animate\":false,\"plural\":\"Vondsten\","
+                + "\"attributes\":[],"
+                + "\"characteristics\":[{\"node\":\"Characteristic\",\"name\":\"gemerkt\",\"kind\":\"BIJVOEGLIJK\"},"
+                + "{\"node\":\"Characteristic\",\"name\":\"kaal\",\"kind\":\"BIJVOEGLIJK\"}]}";
+        String ft = "{\"node\":\"Feittype\",\"naam\":\"vondstaanmelding\","
                 + "\"wederkerig\":false,\"rollen\":[{\"node\":\"Rol\",\"naam\":\"aanmelder\","
                 + "\"objecttypeNaam\":\"Jutter\",\"meervoud\":null,\"meervoudig\":false},"
                 + "{\"node\":\"Rol\",\"naam\":\"vondst\",\"objecttypeNaam\":\"Vondst\","
                 + "\"meervoud\":\"vondsten\",\"meervoudig\":true}]}";
-        return ("{\"formaat\":\"regelspraak-ir-v0\",\"objecttypen\":{%s},\"domeinen\":{},\"parameters\":{},"
-                + "\"eenheidstelsels\":{},\"feittypen\":{%s},\"dimensies\":{},\"tijdlijnen\":[],"
-                + "\"dagsoorten\":[],\"dagsoortPerEenheid\":{},\"regels\":[],\"resolvedRegels\":[%s],"
+        return ("{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":[%s],\"factTypes\":[%s],"
+                + "\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],"
+                + "\"dayKinds\":[],\"dagsoortPerEenheid\":{}},\"rules\":{\"resolvedRegels\":[%s],"
                 + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
                 + "\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
-                + "\"regelGroepen\":[],\"diagnostics\":[]}")
+                + "\"regelGroepen\":[]},\"diagnostics\":[]}")
                 .formatted(ot, ft, String.join(",", regels));
     }
 

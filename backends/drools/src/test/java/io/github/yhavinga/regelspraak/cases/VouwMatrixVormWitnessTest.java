@@ -226,7 +226,7 @@ class VouwMatrixVormWitnessTest {
     private Path diepeSamenstelling() throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(SAMENGESTELD.resolve("ir.json")));
         houdRegels(doc, "paraat bij ploegkeur", "redderstal van een reddingspost");
-        for (JsonNode r : doc.withArray("resolvedRegels"))
+        for (JsonNode r : IrPad.rulesLijst(doc, "resolvedRegels"))
             if ("paraat bij ploegkeur".equals(r.path("naam").asText()))
                 ((ObjectNode) r.get("voorwaarde")).set("toets", JSON.readTree(DIEPE_MATRIX));
         return schrijf(doc, "diep-ir");
@@ -236,12 +236,12 @@ class VouwMatrixVormWitnessTest {
     private Path tweeParameters() throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(PARAMETER.resolve("ir.json")));
         houdRegels(doc, "bekwaam bij keurgrens", "loodstal van een loodspost");
-        ((ObjectNode) doc.get("parameters")).set("bovengrens", JSON.readTree("""
+        IrPad.modelLijst(doc, "parameters").add(JSON.readTree("""
                 { "node": "Parameter", "naam": "bovengrens",
                   "datatype": { "node": "Numeriek", "geheel": true, "decimalen": 0,
                                 "teken": "NIET_NEGATIEF", "eenheid": null },
                   "granulariteit": null }"""));
-        for (JsonNode r : doc.withArray("resolvedRegels"))
+        for (JsonNode r : IrPad.rulesLijst(doc, "resolvedRegels"))
             if ("bekwaam bij keurgrens".equals(r.path("naam").asText()))
                 ((ObjectNode) r.get("voorwaarde")).set("toets", JSON.readTree(TWEE_PARAM_MATRIX));
         return schrijf(doc, "twee-param-ir");
@@ -252,12 +252,11 @@ class VouwMatrixVormWitnessTest {
     private Path tekstParameter() throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(PARAMETER.resolve("ir.json")));
         houdRegels(doc, "bekwaam bij keurgrens", "loodstal van een loodspost");
-        ((ObjectNode) doc.get("objecttypen").get("Loods").get("attributen"))
-                .set("rang", JSON.readTree("{ \"node\": \"Tekst\" }"));
-        ((ObjectNode) doc.get("parameters")).set("keurrang", JSON.readTree("""
+        IrPad.addAttribute(IrPad.objectType(doc, "Loods"), "rang", JSON.readTree("{ \"node\": \"Tekst\" }"));
+        IrPad.modelLijst(doc, "parameters").add(JSON.readTree("""
                 { "node": "Parameter", "naam": "keurrang", "datatype": { "node": "Tekst" },
                   "granulariteit": null }"""));
-        for (JsonNode r : doc.withArray("resolvedRegels"))
+        for (JsonNode r : IrPad.rulesLijst(doc, "resolvedRegels"))
             if ("bekwaam bij keurgrens".equals(r.path("naam").asText()))
                 ((ObjectNode) r.get("voorwaarde")).set("toets", JSON.readTree(TEKST_PARAM_MATRIX));
         return schrijf(doc, "tekst-param-ir");
@@ -265,11 +264,9 @@ class VouwMatrixVormWitnessTest {
 
     private static void houdRegels(ObjectNode doc, String... namen) {
         List<String> keep = List.of(namen);
-        for (String veld : new String[] { "regels", "resolvedRegels" }) {
-            com.fasterxml.jackson.databind.node.ArrayNode uit = JSON.createArrayNode();
-            for (JsonNode r : doc.withArray(veld)) if (keep.contains(r.path("naam").asText())) uit.add(r);
-            doc.set(veld, uit);
-        }
+        com.fasterxml.jackson.databind.node.ArrayNode uit = JSON.createArrayNode();
+        for (JsonNode r : IrPad.rulesLijst(doc, "resolvedRegels")) if (keep.contains(r.path("naam").asText())) uit.add(r);
+        IrPad.rules(doc).set("resolvedRegels", uit);
     }
 
     private Path schrijf(ObjectNode doc, String naam) throws Exception {

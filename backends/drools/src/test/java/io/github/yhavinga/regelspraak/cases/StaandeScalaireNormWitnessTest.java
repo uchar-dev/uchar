@@ -155,9 +155,9 @@ class StaandeScalaireNormWitnessTest {
         // carried by loader and transpiler.
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(
                 CORPUS.resolve("anchor").resolve("jutterswet-waardestelling").resolve("ir.json")));
-        ObjectNode groep = ((ObjectNode) JSON.readTree(Files.readString(
-                CORPUS.resolve("anchor").resolve("jutterswet-nestdiepte").resolve("ir.json")))
-                .get("prioritizedDefaults").get(0)).deepCopy();
+        ObjectNode groep = ((ObjectNode) IrPad.rulesLijst(JSON.readTree(Files.readString(
+                CORPUS.resolve("anchor").resolve("jutterswet-nestdiepte").resolve("ir.json"))),
+                "prioritizedDefaults").get(0)).deepCopy();
         groep.put("naam", "geschatte waarde default (witness)");
         groep.put("onderwerp", "Vondst");
         groep.put("attribuut", "geschatte waarde");
@@ -174,7 +174,7 @@ class StaandeScalaireNormWitnessTest {
         groep.set("defaults", defaults);
         ArrayNode pds = JSON.createArrayNode();
         pds.add(groep);
-        ir.set("prioritizedDefaults", pds);
+        IrPad.rules(ir).set("prioritizedDefaults", pds);
         Path tmp = Files.createTempFile("other-writer-witness", ".json");
         try {
             Files.writeString(tmp, ir.toString());
@@ -265,7 +265,7 @@ class StaandeScalaireNormWitnessTest {
     private static Path versieSchrijver() throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(CORPUS.resolve("anchor")
                 .resolve("jutterswet-waardestelling").resolve("ir.json").toFile());
-        ((ObjectNode) ir.get("resolvedRegels").get(0)).set("geldigheid", JSON.createObjectNode()
+        ((ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0)).set("geldigheid", JSON.createObjectNode()
                 .put("node", "Geldigheid").put("vanaf", "2026-01-01").put("tot", "2026-12-31"));
         Path uit = Files.createTempFile("versie-schrijver", ".json");
         uit.toFile().deleteOnExit();
@@ -282,9 +282,9 @@ class StaandeScalaireNormWitnessTest {
         ObjectNode getal = JSON.createObjectNode();
         getal.put("node", "Numeriek").put("geheel", false).put("decimalen", 2)
                 .put("teken", "ONBEPAALD").putNull("eenheid");
-        ((ObjectNode) ir.get("objecttypen").get("Vondst").get("attributen")).set("tweede taxatie", getal);
+        IrPad.addAttribute(IrPad.objectType(ir, "Vondst"), "tweede taxatie", getal);
 
-        ArrayNode regels = (ArrayNode) ir.get("resolvedRegels");
+        ArrayNode regels = IrPad.rulesLijst(ir, "resolvedRegels");
         ObjectNode tweede = regels.get(0).deepCopy();
         tweede.put("naam", "Waardestelling tweede");
         ObjectNode bron = (ObjectNode) tweede.get("waarde");
@@ -292,8 +292,6 @@ class StaandeScalaireNormWitnessTest {
                 .put("onderwerpBron", "de tweede taxatie van de Vondst")
                 .put("bron", "de tweede taxatie van de Vondst");
         regels.add(tweede);
-        ((ArrayNode) ir.get("regels")).add(JSON.createObjectNode()
-                .put("node", "Regel").put("naam", "Waardestelling tweede").put("soort", "regel"));
 
         Path uit = Files.createTempFile("tweede-schrijver", ".json");
         uit.toFile().deleteOnExit();

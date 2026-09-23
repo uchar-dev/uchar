@@ -334,7 +334,7 @@ class HerhaaldTypepaarWitnessTest {
      *  read exactly as supplied and no rule writes a role field. */
     private static Path alleenTellingen() throws Exception {
         ObjectNode ir = lees(DUBBELVERBINDING);
-        ir.putArray("feitCreaties");
+        IrPad.rules(ir).putArray("feitCreaties");
         houdRegels(ir, "liggertal van een haven", "wintertal van een haven");
         return tijdelijk("dv-tellingen", ir);
     }
@@ -346,13 +346,13 @@ class HerhaaldTypepaarWitnessTest {
         ObjectNode ir = lees(DUBBELVERBINDING);
         houdCreaties(ir, "winterberging door de haven");
         houdRegels(ir, "wintertal van een haven", "ligprijs van een schuit");
-        ObjectNode fc = (ObjectNode) ir.get("feitCreaties").get(0);
+        ObjectNode fc = (ObjectNode) IrPad.rulesLijst(ir, "feitCreaties").get(0);
         if (voorwaarde == null) fc.putNull("voorwaarde"); else fc.set("voorwaarde", voorwaarde);
         if (altijd) fc.set("geldigheid", JSON.createObjectNode()
                 .put("node", "Geldigheid").putNull("vanaf").putNull("tot"));
         // the ligprijs rule carries its own doel-kenmerk gate in the golden; drop it so this row reads the
         // created link for every Schuit and the creation's guard is the only selector.
-        for (JsonNode r : ir.get("resolvedRegels"))
+        for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels"))
             if ("ligprijs van een schuit".equals(r.get("naam").asText())) ((ObjectNode) r).putNull("voorwaarde");
         return tijdelijk("dv-creatie", ir);
     }
@@ -362,7 +362,7 @@ class HerhaaldTypepaarWitnessTest {
      *  changes nothing (BonenveldWitnessTest). */
     private static Path creatieVerlegd(String feittype, String ankerRol, String doelRol) throws Exception {
         ObjectNode ir = lees(DUBBELVERBINDING);
-        for (JsonNode f : ir.get("feitCreaties"))
+        for (JsonNode f : IrPad.rulesLijst(ir, "feitCreaties"))
             if ("winterberging door de haven".equals(f.get("naam").asText()))
                 ((ObjectNode) f).put("feittype", feittype).put("ankerRol", ankerRol).put("doelRol", doelRol);
         return tijdelijk("dv-creatie-verlegd", ir);
@@ -372,9 +372,9 @@ class HerhaaldTypepaarWitnessTest {
      *  Haven from Schuit under one name and neither derives a field. */
     private static Path rolnaamBotsing() throws Exception {
         ObjectNode ir = lees(DUBBELVERBINDING);
-        ir.putArray("feitCreaties");
+        IrPad.rules(ir).putArray("feitCreaties");
         houdRegels(ir, "liggertal van een haven", "wintertal van een haven");
-        for (JsonNode r : ir.get("feittypen").get("winterberging").get("rollen"))
+        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "winterberging").get("rollen"))
             if ("winterhaven".equals(r.get("naam").asText())) ((ObjectNode) r).put("naam", "thuishaven");
         return tijdelijk("dv-rolnaambotsing", ir);
     }
@@ -382,9 +382,9 @@ class HerhaaldTypepaarWitnessTest {
     /** The counts-only model with a Numeriek attribute SHARING the role name `thuishaven` on Schuit. */
     private static Path naamdelendeSchuit() throws Exception {
         ObjectNode ir = lees(DUBBELVERBINDING);
-        ir.putArray("feitCreaties");
+        IrPad.rules(ir).putArray("feitCreaties");
         houdRegels(ir, "liggertal van een haven", "wintertal van een haven");
-        ((ObjectNode) ir.get("objecttypen").get("Schuit").get("attributen")).set("thuishaven", numeriek());
+        IrPad.addAttribute(IrPad.objectType(ir, "Schuit"), "thuishaven", numeriek());
         return tijdelijk("dv-naamdeling", ir);
     }
 
@@ -392,9 +392,9 @@ class HerhaaldTypepaarWitnessTest {
      *  the subject's `thuishaven` to-many — so the join field is missing on the Schuit but present on the Haven. */
     private static Path elementrolToOne() throws Exception {
         ObjectNode ir = lees(DUBBELVERBINDING);
-        ir.putArray("feitCreaties");
+        IrPad.rules(ir).putArray("feitCreaties");
         houdRegels(ir, "liggertal van een haven", "wintertal van een haven");
-        for (JsonNode r : ir.get("feittypen").get("thuisligging").get("rollen"))
+        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "thuisligging").get("rollen"))
             ((ObjectNode) r).put("meervoudig", "thuishaven".equals(r.get("naam").asText()));
         return tijdelijk("dv-elementrol-toone", ir);
     }
@@ -402,9 +402,9 @@ class HerhaaldTypepaarWitnessTest {
     /** The counts-only model with BOTH roles of thuisligging to-many — no field at either end. */
     private static Path beideZijdenMeervoudig() throws Exception {
         ObjectNode ir = lees(DUBBELVERBINDING);
-        ir.putArray("feitCreaties");
+        IrPad.rules(ir).putArray("feitCreaties");
         houdRegels(ir, "liggertal van een haven", "wintertal van een haven");
-        for (JsonNode r : ir.get("feittypen").get("thuisligging").get("rollen"))
+        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "thuisligging").get("rollen"))
             ((ObjectNode) r).put("meervoudig", true);
         return tijdelijk("dv-beide-meervoudig", ir);
     }
@@ -415,9 +415,9 @@ class HerhaaldTypepaarWitnessTest {
      *  BronRolVouwWitnessTest's business.) */
     private static Path somOverLiggers() throws Exception {
         ObjectNode ir = lees(DUBBELVERBINDING);
-        ir.putArray("feitCreaties");
+        IrPad.rules(ir).putArray("feitCreaties");
         houdRegels(ir, "liggertal van een haven");
-        ObjectNode fold = (ObjectNode) ir.get("resolvedRegels").get(0).get("waarde");
+        ObjectNode fold = (ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0).get("waarde");
         fold.remove("bronRol");
         fold.put("kind", "SOM").put("bron", "de som van de romplengte van alle liggers van de Haven");
         ObjectNode arg = (ObjectNode) fold.get("argumenten").get(0);
@@ -428,17 +428,15 @@ class HerhaaldTypepaarWitnessTest {
 
     private static void houdRegels(ObjectNode ir, String... namen) {
         List<String> houd = List.of(namen);
-        for (String veld : new String[] { "regels", "resolvedRegels" }) {
-            ArrayNode uit = JSON.createArrayNode();
-            for (JsonNode r : ir.get(veld)) if (houd.contains(r.get("naam").asText())) uit.add(r);
-            ir.set(veld, uit);
-        }
+        ArrayNode uit = JSON.createArrayNode();
+        for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels")) if (houd.contains(r.get("naam").asText())) uit.add(r);
+        IrPad.rules(ir).set("resolvedRegels", uit);
     }
 
     private static void houdCreaties(ObjectNode ir, String naam) {
         ArrayNode uit = JSON.createArrayNode();
-        for (JsonNode f : ir.get("feitCreaties")) if (naam.equals(f.get("naam").asText())) uit.add(f);
-        ir.set("feitCreaties", uit);
+        for (JsonNode f : IrPad.rulesLijst(ir, "feitCreaties")) if (naam.equals(f.get("naam").asText())) uit.add(f);
+        IrPad.rules(ir).set("feitCreaties", uit);
     }
 
     /** A §8.1.7 characteristic check on the ANKER — no eigenaar, so it hosts on the anker pattern. */

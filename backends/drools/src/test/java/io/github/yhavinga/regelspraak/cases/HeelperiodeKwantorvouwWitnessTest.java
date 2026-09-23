@@ -641,9 +641,8 @@ class HeelperiodeKwantorvouwWitnessTest {
      *  which the eval after the accumulate cannot read (it binds no subject). */
     private static String nietScalaireGrens() throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(ir(vouw("ALLE", ZEEGAAND_FILTER, BRONROL)));
-        ((ObjectNode) doc.get("objecttypen").get("Schuit").get("attributen"))
-                .set("grenswaarde", JSON.readTree(NUMERIEK));
-        ObjectNode toets = (ObjectNode) doc.get("resolvedRegels").get(0).get("voorwaarde").get("toets");
+        IrPad.addAttribute(IrPad.objectType(doc, "Schuit"), "grenswaarde", JSON.readTree(NUMERIEK));
+        ObjectNode toets = (ObjectNode) IrPad.rulesLijst(doc, "resolvedRegels").get(0).get("voorwaarde").get("toets");
         toets.set("rechts", JSON.readTree("""
                 { "node": "AttribuutRef", "attribuut": "grenswaarde", "objecttype": "Schuit",
                   "onderwerpBron": "zijn", "navigatieRol": null, "type": %s,
@@ -663,13 +662,11 @@ class HeelperiodeKwantorvouwWitnessTest {
                   "bronRol": { "node": "RolBinding", "feittype": "schuituitrusting", "rol": "stuk" },
                   "bron": "die al hun stukken gekeurd hebben" }""";
         ObjectNode doc = (ObjectNode) JSON.readTree(ir(vouw("ALLE", nested, BRONROL)));
-        ((ObjectNode) doc.get("objecttypen")).set("Uitrusting", JSON.readTree("""
-                { "node": "Objecttype", "naam": "Uitrusting", "attributen": {}, "attribuutMeervoud": {},
-                  "attribuutDimensies": {}, "attribuutGranulariteit": {}, "attribuutTijdlijnAantal": {},
-                  "attribuutTijdlijnNaam": {}, "kenmerken": [ "gekeurd" ],
-                  "kenmerkSoorten": { "gekeurd": "BIJVOEGLIJK" }, "kenmerkGranulariteit": {},
-                  "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Uitrustingen" }"""));
-        ((ObjectNode) doc.get("feittypen")).set("schuituitrusting", JSON.readTree("""
+        IrPad.modelLijst(doc, "objectTypes").add(JSON.readTree("""
+                { "node": "ObjectType", "name": "Uitrusting", "animate": false, "plural": "Uitrustingen",
+                  "attributes": [],
+                  "characteristics": [ { "node": "Characteristic", "name": "gekeurd", "kind": "BIJVOEGLIJK" } ] }"""));
+        IrPad.modelLijst(doc, "factTypes").add(JSON.readTree("""
                 { "node": "Feittype", "naam": "schuituitrusting", "wederkerig": false, "rollen": [
                     { "node": "Rol", "naam": "drager", "objecttypeNaam": "Schuit",
                       "meervoud": null, "meervoudig": false },
@@ -683,11 +680,11 @@ class HeelperiodeKwantorvouwWitnessTest {
      *  {@code heelperiode} picks which matrix route the bullet takes. */
     private static String vouwOnderDisjunctie(boolean heelperiode) throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(ir(vouw("ALLE", "null", BRONROL)));
-        ObjectNode vloot = (ObjectNode) doc.get("objecttypen").get("Vloot");
-        vloot.set("kenmerken", JSON.readTree("[ \"zeewaardig\", \"vlaggend\" ]"));
-        vloot.set("kenmerkSoorten",
-                JSON.readTree("{ \"zeewaardig\": \"BIJVOEGLIJK\", \"vlaggend\": \"BIJVOEGLIJK\" }"));
-        ObjectNode regel = (ObjectNode) doc.get("resolvedRegels").get(0);
+        ObjectNode vloot = IrPad.objectType(doc, "Vloot");
+        vloot.set("characteristics", JSON.readTree("""
+                [ { "node": "Characteristic", "name": "zeewaardig", "kind": "BIJVOEGLIJK" },
+                  { "node": "Characteristic", "name": "vlaggend", "kind": "BIJVOEGLIJK" } ]"""));
+        ObjectNode regel = (ObjectNode) IrPad.rulesLijst(doc, "resolvedRegels").get(0);
         ObjectNode fold = (ObjectNode) regel.get("voorwaarde");
         if (!heelperiode)   // de niet-temporele route: een kenmerkmatrix zonder heelperiodekwalificatie
             fold.set("toets", JSON.readTree("""
@@ -729,41 +726,37 @@ class HeelperiodeKwantorvouwWitnessTest {
      *  so the join field lives on the Schuit — the ordinary storage direction of a §9.4 set. */
     private static String ir(String vouw) {
         return """
-                { "formaat": "regelspraak-ir-v0",
-                  "objecttypen": {
-                    "Vloot": { "node": "Objecttype", "naam": "Vloot",
-                      "attributen": {}, "attribuutMeervoud": {}, "attribuutDimensies": {},
-                      "attribuutGranulariteit": {}, "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-                      "kenmerken": [ "zeewaardig" ], "kenmerkSoorten": { "zeewaardig": "BIJVOEGLIJK" },
-                      "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
-                      "bezield": false, "meervoud": "Vloten" },
-                    "Schuit": { "node": "Objecttype", "naam": "Schuit",
-                      "attributen": { "wachtwaarde": %s },
-                      "attribuutMeervoud": {}, "attribuutDimensies": {},
-                      "attribuutGranulariteit": { "wachtwaarde": "MAAND" },
-                      "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-                      "kenmerken": [ "zeegaand" ], "kenmerkSoorten": { "zeegaand": "BIJVOEGLIJK" },
-                      "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
-                      "bezield": false, "meervoud": "Schuiten" } },
-                  "domeinen": {}, "parameters": {}, "eenheidstelsels": {},
-                  "feittypen": {
-                    "vlootindeling": { "node": "Feittype", "naam": "vlootindeling", "wederkerig": false,
-                      "rollen": [
-                        { "node": "Rol", "naam": "vloot", "objecttypeNaam": "Vloot", "meervoud": null, "meervoudig": false },
-                        { "node": "Rol", "naam": "schip", "objecttypeNaam": "Schuit", "meervoud": "schepen", "meervoudig": true } ] } },
-                  "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
-                  "regels": [ { "node": "Regel", "naam": "Kenmerktoekenning zeewaardig", "soort": "regel" } ],
-                  "resolvedRegels": [
-                    { "node": "ResolvedRegel", "naam": "Kenmerktoekenning zeewaardig", "soort": "KENMERKTOEKENNING",
-                      "doel": { "node": "AttribuutRef", "attribuut": "zeewaardig", "objecttype": "Vloot",
-                                "onderwerpBron": "Een Vloot", "navigatieRol": null, "type": { "node": "Booleaan" },
-                                "bron": "Een Vloot is zeewaardig", "set": false, "navigatiePad": [] },
-                      "waarde": { "node": "Literal", "waarde": "waar", "type": { "node": "Booleaan" }, "bron": "waar" },
-                      "voorwaarde": %s,
-                      "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
-                  "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-                  "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-                  "regelGroepen": [], "diagnostics": [] }
+                { "format": "uchar-ir-v1",
+                  "model": {
+                    "objectTypes": [
+                      { "node": "ObjectType", "name": "Vloot", "animate": false, "plural": "Vloten",
+                        "attributes": [],
+                        "characteristics": [ { "node": "Characteristic", "name": "zeewaardig", "kind": "BIJVOEGLIJK" } ] },
+                      { "node": "ObjectType", "name": "Schuit", "animate": false, "plural": "Schuiten",
+                        "attributes": [
+                          { "node": "Attribute", "name": "wachtwaarde", "datatype": %s,
+                            "timeline": { "node": "TimelineFacet", "granularity": "MAAND", "count": 1 } } ],
+                        "characteristics": [ { "node": "Characteristic", "name": "zeegaand", "kind": "BIJVOEGLIJK" } ] } ],
+                    "factTypes": [
+                      { "node": "Feittype", "naam": "vlootindeling", "wederkerig": false,
+                        "rollen": [
+                          { "node": "Rol", "naam": "vloot", "objecttypeNaam": "Vloot", "meervoud": null, "meervoudig": false },
+                          { "node": "Rol", "naam": "schip", "objecttypeNaam": "Schuit", "meervoud": "schepen", "meervoudig": true } ] } ],
+                    "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
+                    "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {} },
+                  "rules": {
+                    "resolvedRegels": [
+                      { "node": "ResolvedRegel", "naam": "Kenmerktoekenning zeewaardig", "soort": "KENMERKTOEKENNING",
+                        "doel": { "node": "AttribuutRef", "attribuut": "zeewaardig", "objecttype": "Vloot",
+                                  "onderwerpBron": "Een Vloot", "navigatieRol": null, "type": { "node": "Booleaan" },
+                                  "bron": "Een Vloot is zeewaardig", "set": false, "navigatiePad": [] },
+                        "waarde": { "node": "Literal", "waarde": "waar", "type": { "node": "Booleaan" }, "bron": "waar" },
+                        "voorwaarde": %s,
+                        "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } } ],
+                    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+                    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+                    "regelGroepen": [] },
+                  "diagnostics": [] }
                 """.formatted(NUMERIEK, vouw);
     }
 

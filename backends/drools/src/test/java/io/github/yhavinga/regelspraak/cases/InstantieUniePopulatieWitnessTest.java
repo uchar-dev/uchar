@@ -59,19 +59,16 @@ class InstantieUniePopulatieWitnessTest {
             "{\"node\":\"Numeriek\",\"geheel\":true,\"decimalen\":0,\"teken\":\"NIET_NEGATIEF\",\"eenheid\":null}";
 
     private static String objecttype(String naam, String mv) {
-        return ("\"%s\":{\"node\":\"Objecttype\",\"naam\":\"%s\",\"attributen\":{},\"attribuutMeervoud\":{},"
-                + "\"attribuutDimensies\":{},\"attribuutGranulariteit\":{},\"attribuutTijdlijnAantal\":{},"
-                + "\"attribuutTijdlijnNaam\":{},\"kenmerken\":[],\"kenmerkSoorten\":{},"
-                + "\"kenmerkGranulariteit\":{},\"kenmerkTijdlijnAantal\":{},\"bezield\":false,"
-                + "\"meervoud\":\"%s\"}").formatted(naam, naam, mv);
+        return ("{\"node\":\"ObjectType\",\"name\":\"%s\",\"animate\":false,\"plural\":\"%s\","
+                + "\"attributes\":[],\"characteristics\":[]}").formatted(naam, mv);
     }
 
     private static String feittype(String naam, String eenRol, String veelRol, String veelType, String veelMv) {
-        return ("\"%s\":{\"node\":\"Feittype\",\"naam\":\"%s\",\"wederkerig\":false,\"rollen\":["
+        return ("{\"node\":\"Feittype\",\"naam\":\"%s\",\"wederkerig\":false,\"rollen\":["
                 + "{\"node\":\"Rol\",\"naam\":\"%s\",\"objecttypeNaam\":\"Jutter\",\"meervoud\":null,"
                 + "\"meervoudig\":false},"
                 + "{\"node\":\"Rol\",\"naam\":\"%s\",\"objecttypeNaam\":\"%s\",\"meervoud\":\"%s\","
-                + "\"meervoudig\":true}]}").formatted(naam, naam, eenRol, veelRol, veelType, veelMv);
+                + "\"meervoudig\":true}]}").formatted(naam, eenRol, veelRol, veelType, veelMv);
     }
 
     private static String tak(String elementType, String feittype, String rol) {
@@ -80,20 +77,17 @@ class InstantieUniePopulatieWitnessTest {
                 + "\"filter\":null,\"bron\":\"een selectie\"}").formatted(elementType, feittype, rol);
     }
 
-    private static final String DOC = ("{\"formaat\":\"regelspraak-ir-v0\",\"objecttypen\":{"
-            + "\"Jutter\":{\"node\":\"Objecttype\",\"naam\":\"Jutter\","
-            + "\"attributen\":{\"aantal strandvondsten\":" + HEEL + "},\"attribuutMeervoud\":{},"
-            + "\"attribuutDimensies\":{},\"attribuutGranulariteit\":{},\"attribuutTijdlijnAantal\":{},"
-            + "\"attribuutTijdlijnNaam\":{},\"kenmerken\":[],\"kenmerkSoorten\":{},"
-            + "\"kenmerkGranulariteit\":{},\"kenmerkTijdlijnAantal\":{},\"bezield\":true,"
-            + "\"meervoud\":\"Jutters\"},"
+    private static final String DOC = ("{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":["
+            + "{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\","
+            + "\"attributes\":[{\"node\":\"Attribute\",\"name\":\"aantal strandvondsten\",\"datatype\":" + HEEL + "}],"
+            + "\"characteristics\":[]},"
             + objecttype("Vondst", "Vondsten") + "," + objecttype("Kavel", "Kavels")
-            + "},\"domeinen\":{},\"parameters\":{},\"eenheidstelsels\":{},\"feittypen\":{"
+            + "],\"factTypes\":["
             + feittype("vondstaanmelding", "aanmelder", "aangemelde vondst", "Vondst", "aangemelde vondsten")
             + "," + feittype("kaveltoewijzing", "kavelhouder", "duinkavel", "Kavel", "duinkavels")
-            + "},\"dimensies\":{},\"tijdlijnen\":[],\"dagsoorten\":[],\"dagsoortPerEenheid\":{},"
-            + "\"regels\":[{\"node\":\"Regel\",\"naam\":\"aantal strandvondsten\",\"soort\":\"regel\"}],"
-            + "\"resolvedRegels\":[{\"node\":\"ResolvedRegel\",\"naam\":\"aantal strandvondsten\","
+            + "],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],"
+            + "\"dayKinds\":[],\"dagsoortPerEenheid\":{}},"
+            + "\"rules\":{\"resolvedRegels\":[{\"node\":\"ResolvedRegel\",\"naam\":\"aantal strandvondsten\","
             + "\"soort\":\"BEREKENING\",\"doel\":{\"node\":\"AttribuutRef\","
             + "\"attribuut\":\"aantal strandvondsten\",\"objecttype\":\"Jutter\","
             + "\"onderwerpBron\":\"een Jutter\",\"navigatieRol\":null,\"type\":" + HEEL + ","
@@ -108,7 +102,7 @@ class InstantieUniePopulatieWitnessTest {
             + "\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}],"
             + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
             + "\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
-            + "\"regelGroepen\":[],\"diagnostics\":[]}");
+            + "\"regelGroepen\":[]},\"diagnostics\":[]}");
 
     /** The same model, with the union standing as the rule's WHOLE value — no count above it. */
     private static final String KALE_UNIE_DOC = DOC.replace(

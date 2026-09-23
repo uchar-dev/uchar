@@ -54,7 +54,7 @@ class LeegNegatieWitnessTest {
     /** The same document with the navigation's wire binding removed: the written single step alone. */
     @Test void de_negatie_speelt_over_een_ongebonden_stap() throws Exception {
         ObjectNode ir = ir();
-        for (JsonNode r : ir.get("resolvedRegels"))
+        for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels"))
             ((ObjectNode) r.get("voorwaarde").get("operand")).remove("navigatieBindingen");
         BeideTakken.groen(tijdelijk(ir), geval(), "niet leeg over an unbound written step");
     }
@@ -63,7 +63,7 @@ class LeegNegatieWitnessTest {
      *  flipped the soort without looking at the field would pass the first row and fail this one. */
     @Test void de_ongenegeerde_tweeling_speelt_gespiegeld() throws Exception {
         ObjectNode ir = ir();
-        for (JsonNode r : ir.get("resolvedRegels"))
+        for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels"))
             ((ObjectNode) r.get("voorwaarde")).put("negatie", false);
         BeideTakken.groen(tijdelijk(ir), gespiegeld(geval()), "leeg / gevuld unnegated");
     }
@@ -75,14 +75,12 @@ class LeegNegatieWitnessTest {
      *  both branches refuse the negated form by name rather than choose a threshold. */
     @Test void de_negatie_onder_geheel_periode_weigert_in_beide_takken() throws Exception {
         ObjectNode ir = ir();
-        ((ObjectNode) ir.get("objecttypen").get("Schuit").get("attribuutGranulariteit")).put("lengte", "MAAND");
+        IrPad.timeline(IrPad.attribute(IrPad.objectType(ir, "Schuit"), "lengte"), "MAAND");
         // meldpremie's rule alone: the ongemeten rule reads the now-temporal lengte unqualified and would be
         // excluded for THAT, hiding the refusal under test.
-        for (String veld : new String[] { "regels", "resolvedRegels" }) {
-            ArrayNode een = JSON.createArrayNode().add(ir.get(veld).get(0));
-            ir.set(veld, een);
-        }
-        ObjectNode vw = (ObjectNode) ir.get("resolvedRegels").get(0).get("voorwaarde");
+        ArrayNode een = JSON.createArrayNode().add(IrPad.rulesLijst(ir, "resolvedRegels").get(0));
+        IrPad.rules(ir).set("resolvedRegels", een);
+        ObjectNode vw = (ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0).get("voorwaarde");
         vw.putObject("periode").put("node", "GeheelPeriode").put("jaar", true).put("niet", false);
         Path p = tijdelijk(ir);
         // lengte is now month-granular, so the case supplies it as a timeline (a scalar input would be refused
@@ -110,10 +108,10 @@ class LeegNegatieWitnessTest {
         for (String soort : new String[] { "LEEG", "GEVULD" })
             for (boolean niet : new boolean[] { false, true }) {
                 ObjectNode ir = ir();
-                ((ObjectNode) ir.get("objecttypen").get("Schuit").get("attribuutGranulariteit")).put("lengte", "MAAND");
-                for (String veld : new String[] { "regels", "resolvedRegels" })
-                    ir.set(veld, JSON.createArrayNode().add(ir.get(veld).get(0)));
-                ObjectNode vw = (ObjectNode) ir.get("resolvedRegels").get(0).get("voorwaarde");
+                IrPad.timeline(IrPad.attribute(IrPad.objectType(ir, "Schuit"), "lengte"), "MAAND");
+                IrPad.rules(ir).set("resolvedRegels",
+                        JSON.createArrayNode().add(IrPad.rulesLijst(ir, "resolvedRegels").get(0)));
+                ObjectNode vw = (ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0).get("voorwaarde");
                 vw.put("soort", soort).put("negatie", false);
                 vw.putObject("periode").put("node", "GeheelPeriode").put("jaar", true).put("niet", niet);
                 Path p = tijdelijk(ir);

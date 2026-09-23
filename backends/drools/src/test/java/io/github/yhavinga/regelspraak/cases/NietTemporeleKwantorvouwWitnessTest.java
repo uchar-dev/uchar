@@ -236,26 +236,21 @@ class NietTemporeleKwantorvouwWitnessTest {
      *  are read and never written. */
     private Path genesteVouw() throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(GOLDEN.resolve("ir.json")));
-        ObjectNode ots = (ObjectNode) doc.get("objecttypen");
-        ((ObjectNode) ots.get("Schouwploeg")).set("kenmerken", JSON.readTree("[ \"uitgerust\" ]"));
-        ((ObjectNode) ots.get("Schouwploeg")).set("kenmerkSoorten",
-                JSON.readTree("{ \"uitgerust\": \"BIJVOEGLIJK\" }"));
-        ((ObjectNode) ots.get("Schouwploeg")).set("attributen", JSON.readTree("{}"));
-        ots.set("Uitrusting", JSON.readTree("""
-                { "node": "Objecttype", "naam": "Uitrusting", "attributen": {}, "attribuutMeervoud": {},
-                  "attribuutDimensies": {}, "attribuutGranulariteit": {}, "attribuutTijdlijnAantal": {},
-                  "attribuutTijdlijnNaam": {}, "kenmerken": [ "gekeurd" ],
-                  "kenmerkSoorten": { "gekeurd": "BIJVOEGLIJK" }, "kenmerkGranulariteit": {},
-                  "kenmerkTijdlijnAantal": {}, "bezield": false, "meervoud": "Uitrustingen" }"""));
-        ((ObjectNode) doc.get("feittypen")).set("wachtuitrusting", JSON.readTree("""
+        ObjectNode ploeg = IrPad.objectType(doc, "Schouwploeg");
+        ploeg.set("characteristics", JSON.readTree(
+                "[ { \"node\": \"Characteristic\", \"name\": \"uitgerust\", \"kind\": \"BIJVOEGLIJK\" } ]"));
+        ploeg.set("attributes", JSON.readTree("[]"));
+        IrPad.modelLijst(doc, "objectTypes").add(JSON.readTree("""
+                { "node": "ObjectType", "name": "Uitrusting", "animate": false, "plural": "Uitrustingen",
+                  "attributes": [],
+                  "characteristics": [ { "node": "Characteristic", "name": "gekeurd", "kind": "BIJVOEGLIJK" } ] }"""));
+        IrPad.modelLijst(doc, "factTypes").add(JSON.readTree("""
                 { "node": "Feittype", "naam": "wachtuitrusting", "wederkerig": false, "rollen": [
                     { "node": "Rol", "naam": "drager", "objecttypeNaam": "Strandwacht",
                       "meervoud": null, "meervoudig": false },
                     { "node": "Rol", "naam": "stuk", "objecttypeNaam": "Uitrusting",
                       "meervoud": "stukken", "meervoudig": true } ] }"""));
-        doc.set("regels", JSON.readTree(
-                "[ { \"node\": \"Regel\", \"naam\": \"uitgerust bij keuring\", \"soort\": \"regel\" } ]"));
-        doc.set("resolvedRegels", JSON.readTree("""
+        IrPad.rules(doc).set("resolvedRegels", JSON.readTree("""
                 [ { "node": "ResolvedRegel", "naam": "uitgerust bij keuring", "soort": "KENMERKTOEKENNING",
                     "doel": { "node": "AttribuutRef", "attribuut": "uitgerust", "objecttype": "Schouwploeg",
                               "onderwerpBron": "Een Schouwploeg", "navigatieRol": null,

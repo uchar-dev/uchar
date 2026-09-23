@@ -156,7 +156,7 @@ class DrlCreatieKoppelingWitnessTest {
     /** The rekenkamer model plus a second fact type `reservetaxatie` between Jutter and Rekenkamer. */
     private static Path herhaaldPaar() throws Exception {
         ObjectNode ir = lees(REKENKAMER);
-        ((ObjectNode) ir.get("feittypen")).set("reservetaxatie", JSON.readTree("""
+        IrPad.modelLijst(ir, "factTypes").add(JSON.readTree("""
                 { "node": "Feittype", "naam": "reservetaxatie", "wederkerig": false, "rollen": [
                     { "node": "Rol", "naam": "reserveopdrachtgever", "objecttypeNaam": "Jutter",
                       "meervoud": null, "meervoudig": false },
@@ -167,7 +167,7 @@ class DrlCreatieKoppelingWitnessTest {
 
     private static Path metBinding(String golden, String feittype, String rol) throws Exception {
         ObjectNode ir = lees(golden);
-        ((ObjectNode) ir.get("objectCreaties").get(0)).set("verbindendeRol", JSON.readTree(
+        ((ObjectNode) IrPad.rulesLijst(ir, "objectCreaties").get(0)).set("verbindendeRol", JSON.readTree(
                 "{ \"node\": \"RolBinding\", \"feittype\": \"" + feittype + "\", \"rol\": \"" + rol + "\" }"));
         return schrijf(ir, "binding-" + rol);
     }
@@ -176,7 +176,7 @@ class DrlCreatieKoppelingWitnessTest {
      *  through the created-side role (it would refuse on its own §13.3.9 reason first). */
     private static Path gelijknamigLid(String objecttype, String rol) throws Exception {
         ObjectNode ir = zonderNavigerendeRegel(lees(REKENKAMER));
-        ((ObjectNode) ir.get("objecttypen").get(objecttype).get("attributen")).set(rol, JSON.readTree("""
+        IrPad.addAttribute(IrPad.objectType(ir, objecttype), rol, JSON.readTree("""
                 { "node": "Numeriek", "geheel": true, "decimalen": 0, "teken": "ONBEPAALD", "eenheid": null }"""));
         return schrijf(ir, "lid-" + rol);
     }
@@ -188,26 +188,24 @@ class DrlCreatieKoppelingWitnessTest {
     /** Role 0 of taxatieopdracht is the subject side (`opdrachtgever`), role 1 the created side (`rekenkamer`). */
     private static ObjectNode cardinaliteitIr(boolean subjectVeel, boolean gemunteVeel) throws Exception {
         ObjectNode ir = lees(REKENKAMER);
-        JsonNode rollen = ir.get("feittypen").get("taxatieopdracht").get("rollen");
+        JsonNode rollen = IrPad.declaratie(ir, "factTypes", "taxatieopdracht").get("rollen");
         ((ObjectNode) rollen.get(0)).put("meervoudig", subjectVeel);
         ((ObjectNode) rollen.get(1)).put("meervoudig", gemunteVeel);
         return ir;
     }
 
     private static ObjectNode zonderNavigerendeRegel(ObjectNode ir) {
-        for (String sectie : new String[] { "regels", "resolvedRegels" }) {
-            var behouden = JSON.createArrayNode();
-            for (JsonNode r : ir.get(sectie))
-                if (!"heffing van een jutter".equals(r.path("naam").asText())) behouden.add(r);
-            ir.set(sectie, behouden);
-        }
+        var behouden = JSON.createArrayNode();
+        for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels"))
+            if (!"heffing van een jutter".equals(r.path("naam").asText())) behouden.add(r);
+        IrPad.rules(ir).set("resolvedRegels", behouden);
         return ir;
     }
 
     /** The overzee model with the kenmerk toekenning's value replaced by the Numeriek literal 5. */
     private static Path kenmerkGetal() throws Exception {
         ObjectNode ir = lees(OVERZEE);
-        for (JsonNode t : ir.get("objectCreaties").get(0).get("toekenningen"))
+        for (JsonNode t : IrPad.rulesLijst(ir, "objectCreaties").get(0).get("toekenningen"))
             if (t.get("kenmerk").asBoolean())
                 ((ObjectNode) t).set("waarde", JSON.readTree("""
                         { "node": "Literal", "waarde": "5",

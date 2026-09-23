@@ -140,9 +140,9 @@ class BronRolVouwWitnessTest {
         // is never consulted, and both branches played this before the card as well. The row that says the
         // fix reached only the arm it was meant to.
         ObjectNode ir = somModel();
-        ObjectNode fts = JSON.createObjectNode();
-        fts.set("thuisligging", ir.get("feittypen").get("thuisligging"));
-        ir.set("feittypen", fts);
+        ArrayNode fts = JSON.createArrayNode();
+        fts.add(IrPad.declaratie(ir, "factTypes", "thuisligging"));
+        IrPad.model(ir).set("factTypes", fts);
         // the three sister relations are gone from the model, so the input may not spell them either.
         BeideTakken.groen(tijdelijk("bronrol-uniek", ir),
                 JSON.readTree(zaak("liggertal", "19", "20", null, "thuishaven")),
@@ -180,7 +180,7 @@ class BronRolVouwWitnessTest {
         // both branches refuse — the §13.3.9 storage-direction half, unchanged by this card. (The document
         // itself is well-formed: verifier PASS, ref PASS, clingo PASS on the very same expectations.)
         ObjectNode ir = somModel();
-        for (JsonNode r : ir.get("feittypen").get("thuisligging").get("rollen"))
+        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "thuisligging").get("rollen"))
             ((ObjectNode) r).put("meervoudig", true);
         Path p = tijdelijk("bronrol-beide-meervoudig", ir);
         JsonNode c = JSON.readTree(zaak("liggertal", "19", "20", null));
@@ -200,7 +200,7 @@ class BronRolVouwWitnessTest {
         // derivation from. No corpus golden reaches this arm (measured, whole corpus, both branches), which is
         // exactly why the branches were free to drift here.
         ObjectNode ir = somModel();
-        for (JsonNode r : ir.get("feittypen").get("thuisligging").get("rollen"))
+        for (JsonNode r : IrPad.declaratie(ir, "factTypes", "thuisligging").get("rollen"))
             ((ObjectNode) r).put("meervoudig", true);
         BeideTakken.geweigerd(tijdelijk("bronrol-gedeelde-zin", ir),
                 JSON.readTree(zaak("liggertal", "19", "20", null)),
@@ -255,10 +255,10 @@ class BronRolVouwWitnessTest {
     private static Path vouw(String kind, String doelAttribuut, String meervoud, String feittype, String rol)
             throws Exception {
         ObjectNode ir = lees();
-        ir.putArray("feitCreaties");
+        IrPad.rules(ir).putArray("feitCreaties");
         String regel = regelVoor(doelAttribuut);
         houdRegels(ir, regel);
-        ObjectNode r = (ObjectNode) ir.get("resolvedRegels").get(0);
+        ObjectNode r = (ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0);
         r.set("waarde", fold(kind, meervoud, feittype, rol));
         return tijdelijk("bronrol-" + kind.toLowerCase(), ir);
     }
@@ -266,9 +266,9 @@ class BronRolVouwWitnessTest {
     /** All three folds in one document, each over its own feittype. */
     private static Path drieVouwen() throws Exception {
         ObjectNode ir = lees();
-        ir.putArray("feitCreaties");
+        IrPad.rules(ir).putArray("feitCreaties");
         houdRegels(ir, "liggertal van een haven", "wintertal van een haven", "keurtal van een haven");
-        for (JsonNode n : ir.get("resolvedRegels")) {
+        for (JsonNode n : IrPad.rulesLijst(ir, "resolvedRegels")) {
             ObjectNode r = (ObjectNode) n;
             switch (r.get("naam").asText()) {
                 case "liggertal van een haven" ->
@@ -284,14 +284,14 @@ class BronRolVouwWitnessTest {
     /** The single-SOM model every mutation row starts from. */
     private static ObjectNode somModel() throws Exception {
         ObjectNode ir = lees();
-        ir.putArray("feitCreaties");
+        IrPad.rules(ir).putArray("feitCreaties");
         houdRegels(ir, "liggertal van een haven");
-        ((ObjectNode) ir.get("resolvedRegels").get(0))
+        ((ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0))
                 .set("waarde", fold("SOM", "liggers", "thuisligging", "ligger"));
         return ir;
     }
 
-    private static JsonNode vouwVan(ObjectNode ir) { return ir.get("resolvedRegels").get(0).get("waarde"); }
+    private static JsonNode vouwVan(ObjectNode ir) { return IrPad.rulesLijst(ir, "resolvedRegels").get(0).get("waarde"); }
 
     private static String regelVoor(String doelAttribuut) {
         return switch (doelAttribuut) {
@@ -345,11 +345,9 @@ class BronRolVouwWitnessTest {
 
     private static void houdRegels(ObjectNode ir, String... namen) {
         List<String> houd = List.of(namen);
-        for (String veld : new String[] { "regels", "resolvedRegels" }) {
-            ArrayNode uit = JSON.createArrayNode();
-            for (JsonNode r : ir.get(veld)) if (houd.contains(r.get("naam").asText())) uit.add(r);
-            ir.set(veld, uit);
-        }
+        ArrayNode uit = JSON.createArrayNode();
+        for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels")) if (houd.contains(r.get("naam").asText())) uit.add(r);
+        IrPad.rules(ir).set("resolvedRegels", uit);
     }
 
     /** The shared world with ONE attribute pinned per haven; a null cell is an {@code attributeEmpty}.

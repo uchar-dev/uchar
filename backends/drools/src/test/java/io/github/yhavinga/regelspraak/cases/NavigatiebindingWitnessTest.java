@@ -113,8 +113,8 @@ class NavigatiebindingWitnessTest {
         // instead of walking vlagvoering to the Haven. RED FIRST on the port before this row: exec
         // "attribuut vlagprijs: verwacht 40, werkelijk leeg" in three cases, DRL PLAYED 4, ref PASS, verifier PASS.
         ObjectNode ir = lees();
-        ObjectNode schuit = (ObjectNode) ir.get("objecttypen").get("Schuit").get("attributen");
-        schuit.set("kadegeld", ir.get("objecttypen").get("Haven").get("attributen").get("kadegeld"));
+        IrPad.addAttribute(IrPad.objectType(ir, "Schuit"), "kadegeld",
+                IrPad.attribute(IrPad.objectType(ir, "Haven"), "kadegeld").get("datatype"));
         ObjectNode links = waarde(ir).deepCopy();
         links.putNull("navigatieRol");
         links.putArray("navigatiePad");
@@ -131,10 +131,11 @@ class NavigatiebindingWitnessTest {
     @Test void het_eindpunt_mag_een_supertype_van_de_vuller_zijn_niet_een_subtype() throws Exception {
         // WF-053 and ref: the last bound role's filler must be the endpoint or a subtype of it (filler ⊑ endpoint).
         ObjectNode ir = lees();
-        ObjectNode typen = (ObjectNode) ir.get("objecttypen");
-        typen.set("Ligplaats", leegType(typen.get("Haven"), "Ligplaats", null));
-        typen.set("Zeehaven", leegType(typen.get("Haven"), "Zeehaven", "Haven"));
-        ((ObjectNode) typen.get("Haven")).put("supertype", "Ligplaats");
+        ArrayNode typen = IrPad.modelLijst(ir, "objectTypes");
+        ObjectNode haven = IrPad.objectType(ir, "Haven");
+        typen.add(leegType(haven, "Ligplaats", null));
+        typen.add(leegType(haven, "Zeehaven", "Haven"));
+        haven.put("supertype", "Ligplaats");
         RegelSpraakModel m = IrLoader.loadAll(ir).model();
         List<RegelSpraakModel.RolBindingRef> stap = List.of(new RegelSpraakModel.RolBindingRef("vlagvoering", "vlaghaven"));
         RegelSpraakModel.Objecttype schuit = m.objecttypeOpNaam("Schuit");
@@ -154,7 +155,7 @@ class NavigatiebindingWitnessTest {
 
     @Test void een_binding_op_een_niet_navigerende_kenmerkcheck_wordt_geweigerd() throws Exception {
         ObjectNode ir = lees();
-        ObjectNode k = (ObjectNode) ir.get("resolvedRegels").get(3).get("voorwaarde");   // "de Schuit gekeurd is"
+        ObjectNode k = (ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(3).get("voorwaarde");   // "de Schuit gekeurd is"
         k.set("navigatieBinding", binding("vlagvoering", "vlaghaven"));
         IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class, () -> IrLoader.loadAll(ir));
         assertTrue(r.form().equals("Kenmerk.navigatieBinding"), r.getMessage());
@@ -169,7 +170,7 @@ class NavigatiebindingWitnessTest {
         assertTrue(r.getMessage().contains("missing required field 'rol'"), r.getMessage());
 
         ObjectNode ir2 = lees();
-        ((ObjectNode) ir2.get("resolvedRegels").get(3).get("voorwaarde")).putNull("navigatieBinding");
+        ((ObjectNode) IrPad.rulesLijst(ir2, "resolvedRegels").get(3).get("voorwaarde")).putNull("navigatieBinding");
         IrLoader.Refusal r2 = assertThrows(IrLoader.Refusal.class, () -> IrLoader.loadAll(ir2));
         assertTrue(r2.getMessage().contains("malformed"), "null is malformed before it is misplaced: " + r2.getMessage());
     }
@@ -189,7 +190,7 @@ class NavigatiebindingWitnessTest {
     }
 
     private static ObjectNode regel(ObjectNode ir) {
-        ObjectNode r = (ObjectNode) ir.get("resolvedRegels").get(VLAGPRIJS);
+        ObjectNode r = (ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(VLAGPRIJS);
         assertTrue(r.get("naam").asText().equals("vlagprijs van een schuit"), r.get("naam").asText());
         return r;
     }
@@ -206,13 +207,10 @@ class NavigatiebindingWitnessTest {
     /** A member-less object type shaped like {@code model}, with the given supertype. */
     private static ObjectNode leegType(JsonNode model, String naam, String supertype) {
         ObjectNode t = model.deepCopy();
-        t.put("naam", naam).put("meervoud", naam + "s");
+        t.put("name", naam).put("plural", naam + "s");
         if (supertype == null) t.remove("supertype"); else t.put("supertype", supertype);
-        for (String kaart : new String[] { "attributen", "attribuutMeervoud", "attribuutDimensies",
-                "attribuutGranulariteit", "attribuutTijdlijnAantal", "attribuutTijdlijnNaam", "kenmerkSoorten",
-                "kenmerkGranulariteit", "kenmerkTijdlijnAantal" })
-            if (t.has(kaart)) t.putObject(kaart);
-        t.putArray("kenmerken");
+        t.putArray("attributes");
+        t.putArray("characteristics");
         return t;
     }
 

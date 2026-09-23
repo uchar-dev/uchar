@@ -136,37 +136,31 @@ class InstantieUnieWitnessTest {
                 + "\"objecttype\":\"Jutter\",\"onderwerpBron\":\"een Jutter\",\"navigatieRol\":null,"
                 + "\"type\":%s,\"bron\":\"Het aantal strandvondsten van een Jutter\",\"set\":false,"
                 + "\"navigatiePad\":[]}").formatted(heel);
-        String jutter = ("\"Jutter\":{\"node\":\"Objecttype\",\"naam\":\"Jutter\","
-                + "\"attributen\":{\"aantal strandvondsten\":%s},\"attribuutMeervoud\":{},"
-                + "\"attribuutDimensies\":{},\"attribuutGranulariteit\":{},\"attribuutTijdlijnAantal\":{},"
-                + "\"attribuutTijdlijnNaam\":{},\"kenmerken\":[],\"kenmerkSoorten\":{},"
-                + "\"kenmerkGranulariteit\":{},\"kenmerkTijdlijnAantal\":{},\"bezield\":true,"
-                + "\"meervoud\":\"Jutters\"}").formatted(heel);
-        String vondst = "\"Vondst\":{\"node\":\"Objecttype\",\"naam\":\"Vondst\",\"attributen\":{},"
-                + "\"attribuutMeervoud\":{},\"attribuutDimensies\":{},\"attribuutGranulariteit\":{},"
-                + "\"attribuutTijdlijnAantal\":{},\"attribuutTijdlijnNaam\":{},\"kenmerken\":[\"gemerkt\"],"
-                + "\"kenmerkSoorten\":{\"gemerkt\":\"BIJVOEGLIJK\"},\"kenmerkGranulariteit\":{},"
-                + "\"kenmerkTijdlijnAantal\":{},\"bezield\":false,\"meervoud\":\"Vondsten\"}";
-        String ftAan = "\"vondstaanmelding\":{\"node\":\"Feittype\",\"naam\":\"vondstaanmelding\","
+        String jutter = ("{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\","
+                + "\"attributes\":[{\"node\":\"Attribute\",\"name\":\"aantal strandvondsten\",\"datatype\":%s}],"
+                + "\"characteristics\":[]}").formatted(heel);
+        String vondst = "{\"node\":\"ObjectType\",\"name\":\"Vondst\",\"animate\":false,\"plural\":\"Vondsten\","
+                + "\"attributes\":[],"
+                + "\"characteristics\":[{\"node\":\"Characteristic\",\"name\":\"gemerkt\",\"kind\":\"BIJVOEGLIJK\"}]}";
+        String ftAan = "{\"node\":\"Feittype\",\"naam\":\"vondstaanmelding\","
                 + "\"wederkerig\":false,\"rollen\":[{\"node\":\"Rol\",\"naam\":\"aanmelder\","
                 + "\"objecttypeNaam\":\"Jutter\",\"meervoud\":null,\"meervoudig\":false},"
                 + "{\"node\":\"Rol\",\"naam\":\"aangemelde vondst\",\"objecttypeNaam\":\"Vondst\","
                 + "\"meervoud\":\"aangemelde vondsten\",\"meervoudig\":true}]}";
-        String ftBerg = "\"vondstberging\":{\"node\":\"Feittype\",\"naam\":\"vondstberging\","
+        String ftBerg = "{\"node\":\"Feittype\",\"naam\":\"vondstberging\","
                 + "\"wederkerig\":false,\"rollen\":[{\"node\":\"Rol\",\"naam\":\"berger\","
                 + "\"objecttypeNaam\":\"Jutter\",\"meervoud\":null,\"meervoudig\":false},"
                 + "{\"node\":\"Rol\",\"naam\":\"geborgen vondst\",\"objecttypeNaam\":\"Vondst\","
                 + "\"meervoud\":\"geborgen vondsten\",\"meervoudig\":true}]}";
-        return ("{\"formaat\":\"regelspraak-ir-v0\",\"objecttypen\":{%s,%s},\"domeinen\":{},\"parameters\":{},"
-                + "\"eenheidstelsels\":{},\"feittypen\":{%s,%s},\"dimensies\":{},\"tijdlijnen\":[],"
-                + "\"dagsoorten\":[],\"dagsoortPerEenheid\":{},"
-                + "\"regels\":[{\"node\":\"Regel\",\"naam\":\"aantal strandvondsten\",\"soort\":\"regel\"}],"
-                + "\"resolvedRegels\":[{\"node\":\"ResolvedRegel\",\"naam\":\"aantal strandvondsten\","
+        return ("{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":[%s,%s],\"factTypes\":[%s,%s],"
+                + "\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],"
+                + "\"dayKinds\":[],\"dagsoortPerEenheid\":{}},"
+                + "\"rules\":{\"resolvedRegels\":[{\"node\":\"ResolvedRegel\",\"naam\":\"aantal strandvondsten\","
                 + "\"soort\":\"BEREKENING\",\"doel\":%s,\"waarde\":%s,\"voorwaarde\":null,"
                 + "\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}],"
                 + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
                 + "\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
-                + "\"regelGroepen\":[],\"diagnostics\":[]}")
+                + "\"regelGroepen\":[]},\"diagnostics\":[]}")
                 .formatted(jutter, vondst, ftAan, ftBerg, doel, waarde);
     }
 }

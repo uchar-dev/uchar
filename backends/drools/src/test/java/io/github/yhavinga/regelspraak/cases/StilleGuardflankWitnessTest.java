@@ -131,13 +131,11 @@ class StilleGuardflankWitnessTest {
      *  stays as the golden has it, so the document differs from a played corpus golden in exactly one field. */
     private Path metGuard(ObjectNode guard) throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(CORPUS.resolve(POSTWACHT).resolve("ir.json")));
-        for (String veld : new String[] { "regels", "resolvedRegels" }) {
-            ArrayNode houd = JSON.createArrayNode();
-            for (JsonNode r : ir.get(veld))
-                if (Set.of("vakseinaantal van een kustvak").contains(r.get("naam").asText())) houd.add(r);
-            ir.set(veld, houd);
-        }
-        ((ObjectNode) ir.get("feitCreaties").get(0)).set("voorwaarde", guard);
+        ArrayNode houd = JSON.createArrayNode();
+        for (JsonNode r : IrPad.rulesLijst(ir, "resolvedRegels"))
+            if (Set.of("vakseinaantal van een kustvak").contains(r.get("naam").asText())) houd.add(r);
+        IrPad.rules(ir).set("resolvedRegels", houd);
+        ((ObjectNode) IrPad.rulesLijst(ir, "feitCreaties").get(0)).set("voorwaarde", guard);
         Path tmp = Files.createTempFile("stille-guardflank", ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir.toString());
@@ -149,9 +147,9 @@ class StilleGuardflankWitnessTest {
     private Path metKenmerkOpType(String objecttype, String kenmerk, ObjectNode guard) throws Exception {
         Path p = metGuard(guard);
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(p));
-        ObjectNode ot = (ObjectNode) ir.get("objecttypen").get(objecttype);
-        ot.putArray("kenmerken").add(kenmerk);
-        ot.putObject("kenmerkSoorten").put(kenmerk, "BIJVOEGLIJK");
+        ObjectNode ot = IrPad.objectType(ir, objecttype);
+        ot.putArray("characteristics").addObject()
+                .put("node", "Characteristic").put("name", kenmerk).put("kind", "BIJVOEGLIJK");
         Files.writeString(p, ir.toString());
         return p;
     }

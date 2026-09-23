@@ -90,7 +90,7 @@ class VensterGatepositieWitnessTest {
     /** The distribution golden with its gate replaced; a {@code {score}} placeholder is the golden's own gate. */
     private Path verdeling(String gate) throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(VERDELING.resolve("ir.json")));
-        ObjectNode v = (ObjectNode) doc.withArray("verdelingen").get(0);
+        ObjectNode v = (ObjectNode) IrPad.rulesLijst(doc, "verdelingen").get(0);
         v.set("voorwaarde", JSON.readTree(gate.replace("{score}", v.get("voorwaarde").toString())));
         return schrijf(doc);
     }
@@ -98,7 +98,7 @@ class VensterGatepositieWitnessTest {
     /** The creation golden with its guard replaced; a {@code {guard}} placeholder is the golden's own guard. */
     private Path creatie(String guard) throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(CREATIE.resolve("ir.json")));
-        ObjectNode oc = (ObjectNode) doc.withArray("objectCreaties").get(0);
+        ObjectNode oc = (ObjectNode) IrPad.rulesLijst(doc, "objectCreaties").get(0);
         oc.set("voorwaarde", JSON.readTree(guard.replace("{guard}", oc.get("voorwaarde").toString())));
         return schrijf(doc);
     }

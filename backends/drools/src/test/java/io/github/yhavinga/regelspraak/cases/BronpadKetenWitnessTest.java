@@ -202,14 +202,16 @@ class BronpadKetenWitnessTest {
 
     private static String objecttype(String naam, String meervoud, String supertype, String attributen) {
         return """
-                "%s": { "node": "Objecttype", "naam": "%s", %s
-                  "attributen": { %s },
-                  "attribuutMeervoud": {}, "attribuutDimensies": {}, "attribuutGranulariteit": {},
-                  "attribuutTijdlijnAantal": {}, "attribuutTijdlijnNaam": {},
-                  "kenmerken": [], "kenmerkSoorten": {}, "kenmerkGranulariteit": {}, "kenmerkTijdlijnAantal": {},
-                  "bezield": false, "meervoud": "%s" }"""
-                .formatted(naam, naam, supertype == null ? "" : "\"supertype\": \"" + supertype + "\",",
-                        attributen, meervoud);
+                { "node": "ObjectType", "name": "%s", %s"animate": false, "plural": "%s",
+                  "attributes": [ %s ],
+                  "characteristics": [] }"""
+                .formatted(naam, supertype == null ? "" : "\"supertype\": \"" + supertype + "\", ",
+                        meervoud, attributen);
+    }
+
+    /** One entry of an object type's attribute list. */
+    private static String attribuut(String naam, String datatype) {
+        return "{ \"node\": \"Attribute\", \"name\": \"" + naam + "\", \"datatype\": " + datatype + " }";
     }
 
     private static String rol(String naam, String otn, String meervoud, boolean meervoudig) {
@@ -218,37 +220,39 @@ class BronpadKetenWitnessTest {
     }
 
     private static String feittype(String naam, String a, String b) {
-        return "\"" + naam + "\": { \"node\": \"Feittype\", \"naam\": \"" + naam + "\", \"wederkerig\": false,"
+        return "{ \"node\": \"Feittype\", \"naam\": \"" + naam + "\", \"wederkerig\": false,"
                 + " \"rollen\": [ " + a + ", " + b + " ] }";
     }
 
     private static final String DOCUMENT = """
-            { "formaat": "regelspraak-ir-v0",
-              "objecttypen": {
-                %s,
-                %s,
-                %s,
-                %s,
-                %s,
-                %s },
-              "domeinen": {}, "parameters": {}, "eenheidstelsels": {},
-              "feittypen": { %s, %s, %s, %s, %s },
-              "dimensies": {}, "tijdlijnen": [], "dagsoorten": [], "dagsoortPerEenheid": {},
-              "regels": [ %s ],
-              "resolvedRegels": [ %s ],
-              "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
-              "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
-              "regelGroepen": [], "diagnostics": [] }"""
+            { "format": "uchar-ir-v1",
+              "model": {
+                "objectTypes": [
+                  %s,
+                  %s,
+                  %s,
+                  %s,
+                  %s,
+                  %s ],
+                "factTypes": [ %s, %s, %s, %s, %s ],
+                "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
+                "timelines": [], "dayKinds": [], "dagsoortPerEenheid": {} },
+              "rules": {
+                "resolvedRegels": [ %s ],
+                "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+                "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+                "regelGroepen": [] },
+              "diagnostics": [] }"""
             .formatted(
                     objecttype("Tolhuis", "Tolhuizen", null,
-                            "\"laagste vracht\": " + NUM2 + ", \"totale vracht\": " + NUM2
-                            + ", \"steenlast\": " + NUM2 + ", \"laagste zegelvracht\": " + NUM2
-                            + ", \"laagste vatinhoud\": " + NUM2),
+                            String.join(", ", attribuut("laagste vracht", NUM2), attribuut("totale vracht", NUM2),
+                                    attribuut("steenlast", NUM2), attribuut("laagste zegelvracht", NUM2),
+                                    attribuut("laagste vatinhoud", NUM2))),
                     objecttype("Sluis", "Sluizen", null, ""),
-                    objecttype("Praam", "Pramen", null, "\"vracht\": " + NUM2),
+                    objecttype("Praam", "Pramen", null, attribuut("vracht", NUM2)),
                     objecttype("Zegelpraam", "Zegelpramen", "Praam", ""),
-                    objecttype("Ankersteen", "Ankerstenen", null, "\"steengewicht\": " + NUM2),
-                    objecttype("Vat", "Vaten", null, "\"inhoud\": " + NUM2),
+                    objecttype("Ankersteen", "Ankerstenen", null, attribuut("steengewicht", NUM2)),
+                    objecttype("Vat", "Vaten", null, attribuut("inhoud", NUM2)),
                     feittype("sluisbeheer", rol("tolhuis", "Tolhuis", "tolhuizen", false),
                             rol("beheerde sluis", "Sluis", "beheerde sluizen", true)),
                     feittype("schutting", rol("schuttende sluis", "Sluis", "schuttende sluizen", false),
@@ -259,12 +263,6 @@ class BronpadKetenWitnessTest {
                             rol("geregistreerde praam", "Praam", "geregistreerde pramen", true)),
                     feittype("lading", rol("ladende praam", "Praam", "ladende pramen", false),
                             rol("geladen vat", "Vat", "geladen vaten", true)),
-                    String.join(", ",
-                            "{ \"node\": \"Regel\", \"naam\": \"laagste vracht\", \"soort\": \"regel\" }",
-                            "{ \"node\": \"Regel\", \"naam\": \"totale vracht\", \"soort\": \"regel\" }",
-                            "{ \"node\": \"Regel\", \"naam\": \"steenlast\", \"soort\": \"regel\" }",
-                            "{ \"node\": \"Regel\", \"naam\": \"laagste zegelvracht\", \"soort\": \"regel\" }",
-                            "{ \"node\": \"Regel\", \"naam\": \"laagste vatinhoud\", \"soort\": \"regel\" }"),
                     String.join(", ",
                             regel("laagste vracht", "laagste vracht", "MINIMUM", "Praam", "vracht", "null", PAD_VRACHT),
                             regel("totale vracht", "totale vracht", "SOM", "Praam", "vracht",

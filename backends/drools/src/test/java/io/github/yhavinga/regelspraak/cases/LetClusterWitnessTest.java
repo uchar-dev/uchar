@@ -242,26 +242,24 @@ class LetClusterWitnessTest {
     }
 
     /** A one-objecttype document: the declared attributes and kenmerken, the rules, and an optional defaults
-     *  section. {@code kenmerken}/{@code kenmerkSoorten} are the two declaration blocks' bodies (both empty
-     *  for a kenmerk-free model). */
-    private static String model(String attributen, String kenmerken, String kenmerkSoorten,
-            String[] regelNamen, String[] regels, String prioritizedDefaults) {
-        StringBuilder namen = new StringBuilder();
-        for (String n : regelNamen) {
-            if (namen.length() > 0) namen.append(',');
-            namen.append("{\"node\":\"Regel\",\"naam\":\"%s\",\"soort\":\"regel\"}".formatted(n));
-        }
-        return ("{\"formaat\":\"regelspraak-ir-v0\","
-                + "\"objecttypen\":{\"Jutter\":{\"node\":\"Objecttype\",\"naam\":\"Jutter\",\"attributen\":{%s},"
-                + "\"attribuutMeervoud\":{},\"attribuutDimensies\":{},\"attribuutGranulariteit\":{},"
-                + "\"attribuutTijdlijnAantal\":{},\"attribuutTijdlijnNaam\":{},\"kenmerken\":[%s],\"kenmerkSoorten\":{%s},"
-                + "\"kenmerkGranulariteit\":{},\"kenmerkTijdlijnAantal\":{},\"bezield\":true,\"meervoud\":\"Jutters\"}},"
-                + "\"domeinen\":{},\"parameters\":{},\"eenheidstelsels\":{},\"feittypen\":{},\"dimensies\":{},"
-                + "\"tijdlijnen\":[],\"dagsoorten\":[],\"dagsoortPerEenheid\":{},\"regels\":[%s],\"resolvedRegels\":[%s],"
+     *  section. {@code attributen}/{@code kenmerken} are the bodies of the Jutter's two member lists (the
+     *  kenmerken body is empty for a kenmerk-free model). */
+    private static String model(String attributen, String kenmerken, String[] regels, String prioritizedDefaults) {
+        return ("{\"format\":\"uchar-ir-v1\","
+                + "\"model\":{\"objectTypes\":[{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,"
+                + "\"plural\":\"Jutters\",\"attributes\":[%s],\"characteristics\":[%s]}],"
+                + "\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],"
+                + "\"timelines\":[],\"dayKinds\":[],\"dagsoortPerEenheid\":{}},"
+                + "\"rules\":{\"resolvedRegels\":[%s],"
                 + "\"resolvedDagsoorten\":[],\"objectCreaties\":[],\"verdelingen\":[],\"consistenties\":[],"
                 + "\"uniciteiten\":[],\"uniciteitUnies\":[],\"feitCreaties\":[],\"resolvedStartpunten\":[],"
-                + "\"regelGroepen\":[],\"diagnostics\":[]%s}")
-                .formatted(attributen, kenmerken, kenmerkSoorten, namen, String.join(",", regels), prioritizedDefaults);
+                + "\"regelGroepen\":[]%s},\"diagnostics\":[]}")
+                .formatted(attributen, kenmerken, String.join(",", regels), prioritizedDefaults);
+    }
+
+    /** One entry of the Jutter's attribute list. */
+    private static String attribuut(String naam, String datatype) {
+        return "{\"node\":\"Attribute\",\"name\":\"%s\",\"datatype\":%s}".formatted(naam, datatype);
     }
 
     // ---------------- the three models (each verifier-clean and ref-replayed before pinning) ----------------
@@ -278,11 +276,9 @@ class LetClusterWitnessTest {
         String tak = let("a", inkomen,
                 let("b", binair("MAAL", kindertal, lit("100.00", 2), 2),
                         ite(verg("GROTER", bref("b", 2), bref("a", 2)), lit("1.00", 2), lit("2.00", 2), 2), 2), 2);
-        return model("\"inkomen\":%s,\"kindertal\":%s,\"basis\":%s,\"dubbelop\":%s,\"geschaduwd\":%s,\"tak\":%s"
-                        .formatted(num(2, false, "NIET_NEGATIEF"), num(0, true, "NIET_NEGATIEF"),
-                                num(2), num(2), num(2), num(2)), "", "",
-                new String[]{"basis van een jutter", "dubbelop van een jutter", "geschaduwd van een jutter",
-                        "tak van een jutter"},
+        return model(String.join(",", attribuut("inkomen", num(2, false, "NIET_NEGATIEF")),
+                        attribuut("kindertal", num(0, true, "NIET_NEGATIEF")), attribuut("basis", num(2)),
+                        attribuut("dubbelop", num(2)), attribuut("geschaduwd", num(2)), attribuut("tak", num(2))), "",
                 new String[]{regel("basis van een jutter", attr("basis", 2, false, "ONBEPAALD"), basis),
                         regel("dubbelop van een jutter", attr("dubbelop", 2, false, "ONBEPAALD"), dubbelop),
                         regel("geschaduwd van een jutter", attr("geschaduwd", 2, false, "ONBEPAALD"), geschaduwd),
@@ -293,9 +289,8 @@ class LetClusterWitnessTest {
     /** ch. 10.6's contrast: the same product with and without the Let binding, on one subject. */
     private static String barriereModel() {
         String inkomen = attr("inkomen", 2, false, "NIET_NEGATIEF");
-        return model("\"inkomen\":%s,\"metlet\":%s,\"zonderlet\":%s".formatted(
-                        num(2, false, "NIET_NEGATIEF"), num(4), num(4)), "", "",
-                new String[]{"met let van een jutter", "zonder let van een jutter"},
+        return model(String.join(",", attribuut("inkomen", num(2, false, "NIET_NEGATIEF")),
+                        attribuut("metlet", num(4)), attribuut("zonderlet", num(4))), "",
                 new String[]{
                         regel("met let van een jutter", attr("metlet", 4, false, "ONBEPAALD"),
                                 let("ink", inkomen, binair("MAAL", bref("ink", 2), lit("0.21", 2), 4), 4)),
@@ -317,9 +312,9 @@ class LetClusterWitnessTest {
                 + "\"bron\":\"toeslag\",\"geldigheid\":{\"node\":\"Geldigheid\",\"vanaf\":null,\"tot\":null}}]")
                 .formatted(verg("GROTER_OF_GELIJK", attr("kindertal", 0, true, "NIET_NEGATIEF"), lit("2", 0, true)),
                         consequentie, lit("0.00", 2));
-        return model("\"kindertal\":%s,\"grondslag\":%s,\"toeslag\":%s".formatted(
-                        num(0, true, "NIET_NEGATIEF"), num(2, false, "NIET_NEGATIEF"), num(2)), "", "",
-                new String[]{}, new String[]{}, groep);
+        return model(String.join(",", attribuut("kindertal", num(0, true, "NIET_NEGATIEF")),
+                        attribuut("grondslag", num(2, false, "NIET_NEGATIEF")), attribuut("toeslag", num(2))), "",
+                new String[]{}, groep);
     }
 
     /** A Let-wrapped read of an attribute whose producer is FORCED to fire later (§9.2 stratification: its
@@ -335,10 +330,9 @@ class LetClusterWitnessTest {
                 + "\"eigenaar\":null,\"periode\":null,\"bron\":\"hij niet vermist is\"}");
         String gewogen = let("x", inkomen,
                 binair("MAAL", bref("x", 2), attr("factor", 4, false, "ONBEPAALD"), 6), 6);
-        return model("\"inkomen\":%s,\"factor\":%s,\"gewogen\":%s".formatted(
-                        num(2, false, "NIET_NEGATIEF"), num(4), num(6)),
-                "\"vermist\"", "\"vermist\":\"BIJVOEGLIJK\"",
-                new String[]{"vermissing van een jutter", "factor van een jutter", "gewogen van een jutter"},
+        return model(String.join(",", attribuut("inkomen", num(2, false, "NIET_NEGATIEF")),
+                        attribuut("factor", num(4)), attribuut("gewogen", num(6))),
+                "{\"node\":\"Characteristic\",\"name\":\"vermist\",\"kind\":\"BIJVOEGLIJK\"}",
                 new String[]{
                         // never true for the case input — its only job is to BE a producer of `vermist`, which
                         // is what sinks the factor rule's stratum below this consumer's.
