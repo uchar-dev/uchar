@@ -887,7 +887,8 @@ let unbound_param_order_reason name what =
    only in a pass before a rule of the same stratum wrote what the read's
    short circuit depends on fires nothing (README [S3]), nor does one ref
    reaches only in the pass before a creation through a condition that holds
-   on absence, in an ALLE prefix or a taken arm (README [S4]). *)
+   on absence, in an ALLE prefix, a taken arm or a rule's condition (README
+   [S4]). *)
 let unbound_param_guard ctx ~witness ~guard name =
   if param_unbound ctx name then begin
     let body = guard () in

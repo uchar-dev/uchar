@@ -10406,7 +10406,8 @@ let () =
    prefix, ALLE [het aantal schuiten = 0, p > 0], the member is true in the
    pass before the creation and false at the fixpoint; in a taken arm, Let n =
    het aantal schuiten in (als n > 0 dan 99 anders p), that pass takes the
-   other arm. ref faults in that pass, clingo answers the fixpoint *)
+   other arm; and keur = p indien het aantal schuiten = 0 reads its value in
+   that pass. ref faults in that pass, clingo answers the fixpoint *)
 let () =
   let n0 = pf_n0 in
   let lit v = pf_l ~typ:n0 v in
@@ -10490,7 +10491,13 @@ let () =
   pinned_silent ~entry:"S4" ~name:"a count in a taken arm's condition is zero in the pass before a creation (r6-agg-ite)"
     ~ir:(doc ~creaties:[ acht ] tak) ~param:"p" ~case_text:(pf_case ~instances:[ w1 "" ] (rows (Some "99")));
   both_answer ~name:"the count in the arm's condition with the case's own schuit (r6-agg-ite-case, control)"
-    ~ir:(doc tak) ~case_text:(pf_case ~instances:met_schuit (rows (Some "99")))
+    ~ir:(doc tak) ~case_text:(pf_case ~instances:met_schuit (rows (Some "99")));
+  let nul_regel = pf_cmp "GELIJK" aantal (lit "0") in
+  pinned_silent ~entry:"S4" ~name:"a rule's condition counts no schuit in the pass before a creation (r6-regelcond-nul)"
+    ~ir:(doc ~creaties:[ acht ] ~voorwaarde:nul_regel (pf_p ~typ:n0 "p")) ~param:"p"
+    ~case_text:(pf_case ~instances:[ w1 "" ] (rows None));
+  both_answer ~name:"the rule's condition with the case's own schuit (r6-regelcond-nul-case, control)"
+    ~ir:(doc ~voorwaarde:nul_regel (pf_p ~typ:n0 "p")) ~case_text:(pf_case ~instances:met_schuit (rows None))
 
 (* FIXRONDE 6, README [L2]'s other half: the read's own member is there in the
    pass before a creation, as the Let barrier takes the guard's own member. A

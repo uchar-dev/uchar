@@ -116,14 +116,15 @@ spec bug.
     refusal is named (above). Whether ref's fault in such a pass is
     the arbiter's answer is a norm question for the maintainer. [S4] A
     condition that holds on absence (ch. 6.1: a count against zero,
-    read positively) with a creation as writer, in an ALLE prefix or
-    in a taken arm: `ALLE [het aantal schuiten = 0, p > 0]`, or `Let
-    n = het aantal schuiten in (als n > 0 dan 99 anders p)`, with one
+    read positively) with a creation as writer, in an ALLE prefix, in
+    a taken arm or in a rule's condition: `ALLE [het aantal schuiten =
+    0, p > 0]`, `Let n = het aantal schuiten in (als n > 0 dan 99
+    anders p)`, or `keur = p indien het aantal schuiten = 0`, with one
     schuit created for each Werf. In the pass before the creation the
-    member holds, or the other arm is taken, and ref faults there;
-    clingo answers the fixpoint. Only a TEN MINSTE prefix gets that
-    pass (above); an ALLE prefix and a branch condition are read at the
-    fixpoint.
+    member holds, the other arm is taken or the condition holds, and
+    ref faults there; clingo answers the fixpoint. Only a TEN MINSTE
+    prefix gets that pass (above); an ALLE prefix, a branch condition
+    and a rule's condition are read at the fixpoint.
 
   Each tagged entry, here and under Recorded limitations ([V1], [V2],
   [V3]),
