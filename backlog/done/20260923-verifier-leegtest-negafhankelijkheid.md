@@ -42,31 +42,42 @@ May touch: `spec/IR-SPEC.md` en `spec/verifier/**` (**voorstel**),
 **Geland op de branch, beschermde paden als voorstel.** WF-046 telt een
 leeg/gevuld-test nu als negatieve kant, in beide polariteiten. Sinds
 fixronde 2 geldt dat ook voor het bereik van een kwantorvouw onder ALLE,
-GEEN, TEN_HOOGSTE en PRECIES, en voor de matrix onder GEEN, TEN_HOOGSTE en
-PRECIES. Speczin en verifier-arm zijn voorstellen voor de maintainer. Acht
-negatiefs zijn rood-eerst en hebben elk een NOTE; daarnaast is er één
-nieuwe golden. ref heeft een invariantnotitie en twee suitegetuigen.
-Alle veertien gates zijn groen: gate 12 met de pinwijziging die nu als
-beschermd-pad-voorstel in de branch staat (played 183, DRL-tekst 162).
-Commits, na de rebase op main `3a140fe4`:
-- `8b8bfc1e` claim
-- `8822165d` spec + arm + drie negatiefs (**voorstel**)
-- `11b2f0f8` ref-notitie + WV-6.4-f/g
-- `81c86327` IR-SPEC 5.5, Drools-flank (**voorstel**)
-- `aa19bef3` vierde negatief, kwantormatrix (**voorstel**)
-- `96f1b0c5` Result
-- `1994592e` fixronde 2, punt 5: hygiëne
-- `95599369` punt 1: IR-SPEC 5.5 in twee vormen (**voorstel**)
-- `c5f2de46` punt 2: de kwantorvouw (**voorstel**; golden en vier negatiefs)
-- `c6135f97` punt 3: RS 6.4-reikwijdte (**voorstel**)
-- `fccdcab8` punt 4: clingo-overdracht
-- `745da8b5` Result na fixronde 2
-- `4bb74675` IR-SPEC 5.2: in de Engelse weergave van het kwantorbesluit
-  staat "the review round" voor "de lens" en "the branch tip" voor "de
-  tip", zodat het citaat zonder projectjargon leest; het Nederlandse
-  citaat hieronder is letterlijk
-- `fae93152` gate 12: de pins +1/+1 (**voorstel**, beschermd pad)
-- de slotcommit: dit Result met de gate-12-uitslag in de branch
+GEEN, TEN_HOOGSTE en PRECIES en voor de matrix onder GEEN, TEN_HOOGSTE en
+PRECIES. Speczin en verifier-arm zijn voorstellen voor de maintainer. Er
+zijn dertien negatiefs, alle rood-eerst en elk met een NOTE, en één
+nieuwe golden. ref heeft een invariantnotitie en twee suitegetuigen. De
+gate-12-pins staan als voorstel in de branch. Alle veertien gates zijn
+groen op `b7900d48`. Commits, na de rebase op main `a1b9daf0` (fixronde
+3):
+- `491388a4` claim
+- `9312f80a` spec + arm + drie negatiefs (**voorstel**)
+- `fe04e23a` ref-notitie + WV-6.4-f/g
+- `b85de0dd` IR-SPEC 5.5, Drools-flank (**voorstel**)
+- `3f620947` vierde negatief, kwantormatrix (**voorstel**)
+- `ac25b08e` Result
+- fixronde 2:
+  - `39b6b48c` hygiëne
+  - `7ea4a473` Drools-flank in twee vormen (**voorstel**)
+  - `1dc4d3df` de kwantorvouw (**voorstel**; golden en vier negatiefs)
+  - `bc7a96ff` RS 6.4-reikwijdte (**voorstel**)
+  - `a65b4408` clingo-overdracht
+  - `8e634a4e` Result
+  - `dbefec76` citaat zonder jargon (**voorstel**)
+  - `a7d788e4` gate-12-pins (**voorstel**)
+  - `ad4f3425` Result
+- fixronde 3:
+  - `96b53986` vijf negatiefs voor de ongepinde kwantorclausules
+    (**voorstel**)
+  - `c51c30f0` gedateerde tellingen na de rebase (**voorstel**)
+  - `610900eb` de kwantordekking begrensd, de groeiende waarde als
+    restpunt (**voorstel**)
+  - `cbc745e5` de ALLE-codering van clingo: IR-SPEC 5.5 en de overdracht
+    (**voorstel**)
+  - `bf104a71` RS 6.4: het kwantorbesluit buiten een cyclus (**voorstel**)
+  - `f346711c` RS 6.1: de bindingloze vouw (**voorstel**)
+  - `d846540f` RS 6.3: de negatieve delen van de vouw (**voorstel**)
+  - `b7900d48` golden-NOTE: waarom geen case wederzijds leidt
+  - de slotcommit: dit Result
 
 ### Aangescherpte acceptatie, zoals uitgevoerd
 
@@ -78,8 +89,8 @@ bewegingen, in beide rondes. (d) ref: notitie en getuige, geen codewijziging in 
 Clingo niet aangeraakt; de versmalling staat hieronder als overdracht.
 (f) Veertien gates, met getallen. In fixronde 1 waren ze alle groen. In
 fixronde 2 waren er eerst dertien groen, met gate 12 rood op de
-gelijkheidspin. Na de pinwijziging in de branch zijn alle veertien
-groen.
+gelijkheidspin; na de pinwijziging in de branch waren alle veertien
+groen. In fixronde 3 zijn alle veertien groen op `b7900d48`.
 
 ### De norm
 
@@ -366,8 +377,8 @@ Zie open punt 4.
 ### Gates
 
 Fixronde 1: alle veertien groen op de toenmalige tip (443/444 negatief,
-ref-suite 810, played 182). De stand na fixronde 2 staat in de sectie
-Fixronde 2 hieronder.
+ref-suite 810, played 182). De stand na fixronde 2 en 3 staat in de
+secties Fixronde 2 en Fixronde 3 hieronder.
 
 ### Voorstellen voor beschermde paden
 
@@ -404,9 +415,11 @@ off-cycle leeg reader above its operand's writer (WV-6.4-f/g). Witnesses
 negatie-recursieve-creatie, aanwezigheid-recursieve-creatie,
 kwantorvouw-recursieve-creatie}` and
 `wf046-kwantorvouw-{alle-bereik, geen-vergelijking, geen-matrix,
-bindingloos-bereik}`. Corpus cost zero: none of the 28 leeg/gevuld tests
-reads a written node, and of the 59 fold read positions that change kind
-only one has a writer, in a negatief already refused. Recorded open: the other
+bindingloos-bereik, tenhoogste-bereik, precies-bereik, tenhoogste-matrix,
+precies-matrix, onder-geen}`, one per clause. Corpus cost zero, counted
+on the 753 documents the card did not add: none of the 31 leeg/gevuld
+tests reads a written node, and none of the 78 read positions that
+change kind has a writer. Recorded open: the other
 absence-true conditions (RUNTIME-SEMANTICS ch. 6.1) and the Drools flank
 (IR-SPEC ch. 5.5): both branches act on a transient leeg when an own-operand
 or filter reader precedes the writer of what it tests, and a navigated read
@@ -624,7 +637,7 @@ commentaar bij WV-6.4-e is gecorrigeerd, alleen commentaar, onder
 mandaat. (c) De alinea in IR-SPEC is afgebroken, en de lange regel in RS
 ook.
 
-### Gates na fixronde 2 (elk los, na `eval $(opam env)`, op `fccdcab8`)
+### Gates na fixronde 2 (elk los, na `eval $(opam env)`, op `a65b4408`)
 
 1 self-contained PASS · 2 ir-schema PASS (279, vloer 192) · 3 verifier
 PASS (279 golden+rood schoon; 448 negatief, was 444, vloer 350) · 4
@@ -643,11 +656,131 @@ PASS (130; 2 goldens).
 Gate 12 met het pinvoorstel, eerst gedraaid als ongetrackte kopie in
 /tmp (alleen de `cd`-regel en de twee pins gewijzigd): `check-drools:
 PASS`, `played 183`, `DRL-text branch played 162 (… pin 162)`, `JUnit
-620 tests`. Daarna vastgelegd in de branch (`fae93152`) en gate 12 daar
+620 tests`. Daarna vastgelegd in de branch (`a7d788e4`) en gate 12 daar
 opnieuw gedraaid: `check-drools: PASS`, played 183 = pin, DRL-tekst
 162 = pin, JUnit 620, kanaalvloer 53, value-divergence 1, 6 min 30 s.
 
-## Open punten (stand na fixronde 2)
+## Fixronde 3 (2026-09-23)
+
+De lens bevestigde in ronde 2 de census, de oordelen, de ref-sweep, de
+negatiefs, de handwaarden van de golden, PLAYED 4, de mutanten Ka–Kg en
+de Drools-flanktekst. Er bleef één blokkerende vondst over, plus
+adviezen. Elk punt staat in een eigen commit.
+
+### Punt 7 eerst: rebase en tellingen
+
+Gerebased op main `a1b9daf0`, zonder conflicten. Main voegde vier rode
+documenten en een negatief toe en veranderde van de executors alleen de
+Drools-caserunner; ref, verifier en clingo zijn ongewijzigd. Opnieuw
+geteld op de 753 documenten die deze kaart niet toevoegde:
+- 31 leeg/gevuld-tests in 29 documenten (GEVULD negatie:false 25, LEEG¬
+  3, GEVULD¬ 2, LEEG 1). Geen daarvan leest een geschreven knoop.
+- Leesposten die van soort veranderen, zonder één echte kant: main →
+  leeg-arm 20 posten in 17 documenten; leeg-arm → tip 58 posten in 17
+  documenten (51 strict → neg, 7 neg → pos); main → tip 78 posten in 34
+  documenten. Het echte kant-geval uit de vorige telling zat in een
+  eigen negatief en telt nu niet mee.
+- Oordelen main → tip over de 753: identiek (golden 235, rood 47,
+  negatief 441, toka 30).
+- ref-sweep main → tip over de 642 bestaande golden- en rood-cases:
+  `cmp` identiek.
+De tellingen in IR-SPEC 5.2 en de WF-indexrij zijn bijgewerkt.
+
+### Punt 1: vijf ongepinde kwantorclausules (blokkerend)
+
+Vijf negatiefs, elk het model van de golden met een andere
+creatievoorwaarde, en elk voor één clausule:
+
+| negatief | clausule | vóór de arm: ref / clingo | mutant die hem doorlaat |
+|---|---|---|---|
+| `wf046-kwantorvouw-tenhoogste-bereik` | bereik onder TEN_HOOGSTE (matrix alleen invoer: kleur ≠ 7) | merk(W1) = 2 / UNSAT | Kj |
+| `wf046-kwantorvouw-precies-bereik` | bereik onder PRECIES | merk(W1) = 2 / UNSAT | Kk |
+| `wf046-kwantorvouw-tenhoogste-matrix` | matrix onder TEN_HOOGSTE (bereik alleen invoer: ploeg) | merk(W1) = 1 / 0, stil | Kl |
+| `wf046-kwantorvouw-precies-matrix` | matrix onder PRECIES (de lens-case A/A1/Y, B/B1/B2/X) | merk(W1) = 1 / 0, stil | Ki |
+| `wf046-kwantorvouw-onder-geen` | een TEN_MINSTE-vouw onder een propositionele GEEN | keten / UNSAT | Kh |
+
+Rood eerst: gate 3 met de arm van vóór het kwantorbesluit (`3f620947`)
+laat alle negen kwantorgetuigen door, exit 1. Mutanten op de huidige arm,
+elk teruggezet met `cmp` identiek; bij elke mutant faalt gate 3 op precies
+de eigen getuige:
+- Kh (binnenkomende `neg` genegeerd): `wf046-kwantorvouw-onder-geen`
+- Ki (matrix positief onder PRECIES): `…-precies-matrix`
+- Kj (bereik positief onder TEN_HOOGSTE): `…-tenhoogste-bereik`
+- Kk (bereik positief onder PRECIES): `…-precies-bereik`
+- Kl (matrix positief onder TEN_HOOGSTE): `…-tenhoogste-matrix`
+
+Gate 3 staat op 454 negatief. Dat is 448, plus het negatief dat main
+toevoegde (`wf022-kenmerk-onwaar`), plus deze vijf. De lens verwachtte
+451 of 453 zonder dat negatief van main. IR-SPEC 5.2 noemt de getuigen en
+mutanten nu volledig, net als RS 6.4 en de WF-indexrij.
+
+### Punt 2: de dekking precies begrensd; de groeiende waarde
+
+IR-SPEC 5.2 zegt nu dat de kwantorvouw alleen onder het besluit valt voor
+het bereik onder ALLE, GEEN, TEN_HOOGSTE en PRECIES en de matrix onder
+GEEN, TEN_HOOGSTE en PRECIES. Een vergelijking in de matrix van een ALLE-
+of TEN_MINSTE-vouw blijft positief of stratumstrikt. De openingszin van
+het restpunt in RS 6.1 is gelijk getrokken. Nieuw restpunt, "a value that
+grows", gemeten op het model van de golden:
+
+| variant | invoer | verifier | ref | exec | clingo | DRL |
+|---|---|---|---|---|---|---|
+| ALLE ploegleden merk < 2 | case 4 | PASS | 2 | 2 | 1 | 1 |
+| ALLE ploegleden merk ≠ 2 | case 4 | PASS | 2 | 2 | 1 | 1 |
+| TEN_MINSTE 1 ploeglid merk < 2 | case 4 plus een ploeglid onder W3 | PASS | 2 | 2 | 1 | 2 |
+| zonder vouw: merk van de ploegleider ≠ 2 (merk(W3)) | case 4 | PASS, ook op main | 2 | 2 | 1 | 2 |
+
+Afwijking van de lens, benoemd: voor de TEN_MINSTE-variant gaf case 4
+zelf bij mij geen splitsing. W3 leidt niemand, dus W3 houdt zijn eigen
+TEN_MINSTE 1 niet en maakt niets aan. Pas met een ploeglid onder W3
+splitst hij, zoals in de tabel. De normvraag staat als open punt 11.
+
+### Punt 3: de ALLE-codering van clingo
+
+De zin in de overdracht was onjuist en is gecorrigeerd. Gemeten op het
+model van de golden, W1 en W3 elk ploegleider van de ander, elk met een
+opvolger van rang 4:
+- merk > 1: verifier PASS op main en tip; ref en runner 1/1;
+  `clingo -n 0` `Models : 2` (1/1 en 2/2).
+- kenmerk "alle ploegleden zijn actief": WF-046 op main, PASS op de tip,
+  2 modellen.
+- TEN_MINSTE 1: 1 model.
+Vastgelegd als tweede flank in IR-SPEC 5.5, en als getuige overgedragen
+aan `clingo-alle-matrix-stratificatie` (open punt 12). De golden-NOTE zegt
+waarom geen case twee Wachters elkaar laat leiden.
+
+### Punt 4: het kwantorbesluit buiten een cyclus
+
+Gemeten met de lezer voorop: "b = 1 indien geen ding heeft a > 3" (a = 5
+door een andere regel), en "b = 1 indien alle dingen hebben rang > 0" met
+het bereik gevuld door een creatie. Main-ref geeft b = 1, de tip leeg,
+net als clingo. RS 6.4 en open punt 4 noemen nu de matrix onder
+GEEN/TEN_HOOGSTE/PRECIES en het bereik van elke vouw behalve TEN_MINSTE.
+
+### Punten 5 en 6
+
+RS 6.1 zegt nu wat de wandeling doet bij een bindingloze vouw. Een
+bindingloze verdeling houdt alleen de proxy. Een bindingloze
+instantievouw leest de proxy en de relatie van de rol die zijn bron
+noemt. Een bindingloze kwantorvouw leest de proxy en de ene verbindende
+relatie van WF-048. RS 6.3 noemt de negatieve delen van de vouw. De
+onjuiste zin in RS 6.4 over "the first, second and fourth" is in de
+getuigencommit herschreven.
+
+### Gates na fixronde 3 (elk los, na `eval $(opam env)`, op `b7900d48`)
+
+1 self-contained PASS · 2 ir-schema PASS (283, vloer 192) · 3 verifier
+PASS (283 golden+rood schoon; 454 negatief, vloer 350) · 4 case-schema
+PASS (646) · 5 oracle PASS (ref-suite 810; 599 cases) · 6 clingo PASS
+(suite 523; 599 cases) · 7 noop PASS (563; 36 survivors) · 8 rood PASS
+(47; 94 fragmenten; Drools-leg 10 gepind / 37 met reden) · 9 catala PASS
+(201; 12 goldens) · 10 regelspraak PASS (409; 70 goldens) · 11
+toka-parity PASS (45; suite 27; 29/29/29) · 12 drools PASS (played 183 =
+pin; DRL-tekst 162 = pin; JUnit 620; kanaalvloer 53; value-divergence 1)
+· 13 reftype-derivation PASS (131 twists over 27 goldens; 128 replays,
+25 DRL) · 14 flogic PASS (130; 2 goldens).
+
+## Open punten (stand na fixronde 3)
 
 
 1. **Normbesluit: de overige afwezigheidscondities.** Stand na
@@ -718,7 +851,7 @@ opnieuw gedraaid: `check-drools: PASS`, played 183 = pin, DRL-tekst
    WV-6.4-f-vorm plus de genavigeerde variant in de
    value-divergence-lijst van gate 12.
 8. **Gate-12-pins, beschermd-pad-voorstel in de branch** (commit
-   `fae93152`, op aanwijzing van de hoofdsessie). In
+   `a7d788e4`, op aanwijzing van de hoofdsessie). In
    `scripts/check-drools.sh` zijn uitsluitend `EXPECTED_PLAYED` 182 →
    183 en `EXPECTED_DRL_PLAYED` 161 → 162 gewijzigd, elk met een
    redenblok in de huisstijl (golden `jutterswet-opvolgerquorum`, vier
@@ -729,15 +862,32 @@ opnieuw gedraaid: `check-drools: PASS`, played 183 = pin, DRL-tekst
    hoofdsessie:** de parallelle Drools-kaart voegt ook een spelende
    golden toe. Wie als tweede landt, rebaset en zet beide pins één
    verder; voorspeld eindtotaal 184/163.
-9. **Mijn lezing van "BEREIK" en van "s6", benoemd.** (a) Het bereik
-   omvat de `filter` (de bereikvelden van IR-SPEC 4.5). Wie het filter
-   onder ALLE monotoon wil, verandert één regel in de Kwantorvouw-tak.
-   Geen corpusdocument heeft een filter met een schrijver. (b) De derde
-   kwantornegatief isoleert de GEEN-matrix. De propositionele GEEN (mijn
-   s6) staat op de lijst van klassen die buiten blijven; wil de
-   maintainer hem toch onder de arm, dan is dat één regel in de
-   Samengesteld-tak plus één negatief.
+9. **Mijn lezing van "BEREIK", benoemd.** Het bereik omvat de `filter`
+   (de bereikvelden van IR-SPEC 4.5). Wie het filter onder ALLE monotoon
+   wil, verandert één regel in de Kwantorvouw-tak. Geen corpusdocument
+   heeft een filter met een schrijver. De propositionele GEEN over een
+   vergelijking blijft buiten de kaart. Een kwantorvouw ONDER een
+   propositionele GEEN valt er wel binnen: de contextclausule, met
+   getuige `wf046-kwantorvouw-onder-geen`.
 10. **Bindingloze kwantorvouw** (bijvangst, gefixt): die trok geen
    bereikkant. Hij leest nu de afgeleide relatie en de populatie, met
    een eigen negatief. Nul in het corpus. Omdat het een kleine uitbreiding
    is van wat de verifier leest, staat hij hier ter beoordeling.
+11. **Open normpunt, niet in deze kaart beslist:** geldt "monotoon in de
+   matrix" alleen als de matrix zelf monotoon is? Een vergelijking die
+   door een groeiende waarde onwaar wordt ("merk < 2" terwijl merk
+   opvolgers telt), in een ALLE- of TEN_MINSTE-matrix op een toegelaten
+   cyclus, is verifier-schoon en laat de vier executors stil splitsen
+   (tabel in Fixronde 3, punt 2). Dezelfde klasse zonder vouw is op main
+   al verifier-schoon ("het merk van de ploegleider ≠ 2": ref 2, clingo
+   1). De ontlasting van strictheid op een toegelaten cyclus is
+   ondeugdelijk voor elke lezing die haar waarheid kan verliezen, ook via
+   een groeiende waarde.
+12. **ALLE-codering van clingo, voor `clingo-alle-matrix-stratificatie`:**
+   op een positieve cyclus door een ALLE-matrix heeft de dubbele negatie
+   twee stabiele modellen, waar de graaf het kleinste vaste punt vraagt
+   (IR-SPEC 5.5, tweede flank). Getuige: het model van de golden, W1 en
+   W3 elk ploegleider van de ander, elk met een opvolger van rang 4. Met
+   een kenmerk in de matrix laat de tip een document toe dat main
+   weigerde. Nodig: een monotone codering met telling, of een benoemde
+   weigering. In het corpus komt de vorm niet voor.
