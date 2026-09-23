@@ -34,3 +34,25 @@ nergens vast.
 
 May touch: `corpus/negatief/wf022-kenmerk-onwaar/`, de WF-022-rij in
 `spec/IR-SPEC.md` (als voorstel), kaartverplaatsing.
+
+## Acceptatie (aangescherpt bij de claim, 2026-09-23)
+
+Opgepakt in branch `card/rood-duo` (fixronde 3 van de hoofdsessie),
+na de rebase op main `3a140fe4`.
+
+- (a) `corpus/negatief/wf022-kenmerk-onwaar/ir.json` naar de tekst van
+  voorstel §7.3: objecttype `Recht` met de kenmerken `herleefd` en
+  `nieuw recht ontstaan`, en de vlakke regel `geen herleving` met
+  waarde `onwaar`. De verifier weigert het document alleen op WF-022,
+  met `WF-022 FAIL /resolvedRegels/0/waarde: characteristic target's
+  value must be the boolean constant true`. Een NOTE met de zelf
+  gemeten uitkomst van de vier uitvoerders (ref, clingo, exec-tak,
+  DRL-tekst-tak), via een case die alleen onder /tmp bestaat.
+- (b) Rood-eerst: een mutant die de waardeclausule van `wf022` in
+  `spec/verifier/lib/checks.ml` uitschakelt, maakt gate 3 rood op
+  precies dit negatief. Daarna herstel, met `cmp` tegen HEAD.
+- (c) De WF-022-rij van de WF-index in `spec/IR-SPEC.md` noemt het
+  nieuwe negatief (**voorstel**, alleen die ene rij).
+- (d) Gates 1, 2, 3, 4, 8 en 12 groen, elk los. Gate 3 telt 441
+  negatief. Registerzin voor de WF-022-rij van CONSTRUCTS in het
+  Result.
