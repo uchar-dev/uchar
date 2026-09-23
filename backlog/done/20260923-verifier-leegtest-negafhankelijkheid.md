@@ -693,7 +693,13 @@ opnieuw gedraaid: `check-drools: PASS`, played 183 = pin, DRL-tekst
    gemeten (fixronde 2, main tegen tip) verschuiven de eigen operand, de
    genavigeerde operand, het vouwfilter, het kwantorfilter, een Let als
    operand en GEVULD in een filter onder telling = 0 van b = 1 naar leeg.
-   Dat is in elk geval het antwoord van clingo. Creatievoorwaarden en
+   Dat is in elk geval het antwoord van clingo. Het kwantorbesluit doet
+   hetzelfde in zijn negatieve delen (fixronde 3, gemeten): de matrix
+   onder GEEN, TEN_HOOGSTE en PRECIES ("b = 1 indien geen ding heeft a >
+   3", a = 5 door een andere regel) en het bereik van elke vouw behalve
+   TEN_MINSTE ("b = 1 indien alle dingen hebben rang > 0", het bereik
+   gevuld door een creatie). Met de lezer voorop gaf main-ref b = 1, en
+   de tip geeft leeg, net als clingo. Creatievoorwaarden en
    kenmerkregels verschuiven niet, want die lazen al stratumstrikt.
    **De hoofdsessie bevestigt dat dit binnen de norm valt:** de kant
    bepaalt de evaluatievolgorde, en ref volgt de gedeelde graaf by

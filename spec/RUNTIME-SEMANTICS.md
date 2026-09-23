@@ -4465,9 +4465,15 @@ many strata as the chain is deep.
   on the same reader-first shape, the own operand, a navigated operand,
   a fold filter, a quantifier filter, a Let as the operand and a gevuld
   test in the filter of a count compared with zero each moved from b = 1
-  to leeg, which is the ASP backend's answer in every case. A creation
-  condition and a characteristic rule did not move, because they already
-  read stratum-strict.
+  to leeg, which is the ASP backend's answer in every case. The
+  quantifier-fold decision moves the same reader-first shape in its
+  negative parts: "b = 1 indien geen ding heeft een a groter dan 3"
+  (a = 5 derived by another rule) and "b = 1 indien alle dingen hebben een
+  rang groter dan 0", whose range a creation fills, each went from b = 1
+  to leeg, again the ASP backend's answer; that is the matrix under
+  *geen*, *ten hoogste* and *precies* and the range of every fold but
+  *ten minste*. A creation condition and a characteristic rule did not
+  move, because they already read stratum-strict.
 - Ill-formed: `a ← b + 1` and `b ← a + 1` on one object type is a
   WF-045 cycle through no creation (negatief case
   `wf045-cyclic-attribute-dependency`). A recursive creation whose
