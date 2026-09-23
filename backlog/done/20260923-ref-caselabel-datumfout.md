@@ -50,6 +50,10 @@ May touch (aangescherpt): `ref/lib/case.ml`, zo nodig `ref/lib/value.ml`,
 
 ## Result:
 
+*Stand van dit Result: de eerste ronde hieronder is ongewijzigd
+bewaard; de secties "Fixronde 1" en "Fixronde 2" onderaan dragen de
+latere wijzigingen en de actuele getallen (tip na fixronde 2).*
+
 Alle acceptatiepunten gehaald; alle veertien gates groen, elk los
 gedraaid op `97f87646`. Fix en getuigen zitten in één commit tussen
 claim en afsluiting (`ref: de caselader weigert misvormde lexemen bij
@@ -360,39 +364,294 @@ characteristic absent, and a computed boolean was written like the
 constant, where the ASP backend refuses at translation; `ref` now tests
 the verifier's own clause (the literal `waar` typed Booleaan) before any
 subject is taken and refuses by name with rule, characteristic, object
-type and the WF-022 ground; no document in any zone carries the form".
+type and the WF-022 ground; no golden, red or parity-zone document carries
+the form, only that negatief, which gate 3 refuses".
 
-**Open punten.**
+### Fixronde 1 (hoofdsessie, 2026-09-23)
+
+**Open punt 4: het rode document `corpus/rood/inputdatum-kalender`**
+(commit `20e83a47`). `ir.json` is `jutterswet-bergingsklok` byte voor byte
+(`cmp`); `case1.json` is case2 van die golden met één waarde anders,
+`P4.meldingsdatum` = `"2026-02-30"`, die het case-schema doorlaat; NOTE met
+handmatige uitleg. Pins: ref en clingo `P4.meldingsdatum "2026-02-30" is
+not the uchar-case-v0 date lexeme yyyy-mm-dd (day out of range in date
+lexeme "2026-02-30")`; Drools `malformed date '2026-02-30' on
+'meldingsdatum': the field widths are right but the calendar is not`, de
+eigen zin van de caselezer tot vóór de JDK-tekst tussen haakjes.
+
+Rood-eerst tegen mains lader: ref `EVALUATION FAULT: day out of range in
+date lexeme "2026-02-30"` rc 1, clingo `TRANSLATION FAULT: day out of
+range in date lexeme "2026-02-30"` rc 1 — de pin wordt niet eens gelezen.
+Gate 8 met de lib van main en dit document: `FAIL:
+corpus/rood/inputdatum-kalender/case1.json — ref did not observe the
+expected fault: EVALUATION FAULT: day out of range in date lexeme
+"2026-02-30"`, idem voor clingo, rc 1. Na: `oracle: expected fault
+observed at load (P4.meldingsdatum "2026-02-30" is not …)` rc 0, clingo
+idem. DroolsRoodMain (jar uit deze worktree): `FAULT
+IllegalArgumentException: malformed date '2026-02-30' on 'meldingsdatum':
+the field widths are right but the calendar is not (Text '2026-02-30'
+could not be parsed: Invalid date 'FEBRUARY 30')`. `ref --bodemzin` met de
+36 zinnen van gate 8: `PINS 2`, geen HIT. Gate 8: 44 rood (was 43), 88
+fragmenten (was 86), Drools-been 10 fault-pinned (was 9) en 34
+not-carried. `scripts/check-rood.sh` niet aangeraakt. Mains gate 8 (sinds
+de rood-duo-kaart, nog niet op deze branch) rekent een benoemde weigering
+van de caselezer tot FAULT en eist voor een pin de eigen zin zonder
+platformtekst; deze pin voldoet daaraan.
+
+**Open punt 3: positiedragende vormweigeringen** (commit `d1845cf3`). De
+strikte helpers `obj`, `str`, `list_` en `field` dragen een positie en
+tonen wat ze vonden (`… : expected a string, got 20260310`); een veld en
+zijn JSON-soort worden in één aanroep gelezen (`str_field`, `obj_field`,
+`list_field`), zodat een nieuwe leesplek zijn positie niet kan vergeten.
+Het padvocabulaire is dat van de lexeemweigeringen: een instantie bij
+haar label zodra het gelezen is (`V1.objectType`, `V1.roles.melders[0]`),
+daarvoor bij haar arrayplaats (`input.instances[0].label`), een
+verwachting bij haar index (`expected[4].kind`), de verwachte waarde bij
+label en attribuut (`expected V1.vondstdag`), de wortel als `<root>`, zoals
+de runners de wortel van een IR noemen. De eigen formuleringen van de
+waardevormen gingen in hetzelfde sjabloon op (`malformed value`,
+`malformed boolean`, `a list value's "list" field is not an array`, `a
+record value's "struct" field is not an object`, `malformed timeline
+value`), de payload kreeg een eigen positie (`V1.status.payload`, ook voor
+de lexeemzin), en drie kruiscontroles die bij meerdere kandidaten
+onvindbaar waren noemen hun plaats (`M1.roles.vondst: to-one role "vondst"
+carries 2 labels`, `expected[4]: an inconsistent label pin requires a rule
+pin`, `expected[4].kind: unknown expectation kind "consistentt"`). Een
+niet-string asOfDate: `asOfDate: expected a string or null, got
+20260601` (was `malformed asOfDate`). Bewust anders gelaten: open punt 4
+onderaan. Aanvaarding verandert nergens, alleen zinnen; de tijdlijnwrapper
+leest nu zelf de segmentlijst (`timeline_json`), waardoor een verdedigende
+arm onnodig werd.
+
+De asOfDate-lexeemzin: negen lexemen × ref en clingo, `cmp` identiek met
+main (md5 `1baf670013d6d1ba8966c154eb29c81c`, gemeten na elke wijziging).
+De parallelle rood-kaart pint in `corpus/rood/asofdate-kalender` alleen de
+lexeemzin (ref/clingo `asOfDate "2026-02-30" is not the uchar-case-v0 date
+lexeme yyyy-mm-dd (day out of range in date lexeme "2026-02-30")`, Drools
+`malformed date '2026-02-30' on 'asOfDate': …`), niet de niet-string-vorm;
+haar case en IR, afgespeeld met de runners van deze branch: `oracle:
+expected fault observed at load (…)` rc 0, clingo idem.
+
+Rood-eerst, de hele set nieuwe en bijgestelde getuigen tegen de lader van
+vóór deze stap (`20e83a47`), suite van na de stap:
+
+```
+FAIL caselader-lexeem-constructorpayload-datum (got: V1.status "10-03-2026" is not the uchar-case-v0 date lexeme yyyy-mm-dd (malformed date lexeme "10-03-2026" (expected ISO yyyy-mm-dd)))
+FAIL caselader-vorm-wortel-geen-object (got: expected an object)
+FAIL caselader-vorm-format-ontbreekt (got: missing field "format")
+FAIL caselader-vorm-format-geen-tekst (got: expected a string)
+FAIL caselader-vorm-asofdate-ontbreekt (got: missing field "asOfDate")
+FAIL caselader-vorm-asofdate-geen-tekst (got: malformed asOfDate)
+FAIL caselader-vorm-input-geen-object (got: expected an object)
+FAIL caselader-vorm-input-ontbreekt (got: missing field "input")
+FAIL caselader-vorm-instances-geen-lijst (got: instances: expected a list)
+FAIL caselader-vorm-instances-ontbreekt (got: missing field "instances")
+FAIL caselader-vorm-parameters-geen-object (got: expected an object)
+FAIL caselader-vorm-parameters-ontbreekt (got: missing field "parameters")
+FAIL caselader-vorm-expected-geen-lijst (got: expected: expected a list)
+FAIL caselader-vorm-expected-ontbreekt (got: missing field "expected")
+FAIL caselader-vorm-expectedfault-geen-object (got: expected an object)
+FAIL caselader-vorm-expectedfault-veld-ontbreekt (got: missing field "clingo")
+FAIL caselader-vorm-expectedfault-geen-tekst (got: expected a string)
+FAIL caselader-vorm-instantie-geen-object (got: expected an object)
+FAIL caselader-vorm-label-ontbreekt (got: missing field "label")
+FAIL caselader-vorm-label-geen-tekst (got: expected a string)
+FAIL caselader-vorm-objecttype-geen-tekst (got: expected a string)
+FAIL caselader-vorm-attributes-ontbreekt (got: missing field "attributes")
+FAIL caselader-vorm-attributes-geen-object (got: expected an object)
+FAIL caselader-vorm-characteristics-ontbreekt (got: missing field "characteristics")
+FAIL caselader-vorm-characteristics-geen-lijst (got: characteristics: expected a list)
+FAIL caselader-vorm-kenmerk-geen-tekst (got: expected a string)
+FAIL caselader-vorm-roles-ontbreekt (got: missing field "roles")
+FAIL caselader-vorm-roles-geen-object (got: expected an object)
+FAIL caselader-vorm-rol-geen-lijst (got: role "melders": expected a list of labels)
+FAIL caselader-vorm-rollabel-geen-tekst (got: expected a string)
+FAIL caselader-vorm-kenmerktijdlijnen-geen-object (got: expected an object)
+FAIL caselader-vorm-perioden-geen-lijst (got: V1.dienstdoend: expected a list of periods)
+FAIL caselader-vorm-periode-geen-object (got: expected an object)
+FAIL caselader-vorm-periodegrens-ontbreekt (got: missing field "to")
+FAIL caselader-vorm-periodegrens-geen-tekst (got: expected a string)
+FAIL caselader-vorm-waarde-geen-object (got: expected an object)
+FAIL caselader-vorm-datum-geen-tekst (got: expected a string)
+FAIL caselader-vorm-getal-geen-tekst (got: expected a string)
+FAIL caselader-vorm-datumtijd-geen-tekst (got: expected a string)
+FAIL caselader-vorm-waarde-meerdere-varianten (got: V1.vondstdag: malformed value)
+FAIL caselader-vorm-boolean-geen-boolean (got: V1.gemeld: malformed boolean)
+FAIL caselader-vorm-lijst-geen-lijst (got: V1.vangstdagen: a list value's "list" field is not an array)
+FAIL caselader-vorm-struct-geen-object (got: V1.dossier: a record value's "struct" field is not an object)
+FAIL caselader-vorm-payload-geen-object (got: expected an object)
+FAIL caselader-vorm-tijdlijn-geen-lijst (got: V1.tarief: malformed timeline value)
+FAIL caselader-vorm-constructor-geen-tekst (got: expected a string)
+FAIL caselader-vorm-lijstelement-geen-tekst (got: expected a string)
+FAIL caselader-vorm-structveld-geen-tekst (got: expected a string)
+FAIL caselader-vorm-segment-geen-object (got: expected an object)
+FAIL caselader-vorm-segmentwaarde-ontbreekt (got: missing field "value")
+FAIL caselader-vorm-segmentgrens-geen-tekst (got: expected a string)
+FAIL caselader-vorm-parameterwaarde-geen-object (got: expected an object)
+FAIL caselader-vorm-parameterdatum-geen-tekst (got: expected a string)
+FAIL caselader-vorm-verwachting-geen-object (got: expected an object)
+FAIL caselader-vorm-kind-ontbreekt (got: missing field "kind")
+FAIL caselader-vorm-kind-geen-tekst (got: expected a string)
+FAIL caselader-vorm-verwacht-label-ontbreekt (got: missing field "label")
+FAIL caselader-vorm-verwacht-label-geen-tekst (got: expected a string)
+FAIL caselader-vorm-verwacht-attribuut-geen-tekst (got: expected a string)
+FAIL caselader-vorm-verwachte-waarde-ontbreekt (got: missing field "value")
+FAIL caselader-vorm-verwachte-waarde-geen-object (got: expected an object)
+FAIL caselader-vorm-verwachte-tijdlijn-ontbreekt (got: missing field "timeline")
+FAIL caselader-vorm-verwachte-tijdlijn-geen-lijst (got: expected V1.tarief: malformed timeline value)
+FAIL caselader-vorm-kenmerk-ontbreekt (got: missing field "characteristic")
+FAIL caselader-vorm-regel-geen-tekst (got: expected a string)
+FAIL caselader-positie-onbekende-soort (got: unknown expectation kind "consistentt")
+FAIL caselader-positie-labelpin-zonder-regel (got: an inconsistent label pin requires a rule pin)
+FAIL caselader-positie-naar-een-rol-twee-labels (got: to-one role "vondst" carries 2 labels)
+68 failure(s)
+```
+
+Mutaties (elk één keten met bouwcontrole, herstel `cmp identiek`, daarna
+`test_ref: all 914 worked examples pass` en `test_clingo: 523 checks, 0
+failures`): MV1 `obj` zonder positie `16 failure(s)` (`got: expected an
+object, got []`); MV2 `str_field` op de ouder `9` (`got: <root>: expected
+a string, got 0`); MV3 `field` zonder positie `17` (`got: missing field
+"format"`); MV4 instantie blijft op het arraypad `1` (`got:
+input.instances[0].objectType: …`); MV5 verwachtingsindex één te hoog `12`
+(`got: expected[5]: …`); MV6 niet-string-asOfDate terug `1` (`got:
+malformed asOfDate`); MV7 `list_` zonder vondst `8`; MV8 variantsleutel uit
+de positie `6` (`got: V1.vondstdag: expected a string, got 20260310`); MV9
+payload op de constructorpositie `2`; MV10 tijdlijnlijst op het attribuut
+`2`; MV11a/b/c de drie kruiscontroles zonder positie, elk `1`.
+
+**Eerste extra item: het commentaar bij `periode_onder_telkwantor`**
+(commit `1c302872`, alleen commentaar, regels identiek aan basis
+`8dd05e25` en daar geverifieerd). De meting van 2026-09-20 (de oude
+DRL-weigerzin) en die van de vouw op 2026-09-23 heten nu metingen van vóór
+de kaart drools-venster-vouwtoets, met de nieuwe stand erbij: beide
+Drools-takken spelen het venster onder ALLE en weigeren het bij naam onder
+GEEN en de tellende kwantoren, met WF-112, in samenstelling en vouw.
+
+**Tweede extra item: WF-022 in ref** (commit `04a0206f`). Een platte
+KENMERKTOEKENNING met een andere waarde dan de constante `waar` weigert nu
+vóór er een onderwerp genomen wordt, met de test van de verifier zelf (het
+literal `waar` getypt Booleaan):
+
+```
+rule "geen herleving" attributes the characteristic "herleefd" of "Recht" with the literal "onwaar": a characteristic target takes the boolean constant waar and nothing else, the position WF-022 refuses (a negative decision on a characteristic exists only inside a defaults group). Declined at evaluation
+```
+
+Het negatief `corpus/negatief/wf022-kenmerk-onwaar` (van main, nog niet op
+deze branch), buiten de verifier om afgespeeld met een case (R1 met `nieuw
+recht ontstaan`, R2 zonder): main ref `oracle: PASS (3 expectations)`
+(stil, kenmerk afwezig), clingo `TRANSLATION FAULT: characteristic
+attribution with a non-waar value`; deze branch ref `EVALUATION FAULT:
+rule "geen herleving" attributes …` rc 1. Rood-eerst in de suite (de
+inline nagebouwde versie van dat document): `FAIL
+WF-022-kenmerk-onwaar-weigert (no fault at all; herleefd on R1: false, on
+R2: false)` en `FAIL WF-022-kenmerk-berekend-weigert (no fault at all;
+herleefd on R1: true, on R2: false)`; de controle met `waar` groen.
+Mutaties: MW1 controle weg `2 failure(s)` (`herleefd on R1: true` — met de
+vereenvoudigde arm zou `onwaar` het kenmerk dan zelfs zetten); MW2
+controle aanvaardt elk boolean-literal `1 failure(s)`; herstel `cmp
+identiek`. De evaluatiearmen voor `onwaar` en een niet-boolean waarde
+werden door de controle onbereikbaar en zijn weg. Geen golden (99
+kenmerktoekenningen), rood (8) of toka-document (14) draagt de vorm, en
+van de negatieven alleen `wf022-kenmerk-onwaar` op main, dat hem juist
+moet dragen (gate 3 weigert het); sweep ongewijzigd.
+
+### Fixronde 2 (lens-adviezen, 2026-09-23; oordeel MERGEN)
+
+1. **Overlevende tellermutant** (commit `62d2bd56`). Getuigen `1.5/2` en
+   `-/3` op `V1.gewicht`; tegen de lensmutant (`digits num && …` → `ignore
+   num; …`): `FAIL caselader-lexeem-attribuut-getal-teller-decimaal
+   (escaped the loader as Value.Fault: malformed number lexeme "1.5/2")`,
+   idem `"-/3"`, `2 failure(s)`; herstel `cmp identiek`, 919 groen.
+2. **Gate 4 en de afsluitende newline** (commit `a4f52876`, BESCHERMD-PAD-
+   VOORSTEL in `scripts/check-case-schema.sh`; commentaren in `8814112e`).
+   Gemeten met vier tijdelijke cases naast `jutterswet-bergingsklok`
+   (niet gecommit, na de meting verwijderd): met het oude script `PASS
+   (schema valid; 643 case file(s) validate)`, terwijl de lader elk
+   weigerde (`CASE ERROR: P4.meldingsdatum "2026-03-10\n" is not …`,
+   `… "5\n" …`, `… "1/2\n" …`, `asOfDate "2026-06-01\n" is not …`). Met het
+   voorstel (een `pattern`-keyword dat `re.fullmatch` toetst): rc 1 met
+   `'2026-06-01\n' does not match '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'`, `'1/2\n'
+   does not match …`, `'2026-03-10\n' …`, `'5\n' …`; na verwijderen `PASS
+   (schema valid; 639 case file(s) validate)`. De testkop en het
+   commentaar van het getalhek zeggen nu wat onder beide lezingen waar is.
+   Gate 2 heeft hetzelfde gat: open punt 3.
+3. **Registerzin** (commit `7399a3ed`): versmald, zie boven.
+4. **Roosterweigering** (commit `21a9f738`). De lader vraagt het rooster
+   zelf af en noemt het, als v0-grens: `V1.tarief: the declared grid is
+   DAG, which every day boundary sits on, yet this loader checks a
+   timeline's grid through the calendar bucketing and v0 defines buckets
+   for month and year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12):
+   refused as a v0 limit, not as a defect of the case`; voor WEEK en
+   KWARTAAL `V1.tarief: the declared grid is WEEK, and v0 defines calendar
+   buckets for month and year only (…), so this loader has no WEEK grid to
+   check the segment boundaries against: refused as a v0 limit, not as a
+   defect of the case`. Eerlijk gezegd: een DAG-tijdlijn ligt altijd op
+   zijn rooster en wordt toch geweigerd, omdat de controle via de
+   kalenderindeling loopt; dat is de bekende v0-grens van RUNTIME-SEMANTICS
+   ch. 3.2 ("Bucketing by day/week/quarter: absent (mirrored); OPEN"), geen
+   gedragswijziging. Getuigen DAG, WEEK, KWARTAAL; MG1 (DAG weer via de
+   indeling) `1 failure(s)` (`escaped … bucketing is defined for month and
+   year only (ch. 3.2)`), MG2 (roosternaam vast op WEEK) `1 failure(s)`;
+   herstel `cmp identiek`, 921 groen.
+5. **Payload-achtervoegsel**: al gedaan in fixronde 1 (`d1845cf3`,
+   `V1.status.payload`), vóór het advies kwam; getuigen
+   `caselader-lexeem-constructorpayload-datum` en
+   `caselader-vorm-payload-geen-object`, mutant MV9. Geen aparte commit.
+6. **May-touch** (commit `2e125116`): de paragraaf klopt nu met de branch,
+   met de samenloop en de gate-5-afspraak.
+
+**Gates na fixronde 2** (elk los, na `eval $(opam env)`, op de codetip
+`21a9f738`; daarna alleen kaartcommits): 1 PASS; 2 PASS (279 bestanden,
+floor 192); 3 PASS (279 schoon / 440 negatief, floor 350); 4 PASS (639
+cases); 5 PASS (**ref-suite 921**, floor 489; 595 cases, floor 427); 6
+PASS (523 checks, 595 cases; uitvoer byte-identiek aan main); 7 PASS (559
++ 36 overlevers); 8 PASS (44 rood, floor 26; 88 fragmenten, geen bodemzin;
+Drools 10 fault-pinned, 34 not-carried); 9 PASS (201 checks, 12
+goldens); 11 PASS (ref 29, clingo 29, Drools 29 PLAYED); 13 PASS (131
+twists over 27 goldens, 128 replays, 25 DRL-played, 0 overlevers); 14 PASS
+(130 checks, 2 goldens). Gates 10 en 12 raken geen ref-code en liepen
+laatst op `97f87646` groen (409 tests / 70 goldens; played 182, DRL 161,
+JUnit 620). Sweep ref en clingo over 639 cases op `21a9f738`: tegenover
+main verschilt alleen `inputdatum-kalender` (main rc 1 evaluatiefout, hier
+rc 0 fault bij het laden); asOfDate-lexeemzin `cmp` identiek met main.
+
+**Nog niet gerebased** (aanwijzing). Main is intussen verder (o.a. de
+rood-duo-kaart met `corpus/rood/asofdate-kalender` en het negatief
+`wf022-kenmerk-onwaar`), maar raakte geen bestand van deze branch aan
+(`ref/`, `scripts/check-case-schema.sh`, `corpus/rood/inputdatum-kalender`,
+deze kaart). Na de rebase telt gate 8 één rood document meer dan main.
+
+**Open punten** (stand na fixronde 2; de punten 3 en 4 van de eerste
+ronde zijn in fixronde 1 opgelost).
 
 1. Drools-caselezer (`backends/drools`, andere zone): de getallezer
    (`new BigDecimal` in `waardeNaarArg`) aanvaardt `.5`, `1E3` en `+5`,
    die het case-schema, ref en clingo weigeren (gemeten `PLAYED 1`), en
    weigert `1,000`/`12,5` als kale `NumberFormatException` zonder veld,
-   waar zijn datum- en datumtijdklemmen veld en vorm noemen. Een wire,
-   gesplitste lezers buiten het hek van gate 4; het huispatroon is een
-   klem met het schemapatroon, zoals `datumVanCaseWire`. Zijn
-   datumweigering noemt het attribuut maar niet het instantielabel.
+   waar zijn datum- en datumtijdklemmen veld en vorm noemen. Het
+   huispatroon is een klem met het schemapatroon, zoals
+   `datumVanCaseWire`. Zijn datumweigering noemt het attribuut maar niet
+   het instantielabel.
 2. Clingo `backends/clingo/lib/translate.ml` (andere zone): dode armen
    van dezelfde klasse als de hier verwijderde eval-arm — r. 1904
    `malformed date literal %S`, r. 3746 en r. 5839 `malformed asOfDate
-   %S`, en de stille `| _ -> ()` op r. 4764 achter
-   `datetime_of_lexeme`. Geen gedrag in het geding (de lader weigert een
-   niet-datum-asOfDate al, en de lezers geven alleen `Date` of
-   `Date_time`), wel armen die een weigering beloven die nooit komt.
-3. De JSON-vormweigeringen van de lader (`expected a string`, `expected
-   an object`, `missing field "x"`, en `malformed asOfDate` voor een
-   asOfDate die geen string is) dragen geen positie. Fase klopt (CASE
-   ERROR, exit 2) en gate 4 houdt ze uit het corpus, maar een
-   handgebouwde case krijgt geen veld. Posities erin brengen betekent
-   een pad door de ongeveer veertig `obj`/`str`/`field`-aanroepen
-   rijgen: een herziening van het foutmodel van de lader, van een andere
-   orde dan deze kaart; `malformed asOfDate` blijft onder de
-   asOfDate-randvoorwaarde staan.
-4. Corpus (`corpus/rood`, andere zone): sinds deze kaart is een
-   kalender-ongeldige datum op elke invoerpositie (bijvoorbeeld een
-   attribuutdatum `2026-02-30`, die gate 4 doorlaat) als rode case bij
-   het laden te pinnen; vóór deze kaart faalde zo'n case in gate 8 (rc
-   1, pin niet geraadpleegd; gemeten). Een rode getuige voor de
-   kalenderhelft van een invoerpositie hoort bij de parallelle kaart
-   `rood-asofdate-kalender` of een vervolg; meet daar eerst hoe het
-   Drools-been van gate 8 de Drools-ERROR op zo'n case telt.
+   %S`, en de stille `| _ -> ()` op r. 4764 achter `datetime_of_lexeme`.
+   Daarnaast toetst zijn WF-022-arm (r. 7334) alleen het lexeem `waar`
+   en niet het type Booleaan dat de verifier eist; een `waar` getypt als
+   Tekst gaat daar door waar ref (sinds fixronde 1) en de verifier
+   weigeren.
+3. Gate 2 (`scripts/check-ir-schema.sh`, beschermd pad) heeft hetzelfde
+   `$`-gat als gate 4 had: zijn standaardvalidator laat voor de
+   Geldigheid-patronen `"2026-01-01\n"` door (gemeten: Pythons
+   `re.search` matcht, `re.fullmatch` niet); de zelftesttabel draagt een
+   rij met afsluitende spatie maar niet met afsluitende newline. Zelfde
+   remedie als het gate-4-voorstel; WF-101 in de verifier vangt de waarde
+   daarna wel.
+4. Bewust ongepositioneerd gelaten: drie weigeringen op de wortel die geen
+   plaats nodig hebben omdat de wortel uniek is en de zin het veld noemt
+   (`unsupported case format "…"`, `a case carries exactly one of
+   expected / expectedFault`, `empty expectation list`), en de
+   kruiscontroles die hun plaats al met namen dragen (`attribute "…" is
+   not declared on "…"`, `role key "…" is ambiguous from "…"`,
+   `expectation references unknown label "…"` en verwanten).
