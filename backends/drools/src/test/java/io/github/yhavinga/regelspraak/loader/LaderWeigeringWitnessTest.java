@@ -16,6 +16,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -279,6 +280,104 @@ class LaderWeigeringWitnessTest {
         JsonNode catala = JSON.readTree(Files.readString(CORPUS.resolve(KAMERHEFFING).resolve("ir.json")));
         IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class, () -> IrLoader.loadAll(catala));
         assertEquals("functionDefs", r.form(), r.getMessage());
+    }
+
+    // ---------------- what the first strict reading left lenient ----------------
+    // Measured 2026-09-23 by the second lens round: each twist below PLAYED, landed in the auto-excluded channel
+    // with a reason that named no defect, or died in a NullPointerException naming no place.
+
+    @Test void een_datatype_zonder_node_weigert_met_een_plek() throws Exception {
+        // at an M1 position (the attribute, the domain) with its JSON pointer, at a v0 position with the kind
+        ObjectNode ir = golden(BAKENMEESTER);
+        String attr = lidPad(ir, "Bakenmeester", "attributes", "onderhoudstarief");
+        ((ObjectNode) IrPad.attribute(IrPad.objectType(ir, "Bakenmeester"), "onderhoudstarief").get("datatype"))
+                .remove("node");
+        ontbreekt(ir, attr + "/datatype", "node");
+
+        ir = golden(VONDSTKLASSE);
+        String domein = "/model/domains/" + index(IrPad.modelLijst(ir, "domains"), "name", "Vondstklasse");
+        ((ObjectNode) IrPad.domain(ir, "Vondstklasse").get("datatype")).remove("node");
+        ontbreekt(ir, domein + "/datatype", "node");
+
+        ir = golden(BAKENMEESTER);
+        ((ObjectNode) IrPad.rulesLijst(ir, "resolvedRegels").get(0).get("doel").get("type")).remove("node");
+        IrLoader.Documentfout e = weigert(ir, "Datatype.node");
+        assertTrue(e.getMessage().contains("missing field 'node'"), e.getMessage());
+    }
+
+    @Test void een_domeindatatype_draagt_precies_de_velden_van_zijn_soort() throws Exception {
+        // the key check the Enumeratie, SumType and StructType arms already had, for the kinds without an arm;
+        // no golden declares a Numeriek domain, so one is added: clean it loads, with a stray field it is refused
+        ObjectNode ir = golden(BAKENMEESTER);
+        ArrayNode domeinen = IrPad.modelLijst(ir, "domains");
+        ObjectNode getal = domeinen.addObject().put("node", "Domain").put("name", "Bedrag").putObject("datatype")
+                .put("node", "Numeriek").put("geheel", false).put("decimalen", 2).put("teken", "ONBEPAALD")
+                .putNull("eenheid");
+        IrLoader.loadAll(ir);
+        getal.put("naam", "Bedrag");
+        weigert(ir, "/model/domains/" + (domeinen.size() - 1) + "/datatype/naam");
+    }
+
+    @Test void een_diagnose_is_een_knoop_met_de_vorm_van_het_schema() throws Exception {
+        // WF-113 itself is the verifier's; this is the node's form: the discriminator, the exact keys, a severity
+        // and a message that are strings, an integer line
+        ObjectNode ir = golden(BAKENMEESTER);
+        ArrayNode diagnoses = (ArrayNode) ir.get("diagnostics");
+        diagnoses.addObject().put("node", "Diagnostic").put("severity", "WARNING").put("message", "een melding")
+                .put("line", 1);
+        IrLoader.loadAll(ir);
+        String d = "/diagnostics/" + (diagnoses.size() - 1);
+        ObjectNode diagnose = (ObjectNode) diagnoses.get(diagnoses.size() - 1);
+
+        for (String veld : List.of("node", "severity", "message", "line")) {
+            ObjectNode twist = ir.deepCopy();
+            ((ObjectNode) twist.get("diagnostics").get(diagnoses.size() - 1)).remove(veld);
+            ontbreekt(twist, d, veld);
+        }
+        for (String veld : List.of("severity", "message", "line")) {
+            ObjectNode twist = ir.deepCopy();
+            ((ObjectNode) twist.get("diagnostics").get(diagnoses.size() - 1)).putNull(veld);
+            weigert(twist, d + "/" + veld);
+        }
+        diagnose.put("bron", "een melding");
+        IrLoader.Documentfout e = weigert(ir, d + "/bron");
+        assertTrue(e.getMessage().contains("unknown field"), e.getMessage());
+    }
+
+    @Test void een_dagsoortlijst_draagt_tekst_of_null() throws Exception {
+        // the schema types every entry string or null; asText read 5 as "5" and null as the text "null"
+        ObjectNode ir = golden(BAKENMEESTER);
+        IrPad.model(ir).putArray("dayKinds").add(5);
+        weigert(ir, "/model/dayKinds/0");
+
+        ir = golden(BAKENMEESTER);
+        IrPad.model(ir).putObject("dagsoortPerEenheid").put("x", 5);
+        weigert(ir, "/model/dagsoortPerEenheid/x");
+
+        ir = golden(BAKENMEESTER);
+        IrPad.model(ir).putObject("dagsoortPerEenheid").putNull("x");
+        assertNull(IrLoader.load(ir).dagsoortPerEenheid.get("x"), "null blijft null, niet de tekst \"null\"");
+    }
+
+    @Test void format_en_functionDefs_worden_eerst_op_vorm_gelezen() throws Exception {
+        // an absent or non-string format, and a functionDefs that is no list, are defects of the document; only a
+        // well-formed one reaches the refusal of a form this backend does not carry
+        ObjectNode ir = golden(BAKENMEESTER);
+        ir.remove("format");
+        ontbreekt(ir, "", "format");
+
+        ir = golden(BAKENMEESTER);
+        ir.put("format", 1);
+        weigert(ir, "/format");
+
+        ObjectNode ander = golden(BAKENMEESTER).put("format", "uchar-ir-v0");
+        IrLoader.Refusal r = assertThrows(IrLoader.Refusal.class, () -> IrLoader.loadAll(ander));
+        assertEquals("format", r.form(), r.getMessage());
+
+        ir = golden(BAKENMEESTER);
+        IrPad.model(ir).putObject("functionDefs");
+        IrLoader.Documentfout e = weigert(ir, "/model/functionDefs");
+        assertTrue(e.getMessage().contains("expected an array"), e.getMessage());
     }
 
     // ---------------- names ----------------

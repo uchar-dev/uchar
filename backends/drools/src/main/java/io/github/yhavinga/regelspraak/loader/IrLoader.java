@@ -53,10 +53,12 @@ import java.util.Map;
  * discriminator inside the {@link Expr} / {@link Conditie} / {@link Datatype} sealed hierarchies
  * (a struct/list literal, a MapList/Invoke, …). The differential gate turns a Refusal into a
  * reason-carrying exclusion. A document that is not well-formed is no form at all: the container, the
- * declaration lists and the M1 nodes ({@code ObjectType}, {@code Attribute}, {@code Characteristic},
- * {@code TimelineFacet}, {@code Domain}) are read as strictly as the OCaml loader reads them — exact keys, the
- * node discriminator, the JSON types, WF-001/WF-002 name identity — and a defect there is a {@link Documentfout}
- * naming its JSON position, a hard error.
+ * declaration lists, the M1 nodes ({@code ObjectType}, {@code Attribute}, {@code Characteristic},
+ * {@code TimelineFacet}, {@code Domain} with its datatype) and each {@code Diagnostic} are read as strictly as the
+ * OCaml loader reads them — exact keys, the node discriminator, the JSON types, WF-001/WF-002 name identity — and a
+ * defect there is a {@link Documentfout} naming its JSON position, a hard error. One step stricter: a Diagnostic's
+ * severity and message must be strings, as the schema types them, where the OCaml loader admits a null so that
+ * WF-113 can name it. Every datatype, at any position, carries its discriminator.
  *
  * <p><b>Authority.</b> The v0 BEAN fields are authoritative: where the emitter also writes a symbolic
  * extension that is a record field (a feitcreatie's {@code feittype/ankerRol/doelRol/joinRol}, a
@@ -216,15 +218,21 @@ public final class IrLoader {
 
     private RegelSpraakModel model(JsonNode root) {
         if (root == null || !root.isObject()) throw new Documentfout("", "expected an object, got " + kort(root));
-        String format = text(root, "format");
-        if (!"uchar-ir-v1".equals(format))
-            throw new Refusal("format", String.valueOf(format));
+        // another format is a form this backend does not carry, whatever else that document holds; an absent or
+        // non-string format is a defect of this one
+        String format = tekst(root, "", "format");
+        if (!"uchar-ir-v1".equals(format)) throw new Refusal("format", format);
         velden(root, "", null, ROOT, List.of());
         JsonNode model = sectie(root, "", "model");
         JsonNode rules = sectie(root, "", "rules");
         velden(model, "/model", null, MODEL, List.of("functionDefs"));
-        // an extension the schema admits and this backend does not carry: a form, so a Refusal, not a defect
-        if (model.has("functionDefs")) throw new Refusal("functionDefs", "unknown model section");
+        // an extension the schema admits and this backend does not carry: a form, so a Refusal, not a defect —
+        // once the section has the form the schema gives it. Its entries are not read, so not checked either.
+        if (model.has("functionDefs")) {
+            JsonNode fd = model.get("functionDefs");
+            if (!fd.isArray()) throw new Documentfout("/model/functionDefs", "expected an array, got " + kort(fd));
+            throw new Refusal("functionDefs", "unknown model section");
+        }
         velden(rules, "/rules", null, RULES, List.of("prioritizedDefaults"));
 
         // declarations first: the resolved lists reference them by name. Read in the v0 table order, so the
@@ -257,8 +265,9 @@ public final class IrLoader {
             eenmaal(m.dimensies, p + "/naam", d.naam(), d);
         });
         lijst(model, "/model", "timelines", (p, n) -> m.tijdlijnen.add(tijdlijn(n)));
-        lijst(model, "/model", "dayKinds", (p, n) -> m.dagsoorten.add(n.asText()));
-        forEachField(sectie(model, "/model", "dagsoortPerEenheid"), (k, v) -> m.dagsoortPerEenheid.put(k, v.asText()));
+        lijst(model, "/model", "dayKinds", (p, n) -> m.dagsoorten.add(tekstOfNull(n, p)));
+        forEachField(sectie(model, "/model", "dagsoortPerEenheid"),
+                (k, v) -> m.dagsoortPerEenheid.put(k, tekstOfNull(v, "/model/dagsoortPerEenheid/" + k)));
 
         lijst(rules, "/rules", "resolvedRegels", (p, n) -> m.resolvedRegels.add(resolvedRegel(n)));
         lijst(rules, "/rules", "resolvedDagsoorten", (p, n) -> m.resolvedDagsoorten.add(
@@ -274,8 +283,7 @@ public final class IrLoader {
         weigerGeerfdAnker();   // the §9.9 family: asked here, where BOTH the tijdlijnen and the determinations are read
         lijst(rules, "/rules", "regelGroepen", (p, n) -> m.regelGroepen.add(new ResolvedRegelGroep(
                 text(n, "naam"), bool(n, "recursief"), stringList(n.get("leden")), bron(n), intOf(n, "line"))));
-        lijst(root, "", "diagnostics", (p, n) -> m.diagnostics.add(new Diagnostic(
-                enumOf(Severity.class, text(n, "severity"), p + "/severity"), text(n, "message"), intOf(n, "line"))));
+        lijst(root, "", "diagnostics", (p, n) -> m.diagnostics.add(diagnostic(p, n)));
         // §6.1 (Phase 4) the prioritized-defaults extension, parsed AFTER the declarations so a default's
         // condition/value resolves its objecttype/parameter references against the fully-built model. A malformed
         // defaults bundle (an unknown inner node, a missing target) raises a loud Refusal from these parsers.
@@ -353,6 +361,14 @@ public final class IrLoader {
     /** An optional string field: absent is null; present, it is a string ({@link #velden} has refused a null). */
     private static String optTekst(JsonNode n, String pad, String veld) {
         return n.has(veld) ? tekst(n, pad, veld) : null;
+    }
+
+    /** A list entry or map value the schema types as string or null. Null stays null, where {@code asText} made it
+     *  the text "null", and anything else is a defect. */
+    private static String tekstOfNull(JsonNode v, String pad) {
+        if (v.isNull()) return null;
+        if (!v.isTextual()) throw new Documentfout(pad, "expected a string or null, got " + kort(v));
+        return v.asText();
     }
 
     private static boolean waarheid(JsonNode n, String pad, String veld) {
@@ -543,6 +559,15 @@ public final class IrLoader {
         }
     }
 
+    /** The node's form as the schema gives it: severity and message strings, the line an integer. What WF-113
+     *  demands of the values beyond that (a WARNING, a message that is not blank, a line of at least 0) is the
+     *  verifier's to refuse; no consumer reads a diagnostic for evaluation. */
+    private static Diagnostic diagnostic(String pad, JsonNode n) {
+        velden(n, pad, "Diagnostic", List.of("node", "severity", "message", "line"), List.of());
+        return new Diagnostic(enumOf(Severity.class, tekst(n, pad, "severity"), pad + "/severity"),
+                tekst(n, pad, "message"), geheel(n, pad, "line", "Diagnostic.line"));
+    }
+
     // --- declaration side --------------------------------------------------
 
     /** IR-SPEC ch. 2.2: the member nodes back into the model's member-keyed side-maps. Every facet's count is
@@ -569,7 +594,7 @@ public final class IrLoader {
             JsonNode dt = a.get("datatype");
             if (!dt.isNull() && !dt.isObject())
                 throw new Documentfout(ap + "/datatype", "expected a datatype object or null, got " + kort(dt));
-            ot.attributen.put(lid, datatype(dt));
+            ot.attributen.put(lid, datatype(dt, ap + "/datatype"));
             String meervoud = optTekst(a, ap, "plural");
             if (meervoud != null) ot.attribuutMeervoud.put(lid, meervoud);
             if (a.has("dimensions")) ot.attribuutDimensies.put(lid, tekstLijst(a, ap, "dimensions"));
@@ -612,22 +637,36 @@ public final class IrLoader {
         String dp = pad + "/datatype";
         JsonNode dt = n.get("datatype");
         if (!dt.isObject()) throw new Documentfout(dp, "expected a datatype object, got " + kort(dt));
-        switch (String.valueOf(text(dt, "node"))) {
-            case "Enumeratie" -> {
-                velden(dt, dp, "Enumeratie", List.of("node", "waarden"), List.of());
-                if (!dt.get("waarden").isArray())
-                    throw new Documentfout(dp + "/waarden", "expected an array, got " + kort(dt.get("waarden")));
-                return new Datatype.Enumeratie(naam, stringList(dt.get("waarden")));
-            }
-            case "SumType" -> velden(dt, dp, "SumType", List.of("node", "constructors"), List.of());
-            case "StructType" -> velden(dt, dp, "StructType", List.of("node", "fields"), List.of());
-            default -> { }
+        String soort = datatypeSoort(dt, dp);
+        List<String> sleutels = DOMEINDATATYPE.get(soort);
+        if (sleutels != null) velden(dt, dp, soort, sleutels, List.of());
+        if (soort.equals("Enumeratie")) {
+            if (!dt.get("waarden").isArray())
+                throw new Documentfout(dp + "/waarden", "expected an array, got " + kort(dt.get("waarden")));
+            return new Datatype.Enumeratie(naam, stringList(dt.get("waarden")));
         }
-        return datatype(dt);
+        return datatype(dt, dp);
     }
 
+    /** The key set of each datatype kind at the declaration position {@code Domain.datatype}, as the OCaml loader's
+     *  {@code domain_datatype} and {@code datatype} check it: the three kinds that carry a domain name at a
+     *  reference position carry none here, and every other kind has the keys it has everywhere. A kind outside
+     *  the table reaches the dispatch's refusal of an unknown datatype node. */
+    private static final Map<String, List<String>> DOMEINDATATYPE = Map.ofEntries(
+            Map.entry("Enumeratie", List.of("node", "waarden")),
+            Map.entry("SumType", List.of("node", "constructors")),
+            Map.entry("StructType", List.of("node", "fields")),
+            Map.entry("ListType", List.of("node", "element")),
+            Map.entry("Numeriek", List.of("node", "geheel", "decimalen", "teken", "eenheid")),
+            Map.entry("Percentage", List.of("node", "geheel", "decimalen", "eenheid")),
+            Map.entry("Tekst", List.of("node")),
+            Map.entry("Booleaan", List.of("node")),
+            Map.entry("DatumInDagen", List.of("node")),
+            Map.entry("DatumTijd", List.of("node")),
+            Map.entry("Onbekend", List.of("node", "reden")));
+
     private Parameter parameter(String pad, JsonNode n) {
-        return new Parameter(naam(n, pad, "naam"), datatype(n.get("datatype")),
+        return new Parameter(naam(n, pad, "naam"), datatype(n.get("datatype"), pad + "/datatype"),
                 enumOf(Granulariteit.class, n, "granulariteit"));
     }
 
@@ -664,9 +703,15 @@ public final class IrLoader {
 
     // --- Datatype ----------------------------------------------------------
 
-    private Datatype datatype(JsonNode n) {
+    private Datatype datatype(JsonNode n) { return datatype(n, null); }
+
+    /** The datatype dispatch. {@code pad} is the JSON pointer of the datatype where one is known, and null at a
+     *  v0 position, which is read without a path (see {@link Documentfout}). */
+    private Datatype datatype(JsonNode n, String pad) {
         if (n == null || n.isNull()) return null;
-        String node = text(n, "node");
+        if (!n.isObject())
+            throw new Documentfout(pad == null ? "Datatype" : pad, "expected a datatype object or null, got " + kort(n));
+        String node = datatypeSoort(n, pad);
         return switch (node) {
             case "Numeriek" -> new Datatype.Numeriek(bool(n, "geheel"), intOf(n, "decimalen"),
                     enumOf(Datatype.Teken.class, n, "teken"), eenheid(n.get("eenheid")));
@@ -680,6 +725,17 @@ public final class IrLoader {
             case "Onbekend" -> new Datatype.Onbekend(text(n, "reden"));
             default -> throw new Refusal("Datatype:" + node, "unknown datatype node");
         };
+    }
+
+    /** The {@code node} of a datatype object, required: a switch on an absent one ended in a NullPointerException
+     *  that named no place in the document. {@code pad} as in {@link #datatype(JsonNode, String)}. */
+    private static String datatypeSoort(JsonNode n, String pad) {
+        JsonNode soort = n.get("node");
+        if (soort == null)
+            throw new Documentfout(pad == null ? "Datatype.node" : pad, "missing field 'node' (the datatype discriminator)");
+        if (!soort.isTextual())
+            throw new Documentfout(pad == null ? "Datatype.node" : pad + "/node", "expected a string, got " + kort(soort));
+        return soort.asText();
     }
 
     // --- Expr --------------------------------------------------------------
