@@ -557,3 +557,29 @@ vierde heel-tijdvak-tweeling (zusterkaart) en de kaart
 1 PASS · 2 PASS (282) · 3 PASS (282 / 441) · 4 PASS (642) · 8 PASS (47
 rood, 94 fragmenten, Drools 10/37) · 12 PASS (182 / 161, JUnit 620).
 Open punten 3 en 5 (voor de Drools-lijn) staan ongewijzigd.
+
+### Fixronde 4 (lens ronde 2, 2026-09-23)
+
+- **Punt 1, blokkerend.** De tekst uit fixronde 2 zei op drie plekken
+  "elke runtime-uitzondering na de bouw is FAULT", zonder de
+  uitzondering voor `Excluded`: de schemabeschrijving, de javadoc van
+  `RoodResult` en de FAULT-regel in de tabel van `DroolsRoodMain`. Het
+  schema sloot bovendien de EXCLUDE van de caselezer nergens uit. Nu
+  staat overal de volledige indeling: `Excluded` (ook uit de
+  caselezer) is EXCLUDE; IOException en fouten tijdens IR-laden en bouw
+  zijn ERROR; elke andere runtime-uitzondering na de bouw is FAULT; en
+  de fire-cap zonder fixpunt is een FAULT zonder uitzondering. De
+  pinregel eist positie en lexeem alleen bij een weigering tijdens het
+  lezen van de case: "Breuk deling door 0", "deling door 0" en "geen
+  fixpunt (kringverwijzing?)" zijn eigen zinnen zonder die twee. Deze
+  pin (`malformed date '2026-02-30' on 'asOfDate': …`) is wel zo'n
+  weigering en noemt beide. Commits: `450e90fe` (gatekop, voorstel),
+  `8d800461` (javadoc) en `4a830f4e` (schema, voorstel).
+- **Punt 6** (`c9331aa1`): de bullet "Beschermd pad" beschreef het
+  commentaar uit de eerste ronde nog als huidige stand. Hij is nu als
+  vervangen gemarkeerd.
+
+Gates na fixronde 4: 1 PASS · 2 PASS (282) · 3 PASS (282 / 441) · 4
+PASS (642) · 8 PASS (47 rood, 94 fragmenten, Drools 10/37) · 12 PASS
+(182 / 161, JUnit 620). Open punten 3 en 5 (voor de Drools-lijn) staan
+ongewijzigd.

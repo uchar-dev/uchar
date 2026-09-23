@@ -492,3 +492,57 @@ negatief van de meegenomen WF-022-kaart) · 4 PASS (642 cases) · 8 PASS
 
 Nog open, ongewijzigd: open punt 3 (de sleuteltoets; gemeld, niet
 gekaart). Het gat van de genegeerde gevuld-test is dicht.
+
+### Fixronde 4 (lens ronde 2, 2026-09-23)
+
+De lens bevestigde de inhoud en liet twee blokkerende tekstpunten en
+vier adviezen over. Alles is in deze branch verwerkt; de punten die
+de zusterkaart betreffen staan ook in haar Result.
+
+- **Punt 1, blokkerend** (gedeeld): de indeling naar
+  uitzonderingstype staat nu op alle plekken volledig. EXCLUDE is een
+  loaderweigering of een `Excluded` uit de bouw of uit de caselezer.
+  ERROR is I/O of een fout tijdens IR-laden of bouw. FAULT is elke
+  andere runtime-uitzondering na de bouw, plus de fire-cap zonder
+  fixpunt als FAULT zonder uitzondering. De pinregel eist positie en
+  lexeem alleen nog bij een weigering tijdens het lezen van de case,
+  want vier van de tien bestaande pins citeren een eigen runtimezin
+  zonder die twee. Nagemeten: zes gelijste gevallen krijgen hun EXCLUDE
+  na de bouw uit de caselezer (`ambiguous-case-role-key`,
+  `unknown-role-target-label`, `uni-temporal-key-scalar`,
+  `uu-temporal-key-scalar`, `datumtijdlijn-totaalvouw`,
+  `datumtijdlijn-klipvouw`). Commits: `450e90fe` (gatekop, voorstel),
+  `8d800461` (javadoc, code zonder commentaar gelijk gemeten) en
+  `4a830f4e` (schema, voorstel, validatiesleutels gelijk gemeten).
+- **Punt 2, blokkerend:** de redenregels geven als grond nu het
+  uitzonderingstype en niet de fase. De transpiler werpt een
+  `Excluded`, de IR-loader een `IrLoader.Refusal`, en de rode run
+  meldt beide als EXCLUDE. De onware regel die fixronde 2 bij
+  `datumtijdlijn-totaalvouw` achterliet ("een caselader-weigering is
+  een EXCLUDE") is vervangen. Die regel zegt er nu bij dat niet elke
+  caselader-weigering een EXCLUDE is: een datumlexeem zonder dag is
+  een FAULT. Ook aangepast: de fase-redenering bij
+  `leegnegatie-heel-tijdvak` en `periodevenster-tijdlijnkenmerk`, en in
+  de NOTEs van `leegnegatie`, `datumsetbron-somvouw`, `periodevenster`
+  en de drie tweelingen van deze kaart. Commits: `076ac1e8` (gate 8,
+  voorstel) en `4fc7d4ca` (NOTEs, may-touch-verbreding binnen
+  `corpus/rood`).
+- **Punt 3** (`e48f5c7e`): de CONSTRUCTS-zin noemt nu drie mutanten,
+  opnieuw gemeten op alle vier de documenten. De negatie-mutant: beide
+  genegeerde groen, beide ongenegeerde rc 1. De LEEG-mutant: beide
+  leeg-documenten groen, beide gevuld-documenten rc 1. De hoekmutant:
+  alleen `gevuldnegatie`. De oude zin ("fails the gevuld one") was
+  gemeten toen er één gevuld-document was.
+- **Punt 5** (`b418fca5`, gate 8, voorstel): de redenregel van
+  `to-one-second-filler` citeert nu wat de jar meldt, een
+  transpiler-SKIP "aggregatie over de enkelvoudige elementrol
+  'bergende gemeente' …", in plaats van de rolinvoerweigering die daar
+  sinds `e1f779aa` stond. De categorie EXCLUDE is ongewijzigd.
+- **Punt 6** (`4fc7d4ca`): de te lange regel in de NOTE van
+  `unknown-role-target-label` is afgebroken.
+
+Gates na fixronde 4, elk los na `eval $(opam env)`: 1 PASS · 2 PASS
+(282 bestanden, vloer 192) · 3 PASS (282 schoon; 441 negatief) · 4 PASS
+(642 cases) · 8 PASS (47 rood; 94 fragmenten, geen bodemzin;
+Drools-been 10 gepind / 37 met reden) · 12 PASS (played 182 = pin,
+DRL-tekst 161 = pin, JUnit 620).
