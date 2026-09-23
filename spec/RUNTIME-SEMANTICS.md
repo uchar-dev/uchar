@@ -5195,6 +5195,7 @@ unordered exception groups `{ ny → do-not-attribute (false), nz → attribute
 | `case1-y-wint` | nx, ny | **absent** | consistent — the sub-decision `false` displaces `nx`'s `true` |
 | `case2-conflict` | nx, ny, nz | **absent** | inconsistent `Jutter.vrijgesteld/0` — the exception groups decide `false` and `true` |
 | `case3-terugval` | nx | **present** | consistent — the exception groups decide nothing, so default 0 falls back to its own besluit `true` |
+| `case4-nz-zonder-nx` | M: nz; N: nx, nz; O: ny, nz | M **absent**, N **present**, O **absent** | consistent — each exception group's justification conjoins its carrier's `nx` (ch. 7.1), so without `nx` nothing decides: M and O stay absent and O's `ny` and `nz` raise no conflict; in N the `nz` group decides `true` |
 
 *Nest depth* — `jutterswet-nestdiepte`, `Jutter.heffing` (2 decimals),
 three levels deep. One defaults group: default 0 = form-a `grondX → 40.00`
