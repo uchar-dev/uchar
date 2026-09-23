@@ -833,20 +833,22 @@ let barred li i =
    need leeg; so each need's atoms leave the body and [barred] takes their
    place. A Let whose value encloses [s] is covered: the value runs at the
    first read of that Let's binder, whose own reach carries the enclosing
-   barriers (the demand, or [read_places]). [skip] is the binder a read
-   reads — the read itself happens whatever its need. [cut] is for the
+   barriers (the demand, or [read_places]). [skip] is the Let a read reads,
+   by identity: the read itself happens whatever that Let's need, while an
+   enclosing Let that happens to bind the same name keeps its barrier. [cut] is for the
    barrier rules themselves: they drop [cut] and every Let around it, and the
    demands of the Lets inside it, which [read_places] replaces — so a
    barrier rule reads only barriers of Lets nested deeper, and the program
    stays stratified. *)
-let reach_at ctx ?skip ?cut (s : site) (node : expr) : string list =
+let reach_at ctx ?(skip : let_info option) ?cut (s : site) (node : expr) : string list =
   let covered = match s.si_value_of with Some m -> m.li_depth | None -> 0 in
   let cut_depth = match cut with Some c -> c.li_depth | None -> -1 in
   let drop = List.concat_map (fun li -> li.li_va) s.si_needs in
   let barriers =
     List.filter_map
       (fun li ->
-        if li.li_depth < covered || li.li_depth <= cut_depth || Some li.li_binder = skip then None
+        if li.li_depth < covered || li.li_depth <= cut_depth || Option.fold ~none:false ~some:(( == ) li) skip
+        then None
         else Option.map (barred li) (let_place li node))
       (List.rev s.si_needs)
   in
@@ -865,7 +867,7 @@ let reach_at ctx ?skip ?cut (s : site) (node : expr) : string list =
 
 (* the reach of a read at [node] in the current context, captured as a
    closure so a nested context can hand it on unchanged *)
-let rule_reach ?skip ctx ~subject ~subject_ot =
+let rule_reach ?(skip : let_info option) ctx ~subject ~subject_ot =
   let s = site ctx ~subject ~subject_ot in
   fun (node : expr) -> reach_at ctx ?skip s node
 
@@ -875,7 +877,7 @@ let rule_reach ?skip ctx ~subject ~subject_ot =
    Let's binder — the first one runs it, and a later one is reached only after
    the first — so its places are those of the reads of that binder, joined to
    its own reach within the value. *)
-let rec read_places ctx li ~skip (node, (s : site)) =
+let rec read_places ctx li ~(skip : let_info) (node, (s : site)) =
   match read_place li node with
   | Some i -> [ (i, reach_at ctx ~skip ~cut:li s node) ]
   | None -> (
@@ -883,7 +885,7 @@ let rec read_places ctx li ~skip (node, (s : site)) =
       | Some m when List.memq li m.li_outer ->
           let within = reach_at ctx ~skip ~cut:li s node in
           List.concat_map
-            (fun r -> List.map (fun (i, a) -> (i, a @ within)) (read_places ctx li ~skip:m.li_binder r))
+            (fun r -> List.map (fun (i, a) -> (i, a @ within)) (read_places ctx li ~skip:m r))
             (List.rev m.li_reads)
       | _ -> [])
 
@@ -906,7 +908,7 @@ let emit_barriers ctx =
         List.iter
           (fun (i, atoms) ->
             emit ctx "lbr%d(%s,%d) :- %s." li.li_id li.li_subject i (String.concat ", " atoms))
-          (List.concat_map (read_places ctx li ~skip:li.li_binder) (List.rev li.li_reads));
+          (List.concat_map (read_places ctx li ~skip:li) (List.rev li.li_reads));
         List.iter
           (fun i ->
             emit ctx "lbb%d(S,%d) :- lbr%d(S,I), I < %d, not lbn%d(S)." li.li_id i li.li_id i li.li_id)
@@ -990,26 +992,30 @@ let under_demand ctx demand (f : unit -> 'a) : 'a =
       ctx.param_reach <- saved;
       r
 
-(* a read of a binder. A Let's binder keeps the read and where it stands, for
-   the barrier rules of [emit_barriers]; a binder with a demand derives it
-   wherever this read is reached — the binder's own need excluded, for the
-   read is what evaluates it *)
+(* a read of a binder. The Let it reads is the one whose binding the lexical
+   scope resolves the name to ([binders]), found by identity, never by name: a
+   match payload or a lambda parameter that shadows a Let binder reads no Let,
+   and an inner Let of the same name is not the outer one. That Let keeps the
+   read and where it stands, for the barrier rules of [emit_barriers]; if it has
+   a demand, the demand is derived wherever this read is reached — that Let's
+   own need excluded, for the read is what evaluates it *)
 let note_binder_read ctx ~subject ~subject_ot (node : expr) naam =
-  (match List.assoc_opt (norm naam) ctx.binders with
+  match List.assoc_opt (norm naam) ctx.binders with
+  | None -> ()
   | Some entry -> (
       match
         List.find_opt
           (fun li -> match li.li_entry with Some e -> e == entry | None -> false)
           ctx.let_needs
       with
-      | Some li -> li.li_reads <- (node, site ctx ~subject ~subject_ot) :: li.li_reads
-      | None -> ())
-  | None -> ());
-  match List.assoc_opt (norm naam) ctx.demands with
-  | None -> ()
-  | Some (d, subj) ->
-      emit ctx "%s(%s) :- %s." d subj
-        (String.concat ", " (rule_reach ~skip:(norm naam) ctx ~subject ~subject_ot node))
+      | None -> ()
+      | Some li -> (
+          li.li_reads <- (node, site ctx ~subject ~subject_ot) :: li.li_reads;
+          match li.li_demand with
+          | None -> ()
+          | Some d ->
+              emit ctx "%s :- %s." d
+                (String.concat ", " (rule_reach ~skip:li ctx ~subject ~subject_ot node))))
 
 (* the canonical role name: the plural for a to-many role, the singular
    otherwise — the same convention the case facts use *)

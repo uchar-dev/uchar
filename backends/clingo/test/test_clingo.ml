@@ -9273,6 +9273,53 @@ let () =
     ~param:"p" ~case_text:(pf_case ~instances:(werven {|"restpost": { "number": "1" }|}) bonus_leeg)
     ~silent:"bonus leeg: no member passed the filter"
 
+(* FIXRONDE 3, point 1: the barrier a read skips is the Let that read reads,
+   by identity. The guard skipped every enclosing Let that binds the same
+   NAME, so an inner Let of the same name took the outer barrier with it.
+   Loud (sh-4, sh-5): restpost leeg, the outer k is read first and ends the
+   Let, but the demand of the inner k, whose value is p, was derived without
+   the outer barrier and fired. Silent (sh-7): extra leeg, so the Let of k
+   ends before its inner Let reads x, and p after it is reached; the read of
+   x counted as reached because the barrier of the outer k was skipped along
+   with the inner one, and x's leeg need then stopped the guard. sh-7b is
+   the same document with the inner binder renamed. *)
+let () =
+  let p = pf_p "p" and k = pf_b "k" and restpost = pf_a "restpost" in
+  let jutter =
+    pf_ot (Printf.sprintf {|"inkomen": %s, "restpost": %s, "extra": %s, "heffing": %s|} pf_n2 pf_n2 pf_n2 pf_n2)
+  in
+  let doc waarde = pf_doc ~objecttypen:[ jutter ] ~parameters:[ pf_decl "p" ] ~regels:[ pf_regel waarde ] () in
+  let j1 attrs =
+    Printf.sprintf
+      {|{ "label": "J1", "objectType": "Jutter", "attributes": { "inkomen": { "number": "20" }%s }, "roles": {}, "characteristics": [] }|}
+      (String.concat "" (List.map (fun (a, v) -> Printf.sprintf {|, "%s": { "number": "%s" }|} a v) attrs))
+  in
+  let leeg = [ pf_leeg (); pf_cons ] in
+  let sh4 = doc (pf_let "k" restpost (pf_bin "PLUS" k (pf_let "k" p k))) in
+  both_answer ~name:"Let, lazy: an inner Let of the same name keeps the outer barrier (sh-4)" ~ir:sh4
+    ~case_text:(pf_case ~instances:[ j1 [] ] leeg);
+  unbound_fires ~name:"Let: the outer need filled, the inner k reads p (sh-4, control)" ~ir:sh4
+    ~param:"p" ~case_text:(pf_case ~instances:[ j1 [ ("restpost", "1") ] ] leeg) ~silent:"heffing leeg";
+  let sh5 = doc (pf_let "k" restpost (pf_bin "PLUS" k (pf_let "k" (pf_let "k" p k) k))) in
+  both_answer ~name:"Let, lazy: the same name three deep keeps the outer barrier (sh-5)" ~ir:sh5
+    ~case_text:(pf_case ~instances:[ j1 [] ] leeg);
+  unbound_fires ~name:"Let: the same name three deep, the outer need filled (sh-5, control)" ~ir:sh5
+    ~param:"p" ~case_text:(pf_case ~instances:[ j1 [ ("restpost", "1") ] ] leeg) ~silent:"heffing leeg";
+  let x = pf_b "x" and extra = pf_a "extra" in
+  let sh7 =
+    doc (pf_let "x" restpost (pf_bin "PLUS" (pf_let "k" extra (pf_bin "PLUS" k (pf_let "k" x k))) p))
+  in
+  unbound_fires ~name:"Let: an inner k ends before its inner k reads x, so p is read (sh-7)" ~ir:sh7
+    ~param:"p" ~case_text:(pf_case ~instances:[ j1 [] ] leeg)
+    ~silent:"heffing leeg: the read of x counted as reached, the outer k's barrier skipped with the inner k's";
+  let sh7b =
+    doc
+      (pf_let "x" restpost
+         (pf_bin "PLUS" (pf_let "k" extra (pf_bin "PLUS" k (pf_let "m" x (pf_b "m")))) p))
+  in
+  unbound_fires ~name:"Let: the same with the inner binder renamed (sh-7b, control)" ~ir:sh7b ~param:"p"
+    ~case_text:(pf_case ~instances:[ j1 [] ] leeg) ~silent:"heffing leeg"
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
