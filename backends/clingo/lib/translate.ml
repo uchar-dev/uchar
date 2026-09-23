@@ -767,9 +767,11 @@ let unbound_param_order_reason name what =
    before the creation also where ch. 6.3 puts the rule above the creation, so
    that ref has no such pass ([emit_barriers], README [L2]). Silent: the Let
    lowering keeps a value behind an enclosing need on a path that does not
-   read it, and the guard follows the lowering ([reach_at], README [S1]); and
-   the branch hoist reads a condition before the operand beside the branch
-   ([hoist_branch], README [S2]). *)
+   read it, and the guard follows the lowering ([reach_at], README [S1]); the
+   branch hoist reads a condition before the operand beside the branch
+   ([hoist_branch], README [S2]); and the guard is read at the fixpoint, so a
+   read ref reaches only in a pass before a form of the same stratum wrote
+   what the read's short circuit depends on fires nothing (README [S3]). *)
 let unbound_param_guard ctx ~witness ~guard name =
   if param_unbound ctx name then begin
     let body = guard () in

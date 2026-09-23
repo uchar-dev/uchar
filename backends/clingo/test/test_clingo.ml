@@ -10137,6 +10137,76 @@ let () =
   both_answer ~name:"the rule above the creation, with the case's own schuit (tr-strat-case, control)" ~ir:(doc strat)
     ~case_text:(pf_case ~instances:(w1 ~case_schuit:true ()) wb)
 
+(* FIXRONDE 5, lens point 2 (README [S3], no code by decision of the main
+   session): the intermediate pass within one stratum. ref runs the forms of a
+   stratum pass by pass until nothing changes, and a form that reads what a
+   later form of the same stratum writes sees it leeg in the first pass. Where
+   a short circuit hangs on that value, ref reads the parameter in that pass
+   and faults, while the fixpoint never reads it; clingo answers the fixpoint.
+   t1: heffing = 5,00 indien TEN MINSTE 1 [a > 0, p > 0], written before a =
+   inkomen. The writer can be a creation as well (tr-of-1): keur = 99 indien
+   TEN MINSTE 1 [TEN MINSTE 1 schuiten [lengte > 5], p > 0], one schuit of 8
+   created for each Werf. With the writer first, or the schuit in the case,
+   both answer. *)
+let () =
+  let jutter = pf_ot (Printf.sprintf {|"inkomen": %s, "a": %s, "heffing": %s|} pf_n2 pf_n2 pf_n2) in
+  let heffing =
+    pf_regel
+      ~voorwaarde:
+        (pf_comp ~drempel:1 "TEN_MINSTE"
+           [ pf_cmp "GROTER" (pf_a "a") (pf_l "0"); pf_cmp "GROTER" (pf_p "p") (pf_l "0") ])
+      (pf_l "5.00")
+  and a = pf_regel ~doel:"a" (pf_a "inkomen") in
+  let t1 regels = pf_doc ~objecttypen:[ jutter ] ~parameters:[ pf_decl "p" ] ~regels () in
+  let rows = [ pf_is "5.00"; pf_is ~attr:"a" "20.00"; pf_cons ] in
+  pinned_silent ~entry:"S3" ~name:"the reader before the writer: a is leeg in the first pass, so p is read (t1)"
+    ~ir:(t1 [ heffing; a ]) ~param:"p" ~case_text:(pf_case rows);
+  both_answer ~name:"the writer before the reader: a > 0 settles the condition in the first pass (t1b, control)"
+    ~ir:(t1 [ a; heffing ]) ~case_text:(pf_case rows);
+  let werf = pf_ot ~naam:"Werf" ~meervoud:"Werven" (Printf.sprintf {|"keur": %s|} pf_n0)
+  and schuit = pf_ot ~naam:"Schuit" ~meervoud:"Schuiten" (Printf.sprintf {|"lengte": %s|} pf_n0) in
+  let ligplaats =
+    {|{ "ligplaats": { "node": "Feittype", "naam": "ligplaats", "wederkerig": false, "rollen": [
+      { "node": "Rol", "naam": "werf", "objecttypeNaam": "Werf", "meervoud": null, "meervoudig": false },
+      { "node": "Rol", "naam": "schuit", "objecttypeNaam": "Schuit", "meervoud": "schuiten", "meervoudig": true } ] } }|}
+  and schuiten = {|{ "node": "RolBinding", "feittype": "ligplaats", "rol": "schuit" }|} in
+  let lit v = pf_l ~typ:pf_n0 v in
+  let fold =
+    Printf.sprintf
+      {|{ "node": "Kwantorvouw", "kwantor": "TEN_MINSTE", "drempel": 1, "elementObjecttype": "Schuit",
+        "filter": null, "toets": %s, "bron": "de schuiten", "bronRol": %s }|}
+      (pf_cmp "GROTER" (pf_a ~ot:"Schuit" ~typ:pf_n0 "lengte") (lit "5"))
+      schuiten
+  in
+  let keur =
+    pf_regel ~ot:"Werf" ~doel:"keur" ~typ:pf_n0
+      ~voorwaarde:(pf_comp ~drempel:1 "TEN_MINSTE" [ fold; pf_cmp "GROTER" (pf_p ~typ:pf_n0 "p") (lit "0") ])
+      (lit "99")
+  in
+  let acht =
+    Printf.sprintf
+      {|{ "node": "ResolvedObjectCreatie", "naam": "maak schuit", "nieuwType": "Schuit", "subject": "Werf",
+          "toekenningen": [ { "node": "Toekenning", "attribuut": "lengte", "waarde": %s, "kenmerk": false } ],
+          "voorwaarde": null, "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null },
+          "verbindendeRol": %s }|}
+      (lit "8") schuiten
+  in
+  let doc creaties =
+    pf_doc ~objecttypen:[ werf; schuit ] ~feittypen:ligplaats ~parameters:[ pf_decl ~typ:pf_n0 "p" ]
+      ~regels:[ keur ] ~creaties ()
+  in
+  let w1 roles = Printf.sprintf {|{ "label": "W1", "objectType": "Werf", "attributes": {}, "roles": { %s }, "characteristics": [] }|} roles in
+  let rows = [ pf_is ~label:"W1" ~attr:"keur" "99"; pf_cons ] in
+  pinned_silent ~entry:"S3" ~name:"the pass before a creation: the fold is false there, so p is read (tr-of-1)"
+    ~ir:(doc [ acht ]) ~param:"p" ~case_text:(pf_case ~instances:[ w1 "" ] rows);
+  both_answer ~name:"the case's own schuit settles the fold in the first pass (tr-of-case, control)" ~ir:(doc [])
+    ~case_text:
+      (pf_case
+         ~instances:
+           [ w1 {|"schuiten": [ "S1" ]|};
+             {|{ "label": "S1", "objectType": "Schuit", "attributes": { "lengte": { "number": "8" } }, "roles": {}, "characteristics": [] }|} ]
+         rows)
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

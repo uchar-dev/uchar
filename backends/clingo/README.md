@@ -70,10 +70,26 @@ spec bug.
     the Let lowering reads the branch's condition before the operand
     beside the branch: `Let n = restpost in Let k = extra in (p plus
     (als n > 0 dan k anders 0))` with restpost leeg and p unbound
-    answers leeg where ref faults at p.
+    answers leeg where ref faults at p. [S3] The intermediate pass
+    within one stratum (the ch. 6.1 residual of order-dependent
+    transients, in fail-fast form). ref runs the forms of a stratum
+    pass by pass until nothing changes, so a form that reads what a
+    later form of the same stratum writes sees it leeg in the first
+    pass. Where a short circuit depends on that value, ref reads the
+    parameter in that pass and faults, while the fixpoint never reads
+    it, and clingo answers the fixpoint: `heffing = 5,00 indien TEN
+    MINSTE 1 [a > 0, p > 0]`, written before `a = inkomen`, with
+    inkomen 20 and p unbound, answers 5,00 where ref faults; with the
+    writing rule first both answer 5,00. The writer can be a creation:
+    `keur = 99 indien TEN MINSTE 1 [TEN MINSTE 1 schuiten [lengte > 5],
+    p > 0]` with one schuit of 8 created for each Werf answers 99 where
+    ref faults in the pass before the creation. For a Let barrier that
+    pass gives the named refusal above; for a short circuit it stays
+    silent. Whether ref's fault in such a pass is the arbiter's answer
+    is a norm question for the maintainer.
 
   Each tagged entry, here and under Recorded limitations ([V1], [V2]),
-  has one frame in the suite, named `README [tag]`, that pins it and
+  has a frame in the suite, named `README [tag]`, that pins it and
   goes red when the entry no longer holds.
 - Exact arithmetic by declared-decimals integer scaling: a value of an
   attribute declared with d decimals is the integer value × 10^d;
