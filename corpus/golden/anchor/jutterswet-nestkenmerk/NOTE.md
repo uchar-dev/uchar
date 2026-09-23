@@ -77,19 +77,39 @@ Elk van die twee is een instantie van case4:
 Op de zes andere combinaties geven beide bomen dezelfde uitkomst. Met X
 geldt de conjunctie van een broer precies als haar eigen voorwaarde geldt.
 Zonder X beslist in deze boom niets; in de boom zonder dragervoorwaarden
-beslist bij Y zonder Z alleen de broer `ny`, met `onwaar`, en dat schrijft
-niets, zodat `vrijgesteld` ook daar afwezig blijft.
+beslist bij Y zonder Z alleen de broer `ny`, met `onwaar`. Dat besluit
+schrijft niets, en omdat default 0 de enige default van de wortelketen is,
+verdringt het ook niets, zodat `vrijgesteld` ook daar afwezig blijft.
 
-Om dezelfde reden is het conjunct `nx` in de broer `ny` door geen invoer
-waarneembaar. Een broer `ny` zonder dat conjunct beslist alleen anders dan
-dit anker waar `nx` ontbreekt: daar beslist zij `onwaar` en dit anker
-niets, en in beide gevallen blijft `vrijgesteld` zoals de invoer het zet,
-want een `onwaar`-besluit schrijft niets en neemt niets weg. Een conflict
-ontstaat daar niet, want de broer `nz` beslist zonder `nx` niet. Gemeten op
-alle zestien invoeren (de acht combinaties, met
-en zonder `vrijgesteld` in de invoer) in ref en clingo: geen verschil. Het
-conjunct staat er omdat ch. 7.1 elke geneste laag een zelfstandige
-rechtvaardiging geeft; de cases pinnen alleen het conjunct `nx` in de broer
+Het conjunct `nx` in de broer `ny` is door geen invoer waarneembaar. Zonder
+dat conjunct beslist de broer `ny` alleen anders dan in dit anker waar `ny`
+geldt en `nx` ontbreekt: daar beslist hij `onwaar`, en in dit anker beslist
+daar niets. Dat verschil blijft om drie redenen onzichtbaar:
+
+- een `onwaar`-besluit schrijft niets en neemt niets weg, dus `vrijgesteld`
+  blijft in beide gevallen zoals de invoer het zet;
+- de broer `nz` beslist zonder `nx` niet, dus er ontstaat geen conflict;
+- default 0 is de enige default van de wortelketen, dus een besluit
+  `onwaar` verdringt niets.
+
+Gemeten op alle zestien invoeren (de acht combinaties, met en zonder
+`vrijgesteld` in de invoer) in ref en clingo: geen verschil. Ook de derde
+reden is gemeten, in ref en clingo: met een extra, lagere wortel-default
+`waar als nw` wordt het verschil zichtbaar bij `ny` en `nw` zonder `nx`, met
+en zonder `nz`. Het anker met die default geeft daar aanwezig, omdat die
+default `waar` beslist; zonder het conjunct geeft dezelfde boom daar
+afwezig, omdat de broer `ny` dan `onwaar` beslist en dat besluit van
+default 0 de lagere default verdringt.
+
+Onder optie (7-ii) van de kaart kenmerkinvoer-en-invoer-boven-berekening,
+waarin kenmerkinvoer op een defaults-doel alleen blijft staan als de groep
+niet beslist, vervalt de eerste reden: bij `ny` met `vrijgesteld` in de
+invoer, met en zonder `nz`, zou dit anker het kenmerk laten staan en zou een
+broer `ny` zonder het conjunct het wegnemen. Dat is een gevolgtrekking; geen
+uitvoerder implementeert die optie.
+
+Het conjunct staat er omdat ch. 7.1 elke geneste laag een zelfstandige
+rechtvaardiging geeft. De cases pinnen alleen het conjunct `nx` in de broer
 `nz` (instanties M en O van case4).
 
 **WF-050** — precies één defaults-bundel, één schrijver, één doel: het
