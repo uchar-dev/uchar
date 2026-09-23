@@ -232,10 +232,12 @@ golden, zelfde kanalen.
 1. Gate 13 toetst dit golden niet. Het anker heeft nul verdraaibare
    annotaties: de enige eenheid, `dag`, declareert geen canoniek en geen
    factor, en de drie eenheiddragende annotaties zijn twee vrijgestelde en één
-   zonder converteerbare zus, vóór en na gelijk. Acceptatie (d) gaat dus van
-   een onjuiste premisse uit: gate 13 blijft groen, maar raakt deze kaart
-   niet. Dekking vergt converteerbare eenheden in het model; dat valt buiten
-   deze kaart.
+   zonder converteerbare zus, vóór en na gelijk. Acceptatie (d) van de kaart
+   eist alleen veertien groene gates, en die zijn groen. Niet de kaart maar
+   de opdracht aan de bouwer ging uit van een onjuiste premisse: zij scherpte
+   (d) aan met "gate 13 draait over dit golden met zijn cases". Gate 13
+   blijft groen, maar raakt deze kaart niet. Dekking vergt converteerbare
+   eenheden in het model; dat valt buiten deze kaart.
 2. **Voor de tweelingkaart dialect-uitzondering-op-uitzondering.**
    - *Vorm.* De RegelSpraak-tweeling moet dezelfde platte `ALLE`-vorm
      uitzenden als het anker: per geneste default één `Samengesteld` met
