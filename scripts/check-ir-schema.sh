@@ -71,12 +71,17 @@ except Exception as exc:  # pragma: no cover
 # matches only at the end of the input. The stock validator runs Python's
 # re.search, whose `$` also matches before a final newline, so it admitted a
 # validity bound "2026-01-01\n" that only WF-101 in the verifier then refused
-# (measured 2026-09-23, the gate-4 twin of this fix). Both patterns of this
-# schema are anchored at both ends, so a FULL match is what ECMA-262 asks of
-# them; on a pattern that is not anchored that way a full match is only ever
-# stricter than ECMA-262's search, never laxer. The self-test below runs the
-# same validator as the corpus check, and its trailing-newline row fails the
-# day the pattern is matched Python's way again.
+# (measured 2026-09-23, the gate-4 twin of this fix). This validator takes a
+# FULL match instead. For the pattern this schema carries (the date pattern
+# at both bounds, anchored at both ends, digits written [0-9]) a full match
+# and ECMA-262's search agree: measured 2026-09-23 against node, together with
+# the case schema's patterns, on 1437 lexeme-pattern pairs, no difference.
+# That is a property of the pattern, not of full matching: `^a$\n?` on "a\n",
+# `^\d+$` on "\u0663" and `^\w+$` on "\u00e9" match fully in Python and fail
+# in ECMA-262. The self-test below runs the same validator as the corpus
+# check; its trailing-newline row fails the day the pattern is matched
+# Python's way again, and it carries no non-ASCII digit, so it would not see
+# the pattern changed from [0-9] to \d.
 def ecma_pattern(validator, pattern, instance, schema):
     if validator.is_type(instance, "string") and re.fullmatch(pattern, instance) is None:
         yield ValidationError("%r does not match %r" % (instance, pattern))

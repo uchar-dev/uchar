@@ -63,11 +63,15 @@ from jsonschema.exceptions import best_match, SchemaError, ValidationError
 # re.search, whose `$` also matches before a final newline, so it admitted
 # "2026-03-10\n" for the date pattern, "5\n" for the number pattern and an
 # asOfDate with a trailing newline, all of which every case reader refuses
-# (measured 2026-09-23). Every pattern in the case schema is anchored at both
-# ends on every alternative, so a FULL match is what ECMA-262 asks of it; on
-# a pattern that is not anchored that way a full match is only ever stricter
-# than ECMA-262's search, never laxer, so this gate can fail loudly on such a
-# pattern but can never pass a value the schema refuses.
+# (measured 2026-09-23). This validator takes a FULL match instead. For the
+# three patterns the case schema carries (anchored at both ends on every
+# alternative, digits written [0-9]) a full match and ECMA-262's search agree:
+# measured 2026-09-23 against node on 1437 lexeme-pattern pairs (both
+# self-test tables and every corpus lexeme of these kinds), no difference.
+# That is a property of these patterns, not of full matching: `^a$\n?` on
+# "a\n", `^\d+$` on "\u0663" and `^\w+$` on "\u00e9" match fully in Python
+# and fail in ECMA-262. The self-test below carries no non-ASCII digit, so it
+# would not see a pattern changed from [0-9] to \d.
 def ecma_pattern(validator, pattern, instance, schema):
     if validator.is_type(instance, "string") and re.fullmatch(pattern, instance) is None:
         yield ValidationError("%r does not match %r" % (instance, pattern))
