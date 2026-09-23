@@ -2596,33 +2596,65 @@ let run_pro_rata ?venster env w (self : World.instance) ~ot ~attr waarde =
         "a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count shape (a \
          gedurende condition over an own temporal characteristic); no corpus case for more"
 
-(* WF-022, the value clause: a characteristic target is written with the
-   boolean constant waar and nothing else. On this wire a negative decision on
-   a characteristic exists only inside a defaults group, where it keeps the
-   group from attributing; a flat rule with any other value has no reading.
-   Until 2026-09-23 the attribution arm below evaluated the value and let
-   onwaar write nothing: measured on corpus/negatief/wf022-kenmerk-onwaar
-   forced past the verifier, ref left the characteristic absent without a word
-   while the ASP backend refused the document at translation — and a computed
-   boolean value was written like the constant. Since WF-022 refuses such a
-   document in the VERIFIER, this fault is fail-fast on a non-conforming input
-   rather than the answer to a conforming one, which is why it may not be
-   softened to a fallback. It holds the verifier's own test, the literal waar
-   typed Booleaan, so the two cannot disagree about what the constant is. *)
+(* WF-022's value clause, held for every KENMERKTOEKENNING: the rule writes
+   the boolean constant waar and nothing else. On this wire a negative
+   decision on a characteristic exists only inside a defaults group, where it
+   keeps the group from attributing; a flat rule with another value has no
+   reading. Until 2026-09-23 the attribution arm below evaluated the value and
+   let onwaar write nothing: corpus/negatief/wf022-kenmerk-onwaar, forced past
+   the verifier, answered with the characteristic absent without a word, and a
+   computed boolean was written like the constant, while the ASP backend
+   refused both at translation.
+
+   The verifier keys the clause on the TARGET, this check on the SOORT, and
+   that is a difference in reach: a KENMERKTOEKENNING whose target is an
+   attribute passes the verifier and is refused here (measured 2026-09-23 on
+   jutterswet-penningdrempel with the attribute "aantal aangemelde vondsten"
+   as target and onwaar as value: verifier PASS, the ASP backend refuses as
+   well). Where the verifier refuses the document this fault is fail-fast on a
+   non-conforming input; where it admits it, the fault refuses a write that has
+   no reading; in neither case may it be softened to a fallback. The test of
+   the constant is the verifier's own (the literal waar typed Booleaan).
+
+   What the check does not reach: a rule outside its validity window is
+   skipped before it ([applies] comes first, in the ASP backend too), and a
+   KENMERKTOEKENNING with the value waar on an attribute target passes it and
+   writes a characteristic of the attribute's name, which no reader of that
+   attribute sees (WF-022 does not tie the soort to a characteristic target;
+   open for the verifier). *)
 let kenmerkwaarde_constant_waar (r : resolved_regel) ~ot ~attr =
   match r.waarde with
   | Some (Literal { waarde = Some "waar"; typ = Some Booleaan; _ }) -> ()
   | w ->
+      let datatype_woord (t : datatype) =
+        match t with
+        | Booleaan -> "Booleaan"
+        | Tekst -> "Tekst"
+        | Numeriek _ -> "Numeriek"
+        | Percentage _ -> "Percentage"
+        | Datum_in_dagen -> "DatumInDagen"
+        | Datum_tijd -> "DatumTijd"
+        | Enumeratie _ -> "Enumeratie"
+        | Sum_type _ -> "SumType"
+        | List_type _ -> "ListType"
+        | Struct_type _ -> "StructType"
+        | Datatype_onbekend _ -> "an unknown datatype"
+      in
       let waarde =
         match w with
-        | Some (Literal { waarde = Some lex; _ }) -> Printf.sprintf "the literal %S" lex
+        | Some (Literal { waarde = Some lex; typ = Some t; _ }) ->
+            Printf.sprintf "the literal %S typed %s" lex (datatype_woord t)
+        | Some (Literal { waarde = Some lex; typ = None; _ }) ->
+            Printf.sprintf "the untyped literal %S" lex
+        | Some (Literal { waarde = None; _ }) -> "a literal without a value"
         | Some _ -> "a computed value"
         | None -> "no value"
       in
       Value.fault
-        "rule %S attributes the characteristic %S of %S with %s: a characteristic target takes \
-         the boolean constant waar and nothing else, the position WF-022 refuses (a negative \
-         decision on a characteristic exists only inside a defaults group). Declined at evaluation"
+        "rule %S is a KENMERKTOEKENNING on %S of %S with %s: a KENMERKTOEKENNING writes the boolean \
+         constant waar and nothing else (WF-022's value clause; this interpreter holds it for every \
+         KENMERKTOEKENNING, the verifier only where the target is a declared characteristic). \
+         Declined at evaluation"
         (rule_name r) attr ot waarde
 
 let run_rule env world (r : resolved_regel) =

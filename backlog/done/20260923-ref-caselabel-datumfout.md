@@ -357,17 +357,21 @@ mutation per mechanism; no replay moved (ref and clingo sweep over 639
 cases identical to the base except the new red case)".
 
 **Registerrijtekst `spec/CONSTRUCTS.md`, rij `— Soort`** (fixronde 1,
-tweede extra item) — achter "…, no separate flag" toevoegen:
-"; **`ref` holds WF-022's value clause itself since 2026-09-23 (card
-`ref-caselabel-datumfout`)**: a flat KENMERKTOEKENNING whose value is
-not the constant `waar` was run anyway — forced past the verifier,
-`corpus/negatief/wf022-kenmerk-onwaar` answered `oracle: PASS` with the
-characteristic absent, and a computed boolean was written like the
-constant, where the ASP backend refuses at translation; `ref` now tests
-the verifier's own clause (the literal `waar` typed Booleaan) before any
-subject is taken and refuses by name with rule, characteristic, object
-type and the WF-022 ground; no golden, red or parity-zone document carries
-the form, only that negatief, which gate 3 refuses".
+tweede extra item; herschreven in fixronde 5, lensadvies 1) — achter
+"…, no separate flag" toevoegen:
+"; **`ref` refuses every KENMERKTOEKENNING whose value is not the constant
+`waar` since 2026-09-23 (card `ref-caselabel-datumfout`)**: such a rule was
+run anyway — `corpus/negatief/wf022-kenmerk-onwaar`, forced past the
+verifier, answered `oracle: PASS` with the characteristic absent, and a
+computed boolean was written like the constant, where the ASP backend
+refuses at translation; `ref` now tests the constant (the literal `waar`
+typed Booleaan) before any subject is taken and refuses by name with rule,
+target, object type, value and the WF-022 ground. It holds the clause for
+every KENMERKTOEKENNING, where the verifier holds it only for a target that
+is a declared characteristic: a KENMERKTOEKENNING on an attribute passes the
+verifier, and `ref` and the ASP backend refuse it. No golden, red or
+parity-zone document carries the form, only that negatief, which gate 3
+refuses".
 
 ### Fixronde 1 (hoofdsessie, 2026-09-23)
 
@@ -717,6 +721,17 @@ getuige voor gate 4 in fixronde 4).
    daar door waar ref (sinds fixronde 1) en de verifier weigeren.
 3. Opgelost in fixronde 4 (`81e647bc`): het gate-4-voorstel heeft nu een
    vaste getuige in de patroonzelftest van gate 4.
+5. Verifier-lijn (lensmeting V8, bestond al op main): WF-022 koppelt de
+   soort KENMERKTOEKENNING niet aan een kenmerkdoel. Op
+   `jutterswet-penningdrempel` met een KENMERKTOEKENNING op het attribuut
+   `aantal aangemelde vondsten` (getypeerd als dat attribuut) en de waarde
+   `waar`: verifier PASS, en ref en clingo schrijven stil een kenmerk met
+   de naam van dat numerieke attribuut (`oracle: PASS`, `clingo: PASS`); met
+   `onwaar` (V7) weigeren ref en clingo sinds deze kaart wel. Een verifierregel
+   die de soort aan een gedeclareerd kenmerk als doel bindt, sluit beide.
+6. Kanttekening (lensmeting V11): de WF-022-controle van ref staat achter de
+   geldigheidspoort (`applies` komt eerst in `run_rule`), dus een
+   KENMERKTOEKENNING buiten haar venster weigert niet; clingo idem.
 4. Bewust ongepositioneerd gelaten: drie weigeringen op de wortel die geen
    plaats nodig hebben omdat de wortel uniek is en de zin het veld noemt
    (`unsupported case format "…"`, `a case carries exactly one of

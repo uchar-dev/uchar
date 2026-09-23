@@ -6110,15 +6110,19 @@ let () =
        ())
     {|M1.roles.vondst: to-one role "vondst" carries 2 labels|}
 
-(* WF-022, the value clause: a flat characteristic attribution writes the
-   boolean constant waar and nothing else. The document below is
+(* WF-022's value clause, held for every KENMERKTOEKENNING: the rule writes
+   the boolean constant waar and nothing else. The document below is
    corpus/negatief/wf022-kenmerk-onwaar rebuilt by hand (rule "geen herleving"
    attributes "herleefd" with onwaar when "nieuw recht ontstaan" holds). Forced
    past the verifier, ref used to run the rule and leave the characteristic
    absent without a word, where the ASP backend refuses the document at
    translation; since 2026-09-23 ref refuses it too, by name. A computed value
    is refused the same way even when it would evaluate to true: the clause is
-   about the constant, not about what the value happens to be. *)
+   about the constant, not about what the value happens to be. The verifier
+   keys the clause on a characteristic TARGET and ref on the SOORT, so ref
+   also refuses a KENMERKTOEKENNING whose target is an attribute, which the
+   verifier admits (the lens's measurement V7 on jutterswet-penningdrempel,
+   rebuilt below). *)
 let () =
   let recht =
     ot "Recht" [ ("actief", Some Ir_v0.Ast.Booleaan) ] [ "herleefd"; "nieuw recht ontstaan" ]
@@ -6141,13 +6145,13 @@ let () =
       [ { (inst "R1" "Recht" [ ("actief", Value.Bool true) ]) with chars = [ "nieuw recht ontstaan" ] };
         inst "R2" "Recht" [ ("actief", Value.Bool true) ] ]
   in
-  let zin waarde =
+  let zin ?(regel = "geen herleving") ?(doel = "herleefd") ?(ot = "Recht") waarde =
     Printf.sprintf
-      "rule \"geen herleving\" attributes the characteristic \"herleefd\" of \"Recht\" with %s: a \
-       characteristic target takes the boolean constant waar and nothing else, the position \
-       WF-022 refuses (a negative decision on a characteristic exists only inside a defaults \
-       group). Declined at evaluation"
-      waarde
+      "rule %S is a KENMERKTOEKENNING on %S of %S with %s: a KENMERKTOEKENNING writes the boolean \
+       constant waar and nothing else (WF-022's value clause; this interpreter holds it for every \
+       KENMERKTOEKENNING, the verifier only where the target is a declared characteristic). \
+       Declined at evaluation"
+      regel doel ot waarde
   in
   let weigert naam waarde verwacht =
     match Eval.evaluate (env_of (doc waarde)) wereld with
@@ -6159,14 +6163,40 @@ let () =
              (World.has_char (World.get w "R2") "herleefd"))
           false
   in
-  weigert "WF-022-kenmerk-onwaar-weigert" (litv "onwaar" Ir_v0.Ast.Booleaan) (zin {|the literal "onwaar"|});
+  weigert "WF-022-kenmerk-onwaar-weigert" (litv "onwaar" Ir_v0.Ast.Booleaan)
+    (zin {|the literal "onwaar" typed Booleaan|});
   weigert "WF-022-kenmerk-berekend-weigert"
     (aref "actief" "Recht" Ir_v0.Ast.Booleaan)
     (zin "a computed value");
   (* the control: the constant itself still attributes, on the condition *)
   let w = Eval.evaluate (env_of (doc (litv "waar" Ir_v0.Ast.Booleaan))) wereld in
   check "WF-022-kenmerk-waar-kent-toe"
-    (World.has_char (World.get w "R1") "herleefd" && not (World.has_char (World.get w "R2") "herleefd"))
+    (World.has_char (World.get w "R1") "herleefd" && not (World.has_char (World.get w "R2") "herleefd"));
+  (* V7: a KENMERKTOEKENNING whose target is an ATTRIBUTE, typed as that
+     attribute, with onwaar — verifier PASS, main ref PASS without a word *)
+  let aantal : Ir_v0.Ast.datatype =
+    Numeriek { geheel = true; decimalen = 0; teken = None; eenheid = None }
+  in
+  let jutter = ot "Jutter" [ ("aantal aangemelde vondsten", Some aantal) ] [ "penninggerechtigd" ] in
+  let doc_v7 =
+    { empty_doc with
+      objecttypen = [ jutter ];
+      resolved_regels =
+        [ rr "aantal als kenmerk" Kenmerktoekenning
+            (Some (aref "aantal aangemelde vondsten" "Jutter" aantal))
+            (Some (litv "onwaar" Ir_v0.Ast.Booleaan)) None ] }
+  in
+  (match
+     Eval.evaluate (env_of doc_v7)
+       (World.add_instance World.empty (inst "J1" "Jutter" [ ("aantal aangemelde vondsten", n "14") ]))
+   with
+  | exception Value.Fault m ->
+      let verwacht =
+        zin ~regel:"aantal als kenmerk" ~doel:"aantal aangemelde vondsten" ~ot:"Jutter"
+          {|the literal "onwaar" typed Booleaan|}
+      in
+      check ("WF-022-kenmerktoekenning-op-attribuut-weigert (got: " ^ m ^ ")") (m = verwacht)
+  | _ -> check "WF-022-kenmerktoekenning-op-attribuut-weigert (no fault at all)" false)
 
 let () =
   if !failures > 0 then begin
