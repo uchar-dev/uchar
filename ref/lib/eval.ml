@@ -89,16 +89,37 @@ let rec filter_in_order p = function
 (* --- validity gate (ch. 3.10 / 5.6): a version whose window excludes the
    evaluation date simply does not apply --------------------------------- *)
 
-let applies env (g : geldigheid option) =
+(* All three positions go through the strict date reader and compare as day
+   numbers. They used to compare as raw strings: on canonical lexemes that
+   is calendar order, but a non-canonical one took part silently — asOfDate
+   "01-06-2026" sorts before every 20xx bound, so the 2026 version did not
+   apply and the transition version answered (measured on
+   jutterswet-vensterheffing, 2026-09-23), and a bound written day-first
+   moved its window the same way. WF-101 and the case schema keep such
+   lexemes out of the corpus; this keeps them out of the answer. Shared with
+   the clingo translator's mirror of this gate, so both speak one refusal. *)
+let validity_day ~what s =
+  match Value.date_of_iso s with
+  | Value.Date z -> z
+  | _ -> assert false
+  | exception Value.Fault why ->
+      Value.fault "validity gate: %s %S is not the ISO date lexeme yyyy-mm-dd (%s)" what s why
+
+let window_admits ~as_of (g : geldigheid option) =
   match g with
   | None | Some { geld_vanaf = None; geld_tot = None } -> true
   | Some { geld_vanaf; geld_tot } -> (
-      match env.as_of with
+      match as_of with
       | None ->
           Value.fault "a validity-bounded form needs an evaluation date; this session is time-free"
       | Some d ->
-          (match geld_vanaf with Some v -> String.compare v d <= 0 | None -> true)
-          && (match geld_tot with Some t -> String.compare d t <= 0 | None -> true))
+          let day = validity_day ~what:"asOfDate" d in
+          let vanaf = Option.map (validity_day ~what:"geldigheid.vanaf") geld_vanaf in
+          let tot = Option.map (validity_day ~what:"geldigheid.tot") geld_tot in
+          (match vanaf with Some v -> v <= day | None -> true)
+          && match tot with Some t -> day <= t | None -> true)
+
+let applies env g = window_admits ~as_of:env.as_of g
 
 (* --- name resolution against the document ------------------------------ *)
 

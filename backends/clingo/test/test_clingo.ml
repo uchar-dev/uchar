@@ -7896,6 +7896,56 @@ let () =
     [ ("R1: LEEG in a recursive creation's condition", "GEVULD", "LEEG", false);
       ("R3: GEVULD negated in a recursive creation, LEEG in the rule", "LEEG", "GEVULD", true) ]
 
+(* THE VALIDITY GATE READS DATES (card ref-geldigheid-datumlezing,
+   2026-09-23). This translator decided the gate itself by comparing the
+   raw strings, as ref did; a day-first bound moved its window and the
+   program answered silently (on jutterswet-vensterheffing, a day-first tot
+   kept the transition version on: 140 where leeg is right). It now calls
+   ref's [Eval.window_admits], so a bound that is not a date refuses before
+   any program is grounded. WF-101 keeps such bounds out of the corpus;
+   these pins are the only witnesses. *)
+let () =
+  let venster_ir vanaf tot =
+    dt_doc ~attributen:{|"aanvangstip": { "node": "DatumTijd" }|} ~kenmerken:{|"tijdig"|}
+      ~kenmerk_soorten:{|"tijdig": "BIJVOEGLIJK"|}
+      ~regels:
+        (Printf.sprintf
+           {|{ "node": "ResolvedRegel", "naam": "tijdig", "soort": "KENMERKTOEKENNING",
+      "doel": { "node": "AttribuutRef", "attribuut": "tijdig", "objecttype": "Wachtpost",
+        "onderwerpBron": "Een Wachtpost", "navigatieRol": null,
+        "type": { "node": "Booleaan" }, "bron": "Een Wachtpost is tijdig",
+        "set": false, "navigatiePad": [] },
+      "waarde": { "node": "Literal", "waarde": "waar", "type": { "node": "Booleaan" },
+        "bron": "waar" },
+      "voorwaarde": null,
+      "geldigheid": { "node": "Geldigheid", "vanaf": %s, "tot": %s } }|}
+           vanaf tot)
+  in
+  let venster_case as_of aanwezig =
+    Printf.sprintf
+      {|{ "format": "uchar-case-v0", "asOfDate": "%s",
+  "input": { "instances": [ { "label": "W1", "objectType": "Wachtpost",
+      "attributes": {}, "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [ { "kind": "characteristic%s", "label": "W1", "characteristic": "tijdig" } ] }|}
+      as_of
+      (if aanwezig then "Present" else "Absent")
+  in
+  let jaar = venster_ir {|"2026-01-01"|} {|"2026-12-31"|} in
+  clingo_matches ~name:"geldigheid canoniek, binnen het venster" ~ir:jaar
+    ~case_text:(venster_case "2026-06-01" true);
+  clingo_matches ~name:"geldigheid canoniek, tot inclusief" ~ir:jaar
+    ~case_text:(venster_case "2026-12-31" true);
+  clingo_matches ~name:"geldigheid canoniek, voor het venster" ~ir:jaar
+    ~case_text:(venster_case "2025-06-01" false);
+  faults_with ~name:"geldigheid.vanaf dag-eerst"
+    ~ir:(venster_ir {|"01-01-2026"|} {|"2026-12-31"|})
+    ~case_text:(venster_case "2026-06-01" true)
+    ~needle:"validity gate: geldigheid.vanaf \"01-01-2026\" is not the ISO date lexeme";
+  faults_with ~name:"geldigheid.tot dag-eerst"
+    ~ir:(venster_ir "null" {|"31-12-2026"|})
+    ~case_text:(venster_case "2026-06-01" true)
+    ~needle:"validity gate: geldigheid.tot \"31-12-2026\" is not the ISO date lexeme"
+
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total

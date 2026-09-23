@@ -303,20 +303,13 @@ let fresh ctx prefix =
    per-case, so the case's asOfDate is a translation-time constant and
    the runtime gate is decided HERE: a form whose window excludes the
    date simply does not apply and emits nothing — no head, no helper, no
-   viol/2 fence (ref never evaluates it). Bounds compare as ISO strings,
-   both inclusive, exactly as ref compares them; a bounded window in a
-   time-free session faults with ref's reason, so the two executors
-   refuse identically. *)
-let applies ctx (g : geldigheid option) =
-  match g with
-  | None | Some { geld_vanaf = None; geld_tot = None } -> true
-  | Some { geld_vanaf; geld_tot } -> (
-      match ctx.case.as_of with
-      | None ->
-          fault "a validity-bounded form needs an evaluation date; this session is time-free"
-      | Some d ->
-          (match geld_vanaf with Some v -> String.compare v d <= 0 | None -> true)
-          && (match geld_tot with Some t -> String.compare d t <= 0 | None -> true))
+   viol/2 fence (ref never evaluates it). The decision is ref's own
+   [Eval.window_admits], called rather than copied: this mirror used to
+   compare the raw strings itself, and with ref it answered a
+   non-canonical date silently (card ref-geldigheid-datumlezing,
+   2026-09-23). Now a bound or asOfDate that is not a date refuses in
+   both executors with one sentence. *)
+let applies ctx (g : geldigheid option) = Eval.window_admits ~as_of:ctx.case.as_of g
 
 (* The EFFECTIVE object type (IR-SPEC ch. 2.2): the declaration with its
    member maps closed over the supertype chain. Every declaration lookup in

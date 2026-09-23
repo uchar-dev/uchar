@@ -5453,6 +5453,94 @@ let () =
                 periode = Some { gp_jaar = true; gp_niet = false }; bron = None })))
     "WF-043"
 
+(* WV-3.10-geldigheid-datumlezing: the validity gate reads its three dates —
+   the case's asOfDate and the form's geldigheid.vanaf / .tot — through the
+   strict date reader, and refuses a non-date by position. Until 2026-09-23
+   it compared the raw strings: asOfDate "01-06-2026" sorted before every
+   20xx bound and a day-first bound moved its window, each answering
+   silently (jutterswet-vensterheffing: overgangsheffing 140 where leeg is
+   right). No corpus document can pin this: WF-101 refuses a malformed bound
+   at gate 3, and the case schema's pattern refuses a day-first asOfDate at
+   gate 4 — only a calendar-invalid asOfDate like "2026-13-01" passes the
+   schema, and that one is pinned here at the loader. *)
+let () =
+  let bedrag : Ir_v0.Ast.datatype =
+    Numeriek { geheel = false; decimalen = 2; teken = None; eenheid = None }
+  in
+  let doc vanaf tot =
+    { empty_doc with
+      objecttypen = [ ot "Melding" [ ("heffing", Some bedrag) ] [] ];
+      resolved_regels =
+        [ { (rr "heffing in 2026" Berekening (Some (aref "heffing" "Melding" bedrag))
+               (Some (litv "125" bedrag)) None)
+            with rr_geldigheid = Some { geld_vanaf = vanaf; geld_tot = tot } } ] }
+  in
+  let run ?(as_of = "2026-06-01") vanaf tot =
+    let w =
+      Eval.evaluate
+        { (env_of (doc vanaf tot)) with as_of = Some as_of }
+        (World.add_instance World.empty (inst "m" "Melding" []))
+    in
+    World.attr (World.get w "m") "heffing"
+  in
+  let jaar = (Some "2026-01-01", Some "2026-12-31") in
+  (* the canonical window still decides by calendar, both bounds inclusive *)
+  expect_num "WV-3.10-geldigheid-binnen-venster" (run (fst jaar) (snd jaar)) "125";
+  expect_leeg "WV-3.10-geldigheid-voor-venster" (run ~as_of:"2025-06-01" (fst jaar) (snd jaar));
+  expect_num "WV-3.10-geldigheid-tot-inclusief" (run ~as_of:"2026-12-31" (fst jaar) (snd jaar)) "125";
+  expect_leeg "WV-3.10-geldigheid-na-venster" (run ~as_of:"2027-01-01" (fst jaar) (snd jaar));
+  (* position vanaf: day-first sorted before "2026-06-01", so the window
+     opened; month 13 sorted after, so it stayed shut *)
+  expect_fault_msg "WV-3.10-geldigheid-vanaf-dag-eerst-weigert"
+    (fun () -> run (Some "01-01-2026") (snd jaar))
+    "validity gate: geldigheid.vanaf \"01-01-2026\" is not the ISO date lexeme";
+  expect_fault_msg "WV-3.10-geldigheid-vanaf-kalender-weigert"
+    (fun () -> run (Some "2026-13-01") None)
+    "validity gate: geldigheid.vanaf \"2026-13-01\" is not the ISO date lexeme";
+  (* position tot: "31-12-2025" sorted before "2026-06-01", so the window
+     closed; a day-first tot that sorts AFTER the date kept it open *)
+  expect_fault_msg "WV-3.10-geldigheid-tot-dag-eerst-weigert"
+    (fun () -> run (fst jaar) (Some "31-12-2026"))
+    "validity gate: geldigheid.tot \"31-12-2026\" is not the ISO date lexeme";
+  expect_fault_msg "WV-3.10-geldigheid-tot-kalender-weigert"
+    (fun () -> run None (Some "2026-12-32"))
+    "validity gate: geldigheid.tot \"2026-12-32\" is not the ISO date lexeme";
+  (* a malformed bound is refused even where the other bound already
+     excludes the date: the reading is not behind a short-circuit *)
+  expect_fault_msg "WV-3.10-geldigheid-tot-weigert-ook-buiten-vanaf"
+    (fun () -> run ~as_of:"2025-06-01" (fst jaar) (Some "31-12-2026"))
+    "validity gate: geldigheid.tot \"31-12-2026\"";
+  (* position asOfDate, at the gate: an env built without the case loader *)
+  expect_fault_msg "WV-3.10-geldigheid-asofdate-dag-eerst-weigert"
+    (fun () -> run ~as_of:"01-06-2026" (fst jaar) (snd jaar))
+    "validity gate: asOfDate \"01-06-2026\" is not the ISO date lexeme";
+  (* position asOfDate, at the case loader — the one ref and clingo share,
+     so the refusal comes before either executor runs *)
+  let load as_of =
+    let f = Filename.temp_file "ref-asofdate" ".case.json" in
+    let oc = open_out f in
+    Printf.fprintf oc
+      {|{ "format": "uchar-case-v0", "asOfDate": "%s",
+          "input": { "instances": [], "parameters": {} },
+          "expected": [ { "kind": "consistent" } ] }|}
+      as_of;
+    close_out oc;
+    let r = try Ok (Case.load_file empty_doc f) with Case.Error m -> Error m in
+    Sys.remove f;
+    r
+  in
+  check "WV-3.10-caselader-neemt-canonieke-asofdate"
+    (match load "2026-06-01" with Ok c -> c.as_of = Some "2026-06-01" | Error _ -> false);
+  List.iter
+    (fun (naam, lex) ->
+      match load lex with
+      | Error m ->
+          check (naam ^ " (got: " ^ m ^ ")")
+            (substring m (Printf.sprintf "asOfDate %S is not the uchar-case-v0 date lexeme" lex))
+      | Ok _ -> check (naam ^ " (loaded)") false)
+    [ ("WV-3.10-caselader-weigert-dag-eerst-asofdate", "01-06-2026");
+      ("WV-3.10-caselader-weigert-maand-13-asofdate", "2026-13-01") ]
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

@@ -729,7 +729,14 @@ let load_file (doc : document) path : t =
   let as_of =
     match field kvs "asOfDate" with
     | `Null -> None
-    | `String s -> Some s
+    | `String s -> (
+        (* read here, at load, so a non-date is refused before any
+           reader downstream sees it; the schema pattern alone admits
+           "2026-13-01" *)
+        match Value.date_of_iso s with
+        | _ -> Some s
+        | exception Value.Fault why ->
+            fail "asOfDate %S is not the uchar-case-v0 date lexeme yyyy-mm-dd (%s)" s why)
     | _ -> fail "malformed asOfDate"
   in
   let input = obj (field kvs "input") in
