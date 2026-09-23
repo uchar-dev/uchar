@@ -2596,6 +2596,35 @@ let run_pro_rata ?venster env w (self : World.instance) ~ot ~attr waarde =
         "a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count shape (a \
          gedurende condition over an own temporal characteristic); no corpus case for more"
 
+(* WF-022, the value clause: a characteristic target is written with the
+   boolean constant waar and nothing else. On this wire a negative decision on
+   a characteristic exists only inside a defaults group, where it keeps the
+   group from attributing; a flat rule with any other value has no reading.
+   Until 2026-09-23 the attribution arm below evaluated the value and let
+   onwaar write nothing: measured on corpus/negatief/wf022-kenmerk-onwaar
+   forced past the verifier, ref left the characteristic absent without a word
+   while the ASP backend refused the document at translation — and a computed
+   boolean value was written like the constant. Since WF-022 refuses such a
+   document in the VERIFIER, this fault is fail-fast on a non-conforming input
+   rather than the answer to a conforming one, which is why it may not be
+   softened to a fallback. It holds the verifier's own test, the literal waar
+   typed Booleaan, so the two cannot disagree about what the constant is. *)
+let kenmerkwaarde_constant_waar (r : resolved_regel) ~ot ~attr =
+  match r.waarde with
+  | Some (Literal { waarde = Some "waar"; typ = Some Booleaan; _ }) -> ()
+  | w ->
+      let waarde =
+        match w with
+        | Some (Literal { waarde = Some lex; _ }) -> Printf.sprintf "the literal %S" lex
+        | Some _ -> "a computed value"
+        | None -> "no value"
+      in
+      Value.fault
+        "rule %S attributes the characteristic %S of %S with %s: a characteristic target takes \
+         the boolean constant waar and nothing else, the position WF-022 refuses (a negative \
+         decision on a characteristic exists only inside a defaults group). Declined at evaluation"
+        (rule_name r) attr ot waarde
+
 let run_rule env world (r : resolved_regel) =
   if not (applies env r.rr_geldigheid) then (world, false)
   else
@@ -2664,7 +2693,8 @@ let run_rule env world (r : resolved_regel) =
         (match r.rr_soort with
         | Some Kenmerktoekenning ->
             if kenmerk_temporal (objecttype env ot) attr then
-              Value.fault "temporal characteristic %S: temporal writes are not implemented" attr
+              Value.fault "temporal characteristic %S: temporal writes are not implemented" attr;
+            kenmerkwaarde_constant_waar r ~ot ~attr
         | _ ->
             if temporal_target then
               match r.waarde with
@@ -2693,11 +2723,9 @@ let run_rule env world (r : resolved_regel) =
             if not fire then (w, false)
             else
               match r.rr_soort with
-              | Some Kenmerktoekenning -> (
-                  match eval_expr env w self ~err (req "waarde" r.waarde) with
-                  | Value.Bool true -> World.set_char w ~label:self.label ~char:attr
-                  | Value.Bool false -> (w, false)
-                  | v -> Value.fault "characteristic value is not boolean: %s" (Value.to_string v))
+              (* the value is the constant waar, checked before any subject
+                 was taken ([kenmerkwaarde_constant_waar]) *)
+              | Some Kenmerktoekenning -> World.set_char w ~label:self.label ~char:attr
               | Some (Gelijkstelling | Berekening) when temporal_target ->
                   let venster = Option.map (venster_van w self ~err) clip in
                   run_pro_rata ?venster env w self ~ot ~attr (req "waarde" r.waarde)
