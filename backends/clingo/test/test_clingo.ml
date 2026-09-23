@@ -6740,6 +6740,81 @@ let () =
             (key = reader)
       | None -> check "AANTAL_GEVULDE: the emitted aggregate is unreadable" false)
 
+(* U12, the role check's counterpart. The same wachtindeling relation read from
+   the post's side twice: `bemand` asks for any link, `strandbemand` narrows
+   the filler of the other role to Strandjutter. W1 is held by a plain Jutter,
+   W2 by a Strandjutter: the plain link counts for `bemand` and NOT for the
+   narrowed check, the subtype's link counts for both — ref and clingo alike.
+   A counterpart outside the other role's declared filler would narrow to
+   nobody and is refused by name instead of answering false. *)
+let tegenpartij_regel ~naam ?counterpart () =
+  {|{ "node": "ResolvedRegel", "naam": "|} ^ naam ^ {|", "soort": "KENMERKTOEKENNING",
+        "doel": { "node": "AttribuutRef", "attribuut": "|} ^ naam
+  ^ {|", "objecttype": "Wachtpost", "bron": "Een Wachtpost is |} ^ naam ^ {|" },
+        "waarde": { "node": "Literal", "waarde": "waar", "type": { "node": "Booleaan" }, "bron": "waar" },
+        "voorwaarde": { "node": "RoleMembership", "factType": "wachtindeling",
+          "role": "toegewezen wachtpost", |}
+  ^ (match counterpart with None -> "" | Some c -> {|"counterpartType": "|} ^ c ^ {|", |})
+  ^ {|"negated": false, "bron": "hij een wachtjutter heeft" },
+        "geldigheid": { "node": "Geldigheid", "vanaf": null, "tot": null } }|}
+
+let tegenpartij_doc ?(counterpart = "Strandjutter") () =
+  {|{ "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters",
+        "attributes": [], "characteristics": [] },
+      { "node": "ObjectType", "name": "Strandjutter", "supertype": "Jutter", "animate": true,
+        "plural": "Strandjutters", "attributes": [], "characteristics": [] },
+      { "node": "ObjectType", "name": "Wachtpost", "animate": false, "plural": "Wachtposten",
+        "attributes": [],
+        "characteristics": [ { "node": "Characteristic", "name": "bemand", "kind": "BIJVOEGLIJK" },
+                             { "node": "Characteristic", "name": "strandbemand", "kind": "BIJVOEGLIJK" } ] } ],
+    "factTypes": [
+      { "node": "Feittype", "naam": "wachtindeling", "wederkerig": false, "rollen": [
+        { "node": "Rol", "naam": "wachtjutter", "objecttypeNaam": "Jutter",
+          "meervoud": "wachtjutters", "meervoudig": true },
+        { "node": "Rol", "naam": "toegewezen wachtpost", "objecttypeNaam": "Wachtpost",
+          "meervoud": null, "meervoudig": false } ] } ],
+    "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [],
+    "dayKinds": [], "dagsoortPerEenheid": {} },
+  "rules": {
+    "resolvedRegels": [ |} ^ tegenpartij_regel ~naam:"bemand" ()
+  ^ {|, |} ^ tegenpartij_regel ~naam:"strandbemand" ~counterpart ()
+  ^ {| ],
+    "resolvedDagsoorten": [], "objectCreaties": [], "verdelingen": [], "consistenties": [],
+    "uniciteiten": [], "uniciteitUnies": [], "feitCreaties": [], "resolvedStartpunten": [],
+    "regelGroepen": [] },
+  "diagnostics": []
+}
+|}
+
+let tegenpartij_case =
+  {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+    { "label": "W1", "objectType": "Wachtpost", "attributes": {}, "roles": {}, "characteristics": [] },
+    { "label": "W2", "objectType": "Wachtpost", "attributes": {}, "roles": {}, "characteristics": [] },
+    { "label": "J1", "objectType": "Jutter", "attributes": {},
+      "roles": { "toegewezen wachtpost": [ "W1" ] }, "characteristics": [] },
+    { "label": "S1", "objectType": "Strandjutter", "attributes": {},
+      "roles": { "toegewezen wachtpost": [ "W2" ] }, "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [
+    { "kind": "characteristicPresent", "label": "W1", "characteristic": "bemand" },
+    { "kind": "characteristicAbsent", "label": "W1", "characteristic": "strandbemand" },
+    { "kind": "characteristicPresent", "label": "W2", "characteristic": "bemand" },
+    { "kind": "characteristicPresent", "label": "W2", "characteristic": "strandbemand" } ] }
+|}
+
+let () =
+  ref_matches ~name:"U12 een vernauwde tegenpartij telt alleen haar eigen klasse"
+    ~ir:(tegenpartij_doc ()) ~case_text:tegenpartij_case;
+  clingo_matches ~name:"U12 een vernauwde tegenpartij telt alleen haar eigen klasse"
+    ~ir:(tegenpartij_doc ()) ~case_text:tegenpartij_case;
+  faults_with ~name:"U12 een tegenpartij buiten de gedeclareerde vuller weigert"
+    ~ir:(tegenpartij_doc ~counterpart:"Wachtpost" ()) ~case_text:tegenpartij_case
+    ~needle:"the counterpart type \"Wachtpost\" is no subtype of \"Jutter\""
+
 (* D9's two sides, the ones ref refuses in the same words: a value fold's set
    source names an ATTRIBUTE of the element type, a count's source names the
    counted ROLE. Crossed over, each would read nothing — a role name has no

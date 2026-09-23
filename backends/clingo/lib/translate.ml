@@ -6583,19 +6583,24 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
       let n = fresh ctx "N" in
       [ Printf.sprintf "rol(%s,%s,%s)" subject (str (role_canonical role)) n;
         (if negatie then "not " else "") ^ Printf.sprintf "heeft(%s,%s)" n (str k) ]
-  | Role_membership { fact_type; role; negated; _ } ->
-      (* the role check (RUNTIME-SEMANTICS ch. 5.8a, D11): true iff a link of
-         [fact_type] exists in which the subject fills [role] — existence
-         over the relation, never a count and never a pick, so the number of
-         links the far end holds is no part of it. The subject's links are
-         read over the OTHER role of the fact type (a reciprocal fact type's
-         one role is its own other end): positive, a rol/3 join whose far
-         variable is free, N groundings collapsing onto one head; negated, a
-         helper deriving that presence, negated as failure, with the subject
-         kept bound by the caller's is_a base. Reading the subject's OWN
-         links is reading the relation, not a direction (ch. 5.7a): the case
-         emission mirrors every supplied link and every materialised reverse
-         leg into rol/3 alike. *)
+  | Role_membership { fact_type; role; counterpart_type; negated; _ } ->
+      (* the role check (RUNTIME-SEMANTICS ch. 5.8a, D11, U12): true iff a
+         link of [fact_type] exists in which the subject fills [role] and the
+         filler of the OTHER role is an instance of [counterpart_type] —
+         existence over the relation, never a count and never a pick, so the
+         number of links the far end holds is no part of it. The subject's
+         links are read over the OTHER role of the fact type (a reciprocal
+         fact type's one role is its own other end): positive, a rol/3 join
+         whose far variable is free, N groundings collapsing onto one head;
+         negated, a helper deriving that presence, negated as failure, with
+         the subject kept bound by the caller's is_a base. A counterpart
+         narrows that far variable with an isa/2 literal — the program's
+         extensional membership closure (ch. 2.2), so a subtype instance
+         satisfies it and a supertype-only one does not; absent, the role's
+         declared filler needs no literal. Reading the subject's OWN links is
+         reading the relation, not a direction (ch. 5.7a): the case emission
+         mirrors every supplied link and every materialised reverse leg into
+         rol/3 alike. *)
       let own, other =
         match
           Ir_v0.Checks.resolve_binding { doc = ctx.doc } { rb_feittype = fact_type; rb_rol = role }
@@ -6613,17 +6618,43 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
            the subject there (WF-034)"
           subject_ot role fact_type;
       let canonical = role_canonical other in
+      (match counterpart_type with
+      | None -> ()
+      | Some ct ->
+          (* ref's two refusals word for word: a counterpart outside the other
+             role's declared filler would narrow to nobody, a silent false *)
+          if Ir_v0.Checks.effective_ot ctx.doc ct = None then
+            fault "role check: the counterpart type %S is no declared object type (WF-034)" ct;
+          if
+            not
+              (Ir_v0.Checks.subtype_of ctx.doc ~sub:ct
+                 ~super:(Option.value other.rol_objecttype_naam ~default:""))
+          then
+            fault
+              "role check: the counterpart type %S is no subtype of %S, the filler the role %S \
+               declares (WF-034)"
+              ct
+              (Option.value other.rol_objecttype_naam ~default:"?")
+              (Option.value other.rol_naam ~default:"?"));
+      let narrow n =
+        match counterpart_type with
+        | None -> []
+        | Some ct -> [ Printf.sprintf "isa(%s,%s)" n (str ct) ]
+      in
       if negated then begin
         ctx.fresh <- ctx.fresh + 1;
         let p = Printf.sprintf "rm%d" ctx.fresh in
         let n = fresh ctx "N" in
-        emit ctx "%s(%s) :- isa(%s,%s), rol(%s,%s,%s)." p subject subject (str subject_ot) subject
-          (str canonical) n;
+        emit ctx "%s(%s) :- %s." p subject
+          (String.concat ", "
+             ([ Printf.sprintf "isa(%s,%s)" subject (str subject_ot);
+                Printf.sprintf "rol(%s,%s,%s)" subject (str canonical) n ]
+             @ narrow n));
         [ Printf.sprintf "not %s(%s)" p subject ]
       end
       else
         let n = fresh ctx "N" in
-        [ Printf.sprintf "rol(%s,%s,%s)" subject (str canonical) n ]
+        Printf.sprintf "rol(%s,%s,%s)" subject (str canonical) n :: narrow n
   | Samengesteld { kwantor = Alle | De; onderdelen; _ } ->
       (* the conjunctive short circuit (RUNTIME-SEMANTICS ch. 5.10): member i is
          read only where members 1..i-1 all held, so the accumulated PREFIX

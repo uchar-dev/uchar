@@ -3833,7 +3833,9 @@ let () =
       (inst "j2" "Jutter" [])
   in
   let rolcheck negated : Ir_v0.Ast.conditie =
-    Role_membership { fact_type = "wachtindeling"; role = "wachtjutter"; negated; bron = None }
+    Role_membership
+      { fact_type = "wachtindeling"; role = "wachtjutter"; counterpart_type = None; negated;
+        bron = None }
   in
   let ec label c = Eval.eval_cond env w (World.get w label) ~err:no_err c in
   check "WV-5.8a-vervult-j1" (ec "j1" (rolcheck false));
@@ -3857,8 +3859,13 @@ let () =
      Case 1 pins the two corners and their negations. Case 2 separates
      existence from counting (two fillers on one post read the same as one)
      and from sheer presence (a Jutter in no relation leaves every post
-     alone). Case 3 has two posts with one filler each. A check naming the
-     role of the OTHER side faults: the subject does not fill it. *)
+     alone). Case 3 has two posts with one filler each, differing only in
+     CLASS. The strand checks carry the counterpart (U12): the filler of the
+     other role must be a Strandjutter, so a plain Jutter's link does not
+     count for them while it counts for `bemand`, and a Strandjutter's link
+     counts for both (the subtype satisfies the supertype filler). A check
+     naming the role of the OTHER side faults: the subject does not fill it;
+     so does a counterpart outside the other role's declared filler. *)
   let doc_sj =
     { doc with
       objecttypen =
@@ -3876,10 +3883,11 @@ let () =
       links = World.SMap.add "toegewezen wachtpost" [ post ] World.SMap.empty }
   in
   let wereld insts = List.fold_left World.add_instance World.empty insts in
-  let verre role negated : Ir_v0.Ast.conditie =
-    Role_membership { fact_type = "wachtindeling"; role; negated; bron = None }
+  let verre ?counterpart_type role negated : Ir_v0.Ast.conditie =
+    Role_membership { fact_type = "wachtindeling"; role; counterpart_type; negated; bron = None }
   in
   let bemand = verre "toegewezen wachtpost" in
+  let strandbemand = verre ~counterpart_type:"Strandjutter" "toegewezen wachtpost" in
   let w1 =
     wereld [ post "w1" [ "j1" ]; inst "w2" "Wachtpost" []; jutter_op "j1" "Jutter" "w1" ]
   in
@@ -3888,6 +3896,8 @@ let () =
   check "WV-5.8a-ver-w1-niet-onbemand" (not (ev1 "w1" (bemand true)));
   check "WV-5.8a-ver-w2-niet-bemand" (not (ev1 "w2" (bemand false)));
   check "WV-5.8a-ver-w2-onbemand" (ev1 "w2" (bemand true));
+  check "WV-5.8a-ver-w1-niet-strandbemand" (not (ev1 "w1" (strandbemand false)));
+  check "WV-5.8a-ver-w1-strandvrij" (ev1 "w1" (strandbemand true));
   let w2 =
     wereld
       [ post "w1" [ "j1"; "j2" ]; inst "w2" "Wachtpost" []; jutter_op "j1" "Jutter" "w1";
@@ -3896,6 +3906,7 @@ let () =
   let ev2 label c = Eval.eval_cond env w2 (World.get w2 label) ~err:no_err c in
   check "WV-5.8a-ver-twee-vullers-telt-niet" (ev2 "w1" (bemand false));
   check "WV-5.8a-ver-twee-vullers-niet-onbemand" (not (ev2 "w1" (bemand true)));
+  check "WV-5.8a-ver-subtype-vult-supertype" (ev2 "w1" (strandbemand false));
   check "WV-5.8a-ver-losse-jutter-bemant-niets" (ev2 "w2" (bemand true));
   let w3 =
     wereld
@@ -3904,8 +3915,12 @@ let () =
   in
   let ev3 label c = Eval.eval_cond env w3 (World.get w3 label) ~err:no_err c in
   check "WV-5.8a-ver-klasse-splitst-w1-bemand" (ev3 "w1" (bemand false));
+  check "WV-5.8a-ver-klasse-splitst-w1-strandvrij" (ev3 "w1" (strandbemand true));
   check "WV-5.8a-ver-klasse-splitst-w2-bemand" (ev3 "w2" (bemand false));
-  expect_fault "WV-5.8a-ver-verkeerde-zijde" (fun () -> ev1 "w1" (verre "wachtjutter" false))
+  check "WV-5.8a-ver-klasse-splitst-w2-strandbemand" (ev3 "w2" (strandbemand false));
+  expect_fault "WV-5.8a-ver-verkeerde-zijde" (fun () -> ev1 "w1" (verre "wachtjutter" false));
+  expect_fault "WV-5.8a-ver-vreemde-tegenpartij" (fun () ->
+      ev1 "w1" (verre ~counterpart_type:"Wachtpost" "toegewezen wachtpost" false))
 
 (* --- ch. 5.8b: the characteristic check's owner (WF-100) ----------------
    The RUNTIME-SEMANTICS ch. 5.8b worked example, verbatim. `Vondst` and

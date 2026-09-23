@@ -2015,15 +2015,17 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
   | Regelversie { inconsistent = false; _ } ->
       Value.fault
         "'is gevuurd' is not implemented (row 30: decided as a dialect-only fixpoint predicate)"
-  | Role_membership { fact_type; role; negated; _ } ->
-      (* ch. 5.8a, the role check (D11): true iff a link of [fact_type]
-         exists in which the subject fills [role] — an existence question
-         over the relation, never a count and never a pick, so the number of
-         links the far end holds is no part of it; [negated]: no such link
-         exists. The subject's links are read over the OTHER role of the
-         fact type, the ones the loader materialises from either spelling of
-         a supplied link (ch. 5.7a); a reciprocal fact type's one role is its
-         own other end. *)
+  | Role_membership { fact_type; role; counterpart_type; negated; _ } ->
+      (* ch. 5.8a, the role check (D11, U12): true iff a link of [fact_type]
+         exists in which the subject fills [role] and the filler of the OTHER
+         role is an instance of [counterpart_type] (⊑, ch. 2.2; absent = that
+         role's declared filler, which every linked instance already is) — an
+         existence question over the relation, never a count and never a
+         pick, so the number of links the far end holds is no part of it;
+         [negated]: no such link exists. The subject's links are read over
+         the OTHER role of the fact type, the ones the loader materialises
+         from either spelling of a supplied link (ch. 5.7a); a reciprocal
+         fact type's one role is its own other end. *)
       let own, other =
         match
           Ir_v0.Checks.resolve_binding { doc = env.doc } { rb_feittype = fact_type; rb_rol = role }
@@ -2036,7 +2038,26 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
           "role check: the subject %S does not fill the role %S of %S, so no link of it can \
            hold the subject there (WF-034)"
           self.otype role fact_type;
-      let exists = role_links world self other <> [] in
+      let linked = role_links world self other in
+      let linked =
+        match counterpart_type with
+        | None -> linked
+        | Some ct ->
+            (* a counterpart outside the other role's declared filler would
+               narrow to nobody and answer a silent false: refused by name *)
+            if Ir_v0.Checks.effective_ot env.doc ct = None then
+              Value.fault "role check: the counterpart type %S is no declared object type (WF-034)"
+                ct;
+            if not (fills env ct other) then
+              Value.fault
+                "role check: the counterpart type %S is no subtype of %S, the filler the role %S \
+                 declares (WF-034)"
+                ct
+                (Option.value other.rol_objecttype_naam ~default:"?")
+                (Option.value other.rol_naam ~default:"?");
+            List.filter (fun (i : World.instance) -> isa env i.otype ct) linked
+      in
+      let exists = linked <> [] in
       if negated then not exists else exists
   (* ch. 3.9a, the QUANTIFIER FOLD: a condition quantified over the members
      of a linked instance set. The contributors are the instance fold's,
