@@ -274,10 +274,35 @@ let prioritized_defaults (pd : prioritized_defaults) : json =
 (* The M1 container (decision V3 (b)): the declaration set under "model", the
    rule lists under "rules" with their v0 keys, in the schema's property
    order; prioritizedDefaults is written whole, as it always was. The slice
-   builds no domain, parameter, unit system, dimension, timeline, day kind or
-   diagnostic, and its serialiser has no Onopgelost arm, so no diagnostic has
-   anything to account for (WF-113). *)
+   builds no domain, parameter, unit system, dimension, timeline, day kind,
+   function definition, other rule list or diagnostic, so those lists are
+   written empty or, for functionDefs, not at all, and a filled one refuses:
+   written as [] it would drop what it held without a word. Its serialiser
+   has no Onopgelost arm, so no written document holds a marker a diagnostic
+   would have to account for (WF-113). *)
 let document (d : document) : json =
+  let unfilled list = function
+    | [] -> ()
+    | _ -> failwith (Printf.sprintf "Emit: the document fills %s, which the slice never builds" list)
+  in
+  unfilled "parameters" d.parameters;
+  unfilled "domains" d.domeinen;
+  unfilled "unitSystems" d.eenheidstelsels;
+  unfilled "dimensions" d.dimensies;
+  unfilled "timelines" d.tijdlijnen;
+  unfilled "dayKinds" d.dagsoorten;
+  unfilled "dagsoortPerEenheid" d.dagsoort_per_eenheid;
+  unfilled "functionDefs" d.function_defs;
+  unfilled "resolvedDagsoorten" d.resolved_dagsoorten;
+  unfilled "objectCreaties" d.object_creaties;
+  unfilled "verdelingen" d.verdelingen;
+  unfilled "consistenties" d.consistenties;
+  unfilled "uniciteiten" d.uniciteiten;
+  unfilled "uniciteitUnies" d.uniciteit_unies;
+  unfilled "feitCreaties" d.feit_creaties;
+  unfilled "resolvedStartpunten" d.resolved_startpunten;
+  unfilled "regelGroepen" d.regel_groepen;
+  unfilled "diagnostics" d.diagnostics;
   `Assoc
     [ ("format", `String "uchar-ir-v1");
       ("model",
