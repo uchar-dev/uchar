@@ -6,12 +6,13 @@ genest kenmerk-defaults-doel `recht op uitkering` — grondtoekenning (art. 15)
 → do-not-attribute op de inkomensgrens (art. 20-1-c) → herleving bij
 vervallen omstandigheid (art. 21-1) → do-not-attribute op de blokkade
 (art. 21-2-a) — plus drie gewone scalaire rekenregels. Elke geneste default
-draagt naast haar eigen voorwaarde die van haar drager. Negen cases: vier
+draagt naast haar eigen voorwaarde die van haar drager. Tien cases: vier
 die elk op een andere default beslissen (case1–case4), vier invoeren waarop
 een boom zonder dragervoorwaarden tegen de wettekst in zou beslissen (case5,
-case6, case8, case9), en één case met het doelkenmerk al in de invoer
-(case7). Handgeschreven, met absolute verwachtingen; alle getallen en datums
-zijn eigen casusfeiten.
+case6, case8, case9), één case met het doelkenmerk al in de invoer (case7),
+en één die het eigen conjunct `nieuw maandloon > inkomensgrens` van de
+blokkade los pint (case10). Handgeschreven, met absolute verwachtingen; alle
+getallen en datums zijn eigen casusfeiten.
 
 ## Wetteksten (verbatim)
 
@@ -96,7 +97,7 @@ RegelSpraak-bron: `heeft (geen) recht op uitkering` in plaats van `is (niet)
 recht op uitkering`. Ze staat zo omdat een RegelSpraak-tweeling van dit
 anker die spelling schrijft en byte-identiek op dit anker moet uitkomen. De
 uitvoering hangt er niet van af: met `BIJVOEGLIJK` en met `BEZITTELIJK`
-geven ref, clingo en de Drools-exectak dezelfde uitkomsten op alle negen
+geven ref, clingo en de Drools-exectak dezelfde uitkomsten op alle tien
 cases, krijgt clingo hetzelfde ASP-programma en krijgt de Drools-bean
 hetzelfde veld.
 
@@ -203,9 +204,9 @@ Vereenvoudiging bij art. 20-1-c: `maandinkomen` is hier het inkomen ná
 vermenigvuldiging met de factor C / D uit art. 47 — de factor is in deze
 casus 1, zodat de vergelijking direct tegen 87,5% van het maandloon loopt.
 
-## De negen cases — handberekening
+## De tien cases — handberekening
 
-In alle negen cases: `maandloon` = 2400,00, dus
+In alle tien cases: `maandloon` = 2400,00, dus
 `inkomensgrens` = 0,875 × 2400,00 = **2100,00**.
 
 | Case | W | T | V | N | Beslist | `recht op uitkering` |
@@ -219,11 +220,14 @@ In alle negen cases: `maandloon` = 2400,00, dus
 | case7-invoer-staat-tegen-blokkade | ja | ja (2500,00) | ja | ja (2300,00) | blokkade (art. 21-2-a); het doelkenmerk staat in de invoer | aanwezig |
 | case8-niet-werkloos-boven-grens-vervallen | nee | ja (2500,00) | ja | nee | niets | afwezig |
 | case9-geen-eindiging-wel-vervallen-en-nieuw-recht | ja | nee (1800,00) | ja | ja (2300,00) | grant (art. 15) | aanwezig |
+| case10-nieuw-recht-onder-grens | ja | ja (2500,00) | ja | nee (2000,00) | herleving (art. 21-1) | aanwezig |
 
 Tussen haakjes bij T het `maandinkomen`, bij N het `nieuw maandloon`; "nee"
-bij N betekent: geen nieuw recht, `nieuw maandloon` = 0,00. Elke default is
-ergens de beslisser (grant: case2, case5, case9; einde: case4; herleving:
-case1; blokkade: case3, case7); in case6 en case8 beslist niets.
+zonder bedrag bij N betekent: geen nieuw recht, `nieuw maandloon` = 0,00.
+case10 heeft wel een nieuw recht, maar het nieuwe maandloon (2000,00) ligt
+niet boven de grens. Elke default is ergens de beslisser (grant: case2,
+case5, case9; einde: case4; herleving: case1, case10; blokkade: case3,
+case7); in case6 en case8 beslist niets.
 
 Per case lopen de defaults in de volgorde van ch. 7.9, van diep naar ondiep
 (blokkade, herleving, einde, grant): de eerste waarvan de voorwaarde geldt,
@@ -410,6 +414,32 @@ Feiten: die van case5, plus omstandigheid vervallen met `vervaldatum` =
 - `nieuwe maxdatum` = 2026-11-30 + leeg = **2026-11-30** (ongewijzigd).
 - Met alleen haar eigen voorwaarde zou de blokkade hier `onwaar` beslissen:
   afwezig.
+
+### case10-nieuw-recht-onder-grens.json — een nieuw recht onder de grens (beslist op de herleving-default)
+
+Feiten: die van case3, met een `nieuw maandloon` van 2000,00 in plaats van
+2300,00: werkloos; `maandinkomen` = 2500,00; omstandigheid vervallen; nieuw
+recht ontstaan met `nieuw maandloon` = 2000,00; `eindigingsdatum` =
+2024-03-01; `vervaldatum` = 2024-06-01; `maxdatum` = 2025-10-15.
+
+- Blokkade art. 21-2-a: werkloos, 2500,00 > 2100,00, de omstandigheid is
+  vervallen en er is een nieuw recht, maar 2000,00 ≤ 2100,00: het
+  maandloon van het nieuwe recht is niet meer dan 87,5% van het maandloon
+  van de eerdere uitkering → de blokkade beslist niet.
+- Herleving art. 21-1: werkloos, 2500,00 > 2100,00 en de omstandigheid is
+  vervallen → de herleving-default beslist `waar`; dat besluit is ook dat
+  van einde en grant.
+- Uitkomst: `recht op uitkering` **toegekend** (beslist op de
+  herleving-default).
+- `verstreken periode` = **92** dagen en `nieuwe maxdatum` = **2026-01-15**,
+  berekend als in case3; hier heeft de verschuiving wel gevolg, want het
+  recht herleeft.
+- Zonder het conjunct `nieuw maandloon > inkomensgrens` zou de blokkade hier
+  `onwaar` beslissen: afwezig. case10 is de enige case die dat conjunct los
+  pint; in case3 ligt het nieuwe maandloon boven de grens. Het andere eigen
+  conjunct van de blokkade, `nieuw recht ontstaan`, pint geen case: het is
+  alleen waarneembaar met een nieuw maandloon boven de grens zonder nieuw
+  recht, een invoer die in deze casus niets betekent.
 
 ## Bewuste beperking (scope)
 
