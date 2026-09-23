@@ -105,3 +105,42 @@ May touch: `spec/RUNTIME-SEMANTICS.md` en `spec/IR-SPEC.md`
 (**voorstel**), `ref/**`, `backends/clingo/**`, `corpus/**`,
 `scripts/check-rood.sh` en `scripts/check-drools.sh` (**voorstel**, de
 lijsten en de pins).
+
+## Besluiten en aangescherpte acceptatie (bij oppakken, 2026-09-23)
+
+De drie besluiten zijn genomen door de hoofdsessie (2026-09-23,
+maintainer-norm), hier verbatim vastgelegd:
+
+1. **Grensvorm.** "De tweevorm (datumliteral of eigen scalair
+   datumattribuut van het onderwerp) wordt de v1-norm als WF-regel met
+   negatief; de volle grens-expressie blijft een OPEN wirebesluit in
+   ch. 3.12. Motivering: er is geen corpusvraag naar de volle expressie,
+   clingo heeft voor een niet-onderwerpgebonden grens geen val-atoom om aan
+   te hangen, en het huisbeginsel legt gedragen gedrag normatief vast boven
+   het openhouden van ongetuigd gedrag."
+2. **Clip op een tijdlijndoel.** "Bouwen — de spec draagt het besluit al:
+   ch. 3.10 specificeert de clip en zegt dat ref hem eerst uitvoert."
+3. **Tellende kwantor.** "De mirror-note-begrenzing (weiger het venster
+   onder GEEN/TEN_MINSTE/TEN_HOOGSTE/PRECIES) wordt de v1-norm als WF-regel
+   met negatief; opheffen zou een lezing vergen voor het complement van een
+   vensterverdict in een tijdvrije sessie, en die is er niet."
+
+Acceptatie, aangescherpt:
+
+- (1) Een nieuwe WF-regel (WF-111) in IR-SPEC (**voorstel**) met
+  verifier-arm (**voorstel**), passerend op het bestaande corpus
+  (`jutterswet-premievenster` e.a.), en `corpus/rood/periodegrens-parameterdatum`
+  verplaatst naar `corpus/negatief/wf111-…` met herschreven NOTE; rood-eerst
+  (rc 0 onder de oude verifier, afgewezen onder de nieuwe) en een
+  mutatieproef (arm uit ⇒ negatief stil ⇒ gate 3 rood).
+- (2) De clip `written(tl, window) = tl restricted to [vanaf, tot)` in `ref`
+  en clingo, met een golden met handberekende absoluten, geen geldigheid op
+  de temporele regel (de één-as-beslissing blijft onaangeroerd); de
+  Drools-takken weigeren benoemd en de golden komt reden-dragend in beide
+  gate-12-kanaallijsten, de gelijkheidspinnen bewegen niet. ch. 3.10 en de
+  ch. 3.12-rij bewegen mee (**voorstel**).
+- (3) Een nieuwe WF-regel (WF-112) met verifier-arm en negatief (de rode
+  getuige `periodevenster-tellende-kwantor` verhuist, zelfde procedure);
+  de kwantorVOUW-meting vastgelegd, met de keuze of dezelfde arm hem dekt.
+- De gate-8-telling en de Drools-uitsluitingslijst bewegen mee
+  (**voorstel**); alle veertien gates groen, elk los gedraaid.
