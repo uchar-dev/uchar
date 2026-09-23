@@ -6925,6 +6925,20 @@ let translate_pro_rata ctx ~subject ~ot ~a ~cond ~b ~k ~(g : granulariteit) =
   let base = Printf.sprintf "isa(%s,%s)" subject (str ot) in
   if not (attr_temporal ctx ~otype:ot ~attr:b) then
     fault "pro-rata base %S is not a temporal attribute (WF-056)" b;
+  (* the pro-rata sister of [refuse_date_timeline_total]: the part is the
+     base scaled by true days over bucket days, so a DATE base leaked its
+     day number as an amount — measured 2026-09-23, base 2024-01-18 over one
+     whole month answered 19740.00 where ref faults "pro-rata base is not
+     numeric". Asked of the DECLARATION, like its sisters. *)
+  (match Ir_v0.Checks.find_ci (objecttype ctx ot).attributen b with
+  | Some (Some Datum_in_dagen) ->
+      fault
+        "the pro-rata part (tijdsevenredig deel) of the base %S on %S scales a DATE-valued base by \
+         true days over bucket days: a pro-rata part is arithmetic, a date is a calendar POSITION, \
+         and scaling one has no meaning — this translation would scale its day number and answer \
+         a definite number no calendar reads back. Declined in translation"
+        b ot
+  | _ -> ());
   if attr_unit ctx ~otype:ot ~attr:b <> None || attr_unit ctx ~otype:ot ~attr:a <> None then
     (* ch. 3.7: a rate base restates by its exact factor first — not
        executed; refuse rather than prorate factor-free *)
