@@ -224,6 +224,16 @@ besluit V1–V17, naamprincipe of M1-precedent).
   WF-047 blijft 'moet aanduiden op naam of meervoud'. Normvraag voor de
   maintainer met dit als standaardantwoord (hoofdsessie 2026-09-24; gemeten
   door A1: 2 goldens, 4 toka-plekken).
+- **U12 — de vullersklasse van het rollidmaatschap.** `RoleMembership` krijgt
+  een optioneel veld `counterpartType: string`: het objecttype waartoe de
+  vuller van de ANDERE rol van `factType` moet behoren, ⊑ het gedeclareerde
+  vullertype van die rol; afwezig = dat gedeclareerde type. Sleutelvolgorde:
+  `node, factType, role, counterpartType?, negated, bron`. Betekenis: er
+  bestaat een link van `factType` waarin het subject `role` vult en de vuller
+  van de andere rol een instantie van `counterpartType` is. (Hoofdsessie
+  2026-09-24, standaardantwoord op de normvraag, voorgelegd aan de maintainer;
+  aanleiding: de nulmeting van bouwer B op `jutterswet-postbezetting`, waar de
+  vernauwing tot `Strandjutter` bij de migratie verloren ging.)
 
 ## Lens-checklist — vooraf, per bouwer (de terugkerende vondstklassen van L1)
 
@@ -804,3 +814,8 @@ golden 238, negatief 444, rood 48, toka 30).
   2). Buiten U11 blijven de twee attribuutbronnen onder `AANTAL`
   (`wf096-aantal-setbron`, `wf096-aantal-setbron-bronpad`): hun naam is een
   attribuut van het elementtype en geen telbron; dat oordeel is aan WF-093.
+- U12: 2 vullersklassen geschreven, beide in `jutterswet-postbezetting`
+  (`/rules/resolvedRegels/2/voorwaarde` en `/rules/resolvedRegels/3/voorwaarde`,
+  `counterpartType` `Strandjutter` ⊑ `Jutter`). Van de 18 rolchecks in de
+  L1-stand van alle zones (golden 8, rood 1, toka 2, negatief 7 in de vier
+  geweigerde documenten) noemt geen andere een echt subtype.
