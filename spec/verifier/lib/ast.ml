@@ -1,10 +1,20 @@
-(* Typed AST of the uchar-ir-v1 wire format in its M1 shape
+(* Typed AST of the uchar-ir-v1 wire format in its L2 shape
    (spec/schema/uchar-ir-v1.schema.json).
 
    Modelling rules:
    - every record field of a node carried over from v0 is always present on
      the wire; "optional" means the value may be null, mapped to [option] —
-     never a missing key;
+     never a missing key. The exceptions are the fields the wire writes
+     whole or not at all (the role bindings, `Onopgelost.type`): absent is
+     [None] there, and an explicit null is a load error;
+   - since L2 a reference carries its symbolic form and nothing else: the
+     five reference classes (AttribuutRef, ParameterRef, DimensieCel,
+     BinderRef, VariabeleRef) carry no type of their own — the declaration
+     is the one source, [Checks.expr_type] — and a navigated read, a fold
+     range, a creation step and a scope carry their role binding, never a
+     written name to derive it from. The loader refuses every field that
+     left the wire by name, and reads a required binding as required, so no
+     reader here can fall back to a derivation;
    - JSON maps and the model lists become ordered association lists
      (declaration order is normative, WF-019). A model list carries no map
      key, so the key here is the declaration's own name as its node writes
@@ -15,9 +25,10 @@
      those tables from the M1 member nodes (Attribute, Characteristic,
      TimelineFacet), so a table key is always a member's own name and a
      facet always hangs on a member — the wire can no longer say otherwise;
-   - the three unions (datatype / expr / conditie) each carry their own
-     "Onbekend" variant — the discriminator value is reused across unions
-     and must be dispatched per union, never globally;
+   - the datatype union carries no unknown variant since L2: an
+     unresolvable domain is a declaration naming an undeclared domain
+     (WF-003, WF-018), and an unknown expression type is an `Onopgelost`
+     without a `type`;
    - enums that admit null on the wire are [t option]. *)
 
 type granulariteit = Dag | Week | Maand | Kwartaal | Jaar
@@ -89,7 +100,6 @@ type datatype =
      [domein] names the declaring domain; each field carries a name and a
      non-null datatype (WF-071). Never emitter-produced. *)
   | Struct_type of { domein : string; velden : (string * datatype) list }
-  | Datatype_onbekend of { reden : string option }
 
 (* The whole-period qualifier tag riding Vergelijking/Predicaat/Kenmerk. *)
 type geheel_periode = { gp_jaar : bool; gp_niet : bool }
@@ -119,11 +129,15 @@ type expr =
       typ : datatype option;
       bron : string option;
       granulariteit : granulariteit option;
-      bron_rol : rol_binding option; (* extension: the fold-source role *)
+      bron_rol : rol_binding option; (* the range: one step *)
       bron_pad : rol_binding list option;
-          (* extension: the fold source's multi-step range (WF-102) — the
-             list is carried AS LOADED, empty included, so the arity is a
-             violation the rule reports and never a load failure *)
+          (* the range: a multi-step path (WF-102) — the list is carried AS
+             LOADED, empty included, so the arity is a violation the rule
+             reports and never a load failure. The loader admits at most one
+             of the two, and demands one on a single-argument fold with an
+             elementObjecttype under any kind but TOTAAL (B12): a range here
+             makes the argument the set source (D8), its absence makes it the
+             subject's own read *)
     }
   | Instance_set_union of {
       (* extension: the §5.7 concatenation of subject expressions, the
@@ -151,26 +165,19 @@ type expr =
   | Attribuut_ref of {
       attribuut : string option;
       objecttype : string option;
-      onderwerp_bron : string option;
-      navigatie_rol : string option;
-      typ : datatype option;
       bron : string option;
-      set : bool;
-      navigatie_pad : string option list;
       navigatie_bindingen : rol_binding list option;
-          (* extension: the navigation hops, subject-outward, one binding
-             per hop — the bound role is the role the hop reaches *)
+          (* the navigation hops, subject-outward, one binding per hop — the
+             bound role is the role the hop reaches. Absent: the subject's
+             own read, whose objecttype is the subject type (WF-053, D10);
+             never empty *)
     }
-  | Dimensie_cel of {
-      attribuut : expr option;
-      labels : string option list;
-      typ : datatype option;
-      bron : string option;
-    }
-  | Parameter_ref of { parameter : string option; typ : datatype option; bron : string option }
-  | Variabele_ref of { naam : string option; typ : datatype option; bron : string option }
+  | Dimensie_cel of { attribuut : expr option; labels : string option list; bron : string option }
+  | Parameter_ref of { parameter : string option; bron : string option }
+  | Variabele_ref of { naam : string option; bron : string option }
   | Constante of { naam : string option; typ : datatype option; bron : string option }
   | Expr_onopgelost of { typ : datatype option; bron : string option }
+      (* [typ] absent = the type is unknown; present, a real datatype *)
   (* Extension node (v1, row 11): the ch. 3.3 point-in-time read —
      read(tl, d). [basis] references the timeline (an own temporal
      attribute or a granular parameter); [datum] is a day-precision date
@@ -193,7 +200,7 @@ type expr =
       arms : (string * string option * expr) list; (* constructor, binder, body *)
       bron : string option;
     }
-  | Binder_ref of { naam : string; typ : datatype option; bron : string option }
+  | Binder_ref of { naam : string; bron : string option }
   (* Extension nodes (v1, Phase 5c): the record expression forms
      (IR-SPEC ch. 4.9; semantics RUNTIME-SEMANTICS ch. 11). [typ] is required
      on the wire (non-null, the TemporalRead pattern). [Struct_literal]'s
@@ -261,11 +268,12 @@ and fold_fn =
 
 (* One selection of an InstanceSetUnion (WF-110): a population, the
    one-step relation it ranges over, and the die/dat subselection that
-   narrows it PER CONTRIBUTOR. The two required fields are carried as
-   option so a missing one is a citable violation, not a load failure. *)
+   narrows it PER CONTRIBUTOR. The population is carried as option so a
+   missing one is a citable violation, not a load failure; the relation is
+   schema-required since L2 (B12), and nothing derives it. *)
 and instance_set_branch = {
   isb_element_type : string option;
-  isb_source_role : rol_binding option;
+  isb_source_role : rol_binding;
   isb_filter : conditie option;
   isb_bron : string option;
 }
@@ -299,25 +307,21 @@ and conditie =
     }
   | Kenmerk_check of {
       kenmerk : string option;
-      navigatie : string option;
       negatie : bool;
       eigenaar : string option;
       periode : geheel_periode option;
       bron : string option;
       navigatie_binding : rol_binding option;
-          (* extension: the one hop of a navigated check — the bound role
-             is the role the hop reaches *)
+          (* the one hop of a navigated check — the bound role is the role
+             the hop reaches. Absent: the check reads the subject (D53) *)
     }
-  | Rollidmaatschap of {
-      rol : string option;
-      ander_te_filler : string option;
-      negatie : bool;
-      bron : string option;
-    }
-  | Verre_rollidmaatschap of {
-      filler : string option;
-      backref : string option;
-      negatie : bool;
+  (* The role check (IR-SPEC ch. 4.5, B9): true iff a link of the declared
+     fact type [fact_type] exists in which the subject fills [role], named
+     by its declared name; [negated]: no such link exists. *)
+  | Role_membership of {
+      fact_type : string;
+      role : string;
+      negated : bool;
       bron : string option;
     }
   | Periode_conditie of {
@@ -344,12 +348,13 @@ and conditie =
       kv_filter : conditie option;
       kv_toets : conditie option;
       kv_bron : string option;
-      kv_bron_rol : rol_binding option; (* extension: the one-step range *)
+      kv_bron_rol : rol_binding option; (* the one-step range *)
       kv_bron_pad : rol_binding list option;
-          (* extension: the multi-step range, carried AS LOADED (empty
-             included) so the arity is a violation WF-108 reports and never
-             a load failure — the WF-102 discipline, under this node's own
-             rule *)
+          (* the multi-step range, carried AS LOADED (empty included) so the
+             arity is a violation WF-108 reports and never a load failure —
+             the WF-102 discipline, under this node's own rule. The loader
+             demands exactly one of the two (B12): the range is written,
+             never derived *)
     }
   | Regelversie of { regel : string option; inconsistent : bool; bron : string option }
   | Conditie_onopgelost of { bron : string option }
@@ -474,7 +479,7 @@ type resolved_verdeling = {
   afnemend : bool;
   vd_voorwaarde : conditie option;
   vd_geldigheid : geldigheid option;
-  verbindende_rol : rol_binding option; (* extension: the recipient role *)
+  verbindende_rol : rol_binding; (* the recipient role, required (B12) *)
 }
 
 type resolved_consistentie = {
@@ -490,12 +495,12 @@ type resolved_uniciteit = {
   uni_naam : string option;
   uni_subject : string option;
   sleutels : string option list;
-  scope_veld : string option;
   uni_bron : string option;
   uni_geldigheid : geldigheid option;
   scope_rol : rol_binding option;
-      (* extension: the scope-parent role of a parent-scoped uniqueness,
-         named symbolically — the bound role's filler is the scope parent *)
+      (* the scope-parent role of a parent-scoped uniqueness — the bound
+         role's filler is the scope parent. Its presence IS the scoping
+         (B8): absent, the uniqueness is unscoped *)
 }
 
 type uniciteit_unie_bron = {
@@ -510,28 +515,23 @@ type resolved_uniciteit_unie = {
   uu_geldigheid : geldigheid option;
 }
 
-type tussenstap = {
-  ts_type : string option;
-  veld : string option;
-  via_ouder_veld : bool;
-  ts_rol : rol_binding option; (* extension: the hop, named symbolically *)
-}
+(* One intermediate hop of a fact creation's join chain: its binding and
+   nothing else (B7). *)
+type tussenstap = { ts_rol : rol_binding }
 
 type resolved_feit_creatie = {
   fc_naam : string option;
   anker : string option;
   fc_doel : string option;
-  zet_veld : string option;
-  join_veld : string option;
   tussenstappen : tussenstap list;
   fc_voorwaarde : conditie option;
   fc_geldigheid : geldigheid option;
-  (* extension (all-or-nothing, WF-028): the created relation and the
-     roles its two ends fill, plus the join hop reaching the target *)
-  fc_feittype : string option;
-  anker_rol : string option;
-  doel_rol : string option;
-  join_rol : rol_binding option;
+  (* the symbolic block, required since L2 (B7): the created relation, the
+     roles its two ends fill, and the join hop reaching the target *)
+  fc_feittype : string;
+  anker_rol : string;
+  doel_rol : string;
+  join_rol : rol_binding;
 }
 
 type resolved_startpunt = {

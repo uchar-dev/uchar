@@ -1,4 +1,4 @@
-(* Strict loader for the uchar-ir-v1 wire format in its M1 shape.
+(* Strict loader for the uchar-ir-v1 wire format in its L2 shape.
 
    Strict means: every object must carry exactly the keys the format
    declares (the schema is additionalProperties:false with every property
@@ -17,7 +17,17 @@
    one of the four model lists whose node otherwise keeps its v0 shape
    (factTypes, parameters, unitSystems, dimensions) carries a string
    `naam`. There is no map key beside it any more, so that field is the
-   declaration's only name. *)
+   declaration's only name.
+
+   The L2 rules enforced here and in the schema alike: every field that
+   left the wire with the reference layer is an unknown field, refused by
+   name, and the one unknown datatype node is an unknown node; a binding
+   L2 made required is read as required — the creation block, the step
+   binding, the allocation's recipient role, a union selection's relation,
+   the quantifier fold's range, and the range of a single-argument fold
+   with an elementObjecttype under any kind but TOTAAL (B12, U2). A reader
+   of this library therefore never meets a bindingless form that it would
+   have to derive a binding for. *)
 
 open Ast
 
@@ -260,9 +270,6 @@ let rec datatype path j : datatype =
           domein = str_opt (path / "domein") (f "domein");
           waarden = str_opt_list (path / "waarden") (f "waarden");
         }
-  | "Onbekend" ->
-      check_keys path kvs [ "node"; "reden" ];
-      Datatype_onbekend { reden = str_opt (path / "reden") (f "reden") }
   | "SumType" ->
       (* extension node (v1, row 36): domain is a plain string; each
          constructor carries a name and a payload datatype or explicit null
@@ -373,15 +380,30 @@ let rec expr path j : expr =
       check_keys path kvs ~ext:[ "bronRol"; "bronPad" ]
         [ "node"; "kind"; "argumenten"; "elementObjecttype"; "leegwaarde";
           "filter"; "dimensieSelectie"; "type"; "bron"; "granulariteit" ];
+      let kind = functie_kind (path / "kind") (f "kind") in
+      let argumenten =
+        List.mapi
+          (fun i x -> expr (path / "argumenten" / string_of_int i) x)
+          (list_ (path / "argumenten") (f "argumenten"))
+      in
+      let element_objecttype = str_opt (path / "elementObjecttype") (f "elementObjecttype") in
+      (* the range (B12, U2): one spelling at most, and a single-argument
+         fold with an elementObjecttype carries one under every kind but
+         TOTAAL, where its absence is the subject's own read *)
+      (match (List.mem_assoc "bronRol" kvs, List.mem_assoc "bronPad" kvs) with
+      | true, true ->
+          fail (path / "bronPad") "bronPad beside bronRol: a fold carries one range, never two"
+      | false, false
+        when element_objecttype <> None && List.length argumenten = 1 && kind <> Totaal ->
+          fail path
+            "a single-argument fold with an elementObjecttype carries its range (bronRol or \
+             bronPad) under every kind but TOTAAL: the range is written, never derived"
+      | _ -> ());
       Functie
         {
-          kind = functie_kind (path / "kind") (f "kind");
-          argumenten =
-            List.mapi
-              (fun i x -> expr (path / "argumenten" / string_of_int i) x)
-              (list_ (path / "argumenten") (f "argumenten"));
-          element_objecttype =
-            str_opt (path / "elementObjecttype") (f "elementObjecttype");
+          kind;
+          argumenten;
+          element_objecttype;
           leegwaarde = opt (path / "leegwaarde") expr (f "leegwaarde");
           filter = opt (path / "filter") conditie (f "filter");
           dimensie_selectie =
@@ -431,19 +453,12 @@ let rec expr path j : expr =
           bron = bron ();
         }
   | "AttribuutRef" ->
-      check_keys path kvs ~ext:[ "navigatieBindingen" ]
-        [ "node"; "attribuut"; "objecttype"; "onderwerpBron"; "navigatieRol";
-          "type"; "bron"; "set"; "navigatiePad" ];
+      check_keys path kvs ~ext:[ "navigatieBindingen" ] [ "node"; "attribuut"; "objecttype"; "bron" ];
       Attribuut_ref
         {
           attribuut = str_opt (path / "attribuut") (f "attribuut");
           objecttype = str_opt (path / "objecttype") (f "objecttype");
-          onderwerp_bron = str_opt (path / "onderwerpBron") (f "onderwerpBron");
-          navigatie_rol = str_opt (path / "navigatieRol") (f "navigatieRol");
-          typ = typ ();
           bron = bron ();
-          set = bool_ (path / "set") (f "set");
-          navigatie_pad = str_opt_list (path / "navigatiePad") (f "navigatiePad");
           navigatie_bindingen =
             ext_field path kvs "navigatieBindingen" (fun p j ->
                 match List.mapi (fun i x -> rol_binding (p / string_of_int i) x) (list_ p j) with
@@ -451,21 +466,19 @@ let rec expr path j : expr =
                 | hops -> hops);
         }
   | "DimensieCel" ->
-      check_keys path kvs [ "node"; "attribuut"; "labels"; "type"; "bron" ];
+      check_keys path kvs [ "node"; "attribuut"; "labels"; "bron" ];
       Dimensie_cel
         {
           attribuut = opt (path / "attribuut") expr (f "attribuut");
           labels = str_opt_list (path / "labels") (f "labels");
-          typ = typ ();
           bron = bron ();
         }
   | "ParameterRef" ->
-      check_keys path kvs [ "node"; "parameter"; "type"; "bron" ];
-      Parameter_ref
-        { parameter = str_opt (path / "parameter") (f "parameter"); typ = typ (); bron = bron () }
+      check_keys path kvs [ "node"; "parameter"; "bron" ];
+      Parameter_ref { parameter = str_opt (path / "parameter") (f "parameter"); bron = bron () }
   | "VariabeleRef" ->
-      check_keys path kvs [ "node"; "naam"; "type"; "bron" ];
-      Variabele_ref { naam = str_opt (path / "naam") (f "naam"); typ = typ (); bron = bron () }
+      check_keys path kvs [ "node"; "naam"; "bron" ];
+      Variabele_ref { naam = str_opt (path / "naam") (f "naam"); bron = bron () }
   | "TemporalRead" ->
       (* extension node (v1, row 11): all fields required, none nullable *)
       check_keys path kvs [ "node"; "basis"; "datum"; "type"; "bron" ];
@@ -506,8 +519,8 @@ let rec expr path j : expr =
           bron = bron ();
         }
   | "BinderRef" ->
-      check_keys path kvs [ "node"; "name"; "type"; "bron" ];
-      Binder_ref { naam = str (path / "name") (f "name"); typ = typ (); bron = bron () }
+      check_keys path kvs [ "node"; "name"; "bron" ];
+      Binder_ref { naam = str (path / "name") (f "name"); bron = bron () }
   | "StructLiteral" ->
       (* extension node (v1, Phase 5c): the fields map name to a value expr,
          in declaration order (WF-073); type required not-null *)
@@ -633,10 +646,10 @@ let rec expr path j : expr =
       check_keys path kvs [ "node"; "naam"; "type"; "bron" ];
       Constante { naam = str_opt (path / "naam") (f "naam"); typ = typ (); bron = bron () }
   | "Onopgelost" ->
-      (* the honest-marker node: the emitter names it Onopgelost
-         ("Onbekend" is the DATATYPE sentinel, never an expr node) *)
-      check_keys path kvs [ "node"; "type"; "bron" ];
-      Expr_onopgelost { typ = typ (); bron = bron () }
+      (* the honest-marker node. Its type is written whole or not at all:
+         absent means unknown, and a null is a load error (D14) *)
+      check_keys path kvs ~ext:[ "type" ] [ "node"; "bron" ];
+      Expr_onopgelost { typ = ext_field path kvs "type" datatype; bron = bron () }
   | k -> fail (path / "node") ("unknown expr node \"" ^ k ^ "\"")
 
 (* One branch of an InstanceSetUnion (WF-110). *)
@@ -647,7 +660,7 @@ and instance_set_branch path j : instance_set_branch =
   check_keys path kvs [ "node"; "elementType"; "sourceRole"; "filter"; "bron" ];
   {
     isb_element_type = str_opt (path / "elementType") (f "elementType");
-    isb_source_role = opt (path / "sourceRole") rol_binding (f "sourceRole");
+    isb_source_role = rol_binding (path / "sourceRole") (f "sourceRole");
     isb_filter = opt (path / "filter") conditie (f "filter");
     isb_bron = str_opt (path / "bron") (f "bron");
   }
@@ -737,33 +750,23 @@ and conditie path j : conditie =
         }
   | "Kenmerk" ->
       check_keys path kvs ~ext:[ "navigatieBinding" ]
-        [ "node"; "kenmerk"; "navigatie"; "negatie"; "eigenaar"; "periode"; "bron" ];
+        [ "node"; "kenmerk"; "negatie"; "eigenaar"; "periode"; "bron" ];
       Kenmerk_check
         {
           kenmerk = str_opt (path / "kenmerk") (f "kenmerk");
-          navigatie = str_opt (path / "navigatie") (f "navigatie");
           negatie = bool_ (path / "negatie") (f "negatie");
           eigenaar = str_opt (path / "eigenaar") (f "eigenaar");
           periode = periode ();
           bron = bron ();
           navigatie_binding = ext_field path kvs "navigatieBinding" rol_binding;
         }
-  | "Rollidmaatschap" ->
-      check_keys path kvs [ "node"; "rol"; "anderTeFiller"; "negatie"; "bron" ];
-      Rollidmaatschap
+  | "RoleMembership" ->
+      check_keys path kvs [ "node"; "factType"; "role"; "negated"; "bron" ];
+      Role_membership
         {
-          rol = str_opt (path / "rol") (f "rol");
-          ander_te_filler = str_opt (path / "anderTeFiller") (f "anderTeFiller");
-          negatie = bool_ (path / "negatie") (f "negatie");
-          bron = bron ();
-        }
-  | "VerreRollidmaatschap" ->
-      check_keys path kvs [ "node"; "filler"; "backref"; "negatie"; "bron" ];
-      Verre_rollidmaatschap
-        {
-          filler = str_opt (path / "filler") (f "filler");
-          backref = str_opt (path / "backref") (f "backref");
-          negatie = bool_ (path / "negatie") (f "negatie");
+          fact_type = str (path / "factType") (f "factType");
+          role = str (path / "role") (f "role");
+          negated = bool_ (path / "negated") (f "negated");
           bron = bron ();
         }
   | "Periode" ->
@@ -790,6 +793,16 @@ and conditie path j : conditie =
   | "Kwantorvouw" ->
       check_keys path kvs ~ext:[ "bronRol"; "bronPad"; "drempel" ]
         [ "node"; "kwantor"; "elementObjecttype"; "filter"; "toets"; "bron" ];
+      (* the range, exactly one spelling (B12, U2): written, never derived *)
+      (match (List.mem_assoc "bronRol" kvs, List.mem_assoc "bronPad" kvs) with
+      | true, true ->
+          fail (path / "bronPad")
+            "bronPad beside bronRol: a quantifier fold carries one range, never two"
+      | false, false ->
+          fail path
+            "a quantifier fold carries its range (bronRol or bronPad): the range is written, \
+             never derived"
+      | _ -> ());
       Kwantorvouw
         {
           kv_kwantor = kwantor (path / "kwantor") (f "kwantor");
@@ -1072,10 +1085,11 @@ let resolved_object_creatie path j : resolved_object_creatie =
 let resolved_verdeling path j : resolved_verdeling =
   let kvs = obj path j in
   expect_node path kvs "ResolvedVerdeling";
-  check_keys path kvs ~ext:[ "verbindendeRol" ]
+  check_keys path kvs
     [ "node"; "naam"; "bronType"; "bronAttribuut"; "doelType"; "doelAttribuut";
       "methode"; "ratoAttribuut"; "maximumAttribuut"; "afrondingDecimalen";
-      "restantAttribuut"; "groepeerAttribuut"; "afnemend"; "voorwaarde"; "geldigheid" ];
+      "restantAttribuut"; "groepeerAttribuut"; "afnemend"; "voorwaarde"; "geldigheid";
+      "verbindendeRol" ];
   let f name = field path kvs name in
   {
     vd_naam = str_opt (path / "naam") (f "naam");
@@ -1092,7 +1106,7 @@ let resolved_verdeling path j : resolved_verdeling =
     afnemend = bool_ (path / "afnemend") (f "afnemend");
     vd_voorwaarde = opt (path / "voorwaarde") conditie (f "voorwaarde");
     vd_geldigheid = opt (path / "geldigheid") geldigheid (f "geldigheid");
-    verbindende_rol = ext_field path kvs "verbindendeRol" rol_binding;
+    verbindende_rol = rol_binding (path / "verbindendeRol") (f "verbindendeRol");
   }
 
 let resolved_consistentie path j : resolved_consistentie =
@@ -1113,13 +1127,12 @@ let resolved_uniciteit path j : resolved_uniciteit =
   let kvs = obj path j in
   expect_node path kvs "ResolvedUniciteit";
   check_keys path kvs ~ext:[ "scopeRol" ]
-    [ "node"; "naam"; "subject"; "sleutels"; "scopeVeld"; "bron"; "geldigheid" ];
+    [ "node"; "naam"; "subject"; "sleutels"; "bron"; "geldigheid" ];
   let f name = field path kvs name in
   {
     uni_naam = str_opt (path / "naam") (f "naam");
     uni_subject = str_opt (path / "subject") (f "subject");
     sleutels = str_opt_list (path / "sleutels") (f "sleutels");
-    scope_veld = str_opt (path / "scopeVeld") (f "scopeVeld");
     uni_bron = str_opt (path / "bron") (f "bron");
     uni_geldigheid = opt (path / "geldigheid") geldigheid (f "geldigheid");
     scope_rol = ext_field path kvs "scopeRol" rol_binding;
@@ -1152,37 +1165,30 @@ let resolved_uniciteit_unie path j : resolved_uniciteit_unie =
 let tussenstap path j : tussenstap =
   let kvs = obj path j in
   expect_node path kvs "Tussenstap";
-  check_keys path kvs ~ext:[ "rolBinding" ] [ "node"; "type"; "veld"; "viaOuderVeld" ];
-  {
-    ts_type = str_opt (path / "type") (field path kvs "type");
-    veld = str_opt (path / "veld") (field path kvs "veld");
-    via_ouder_veld = bool_ (path / "viaOuderVeld") (field path kvs "viaOuderVeld");
-    ts_rol = ext_field path kvs "rolBinding" rol_binding;
-  }
+  check_keys path kvs [ "node"; "rolBinding" ];
+  { ts_rol = rol_binding (path / "rolBinding") (field path kvs "rolBinding") }
 
 let resolved_feit_creatie path j : resolved_feit_creatie =
   let kvs = obj path j in
   expect_node path kvs "ResolvedFeitCreatie";
-  check_keys path kvs ~ext:[ "feittype"; "ankerRol"; "doelRol"; "joinRol" ]
-    [ "node"; "naam"; "anker"; "doel"; "zetVeld"; "joinVeld"; "tussenstappen";
-      "voorwaarde"; "geldigheid" ];
+  check_keys path kvs
+    [ "node"; "naam"; "anker"; "doel"; "tussenstappen"; "voorwaarde"; "geldigheid";
+      "feittype"; "ankerRol"; "doelRol"; "joinRol" ];
   let f name = field path kvs name in
   {
     fc_naam = str_opt (path / "naam") (f "naam");
     anker = str_opt (path / "anker") (f "anker");
     fc_doel = str_opt (path / "doel") (f "doel");
-    zet_veld = str_opt (path / "zetVeld") (f "zetVeld");
-    join_veld = str_opt (path / "joinVeld") (f "joinVeld");
     tussenstappen =
       List.mapi
         (fun i x -> tussenstap (path / "tussenstappen" / string_of_int i) x)
         (list_ (path / "tussenstappen") (f "tussenstappen"));
     fc_voorwaarde = opt (path / "voorwaarde") conditie (f "voorwaarde");
     fc_geldigheid = opt (path / "geldigheid") geldigheid (f "geldigheid");
-    fc_feittype = ext_field path kvs "feittype" str;
-    anker_rol = ext_field path kvs "ankerRol" str;
-    doel_rol = ext_field path kvs "doelRol" str;
-    join_rol = ext_field path kvs "joinRol" rol_binding;
+    fc_feittype = str (path / "feittype") (f "feittype");
+    anker_rol = str (path / "ankerRol") (f "ankerRol");
+    doel_rol = str (path / "doelRol") (f "doelRol");
+    join_rol = rol_binding (path / "joinRol") (f "joinRol");
   }
 
 let resolved_startpunt path j : resolved_startpunt =

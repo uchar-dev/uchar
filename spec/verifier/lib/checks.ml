@@ -566,14 +566,11 @@ let wf002 ctx =
     ctx.doc.objecttypen
 
 let wf003 ctx =
-  (* Model-layer resolution: no Onbekend datatype on attributes/domains;
-     enumeration domains resolve; role filler types resolve; named-timeline
-     references resolve. (Parameters: WF-018; dimension refs: WF-004.) *)
+  (* Model-layer resolution: enumeration domains resolve (an unfindable
+     domain is a declaration naming an undeclared one, D15); role filler
+     types resolve; named-timeline references resolve. (Parameters: WF-018;
+     dimension refs: WF-004.) *)
   let dt_check at = function
-    | Some (Datatype_onbekend { reden }) ->
-        [ v "WF-003" at
-            ("unresolved datatype (v0 'Onbekend' sentinel"
-             ^ (match reden with Some r -> ": " ^ r | None -> "") ^ ")") ]
     | Some (Enumeratie { domein = Some d; _ }) when find_ci ctx.doc.domeinen d = None ->
         [ v "WF-003" at ("enumeration references undeclared domain '" ^ d ^ "'") ]
     | _ -> []
@@ -775,14 +772,13 @@ let rec check_datatype_units ~stelsels at = function
           | Some d -> check_datatype_units ~stelsels (at ^ "/constructoren/" ^ c) d
           | None -> [])
         constructoren
-  | Numeriek _ | Percentage _ | Tekst | Booleaan | Datum_in_dagen | Datum_tijd | Enumeratie _
-  | Datatype_onbekend _ ->
+  | Numeriek _ | Percentage _ | Tekst | Booleaan | Datum_in_dagen | Datum_tijd | Enumeratie _ ->
       []
 
 (* WF-092's model half: the declared unit systems (the source of truth for
    every conversion) plus every model-layer datatype. The expression half
-   rides walk_expr's type prologue and the rule-target clause, where WF-007
-   collects the same "every datatype in the document" split. *)
+   rides walk_expr's type prologue, where WF-007 collects the same "every
+   datatype in the document" split. *)
 let wf092 ctx =
   let stelsels = stelsel_namen ctx in
   let site at = function Some d -> check_datatype_units ~stelsels at d | None -> [] in
@@ -1131,10 +1127,6 @@ let wf018 ctx =
       let at = "/parameters/" ^ p in
       match par.par_datatype with
       | None -> [ v "WF-018" at "parameter without a datatype" ]
-      | Some (Datatype_onbekend { reden }) ->
-          [ v "WF-018" at
-              ("parameter datatype unresolved (v0 'Onbekend' sentinel"
-               ^ (match reden with Some r -> ": " ^ r | None -> "") ^ ")") ]
       | Some (Enumeratie { domein = Some d; _ }) when find_ci ctx.doc.domeinen d = None ->
           [ v "WF-018" at ("parameter enumeration references undeclared domain '" ^ d ^ "'") ]
       | Some _ -> [])
@@ -1801,39 +1793,63 @@ let wf034_objectcreatie_subject ctx =
          | Some _ -> [])
        ctx.doc.object_creaties)
 
-(* The type an expression carries, iff it is a value (a Lambda is not). The
-   sole nominal source for static typing; WF-027 uses it to admit a
-   boolean-TYPED characteristic value, and the expression walk (WF-034..) below
-   reuses it. *)
-let typ_of_expr = function
+(* The annotation a node carries of its own. Since L2 the five reference
+   classes carry none (B13): a reference's type is its declaration's, which
+   [expr_type] below reads. A Lambda is never a value and an instance-set
+   union denotes instances, so neither carries one either; an [Onopgelost]
+   without a type is a value of unknown type (D14). *)
+let annotation = function
   | Literal { typ; _ } | Tekst_reeks { typ; _ } | Binair { typ; _ }
   | Functie { typ; _ } | Afgerond { typ; _ } | Begrensd { typ; _ }
-  | Attribuut_ref { typ; _ } | Dimensie_cel { typ; _ } | Parameter_ref { typ; _ }
-  | Variabele_ref { typ; _ } | Constante { typ; _ } | Expr_onopgelost { typ; _ }
+  | Constante { typ; _ } | Expr_onopgelost { typ; _ }
   | Temporal_read { typ; _ } | Construct { typ; _ } | Match { typ; _ }
-  | Binder_ref { typ; _ } | Struct_literal { typ; _ } | Field_access { typ; _ }
+  | Struct_literal { typ; _ } | Field_access { typ; _ }
   | List_literal { typ; _ } | If_then_else { typ; _ } | Let { typ; _ }
   | Invoke { typ; _ } | Fold { typ; _ } | Map_list { typ; _ }
   | Filter_list { typ; _ } | List_length { typ; _ } -> typ
-  (* a Lambda is never a value: it carries no type; nor is an instance-set
-     union, which denotes instances and carries no annotation at all *)
-  | Lambda _ | Instance_set_union _ -> None
+  | Attribuut_ref _ | Dimensie_cel _ | Parameter_ref _ | Variabele_ref _ | Binder_ref _
+  | Lambda _ | Instance_set_union _ ->
+      None
 
-(* An AttribuutRef's serialized [typ] can lie about the attribute's actual
-   datatype (a numeric attribute forced to typ=Booleaan passes typ_of_expr but
-   diverges at runtime). For a value check the honest static type is the
-   RESOLVED attribute datatype — the cross-validation WF-023 performs in
-   rekenposities. Resolve it from the reference's declared endpoint type (the
-   type the value lives on: the subject itself or the navigation endpoint) and
-   member. A reference we cannot resolve (undeclared type/member, a
-   characteristic read that is not in [attributen], or a non-reference node)
-   yields None, and the caller falls back to the node's own typ. *)
+(* The declared datatype of an attribute reference: the attribute on the
+   type the reference names, which is the type the value lives on (the
+   subject for its own read, the endpoint for a navigated one, the element
+   for a fold's set source), resolved upward through the supertype chain.
+   None where the pair does not resolve to a declared attribute — an
+   undeclared type or member, a characteristic, a count source's role
+   name — which the member checks report. *)
 let resolved_attr_datatype ctx = function
   | Attribuut_ref { attribuut = Some a; objecttype = Some otn; _ } -> (
       match objecttype ctx otn with
       | Some ot -> ( match attr_of ot a with Some (Some dt) -> Some dt | _ -> None)
       | None -> None)
   | _ -> None
+
+(* The static type of an expression (RUNTIME-SEMANTICS ch. 2.10): a
+   reference takes its declaration's — an attribute's, a parameter's, the
+   dimensioned attribute's for a cell read, the binder's for a binder read
+   ([binders] carries the enclosing binders with their declared datatypes)
+   — and every other value node its own annotation. None where nothing
+   declares one: a reference that does not resolve (its own rule reports
+   it), an unbound variable marker, an [Onopgelost] of unknown type. *)
+let expr_type ctx ~(binders : (string * datatype option) list) (e : expr) =
+  match e with
+  | Attribuut_ref _ -> resolved_attr_datatype ctx e
+  | Dimensie_cel { attribuut = Some inner; _ } -> resolved_attr_datatype ctx inner
+  | Dimensie_cel { attribuut = None; _ } -> None
+  | Parameter_ref { parameter = Some p; _ } -> (
+      match find_ci ctx.doc.parameters p with Some par -> par.par_datatype | None -> None)
+  | Parameter_ref { parameter = None; _ } -> None
+  | Binder_ref { naam; _ } -> (
+      match List.find_opt (fun (b, _) -> norm b = norm naam) binders with
+      | Some (_, dt) -> dt
+      | None -> None)
+  | Variabele_ref _ -> None
+  | _ -> annotation e
+
+(* The same answer for a consumer that holds a document rather than a check
+   context, as [effective_ot] below does for the chain. *)
+let declared_type doc ~binders e = expr_type { doc } ~binders e
 
 let wf027 ctx =
   List.concat_map
@@ -1862,32 +1878,27 @@ let wf027 ctx =
                            boolean constant (which stays the v0 form). What the
                            verifier can statically type as boolean passes; a
                            statically non-boolean value (a numeric/text literal,
-                           any evidently non-boolean node) stays refused. The v0
-                           unknown sentinel cannot be refuted statically, so it
-                           defers to the runtime fail-fast at the write, exactly
-                           as WF-023 skips Datatype_onbekend. A value that
-                           carries no type at all (a Lambda — never a value)
+                           any evidently non-boolean node) stays refused. A value
+                           whose type nothing declares (an [Onopgelost] of
+                           unknown type, a reference that does not resolve —
+                           its own rule reports it) cannot be refuted
+                           statically and defers to the runtime fail-fast at
+                           the write. A node that is never a value (a Lambda)
                            stays refused. *)
                         (match t.toe_waarde with
                          | None ->
                              [ v "WF-027" tat "characteristic initialisation without a value" ]
-                         | Some w ->
-                             (* the honest static type: an AttribuutRef's own typ
-                                may lie, so prefer the resolved attribute datatype
-                                (the WF-023 cross-validation); fall back to the
-                                node typ for every other expression. The v0
-                                unknown sentinel stays the skip. *)
-                             let effective =
-                               match resolved_attr_datatype ctx w with
-                               | Some dt -> Some dt
-                               | None -> typ_of_expr w
-                             in
-                             (match effective with
-                              | Some Booleaan | Some (Datatype_onbekend _) -> []
-                              | _ ->
-                                  [ v "WF-027" tat
-                                      "characteristic initialisation's value must be a \
-                                       boolean-typed expression" ]))
+                         | Some (Lambda _ | Instance_set_union _) ->
+                             [ v "WF-027" tat
+                                 "characteristic initialisation's value must be a \
+                                  boolean-typed expression" ]
+                         | Some w -> (
+                             match expr_type ctx ~binders:[] w with
+                             | Some Booleaan | None -> []
+                             | Some _ ->
+                                 [ v "WF-027" tat
+                                     "characteristic initialisation's value must be a \
+                                      boolean-typed expression" ]))
                       else if not (has_attr ot m) then
                         [ v "WF-027" tat ("'" ^ m ^ "' is not a declared attribute of '" ^ tn ^ "'") ]
                       else [])
@@ -1912,7 +1923,7 @@ let datatype_kind = function
   | Numeriek _ -> "number" | Percentage _ -> "percentage" | Tekst -> "text"
   | Booleaan -> "boolean" | Datum_in_dagen -> "date-day" | Datum_tijd -> "date-ms"
   | Enumeratie _ -> "enumeration" | Sum_type _ -> "sumtype" | List_type _ -> "list"
-  | Struct_type _ -> "struct" | Datatype_onbekend _ -> "unknown"
+  | Struct_type _ -> "struct"
 
 (* like [datatype_kind] but carrying the decimal count and unit a numeric type
    turns on: a WF-076 mismatch on precision or unit renders as "number differs
@@ -1989,7 +2000,7 @@ let keuzetype_same a b =
    use site in the message, [source] what it reads. *)
 let wf089_domain_identity ?(source = "the declaration it reads from") at ~what ~decl ~typ =
   match (decl, typ) with
-  | None, _ | _, None | Some (Datatype_onbekend _), _ | _, Some (Datatype_onbekend _) -> []
+  | None, _ | _, None -> []
   | Some d, Some t -> (
       match (keuzetype_domain t, keuzetype_domain d) with
       | None, None -> []
@@ -2045,7 +2056,7 @@ let rec struct_domain = function
    carrying no type defers, exactly as WF-089 and WF-023 do. *)
 let wf090_struct_identity ?(source = "the declaration it reads from") at ~what ~decl ~typ =
   match (decl, typ) with
-  | None, _ | _, None | Some (Datatype_onbekend _), _ | _, Some (Datatype_onbekend _) -> []
+  | None, _ | _, None -> []
   | Some d, Some t -> (
       match (struct_domain t, struct_domain d) with
       | None, None -> []
@@ -2238,7 +2249,7 @@ let rec datatype_full = function
 let use_site_identity ?(source = "the declaration it reads from") ?soort ?(skip = []) at ~what
     ~decl ~typ =
   match (decl, typ) with
-  | None, _ | _, None | Some (Datatype_onbekend _), _ | _, Some (Datatype_onbekend _) -> []
+  | None, _ | _, None -> []
   | Some d, Some t ->
       let mismatch facet shown_t shown_d =
         [ v "WF-091" at
@@ -2302,14 +2313,6 @@ let use_site_identity ?(source = "the declaration it reads from") ?soort ?(skip 
            [ ("soort", soort_facet); ("domain", domain_facet); ("unit", unit_facet);
              ("decimals", decimals_facet); ("wholeness", whole_facet); ("sign", sign_facet);
              ("residual", residual_facet) ])
-
-(* the soort facet's WF-078 wording on a `BinderRef` arm — the number and the
-   sentence WF-078 has carried since the sum-type card, kept verbatim so the
-   engine absorbs the rule rather than renaming it *)
-let binder_soort naam =
-  ( "WF-078",
-    fun kt kd -> Printf.sprintf "binder reference '%s' is typed %s, but its binder is %s" naam kt kd
-  )
 
 (* --- the DERIVED expectation on composite positions (WF-091) ------------ *)
 
@@ -2376,15 +2379,16 @@ let maal_unit (a : eenheid option) (b : eenheid option) : eenheid option option 
       in
       (match cancel x y with Some u -> Some u | None -> cancel y x)
 
-(* The RegelSpraak frontend's `setLezing` (`ExpressieBouwer`), mirrored — the
+(* The RegelSpraak frontend's set reading (`ExpressieBouwer`), mirrored — the
    scheidslijn the §4.20 denominator strip below turns on, taken from the
    emitter rather than restated beside it. An aggregation operand list is a
-   NON-TEMPORAL SET reading when it is ONE attribute reference carrying `set`
-   over an attribute its objecttype declares NO granularity for. Both halves
-   are the frontend's and both are load-bearing: a set read over a TEMPORAL
+   NON-TEMPORAL SET reading when the fold carries a range ([ranged]: its one
+   argument is then the set source, D8) and that argument reads an attribute
+   its objecttype declares NO granularity for. Both halves are the
+   frontend's and both are load-bearing: a set read over a TEMPORAL
    attribute is the §7.1 per-element timeline fold (each element's tijdreeks
-   summed over time FIRST), which DOES integrate, and the non-set read is the
-   §4.20 rate read proper — so neither is this shape.
+   summed over time FIRST), which DOES integrate, and the bindingless read
+   is the subject's own §4.20 rate read proper — so neither is this shape.
 
    [None] wherever a SET read's granularity is UNREADABLE — an objecttype
    this document does not declare, or a half of the resolving pair left
@@ -2397,11 +2401,11 @@ let maal_unit (a : eenheid option) (b : eenheid option) : eenheid option option 
    ill-formed in a fold source since the widening. The corpus carries none
    of the three shapes: every TOTAAL operand in golden, rood, negatief and
    the parity zone resolves (measured 2026-09-04). *)
-let set_lezing ctx (args : expr list) : bool option =
+let set_lezing ctx ~ranged (args : expr list) : bool option =
   match args with
-  | [ Attribuut_ref { set = true; objecttype = Some otn; attribuut = Some a; _ } ] -> (
+  | [ Attribuut_ref { objecttype = Some otn; attribuut = Some a; _ } ] when ranged -> (
       match objecttype ctx otn with Some ot -> Some (not (attr_temporal ot a)) | None -> None)
-  | [ Attribuut_ref { set = true; _ } ] -> None
+  | [ Attribuut_ref _ ] when ranged -> None
   | _ -> Some false
 
 (* The expectation for one composite position, or [None] where v0 derives
@@ -2419,9 +2423,10 @@ let set_lezing ctx (args : expr list) : bool option =
    silently skipped. Two node kinds are left out for the opposite reason:
    an IfThenElse and a Let already cross their whole type against their
    branches and their body under WF-069 and WF-076. *)
-let composite_expectation ctx (e : expr) : (string * string * datatype * string list) option =
-  let known x = match x with Some (Datatype_onbekend _) -> None | x -> x in
-  let operand_t x = known (Option.bind x typ_of_expr) in
+let composite_expectation ctx ~binders (e : expr) :
+    (string * string * datatype * string list) option =
+  let ty x = expr_type ctx ~binders x in
+  let operand_t x = Option.bind x ty in
   match e with
   | Binair { op = (Plus | Min | Verminderd_met) as op; links; rechts; _ } -> (
       let what =
@@ -2480,7 +2485,7 @@ let composite_expectation ctx (e : expr) : (string * string * datatype * string 
       (* ch. 2.4 clause 2: a rounding changes the FACING precision to its own
          decimal count (whole when 0) and touches nothing else — ch. 2.10:
          it carries its basis's unit. *)
-      match known (typ_of_expr b) with
+      match ty b with
       | Some (Numeriek { teken; eenheid; _ }) ->
           Some
             ( "the rounding", "the type derived from its base and its decimal count",
@@ -2503,7 +2508,7 @@ let composite_expectation ctx (e : expr) : (string * string * datatype * string 
       (* ch. 2.7: a clamp returns one of three values of the base's own type.
          Its SIGN is the sharpest case for the exclusion the header states: a
          clamp with a minimum of 0 IS non-negative whatever its base says. *)
-      match known (typ_of_expr b) with
+      match ty b with
       | Some d -> Some ("the clamp", "the type derived from its base", d, [ "sign"; "residual" ])
       | None -> None)
   | Functie { kind = Aantal; _ } ->
@@ -2531,14 +2536,14 @@ let composite_expectation ctx (e : expr) : (string * string * datatype * string 
           Numeriek { geheel = true; decimalen = 0; teken = Some Niet_negatief; eenheid = None },
           [ "sign"; "residual" ] )
   | Functie { kind = (Som | Eerste | Laatste | Totaal | Minimum | Maximum) as k;
-              argumenten = a0 :: rest; _ } -> (
+              argumenten = a0 :: rest; bron_rol; bron_pad; _ } -> (
       let name =
         match k with
         | Som -> "SOM" | Eerste -> "EERSTE" | Laatste -> "LAATSTE"
         | Totaal -> "TOTAAL" | Minimum -> "MINIMUM" | _ -> "MAXIMUM"
       in
       let what = "the " ^ name ^ " aggregation" in
-      match known (typ_of_expr a0) with
+      match ty a0 with
       | None -> None
       | Some t0 -> (
           match k with
@@ -2571,7 +2576,7 @@ let composite_expectation ctx (e : expr) : (string * string * datatype * string 
                  answer the first operand's unit whole) — a divergence recorded
                  at the card, harmless on this corpus, where every TOTAAL's own
                  annotation follows the emitter. *)
-              match set_lezing ctx (a0 :: rest) with
+              match set_lezing ctx ~ranged:(bron_rol <> None || bron_pad <> None) (a0 :: rest) with
               | None -> None
               | Some true ->
                   Some (what, "the type derived from its first operand", t0, [ "sign"; "residual" ])
@@ -2589,8 +2594,8 @@ let composite_expectation ctx (e : expr) : (string * string * datatype * string 
                   ( what, "the type derived from its operand", t0,
                     [ "domain"; "sign"; "residual" ] )
               else
-                let ts = List.map typ_of_expr (a0 :: rest) in
-                if List.exists (fun x -> known x = None) ts then None
+                let ts = List.map ty (a0 :: rest) in
+                if List.exists (fun x -> x = None) ts then None
                 else
                   let ts = List.filter_map (fun x -> x) ts in
                   (* ch. 2.3 / ch. 4.1: the least operand precision, the
@@ -2612,12 +2617,12 @@ let composite_expectation ctx (e : expr) : (string * string * datatype * string 
           | _ -> None))
   | _ -> None
 
-let composite_identity ctx at (e : expr) =
-  match composite_expectation ctx e with
+let composite_identity ctx ~binders at (e : expr) =
+  match composite_expectation ctx ~binders e with
   | None -> []
   | Some (what, source, derived, skip) ->
       use_site_identity ~source ~skip (at ^ "/type") ~what ~decl:(Some derived)
-        ~typ:(typ_of_expr e)
+        ~typ:(annotation e)
 
 let wf030 ctx =
   let key_checks at otn keys =
@@ -2833,8 +2838,7 @@ let dagsoort_scan at (c0 : conditie) : violation list * string list =
     (* the WF-031 admission list is closed: relation membership and rule-version state are
        derived fact-base reads, outside "dates, date-components, eerste-paasdag, literals,
        parameters and other day kinds" — flag them like the attribute/characteristic reads *)
-    | Rollidmaatschap { rol; _ } -> impure "role membership" (Option.value rol ~default:"?")
-    | Verre_rollidmaatschap { filler; _ } -> impure "role membership" (Option.value filler ~default:"?")
+    | Role_membership { role; _ } -> impure "role membership" role
     | Regelversie { regel; _ } -> impure "rule-version state" (Option.value regel ~default:"?")
     (* the quantifier fold ranges over the fact base — instances reached
        through a relation — which is the same derived read the membership
@@ -3136,57 +3140,6 @@ let rec enum_use_site ctx at (d : datatype) : violation list =
       List.concat_map (fun (_, fd) -> enum_use_site ctx at fd) velden
   | _ -> []
 
-(* WF-034's sentinel fence, one level down: the v0 unknown type on a `SumType`
-   CONSTRUCTOR PAYLOAD (maintainer decision 2026-09-04, second wave). The fence
-   in [walk_expr]'s type prologue matches the node's type at the top level, so
-   it sees the sentinel only when the WHOLE type is the sentinel; a datatype is
-   a tree, and a sum type carries its payloads as children. The descent is
-   [enum_use_site]'s, through the same payloads and for the same measured
-   reason — a use site's inline constructor copy is what the consumers read,
-   while WF-062 crosses only the DECLARATION.
-
-   The CONTAINER half followed one wave later (maintainer decision
-   2026-09-04, third wave): a payload is a datatype, so it may be a
-   `ListType` or a `StructType`, and the sentinel then sits one further
-   level down — measured schema-valid and verifier-clean on three
-   hand-built witnesses over a sum-typed golden, with `ref` replaying to
-   its pinned expectations while clingo refuses the same document
-   (`TRANSLATION FAULT: unscalable datatype in the ASP translation`).
-   [payload_descent] therefore walks the WHOLE payload subtree, not just
-   the sum chain, and a container that contains a further sum re-enters
-   [payload_sentinel] — which keeps the sum-chain message naming the
-   innermost constructor, as before.
-
-   Only the payload subtree: a sentinel at a `ListType` element or a
-   `StructType` field that is NOT under a payload is caught by the
-   declaration and identity rules (measured — of the goldens' datatype
-   positions only the payload chain and the fold-/aggregation argument
-   types ever survived sentinel injection), and the fold-/aggregation
-   survivors belong to the aggregation branch, not to this descent: 10 of
-   them before that branch grew its own sentinel fence (WF-034's seventh
-   wave), 0 after. *)
-let rec payload_sentinel at (d : datatype) : violation list =
-  match d with
-  | Sum_type { constructoren; _ } ->
-      List.concat_map
-        (function
-          | n, Some p -> payload_descent at ("the payload of constructor '" ^ n ^ "'") p
-          | _, None -> [])
-        constructoren
-  | _ -> []
-
-(* One payload subtree, [where] naming the position in the reader's terms. *)
-and payload_descent at where (d : datatype) : violation list =
-  match d with
-  | Datatype_onbekend _ -> [ v "WF-034" at ("unknown-type sentinel on " ^ where) ]
-  | Sum_type _ -> payload_sentinel at d
-  | List_type { element } -> payload_descent at ("the list element inside " ^ where) element
-  | Struct_type { velden; _ } ->
-      List.concat_map
-        (fun (fn, fd) -> payload_descent at ("field '" ^ fn ^ "' inside " ^ where) fd)
-        velden
-  | _ -> []
-
 (* Two constructor lists agree when they carry the same constructors in the
    same order with structurally equal payloads (names case-insensitively,
    the WF-001 identity rule; payloads by the datatype equality WF-049 uses). *)
@@ -3295,23 +3248,6 @@ let is_role_name ctx name =
         ft.rollen)
     ctx.doc.feittypen
 
-(* Does [name] match (ci, declared name or plural) a role that [otype]
-   itself fills in some declared fact type? The self-denoting fold source
-   (WF-083, IR-SPEC ch. 4.3): the written form "het aantal <rol> van de
-   <onderwerp>" names the fold subject by its own role name, and the wire
-   carries that written role in the argument's navigatieRol —
-   presentation, not navigation. *)
-let self_denoting_role ctx ~otype name =
-  List.exists
-    (fun (_, (ft : feittype)) ->
-      List.exists
-        (fun (r : rol) ->
-          norm (Option.value r.rol_objecttype_naam ~default:"") = norm otype
-          && ((match r.rol_naam with Some n -> norm n = norm name | None -> false)
-             || match r.rol_meervoud with Some m -> norm m = norm name | None -> false))
-        ft.rollen)
-    ctx.doc.feittypen
-
 (* The ch. 4.1 type-pair derivation, mirrored from the executors: the
    two-role fact types relating [from_type] to [to_type] (either way).
 
@@ -3391,33 +3327,6 @@ let connecting_role_candidates ctx ~from_type ~to_type =
       | _ -> [])
     ctx.doc.feittypen
 
-(* WF-034 (t), ch. 4.6: the FAR-side role check's pair. Counted in
-   (subject role, far role) PAIRS on ONE fact type, because that is what the
-   node's two fields together denote and a fact type carrying only one end
-   answers nothing: [backref] names the role the SUBJECT fills, and the role
-   at the OTHER end of the same fact type must be filled by [filler]. Name
-   identity is ch. 2.1's — declared name or declared plural under [norm] —
-   as in every other role lookup here. The reciprocal shape is the one case
-   where the two ends are one role, so it contributes iff both sides hold of
-   it. Deliberately NOT a mirror of ref's exists-join: the verifier derives
-   this from the declarations alone, sharing no code with any executor. *)
-let far_role_candidates ctx ~subject ~filler ~backref =
-  let named (r : rol) =
-    (match r.rol_naam with Some n -> norm n = norm backref | None -> false)
-    || match r.rol_meervoud with Some m -> norm m = norm backref | None -> false
-  in
-  List.concat_map
-    (fun (_, (ft : feittype)) ->
-      let f inst role = fills ctx ~inst ~role in
-      match ft.rollen with
-      | [ a; b ] ->
-          (if f subject a && named a && f filler b then [ (a, b) ] else [])
-          @ (if f subject b && named b && f filler a then [ (b, a) ] else [])
-      | [ r ] when ft.wederkerig ->
-          if f subject r && named r && f filler r then [ (r, r) ] else []
-      | _ -> [])
-    ctx.doc.feittypen
-
 (* The SEVEN aggregation kinds that read a VALUE per contributor — every fold
    kind except AANTAL, which reads the contributors themselves (ch. 1.2e: a
    count is never empty because it never looks inside a member). WF-093's
@@ -3441,269 +3350,164 @@ let value_fold_name = function
   | Aantal_gevulde -> Some "AANTAL_GEVULDE"
   | _ -> None
 
-(* The v0 instance-fold source wart (`CONSTRUCTS.md` row 1): a count/fold
-   over a fact-type relation encodes its source as a pseudo-AttribuutRef
-   naming a ROLE (usually the plural), typed with the unknown sentinel.
-   Legitimate v0; the row-1 split removes the encoding in v1. Such an
-   argument is checked here instead of by the generic walk. [element_type]
-   is the fold's declared element type — the far end of the narrowed
-   type-pair fallback (IR-SPEC ch. 4.3). [subject] is the fold SUBJECT (the
-   walking type), which is what both executors anchor an instance fold at;
-   [single] says the fold carries exactly ONE argument — the instance-fold
-   source shape, the only one whose operand has an anchor at all (a listed
-   value fold's operands are ordinary reads, and a foreign objecttype there
-   is a legitimate type-pair hop, ref's [navigated]). *)
-let aggregation_source_check ctx at ~element_type ~subject ~single ~kind e =
-  (* WF-093, the wart's KIND law (maintainer decision 2026-09-06): a
-     single-argument instance-fold source carrying the unknown sentinel on its
-     OWN type is a COUNT source and nothing else. The rule keys on the
-     SENTINEL, which is the one thing all its guises share: v0 writes it over
-     a ROLE name (the bare spelling, "het aantal <rol> van de <onderwerp>"),
-     over an element ATTRIBUTE (the set spelling), and — the frontend's own
-     route — over a CHARACTERISTIC. Under the sentinel the source hands the
-     fold linked INSTANCES instead of a value per contributor, which is
-     exactly what AANTAL consumes and what every other fold kind cannot read.
+(* The roles reachable from [from_type] whose declared name or plural
+   matches [name] (ci): the far role of every two-role fact type whose near
+   role [from_type] fills, and the one role of a reciprocal fact type it
+   fills. The near side is a FILLER question — an instance of [from_type]
+   fills a role declared at any of its supertypes (ch. 2.6). Returns
+   (fact type, reached role). *)
+let roles_named_from ctx ~from_type ~name =
+  let matches (r : rol) =
+    (match r.rol_naam with Some n -> norm n = norm name | None -> false)
+    || match r.rol_meervoud with Some m -> norm m = norm name | None -> false
+  in
+  List.filter_map
+    (fun (fn, (ft : feittype)) ->
+      let f role = fills ctx ~inst:from_type ~role in
+      match ft.rollen with
+      | [ a; b ] ->
+          if f a && matches b then Some (fn, b)
+          else if f b && matches a then Some (fn, a)
+          else None
+      | [ r ] when ft.wederkerig -> if f r && matches r then Some (fn, r) else None
+      | _ -> None)
+    ctx.doc.feittypen
 
-     Keyed on the unknown sentinel, which is how the wart is spelled on the
-     wire (ch. 4.3's normative discriminator) and how ref keys its own arm:
-     [Attribuut_ref { typ = Some (Datatype_onbekend _); ... }] is ref's FIRST
-     fold-source arm, matched before the set arm and regardless of [set], so
-     it takes BOTH spellings — the bare wart and the set wart — and yields
-     `Instances, which its [values ()] refuses with `value aggregation over a
-     bare role source`. That fault is now unreachable on a well-formed
-     document; it stays as the second line of defence, never a dead branch.
+(* The reading of an instance fold's SOURCE — the single argument of an
+   aggregation carrying an elementObjecttype (IR-SPEC ch. 4.3, D8). The
+   range decides it: with one (bronRol or bronPad) the argument is the SET
+   source, read per contributor; without one it is the subject's own read,
+   which the loader admits under TOTAAL alone. Under AANTAL the set source
+   counts the instances the range reaches, and its `attribuut` is the
+   written name of the bound role (WF-047 crosses it); under every other
+   aggregation it reads `attribuut` on each contributor, so the name is an
+   attribute of the elementObjecttype.
 
-     Single-scoped with the rest of the family: with two or more arguments the
-     node is the listed value fold (§5.8.3), whose operands are ordinary reads
-     — and in the ONE listed position the four zones carry today the sentinel
-     is v0's failed typing of a real attribute read (measured: one EERSTE over
-     two listed operands in the parity zone). The wart VERBATIM in that
-     position is a second shape again, and no executor carries it — the third
-     one reaches for the getter of the ROLE name and throws — so widening this
-     rule there would refuse two different shapes under one reason; the
-     sentinel-at-an-ordinary-read question is tracked on its own. Kind-scoped
-     to the aggregations because the rule is about folding; a builtin carrying
-     an elementObjecttype is a different malformation and no document has one
-     (measured: 0 of 523). *)
-  (match (e, value_fold_name kind) with
-   | Attribuut_ref { typ = Some (Datatype_onbekend _); set; _ }, Some kn when single ->
-       [ v "WF-093" at
-           ("the v0 instance-fold source (the row-1 wart, spelled with the unknown sentinel on \
-             the argument's own type) is a COUNT source: a fold source whose own type is the \
-             unknown sentinel yields the linked instances, which only AANTAL reads — so it \
-             cannot be the source of this " ^ kn
-          ^ " aggregation"
-          ^ (if set then " (the set spelling reads it no differently: the sentinel decides)"
-             else "")) ]
-   | _ -> [])
-  @
-  (* a fold source never navigates: its relation is the fold's bronRol —
-     stray navigation bindings in this slot are ill-formed (WF-053). Scoped
-     to the single-argument shape with the rest of the family (see the
-     navigatiePad arm below): only there is the argument a fold SOURCE. *)
-  (match e with
-   | Attribuut_ref { navigatie_bindingen = Some _; _ } when single ->
-       [ v "WF-053" at
-           "navigation bindings on a fold source are ill-formed (the fold's relation is \
-            bronRol)" ]
-   | _ -> [])
-  @
+   The count source is recognised at the source itself (D9): its
+   `attribuut` names no member of the element type. That is the whole of
+   the distinction WF-093 draws in both directions — a count source is the
+   source of AANTAL and of nothing else, and AANTAL reads nothing but a
+   count source — so the recognition must not read the node's kind, or the
+   rule would be circular. A name that is no member of the element type and
+   no role reachable from the subject either is neither reading: under a
+   value fold it is an unresolved member (WF-034), under AANTAL a written
+   role name that denotes nothing (WF-047). *)
+type source_reading =
+  | Src_count (* AANTAL over a source naming no member of the element type *)
+  | Src_count_of_member (* AANTAL over a member of the element type: WF-093 *)
+  | Src_value (* a value fold's set source, a member of the element type *)
+  | Src_role_under_value_fold (* a value fold over a role name: WF-093 *)
+  | Src_unresolved (* a value fold over a name that resolves nowhere *)
+  | Src_own (* no range: the subject's own read (ch. 3.6) *)
+  | Src_undecided (* the element type is undeclared: WF-034 reports it *)
+
+let source_reading ctx ~element_type ~subject ~kind ~ranged a =
+  if not ranged then Src_own
+  else
+    match objecttype ctx element_type with
+    | None -> Src_undecided
+    | Some ot -> (
+        let member = has_attr ot a || has_kenmerk ot a in
+        match (kind, member) with
+        | Aantal, true -> Src_count_of_member
+        | Aantal, false -> Src_count
+        | _, true -> Src_value
+        | _, false ->
+            let role =
+              match subject with
+              | Some st -> roles_named_from ctx ~from_type:st ~name:a <> []
+              | None -> is_role_name ctx a
+            in
+            if role then Src_role_under_value_fold else Src_unresolved)
+
+(* The fold-source rules over that reading, for an attribute reference in
+   the source position ([aggregation_source_check] is called for the single
+   argument of an aggregation with an elementObjecttype and nowhere else;
+   every other operand is an ordinary read, walked by [walk_expr]).
+
+   WF-093, both directions (D9, maintainer decision 2026-09-06 for the first
+   direction): a count source hands the fold the linked INSTANCES, which
+   only AANTAL reads; and AANTAL folds instances, so a source reading a
+   member of each contributor hands it values it does not consume.
+
+   WF-083 (c), the anchor, per position (D8): the source's `objecttype`
+   names the type the executors read it at — the elementObjecttype for a
+   value fold's set source (every declaration is looked up on the element),
+   the fold SUBJECT for the count source (its written role name is the
+   subject's relation) and for the subject's own read. It is a guard, not a
+   selector: a spelling that disagrees names another declaration than the
+   one the executors resolve, so it is refused, never read. Where WF-093
+   refuses the reading itself the anchor has nothing to add and stays
+   silent, so one defect keeps one rule.
+
+   The member resolution (WF-034, WF-080) runs on the source's own
+   `objecttype`, as on every attribute reference; the count source's name is
+   WF-047's (it must denote the bound role), so it is exempt here. *)
+let aggregation_source_check ctx at ~element_type ~subject ~kind ~ranged e =
   match e with
-  (* WF-083 (a). Single-scoped with the whole "a fold source never
-     navigates" family (maintainer decision 2026-09-05, the fix round):
-     with two or more arguments the node is the listed value fold
-     (§5.8.3) and its operands are ORDINARY READS — ref evaluates each
-     one through the same expression evaluator that navigates anywhere
-     else, so a navigating operand there is a legitimate read, not an
-     anchored source that moved. Measured on a hand-built LAATSTE whose
-     second operand navigates: ref 30, the ASP backend 30, Drools 30 —
-     three executors agreeing on a form this arm refused unscoped. *)
-  | Attribuut_ref { navigatie_pad = _ :: _; _ } when single ->
-      [ v "WF-083" at
-          "a fold source never navigates: a non-empty navigatiePad on a fold-source argument \
-           is ill-formed (the fold's relation is bronRol)" ]
-  (* the [navigatie_pad] constraint the arm above used to carry is
-     deliberately absent here: with (a) scoped, a nested operand with a
-     path must still reach the resolution below instead of falling
-     through every arm into silence. *)
-  | Attribuut_ref { attribuut = Some a; objecttype = Some otn;
-                    navigatie_rol; typ; set; _ } -> (
-      (* the row-1 wart, spelled on the wire as the unknown sentinel on the
-         argument's own type. Hoisted out of the [Some ot] branch below
-         because the self-denotation clause needs it too: only the wart
-         carries a written role name at all. *)
-      let wart = match typ with Some (Datatype_onbekend _) -> true | _ -> false in
-      (* the self-denoting fold source (WF-083): navigatieRol here is the
-         written form naming the fold subject by its own role name — an
-         away-pointing role would be navigation, which a fold source
-         never does; the silent fall-through this arm replaces let it
-         pass while both executors fault on it.
-
-         The test anchors on the fold SUBJECT (maintainer decision
-         2026-09-05), which is the type both executors anchor it at:
-         ref's instance-fold source arm guards on
-         [self_denoting_role ~self_type:self.otype], the ASP backend's
-         count arm on [~self_type:subject_ot]. Before this the anchor was
-         the OPERAND's own objecttype — a field neither executor reads
-         here — so one wire field flipped the verdict while no executor
-         moved: measured on the tempototaal shape with navigatieRol
-         "vondst" added, `objecttype: "Vondst"` PASSED and
-         `objecttype: "Jutter"` FAILED, with ref faulting `unsupported
-         instance-fold source shape` and the ASP backend `expression kind
-         not translated` on BOTH spellings.
-
-         And the written role belongs to the WART alone: it is v0's
-         presentation of "het aantal <rol> van de <onderwerp>", the one
-         shape whose source names a role instead of reading an attribute.
-         On any other fold source a navigatieRol is navigation, which a
-         fold source never does — ref's set-source arm and its temporal
-         total both demand [navigatie_rol = None] outright, so every such
-         form faults there. Without this half the re-anchoring would have
-         OPENED a hole it did not have: a set fold carrying a navigatieRol
-         that denotes the SUBJECT (measured: "bewarende jutter" on a
-         Jutter-subject fold over Vondst) is refused by both executors and
-         would have become verifier-clean.
-
-         Single-scoped with the rest of the family: on a listed value
-         fold the operands are ordinary reads and a navigatieRol there is
-         an ordinary written hop, governed by WF-053 in the sibling
-         branch. *)
-      (if not single then []
-       else
-         match navigatie_rol with
-         | None -> []
-         | Some nr when not wart ->
-             [ v "WF-083" at
-                 ("navigatieRol '" ^ nr ^ "' on a fold source that is not the v0 instance-fold \
-                   source (the unknown-typed row-1 wart): the written role is that wart's \
-                   presentation of the fold subject and nothing else — on any other fold \
-                   source a navigatieRol claims navigation, which a fold source never does \
-                   (its relation is bronRol)") ]
-         | Some nr -> (
-             match subject with
-             | Some st when not (self_denoting_role ctx ~otype:st nr) ->
-                 [ v "WF-083" at
-                     ("navigatieRol '" ^ nr ^ "' on a fold source does not denote the fold \
-                       subject: no role named so (declared name or plural, ci) is filled by \
-                       the fold subject '" ^ st ^ "' itself — a fold source never navigates") ]
-             | _ -> []))
-      (* WF-083, the ANCHOR cross (maintainer decision 2026-09-05): the
-         instance-fold source's own `objecttype` MUST name the type the
-         executors anchor the read at — the `elementObjecttype` when the
-         source is the set read (every read hangs on the element variable
-         and every declaration is looked up on the element type: ref's
-         set-source arm binds no objecttype at all, and the ASP backend
-         states the same anchor as [fold_operand_otype]), the fold SUBJECT
-         otherwise (ref's temporal total demands [norm aot = norm
-         self.otype] outright, and the wart resolves its written role name
-         from the subject).
-
-         The two forms this closes were both verifier-clean and both
-         measured: a temporal TOTAAL whose operand names another type's
-         temporal attribute (ref `unsupported instance-fold source shape`,
-         the ASP backend `the temporal total of … is declared on "Jutter",
-         not on the subject type "Vondst"`), and a NON-temporal set TOTAAL
-         whose operand names an attribute the element type does not
-         declare — where the two executors DISAGREE under a well-formed
-         document: ref folds every member's absent value and answers 0,
-         the ASP backend faults `unknown attribute … on "Vondst"`.
-
-         Scoped to the single-argument shape: with two or more operands the
-         fold is the listed value fold (§5.8.3) whose operands are ordinary
-         reads, and there a foreign objecttype is a legitimate type-pair
-         hop (ref's [navigated] switch) — not an anchor lie. Measured over
-         the four zones: 110 single-argument fold sources and 12 operands
-         of listed folds carrying a vestigial elementObjecttype; all 122
-         agree with their anchor today, so the scope hides nothing. *)
-      @ (let anchor = if set then Some element_type else subject in
+  | Attribuut_ref { attribuut = Some a; objecttype = Some otn; navigatie_bindingen; _ } -> (
+      (* a fold source never navigates: its relation is the fold's range —
+         navigation bindings in this slot are ill-formed (WF-053) *)
+      (match navigatie_bindingen with
+       | Some _ ->
+           [ v "WF-053" at
+               "navigation bindings on a fold source are ill-formed (the fold's relation is its \
+                range, bronRol or bronPad)" ]
+       | None -> [])
+      @
+      let reading = source_reading ctx ~element_type ~subject ~kind ~ranged a in
+      let kn = match value_fold_name kind with Some k -> k | None -> "AANTAL" in
+      (match reading with
+       | Src_role_under_value_fold ->
+           [ v "WF-093" at
+               ("the fold source '" ^ a ^ "' names a role of the fold subject and no attribute \
+                of the element type '" ^ element_type
+              ^ "': it is a COUNT source, which yields the linked instances, and only AANTAL \
+                 reads those — it cannot be the source of this " ^ kn ^ " aggregation") ]
+       | Src_count_of_member ->
+           [ v "WF-093" at
+               ("the source of this AANTAL aggregation reads '" ^ a
+              ^ "', a member of the element type '" ^ element_type
+              ^ "': a count folds INSTANCES, so its source is a count source naming the \
+                 relation's role, never a value read per contributor") ]
+       | _ -> [])
+      @ (let anchor =
+           match reading with
+           | Src_value | Src_unresolved -> Some element_type
+           | Src_count | Src_own -> subject
+           | Src_count_of_member | Src_role_under_value_fold | Src_undecided -> None
+         in
          match anchor with
-         | Some anc when single && norm otn <> norm anc ->
+         | Some anc when norm otn <> norm anc ->
              [ v "WF-083" at
-                 ("fold-source objecttype '" ^ otn ^ "' is not the fold's anchor '" ^ anc
-                ^ "' (" ^ (if set then "the set source reads each member of the \
-                                       elementObjecttype"
-                           else "a non-set fold source is read on the fold subject")
-                ^ "): the executors resolve '" ^ a ^ "' against the anchor, never against this \
-                   annotation, so the two spellings name different declarations") ]
+                 ("fold-source objecttype '" ^ otn ^ "' is not the fold's anchor '" ^ anc ^ "' ("
+                 ^ (match reading with
+                   | Src_count -> "a count source is read on the fold subject"
+                   | Src_own -> "a fold without a range reads the subject's own attribute"
+                   | _ -> "a set source reads each member of the elementObjecttype")
+                 ^ "): the executors resolve '" ^ a
+                 ^ "' against the anchor, never against this field, so the two spellings name \
+                    different declarations") ]
          | _ -> [])
       @
       match objecttype ctx otn with
       | None -> [ v "WF-034" at ("object type '" ^ otn ^ "' is not declared") ]
-      | Some ot ->
-          (* IR-SPEC ch. 4.6: "the one scoped exception is the fold-source role
-             name (ch. 4.3)", and ch. 4.3 scopes it to the v0 INSTANCE-fold
-             source — the row-1 wart, which writes a role name in the
-             argument's `attribuut` slot and carries the unknown sentinel on
-             its own type BY CONSTRUCTION. That sentinel is how the wart is
-             spelled on the wire and how both executors key their
-             role-naming branch (ref's contributor match, the ASP backend's
-             count arm); the verifier now keys it the same way instead of
-             offering the exception to every fold source.
-
-             Measured before this narrowing (maintainer decision 2026-09-04,
-             fourth wave), on `corpus/golden/anchor/jutterswet-maatschap`
-             whose SOM source is a genuine attribute read carrying a real
-             datatype: `attribuut` set to `bestaatniet` (the type-pair
-             branch — the one reciprocal self-relation over Jutter offers
-             exactly one candidate role) or to `maat` (the role-name branch —
-             a declared role of another position entirely) both stayed
-             verifier-CLEAN, while `ref` silently summed 0 where 12 and 30 are
-             pinned and the ASP backend refused to translate. Outside the
-             wart the source is an ordinary attribute reference and resolves
-             like one.
-
-             The regression boundary, counted over all four zones: of 89
-             named fold sources — NAMED being the argument that spells both
-             its `attribuut` and its `objecttype`, the pair this arm resolves
-             through; count in the one source spelling an attribute and no
-             object type (a wave-1 shape, refused there) and the totals read
-             90 and 58 — 32 carry the wart (24 resolving through a
-             declared role name, 5 through the type pair, 3 already
-             ill-formed under this rule's older arms) and 57 do not — and of
-             those 57, 54 already resolve as a declared attribute and one
-             names a characteristic (WF-080's arm above, unchanged), leaving
-             only the two witnesses this narrowing adds. The counting folds
-             that lean on the fallback (`jutterswet-kaveltelling`'s
-             synthesized plural; the declared-plural route of
-             `jutterswet-aanmeldertelling` and `jutterswet-vondsttelling`)
-             are warts and keep both routes. *)
-          if has_attr ot a || (wart && is_role_name ctx a) then []
-          else if has_kenmerk ot a then
-            (* WF-080: an aggregation source is a value position — a
-               value-yielding fold reads each element's attribute value
-               (a count names a role, kept above via is_role_name). A
-               characteristic endpoint carries no value here: ref folds it
-               as empty, clingo cannot translate it — the split the sibling
-               walk_expr branch already refuses. The same tolerated
-               has_attr||has_kenmerk leak, closed here too. *)
-            [ v "WF-080" at
-                ("'" ^ a ^ "' is a characteristic of '" ^ otn
-               ^ "', not an attribute — a characteristic endpoint is ill-formed in an \
-                  aggregation source position") ]
-          else if not wart then
-            [ v "WF-034" at
-                ("'" ^ a ^ "' is not a declared attribute of '" ^ otn
-               ^ "': outside the v0 instance-fold source (the unknown-typed row-1 wart) a \
-                  fold-source argument is an ordinary attribute reference — the ch. 4.3 \
-                  role-name exception and its type-pair fallback do not reach here") ]
-          else (
-            (* the narrowed type-pair fallback (IR-SPEC ch. 4.3): a written
-               source name that resolves to no declared role — v0's
-               synthesized plural over a role without a declared one — is
-               admitted iff the type pair derives a unique CONNECTING ROLE;
-               that role is the source, deterministically, no spelling guess.
-               Zero, several, or a self-typed two-role pair (both roles are
-               candidates — the executors' block, ch. 4.1) keep the rejection
-               loud. Counted in candidate roles, not fact types. *)
-            match connecting_role_candidates ctx ~from_type:otn ~to_type:element_type with
-            | [ _ ] -> []
-            | cands ->
+      | Some ot -> (
+          match reading with
+          | Src_count | Src_count_of_member | Src_role_under_value_fold | Src_undecided -> []
+          | Src_value | Src_unresolved | Src_own ->
+              if has_attr ot a then []
+              else if has_kenmerk ot a then
+                (* WF-080: an aggregation source is a value position — a
+                   characteristic endpoint carries no value here *)
+                [ v "WF-080" at
+                    ("'" ^ a ^ "' is a characteristic of '" ^ otn
+                   ^ "', not an attribute — a characteristic endpoint is ill-formed in an \
+                      aggregation source position") ]
+              else
                 [ v "WF-034" at
-                    ("'" ^ a ^ "' is neither a member of '" ^ otn
-                   ^ "' nor a declared role, and the type pair '" ^ otn ^ "'/'"
-                   ^ element_type ^ "' does not derive a unique connecting role ("
-                   ^ string_of_int (List.length cands)
-                   ^ " candidates) — the ch. 4.3 fallback cannot stand in") ]))
+                    ("'" ^ a ^ "' is not a declared attribute of '" ^ otn
+                   ^ "': a value fold's source reads an attribute of each contributor") ]))
   | _ -> []
 
 (* --- WF-047 / WF-048: symbolic role bindings (v1 extension) -------------- *)
@@ -3771,262 +3575,89 @@ let wf047_binding ctx at (rb : rol_binding) ~bound_filler ~other_filler =
       in
       agree "bound" bound bound_filler @ agree "opposite" other other_filler
 
-(* WF-048: a bindingless allocation or instance fold is well-formed only
-   if the connecting relation is uniquely derivable from the type pair —
-   the ch. 4.1 runtime fault, lifted to well-formedness. *)
-let wf048_derivable ctx at ~from_type ~to_type ~site =
-  match connecting_candidates ctx ~from_type ~to_type with
-  | [ _ ] -> []
-  | [] ->
-      [ v "WF-048" at
-          (Printf.sprintf "bindingless %s: no fact type relates '%s' to '%s'" site from_type
-             to_type) ]
-  | l ->
-      [ v "WF-048" at
-          (Printf.sprintf
-             "bindingless %s: %d fact types relate '%s' to '%s' — not uniquely derivable; \
-              name the connecting relation with an explicit role binding"
-             site (List.length l) from_type to_type) ]
-
-(* --- WF-053: the navigated read (v1 extension) --------------------------- *)
-
-(* One by-name navigation step from [from_type]: the unique reachable role
-   whose declared name or plural matches [name] — the executors' hop
-   resolution, lifted to well-formedness. [endpoint], when the step is
-   the last (the written endpoint type is known), joins the filter: the
-   v0 by-name derivation (verbindendeRolViaNaam) disambiguates
-   same-named roles by target type. Its best-effort pluralisation is
-   deliberately NOT mirrored — a loud refusal beats heuristic name
-   formation (tracked delta, `CONSTRUCTS.md` row 4). Returns
-   (fact type, reached role). *)
-let nav_roles_by_name ?endpoint ctx ~from_type ~name =
-  let matches (r : rol) =
-    ((match r.rol_naam with Some n -> norm n = norm name | None -> false)
-    || (match r.rol_meervoud with Some m -> norm m = norm name | None -> false))
-    &&
-    match endpoint with
-    | None -> true
-    | Some e -> type_compatible ctx (Option.value r.rol_objecttype_naam ~default:"") e
-  in
-  List.filter_map
-    (fun (fn, (ft : feittype)) ->
-      (* the near side is a FILLER question: an instance of [from_type]
-         fills a role declared at any of its supertypes (ch. 2.6) *)
-      let f role = fills ctx ~inst:from_type ~role in
-      match ft.rollen with
-      | [ a; b ] ->
-          if f a && matches b then Some (fn, b)
-          else if f b && matches a then Some (fn, a)
-          else None
-      | [ r ] when ft.wederkerig -> if f r && matches r then Some (fn, r) else None
-      | _ -> None)
-    ctx.doc.feittypen
-
-let nav_role_by_name ?endpoint ctx ~from_type ~name =
-  match nav_roles_by_name ?endpoint ctx ~from_type ~name with
-  | [ p ] -> Ok p
-  | [] -> Error (Printf.sprintf "no role named '%s' is reachable from '%s'" name from_type)
-  | _ ->
-      Error
-        (Printf.sprintf
-           "role name '%s' is ambiguous from '%s'; name the hop with an explicit role binding"
-           name from_type)
-
-(* The by-pair step (a directly named object type, no written role): the
-   unique fact type relating the pair, and the role [to_type] fills —
-   the executors' type-pair derivation (the WF-048 model). *)
-let nav_role_by_pair ctx ~from_type ~to_type =
-  let hits =
-    List.filter_map
-      (fun (fn, (ft : feittype)) ->
-        let f inst role = fills ctx ~inst ~role in
-        match ft.rollen with
-        | [ a; b ] ->
-            if f from_type a && f to_type b then Some (fn, b)
-            else if f from_type b && f to_type a then Some (fn, a)
-            else None
-        | [ r ] when ft.wederkerig ->
-            if f from_type r && norm from_type = norm to_type then Some (fn, r) else None
-        | _ -> None)
-      ctx.doc.feittypen
-  in
-  match hits with
-  | [ p ] -> Ok p
-  | [] -> Error (Printf.sprintf "bindingless navigation: no fact type relates '%s' to '%s'" from_type to_type)
-  | l ->
-      Error
-        (Printf.sprintf
-           "bindingless navigation: %d fact types relate '%s' to '%s' — not uniquely \
-            derivable; name the hop with an explicit role binding"
-           (List.length l) from_type to_type)
+(* --- WF-053: the navigated read -------------------------------------------- *)
 
 (* The hop list of a navigated reference, subject-outward: (fact type,
-   reached role) per step. The bound route resolves each binding and
-   checks the chain's near sides and the written-name denotation; the
-   bindingless route requires each step to be uniquely derivable. Used
-   by the WF-053 check, and best-effort (errors dropped) by the
-   dependency graph. *)
-let nav_hops ctx ~subject ~(bindings : rol_binding list option)
-    ~(navigatie_rol : string option) ~(navigatie_pad : string option list)
-    ~(endpoint : string option) : ((string * rol) list, string list) result
-    =
+   reached role) per step. Every binding resolves (WF-047's resolution: the
+   declared role name binds), every hop's near side is filled by the type
+   the walk stands at, and the walk lands on the endpoint. Used by the
+   WF-053 check, and best-effort (errors dropped) by the dependency graph.
+   Since L2 the bindings are the whole navigation (B11): a read without them
+   is the subject's own read, so there is nothing here to derive. *)
+let nav_hops ctx ~subject ~(bindings : rol_binding list) ~(endpoint : string option) :
+    ((string * rol) list, string list) result =
   let filler (r : rol) = Option.value r.rol_objecttype_naam ~default:"" in
-  let written_steps =
-    match navigatie_pad with
-    | [] -> ( match navigatie_rol with Some n -> Some [ n ] | None -> Some [] )
-    | pad ->
-        if List.exists (fun s -> s = None) pad then None
-        else Some (List.filter_map (fun s -> s) pad)
+  (* ONE-SIDED, deliberately: the walk lands on a role whose declared
+     filler is [c], so every instance it can hold is ⊑ c, and all of them
+     satisfy the endpoint only when c ⊑ e. The other direction — a
+     supertype filler against a subtype endpoint — is the unsound one, and
+     ref refuses it at run time per instance (`the navigation reached %S,
+     not the declared endpoint %S`). A two-sided test here would admit a
+     document ref faults on and clingo answers, which is ref ≢ clingo on
+     verifier-clean input. *)
+  let endpoint_check cur =
+    match (endpoint, cur) with
+    | Some e, Some c when not (is_sub ctx ~sub:c ~super:e) ->
+        [ Printf.sprintf "the navigation reaches '%s', not the endpoint '%s'" c e ]
+    | _ -> []
   in
-  match written_steps with
-  | None -> Error [ "the navigation path carries a null step" ]
-  | Some written -> (
-      let denotes (r : rol) name =
-        (match r.rol_naam with Some n -> norm n = norm name | None -> false)
-        || (match r.rol_meervoud with Some m -> norm m = norm name | None -> false)
-      in
-      (* ONE-SIDED, deliberately: the walk lands on a role whose declared
-         filler is [c], so every instance it can hold is ⊑ c, and all of
-         them satisfy the endpoint only when c ⊑ e. The other direction —
-         a supertype filler against a subtype endpoint — is the unsound
-         one, and ref refuses it at run time per instance
-         (`the navigation reached %S, not the declared endpoint %S`). A
-         two-sided test here would admit a document ref faults on and
-         clingo answers, which is ref ≢ clingo on verifier-clean input. *)
-      let endpoint_check cur =
-        match (endpoint, cur) with
-        | Some e, Some c when not (is_sub ctx ~sub:c ~super:e) ->
-            [ Printf.sprintf "the navigation reaches '%s', not the endpoint '%s'" c e ]
-        | _ -> []
-      in
-      match bindings with
-      | Some hops -> (
-          let expected = match written with [] -> 1 | l -> List.length l in
-          if List.length hops <> expected then
-            Error
+  let step (i, cur, acc, errs) (rb : rol_binding) =
+    match resolve_binding ctx rb with
+    | Error e -> (i + 1, None, acc, errs @ [ e ])
+    | Ok (_, bound, opposite) ->
+        let near =
+          match cur with
+          | Some c when not (fills ctx ~inst:c ~role:opposite) ->
               [ Printf.sprintf
-                  "the reference carries %d navigation bindings for %d navigation steps"
-                  (List.length hops) expected ]
-          else
-            let step (i, cur, acc, errs) (rb : rol_binding) =
-              match resolve_binding ctx rb with
-              | Error e -> (i + 1, None, acc, errs @ [ e ])
-              | Ok (_, bound, opposite) ->
-                  let near =
-                    match cur with
-                    | Some c when not (fills ctx ~inst:c ~role:opposite) ->
-                        [ Printf.sprintf
-                            "hop %d over '%s': the near side fills '%s', but the walk stands \
-                             at '%s'"
-                            i rb.rb_feittype (filler opposite) c ]
-                    | _ -> []
-                  in
-                  let name_check =
-                    match List.nth_opt written i with
-                    | Some w when not (denotes bound w) ->
-                        [ Printf.sprintf
-                            "the written step '%s' does not denote the bound role '%s'" w
-                            (Option.value bound.rol_naam ~default:"?") ]
-                    | _ -> []
-                  in
-                  ( i + 1,
-                    Some (filler bound),
-                    acc @ [ (rb.rb_feittype, bound) ],
-                    errs @ near @ name_check )
-            in
-            let _, cur, acc, errs =
-              List.fold_left step (0, Some subject, [], []) hops
-            in
-            match errs @ endpoint_check cur with [] -> Ok acc | errs -> Error errs)
-      | None -> (
-          match written with
-          | [] -> (
-              match endpoint with
-              | None -> Ok [] (* nothing names the walk; not a navigation *)
-              | Some e -> (
-                  match nav_role_by_pair ctx ~from_type:subject ~to_type:e with
-                  | Ok p -> Ok [ p ]
-                  | Error e -> Error [ e ]))
-          | [ n ] when navigatie_pad = [] -> (
-              (* the single written step (navigatieRol): a far role when
-                 one resolves; at ZERO far hits, on an endpoint equal to
-                 the subject type, a name that denotes a role the subject
-                 itself fills is the zero-hop self-reference (ch. 4.1a) —
-                 the walk is empty. Order is normative: far-role
-                 resolution first (a reciprocal role stays a real hop);
-                 v0's broader same-typed fall-through and its
-                 ambiguous-far-match fall-through are deliberately NOT
-                 mirrored — both stay loud (tracked delta, safe
-                 direction). *)
-              match nav_roles_by_name ?endpoint ctx ~from_type:subject ~name:n with
-              | [ p ] -> Ok [ p ]
-              | [] -> (
-                  match endpoint with
-                  | Some e
-                    when norm e = norm subject && self_denoting_role ctx ~otype:subject n ->
-                      Ok []
-                  | Some e when norm e = norm subject ->
-                      Error
-                        [ Printf.sprintf
-                            "no role named '%s' is reachable from '%s', and it does not \
-                             name a role '%s' itself fills — not the zero-hop \
-                             self-reference"
-                            n subject subject ]
-                  | _ ->
-                      Error
-                        [ Printf.sprintf "no role named '%s' is reachable from '%s'" n
-                            subject ])
-              | _ ->
-                  Error
-                    [ Printf.sprintf
-                        "role name '%s' is ambiguous from '%s'; name the hop with an \
-                         explicit role binding"
-                        n subject ])
-          | steps -> (
-              let last = List.length steps - 1 in
-              let step (i, cur, acc, errs) name =
-                match errs with
-                | _ :: _ -> (i + 1, cur, acc, errs) (* an unresolved hop stops the walk *)
-                | [] -> (
-                    let ep = if i = last then endpoint else None in
-                    match nav_role_by_name ?endpoint:ep ctx ~from_type:cur ~name with
-                    | Ok ((_, r) as p) -> (i + 1, filler r, acc @ [ p ], [])
-                    | Error e -> (i + 1, cur, acc, [ e ]))
-              in
-              let _, cur, acc, errs = List.fold_left step (0, subject, [], []) steps in
-              (* a failed hop already reported; the endpoint check would
-                 only re-describe the stalled walk *)
-              match errs with
-              | _ :: _ -> Error errs
-              | [] -> (
-                  match endpoint_check (Some cur) with
-                  | [] -> Ok acc
-                  | errs -> Error errs))))
+                  "hop %d over '%s': the near side fills '%s', but the walk stands at '%s'" i
+                  rb.rb_feittype (filler opposite) c ]
+          | _ -> []
+        in
+        (i + 1, Some (filler bound), acc @ [ (rb.rb_feittype, bound) ], errs @ near)
+  in
+  let _, cur, acc, errs = List.fold_left step (0, Some subject, [], []) bindings in
+  match errs @ endpoint_check cur with [] -> Ok acc | errs -> Error errs
 
-(* WF-053 over one navigated attribute reference: the walk resolves
-   (bound or uniquely derivable), and in a scalar slot every hop is
-   to-one — a to-many step needs an aggregation, never a silent first
-   pick (the v0 resolver builds only to-one chains; NAAR_VEEL is its
-   marker). *)
-let wf053_attribuut_ref ctx at ~subject ~set ~bindings ~navigatie_rol ~navigatie_pad
-    ~endpoint =
-  match nav_hops ctx ~subject ~bindings ~navigatie_rol ~navigatie_pad ~endpoint with
+(* WF-053 over one navigated attribute reference: the walk resolves, and
+   every hop is to-one — a to-many step needs an aggregation, never a
+   silent first pick (the v0 resolver builds only to-one chains; NAAR_VEEL
+   is its marker). Every position this is called for wants ONE value: a
+   fold's set source never navigates (its relation is the fold's range), so
+   no read reaches here that could consume a collection. *)
+let wf053_attribuut_ref ctx at ~subject ~bindings ~endpoint =
+  match nav_hops ctx ~subject ~bindings ~endpoint with
   | Error msgs -> List.map (fun m -> v "WF-053" at m) msgs
   | Ok hops ->
-      if set then []
-      else
-        List.concat
-          (List.mapi
-             (fun i ((_, (r : rol))) ->
-               if r.rol_meervoudig then
-                 [ v "WF-053" at
-                     (Printf.sprintf
-                        "hop %d reaches the to-many role '%s' in a scalar slot — a to-many \
-                         step needs an aggregation, never a silent first pick"
-                        i
-                        (Option.value r.rol_naam ~default:"?")) ]
-               else [])
-             hops)
+      List.concat
+        (List.mapi
+           (fun i ((_, (r : rol))) ->
+             if r.rol_meervoudig then
+               [ v "WF-053" at
+                   (Printf.sprintf
+                      "hop %d reaches the to-many role '%s' in a scalar slot — a to-many step \
+                       needs an aggregation, never a silent first pick"
+                      i
+                      (Option.value r.rol_naam ~default:"?")) ]
+             else [])
+           hops)
+
+(* WF-053 over one attribute reference in an ordinary read position (D10):
+   with navigation bindings, the navigated read above; without them, the
+   subject's own read, so its objecttype MUST be the subject type — a
+   foreign objecttype there names a type the read never reaches. A
+   position with no subject (a day-kind condition) anchors nothing. *)
+let wf053_read ctx at ~subject ~objecttype:otn ~bindings =
+  match (subject, bindings) with
+  | None, _ -> []
+  | Some st, Some hops -> wf053_attribuut_ref ctx at ~subject:st ~bindings:hops ~endpoint:(Some otn)
+  | Some st, None when norm st <> norm otn ->
+      [ v "WF-053" at
+          (Printf.sprintf
+             "an attribute reference without navigation bindings is the subject's own read, so \
+              its objecttype is the subject type '%s' — '%s' names another type, which only a \
+              navigation reaches"
+             st otn) ]
+  | Some _, None -> []
 
 (* The position context threaded as [~body] through the expression walk
    (IR-SPEC ch. 2.11 / ch. 4.8 / ch. 4.10). It gates two independent things:
@@ -4117,7 +3748,7 @@ and mentions_binder_cond b (c : conditie) : bool =
   | Kwantorvouw { kv_filter; kv_toets; _ } ->
       let sub = function Some c -> mentions_binder_cond b c | None -> false in
       sub kv_filter || sub kv_toets
-  | Kenmerk_check _ | Rollidmaatschap _ | Verre_rollidmaatschap _ | Regelversie _
+  | Kenmerk_check _ | Role_membership _ | Regelversie _
   | Conditie_onopgelost _ -> false
 
 (* WF-077 — the condition-operand discipline (IR-SPEC ch. 4.10). Everywhere an
@@ -4156,7 +3787,7 @@ let wf077_condition at (c : conditie) : violation list =
     | Samengesteld { onderdelen; _ } ->
         List.concat
           (List.mapi (fun i c -> walk (Printf.sprintf "%s/onderdelen/%d" at i) c) onderdelen)
-    | Kenmerk_check _ | Rollidmaatschap _ | Verre_rollidmaatschap _ | Regelversie _
+    | Kenmerk_check _ | Role_membership _ | Regelversie _
     | Kwantorvouw _ | Conditie_onopgelost _ ->
         [ v "WF-077" at
             "an IfThenElse condition reads a characteristic, role or channel — not admissible (only \
@@ -4245,9 +3876,8 @@ let wf111_bound ctx ~subject at side (e : expr) =
   match e with
   | Literal { typ = Some Datum_tijd; _ } -> instant
   | Literal _ -> []
-  | Attribuut_ref
-      { attribuut = Some a; objecttype = Some otn; navigatie_rol = None; navigatie_pad = [];
-        set = false; navigatie_bindingen = None | Some []; _ } -> (
+  | Attribuut_ref { attribuut = Some a; objecttype = Some otn; navigatie_bindingen = None; _ }
+    -> (
       match subject with
       | None -> refuse ("the attribute '" ^ a ^ "' at a position with no subject to own it")
       | Some st when not (is_sub ctx ~sub:st ~super:otn) ->
@@ -4261,8 +3891,7 @@ let wf111_bound ctx ~subject at side (e : expr) =
           | Some ot when attr_of ot a = Some (Some Datum_tijd) -> instant
           | _ -> []))
   | Attribuut_ref { attribuut; _ } ->
-      refuse
-        ("a navigated or set read of '" ^ Option.value attribuut ~default:"?" ^ "'")
+      refuse ("a navigated read of '" ^ Option.value attribuut ~default:"?" ^ "'")
   | Parameter_ref { parameter; _ } ->
       refuse ("the parameter '" ^ Option.value parameter ~default:"?" ^ "'")
   | _ -> refuse "a computed date expression"
@@ -4279,8 +3908,8 @@ let rec cond_has_window (c : conditie) =
   | Samengesteld { onderdelen; _ } -> List.exists cond_has_window onderdelen
   | Kwantorvouw { kv_filter; kv_toets; _ } ->
       List.exists cond_has_window (List.filter_map Fun.id [ kv_filter; kv_toets ])
-  | Vergelijking _ | Predicaat _ | Kenmerk_check _ | Rollidmaatschap _ | Verre_rollidmaatschap _
-  | Regelversie _ | Conditie_onopgelost _ ->
+  | Vergelijking _ | Predicaat _ | Kenmerk_check _ | Role_membership _ | Regelversie _
+  | Conditie_onopgelost _ ->
       false
 
 let wf112_position at (kwantor : kwantor) (parts : conditie list) =
@@ -4301,28 +3930,33 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
      the node the count hands over and no descendant of it — a union nested
      inside a branch filter is at a wrong position again, and says so. *)
   let sub p = at ^ "/" ^ p in
+  (* the static type of an operand: a reference's declaration, every other
+     value's annotation (RUNTIME-SEMANTICS ch. 2.10) *)
+  let ty x = expr_type ctx ~binders x in
   let typ_checks =
-    match typ_of_expr e with
-    | Some (Datatype_onbekend _) ->
-        [ v "WF-034" (sub "type") "unknown-type sentinel inside a structured node" ]
-    | Some d ->
-        payload_sentinel (sub "type") d
-        @ check_number_form (sub "type") d
-        @ check_datatype_units ~stelsels:(stelsel_namen ctx) (sub "type") d
-        @ enum_use_site ctx (sub "type") d
-        @ struct_use_site ctx (sub "type") d
-    | None -> (
-        (* A value node without a static type is the unspelled twin of the
-           Onbekend sentinel — refused symmetrically (WF-034). A Lambda is
-           never a value: it is structurally typeless (special-cased by node
-           kind, not by the [typ_of_expr] None result) and stays admissible
-           here — its own position discipline is WF-069 below. The
-           instance-set union (WF-110) is typeless on the same ground and
-           by the same mechanism: it denotes INSTANCES, so it carries no
-           [type] key at all, and its position discipline is WF-110 (a). *)
-        match e with
-        | Lambda _ | Instance_set_union _ -> []
-        | _ -> [ v "WF-034" (sub "type") "value node without a static type" ])
+    match e with
+    (* A reference carries no type of its own since L2 (B13): its type is
+       its declaration's, and the declaration is checked where it is
+       declared. A Lambda is never a value and the instance-set union
+       denotes INSTANCES, so neither carries one either — their own
+       position disciplines are WF-069 and WF-110 (a). An [Onopgelost]
+       without a type is a value of unknown type (D14), WF-044's. *)
+    | Attribuut_ref _ | Dimensie_cel _ | Parameter_ref _ | Variabele_ref _ | Binder_ref _
+    | Lambda _ | Instance_set_union _
+    | Expr_onopgelost { typ = None; _ } ->
+        []
+    | _ -> (
+        match annotation e with
+        | Some d ->
+            check_number_form (sub "type") d
+            @ check_datatype_units ~stelsels:(stelsel_namen ctx) (sub "type") d
+            @ enum_use_site ctx (sub "type") d
+            @ struct_use_site ctx (sub "type") d
+        | None ->
+            (* every other value node carries its annotation: a derived
+               position its derived type, a literal or a composite value its
+               own (WF-034) *)
+            [ v "WF-034" (sub "type") "value node without a static type" ])
   in
   typ_checks
   (* WF-091 at a COMPOSITE position: the annotation against the expectation
@@ -4330,7 +3964,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
      prologue, for the same reason: this is a claim about the node's own
      [type], not about its children, and it holds wherever the walk reaches
      a covered node kind. *)
-  @ composite_identity ctx at e
+  @ composite_identity ctx ~binders at e
   @
   (let closed =
      (* inside a closed body: the reads that break closure short-circuit,
@@ -4395,7 +4029,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
              | Ingevoegd { expr = None } -> [])
            delen)
   | Binair { op; links; rechts; _ } ->
-      let lt = Option.bind links typ_of_expr and rt = Option.bind rechts typ_of_expr in
+      let lt = Option.bind links ty and rt = Option.bind rechts ty in
       let numeric_required =
         match op with
         | Maal | Gedeeld_door | Gedeeld_door_abs | Percentage_van | Verminderd_met
@@ -4475,6 +4109,16 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       @ (match rechts with Some e -> walk_expr ctx ~binders ~subject ~body (sub "rechts") e | None -> [])
   | Functie f ->
       let arity = List.length f.argumenten in
+      (* D8: with a range the single argument is the set source; without
+         one it is the subject's own read (the loader admits that under
+         TOTAAL alone) *)
+      let ranged = f.bron_rol <> None || f.bron_pad <> None in
+      (* the fold SOURCE position (ch. 4.3): the single argument of an
+         aggregation carrying an elementObjecttype. Every other operand — a
+         listed value fold's, a builtin's — is an ordinary read *)
+      let source_position =
+        arity = 1 && f.element_objecttype <> None && List.mem f.kind aggregation_kinds
+      in
       (* WF-037: facet validity per kind *)
       (if f.leegwaarde <> None && f.kind <> Som then
          [ v "WF-037" at "empty-value fallback on a non-sum aggregation" ]
@@ -4589,21 +4233,14 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                   operand holds (ch. 4.3)" ]
          | _ -> [])
       (* WF-037, the filled count's shape (IR-SPEC ch. 4.3, semantics
-         RUNTIME-SEMANTICS ch. 3.4c). Two of the three arms are new of
-         DIRECTION: everywhere else this rule forbids a facet or demands at
-         LEAST two operands, and here the law is the opposite — exactly one
-         argument, and that one a set reading. It is the only WF-037 arm that
-         demands a form instead of refusing one, and it has to be: a non-set
-         source is the subject's OWN read (the ch. 3.6 temporal total, the
-         row-1 wart), and the filled count of one own value is 0 or 1 — a
-         form no author writes and no executor should have to answer.
-
-         Drawn edge to edge with WF-093, which owns the sentinel: the bare
-         wart is a non-set reading by construction, so without the sentinel
-         exit below every wf093 witness under this kind would carry a second
-         citation for one defect. The arms return in order — arity, then the
-         element type, then the source — because each later one presupposes
-         what the earlier one established. *)
+         RUNTIME-SEMANTICS ch. 3.4c). The law is a form demanded rather than
+         refused: exactly one argument, and that one the set source. The
+         arms return in order — arity, then the element type, then the
+         source — because each later one presupposes what the earlier one
+         established. The set source's range is the loader's since L2 (the
+         schema's condition, B12): a filled count with an elementObjecttype
+         and one argument carries bronRol or bronPad, so what is left here is
+         a source that is no attribute reference at all. *)
       @ (if f.kind <> Aantal_gevulde then []
          else if arity <> 1 then
            [ v "WF-037" at
@@ -4620,19 +4257,12 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                    "the filled count is an INSTANCE fold and MUST carry an element type: \
                     without one its argument is no fold source at all, and the count has no \
                     contributors whose values it could test for presence (ch. 4.3)" ]
-           | Some _, [ Attribuut_ref { set = true; _ } ] -> []
-           | Some _, [ Attribuut_ref { typ = Some (Datatype_onbekend _); _ } ] ->
-               (* the row-1 wart hands the fold linked INSTANCES rather than a
-                  value per contributor, which is WF-093's sentence and not a
-                  second defect — the exit keeps one malformation on one rule *)
-               []
+           | Some _, [ Attribuut_ref _ ] -> []
            | Some _, _ ->
                [ v "WF-037" at
-                   "the filled count's single argument MUST be a set reading: this kind reads a \
-                    VALUE per contributor, so its source is the set source (ch. 4.3, \
-                    `set: true`) — a non-set source is the subject's own read, whose filled \
-                    count is 0 or 1, and a bare role source hands the fold instances instead \
-                    of values" ])
+                   "the filled count's single argument MUST be its set source, an attribute \
+                    reference read on each contributor: this kind reads a VALUE per \
+                    contributor and tests that value for presence (ch. 4.3)" ])
       (* WF-034: references *)
       @ (match f.element_objecttype with
          | Some t when objecttype ctx t = None ->
@@ -4641,14 +4271,14 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       (* WF-038: operand typing slices *)
       @ (match f.kind, f.argumenten with
          | Eerste_paasdag, [ a ] -> (
-             match typ_of_expr a with
+             match ty a with
              | Some (Numeriek { geheel = true; eenheid = None; _ }) -> []
              | Some d ->
                  [ v "WF-038" at ("eerste-paasdag operand is " ^ datatype_kind d
                                   ^ ", must be a whole unitless number") ]
              | None -> [])
          | (Uur_uit | Minuut_uit | Seconde_uit | Milliseconde_uit), [ a ] -> (
-             match typ_of_expr a with
+             match ty a with
              | Some Datum_tijd | None -> []
              | Some d ->
                  [ v "WF-038" at ("sub-day extractor operand is " ^ datatype_kind d
@@ -4657,7 +4287,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
              (* the day-precision extractors read civil components (ch. 3.8
                 of RUNTIME-SEMANTICS): the operand must be a date — either
                 precision, mirroring the v0 field read *)
-             match typ_of_expr a with
+             match ty a with
              | Some d when not (is_date d) ->
                  [ v "WF-038" at ("day-precision extractor operand is " ^ datatype_kind d
                                   ^ ", must be a date") ]
@@ -4668,7 +4298,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                 counted unit — a recognised time-unit or declared day-kind
                 spelling; a sub-day unit demands millisecond-precision
                 operands *)
-             let ta = typ_of_expr a and tb = typ_of_expr b in
+             let ta = ty a and tb = ty b in
              let operand side t =
                match t with
                | Some d when not (is_date d) ->
@@ -4735,26 +4365,10 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          `elementObjecttype` besides (v0 stamps the tag vestigially), so
          form is no dichotomy a rule could have keyed on.
 
-         The unknown sentinel and an operand carrying no type at all
-         DEFER. Where that defer is unreachable it is dead, and where it
-         is reachable it is load-bearing: an operand walked as an
-         ordinary expression is already refused by WF-034 (`unknown-type
-         sentinel inside a structured node` for the sentinel, `value node
-         without a static type` for the twin, both measured) and, since
-         WF-034's seventh wave (2026-09-06), so is a fold operand that is
-         not a fold SOURCE — in BOTH spellings, the sentinel and the
-         null, on the same guard. What still reaches this arm is
-         therefore only the single argument of an AGGREGATION: the
-         ch. 4.3 row-1 wart, which WF-034 tolerates by construction, plus
-         the same position spelled with no type at all, which no producer
-         in this repo emits (measured) and which the wart's own exemption
-         covers because the guard is one predicate for both. There the
-         defer holds open a shape no executor carries: an instance
-         ordering fold over a bare role source is verifier-clean today
-         and measured ref `value aggregation over a bare role source`,
-         ASP `expression kind not translated`, Drools
-         `ConstraintEvaluationException`. An open flank recorded, not a
-         claim that the shape is sound. *)
+         An operand whose type nothing declares DEFERS: a reference that
+         does not resolve (its own WF-034 arm reports it), an [Onopgelost]
+         of unknown type, and a count source, whose name is a role and no
+         attribute — under an ordering fold that source is WF-093's. *)
       @ (match List.assoc_opt f.kind passthrough_folds with
          | None -> []
          | Some kn ->
@@ -4766,11 +4380,11 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                  | Datum_tijd -> Some `Date_ms
                  | _ -> None
              in
-             let typed = List.mapi (fun i a -> (i, typ_of_expr a)) f.argumenten in
+             let typed = List.mapi (fun i a -> (i, ty a)) f.argumenten in
              List.concat_map
                (fun (i, t) ->
                  match t with
-                 | None | Some (Datatype_onbekend _) -> []
+                 | None -> []
                  | Some d when family d = None ->
                      (* a bare "list" names no element, and the element is
                         what carries the unorderability here *)
@@ -4805,7 +4419,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                 | _ -> []))
       @ (match f.leegwaarde with
          | Some lw -> (
-             (match typ_of_expr lw with
+             (match ty lw with
               | Some d when not (is_number_like d) ->
                   [ v "WF-038" (sub "leegwaarde")
                       ("sum fallback is " ^ datatype_kind d ^ ", must be numeric") ]
@@ -4871,250 +4485,39 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                     use_site_domain (sub "type")
                       ~source:(Printf.sprintf "operand %d" i)
                       ~what:(Printf.sprintf "the %s aggregation" kn)
-                      ~decl:(typ_of_expr a) ~typ:f.typ)
+                      ~decl:(ty a) ~typ:f.typ)
                   f.argumenten))
-      @ (let source_exempt =
-           (* The ch. 4.3 fold SOURCE position, and exactly it. Drawn on the
-              SAME pair WF-093 keys on — a SINGLE argument, and a kind that
-              folds (the seven value folds of [value_fold_name] plus AANTAL) —
-              so the rules that fence this branch meet edge to edge:
-              single+AANTAL is the count source they leave alone,
-              single+value-fold is WF-093's alone, and everything else is an
-              ordinary read. This is WF-034's sentinel fence's boundary; the
-              set fence's is [set_source_exempt] below, and the one kind they
-              disagree about is stated there. *)
-           List.length f.argumenten = 1
-           && (value_fold_name f.kind <> None || f.kind = Aantal)
-         in
-         let set_source_exempt =
-           (* WF-096's boundary, NARROWER than the sentinel fence's by exactly
-              AANTAL (maintainer decision 2026-09-19): the source of a
-              single-argument VALUE fold. `set` says the read hands the fold
-              the members' VALUES, one per member, and only a value fold reads
-              a value per contributor — a count folds the CONTRIBUTORS
-              themselves (`RUNTIME-SEMANTICS.md` ch. 1.2e/3.4a), so under
-              AANTAL the field names a collection the node does not consume
-              and the wire form mixes two meanings.
-
-              The two boundaries differ on that kind alone, deliberately: v0's
-              own spelling of a count source is the SENTINEL, which
-              [source_exempt] still admits (the 81 bare warts the four zones
-              carry are untouched), while `set` under AANTAL is the form the
-              decision took off the wire. What it was: verifier-clean with no
-              producer route — the RegelSpraak frontend refuses the sentence
-              that would write it, citing this very rule — while `ref` counted
-              the FILLED VALUES where the Drools backend counted the MEMBERS,
-              2 against 3 as soon as one member's attribute is leeg, and the
-              ASP backend refused the kind. Both executors' arms stay as the
-              second line of defence, unreachable through a well-formed
-              document rather than removed.
-
-              SIX became SEVEN on 2026-09-20 with AANTAL_GEVULDE, and the
-              formula did not move a letter: the exemption reads
-              [value_fold_name], and that list grew. The narrowing above is
-              unweakened by it. What left the wire was a node whose semantics
-              fold CONTRIBUTORS carrying a field that names their values; the
-              new kind's semantics fold the VALUES (ch. 3.4c), so `set` on its
-              source names exactly what the node consumes. The kinds differ,
-              the boundary does not. *)
-           List.length f.argumenten = 1 && value_fold_name f.kind <> None
-         in
-         List.concat
+      (* the operands: the source position is judged by the fold-source rules
+         ([aggregation_source_check]), every other operand is walked as the
+         ordinary read it is — with two or more arguments the node is the
+         listed value fold (§5.8.3), whose operands are read one by one
+         against the rule subject and navigate like any other read, and a
+         builtin has no source at all *)
+      @ List.concat
           (List.mapi
              (fun i a ->
                let p = Printf.sprintf "%s/argumenten/%d" at i in
-               (* WF-096 (maintainer decision 2026-09-09): the set reading is
-                  the fold SOURCE's field, so it is ill-formed at every fold
-                  argument that is not a source. Computed ahead of the arms
-                  rather than inside one of them because it must not depend on
-                  which of them answers: two of the three refuse an argument
-                  whose resolving pair is incomplete and return, so a set
-                  reading there would go unreported only because the name
-                  check answered first. Scoped to
-                  `element_objecttype = Some` because that is exactly the
-                  branch's own scope: without one the argument falls to
-                  [walk_expr], whose own arm speaks the same sentence, and
-                  reporting here as well would say it twice. *)
-               (match a, f.element_objecttype with
-                | Attribuut_ref { set = true; _ }, Some _ when not set_source_exempt ->
-                    [ v "WF-096" p
-                        "set reading on a fold operand that is not a VALUE fold's SOURCE: a set \
-                         reading is admissible on the single argument of a value AGGREGATION \
-                         alone (ch. 4.3) — with two or more arguments the node is the listed \
-                         value fold, whose operands are ordinary reads; at a non-aggregation \
-                         kind there is no source at all; and under AANTAL the fold reads the \
-                         CONTRIBUTORS, never a value per contributor, so a set reading there \
-                         names a collection the count does not consume" ]
-                | _ -> [])
-               @
-               match a, f.element_objecttype with
-               | Attribuut_ref { attribuut; objecttype = None; _ }, Some _ ->
-                   (* WF-034 (widened, maintainer decision 2026-09-04): K1's
-                      arm has to be applied here for the same reason WF-089's
-                      is — this branch replaces [walk_expr] for the fold
-                      source, and [aggregation_source_check] matches only on
-                      `objecttype = Some`, so the absent endpoint fell through
-                      BOTH. Measured: the shape plays in all three executors
-                      (ref, clingo, Drools) off a unit lie no rule fenced. *)
+               match (a, f.element_objecttype) with
+               | Attribuut_ref { attribuut; objecttype = None; _ }, Some _ when source_position ->
                    [ v "WF-034" p
                        ("attribute reference '"
                        ^ Option.value attribuut ~default:"?"
                        ^ "' without an object type: it resolves against no declaration") ]
-               | Attribuut_ref { attribuut = None; objecttype = Some otn; _ }, Some _ ->
-                   (* the second half of the pair, in the fold source, and its
-                      own arm for the same reason as the first: this branch
-                      replaces [walk_expr] here, and
-                      [aggregation_source_check] resolves only on
-                      `attribuut = Some a`. Measured: with the generic arm
-                      alone, 43 of the goldens' 751 emptied `attribuut`
-                      positions stayed verifier-clean — every one of them a
-                      fold-/aggregation argument. *)
+               | Attribuut_ref { attribuut = None; objecttype = Some otn; _ }, Some _
+                 when source_position ->
                    [ v "WF-034" p
                        ("attribute reference on '" ^ otn
                       ^ "' without an attribute name: it resolves against no declaration") ]
-               | Attribuut_ref { attribuut; typ; _ }, Some el ->
-                   (* WF-034's SENTINEL FENCE, the seventh wave (maintainer
-                      decision 2026-09-06, boundary widened in its fix round
-                      2026-09-06): [walk_expr]'s type prologue refuses the v0
-                      unknown sentinel on every value node — and its unspelled
-                      twin, a value node with no static type at all — and this
-                      branch REPLACES that prologue, so both survived at
-                      exactly the positions the branch reaches. One exemption,
-                      and it is the branch's whole reason for existing: the
-                      SINGLE argument of an AGGREGATION is the fold SOURCE, the
-                      ch. 4.3 row-1 wart, which carries the sentinel by
-                      construction (a written role name has no datatype to
-                      give) and whose kind WF-093 governs. Everything else the
-                      branch reaches is an ORDINARY READ — no source, no role
-                      name — and the sentinel is as ill-formed there as it is
-                      anywhere else the walk reaches.
-
-                      The boundary is the ARITY *and the KIND*, drawn on
-                      exactly the pair WF-093 keys on, so the two rules meet
-                      edge to edge with nothing between them and nothing
-                      doubled: single+AANTAL is the count source both leave
-                      alone; single+value-fold is WF-093's alone (it refuses a
-                      non-AANTAL kind over the sentinel source); two or more
-                      arguments is the listed value fold (§5.8.3), this arm's;
-                      and a single argument at a NON-aggregation kind — a
-                      builtin carrying an `elementObjecttype`, which has no
-                      source either — is this arm's too. That last exit is the
-                      fix round's: with the guard drawn on the arity alone,
-                      three builtin spellings stayed verifier-clean (the
-                      degraded own read, the wart verbatim and the set
-                      reading), and the second of them CRASHES the third
-                      executor.
-
-                      Measured 2026-09-06 over the four zones (537 documents,
-                      65 sentinel `type` positions): 61 sit at a fold argument,
-                      60 of them the single-argument wart and exactly ONE a
-                      listed operand — in the parity zone, on a document that
-                      already carries a co-firing WF-034 at the same pointer.
-                      Re-counted the same day on the rebased head (546
-                      documents, main's datum-tijd card in the base): 71
-                      sentinel `type` positions, 66 at a fold argument, 62 of
-                      them the single-argument wart and 4 listed — the three
-                      witnesses this arm brought plus that same ONE parity
-                      operand, which is the invariant that carries the claim.
-                      No golden, rood or negatief document moves, and neither
-                      half of the fix round moves one either. What the shape
-                      bought itself while it was clean is the familiar
-                      self-served exemption: [use_site_identity] defers on the
-                      sentinel and [composite_expectation]'s MINIMUM/MAXIMUM
-                      arm defers when any operand type is unknown, so one
-                      degraded annotation switched off the whole identity
-                      family at that operand. And no executor carries it:
-                      `ref` faults `unsupported AttribuutRef shape
-                      (set/sentinel outside a fold)`, the ASP backend refuses
-                      the expression kind, while the Drools backend PLAYS the
-                      degraded-read spelling and answers, and THROWS on the
-                      wart-verbatim spelling (it reaches for a getter of the
-                      role name) — one-answers-two-refuse, the class PLAN §6
-                      calls a spec bug, cut off at the wire. The unspelled twin
-                      is the same fence on the same positions and is measured
-                      the other way round: no frontend in this repo emits a
-                      null `type` (73 of the repo's 78 `.rgs` sources emit, 0
-                      occurrences), so that half closes a WIRE form rather than
-                      a producer route — but the ONE listed null operand built
-                      by hand is answered by `ref` (all 5 pinned expectations)
-                      and by Drools while the ASP backend refuses, which is the
-                      same class read from the other side. *)
-                   (* the exemption is [source_exempt], hoisted above the
-                      argument walk: the ch. 4.3 wart and exactly it. *)
-                   (match typ with
-                    | Some (Datatype_onbekend _) when not source_exempt ->
-                        [ v "WF-034" (p ^ "/type")
-                            ("unknown-type sentinel on a fold operand that is not a fold SOURCE: \
-                              the sentinel is admissible on the single argument of an AGGREGATION \
-                              alone (the v0 row-1 wart, ch. 4.3) — with two or more arguments the \
-                              node is the listed value fold, whose operands are ordinary reads, \
-                              and at a non-aggregation kind there is no source at all") ]
-                    | None when not source_exempt ->
-                        (* the unspelled twin, refused symmetrically — the same
-                           sentence [walk_expr]'s type prologue speaks, on the
-                           positions this branch took away from it *)
-                        [ v "WF-034" (p ^ "/type") "value node without a static type" ]
-                    | _ -> [])
-                   @ (match typ with
-                    | Some d -> check_datatype_units ~stelsels:(stelsel_namen ctx) (p ^ "/type") d
-                    | None -> [])
-                   @ use_site_identity (p ^ "/type")
-                     ~what:
-                       ("fold-source attribute reference '"
-                      ^ Option.value attribuut ~default:"?" ^ "'")
-                     ~decl:(resolved_attr_datatype ctx a) ~typ
-                   @ aggregation_source_check ctx p ~element_type:el ~subject
-                       ~single:(List.length f.argumenten = 1) ~kind:f.kind a
-                   (* WF-053 rides along for the same reason WF-089 and
-                      WF-092 do, and for the operands WF-083 no longer
-                      speaks about: with two or more arguments the fold is
-                      the listed value fold (§5.8.3) and its operands are
-                      ORDINARY READS, which navigate like any other read —
-                      but this branch replaces [walk_expr], so without the
-                      repetition a nested operand is the one read position
-                      whose hop resolves against nothing. Measured: a
-                      MAXIMUM whose second operand names a type no fact
-                      type relates to the subject was verifier-clean and is
-                      now WF-053 `bindingless navigation: no fact type
-                      relates …` — exactly what the same read is outside a
-                      fold — and the to-many hop in a scalar slot comes with
-                      it. *)
-                   @ (match a with
-                      | Attribuut_ref
-                          { objecttype = Some otn; navigatie_rol; navigatie_pad;
-                            navigatie_bindingen; set; _ }
-                        when List.length f.argumenten <> 1 -> (
-                          let navigated =
-                            navigatie_rol <> None || navigatie_pad <> []
-                            || (match subject with
-                                | Some st -> norm st <> norm otn
-                                | None -> false)
-                          in
-                          if not navigated then
-                            match navigatie_bindingen with
-                            | Some _ ->
-                                [ v "WF-053" p
-                                    "navigation bindings on a reference that does not \
-                                     navigate" ]
-                            | None -> []
-                          else
-                            match subject with
-                            | None -> [] (* no subject type anchors the walk *)
-                            | Some st ->
-                                wf053_attribuut_ref ctx p ~subject:st ~set
-                                  ~bindings:navigatie_bindingen ~navigatie_rol ~navigatie_pad
-                                  ~endpoint:(Some otn))
-                      | _ -> [])
+               | Attribuut_ref _, Some el when source_position ->
+                   aggregation_source_check ctx p ~element_type:el ~subject ~kind:f.kind ~ranged a
                | _ ->
                    (* the union's admissible position (WF-110 (a)): the SINGLE
                       argument of a count. Keyed on the kind and the arity and
                       NOT on elementObjecttype, so a count that carries a source
                       of its own beside the union is reported once — by clause
                       (c), which is what is wrong with it — instead of twice. *)
-                   walk_expr ctx ~binders ~subject
-                     ~union_ok:(f.kind = Aantal && List.length f.argumenten = 1)
-                     p a)
-             f.argumenten))
+                   walk_expr ctx ~binders ~subject ~union_ok:(f.kind = Aantal && arity = 1) p a)
+             f.argumenten)
       (* WF-055: the gedurende clip — a filter on the temporal total is a
          timeline operation; its condition is an own temporal
          characteristic check or a per-segment comparison of an own
@@ -5122,12 +4525,12 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       @ (match (f.kind, f.argumenten, f.filter) with
          | ( Totaal,
              [ Attribuut_ref
-                 { attribuut = Some a; objecttype = Some aot; navigatie_rol = None;
-                   navigatie_pad = []; set = false; _ } ],
+                 { attribuut = Some a; objecttype = Some aot; navigatie_bindingen = None; _ } ],
              Some c )
-           when (match objecttype ctx aot with
-                | Some ot -> attr_temporal ot a
-                | None -> false) -> (
+           when (not ranged)
+                && (match objecttype ctx aot with
+                   | Some ot -> attr_temporal ot a
+                   | None -> false) -> (
              let temporal_char k =
                match objecttype ctx aot with
                | Some ot ->
@@ -5136,7 +4539,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
              in
              let rec clip_cond_ok c =
                match c with
-               | Kenmerk_check { kenmerk = Some k; navigatie = None; _ } ->
+               | Kenmerk_check { kenmerk = Some k; navigatie_binding = None; _ } ->
                    if temporal_char k then []
                    else
                      [ v "WF-055" (sub "filter")
@@ -5144,8 +4547,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                         ^ "', which is not a temporal characteristic of '" ^ aot ^ "'") ]
                | Vergelijking
                    { links = Some (Attribuut_ref
-                       { attribuut = Some b; objecttype = Some botn; navigatie_rol = None;
-                         navigatie_pad = []; set = false; _ });
+                       { attribuut = Some b; objecttype = Some botn; navigatie_bindingen = None; _ });
                      rechts = Some _; periode = None; _ }
                  when norm botn = norm aot
                       && (match objecttype ctx botn with
@@ -5203,7 +4605,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          else
            (match f.filter with
            | None -> [ v "WF-056" at "tijdsevenredig-deel without a gedurende condition" ]
-           | Some (Kenmerk_check { kenmerk = Some k; navigatie = None; _ }) -> (
+           | Some (Kenmerk_check { kenmerk = Some k; navigatie_binding = None; _ }) -> (
                (* the gedurende characteristic MUST be temporal — a
                   non-temporal one has no periods to prorate over (a
                   hunted gap: ref faulted, clingo silently emptied) *)
@@ -5246,58 +4648,43 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                    [ v "WF-056" (sub "argumenten/0")
                        ("pro-rata base parameter '" ^ p ^ "' is not granular") ])
            | _ -> [ v "WF-056" at "tijdsevenredig-deel takes one temporal source argument" ])
-      (* WF-047/048: the fold-source role binding (v1 extension) *)
+      (* WF-047 and WF-102: the fold's range. The loader has already seen to
+         its presence and to one spelling (B12, U2) *)
       @ (let fold_source =
            match (f.element_objecttype, f.argumenten) with
-           | ( Some el,
-               [ Attribuut_ref
-                   { attribuut; typ = Some (Datatype_onbekend _);
-                     navigatie_rol = None; navigatie_pad = []; _ } ] ) ->
-               Some (el, `Role_name attribuut)
-           | ( Some el,
-               [ Attribuut_ref { set = true; navigatie_rol = None; navigatie_pad = []; _ } ] )
-             ->
-               Some (el, `Member)
+           | Some el, [ Attribuut_ref { attribuut; _ } ] when source_position && ranged -> (
+               match attribuut with
+               | Some a -> (
+                   match source_reading ctx ~element_type:el ~subject ~kind:f.kind ~ranged a with
+                   | Src_count | Src_role_under_value_fold -> Some (el, `Role_name a)
+                   | _ -> Some (el, `Member))
+               | None -> Some (el, `Member))
            | _ -> None
          in
          (* WF-102 (maintainer decision 2026-09-11): the fold source's range
-            may be a PATH. The path IS the binding, so the bindingless
-            derivability arm below (WF-048) never applies to it: WF-048
-            answers for a type PAIR, and a path's intermediate types are its
-            own claim rather than a derivable consequence of its endpoints.
-            Placed AHEAD of the one-step logic and returning instead of
-            falling through, so exactly one of the two shapes is judged and
-            a document carrying both is reported once, by (a). *)
+            may be a PATH. Placed AHEAD of the one-step logic and returning
+            instead of falling through, so exactly one of the two shapes is
+            judged. *)
          match f.bron_pad with
          | Some pad ->
-             (* (a) one meaning, one spelling *)
-             (match f.bron_rol with
-             | Some _ ->
-                 [ v "WF-102" (sub "bronPad")
-                     "bronPad beside bronRol: the one-step range IS bronRol, so the two fields \
-                      are mutually exclusive" ]
-             | None -> [])
              (* (b) the arity: the empty list and the single step are the
                 one-step spelling's territory, not the path's *)
-             @ (if List.length pad >= 2 then []
-                else
-                  [ v "WF-102" (sub "bronPad")
-                      (Printf.sprintf
-                         "a bronPad carries at least TWO steps, found %d — the one-step range is \
-                          spelled bronRol"
-                         (List.length pad)) ])
-             (* (c) the position: the set source of a single-argument
-                instance fold, exactly where bronRol stands. The non-set
-                sources hand the fold something else entirely (the temporal
-                total reads the subject's own timeline, the row-1 wart hands
-                it the subject's linked instances), so a range does not
-                apply to them. *)
+             (if List.length pad >= 2 then []
+              else
+                [ v "WF-102" (sub "bronPad")
+                    (Printf.sprintf
+                       "a bronPad carries at least TWO steps, found %d — the one-step range is \
+                        spelled bronRol"
+                       (List.length pad)) ])
+             (* (c) the position: the set source of a single-argument VALUE
+                fold. A count's range is one step, spelled bronRol — its
+                source names the one relation whose role it counts. *)
              @ (match fold_source with
                | Some (_, `Member) -> []
                | _ ->
                    [ v "WF-102" (sub "bronPad")
-                       "a bronPad is admissible only on the SET source of a single-argument \
-                        instance fold — the position bronRol stands at" ])
+                       "a bronPad is admissible only as the range of a single-argument VALUE \
+                        fold's set source — a count's range is one step, spelled bronRol" ])
              (* (d) every step resolves (WF-047) and the steps JOIN: the
                 first step's opposite role is filled by the fold subject,
                 each further step's opposite role by the type its
@@ -5334,21 +4721,11 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                                         else "the type the previous step reaches")) ]
                           in
                           (* TWO-SIDED, on the WF-047 line and deliberately
-                             not narrowed here. The bronPad's landing asks
-                             the same question the ordinary fold source
-                             asks through [wf047_binding] with
-                             ~bound_filler:(Some el), which the kernel made
-                             ⊑-compatible in both directions; a one-sided
+                             not narrowed here: the bronRol arm below asks the
+                             same question through [wf047_binding], which is
+                             ⊑-compatible in both directions, and a one-sided
                              test on this arm alone would make the two
-                             spellings of one fold disagree again — the very
-                             split the bound/bindingless correction removed.
-                             The direction that is only half-implemented —
-                             an elementObjecttype STRICTLY BELOW what the
-                             path reaches, which needs an exclusion filter
-                             no executor has — is therefore admitted here
-                             exactly as the bronRol arm already admits it,
-                             and closing it is one change on both arms plus
-                             the executors, not a tightening of this line. *)
+                             spellings of one fold disagree. *)
                           let lands =
                             if rest <> [] then []
                             else
@@ -5367,33 +4744,30 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                 in
                 chain 0 subject pad)
          | None -> (
-         match (fold_source, f.bron_rol) with
-         | None, None -> []
-         | None, Some _ ->
-             [ v "WF-047" (sub "bronRol")
-                 "a fold-source role binding on a node that is not an instance fold over a \
-                  relation" ]
-         | Some (el, written), Some rb -> (
-             wf047_binding ctx (sub "bronRol") rb ~bound_filler:(Some el) ~other_filler:subject
-             @
-             (* the written v0 source (the row-1 wart) must denote the
-                bound role — one relation, not two spellings of two *)
-             match (resolve_binding ctx rb, written) with
-             | Ok (_, bound, _), `Role_name (Some w)
-               when not
-                      ((match bound.rol_naam with Some n -> norm n = norm w | None -> false)
-                      || match bound.rol_meervoud with
-                         | Some m -> norm m = norm w
-                         | None -> false) ->
+             match (fold_source, f.bron_rol) with
+             | _, None -> []
+             | None, Some _ ->
                  [ v "WF-047" (sub "bronRol")
-                     (Printf.sprintf "the written fold source '%s' does not denote the bound role '%s'"
-                        w
-                        (Option.value bound.rol_naam ~default:"?")) ]
-             | _ -> [])
-         | Some (el, _), None -> (
-             match subject with
-             | Some st -> wf048_derivable ctx at ~from_type:st ~to_type:el ~site:"instance fold"
-             | None -> [])))
+                     "a fold-source role binding on a node that is not an instance fold over a \
+                      relation" ]
+             | Some (el, written), Some rb -> (
+                 wf047_binding ctx (sub "bronRol") rb ~bound_filler:(Some el)
+                   ~other_filler:subject
+                 @
+                 (* the count source's written name (D8 (ii)) must denote the
+                    bound role — one relation, not two spellings of two *)
+                 match (resolve_binding ctx rb, written) with
+                 | Ok (_, bound, _), `Role_name w
+                   when not
+                          ((match bound.rol_naam with Some n -> norm n = norm w | None -> false)
+                          || match bound.rol_meervoud with
+                             | Some m -> norm m = norm w
+                             | None -> false) ->
+                     [ v "WF-047" (sub "bronRol")
+                         (Printf.sprintf
+                            "the written fold source '%s' does not denote the bound role '%s'" w
+                            (Option.value bound.rol_naam ~default:"?")) ]
+                 | _ -> [])))
   | Afgerond { basis; _ } ->
       (match basis with Some e -> walk_expr ctx ~binders ~subject ~body (sub "basis") e | None -> [])
   | Begrensd { basis; minimum; maximum; _ } ->
@@ -5404,7 +4778,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
           (fun (n, e) ->
             match e with
             | Some e ->
-                (match typ_of_expr e with
+                (match ty e with
                  | Some d when not (is_number_like d) ->
                      [ v "WF-035" (sub n) ("clamp " ^ n ^ " is " ^ datatype_kind d ^ ", must be numeric") ]
                  | _ -> [])
@@ -5423,11 +4797,11 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          Skipped unless both sides are number-like — a non-numeric operand is
          the WF-035 arm directly above, and one node should not report the same
          defect twice. *)
-      @ (match Option.bind basis typ_of_expr with
+      @ (match Option.bind basis ty with
          | Some bt when is_number_like bt ->
              List.concat_map
                (fun (n, e) ->
-                 match Option.bind e typ_of_expr with
+                 match Option.bind e ty with
                  | Some d
                    when is_number_like d
                         && not (units_compatible_adopting basis e (unit_of bt) (unit_of d)) ->
@@ -5435,48 +4809,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                  | _ -> [])
                [ ("minimum", minimum); ("maximum", maximum) ]
          | _ -> [])
-  | Attribuut_ref
-      { attribuut; objecttype = otn; navigatie_rol; navigatie_pad; navigatie_bindingen;
-        set; typ; _ } -> (
-      (* WF-089: the reference's type names the keuzetype domain of the
-         attribute it reads (resolved at the endpoint type, so a navigated
-         read crosses against the attribute it lands on); an unresolvable
-         reference — a role-name fold source, a characteristic — defers *)
-      use_site_identity (sub "type")
-        ~what:("attribute reference '" ^ Option.value attribuut ~default:"?" ^ "'")
-        ~decl:(resolved_attr_datatype ctx e) ~typ
-      (* WF-096 (maintainer decision 2026-09-09): `set` says the read yields
-         the members' values, one per member — a COLLECTION. Every position
-         this walk reaches wants ONE value, so the field has nothing here to
-         be consumed by: the only node that consumes a collection is the VALUE
-         fold that owns the source (a count folds the contributors themselves —
-         the 2026-09-19 narrowing, stated at [set_source_exempt]), and a source
-         is reached by the aggregation branch above, never by this one. Placed
-         beside the type prologue and
-         before the resolution below deliberately, and for the same reason the
-         fold branch computes its half ahead of its arms: the endpoint arm at
-         the bottom returns WF-034 alone on a reference whose object type is
-         absent, so a set reading there would go unreported only because the
-         name check answered first.
-
-         Stated as a field rule rather than as an arm of WF-053: the walk's
-         to-many clause does read `set`, and reads it as an ESCAPE
-         ([wf053_attribuut_ref]'s `if set then []`) — a set reading is
-         precisely how a to-many hop is admitted in a slot that would
-         otherwise demand to-one. That escape is what made the shape clean:
-         one field switched off the rule that would have caught the hop.
-         After this clause the escape is unreachable through a well-formed
-         document and stays as the second line of defence, never a dead
-         branch. *)
-      @ (if set then
-           [ v "WF-096" at
-               "set reading at an ordinary read position: a set reading names the members' \
-                values, one per member, and is admissible only as the SOURCE of a \
-                single-argument VALUE fold (ch. 4.3; a count folds the contributors, not \
-                their values) — here nothing consumes the collection and the slot wants \
-                one value" ]
-         else [])
-      @
+  | Attribuut_ref { attribuut; objecttype = otn; navigatie_bindingen; _ } -> (
       match otn with
       | Some otn -> (
           match objecttype ctx otn with
@@ -5491,10 +4824,9 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                    if has_attr ot a then []
                    else if has_kenmerk ot a then
                      (* WF-080: a value position reads a value; a characteristic
-                        endpoint carries no attribute value here. The tolerated
-                        has_attr||has_kenmerk leak: a kenmerk is read through a
-                        characteristic check (ch. 4.5), never an AttribuutRef in
-                        a value slot. *)
+                        endpoint carries no attribute value here. A
+                        characteristic is read through a characteristic check
+                        (ch. 4.5), never an AttribuutRef in a value slot. *)
                      [ v "WF-080" at
                          ("'" ^ a ^ "' is a characteristic of '" ^ otn
                         ^ "', not an attribute — a characteristic endpoint is ill-formed in a \
@@ -5508,55 +4840,23 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                       wave): the OTHER half of the resolving pair. A reference
                       resolves through `objecttype` AND `attribuut`; with the
                       member name absent it lands on a declared type and reads
-                      nothing there. The absent name silences the same rules
-                      from the other side — this member check and WF-080 both
-                      sit behind `Some a`, and [resolved_attr_datatype] is
-                      None, on which WF-089/090/091 defer. *)
+                      nothing there. *)
                    [ v "WF-034" at
                        ("attribute reference on '" ^ otn
                       ^ "' without an attribute name: it resolves against no declaration") ])
-              @
-              (* WF-053: the navigated shapes — a written role, a declared
-                 chain, or a directly named off-subject type (by-pair) *)
-              let navigated =
-                navigatie_rol <> None || navigatie_pad <> []
-                || (match subject with Some st -> norm st <> norm otn | None -> false)
-              in
-              if not navigated then
-                match navigatie_bindingen with
-                | Some _ ->
-                    [ v "WF-053" at
-                        "navigation bindings on a reference that does not navigate" ]
-                | None -> []
-              else (
-                match subject with
-                | None -> [] (* no subject type anchors the walk *)
-                | Some st ->
-                    wf053_attribuut_ref ctx at ~subject:st ~set
-                      ~bindings:navigatie_bindingen ~navigatie_rol ~navigatie_pad
-                      ~endpoint:(Some otn)))
+              (* WF-053: the navigated read, or the subject's own (D10) *)
+              @ wf053_read ctx at ~subject ~objecttype:otn ~bindings:navigatie_bindingen)
       | None ->
           (* WF-034 (widened, maintainer decision 2026-09-04): the absent
-             endpoint is not one rule's deferral but a generic exemption —
-             it skips the whole branch above (member resolution, WF-053,
-             WF-080) and makes [resolved_attr_datatype] None, which defers
-             WF-089/090/091 too. Five rules fall silent on one empty field,
-             and the shape is measured answer-changing: a unit lie on such
-             a reference was verifier-clean while one executor played it. *)
+             endpoint resolves against nothing — it skips the member
+             resolution, WF-053 and WF-080 at once *)
           [ v "WF-034" at
               ("attribute reference '"
               ^ Option.value attribuut ~default:"?"
               ^ "' without an object type: it resolves against no declaration") ])
-  | Dimensie_cel { attribuut; labels; typ; _ } ->
+  | Dimensie_cel { attribuut; labels; _ } ->
       (match attribuut with
        | Some (Attribuut_ref { attribuut = Some a; objecttype = Some otn; _ } as inner) ->
-           (* WF-089: a cell of a dimensioned attribute carries that
-              attribute's datatype, so the cell read's own type crosses
-              against the declaration too (the inner reference crosses its
-              own type in its walk below) *)
-           use_site_identity (sub "type") ~what:("dimension-cell read of '" ^ a ^ "'")
-             ~decl:(resolved_attr_datatype ctx inner) ~typ
-           @
            (match objecttype ctx otn with
             | Some ot -> (
                 match find_ci ot.attribuut_dimensies a with
@@ -5616,24 +4916,17 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
            [ v "WF-034" at
                "dimension-cell read without an attribute reference: it resolves against no \
                 declaration" ])
-  | Parameter_ref { parameter; typ; _ } -> (
+  | Parameter_ref { parameter; _ } -> (
       match parameter with
       | Some p -> (
           match find_ci ctx.doc.parameters p with
           | None -> [ v "WF-034" at ("reference to undeclared parameter '" ^ p ^ "'") ]
-          | Some (par : parameter) ->
-              (* WF-089: the reference's type names the keuzetype domain of
-                 the parameter it reads *)
-              use_site_identity (sub "type") ~what:("parameter reference '" ^ p ^ "'")
-                ~decl:par.par_datatype ~typ)
+          | Some _ -> [])
       | None ->
           (* WF-034 (widened, 2026-09-04, second wave): the same shape one node
              kind over. A parameter reference resolves through exactly one
              field; the arm above reports a name that resolves nowhere, and
-             sits behind `Some p`, so an ABSENT name walked past it — and past
-             the identity family with it, which crosses this node's type
-             against the parameter's declared datatype and defers on an
-             unresolvable declaration. *)
+             sits behind `Some p`, so an ABSENT name walked past it. *)
           [ v "WF-034" at
               "parameter reference without a parameter name: it resolves against no declaration"
           ])
@@ -5669,9 +4962,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       (* WF-049: the point-in-time read (extension node, row 11) *)
       let basis_checks =
         match basis with
-        | Attribuut_ref
-            { attribuut = Some a; objecttype = Some otn; navigatie_rol = None;
-              navigatie_pad = []; set = false; _ } -> (
+        | Attribuut_ref { attribuut = Some a; objecttype = Some otn; navigatie_bindingen = None; _ }
+          -> (
             match objecttype ctx otn with
             | None -> [] (* resolution is the walk's WF-034, below *)
             | Some ot ->
@@ -5716,7 +5008,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                  parameter reference (a temporal characteristic operand is OPEN)" ]
       in
       let datum_checks =
-        match typ_of_expr datum with
+        match ty datum with
         | Some Datum_in_dagen -> []
         | Some d ->
             [ v "WF-049" (sub "datum")
@@ -5752,7 +5044,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                    | None, None | Some _, Some _ ->
                        (match payload, argument with
                         | Some pd, Some a -> (
-                            match typ_of_expr a with
+                            match ty a with
                             | Some ad when ad <> pd ->
                                 [ v "WF-062" at
                                     ("argument type " ^ datatype_detail ad
@@ -5782,7 +5074,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          inline copy — so totality, duplicate and binder checks are shared;
          only the words in the messages differ. *)
       let decl =
-        match typ_of_expr scrutinee with
+        match ty scrutinee with
         | Some (Sum_type { domein; _ }) -> `Sum (domein, sum_decl ctx domein)
         | Some (Enumeratie { domein = Some d; _ }) -> `Enum (d, enum_decl ctx d)
         | Some (Enumeratie { domein = None; _ }) -> `NoDomain
@@ -5859,14 +5151,31 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                         [ v "WF-063" at ("unary " ^ alt ^ " '" ^ c ^ "' carries no binder") ]))
               arms
       in
+      (* the binders an arm body sees: the arm binder, whose declared
+         datatype is the matched constructor's payload, over the enclosing
+         ones *)
+      let arm_binders cname binder =
+        match binder with
+        | Some b ->
+            let bdt =
+              match ctors with
+              | Some cs -> (
+                  match List.find_opt (fun (n, _) -> norm n = norm cname) cs with
+                  | Some (_, payload) -> payload
+                  | None -> None)
+              | None -> None
+            in
+            (b, bdt) :: binders
+        | None -> binders
+      in
       (* WF-064: all arm bodies agree on one result datatype — the Match's own type *)
       let body_type_checks =
         match typ with
         | None -> []
         | Some mt ->
             List.filter_map
-              (fun (c, _, body) ->
-                match typ_of_expr body with
+              (fun (c, binder, body) ->
+                match expr_type ctx ~binders:(arm_binders c binder) body with
                 | Some bt when bt <> mt ->
                     Some
                       (v "WF-064" at
@@ -5880,26 +5189,10 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       @ List.concat
           (List.mapi
              (fun i (cname, binder, arm_body) ->
-               let binders' =
-                 match binder with
-                 | Some b ->
-                     (* the arm binder's declared datatype is the matched
-                        constructor's payload (WF-078 reads it) *)
-                     let bdt =
-                       match ctors with
-                       | Some cs -> (
-                           match List.find_opt (fun (n, _) -> norm n = norm cname) cs with
-                           | Some (_, payload) -> payload
-                           | None -> None)
-                       | None -> None
-                     in
-                     (b, bdt) :: binders
-                 | None -> binders
-               in
-               walk_expr ctx ~binders:binders' ~subject ~body
+               walk_expr ctx ~binders:(arm_binders cname binder) ~subject ~body
                  (Printf.sprintf "%s/arms/%d/body" at i) arm_body)
              arms)
-  | Binder_ref { naam; typ; _ } -> (
+  | Binder_ref { naam; _ } -> (
       (* WF-064: a binder reference resolves lexically to an enclosing binder
          (a match arm, or a lambda/function parameter — row 10); a
          VariabeleRef stays outside this rule (row 24). Inside a closed body
@@ -5907,7 +5200,9 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          and whatever an inner Let/match/filter binds; the enclosing scope's
          binders were dropped at the closure boundary, so a reference that
          reaches out to one is rejected here (the closure clause), citing the
-         outer name it names when we still remember it. *)
+         outer name it names when we still remember it. Since L2 the read
+         carries no type of its own: the binder's declaration is its type
+         ([expr_type]). *)
       match List.find_opt (fun (b, _) -> norm b = norm naam) binders with
       | None ->
           let outside =
@@ -5921,17 +5216,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                ^ "' is bound outside the enclosing closed body — a closed function or lambda body \
                   reads only its own parameters and inner bindings") ]
           else [ v "WF-064" at ("binder reference '" ^ naam ^ "' resolves to no enclosing binder") ]
-      | Some (_, bdt) ->
-          (* the identity engine on the binder arm. The binder's declared
-             datatype is a match arm's declared payload, a lambda/function
-             parameter's declared type, a Let value's type or a filter's
-             element type; the reference's serialized [type] repeats it on
-             every facet. Soort is WF-078's facet here (its number and its
-             sentence, kept), the domain facet WF-089/WF-090's, every other
-             facet WF-091's — the decimals and the unit WF-078 deliberately
-             left uncrossed among them. *)
-          use_site_identity (sub "type") ~soort:(binder_soort naam)
-            ~what:("binder reference '" ^ naam ^ "'") ~decl:bdt ~typ)
+      | Some _ -> [])
   | Struct_literal { typ; velden; _ } ->
       (* WF-073: the type is a declared struct; the supplied fields are
          exactly the declared fields, each once; each value's static type
@@ -5969,7 +5254,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                      match List.find_opt (fun (n, _) -> norm n = norm fname) decl with
                      | None -> [] (* alien: reported above *)
                      | Some (_, fdt) -> (
-                         match typ_of_expr value with
+                         match ty value with
                          | Some vt when vt <> fdt ->
                              [ v "WF-073" at
                                  ("field '" ^ fname ^ "' value is " ^ datatype_detail vt
@@ -5987,7 +5272,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
   | Field_access { typ; base; veld; _ } ->
       (* WF-074: the base is struct-typed; the field is a declared field; the
          node type equals that field's declared datatype *)
-      (match typ_of_expr base with
+      (match ty base with
        | Some (Struct_type { domein; _ }) -> (
            match struct_decl ctx domein with
            | None ->
@@ -6016,7 +5301,9 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       (* WF-076: the Let binding (IR-SPEC ch. 4.10). The node type equals the
          body type; the binder is visible only in the body (never in its own
          value); the binder joins the WF-064 regime for the body. *)
-      (match typ, typ_of_expr lbody with
+      (* the body sees the binder, typed by its value *)
+      let body_binders = (binder, ty value) :: binders in
+      (match typ, expr_type ctx ~binders:body_binders lbody with
        | Some t, Some bt when t <> bt ->
            [ v "WF-076" (sub "type")
                (Printf.sprintf
@@ -6034,10 +5321,10 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          here, and the position context is unchanged (a Let value inside a
          closed body stays closed) *)
       @ walk_expr ctx ~binders ~subject ~body (sub "value") value
-      (* the body: the binder joins the scope carrying its value's datatype
-         (WF-078); a Let body admits IfThenElse (Let_pos) unless already
-         inside a closed body (stay closed) *)
-      @ walk_expr ctx ~binders:((binder, typ_of_expr value) :: binders) ~subject
+      (* the body: the binder joins the scope carrying its value's datatype;
+         a Let body admits IfThenElse (Let_pos) unless already inside a
+         closed body (stay closed) *)
+      @ walk_expr ctx ~binders:body_binders ~subject
           ~body:(match body with Closed_pos (wf, o) -> Closed_pos (wf, o) | Rule_pos | Let_pos -> Let_pos)
           (* a Let inside a closed body stays closed with the SAME outer set —
              the Let binder is an INNER binding (added to [binders] above), so a
@@ -6058,7 +5345,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
              List.concat
                (List.mapi
                   (fun i e ->
-                    match typ_of_expr e with
+                    match ty e with
                     | Some t when t <> ed ->
                         [ v "WF-066" (sub (Printf.sprintf "elements/%d" i))
                             ("element type " ^ datatype_detail t
@@ -6085,7 +5372,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                "an IfThenElse is admissible only inside a lambda, function or Let body" ])
       @ wf077_condition (sub "condition") condition
       @ (let branch name e =
-           match typ, typ_of_expr e with
+           match typ, ty e with
            | Some t, Some bt when t <> bt ->
                [ v "WF-069" (sub name)
                    ("the " ^ name ^ " branch is " ^ datatype_detail bt
@@ -6110,7 +5397,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
               List.concat
                 (List.mapi
                    (fun i (a, (_, pt)) ->
-                     match typ_of_expr a with
+                     match ty a with
                      | Some at' when at' <> pt ->
                          [ v "WF-068" (sub (Printf.sprintf "arguments/%d" i))
                              ("argument type " ^ datatype_detail at'
@@ -6127,8 +5414,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
              (fun i a -> walk_expr ctx ~binders ~subject ~body (sub (Printf.sprintf "arguments/%d" i)) a)
              arguments)
   | Fold { typ; list; functie; init; _ } ->
-      let src_elem = match typ_of_expr list with Some (List_type { element }) -> Some element | _ -> None in
-      fold_source_check ctx (sub "list") list
+      let src_elem = match ty list with Some (List_type { element }) -> Some element | _ -> None in
+      fold_source_check ctx ~binders (sub "list") list
       (* WF-070: the accumulator (node type = init type) is one first-order
          non-list datatype *)
       @ (match typ with
@@ -6136,7 +5423,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
             [ v "WF-070" (sub "type")
                 "fold accumulator is list-typed — it must be a first-order non-list datatype" ]
         | _ -> [])
-      @ (match typ, typ_of_expr init with
+      @ (match typ, ty init with
         | Some at', Some it when at' <> it ->
             [ v "WF-070" (sub "init") "fold init datatype differs from the accumulator type" ]
         | _ -> [])
@@ -6145,9 +5432,9 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       @ walk_expr ctx ~binders ~subject ~body (sub "list") list
       @ walk_expr ctx ~binders ~subject ~body (sub "init") init
   | Map_list { typ; list; functie; _ } ->
-      let src_elem = match typ_of_expr list with Some (List_type { element }) -> Some element | _ -> None in
+      let src_elem = match ty list with Some (List_type { element }) -> Some element | _ -> None in
       let out_elem = match typ with Some (List_type { element }) -> Some element | _ -> None in
-      fold_source_check ctx (sub "list") list
+      fold_source_check ctx ~binders (sub "list") list
       (* WF-070: the node type is the ListType of the body's datatype *)
       @ (match typ with
         | Some (List_type _) -> []
@@ -6157,19 +5444,19 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       @ check_fold_fn ctx ~binders ~subject (sub "function") ~params:[ src_elem ] ~result:out_elem functie
       @ walk_expr ctx ~binders ~subject ~body (sub "list") list
   | Filter_list { typ; list; binder; condition; _ } ->
-      let src_elem = match typ_of_expr list with Some (List_type { element }) -> Some element | _ -> None in
-      fold_source_check ctx (sub "list") list
+      let src_elem = match ty list with Some (List_type { element }) -> Some element | _ -> None in
+      fold_source_check ctx ~binders (sub "list") list
       (* WF-070: the node type equals the source's list type *)
-      @ (match typ, typ_of_expr list with
+      @ (match typ, ty list with
         | Some t, Some s when t <> s ->
             [ v "WF-070" (sub "type") "filter result type must equal the source list type" ]
         | _ -> [])
       @ walk_expr ctx ~binders ~subject ~body (sub "list") list
       (* the binder is bound in the condition — the aggregation-filter precedent;
-         it carries the source element datatype (WF-078) *)
+         it carries the source element datatype *)
       @ walk_cond ctx ~binders:((binder, src_elem) :: binders) ~subject ~body (sub "condition") condition
   | List_length { typ; list; _ } ->
-      fold_source_check ctx (sub "list") list
+      fold_source_check ctx ~binders (sub "list") list
       (* WF-070: the count is a whole number *)
       @ (match typ with
         | Some (Numeriek { geheel = true; _ }) -> []
@@ -6243,12 +5530,10 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                                el) ]
                       else []
                   | _ -> [])
-                 (* (e) every selection names its population and its relation.
-                    There is deliberately no bindingless fallback: WF-048
-                    derives a relation from a TYPE PAIR, clause (d) gives every
-                    selection of one union the SAME type pair, so a derived
-                    range would make the selections indistinguishable and the
-                    union a restatement of one of them. *)
+                 (* (e) every selection names its population. Its relation is
+                    schema-required (B12) and the loader reads it as required:
+                    a type pair would give every selection of one union the
+                    SAME derived range (clause (d)), so nothing derives it. *)
                  @ (match b.isb_element_type with
                    | None ->
                        [ v "WF-110" (bat ^ "/elementType")
@@ -6258,18 +5543,10 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                        [ v "WF-034" (bat ^ "/elementType")
                            ("instance-set selection element type '" ^ el ^ "' is not declared") ]
                    | Some _ -> [])
-                 @ (match b.isb_source_role with
-                   | None ->
-                       [ v "WF-110" (bat ^ "/sourceRole")
-                           "an instance-set union's selection MUST name the relation it ranges \
-                            over: there is no bindingless fallback here, because every selection \
-                            of one union shares one type pair (clause (d)) and a derived range \
-                            would make them indistinguishable (ch. 4.3)" ]
-                   | Some rb ->
-                       (* WF-047 at a new position rather than under a new
-                          rule — the discipline WF-102 (d) applies per step *)
-                       wf047_binding ctx (bat ^ "/sourceRole") rb
-                         ~bound_filler:b.isb_element_type ~other_filler:subject)
+                 (* WF-047 at a new position rather than under a new rule — the
+                    discipline WF-102 (d) applies per step *)
+                 @ wf047_binding ctx (bat ^ "/sourceRole") b.isb_source_role
+                     ~bound_filler:b.isb_element_type ~other_filler:subject
                  (* every selection's filter evaluates PER CONTRIBUTOR, so the
                     selection's own element type is its subject — ch. 3.4a's
                     fold-filter discipline, once per selection *)
@@ -6280,8 +5557,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                branches))
 
 (* WF-070: the fold-family [list] operand must be list-typed. *)
-and fold_source_check _ctx at list =
-  match typ_of_expr list with
+and fold_source_check ctx ~binders at list =
+  match expr_type ctx ~binders list with
   | Some (List_type _) -> []
   | Some d -> [ v "WF-070" at ("fold source is " ^ datatype_kind d ^ ", must be list-typed") ]
   | None -> [ v "WF-070" at "fold source carries no type" ]
@@ -6318,7 +5595,10 @@ and check_fold_fn ctx ~binders ~subject at ~params ~result (fn : fold_fn) : viol
       @ List.concat_map
           (fun (pn, pt) -> check_datatype_units ~stelsels:(stelsel_namen ctx) (at ^ "/parameters/" ^ pn) pt)
           parameters
-      @ (match result, typ_of_expr lbody with
+      @ (match
+           ( result,
+             expr_type ctx ~binders:(List.map (fun (n, dt) -> (n, Some dt)) parameters) lbody )
+         with
         | Some r, Some b when r <> b ->
             [ v "WF-070" at
                 ("lambda body is " ^ datatype_detail b ^ ", but the fold requires "
@@ -6384,7 +5664,8 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
   | None ->
   match c with
   | Vergelijking { op; links; rechts; periode; _ } ->
-      let lt = Option.bind links typ_of_expr and rt = Option.bind rechts typ_of_expr in
+      let lt = Option.bind links (expr_type ctx ~binders)
+      and rt = Option.bind rechts (expr_type ctx ~binders) in
       let ordering =
         match op with
         | Kleiner | Kleiner_of_gelijk | Groter | Groter_of_gelijk -> `Num
@@ -6417,18 +5698,9 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
               well-formed alone; their combination is not, so it is
               reported at the comparison node. The sibling equality arm
               below crosses the same seam ("equality across date
-              precisions"); this arm is its ordering half.
-
-              NO deferral on the sentinel here — deliberately unlike
-              WF-038's ordering fold. An operand with no type at all does
-              defer (the outer match skips it) and WF-034 reports it
-              ("value node without a static type", measured); the unknown
-              SENTINEL is REPORTED by the is_date guard just above
-              ("date-ordering operand is unknown", measured, beside
-              WF-034's "unknown-type sentinel inside a structured node"),
-              so this precision clause never meets one. The fold arm
-              defers because only the ch. 4.3 row-1 wart reaches it;
-              every operand here is walked as an ordinary expression. *)
+              precisions"); this arm is its ordering half. An operand
+              whose type nothing declares defers (the outer match skips
+              it); its own rule reports it. *)
            @ (match l, r with
               | Datum_in_dagen, Datum_tijd | Datum_tijd, Datum_in_dagen ->
                   [ v "WF-036" at
@@ -6466,7 +5738,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
       @ (match links with Some e -> walk_expr ctx ~binders ~subject ~body (sub "links") e | None -> [])
       @ (match rechts with Some e -> walk_expr ctx ~binders ~subject ~body (sub "rechts") e | None -> [])
   | Predicaat { soort; operand; dagsoort; periode; _ } ->
-      let ot = Option.bind operand typ_of_expr in
+      let ot = Option.bind operand (expr_type ctx ~binders) in
       (match soort, ot with
        | Elfproef, Some d -> (
            match d with
@@ -6487,7 +5759,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
          | _ -> [])
       @ whole_period_check periode [ operand ]
       @ (match operand with Some e -> walk_expr ctx ~binders ~subject ~body (sub "operand") e | None -> [])
-  | Kenmerk_check { kenmerk; navigatie; periode; navigatie_binding; eigenaar; _ } ->
+  | Kenmerk_check { kenmerk; periode; navigatie_binding; eigenaar; _ } ->
       (* WF-034 (widened, maintainer decision 2026-09-05, sixth wave; IR-SPEC
          ch. 4.6 (q)): a characteristic check's EXPLICIT OWNER. `eigenaar`
          names the object type the characteristic is read on when it is not
@@ -6582,7 +5854,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
       (match eigenaar with
        | Some e when objecttype ctx e <> None ->
            let bound =
-             match fc_doel, navigatie, periode with
+             match fc_doel, navigatie_binding, periode with
              | Some d, None, None -> (
                  match subject with
                  | Some a -> [ ("anker", a); ("doel", d) ]
@@ -6651,7 +5923,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
       (let decl_key = match eigenaar with Some _ as e -> e | None -> subject in
        let keyed_wf = match eigenaar with Some _ -> "WF-100" | None -> "WF-034" in
        let keyed_at = match eigenaar with Some _ -> sub "eigenaar" | None -> at in
-       (match kenmerk, navigatie, decl_key with
+       (match kenmerk, navigatie_binding, decl_key with
         | Some k, None, Some otn -> (
             match objecttype ctx otn with
             | Some ot when not (has_kenmerk ot k) ->
@@ -6659,7 +5931,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
                     ("'" ^ k ^ "' is not a declared characteristic of '" ^ otn ^ "'") ]
             | _ -> [])
         | _ -> [])
-       @ (match periode, kenmerk, navigatie, decl_key with
+       @ (match periode, kenmerk, navigatie_binding, decl_key with
           | Some _, Some k, None, Some otn -> (
               match objecttype ctx otn with
               | Some ot
@@ -6667,180 +5939,82 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
                   [ v "WF-043" at "whole-period qualifier on a non-time-dependent characteristic" ]
               | _ -> [])
           | _ -> []))
-      @ (* WF-053: the navigated characteristic check — one hop, bound or
-           uniquely derivable by the written role name; to-one only (the
-           v0 resolver's NAAR_VEEL marker, lifted); the characteristic
-           lives on the REACHED type *)
-      (match navigatie with
-       | None -> (
-           match navigatie_binding with
-           | Some _ ->
-               [ v "WF-053" at
-                   "navigation binding on a characteristic check that does not navigate" ]
-           | None -> [])
-       | Some nav -> (
-           match subject with
-           | None -> []
-           | Some st -> (
-               let filler (r : rol) = Option.value r.rol_objecttype_naam ~default:"" in
-               let hop =
-                 match navigatie_binding with
-                 | Some rb -> (
-                     match resolve_binding ctx rb with
-                     | Error e -> Error [ e ]
-                     | Ok (_, bound, opposite) ->
-                         let near =
-                           if not (fills ctx ~inst:st ~role:opposite) then
-                             [ Printf.sprintf
-                                 "the near side of '%s' fills '%s', but the check's subject \
-                                  is '%s'"
-                                 rb.rb_feittype (filler opposite) st ]
-                           else []
-                         in
-                         let name_check =
-                           let denotes =
-                             (match bound.rol_naam with
-                              | Some n -> norm n = norm nav
-                              | None -> false)
-                             || match bound.rol_meervoud with
-                                | Some m -> norm m = norm nav
-                                | None -> false
-                           in
-                           if denotes then []
-                           else
-                             [ Printf.sprintf
-                                 "the written navigation '%s' does not denote the bound role \
-                                  '%s'"
-                                 nav
-                                 (Option.value bound.rol_naam ~default:"?") ]
-                         in
-                         if near @ name_check = [] then Ok bound
-                         else Error (near @ name_check))
-                 | None -> (
-                     match nav_role_by_name ctx ~from_type:st ~name:nav with
-                     | Ok (_, r) -> Ok r
-                     | Error e ->
-                         (* the ch. 4.1a zero-hop self-reference is scoped
-                            to the attribute read; a self-denoting name on
-                            the navigated check stays rejected, explicitly *)
-                         if
-                           nav_roles_by_name ctx ~from_type:st ~name:nav = []
-                           && self_denoting_role ctx ~otype:st nav
-                         then
-                           Error
-                             [ e ^ "; '" ^ nav ^ "' names a role '" ^ st
-                               ^ "' itself fills — the zero-hop self-reference does not \
-                                  extend to the characteristic check" ]
-                         else Error [ e ])
-               in
-               match hop with
-               | Error msgs -> List.map (fun m -> v "WF-053" at m) msgs
-               | Ok r ->
-                   (if r.rol_meervoudig then
-                      [ v "WF-053" at
-                          (Printf.sprintf
-                             "the navigated check reaches the to-many role '%s' — a to-many \
-                              step needs an aggregation, never a silent first pick"
-                             (Option.value r.rol_naam ~default:"?")) ]
-                    else [])
-                   @
-                   match kenmerk with
-                   | Some k -> (
-                       match objecttype ctx (filler r) with
-                       | Some ot when not (has_kenmerk ot k) ->
-                           [ v "WF-034" at
-                               ("'" ^ k ^ "' is not a declared characteristic of '" ^ filler r
-                              ^ "'") ]
-                       | _ -> [])
-                   | None -> [])))
-  | Rollidmaatschap { ander_te_filler; _ } -> (
-      (* WF-034 (widened, maintainer decision 2026-09-04, fifth wave): the
-         near-side role check ("hij is een <rol>") resolves through
-         `anderTeFiller`, not through the written role name — the executors
-         take the connecting role from the SUBJECT to that type and null-test
-         it (ch. 5.8a), so the written `rol` is presentation and this field is
-         the whole of the reference. Nothing crossed it. Measured on all four
-         golden positions (`jutterswet-wachtindeling` 2, `jutterswet-wachtploeg`
-         2) with the field pointed at an undeclared type: 4/4 verifier-CLEAN,
-         while both OCaml executors refuse loudly with the same sentence —
-         `ref` "EVALUATION FAULT: no fact type relates \"Jutter\" to
-         \"Bestaatniet\"", clingo the same as a TRANSLATION FAULT — and the
-         bean-model executor takes a third road again: it stops carrying the
-         rule (a transpiler skip, "voorwaarde buiten Phase-B scope"), so the
-         document neither faults nor answers.
-
-         One cross, against the role fillers: the ch. 4.3 candidate list
-         [connecting_role_candidates], the executors' own derivation. Empty is
-         this arm's report — it is exactly `ref`'s `[]` fault. A candidate
-         list with SEVERAL entries is a different defect (ambiguity, ch. 4.1)
-         and stays WF-048's business; a subject the walk does not know keeps
-         the arm silent.
-
-         The EMPTY half is its own arm (maintainer decision 2026-09-05, sixth
-         wave; IR-SPEC ch. 4.6 (o), its empty half) and needs no subject: with
-         the field absent there is no type to derive a connecting role TO, and
-         the written `rol` being presentation, the node then carries no
-         reference at all. Carried by 1 of the 10 role checks the four zones
-         hold on 2026-09-05, and that one is a day-kind condition
-         (`wf031-dagsoort-leest-rolstaat`) that WF-031 already refuses
-         outright — a day-kind voorwaarde may not read role state at all,
-         which is precisely why no subject was there to derive the filler
-         from. So no legitimate document carries the shape; the one that does
-         keeps its own verdict and gains a truthful incidental line. *)
-      match (ander_te_filler, subject) with
-      | Some f, Some st when connecting_role_candidates ctx ~from_type:st ~to_type:f = [] ->
-          [ v "WF-034" (sub "anderTeFiller")
-              (Printf.sprintf
-                 "no fact type relates the subject '%s' to '%s': the role check's anderTeFiller \
-                  resolves against no declaration"
-                 st f) ]
-      | None, _ ->
-          [ v "WF-034" (sub "anderTeFiller")
-              "role check without an anderTeFiller: the connecting role is derived from that \
-               type and from nothing else, so the check resolves against no declaration" ]
-      | _ -> [])
-  | Verre_rollidmaatschap { filler; backref; _ } -> (
-      (* WF-034 (t) (maintainer decision 2026-09-20; IR-SPEC ch. 4.6 (t)):
-         the FAR-side role check ("de Wachtpost heeft een wachtjutter",
-         ch. 5.8a read from the other end). Unlike its near-side twin (o)
-         this node carries NO written role name at all, so [filler] and
-         [backref] together are the whole of the reference — which is why
-         the rule crosses the PAIR and not each field on its own. A
-         [backref] naming a real role on the wrong SIDE (the filler's own
-         role instead of the subject's) resolves as a name and still leaves
-         the exists-join ranging over an empty relation; that is the shape
-         `wf034-verre-rolcheck-verkeerde-zijde` pins, and it is the mistake
-         a producer makes.
-
-         One cross, against the role fillers, mirroring (o): an EMPTY
-         candidate list is this arm's report; several entries stay WF-048's
-         ambiguity question; a subject the walk does not know keeps the arm
-         silent. The two absent spellings fold in on the (s) precedent —
-         with either field gone the node carries no reference whatever.
-         Arity is deliberately uncrossed: ch. 5.7a makes the relation
-         symmetric, so neither OCaml executor needs a direction, and the
-         bean-model executor refuses the shape it cannot store per form,
-         with its own reason. *)
-      match (filler, backref, subject) with
-      | None, _, _ ->
-          [ v "WF-034" (sub "filler")
-              "far-side role check without a filler: the exists-join ranges over the objects \
-               of that type and over nothing else, so the check resolves against no \
-               declaration" ]
-      | _, None, _ ->
-          [ v "WF-034" (sub "backref")
-              "far-side role check without a backref: the join is on the role the subject \
-               fills and the node names it in that field alone, so the check resolves against \
-               no declaration" ]
-      | Some f, Some b, Some st
-        when far_role_candidates ctx ~subject:st ~filler:f ~backref:b = [] ->
-          [ v "WF-034" (sub "backref")
-              (Printf.sprintf
-                 "no declared fact type holds the subject '%s' in a role named '%s' with '%s' \
-                  at the other end: the far-side role check's filler and back-reference \
-                  resolve against no single declaration"
-                 st b f) ]
-      | _ -> [])
+      @ (* WF-053: the navigated characteristic check — one hop, its binding
+           (D53); to-one only (the v0 resolver's NAAR_VEEL marker, lifted);
+           the characteristic lives on the REACHED type. Without a binding
+           the check reads the subject itself. *)
+      (match (navigatie_binding, subject) with
+       | None, _ | Some _, None -> []
+       | Some rb, Some st -> (
+           let filler (r : rol) = Option.value r.rol_objecttype_naam ~default:"" in
+           match resolve_binding ctx rb with
+           | Error e -> [ v "WF-053" at e ]
+           | Ok (_, bound, opposite) ->
+               if not (fills ctx ~inst:st ~role:opposite) then
+                 [ v "WF-053" at
+                     (Printf.sprintf
+                        "the near side of '%s' fills '%s', but the check's subject is '%s'"
+                        rb.rb_feittype (filler opposite) st) ]
+               else
+                 (if bound.rol_meervoudig then
+                    [ v "WF-053" at
+                        (Printf.sprintf
+                           "the navigated check reaches the to-many role '%s' — a to-many \
+                            step needs an aggregation, never a silent first pick"
+                           (Option.value bound.rol_naam ~default:"?")) ]
+                  else [])
+                 @
+                 match kenmerk with
+                 | Some k -> (
+                     match objecttype ctx (filler bound) with
+                     | Some ot when not (has_kenmerk ot k) ->
+                         [ v "WF-034" at
+                             ("'" ^ k ^ "' is not a declared characteristic of '"
+                            ^ filler bound ^ "'") ]
+                     | _ -> [])
+                 | None -> []))
+  | Role_membership { fact_type; role; _ } -> (
+      (* WF-034, the role check (D11; IR-SPEC ch. 4.6, the v1 role arm): the
+         node names the relation and the role, so the whole of the reference
+         is the pair, crossed against the declarations — the fact type is
+         declared, the role is one of its roles by declared name (the plural
+         is presentation and does not name a role here, as in a role
+         binding), and the SUBJECT fills that role. The last is the mistake a
+         producer makes: a role of the right fact type on the wrong side
+         names a link the subject can never be in, and the check then asks
+         for nothing. One-sided, on the [fills] line of every near-side
+         question in this file: an instance of the subject type fills a role
+         declared at any of its supertypes (ch. 2.6). A subject-less position
+         (a day-kind condition) crosses the declarations only; WF-031 refuses
+         it for reading role state at all. *)
+      match find_ci ctx.doc.feittypen fact_type with
+      | None ->
+          [ v "WF-034" (sub "factType")
+              ("role check names fact type '" ^ fact_type
+             ^ "', which is not declared: the check resolves against no declaration") ]
+      | Some (ft : feittype) -> (
+          let named (r : rol) =
+            match r.rol_naam with Some n -> norm n = norm role | None -> false
+          in
+          match List.filter named ft.rollen with
+          | [] ->
+              [ v "WF-034" (sub "role")
+                  ("'" ^ role ^ "' is not a declared role of fact type '" ^ fact_type
+                 ^ "' (a role check names the role by its declared name)") ]
+          | [ r ] -> (
+              match subject with
+              | Some st when not (fills ctx ~inst:st ~role:r) ->
+                  [ v "WF-034" (sub "role")
+                      (Printf.sprintf
+                         "the subject '%s' does not fill the role '%s' of fact type '%s', which \
+                          is filled by '%s': the check names a link the subject can never be in"
+                         st role fact_type
+                         (Option.value r.rol_objecttype_naam ~default:"?")) ]
+              | _ -> [])
+          | _ ->
+              [ v "WF-034" (sub "role")
+                  ("role name '" ^ role ^ "' is ambiguous within fact type '" ^ fact_type ^ "'")
+              ]))
   | Periode_conditie { vanaf; tot; _ } ->
       (if vanaf = None && tot = None then
          [ v "WF-042" at "time window without any bound" ]
@@ -6849,7 +6023,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
           (fun (n, e) ->
             match e with
             | Some e ->
-                (match typ_of_expr e with
+                (match expr_type ctx ~binders e with
                  | Some d when not (is_date d) ->
                      [ v "WF-042" (sub n) ("window bound is " ^ datatype_kind d ^ ", must be a date") ]
                  | _ -> [])
@@ -6941,16 +6115,12 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
                   satisfy, and a quantifier over no condition has no verdict" ]
          | Some _ -> [])
       (* (c) the range, one meaning with two spellings — the WF-102
-         discipline under this node's own number. *)
+         discipline under this node's own number. Its presence and its one
+         spelling are the loader's since L2 (B12): the range is written,
+         never derived. *)
       @ (match k.kv_bron_pad with
          | Some pad ->
-             (match k.kv_bron_rol with
-              | Some _ ->
-                  [ v "WF-108" (sub "bronPad")
-                      "bronPad beside bronRol on a quantifier fold: the one-step range IS \
-                       bronRol, so the two fields are mutually exclusive" ]
-              | None -> [])
-             @ (if List.length pad >= 2 then []
+             (if List.length pad >= 2 then []
                 else
                   [ v "WF-108" (sub "bronPad")
                       (Printf.sprintf
@@ -7002,13 +6172,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
              | Some el, Some rb ->
                  wf047_binding ctx (sub "bronRol") rb ~bound_filler:(Some el)
                    ~other_filler:subject
-             | Some el, None -> (
-                 match subject with
-                 | Some st ->
-                     wf048_derivable ctx (sub "bronRol") ~from_type:st ~to_type:el
-                       ~site:"quantifier fold"
-                 | None -> [])
-             | None, _ -> []))
+             | _ -> []))
       (* the matrix and the subselection are read with the ELEMENT as
          subject — the same re-anchoring the fold's filter gets
          (walk_expr's Functie arm), so an element-own read resolves against
@@ -7033,54 +6197,11 @@ let expression_layer ctx =
         | Some (Attribuut_ref { objecttype; _ }) -> objecttype
         | _ -> None
       in
-      (* The target lvalue is WF-022's job, not part of the WF-034 walk —
-         which left the target's own [type] the one position in a document
-         where the v0 unknown sentinel survived (the walk refuses it on
-         every value node it enters, WF-003 on every declaration). Nobody
-         READS the field, but the identity family crosses it (WF-091's
-         rule-target arm) and defers on the sentinel, so writing it there
-         switched the unit and domain checks off one's own write targets.
-         WF-034 covers that one position too (maintainer decision
-         2026-09-04).
-
-         Both spellings of the unknown type, since the second wave of the
-         same decision: the explicit sentinel and its UNSPELLED TWIN, a
-         target with no type at all. The first wave left the twin out for
-         want of a witness; it has one now, and it is the worse of the two —
-         besides WF-091's rule-target arm it also switches off WF-007's
-         target clause below (a shape law that reads `Some d`), and the
-         document it produces replays clean in ref and clingo while the
-         Drools backend throws on it. Measured before this arm: all 295
-         golden rule-target types stay verifier-clean when emptied. *)
-      (match r.doel with
-      | Some (Attribuut_ref { typ = Some (Datatype_onbekend _); _ }) ->
-          [ v "WF-034" (at ^ "/doel/type") "unknown-type sentinel on a rule target" ]
-      | Some (Attribuut_ref { typ = None; _ }) ->
-          [ v "WF-034" (at ^ "/doel/type") "rule target without a static type" ]
-      | _ -> [])
-      (* WF-007 at the same position, and for a different reason than its
-         neighbour above: the precision form is a SHAPE law on a datatype —
-         every Number in the document — not a cross against a declaration,
-         so nothing else can stand in for it. Its two halves reached the
-         declarations ([wf007_model]) and the types the walk enters (the
-         prologue), which left the target out on the lvalue argument.
-         Measured 2026-09-03: whole + 2 decimals passes here and is refused
-         on every walked expression type. Where the target's declaration
-         resolves the identity family masks the shape incidentally (a facet
-         mismatch, WF-091's number and a comparison message); on a
-         CHARACTERISTIC target it defers by construction and this clause is
-         the only guard. The sentinel and an absent type fall through it —
-         [check_number_form] has nothing to say about either. *)
-      @ (* WF-092 rides the same lvalue position for the same reason: the
-           unit's conversion pair is a SHAPE law on every unit in the
-           document, and the target's own `type` is the one datatype the
-           expression walk never enters. *)
-      (match r.doel with
-        | Some (Attribuut_ref { typ = Some d; _ }) ->
-            check_number_form (at ^ "/doel/type") d
-            @ check_datatype_units ~stelsels:(stelsel_namen ctx) (at ^ "/doel/type") d
-        | _ -> [])
-      @ (* WF-056 (rule level): a pro-rata value on a temporal target MUST
+      (* The target lvalue is WF-022's job, not part of the walk. Since L2 it
+         carries no type of its own (B13): the attribute declaration it writes
+         is the one source, crossed where it is declared, so the target has
+         no annotation left to cross here. *)
+      (* WF-056 (rule level): a pro-rata value on a temporal target MUST
          bucket at the target's declared granularity; WF-058 states the
          same facet for the ch. 3.8 day count *)
       (match (r.doel, r.waarde) with
@@ -7114,7 +6235,7 @@ let expression_layer ctx =
              else [])
             @ (match f.filter with
               | None -> [ v "WF-058" (at ^ "/waarde") "aantal-dagen-in without a gedurende condition" ]
-              | Some (Kenmerk_check { kenmerk = Some k; navigatie = None; negatie = false; _ }) -> (
+              | Some (Kenmerk_check { kenmerk = Some k; navigatie_binding = None; negatie = false; _ }) -> (
                   match Option.bind subject (objecttype ctx) with
                   | Some otd
                     when not
@@ -7368,34 +6489,17 @@ type dep_form = {
    navigated shapes' hop relations *)
 let rec dep_expr ctx ~subject acc (e : expr) =
   match e with
-  | Attribuut_ref
-      { attribuut = Some a; objecttype = Some ot; typ; navigatie_rol; navigatie_pad;
-        navigatie_bindingen; _ } -> (
-      match typ with
-      | Some (Datatype_onbekend _) ->
-          acc (* the fold-source role wart; the fold adds the population read *)
-      | _ ->
-          (* a navigated read consumes the link set of every hop relation
-             (ch. 6.1) — the edge that orders navigation-after-creation.
-             The bound hops name their relations; the bindingless walk is
-             derived best-effort (WF-053 reports an unresolvable one, so
-             dropping its edges never hides a cycle in a clean document) *)
-          let rel_edges =
-            match navigatie_bindingen with
-            | Some hops -> List.map (fun (rb : rol_binding) -> (n_rel rb.rb_feittype, Dep_pos)) hops
-            | None -> (
-                match subject with
-                | Some st
-                  when navigatie_rol <> None || navigatie_pad <> [] || norm st <> norm ot -> (
-                    match
-                      nav_hops ctx ~subject:st ~bindings:None ~navigatie_rol ~navigatie_pad
-                        ~endpoint:(Some ot)
-                    with
-                    | Ok hops -> List.map (fun (fn, _) -> (n_rel fn, Dep_pos)) hops
-                    | Error _ -> [])
-                | _ -> [])
-          in
-          rel_edges @ ((n_attr ot a, Dep_pos) :: acc))
+  | Attribuut_ref { attribuut = Some a; objecttype = Some ot; navigatie_bindingen; _ } ->
+      (* a navigated read consumes the link set of every hop relation
+         (ch. 6.1) — the edge that orders navigation-after-creation. Since
+         L2 the bindings name every relation it walks (B11); an own read
+         walks none *)
+      let rel_edges =
+        match navigatie_bindingen with
+        | Some hops -> List.map (fun (rb : rol_binding) -> (n_rel rb.rb_feittype, Dep_pos)) hops
+        | None -> []
+      in
+      rel_edges @ ((n_attr ot a, Dep_pos) :: acc)
   | Attribuut_ref _ | Literal _ | Parameter_ref _ | Variabele_ref _ | Constante _
   | Expr_onopgelost _ ->
       acc
@@ -7407,7 +6511,7 @@ let rec dep_expr ctx ~subject acc (e : expr) =
           | Ingevoegd { expr = None } -> acc)
         acc delen
   | Binair { links; rechts; _ } -> dep_opt ctx ~subject (dep_opt ctx ~subject acc links) rechts
-  | Functie { argumenten; element_objecttype; leegwaarde; filter; bron_rol; bron_pad; _ } ->
+  | Functie { kind; argumenten; element_objecttype; leegwaarde; filter; bron_rol; bron_pad; _ } ->
       let acc =
         match element_objecttype with Some el -> (n_pop el, Dep_pos) :: acc | None -> acc
       in
@@ -7428,23 +6532,23 @@ let rec dep_expr ctx ~subject acc (e : expr) =
            fact creation's write reaches, from either end (ch. 6.1) *)
         match bron_rol with
         | Some (rb : rol_binding) -> (n_rel rb.rb_feittype, Dep_pos) :: acc
-        | None -> (
-            (* the bindingless instance fold's role-wart source names its
-               relation by role name — derive it best-effort (the
-               navigated-read discipline: WF-034/047 report an
-               unresolvable one, so dropping its edge never hides a
-               cycle in a clean document) and read its link set beside
-               the population proxy *)
-            match (element_objecttype, subject, argumenten) with
-            | ( Some _, Some st,
-                [ Attribuut_ref
-                    { attribuut = Some a; typ = Some (Datatype_onbekend _); _ } ] ) -> (
-                match nav_role_by_name ctx ~from_type:st ~name:a with
-                | Ok (fn, _) -> (n_rel fn, Dep_pos) :: acc
-                | Error _ -> acc)
-            | _ -> acc)
+        | None -> acc
       in
-      let acc = List.fold_left (dep_expr ctx ~subject) acc argumenten in
+      (* the count source names the relation's role, not an attribute: it
+         reads the link set drawn above and the population, never a member
+         (D8 (ii), D9) *)
+      let count_source =
+        match (kind, element_objecttype, argumenten, bron_rol, bron_pad) with
+        | Aantal, Some el, [ Attribuut_ref { attribuut = Some a; _ } ], _, _
+          when bron_rol <> None || bron_pad <> None -> (
+            match objecttype ctx el with
+            | Some ot -> not (has_attr ot a || has_kenmerk ot a)
+            | None -> false)
+        | _ -> false
+      in
+      let acc =
+        if count_source then acc else List.fold_left (dep_expr ctx ~subject) acc argumenten
+      in
       let acc = dep_opt ctx ~subject acc leegwaarde in
       (* the filter's reads are the ELEMENT's (ch. 6.1): a filter over a
          derived characteristic of the contributor type must sit above
@@ -7462,11 +6566,7 @@ let rec dep_expr ctx ~subject acc (e : expr) =
           let acc =
             match b.isb_element_type with Some el -> (n_pop el, Dep_pos) :: acc | None -> acc
           in
-          let acc =
-            match b.isb_source_role with
-            | Some (rb : rol_binding) -> (n_rel rb.rb_feittype, Dep_pos) :: acc
-            | None -> acc
-          in
+          let acc = (n_rel b.isb_source_role.rb_feittype, Dep_pos) :: acc in
           match b.isb_filter with
           | Some c -> dep_cond ctx ~subject:b.isb_element_type ~neg:false acc c
           | None -> acc)
@@ -7561,36 +6661,20 @@ and dep_cond ctx ~subject ~neg acc (c : conditie) =
   | Predicaat { soort = Leeg | Gevuld; operand; _ } ->
       List.map (fun (node, _) -> (node, Dep_neg)) (dep_opt ctx ~subject [] operand) @ acc
   | Predicaat { operand; _ } -> dep_opt ctx ~subject acc operand
-  | Kenmerk_check { kenmerk = Some k; eigenaar; negatie; navigatie = Some nav; navigatie_binding; _ }
-    -> (
+  | Kenmerk_check { kenmerk = Some k; negatie; navigatie_binding = Some rb; _ } -> (
       (* the navigated check: the characteristic lives on the REACHED
          type, and the hop relation itself is read positively (only the
          characteristic sits under the negation — an absent link makes
          the check false either way, never true). An unresolvable hop
          contributes no edges; WF-053 reports it. *)
-      ignore eigenaar;
       let kind = if neg || negatie then Dep_neg else Dep_pos in
-      let hop =
-        match navigatie_binding with
-        | Some rb -> (
-            match resolve_binding ctx rb with
-            | Ok (_, bound, _) -> Some (rb.rb_feittype, bound)
-            | Error _ -> None)
-        | None -> (
-            match subject with
-            | Some st -> (
-                match nav_role_by_name ctx ~from_type:st ~name:nav with
-                | Ok p -> Some p
-                | Error _ -> None)
-            | None -> None)
-      in
-      match hop with
-      | Some (fn, r) ->
-          (n_rel fn, Dep_pos)
+      match resolve_binding ctx rb with
+      | Ok (_, r, _) ->
+          (n_rel rb.rb_feittype, Dep_pos)
           :: (n_char (Option.value r.rol_objecttype_naam ~default:"") k, kind)
           :: acc
-      | None -> acc)
-  | Kenmerk_check { kenmerk = Some k; eigenaar; negatie; navigatie = None; _ } -> (
+      | Error _ -> acc)
+  | Kenmerk_check { kenmerk = Some k; eigenaar; negatie; navigatie_binding = None; _ } -> (
       (* once negative, conservatively negative — double negation does
          not cancel (ch. 6.1) *)
       let kind = if neg || negatie then Dep_neg else Dep_pos in
@@ -7598,7 +6682,7 @@ and dep_cond ctx ~subject ~neg acc (c : conditie) =
       | Some ot -> (n_char ot k, kind) :: acc
       | None -> acc)
   | Kenmerk_check _ -> acc
-  | Rollidmaatschap _ | Verre_rollidmaatschap _ -> acc
+  | Role_membership _ -> acc
   | Periode_conditie { vanaf; tot; _ } -> dep_opt ctx ~subject (dep_opt ctx ~subject acc vanaf) tot
   | Samengesteld { kwantor; onderdelen; _ } ->
       let neg' =
@@ -7632,29 +6716,18 @@ and dep_cond ctx ~subject ~neg acc (c : conditie) =
      corpus/golden/jutterswet-opvolgerquorum; the negative witnesses are
      corpus/negatief/wf046-kwantorvouw-*.
 
-     A BINDINGLESS fold (no bronRol, no bronPad: the range is the one
-     connecting relation WF-048 demands) drew no range edge at all before;
-     it now reads that relation and, as a bindingless instance fold does
-     (ch. 6.1's recorded narrowing), the element population. *)
+     The range is written since L2 (B12): the loader admits the node with
+     exactly one of bronRol and bronPad, so the reach is always the relations
+     it names. *)
   | Kwantorvouw { kv_kwantor; kv_element_objecttype; kv_filter; kv_toets; kv_bron_rol; kv_bron_pad; _ }
     ->
       let range_neg = neg || kv_kwantor <> Ten_minste in
       let matrix_neg = neg || not (kv_kwantor = Ten_minste || kv_kwantor = Alle) in
       let reach =
-        match (kv_bron_rol, kv_bron_pad) with
-        | None, None ->
-            (match kv_element_objecttype with Some el -> [ n_pop el ] | None -> [])
-            @ (match (subject, kv_element_objecttype) with
-               | Some st, Some el -> (
-                   match connecting_candidates ctx ~from_type:st ~to_type:el with
-                   | [ fn ] -> [ n_rel fn ]
-                   | _ -> [])
-               | _ -> [])
-        | _ ->
-            List.map
-              (fun (rb : rol_binding) -> n_rel rb.rb_feittype)
-              ((match kv_bron_rol with Some rb -> [ rb ] | None -> [])
-              @ Option.value kv_bron_pad ~default:[])
+        List.map
+          (fun (rb : rol_binding) -> n_rel rb.rb_feittype)
+          ((match kv_bron_rol with Some rb -> [ rb ] | None -> [])
+          @ Option.value kv_bron_pad ~default:[])
       in
       let part ~negative = function
         | Some c ->
@@ -7729,9 +6802,8 @@ let dep_forms ctx : dep_form list =
         in
         let reads =
           (n_pop dt, Dep_pos)
-          :: (match v.verbindende_rol with
-             | Some rb -> [ (n_rel rb.rb_feittype, Dep_pos) ]
-             | None -> [])
+          :: (n_rel v.verbindende_rol.rb_feittype, Dep_pos)
+          :: []
           @ (match v.bron_attribuut with Some a -> [ (n_attr bt a, Dep_pos) ] | None -> [])
           @ List.filter_map
               (fun a -> Option.map (fun a -> (n_attr dt a, Dep_pos)) a)
@@ -7762,17 +6834,11 @@ let dep_forms ctx : dep_form list =
         let name = Option.value u.uni_naam ~default:at in
         let subj = Option.value u.uni_subject ~default:"" in
         (* a parent-scoped uniqueness reads the scope relation's link set
-           (ch. 6.1) — bound by its named fact type, else derived from
-           the written scope field (an unresolvable scope contributes no
-           edge; WF-054 reports it) *)
+           (ch. 6.1), named by its binding (B8) *)
         let scope_read =
-          match (u.scope_rol, u.scope_veld) with
-          | Some rb, _ -> [ (n_rel rb.rb_feittype, Dep_strict) ]
-          | None, Some sv -> (
-              match nav_role_by_name ctx ~from_type:subj ~name:sv with
-              | Ok (fn, _) -> [ (n_rel fn, Dep_strict) ]
-              | Error _ -> [])
-          | None, None -> []
+          match u.scope_rol with
+          | Some rb -> [ (n_rel rb.rb_feittype, Dep_strict) ]
+          | None -> []
         in
         {
           df_at = at;
@@ -7880,21 +6946,13 @@ let dep_forms ctx : dep_form list =
       (fun i (f : resolved_feit_creatie) ->
         let at = Printf.sprintf "/feitCreaties/%d" i in
         let name = Option.value f.fc_naam ~default:at in
-        (* the symbolic form writes the created relation's link set and
-           reads the link set of every hop it traverses (ch. 6.1) — the
-           edge that orders creation-after-creation; a bean-field-only
-           record carries no symbolic hops (recorded uncheckable,
-           WF-028) and keeps the bare population write *)
-        let rel_writes = match f.fc_feittype with Some ft -> [ n_rel ft ] | None -> [] in
+        (* the creation writes the created relation's link set and reads
+           the link set of every hop it traverses (ch. 6.1) — the edge that
+           orders creation-after-creation *)
+        let rel_writes = [ n_rel f.fc_feittype ] in
         let hop_reads =
-          List.filter_map
-            (fun (t : tussenstap) ->
-              Option.map (fun (rb : rol_binding) -> (n_rel rb.rb_feittype, Dep_pos)) t.ts_rol)
-            f.tussenstappen
-          @
-          match f.join_rol with
-          | Some rb -> [ (n_rel rb.rb_feittype, Dep_pos) ]
-          | None -> []
+          List.map (fun (t : tussenstap) -> (n_rel t.ts_rol.rb_feittype, Dep_pos)) f.tussenstappen
+          @ [ (n_rel f.join_rol.rb_feittype, Dep_pos) ]
         in
         {
           df_at = at;
@@ -8034,434 +7092,144 @@ let wf045_046 ctx =
 (* WF-047/048 on the allocation: the recipient-role binding agrees with
    the declared (bronType, doelType); a bindingless allocation must be
    uniquely derivable. *)
-let wf047_048_verdelingen ctx =
+(* WF-047 on the allocation's recipient role, which it carries since L2
+   (B12): the binding resolves and its fillers agree with the source and
+   target types. *)
+let wf047_verdelingen ctx =
   List.concat
     (List.mapi
        (fun i (r : resolved_verdeling) ->
-         let at = Printf.sprintf "/verdelingen/%d" i in
-         match r.verbindende_rol with
-         | Some rb ->
-             wf047_binding ctx (at ^ "/verbindendeRol") rb ~bound_filler:r.doel_type
-               ~other_filler:r.bron_type
-         | None -> (
-             match (r.bron_type, r.doel_type) with
-             | Some bt, Some dt ->
-                 wf048_derivable ctx at ~from_type:bt ~to_type:dt ~site:"allocation"
-             | _ -> []))
+         wf047_binding ctx
+           (Printf.sprintf "/verdelingen/%d/verbindendeRol" i)
+           r.verbindende_rol ~bound_filler:r.doel_type ~other_filler:r.bron_type)
        ctx.doc.verdelingen)
 
-(* WF-028 over the symbolic creation form (v1 extension). The form is
-   all-or-nothing, every binding resolves, the ends agree, and the join chain
-   reaches the target through a relation that differs from the created one.
-
-   The NO-symbolic-field case (maintainer decision 2026-09-04, fifth wave).
-   Until this wave a record carrying only the v0 bean fields — `zetVeld`,
-   `joinVeld`, `tussenstappen[].veld/type` and nothing symbolic — fell through
-   this clause as "uncheckable, its relational content is not on the wire".
-   That was a mis-reading of what the rule is for: the content is not on the
-   wire, and THAT is the defect. Measured on `jutterswet-postwacht` with all
-   five extension keys removed (`feittype`, `ankerRol`, `doelRol`, `joinRol`
-   and the hop's `rolBinding`), the three executors disagree about whether the
-   document exists at all:
-
-     verifier  PASS
-     ref       EVALUATION FAULT: fact creation "…" carries only bean fields;
-               the symbolic form (IR-SPEC ch. 3.4) is what executes
-     clingo    TRANSLATION FAULT: the same sentence
-     Drools    PLAYED 1 — it reads exactly those bean fields, so it runs
-
-   Two executors refuse the document and the third replays it to the pinned
-   expectations. A verifier that admits it makes the IR's meaning depend on
-   which engine reads it, which is the one thing an engine-neutral IR may not
-   do. The arm says the ch. 3.4 requirement out loud instead: the symbolic
-   form is what executes, so a creation must carry it. Its witness is
-   `corpus/negatief/wf028-bean-only-creation`; over the four zones no document
-   loses it — measured at the pre-card state, all 8 fact creations in golden,
-   rood, negatief and the parity zone carried the symbolic form; of the 16
-   those zones hold since (the fifth wave's four witnesses, its WF-028 witness
-   and the fix round's three), 15 do, and the sixteenth is this arm's own. *)
+(* WF-028 over the fact creation (IR-SPEC ch. 3.4). Since L2 the symbolic
+   block is the whole creation (B7) and the loader reads it as required:
+   the created relation and the roles its two ends fill, the step bindings
+   and the join hop. What is left to cross is its meaning — every binding
+   resolves, the ends agree, and the join chain reaches the target through
+   a relation that differs from the created one. *)
 let wf028 ctx =
   List.concat
     (List.mapi
        (fun i (fc : resolved_feit_creatie) ->
          let at = Printf.sprintf "/feitCreaties/%d" i in
-         let any_symbolic =
-           fc.fc_feittype <> None || fc.anker_rol <> None || fc.doel_rol <> None
-           || fc.join_rol <> None
-           || List.exists (fun (t : tussenstap) -> t.ts_rol <> None) fc.tussenstappen
-         in
-         if not any_symbolic then
-           [ v "WF-028" at
-               "fact creation carries only bean fields; the symbolic form (ch. 3.4) is what \
-                executes, and nothing on the wire says which relation is created" ]
-         else
-           let missing =
-             List.filter_map
-               (fun (n, p) -> if p then None else Some n)
-               [ ("feittype", fc.fc_feittype <> None);
-                 ("ankerRol", fc.anker_rol <> None);
-                 ("doelRol", fc.doel_rol <> None);
-                 ("joinRol", fc.join_rol <> None) ]
-             @ List.concat
-                 (List.mapi
-                    (fun j (t : tussenstap) ->
-                      if t.ts_rol = None then
-                        [ Printf.sprintf "tussenstappen/%d/rolBinding" j ]
-                      else [])
-                    fc.tussenstappen)
-           in
-           if missing <> [] then
-             [ v "WF-028" at
-                 ("symbolic fact creation is all-or-nothing; missing: "
-                 ^ String.concat ", " missing) ]
-           else
-             let ftn = Option.get fc.fc_feittype in
-             let anker_rol = Option.get fc.anker_rol in
-             let doel_rol = Option.get fc.doel_rol in
-             let join = Option.get fc.join_rol in
-             let filler (r : rol) = Option.value r.rol_objecttype_naam ~default:"" in
-             let created_checks =
-               match find_ci ctx.doc.feittypen ftn with
-               | None -> [ v "WF-028" at ("created fact type '" ^ ftn ^ "' is not declared") ]
-               | Some (ft : feittype) -> (
-                   match ft.rollen with
-                   | [ a; b ] ->
-                       let pick name =
-                         let m r =
-                           match r.rol_naam with
-                           | Some n -> norm n = norm name
-                           | None -> false
-                         in
-                         match (m a, m b) with
-                         | true, false -> Ok a
-                         | false, true -> Ok b
-                         | true, true ->
-                             Error ("role '" ^ name ^ "' is ambiguous within '" ^ ftn ^ "'")
-                         | false, false ->
-                             Error ("'" ^ name ^ "' is not a role of '" ^ ftn ^ "'")
-                       in
-                       (* ONE-SIDED. [anker]/[doel] name the types the
-                          creation ranges over and targets; read
-                          extensionally those are every instance ⊑ the name,
-                          and the created relation's role must be able to
-                          hold all of them — so the node's type sits AT OR
-                          BELOW the role's declared filler, never above it.
-                          The other direction (a role filling a strict
-                          subtype while the node names the parent) writes
-                          instances into a role that does not accept them,
-                          and both OCaml executors carry it out silently
-                          instead of refusing. WF-047's [agree] is two-sided
-                          for a reason that does not hold here: there the
-                          node names a type to READ through, and reading
-                          upward from every filler is sound. *)
-                       let end_check what name expected =
-                         match pick name with
-                         | Error e -> [ v "WF-028" at e ]
-                         | Ok r -> (
-                             match expected with
-                             | Some t when not (is_sub ctx ~sub:t ~super:(filler r)) ->
-                                 [ v "WF-028" at
-                                     (Printf.sprintf "%s '%s' fills '%s', but the node names '%s'"
-                                        what name (filler r) t) ]
-                             | _ -> [])
-                       in
-                       (if norm anker_rol = norm doel_rol then
-                          [ v "WF-028" at "ankerRol and doelRol must be distinct roles" ]
-                        else [])
-                       @ end_check "ankerRol" anker_rol fc.anker
-                       @ end_check "doelRol" doel_rol fc.fc_doel
-                   | _ ->
-                       [ v "WF-028" at
-                           ("created fact type '" ^ ftn ^ "' does not have exactly two roles") ])
-             in
-             let chain_checks =
-               (* anchor -[tussenstappen]-> ... -[joinRol]-> target; each
-                  binding names the role the hop's far side fills *)
-               let step at_step cur rb =
-                 match resolve_binding ctx rb with
-                 | Error e -> Error [ v "WF-028" at_step e ]
-                 | Ok (_, bound, other) -> (
-                     match cur with
-                     | Some cur when not (fills ctx ~inst:cur ~role:other) ->
-                         Error
-                           [ v "WF-028" at_step
-                               (Printf.sprintf
-                                  "hop over '%s': the near side fills '%s', but the chain stands \
-                                   at '%s'"
-                                  rb.rb_feittype (filler other) cur) ]
-                     | _ -> Ok (Some (filler bound)))
-               in
-               let rec go j cur = function
-                 | [] -> (
-                     match step (at ^ "/joinRol") cur join with
-                     | Error vs -> vs
-                     | Ok reached ->
-                         (* LITERAL, and left so on purpose. The unsound
-                            direction — the chain reaches an ancestor of the
-                            declared target, so a plain instance would be
-                            linked as one — must refuse, and this comparison
-                            already does. The sound direction (the chain reaches a strict SUBTYPE of
-                            the target) would be a widening, and it is held back: the
-                            fold and the allocation now both narrow a reached set to
-                            their declared type (ch. 2.2), so the machinery exists,
-                            but a creation LINKS rather than folds — a narrowed chain
-                            would silently create fewer relations instead of fewer
-                            contributors — and that deserves its own measurement
-                            rather than riding along here. *)
-                         (match (reached, fc.fc_doel) with
-                         | Some r, Some d when norm r <> norm d ->
-                             [ v "WF-028" at
-                                 (Printf.sprintf "the join chain reaches '%s', not the target '%s'"
-                                    r d) ]
-                         | _ -> [])
-                         @
-                         if norm join.rb_feittype = norm ftn then
-                           [ v "WF-028" at
-                               "the created relation must differ from the relation of the final \
-                                hop" ]
-                         else [])
-                 | (t : tussenstap) :: rest -> (
-                     match
-                       step (Printf.sprintf "%s/tussenstappen/%d" at j) cur (Option.get t.ts_rol)
-                     with
-                     | Error vs -> vs
-                     | Ok reached -> go (j + 1) reached rest)
-               in
-               go 0 fc.anker fc.tussenstappen
-             in
-             created_checks @ chain_checks)
-       ctx.doc.feit_creaties)
-
-(* WF-034 on the four BEAN-field names of a fact creation (maintainer decision
-   2026-09-04, fifth wave): `zetVeld`, `joinVeld`, `tussenstappen[].veld` and
-   `tussenstappen[].type`. These are the v0 half of the node — the fields the
-   bean-model executor navigates and writes — and until this clause not one of
-   them was held against a declaration. WF-028 above crosses only the symbolic
-   sisters (`feittype`, `ankerRol`, `doelRol`, `joinRol`,
-   `tussenstappen[].rolBinding`); the bean fields sat beside them, unchecked,
-   spelling whatever the producer liked.
-
-   What they mean, and therefore what they resolve against. A binary relation
-   lives in the v0 bean model as ONE SCALAR reference field, on the object type
-   that fills the TO-MANY role, named after the TO-ONE role. That is the
-   §13.3.9 storage direction: the Drools backend's `FactModelGenerator` derives
-   exactly that field and its transpiler cites the same law by name in its own
-   skip reasons ("§13.3.9 opslagrichting"). So each bean field belongs to a
-   relation its symbolic sister already names —
-
-     zetVeld                the created relation      -> a role of `feittype`
-     joinVeld               the final hop's relation  -> a role of `joinRol`'s
-     tussenstappen[j].veld  hop j's relation          -> a role of that
-                                                         `rolBinding`'s
-
-   — and three arms hold it there, in cascade so each is separately
-   falsifiable (an undeclared name would otherwise trip A and B at once, and
-   no single mutant would free its witness):
-
-     A  the name is a DECLARED role of that relation
-     B  where the relation carries exactly ONE to-one role, it is THAT role
-     C  it is that role's DECLARED SPELLING, byte for byte
-
-   Arm B stops where the derivation stops (fix round, 2026-09-05). At EQUAL
-   cardinality the model derives no side — two to-many roles imply no scalar
-   field at all, two to-one roles imply one on each bean — and there both names
-   are admissible. That is not a hedge but the corpus: `anchor/jutterswet-
-   erflijn` creates `erflijn`, whose roles are both to-many, and
-   `anchor/jutterswet-gemeenteberging` joins over `aanmelding`, likewise; a
-   rule that picked a side there would make two anchor goldens ill-formed for a
-   choice no model makes. The fifth wave admitted BOTH roles everywhere, with
-   the reason "which side the bean model stores is a bean-model decision the
-   wire does not carry" — refuted by the backend in this repository, which
-   derives the side from cardinality alone. Its corpus evidence was also
-   mis-counted: read PER CREATION, two of the four golden creations spell
-   `zetVeld` with the anchor's role (`jutterswet-postwacht`,
-   `anchor/jutterswet-gemeenteberging`) and two with the target's
-   (`anchor/jutterswet-erflijn` carries two creations, both target-spelled) —
-   two and two, not three and one. The anchor/target framing predicts nothing
-   anyway: `jutterswet-postwacht` spells `joinVeld` with the OPPOSITE of its
-   bound role, and it is precisely the to-one role. The to-one reading explains
-   all eleven golden positions at once.
-
-   Arm C is the one place in this rule where the ch. 2.4 case-insensitive name
-   identity is not enough, and the reason is not a naming rule but what the
-   name becomes: a bean-model executor turns the role name into a Java PROPERTY
-   name and reaches it by getter, and that lookup is case-sensitive (measured:
-   an internal capital throws "geen getter voor 'seinVak'"; a first-letter
-   change is harmless, because the identifier mapping lower-cases the initial).
-   Deliberate asymmetry: `tussenstappen[j].type` gets NO byte arm, because its
-   consumer resolves object types with `equalsIgnoreCase` by documented
-   contract — a byte arm there would be stricter than all three executors and
-   would have no witness.
-
-   The EMPTY half of the same class is one list-driven presence arm over the
-   four (path, field, value) triples rather than four sub-arms: with one
-   witness, three of four sub-arms move no document at all (measured, 0 of
-   503), and a clause with no counterexample is not a clause. All four absences
-   were measured on `jutterswet-postwacht`: `tussenstappen[].veld` and
-   `tussenstappen[].type` crash the bean-model executor with exactly the
-   exceptions the two filled-name witnesses already pin, `zetVeld` and
-   `joinVeld` drop the whole creation as a loud transpiler skip.
-
-   `tussenstappen[j].type` is not a role name but the intermediate object type
-   the hop lands on, so it crosses against the hop itself: the filler of the
-   role that binding binds, the same [resolve_binding] the chain walk in
-   WF-028 uses. Where the binding does not resolve, this arm stays silent —
-   that report is WF-028's.
-
-   Measured, one field at a time set to a name no declaration carries, over
-   all 14 golden positions (4 `zetVeld`, 4 `joinVeld`, 3 `type`, 3 `veld`,
-   spread over `anchor/jutterswet-erflijn`, `anchor/jutterswet-gemeenteberging`
-   and `jutterswet-postwacht`):
-
-     verifier  14/14 PASS
-     ref       14/14 clean — replays to the pinned expectations
-     clingo    14/14 clean — the same
-
-   Both OCaml executors are BLIND here by construction: they read the symbolic
-   fields and never touch the bean fields, so a nonsense name changes no
-   answer and there is no divergence to catch. The bean-model executor reads
-   them, reflectively, and on `jutterswet-postwacht` (baseline: it plays)
-   every one of the four throws it out of the engine:
-
-     zetVeld                IllegalStateException: no getter for 'bestaatniet'
-                            on the target fact class (via ConsequenceException)
-     joinVeld               ConstraintEvaluationException: Error evaluating
-                            constraint '' in  and in more rules
-     tussenstappen[].veld   ConstraintEvaluationException, the same
-     tussenstappen[].type   NullPointerException: Cannot read field "naam"
-                            because "ot" is null
-
-   That is the sharpest shape this rule family has: a verifier-clean document
-   that two executors replay without a murmur while the third crashes on it.
-   Seven witnesses in all — four on the undeclared name
-   (`corpus/negatief/wf034-feitcreatie-onbekend-*`), and, from the fix round,
-   `wf034-feitcreatie-zusterrol` (arm B: a DECLARED role of the created
-   relation, still a getter that does not exist), `wf034-feitcreatie-
-   hoofdletterveld` (arm C) and `wf034-feitcreatie-loos-tussenstapveld` (the
-   presence arm) — each arm-exact against the full four-zone sweep.
-
-   Over the four zones the clause costs nothing. Measured at the pre-card
-   state: all 8 fact creations in golden, rood, negatief and the parity zone
-   spelled every bean field against a declared role. Re-measured over the 45
-   bean name positions the 503 documents hold since (11 golden, 3 rood, 28
-   negatief, 3 parity): 27 sit on a relation with exactly one to-one role and
-   every one names it byte-exactly, 8 sit at equal cardinality where arm B
-   stands down, 4 sit on a fact type WF-028 already reports missing, and the
-   remaining 6 are this family's own witnesses. Every one of the 13
-   `tussenstappen[].type` positions is present. *)
-let wf034_feitcreatie_beanvelden ctx =
-  List.concat
-    (List.mapi
-       (fun i (fc : resolved_feit_creatie) ->
-         let at = Printf.sprintf "/feitCreaties/%d" i in
+         let ftn = fc.fc_feittype in
+         let anker_rol = fc.anker_rol in
+         let doel_rol = fc.doel_rol in
+         let join = fc.join_rol in
          let filler (r : rol) = Option.value r.rol_objecttype_naam ~default:"" in
-         (* Three arms, in cascade so each is separately falsifiable: an
-            UNDECLARED name never reaches the to-one arm (it would trip both
-            and no single mutant would free its witness), and a name the
-            to-one arm rejects never reaches the spelling arm. *)
-         let spells_role where path ftn = function
-           | None -> []
-           | Some n -> (
-               match find_ci ctx.doc.feittypen ftn with
-               | None -> [] (* the fact type itself is WF-028's report *)
-               | Some (ft : feittype) -> (
-                   let declared = some_names (List.map (fun (r : rol) -> r.rol_naam) ft.rollen) in
-                   let to_one =
-                     List.filter_map
-                       (fun (r : rol) -> if r.rol_meervoudig then None else r.rol_naam)
-                       ft.rollen
+         let created_checks =
+           match find_ci ctx.doc.feittypen ftn with
+           | None -> [ v "WF-028" at ("created fact type '" ^ ftn ^ "' is not declared") ]
+           | Some (ft : feittype) -> (
+               match ft.rollen with
+               | [ a; b ] ->
+                   let pick name =
+                     let m r =
+                       match r.rol_naam with
+                       | Some n -> norm n = norm name
+                       | None -> false
+                     in
+                     match (m a, m b) with
+                     | true, false -> Ok a
+                     | false, true -> Ok b
+                     | true, true ->
+                         Error ("role '" ^ name ^ "' is ambiguous within '" ^ ftn ^ "'")
+                     | false, false ->
+                         Error ("'" ^ name ^ "' is not a role of '" ^ ftn ^ "'")
                    in
-                   if not (mem_ci declared n) then
-                     [ v "WF-034" path
-                         (Printf.sprintf
-                            "'%s' is not a declared role of '%s': the %s bean field resolves \
-                             against no declaration"
-                            n ftn where) ]
-                   else
-                     match to_one with
-                     | [ one ] when norm n <> norm one ->
-                         [ v "WF-034" path
-                             (Printf.sprintf
-                                "'%s' is a to-many role of '%s': the %s bean field names the side \
-                                 the v0 bean model stores the reference under, so it must name \
-                                 '%s'"
-                                n ftn where one) ]
-                     | _ ->
-                         if List.mem n declared then []
-                         else
-                           [ v "WF-034" path
-                               (Printf.sprintf
-                                  "'%s' is not the declared spelling of the role '%s' of '%s': the \
-                                   %s bean field is a bean PROPERTY name, which is case-sensitive"
-                                  n
-                                  (List.find (fun d -> norm d = norm n) declared)
-                                  ftn where) ]))
+                   (* ONE-SIDED. [anker]/[doel] name the types the
+                      creation ranges over and targets; read
+                      extensionally those are every instance ⊑ the name,
+                      and the created relation's role must be able to
+                      hold all of them — so the node's type sits AT OR
+                      BELOW the role's declared filler, never above it.
+                      The other direction (a role filling a strict
+                      subtype while the node names the parent) writes
+                      instances into a role that does not accept them,
+                      and both OCaml executors carry it out silently
+                      instead of refusing. WF-047's [agree] is two-sided
+                      for a reason that does not hold here: there the
+                      node names a type to READ through, and reading
+                      upward from every filler is sound. *)
+                   let end_check what name expected =
+                     match pick name with
+                     | Error e -> [ v "WF-028" at e ]
+                     | Ok r -> (
+                         match expected with
+                         | Some t when not (is_sub ctx ~sub:t ~super:(filler r)) ->
+                             [ v "WF-028" at
+                                 (Printf.sprintf "%s '%s' fills '%s', but the node names '%s'"
+                                    what name (filler r) t) ]
+                         | _ -> [])
+                   in
+                   (if norm anker_rol = norm doel_rol then
+                      [ v "WF-028" at "ankerRol and doelRol must be distinct roles" ]
+                    else [])
+                   @ end_check "ankerRol" anker_rol fc.anker
+                   @ end_check "doelRol" doel_rol fc.fc_doel
+               | _ ->
+                   [ v "WF-028" at
+                       ("created fact type '" ^ ftn ^ "' does not have exactly two roles") ])
          in
-         (* The EMPTY half of the same class, as ONE list-driven arm over the
-            four (path, field, value) triples: four separate sub-arms would
-            need four witnesses to be falsifiable, and with one witness three
-            of them move no document at all. *)
-         let present =
-           List.filter_map
-             (fun (path, where, value) ->
-               if value = None then
-                 Some
-                   (v "WF-034" path
-                      (Printf.sprintf
-                         "the %s bean field is absent: the v0 half of a fact creation is what a \
-                          bean-model executor navigates and writes, and an absent field names \
-                          nothing"
-                         where))
-               else None)
-             ([ (at ^ "/zetVeld", "created relation's", fc.zet_veld);
-                (at ^ "/joinVeld", "final hop's", fc.join_veld) ]
-             @ List.concat
-                 (List.mapi
-                    (fun j (t : tussenstap) ->
-                      let tat = Printf.sprintf "%s/tussenstappen/%d" at j in
-                      [ (tat ^ "/veld", "hop's", t.veld);
-                        (tat ^ "/type", "hop's intermediate-type", t.ts_type) ])
-                    fc.tussenstappen))
+         let chain_checks =
+           (* anchor -[tussenstappen]-> ... -[joinRol]-> target; each
+              binding names the role the hop's far side fills *)
+           let step at_step cur rb =
+             match resolve_binding ctx rb with
+             | Error e -> Error [ v "WF-028" at_step e ]
+             | Ok (_, bound, other) -> (
+                 match cur with
+                 | Some cur when not (fills ctx ~inst:cur ~role:other) ->
+                     Error
+                       [ v "WF-028" at_step
+                           (Printf.sprintf
+                              "hop over '%s': the near side fills '%s', but the chain stands \
+                               at '%s'"
+                              rb.rb_feittype (filler other) cur) ]
+                 | _ -> Ok (Some (filler bound)))
+           in
+           let rec go j cur = function
+             | [] -> (
+                 match step (at ^ "/joinRol") cur join with
+                 | Error vs -> vs
+                 | Ok reached ->
+                     (* LITERAL, and left so on purpose. The unsound
+                        direction — the chain reaches an ancestor of the
+                        declared target, so a plain instance would be
+                        linked as one — must refuse, and this comparison
+                        already does. The sound direction (the chain reaches a strict SUBTYPE of
+                        the target) would be a widening, and it is held back: the
+                        fold and the allocation now both narrow a reached set to
+                        their declared type (ch. 2.2), so the machinery exists,
+                        but a creation LINKS rather than folds — a narrowed chain
+                        would silently create fewer relations instead of fewer
+                        contributors — and that deserves its own measurement
+                        rather than riding along here. *)
+                     (match (reached, fc.fc_doel) with
+                     | Some r, Some d when norm r <> norm d ->
+                         [ v "WF-028" at
+                             (Printf.sprintf "the join chain reaches '%s', not the target '%s'"
+                                r d) ]
+                     | _ -> [])
+                     @
+                     if norm join.rb_feittype = norm ftn then
+                       [ v "WF-028" at
+                           "the created relation must differ from the relation of the final \
+                            hop" ]
+                     else [])
+             | (t : tussenstap) :: rest -> (
+                 match step (Printf.sprintf "%s/tussenstappen/%d" at j) cur t.ts_rol with
+                 | Error vs -> vs
+                 | Ok reached -> go (j + 1) reached rest)
+           in
+           go 0 fc.anker fc.tussenstappen
          in
-         present
-         @ (match fc.fc_feittype with
-           | Some ftn -> spells_role "created relation's" (at ^ "/zetVeld") ftn fc.zet_veld
-           | None -> [])
-         @ (match fc.join_rol with
-           | Some rb -> spells_role "final hop's" (at ^ "/joinVeld") rb.rb_feittype fc.join_veld
-           | None -> [])
-         @ List.concat
-             (List.mapi
-                (fun j (t : tussenstap) ->
-                  let tat = Printf.sprintf "%s/tussenstappen/%d" at j in
-                  match t.ts_rol with
-                  | None -> []
-                  | Some rb ->
-                      (* ONE-SIDED, like WF-028's [end_check] above and for
-                         the same reason: [tn] is a bean FIELD type and the
-                         hop hands it every instance the reached role holds,
-                         all of them ⊑ that role's filler. A field typed at
-                         a strict SUBTYPE of what the hop reaches cannot
-                         hold them; a field typed at an ancestor can. *)
-                      (match (resolve_binding ctx rb, t.ts_type) with
-                      | Ok (_, bound, _), Some tn
-                        when not (is_sub ctx ~sub:(filler bound) ~super:tn) ->
-                          [ v "WF-034" (tat ^ "/type")
-                              (Printf.sprintf
-                                 "the hop over '%s' reaches '%s', but the intermediate bean type \
-                                  names '%s'"
-                                 rb.rb_feittype (filler bound) tn) ]
-                      | _ -> [])
-                      @ spells_role "hop's" (tat ^ "/veld") rb.rb_feittype t.veld)
-                fc.tussenstappen))
+         created_checks @ chain_checks)
        ctx.doc.feit_creaties)
 
-(* WF-050: defaults-group well-formedness (IR-SPEC ch. 6): at least one
-   default; exactly one target kind (characteristic or attribute), resolving
-   on the subject; default shapes match the target kind; the initialisation
-   default is lowest and unique; the target has no other writer; multiple
-   defaults groups on one target only when every member is declared unordered
-   (ch. 7.2). *)
 let wf050 ctx =
   List.concat
     (List.mapi
@@ -8786,64 +7554,34 @@ let wf079 ctx =
   in
   pairs writers
 
-(* WF-054: parent-scoped uniqueness (the scope hop, v1 extension). The
-   scope role resolves — bound (scopeRol) or uniquely derivable from the
-   written scopeVeld name — its near side fills the subject, the written
-   name denotes the bound role, and the scope role is to-one (a scope
-   parent is one instance; the v0 reference field). A binding on an
-   unscoped uniqueness is ill-formed. Scope-less instances do not
-   participate at evaluation (RUNTIME-SEMANTICS ch. 5.9). *)
+(* WF-054: parent-scoped uniqueness (the scope hop). Since L2 the scope
+   binding IS the scoping (B8): a uniqueness carrying one is scoped, one
+   without is not. The binding resolves, its near side fills the subject,
+   and the scope role is to-one (a scope parent is one instance; the v0
+   reference field). Scope-less instances do not participate at evaluation
+   (RUNTIME-SEMANTICS ch. 5.9). *)
 let wf054 ctx =
   List.concat_map
     (fun (i, (r : resolved_uniciteit)) ->
       let at = Printf.sprintf "/uniciteiten/%d" i in
-      match (r.scope_veld, r.scope_rol, r.uni_subject) with
-      | None, Some _, _ ->
-          [ v "WF-054" at "a scope binding on an unscoped uniqueness" ]
-      | None, None, _ -> []
-      | Some _, _, None -> [] (* WF-030 reports the missing subject *)
-      | Some sv, binding, Some subj -> (
+      match (r.scope_rol, r.uni_subject) with
+      | None, _ -> []
+      | Some _, None -> [] (* WF-030 reports the missing subject *)
+      | Some rb, Some subj -> (
           let filler (r : rol) = Option.value r.rol_objecttype_naam ~default:"" in
-          let denotes (r : rol) name =
-            (match r.rol_naam with Some n -> norm n = norm name | None -> false)
-            || match r.rol_meervoud with Some m -> norm m = norm name | None -> false
-          in
-          let hop =
-            match binding with
-            | Some rb -> (
-                match resolve_binding ctx rb with
-                | Error e -> Error [ e ]
-                | Ok (_, bound, opposite) ->
-                    let near =
-                      if not (fills ctx ~inst:subj ~role:opposite) then
-                        [ Printf.sprintf
-                            "the near side of '%s' fills '%s', but the uniqueness subject is \
-                             '%s'"
-                            rb.rb_feittype (filler opposite) subj ]
-                      else []
-                    in
-                    let name_v =
-                      if denotes bound sv then []
-                      else
-                        [ Printf.sprintf
-                            "the written scope field '%s' does not denote the bound role '%s'"
-                            sv
-                            (Option.value bound.rol_naam ~default:"?") ]
-                    in
-                    if near @ name_v = [] then Ok bound else Error (near @ name_v))
-            | None -> (
-                match nav_role_by_name ctx ~from_type:subj ~name:sv with
-                | Ok (_, r) -> Ok r
-                | Error e -> Error [ e ])
-          in
-          match hop with
-          | Error msgs -> List.map (fun m -> v "WF-054" at m) msgs
-          | Ok r ->
-              if r.rol_meervoudig then
+          match resolve_binding ctx rb with
+          | Error e -> [ v "WF-054" at e ]
+          | Ok (_, bound, opposite) ->
+              if not (fills ctx ~inst:subj ~role:opposite) then
+                [ v "WF-054" at
+                    (Printf.sprintf
+                       "the near side of '%s' fills '%s', but the uniqueness subject is '%s'"
+                       rb.rb_feittype (filler opposite) subj) ]
+              else if bound.rol_meervoudig then
                 [ v "WF-054" at
                     (Printf.sprintf
                        "the scope role '%s' is to-many — a scope parent is one instance"
-                       (Option.value r.rol_naam ~default:"?")) ]
+                       (Option.value bound.rol_naam ~default:"?")) ]
               else []))
     (List.mapi (fun i r -> (i, r)) ctx.doc.uniciteiten)
 
@@ -8876,113 +7614,83 @@ let wf023_assignment at ~target ~value (dt : datatype) (wt : datatype) =
         true
     | _ -> false
   in
-  match (dt, wt) with
-  | Datatype_onbekend _, _ | _, Datatype_onbekend _ -> []
-  | _ ->
-      let same_family =
-        datatype_kind dt = datatype_kind wt || (is_number_like dt && is_number_like wt)
-      in
-      (if not same_family then
-         [ v "WF-023" at
-             (Printf.sprintf "a %s value is assigned to a %s target" (datatype_kind wt)
-                (datatype_kind dt)) ]
-       else [])
-      @ (if
-           is_number_like dt && is_number_like wt
-           && not (units_compatible_adopting target value (unit_of dt) (unit_of wt))
-         then [ v "WF-023" at "assignment across incompatible units" ]
-         else [])
-      @ (if sign_conflict dt wt then
-           [ v "WF-023" at "the value's sign restriction contradicts the target's" ]
-         else [])
-      @ (* WF-090's write half (struct-domain identity, ch. 2.4): the same
-           three write positions, the struct sibling of the keuzetype clause
-           below. Its own rule number, so the two are falsifiable apart; the
-           one-sided arms follow the keuzetype clause and report only within
-           one family. *)
-      (match (struct_domain dt, struct_domain wt) with
-       | None, None -> []
-       | Some a, Some b when norm a = norm b -> []
-       | Some a, Some b ->
-           [ v "WF-090" at
-               (Printf.sprintf
-                  "a value of the struct domain '%s' is assigned to a target of the struct domain \
-                   '%s'"
-                  b a) ]
-       | Some a, None when same_family ->
-           [ v "WF-090" at
-               (Printf.sprintf
-                  "a %s value naming no struct domain is assigned to a target of the struct domain \
-                   '%s'"
-                  (datatype_kind wt) a) ]
-       | None, Some b when same_family ->
-           [ v "WF-090" at
-               (Printf.sprintf
-                  "a value of the struct domain '%s' is assigned to a %s target naming no struct \
-                   domain"
-                  b (datatype_kind dt)) ]
-       | _ -> [])
-      @
-      (* the domain clause; a one-sided keuzetype is reported only within
-         one family (a list of a keuzetype against a list of something else,
-         an enumeration without a domain) — across families the family
-         message already names the defect *)
-      match (keuzetype_domain dt, keuzetype_domain wt) with
-      | None, None -> []
-      | Some a, Some b when keuzetype_same a b -> []
-      | Some a, Some b ->
-          [ v "WF-023" at
-              (Printf.sprintf "a value of the %s '%s' is assigned to a target of the %s '%s'"
-                 (keuzetype_variant b) (keuzetype_name b) (keuzetype_variant a)
-                 (keuzetype_name a)) ]
-      | Some a, None when same_family ->
-          [ v "WF-023" at
-              (Printf.sprintf
-                 "a %s value naming no keuzetype domain is assigned to a target of the %s '%s'"
-                 (datatype_kind wt) (keuzetype_variant a) (keuzetype_name a)) ]
-      | None, Some b when same_family ->
-          [ v "WF-023" at
-              (Printf.sprintf
-                 "a value of the %s '%s' is assigned to a %s target naming no keuzetype domain"
-                 (keuzetype_variant b) (keuzetype_name b) (datatype_kind dt)) ]
-      | _ -> []
+  let same_family =
+    datatype_kind dt = datatype_kind wt || (is_number_like dt && is_number_like wt)
+  in
+  (if not same_family then
+     [ v "WF-023" at
+         (Printf.sprintf "a %s value is assigned to a %s target" (datatype_kind wt)
+            (datatype_kind dt)) ]
+   else [])
+  @ (if
+       is_number_like dt && is_number_like wt
+       && not (units_compatible_adopting target value (unit_of dt) (unit_of wt))
+     then [ v "WF-023" at "assignment across incompatible units" ]
+     else [])
+  @ (if sign_conflict dt wt then
+       [ v "WF-023" at "the value's sign restriction contradicts the target's" ]
+     else [])
+  @ (* WF-090's write half (struct-domain identity, ch. 2.4): the same
+       three write positions, the struct sibling of the keuzetype clause
+       below. Its own rule number, so the two are falsifiable apart; the
+       one-sided arms follow the keuzetype clause and report only within
+       one family. *)
+  (match (struct_domain dt, struct_domain wt) with
+   | None, None -> []
+   | Some a, Some b when norm a = norm b -> []
+   | Some a, Some b ->
+       [ v "WF-090" at
+           (Printf.sprintf
+              "a value of the struct domain '%s' is assigned to a target of the struct domain \
+               '%s'"
+              b a) ]
+   | Some a, None when same_family ->
+       [ v "WF-090" at
+           (Printf.sprintf
+              "a %s value naming no struct domain is assigned to a target of the struct domain \
+               '%s'"
+              (datatype_kind wt) a) ]
+   | None, Some b when same_family ->
+       [ v "WF-090" at
+           (Printf.sprintf
+              "a value of the struct domain '%s' is assigned to a %s target naming no struct \
+               domain"
+              b (datatype_kind dt)) ]
+   | _ -> [])
+  @
+  (* the domain clause; a one-sided keuzetype is reported only within
+     one family (a list of a keuzetype against a list of something else,
+     an enumeration without a domain) — across families the family
+     message already names the defect *)
+  match (keuzetype_domain dt, keuzetype_domain wt) with
+  | None, None -> []
+  | Some a, Some b when keuzetype_same a b -> []
+  | Some a, Some b ->
+      [ v "WF-023" at
+          (Printf.sprintf "a value of the %s '%s' is assigned to a target of the %s '%s'"
+             (keuzetype_variant b) (keuzetype_name b) (keuzetype_variant a)
+             (keuzetype_name a)) ]
+  | Some a, None when same_family ->
+      [ v "WF-023" at
+          (Printf.sprintf
+             "a %s value naming no keuzetype domain is assigned to a target of the %s '%s'"
+             (datatype_kind wt) (keuzetype_variant a) (keuzetype_name a)) ]
+  | None, Some b when same_family ->
+      [ v "WF-023" at
+          (Printf.sprintf
+             "a value of the %s '%s' is assigned to a %s target naming no keuzetype domain"
+             (keuzetype_variant b) (keuzetype_name b) (datatype_kind dt)) ]
+  | _ -> []
 
 let wf023 ctx =
-  (* position 0, the write TARGET's own annotation: a rule target is a
-     reference like any other, so its serialized [type] is a use site of the
-     attribute declaration it WRITES and the identity engine crosses it facet
-     by facet (WF-091, and WF-089/WF-090 for the domain facet). The
-     expression walk deliberately never enters the target — the lvalue is
-     WF-022's — which left it the one reference type in a document that
-     nothing crossed: the card measured a convertible unit lie there passing
-     gate 3 while a consumer honouring the annotation rescales the written
-     value. The three positions below cross what is WRITTEN against the same
-     declaration; this crosses what the target CLAIMS to be. *)
+  (* position 1: the rule target — the attribute declaration it writes
+     (WF-022 owns its resolution) against the value's static type *)
   List.concat_map
-    (fun (i, (r : resolved_regel)) ->
-      match r.doel with
-      | Some (Attribuut_ref { attribuut; _ } as doel) ->
-          use_site_identity
-            (Printf.sprintf "/resolvedRegels/%d/doel/type" i)
-            ~source:"the attribute declaration it writes"
-            ~what:("rule target '" ^ Option.value attribuut ~default:"?" ^ "'")
-            ~decl:(resolved_attr_datatype ctx doel)
-            ~typ:(typ_of_expr doel)
-      | _ -> [])
-    (List.mapi (fun i r -> (i, r)) ctx.doc.resolved_regels)
-  (* position 1: the rule target — its declared datatype where the target
-     resolves (WF-022), its serialized type otherwise *)
-  @ List.concat_map
     (fun (i, (r : resolved_regel)) ->
       let at = Printf.sprintf "/resolvedRegels/%d" i in
       match (r.rr_soort, r.doel, r.waarde) with
       | Some (Gelijkstelling | Berekening | Initialisatie), Some doel, Some w -> (
-          let dt =
-            match resolved_attr_datatype ctx doel with
-            | Some d -> Some d
-            | None -> typ_of_expr doel
-          in
-          match (dt, typ_of_expr w) with
+          match (resolved_attr_datatype ctx doel, expr_type ctx ~binders:[] w) with
           | Some dt, Some wt -> wf023_assignment at ~target:r.doel ~value:r.waarde dt wt
           | _ -> [])
       | _ -> [])
@@ -8999,7 +7707,7 @@ let wf023 ctx =
                 let tat = Printf.sprintf "/objectCreaties/%d/toekenningen/%d" i j in
                 match (t.toe_kenmerk, t.toe_attribuut, t.toe_waarde) with
                 | false, Some m, Some w -> (
-                    match (attr_of ot m, typ_of_expr w) with
+                    match (attr_of ot m, expr_type ctx ~binders:[] w) with
                     | Some (Some dt), Some wt ->
                         wf023_assignment tat ~target:None ~value:(Some w) dt wt
                     | _ -> [])
@@ -9016,7 +7724,10 @@ let wf023 ctx =
         with
         | Some (Some dt) ->
             let rec walk prefix (r : default) =
-              (match Option.bind r.default_consequentie (fun e -> Option.map (fun wt -> (e, wt)) (typ_of_expr e)) with
+              (match
+                 Option.bind r.default_consequentie (fun e ->
+                     Option.map (fun wt -> (e, wt)) (expr_type ctx ~binders:[] e))
+               with
               | Some (e, wt) ->
                   wf023_assignment (prefix ^ "/consequentie") ~target:None ~value:(Some e) dt wt
               | None -> [])
@@ -9663,7 +8374,7 @@ and invoked_cond acc (c : conditie) : string list =
   | Kwantorvouw { kv_filter; kv_toets; _ } ->
       let sub acc = function Some c -> invoked_cond acc c | None -> acc in
       sub (sub acc kv_filter) kv_toets
-  | Kenmerk_check _ | Rollidmaatschap _ | Verre_rollidmaatschap _ | Regelversie _
+  | Kenmerk_check _ | Role_membership _ | Regelversie _
   | Conditie_onopgelost _ ->
       acc
 
@@ -9713,9 +8424,15 @@ let wf067 ctx =
               write half): without this cross a body of another domain than
               the declared result was verifier-clean and reached ref's "no
               arm" fault through a truthful Invoke (the card's fix round 1,
-              probe P7). The v0 unknown sentinel defers, as under WF-023. *)
-           @ (match (typ_of_expr fd.fd_body, fd.fd_result) with
-             | Some (Datatype_onbekend _), _ | _, Datatype_onbekend _ | None, _ -> []
+              probe P7). A body whose type nothing declares defers, as under
+              WF-023. *)
+           @ (match
+                ( expr_type ctx
+                    ~binders:(List.map (fun (n, dt) -> (n, Some dt)) fd.fd_parameters)
+                    fd.fd_body,
+                  fd.fd_result )
+              with
+             | None, _ -> []
              | Some bt, r when bt <> r ->
                  [ v "WF-067" (at ^ "/body/type")
                      ("the body is " ^ datatype_detail bt ^ ", but the declared result is "
@@ -9968,7 +8685,7 @@ and markers_cond acc (c : conditie) : string option list =
   | Periode_conditie { vanaf; tot; _ } -> o (o acc vanaf) tot
   | Samengesteld { onderdelen; _ } -> List.fold_left markers_cond acc onderdelen
   | Kwantorvouw { kv_filter; kv_toets; _ } -> oc (oc acc kv_filter) kv_toets
-  | Kenmerk_check _ | Rollidmaatschap _ | Verre_rollidmaatschap _ | Regelversie _ -> acc
+  | Kenmerk_check _ | Role_membership _ | Regelversie _ -> acc
 
 (* Every expression and condition position of the document, with the
    markers below it in document order. *)
@@ -10176,7 +8893,7 @@ let all (doc : document) : violation list =
       wf034_dagsoort_eenheden ctx;
       wf034_verdelingen ctx; wf034_verdeling_namen ctx; wf034_verdeling_typen ctx;
       wf034_verdeling_naamresolutie ctx; wf034_objectcreatie_subject ctx;
-      wf034_feitcreatie_beanvelden ctx; wf045_046 ctx;
-      wf047_048_verdelingen ctx; wf050 ctx; wf051 ctx; wf052 ctx; wf079 ctx; wf082 ctx; wf054 ctx;
+      wf045_046 ctx;
+      wf047_verdelingen ctx; wf050 ctx; wf051 ctx; wf052 ctx; wf079 ctx; wf082 ctx; wf054 ctx;
       wf057 ctx; wf059 ctx; wf060 ctx; wf087 ctx; wf061 ctx; wf088 ctx; wf065 ctx; wf067 ctx;
       wf071 ctx; wf072 ctx; wf075 ctx; wf086 ctx; wf113 ctx; expression_layer ctx ]
