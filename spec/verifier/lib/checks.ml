@@ -1322,10 +1322,11 @@ let wf020 ctx =
    day, checked by the very predicate WF-084 uses on a date literal.
 
    It exists to make the assumption stated at validity_overlaps above TRUE
-   before that function relies on it: three readers (this verifier, ref and
-   the ASP backend) hold a bound as an OPAQUE STRING and order it with `<=`,
-   and lexicographic order agrees with calendar order only INSIDE this
-   lexeme. Measured 2026-09-11 on jutterswet-vensterheffing with one bound
+   before that function relies on it: this verifier holds a bound as an
+   OPAQUE STRING and orders it with `<=`, and lexicographic order agrees
+   with calendar order only INSIDE this lexeme. Ref and the ASP backend did
+   the same until 2026-09-23 and now read the bounds through the strict
+   date reader, refusing a non-date by position. Measured 2026-09-11 on jutterswet-vensterheffing with one bound
    twisted, no reader faulting anywhere: `+012026-01-01` and `-0500-01-01`
    sort before every four-digit year, so the window silently opens at the
    start and both executors applied a rule version outside it (125 where the
@@ -1336,7 +1337,7 @@ let wf020 ctx =
    The calendar half is the layer the schema pattern on these two fields
    cannot reach: `2026-02-30` matches that pattern, orders correctly, and
    names a day that does not exist — a reader that PARSES the bound refuses
-   it where the three opaque-string readers do not. *)
+   it, as the executors now do, where an opaque-string reader does not. *)
 let wf101 ctx =
   let bounds at (g : geldigheid option) =
     match g with
